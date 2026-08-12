@@ -58,7 +58,8 @@ public sealed record LedgerRun
     /// still carry candidates, but the skill's rule is that a wrong tag is worse than no
     /// tag — so only HIGH and MEDIUM count as an answer.
     /// </summary>
-    public bool HasTaggableKey => Key is not null && Confidence is KeyConfidence.High or KeyConfidence.Medium;
+    public bool HasTaggableKey =>
+        Key is not null && Confidence is KeyConfidence.High or KeyConfidence.Medium;
 
     internal static LedgerRun? FromDto(LedgerRunDto dto)
     {

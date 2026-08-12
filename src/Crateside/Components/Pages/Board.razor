@@ -1,0 +1,139 @@
+@page "/"
+@using Crateside.Core.Ledger
+@using Crateside.Core.Staging
+@inject StagingBoardService BoardService
+@rendermode InteractiveServer
+
+<PageTitle>Staging board — crateside</PageTitle>
+
+<header class="board-header">
+    <div>
+        <h1>Staging board</h1>
+        <p class="subtitle">What is in front of me right now.</p>
+    </div>
+    <button class="refresh" @onclick="Refresh" disabled="@_reading">
+        @(_reading ? "Reading…" : "Refresh")
+    </button>
+</header>
+
+@if (_songs is null)
+{
+    <p class="empty">Reading the staging folder…</p>
+}
+else if (_songs.Count == 0)
+{
+    <p class="empty">
+        Nothing staged. <code>@BoardService.StagingRoot</code> holds no stems — everything has been
+        worked and moved out, which is what an empty board means.
+    </p>
+}
+else
+{
+    <p class="summary">
+        @_songs.Count @(_songs.Count == 1 ? "song" : "songs"),
+        @_songs.Sum(s => s.Stems.Count) stems —
+        @_songs.Count(s => s.IsFullyTagged) fully tagged.
+    </p>
+
+    <table class="board">
+        <thead>
+            <tr>
+                <th>Song</th>
+                <th>Key</th>
+                <th class="numeric">BPM</th>
+                <th>Stems</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var song in _songs)
+            {
+                <tr class="@(song.IsFullyTagged ? "done" : null)">
+                    <td>
+                        <span class="song-name">@song.DisplayName</span>
+                        @if (song.StaleTaggedStems.Count > 0)
+                        {
+                            <span class="flag stale" title="Tagged in Ableton with a key that is not the current verdict — a supersede left it behind.">
+                                stale tag
+                            </span>
+                        }
+                    </td>
+                    <td>
+                        @if (song.Key is { } key)
+                        {
+                            <span class="key">@key</span>
+                            <span class="confidence @song.Confidence.ToString().ToLowerInvariant()">
+                                @song.Confidence.ToString().ToUpperInvariant()
+                            </span>
+                        }
+                        else if (song.AwaitingDetection)
+                        {
+                            <span class="muted">not detected</span>
+                        }
+                        else
+                        {
+                            <span class="muted" title="detect-key ran and declined to give a single safe tag.">
+                                no safe tag
+                            </span>
+                        }
+                    </td>
+                    <td class="numeric">
+                        @(song.Bpm is { } bpm ? bpm.ToString("0.#") : "—")
+                    </td>
+                    <td>
+                        <ul class="stems">
+                            @foreach (var stem in song.Stems)
+                            {
+                                <li class="@StemClass(stem)" title="@stem.FileName">
+                                    <span class="mark">@(stem.IsKeyTagged ? "✓" : "○")</span>
+                                    @stem.Label
+                                    @if (stem.HasPartialKey)
+                                    {
+                                        <span class="flag partial" title="Tagged with a tonic but no Major/Minor keyword — half a key.">
+                                            half
+                                        </span>
+                                    }
+                                    else if (stem.KeyDisagreesWithVerdict)
+                                    {
+                                        <span class="flag stale" title="@($"Ableton has {stem.AbletonKey}.")">
+                                            @stem.AbletonKey
+                                        </span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private IReadOnlyList<StagingSong>? _songs;
+    private bool _reading;
+
+    protected override void OnInitialized() => Refresh();
+
+    private void Refresh()
+    {
+        _reading = true;
+
+        try
+        {
+            _songs = BoardService.Read();
+        }
+        finally
+        {
+            _reading = false;
+        }
+    }
+
+    private static string StemClass(StagingStem stem) =>
+        stem switch
+        {
+            { HasPartialKey: true } => "stem partial",
+            { KeyDisagreesWithVerdict: true } => "stem stale",
+            { IsKeyTagged: true } => "stem tagged",
+            _ => "stem untagged",
+        };
+}

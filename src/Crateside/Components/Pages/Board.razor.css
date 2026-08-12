@@ -1,0 +1,144 @@
+.board-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+}
+
+.subtitle {
+    margin: 0.25rem 0 0;
+    color: var(--muted);
+}
+
+.refresh {
+    padding: 0.45rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.refresh:hover:not(:disabled) {
+    border-color: var(--accent);
+}
+
+.refresh:disabled {
+    color: var(--muted);
+    cursor: default;
+}
+
+.summary,
+.empty {
+    color: var(--muted);
+    margin: 1rem 0;
+}
+
+.board {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+}
+
+.board th {
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.board td {
+    padding: 0.7rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+}
+
+.board tr.done .song-name {
+    color: var(--muted);
+}
+
+.numeric {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.song-name {
+    font-weight: 500;
+}
+
+.key {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.confidence {
+    margin-left: 0.5rem;
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+}
+
+.confidence.high {
+    color: var(--ok);
+}
+
+.muted {
+    color: var(--muted);
+}
+
+/* Stems are a rolled-up list inside the song row, because completion is ragged. */
+.stems {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.9rem;
+}
+
+.stem {
+    white-space: nowrap;
+    font-size: 0.9rem;
+}
+
+.stem .mark {
+    display: inline-block;
+    width: 1em;
+    color: var(--muted);
+}
+
+.stem.tagged .mark {
+    color: var(--ok);
+}
+
+.stem.untagged {
+    color: var(--muted);
+}
+
+.flag {
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    border: 1px solid currentColor;
+}
+
+.flag.partial {
+    color: var(--warn);
+}
+
+.flag.stale {
+    color: var(--alert);
+}

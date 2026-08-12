@@ -38,8 +38,8 @@ public class AbletonFolderInfoRealLibraryTests
         // reconciliation the design deliberately omits.
         var info = new AbletonFolderInfoReader().Read(root);
 
-        var missing = info.Entries
-            .Select(e => e.RelativePath)
+        var missing = info
+            .Entries.Select(e => e.RelativePath)
             .Where(p => !File.Exists(Path.Combine(root, p)))
             .ToArray();
 
@@ -61,7 +61,8 @@ public class AbletonFolderInfoRealLibraryTests
         var names = new[] { StagingRoot, MashupRoot }.Select(root =>
             Path.GetFileName(
                 Directory.GetFiles(Path.Combine(root, "Ableton Folder Info"), "*.xmp").Single()
-            ));
+            )
+        );
         Assert.Single(names.Distinct());
 
         // Paths are relative to their root, so identical names under different roots cannot
@@ -81,8 +82,9 @@ public class AbletonFolderInfoRealLibraryTests
             .SelectMany(t => new[] { $"{t} major", $"{t} minor" })
             .ToHashSet(StringComparer.Ordinal);
 
-        var keys = new AbletonFolderInfoReader().Read(MashupRoot).Entries
-            .Where(e => e.IsKeyTagged)
+        var keys = new AbletonFolderInfoReader()
+            .Read(MashupRoot)
+            .Entries.Where(e => e.IsKeyTagged)
             .Select(e => e.Key!)
             .ToArray();
 
@@ -98,8 +100,9 @@ public class AbletonFolderInfoRealLibraryTests
         // As of 2026-08-12 the Mashup Samples root holds exactly two of these: both Fedde Le
         // Grand "Put Your Hands Up For Detroit" stems carry Key|D with no mode. This asserts
         // the shape, not the count — the user may fix them at any time.
-        var partial = new AbletonFolderInfoReader().Read(MashupRoot).Entries
-            .Where(e => e.HasPartialKey)
+        var partial = new AbletonFolderInfoReader()
+            .Read(MashupRoot)
+            .Entries.Where(e => e.HasPartialKey)
             .ToArray();
 
         Assert.All(partial, e => Assert.Null(e.Key));

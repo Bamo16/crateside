@@ -61,8 +61,8 @@ public sealed class AbletonFolderInfoReader
 
             return new AbletonFolderInfo(rootFolder, entries);
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException or
-            System.Xml.XmlException)
+        catch (Exception e)
+            when (e is IOException or UnauthorizedAccessException or System.Xml.XmlException)
         {
             return AbletonFolderInfo.Empty(rootFolder);
         }
@@ -81,7 +81,9 @@ public sealed class AbletonFolderInfoReader
 
         // Ordered so a second file — never yet observed — resolves the same way every run
         // instead of by directory-enumeration luck.
-        return Directory.EnumerateFiles(directory, "*.xmp").Order(StringComparer.Ordinal)
+        return Directory
+            .EnumerateFiles(directory, "*.xmp")
+            .Order(StringComparer.Ordinal)
             .FirstOrDefault();
     }
 
@@ -90,12 +92,13 @@ public sealed class AbletonFolderInfoReader
         if (item.Element(AblFr + "filePath")?.Value is not { Length: > 0 } filePath)
             return null;
 
-        var keywords = item
-            .Element(AblFr + "keywords")
-            ?.Descendants(Rdf + "li")
-            .Select(li => li.Value)
-            .Where(value => value.Length > 0)
-            .ToArray() ?? [];
+        var keywords =
+            item.Element(AblFr + "keywords")
+                ?.Descendants(Rdf + "li")
+                .Select(li => li.Value)
+                .Where(value => value.Length > 0)
+                .ToArray()
+            ?? [];
 
         var (key, isPartial) = ReadKey(keywords);
 

@@ -27,9 +27,8 @@ public sealed class StemTagReader
                 Path = path,
                 Title = NullIfBlank(file.Tag.Title),
                 Artist = NullIfBlank(file.Tag.FirstPerformer),
-                Duration = file.Properties.Duration > TimeSpan.Zero
-                    ? file.Properties.Duration
-                    : null,
+                Duration =
+                    file.Properties.Duration > TimeSpan.Zero ? file.Properties.Duration : null,
                 Provenance = StemProvenance.Parse(file.Tag.Comment),
             };
         }

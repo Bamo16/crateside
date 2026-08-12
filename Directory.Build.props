@@ -1,18 +1,18 @@
 <Project>
-    <!-- Single source of truth for the product version across all projects. -->
-    <PropertyGroup>
-        <Version>0.1.0</Version>
-        <AssemblyVersion>$(Version)</AssemblyVersion>
-        <FileVersion>$(Version)</FileVersion>
-    </PropertyGroup>
+  <!-- Single source of truth for the product version across all projects. -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <FileVersion>$(Version)</FileVersion>
+  </PropertyGroup>
 
-    <!-- net10.0 everywhere. A .NET 11 preview SDK is installed on this machine;
+  <!-- net10.0 everywhere. A .NET 11 preview SDK is installed on this machine;
          global.json pins the SDK to 10 and this pins the target. Do not raise
          either without a decision (see docs/HANDOFF-first-build.md). -->
-    <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
 </Project>

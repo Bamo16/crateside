@@ -56,8 +56,10 @@ public class KeyLedgerRealDataTests
         var unresolved = Directory
             .GetFiles(StagingRoot, "*.flac")
             .Select(path => (Name: Path.GetFileName(path), Tags: reader.Read(path)))
-            .Where(s => s.Tags?.SourceVideoId is null
-                || !ledger.TryGetLatestByVideoId(s.Tags.SourceVideoId, out _))
+            .Where(s =>
+                s.Tags?.SourceVideoId is null
+                || !ledger.TryGetLatestByVideoId(s.Tags.SourceVideoId, out _)
+            )
             .Select(s => s.Name)
             .ToArray();
 
@@ -81,8 +83,9 @@ public class KeyLedgerRealDataTests
         var tags = new StemTagReader().Read(stem);
         Assert.NotNull(tags?.SourceVideoId);
 
-        Assert.True(KeyLedger.Read(LedgerPath)
-            .TryGetLatestByVideoId(tags.SourceVideoId, out var run));
+        Assert.True(
+            KeyLedger.Read(LedgerPath).TryGetLatestByVideoId(tags.SourceVideoId, out var run)
+        );
         Assert.DoesNotContain("mission 15", Path.GetFileNameWithoutExtension(stem));
         Assert.Contains("mission 15", run.Song, StringComparison.OrdinalIgnoreCase);
     }

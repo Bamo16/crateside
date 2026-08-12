@@ -24,16 +24,14 @@ public sealed class KeyLedger
         // Append-only, so later lines supersede earlier ones for the same identity. Ordering
         // by timestamp rather than file position keeps this correct even if a line is ever
         // appended out of order.
-        _latestBySong = runs
-            .GroupBy(r => r.Song, StringComparer.OrdinalIgnoreCase)
+        _latestBySong = runs.GroupBy(r => r.Song, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 g => g.Key,
                 g => g.OrderBy(r => r.Timestamp).Last(),
                 StringComparer.OrdinalIgnoreCase
             );
 
-        _songByVideoId = runs
-            .Where(r => r.SourceVideoId is not null)
+        _songByVideoId = runs.Where(r => r.SourceVideoId is not null)
             .GroupBy(r => r.SourceVideoId!, StringComparer.Ordinal)
             .ToDictionary(
                 g => g.Key,

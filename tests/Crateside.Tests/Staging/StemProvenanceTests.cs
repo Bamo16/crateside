@@ -38,9 +38,7 @@ public class StemProvenanceTests
     [Fact]
     public void Degrades_to_the_prefix_when_a_local_file_job_carries_no_source()
     {
-        var provenance = StemProvenance.Parse(
-            "stemforge/0.3.1 | preset: Drums | date: 2026-08-05"
-        );
+        var provenance = StemProvenance.Parse("stemforge/0.3.1 | preset: Drums | date: 2026-08-05");
 
         Assert.NotNull(provenance);
         Assert.Equal("Drums", provenance.Preset);
