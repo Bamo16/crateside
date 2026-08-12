@@ -1,0 +1,14 @@
+# secrets — the OAuth refresh token must never be committed
+token.json
+*.token.json
+client_secret*.json
+appsettings.Secrets.json
+appsettings.*.Local.json
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+artifacts/
