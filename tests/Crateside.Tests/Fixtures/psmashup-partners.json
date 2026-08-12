@@ -1,0 +1,4754 @@
+[
+  {
+    "source": "C major",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      }
+    ]
+  },
+  {
+    "source": "C minor",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      }
+    ]
+  },
+  {
+    "source": "C# major",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      }
+    ]
+  },
+  {
+    "source": "C# minor",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      }
+    ]
+  },
+  {
+    "source": "D major",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      }
+    ]
+  },
+  {
+    "source": "D minor",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      }
+    ]
+  },
+  {
+    "source": "D# major",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      }
+    ]
+  },
+  {
+    "source": "D# minor",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      }
+    ]
+  },
+  {
+    "source": "E major",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      }
+    ]
+  },
+  {
+    "source": "E minor",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      }
+    ]
+  },
+  {
+    "source": "F major",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      }
+    ]
+  },
+  {
+    "source": "F minor",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, -6"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      }
+    ]
+  },
+  {
+    "source": "F# major",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      }
+    ]
+  },
+  {
+    "source": "F# minor",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      }
+    ]
+  },
+  {
+    "source": "G major",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      }
+    ]
+  },
+  {
+    "source": "G minor",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      }
+    ]
+  },
+  {
+    "source": "G# major",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      }
+    ]
+  },
+  {
+    "source": "G# minor",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      }
+    ]
+  },
+  {
+    "source": "A major",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      }
+    ]
+  },
+  {
+    "source": "A minor",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      }
+    ]
+  },
+  {
+    "source": "A# major",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      }
+    ]
+  },
+  {
+    "source": "A# minor",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      }
+    ]
+  },
+  {
+    "source": "B major",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      }
+    ]
+  },
+  {
+    "source": "B minor",
+    "sourceName": null,
+    "partners": [
+      {
+        "key": "B Minor",
+        "camelot": "10A",
+        "vibe": "Perfect Match",
+        "score": 0.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "D Major",
+        "camelot": "10B",
+        "vibe": "Relative (Epic)",
+        "score": 0.1,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "E Minor",
+        "camelot": "9A",
+        "vibe": "Relaxed",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "F♯ Minor",
+        "camelot": "11A",
+        "vibe": "Energy Rise",
+        "score": 10.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "E Major",
+        "camelot": "12B",
+        "vibe": "Modulation",
+        "score": 20.0,
+        "shift": 0,
+        "altShifts": "+2, -5"
+      },
+      {
+        "key": "B Major",
+        "camelot": "1B",
+        "vibe": "Modulation",
+        "score": 30.0,
+        "shift": 0,
+        "altShifts": "-5, +5"
+      },
+      {
+        "key": "F♯ Major",
+        "camelot": "2B",
+        "vibe": "Modulation",
+        "score": 40.0,
+        "shift": 0,
+        "altShifts": "-2, +5"
+      },
+      {
+        "key": "G Major",
+        "camelot": "9B",
+        "vibe": "Mood Shift",
+        "score": 11.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "C Major",
+        "camelot": "8B",
+        "vibe": "Modulation",
+        "score": 21.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "F Major",
+        "camelot": "7B",
+        "vibe": "Modulation",
+        "score": 31.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "A♯ Major",
+        "camelot": "6B",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "D♯ Minor",
+        "camelot": "2A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "G Minor",
+        "camelot": "6A",
+        "vibe": "Modulation",
+        "score": 41.0,
+        "shift": -1,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "D♯ Major",
+        "camelot": "5B",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "A♯ Minor",
+        "camelot": "3A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": 1,
+        "altShifts": "-4, -6"
+      },
+      {
+        "key": "C Minor",
+        "camelot": "5A",
+        "vibe": "Modulation",
+        "score": 51.0,
+        "shift": -1,
+        "altShifts": "+4, +6"
+      },
+      {
+        "key": "F Minor",
+        "camelot": "4A",
+        "vibe": "Modulation",
+        "score": 61.0,
+        "shift": 1,
+        "altShifts": "-1, +6"
+      },
+      {
+        "key": "A Major",
+        "camelot": "11B",
+        "vibe": "Mood Shift",
+        "score": 12.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "A Minor",
+        "camelot": "8A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": 2,
+        "altShifts": "-3, -5"
+      },
+      {
+        "key": "C♯ Minor",
+        "camelot": "12A",
+        "vibe": "Modulation",
+        "score": 22.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "G♯ Minor",
+        "camelot": "1A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      },
+      {
+        "key": "D Minor",
+        "camelot": "7A",
+        "vibe": "Modulation",
+        "score": 32.0,
+        "shift": 2,
+        "altShifts": "-3, +4"
+      },
+      {
+        "key": "C♯ Major",
+        "camelot": "3B",
+        "vibe": "Modulation",
+        "score": 52.0,
+        "shift": -2,
+        "altShifts": "+3, +5"
+      },
+      {
+        "key": "G♯ Major",
+        "camelot": "4B",
+        "vibe": "Modulation",
+        "score": 62.0,
+        "shift": -2,
+        "altShifts": "+3, -4"
+      }
+    ]
+  }
+]

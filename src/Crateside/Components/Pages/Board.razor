@@ -60,7 +60,8 @@ else
                     <td>
                         @if (song.Key is { } key)
                         {
-                            <span class="key">@key</span>
+                            <a class="key" href="@($"partners?key={Uri.EscapeDataString(key)}")"
+                               title="Find partners for @key">@key</a>
                             <span class="confidence @song.Confidence.ToString().ToLowerInvariant()">
                                 @song.Confidence.ToString().ToUpperInvariant()
                             </span>

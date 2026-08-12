@@ -1,0 +1,99 @@
+@page "/partners"
+@using Crateside.Core.Pairing
+@rendermode InteractiveServer
+
+<PageTitle>Partners — crateside</PageTitle>
+
+<header class="page-header">
+    <div>
+        <h1>Partners</h1>
+        <p class="subtitle">
+            What else can I use with this? Returns <strong>keys to filter for</strong> in
+            Ableton's browser — never files.
+        </p>
+    </div>
+</header>
+
+<div class="controls">
+    <label>
+        <span>Source key</span>
+        <select @bind="_sourceKeyName" @bind:after="Recalculate">
+            @foreach (var key in MusicKey.AllKeys.OrderBy(k => k.Mode).ThenBy(k => k.CirclePos))
+            {
+                <option value="@key.LedgerName">@key.Name — @key.CamelotCode</option>
+            }
+        </select>
+    </label>
+
+    <label>
+        <span>Max shift <em>@_maxShift @(_maxShift == 1 ? "semitone" : "semitones")</em></span>
+        <input type="range" min="0" max="@Core.Pairing.Partners.MaxPossibleShift" step="1"
+               @bind="_maxShift" @bind:event="oninput" @bind:after="Recalculate" />
+    </label>
+</div>
+
+@if (_source is null)
+{
+    <p class="empty">Pick a key.</p>
+}
+else
+{
+    <p class="summary">
+        @_partners.Count of 24 keys reachable within @_maxShift
+        @(_maxShift == 1 ? "semitone" : "semitones") of <strong>@_source.Name</strong>.
+    </p>
+
+    <table class="partners">
+        <thead>
+            <tr>
+                <th>Key</th>
+                <th>Camelot</th>
+                <th class="numeric">Shift</th>
+                <th>Alt shifts</th>
+                <th>Relationship</th>
+                <th class="numeric">Score</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var partner in _partners)
+            {
+                <tr class="@(partner.AbsoluteShift == 0 ? "unshifted" : null)">
+                    <td class="key">@partner.Key.Name</td>
+                    <td class="camelot">@partner.CamelotCode</td>
+                    <td class="numeric shift">
+                        @MashupPartner.FormatShift(partner.Shift)
+                    </td>
+                    <td class="alts">@partner.AltShiftsDisplay</td>
+                    <td>@partner.Relationship.ToDisplayString()</td>
+                    <td class="numeric muted">@partner.Score.ToString("0.#")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "key")]
+    public string? KeyFromQuery { get; set; }
+
+    private string _sourceKeyName = "C major";
+    private int _maxShift = Core.Pairing.Partners.MaxPossibleShift;
+    private MusicKey? _source;
+    private IReadOnlyList<MashupPartner> _partners = [];
+
+    protected override void OnParametersSet()
+    {
+        // Arriving from a staging row carries its key in the query string.
+        if (MusicKey.FromString(KeyFromQuery) is { } fromQuery)
+            _sourceKeyName = fromQuery.LedgerName;
+
+        Recalculate();
+    }
+
+    private void Recalculate()
+    {
+        _source = MusicKey.FromString(_sourceKeyName);
+        _partners = _source is null ? [] : Core.Pairing.Partners.For(_source, _maxShift);
+    }
+}

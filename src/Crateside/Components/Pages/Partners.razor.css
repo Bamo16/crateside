@@ -1,0 +1,114 @@
+.page-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+}
+
+.subtitle {
+    margin: 0.25rem 0 0;
+    color: var(--muted);
+    max-width: 60ch;
+}
+
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin: 1.5rem 0 0.5rem;
+    padding: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+
+.controls label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+}
+
+.controls em {
+    font-style: normal;
+    color: var(--text);
+    text-transform: none;
+}
+
+.controls select {
+    padding: 0.4rem 0.6rem;
+    min-width: 14rem;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    font: inherit;
+    font-size: 0.95rem;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.controls input[type="range"] {
+    width: 14rem;
+    accent-color: var(--accent);
+}
+
+.summary,
+.empty {
+    color: var(--muted);
+    margin: 1rem 0;
+}
+
+.partners {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.partners th {
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.partners td {
+    padding: 0.55rem 0.75rem;
+    border-bottom: 1px solid var(--line);
+}
+
+/* An unshifted partner can be auditioned in seconds, so it earns emphasis. */
+.partners tr.unshifted .key,
+.partners tr.unshifted .shift {
+    color: var(--ok);
+    font-weight: 600;
+}
+
+.key {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.camelot,
+.shift,
+.alts {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.alts {
+    color: var(--muted);
+}
+
+.numeric {
+    text-align: right;
+}
+
+.muted {
+    color: var(--muted);
+}

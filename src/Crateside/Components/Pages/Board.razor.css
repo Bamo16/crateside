@@ -78,9 +78,19 @@ h1 {
     font-weight: 500;
 }
 
+/* The key is a link into Partners — going from "what is this?" to "what goes with it?"
+   is the whole workflow. */
 .key {
     font-weight: 600;
     white-space: nowrap;
+    color: inherit;
+    text-decoration-color: var(--line);
+    text-underline-offset: 0.2em;
+}
+
+.key:hover {
+    color: var(--accent);
+    text-decoration-color: currentColor;
 }
 
 .confidence {
