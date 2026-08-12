@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace Crateside.Core.Staging;
 
 /// <summary>
@@ -9,7 +11,7 @@ namespace Crateside.Core.Staging;
 /// net11.0, which crateside must not, and it carries UI and separator dependencies
 /// irrelevant here. StemForge remains the writer; if its format changes, this follows.
 /// </remarks>
-public sealed record StemProvenance
+public sealed partial record StemProvenance
 {
     /// <summary>The <c>stemforge/&lt;version&gt;</c> that produced the stem.</summary>
     public required string ToolVersion { get; init; }
@@ -73,50 +75,29 @@ public sealed record StemProvenance
             : null;
 
     /// <summary>
-    /// Pulls the 11-character video ID out of a YouTube URL, covering the
-    /// <c>watch?v=</c>, <c>youtu.be/</c> and <c>/shorts/</c> spellings. Returns null for a
-    /// non-YouTube or unparseable URL rather than guessing.
+    /// Pulls the 11-character video ID out of a YouTube URL — or out of a bare ID — covering
+    /// the <c>watch?v=</c>, <c>youtu.be/</c>, <c>/shorts/</c> and <c>/embed/</c> spellings,
+    /// with or without a scheme and with any trailing query. Returns null for a non-YouTube
+    /// or unparseable input rather than guessing.
     /// </summary>
-    public static string? ExtractYouTubeVideoId(string? url)
-    {
-        if (url is null || !Uri.TryCreate(url, UriKind.Absolute, out var uri))
-            return null;
+    /// <remarks>
+    /// The pattern is StemForge's, from <c>StemForge.Core.Downloading.YtUrlHelper</c> — the
+    /// same expression that recognised these URLs on the way in now recognises them on the
+    /// way out, so the two tools cannot disagree about what a video ID is. Only extraction is
+    /// ported; StemForge's <c>TryNormalize</c> also canonicalises to a music.youtube.com URL
+    /// and passes through non-YouTube URLs, neither of which crateside needs.
+    /// </remarks>
+    public static string? ExtractYouTubeVideoId(string? url) =>
+        url?.Trim() is { Length: > 0 } trimmed
+        && YtVideoIdRegex.Match(trimmed).Groups["VideoId"] is { Success: true, Value: var id }
+            ? id
+            : null;
 
-        var host = uri.Host.TrimStart("www.".ToCharArray());
-
-        string? candidate = null;
-
-        if (host.EndsWith("youtu.be", StringComparison.OrdinalIgnoreCase))
-        {
-            candidate = uri.AbsolutePath.Trim('/');
-        }
-        else if (host.EndsWith("youtube.com", StringComparison.OrdinalIgnoreCase))
-        {
-            var segments = uri.AbsolutePath.Trim('/').Split('/');
-
-            candidate = segments switch
-            {
-                ["shorts" or "embed" or "v", var id, ..] => id,
-                _ => QueryValue(uri.Query, "v"),
-            };
-        }
-
-        return IsVideoId(candidate) ? candidate : null;
-    }
-
-    private static string? QueryValue(string query, string key)
-    {
-        foreach (var pair in query.TrimStart('?').Split('&'))
-        {
-            if (pair.Split('=') is [var name, var value] && name == key)
-                return Uri.UnescapeDataString(value);
-        }
-
-        return null;
-    }
-
-    // YouTube IDs are exactly 11 characters of base64url. Checking the shape keeps a
-    // malformed URL from producing a plausible-looking key that silently joins to nothing.
-    private static bool IsVideoId(string? value) =>
-        value is { Length: 11 } && value.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_');
+    // The 11-character base64url shape is baked into the pattern, so a malformed URL yields
+    // no match rather than a plausible-looking key that silently joins to nothing.
+    [GeneratedRegex(
+        @"^(?:(?:(?:https?:\/\/)?(?:(?:www|music|m)\.)?)?(?:youtube\.com|youtu\.be)(?:\S*?(?:\?v=|\/)))?(?<VideoId>[0-9A-Za-z_-]{11})(?:[&?].*)?$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled
+    )]
+    private static partial Regex YtVideoIdRegex { get; }
 }

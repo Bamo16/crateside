@@ -55,6 +55,12 @@ public class StemProvenanceTests
     [InlineData("https://youtu.be/vfBJjufAG1E?t=42", "vfBJjufAG1E")]
     [InlineData("https://www.youtube.com/shorts/vfBJjufAG1E", "vfBJjufAG1E")]
     [InlineData("https://www.youtube.com/embed/vfBJjufAG1E", "vfBJjufAG1E")]
+    // StemForge's pattern also accepts music/m subdomains, a missing scheme, and a bare ID.
+    [InlineData("https://music.youtube.com/watch?v=vfBJjufAG1E", "vfBJjufAG1E")]
+    [InlineData("https://m.youtube.com/watch?v=vfBJjufAG1E", "vfBJjufAG1E")]
+    [InlineData("www.youtube.com/watch?v=vfBJjufAG1E", "vfBJjufAG1E")]
+    [InlineData("youtu.be/vfBJjufAG1E", "vfBJjufAG1E")]
+    [InlineData("vfBJjufAG1E", "vfBJjufAG1E")]
     public void Extracts_the_video_id_from_every_youtube_spelling(string url, string expected) =>
         Assert.Equal(expected, StemProvenance.ExtractYouTubeVideoId(url));
 
