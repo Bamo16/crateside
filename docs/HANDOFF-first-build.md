@@ -30,6 +30,7 @@
 | Mashup model is **ported**, not shared | duplication accepted knowingly |
 | App owns the **Queue**, OAuth and deletions | keytag stays pure Python with no secret |
 | Removal predicate = **fully processed** | ledger-driven, idempotent, immune to partial failure |
+| Human work is done when stems **leave staging** | location is the signal; `.asd` is not (see below) |
 | Processing stays **ad-hoc**; scheduling is v2 | ~2h serialized GPU per batch |
 
 ## Verified facts (measured, not assumed)
@@ -85,8 +86,33 @@ holds beyond this one case; see the Queue below.
 - **Ableton owns this file while running** — read only, never write (keytag ADR
   0001). The board can lag until Ableton flushes.
 
-**Warped** = a `.asd` sidecar exists next to the stem. Independent of tagged: real
-data had a song tagged-but-unwarped and another both.
+**A `.asd` sidecar does NOT mean "warped"** — corrected by the user 2026-08-12,
+after the reader had been built on the wrong reading. It means only that Ableton
+has *analysed* the file, which happens on dragging a clip into Arrangement view.
+It is present today on stems where the user clicked warp and then stopped because
+they were not ready to do the work. **It is not evidence that anything is
+finished, and crateside must not treat it as progress.** The existence check has
+been deleted rather than left in as a misleading signal.
+
+**Completion is a file's location, not a flag.** The human work is done when the
+stems leave `P:\RYAN\Ableton\Sample Staging` for `P:\RYAN\Ableton\Mashup Samples`.
+This is the same self-cleaning property the XMP has: nothing is marked done,
+things simply move. It also keeps the staging board purely derived.
+
+*Consequence for the board:* there is **no reliable "warped" signal at all**, so
+the board cannot have a warped column. A staged song's per-stem progress reduces
+to whether it is key-tagged; leaving staging is the completion event, and a song
+that completed is simply no longer on the board.
+
+*The sidecar may still be worth reading one day, for a different reason.* If warp
+markers can be extracted, they are **ground-truth tempo** — the user's own warp,
+not a detector's guess — which would beat both the online BPM and `beatdetect`.
+That is a future capability, not a v1 one. What is in the file (inspected, not
+merely assumed): ~400 KB of Ableton's undocumented binary serialization —
+`SampleData`, then repeated `RemoteableDouble` / `RemoteableBool` / `UserFloat` /
+`RemoteableEnum` typed fields, with the bulk almost certainly waveform overview.
+There is no published spec; this would be reverse-engineering, and it should be
+its own decision with its own ADR, not a quiet addition.
 
 **The library is fully readable** — 435 files, 429 key-tagged, `Type|` values
 Instrumental 221 / Vocal 206 / Loop 2. Not needed for v1 (Partners returns keys),
@@ -160,7 +186,13 @@ optional and is a deliberate behaviour change from the cmdlet — not a silent f
 
 ## Open
 
-- Nothing blocking. `docs/adr/` here is empty by design — add one when crateside
+- **What if the user simply deletes stems instead of moving them?** Raised
+  2026-08-12, unaddressed. Deletion and completion look identical from staging —
+  both are "no longer here" — but they mean opposite things, and the Queue's
+  removal predicate requires *a stem carrying that video ID on disk*, so a deleted
+  stem silently keeps its track queued forever. Not blocking the staging board;
+  decide it before the Queue's deletion path.
+- Nothing else blocking. `docs/adr/` here is empty by design — add one when crateside
   makes a decision of its own; the architecture is already recorded in keytag.
 - Paths are hardcoded to this machine (`P:\RYAN\Ableton\…`, `V:\Repos\keytag`).
   Config vs constants is a v1 call, unmade.
