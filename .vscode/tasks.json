@@ -1,0 +1,147 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "process",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "${workspaceFolder}/Crateside.slnx",
+                "/consoleloggerparameters:NoSummary;ForceNoAlign"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "run",
+            "detail": "Run the board. The http launch profile opens a browser on localhost:5027.",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["run", "--project", "${workspaceFolder}/src/Crateside/Crateside.csproj"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "watch",
+            "detail": "Run the board with hot reload — the usual way to work on the UI.",
+            "type": "process",
+            "command": "dotnet",
+            "args": [
+                "watch",
+                "--project",
+                "${workspaceFolder}/src/Crateside/Crateside.csproj",
+                "run"
+            ],
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": {
+                "base": "$msCompile",
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "^.*dotnet watch.*Started",
+                    "endsPattern": "^.*dotnet watch.*(Exited|Waiting for a file to change)"
+                }
+            }
+        },
+        {
+            "label": "test",
+            "detail": "Run every test. The real-library tests assert against P:\\RYAN\\Ableton and the keytag ledger, and skip if those are absent.",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["test", "--solution", "${workspaceFolder}/Crateside.slnx"],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "format",
+            "detail": "Format the repo with CSharpier.",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["csharpier", "format", "${workspaceFolder}"],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "format: check",
+            "detail": "Fail if anything is unformatted, without writing. What CI would run.",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["csharpier", "check", "${workspaceFolder}"],
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "restore",
+            "detail": "Restore packages and the local tool manifest (CSharpier).",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["restore", "${workspaceFolder}/Crateside.slnx"],
+            "dependsOn": "restore: tools",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "restore: tools",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["tool", "restore"],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "clean",
+            "type": "process",
+            "command": "dotnet",
+            "args": ["clean", "${workspaceFolder}/Crateside.slnx"],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "clear": true
+            },
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}
