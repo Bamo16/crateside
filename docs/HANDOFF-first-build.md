@@ -40,6 +40,33 @@ named `Alan Gomez - Mission 15` has ledger identity
 `alan gomez, luck ra - luck ra | mission 15`. Matched **7/7 songs** in staging;
 **124/125** ledger runs carry an extractable video ID.
 
+**Read those tags with TagLibSharp, not ffprobe** — in-process managed code, no
+external binary, no stdout parsing. `TagLibSharp` 2.3.0 is the package.
+
+**The writer already has a reader: mirror it.**
+`V:\Repos\StemForge\src\StemForge.Core\Separation\AudioTagger.cs` both writes the
+provenance comment (`BuildProvenance`) and parses it back (`ParseProvenance`, used
+when a previously-tagged file is fed back in as a local input). Copy that ~30-line
+parse; **do not project-reference `StemForge.Core`** — it targets **net11.0**,
+which crateside must not, and it drags in CommunityToolkit.Mvvm, SharpCompress and
+the Python separator tooling for what is a string split.
+
+The contract, from `BuildProvenance`:
+
+- One line joined by `" | "`, always led by `stemforge/<version>`.
+- `ParseProvenance` gates on that `stemforge/` prefix and returns all-nulls
+  otherwise. **Keep the gate** — it is what makes an untagged or foreign file read
+  as "no video ID" rather than as garbage.
+- Fields are `key: value` with a literal space; the one crateside needs is
+  `source: <url>`, from which the video ID is the `v=` query parameter.
+- Read it through `f.Tag.Comment`, exactly as StemForge writes it. Going at the
+  Xiph field by name is unnecessary — the round-trip is already proven by
+  StemForge's own local-file path, and it keeps crateside format-agnostic if a
+  stem is ever not FLAC.
+
+**Prefer managed .NET libraries over shelling out to binaries in general** — that
+holds beyond this one case; see the Queue below.
+
 **The XMP contract**, inferred from the files and checked across both roots (19 and
 430 entries):
 
@@ -83,16 +110,38 @@ optional and is a deliberate behaviour change from the cmdlet — not a silent f
 
 ## The Queue (OAuth)
 
-- **Read needs no auth** — `yt-dlp --flat-playlist`.
+- **Read is `playlistItems.list` over REST** — use the `Google.Apis.YouTube.v3`
+  client, not `yt-dlp --flat-playlist` (ADR 0003 says yt-dlp; that predates this
+  correction and the ADR should be amended). No subprocess, typed results, and it
+  returns `snippet.resourceId.videoId` directly instead of a scraped URL. **Quota
+  cost is 1 unit** against a 10,000/day default, and the call paginates
+  (`nextPageToken`, 50 per page) — a queue of any realistic size is a handful of
+  units per refresh.
+- **The Queue playlist is currently unlisted**, so a **long-lived API key** can read
+  it and never expires. But **the user may change its visibility**, and a *private*
+  playlist needs OAuth even to list. So: **read with the OAuth credential as the
+  primary path** — it works at every visibility — and keep the API key as the
+  fallback that keeps the board alive while the write token is lapsed. Do not build
+  the read on the API key alone; that path silently dies the day the playlist goes
+  private.
+- **Guard the visibility-change failure mode.** An API-key read of a playlist that
+  has gone private is expected to come back as *not found* rather than as a
+  permission error, which a naive reader renders as an empty queue — indistinguishable
+  from a genuinely empty one. Surface "could not read the playlist" as its own state,
+  distinct from "nothing queued".
+- Note that the built-in **Watch Later** playlist is not reachable through the API
+  at all; the Queue must be an ordinary playlist.
 - **Delete needs OAuth user consent** (`playlistItems.delete`); an API key cannot
   write. Needs a Google Cloud project + OAuth **Desktop/installed app** client.
 - **The write token expires every 7 days** for an unapproved app and re-consent is
   interactive. Known from the user's prior experience, and **accepted** — do not
   redesign around it. Read-scoped tokens last far longer.
-- **Because reading is unauthenticated, expiry is survivable:** only deletion
-  breaks. Treat an expired token as an ordinary state with a re-consent button, not
-  an error. Being a browser app, the `http://localhost:<port>/…` redirect flow is
-  first-class.
+- **Because reading can fall back to the API key, expiry is survivable:** only
+  deletion breaks. Treat an expired token as an ordinary state with a re-consent
+  button, not an error. (This holds only while the playlist stays unlisted — if it
+  ever goes private, a lapsed token blanks the view too, and the re-consent button
+  becomes the only way back.) Being a browser app, the `http://localhost:<port>/…`
+  redirect flow is first-class.
 - **Never commit the token.** Gitignored below; consider DPAPI at rest.
 - Removal rule: delete any playlist item whose video ID is **fully processed** —
   a ledger verdict **and** a stem carrying that video ID on disk. Idempotent; a run
@@ -101,7 +150,7 @@ optional and is a deliberate behaviour change from the cmdlet — not a silent f
 ## Suggested order
 
 1. **Spike the readers first, headless** — XMP parse, `.asd` scan, `runs.jsonl`
-   parse, ffprobe video-ID extraction — and assert against the real folders. The
+   parse, tag-based video-ID extraction — and assert against the real folders. The
    XMP contract above is the only load-bearing inference in the design; prove it
    before building UI on it.
 2. **Staging board.** Delivers the value that motivated the project.
