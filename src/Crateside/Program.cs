@@ -7,8 +7,13 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
-// appsettings.Secrets.json is gitignored and holds the YouTube API key.
+// The API key comes from user-secrets, which the Development environment loads by default —
+// it lives outside the working tree so it cannot surface in an editor or a file tree.
+// appsettings.Secrets.json stays supported as a gitignored fallback for a non-dev run.
 builder.Configuration.AddJsonFile("appsettings.Secrets.json", optional: true, reloadOnChange: true);
+
+if (!builder.Environment.IsDevelopment())
+    builder.Configuration.AddUserSecrets<Program>(optional: true);
 
 builder.Services.Configure<CratesidePaths>(
     builder.Configuration.GetSection(CratesidePaths.SectionName)
