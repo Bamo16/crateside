@@ -1,0 +1,8 @@
+<Solution>
+    <Folder Name="/src/">
+        <Project Path="src/Crateside.Core/Crateside.Core.csproj" />
+    </Folder>
+    <Folder Name="/tests/">
+        <Project Path="tests/Crateside.Tests/Crateside.Tests.csproj" />
+    </Folder>
+</Solution>

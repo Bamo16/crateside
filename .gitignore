@@ -4,6 +4,7 @@ token.json
 client_secret*.json
 appsettings.Secrets.json
 appsettings.*.Local.json
+secrets/
 
 # .NET
 bin/
@@ -12,3 +13,16 @@ obj/
 *.suo
 .vs/
 artifacts/
+*.pdb
+
+# Build / publish output
+[Oo]ut/
+[Pp]ublish/
+
+# Test results / coverage output (generated, not committed)
+**/TestResults/
+
+# IDE
+.vscode/*
+!.vscode/tasks.json
+.idea/
