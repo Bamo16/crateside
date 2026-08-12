@@ -1,0 +1,61 @@
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+}
+
+.subtitle {
+    margin: 0.25rem 0 0;
+    color: var(--muted);
+}
+
+.refresh {
+    padding: 0.45rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--surface);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.refresh:hover:not(:disabled) {
+    border-color: var(--accent);
+}
+
+.refresh:disabled {
+    color: var(--muted);
+    cursor: default;
+}
+
+.summary,
+.empty {
+    color: var(--muted);
+    margin: 1rem 0;
+}
+
+.summary strong {
+    color: var(--text);
+}
+
+.notice {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    max-width: 80ch;
+}
+
+.notice.error {
+    border-left-color: var(--alert);
+}

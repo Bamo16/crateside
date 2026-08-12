@@ -4,6 +4,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Google.Apis.YouTube.v3" Version="1.75.0.4234" />
         <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.0" />
         <PackageReference Include="TagLibSharp" Version="2.3.0" />
     </ItemGroup>

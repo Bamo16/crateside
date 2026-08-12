@@ -1,0 +1,75 @@
+.queue-section {
+    margin: 1.75rem 0;
+}
+
+h2 {
+    margin: 0;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.count {
+    margin-left: 0.5rem;
+    color: var(--muted);
+    font-weight: 400;
+}
+
+.queue-section.warn h2 {
+    color: var(--warn);
+}
+
+.queue-section.muted h2 {
+    color: var(--muted);
+}
+
+.detail {
+    margin: 0.35rem 0 0.75rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    max-width: 75ch;
+}
+
+.queue-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+}
+
+.queue-items li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    padding: 0.5rem 0.25rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.queue-items a {
+    color: var(--text);
+    text-decoration: none;
+}
+
+.queue-items a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+}
+
+.queue-items li.unavailable a {
+    color: var(--muted);
+    text-decoration: line-through;
+}
+
+.channel {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.flag {
+    margin-left: auto;
+    padding: 0.05rem 0.35rem;
+    border: 1px solid var(--alert);
+    border-radius: 4px;
+    color: var(--alert);
+    font-size: 0.7rem;
+}

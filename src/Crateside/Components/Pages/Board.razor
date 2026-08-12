@@ -40,7 +40,7 @@ else
             <tr>
                 <th>Song</th>
                 <th>Key</th>
-                <th class="numeric">BPM</th>
+                <th class="bpm">BPM</th>
                 <th>Stems</th>
             </tr>
         </thead>
@@ -77,8 +77,10 @@ else
                             </span>
                         }
                     </td>
-                    <td class="numeric">
-                        @(song.Bpm is { } bpm ? bpm.ToString("0.#") : "—")
+                    @* Rounded: the BPM is a warp starting point good to ±2-3, so a decimal
+                       is false precision and it misaligns the column against whole values. *@
+                    <td class="bpm">
+                        @(song.Bpm is { } bpm ? Math.Round(bpm).ToString("0") : "—")
                     </td>
                     <td>
                         <ul class="stems">

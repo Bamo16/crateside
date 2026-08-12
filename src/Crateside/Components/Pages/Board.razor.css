@@ -74,6 +74,16 @@ h1 {
     font-variant-numeric: tabular-nums;
 }
 
+/* Sized to the widest three-digit BPM and right-aligned, so the digits line up as a
+   column instead of drifting across the gap to the stems. */
+.bpm {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    width: 4.5rem;
+    padding-right: 1.5rem !important;
+    white-space: nowrap;
+}
+
 .song-name {
     font-weight: 500;
 }

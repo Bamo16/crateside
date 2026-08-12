@@ -1,0 +1,39 @@
+@using Crateside.Core.Queue
+
+<section class="queue-section @Tone">
+    <h2>@Title <span class="count">@Items.Count</span></h2>
+    <p class="detail">@Detail</p>
+
+    <ul class="queue-items">
+        @foreach (var item in Items)
+        {
+            <li class="@(item.IsUnavailable ? "unavailable" : null)">
+                <a href="@item.WatchUrl" target="_blank" rel="noopener">@item.Title</a>
+                @if (item.ChannelTitle is { Length: > 0 } channel)
+                {
+                    <span class="channel">@channel</span>
+                }
+                @if (item.IsUnavailable)
+                {
+                    <span class="flag" title="Deleted or made private upstream — it can never become processed.">
+                        unavailable
+                    </span>
+                }
+            </li>
+        }
+    </ul>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public required string Title { get; set; }
+
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<QueueItem> Items { get; set; }
+
+    [Parameter]
+    public string? Detail { get; set; }
+
+    [Parameter]
+    public string? Tone { get; set; }
+}
