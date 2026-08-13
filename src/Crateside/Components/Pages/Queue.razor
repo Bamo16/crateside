@@ -79,8 +79,29 @@ else
 
     @if (_view.Outstanding.Count > 0)
     {
-        <QueueSection Title="New" Items="_view.Outstanding"
-                      Detail="Not yet detected. This is the work list — paste these into a detect-key session." />
+        <div class="batch-control">
+            <label>
+                <span>Batch size <em>@_batchSize</em></span>
+                <input type="range" min="1" max="@Math.Max(1, _view.Outstanding.Count)" step="1"
+                       @bind="_batchSize" @bind:event="oninput" />
+            </label>
+            <span class="batch-detail">
+                Oldest-added first — the playlist's own order depends on whether it adds new
+                videos to the top, so it is not used. Tick anything to force it into the batch.
+            </span>
+        </div>
+
+        <QueueSection Title="Next batch" Items="_view.NextBatch(_batchSize, _pinned)"
+                      Pinned="_pinned" OnPinToggled="TogglePin"
+                      Detail="What to work now. Paste these into a detect-key session." />
+
+        @if (_view.Outstanding.Count > _batchSize)
+        {
+            <QueueSection Title="Also waiting"
+                          Items="_view.Outstanding.Except(_view.NextBatch(_batchSize, _pinned)).ToList()"
+                          Tone="muted" Pinned="_pinned" OnPinToggled="TogglePin"
+                          Detail="Queued but not in this batch." />
+        }
     }
 
     @if (_view.Stalled.Count > 0)
@@ -97,11 +118,24 @@ else
 }
 
 @code {
+    private const int DefaultBatchSize = 20;
+
     private QueueView? _view;
     private string? _error;
     private string? _settingProblem;
     private string _playlistInput = string.Empty;
     private bool _loading;
+    private int _batchSize = DefaultBatchSize;
+
+    // Session-scoped on purpose: a pin says "include this one in the batch I am about to
+    // run", which stops meaning anything once that batch is processed.
+    private readonly HashSet<string> _pinned = new(StringComparer.Ordinal);
+
+    private void TogglePin(string playlistItemId)
+    {
+        if (!_pinned.Add(playlistItemId))
+            _pinned.Remove(playlistItemId);
+    }
 
     private bool HasPendingChange =>
         PlaylistReference.TryParse(_playlistInput, out var parsed)

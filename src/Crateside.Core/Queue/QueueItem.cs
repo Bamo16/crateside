@@ -16,7 +16,19 @@ public sealed record QueueItem
     /// <summary>The uploading channel, for telling two versions of a track apart.</summary>
     public string? ChannelTitle { get; init; }
 
+    /// <summary>
+    /// When the item was added to the playlist. <strong>This, not
+    /// <see cref="Position"/>, is the queue order</strong> — "Add new videos to top of
+    /// playlist" is a per-playlist setting, so position means the opposite thing depending on
+    /// how a given playlist is configured, while added-at always means the same thing.
+    /// </summary>
     public DateTimeOffset? AddedAt { get; init; }
+
+    /// <summary>Where the item sits in the playlist. Display only; see <see cref="AddedAt"/>.</summary>
+    public int? Position { get; init; }
+
+    /// <summary>Whether this is likely to download at Premium quality.</summary>
+    public PremiumOutlook PremiumOutlook { get; init; }
 
     /// <summary>
     /// True when the video is no longer playable — deleted or made private upstream. YouTube
@@ -36,8 +48,36 @@ public sealed record QueueView
     /// <summary>Items whose video is fully processed — the ones deletion would remove.</summary>
     public required IReadOnlyList<QueueItem> FullyProcessed { get; init; }
 
-    /// <summary>Items with no verdict yet: the actual work list.</summary>
+    /// <summary>
+    /// Items with no verdict yet: the actual work list, oldest-added first.
+    /// </summary>
     public required IReadOnlyList<QueueItem> Outstanding { get; init; }
+
+    /// <summary>
+    /// The next <paramref name="size"/> items to work, plus anything explicitly pinned.
+    /// </summary>
+    /// <remarks>
+    /// Oldest-added first, because the Queue is a queue: things should mostly come out in the
+    /// order they went in. <paramref name="pinned"/> jumps that order for the case the FIFO
+    /// rule cannot express — something just added that the user wants in this batch anyway.
+    /// Pinned items are included <em>on top of</em> the size, never instead of, so pinning one
+    /// track never silently drops another off the end.
+    /// </remarks>
+    public IReadOnlyList<QueueItem> NextBatch(int size, ISet<string>? pinned = null)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(size);
+
+        var picked = Outstanding.Take(size).ToList();
+        var taken = picked.Select(i => i.PlaylistItemId).ToHashSet(StringComparer.Ordinal);
+
+        picked.AddRange(
+            Outstanding.Where(i =>
+                pinned?.Contains(i.PlaylistItemId) is true && !taken.Contains(i.PlaylistItemId)
+            )
+        );
+
+        return picked;
+    }
 
     /// <summary>
     /// Items with a verdict but no stems on disk — a separation that died partway, or stems

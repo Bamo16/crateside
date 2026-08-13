@@ -115,6 +115,40 @@
     cursor: default;
 }
 
+.batch-control {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1.5rem 0 0.5rem;
+}
+
+.batch-control label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+}
+
+.batch-control em {
+    font-style: normal;
+    color: var(--text);
+}
+
+.batch-control input[type="range"] {
+    width: 14rem;
+    accent-color: var(--accent);
+}
+
+.batch-detail {
+    color: var(--muted);
+    font-size: 0.85rem;
+    max-width: 55ch;
+}
+
 .problem {
     color: var(--alert);
     font-size: 0.85rem;

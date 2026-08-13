@@ -35,7 +35,11 @@ public sealed class QueueService(
     /// </summary>
     public async Task<QueueView> ReadAsync(CancellationToken cancellationToken = default)
     {
-        var items = await reader.ListAsync(PlaylistId ?? string.Empty, cancellationToken);
+        // Oldest-added first: the Queue is a queue, and added-at is the only ordering that
+        // means the same thing whether or not the playlist adds new videos to the top.
+        var items = (await reader.ListAsync(PlaylistId ?? string.Empty, cancellationToken))
+            .OrderBy(item => item.AddedAt ?? DateTimeOffset.MaxValue)
+            .ToArray();
 
         // Stems live in staging until the work is done, then move to Mashup Samples — both
         // count, because a track that moved out is still processed.

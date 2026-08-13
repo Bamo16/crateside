@@ -8,14 +8,28 @@
         @foreach (var item in Items)
         {
             <li class="@(item.IsUnavailable ? "unavailable" : null)">
+                @if (OnPinToggled.HasDelegate)
+                {
+                    <input type="checkbox" title="Include in the next batch regardless of age"
+                           checked="@(Pinned?.Contains(item.PlaylistItemId) is true)"
+                           @onchange="() => OnPinToggled.InvokeAsync(item.PlaylistItemId)" />
+                }
                 <a href="@item.WatchUrl" target="_blank" rel="noopener">@item.Title</a>
                 @if (item.ChannelTitle is { Length: > 0 } channel)
                 {
                     <span class="channel">@channel</span>
                 }
+                @if (PremiumOutlookReader.AdvisoryFor(item.PremiumOutlook) is { } advisory)
+                {
+                    <span class="flag outlook @item.PremiumOutlook.ToString().ToLowerInvariant()"
+                          title="@advisory">
+                        @(item.PremiumOutlook is PremiumOutlook.VideoUpload ? "video upload" : "unknown")
+                    </span>
+                }
                 @if (item.IsUnavailable)
                 {
-                    <span class="flag" title="Deleted or made private upstream — it can never become processed.">
+                    <span class="flag gone"
+                          title="Deleted or made private upstream — it can never become processed.">
                         unavailable
                     </span>
                 }
@@ -36,4 +50,11 @@
 
     [Parameter]
     public string? Tone { get; set; }
+
+    /// <summary>Supplied only for the section where pinning makes sense — the work list.</summary>
+    [Parameter]
+    public ISet<string>? Pinned { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnPinToggled { get; set; }
 }

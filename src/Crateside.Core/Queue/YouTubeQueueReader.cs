@@ -110,7 +110,10 @@ public sealed class YouTubeQueueReader(IOptions<QueueOptions> options) : IDispos
             Title = item.Snippet.Title ?? videoId,
             ChannelTitle = item.Snippet.VideoOwnerChannelTitle,
             AddedAt = item.Snippet.PublishedAtDateTimeOffset,
+            Position = (int?)item.Snippet.Position,
             IsUnavailable = unavailable,
+            // The description comes back on this same call, so the premium signal is free.
+            PremiumOutlook = PremiumOutlookReader.FromDescription(item.Snippet.Description),
         };
     }
 

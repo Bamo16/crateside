@@ -66,10 +66,32 @@ h2 {
 }
 
 .flag {
-    margin-left: auto;
     padding: 0.05rem 0.35rem;
-    border: 1px solid var(--alert);
+    border: 1px solid currentColor;
     border-radius: 4px;
-    color: var(--alert);
     font-size: 0.7rem;
+    white-space: nowrap;
+}
+
+/* Pushes the first flag, and everything after it, to the right edge. */
+.flag:not(.flag ~ .flag) {
+    margin-left: auto;
+}
+
+.flag.gone {
+    color: var(--alert);
+}
+
+.flag.outlook.videoupload {
+    color: var(--warn);
+}
+
+.flag.outlook.unknown {
+    color: var(--muted);
+}
+
+.queue-items input[type="checkbox"] {
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex: none;
 }
