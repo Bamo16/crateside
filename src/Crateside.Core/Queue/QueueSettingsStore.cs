@@ -67,7 +67,10 @@ public sealed class QueueSettingsStore
     /// <summary>Saves the playlist ID. Pass null or empty to clear it.</summary>
     public QueueSettings SavePlaylistId(string? playlistId)
     {
-        var settings = new QueueSettings { PlaylistId = PlaylistReference.Parse(playlistId) };
+        var settings = new QueueSettings
+        {
+            PlaylistId = PlaylistReference.TryParse(playlistId, out var parsed) ? parsed : null,
+        };
 
         lock (_gate)
         {

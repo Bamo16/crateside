@@ -23,8 +23,11 @@ public class PlaylistReferenceTests
     [InlineData("https://www.youtube.com/playlist?list=PL123&list=PL456", "PL123")]
     // ...and skips a malformed one rather than failing on it.
     [InlineData("https://www.youtube.com/playlist?list=has%20a%20space&list=PL456", "PL456")]
-    public void Takes_an_id_or_a_pasted_url(string input, string expected) =>
-        Assert.Equal(expected, PlaylistReference.Parse(input));
+    public void Takes_an_id_or_a_pasted_url(string input, string expected)
+    {
+        Assert.True(PlaylistReference.TryParse(input, out var playlistId));
+        Assert.Equal(expected, playlistId);
+    }
 
     [Theory]
     [InlineData(null)]
@@ -35,8 +38,11 @@ public class PlaylistReferenceTests
     [InlineData("https://www.youtube.com/playlist?list")] // the key with no value
     [InlineData("https://www.youtube.com/playlist?list=")] // an empty value
     [InlineData("https://www.youtube.com/playlist?list=has%20a%20space")]
-    public void Returns_null_when_there_is_no_playlist_in_the_input(string? input) =>
-        Assert.Null(PlaylistReference.Parse(input));
+    public void Fails_when_there_is_no_playlist_in_the_input(string? input)
+    {
+        Assert.False(PlaylistReference.TryParse(input, out var playlistId));
+        Assert.Null(playlistId);
+    }
 
     [Fact]
     public void Watch_later_is_rejected_with_an_explanation()

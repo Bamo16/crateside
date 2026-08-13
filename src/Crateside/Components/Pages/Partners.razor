@@ -26,7 +26,7 @@
     </label>
 
     <label>
-        <span>Max shift <em>@_maxShift @(_maxShift == 1 ? "semitone" : "semitones")</em></span>
+        <span>Max shift <em>@("semitone".ToQuantity(_maxShift))</em></span>
         <input type="range" min="0" max="@Core.Pairing.Partners.MaxPossibleShift" step="1"
                @bind="_maxShift" @bind:event="oninput" @bind:after="Recalculate" />
     </label>
@@ -39,8 +39,8 @@
 else
 {
     <p class="summary">
-        @_partners.Count of 24 keys reachable within @_maxShift
-        @(_maxShift == 1 ? "semitone" : "semitones") of <strong>@_source.Name</strong>.
+        @_partners.Count of 24 keys reachable within @("semitone".ToQuantity(_maxShift))
+        of <strong>@_source.Name</strong>.
     </p>
 
     <table class="partners">

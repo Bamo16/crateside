@@ -68,10 +68,13 @@ else if (_view.Items.Count == 0)
 else
 {
     <p class="summary">
-        @_view.Items.Count queued —
+        @("track".ToQuantity(_view.Items.Count)) queued —
         <strong>@_view.Outstanding.Count new</strong>,
-        @_view.FullyProcessed.Count done@(_view.Stalled.Count > 0
-            ? $", {_view.Stalled.Count} stalled" : "").
+        @_view.FullyProcessed.Count done@(_view.Stalled.Count switch
+        {
+            0 => string.Empty,
+            var stalled => $", {stalled} stalled",
+        }).
     </p>
 
     @if (_view.Outstanding.Count > 0)
@@ -101,8 +104,8 @@ else
     private bool _loading;
 
     private bool HasPendingChange =>
-        PlaylistReference.Parse(_playlistInput) != QueueService.PlaylistId
-        && !string.IsNullOrWhiteSpace(_playlistInput);
+        PlaylistReference.TryParse(_playlistInput, out var parsed)
+        && parsed != QueueService.PlaylistId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -112,7 +115,7 @@ else
 
     private async Task SavePlaylist()
     {
-        _settingProblem = PlaylistReference.Problem(PlaylistReference.Parse(_playlistInput));
+        _settingProblem = PlaylistReference.Problem(_playlistInput);
 
         if (_settingProblem is not null)
             return;

@@ -30,8 +30,8 @@ else if (_songs.Count == 0)
 else
 {
     <p class="summary">
-        @_songs.Count @(_songs.Count == 1 ? "song" : "songs"),
-        @_songs.Sum(s => s.Stems.Count) stems —
+        @("song".ToQuantity(_songs.Count)),
+        @("stem".ToQuantity(_songs.Sum(s => s.Stems.Count))) —
         @_songs.Count(s => s.IsFullyTagged) fully tagged.
     </p>
 
@@ -52,7 +52,8 @@ else
                         <span class="song-name">@song.DisplayName</span>
                         @if (song.StaleTaggedStems.Count > 0)
                         {
-                            <span class="flag stale" title="Tagged in Ableton with a key that is not the current verdict — a supersede left it behind.">
+                            <span class="flag stale"
+                                  title="Tagged in Ableton with a key that is not the current verdict — a supersede left it behind.">
                                 stale tag
                             </span>
                         }
@@ -80,7 +81,7 @@ else
                     @* Rounded: the BPM is a warp starting point good to ±2-3, so a decimal
                        is false precision and it misaligns the column against whole values. *@
                     <td class="bpm">
-                        @(song.Bpm is { } bpm ? Math.Round(bpm).ToString("0") : "—")
+                        @(song is { Bpm: { } bpm } ? Math.Round(bpm).ToString("0") : "—")
                     </td>
                     <td>
                         <ul class="stems">
