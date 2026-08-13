@@ -52,6 +52,13 @@ public enum PremiumOutlook
 /// Topic channel. <c>categoryId == 10</c> (Music) fires on 496 with 88 false positives, and
 /// <c>contentDetails.licensedContent</c> on 415 with 34 — neither is close.
 /// </para>
+/// <para>
+/// <strong>The marker is forgeable.</strong> It is a convention YouTube's tooling writes, not
+/// an attestation, and the corpus was not adversarial — so the perfect precision means nobody
+/// in it had lied, not that lying is impossible. This is a pre-flight hint on metadata;
+/// StemForge's <c>PremiumExpectation</c> sees the real format ladder at download time and
+/// remains the authority. See <c>docs/premium-outlook.md</c>.
+/// </para>
 /// </remarks>
 public static class PremiumOutlookReader
 {
