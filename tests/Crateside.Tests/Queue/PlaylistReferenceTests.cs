@@ -17,6 +17,10 @@ public class PlaylistReferenceTests
     )]
     [InlineData("https://music.youtube.com/playlist?list=PL123456", "PL123456")]
     [InlineData("  PL123456  ", "PL123456")]
+    // Percent-encoded values are decoded for us.
+    [InlineData("https://www.youtube.com/playlist?list=PL%5F123", "PL_123")]
+    // A repeated key takes the first, rather than the indexer's joined "A,B".
+    [InlineData("https://www.youtube.com/playlist?list=PL123&list=PL456", "PL123")]
     public void Takes_an_id_or_a_pasted_url(string input, string expected) =>
         Assert.Equal(expected, PlaylistReference.Parse(input));
 
@@ -26,6 +30,9 @@ public class PlaylistReferenceTests
     [InlineData("   ")]
     [InlineData("not a playlist")]
     [InlineData("https://www.youtube.com/watch?v=vfBJjufAG1E")] // a video, with no list
+    [InlineData("https://www.youtube.com/playlist?list")] // the key with no value
+    [InlineData("https://www.youtube.com/playlist?list=")] // an empty value
+    [InlineData("https://www.youtube.com/playlist?list=has%20a%20space")]
     public void Returns_null_when_there_is_no_playlist_in_the_input(string? input) =>
         Assert.Null(PlaylistReference.Parse(input));
 

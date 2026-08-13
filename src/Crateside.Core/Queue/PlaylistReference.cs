@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using System.Web;
 
 namespace Crateside.Core.Queue;
 
@@ -16,11 +17,15 @@ public static partial class PlaylistReference
         if (input?.Trim() is not { Length: > 0 } trimmed)
             return null;
 
-        if (
-            Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
-            && QueryValue(uri.Query, "list") is { Length: > 0 } fromQuery
-        )
+        if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
         {
+            // GetValues rather than the indexer: a repeated list= would come back from the
+            // indexer joined as "A,B", which is not an ID and would fail the shape check.
+            var fromQuery = HttpUtility
+                .ParseQueryString(uri.Query)
+                .GetValues("list")
+                ?.FirstOrDefault();
+
             return IsWellFormed(fromQuery) ? fromQuery : null;
         }
 
@@ -55,17 +60,6 @@ public static partial class PlaylistReference
                     + "'list=' value from it.",
             _ => null,
         };
-
-    private static string? QueryValue(string query, string key)
-    {
-        foreach (var pair in query.TrimStart('?').Split('&'))
-        {
-            if (pair.Split('=') is [var name, var value] && name == key)
-                return Uri.UnescapeDataString(value);
-        }
-
-        return null;
-    }
 
     [GeneratedRegex(@"^[A-Za-z0-9_-]{2,64}$")]
     private static partial Regex PlaylistIdPattern();
