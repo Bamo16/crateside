@@ -26,10 +26,11 @@ public sealed class YouTubeQueueReader(IOptions<QueueOptions> options) : IDispos
     private readonly QueueOptions _options = options.Value;
     private YouTubeService? _service;
 
-    /// <summary>Whether anything is configured well enough to attempt a read.</summary>
-    public bool IsConfigured =>
-        !string.IsNullOrWhiteSpace(_options.PlaylistId)
-        && !string.IsNullOrWhiteSpace(_options.ApiKey);
+    /// <summary>
+    /// Whether a credential is available. The playlist ID is passed per call, since the user
+    /// can change it from the UI without restarting.
+    /// </summary>
+    public bool HasCredential => !string.IsNullOrWhiteSpace(_options.ApiKey);
 
     /// <summary>
     /// Lists every item in the playlist, following pagination to the end.
@@ -40,11 +41,15 @@ public sealed class YouTubeQueueReader(IOptions<QueueOptions> options) : IDispos
     /// returning empty — an unreadable queue must never render as an empty one.
     /// </exception>
     public async Task<IReadOnlyList<QueueItem>> ListAsync(
+        string playlistId,
         CancellationToken cancellationToken = default
     )
     {
-        if (!IsConfigured)
-            throw new QueueUnavailableException("No playlist ID or API key is configured.");
+        if (!HasCredential)
+            throw new QueueUnavailableException("No API key is configured.");
+
+        if (PlaylistReference.Problem(playlistId) is { } problem)
+            throw new QueueUnavailableException(problem);
 
         var service = _service ??= new YouTubeService(
             new BaseClientService.Initializer
@@ -62,7 +67,7 @@ public sealed class YouTubeQueueReader(IOptions<QueueOptions> options) : IDispos
             do
             {
                 var request = service.PlaylistItems.List("snippet,status");
-                request.PlaylistId = _options.PlaylistId;
+                request.PlaylistId = playlistId;
                 request.MaxResults = MaxPageSize;
                 request.PageToken = pageToken;
 

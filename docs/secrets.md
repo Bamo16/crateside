@@ -17,8 +17,11 @@ From the repo root:
 
 ```powershell
 dotnet user-secrets set "Queue:ApiKey" "<your key>" --project src\Crateside\Crateside.csproj
-dotnet user-secrets set "Queue:PlaylistId" "<id>" --project src\Crateside\Crateside.csproj
 ```
+
+**The playlist ID is not a secret and does not go here** — set it on the Queue page. It is
+saved to `%APPDATA%\crateside\queue.json`, which also keeps it out of the working tree, but
+for tidiness rather than secrecy. The key is the only thing user-secrets holds.
 
 `set` takes exactly `<key> <value>` positionally — the project goes in `--project`, and it
 must be the **csproj**, not `Crateside.slnx` (user-secrets resolves a project, not a

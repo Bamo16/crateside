@@ -8,15 +8,25 @@ namespace Crateside.Core.Queue;
 /// </summary>
 public sealed class QueueService(
     IOptions<CratesidePaths> paths,
-    IOptions<QueueOptions> queueOptions,
+    QueueSettingsStore settings,
     YouTubeQueueReader reader
 )
 {
     private readonly CratesidePaths _paths = paths.Value;
 
-    public bool IsConfigured => reader.IsConfigured;
+    /// <summary>Whether an API key is available. Without one, nothing can be read.</summary>
+    public bool HasCredential => reader.HasCredential;
 
-    public string? PlaylistId => queueOptions.Value.PlaylistId;
+    /// <summary>The playlist currently being read, or null if none is set yet.</summary>
+    public string? PlaylistId => settings.Read().PlaylistId;
+
+    public bool IsConfigured => HasCredential && PlaylistId is { Length: > 0 };
+
+    /// <summary>
+    /// Points the Queue at a different playlist. Accepts a bare ID or a pasted URL, and
+    /// persists outside the working tree.
+    /// </summary>
+    public void SetPlaylist(string? playlistIdOrUrl) => settings.SavePlaylistId(playlistIdOrUrl);
 
     /// <summary>
     /// Reads the playlist and classifies every item. Throws
@@ -25,7 +35,7 @@ public sealed class QueueService(
     /// </summary>
     public async Task<QueueView> ReadAsync(CancellationToken cancellationToken = default)
     {
-        var items = await reader.ListAsync(cancellationToken);
+        var items = await reader.ListAsync(PlaylistId ?? string.Empty, cancellationToken);
 
         // Stems live in staging until the work is done, then move to Mashup Samples — both
         // count, because a track that moved out is still processed.

@@ -1,0 +1,55 @@
+using Crateside.Core.Queue;
+
+namespace Crateside.Tests.Queue;
+
+public class PlaylistReferenceTests
+{
+    [Theory]
+    [InlineData("PLrAXtmRdnEQy6nuLMHjMZOz59Oq8B9Ck1", "PLrAXtmRdnEQy6nuLMHjMZOz59Oq8B9Ck1")]
+    [InlineData(
+        "https://www.youtube.com/playlist?list=PLrAXtmRdnEQy6nuLMHjMZOz59Oq8B9Ck1",
+        "PLrAXtmRdnEQy6nuLMHjMZOz59Oq8B9Ck1"
+    )]
+    // The address bar usually has a video ID in front of the list — take the list.
+    [InlineData(
+        "https://www.youtube.com/watch?v=vfBJjufAG1E&list=PLrAXtmRdnEQy6nuLMHjMZOz59Oq8B9Ck1&index=2",
+        "PLrAXtmRdnEQy6nuLMHjMZOz59Oq8B9Ck1"
+    )]
+    [InlineData("https://music.youtube.com/playlist?list=PL123456", "PL123456")]
+    [InlineData("  PL123456  ", "PL123456")]
+    public void Takes_an_id_or_a_pasted_url(string input, string expected) =>
+        Assert.Equal(expected, PlaylistReference.Parse(input));
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("not a playlist")]
+    [InlineData("https://www.youtube.com/watch?v=vfBJjufAG1E")] // a video, with no list
+    public void Returns_null_when_there_is_no_playlist_in_the_input(string? input) =>
+        Assert.Null(PlaylistReference.Parse(input));
+
+    [Fact]
+    public void Watch_later_is_rejected_with_an_explanation()
+    {
+        // It parses as well-formed, so without this it would fail later as a bare "not
+        // found" — which reads as a typo rather than as an impossibility.
+        var problem = PlaylistReference.Problem("WL");
+
+        Assert.NotNull(problem);
+        Assert.Contains("Watch Later", problem);
+    }
+
+    [Theory]
+    [InlineData("PLrAXtmRdnEQy6nuLMHjMZOz59Oq8B9Ck1")]
+    [InlineData("LL")]
+    public void A_usable_id_reports_no_problem(string id) =>
+        Assert.Null(PlaylistReference.Problem(id));
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    [InlineData("has spaces")]
+    public void An_unusable_id_reports_a_problem(string? id) =>
+        Assert.NotNull(PlaylistReference.Problem(id));
+}

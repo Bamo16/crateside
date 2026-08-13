@@ -8,25 +8,46 @@
 <header class="page-header">
     <div>
         <h1>Queue</h1>
-        <p class="subtitle">
-            What is in the playlist, what is already done, and what is new.
-        </p>
+        <p class="subtitle">What is in the playlist, what is already done, and what is new.</p>
     </div>
-    <button class="refresh" @onclick="Load" disabled="@_loading">
+    <button class="refresh" @onclick="Load" disabled="@(_loading || !QueueService.IsConfigured)">
         @(_loading ? "Reading…" : "Refresh")
     </button>
 </header>
 
-@if (!QueueService.IsConfigured)
+@if (!QueueService.HasCredential)
 {
+    @* The key is the one thing the UI cannot set — it is a secret and stays out of the app. *@
     <div class="notice">
-        <strong>Not configured.</strong>
-        Set both from the repo root, then refresh:
-        <pre><code>dotnet user-secrets set "Queue:ApiKey" "&lt;key&gt;" --project src\Crateside\Crateside.csproj
-dotnet user-secrets set "Queue:PlaylistId" "&lt;id&gt;" --project src\Crateside\Crateside.csproj</code></pre>
-        A read-only key is enough while the playlist stays unlisted. See
+        <strong>No API key.</strong>
+        Set it once from the repo root, then restart:
+        <pre><code>dotnet user-secrets set "Queue:ApiKey" "&lt;key&gt;" --project src\Crateside\Crateside.csproj</code></pre>
+        A read-only key restricted to the YouTube Data API is enough. See
         <code>docs/secrets.md</code>.
     </div>
+}
+
+<div class="playlist-setting">
+    <label>
+        <span>Playlist</span>
+        <input type="text" placeholder="Playlist ID, or paste the playlist URL"
+               @bind="_playlistInput" @bind:event="oninput" />
+    </label>
+    <button @onclick="SavePlaylist" disabled="@(!HasPendingChange)">Save</button>
+    @if (_settingProblem is { } problem)
+    {
+        <span class="problem">@problem</span>
+    }
+    else if (QueueService.PlaylistId is { Length: > 0 } current)
+    {
+        <a class="open" href="@($"https://www.youtube.com/playlist?list={current}")"
+           target="_blank" rel="noopener">Open on YouTube</a>
+    }
+</div>
+
+@if (!QueueService.IsConfigured)
+{
+    <p class="empty">Set a playlist to read.</p>
 }
 else if (_error is { } error)
 {
@@ -75,9 +96,33 @@ else
 @code {
     private QueueView? _view;
     private string? _error;
+    private string? _settingProblem;
+    private string _playlistInput = string.Empty;
     private bool _loading;
 
-    protected override async Task OnInitializedAsync() => await Load();
+    private bool HasPendingChange =>
+        PlaylistReference.Parse(_playlistInput) != QueueService.PlaylistId
+        && !string.IsNullOrWhiteSpace(_playlistInput);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _playlistInput = QueueService.PlaylistId ?? string.Empty;
+        await Load();
+    }
+
+    private async Task SavePlaylist()
+    {
+        _settingProblem = PlaylistReference.Problem(PlaylistReference.Parse(_playlistInput));
+
+        if (_settingProblem is not null)
+            return;
+
+        QueueService.SetPlaylist(_playlistInput);
+        _playlistInput = QueueService.PlaylistId ?? string.Empty;
+        _view = null;
+
+        await Load();
+    }
 
     private async Task Load()
     {

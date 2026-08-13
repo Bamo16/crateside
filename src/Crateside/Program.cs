@@ -28,6 +28,7 @@ builder.Services.AddSingleton<AbletonFolderInfoReader>();
 builder.Services.AddSingleton<StagingBoard>();
 builder.Services.AddSingleton<StagingBoardService>();
 builder.Services.AddSingleton<YouTubeQueueReader>();
+builder.Services.AddSingleton<QueueSettingsStore>();
 builder.Services.AddSingleton<QueueService>();
 
 var app = builder.Build();
