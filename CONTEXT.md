@@ -50,6 +50,30 @@ against it.
 - **Queue view** — the **Queue** as work: what is in the playlist, what is already
   **fully processed**, and what is new.
 
+## Orchestration
+
+What crateside does when it stops only *showing* the workflow and starts *running*
+it. **Evidence** and **Verdict** are keytag's terms and keep their meanings here;
+the two run types below are named after which of them they produce.
+
+- **Work order** — crateside's instruction for one track: which URL is canonical,
+  where its stems belong, what quality to ask for. The thing that replaces a
+  hand-written prompt. A work order says what should happen to a track next; it is
+  not a record that anything did.
+- **Evidence run** — the stage that produces the **evidence** for a track:
+  acquiring the audio and running the detectors. Deterministic, needs no judgement,
+  and contends for nothing scarce.
+- **Verdict run** — the stage that turns evidence into a **verdict**. The only
+  stage that requires an agent, because weighing evidence and going to look for
+  human corroboration is the only part of the workflow that genuinely needs one.
+- **Batch** — the set of tracks crateside selects to separate in one go. A batch is
+  a **separation** unit specifically: it exists because separation is serial and
+  hours long, so it is the thing the user chooses a moment for.
+- **Stage** — one of evidence run, verdict run, or separation. Stages are named
+  separately because each contends for a *different* scarce resource — nothing,
+  Claude quota, and the GPU respectively — and so each wants its own moment to run.
+  Being ready for one stage says nothing about being ready for another.
+
 ## Flagged ambiguities
 
 - **"Vibe"** — the existing cmdlet's label for a partner's **relationship**
