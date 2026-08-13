@@ -19,8 +19,10 @@ public class PlaylistReferenceTests
     [InlineData("  PL123456  ", "PL123456")]
     // Percent-encoded values are decoded for us.
     [InlineData("https://www.youtube.com/playlist?list=PL%5F123", "PL_123")]
-    // A repeated key takes the first, rather than the indexer's joined "A,B".
+    // A repeated key takes the first usable value, rather than the indexer's joined "A,B".
     [InlineData("https://www.youtube.com/playlist?list=PL123&list=PL456", "PL123")]
+    // ...and skips a malformed one rather than failing on it.
+    [InlineData("https://www.youtube.com/playlist?list=has%20a%20space&list=PL456", "PL456")]
     public void Takes_an_id_or_a_pasted_url(string input, string expected) =>
         Assert.Equal(expected, PlaylistReference.Parse(input));
 

@@ -12,25 +12,20 @@ public static partial class PlaylistReference
     /// Accepts a bare playlist ID or any YouTube URL carrying one, and returns the ID.
     /// Pasting the URL straight from the address bar is what people actually have in hand.
     /// </summary>
-    public static string? Parse(string? input)
-    {
-        if (input?.Trim() is not { Length: > 0 } trimmed)
-            return null;
-
-        if (Uri.TryCreate(trimmed, UriKind.Absolute, out var uri))
+    public static string? Parse(string? input) =>
+        input?.Trim() switch
         {
+            not { Length: > 0 } => null,
+
             // GetValues rather than the indexer: a repeated list= would come back from the
             // indexer joined as "A,B", which is not an ID and would fail the shape check.
-            var fromQuery = HttpUtility
+            { } trimmed when Uri.TryCreate(trimmed, UriKind.Absolute, out var uri) => HttpUtility
                 .ParseQueryString(uri.Query)
                 .GetValues("list")
-                ?.FirstOrDefault();
+                ?.FirstOrDefault(id => IsWellFormed(id)),
 
-            return IsWellFormed(fromQuery) ? fromQuery : null;
-        }
-
-        return IsWellFormed(trimmed) ? trimmed : null;
-    }
+            { } trimmed => IsWellFormed(trimmed) ? trimmed : null,
+        };
 
     /// <summary>
     /// Whether the ID looks like a playlist ID at all. Deliberately loose — YouTube's
@@ -38,7 +33,7 @@ public static partial class PlaylistReference
     /// than trying to be authoritative.
     /// </summary>
     public static bool IsWellFormed(string? id) =>
-        id is { Length: >= 2 } && PlaylistIdPattern().IsMatch(id);
+        id is { Length: >= 2 } && PlaylistIdPattern.IsMatch(id);
 
     /// <summary>
     /// Watch Later cannot be read through the API at all, with any credential — Google
@@ -51,7 +46,7 @@ public static partial class PlaylistReference
     public static string? Problem(string? id) =>
         id switch
         {
-            null or "" => "Enter a playlist ID or paste the playlist URL.",
+            not { Length: > 0 } => "Enter a playlist ID or paste the playlist URL.",
             _ when IsWatchLater(id) =>
                 "Watch Later cannot be read through the YouTube API by any credential. "
                     + "The Queue has to be an ordinary playlist.",
@@ -62,5 +57,5 @@ public static partial class PlaylistReference
         };
 
     [GeneratedRegex(@"^[A-Za-z0-9_-]{2,64}$")]
-    private static partial Regex PlaylistIdPattern();
+    private static partial Regex PlaylistIdPattern { get; }
 }
