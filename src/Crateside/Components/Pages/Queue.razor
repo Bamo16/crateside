@@ -21,9 +21,11 @@
 {
     <div class="notice">
         <strong>Not configured.</strong>
-        Set <code>Queue:PlaylistId</code> and <code>Queue:ApiKey</code>. The key is a secret —
-        put it in <code>appsettings.Secrets.json</code> or user-secrets, both gitignored.
-        A read-only key is enough while the playlist stays unlisted.
+        Set both from the repo root, then refresh:
+        <pre><code>dotnet user-secrets set "Queue:ApiKey" "&lt;key&gt;" --project src\Crateside\Crateside.csproj
+dotnet user-secrets set "Queue:PlaylistId" "&lt;id&gt;" --project src\Crateside\Crateside.csproj</code></pre>
+        A read-only key is enough while the playlist stays unlisted. See
+        <code>docs/secrets.md</code>.
     </div>
 }
 else if (_error is { } error)

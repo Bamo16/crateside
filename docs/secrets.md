@@ -13,12 +13,17 @@ first line of defence is that the key is not in the working tree at all.
 
 ## Setting the API key
 
-From `src/Crateside`:
+From the repo root:
 
 ```powershell
-dotnet user-secrets set "Queue:ApiKey" "<your key>"
-dotnet user-secrets set "Queue:PlaylistId" "<playlist id>"   # optional; not a secret
+dotnet user-secrets set "Queue:ApiKey" "<your key>" --project src\Crateside\Crateside.csproj
+dotnet user-secrets set "Queue:PlaylistId" "<id>" --project src\Crateside\Crateside.csproj
 ```
+
+`set` takes exactly `<key> <value>` positionally — the project goes in `--project`, and it
+must be the **csproj**, not `Crateside.slnx` (user-secrets resolves a project, not a
+solution). Quote the value, or PowerShell reads a leading `-` as a parameter. Running from
+`src\Crateside` lets you drop `--project` entirely.
 
 It is stored at `%APPDATA%\Microsoft\UserSecrets\<UserSecretsId>\secrets.json`. The
 `UserSecretsId` is in `Crateside.csproj`; the value is not.
