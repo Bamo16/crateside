@@ -18,7 +18,10 @@
     color: var(--muted);
 }
 
-.bench-nav a {
+/* ::deep throughout, because NavLink renders the anchor — without it the scope attribute lands
+   on the `a` itself, which never carries this file's scope, and every rule below silently
+   fails to match while .bench-nav and .brand above still apply. */
+.bench-nav ::deep a {
     display: flex;
     align-items: center;
     padding: 0.5rem 1rem 0.6rem;
@@ -31,14 +34,14 @@
     margin-bottom: -1px;
 }
 
-.bench-nav a:hover {
+.bench-nav ::deep a:hover {
     color: var(--text);
     background: var(--surface);
 }
 
 /* The current tab joins the page below it: lifted background, and the bottom rule cut away
    so it reads as continuous with the content rather than as one more thing to click. */
-.bench-nav a.active {
+.bench-nav ::deep a.active {
     color: var(--text);
     font-weight: 600;
     background: var(--bg);
@@ -46,6 +49,6 @@
     border-bottom: 1px solid var(--bg);
 }
 
-.bench-nav a.active:hover {
+.bench-nav ::deep a.active:hover {
     background: var(--bg);
 }
