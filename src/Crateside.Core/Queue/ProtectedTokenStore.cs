@@ -42,6 +42,10 @@ public sealed class ProtectedTokenStore(IDataProtectionProvider provider, string
             "tokens"
         );
 
+    /// <summary>Whether any token is stored at all — "have we ever consented?".</summary>
+    public bool HasStoredToken =>
+        Directory.Exists(_directory) && Directory.EnumerateFiles(_directory).Any();
+
     public Task StoreAsync<T>(string key, T value)
     {
         Directory.CreateDirectory(_directory);
@@ -88,10 +92,6 @@ public sealed class ProtectedTokenStore(IDataProtectionProvider provider, string
 
         return Task.CompletedTask;
     }
-
-    /// <summary>Whether any token is stored at all — "have we ever consented?".</summary>
-    public bool HasStoredToken =>
-        Directory.Exists(_directory) && Directory.EnumerateFiles(_directory).Any();
 
     // Google's keys are safe filename characters in practice, but they are not guaranteed to
     // be, and a key containing a separator would otherwise write outside the directory.

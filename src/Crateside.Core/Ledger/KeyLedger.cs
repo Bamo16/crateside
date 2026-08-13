@@ -17,6 +17,12 @@ public sealed class KeyLedger
     private readonly Dictionary<string, LedgerRun> _latestBySong;
     private readonly Dictionary<string, string> _songByVideoId;
 
+    /// <summary>Every run parsed from the file, in file order.</summary>
+    public IReadOnlyList<LedgerRun> Runs { get; }
+
+    /// <summary>The number of distinct songs the ledger knows about.</summary>
+    public int SongCount => _latestBySong.Count;
+
     private KeyLedger(IReadOnlyList<LedgerRun> runs)
     {
         Runs = runs;
@@ -39,12 +45,6 @@ public sealed class KeyLedger
                 StringComparer.Ordinal
             );
     }
-
-    /// <summary>Every run parsed from the file, in file order.</summary>
-    public IReadOnlyList<LedgerRun> Runs { get; }
-
-    /// <summary>The number of distinct songs the ledger knows about.</summary>
-    public int SongCount => _latestBySong.Count;
 
     /// <summary>
     /// Reads the ledger. A malformed line is skipped rather than failing the whole read —

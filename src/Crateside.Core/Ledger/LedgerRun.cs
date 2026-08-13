@@ -3,19 +3,6 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Core.Ledger;
 
-/// <summary>How much the detect-key run trusts its own verdict.</summary>
-public enum KeyConfidence
-{
-    /// <summary>The line carried a confidence crateside does not know. Treated as no key.</summary>
-    Unknown,
-
-    /// <summary>No single safe tag was given; <see cref="LedgerRun.Key"/> is null.</summary>
-    Withheld,
-    Low,
-    Medium,
-    High,
-}
-
 /// <summary>
 /// One recorded detect-key run — a single line of keytag's <c>results/runs.jsonl</c>.
 /// </summary>
@@ -89,6 +76,19 @@ public sealed record LedgerRun
             "WITHHELD" => KeyConfidence.Withheld,
             _ => KeyConfidence.Unknown,
         };
+}
+
+/// <summary>How much the detect-key run trusts its own verdict.</summary>
+public enum KeyConfidence
+{
+    /// <summary>The line carried a confidence crateside does not know. Treated as no key.</summary>
+    Unknown,
+
+    /// <summary>No single safe tag was given; <see cref="LedgerRun.Key"/> is null.</summary>
+    Withheld,
+    Low,
+    Medium,
+    High,
 }
 
 // Only the fields crateside reads. The `machine` block — three algorithms, chords, flicker —

@@ -4,17 +4,6 @@ using Google.Apis.YouTube.v3;
 
 namespace Crateside.Core.Queue;
 
-/// <summary>The outcome of removing one playlist item.</summary>
-public sealed record RemovalResult
-{
-    public required string PlaylistItemId { get; init; }
-    public required string Title { get; init; }
-    public required bool Removed { get; init; }
-
-    /// <summary>Why it was not removed. Null when it was.</summary>
-    public string? Reason { get; init; }
-}
-
 /// <summary>
 /// Deletes items from the Queue playlist. The only part of crateside that writes anything,
 /// anywhere.
@@ -138,4 +127,15 @@ public sealed class QueueRemover(QueueAuthorizer authorizer)
             _ => $"{reason}: {message}",
         };
     }
+}
+
+/// <summary>The outcome of removing one playlist item.</summary>
+public sealed record RemovalResult
+{
+    public required string PlaylistItemId { get; init; }
+    public required string Title { get; init; }
+    public required bool Removed { get; init; }
+
+    /// <summary>Why it was not removed. Null when it was.</summary>
+    public string? Reason { get; init; }
 }
