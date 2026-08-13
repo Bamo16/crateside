@@ -19,4 +19,10 @@ public sealed class QueueOptions
     /// expires. It cannot write — deletion needs OAuth user consent.
     /// </summary>
     public string? ApiKey { get; set; }
+
+    /// <summary>OAuth client ID for a <strong>Desktop app</strong> client. Secret-adjacent.</summary>
+    public string? ClientId { get; set; }
+
+    /// <summary>OAuth client secret. A secret — user-secrets only, never the repo.</summary>
+    public string? ClientSecret { get; set; }
 }

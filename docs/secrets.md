@@ -44,21 +44,31 @@ It costs nothing and caps the blast radius of a leak to burned quota.
 `appsettings.Secrets.json` is still read if present, as a gitignored fallback for running
 outside the Development environment. Prefer user-secrets.
 
-## The refresh token (when OAuth lands)
+## The OAuth client
 
-user-secrets is the wrong tool for the token: it is written by the app at runtime, not set by
-hand, and it is the credential that can actually delete things. It gets encrypted at rest with
-**Windows DPAPI**, via ASP.NET Core's own Data Protection — no extra package, no P/Invoke:
+A **Desktop app** client, created in the same Cloud project. The ID is secret-adjacent and
+the secret plainly is, so both go to user-secrets:
 
-```csharp
-services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(keyRingPath))
-    .SetApplicationName("crateside")
-    .ProtectKeysWithDpapi();
+```powershell
+dotnet user-secrets set "Queue:ClientId" "<id>" --project src\Crateside\Crateside.csproj
+dotnet user-secrets set "Queue:ClientSecret" "<secret>" --project src\Crateside\Crateside.csproj
 ```
 
-`IDataProtector.Protect` / `.Unprotect` then encrypt the token itself, and the key ring is
-sealed to the current Windows user.
+Scope is `youtube` — the narrowest that permits `playlistItems.delete`.
+
+## The refresh token
+
+user-secrets is the wrong tool for the token: it is written by the app at runtime, not set by
+hand, and it is the credential that can actually delete things. It is encrypted at rest with
+**Windows DPAPI**, via ASP.NET Core's own Data Protection — no extra package, no P/Invoke.
+`ProtectedTokenStore` implements Google's `IDataStore` (replacing its plaintext
+`FileDataStore`) and writes to `%APPDATA%\crateside\tokens`; the key ring lives in
+`%LOCALAPPDATA%\crateside\keys`, sealed to the current Windows user.
+
+A token this key ring cannot decrypt — rotated keys, a file copied from another machine —
+reads as **absent** rather than throwing. The cost is one more consent prompt, which is a
+state the Queue already handles; a crash is not. There are tests for that, and for the fact
+that nothing recognisable appears in the file on disk.
 
 **Know what that does and does not buy.** DPAPI `CurrentUser` means the ciphertext is useless
 on another machine or under another account — it defends against the file being copied off

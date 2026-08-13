@@ -106,14 +106,66 @@ else
 
     @if (_view.Stalled.Count > 0)
     {
-        <QueueSection Title="Stalled" Items="_view.Stalled" Tone="warn"
-                      Detail="A verdict was recorded but no stems are on disk — a separation that died partway, or stems that were deleted. These stay queued deliberately." />
+        <QueueSection Title="Stalled" Items="_view.Stalled" Tone="warn" OnRemove="RemoveOne"
+                      Detail="A verdict was recorded but no stems are on disk — a separation that died partway, or stems that were deleted. Never removed automatically; remove one by hand if you have abandoned it." />
     }
 
     @if (_view.FullyProcessed.Count > 0)
     {
         <QueueSection Title="Done" Items="_view.FullyProcessed" Tone="muted"
-                      Detail="Fully processed: a verdict and stems on disk. These are what the deletion step would remove." />
+                      OnRemove="RemoveOne"
+                      Detail="Fully processed: a verdict and stems on disk. Safe to remove from the playlist." />
+
+        <div class="removal">
+            @if (!QueueService.CanAuthorize)
+            {
+                <div class="notice">
+                    <strong>No OAuth client.</strong>
+                    Removing from the playlist needs user consent; an API key cannot write.
+                    Create a <em>Desktop app</em> OAuth client, then:
+                    <pre><code>dotnet user-secrets set "Queue:ClientId" "&lt;id&gt;" --project src\Crateside\Crateside.csproj
+dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crateside\Crateside.csproj</code></pre>
+                </div>
+            }
+            else if (!QueueService.IsAuthorized)
+            {
+                <button class="grant" @onclick="Consent" disabled="@_working">
+                    @(_working ? "Waiting for consent…" : "Grant access to remove items")
+                </button>
+                <span class="removal-detail">
+                    Opens a browser. The write token lapses about weekly, so expect to do this
+                    again — reading never stops working in the meantime.
+                </span>
+            }
+            else if (_confirmingRemoveAll)
+            {
+                <button class="danger" @onclick="RemoveProcessed" disabled="@_working">
+                    @(_working ? "Removing…" : $"Yes, remove {_view.FullyProcessed.Count} from the playlist")
+                </button>
+                <button @onclick="() => _confirmingRemoveAll = false" disabled="@_working">Cancel</button>
+                <span class="removal-detail">
+                    Re-checked at the moment of removal, not from this page.
+                </span>
+            }
+            else
+            {
+                <button @onclick="() => _confirmingRemoveAll = true">
+                    Remove @_view.FullyProcessed.Count processed from the playlist
+                </button>
+                <button class="link" @onclick="SignOut">Forget access</button>
+            }
+        </div>
+    }
+
+    @if (_removals is { Count: > 0 })
+    {
+        <div class="notice @(_removals.Any(r => !r.Removed) ? "error" : null)">
+            <strong>Removed @_removals.Count(r => r.Removed) of @_removals.Count.</strong>
+            @foreach (var failed in _removals.Where(r => !r.Removed))
+            {
+                <div class="failed">@failed.Title — @failed.Reason</div>
+            }
+        </div>
     }
 }
 
@@ -131,10 +183,66 @@ else
     // run", which stops meaning anything once that batch is processed.
     private readonly HashSet<string> _pinned = new(StringComparer.Ordinal);
 
+    private bool _working;
+    private bool _confirmingRemoveAll;
+    private IReadOnlyList<RemovalResult>? _removals;
+
     private void TogglePin(string playlistItemId)
     {
         if (!_pinned.Add(playlistItemId))
             _pinned.Remove(playlistItemId);
+    }
+
+    private async Task Consent()
+    {
+        _working = true;
+        _error = null;
+
+        try
+        {
+            await QueueService.ConsentAsync();
+        }
+        catch (Exception e)
+        {
+            _error = $"Consent did not complete: {e.Message}";
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task SignOut()
+    {
+        await QueueService.SignOutAsync();
+        _confirmingRemoveAll = false;
+    }
+
+    private async Task RemoveProcessed() =>
+        await Remove(() => QueueService.RemoveProcessedAsync());
+
+    private async Task RemoveOne(QueueItem item) => await Remove(() => QueueService.RemoveAsync([item]));
+
+    private async Task Remove(Func<Task<IReadOnlyList<RemovalResult>>> removal)
+    {
+        _working = true;
+        _error = null;
+
+        try
+        {
+            _removals = await removal();
+            _confirmingRemoveAll = false;
+
+            await Load();
+        }
+        catch (QueueUnavailableException e)
+        {
+            _error = e.Message;
+        }
+        finally
+        {
+            _working = false;
+        }
     }
 
     private bool HasPendingChange =>

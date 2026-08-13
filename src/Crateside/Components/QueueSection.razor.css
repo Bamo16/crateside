@@ -90,6 +90,23 @@ h2 {
     color: var(--muted);
 }
 
+.remove {
+    flex: none;
+    padding: 0 0.4rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    line-height: 1.4;
+    cursor: pointer;
+}
+
+.remove:hover {
+    color: var(--alert);
+    border-color: var(--alert);
+}
+
 .queue-items input[type="checkbox"] {
     accent-color: var(--accent);
     cursor: pointer;

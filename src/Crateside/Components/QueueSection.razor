@@ -33,6 +33,11 @@
                         unavailable
                     </span>
                 }
+                @if (OnRemove.HasDelegate)
+                {
+                    <button class="remove" title="Remove this item from the playlist"
+                            @onclick="() => OnRemove.InvokeAsync(item)">✕</button>
+                }
             </li>
         }
     </ul>
@@ -57,4 +62,8 @@
 
     [Parameter]
     public EventCallback<string> OnPinToggled { get; set; }
+
+    /// <summary>Supplied only where removing by hand is meaningful — done and stalled.</summary>
+    [Parameter]
+    public EventCallback<QueueItem> OnRemove { get; set; }
 }

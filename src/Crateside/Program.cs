@@ -2,6 +2,7 @@ using Crateside.Components;
 using Crateside.Core;
 using Crateside.Core.Queue;
 using Crateside.Core.Staging;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,32 @@ builder.Services.AddSingleton<StagingBoard>();
 builder.Services.AddSingleton<StagingBoardService>();
 builder.Services.AddSingleton<YouTubeQueueReader>();
 builder.Services.AddSingleton<QueueSettingsStore>();
+
+// The OAuth refresh token can delete from the playlist, so it is encrypted at rest. The key
+// ring is sealed to the current Windows user (docs/secrets.md).
+var dataProtection = builder
+    .Services.AddDataProtection()
+    .PersistKeysToFileSystem(
+        new DirectoryInfo(
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "crateside",
+                "keys"
+            )
+        )
+    )
+    .SetApplicationName("crateside");
+
+// DPAPI is Windows-only. crateside is a Windows app (the Ableton roots are P:\ paths), so
+// this always applies in practice; the guard is here because the analyzer is right that the
+// call is not portable, and falling back to the default key protection is the honest
+// alternative rather than suppressing the warning.
+if (OperatingSystem.IsWindows())
+    dataProtection.ProtectKeysWithDpapi();
+
+builder.Services.AddSingleton<ProtectedTokenStore>();
+builder.Services.AddSingleton<QueueAuthorizer>();
+builder.Services.AddSingleton<QueueRemover>();
 builder.Services.AddSingleton<QueueService>();
 
 var app = builder.Build();

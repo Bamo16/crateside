@@ -186,13 +186,17 @@ optional and is a deliberate behaviour change from the cmdlet — not a silent f
 
 ## Open
 
-- **What if the user simply deletes stems instead of moving them?** Raised
-  2026-08-12, unaddressed. Deletion and completion look identical from staging —
-  both are "no longer here" — but they mean opposite things, and the Queue's
-  removal predicate requires *a stem carrying that video ID on disk*, so a deleted
-  stem silently keeps its track queued forever. Not blocking the staging board;
-  decide it before the Queue's deletion path.
-- Nothing else blocking. `docs/adr/` here is empty by design — add one when crateside
+- ~~**What if the user simply deletes stems instead of moving them?**~~ **Decided
+  2026-08-13.** Automatic removal stays strictly "verdict + stems on disk", so a
+  track whose stems were deleted is never removed by machine — it surfaces as
+  **Stalled** and gets a per-item delete button the user clicks themselves. No new
+  state, no age heuristic, and the predicate stays honest. Manual removal does no
+  qualification check at all: it is the user's explicit call.
+- ~~Paths are hardcoded to this machine.~~ **Decided.** `CratesidePaths`, bound
+  from `appsettings.json`, defaulted to this machine's real paths — works with no
+  configuration, overridable without a rebuild.
+- Nothing blocking. `docs/adr/` here is empty by design — add one when crateside
   makes a decision of its own; the architecture is already recorded in keytag.
-- Paths are hardcoded to this machine (`P:\RYAN\Ableton\…`, `V:\Repos\keytag`).
-  Config vs constants is a v1 call, unmade.
+- **v1 is complete** once deletion has been exercised against the real playlist.
+  The remaining known gaps are deliberate: scheduling is v2, and the `.asd` warp
+  markers are a future capability with their own ADR if ever wanted.

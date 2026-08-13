@@ -9,10 +9,24 @@ namespace Crateside.Core.Queue;
 public sealed class QueueService(
     IOptions<CratesidePaths> paths,
     QueueSettingsStore settings,
-    YouTubeQueueReader reader
+    YouTubeQueueReader reader,
+    QueueAuthorizer authorizer,
+    QueueRemover remover
 )
 {
     private readonly CratesidePaths _paths = paths.Value;
+
+    /// <summary>Whether an OAuth client exists, so deletion is possible at all.</summary>
+    public bool CanAuthorize => authorizer.IsConfigured;
+
+    /// <summary>Whether consent is currently held. False is an ordinary state, not an error.</summary>
+    public bool IsAuthorized => authorizer.IsConfigured && authorizer.HasStoredToken;
+
+    /// <summary>Runs the interactive consent flow. Only from an explicit user action.</summary>
+    public Task ConsentAsync(CancellationToken cancellationToken = default) =>
+        authorizer.ConsentAsync(cancellationToken);
+
+    public Task SignOutAsync() => authorizer.SignOutAsync();
 
     /// <summary>Whether an API key is available. Without one, nothing can be read.</summary>
     public bool HasCredential => reader.HasCredential;
@@ -62,4 +76,32 @@ public sealed class QueueService(
             ],
         };
     }
+
+    /// <summary>
+    /// Removes every fully-processed item from the playlist.
+    /// </summary>
+    /// <remarks>
+    /// <strong>Re-reads and re-tests before deleting.</strong> The caller passes nothing: the
+    /// set to remove is derived here, at the moment of removal, rather than taken from
+    /// whatever a page happened to render earlier. A stale page must never be able to delete
+    /// something that has since stopped qualifying.
+    /// </remarks>
+    public async Task<IReadOnlyList<RemovalResult>> RemoveProcessedAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        var view = await ReadAsync(cancellationToken);
+
+        return await remover.RemoveAsync(view.FullyProcessed, cancellationToken);
+    }
+
+    /// <summary>
+    /// Removes specific items the user picked by hand — the escape hatch for anything the
+    /// automatic predicate will never claim, such as a track whose stems were deleted rather
+    /// than moved. Deliberately does no qualification check: this is the user's explicit call.
+    /// </summary>
+    public Task<IReadOnlyList<RemovalResult>> RemoveAsync(
+        IReadOnlyList<QueueItem> items,
+        CancellationToken cancellationToken = default
+    ) => remover.RemoveAsync(items, cancellationToken);
 }

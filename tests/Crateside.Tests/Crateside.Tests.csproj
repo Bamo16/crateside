@@ -5,6 +5,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <!-- DataProtectionProvider.Create, for standing up a real key ring in tests. -->
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection.Extensions" Version="10.0.11" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
         <PackageReference Include="TagLibSharp" Version="2.3.0" />
         <PackageReference Include="xunit.v3" Version="3.2.2" />
