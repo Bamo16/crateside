@@ -22,7 +22,16 @@ public sealed partial class StagingBoard
     }
 
     /// <summary>The stem formats StemForge writes.</summary>
-    private static readonly string[] StemExtensions = [".flac", ".wav", ".aiff", ".mp3"];
+    internal static readonly string[] StemExtensions = [".flac", ".wav", ".aiff", ".mp3"];
+
+    /// <summary>
+    /// Whether a path is worth handing to the tag reader. Checking first matters: both stem
+    /// roots are roughly half <c>.asd</c> sidecars, and asking TagLib to open one throws — so
+    /// skipping them avoids hundreds of exceptions per scan, which is the expensive way to
+    /// discover a file is not audio.
+    /// </summary>
+    internal static bool IsStemFile(string path) =>
+        StemExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Reads the staging folder and rolls its stems up into songs, newest-looking first.
@@ -37,9 +46,7 @@ public sealed partial class StagingBoard
 
         var stems = Directory
             .EnumerateFiles(stagingRoot, "*", SearchOption.TopDirectoryOnly)
-            .Where(p =>
-                StemExtensions.Contains(Path.GetExtension(p), StringComparer.OrdinalIgnoreCase)
-            )
+            .Where(IsStemFile)
             .Select(path => new { Path = path, Tags = _tagReader.Read(path) })
             .ToArray();
 

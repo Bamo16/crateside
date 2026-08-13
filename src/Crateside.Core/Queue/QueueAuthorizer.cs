@@ -100,6 +100,45 @@ public sealed class QueueAuthorizer(IOptions<QueueOptions> options, ProtectedTok
     /// <summary>Forgets the stored token, so the next write needs fresh consent.</summary>
     public Task SignOutAsync() => tokenStore.ClearAsync();
 
+    /// <summary>
+    /// The YouTube channel the stored token actually belongs to, or null if unknown.
+    /// </summary>
+    /// <remarks>
+    /// Worth surfacing, because the failure it diagnoses is otherwise invisible: a Google
+    /// account can own several channels, consent grants whichever one was picked at the
+    /// consent screen, and deleting from a playlist owned by a <em>different</em> channel
+    /// fails as a bare 403. Costs 1 quota unit.
+    /// </remarks>
+    public async Task<string?> GetAuthorizedChannelAsync(
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (await TryGetCredentialAsync(cancellationToken) is not { } credential)
+            return null;
+
+        try
+        {
+            using var service = new YouTubeService(
+                new Google.Apis.Services.BaseClientService.Initializer
+                {
+                    ApplicationName = "crateside",
+                    HttpClientInitializer = credential,
+                }
+            );
+
+            var request = service.Channels.List("snippet");
+            request.Mine = true;
+
+            var response = await request.ExecuteAsync(cancellationToken);
+
+            return response.Items?.FirstOrDefault()?.Snippet?.Title;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
     private ClientSecrets ClientSecrets =>
         new() { ClientId = _options.ClientId, ClientSecret = _options.ClientSecret };
 }

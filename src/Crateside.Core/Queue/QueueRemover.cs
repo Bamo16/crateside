@@ -102,8 +102,40 @@ public sealed class QueueRemover(QueueAuthorizer authorizer)
                 PlaylistItemId = item.PlaylistItemId,
                 Title = item.Title,
                 Removed = false,
-                Reason = e.Error?.Message ?? e.Message,
+                Reason = Describe(e),
             };
         }
+    }
+
+    /// <summary>
+    /// Turns a Google API failure into something diagnosable. The HTTP status alone is
+    /// useless here — every interesting way a delete can fail is a 403, and it is the
+    /// <c>reason</c> code that says which, so that is what gets surfaced.
+    /// </summary>
+    private static string Describe(GoogleApiException e)
+    {
+        var reason = e.Error?.Errors?.FirstOrDefault()?.Reason;
+        var message = e.Error?.Message ?? e.Message;
+
+        return reason switch
+        {
+            null => message,
+
+            // The token is valid but belongs to an account that does not own the playlist.
+            // A Google account can own several YouTube channels, and consent grants whichever
+            // one was picked at the consent screen.
+            "playlistItemsNotAccessible" or "playlistOperationUnsupported" or "forbidden" =>
+                $"{reason}: the authorized account cannot modify this playlist. Check that "
+                    + "consent was granted for the channel that owns it.",
+
+            "insufficientPermissions" =>
+                $"{reason}: the token was not granted the youtube scope. Use \"Forget access\" "
+                    + "and grant again.",
+
+            "quotaExceeded" or "rateLimitExceeded" =>
+                $"{reason}: out of quota. Each delete costs 50 units of the daily 10,000.",
+
+            _ => $"{reason}: {message}",
+        };
     }
 }

@@ -153,6 +153,12 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                     Remove @_view.FullyProcessed.Count processed from the playlist
                 </button>
                 <button class="link" @onclick="SignOut">Forget access</button>
+                @* Consent grants one channel, and a Google account can own several. Deleting
+                   from a playlist owned by a different one fails as a bare 403, so say which. *@
+                <span class="removal-detail">
+                    Authorized as <strong>@(_authorizedChannel ?? "…")</strong>. Removal only
+                    works if that channel owns the playlist.
+                </span>
             }
         </div>
     }
@@ -186,6 +192,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     private bool _working;
     private bool _confirmingRemoveAll;
     private IReadOnlyList<RemovalResult>? _removals;
+    private string? _authorizedChannel;
 
     private void TogglePin(string playlistItemId)
     {
@@ -280,6 +287,9 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         try
         {
             _view = await QueueService.ReadAsync();
+
+            if (QueueService.IsAuthorized)
+                _authorizedChannel = await QueueService.GetAuthorizedChannelAsync();
         }
         catch (QueueUnavailableException e)
         {

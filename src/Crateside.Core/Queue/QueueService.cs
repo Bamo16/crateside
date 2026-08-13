@@ -26,6 +26,10 @@ public sealed class QueueService(
     public Task ConsentAsync(CancellationToken cancellationToken = default) =>
         authorizer.ConsentAsync(cancellationToken);
 
+    /// <summary>Which channel the stored consent belongs to, or null if unknown.</summary>
+    public Task<string?> GetAuthorizedChannelAsync(CancellationToken cancellationToken = default) =>
+        authorizer.GetAuthorizedChannelAsync(cancellationToken);
+
     public Task SignOutAsync() => authorizer.SignOutAsync();
 
     /// <summary>Whether an API key is available. Without one, nothing can be read.</summary>

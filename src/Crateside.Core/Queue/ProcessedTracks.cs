@@ -69,6 +69,12 @@ public sealed class ProcessedTracks
         {
             foreach (var path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
             {
+                // Roughly half the files under a stem root are .asd sidecars, and asking
+                // TagLib to open one throws — hundreds of exceptions per scan is an expensive
+                // way to learn a file is not audio.
+                if (!StagingBoard.IsStemFile(path))
+                    continue;
+
                 if (reader.Read(path)?.SourceVideoId is not { } videoId)
                     continue;
 
