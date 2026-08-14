@@ -114,12 +114,12 @@ public sealed partial class TagAuditReport(IReadOnlyList<TaggedStem> stems)
     /// the verdict superseded it; the audit does not claim to know which.
     /// </summary>
     public IReadOnlyList<TaggedStem> Disagreements { get; } =
-        [
-            .. stems.Where(s =>
-                s is { AppliedKey: { } applied, LedgerKey: { } verdict }
-                && !applied.Equals(verdict, StringComparison.OrdinalIgnoreCase)
-            ),
-        ];
+    [
+        .. stems.Where(s =>
+            s is { AppliedKey: { } applied, LedgerKey: { } verdict }
+            && !applied.Equals(verdict, StringComparison.OrdinalIgnoreCase)
+        ),
+    ];
 
     /// <summary>
     /// A taggable verdict exists but no key was applied — the step was skipped. Deliberately
@@ -129,11 +129,10 @@ public sealed partial class TagAuditReport(IReadOnlyList<TaggedStem> stems)
     /// and should move into <see cref="ProblemCount"/>.</strong>
     /// </summary>
     public IReadOnlyList<TaggedStem> Untagged { get; } =
-        [.. stems.Where(s => s is { AppliedKey: null, HasTaggableVerdict: true })];
+    [.. stems.Where(s => s is { AppliedKey: null, HasTaggableVerdict: true })];
 
     /// <summary>Tagged with a tonic but no mode, or the reverse. Half a key is not a key.</summary>
-    public IReadOnlyList<TaggedStem> PartialKeys { get; } =
-        [.. stems.Where(s => s.HasPartialKey)];
+    public IReadOnlyList<TaggedStem> PartialKeys { get; } = [.. stems.Where(s => s.HasPartialKey)];
 
     /// <summary>
     /// Songs whose own stems carry different keys — grouped by source video ID, which survives
@@ -238,7 +237,8 @@ public sealed record InconsistentSong
     /// <summary>The distinct keys in play, which is the whole finding.</summary>
     public IReadOnlyList<string> AppliedKeys =>
         [
-            .. Stems.Select(s => s.AppliedKey)
+            .. Stems
+                .Select(s => s.AppliedKey)
                 .OfType<string>()
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Order(StringComparer.OrdinalIgnoreCase),
