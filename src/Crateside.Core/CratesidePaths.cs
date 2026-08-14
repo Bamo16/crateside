@@ -7,10 +7,17 @@ namespace Crateside.Core;
 /// they are settable so a test — or another machine — is not stuck with them.
 /// </summary>
 /// <remarks>
-/// The handoff left "config vs constants" as an unmade v1 call. This is the middle: bindable
-/// from <c>appsettings.json</c>, but with working defaults so nothing has to be configured to
-/// run. crateside reads all of these and writes none of them — the stem destinations below are
+/// <para>
+/// The middle ground between config and constants: bindable from <c>appsettings.json</c>, but
+/// with working defaults so nothing has to be configured to run.
+/// </para>
+/// <para>
+/// crateside reads all of these. It writes exactly one thing: the
+/// <c>Ableton Folder Info</c> XMP under <see cref="SampleStaging"/>, and only there
+/// (ADR 0003). <see cref="MashupSamples"/> is the finished library and is never written —
+/// it holds hand-applied tags crateside knows nothing about. The stem destinations are
 /// where it <em>directs</em> the separator's output, not somewhere it puts files itself.
+/// </para>
 /// </remarks>
 public sealed class CratesidePaths
 {

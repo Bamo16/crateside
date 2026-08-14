@@ -1,0 +1,142 @@
+# 0003 — crateside may write Ableton's tag store
+
+- Status: Accepted
+- Date: 2026-08-14
+- Supersedes the first decision of keytag ADR 0001 ("do not write the Ableton XMP"),
+  on measurement. That ADR's other decisions stand.
+
+## Context
+
+keytag ADR 0001 decided that no tool should write Ableton's
+`Ableton Folder Info\<uuid>.xmp`. It gave three reasons:
+
+1. *"The user keeps Ableton open at all times, and Ableton owns/rewrites that file while
+   running (an external edit would be clobbered)."*
+2. *"The user is also uneasy about a tool modifying it."*
+3. *"The tagging step is a deliberate, hands-on part of their warp workflow, not a click
+   worth automating away."*
+
+**Reasons 2 and 3 were the user's, and the user withdrew them on 2026-08-14** — noting
+also that 3 was never independent, but derived from 2: they had said they did not want it
+automated, and an agent wrote that preference up as a workflow principle.
+
+That left reason 1 alone, and reason 1 had **never been tested**. The word "owns" was
+doing a great deal of work, and "an external edit would be clobbered" was an inference
+stated as a fact. This is the same failure mode as ADR 0001's GPU premise and ADR 0002's
+`.asd` reading, so it was measured rather than argued.
+
+The prompt was a real problem: the user has mis-tagged a stem by hand and caught it only
+by chance. If crateside can read the tags it can flag disagreement with the ledger — and
+if it can *write* them, that class of error disappears.
+
+## How it was measured
+
+An isolated watched folder, `Crateside XMP Test`, with five copied stems — no risk to
+either real root, and fully reproducible content. Both real XMPs were backed up first.
+Ableton 12.4.3, running throughout except for the final step. Each step was performed by
+the user in the UI or by crateside on disk, never both at once, and the file was read
+back after each.
+
+## What was found
+
+1. **The file is not locked.** An external write succeeded with Ableton running. "Owns"
+   is false in the exclusive sense.
+2. **Ableton picks up external edits without a restart**, and without the folder being
+   re-added. In the final test it required *no interaction at all* — Ableton is watching
+   the file, not re-reading it on selection.
+3. **External tags reach the search index, not just the Tag Editor.** Filtering by key
+   found an externally-tagged file that had never been clicked. This is the one that
+   matters, because filtering by key in the browser is what the tags are *for*.
+4. **Ableton merges; it does not rewrite from memory.** After an external edit, tagging a
+   different file through the UI preserved every external entry *and their insertion
+   order*, appending the new one at the end. A write from an in-memory index would have
+   dropped the entries it did not know about.
+5. **Disk is authoritative.** After the XMP was deleted and replaced with a hand-written
+   one, every tag not in the new file vanished from the browser's filters. Ableton did not
+   defend its own earlier writes.
+6. **crateside can create the file from nothing** — directory included — for a file
+   Ableton had never indexed, and Ableton honoured it.
+7. **Quitting flushes nothing.** The file was byte-identical after shutdown.
+8. **A malformed keyword permanently pollutes the tag vocabulary.** A `Key|F#` written
+   with ASCII `#` instead of U+266F was not rejected and did not fail — Ableton registered
+   it as a *new user-created tag*, which then appeared as a second "F#" in the Key group
+   alongside the built-in one. Correcting the file did not retract it; it had to be
+   deleted by hand, and only custom tags offer that option. **The vocabulary lives outside
+   the folder XMP** — removing the tag did not modify the file at all.
+
+## Decision
+
+**crateside may write the Ableton tag store for the `Sample Staging` root.** Specifically:
+
+- **Write the key and type tags it already knows** — the ledger verdict, and
+  Vocal/Instrumental from the stem's own provenance.
+- **Validate every keyword against the exact vocabulary before writing.** Sharps are
+  **U+266F**, never ASCII `#`. Finding 8 makes this non-negotiable: a typo is worse than a
+  no-op, because it silently creates a permanent bogus tag that only the user can remove.
+- **Match Ableton's file format byte-for-byte**: UTF-8, **no BOM**, and **no XML
+  declaration** — Ableton's own file has none, and a writer that adds one is not
+  round-tripping.
+- **Read-modify-write**, preserving entries crateside did not create; create the directory
+  and file when absent.
+- **`Sample Staging` only. Never `Mashup Samples`.** The finished library is the user's,
+  holds hand-applied tags crateside knows nothing about, and has no reason to be written.
+
+**The user does not hand-tag in staging.** Their rule, offered when the question was still
+open: staging holds only stems, the only tags they ever apply there are key and
+vocal/instrumental, and crateside can do both. Anything special — an extra tag, a
+correction — means moving the stem to `Mashup Samples` first, where crateside never
+writes. This makes the concurrent-write question *moot* rather than solved, which is
+better: the tests above never had both writers active simultaneously, so that is the one
+scenario still unmeasured.
+
+## Alternatives considered
+
+**Keep the prohibition and only flag disagreement.** The read-only half of this, already
+sanctioned by ADR 0001 itself ("the record and the user's Ableton tag can diverge until an
+XMP-read reconciliation feature exists — which is fine, and is itself the *was the tool
+right?* signal"). **This is still being built**, because it is valuable whether or not
+crateside writes: the user may still tag by hand in `Mashup Samples`, and a supersede in
+the ledger can put a correct tag out of date. Rejected only as a *replacement* for
+writing — it detects the error class instead of eliminating it.
+
+**Write only while Ableton is closed.** The conservative reading, and what the evidence
+would have supported had finding 4 gone the other way. Unnecessary given findings 1–7, and
+close to useless in practice: the user keeps Ableton open at all times, so crateside would
+have to queue writes indefinitely.
+
+**Write the portable `INITIALKEY` file tag instead** (keytag ADR 0001 decision 3). Solves a
+different problem — metadata portability across DAWs — and does nothing for the Ableton
+browser, which is where the filtering happens. Still worth doing one day; not a substitute.
+
+## Consequences
+
+- **Tagging leaves the "human-limited steps."** That term is defined in keytag's
+  `CONTEXT.md` as warping, tagging and sometimes renaming, and it is part of what this
+  whole project is organised around. Warping remains, and the user still opens the stems in
+  Ableton, so the saving is the clicks and — more valuable — the elimination of a real
+  error class. **keytag's `CONTEXT.md` needs amending**, along with ADR 0001 itself.
+- **crateside now writes into the library.** `CratesidePaths` documented that it writes
+  nothing; that is no longer true, and the boundary is now "reads everything, writes the
+  staging XMP and nothing else."
+- **The Staging board's "tagged" column becomes partly self-inflicted.** It has always
+  reported what Ableton holds; some of that will now be crateside's own writing. It stays
+  purely derived — it still reports the file, not an intention — but "tagged" stops being
+  evidence that a *human* looked at it.
+- **Untested: simultaneous writes.** Every measurement above was sequential. The user's
+  no-hand-tagging rule is what keeps that from mattering; if that rule is ever broken, this
+  ADR does not cover what happens.
+- **Untested: file removal.** Adding a file was covered (finding 6); removing one, and the
+  user's report that emptying a folder deletes the XMP entirely, were not. crateside
+  already treats an absent XMP as an ordinary empty state, so the risk is low.
+- The test folder `P:\RYAN\Ableton\Crateside XMP Test` and its five `XMPTEST-*.flac` files
+  exist only for this and should be deleted, and the watched folder removed in Ableton.
+
+## Postscript
+
+Third decision in this repo found to rest on an unverified premise, after ADR 0001's GPU
+claim and ADR 0002's `.asd` reading — and the third to be settled in minutes once someone
+actually looked. Worth noticing that all three were *inherited* rather than invented: each
+was written down confidently by whoever was there first, and then cited rather than
+checked. A recorded decision carries its premise forward with the same authority as its
+conclusion, and nothing in the format distinguishes the measured parts from the plausible
+ones.
