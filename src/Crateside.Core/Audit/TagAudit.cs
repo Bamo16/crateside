@@ -5,99 +5,29 @@ using Crateside.Core.Staging;
 namespace Crateside.Core.Audit;
 
 /// <summary>
-/// Checks the key tags actually applied in Ableton, across every stem root — including the
-/// finished library.
+/// Reads every stem's applied Ableton tags and hands them to <see cref="TagAuditReport"/>,
+/// which does the interpreting.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The staging board already flags a disagreement, but only for stems still <em>in</em>
-/// staging. A stem that was mis-tagged and then moved to <c>Mashup Samples</c> leaves the board
-/// and is never looked at again — which is the case that actually bites, because the applied
-/// tag is what pairing uses, so a wrong one silently misroutes mashups for as long as it lives.
-/// </para>
-/// <para>
-/// Two independent checks, because they cover different stems:
-/// </para>
-/// <list type="bullet">
-/// <item><strong>Against the ledger</strong> — the applied key versus the current verdict.
-/// Only possible for stems the ledger knows.</item>
-/// <item><strong>Against each other</strong> — two stems of one song must carry the same key,
-/// since key is a song-level fact. This needs no verdict at all, so it reaches the large
-/// share of the library that predates the ledger.</item>
-/// </list>
-/// <para>
-/// <strong>A ledger disagreement does not say who is wrong.</strong> It has two causes that
-/// look identical from here: the tag was applied incorrectly, or the ledger superseded it with
-/// a better verdict afterwards. Nothing records when a tag was written, so crateside reports
-/// both sides and leaves the judgement to the user. A <em>sibling</em> disagreement is
-/// different — it is wrong on its own terms whatever the ledger says.
+/// The staging board already flags a stem whose Ableton key disagrees with the verdict, but
+/// only while the stem is still <em>in</em> staging. One that was mis-tagged and then moved to
+/// <c>Mashup Samples</c> leaves the board and is never looked at again — which is the case that
+/// actually bites, because the applied tag is what pairing uses, so a wrong one silently
+/// misroutes mashups for as long as it lives.
 /// </para>
 /// <para>
 /// Read-only, and safe while Ableton is running.
 /// </para>
 /// </remarks>
-public static partial class TagAudit
+public static class TagAudit
 {
     public static TagAuditReport Run(
         KeyLedger ledger,
         IEnumerable<string> stemRoots,
         StemTagReader? tagReader = null,
         AbletonFolderInfoReader? folderInfoReader = null
-    )
-    {
-        var stems = Scan(ledger, stemRoots, tagReader, folderInfoReader);
-
-        return new TagAuditReport
-        {
-            Disagreements =
-            [
-                .. stems.Where(s =>
-                    s.AppliedKey is { } applied
-                    && s.LedgerKey is { } verdict
-                    && !applied.Equals(verdict, StringComparison.OrdinalIgnoreCase)
-                ),
-            ],
-            // Only a finding when there was something to tag with — a withheld verdict is
-            // *supposed* to leave the stem untagged, and reporting it would train the user to
-            // ignore the list.
-            Untagged = [.. stems.Where(s => s.AppliedKey is null && s.HasTaggableVerdict)],
-            PartialKeys = [.. stems.Where(s => s.HasPartialKey)],
-            Inconsistencies = FindInconsistencies(stems),
-            AgreedCount = stems.Count(s =>
-                s.AppliedKey is { } applied
-                && s.LedgerKey is { } verdict
-                && applied.Equals(verdict, StringComparison.OrdinalIgnoreCase)
-            ),
-            NoVerdictCount = stems.Count(s => s.Song is null),
-            ScannedCount = stems.Count,
-        };
-    }
-
-    /// <summary>
-    /// Songs whose stems disagree with each other. Grouped by source video ID, which survives
-    /// the rename step where filenames do not.
-    /// </summary>
-    private static IReadOnlyList<InconsistentSong> FindInconsistencies(
-        IReadOnlyList<TaggedStem> stems
-    ) =>
-        [
-            .. stems
-                .Where(s => s.AppliedKey is not null)
-                .GroupBy(s => s.SourceVideoId, StringComparer.Ordinal)
-                .Where(g =>
-                    g.Select(s => s.AppliedKey).Distinct(StringComparer.OrdinalIgnoreCase).Count()
-                    > 1
-                )
-                .Select(g => new InconsistentSong
-                {
-                    SourceVideoId = g.Key,
-                    Label =
-                        g.Select(s => s.Song).FirstOrDefault(s => s is not null)
-                        ?? StripPresetSuffix(g.First().FileName),
-                    LedgerKey = g.Select(s => s.LedgerKey).FirstOrDefault(k => k is not null),
-                    Stems = [.. g],
-                }),
-        ];
+    ) => new(Scan(ledger, stemRoots, tagReader, folderInfoReader));
 
     private static List<TaggedStem> Scan(
         KeyLedger ledger,
@@ -134,10 +64,10 @@ public static partial class TagAudit
                         FileName = Path.GetFileName(path),
                         Root = root,
                         SourceVideoId = videoId,
-                        Song = hasVerdict ? run!.Song : null,
-                        LedgerKey = hasVerdict ? run!.Key : null,
+                        Song = run?.Song,
+                        LedgerKey = run?.Key,
                         HasTaggableVerdict = hasVerdict && run!.HasTaggableKey,
-                        Confidence = hasVerdict ? run!.Confidence : KeyConfidence.Unknown,
+                        Confidence = run?.Confidence ?? KeyConfidence.Unknown,
                         AppliedKey = applied?.Key,
                         HasPartialKey = applied?.HasPartialKey ?? false,
                     }
@@ -147,52 +77,117 @@ public static partial class TagAudit
 
         return stems;
     }
-
-    /// <summary>Drops StemForge's trailing <c>(Vocal - Full)</c> so siblings read as one song.</summary>
-    private static string StripPresetSuffix(string fileName) =>
-        PresetSuffix().Replace(Path.GetFileNameWithoutExtension(fileName), string.Empty).Trim();
-
-    [GeneratedRegex(@"\s*\([^()]*\)\s*$")]
-    private static partial Regex PresetSuffix();
 }
 
-/// <summary>What the audit found.</summary>
-public sealed record TagAuditReport
+/// <summary>
+/// What the audit found. Every property is a different reading of the same stem list, so the
+/// list is the constructor's whole input and none of the readings are settable.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Two independent checks, because they cover different stems:
+/// </para>
+/// <list type="bullet">
+/// <item><strong>Against the ledger</strong> — the applied key versus the current verdict.
+/// Only possible for stems the ledger knows.</item>
+/// <item><strong>Against each other</strong> — two stems of one song must carry the same key,
+/// since key is a song-level fact. This needs no verdict at all, so it reaches the large share
+/// of the library that predates the ledger.</item>
+/// </list>
+/// <para>
+/// <strong>A ledger disagreement does not say who is wrong.</strong> It has two causes that
+/// look identical from here: the tag was applied incorrectly, or the ledger superseded it with
+/// a better verdict afterwards. Nothing records when a tag was written, so crateside reports
+/// both sides and leaves the judgement to the user. A <em>sibling</em> disagreement is
+/// different — it is wrong on its own terms whatever the ledger says.
+/// </para>
+/// <para>
+/// <c>stems</c> is read by the initializers below and then goes away: a primary constructor
+/// parameter used only in initializers is not captured into a field, so the full list is not
+/// retained or exposed.
+/// </para>
+/// </remarks>
+public sealed partial class TagAuditReport(IReadOnlyList<TaggedStem> stems)
 {
     /// <summary>
     /// Applied key and current verdict both present and different. Either the tag is wrong or
     /// the verdict superseded it; the audit does not claim to know which.
     /// </summary>
-    public required IReadOnlyList<TaggedStem> Disagreements { get; init; }
+    public IReadOnlyList<TaggedStem> Disagreements { get; } =
+        [
+            .. stems.Where(s =>
+                s is { AppliedKey: { } applied, LedgerKey: { } verdict }
+                && !applied.Equals(verdict, StringComparison.OrdinalIgnoreCase)
+            ),
+        ];
 
-    /// <summary>A taggable verdict exists but no key was applied — the step was skipped.</summary>
-    public required IReadOnlyList<TaggedStem> Untagged { get; init; }
+    /// <summary>
+    /// A taggable verdict exists but no key was applied — the step was skipped. Deliberately
+    /// <em>not</em> counted as a problem while tagging is still the user's job: it is ordinary
+    /// work in progress, and a badge that lit up mid-batch would train them to ignore it.
+    /// <strong>Once crateside owns tagging (ADR 0003), an untagged stem stops being ordinary
+    /// and should move into <see cref="ProblemCount"/>.</strong>
+    /// </summary>
+    public IReadOnlyList<TaggedStem> Untagged { get; } =
+        [.. stems.Where(s => s is { AppliedKey: null, HasTaggableVerdict: true })];
 
     /// <summary>Tagged with a tonic but no mode, or the reverse. Half a key is not a key.</summary>
-    public required IReadOnlyList<TaggedStem> PartialKeys { get; init; }
+    public IReadOnlyList<TaggedStem> PartialKeys { get; } =
+        [.. stems.Where(s => s.HasPartialKey)];
 
     /// <summary>
-    /// Songs whose own stems carry different keys. Needs no verdict, so this is the only check
-    /// that reaches stems the ledger has never seen.
+    /// Songs whose own stems carry different keys — grouped by source video ID, which survives
+    /// the rename step where filenames do not. Needs no verdict, so this is the only check that
+    /// reaches stems the ledger has never seen.
     /// </summary>
-    public required IReadOnlyList<InconsistentSong> Inconsistencies { get; init; }
+    public IReadOnlyList<InconsistentSong> Inconsistencies { get; } = FindInconsistencies(stems);
 
     /// <summary>Stems whose applied tag matches the current verdict exactly.</summary>
-    public required int AgreedCount { get; init; }
+    public int AgreedCount { get; } =
+        stems.Count(s =>
+            s is { AppliedKey: { } applied, LedgerKey: { } verdict }
+            && applied.Equals(verdict, StringComparison.OrdinalIgnoreCase)
+        );
 
     /// <summary>Stems with provenance the ledger has never seen.</summary>
-    public required int NoVerdictCount { get; init; }
+    public int NoVerdictCount { get; } = stems.Count(s => s.Song is null);
 
     /// <summary>Every stem carrying usable provenance, whether or not it produced a finding.</summary>
-    public required int ScannedCount { get; init; }
+    public int ScannedCount { get; } = stems.Count;
 
-    /// <summary>
-    /// Findings worth showing a badge for. <see cref="Untagged"/> is excluded: it is ordinary
-    /// work-in-progress, not something wrong.
-    /// </summary>
+    /// <summary>Findings worth showing a badge for. See <see cref="Untagged"/> for what is not.</summary>
     public int ProblemCount => Disagreements.Count + PartialKeys.Count + Inconsistencies.Count;
 
     public bool IsClean => ProblemCount == 0;
+
+    private static IReadOnlyList<InconsistentSong> FindInconsistencies(
+        IReadOnlyList<TaggedStem> stems
+    ) =>
+        [
+            .. stems
+                .Where(s => s.AppliedKey is not null)
+                .GroupBy(s => s.SourceVideoId, StringComparer.Ordinal)
+                .Where(g =>
+                    g.Select(s => s.AppliedKey).Distinct(StringComparer.OrdinalIgnoreCase).Count()
+                    > 1
+                )
+                .Select(g => new InconsistentSong
+                {
+                    SourceVideoId = g.Key,
+                    Label =
+                        g.Select(s => s.Song).FirstOrDefault(s => s is not null)
+                        ?? StripPresetSuffix(g.First().FileName),
+                    LedgerKey = g.Select(s => s.LedgerKey).FirstOrDefault(k => k is not null),
+                    Stems = [.. g],
+                }),
+        ];
+
+    /// <summary>Drops StemForge's trailing <c>(Vocal - Full)</c> so siblings read as one song.</summary>
+    private static string StripPresetSuffix(string fileName) =>
+        PresetSuffix.Replace(Path.GetFileNameWithoutExtension(fileName), string.Empty).Trim();
+
+    [GeneratedRegex(@"\s*\([^()]*\)\s*$")]
+    private static partial Regex PresetSuffix { get; }
 }
 
 /// <summary>One stem, as the audit sees it: what the ledger says, and what Ableton has.</summary>
@@ -243,8 +238,7 @@ public sealed record InconsistentSong
     /// <summary>The distinct keys in play, which is the whole finding.</summary>
     public IReadOnlyList<string> AppliedKeys =>
         [
-            .. Stems
-                .Select(s => s.AppliedKey)
+            .. Stems.Select(s => s.AppliedKey)
                 .OfType<string>()
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .Order(StringComparer.OrdinalIgnoreCase),
