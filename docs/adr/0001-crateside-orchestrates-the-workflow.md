@@ -2,6 +2,8 @@
 
 - Status: Accepted
 - Date: 2026-08-13
+- Amended: 2026-08-13, after the GPU-contention premise was measured wrong. See
+  **Correction** below; the original reasoning is left in place rather than rewritten.
 
 ## Context
 
@@ -56,6 +58,7 @@ wrong that a human is the transport.
 - **Evidence runs (A)** run whenever, unattended.
 - **Verdict runs (B)** are scheduled opportunistically to soak up idle Claude quota.
 - **Separation (C)** stays **ad-hoc and button-driven**, exactly as ADR 0003 decided.
+  *(Superseded same day — see **Correction**. C now drains continuously.)*
 
 ADR 0003's *"processing stays ad-hoc; scheduling is an explicit v2"* is **not
 overturned**. Its entire stated justification is GPU contention — "a batch is ~2 hours
@@ -112,6 +115,50 @@ N unjudged tracks", failing fast when quota is exhausted and resuming later. Thi
 converts an unanswerable prediction problem into a retry problem. Failures are
 persisted with a strike count so a poisoned track stops being retried nightly.
 
+## Correction — the GPU-contention premise was never measured
+
+Everything above about *when* separation may run rests on one sentence from ADR 0003:
+a batch is *"~2 hours of strictly serialized GPU work **that would make the machine
+unusable if it collided with the user**."* That sentence was inherited and restated
+here without ever being checked with the person whose machine it is.
+
+Checked, the same day, it is **wrong**. Two facts, from the user:
+
+- **More than one separation at a time brings the system to a standstill.** Absolute;
+  never do it.
+- **A single separation is essentially unnoticeable.** The GPU is audible and the room
+  warms slightly, but music production, coding and streaming all continue normally.
+
+So "two hours of GPU work" and "two hours of unusable machine" had been treated as the
+same fact, and are not. The real constraint is **concurrency, not contention** — and
+concurrency is exactly what `SeparationInterlock` already enforces. It turns out to be
+the only constraint rather than one of two.
+
+**Consequences of the correction:**
+
+- **Separation drains continuously and is on by default.** Requiring the user to pick a
+  moment was solving a problem that does not exist. The queue empties itself, one track
+  at a time, gated only by the interlock — the same shape as verdict runs, so the worker
+  is one loop rather than a scheduler plus a button.
+- **A pause control is kept, for a different reason.** Unnoticeable is not silent: with a
+  live microphone, fan noise is a real reason to stop for an hour. That is an occasional
+  judgement, not a gate on every batch.
+- **One track per invocation, not one batch.** `separate` does accept many inputs and
+  loop them serially, but batching made "the GPU is busy" and "this track is being
+  worked" two different facts sharing one PID. One track per process costs some repeated
+  start-up and buys dramatically simpler state, plus a pause that responds at track
+  boundaries instead of batch boundaries.
+- **StemForge's warm long-running Python process is deliberately not adopted.** It exists
+  in the GUI to avoid exactly the per-invocation start-up cost above, and pulling it in
+  would overcomplicate this for a saving that does not matter when nobody is waiting.
+- **ADR 0003's v2-scheduling decision is now genuinely superseded**, rather than
+  side-stepped as the original text of this ADR claimed. Its conclusion was reasonable
+  given its premise; the premise was simply never verified.
+
+The lesson is one this project keeps re-learning and is worth writing down: **a settled
+decision inherits the truth of its premise, and a premise nobody measured is not
+settled — it is only old.**
+
 ## Alternatives considered
 
 **Keep the human in the loop — crateside emits a prompt to copy/paste.** ADR 0003's
@@ -129,10 +176,11 @@ and reverses the dependency so that keytag's skill must know crateside exists.
 coupling and no API. Rejected as paste-a-blob wearing a hat — something still has to
 tell the agent to go and look.
 
-**Scheduling separation as well as judgment.** Rejected: ADR 0003's GPU-contention
-argument has not weakened, and a scheduled 2-hour GPU job must additionally know the
-user is absent, survive reboots, and handle the 7-day OAuth lapse unattended. "I'm
-going to bed, take the machine" is adequately expressed by a button.
+**Scheduling separation as well as judgment.** Originally rejected on the grounds that
+ADR 0003's GPU-contention argument had not weakened, and that a scheduled 2-hour job
+must know the user is absent. **Both grounds fell with the premise** — see
+**Correction**. A continuous drainer need not know whether the user is present, because
+their presence does not conflict with it. This is now the chosen design.
 
 **Cowork routines for the scheduled half.** Attractive because routines draw on a
 separate daily allowance the user is not otherwise spending. Rejected on a hard

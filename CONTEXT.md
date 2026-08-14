@@ -66,9 +66,12 @@ the two run types below are named after which of them they produce.
 - **Verdict run** — the stage that turns evidence into a **verdict**. The only
   stage that requires an agent, because weighing evidence and going to look for
   human corroboration is the only part of the workflow that genuinely needs one.
-- **Batch** — the set of tracks crateside selects to separate in one go. A batch is
-  a **separation** unit specifically: it exists because separation is serial and
-  hours long, so it is the thing the user chooses a moment for.
+- **Draining** — working the queue down continuously, one track at a time, for as
+  long as there is anything outstanding. The normal state of the system rather than
+  an action someone takes: what limits separation is that two at once are ruinous,
+  not that one costs the user their machine, so there is nothing to pick a moment
+  for. **Pausing** is the occasional exception — worth having because the GPU is
+  audible, and a live microphone is a real reason to stop for an hour.
 - **Stage** — one of evidence run, verdict run, or separation. Stages are named
   separately because each contends for a *different* scarce resource — nothing,
   Claude quota, and the GPU respectively — and so each wants its own moment to run.

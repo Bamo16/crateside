@@ -135,12 +135,4 @@ public class SeparationInterlockTests : IDisposable
 
         Assert.False(Interlock().Reconcile().FoundAnything);
     }
-
-    private sealed class FakeProcessProbe : IProcessProbe
-    {
-        public Dictionary<int, DateTimeOffset> Running { get; } = [];
-
-        public bool TryGetStartTime(int processId, out DateTimeOffset startedAt) =>
-            Running.TryGetValue(processId, out startedAt);
-    }
 }
