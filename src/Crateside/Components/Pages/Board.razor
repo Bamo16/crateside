@@ -77,6 +77,18 @@ else
                         {
                             <a class="key" href="@($"partners?key={Uri.EscapeDataString(key)}")"
                                title="Find partners for @key">@key</a>
+                            @* The tag is the collapse, and the collapse is one note away from
+                               what the track plays. Marked here rather than only on the evidence
+                               page because the moment it explains something — a pairing that
+                               sounds wrong for no visible reason — is the moment you would not
+                               have thought to go looking for it. *@
+                            @if (song.Verdict?.ModalKey is { } modal)
+                            {
+                                <span class="modal"
+                                      title="@($"Actually {modal}, collapsed to {key} for the Ableton tag so it still matches a Key filter. Pairings are ranked on the collapsed key, so this track carries one note the ranking does not know about.")">
+                                    @modal
+                                </span>
+                            }
                             <span class="confidence @song.Confidence.ToString().ToLowerInvariant()">
                                 @song.Confidence.ToString().ToUpperInvariant()
                             </span>

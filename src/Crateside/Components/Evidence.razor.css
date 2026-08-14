@@ -66,9 +66,26 @@
     border-top: none;
 }
 
-/* The tier badge is the whole point of the list: what a source is worth is more important
-   than what it said, because a confident tier-3 claim is still not an answer. */
-.tier {
+/* Whether the source backed the verdict, in one glyph at the head of the row. This is what
+   the schema split `states` for: it used to require reading every line of prose. */
+.stance {
+    flex: none;
+    width: 1rem;
+    text-align: center;
+    color: var(--muted);
+}
+
+.source.agrees .stance {
+    color: var(--ok);
+}
+
+.source.dissents .stance {
+    color: var(--warn);
+}
+
+/* The kind badge is the other half of the point: what a source is worth matters more than
+   what it said, because a confident algorithmic claim is still not an answer. */
+.kind {
     flex: none;
     min-width: 7.5rem;
     padding: 0.05rem 0.45rem;
@@ -81,30 +98,62 @@
     color: var(--muted);
 }
 
-.source.authoritative .tier {
+.source.authoritative .kind {
     color: var(--ok);
     border-color: var(--ok);
 }
 
-.source.corroborating .tier {
+.source.corroborating .kind {
     color: var(--accent);
     border-color: var(--accent);
 }
 
 /* Deliberately warned rather than neutral: its key may never be the basis of a verdict. */
-.source.chordrecogniser .tier {
+.source.chordrecogniser .kind {
     color: var(--warn);
     border-color: var(--warn);
 }
 
-.states {
+.states,
+.states-key {
     color: var(--text);
 }
 
-.recorded-tier {
+.states-key {
+    font-variant-numeric: tabular-nums;
+}
+
+.via,
+.note {
     color: var(--muted);
     font-size: 0.8rem;
     font-style: italic;
+}
+
+/* The prose is kept but folded away: it is worth reading when a row looks odd, and worth
+   staying out of the way when the machine-readable half already answered the question. */
+.source-prose {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.source-prose summary {
+    cursor: pointer;
+}
+
+.source-prose ul {
+    margin: 0.4rem 0 0;
+    padding-left: 1rem;
+}
+
+.source-prose .host {
+    color: var(--text);
+    margin-right: 0.4rem;
+}
+
+.tonic-check {
+    margin: 0 0 0.5rem;
 }
 
 .not-a-link {

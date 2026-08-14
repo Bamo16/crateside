@@ -89,21 +89,46 @@ public class RunEvidenceRealDataTests
     }
 
     [Fact]
-    public void A_source_is_classified_by_its_host_not_by_what_the_agent_typed()
+    public void Every_source_carries_a_kind_from_the_closed_set()
     {
         Assert.SkipUnless(Available, "The keytag ledger must be present.");
 
         var sources = All().SelectMany(e => e.Sources).ToList();
 
         Assert.NotEmpty(sources);
-        // The recorded tier carries three vocabularies plus free prose, so nothing may switch
-        // on it — but anything that resolves to a real link still gets a usable classification.
-        Assert.All(
-            sources.Where(s => s.Link is not null),
-            s => Assert.NotEqual(SourceTier.Unknown, s.Tier)
+        // The whole point of the closed vocabulary: nothing falls through. This is the assertion
+        // the old `tier` field could never have passed — it held over thirty distinct values.
+        Assert.All(sources, s => Assert.NotEqual(SourceKind.Unknown, s.Kind));
+        Assert.All(sources, s => Assert.NotEqual(SourceKind.Unclassified, s.Kind));
+        Assert.Contains(sources, s => s.Kind is SourceKind.Authoritative);
+        Assert.Contains(sources, s => s.Kind is SourceKind.Algorithmic);
+    }
+
+    [Fact]
+    public void A_sources_stance_on_the_verdict_is_computed_not_read()
+    {
+        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+
+        var sources = All().SelectMany(e => e.Sources).ToList();
+
+        // The single most useful thing the sources list can show, and for most of this record's
+        // life it could only be had by reading every line of prose. Both stances are real: the
+        // ledger contains sources that back the verdict and sources that argue with it.
+        Assert.Contains(sources, s => s.Stance is SourceStance.Agrees);
+        Assert.Contains(sources, s => s.Stance is SourceStance.Dissents);
+    }
+
+    [Fact]
+    public void A_source_with_no_page_still_says_where_it_came_from()
+    {
+        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+
+        // The user photographed sheet music: no host to classify by, and among the strongest
+        // evidence in the record. The old schema could only record that as a URL that wasn't one.
+        Assert.Contains(
+            All().SelectMany(e => e.Sources),
+            s => s.Url is null && s.Via is { Length: > 0 }
         );
-        Assert.Contains(sources, s => s.Tier is SourceTier.Authoritative);
-        Assert.Contains(sources, s => s.Tier is SourceTier.Algorithmic);
     }
 
     [Fact]
@@ -136,7 +161,7 @@ public class RunEvidenceRealDataTests
         // the basis of a verdict. The view has to be able to say so.
         Assert.Contains(
             All().SelectMany(e => e.Sources),
-            s => s.Tier is SourceTier.ChordRecogniser
+            s => s.Kind is SourceKind.ChordRecogniser
         );
     }
 

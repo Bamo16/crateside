@@ -35,6 +35,34 @@ public sealed record LedgerRun
     /// <summary>The tagged key in ASCII spelling (<c>G# major</c>), or null when withheld.</summary>
     public string? Key { get; init; }
 
+    /// <summary>
+    /// The diatonic mode, where a human source established one. Null means <em>nobody looked</em>,
+    /// which is true of most runs — not a claim that the song is plain major/minor.
+    /// </summary>
+    public string? Mode { get; init; }
+
+    /// <summary>
+    /// True when the tagged key is a <em>collapse</em> of something else — the track is modal,
+    /// and <see cref="Key"/> is its parallel major or minor.
+    /// </summary>
+    /// <remarks>
+    /// Worth a marker on the board rather than only on the evidence page. A collapsed key is one
+    /// note away from what the track actually plays (Dorian's natural sixth, Mixolydian's flat
+    /// seventh), so it is a candidate explanation when a pairing sounds wrong — and the moment
+    /// you need it, you do not yet know to go looking for it.
+    /// </remarks>
+    public bool IsCollapsed => Mode is not null and not "major" and not "minor";
+
+    /// <summary>The key as the song actually plays it (<c>D Dorian</c>), when that is known.</summary>
+    /// <remarks>
+    /// Reconstructed rather than stored: the collapse keeps the tonic, so the tagged key and the
+    /// mode together restate the original exactly and a second field could only drift.
+    /// </remarks>
+    public string? ModalKey =>
+        IsCollapsed && Key?.Split(' ') is [var tonic, ..] && Mode is { Length: > 0 } mode
+            ? $"{tonic} {char.ToUpperInvariant(mode[0])}{mode[1..]}"
+            : null;
+
     public KeyConfidence Confidence { get; init; }
 
     /// <summary>The warp starting point, not a tagged value. Rough by design.</summary>
@@ -62,6 +90,7 @@ public sealed record LedgerRun
             SourceUrl = dto.SourceUrl,
             SourceVideoId = StemProvenance.ExtractYouTubeVideoId(dto.SourceUrl),
             Key = dto.Verdict?.Key,
+            Mode = dto.Verdict?.Mode,
             Confidence = ParseConfidence(dto.Verdict?.Confidence),
             Bpm = dto.Bpm?.Value,
         };
@@ -120,6 +149,9 @@ internal sealed record LedgerRunDto
     {
         [JsonPropertyName("key")]
         public string? Key { get; init; }
+
+        [JsonPropertyName("mode")]
+        public string? Mode { get; init; }
 
         [JsonPropertyName("confidence")]
         public string? Confidence { get; init; }

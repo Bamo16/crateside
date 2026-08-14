@@ -31,7 +31,23 @@ public sealed record RunEvidence
     public required DateTimeOffset Timestamp { get; init; }
     public required string Song { get; init; }
 
-    /// <summary>The agent's chord/flicker note and confidence rationale. Always present.</summary>
+    /// <summary>The verdict's key, so a source's own answer can be compared against it.</summary>
+    public string? Key { get; init; }
+
+    /// <summary>
+    /// The diatonic mode, where a human source established one. Null means <em>nobody looked</em>
+    /// — not "plain major/minor". No detector can produce a mode, so this is always a judgment.
+    /// </summary>
+    public string? Mode { get; init; }
+
+    /// <summary>
+    /// The argument that the tonic is not its relative, made against the chords and the flicker.
+    /// Its own field because it is read <em>next to</em> the chords it argues about. Null on runs
+    /// recorded before the schema split it out — their prose is still in <see cref="Reasoning"/>.
+    /// </summary>
+    public string? TonicCheck { get; init; }
+
+    /// <summary>The confidence rationale, and anything else the agent thought worth saying.</summary>
     public string? Reasoning { get; init; }
 
     /// <summary>
@@ -138,6 +154,9 @@ public sealed record RunEvidence
         {
             Timestamp = dto.Timestamp ?? default,
             Song = dto.Song ?? string.Empty,
+            Key = dto.Verdict?.Key,
+            Mode = dto.Verdict?.Mode,
+            TonicCheck = dto.TonicCheck,
             Reasoning = dto.Reasoning,
             InputKind = dto.InputKind,
             Sources =
@@ -145,8 +164,13 @@ public sealed record RunEvidence
                 .. (dto.Sources ?? []).Select(s => new EvidenceSource
                 {
                     Url = s.Url,
+                    Via = s.Via,
                     States = s.States,
-                    RecordedTier = s.Tier,
+                    StatesKey = s.StatesKey,
+                    StatesMode = s.StatesMode,
+                    RecordedKind = s.Kind,
+                    Note = s.Note,
+                    VerdictKey = dto.Verdict?.Key,
                 }),
             ],
             Algorithms = AlgorithmResult.FromDto(dto.Machine?.Algorithms),
@@ -179,48 +203,88 @@ public sealed record RunEvidence
 /// <summary>An external source consulted for a verdict.</summary>
 public sealed partial record EvidenceSource
 {
+    /// <summary>The page, or null when there was none to visit.</summary>
     public string? Url { get; init; }
 
-    /// <summary>What the source said the key was.</summary>
+    /// <summary>
+    /// How the source was obtained, when that is not simply "this link". Carries the case a
+    /// URL cannot: <c>"user-provided image"</c> is the user photographing sheet music, which
+    /// is among the strongest evidence in the record and has no page at all.
+    /// </summary>
+    public string? Via { get; init; }
+
+    /// <summary>Everything the source said about the key, verbatim.</summary>
     public string? States { get; init; }
 
     /// <summary>
-    /// The tier string as the agent wrote it. Deliberately kept raw: in practice it carries
-    /// three different vocabularies plus free prose ("tier-3 (self-inconsistent)"), so it is
-    /// the agent's note about the source, not a value to switch on. Use <see cref="Tier"/>
-    /// for that.
+    /// What the source said, in the verdict's own spelling — so it compares. Null when the
+    /// source said something that is not a key, which is a fifth of them.
     /// </summary>
-    public string? RecordedTier { get; init; }
+    public string? StatesKey { get; init; }
+
+    /// <summary>The diatonic mode the source named, where it named one.</summary>
+    public string? StatesMode { get; init; }
+
+    /// <summary>The kind as recorded, from the ledger's closed set.</summary>
+    public string? RecordedKind { get; init; }
+
+    /// <summary>
+    /// Anything else the agent said about this source: how strong it is, and how a dissent
+    /// was handled. The half of the old <c>tier</c> field that was worth keeping.
+    /// </summary>
+    public string? Note { get; init; }
+
+    /// <summary>The verdict this source was consulted for, so agreement can be computed.</summary>
+    public string? VerdictKey { get; init; }
 
     /// <summary>
     /// <see cref="Url"/> as something safe to render as a link, or null when it is not one.
     /// </summary>
     /// <remarks>
-    /// The recorded string cannot be linkified blindly, because it is whatever the agent wrote.
-    /// Both of these are real entries: <c>"user-provided image"</c> — the user photographed
-    /// sheet music, and there is no page to visit — and
-    /// <c>"open.spotify.com/track/… (via web search)"</c>, which is a real link wearing a
-    /// trailing note and missing its scheme.
+    /// The recorder now splits the link from its provenance on write, so this is defensive
+    /// rather than load-bearing. It stays because a line written by an older recorder still
+    /// reads, and a dead anchor is a worse failure than a plain string.
     /// </remarks>
     public Uri? Link => ParseLink(Url);
 
     public string? Host => Link?.Host;
 
     /// <summary>
-    /// What the source actually is, classified from its host rather than from
-    /// <see cref="RecordedTier"/>. The host is stable and the catalog in the skill's
-    /// <c>SOURCES.md</c> is explicit about what each one is worth; the recorded string is not
-    /// reliable enough to style by.
+    /// Whether this source agreed with the verdict — the single most useful thing the sources
+    /// list can show, and what the schema split was mostly for.
     /// </summary>
-    public SourceTier Tier =>
+    public SourceStance Stance =>
+        (StatesKey, VerdictKey) switch
+        {
+            ({ Length: > 0 } stated, { Length: > 0 } verdict) => stated.Equals(
+                verdict,
+                StringComparison.OrdinalIgnoreCase
+            )
+                ? SourceStance.Agrees
+                : SourceStance.Dissents,
+            _ => SourceStance.Unstated,
+        };
+
+    /// <summary>
+    /// What the source is worth on the tonic: the recorded kind, or the host when a line
+    /// predates the field.
+    /// </summary>
+    public SourceKind Kind => ParseKind(RecordedKind) ?? KindFromHost;
+
+    /// <summary>
+    /// The kind the host implies. Kept as a <em>cross-check</em>, not the authority: a host
+    /// catalog cannot classify a photograph of sheet music, cannot tell a rigorous analysis
+    /// from a bare assertion on the same blog, and cannot cover an unbounded set of domains.
+    /// </summary>
+    public SourceKind KindFromHost =>
         Host?.Replace("www.", string.Empty, StringComparison.OrdinalIgnoreCase) switch
         {
-            "hooktheory.com" or "musicnotes.com" => SourceTier.Authoritative,
+            "hooktheory.com" or "musicnotes.com" => SourceKind.Authoritative,
             "tabs.ultimate-guitar.com" or "ultimate-guitar.com" or "songsterr.com" =>
-                SourceTier.Corroborating,
+                SourceKind.Corroborating,
             // Automatic chord recognisers. Their chords are evidence; their key is another
             // algorithm's guess, so citing it to confirm ours would be circular.
-            "chordify.net" or "chordu.com" => SourceTier.ChordRecogniser,
+            "chordify.net" or "chordu.com" => SourceKind.ChordRecogniser,
             "tunebat.com"
             or "songbpm.com"
             or "getsongbpm.com"
@@ -228,9 +292,30 @@ public sealed partial record EvidenceSource
             or "songdata.io"
             or "musicgateway.com"
             or "open.spotify.com"
-            or "acousticbrainz.org" => SourceTier.Algorithmic,
-            null => SourceTier.Unknown,
-            _ => SourceTier.Unclassified,
+            or "acousticbrainz.org" => SourceKind.Algorithmic,
+            null => SourceKind.Unknown,
+            _ => SourceKind.Unclassified,
+        };
+
+    /// <summary>True when the agent's kind and the host's catalog entry disagree.</summary>
+    /// <remarks>
+    /// Worth surfacing rather than reconciling. Filing Chordify as anything but a chord
+    /// recogniser is precisely the mistake <c>SOURCES.md</c>'s hard rule exists to prevent,
+    /// and it was made — three HIGH verdicts once rested on a chord recogniser's key.
+    /// </remarks>
+    public bool KindDisagreesWithHost =>
+        ParseKind(RecordedKind) is { } recorded
+        && KindFromHost is not (SourceKind.Unknown or SourceKind.Unclassified)
+        && recorded != KindFromHost;
+
+    private static SourceKind? ParseKind(string? recorded) =>
+        recorded?.Trim().ToLowerInvariant() switch
+        {
+            "authoritative" => SourceKind.Authoritative,
+            "corroborating" => SourceKind.Corroborating,
+            "chord_recogniser" => SourceKind.ChordRecogniser,
+            "algorithmic" => SourceKind.Algorithmic,
+            _ => null,
         };
 
     private static Uri? ParseLink(string? url)
@@ -257,13 +342,30 @@ public sealed partial record EvidenceSource
     private static partial Regex TrailingNote { get; }
 }
 
-/// <summary>What a source is worth on the tonic, by host.</summary>
-public enum SourceTier
+/// <summary>Whether a source backed the verdict or argued against it.</summary>
+public enum SourceStance
 {
-    /// <summary>No URL to judge by.</summary>
+    /// <summary>The source said something that is not a key, so there is nothing to compare.</summary>
+    Unstated,
+
+    /// <summary>The source named a different key. Not necessarily a problem — an algorithmic
+    /// dissent does not demote a verdict — but it is the thing worth seeing first.</summary>
+    Dissents,
+
+    /// <summary>The source named the verdict's key.</summary>
+    Agrees,
+}
+
+/// <summary>
+/// What a source is worth on the tonic. Ordered by weight: the view sorts on it, so the
+/// strongest evidence leads.
+/// </summary>
+public enum SourceKind
+{
+    /// <summary>Neither recorded nor derivable from a host.</summary>
     Unknown,
 
-    /// <summary>A host the catalog does not list. Read the agent's note.</summary>
+    /// <summary>A host the catalog does not list and no recorded kind. Read the agent's note.</summary>
     Unclassified,
 
     /// <summary>Shares this tool's failure modes — corroboration only, never the answer.</summary>
@@ -379,6 +481,12 @@ internal sealed record RunEvidenceDto
     [JsonPropertyName("song")]
     public string? Song { get; init; }
 
+    [JsonPropertyName("verdict")]
+    public VerdictDto? Verdict { get; init; }
+
+    [JsonPropertyName("tonic_check")]
+    public string? TonicCheck { get; init; }
+
     [JsonPropertyName("reasoning")]
     public string? Reasoning { get; init; }
 
@@ -394,16 +502,37 @@ internal sealed record RunEvidenceDto
     [JsonPropertyName("machine")]
     public MachineDto? Machine { get; init; }
 
+    internal sealed record VerdictDto
+    {
+        [JsonPropertyName("key")]
+        public string? Key { get; init; }
+
+        [JsonPropertyName("mode")]
+        public string? Mode { get; init; }
+    }
+
     internal sealed record SourceDto
     {
         [JsonPropertyName("url")]
         public string? Url { get; init; }
 
+        [JsonPropertyName("via")]
+        public string? Via { get; init; }
+
         [JsonPropertyName("states")]
         public string? States { get; init; }
 
-        [JsonPropertyName("tier")]
-        public string? Tier { get; init; }
+        [JsonPropertyName("states_key")]
+        public string? StatesKey { get; init; }
+
+        [JsonPropertyName("states_mode")]
+        public string? StatesMode { get; init; }
+
+        [JsonPropertyName("kind")]
+        public string? Kind { get; init; }
+
+        [JsonPropertyName("note")]
+        public string? Note { get; init; }
     }
 
     internal sealed record BpmDto

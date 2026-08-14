@@ -141,6 +141,17 @@ h1 {
     text-decoration-color: currentColor;
 }
 
+/* Quiet on purpose. It is not a warning — the tag is right — but it has to be visible without
+   being asked for, because the question it answers ("why does this pairing sound off?") never
+   arrives as a decision to go and check the mode. */
+.modal {
+    margin-left: 0.4rem;
+    font-size: 0.7rem;
+    font-style: italic;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
 .confidence {
     margin-left: 0.5rem;
     font-size: 0.68rem;

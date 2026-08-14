@@ -19,7 +19,7 @@
         <h4>Human sources</h4>
         @if (Run.Sources.Count == 0)
         {
-            @* Not a defect: whole catalogs have no tier-1/2 coverage, and the skill's stop rule
+            @* Not a defect: whole catalogs have no human coverage, and the skill's stop rule
                says to settle rather than keep searching. Saying so beats an empty box. *@
             <p class="muted">
                 None found. Underground, non-Anglophone and recent album tracks often have no
@@ -29,31 +29,55 @@
         else
         {
             <ul class="sources">
-                @foreach (var source in Run.Sources.OrderByDescending(s => s.Tier))
+                @foreach (var source in Run.Sources.OrderByDescending(s => s.Kind))
                 {
-                    <li class="source @source.Tier.ToString().ToLowerInvariant()">
-                        <span class="tier" title="@TierTitle(source.Tier)">@TierLabel(source.Tier)</span>
+                    <li class="source @source.Kind.ToString().ToLowerInvariant() @source.Stance.ToString().ToLowerInvariant()">
+                        @* Whether each source backed the verdict is the first thing to show and
+                           the reason the schema split `states` — for most of this record's life
+                           it could only be had by reading every line. *@
+                        <span class="stance" title="@StanceTitle(source.Stance)">@StanceMark(source.Stance)</span>
+                        <span class="kind" title="@KindTitle(source.Kind)">@KindLabel(source.Kind)</span>
                         @if (source.Link is { } link)
                         {
                             <a href="@link" target="_blank" rel="noopener noreferrer">@(source.Host ?? link.ToString())</a>
                         }
-                        else if (source.Url is { Length: > 0 } raw)
+                        @if (source.Via is { Length: > 0 } via)
                         {
-                            @* Real entries include "user-provided image" — there is no page to
-                               visit, so this must not become a dead anchor. *@
-                            <span class="not-a-link">@raw</span>
+                            @* The case a URL cannot carry: a photograph of sheet music has no
+                               page, and is among the strongest evidence here. *@
+                            <span class="via">@via</span>
                         }
-                        @if (source.States is { Length: > 0 } states)
+                        @if (source.StatesKey is { Length: > 0 } stated)
+                        {
+                            <span class="states-key">@stated@(source.StatesMode is { Length: > 0 } m ? $" ({m})" : null)</span>
+                        }
+                        else if (source.States is { Length: > 0 } states)
                         {
                             <span class="states">@states</span>
                         }
-                        @if (source.RecordedTier is { Length: > 0 } recorded)
+                        @if (source.Note is { Length: > 0 } note)
                         {
-                            <span class="recorded-tier" title="The tier as the agent wrote it.">@recorded</span>
+                            <span class="note" title="The agent's note on this source.">@note</span>
+                        }
+                        @if (source.KindDisagreesWithHost)
+                        {
+                            <span class="problem" title="@HostMismatchTitle(source)">kind ≠ host</span>
                         }
                     </li>
                 }
             </ul>
+            @if (Run.Sources.Any(s => s.StatesKey is { Length: > 0 } && s.States is { Length: > 0 }))
+            {
+                <details class="source-prose">
+                    <summary>What each source actually said</summary>
+                    <ul>
+                        @foreach (var source in Run.Sources.Where(s => s.States is { Length: > 0 }))
+                        {
+                            <li><span class="host">@(source.Host ?? source.Via ?? "source")</span> @source.States</li>
+                        }
+                    </ul>
+                </details>
+            }
         }
     </section>
 
@@ -123,6 +147,15 @@
                     </li>
                 }
             </ul>
+        }
+
+        @* The tonic check is the argument that this key is not its relative, and it is made
+           *against* the chords — so it sits with them rather than in the reasoning block. Runs
+           recorded before the schema split it out have it inside `reasoning` instead. *@
+        @if (Run.TonicCheck is { Length: > 0 } tonicCheck)
+        {
+            <h4>Tonic check</h4>
+            <p class="tonic-check">@tonicCheck</p>
         }
 
         @if (Run.Chords.Count > 0)
@@ -204,28 +237,50 @@
     [Parameter]
     public bool Compact { get; set; }
 
-    private static string TierLabel(SourceTier tier) =>
-        tier switch
+    private static string StanceMark(SourceStance stance) =>
+        stance switch
         {
-            SourceTier.Authoritative => "authoritative",
-            SourceTier.Corroborating => "corroborating",
-            SourceTier.Algorithmic => "algorithmic",
-            SourceTier.ChordRecogniser => "chords only",
-            SourceTier.Unclassified => "unclassified",
+            SourceStance.Agrees => "✓",
+            SourceStance.Dissents => "✗",
+            _ => "·",
+        };
+
+    private static string StanceTitle(SourceStance stance) =>
+        stance switch
+        {
+            SourceStance.Agrees => "This source names the same key as the verdict.",
+            SourceStance.Dissents =>
+                "This source names a different key. Not necessarily a defect — an algorithmic dissent does not demote a verdict — but read the note.",
+            _ => "This source said something that is not a key, so there is nothing to compare.",
+        };
+
+    private static string HostMismatchTitle(EvidenceSource source) =>
+        $"Recorded as {source.RecordedKind}, but its host is catalogued as "
+        + $"{KindLabel(source.KindFromHost)}. Worth a look: filing a chord recogniser as anything "
+        + "else is the mistake the hard rule exists to prevent.";
+
+    private static string KindLabel(SourceKind kind) =>
+        kind switch
+        {
+            SourceKind.Authoritative => "authoritative",
+            SourceKind.Corroborating => "corroborating",
+            SourceKind.Algorithmic => "algorithmic",
+            SourceKind.ChordRecogniser => "chords only",
+            SourceKind.Unclassified => "unclassified",
             _ => "no link",
         };
 
-    private static string TierTitle(SourceTier tier) =>
-        tier switch
+    private static string KindTitle(SourceKind kind) =>
+        kind switch
         {
-            SourceTier.Authoritative =>
+            SourceKind.Authoritative =>
                 "Human analysis or published sheet music. Authoritative on the tonic.",
-            SourceTier.Corroborating => "Human transcription. Solid, but consensus-dependent.",
-            SourceTier.Algorithmic =>
+            SourceKind.Corroborating => "Human transcription. Solid, but consensus-dependent.",
+            SourceKind.Algorithmic =>
                 "Shares the failure modes this tool exists to catch — corroboration only, never the answer.",
-            SourceTier.ChordRecogniser =>
+            SourceKind.ChordRecogniser =>
                 "An automatic chord recogniser. Its chords are evidence; its key is another algorithm's guess and may never be the basis of a verdict.",
-            SourceTier.Unclassified => "Not a host the catalog lists — read the agent's note.",
+            SourceKind.Unclassified => "Neither recorded nor a host the catalog lists — read the agent's note.",
             _ => "No link to judge by.",
         };
 
