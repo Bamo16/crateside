@@ -127,7 +127,7 @@ else
                         <td colspan="4">
                             @if (_expandedRun is { } run)
                             {
-                                <Evidence Run="run" />
+                                <Evidence Run="run" Compact />
                                 @if (song.SourceVideoId is { Length: > 0 } videoId)
                                 {
                                     <a class="full-record" href="@($"song/{videoId}")">

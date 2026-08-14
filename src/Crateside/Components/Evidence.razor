@@ -95,41 +95,56 @@
             </tbody>
         </table>
 
-        <h4>Agreement</h4>
-        <ul class="agreement">
-            @foreach (var pair in Run.Agreement)
-            {
-                <li class="@(pair.Agrees ? "agrees" : "differs")">
-                    <span class="mark">@(pair.Agrees ? "✓" : "✗")</span>
-                    <span class="pair">@pair.Pair</span>
-                    @if (pair.Agrees)
-                    {
-                        <span class="recommended">@pair.Recommended</span>
-                    }
-                    else
-                    {
-                        <span class="relation @pair.Status.ToLowerInvariant()"
-                              title="@StatusTitle(pair.Status)">@pair.Status</span>
-                        @if (pair.Note is { Length: > 0 } note)
+        @* Agreement is omitted when compact: the three keys above already say who agreed, and
+           reading them off is faster than a second list restating it. It earns its place on the
+           full page only because `relative` names the one split no confidence value can break. *@
+        @if (!Compact)
+        {
+            <h4>Agreement</h4>
+            <ul class="agreement">
+                @foreach (var pair in Run.Agreement)
+                {
+                    <li class="@(pair.Agrees ? "agrees" : "differs")">
+                        <span class="mark">@(pair.Agrees ? "✓" : "✗")</span>
+                        <span class="pair">@pair.Pair</span>
+                        @if (pair.Agrees)
                         {
-                            <span class="note">@note</span>
+                            <span class="recommended">@pair.Recommended</span>
                         }
-                    }
-                </li>
-            }
-        </ul>
+                        else
+                        {
+                            <span class="relation @pair.Status.ToLowerInvariant()"
+                                  title="@StatusTitle(pair.Status)">@pair.Status</span>
+                            @if (pair.Note is { Length: > 0 } note)
+                            {
+                                <span class="note">@note</span>
+                            }
+                        }
+                    </li>
+                }
+            </ul>
+        }
 
         @if (Run.Chords.Count > 0)
         {
             <h4>Chord progression</h4>
-            <p class="chords">@string.Join(" → ", Run.Chords)</p>
+            @* Capped when compact — a long track runs to sixty chords, which swamps the row.
+               The cadence is legible from the opening, and the runner's own report truncates
+               for the same reason. *@
+            <p class="chords">
+                @string.Join(" → ", Compact ? Run.Chords.Take(CompactChordLimit) : Run.Chords)
+                @if (Compact && Run.Chords.Count > CompactChordLimit)
+                {
+                    <span class="muted"> (+@(Run.Chords.Count - CompactChordLimit) more)</span>
+                }
+            </p>
         }
 
-        @if (Run.KeyEvents.Count > 0)
+        @* The flicker is a diagnostic for a specific doubt — is the early instability just a
+           sparse intro? — and nothing on a board row is asking that question. *@
+        @if (!Compact && Run.KeyEvents.Count > 0)
         {
             <h4>Key flicker</h4>
-            @* Early instability is usually a sparse intro rather than a real ambiguity, so the
-               timestamps matter as much as the keys. *@
             <ul class="flicker">
                 @foreach (var e in Run.KeyEvents)
                 {
@@ -176,8 +191,18 @@
 </div>
 
 @code {
+    // Long enough to read a cadence off, short enough not to swamp a table row.
+    private const int CompactChordLimit = 24;
+
     [Parameter, EditorRequired]
     public required RunEvidence Run { get; set; }
+
+    /// <summary>
+    /// Trims to what answers "why this key" at a glance. The board row is a look, not a study —
+    /// the full record is one click away and keeps everything.
+    /// </summary>
+    [Parameter]
+    public bool Compact { get; set; }
 
     private static string TierLabel(SourceTier tier) =>
         tier switch
