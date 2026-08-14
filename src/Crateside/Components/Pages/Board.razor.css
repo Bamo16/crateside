@@ -88,6 +88,44 @@ h1 {
     font-weight: 500;
 }
 
+/* The expander is a button for keyboard and screen-reader reasons, but it is a row label —
+   so it is stripped back to looking like the text it replaced. It keeps .song-name, so the
+   muted styling for a finished row still reaches it. */
+.expander {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    padding: 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.expander:hover {
+    color: var(--accent);
+}
+
+.caret {
+    color: var(--muted);
+    font-size: 0.75rem;
+}
+
+.evidence-row > td {
+    padding: 0 0.75rem 1.25rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+}
+
+.full-record {
+    display: inline-block;
+    margin-top: 0.75rem;
+    color: var(--accent);
+    font-size: 0.85rem;
+}
+
 /* The key is a link into Partners — going from "what is this?" to "what goes with it?"
    is the whole workflow. */
 .key {

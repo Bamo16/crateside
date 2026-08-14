@@ -2,6 +2,7 @@
 @using Crateside.Core.Ledger
 @using Crateside.Core.Staging
 @inject StagingBoardService BoardService
+@inject EvidenceService Evidence
 @rendermode InteractiveServer
 
 <PageTitle>Staging board — crateside</PageTitle>
@@ -49,7 +50,20 @@ else
             {
                 <tr class="@(song.IsFullyTagged ? "done" : null)">
                     <td>
-                        <span class="song-name">@song.DisplayName</span>
+                        @if (song.Verdict is not null)
+                        {
+                            @* Expanding is the cheap look; the page is the full record. Only
+                               offered where there is a run to show. *@
+                            <button class="song-name expander" @onclick="() => Toggle(song)"
+                                    title="Show why this key was given">
+                                <span class="caret">@(IsExpanded(song) ? "▾" : "▸")</span>
+                                @song.DisplayName
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="song-name">@song.DisplayName</span>
+                        }
                         @if (song.StaleTaggedStems.Count > 0)
                         {
                             <span class="flag stale"
@@ -107,6 +121,27 @@ else
                         </ul>
                     </td>
                 </tr>
+                @if (IsExpanded(song))
+                {
+                    <tr class="evidence-row">
+                        <td colspan="4">
+                            @if (_expandedRun is { } run)
+                            {
+                                <Evidence Run="run" />
+                                @if (song.SourceVideoId is { Length: > 0 } videoId)
+                                {
+                                    <a class="full-record" href="@($"song/{videoId}")">
+                                        Open the full record →
+                                    </a>
+                                }
+                            }
+                            else
+                            {
+                                <p class="muted">No run recorded for this song.</p>
+                            }
+                        </td>
+                    </tr>
+                }
             }
         </tbody>
     </table>
@@ -115,6 +150,11 @@ else
 @code {
     private IReadOnlyList<StagingSong>? _songs;
     private bool _reading;
+
+    // One at a time: the panel is tall, and several open at once turns the board into a wall
+    // of evidence, which is the thing the board exists to avoid.
+    private string? _expandedSong;
+    private RunEvidence? _expandedRun;
 
     protected override void OnInitialized() => Refresh();
 
@@ -130,6 +170,26 @@ else
         {
             _reading = false;
         }
+    }
+
+    private bool IsExpanded(StagingSong song) =>
+        song.Verdict is { Song: { } identity } && identity == _expandedSong;
+
+    private void Toggle(StagingSong song)
+    {
+        if (song.Verdict is not { Song: { } identity })
+            return;
+
+        if (identity == _expandedSong)
+        {
+            (_expandedSong, _expandedRun) = (null, null);
+
+            return;
+        }
+
+        // Read on expand rather than with the board: the machine block is the bulk of every
+        // ledger line, and a board of ten songs would pay for ten of them to show none.
+        (_expandedSong, _expandedRun) = (identity, Evidence.ForSong(identity));
     }
 
     private static string StemClass(StagingStem stem) =>

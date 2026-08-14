@@ -1,0 +1,43 @@
+@page "/song/{VideoId}"
+@using Crateside.Core.Ledger
+@inject EvidenceService Evidence
+@inject NavigationManager Navigation
+
+<PageTitle>@(_run?.Song ?? "Song") — crateside</PageTitle>
+
+<header class="page-header">
+    <div>
+        <a class="back" href="/">← Staging board</a>
+        <h1>@(_run?.Song ?? "Unknown song")</h1>
+        <p class="subtitle">
+            Why this key was given, and what it was based on.
+        </p>
+    </div>
+    @if (_run is not null)
+    {
+        <a class="watch" href="@($"https://www.youtube.com/watch?v={VideoId}")"
+           target="_blank" rel="noopener noreferrer">Open on YouTube</a>
+    }
+</header>
+
+@if (_run is null)
+{
+    <div class="notice">
+        <strong>No run recorded for this video.</strong>
+        The ledger has never seen <code>@VideoId</code> — either detect-key has not run for it,
+        or the stem's provenance points at a different video than the one that was judged.
+    </div>
+}
+else
+{
+    <Evidence Run="_run" />
+}
+
+@code {
+    [Parameter]
+    public required string VideoId { get; set; }
+
+    private RunEvidence? _run;
+
+    protected override void OnParametersSet() => _run = Evidence.ForVideoId(VideoId);
+}

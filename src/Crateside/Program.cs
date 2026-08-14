@@ -1,6 +1,7 @@
 using Crateside;
 using Crateside.Components;
 using Crateside.Core;
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Queue;
 using Crateside.Core.Staging;
@@ -32,6 +33,7 @@ builder.Services.AddSingleton<AbletonFolderInfoReader>();
 builder.Services.AddSingleton<StagingBoard>();
 builder.Services.AddSingleton<StagingBoardService>();
 builder.Services.AddSingleton<YouTubeQueueReader>();
+builder.Services.AddSingleton<EvidenceService>();
 builder.Services.AddSingleton<QueueSettingsStore>();
 
 // The OAuth refresh token can delete from the playlist, so it is encrypted at rest. The key
@@ -73,7 +75,12 @@ builder.Services.AddSingleton<SeparationRunner>(sp => new SeparationRunner(
     sp.GetRequiredService<SeparationInterlock>(),
     sp.GetRequiredService<IOptions<CratesidePaths>>().Value
 ));
-builder.Services.AddSingleton<DrainControl>();
+builder.Services.Configure<DrainOptions>(
+    builder.Configuration.GetSection(DrainOptions.SectionName)
+);
+builder.Services.AddSingleton<DrainControl>(sp => new DrainControl(
+    sp.GetRequiredService<IOptions<DrainOptions>>().Value.StartPaused
+));
 builder.Services.AddSingleton<SeparationDrainer>();
 
 // Draining is on by default: two separations at once are ruinous, but one is unnoticeable, so

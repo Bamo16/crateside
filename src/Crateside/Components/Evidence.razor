@@ -1,0 +1,215 @@
+@using Crateside.Core.Ledger
+
+@* The record keeps the agent's conclusion and the runner's measurements apart, and so does
+   this: the argument is what answers "why this key", and the numbers are how you audit it
+   when the argument looks shaky. Leading with the numbers would bury the reasoning. *@
+
+<div class="evidence">
+    <section class="argument">
+        <h3>Why this key</h3>
+        @if (Run.Reasoning is { Length: > 0 } reasoning)
+        {
+            <p class="reasoning">@reasoning</p>
+        }
+        else
+        {
+            <p class="muted">No reasoning was recorded for this run.</p>
+        }
+
+        <h4>Human sources</h4>
+        @if (Run.Sources.Count == 0)
+        {
+            @* Not a defect: whole catalogs have no tier-1/2 coverage, and the skill's stop rule
+               says to settle rather than keep searching. Saying so beats an empty box. *@
+            <p class="muted">
+                None found. Underground, non-Anglophone and recent album tracks often have no
+                human analysis at all — the verdict rests on the detectors and the chord check.
+            </p>
+        }
+        else
+        {
+            <ul class="sources">
+                @foreach (var source in Run.Sources.OrderByDescending(s => s.Tier))
+                {
+                    <li class="source @source.Tier.ToString().ToLowerInvariant()">
+                        <span class="tier" title="@TierTitle(source.Tier)">@TierLabel(source.Tier)</span>
+                        @if (source.Link is { } link)
+                        {
+                            <a href="@link" target="_blank" rel="noopener noreferrer">@(source.Host ?? link.ToString())</a>
+                        }
+                        else if (source.Url is { Length: > 0 } raw)
+                        {
+                            @* Real entries include "user-provided image" — there is no page to
+                               visit, so this must not become a dead anchor. *@
+                            <span class="not-a-link">@raw</span>
+                        }
+                        @if (source.States is { Length: > 0 } states)
+                        {
+                            <span class="states">@states</span>
+                        }
+                        @if (source.RecordedTier is { Length: > 0 } recorded)
+                        {
+                            <span class="recorded-tier" title="The tier as the agent wrote it.">@recorded</span>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </section>
+
+    <section class="measurements">
+        <h3>What the detectors reported</h3>
+
+        <table class="algorithms">
+            <tbody>
+                @foreach (var algorithm in Run.Algorithms)
+                {
+                    <tr>
+                        <th>@algorithm.Name</th>
+                        <td class="algo-key">@(algorithm.Key ?? "—")</td>
+                        <td class="detail">
+                            @if (algorithm.Error is { Length: > 0 } error)
+                            {
+                                <span class="problem">@error</span>
+                            }
+                            else if (algorithm.RunnerUpKey is { } runnerUp)
+                            {
+                                @* CREMA's winner confidence is structurally always 1.0, so
+                                   separation from the runner-up is the only real signal — and a
+                                   near-tie against the relative key is a swap warning. *@
+                                <span title="CREMA reports no usable confidence; this is how close second place was.">
+                                    runner-up @runnerUp @(algorithm.RunnerUpRatio is { } r ? $"({r:F3})" : null)
+                                </span>
+                            }
+                            else if (algorithm.Confidence is { } confidence)
+                            {
+                                <span>@confidence.ToString("F3")</span>
+                                @if (algorithm.Flag is { Length: > 0 } flag)
+                                {
+                                    <span class="flag @flag.ToLowerInvariant()">@flag</span>
+                                }
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <h4>Agreement</h4>
+        <ul class="agreement">
+            @foreach (var pair in Run.Agreement)
+            {
+                <li class="@(pair.Agrees ? "agrees" : "differs")">
+                    <span class="mark">@(pair.Agrees ? "✓" : "✗")</span>
+                    <span class="pair">@pair.Pair</span>
+                    @if (pair.Agrees)
+                    {
+                        <span class="recommended">@pair.Recommended</span>
+                    }
+                    else
+                    {
+                        <span class="relation @pair.Status.ToLowerInvariant()"
+                              title="@StatusTitle(pair.Status)">@pair.Status</span>
+                        @if (pair.Note is { Length: > 0 } note)
+                        {
+                            <span class="note">@note</span>
+                        }
+                    }
+                </li>
+            }
+        </ul>
+
+        @if (Run.Chords.Count > 0)
+        {
+            <h4>Chord progression</h4>
+            <p class="chords">@string.Join(" → ", Run.Chords)</p>
+        }
+
+        @if (Run.KeyEvents.Count > 0)
+        {
+            <h4>Key flicker</h4>
+            @* Early instability is usually a sparse intro rather than a real ambiguity, so the
+               timestamps matter as much as the keys. *@
+            <ul class="flicker">
+                @foreach (var e in Run.KeyEvents)
+                {
+                    <li><span class="t">@e.Seconds.ToString("F2")s</span> @e.Key <span class="r">r=@e.R.ToString("F2")</span></li>
+                }
+            </ul>
+        }
+
+        <h4>Tempo</h4>
+        <p class="tempo">
+            @if (Run.Bpm is { } bpm)
+            {
+                <strong>@Math.Round(bpm)</strong>
+                <span class="muted">from @(Run.BpmSource ?? "unknown")</span>
+            }
+            else
+            {
+                <span class="muted">No recommendation recorded.</span>
+            }
+            @if (Run.BeatdetectBpm is { } rough)
+            {
+                <span class="beatdetect @(Run.BpmConflicts ? "conflict" : null)"
+                      title="The runner's own estimate, kept as a cross-check. Frequently wrong, especially by a factor of two.">
+                    beatdetect @rough.ToString("F1")
+                </span>
+            }
+            @if (Run.BpmConflicts)
+            {
+                <span class="problem"
+                      title="Not a clean half or double, so this is not just a tempo-octave choice — one of the two is simply wrong.">
+                    conflict
+                </span>
+            }
+        </p>
+
+        <p class="provenance muted">
+            Recorded @Run.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+            @if (Run.InputKind is { Length: > 0 } kind)
+            {
+                <text> from the @kind.Replace('_', ' ')</text>
+            }
+        </p>
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required RunEvidence Run { get; set; }
+
+    private static string TierLabel(SourceTier tier) =>
+        tier switch
+        {
+            SourceTier.Authoritative => "authoritative",
+            SourceTier.Corroborating => "corroborating",
+            SourceTier.Algorithmic => "algorithmic",
+            SourceTier.ChordRecogniser => "chords only",
+            SourceTier.Unclassified => "unclassified",
+            _ => "no link",
+        };
+
+    private static string TierTitle(SourceTier tier) =>
+        tier switch
+        {
+            SourceTier.Authoritative =>
+                "Human analysis or published sheet music. Authoritative on the tonic.",
+            SourceTier.Corroborating => "Human transcription. Solid, but consensus-dependent.",
+            SourceTier.Algorithmic =>
+                "Shares the failure modes this tool exists to catch — corroboration only, never the answer.",
+            SourceTier.ChordRecogniser =>
+                "An automatic chord recogniser. Its chords are evidence; its key is another algorithm's guess and may never be the basis of a verdict.",
+            SourceTier.Unclassified => "Not a host the catalog lists — read the agent's note.",
+            _ => "No link to judge by.",
+        };
+
+    private static string StatusTitle(string status) =>
+        status.ToLowerInvariant() switch
+        {
+            "relative" =>
+                "The dangerous one: relative keys share every note, so no confidence value can break this tie — only the cadence, or a human source.",
+            "single" => "Only one of the two produced an answer, so there was nothing to compare.",
+            _ => "The two disagree outright.",
+        };
+}

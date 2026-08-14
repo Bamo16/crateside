@@ -60,6 +60,15 @@ public class RunEvidenceRealDataTests
                 // Three algorithms and three pairings, on every run ever recorded.
                 Assert.Equal(3, e.Algorithms.Count);
                 Assert.Equal(3, e.Agreement.Count);
+                // The status vocabulary is closed; anything else means the runner changed.
+                Assert.All(
+                    e.Agreement,
+                    pair =>
+                        Assert.Contains(
+                            pair.Status,
+                            (string[])["full", "relative", "none", "single"]
+                        )
+                );
                 Assert.NotEmpty(e.Chords);
                 Assert.NotEmpty(e.KeyEvents);
             }
@@ -129,6 +138,21 @@ public class RunEvidenceRealDataTests
             All().SelectMany(e => e.Sources),
             s => s.Tier is SourceTier.ChordRecogniser
         );
+    }
+
+    [Fact]
+    public void Full_agreement_is_reported_as_agreement()
+    {
+        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+
+        // Guards a real bug: the shape was guessed as {agree, relation} when it is
+        // {status, recommended, note}, so every pair rendered as a disagreement while the
+        // algorithms plainly agreed.
+        var pairs = All().SelectMany(e => e.Agreement).ToList();
+
+        Assert.Contains(pairs, p => p.Agrees);
+        Assert.All(pairs.Where(p => p.Agrees), p => Assert.NotNull(p.Recommended));
+        Assert.All(pairs.Where(p => p.Status == "none"), p => Assert.False(p.Agrees));
     }
 
     [Fact]

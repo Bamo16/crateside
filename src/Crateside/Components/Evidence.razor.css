@@ -1,0 +1,269 @@
+/* Two columns on a wide screen because the argument and the measurements are read for
+   different reasons — you read the argument, and you consult the numbers. Stacked below that,
+   argument first, so the reasoning is never buried under a table of correlations. */
+.evidence {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 2rem;
+    padding: 1.25rem 0 0.5rem;
+}
+
+@media (max-width: 60rem) {
+    .evidence {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.5rem;
+    }
+}
+
+.evidence h3 {
+    margin: 0 0 0.6rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted);
+}
+
+.evidence h4 {
+    margin: 1.25rem 0 0.4rem;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.reasoning {
+    margin: 0;
+    max-width: 70ch;
+    white-space: pre-wrap;
+}
+
+.muted {
+    color: var(--muted);
+}
+
+.problem {
+    color: var(--alert);
+}
+
+/* Sources */
+.sources {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.source {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+    border-top: 1px solid var(--line);
+}
+
+.source:first-child {
+    border-top: none;
+}
+
+/* The tier badge is the whole point of the list: what a source is worth is more important
+   than what it said, because a confident tier-3 claim is still not an answer. */
+.tier {
+    flex: none;
+    min-width: 7.5rem;
+    padding: 0.05rem 0.45rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: center;
+    color: var(--muted);
+}
+
+.source.authoritative .tier {
+    color: var(--ok);
+    border-color: var(--ok);
+}
+
+.source.corroborating .tier {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+/* Deliberately warned rather than neutral: its key may never be the basis of a verdict. */
+.source.chordrecogniser .tier {
+    color: var(--warn);
+    border-color: var(--warn);
+}
+
+.states {
+    color: var(--text);
+}
+
+.recorded-tier {
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.not-a-link {
+    color: var(--muted);
+    font-style: italic;
+}
+
+/* Algorithms */
+.algorithms {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.algorithms th {
+    text-align: left;
+    font-weight: 500;
+    color: var(--muted);
+    padding: 0.3rem 0.75rem 0.3rem 0;
+    white-space: nowrap;
+}
+
+.algorithms td {
+    padding: 0.3rem 0.75rem 0.3rem 0;
+}
+
+.algo-key {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.detail {
+    color: var(--muted);
+    font-size: 0.9rem;
+    width: 100%;
+}
+
+.flag {
+    margin-left: 0.4rem;
+    padding: 0.02rem 0.35rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    background: var(--line);
+}
+
+.flag.distrust {
+    color: var(--alert);
+}
+
+.flag.gray {
+    color: var(--warn);
+}
+
+/* Agreement */
+.agreement {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.agreement li {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.agreement .mark {
+    width: 1rem;
+}
+
+.agrees .mark {
+    color: var(--ok);
+}
+
+.differs .mark {
+    color: var(--muted);
+}
+
+.pair {
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.85rem;
+}
+
+.relation {
+    padding: 0.02rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    background: var(--line);
+    color: var(--muted);
+}
+
+/* The one that cannot be resolved by any confidence value — it earns a colour. */
+.relation.relative {
+    color: var(--alert);
+}
+
+.recommended {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.note {
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.chords {
+    margin: 0;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.9rem;
+    line-height: 1.7;
+}
+
+.flicker {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-size: 0.82rem;
+    color: var(--muted);
+    max-height: 12rem;
+    overflow-y: auto;
+}
+
+.flicker .t {
+    display: inline-block;
+    min-width: 4.5rem;
+}
+
+.flicker .r {
+    color: var(--line);
+}
+
+.tempo {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.6rem;
+}
+
+.tempo strong {
+    font-size: 1.1rem;
+}
+
+.beatdetect {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.beatdetect.conflict {
+    color: var(--warn);
+}
+
+.provenance {
+    margin: 1.5rem 0 0;
+    font-size: 0.8rem;
+}

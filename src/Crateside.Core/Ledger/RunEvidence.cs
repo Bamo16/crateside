@@ -155,8 +155,9 @@ public sealed record RunEvidence
                 .. (dto.Machine?.PairwiseAgreement ?? []).Select(p => new AgreementPair
                 {
                     Pair = p.Pair ?? string.Empty,
-                    Agrees = p.Agree,
-                    Relation = p.Relation,
+                    Status = p.Status ?? "none",
+                    Recommended = p.Recommended,
+                    Note = p.Note,
                 }),
             ],
             Chords = dto.Machine?.Chords ?? [],
@@ -339,10 +340,26 @@ public sealed record AlgorithmResult
 public sealed record AgreementPair
 {
     public required string Pair { get; init; }
-    public bool Agrees { get; init; }
 
-    /// <summary>RELATIVE, PARALLEL, NONE — what kind of disagreement it was.</summary>
-    public string? Relation { get; init; }
+    /// <summary>
+    /// <c>full</c>, <c>relative</c>, <c>none</c>, or <c>single</c> when only one of the two
+    /// produced an answer at all.
+    /// </summary>
+    public required string Status { get; init; }
+
+    /// <summary>The key the pair settled on, when they settled on one.</summary>
+    public string? Recommended { get; init; }
+
+    /// <summary>What each said, when they disagreed outright.</summary>
+    public string? Note { get; init; }
+
+    public bool Agrees => Status.Equals("full", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The dangerous outcome: relative keys share every note, so this cannot be broken by any
+    /// confidence value — only by the cadence or a human source.
+    /// </summary>
+    public bool IsRelative => Status.Equals("relative", StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>A point where the running key estimate changed.</summary>
@@ -421,11 +438,14 @@ internal sealed record MachineDto
         [JsonPropertyName("pair")]
         public string? Pair { get; init; }
 
-        [JsonPropertyName("agree")]
-        public bool Agree { get; init; }
+        [JsonPropertyName("status")]
+        public string? Status { get; init; }
 
-        [JsonPropertyName("relation")]
-        public string? Relation { get; init; }
+        [JsonPropertyName("recommended")]
+        public string? Recommended { get; init; }
+
+        [JsonPropertyName("note")]
+        public string? Note { get; init; }
     }
 
     internal sealed record KeyEventDto

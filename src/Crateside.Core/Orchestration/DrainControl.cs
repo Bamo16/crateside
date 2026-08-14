@@ -14,12 +14,18 @@ namespace Crateside.Core.Orchestration;
 /// Pause exists for the reason that is actually true rather than the one originally assumed:
 /// the GPU is audible, and a live microphone is a real reason to stop for an hour.
 /// </para>
+/// <para>
+/// <paramref name="startPaused"/> exists so that launching the app is never itself an act that
+/// consumes the GPU — useful for a debugging session, a fresh checkout, or any period where
+/// draining would conflict with work happening elsewhere. It changes where the toggle starts,
+/// not what the default behaviour is.
+/// </para>
 /// </remarks>
-public sealed class DrainControl
+public sealed class DrainControl(bool startPaused = false)
 {
     private readonly Lock _gate = new();
 
-    private bool _paused;
+    private bool _paused = startPaused;
     private string? _activity;
 
     /// <summary>Raised whenever the state changes, so a rendered page can catch up.</summary>
