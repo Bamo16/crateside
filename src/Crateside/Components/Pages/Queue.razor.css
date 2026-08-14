@@ -60,6 +60,41 @@
     border-left-color: var(--alert);
 }
 
+/* Reports what is already happening rather than offering to start it — draining is the normal
+   state, so this is a status strip with an escape hatch, not a call to action. */
+.drain {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 1rem 0;
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    background: var(--surface);
+    font-size: 0.9rem;
+}
+
+.drain.paused {
+    border-left-color: var(--muted);
+    color: var(--muted);
+}
+
+.drain button {
+    padding: 0.3rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--bg);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.drain button:hover {
+    border-color: var(--accent);
+}
+
 .playlist-setting {
     display: flex;
     align-items: flex-end;

@@ -1,8 +1,11 @@
+using Crateside;
 using Crateside.Components;
 using Crateside.Core;
+using Crateside.Core.Orchestration;
 using Crateside.Core.Queue;
 using Crateside.Core.Staging;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,6 +60,26 @@ builder.Services.AddSingleton<ProtectedTokenStore>();
 builder.Services.AddSingleton<QueueAuthorizer>();
 builder.Services.AddSingleton<QueueRemover>();
 builder.Services.AddSingleton<QueueService>();
+
+// Orchestration. The job store is the one piece of non-derived state in the system, so it is a
+// singleton with a single writer -- the drain worker below.
+builder.Services.AddSingleton<JobStore>(_ => new JobStore());
+builder.Services.AddSingleton<IProcessProbe, SystemProcessProbe>();
+builder.Services.AddSingleton<SeparationInterlock>();
+builder.Services.AddSingleton<SeparationSelector>(sp => new SeparationSelector(
+    sp.GetRequiredService<JobStore>()
+));
+builder.Services.AddSingleton<SeparationRunner>(sp => new SeparationRunner(
+    sp.GetRequiredService<SeparationInterlock>(),
+    sp.GetRequiredService<IOptions<CratesidePaths>>().Value
+));
+builder.Services.AddSingleton<DrainControl>();
+builder.Services.AddSingleton<SeparationDrainer>();
+
+// Draining is on by default: two separations at once are ruinous, but one is unnoticeable, so
+// there is no moment for the user to pick. Pause is in the Queue view for when the room is
+// being recorded in.
+builder.Services.AddHostedService<DrainWorker>();
 
 var app = builder.Build();
 

@@ -1,6 +1,9 @@
 @page "/queue"
 @using Crateside.Core.Queue
+@using Crateside.Core.Orchestration
 @inject QueueService QueueService
+@inject DrainControl Drain
+@implements IDisposable
 @rendermode InteractiveServer
 
 <PageTitle>Queue — crateside</PageTitle>
@@ -14,6 +17,26 @@
         @(_loading ? "Reading…" : "Refresh")
     </button>
 </header>
+
+@* Draining is the normal state, so this reports rather than invites. Pause is here because the
+   GPU is audible, not because a run costs the machine. *@
+<div class="drain @(Drain.IsPaused ? "paused" : "running")">
+    <span class="state">
+        @if (Drain.IsPaused)
+        {
+            <text>Paused</text>
+        }
+        else if (Drain.Activity is { } activity)
+        {
+            <text>@activity</text>
+        }
+        else
+        {
+            <text>Draining — nothing to separate right now</text>
+        }
+    </span>
+    <button @onclick="ToggleDrain">@(Drain.IsPaused ? "Resume" : "Pause")</button>
+</div>
 
 @if (!QueueService.HasCredential)
 {
@@ -259,7 +282,21 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     protected override async Task OnInitializedAsync()
     {
         _playlistInput = QueueService.PlaylistId ?? string.Empty;
+        Drain.Changed += OnDrainChanged;
         await Load();
+    }
+
+    public void Dispose() => Drain.Changed -= OnDrainChanged;
+
+    // Raised from the drain worker's thread, so hop back onto the circuit before rendering.
+    private void OnDrainChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void ToggleDrain()
+    {
+        if (Drain.IsPaused)
+            Drain.Resume();
+        else
+            Drain.Pause();
     }
 
     private async Task SavePlaylist()
