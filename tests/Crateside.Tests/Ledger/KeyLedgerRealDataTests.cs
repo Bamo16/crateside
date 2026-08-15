@@ -26,6 +26,21 @@ public class KeyLedgerRealDataTests
     }
 
     [Fact]
+    public void A_modal_verdict_reads_as_a_collapse_of_the_tagged_key()
+    {
+        Assert.SkipUnless(File.Exists(LedgerPath), $"{LedgerPath} not present.");
+
+        var modal = KeyLedger.Read(LedgerPath).Runs.Where(r => r.IsCollapsed).ToList();
+
+        // Asserting the shape rather than a count: what matters is that a mode never contradicts
+        // the tag it collapses to, since the tonic is shared and only the quality follows from
+        // the mode. Uptown Funk is the first of these — D Dorian, tagged D minor.
+        Assert.NotEmpty(modal);
+        Assert.All(modal, r => Assert.NotNull(r.ModalKey));
+        Assert.All(modal, r => Assert.Equal(r.Key!.Split(' ')[0], r.ModalKey!.Split(' ')[0]));
+    }
+
+    [Fact]
     public void Nearly_every_run_carries_an_extractable_video_id()
     {
         Assert.SkipUnless(File.Exists(LedgerPath), $"{LedgerPath} not present.");
