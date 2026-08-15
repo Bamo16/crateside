@@ -3,11 +3,11 @@
 Glossary for the helper bench that supports the **human-limited steps** of the
 user's Ableton mashup workflow. Glossary only — no implementation detail.
 
-Terms shared with the detection tool — **Track**, **Stem**, **Song identity**,
-**Verdict**, **Source video ID**, **Queue**, **Fully processed**, **Sample
-Staging**, **Mashup Samples** — are defined once in `keytag`'s `CONTEXT.md` and
-are not repeated here. This file covers what is specific to crateside: the
-mashup-pairing vocabulary, and the views.
+Terms shared with the detection tool — **Track**, **Stem**, **Sample**, **Warp
+guide**, **Song identity**, **Verdict**, **Source video ID**, **Queue**, **Fully
+processed**, **Sample Staging**, **Mashup Samples** — are defined once in
+`keytag`'s `CONTEXT.md` and are not repeated here. This file covers what is
+specific to crateside: the mashup-pairing vocabulary, and the views.
 
 ## Pairing
 
@@ -87,7 +87,3 @@ the two run types below are named after which of them they produce.
   shift is involved. **Resolution: prefer "relationship" as the term**, and say
   what each actually is rather than bucketing it. Retiring `Modulation` is a
   behaviour change from the cmdlet and should be a deliberate one.
-- **"Sample"** — avoid. In DJ usage it means any asset used in production, which is
-  too broad to be useful. Use **Track** for source material and **Stem** for a
-  separated part. `Sample Staging` and `Mashup Samples` keep the word only because
-  they are existing folder names on disk.
