@@ -9,17 +9,10 @@ namespace Crateside.Core.Staging;
 /// </summary>
 public sealed partial class StagingBoard
 {
-    private readonly StemTagReader _tagReader;
     private readonly AbletonFolderInfoReader _folderInfoReader;
 
-    public StagingBoard(
-        StemTagReader? tagReader = null,
-        AbletonFolderInfoReader? folderInfoReader = null
-    )
-    {
-        _tagReader = tagReader ?? new StemTagReader();
+    public StagingBoard(AbletonFolderInfoReader? folderInfoReader = null) =>
         _folderInfoReader = folderInfoReader ?? new AbletonFolderInfoReader();
-    }
 
     /// <summary>The stem formats StemForge writes.</summary>
     internal static readonly string[] StemExtensions = [".flac", ".wav", ".aiff", ".mp3"];
@@ -47,7 +40,7 @@ public sealed partial class StagingBoard
         var stems = Directory
             .EnumerateFiles(stagingRoot, "*", SearchOption.TopDirectoryOnly)
             .Where(IsStemFile)
-            .Select(path => new { Path = path, Tags = _tagReader.Read(path) })
+            .Select(path => new { Path = path, Tags = StemTagReader.Read(path) })
             .ToArray();
 
         return

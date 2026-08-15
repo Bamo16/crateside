@@ -4,6 +4,16 @@
     --surface: #1e2127;
     --line: #2c3038;
     --text: #e6e8ec;
+
+    /* Secondary text: quieter than --text, but still meant to be *read* — section headings,
+       algorithm names, per-source notes, chip labels. 8.1:1 on --bg. This exists because
+       --muted was doing two jobs, and the weaker of the two won: at the 0.7rem sizes the chips
+       and headings use, 5.3:1 is thin enough to be work. */
+    --text-dim: #a8b0bd;
+
+    /* True footnotes only — the "Recorded … from the full mix" line and its kin. Deemphasis is
+       the point here, so 5.3:1 is right. Do not reach for this for anything a reader is meant
+       to take in, and never use --line as a text colour: it is a border at 1.3:1. */
     --muted: #868d99;
     --accent: #6ea8fe;
     --ok: #5fc98a;

@@ -41,6 +41,10 @@ else
             <tr>
                 <th>Song</th>
                 <th>Key</th>
+                @* Its own column so the badges line up down the page. Sharing a cell with the
+                   key meant every confidence sat at a different x depending on how long the key
+                   and its mode were, which is the one thing that makes a column unscannable. *@
+                <th class="confidence">Conf</th>
                 <th class="bpm">BPM</th>
                 <th>Stems</th>
             </tr>
@@ -89,9 +93,6 @@ else
                                     @modal
                                 </span>
                             }
-                            <span class="confidence @song.Confidence.ToString().ToLowerInvariant()">
-                                @song.Confidence.ToString().ToUpperInvariant()
-                            </span>
                         }
                         else if (song.AwaitingDetection)
                         {
@@ -101,6 +102,14 @@ else
                         {
                             <span class="muted" title="detect-key ran and declined to give a single safe tag.">
                                 no safe tag
+                            </span>
+                        }
+                    </td>
+                    <td class="confidence">
+                        @if (song.Key is not null)
+                        {
+                            <span class="badge @song.Confidence.ToString().ToLowerInvariant()">
+                                @song.Confidence.ToString().ToUpperInvariant()
                             </span>
                         }
                     </td>

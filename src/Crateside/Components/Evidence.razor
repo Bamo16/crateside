@@ -119,34 +119,19 @@
             </tbody>
         </table>
 
-        @* Agreement is omitted when compact: the three keys above already say who agreed, and
-           reading them off is faster than a second list restating it. It earns its place on the
-           full page only because `relative` names the one split no confidence value can break. *@
-        @if (!Compact)
+        @* There is no agreement list. Three rows restating which of the three keys above match
+           is a table you have to read to learn what the table above it already showed. The one
+           thing pairwise agreement knows that the keys do not is `relative` — that two detectors
+           landed a minor third apart, which reads as plain disagreement unless you happen to
+           spot the relationship — so that, and only that, is surfaced. *@
+        @if (Run.Agreement.FirstOrDefault(p => p.IsRelative) is { } split)
         {
-            <h4>Agreement</h4>
-            <ul class="agreement">
-                @foreach (var pair in Run.Agreement)
-                {
-                    <li class="@(pair.Agrees ? "agrees" : "differs")">
-                        <span class="mark">@(pair.Agrees ? "✓" : "✗")</span>
-                        <span class="pair">@pair.Pair</span>
-                        @if (pair.Agrees)
-                        {
-                            <span class="recommended">@pair.Recommended</span>
-                        }
-                        else
-                        {
-                            <span class="relation @pair.Status.ToLowerInvariant()"
-                                  title="@StatusTitle(pair.Status)">@pair.Status</span>
-                            @if (pair.Note is { Length: > 0 } note)
-                            {
-                                <span class="note">@note</span>
-                            }
-                        }
-                    </li>
-                }
-            </ul>
+            <p class="relative-split" title="@StatusTitle("relative")">
+                <strong>Relative split</strong>
+                <span class="pair">@split.Pair</span>
+                landed on relative keys. Nothing in the numbers above can break this tie —
+                only the cadence or a human source.
+            </p>
         }
 
         @* The tonic check is the argument that this key is not its relative, and it is made

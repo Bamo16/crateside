@@ -20,7 +20,7 @@
     font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: var(--muted);
+    color: var(--text-dim);
 }
 
 .evidence h4 {
@@ -28,7 +28,7 @@
     font-size: 0.78rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--muted);
+    color: var(--text-dim);
     font-weight: 600;
 }
 
@@ -89,13 +89,13 @@
     flex: none;
     min-width: 7.5rem;
     padding: 0.05rem 0.45rem;
-    border: 1px solid var(--line);
+    border: 1px solid var(--text-dim);
     border-radius: 4px;
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     text-align: center;
-    color: var(--muted);
+    color: var(--text-dim);
 }
 
 .source.authoritative .kind {
@@ -125,7 +125,7 @@
 
 .via,
 .note {
-    color: var(--muted);
+    color: var(--text-dim);
     font-size: 0.8rem;
     font-style: italic;
 }
@@ -135,7 +135,7 @@
 .source-prose {
     margin-top: 0.5rem;
     font-size: 0.85rem;
-    color: var(--muted);
+    color: var(--text-dim);
 }
 
 .source-prose summary {
@@ -156,10 +156,6 @@
     margin: 0 0 0.5rem;
 }
 
-.not-a-link {
-    color: var(--muted);
-    font-style: italic;
-}
 
 /* Algorithms */
 .algorithms {
@@ -170,7 +166,7 @@
 .algorithms th {
     text-align: left;
     font-weight: 500;
-    color: var(--muted);
+    color: var(--text-dim);
     padding: 0.3rem 0.75rem 0.3rem 0;
     white-space: nowrap;
 }
@@ -185,7 +181,7 @@
 }
 
 .detail {
-    color: var(--muted);
+    color: var(--text-dim);
     font-size: 0.9rem;
     width: 100%;
 }
@@ -207,61 +203,24 @@
     color: var(--warn);
 }
 
-/* Agreement */
-.agreement {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
+/* The only pairwise-agreement outcome that survives into the view. See Evidence.razor for
+   why the list went: it restated the detector table immediately above it. */
+.relative-split {
+    margin: 0.75rem 0 0;
+    padding: 0.5rem 0.7rem;
+    border-left: 2px solid var(--alert);
+    background: var(--surface);
+    font-size: 0.88rem;
 }
 
-.agreement li {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-}
-
-.agreement .mark {
-    width: 1rem;
-}
-
-.agrees .mark {
-    color: var(--ok);
-}
-
-.differs .mark {
-    color: var(--muted);
+.relative-split strong {
+    color: var(--alert);
+    margin-right: 0.3rem;
 }
 
 .pair {
     font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
     font-size: 0.85rem;
-}
-
-.relation {
-    padding: 0.02rem 0.4rem;
-    border-radius: 3px;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    background: var(--line);
-    color: var(--muted);
-}
-
-/* The one that cannot be resolved by any confidence value — it earns a colour. */
-.relation.relative {
-    color: var(--alert);
-}
-
-.recommended {
-    color: var(--muted);
-    font-size: 0.85rem;
-}
-
-.note {
-    color: var(--muted);
-    font-size: 0.8rem;
 }
 
 .chords {
@@ -277,7 +236,7 @@
     padding: 0;
     font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
     font-size: 0.82rem;
-    color: var(--muted);
+    color: var(--text-dim);
     max-height: 12rem;
     overflow-y: auto;
 }
@@ -288,7 +247,7 @@
 }
 
 .flicker .r {
-    color: var(--line);
+    color: var(--muted);
 }
 
 .tempo {
@@ -304,7 +263,7 @@
 }
 
 .beatdetect {
-    color: var(--muted);
+    color: var(--text-dim);
     font-size: 0.85rem;
 }
 

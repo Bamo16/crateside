@@ -25,18 +25,15 @@ public static class TagAudit
     public static TagAuditReport Run(
         KeyLedger ledger,
         IEnumerable<string> stemRoots,
-        StemTagReader? tagReader = null,
         AbletonFolderInfoReader? folderInfoReader = null
-    ) => new(Scan(ledger, stemRoots, tagReader, folderInfoReader));
+    ) => new(Scan(ledger, stemRoots, folderInfoReader));
 
     private static List<TaggedStem> Scan(
         KeyLedger ledger,
         IEnumerable<string> stemRoots,
-        StemTagReader? tagReader,
         AbletonFolderInfoReader? folderInfoReader
     )
     {
-        var tags = tagReader ?? new StemTagReader();
         var folders = folderInfoReader ?? new AbletonFolderInfoReader();
         var stems = new List<TaggedStem>();
 
@@ -51,7 +48,7 @@ public static class TagAudit
 
                 // No provenance means no video ID, so there is nothing to group or join on.
                 // Common for anything not produced by StemForge, and not a finding.
-                if (tags.Read(path)?.Provenance?.SourceVideoId is not { } videoId)
+                if (StemTagReader.Read(path)?.Provenance?.SourceVideoId is not { } videoId)
                     continue;
 
                 var hasVerdict = ledger.TryGetLatestByVideoId(videoId, out var run);

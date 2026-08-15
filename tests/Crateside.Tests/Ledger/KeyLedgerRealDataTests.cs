@@ -66,11 +66,10 @@ public class KeyLedgerRealDataTests
         );
 
         var ledger = KeyLedger.Read(LedgerPath);
-        var reader = new StemTagReader();
 
         var unresolved = Directory
             .GetFiles(StagingRoot, "*.flac")
-            .Select(path => (Name: Path.GetFileName(path), Tags: reader.Read(path)))
+            .Select(path => (Name: Path.GetFileName(path), Tags: StemTagReader.Read(path)))
             .Where(s =>
                 s.Tags?.SourceVideoId is null
                 || !ledger.TryGetLatestByVideoId(s.Tags.SourceVideoId, out _)
@@ -95,7 +94,7 @@ public class KeyLedgerRealDataTests
         var stem = Path.Combine(StagingRoot, "Alan Gomez - Mission 15 (Vocal - Full).flac");
         Assert.SkipUnless(File.Exists(stem), "The Mission 15 stem is no longer staged.");
 
-        var tags = new StemTagReader().Read(stem);
+        var tags = StemTagReader.Read(stem);
         Assert.NotNull(tags?.SourceVideoId);
 
         Assert.True(

@@ -56,13 +56,8 @@ public sealed class ProcessedTracks
     /// Every folder a finished stem might live in — staging <em>and</em> the destination it
     /// gets moved to. A track whose stems have left staging is still processed.
     /// </param>
-    public static ProcessedTracks Scan(
-        KeyLedger ledger,
-        IEnumerable<string> stemRoots,
-        StemTagReader? tagReader = null
-    )
+    public static ProcessedTracks Scan(KeyLedger ledger, IEnumerable<string> stemRoots)
     {
-        var reader = tagReader ?? new StemTagReader();
         var stemsByVideoId = new Dictionary<string, List<string>>(StringComparer.Ordinal);
 
         foreach (var root in stemRoots.Where(Directory.Exists))
@@ -75,7 +70,7 @@ public sealed class ProcessedTracks
                 if (!StagingBoard.IsStemFile(path))
                     continue;
 
-                if (reader.Read(path)?.SourceVideoId is not { } videoId)
+                if (StemTagReader.Read(path)?.SourceVideoId is not { } videoId)
                     continue;
 
                 if (!stemsByVideoId.TryGetValue(videoId, out var paths))

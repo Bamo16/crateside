@@ -153,13 +153,19 @@ h1 {
 }
 
 .confidence {
-    margin-left: 0.5rem;
-    font-size: 0.68rem;
-    letter-spacing: 0.06em;
-    color: var(--muted);
+    white-space: nowrap;
+    width: 1%;
 }
 
-.confidence.high {
+.confidence .badge {
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    /* MEDIUM and LOW are the default. They are not warnings — a MEDIUM verdict is usually just
+       a track with no human coverage — so they stay quiet while HIGH earns the colour. */
+    color: var(--text-dim);
+}
+
+.confidence .badge.high {
     color: var(--ok);
 }
 

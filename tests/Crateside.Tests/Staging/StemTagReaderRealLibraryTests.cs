@@ -21,13 +21,12 @@ public class StemTagReaderRealLibraryTests
     {
         Assert.SkipUnless(StagingPresent, $"{StagingRoot} not present on this machine.");
 
-        var reader = new StemTagReader();
         var stems = Stems();
 
         Assert.NotEmpty(stems);
 
         var unjoinable = stems
-            .Select(path => (Name: Path.GetFileName(path), Tags: reader.Read(path)))
+            .Select(path => (Name: Path.GetFileName(path), Tags: StemTagReader.Read(path)))
             .Where(s => s.Tags?.SourceVideoId is null)
             .Select(s => s.Name)
             .ToArray();
@@ -40,11 +39,9 @@ public class StemTagReaderRealLibraryTests
     {
         Assert.SkipUnless(StagingPresent, $"{StagingRoot} not present on this machine.");
 
-        var reader = new StemTagReader();
-
         // Song-level rollup depends on this: the video ID is the song, the preset is the stem.
         var songs = Stems()
-            .Select(reader.Read)
+            .Select(StemTagReader.Read)
             .Where(t => t?.SourceVideoId is not null)
             .GroupBy(t => t!.SourceVideoId)
             .ToArray();

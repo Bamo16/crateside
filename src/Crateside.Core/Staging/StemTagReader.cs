@@ -8,7 +8,7 @@ namespace Crateside.Core.Staging;
 /// for the Xiph field by name: the round-trip is already proven by StemForge's own
 /// local-file path, and it keeps this reader working if a stem is ever not FLAC.
 /// </remarks>
-public sealed class StemTagReader
+public static class StemTagReader
 {
     /// <summary>
     /// Reads the tags crateside needs from a stem file. Returns null if the file is
@@ -16,7 +16,7 @@ public sealed class StemTagReader
     /// with no key and no video ID, which the staging board renders as unknown rather than
     /// as an error.
     /// </summary>
-    public StemTags? Read(string path)
+    public static StemTags? Read(string path)
     {
         try
         {
