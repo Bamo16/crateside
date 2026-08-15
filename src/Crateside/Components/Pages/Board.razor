@@ -122,10 +122,16 @@ else
                         <ul class="stems">
                             @foreach (var stem in song.Stems)
                             {
-                                <li class="@StemClass(stem)" title="@stem.FileName">
-                                    <span class="mark">@(stem.IsKeyTagged ? "✓" : "○")</span>
+                                <li class="@StemClass(stem)" title="@StemTitle(stem)">
+                                    <span class="mark">@StemMark(stem)</span>
                                     @stem.Label
-                                    @if (stem.HasPartialKey)
+                                    @if (stem.IsWarpGuide)
+                                    {
+                                        @* No tag state at all: a warp guide is never tagged, so
+                                           an untagged marker on it would be reporting a step
+                                           that does not exist. *@
+                                    }
+                                    else if (stem.HasPartialKey)
                                     {
                                         <span class="flag partial" title="Tagged with a tonic but no Major/Minor keyword — half a key.">
                                             half
@@ -216,9 +222,27 @@ else
     private static string StemClass(StagingStem stem) =>
         stem switch
         {
+            { IsWarpGuide: true } => "stem guide",
             { HasPartialKey: true } => "stem partial",
             { KeyDisagreesWithVerdict: true } => "stem stale",
             { IsKeyTagged: true } => "stem tagged",
             _ => "stem untagged",
         };
+
+    // A warp guide is not on the tagging track at all, so it gets neither ✓ nor ○ — it is
+    // outstanding *warping*, and marking it untagged would answer a question nobody asked.
+    private static string StemMark(StagingStem stem) =>
+        stem switch
+        {
+            { IsWarpGuide: true } => "◇",
+            { IsKeyTagged: true } => "✓",
+            _ => "○",
+        };
+
+    private static string StemTitle(StagingStem stem) =>
+        stem.IsWarpGuide
+            ? $"{stem.FileName}\n\nWarp guide: separated to be looked at, not heard. Place the "
+                + "warp markers against its transients, then delete it — that deletion is the "
+                + "step, not tidying up."
+            : stem.FileName;
 }

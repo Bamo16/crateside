@@ -54,6 +54,21 @@ simplification, recorded so that it reads as one.
 sample tagged?". A warp guide's presence is reported as its own state — warping outstanding —
 rather than as an untagged file.
 
+**An instrumental release is recorded as `has_vocals: false` in the ledger, stated by the user.**
+Not `instrumental`, which already names a *stem preset* — the track minus its vocals — and a
+release like this will never have one; writing `instrumental: true` on a track that can never
+have an `Instrumental - Full` file is the same overload this ADR exists to undo. It sits at the
+top level rather than inside `verdict`, because it is something the user says rather than
+something the agent concluded from evidence, and it is kept distinct from `input_kind`, which
+says *which file was analysed* — for one of these the analysed file genuinely is the full mix.
+It records the **fact** rather than the plan ("separate drums only"), so it still explains itself
+when the workflow changes, and crateside derives the plan from it.
+
+**Absent means "not stated", not "it has vocals"** — the same null semantics as `verdict.mode`,
+for the same reason: no run recorded before the field existed said anything about vocals, and
+none of them may acquire the fact retroactively. What to do about not-stated is the consumer's
+policy, and crateside's policy is to expect the usual vocal and instrumental pair.
+
 ## Considered and rejected
 
 - **Keep *sample* out and coin a different role word.** Rejected: the folder names already teach

@@ -199,7 +199,19 @@ h1 {
 }
 
 .stem.untagged {
+    color: var(--text-dim);
+}
+
+/* A warp guide is outstanding work of a different kind, so it reads as its own state rather
+   than as an untagged sample. Quiet, because its being here is normal until warping is done. */
+.stem.guide {
     color: var(--muted);
+    font-style: italic;
+}
+
+.stem.guide .mark {
+    color: var(--accent);
+    font-style: normal;
 }
 
 .flag {

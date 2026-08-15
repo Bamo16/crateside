@@ -63,6 +63,17 @@ public sealed record LedgerRun
             ? $"{tonic} {char.ToUpperInvariant(mode[0])}{mode[1..]}"
             : null;
 
+    /// <summary>
+    /// False when the user stated the release is instrumental: nothing to separate out, so the
+    /// drums are the only stem and the source track is the file that gets kept and tagged.
+    /// </summary>
+    /// <remarks>
+    /// Null means <em>not stated</em>, not "it has vocals" — no run recorded before the field
+    /// existed said anything. What to do about not-stated is this consumer's policy, and the
+    /// policy is to expect the usual vocal and instrumental pair.
+    /// </remarks>
+    public bool? HasVocals { get; init; }
+
     public KeyConfidence Confidence { get; init; }
 
     /// <summary>The warp starting point, not a tagged value. Rough by design.</summary>
@@ -91,6 +102,7 @@ public sealed record LedgerRun
             SourceVideoId = StemProvenance.ExtractYouTubeVideoId(dto.SourceUrl),
             Key = dto.Verdict?.Key,
             Mode = dto.Verdict?.Mode,
+            HasVocals = dto.HasVocals,
             Confidence = ParseConfidence(dto.Verdict?.Confidence),
             Bpm = dto.Bpm?.Value,
         };
@@ -144,6 +156,9 @@ internal sealed record LedgerRunDto
 
     [JsonPropertyName("bpm")]
     public BpmDto? Bpm { get; init; }
+
+    [JsonPropertyName("has_vocals")]
+    public bool? HasVocals { get; init; }
 
     internal sealed record VerdictDto
     {
