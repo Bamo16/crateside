@@ -10,6 +10,7 @@ namespace Crateside;
 public sealed class DrainWorker(
     SeparationDrainer drainer,
     SeparationInterlock interlock,
+    DrainControl control,
     ILogger<DrainWorker> logger
 ) : BackgroundService
 {
@@ -45,7 +46,9 @@ public sealed class DrainWorker(
 
             try
             {
-                await Task.Delay(delay, stoppingToken);
+                // Waiting on the control rather than the clock, so pressing resume starts work
+                // now instead of whenever the idle delay happens to run out.
+                await control.WaitForWorkAsync(delay, stoppingToken);
             }
             catch (OperationCanceledException)
             {

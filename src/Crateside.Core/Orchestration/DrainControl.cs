@@ -21,9 +21,21 @@ namespace Crateside.Core.Orchestration;
 /// not what the default behaviour is.
 /// </para>
 /// </remarks>
-public sealed class DrainControl(bool startPaused = false)
+public sealed class DrainControl(bool startPaused = true)
 {
     private readonly Lock _gate = new();
+
+    /// <summary>
+    /// Released by <see cref="Resume"/> so the worker's idle wait ends immediately.
+    /// </summary>
+    /// <remarks>
+    /// Without this, resuming only took effect on the loop's next tick — up to two minutes of
+    /// "nothing to separate right now" while a track sat waiting, which reads as a broken button
+    /// rather than a slow one. Bounded at one permit because the signal is level, not edge: two
+    /// resumes in a row still mean "go", and a second permit would only make the following wait
+    /// return instantly for no reason.
+    /// </remarks>
+    private readonly SemaphoreSlim _wake = new(0, 1);
 
     private bool _paused = startPaused;
     private string? _activity;
@@ -72,6 +84,15 @@ public sealed class DrainControl(bool startPaused = false)
         Changed?.Invoke();
     }
 
+    /// <summary>
+    /// Waits out the worker's idle delay, returning early when <see cref="Resume"/> is called.
+    /// </summary>
+    /// <returns>True when woken by a resume, false when the delay simply elapsed.</returns>
+    public Task<bool> WaitForWorkAsync(
+        TimeSpan delay,
+        CancellationToken cancellationToken = default
+    ) => _wake.WaitAsync(delay, cancellationToken);
+
     private void Set(bool paused)
     {
         lock (_gate)
@@ -80,6 +101,18 @@ public sealed class DrainControl(bool startPaused = false)
                 return;
 
             _paused = paused;
+        }
+
+        if (!paused)
+        {
+            try
+            {
+                _wake.Release();
+            }
+            catch (SemaphoreFullException)
+            {
+                // Already signalled and not yet consumed — the worker is about to run anyway.
+            }
         }
 
         Changed?.Invoke();
