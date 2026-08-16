@@ -1,4 +1,5 @@
 using System.Text;
+using Google.Apis.Json;
 using Google.Apis.Util.Store;
 using Microsoft.AspNetCore.DataProtection;
 
@@ -50,7 +51,7 @@ public sealed class ProtectedTokenStore(IDataProtectionProvider provider, string
     {
         Directory.CreateDirectory(_directory);
 
-        var json = Google.Apis.Json.NewtonsoftJsonSerializer.Instance.Serialize(value);
+        var json = NewtonsoftJsonSerializer.Instance.Serialize(value);
         var protectedBytes = _protector.Protect(Encoding.UTF8.GetBytes(json));
 
         return File.WriteAllBytesAsync(PathFor(key), protectedBytes);
@@ -67,7 +68,7 @@ public sealed class ProtectedTokenStore(IDataProtectionProvider provider, string
         {
             var plaintext = _protector.Unprotect(await File.ReadAllBytesAsync(path));
 
-            return Google.Apis.Json.NewtonsoftJsonSerializer.Instance.Deserialize<T>(
+            return NewtonsoftJsonSerializer.Instance.Deserialize<T>(
                 Encoding.UTF8.GetString(plaintext)
             );
         }

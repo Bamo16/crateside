@@ -38,6 +38,20 @@ against it.
   circle of fifths and letters the mode. An alternate spelling of a key, not a
   separate concept.
 
+## Import
+
+- **Import** — finishing a song: warping it, tagging it, saving its default clip, and
+  moving it into **Mashup Samples**. The steps can happen in any order, but the move is
+  kept last, so **presence in Mashup Samples is what says a song is imported**. Nothing
+  on disk records "warped" and nothing needs to: the move covers the whole sequence,
+  because a sample sitting there unwarped or mistagged is a mistake rather than a state
+  the workflow produces. Described step by step in
+  [the manual workflow](../docs/the-manual-workflow.md).
+- **Default clip** — the saved start position of a sample, trimmed to the bar where its
+  first verse begins, so that dragging it out of the library lands it there. What makes
+  an arbitrary vocal and an arbitrary instrumental line up on the first try. The audio
+  before that point is not removed; only the drag-in position moves.
+
 ## Views
 
 - **Staging board** — the live answer to "what is in front of me right now?": every

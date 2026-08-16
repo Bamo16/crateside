@@ -32,7 +32,7 @@ public sealed class QueueRemover(QueueAuthorizer authorizer)
         if (items.Count == 0)
             return [];
 
-        if (await authorizer.TryGetCredentialAsync(cancellationToken) is not { } credential)
+        if (await authorizer.GetCredentialAsync(cancellationToken) is not { } credential)
             throw new QueueUnavailableException(
                 "Not authorized to modify the playlist. Grant access and try again."
             );

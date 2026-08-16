@@ -1,4 +1,6 @@
 using Google.Apis.Auth.OAuth2;
+using Google.Apis.Auth.OAuth2.Flows;
+using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 using Microsoft.Extensions.Options;
 
@@ -46,7 +48,7 @@ public sealed class QueueAuthorizer(IOptions<QueueOptions> options, ProtectedTok
     /// longer be refreshed. Never prompts — call <see cref="ConsentAsync"/> for that, so a
     /// page render can never launch a browser window.
     /// </summary>
-    public async Task<UserCredential?> TryGetCredentialAsync(
+    public async Task<UserCredential?> GetCredentialAsync(
         CancellationToken cancellationToken = default
     )
     {
@@ -55,8 +57,8 @@ public sealed class QueueAuthorizer(IOptions<QueueOptions> options, ProtectedTok
 
         try
         {
-            var flow = new Google.Apis.Auth.OAuth2.Flows.GoogleAuthorizationCodeFlow(
-                new Google.Apis.Auth.OAuth2.Flows.GoogleAuthorizationCodeFlow.Initializer
+            var flow = new GoogleAuthorizationCodeFlow(
+                new GoogleAuthorizationCodeFlow.Initializer
                 {
                     ClientSecrets = ClientSecrets,
                     Scopes = Scopes,
@@ -113,13 +115,13 @@ public sealed class QueueAuthorizer(IOptions<QueueOptions> options, ProtectedTok
         CancellationToken cancellationToken = default
     )
     {
-        if (await TryGetCredentialAsync(cancellationToken) is not { } credential)
+        if (await GetCredentialAsync(cancellationToken) is not { } credential)
             return null;
 
         try
         {
             using var service = new YouTubeService(
-                new Google.Apis.Services.BaseClientService.Initializer
+                new BaseClientService.Initializer
                 {
                     ApplicationName = "crateside",
                     HttpClientInitializer = credential,

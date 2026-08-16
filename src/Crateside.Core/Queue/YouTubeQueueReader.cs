@@ -1,6 +1,7 @@
 using Google;
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
+using Google.Apis.YouTube.v3.Data;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Queue;
@@ -92,7 +93,7 @@ public sealed class YouTubeQueueReader(IOptions<QueueOptions> options) : IDispos
         return items;
     }
 
-    private static QueueItem? ToQueueItem(Google.Apis.YouTube.v3.Data.PlaylistItem item)
+    private static QueueItem? ToQueueItem(PlaylistItem item)
     {
         if (item.Snippet?.ResourceId?.VideoId is not { Length: > 0 } videoId)
             return null;
