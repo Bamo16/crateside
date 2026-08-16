@@ -11,8 +11,9 @@ namespace Crateside.Core.Orchestration;
 /// work — so there is no moment to pick and nothing to start.
 /// </para>
 /// <para>
-/// Pause exists for the reason that is actually true rather than the one originally assumed:
-/// the GPU is audible, and a live microphone is a real reason to stop for an hour.
+/// Pause carries no stated reason on purpose. Whether to leave the GPU alone right now is an
+/// occasional judgement that belongs to the user, and every attempt to write down <em>why</em>
+/// they might make it has so far been a guess rather than an observation.
 /// </para>
 /// <para>
 /// <paramref name="startPaused"/> exists so that launching the app is never itself an act that

@@ -140,9 +140,11 @@ the only constraint rather than one of two.
   moment was solving a problem that does not exist. The queue empties itself, one track
   at a time, gated only by the interlock — the same shape as verdict runs, so the worker
   is one loop rather than a scheduler plus a button.
-- **A pause control is kept, for a different reason.** Unnoticeable is not silent: with a
-  live microphone, fan noise is a real reason to stop for an hour. That is an occasional
-  judgement, not a gate on every batch.
+- ~~**A pause control is kept, for a different reason.** Unnoticeable is not silent: with a
+  live microphone, fan noise is a real reason to stop for an hour.~~ That is an occasional
+  judgement, not a gate on every batch. *(The microphone was never real — see **The
+  correction had the same defect** below. The pause is kept; only its justification is
+  withdrawn.)*
 - **One track per invocation, not one batch.** `separate` does accept many inputs and
   loop them serially, but batching made "the GPU is busy" and "this track is being
   worked" two different facts sharing one PID. One track per process costs some repeated
@@ -158,6 +160,26 @@ the only constraint rather than one of two.
 The lesson is one this project keeps re-learning and is worth writing down: **a settled
 decision inherits the truth of its premise, and a premise nobody measured is not
 settled — it is only old.**
+
+## The correction had the same defect — 2026-08-16
+
+The microphone was never checked either. It entered the conversation as an agent's
+suggestion, drew a silent nod, and was written down as fact. Checked: the user has not
+used the machine's microphone in over a month, and not for music production when they
+did. It had by then propagated to four places — this ADR, `CONTEXT.md`, `DrainControl`'s
+own documentation, and keytag ADR 0003 — in two of which it was framed as *the reason
+that is actually true*, i.e. it occupied the slot reserved for the lesson learned.
+
+**The pause survives; only its justification is withdrawn.** Whether to leave the GPU
+alone right now is an occasional judgement belonging to the person whose machine it is,
+and it is now recorded with no stated reason at all. That is deliberate: an empty slot
+invites nobody to reason from it, whereas a plausible-sounding one invites everybody to.
+
+Worth naming precisely, because it is not the same lesson as the one above: **a premise
+does not become measured by appearing in the correction of an unmeasured premise.** The
+first correction was rigorous about the claim it replaced and careless about the claim it
+introduced, in the same paragraph. Silence is not agreement, and a suggestion the user did
+not contradict is still a suggestion.
 
 ## Alternatives considered
 

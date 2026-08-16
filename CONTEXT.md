@@ -74,22 +74,37 @@ the two run types below are named after which of them they produce.
   where its stems belong, what quality to ask for. The thing that replaces a
   hand-written prompt. A work order says what should happen to a track next; it is
   not a record that anything did.
+- **Recipe** — the part of a work order that says what to make: which stems, in
+  what form. Normally nobody chooses one — it is *derived* from what is known
+  about the release, so an **instrumental release** yields a drums-only recipe
+  that keeps the source, and every other track yields the usual pair plus a
+  **warp guide**. A recipe is a plan and never a fact, so it is crateside's alone
+  and is not recorded anywhere keytag reads.
 - **Evidence run** — the stage that produces the **evidence** for a track:
   acquiring the audio and running the detectors. Deterministic, needs no judgement,
   and contends for nothing scarce.
 - **Verdict run** — the stage that turns evidence into a **verdict**. The only
   stage that requires an agent, because weighing evidence and going to look for
   human corroboration is the only part of the workflow that genuinely needs one.
+- **Working set** — everything crateside is holding about one track while that
+  track is in flight: the source audio it acquired and the evidence it produced
+  from it. Discarded when the track is **imported**, because that is the point
+  at which there is nothing further to do with the track and therefore nothing
+  further to do with what was gathered about it. Crateside's own scratch, never a
+  record of anything — losing it costs a re-run, never a fact.
 - **Draining** — working the queue down continuously, one track at a time, for as
   long as there is anything outstanding. The normal state of the system rather than
   an action someone takes: what limits separation is that two at once are ruinous,
   not that one costs the user their machine, so there is nothing to pick a moment
-  for. **Pausing** is the occasional exception — worth having because the GPU is
-  audible, and a live microphone is a real reason to stop for an hour.
+  for. **Pausing** is the occasional exception, and deliberately carries no stated
+  reason: whether to leave the GPU alone right now is the user's call to make, and
+  a written-down justification would only be a guess at one.
 - **Stage** — one of evidence run, verdict run, or separation. Stages are named
   separately because each contends for a *different* scarce resource — nothing,
   Claude quota, and the GPU respectively — and so each wants its own moment to run.
-  Being ready for one stage says nothing about being ready for another.
+  **Independent moments, but not independent order:** separation reads facts that
+  only a verdict run records, so a track becomes ready for it by having been
+  judged rather than by the clock coming round.
 
 ## Flagged ambiguities
 
