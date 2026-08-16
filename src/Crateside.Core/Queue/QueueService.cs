@@ -107,9 +107,10 @@ public sealed class QueueService(
             [_paths.SampleStaging, _paths.MashupSamples]
         );
 
-        // Held is subtracted from Outstanding rather than checked by its readers: the drainer
-        // takes the first outstanding item, so keeping held tracks out of that collection is
-        // what makes it impossible for one to be separated.
+        // Held is subtracted from the work lists rather than checked by their readers: a stage
+        // takes the first item out of one of these, so keeping held tracks out of them is what
+        // makes it impossible for one to be worked -- rather than correct only while every
+        // reader remembers to filter.
         var held = instructions
             .Values.Where(t => t.IsHeld)
             .Select(t => t.VideoId)
@@ -119,7 +120,12 @@ public sealed class QueueService(
         {
             Items = items,
             FullyProcessed = [.. items.Where(i => processed.IsFullyProcessed(i.VideoId))],
-            Stalled = [.. items.Where(i => processed.VerdictWithoutStems.Contains(i.VideoId))],
+            AwaitingSeparation =
+            [
+                .. items.Where(i =>
+                    processed.VerdictWithoutStems.Contains(i.VideoId) && !held.Contains(i.VideoId)
+                ),
+            ],
             Held = [.. items.Where(i => held.Contains(i.VideoId))],
             Outstanding =
             [

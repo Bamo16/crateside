@@ -93,10 +93,10 @@ else
     <p class="summary">
         @("track".ToQuantity(_view.Items.Count)) queued —
         <strong>@_view.Outstanding.Count new</strong>,
-        @_view.FullyProcessed.Count done@(_view.Stalled.Count switch
+        @_view.FullyProcessed.Count done@(_view.AwaitingSeparation.Count switch
         {
             0 => string.Empty,
-            var stalled => $", {stalled} stalled",
+            var awaiting => $", {awaiting} awaiting stems",
         }).
     </p>
 
@@ -135,10 +135,10 @@ else
                       Detail="Left alone on purpose — usually the wrong upload of the right song. crateside will not work these, and nothing removes them automatically, so they stay here until you deal with them." />
     }
 
-    @if (_view.Stalled.Count > 0)
+    @if (_view.AwaitingSeparation.Count > 0)
     {
-        <QueueSection Title="Stalled" Items="_view.Stalled" Tone="warn" OnRemove="RemoveOne"
-                      Detail="A verdict was recorded but no stems are on disk — a separation that died partway, or stems that were deleted. Never removed automatically; remove one by hand if you have abandoned it." />
+        <QueueSection Title="Awaiting stems" Items="_view.AwaitingSeparation" Tone="muted" OnRemove="RemoveOne"
+                      Detail="Judged, and waiting for the GPU. This is the normal state between a verdict and its stems — the separation work list, worked oldest-first. A track that sits here long after the queue has drained is a real stall: a separation that failed, or stems that were deleted." />
     }
 
     @if (_view.FullyProcessed.Count > 0)

@@ -109,9 +109,22 @@ public sealed record QueueView
     }
 
     /// <summary>
-    /// Items with a verdict but no stems on disk — a separation that died partway, or stems
-    /// that were deleted. They stay queued on purpose; this names them so a stall is visible
-    /// rather than silent.
+    /// Items with a verdict and no stems on disk: the separation work list, oldest-added first.
     /// </summary>
-    public required IReadOnlyList<QueueItem> Stalled { get; init; }
+    /// <remarks>
+    /// <para>
+    /// <strong>This used to mean a stall</strong>, back when one run produced the verdict and
+    /// the stems together — a track in this state had died partway. Now that the stages are
+    /// ordered it is the ordinary waiting room between them, and it is what
+    /// <see cref="Orchestration.SeparationSelector"/> reads. A genuine stall is still in here
+    /// (stems deleted, a separation that failed), and is told apart by what crateside recorded
+    /// having run rather than by the queue.
+    /// </para>
+    /// <para>
+    /// <strong>Held items are not here</strong>, for the same structural reason they are absent
+    /// from <see cref="Outstanding"/>: the guard has to be impossible to forget, not merely
+    /// applied everywhere today.
+    /// </para>
+    /// </remarks>
+    public required IReadOnlyList<QueueItem> AwaitingSeparation { get; init; }
 }

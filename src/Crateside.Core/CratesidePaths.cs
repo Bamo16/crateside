@@ -34,8 +34,30 @@ public sealed class CratesidePaths
     /// <summary>Where stems go once the work on them is finished.</summary>
     public string MashupSamples { get; set; } = @"P:\RYAN\Ableton\Mashup Samples";
 
+    private string? _ledger;
+
+    /// <summary>
+    /// The keytag checkout, which crateside drives through its two declared interfaces:
+    /// <c>keytag-detect</c> for the evidence run, and <c>runs.jsonl</c> for the verdict.
+    /// </summary>
+    /// <remarks>
+    /// It reaches the detector without changing directory —
+    /// <c>uv run --project &lt;this&gt; keytag-detect …</c> — so relative paths still resolve
+    /// against crateside. Nothing here may reach past those two names into keytag's tree
+    /// (keytag ADR 0006).
+    /// </remarks>
+    public string KeytagRepo { get; set; } = @"V:\Repos\keytag";
+
     /// <summary>keytag's append-only record of detect-key runs. Read-only; keytag owns it.</summary>
-    public string Ledger { get; set; } = @"V:\Repos\keytag\results\runs.jsonl";
+    /// <remarks>
+    /// Defaults to its place inside <see cref="KeytagRepo"/> so the two cannot drift, and stays
+    /// settable on its own because a test points at a fixture without needing a whole checkout.
+    /// </remarks>
+    public string Ledger
+    {
+        get => _ledger ?? Path.Combine(KeytagRepo, "results", "runs.jsonl");
+        set => _ledger = value;
+    }
 
     /// <summary>Where stems go when the track has a key the user would tag with.</summary>
     public string StemsKeyIdentified { get; set; } = Path.Combine(MusicStems, "Key Identified");

@@ -33,17 +33,23 @@ public sealed class SeparationSelector(
     /// already ran is the only thing that separates "not done" from "not done yet *by me*".
     /// </para>
     /// <para>
-    /// <strong>A track with no ledger line is not ready</strong>, however long it has waited.
-    /// Separation reads two things off that line and neither exists before a verdict run: the
-    /// recipe, via <c>has_vocals</c>, and the destination, via <c>HasTaggableKey</c>. An
-    /// evidence run does not produce a line — keytag's recorder requires a verdict — so
-    /// "detected" and "never touched" look identical from here. Separating anyway is what made
-    /// a vocal stem of a track with no vocals, and it also strands the stems in
+    /// <strong>It reads <see cref="QueueView.AwaitingSeparation"/>, not
+    /// <see cref="QueueView.Outstanding"/></strong>, and that is the whole verdict gate.
+    /// Separation reads two things off a ledger line and neither exists before a verdict run:
+    /// the recipe, via <c>has_vocals</c>, and the destination, via <c>HasTaggableKey</c>. An
+    /// evidence run records no line at all — keytag's recorder requires a verdict — so
+    /// "detected" and "never touched" are indistinguishable from here. Separating anyway is
+    /// what made a vocal stem of a track with no vocals, and it also strands the stems in
     /// <c>Unresolved Key</c> for good, because nothing moves them afterwards (ADR 0005).
     /// </para>
     /// <para>
-    /// A LOW or WITHHELD verdict <em>is</em> a line, so it passes: the track was judged, the
-    /// answer was "no safe tag", and <c>Unresolved Key</c> is the folder that says so.
+    /// Making it a collection rather than a test here is deliberate, and the same choice holds
+    /// took: <em>Outstanding</em> means "no verdict yet", so a judged track is not in it and
+    /// filtering it by "has a verdict" would have quietly yielded nothing at all.
+    /// </para>
+    /// <para>
+    /// A LOW or WITHHELD verdict <em>is</em> a line, so it arrives here: the track was judged,
+    /// the answer was "no safe tag", and <c>Unresolved Key</c> is the folder that says so.
     /// </para>
     /// <para>
     /// Unavailable items are skipped rather than attempted: the video is deleted or private
@@ -53,9 +59,7 @@ public sealed class SeparationSelector(
     public bool TryPickNext(QueueView view, KeyLedger ledger, out WorkOrder order)
     {
         if (
-            view.Outstanding.FirstOrDefault(i =>
-                !i.IsUnavailable && ledger.HasRunFor(i.VideoId) && IsEligible(i)
-            )
+            view.AwaitingSeparation.FirstOrDefault(i => !i.IsUnavailable && IsEligible(i))
             is not { } next
         )
         {
