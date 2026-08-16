@@ -47,6 +47,21 @@ public sealed class QueueService(
     public void SetPlaylist(string? playlistIdOrUrl) => settings.SavePlaylistId(playlistIdOrUrl);
 
     /// <summary>
+    /// Tells crateside to leave a track alone — it drops out of the work list until released.
+    /// </summary>
+    public void Hold(string videoId, string? reason = null) => settings.Hold(videoId, reason);
+
+    /// <summary>Puts a held track back into the work list.</summary>
+    public void Release(string videoId) => settings.Release(videoId);
+
+    /// <summary>Why a track is being held, in the user's words, or null if it is not held.</summary>
+    public string? HoldReason(string videoId) =>
+        settings
+            .Read()
+            .Held.FirstOrDefault(h => h.VideoId.Equals(videoId, StringComparison.Ordinal))
+            ?.Reason;
+
+    /// <summary>
     /// Reads the playlist and classifies every item. Throws
     /// <see cref="QueueUnavailableException"/> if the playlist cannot be read — the caller
     /// must render that as its own state, never as an empty queue.
@@ -66,16 +81,23 @@ public sealed class QueueService(
             [_paths.SampleStaging, _paths.MashupSamples]
         );
 
+        // Held is subtracted from Outstanding rather than checked by its readers: the drainer
+        // takes the first outstanding item, so keeping held tracks out of that collection is
+        // what makes it impossible for one to be separated.
+        var held = settings.Read().Held.Select(h => h.VideoId).ToHashSet(StringComparer.Ordinal);
+
         return new QueueView
         {
             Items = items,
             FullyProcessed = [.. items.Where(i => processed.IsFullyProcessed(i.VideoId))],
             Stalled = [.. items.Where(i => processed.VerdictWithoutStems.Contains(i.VideoId))],
+            Held = [.. items.Where(i => held.Contains(i.VideoId))],
             Outstanding =
             [
                 .. items.Where(i =>
                     !processed.IsFullyProcessed(i.VideoId)
                     && !processed.VerdictWithoutStems.Contains(i.VideoId)
+                    && !held.Contains(i.VideoId)
                 ),
             ],
         };

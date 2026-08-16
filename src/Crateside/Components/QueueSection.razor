@@ -33,6 +33,19 @@
                         unavailable
                     </span>
                 }
+                @if (HoldReason?.Invoke(item.VideoId) is { Length: > 0 } reason)
+                {
+                    <span class="hold-reason">@reason</span>
+                }
+                @if (OnHoldToggled.HasDelegate)
+                {
+                    @* Held is a bucket, not a flag the drainer checks, so this button is the
+                       only thing standing between a wrong-version upload and the GPU. *@
+                    <button class="hold" title="@(IsHeld ? "Put this back in the work list" : "Leave this alone — crateside will not work it")"
+                            @onclick="() => OnHoldToggled.InvokeAsync(item)">
+                        @(IsHeld ? "release" : "hold")
+                    </button>
+                }
                 @if (OnRemove.HasDelegate)
                 {
                     <button class="remove" title="Remove this item from the playlist"
@@ -66,4 +79,16 @@
     /// <summary>Supplied only where removing by hand is meaningful — done and stalled.</summary>
     [Parameter]
     public EventCallback<QueueItem> OnRemove { get; set; }
+
+    /// <summary>Holds and releases. Supplied on the work list and on the held section.</summary>
+    [Parameter]
+    public EventCallback<QueueItem> OnHoldToggled { get; set; }
+
+    /// <summary>True when this section <em>is</em> the held one, so the button reads "release".</summary>
+    [Parameter]
+    public bool IsHeld { get; set; }
+
+    /// <summary>Looks up why a track is held, for the held section.</summary>
+    [Parameter]
+    public Func<string, string?>? HoldReason { get; set; }
 }

@@ -51,7 +51,24 @@ public sealed record QueueView
     /// <summary>
     /// Items with no verdict yet: the actual work list, oldest-added first.
     /// </summary>
+    /// <remarks>
+    /// <strong>Held items are not here.</strong> That is the whole guard: the drainer reads this
+    /// collection, so a held track cannot reach the GPU by any path, rather than by every reader
+    /// remembering to filter. The batch size and <see cref="NextBatch"/> are sized off this too,
+    /// so they describe work actually intended.
+    /// </remarks>
     public required IReadOnlyList<QueueItem> Outstanding { get; init; }
+
+    /// <summary>
+    /// Items the user has told crateside to leave alone — usually the wrong upload of the right
+    /// song, noticed late and not worth stopping to fix.
+    /// </summary>
+    /// <remarks>
+    /// These stay in the playlist and are not <see cref="FullyProcessed"/>, so nothing will ever
+    /// clean them up automatically. That is correct — a hold is the user's decision to revisit —
+    /// but it means they accumulate quietly unless the view keeps them visible.
+    /// </remarks>
+    public required IReadOnlyList<QueueItem> Held { get; init; }
 
     /// <summary>
     /// The next <paramref name="size"/> items to work, plus anything explicitly pinned.

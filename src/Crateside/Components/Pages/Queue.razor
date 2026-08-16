@@ -115,16 +115,24 @@ else
         </div>
 
         <QueueSection Title="Next batch" Items="_view.NextBatch(_batchSize, _pinned)"
-                      Pinned="_pinned" OnPinToggled="TogglePin"
+                      Pinned="_pinned" OnPinToggled="TogglePin" OnHoldToggled="ToggleHold"
                       Detail="What to work now. Paste these into a detect-key session." />
 
         @if (_view.Outstanding.Count > _batchSize)
         {
             <QueueSection Title="Also waiting"
                           Items="_view.Outstanding.Except(_view.NextBatch(_batchSize, _pinned)).ToList()"
-                          Tone="muted" Pinned="_pinned" OnPinToggled="TogglePin"
+                          Tone="muted" Pinned="_pinned" OnPinToggled="TogglePin" OnHoldToggled="ToggleHold"
                           Detail="Queued but not in this batch." />
         }
+    }
+
+    @if (_view.Held.Count > 0)
+    {
+        <QueueSection Title="Held" Items="_view.Held" Tone="muted" IsHeld="true"
+                      OnHoldToggled="ToggleHold" HoldReason="QueueService.HoldReason"
+                      OnRemove="RemoveOne"
+                      Detail="Left alone on purpose — usually the wrong upload of the right song. crateside will not work these, and nothing removes them automatically, so they stay here until you deal with them." />
     }
 
     @if (_view.Stalled.Count > 0)
@@ -221,6 +229,23 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     {
         if (!_pinned.Add(playlistItemId))
             _pinned.Remove(playlistItemId);
+    }
+
+    /// <summary>
+    /// Holds or releases a track, then re-reads so it moves between sections.
+    /// </summary>
+    /// <remarks>
+    /// The re-read is the point: holding does not hide a row, it moves the track out of
+    /// <c>Outstanding</c> entirely, which is what keeps it away from the drainer.
+    /// </remarks>
+    private async Task ToggleHold(QueueItem item)
+    {
+        if (_view?.Held.Any(h => h.VideoId == item.VideoId) is true)
+            QueueService.Release(item.VideoId);
+        else
+            QueueService.Hold(item.VideoId);
+
+        await Load();
     }
 
     private async Task Consent()

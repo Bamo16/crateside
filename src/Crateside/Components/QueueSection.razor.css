@@ -90,6 +90,30 @@ h2 {
     color: var(--muted);
 }
 
+.hold {
+    flex: none;
+    padding: 0 0.45rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: none;
+    color: var(--text-dim);
+    font: inherit;
+    font-size: 0.75rem;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.hold:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.hold-reason {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
 .remove {
     flex: none;
     padding: 0 0.4rem;

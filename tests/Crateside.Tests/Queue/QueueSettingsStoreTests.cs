@@ -80,4 +80,57 @@ public class QueueSettingsStoreTests : IDisposable
 
         Assert.Null(store.Read().PlaylistId);
     }
+
+    [Fact]
+    public void A_hold_survives_a_restart()
+    {
+        Store().Hold("abc123", "wrong upload — want the album version");
+
+        var reloaded = Store().Read();
+
+        Assert.Equal("abc123", Assert.Single(reloaded.Held).VideoId);
+        Assert.Equal("wrong upload — want the album version", reloaded.Held[0].Reason);
+    }
+
+    [Fact]
+    public void Saving_the_playlist_does_not_drop_the_holds()
+    {
+        // Every mutator used to write a freshly-constructed settings object, so saving one field
+        // discarded the others. Harmless while there was only one field, and not any more.
+        var store = Store();
+        store.Hold("abc123");
+
+        store.SavePlaylistId("PL_something");
+
+        var reloaded = Store().Read();
+        Assert.Equal("PL_something", reloaded.PlaylistId);
+        Assert.Single(reloaded.Held);
+    }
+
+    [Fact]
+    public void Holding_the_same_track_twice_holds_it_once()
+    {
+        var store = Store();
+
+        store.Hold("abc123", "first");
+        store.Hold("abc123", "second");
+
+        Assert.Equal("second", Assert.Single(store.Read().Held).Reason);
+    }
+
+    [Fact]
+    public void Releasing_removes_only_that_track()
+    {
+        var store = Store();
+        store.Hold("abc123");
+        store.Hold("def456");
+
+        store.Release("abc123");
+
+        Assert.Equal("def456", Assert.Single(store.Read().Held).VideoId);
+    }
+
+    [Fact]
+    public void Releasing_something_that_was_never_held_is_not_an_error() =>
+        Assert.Empty(Store().Release("never-held").Held);
 }

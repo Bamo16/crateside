@@ -40,12 +40,33 @@ public class SeparationSelectorTests : IDisposable
             Outstanding = outstanding,
             FullyProcessed = [],
             Stalled = [],
+            Held = [],
         };
 
     [Fact]
     public void An_empty_queue_yields_nothing()
     {
         Assert.False(new SeparationSelector(Jobs).TryPickNext(View(), NoLedger, out _));
+    }
+
+    [Fact]
+    public void A_held_track_cannot_be_picked_because_it_is_not_outstanding()
+    {
+        // The guard is structural, not a check here. QueueService subtracts held tracks from
+        // Outstanding, so the selector needs no knowledge of holds and cannot forget to apply
+        // them — which matters because Outstanding has several other readers.
+        var held = Item("held-one");
+
+        var view = new QueueView
+        {
+            Items = [held],
+            Outstanding = [],
+            FullyProcessed = [],
+            Stalled = [],
+            Held = [held],
+        };
+
+        Assert.False(new SeparationSelector(Jobs).TryPickNext(view, NoLedger, out _));
     }
 
     [Fact]
