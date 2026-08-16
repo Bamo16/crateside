@@ -36,7 +36,7 @@
         },
         {
             "label": "watch",
-            "detail": "Run the board with hot reload — the usual way to work on the UI.",
+            "detail": "Run the board with hot reload — the usual way to work on the UI. Starts automatically when the folder is opened.",
             "type": "process",
             "command": "dotnet",
             "args": [
@@ -46,6 +46,11 @@
                 "run"
             ],
             "isBackground": true,
+            // Safe to autostart only because draining now defaults to paused: opening the repo
+            // cannot start a separation. If that default is ever flipped back, remove this.
+            "runOptions": {
+                "runOn": "folderOpen"
+            },
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"
