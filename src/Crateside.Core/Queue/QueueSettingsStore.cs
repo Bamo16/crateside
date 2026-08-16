@@ -14,10 +14,10 @@ namespace Crateside.Core.Queue;
 /// </para>
 /// <para>
 /// This is settings, not state: the staging board stays purely derived, and nothing here
-/// records what has been done. A <strong>hold</strong> fits that rule — it is a standing
-/// instruction about what to work, like the playlist ID, not a record that anything ran.
-/// <strong>The API key is deliberately not here</strong> — it lives in user-secrets and is
-/// never written or displayed by the app.
+/// records what has been done. A <see cref="TrackInstruction"/> fits that rule — it is a
+/// standing instruction about <em>how to work</em> a track, like the playlist ID, not a record
+/// that anything ran. <strong>The API key is deliberately not here</strong> — it lives in
+/// user-secrets and is never written or displayed by the app.
 /// </para>
 /// </remarks>
 public sealed class QueueSettingsStore
@@ -62,7 +62,7 @@ public sealed class QueueSettingsStore
             return _cached = new QueueSettings
             {
                 PlaylistId = stored?.PlaylistId ?? _fallback.PlaylistId,
-                Held = stored?.Held ?? [],
+                Tracks = TracksOf(stored),
             };
         }
     }
@@ -86,32 +86,62 @@ public sealed class QueueSettingsStore
     /// they have never been detected, so there is no song identity to key on.
     /// </remarks>
     public QueueSettings Hold(string videoId, string? reason = null) =>
-        Save(current =>
-            current with
-            {
-                Held =
-                [
-                    .. current.Held.Where(h =>
-                        !h.VideoId.Equals(videoId, StringComparison.Ordinal)
-                    ),
-                    new HeldTrack { VideoId = videoId, Reason = reason },
-                ],
-            }
-        );
+        Upsert(videoId, t => t with { IsHeld = true, HoldReason = reason });
 
     /// <summary>Releases a held track back into the work list.</summary>
     public QueueSettings Release(string videoId) =>
-        Save(current =>
-            current with
+        Upsert(videoId, t => t with { IsHeld = false, HoldReason = null });
+
+    /// <summary>
+    /// Records that a track is an <em>instrumental release</em> — no vocals to begin with, so
+    /// there is nothing to separate out and the source track is the sample.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>A fact, not a plan.</strong> It says what the release is; the recipe is derived
+    /// from it. That distinction is ADR 0004's and is why this is not simply "separate drums
+    /// only" — recorded as a fact it still explains itself when the workflow changes, and it is
+    /// what reaches keytag's ledger as <c>has_vocals</c>.
+    /// </para>
+    /// <para>
+    /// It lives here rather than coming back from the ledger because it is <em>the user's
+    /// statement</em>, and this is the only place in the pipeline where a user is present:
+    /// the evidence run is unattended and the verdict run is a headless session. It is also
+    /// knowable the moment the track is queued, being a property of the release rather than
+    /// something detection discovers.
+    /// </para>
+    /// </remarks>
+    public QueueSettings SetInstrumentalRelease(string videoId, bool isInstrumentalRelease) =>
+        Upsert(videoId, t => t with { IsInstrumentalRelease = isInstrumentalRelease });
+
+    /// <summary>
+    /// Applies a change to one track's instruction, adding it if there was none and dropping it
+    /// again once it says nothing. Keeping empty entries would turn every released hold into a
+    /// permanent line in the file.
+    /// </summary>
+    private QueueSettings Upsert(string videoId, Func<TrackInstruction, TrackInstruction> change)
+    {
+        return Save(current =>
+        {
+            var existing =
+                current.Tracks.FirstOrDefault(t =>
+                    t.VideoId.Equals(videoId, StringComparison.Ordinal)
+                ) ?? new TrackInstruction { VideoId = videoId };
+
+            var changed = change(existing);
+
+            return current with
             {
-                Held =
+                Tracks =
                 [
-                    .. current.Held.Where(h =>
-                        !h.VideoId.Equals(videoId, StringComparison.Ordinal)
+                    .. current.Tracks.Where(t =>
+                        !t.VideoId.Equals(videoId, StringComparison.Ordinal)
                     ),
+                    .. changed.SaysSomething ? new[] { changed } : [],
                 ],
-            }
-        );
+            };
+        });
+    }
 
     /// <summary>
     /// Reads, applies, writes. Every mutator goes through here so that saving one setting cannot
@@ -122,12 +152,14 @@ public sealed class QueueSettingsStore
     {
         lock (_gate)
         {
+            var stored = _cached is null ? TryReadFile() : null;
+
             var settings = change(
                 _cached
                     ?? new QueueSettings
                     {
-                        PlaylistId = TryReadFile()?.PlaylistId ?? _fallback.PlaylistId,
-                        Held = TryReadFile()?.Held ?? [],
+                        PlaylistId = stored?.PlaylistId ?? _fallback.PlaylistId,
+                        Tracks = TracksOf(stored),
                     }
             );
 
@@ -137,6 +169,28 @@ public sealed class QueueSettingsStore
             return _cached = settings;
         }
     }
+
+    /// <summary>
+    /// The stored instructions, reading a file written before holds and the instrumental-release
+    /// fact became one entry. A file with only the old <c>held</c> array still describes real
+    /// user decisions, so it is read rather than discarded; the next write puts it in the new
+    /// shape.
+    /// </summary>
+    private static IReadOnlyList<TrackInstruction> TracksOf(QueueSettings? stored) =>
+        stored switch
+        {
+            { Tracks: { Count: > 0 } tracks } => tracks,
+            { Held: { Count: > 0 } held } =>
+            [
+                .. held.Select(h => new TrackInstruction
+                {
+                    VideoId = h.VideoId,
+                    IsHeld = true,
+                    HoldReason = h.Reason,
+                }),
+            ],
+            _ => [],
+        };
 
     private QueueSettings? TryReadFile()
     {
@@ -162,23 +216,70 @@ public sealed record QueueSettings
     [JsonPropertyName("playlistId")]
     public string? PlaylistId { get; init; }
 
-    /// <summary>Tracks crateside has been told not to work.</summary>
+    /// <summary>Standing instructions about how to work particular tracks.</summary>
+    [JsonPropertyName("tracks")]
+    public IReadOnlyList<TrackInstruction> Tracks { get; init; } = [];
+
+    /// <summary>
+    /// The previous shape, read once so existing holds survive and then never written again.
+    /// </summary>
     [JsonPropertyName("held")]
-    public IReadOnlyList<HeldTrack> Held { get; init; } = [];
+    public IReadOnlyList<HeldTrack>? Held { get; init; }
 }
 
-/// <summary>A track the user has told crateside to leave alone.</summary>
+/// <summary>
+/// A standing instruction about how crateside should work one track.
+/// </summary>
 /// <remarks>
-/// A <em>deferral</em>, not a classification: the usual case is knowing an entry is the wrong
-/// upload and not wanting to stop and fix it. Whether it is eventually replaced, removed, or
-/// released is left open, which is why <see cref="Reason"/> is prose rather than an enum.
+/// Keyed by video ID because that is the only identity these tracks have — an undetected track
+/// has no song identity to key on. Holds and the instrumental-release fact live together
+/// because they are the same kind of thing: something the user knows about a specific track,
+/// stated once, before anything runs. A per-track <em>recipe override</em> would be the third,
+/// and would slot in here.
 /// </remarks>
+public sealed record TrackInstruction
+{
+    [JsonPropertyName("videoId")]
+    public required string VideoId { get; init; }
+
+    /// <summary>
+    /// crateside will not work this track at all until it is released.
+    /// </summary>
+    /// <remarks>
+    /// A <em>deferral</em>, not a classification: the usual case is knowing an entry is the
+    /// wrong upload and not wanting to stop and fix it. Whether it is eventually replaced,
+    /// removed, or released is left open, which is why <see cref="HoldReason"/> is prose.
+    /// </remarks>
+    [JsonPropertyName("held")]
+    public bool IsHeld { get; init; }
+
+    /// <summary>Why, in the user's words. Optional, and free text on purpose.</summary>
+    [JsonPropertyName("holdReason")]
+    public string? HoldReason { get; init; }
+
+    /// <summary>
+    /// The release has no vocals to begin with, so there is nothing to separate out: the drums
+    /// are the only stem and the source track is the sample.
+    /// </summary>
+    /// <remarks>
+    /// The user's statement about the release, never crateside's inference — not from the audio,
+    /// and not from a title containing the word "Instrumental", which also describes an official
+    /// instrumental of a track that does have vocals.
+    /// </remarks>
+    [JsonPropertyName("instrumentalRelease")]
+    public bool IsInstrumentalRelease { get; init; }
+
+    /// <summary>Whether this instruction still carries anything worth storing.</summary>
+    [JsonIgnore]
+    public bool SaysSomething => IsHeld || IsInstrumentalRelease;
+}
+
+/// <summary>A held track as the previous file format wrote it. Read-only; see ADR 0005.</summary>
 public sealed record HeldTrack
 {
     [JsonPropertyName("videoId")]
     public required string VideoId { get; init; }
 
-    /// <summary>Why, in the user's words. Optional, and free text on purpose.</summary>
     [JsonPropertyName("reason")]
     public string? Reason { get; init; }
 }

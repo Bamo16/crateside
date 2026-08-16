@@ -56,10 +56,21 @@ public sealed class QueueService(
 
     /// <summary>Why a track is being held, in the user's words, or null if it is not held.</summary>
     public string? HoldReason(string videoId) =>
+        InstructionFor(videoId) is { IsHeld: true, HoldReason: var reason } ? reason : null;
+
+    /// <summary>
+    /// Records whether a track is an <em>instrumental release</em>. The user's statement, and
+    /// the only thing that stops crateside asking the separator for a vocal stem of a track
+    /// that has no vocals.
+    /// </summary>
+    public void SetInstrumentalRelease(string videoId, bool isInstrumentalRelease) =>
+        settings.SetInstrumentalRelease(videoId, isInstrumentalRelease);
+
+    /// <summary>The standing instruction for a track, or null when there is none.</summary>
+    public TrackInstruction? InstructionFor(string videoId) =>
         settings
             .Read()
-            .Held.FirstOrDefault(h => h.VideoId.Equals(videoId, StringComparison.Ordinal))
-            ?.Reason;
+            .Tracks.FirstOrDefault(t => t.VideoId.Equals(videoId, StringComparison.Ordinal));
 
     /// <summary>
     /// Reads the playlist and classifies every item. Throws
@@ -70,7 +81,22 @@ public sealed class QueueService(
     {
         // Oldest-added first: the Queue is a queue, and added-at is the only ordering that
         // means the same thing whether or not the playlist adds new videos to the top.
+        var instructions = settings
+            .Read()
+            .Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal);
+
+        // The instrumental-release fact is carried on the item rather than looked up again by
+        // every reader, so composing a work order stays pure — it reads the queue item and the
+        // ledger and touches nothing.
         var items = (await reader.ListAsync(PlaylistId ?? string.Empty, cancellationToken))
+            .Select(item =>
+                instructions.TryGetValue(item.VideoId, out var instruction)
+                    ? item with
+                    {
+                        IsInstrumentalRelease = instruction.IsInstrumentalRelease,
+                    }
+                    : item
+            )
             .OrderBy(item => item.AddedAt ?? DateTimeOffset.MaxValue)
             .ToArray();
 
@@ -84,7 +110,10 @@ public sealed class QueueService(
         // Held is subtracted from Outstanding rather than checked by its readers: the drainer
         // takes the first outstanding item, so keeping held tracks out of that collection is
         // what makes it impossible for one to be separated.
-        var held = settings.Read().Held.Select(h => h.VideoId).ToHashSet(StringComparer.Ordinal);
+        var held = instructions
+            .Values.Where(t => t.IsHeld)
+            .Select(t => t.VideoId)
+            .ToHashSet(StringComparer.Ordinal);
 
         return new QueueView
         {

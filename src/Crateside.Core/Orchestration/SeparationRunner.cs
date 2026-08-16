@@ -162,7 +162,13 @@ public sealed class SeparationRunner(
         };
 
         info.ArgumentList.Add("separate");
-        info.ArgumentList.Add(order.SourceUrl);
+
+        // The retained download when there is one, so the track is fetched once for the whole
+        // pipeline. Safe only because the file is StemForge's own: it reads the input's
+        // provenance comment and carries the source URL into the stems, which is what keeps the
+        // video ID -- the join key for the board, for "fully processed", and for queue cleanup.
+        // A file from anywhere else would silently produce stems that join to nothing.
+        info.ArgumentList.Add(order.SourcePath ?? order.SourceUrl);
 
         foreach (var preset in order.Recipe.Presets)
         {
@@ -172,6 +178,11 @@ public sealed class SeparationRunner(
 
         if (order.Recipe.ExtractDrums)
             info.ArgumentList.Add("--extract-drums");
+
+        // An instrumental release has no stems worth keeping but the source itself, so the
+        // separator is asked to place it -- crateside directs output and never moves files.
+        if (order.Recipe.KeepSource)
+            info.ArgumentList.Add("--keep-source");
 
         info.ArgumentList.Add("--format");
         info.ArgumentList.Add(order.Recipe.Format);

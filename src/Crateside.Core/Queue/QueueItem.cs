@@ -37,6 +37,18 @@ public sealed record QueueItem
     /// </summary>
     public bool IsUnavailable { get; init; }
 
+    /// <summary>
+    /// The release has no vocals to begin with, so there is nothing to separate out.
+    /// </summary>
+    /// <remarks>
+    /// Carried from the user's standing instruction rather than inferred here. It is what turns
+    /// the recipe from the usual pair plus a warp guide into drums-only with a kept source, and
+    /// it reaches keytag's ledger as <c>has_vocals: false</c>. False means <em>not stated</em>,
+    /// which is not the same as "it has vocals" — but crateside's policy for not-stated is to
+    /// expect the usual pair, so the two behave alike here (ADR 0004).
+    /// </remarks>
+    public bool IsInstrumentalRelease { get; init; }
+
     public string WatchUrl => $"https://www.youtube.com/watch?v={VideoId}";
 }
 

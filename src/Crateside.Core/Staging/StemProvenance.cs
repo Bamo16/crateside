@@ -22,7 +22,18 @@ public sealed partial record StemProvenance
     /// <summary>The separation date as written (<c>yyyy-MM-dd</c>, UTC).</summary>
     public DateOnly? SeparatedOn { get; init; }
 
-    /// <summary>The source URL the track was downloaded from. Absent for local-file jobs.</summary>
+    /// <summary>
+    /// The source URL the track was downloaded from.
+    /// </summary>
+    /// <remarks>
+    /// <strong>A local-file job keeps this, provided the local file is one StemForge
+    /// downloaded.</strong> <c>AudioTagger.ReadSourceTagInfo</c> parses the input's own
+    /// <c>COMMENT</c> and carries the URL forward into the stems it writes — its doc names the
+    /// case, "download once, then separate on the saved path", which is exactly what crateside's
+    /// working set does. A file acquired any other way has no <c>stemforge/</c> comment, so it
+    /// yields no URL and therefore no <see cref="SourceVideoId"/>, and every stem made from it
+    /// joins to nothing. That is why the evidence run may not pick its own downloader.
+    /// </remarks>
     public string? SourceUrl { get; init; }
 
     /// <summary>

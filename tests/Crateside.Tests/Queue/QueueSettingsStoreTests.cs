@@ -86,14 +86,15 @@ public class QueueSettingsStoreTests : IDisposable
     {
         Store().Hold("abc123", "wrong upload — want the album version");
 
-        var reloaded = Store().Read();
+        var reloaded = Assert.Single(Store().Read().Tracks);
 
-        Assert.Equal("abc123", Assert.Single(reloaded.Held).VideoId);
-        Assert.Equal("wrong upload — want the album version", reloaded.Held[0].Reason);
+        Assert.Equal("abc123", reloaded.VideoId);
+        Assert.True(reloaded.IsHeld);
+        Assert.Equal("wrong upload — want the album version", reloaded.HoldReason);
     }
 
     [Fact]
-    public void Saving_the_playlist_does_not_drop_the_holds()
+    public void Saving_the_playlist_does_not_drop_the_instructions()
     {
         // Every mutator used to write a freshly-constructed settings object, so saving one field
         // discarded the others. Harmless while there was only one field, and not any more.
@@ -104,7 +105,7 @@ public class QueueSettingsStoreTests : IDisposable
 
         var reloaded = Store().Read();
         Assert.Equal("PL_something", reloaded.PlaylistId);
-        Assert.Single(reloaded.Held);
+        Assert.Single(reloaded.Tracks);
     }
 
     [Fact]
@@ -115,7 +116,7 @@ public class QueueSettingsStoreTests : IDisposable
         store.Hold("abc123", "first");
         store.Hold("abc123", "second");
 
-        Assert.Equal("second", Assert.Single(store.Read().Held).Reason);
+        Assert.Equal("second", Assert.Single(store.Read().Tracks).HoldReason);
     }
 
     [Fact]
@@ -127,10 +128,74 @@ public class QueueSettingsStoreTests : IDisposable
 
         store.Release("abc123");
 
-        Assert.Equal("def456", Assert.Single(store.Read().Held).VideoId);
+        Assert.Equal("def456", Assert.Single(store.Read().Tracks).VideoId);
     }
 
     [Fact]
     public void Releasing_something_that_was_never_held_is_not_an_error() =>
-        Assert.Empty(Store().Release("never-held").Held);
+        Assert.Empty(Store().Release("never-held").Tracks);
+
+    [Fact]
+    public void An_instruction_that_says_nothing_is_not_kept()
+    {
+        // Otherwise every track ever held leaves a permanent line in the file, and the list
+        // stops meaning "things I have said something about".
+        var store = Store();
+        store.Hold("abc123");
+
+        store.Release("abc123");
+
+        Assert.Empty(store.Read().Tracks);
+    }
+
+    [Fact]
+    public void An_instrumental_release_and_a_hold_are_one_instruction()
+    {
+        var store = Store();
+
+        store.SetInstrumentalRelease("abc123", true);
+        store.Hold("abc123", "not the canonical upload");
+
+        var track = Assert.Single(store.Read().Tracks);
+        Assert.True(track.IsInstrumentalRelease);
+        Assert.True(track.IsHeld);
+    }
+
+    [Fact]
+    public void Releasing_a_hold_keeps_the_instrumental_release_fact()
+    {
+        // The two are independent: a hold is a deferral, and whether the release has vocals
+        // stays true whether or not crateside is currently allowed to work the track.
+        var store = Store();
+        store.SetInstrumentalRelease("abc123", true);
+        store.Hold("abc123");
+
+        store.Release("abc123");
+
+        var track = Assert.Single(store.Read().Tracks);
+        Assert.True(track.IsInstrumentalRelease);
+        Assert.False(track.IsHeld);
+    }
+
+    [Fact]
+    public void Holds_written_in_the_old_shape_are_still_read()
+    {
+        // queue.json predates instructions, and the holds in it are real user decisions. The
+        // next write puts them in the new shape; nothing is lost in between.
+        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+        File.WriteAllText(
+            _path,
+            """
+            { "playlistId": "PL_old", "held": [ { "videoId": "abc123", "reason": "wrong upload" } ] }
+            """
+        );
+
+        var settings = Store().Read();
+
+        Assert.Equal("PL_old", settings.PlaylistId);
+        var track = Assert.Single(settings.Tracks);
+        Assert.Equal("abc123", track.VideoId);
+        Assert.True(track.IsHeld);
+        Assert.Equal("wrong upload", track.HoldReason);
+    }
 }

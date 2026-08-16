@@ -26,13 +26,17 @@ public class WorkOrderTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static QueueItem Item(PremiumOutlook outlook = PremiumOutlook.Unknown) =>
+    private static QueueItem Item(
+        PremiumOutlook outlook = PremiumOutlook.Unknown,
+        bool instrumentalRelease = false
+    ) =>
         new()
         {
             PlaylistItemId = "PLI1",
             VideoId = VideoId,
             Title = "Yes - Owner of a Lonely Heart",
             PremiumOutlook = outlook,
+            IsInstrumentalRelease = instrumentalRelease,
         };
 
     private KeyLedger Ledger(string? key, string confidence = "HIGH")
@@ -90,6 +94,39 @@ public class WorkOrderTests : IDisposable
     }
 
     [Fact]
+    public void An_instrumental_release_asks_for_drums_and_keeps_the_source()
+    {
+        // There is nothing to separate out, so the drums are the only stem and the source track
+        // is the sample -- which the separator has to place, since crateside directs output and
+        // never moves files itself. Asking for vocal_full here is what made a vocal stem of a
+        // track with no vocals.
+        var order = WorkOrder.Compose(Item(instrumentalRelease: true), Ledger("A minor"));
+
+        Assert.Empty(order.Recipe.Presets);
+        Assert.True(order.Recipe.ExtractDrums);
+        Assert.True(order.Recipe.KeepSource);
+    }
+
+    [Fact]
+    public void The_instrumental_release_fact_travels_to_the_ledger_as_has_vocals()
+    {
+        // crateside is where the user is, so the statement is made here and passed through --
+        // rather than read back from a ledger line that only exists after somebody was asked.
+        Assert.False(
+            WorkOrder.Compose(Item(instrumentalRelease: true), Ledger("A minor")).HasVocals
+        );
+    }
+
+    [Fact]
+    public void Saying_nothing_about_vocals_is_not_saying_it_has_them()
+    {
+        // Absent means nobody stated it, the same null semantics as verdict.mode. crateside's
+        // policy for not-stated is to expect the usual pair, but the record must not claim the
+        // user said so.
+        Assert.Null(WorkOrder.Compose(Item(), Ledger("A minor")).HasVocals);
+    }
+
+    [Fact]
     public void An_art_track_gets_the_music_url()
     {
         var order = WorkOrder.Compose(Item(PremiumOutlook.ArtTrack), Ledger("A minor"));
@@ -130,6 +167,7 @@ public class WorkOrderTests : IDisposable
 
         Assert.Equal(["vocal_full", "instrumental_full"], recipe.Presets);
         Assert.True(recipe.ExtractDrums);
+        Assert.False(recipe.KeepSource);
         Assert.Equal("flac", recipe.Format);
     }
 

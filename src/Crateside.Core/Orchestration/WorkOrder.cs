@@ -20,14 +20,31 @@ public sealed record WorkOrder
     /// <summary>The URL to hand the downloader. See <see cref="Compose"/> for how it is picked.</summary>
     public required string SourceUrl { get; init; }
 
+    /// <summary>
+    /// The retained download from this track's working set, once the evidence run has produced
+    /// one. Preferred over <see cref="SourceUrl"/> so the track is fetched once for the whole
+    /// pipeline; null falls back to fetching again, which is correct but wasteful.
+    /// </summary>
+    public string? SourcePath { get; init; }
+
     /// <summary>Which stem folder this track's output belongs in.</summary>
     public required StemDestination Destination { get; init; }
 
     /// <summary>The pre-flight quality hint, carried so the caller can surface it.</summary>
     public PremiumOutlook PremiumOutlook { get; init; }
 
-    /// <summary>What to ask the separator for. Fixed today; carried so the order is complete.</summary>
+    /// <summary>What to ask the separator for, derived from what is known about the release.</summary>
     public SeparationRecipe Recipe { get; init; } = SeparationRecipe.Standard;
+
+    /// <summary>
+    /// Whether the user has stated the release has no vocals, for the verdict run to pass
+    /// through to the ledger. Null means nobody said, which is not "it has vocals".
+    /// </summary>
+    /// <remarks>
+    /// Only ever <c>false</c> or null: crateside carries the user's statement that a release is
+    /// instrumental, and has nothing to say about a track they have not spoken about.
+    /// </remarks>
+    public bool? HasVocals { get; init; }
 
     /// <summary>
     /// What is worth saying to the user before this runs, or null when nothing is.
@@ -41,11 +58,17 @@ public sealed record WorkOrder
     /// <para>
     /// <strong>Destination follows the verdict</strong>, so the library itself records which
     /// tracks are safe to pair. Only HIGH and MEDIUM produce a key the user would tag with, so
-    /// everything else — LOW, WITHHELD, and <em>no verdict at all</em> — routes to
-    /// <see cref="StemDestination.UnresolvedKey"/>. Stems with no verdict are explicitly that
-    /// case, not an error: the bare stems root is never a valid destination for a track that
-    /// went through this workflow, because a stem sitting there carries no signal about whether
-    /// its key was resolved, which is the entire point of the split.
+    /// LOW and WITHHELD route to <see cref="StemDestination.UnresolvedKey"/> — which is exactly
+    /// what that folder is for, since the bare stems root carries no signal about whether a key
+    /// was resolved.
+    /// </para>
+    /// <para>
+    /// <strong>A track with no verdict at all never reaches separation</strong>, so it cannot be
+    /// routed wrongly: <see cref="SeparationSelector"/> requires a ledger line, because nothing
+    /// moves stems afterwards and a track separated ahead of its verdict would sit in
+    /// <see cref="StemDestination.UnresolvedKey"/> permanently even once a HIGH verdict arrived
+    /// (ADR 0005). Composing an order for an earlier stage still yields a destination; it simply
+    /// means nothing until separation is the stage asking.
     /// </para>
     /// <para>
     /// <strong>The URL choice is a choice of form, not of song.</strong> An art track is a
@@ -69,6 +92,8 @@ public sealed record WorkOrder
                     ? StemDestination.KeyIdentified
                     : StemDestination.UnresolvedKey,
             PremiumOutlook = item.PremiumOutlook,
+            Recipe = SeparationRecipe.For(item),
+            HasVocals = item.IsInstrumentalRelease ? false : null,
         };
 }
 
@@ -85,18 +110,53 @@ public enum StemDestination
     UnresolvedKey,
 }
 
-/// <summary>What to ask the separator for.</summary>
+/// <summary>What to ask the separator for: which stems, in what form.</summary>
 /// <remarks>
-/// The set is always vocal + instrumental + drums. Repeated presets run as independent stem
-/// sets rather than being blended, and multiple inputs loop serially inside one GPU-safe
-/// process — so any number of tracks for one destination is a single invocation.
+/// <para>
+/// <strong>A plan, never a fact.</strong> Nobody chooses a recipe — it is derived from what is
+/// known about the release, which is why <see cref="For"/> takes a queue item rather than being
+/// set on the order. Recording the fact and deriving the plan is ADR 0004's rule, and it is what
+/// lets the plan change later without the record becoming a lie.
+/// </para>
+/// <para>
+/// Deriving it through <see cref="For"/> rather than defaulting a property is also the seam for a
+/// per-track <strong>recipe override</strong> — a user who wants <c>vocal_clean</c> for one track
+/// for no reason a fact could express. That is a queue instruction this method would prefer over
+/// the derivation, and nothing else moves.
+/// </para>
 /// </remarks>
 public sealed record SeparationRecipe
 {
+    /// <summary>
+    /// The usual pair plus a warp guide. Repeated presets run as independent stem sets rather
+    /// than being blended.
+    /// </summary>
     public static SeparationRecipe Standard { get; } =
         new() { Presets = ["vocal_full", "instrumental_full"], ExtractDrums = true };
 
+    /// <summary>
+    /// For a release that has no vocals: nothing to separate out, so the drums are the only
+    /// stem and <strong>the source track is the sample</strong> — which is what
+    /// <see cref="KeepSource"/> is for, since crateside directs the separator's output rather
+    /// than placing files itself.
+    /// </summary>
+    public static SeparationRecipe InstrumentalRelease { get; } =
+        new()
+        {
+            Presets = [],
+            ExtractDrums = true,
+            KeepSource = true,
+        };
+
     public required IReadOnlyList<string> Presets { get; init; }
     public required bool ExtractDrums { get; init; }
+
+    /// <summary>Whether the source track is itself a keeper, and belongs in the destination.</summary>
+    public bool KeepSource { get; init; }
+
     public string Format { get; init; } = "flac";
+
+    /// <summary>The recipe a track's release calls for.</summary>
+    public static SeparationRecipe For(QueueItem item) =>
+        item.IsInstrumentalRelease ? InstrumentalRelease : Standard;
 }
