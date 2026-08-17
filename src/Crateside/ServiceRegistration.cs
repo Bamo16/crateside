@@ -138,10 +138,51 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<SeparationDrainer>();
 
+        // The working set is the second non-derived thing crateside holds, and unlike the job
+        // store it is scratch: losing it costs a re-run and never a fact.
+        services.AddSingleton(_ => new WorkingSet());
+
+        services.AddSingleton(sp => new EvidenceSelector(
+            sp.GetRequiredService<JobStore>(),
+            sp.GetRequiredService<WorkingSet>()
+        ));
+        services.AddSingleton(sp => new EvidenceRunner(
+            sp.GetRequiredService<WorkingSet>(),
+            sp.GetRequiredService<CratesidePaths>()
+        ));
+        services.AddSingleton<EvidenceDrainer>();
+
+        services.AddSingleton(sp => new VerdictSelector(
+            sp.GetRequiredService<JobStore>(),
+            sp.GetRequiredService<WorkingSet>()
+        ));
+        services.AddSingleton(sp => new VerdictRunner(
+            sp.GetRequiredService<WorkingSet>(),
+            sp.GetRequiredService<CratesidePaths>()
+        ));
+        services.AddSingleton<VerdictDrainer>();
+
         // Draining is on by default: two separations at once are ruinous, but one is
         // unnoticeable, so there is no moment for the user to pick. Pause is in the Queue view
         // for when the room is being recorded in.
         services.AddHostedService<DrainWorker>();
+
+        // A loop per stage, so a paused GPU never stops detection of everything behind it.
+        // Neither of these has a pause: evidence contends for nothing, which is the premise the
+        // whole split rests on, and a verdict run is cheap enough not to earn one.
+        services.AddHostedService(sp => new StageWorker(
+            sp.GetRequiredService<EvidenceDrainer>(),
+            sp.GetRequiredService<ILogger<StageWorker>>()
+        ));
+        services.AddHostedService(sp => new StageWorker(
+            sp.GetRequiredService<VerdictDrainer>(),
+            sp.GetRequiredService<ILogger<StageWorker>>()
+        ));
+
+        // Working sets go when their track is imported. Slow on purpose: it is answering a
+        // question about the library, which changes on human timescales.
+        services.AddSingleton<WorkingSetJanitor>();
+        services.AddHostedService<JanitorWorker>();
         return services;
     }
 }
