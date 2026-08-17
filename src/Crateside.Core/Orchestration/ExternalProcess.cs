@@ -13,9 +13,14 @@ namespace Crateside.Core.Orchestration;
 /// </remarks>
 public static class ExternalProcess
 {
+    /// <param name="workingDirectory">
+    /// Where to run it. Supplied when the command's own discovery depends on where it starts —
+    /// a headless agent session finds its skills relative to the directory it opens in.
+    /// </param>
     public static async Task<ProcessOutcome> RunAsync(
         string executable,
         IEnumerable<string> arguments,
+        string? workingDirectory = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -25,6 +30,7 @@ public static class ExternalProcess
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true,
+            WorkingDirectory = workingDirectory ?? string.Empty,
         };
 
         foreach (var argument in arguments)

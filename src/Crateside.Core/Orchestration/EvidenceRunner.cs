@@ -72,6 +72,7 @@ public sealed class EvidenceRunner(
                 "--output",
                 workingSet.Prepare(order.VideoId),
             ],
+            workingDirectory: null,
             cancellationToken
         );
 
@@ -120,6 +121,7 @@ public sealed class EvidenceRunner(
                 "--json-out",
                 evidencePath,
             ],
+            workingDirectory: null,
             cancellationToken
         );
 

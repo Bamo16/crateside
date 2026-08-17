@@ -45,17 +45,17 @@ public sealed class EvidenceSelector(
         return next is not null;
     }
 
+    /// <remarks>
+    /// A past success is no reason to refuse: the working-set check above has already said the
+    /// evidence is not there, so this is a re-acquire rather than a repeat. The working set is
+    /// scratch and may be deleted by hand at any time.
+    /// </remarks>
     private bool IsEligible(QueueItem item) =>
-        !jobs.TryGet(item.VideoId, JobStage.Evidence, out var job)
-        || job.Status switch
-        {
-            // Detected by us and the evidence has since gone: the working-set check above
-            // already let this through, so it is a re-acquire rather than a repeat.
-            JobStatus.Succeeded => true,
-            // Something is on it.
-            JobStatus.Queued or JobStatus.Running => false,
-            // Cancelling is the user's call, not the track's fault, so it is simply next again.
-            JobStatus.Cancelled => true,
-            _ => job.Strikes < maxStrikes,
-        };
+        StageEligibility.Allows(
+            jobs,
+            item.VideoId,
+            JobStage.Evidence,
+            maxStrikes,
+            retrySucceeded: true
+        );
 }

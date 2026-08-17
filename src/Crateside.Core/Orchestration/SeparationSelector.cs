@@ -73,16 +73,19 @@ public sealed class SeparationSelector(
         return true;
     }
 
+    /// <remarks>
+    /// <paramref name="retrySucceeded"/> is false here, and it is the one thing separation does
+    /// differently. Every track in this work list has no stems on disk, so a recorded success
+    /// means they were made and have since gone — most likely deleted on purpose. Redoing that
+    /// costs GPU hours against the user's wishes, and refusing is also what keeps a genuine
+    /// stall visible instead of turning it into a loop.
+    /// </remarks>
     private bool IsEligible(QueueItem item) =>
-        !jobs.TryGet(item.VideoId, JobStage.Separation, out var job)
-        || job.Status switch
-        {
-            // Already separated by us: it is waiting on a verdict, not on the GPU.
-            JobStatus.Succeeded => false,
-            // Something is on it — or a previous crateside was, and it is being adopted.
-            JobStatus.Queued or JobStatus.Running => false,
-            // Cancelling is the user's call, not the track's fault, so it is simply next again.
-            JobStatus.Cancelled => true,
-            _ => job.Strikes < maxStrikes,
-        };
+        StageEligibility.Allows(
+            jobs,
+            item.VideoId,
+            JobStage.Separation,
+            maxStrikes,
+            retrySucceeded: false
+        );
 }
