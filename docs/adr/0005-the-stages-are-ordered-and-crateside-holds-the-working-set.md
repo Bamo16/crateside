@@ -190,8 +190,10 @@ snapshot read as a fact.
 **`--keep-source` as the fix for downloading twice.** This was the framing carried into this
 work, and it dies with the ordering change: the evidence run already has the file, so there is
 nothing to keep. `--keep-source` survives for one job only — the instrumental release, where
-the source track *is* the sample and has to reach the destination folder. Whether it copies a
-*local* input into `--output` is unverified and should be measured, not assumed.
+the source track *is* the sample and has to reach the destination folder. **It puts the source
+in the same place as the stems**, which is exactly what that case needs. *(Confirmed by the
+user, who wrote StemForge — worth noting that "measure it" was the wrong instinct here: the
+answer was owned rather than observed.)*
 
 **Detecting instrumental releases by title.** Would have caught Eat Sleep Dance exactly, since
 its title said so. Rejected as an unmeasured heuristic, which is the failure mode this project

@@ -57,6 +57,70 @@ public sealed record QueueView
 {
     public required IReadOnlyList<QueueItem> Items { get; init; }
 
+    /// <summary>
+    /// Sorts the playlist into the work lists each stage reads.
+    /// </summary>
+    /// <remarks>
+    /// Split out of <see cref="QueueService"/> because this is the part with the actual rules in
+    /// it — which track is ready for which stage, and which are off limits — and it can then be
+    /// tested without a queue credential or a disk scan. Pure: it decides nothing about what to
+    /// do, only about what each thing currently is.
+    /// </remarks>
+    /// <param name="fullyProcessed">Video IDs with both a verdict and stems on disk.</param>
+    /// <param name="verdictWithoutStems">Video IDs with a verdict and no stems anywhere.</param>
+    /// <param name="instructions">The user's standing instructions, keyed by video ID.</param>
+    public static QueueView Compose(
+        IReadOnlyList<QueueItem> items,
+        IReadOnlySet<string> fullyProcessed,
+        IReadOnlySet<string> verdictWithoutStems,
+        IReadOnlyDictionary<string, TrackInstruction> instructions
+    )
+    {
+        // The instrumental-release fact is carried on the item rather than looked up again by
+        // every reader, so composing a work order stays pure — it reads the queue item and the
+        // ledger and touches nothing.
+        var described = items
+            .Select(item =>
+                instructions.TryGetValue(item.VideoId, out var instruction)
+                    ? item with
+                    {
+                        IsInstrumentalRelease = instruction.IsInstrumentalRelease,
+                    }
+                    : item
+            )
+            .ToArray();
+
+        // Held is subtracted from the work lists rather than checked by their readers: a stage
+        // takes the first item out of one of these, so keeping held tracks out of them is what
+        // makes it impossible for one to be worked — rather than correct only while every
+        // reader remembers to filter.
+        var held = instructions
+            .Values.Where(t => t.IsHeld)
+            .Select(t => t.VideoId)
+            .ToHashSet(StringComparer.Ordinal);
+
+        return new QueueView
+        {
+            Items = described,
+            FullyProcessed = [.. described.Where(i => fullyProcessed.Contains(i.VideoId))],
+            AwaitingSeparation =
+            [
+                .. described.Where(i =>
+                    verdictWithoutStems.Contains(i.VideoId) && !held.Contains(i.VideoId)
+                ),
+            ],
+            Held = [.. described.Where(i => held.Contains(i.VideoId))],
+            Outstanding =
+            [
+                .. described.Where(i =>
+                    !fullyProcessed.Contains(i.VideoId)
+                    && !verdictWithoutStems.Contains(i.VideoId)
+                    && !held.Contains(i.VideoId)
+                ),
+            ],
+        };
+    }
+
     /// <summary>Items whose video is fully processed — the ones deletion would remove.</summary>
     public required IReadOnlyList<QueueItem> FullyProcessed { get; init; }
 

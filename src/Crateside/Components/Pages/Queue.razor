@@ -116,13 +116,15 @@ else
 
         <QueueSection Title="Next batch" Items="_view.NextBatch(_batchSize, _pinned)"
                       Pinned="_pinned" OnPinToggled="TogglePin" OnHoldToggled="ToggleHold"
-                      Detail="What to work now. Paste these into a detect-key session." />
+                      OnInstrumentalToggled="ToggleInstrumental"
+                      Detail="What to work now — detected first, then judged, then separated. Mark anything with no vocals before its stems are made." />
 
         @if (_view.Outstanding.Count > _batchSize)
         {
             <QueueSection Title="Also waiting"
                           Items="_view.Outstanding.Except(_view.NextBatch(_batchSize, _pinned)).ToList()"
                           Tone="muted" Pinned="_pinned" OnPinToggled="TogglePin" OnHoldToggled="ToggleHold"
+                          OnInstrumentalToggled="ToggleInstrumental"
                           Detail="Queued but not in this batch." />
         }
     }
@@ -138,7 +140,8 @@ else
     @if (_view.AwaitingSeparation.Count > 0)
     {
         <QueueSection Title="Awaiting stems" Items="_view.AwaitingSeparation" Tone="muted" OnRemove="RemoveOne"
-                      Detail="Judged, and waiting for the GPU. This is the normal state between a verdict and its stems — the separation work list, worked oldest-first. A track that sits here long after the queue has drained is a real stall: a separation that failed, or stems that were deleted." />
+                      OnHoldToggled="ToggleHold" OnInstrumentalToggled="ToggleInstrumental"
+                      Detail="Judged, and waiting for the GPU. Still the last chance to mark one as having no vocals — after this its stems exist. This is the normal state between a verdict and its stems — the separation work list, worked oldest-first. A track that sits here long after the queue has drained is a real stall: a separation that failed, or stems that were deleted." />
     }
 
     @if (_view.FullyProcessed.Count > 0)
@@ -244,6 +247,23 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             QueueService.Release(item.VideoId);
         else
             QueueService.Hold(item.VideoId);
+
+        await Load();
+    }
+
+    /// <summary>
+    /// Records whether a release has no vocals, then re-reads so the recipe follows.
+    /// </summary>
+    /// <remarks>
+    /// This is the whole of the user's say in what gets separated, and the reason it is here
+    /// rather than read back from the ledger: the evidence run is unattended and the verdict run
+    /// is a headless session, so the Queue view is the only point at which anyone can say it.
+    /// Left unsaid, crateside expects the usual vocal and instrumental pair — which is what
+    /// produced a vocal stem of a track whose title said "Instrumental".
+    /// </remarks>
+    private async Task ToggleInstrumental(QueueItem item)
+    {
+        QueueService.SetInstrumentalRelease(item.VideoId, !item.IsInstrumentalRelease);
 
         await Load();
     }

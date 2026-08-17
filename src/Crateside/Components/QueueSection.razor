@@ -37,6 +37,19 @@
                 {
                     <span class="hold-reason">@reason</span>
                 }
+                @if (OnInstrumentalToggled.HasDelegate)
+                {
+                    @* The only place in the pipeline where a user is present: the evidence run
+                       is unattended and the verdict run is headless, so if the release is not
+                       named here, nothing downstream can know it. *@
+                    <button class="instrumental @(item.IsInstrumentalRelease ? "on" : null)"
+                            title="@(item.IsInstrumentalRelease
+                                     ? "Recorded as an instrumental release — drums only, and the source track is kept as the sample. Click to undo."
+                                     : "This release has no vocals to begin with. Says so on the record, and asks for drums only instead of a vocal stem there is nothing to make.")"
+                            @onclick="() => OnInstrumentalToggled.InvokeAsync(item)">
+                        @(item.IsInstrumentalRelease ? "instrumental ✓" : "instrumental?")
+                    </button>
+                }
                 @if (OnHoldToggled.HasDelegate)
                 {
                     @* Held is a bucket, not a flag the drainer checks, so this button is the
@@ -83,6 +96,13 @@
     /// <summary>Holds and releases. Supplied on the work list and on the held section.</summary>
     [Parameter]
     public EventCallback<QueueItem> OnHoldToggled { get; set; }
+
+    /// <summary>
+    /// Records that a release has no vocals. Supplied wherever a track can still be worked,
+    /// since the fact has to be stated before separation reaches it.
+    /// </summary>
+    [Parameter]
+    public EventCallback<QueueItem> OnInstrumentalToggled { get; set; }
 
     /// <summary>True when this section <em>is</em> the held one, so the button reads "release".</summary>
     [Parameter]

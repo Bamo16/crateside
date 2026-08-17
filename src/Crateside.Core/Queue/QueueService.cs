@@ -81,22 +81,7 @@ public sealed class QueueService(
     {
         // Oldest-added first: the Queue is a queue, and added-at is the only ordering that
         // means the same thing whether or not the playlist adds new videos to the top.
-        var instructions = settings
-            .Read()
-            .Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal);
-
-        // The instrumental-release fact is carried on the item rather than looked up again by
-        // every reader, so composing a work order stays pure — it reads the queue item and the
-        // ledger and touches nothing.
         var items = (await reader.ListAsync(PlaylistId ?? string.Empty, cancellationToken))
-            .Select(item =>
-                instructions.TryGetValue(item.VideoId, out var instruction)
-                    ? item with
-                    {
-                        IsInstrumentalRelease = instruction.IsInstrumentalRelease,
-                    }
-                    : item
-            )
             .OrderBy(item => item.AddedAt ?? DateTimeOffset.MaxValue)
             .ToArray();
 
@@ -107,35 +92,12 @@ public sealed class QueueService(
             [_paths.SampleStaging, _paths.MashupSamples]
         );
 
-        // Held is subtracted from the work lists rather than checked by their readers: a stage
-        // takes the first item out of one of these, so keeping held tracks out of them is what
-        // makes it impossible for one to be worked -- rather than correct only while every
-        // reader remembers to filter.
-        var held = instructions
-            .Values.Where(t => t.IsHeld)
-            .Select(t => t.VideoId)
-            .ToHashSet(StringComparer.Ordinal);
-
-        return new QueueView
-        {
-            Items = items,
-            FullyProcessed = [.. items.Where(i => processed.IsFullyProcessed(i.VideoId))],
-            AwaitingSeparation =
-            [
-                .. items.Where(i =>
-                    processed.VerdictWithoutStems.Contains(i.VideoId) && !held.Contains(i.VideoId)
-                ),
-            ],
-            Held = [.. items.Where(i => held.Contains(i.VideoId))],
-            Outstanding =
-            [
-                .. items.Where(i =>
-                    !processed.IsFullyProcessed(i.VideoId)
-                    && !processed.VerdictWithoutStems.Contains(i.VideoId)
-                    && !held.Contains(i.VideoId)
-                ),
-            ],
-        };
+        return QueueView.Compose(
+            items,
+            processed.FullyProcessed,
+            processed.VerdictWithoutStems,
+            settings.Read().Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal)
+        );
     }
 
     /// <summary>
