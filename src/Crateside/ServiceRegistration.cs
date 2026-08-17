@@ -174,14 +174,21 @@ public static class ServiceRegistration
         services.AddHostedService<DrainWorker>();
 
         // A loop per stage, so a paused GPU never stops detection of everything behind it.
-        // Neither of these has a pause: evidence contends for nothing, which is the premise the
-        // whole split rests on, and a verdict run is cheap enough not to earn one.
-        services.AddHostedService(sp => new StageWorker(
+        // Evidence has no pause -- it contends for nothing, which is the premise the whole split
+        // rests on -- while judgment does, because it spends quota.
+        //
+        // AddSingleton<IHostedService> rather than AddHostedService, and NOT a tidy-up waiting
+        // to happen: AddHostedService routes through TryAddEnumerable, which de-duplicates on
+        // implementation type, so the second StageWorker would be discarded in silence. That is
+        // exactly what happened -- the verdict stage never ran, never logged, and never ticked,
+        // while evidence worked perfectly beside it. StageWorkerRegistrationTests pins the
+        // behaviour so this cannot be quietly reverted.
+        services.AddSingleton<IHostedService>(sp => new StageWorker(
             sp.GetRequiredService<EvidenceDrainer>(),
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<ILogger<StageWorker>>()
         ));
-        services.AddHostedService(sp => new StageWorker(
+        services.AddSingleton<IHostedService>(sp => new StageWorker(
             sp.GetRequiredService<VerdictDrainer>(),
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<ILogger<StageWorker>>(),

@@ -14,7 +14,10 @@
         <h1>Queue</h1>
         <p class="subtitle">What is in the playlist, what is already done, and what is new.</p>
     </div>
-    <button class="refresh" @onclick="Load" disabled="@(_loading || !QueueService.IsConfigured)">
+    @* Refresh means "go and look", so it drops the cached playlist first — otherwise pressing it
+       after adding a track on your phone would show the same list back. Every other Load()
+       is happy with a cached read. *@
+    <button class="refresh" @onclick="Reload" disabled="@(_loading || !QueueService.IsConfigured)">
         @(_loading ? "Reading…" : "Refresh")
     </button>
 </header>
@@ -391,6 +394,13 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         _view = null;
 
         await Load();
+    }
+
+    private Task Reload()
+    {
+        QueueService.Invalidate();
+
+        return Load();
     }
 
     private async Task Load()
