@@ -23,7 +23,7 @@
         },
         {
             "label": "run",
-            "detail": "Run the board. The http launch profile opens a browser on localhost:5027.",
+            "detail": "Run the board on localhost:5027. The way to exercise the pipeline — one clean process that will not restart under a download or a separation.",
             "type": "process",
             "command": "dotnet",
             "args": ["run", "--project", "${workspaceFolder}/src/Crateside/Crateside.csproj"],
@@ -36,7 +36,7 @@
         },
         {
             "label": "watch",
-            "detail": "Run the board with hot reload — the usual way to work on the UI. Starts automatically when the folder is opened.",
+            "detail": "Run the board with hot reload. For UI work only — see CLAUDE.md. Started by hand.",
             "type": "process",
             "command": "dotnet",
             "args": [
@@ -46,11 +46,11 @@
                 "run"
             ],
             "isBackground": true,
-            // Safe to autostart only because draining now defaults to paused: opening the repo
-            // cannot start a separation. If that default is ever flipped back, remove this.
-            "runOptions": {
-                "runOn": "folderOpen"
-            },
+            // Does NOT autostart, and should not be started while anyone is editing. Hot reload
+            // patches a running process in place: it updates method bodies but cannot reshape
+            // objects that already exist, so a singleton keeps its old fields while its new code
+            // reaches for ones that were never allocated. That is a NullReferenceException on
+            // every tick of every drain loop, reported as "Hot reload succeeded". Use `run`.
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"
