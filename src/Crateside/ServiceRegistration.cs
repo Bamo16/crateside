@@ -178,10 +178,12 @@ public static class ServiceRegistration
         // whole split rests on, and a verdict run is cheap enough not to earn one.
         services.AddHostedService(sp => new StageWorker(
             sp.GetRequiredService<EvidenceDrainer>(),
+            sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<ILogger<StageWorker>>()
         ));
         services.AddHostedService(sp => new StageWorker(
             sp.GetRequiredService<VerdictDrainer>(),
+            sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<ILogger<StageWorker>>(),
             sp.GetRequiredService<VerdictControl>()
         ));

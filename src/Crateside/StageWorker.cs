@@ -26,6 +26,7 @@ namespace Crateside;
 /// </param>
 public sealed class StageWorker(
     IStageDrainer drainer,
+    JobStore jobs,
     ILogger<StageWorker> logger,
     DrainControl? control = null
 ) : BackgroundService
@@ -39,6 +40,8 @@ public sealed class StageWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        Reopen();
+
         while (!stoppingToken.IsCancellationRequested)
         {
             var delay = IdleDelay;
@@ -72,6 +75,48 @@ public sealed class StageWorker(
             {
                 break;
             }
+        }
+    }
+
+    /// <summary>
+    /// Squares the job store against reality before anything is allowed to start.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A run interrupted by a restart leaves a job saying <c>Running</c>, and every selector
+    /// reads that as "something is on it" — so without this the track is skipped <em>forever</em>:
+    /// never detected, never judged, never separated, and never leaving the queue. Separation has
+    /// had this since the beginning (<see cref="DrainWorker.Reconcile"/>); the stages added later
+    /// did not, and under <c>dotnet watch</c> the app restarts on every save, so the trap fires
+    /// often.
+    /// </para>
+    /// <para>
+    /// <strong>Recorded as cancelled rather than failed, and that is not a euphemism.</strong>
+    /// Cancelled is explicitly not a strike, and a restart is not the track's fault — charging
+    /// one would exhaust a track's patience over an afternoon of editing, for nothing it did.
+    /// </para>
+    /// <para>
+    /// There is nothing to adopt, unlike separation. These runs are minutes rather than hours and
+    /// the working set usually still holds the download, so redoing one is cheap where waiting on
+    /// an orphan would mean watching a process nobody can read the output of.
+    /// </para>
+    /// </remarks>
+    private void Reopen()
+    {
+        foreach (var job in jobs.Open(drainer.Stage))
+        {
+            jobs.Record(
+                job.VideoId,
+                drainer.Stage,
+                JobStatus.Cancelled,
+                error: "did not survive a restart"
+            );
+
+            logger.LogInformation(
+                "{Stage} for {VideoId} did not survive a restart; it goes back in line",
+                drainer.Stage,
+                job.VideoId
+            );
         }
     }
 
