@@ -28,6 +28,9 @@ public sealed record StageTick
     /// <summary>Nothing to do — the resting state once the queue has been worked down.</summary>
     public static StageTick Idle { get; } = new() { Outcome = StageOutcome.Idle };
 
+    /// <summary>Stopped on purpose. Only stages that have a control can report this.</summary>
+    public static StageTick Paused { get; } = new() { Outcome = StageOutcome.Paused };
+
     public required StageOutcome Outcome { get; init; }
 
     public WorkOrder? Order { get; init; }
@@ -51,6 +54,7 @@ public enum StageOutcome
 {
     Ran,
     Idle,
+    Paused,
 
     /// <summary>The playlist could not be read. Distinct from an empty queue, deliberately.</summary>
     Unavailable,

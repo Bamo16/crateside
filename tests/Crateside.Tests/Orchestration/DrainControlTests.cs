@@ -88,4 +88,27 @@ public class DrainControlTests
             )
         );
     }
+
+    [Fact]
+    public void Judgment_starts_paused_too()
+    {
+        // Launching the app should never itself be the act that spends something -- quota here,
+        // as the GPU is for separation.
+        Assert.True(new VerdictControl().IsPaused);
+    }
+
+    [Fact]
+    public void The_two_stages_stop_independently()
+    {
+        // They stop for unrelated reasons at unrelated times: quota during a working session,
+        // the GPU whenever the user wants it left alone. One toggle would mean stopping the GPU
+        // to save quota, or spending quota to free the GPU.
+        var separation = new DrainControl(startPaused: false);
+        var verdict = new VerdictControl(startPaused: false);
+
+        verdict.Pause();
+
+        Assert.True(verdict.IsPaused);
+        Assert.False(separation.IsPaused);
+    }
 }

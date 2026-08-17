@@ -3,6 +3,7 @@
 @using Crateside.Core.Orchestration
 @inject QueueService QueueService
 @inject DrainControl Drain
+@inject VerdictControl Verdict
 @implements IDisposable
 @rendermode InteractiveServer
 
@@ -36,6 +37,27 @@
         }
     </span>
     <button @onclick="ToggleDrain">@(Drain.IsPaused ? "Resume" : "Pause")</button>
+</div>
+
+@* Judgment stops for a different reason and at a different time: a verdict run costs ~37k
+   tokens of session start-up before it weighs anything, and quota is tight exactly when the
+   user is working. Sharing one toggle would mean stopping the GPU to save quota. *@
+<div class="drain @(Verdict.IsPaused ? "paused" : "running")">
+    <span class="state">
+        @if (Verdict.IsPaused)
+        {
+            <text>Judging paused</text>
+        }
+        else if (Verdict.Activity is { } judging)
+        {
+            <text>@judging</text>
+        }
+        else
+        {
+            <text>Judging — nothing detected and unjudged right now</text>
+        }
+    </span>
+    <button @onclick="ToggleVerdict">@(Verdict.IsPaused ? "Resume" : "Pause")</button>
 </div>
 
 @if (!QueueService.HasCredential)
@@ -328,10 +350,15 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     {
         _playlistInput = QueueService.PlaylistId ?? string.Empty;
         Drain.Changed += OnDrainChanged;
+        Verdict.Changed += OnDrainChanged;
         await Load();
     }
 
-    public void Dispose() => Drain.Changed -= OnDrainChanged;
+    public void Dispose()
+    {
+        Drain.Changed -= OnDrainChanged;
+        Verdict.Changed -= OnDrainChanged;
+    }
 
     // Raised from the drain worker's thread, so hop back onto the circuit before rendering.
     private void OnDrainChanged() => _ = InvokeAsync(StateHasChanged);
@@ -342,6 +369,14 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             Drain.Resume();
         else
             Drain.Pause();
+    }
+
+    private void ToggleVerdict()
+    {
+        if (Verdict.IsPaused)
+            Verdict.Resume();
+        else
+            Verdict.Pause();
     }
 
     private async Task SavePlaylist()

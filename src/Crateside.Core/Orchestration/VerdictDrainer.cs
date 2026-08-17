@@ -24,6 +24,7 @@ public sealed class VerdictDrainer(
     VerdictRunner runner,
     VerdictSelector selector,
     JobStore jobs,
+    VerdictControl control,
     IOptions<CratesidePaths> paths
 ) : IStageDrainer
 {
@@ -34,6 +35,9 @@ public sealed class VerdictDrainer(
     /// <summary>Judges the next detected-but-unjudged track, if there is one.</summary>
     public async Task<StageTick> DrainOnceAsync(CancellationToken cancellationToken = default)
     {
+        if (control.IsPaused)
+            return StageTick.Paused;
+
         QueueView view;
 
         try
@@ -55,16 +59,24 @@ public sealed class VerdictDrainer(
         var order = WorkOrder.Compose(item, ledger);
 
         jobs.Record(item.VideoId, JobStage.Verdict, JobStatus.Running);
+        control.Report($"Judging {order.Title}");
 
-        var result = await runner.RunAsync(order, cancellationToken);
+        try
+        {
+            var result = await runner.RunAsync(order, cancellationToken);
 
-        jobs.Record(
-            item.VideoId,
-            JobStage.Verdict,
-            result.IsSuccess ? JobStatus.Succeeded : JobStatus.Failed,
-            error: result.Error
-        );
+            jobs.Record(
+                item.VideoId,
+                JobStage.Verdict,
+                result.IsSuccess ? JobStatus.Succeeded : JobStatus.Failed,
+                error: result.Error
+            );
 
-        return StageTick.Ran(order, result.IsSuccess, result.Error);
+            return StageTick.Ran(order, result.IsSuccess, result.Error);
+        }
+        finally
+        {
+            control.Report(null);
+        }
     }
 }

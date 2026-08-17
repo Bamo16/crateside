@@ -152,6 +152,12 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<EvidenceDrainer>();
 
+        // The verdict stage has its own pause, because it and separation stop for unrelated
+        // reasons at unrelated times — quota during a working session, the GPU whenever the user
+        // wants it left alone. Starts paused: launching the app should never itself be the act
+        // that spends something.
+        services.AddSingleton(_ => new VerdictControl());
+
         services.AddSingleton(sp => new VerdictSelector(
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<WorkingSet>()
@@ -176,7 +182,8 @@ public static class ServiceRegistration
         ));
         services.AddHostedService(sp => new StageWorker(
             sp.GetRequiredService<VerdictDrainer>(),
-            sp.GetRequiredService<ILogger<StageWorker>>()
+            sp.GetRequiredService<ILogger<StageWorker>>(),
+            sp.GetRequiredService<VerdictControl>()
         ));
 
         // Working sets go when their track is imported. Slow on purpose: it is answering a

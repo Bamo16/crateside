@@ -139,11 +139,11 @@ enough on its own: one sequential loop means a paused GPU stops detection of eve
 behind it, and detection costs nothing. Failure isolation is the second reason — a stage
 failing on one track must not stall other tracks in other stages.
 
-Only separation carries a pause. Evidence contends for nothing, which is the premise the whole
-three-stage split rests on. Claude quota is genuinely tight during working sessions, but a
-verdict run is now cheap enough — evidence in, verdict out, no download and no separation —
-that it does not earn a control; ADR 0001's reasoning stands, the consequence it implied does
-not, and this is recorded so nobody re-derives one from it.
+~~Only separation carries a pause.~~ Evidence contends for nothing, which is the premise the
+whole three-stage split rests on. ~~Claude quota is genuinely tight during working sessions,
+but a verdict run is now cheap enough — evidence in, verdict out, no download and no
+separation — that it does not earn a control.~~ *(Reversed the next day — see **The verdict
+stage earns a control after all** below. Evidence still has none.)*
 
 The implementation is not three of anything: `DrainWorker` is thin and every decision already
 lives in a drainer plus a selector, so this is one worker parameterised by stage and three
@@ -160,6 +160,34 @@ intact.
 
 This makes `source_url` load-bearing in a way it was not before — see keytag ADR 0006, which
 makes it required.
+
+## The verdict stage earns a control after all — 2026-08-17
+
+Decision 8 held that a verdict run was too cheap to be worth stopping. That rested on a
+comparison — cheaper than it used to be, now that the download and the separation are gone —
+and not on a number. The number arrived the first time the headless invocation actually ran:
+
+**≈37,000 cache-creation tokens per session, before any evidence is weighed.** That is
+start-up — `CLAUDE.md`, the skill, the tooling — and it is paid once per track, because the
+design is deliberately one track per session. A one-turn no-op run reported ~$0.25.
+
+A queue drains once, so the total is finite and this is not a runaway. But it is spent
+**unattended and in one burst**, by a loop with nothing to stop it — and the reason to want it
+stopped is precisely the one ADR 0001 gave for scheduling this stage separately in the first
+place: *quota is tight during coding sessions and idle otherwise*. Having accepted that premise
+as the justification for the split, refusing it as a justification for a control was
+inconsistent.
+
+So `VerdictControl` is a second control, starting paused, alongside separation's. **Not a flag
+on the same one**: the two stop for unrelated reasons at unrelated times, and one toggle would
+mean stopping the GPU to save quota, or spending quota to free the GPU.
+
+**Evidence still has no control**, and that is unchanged rather than merely un-revisited: it
+contends for nothing, which is the premise the whole three-stage split rests on. If that ever
+needs a pause, the split needs re-examining rather than the control adding.
+
+The pattern is by now familiar enough to be worth stating plainly: *cheap* is a comparison, and
+a comparison is not a measurement. This one survived a day.
 
 ## Alternatives considered
 

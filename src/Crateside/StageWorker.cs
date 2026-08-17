@@ -19,8 +19,16 @@ namespace Crateside;
 /// of which the stages that contend for nothing have any use for.
 /// </para>
 /// </remarks>
-public sealed class StageWorker(IStageDrainer drainer, ILogger<StageWorker> logger)
-    : BackgroundService
+/// <param name="control">
+/// Supplied only for a stage that can be stopped, so that pressing resume starts work now
+/// rather than whenever the idle delay happens to run out. A stage with nothing to stop for —
+/// evidence — passes none, and simply waits out the clock.
+/// </param>
+public sealed class StageWorker(
+    IStageDrainer drainer,
+    ILogger<StageWorker> logger,
+    DrainControl? control = null
+) : BackgroundService
 {
     // Long enough that an idle queue is not re-read constantly, short enough that a track added
     // from a phone starts within a couple of minutes.
@@ -52,7 +60,13 @@ public sealed class StageWorker(IStageDrainer drainer, ILogger<StageWorker> logg
 
             try
             {
-                await Task.Delay(delay, stoppingToken);
+                // Waiting on the control rather than the clock where there is one, so pressing
+                // resume starts work now instead of up to two minutes later, which reads as a
+                // broken button rather than a slow one.
+                if (control is not null)
+                    await control.WaitForWorkAsync(delay, stoppingToken);
+                else
+                    await Task.Delay(delay, stoppingToken);
             }
             catch (OperationCanceledException)
             {

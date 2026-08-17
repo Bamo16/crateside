@@ -22,7 +22,7 @@ namespace Crateside.Core.Orchestration;
 /// not what the default behaviour is.
 /// </para>
 /// </remarks>
-public sealed class DrainControl(bool startPaused = true)
+public class DrainControl(bool startPaused = true)
 {
     private readonly Lock _gate = new();
 
