@@ -71,6 +71,28 @@ public class DrainControl(bool startPaused = true)
 
     public void Resume() => Set(paused: false);
 
+    /// <summary>
+    /// Ends the worker's idle wait without changing whether it is paused.
+    /// </summary>
+    /// <remarks>
+    /// For a change that makes work available which the worker has no way to notice — a track
+    /// put back in line by hand. <see cref="Resume"/> cannot serve: it is level-triggered, so
+    /// calling it when nothing is paused returns without releasing anything and the worker
+    /// sleeps out its full delay. A button whose effect arrives two minutes later reads as
+    /// broken rather than slow, which is the same reason resume wakes it.
+    /// </remarks>
+    public void Wake()
+    {
+        try
+        {
+            _wake.Release();
+        }
+        catch (SemaphoreFullException)
+        {
+            // Already signalled and not yet consumed — the worker is about to run anyway.
+        }
+    }
+
     /// <summary>Records what the worker is on, for the UI. Pass null when it goes idle.</summary>
     public void Report(string? activity)
     {
@@ -105,16 +127,7 @@ public class DrainControl(bool startPaused = true)
         }
 
         if (!paused)
-        {
-            try
-            {
-                _wake.Release();
-            }
-            catch (SemaphoreFullException)
-            {
-                // Already signalled and not yet consumed — the worker is about to run anyway.
-            }
-        }
+            Wake();
 
         Changed?.Invoke();
     }

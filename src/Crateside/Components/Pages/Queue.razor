@@ -320,6 +320,11 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             if (Jobs.TryGet(item.VideoId, stage, out var job) && job is { Status: JobStatus.Failed })
                 Jobs.Forgive(item.VideoId, stage);
 
+        // Nothing polls the job store, so a worker part-way through its idle wait would not look
+        // again for up to two minutes -- long enough for the button to read as broken.
+        Drain.Wake();
+        Verdict.Wake();
+
         await Load();
     }
 
