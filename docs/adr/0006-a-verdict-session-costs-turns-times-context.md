@@ -111,8 +111,32 @@ It improves cross-user cache reuse and does not reduce size.
 Call counts, from the two transcripts: one `ToolSearch` each, one evidence `Read` each, three
 git attempts on track 1. That is 5 of track 1's 12 calls and 2 of track 2's 9.
 
-**This is a projection until a track runs.** Floor and call counts are measured; their product
-is not. The order of magnitude is a ~60–65% cut, to roughly 150–200k a track.
+### Confirmed on a real track — 2026-08-18
+
+The above predicted ~150–200k a track. Muse — *Time is Running Out* was then judged with the
+exact shipped invocation, prompt included:
+
+| | tokens | API calls | tool calls |
+|---|---|---|---|
+| track 1 — obscure, needed a segment re-run | 520,645 | 12 | 11 |
+| track 2 — well known | 364,653 | 9 | 11 |
+| **Muse, after this change** | **156,671** | **6** | **5** |
+
+**−57% against track 2**, which is the like-for-like comparison: both well known, neither
+needing a segment re-run. Against track 1, −70%, but part of that is the git attempts this
+change removes and part is that Muse is an easier track.
+
+The tool calls are now exactly the minimum the work requires — `Skill`, `WebSearch` ×2,
+`Write`, `Bash` — with `permission_denials: []`. No `ToolSearch`, no evidence `Read`, no git.
+The two-search cap in `SKILL.md` held, which track 2 had exceeded.
+
+The verdict was A minor / HIGH, sourced to a Hooktheory TheoryTab, with a musickeyfinder
+dissent recorded as `algorithmic` and not weighted, and a tonic check arguing Am from the
+cadences and explaining the Am/A flicker by the raised 7th. **Nothing was traded for the
+saving.**
+
+At this rate the 44-track backlog is ~6.9M rather than the ~13M the doubled numbers implied —
+still batched work across days, but no longer undrainable.
 
 ## Alternatives considered
 
