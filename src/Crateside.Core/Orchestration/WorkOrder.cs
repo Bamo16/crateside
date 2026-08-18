@@ -20,13 +20,6 @@ public sealed record WorkOrder
     /// <summary>The URL to hand the downloader. See <see cref="Compose"/> for how it is picked.</summary>
     public required string SourceUrl { get; init; }
 
-    /// <summary>
-    /// The retained download from this track's working set, once the evidence run has produced
-    /// one. Preferred over <see cref="SourceUrl"/> so the track is fetched once for the whole
-    /// pipeline; null falls back to fetching again, which is correct but wasteful.
-    /// </summary>
-    public string? SourcePath { get; init; }
-
     /// <summary>Which stem folder this track's output belongs in.</summary>
     public required StemDestination Destination { get; init; }
 

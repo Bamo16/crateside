@@ -131,6 +131,7 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new SeparationSelector(sp.GetRequiredService<JobStore>()));
         services.AddSingleton(sp => new SeparationRunner(
             sp.GetRequiredService<SeparationInterlock>(),
+            sp.GetRequiredService<WorkingSet>(),
             sp.GetRequiredService<CratesidePaths>()
         ));
         services.AddSingleton(sp => new DrainControl(

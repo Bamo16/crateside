@@ -23,6 +23,7 @@ public class SeparationRunnerTests : IDisposable
 
     private JobStore Jobs => field ??= new JobStore(Path.Combine(_directory, "jobs.jsonl"));
     private SeparationInterlock Interlock => field ??= new SeparationInterlock(Jobs, _probe);
+    private WorkingSet Set => field ??= new WorkingSet(Path.Combine(_directory, "working"));
 
     public SeparationRunnerTests() => Directory.CreateDirectory(_directory);
 
@@ -59,7 +60,7 @@ public class SeparationRunnerTests : IDisposable
             """
         );
 
-        return new SeparationRunner(Interlock, new CratesidePaths(), script);
+        return new SeparationRunner(Interlock, Set, new CratesidePaths(), script);
     }
 
     [Fact]
@@ -156,7 +157,7 @@ public class SeparationRunnerTests : IDisposable
             """
         );
 
-        var runner = new SeparationRunner(Interlock, new CratesidePaths(), script);
+        var runner = new SeparationRunner(Interlock, Set, new CratesidePaths(), script);
         using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
@@ -167,5 +168,56 @@ public class SeparationRunnerTests : IDisposable
         Assert.True(Jobs.TryGet(VideoId, JobStage.Separation, out var job));
         Assert.Equal(JobStatus.Failed, job.Status);
         Assert.Equal("cancelled", job.Error);
+    }
+
+    /// <summary>A stand-in that writes its own argument list out for inspection.</summary>
+    private SeparationRunner RunnerEchoingArguments(out string argumentsFile)
+    {
+        var script = Path.Combine(_directory, "echo-stemforge.cmd");
+
+        argumentsFile = Path.Combine(_directory, "arguments.txt");
+
+        File.WriteAllText(
+            script,
+            $$"""
+            @echo off
+            echo %* > "{{argumentsFile}}"
+            echo [{"succeeded":true}]
+            """
+        );
+
+        return new SeparationRunner(Interlock, Set, new CratesidePaths(), script);
+    }
+
+    [Fact]
+    public async Task The_retained_download_is_separated_rather_than_fetched_again()
+    {
+        // WorkOrder used to carry a SourcePath for this and nothing ever assigned it, so every
+        // separation silently re-downloaded a file already sitting in the working set -- and
+        // ADR 0005's "one download for the whole pipeline" was never true.
+        var audio = Path.Combine(Set.Prepare(VideoId), "Yes - Owner of a Lonely Heart.flac");
+
+        File.WriteAllText(audio, "audio");
+
+        var runner = RunnerEchoingArguments(out var argumentsFile);
+
+        await runner.RunAsync(Order(), TestContext.Current.CancellationToken);
+
+        var arguments = File.ReadAllText(argumentsFile);
+
+        Assert.Contains(audio, arguments);
+        Assert.DoesNotContain("youtube.com", arguments);
+    }
+
+    [Fact]
+    public async Task A_track_with_nothing_retained_is_still_fetched_by_url()
+    {
+        // The fallback is correct rather than merely tolerated: a working set discarded at
+        // import, or a separation retried long afterwards, has nothing on disk to reuse.
+        var runner = RunnerEchoingArguments(out var argumentsFile);
+
+        await runner.RunAsync(Order(), TestContext.Current.CancellationToken);
+
+        Assert.Contains($"watch?v={VideoId}", File.ReadAllText(argumentsFile));
     }
 }

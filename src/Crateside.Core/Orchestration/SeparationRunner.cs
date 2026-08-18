@@ -24,6 +24,7 @@ namespace Crateside.Core.Orchestration;
 /// </remarks>
 public sealed class SeparationRunner(
     SeparationInterlock interlock,
+    WorkingSet workingSet,
     CratesidePaths paths,
     string executable = "stemforge-cli"
 )
@@ -168,7 +169,15 @@ public sealed class SeparationRunner(
         // provenance comment and carries the source URL into the stems, which is what keeps the
         // video ID -- the join key for the board, for "fully processed", and for queue cleanup.
         // A file from anywhere else would silently produce stems that join to nothing.
-        info.ArgumentList.Add(order.SourcePath ?? order.SourceUrl);
+        //
+        // Asked of the working set here rather than carried on the order, because composing an
+        // order is pure and this is a question about what is on disk right now. The same shape
+        // as VerdictRunner, which asks it the same way for the same reason. WorkOrder used to
+        // carry a SourcePath for this and nothing ever assigned it, so every separation silently
+        // re-downloaded a file that was already sitting in the working set.
+        info.ArgumentList.Add(
+            workingSet.TryGetSource(order.VideoId, out var retained) ? retained : order.SourceUrl
+        );
 
         foreach (var preset in order.Recipe.Presets)
         {
