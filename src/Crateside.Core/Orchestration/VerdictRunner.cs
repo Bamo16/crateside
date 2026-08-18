@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
 
 namespace Crateside.Core.Orchestration;
@@ -24,7 +22,6 @@ namespace Crateside.Core.Orchestration;
 public sealed class VerdictRunner(
     WorkingSet workingSet,
     CratesidePaths paths,
-    JudgingSession session,
     string executable = "claude"
 )
 {
@@ -61,8 +58,6 @@ public sealed class VerdictRunner(
         if (!workingSet.HasEvidence(order.VideoId))
             return VerdictResult.Failed("no evidence to judge");
 
-        var turn = session.Next();
-
         var outcome = await ExternalProcess.RunAsync(
             executable,
             [
@@ -74,12 +69,6 @@ public sealed class VerdictRunner(
                 // user's own pre-crateside habit was a Sonnet agent over a batch.
                 "--model",
                 "sonnet",
-                // Tracks after the first join the conversation the earlier ones are in, so the
-                // skill and its sources are read once rather than per track.
-                turn.IsNew
-                    ? "--session-id"
-                    : "--resume",
-                turn.SessionId.ToString(),
                 // The skill needs no MCP server, and the ones configured for interactive use --
                 // Supabase, Vercel, Drive -- would put their whole tool surface into every
                 // judging session for nothing.
@@ -103,16 +92,7 @@ public sealed class VerdictRunner(
         // the message and the strike count and decides nothing, which is also what keeps
         // crateside out of the business of parsing agent output.
         if (KeyLedger.Read(paths.Ledger).HasRunFor(order.VideoId))
-        {
-            session.Completed(ContextOf(outcome.StandardOutput));
-
             return VerdictResult.Succeeded();
-        }
-
-        // A conversation whose last turn went wrong is not one to carry forward: whatever went
-        // wrong would sit in the history of every track after it, for the sake of saving one
-        // context load.
-        session.Abandon();
 
         // Running out of quota says nothing about this track, so it must not be charged for it.
         // Left as an ordinary failure it burned all three strikes in about a second -- the
@@ -127,43 +107,6 @@ public sealed class VerdictRunner(
                 : ExternalProcess.Describe(outcome.StandardError, outcome.StandardOutput)
                     ?? $"claude exited with {outcome.ExitCode}"
         );
-    }
-
-    /// <summary>
-    /// How large the conversation now is, read out of the session's own usage report.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <strong>Cache creation only.</strong> The figures in the result are cumulative over every
-    /// turn, not a snapshot — so <c>cache_read</c> is the same context counted once per turn and
-    /// says how much re-reading happened, not how large the conversation is. Measured on the
-    /// first real run: 89,932 created against 1,003,735 read over 27 turns. Adding them made
-    /// this report over a million against a 120,000 bound, which retired the conversation after
-    /// every single track and quietly turned resuming back into a fresh session each time.
-    /// </para>
-    /// <para>
-    /// What was newly written to cache does track growth, because it is the content the
-    /// conversation had not seen before. Returns zero when the shape is not what we expect — the
-    /// track count is the other bound, and it exists so that failing to read this degrades into
-    /// a shorter conversation rather than an unbounded one.
-    /// </para>
-    /// </remarks>
-    private static long ContextOf(string stdout)
-    {
-        try
-        {
-            if (
-                JsonSerializer.Deserialize<SessionResult>(stdout[stdout.IndexOf('{')..])
-                is not { Usage: { } usage }
-            )
-                return 0;
-
-            return usage.CacheCreationInputTokens;
-        }
-        catch (Exception e) when (e is JsonException or ArgumentOutOfRangeException)
-        {
-            return 0;
-        }
     }
 
     /// <summary>
@@ -244,23 +187,4 @@ public sealed record VerdictResult
             IsQuotaExhausted = true,
             Error = "the Claude allowance is spent; judging is paused until it resets",
         };
-}
-
-/// <summary>The part of a headless session's JSON result that says what it cost.</summary>
-internal sealed record SessionResult
-{
-    [JsonPropertyName("usage")]
-    public SessionUsage? Usage { get; init; }
-}
-
-internal sealed record SessionUsage
-{
-    [JsonPropertyName("input_tokens")]
-    public long InputTokens { get; init; }
-
-    [JsonPropertyName("cache_creation_input_tokens")]
-    public long CacheCreationInputTokens { get; init; }
-
-    [JsonPropertyName("cache_read_input_tokens")]
-    public long CacheReadInputTokens { get; init; }
 }

@@ -162,14 +162,9 @@ public static class ServiceRegistration
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<WorkingSet>()
         ));
-        // One conversation across many tracks, so the skill and its sources are read once rather
-        // than per track. crateside still drives one track per invocation, which is what keeps a
-        // job record, a strike and a pause point per track rather than per batch.
-        services.AddSingleton(_ => new JudgingSession());
         services.AddSingleton(sp => new VerdictRunner(
             sp.GetRequiredService<WorkingSet>(),
-            sp.GetRequiredService<CratesidePaths>(),
-            sp.GetRequiredService<JudgingSession>()
+            sp.GetRequiredService<CratesidePaths>()
         ));
         services.AddSingleton<VerdictDrainer>();
 

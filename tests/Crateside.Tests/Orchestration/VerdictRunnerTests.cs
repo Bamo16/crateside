@@ -88,7 +88,7 @@ public class VerdictRunnerTests : IDisposable
             """
         );
 
-        return new VerdictRunner(Set, Paths, new JudgingSession(), script);
+        return new VerdictRunner(Set, Paths, script);
     }
 
     [Fact]
