@@ -69,7 +69,13 @@ public class RunEvidenceRealDataTests
                             (string[])["full", "relative", "none", "single"]
                         )
                 );
-                Assert.NotEmpty(e.Chords);
+                // Chords may legitimately be empty, and that is information rather than a gap:
+                // a track the recogniser commits nothing on leaves the tonic check with only
+                // the flicker to argue from, which is exactly when a verdict should not claim
+                // positive confirmation. Held for 125 of 126 runs until an underground techno
+                // single produced none, so the old assertion was an observation about the
+                // corpus rather than a property of the runner.
+                Assert.NotNull(e.Chords);
                 Assert.NotEmpty(e.KeyEvents);
             }
         );

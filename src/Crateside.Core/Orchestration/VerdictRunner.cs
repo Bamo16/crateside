@@ -133,10 +133,20 @@ public sealed class VerdictRunner(
     /// How large the conversation now is, read out of the session's own usage report.
     /// </summary>
     /// <remarks>
-    /// The three input figures together are what the next turn will have to carry: what was
-    /// cached this turn, what was read from cache, and what was sent fresh. Returns zero when
-    /// the shape is not what we expect — the track count is the other bound, and it exists so
-    /// that failing to read this degrades into a smaller batch rather than an unbounded one.
+    /// <para>
+    /// <strong>Cache creation only.</strong> The figures in the result are cumulative over every
+    /// turn, not a snapshot — so <c>cache_read</c> is the same context counted once per turn and
+    /// says how much re-reading happened, not how large the conversation is. Measured on the
+    /// first real run: 89,932 created against 1,003,735 read over 27 turns. Adding them made
+    /// this report over a million against a 120,000 bound, which retired the conversation after
+    /// every single track and quietly turned resuming back into a fresh session each time.
+    /// </para>
+    /// <para>
+    /// What was newly written to cache does track growth, because it is the content the
+    /// conversation had not seen before. Returns zero when the shape is not what we expect — the
+    /// track count is the other bound, and it exists so that failing to read this degrades into
+    /// a shorter conversation rather than an unbounded one.
+    /// </para>
     /// </remarks>
     private static long ContextOf(string stdout)
     {
@@ -148,7 +158,7 @@ public sealed class VerdictRunner(
             )
                 return 0;
 
-            return usage.CacheCreationInputTokens + usage.CacheReadInputTokens + usage.InputTokens;
+            return usage.CacheCreationInputTokens;
         }
         catch (Exception e) when (e is JsonException or ArgumentOutOfRangeException)
         {

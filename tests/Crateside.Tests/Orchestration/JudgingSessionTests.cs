@@ -108,6 +108,21 @@ public class JudgingSessionTests
     }
 
     [Fact]
+    public void One_tracks_own_work_does_not_retire_a_conversation()
+    {
+        // A real track created ~90k of cache against a 120k bound. Counting cache_read as well
+        // -- a further 1,003,735, being the same context re-read once per turn -- put a single
+        // track over a million and retired the conversation every time, which turned resuming
+        // silently back into a fresh session per track.
+        var session = new JudgingSession();
+        session.Next();
+
+        session.Completed(contextTokens: 89_932);
+
+        Assert.False(session.Next().IsNew);
+    }
+
+    [Fact]
     public void The_defaults_are_the_agreed_ones()
     {
         Assert.Equal(25, JudgingSession.DefaultMaxTracks);
