@@ -4,6 +4,7 @@
 @inject QueueService QueueService
 @inject DrainControl Drain
 @inject VerdictControl Verdict
+@inject JobStore Jobs
 @implements IDisposable
 @rendermode InteractiveServer
 
@@ -142,6 +143,7 @@ else
         <QueueSection Title="Next batch" Items="_view.NextBatch(_batchSize, _pinned)"
                       Pinned="_pinned" OnPinToggled="TogglePin" OnHoldToggled="ToggleHold"
                       OnInstrumentalToggled="ToggleInstrumental"
+                      GivenUpReason="GivenUpOn" OnRetry="Retry"
                       Detail="What to work now — detected first, then judged, then separated. Mark anything with no vocals before its stems are made." />
 
         @if (_view.Outstanding.Count > _batchSize)
@@ -150,6 +152,7 @@ else
                           Items="_view.Outstanding.Except(_view.NextBatch(_batchSize, _pinned)).ToList()"
                           Tone="muted" Pinned="_pinned" OnPinToggled="TogglePin" OnHoldToggled="ToggleHold"
                           OnInstrumentalToggled="ToggleInstrumental"
+                      GivenUpReason="GivenUpOn" OnRetry="Retry"
                           Detail="Queued but not in this batch." />
         }
     }
@@ -166,6 +169,7 @@ else
     {
         <QueueSection Title="Awaiting stems" Items="_view.AwaitingSeparation" Tone="muted" OnRemove="RemoveOne"
                       OnHoldToggled="ToggleHold" OnInstrumentalToggled="ToggleInstrumental"
+                      GivenUpReason="GivenUpOn" OnRetry="Retry"
                       Detail="Judged, and waiting for the GPU. Still the last chance to mark one as having no vocals — after this its stems exist. This is the normal state between a verdict and its stems — the separation work list, worked oldest-first. A track that sits here long after the queue has drained is a real stall: a separation that failed, or stems that were deleted." />
     }
 
@@ -286,6 +290,39 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     /// Left unsaid, crateside expects the usual vocal and instrumental pair — which is what
     /// produced a vocal stem of a track whose title said "Instrumental".
     /// </remarks>
+    /// <summary>
+    /// Why a stage has stopped trying a track, or null when none has.
+    /// </summary>
+    /// <remarks>
+    /// Checked across every stage because a track stuck at any one of them stops moving
+    /// altogether, and nothing else in the view would say so — it would simply sit in the work
+    /// list looking ready while being permanently skipped.
+    /// </remarks>
+    private string? GivenUpOn(string videoId) =>
+        new[]
+        {
+            (JobStage.Evidence, EvidenceSelector.DefaultMaxStrikes),
+            (JobStage.Verdict, VerdictSelector.DefaultMaxStrikes),
+            (JobStage.Separation, SeparationSelector.DefaultMaxStrikes),
+        }
+            .Select(s =>
+                Jobs.TryGet(videoId, s.Item1, out var job)
+                && job is { Status: JobStatus.Failed }
+                && job.Strikes >= s.Item2
+                    ? $"{s.Item1} gave up after {"try".ToQuantity(job.Strikes)}: {job.Error}"
+                    : null
+            )
+            .FirstOrDefault(reason => reason is not null);
+
+    private async Task Retry(QueueItem item)
+    {
+        foreach (var stage in Enum.GetValues<JobStage>())
+            if (Jobs.TryGet(item.VideoId, stage, out var job) && job is { Status: JobStatus.Failed })
+                Jobs.Forgive(item.VideoId, stage);
+
+        await Load();
+    }
+
     private async Task ToggleInstrumental(QueueItem item)
     {
         QueueService.SetInstrumentalRelease(item.VideoId, !item.IsInstrumentalRelease);

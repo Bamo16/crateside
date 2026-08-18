@@ -66,7 +66,12 @@ public class VerdictRunnerTests : IDisposable
         );
 
     /// <summary>A stand-in for the agent that records a verdict, or does not, and exits.</summary>
-    private VerdictRunner Runner(bool records, int exitCode = 0, string stderr = "")
+    private VerdictRunner Runner(
+        bool records,
+        int exitCode = 0,
+        string stderr = "",
+        string stdout = ""
+    )
     {
         var script = Path.Combine(_directory, "fake-claude.cmd");
 
@@ -77,6 +82,7 @@ public class VerdictRunnerTests : IDisposable
             script,
             $"""
             @echo off
+            {(stdout is { Length: > 0 } ? $"echo {stdout}" : string.Empty)}
             {(stderr is { Length: > 0 } ? $"echo {stderr} 1>&2" : string.Empty)}
             exit /b {exitCode}
             """
@@ -146,6 +152,36 @@ public class VerdictRunnerTests : IDisposable
 
         Assert.False(result.IsSuccess);
         Assert.Contains("no evidence", result.Error);
+    }
+
+    [Fact]
+    public async Task Running_out_of_allowance_is_not_the_tracks_fault()
+    {
+        // The session reports this as a successful run that carries an error, so the exit code
+        // says nothing. Left as an ordinary failure it burned all three strikes in about a
+        // second -- the retries returned instantly, cost nothing, and killed the track for good,
+        // so that when the allowance came back it was already out.
+        GiveEvidence();
+
+        var result = await Runner(
+                records: false,
+                stdout: """{"is_error":true,"api_error_status":429,"result":"hit your limit"}"""
+            )
+            .RunAsync(Order(), TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.True(result.IsQuotaExhausted);
+    }
+
+    [Fact]
+    public async Task An_ordinary_failure_is_still_the_tracks_own()
+    {
+        GiveEvidence();
+
+        var result = await Runner(records: false, exitCode: 1, stderr: "something broke")
+            .RunAsync(Order(), TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsQuotaExhausted);
     }
 
     [Fact]

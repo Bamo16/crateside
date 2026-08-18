@@ -61,8 +61,11 @@ public class VerdictSelectorRealDataTests
                 out var next
             );
 
+            // Detected, unjudged and not given up on == pickable. Stating all three is what
+            // makes a failure name the reason: the bug this was written for had every condition
+            // satisfied and still picked nothing.
             Assert.True(
-                picked == !judged,
+                picked == (!judged && allowed),
                 $"{videoId}: hasEvidence=true judged={judged} allowed={allowed} picked={picked}"
             );
 

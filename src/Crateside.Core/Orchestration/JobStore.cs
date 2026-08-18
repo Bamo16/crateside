@@ -69,6 +69,25 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null)
     /// Appends an update and returns the job as it now stands. The only way state changes —
     /// nothing rewrites or removes a line.
     /// </summary>
+    /// <summary>
+    /// Puts a track a stage has given up on back in line.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Strikes are counted over a job's whole history and never decrease, so without this a
+    /// track that reached the limit is unreachable forever — there is no path back except
+    /// editing the file by hand, which this store's whole design says not to do.
+    /// </para>
+    /// <para>
+    /// It records <see cref="JobStatus.Cancelled"/> rather than clearing anything, because
+    /// cancelled already means "eligible again, whatever the count" to every selector, and
+    /// because the history should still show what happened. The strikes stay on the record; they
+    /// simply stop being a verdict on the track.
+    /// </para>
+    /// </remarks>
+    public TrackJob Forgive(string videoId, JobStage stage) =>
+        Record(videoId, stage, JobStatus.Cancelled, error: "put back in line by hand");
+
     public TrackJob Record(
         string videoId,
         JobStage stage,

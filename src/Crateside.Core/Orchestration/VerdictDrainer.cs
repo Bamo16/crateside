@@ -65,6 +65,23 @@ public sealed class VerdictDrainer(
         {
             var result = await runner.RunAsync(order, cancellationToken);
 
+            // Cancelled, not Failed: running out of allowance is not this track's fault, and
+            // Cancelled is the status that carries no strike. Then stop, because every further
+            // attempt returns instantly, achieves nothing, and spends a strike on a condition
+            // that has nothing to do with whichever track happens to be next.
+            if (result.IsQuotaExhausted)
+            {
+                jobs.Record(
+                    item.VideoId,
+                    JobStage.Verdict,
+                    JobStatus.Cancelled,
+                    error: result.Error
+                );
+                control.Pause();
+
+                return StageTick.Ran(order, isSuccess: false, result.Error);
+            }
+
             jobs.Record(
                 item.VideoId,
                 JobStage.Verdict,

@@ -63,6 +63,12 @@ public sealed class VerdictRunner(
             [
                 "-p",
                 Prompt(order),
+                // Judgment is reading a JSON file, weighing three numbers against each other,
+                // usually one search, and writing a record. Left to the default this ran on Opus
+                // and spent 180k tokens on a single track; the work does not need it, and the
+                // user's own pre-crateside habit was a Sonnet agent over a batch.
+                "--model",
+                "sonnet",
                 "--output-format",
                 "json",
                 "--permission-mode",
@@ -84,6 +90,13 @@ public sealed class VerdictRunner(
         if (KeyLedger.Read(paths.Ledger).HasRunFor(order.VideoId))
             return VerdictResult.Succeeded();
 
+        // Running out of quota says nothing about this track, so it must not be charged for it.
+        // Left as an ordinary failure it burned all three strikes in about a second -- the
+        // second and third attempts returned instantly, cost nothing, and achieved nothing
+        // except to kill the track for good, so that when quota returned it was already out.
+        if (IsQuotaExhausted(outcome.StandardOutput, outcome.StandardError))
+            return VerdictResult.QuotaExhausted();
+
         return VerdictResult.Failed(
             outcome.Succeeded
                 ? "the session finished without recording a verdict"
@@ -91,6 +104,21 @@ public sealed class VerdictRunner(
                     ?? $"claude exited with {outcome.ExitCode}"
         );
     }
+
+    /// <summary>
+    /// Whether the session stopped because the allowance is spent rather than because anything
+    /// about this track is wrong.
+    /// </summary>
+    /// <remarks>
+    /// Read out of the session's own JSON, which reports <c>api_error_status: 429</c> alongside a
+    /// human sentence naming the reset time. Matched on both, because a 429 elsewhere in the
+    /// stream could mean something else and the sentence alone could appear in a track's title.
+    /// </remarks>
+    private static bool IsQuotaExhausted(params string[] streams) =>
+        streams.Any(s =>
+            s.Contains("\"api_error_status\":429", StringComparison.Ordinal)
+            || s.Contains("hit your limit", StringComparison.OrdinalIgnoreCase)
+        );
 
     /// <summary>
     /// The work order, rendered for the session.
@@ -135,9 +163,24 @@ public sealed class VerdictRunner(
 public sealed record VerdictResult
 {
     public required bool IsSuccess { get; init; }
+
+    /// <summary>
+    /// The allowance is spent. Not a failure of the track, and not something retrying fixes —
+    /// the stage has to stop until it resets.
+    /// </summary>
+    public bool IsQuotaExhausted { get; init; }
+
     public string? Error { get; init; }
 
     public static VerdictResult Succeeded() => new() { IsSuccess = true };
 
     public static VerdictResult Failed(string error) => new() { IsSuccess = false, Error = error };
+
+    public static VerdictResult QuotaExhausted() =>
+        new()
+        {
+            IsSuccess = false,
+            IsQuotaExhausted = true,
+            Error = "the Claude allowance is spent; judging is paused until it resets",
+        };
 }

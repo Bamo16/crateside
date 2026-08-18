@@ -37,6 +37,14 @@
                 {
                     <span class="hold-reason">@reason</span>
                 }
+                @if (GivenUpReason?.Invoke(item.VideoId) is { Length: > 0 } givenUp)
+                {
+                    @* A track that hit its strike limit is otherwise unreachable: strikes never
+                       decrease, so nothing will ever pick it again on its own. *@
+                    <span class="flag gone" title="@givenUp">gave up</span>
+                    <button class="hold" title="@givenUp Put it back in line."
+                            @onclick="() => OnRetry.InvokeAsync(item)">retry</button>
+                }
                 @if (OnInstrumentalToggled.HasDelegate)
                 {
                     @* The only place in the pipeline where a user is present: the evidence run
@@ -111,4 +119,14 @@
     /// <summary>Looks up why a track is held, for the held section.</summary>
     [Parameter]
     public Func<string, string?>? HoldReason { get; set; }
+
+    /// <summary>
+    /// Says whether a stage has given up on a track, and why. Null for the ordinary case.
+    /// </summary>
+    [Parameter]
+    public Func<string, string?>? GivenUpReason { get; set; }
+
+    /// <summary>Puts a given-up track back in line.</summary>
+    [Parameter]
+    public EventCallback<QueueItem> OnRetry { get; set; }
 }
