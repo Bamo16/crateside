@@ -51,8 +51,17 @@ public sealed class SeparationRunner(
 
         try
         {
-            var stdout = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-            var stderr = await process.StandardError.ReadToEndAsync(cancellationToken);
+            // Both reads are started before either is awaited, the same way ExternalProcess
+            // does it and for the reason its comment gives: a child that fills one pipe's
+            // buffer blocks writing to it, so draining stdout to completion first means a
+            // chatty stderr wedges the child forever -- and this is the process that holds
+            // the GPU for six minutes. It survives today only because --json keeps stderr
+            // quiet, which is a property of the callee, not a guarantee.
+            var stdoutRead = process.StandardOutput.ReadToEndAsync(cancellationToken);
+            var stderrRead = process.StandardError.ReadToEndAsync(cancellationToken);
+
+            var stdout = await stdoutRead;
+            var stderr = await stderrRead;
 
             await process.WaitForExitAsync(cancellationToken);
 
