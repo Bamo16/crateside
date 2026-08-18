@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
 
 namespace Crateside.Core.Orchestration;
@@ -22,6 +24,7 @@ namespace Crateside.Core.Orchestration;
 public sealed class VerdictRunner(
     WorkingSet workingSet,
     CratesidePaths paths,
+    JudgingSession session,
     string executable = "claude"
 )
 {
@@ -58,6 +61,8 @@ public sealed class VerdictRunner(
         if (!workingSet.HasEvidence(order.VideoId))
             return VerdictResult.Failed("no evidence to judge");
 
+        var turn = session.Next();
+
         var outcome = await ExternalProcess.RunAsync(
             executable,
             [
@@ -69,6 +74,16 @@ public sealed class VerdictRunner(
                 // user's own pre-crateside habit was a Sonnet agent over a batch.
                 "--model",
                 "sonnet",
+                // Tracks after the first join the conversation the earlier ones are in, so the
+                // skill and its sources are read once rather than per track.
+                turn.IsNew
+                    ? "--session-id"
+                    : "--resume",
+                turn.SessionId.ToString(),
+                // The skill needs no MCP server, and the ones configured for interactive use --
+                // Supabase, Vercel, Drive -- would put their whole tool surface into every
+                // judging session for nothing.
+                "--strict-mcp-config",
                 "--output-format",
                 "json",
                 "--permission-mode",
@@ -88,7 +103,16 @@ public sealed class VerdictRunner(
         // the message and the strike count and decides nothing, which is also what keeps
         // crateside out of the business of parsing agent output.
         if (KeyLedger.Read(paths.Ledger).HasRunFor(order.VideoId))
+        {
+            session.Completed(ContextOf(outcome.StandardOutput));
+
             return VerdictResult.Succeeded();
+        }
+
+        // A conversation whose last turn went wrong is not one to carry forward: whatever went
+        // wrong would sit in the history of every track after it, for the sake of saving one
+        // context load.
+        session.Abandon();
 
         // Running out of quota says nothing about this track, so it must not be charged for it.
         // Left as an ordinary failure it burned all three strikes in about a second -- the
@@ -106,13 +130,40 @@ public sealed class VerdictRunner(
     }
 
     /// <summary>
+    /// How large the conversation now is, read out of the session's own usage report.
+    /// </summary>
+    /// <remarks>
+    /// The three input figures together are what the next turn will have to carry: what was
+    /// cached this turn, what was read from cache, and what was sent fresh. Returns zero when
+    /// the shape is not what we expect — the track count is the other bound, and it exists so
+    /// that failing to read this degrades into a smaller batch rather than an unbounded one.
+    /// </remarks>
+    private static long ContextOf(string stdout)
+    {
+        try
+        {
+            if (
+                JsonSerializer.Deserialize<SessionResult>(stdout[stdout.IndexOf('{')..])
+                is not { Usage: { } usage }
+            )
+                return 0;
+
+            return usage.CacheCreationInputTokens + usage.CacheReadInputTokens + usage.InputTokens;
+        }
+        catch (Exception e) when (e is JsonException or ArgumentOutOfRangeException)
+        {
+            return 0;
+        }
+    }
+
+    /// <summary>
     /// Whether the session stopped because the allowance is spent rather than because anything
     /// about this track is wrong.
     /// </summary>
     /// <remarks>
     /// Read out of the session's own JSON, which reports <c>api_error_status: 429</c> alongside a
-    /// human sentence naming the reset time. Matched on both, because a 429 elsewhere in the
-    /// stream could mean something else and the sentence alone could appear in a track's title.
+    /// human sentence naming the reset time. Either is enough: the status alone is unambiguous,
+    /// and a session that stops before emitting one still says it in prose.
     /// </remarks>
     private static bool IsQuotaExhausted(params string[] streams) =>
         streams.Any(s =>
@@ -183,4 +234,23 @@ public sealed record VerdictResult
             IsQuotaExhausted = true,
             Error = "the Claude allowance is spent; judging is paused until it resets",
         };
+}
+
+/// <summary>The part of a headless session's JSON result that says what it cost.</summary>
+internal sealed record SessionResult
+{
+    [JsonPropertyName("usage")]
+    public SessionUsage? Usage { get; init; }
+}
+
+internal sealed record SessionUsage
+{
+    [JsonPropertyName("input_tokens")]
+    public long InputTokens { get; init; }
+
+    [JsonPropertyName("cache_creation_input_tokens")]
+    public long CacheCreationInputTokens { get; init; }
+
+    [JsonPropertyName("cache_read_input_tokens")]
+    public long CacheReadInputTokens { get; init; }
 }
