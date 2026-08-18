@@ -86,6 +86,13 @@ the two run types below are named after which of them they produce.
 - **Verdict run** — the stage that turns evidence into a **verdict**. The only
   stage that requires an agent, because weighing evidence and going to look for
   human corroboration is the only part of the workflow that genuinely needs one.
+- **Handoff** — the stage that moves a track's finished stems out of the transient
+  stems output and into **Sample Staging**, which is the line between the automated
+  and the human halves of the workflow. It is what makes the stems output transient
+  rather than merely described as such, and what lets a separated track become
+  **fully processed**. Only stems with a key the user could tag with are handed
+  over; the rest stay where separation put them, because staging is where tagging
+  happens and there is nothing to tag them with.
 - **Working set** — everything crateside is holding about one track while that
   track is in flight: the source audio it acquired and the evidence it produced
   from it. Discarded when the track is **imported**, because that is the point
@@ -99,9 +106,10 @@ the two run types below are named after which of them they produce.
   for. **Pausing** is the occasional exception, and deliberately carries no stated
   reason: whether to leave the GPU alone right now is the user's call to make, and
   a written-down justification would only be a guess at one.
-- **Stage** — one of evidence run, verdict run, or separation. Stages are named
-  separately because each contends for a *different* scarce resource — nothing,
-  Claude quota, and the GPU respectively — and so each wants its own moment to run.
+- **Stage** — one of evidence run, verdict run, separation, or handoff. Stages are
+  named separately because each contends for a *different* scarce resource —
+  nothing, Claude quota, the GPU, and nothing again — and so each wants its own
+  moment to run.
   **Independent moments, but not independent order:** separation reads facts that
   only a verdict run records, so a track becomes ready for it by having been
   judged rather than by the clock coming round.

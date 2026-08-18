@@ -169,6 +169,16 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<VerdictDrainer>();
 
+        // The last stage, and the one that makes the stems root transient as its definition
+        // says. Reads no queue: moving files crateside already made is no business of a
+        // YouTube credential.
+        services.AddSingleton(sp => new HandoffSelector(
+            sp.GetRequiredService<JobStore>(),
+            sp.GetRequiredService<CratesidePaths>()
+        ));
+        services.AddSingleton(sp => new HandoffRunner(sp.GetRequiredService<CratesidePaths>()));
+        services.AddSingleton<HandoffDrainer>();
+
         // Draining is on by default: two separations at once are ruinous, but one is
         // unnoticeable, so there is no moment for the user to pick. Pause is in the Queue view
         // for when the room is being recorded in.
@@ -194,6 +204,11 @@ public static class ServiceRegistration
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<ILogger<StageWorker>>(),
             sp.GetRequiredService<VerdictControl>()
+        ));
+        services.AddSingleton<IHostedService>(sp => new StageWorker(
+            sp.GetRequiredService<HandoffDrainer>(),
+            sp.GetRequiredService<JobStore>(),
+            sp.GetRequiredService<ILogger<StageWorker>>()
         ));
 
         // Working sets go when their track is imported. Slow on purpose: it is answering a

@@ -33,7 +33,19 @@ public sealed record StageTick
 
     public required StageOutcome Outcome { get; init; }
 
+    /// <summary>
+    /// The order this pass worked, where the stage had one.
+    /// </summary>
+    /// <remarks>
+    /// Null for <see cref="JobStage.Handoff"/>, which deliberately never reads the queue: it
+    /// moves files that are already on disk, so a lapsed playlist credential is no reason for it
+    /// to stop. <see cref="Subject"/> is what the log wants, and every stage has one.
+    /// </remarks>
     public WorkOrder? Order { get; init; }
+
+    /// <summary>What the pass was about, for the log. The order's title where there is one.</summary>
+    public string? Subject { get; init; }
+
     public bool IsSuccess { get; init; }
     public string? Error { get; init; }
 
@@ -42,6 +54,17 @@ public sealed record StageTick
         {
             Outcome = StageOutcome.Ran,
             Order = order,
+            Subject = order.Title,
+            IsSuccess = isSuccess,
+            Error = error,
+        };
+
+    /// <summary>For a stage whose work is not described by a <see cref="WorkOrder"/>.</summary>
+    public static StageTick Ran(string subject, bool isSuccess, string? error) =>
+        new()
+        {
+            Outcome = StageOutcome.Ran,
+            Subject = subject,
             IsSuccess = isSuccess,
             Error = error,
         };

@@ -126,14 +126,14 @@ public sealed class StageWorker(
 
         switch (tick)
         {
-            case { Outcome: StageOutcome.Ran, Order: { } order }:
+            case { Outcome: StageOutcome.Ran, Subject: { } subject }:
                 if (tick.IsSuccess)
-                    logger.LogInformation("{Stage}: {Title}", drainer.Stage, order.Title);
+                    logger.LogInformation("{Stage}: {Title}", drainer.Stage, subject);
                 else
                     logger.LogWarning(
                         "{Stage} failed for {Title}: {Error}",
                         drainer.Stage,
-                        order.Title,
+                        subject,
                         tick.Error
                     );
 

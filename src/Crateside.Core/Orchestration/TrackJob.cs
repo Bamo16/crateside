@@ -70,6 +70,12 @@ public enum JobStage
 
     /// <summary>Separation. GPU-bound, serial, hours long, and strictly single-flight.</summary>
     Separation,
+
+    /// <summary>
+    /// Hands the finished stems to the human half by moving them into <c>Sample Staging</c>.
+    /// A file move, so it contends for nothing — like evidence, it needs no moment picked for it.
+    /// </summary>
+    Handoff,
 }
 
 /// <summary>How a job is currently going.</summary>

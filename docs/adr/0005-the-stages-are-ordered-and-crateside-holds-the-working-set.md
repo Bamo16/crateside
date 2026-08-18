@@ -260,3 +260,45 @@ with an observed reason to stop is the one that spins the GPU.
 - **The Queue view gains a second per-track instruction** beside holds. `queue.json`'s stated
   rule — *"a standing instruction about what to work, not a record that anything ran"* —
   already covers it.
+
+## A fourth stage: the handoff — 2026-08-18
+
+The first separation crateside ever ran against a retained local file succeeded, wrote three
+stems to `Music\Stems\Key Identified`, and then **the track stayed in "Awaiting stems"
+forever.**
+
+Nothing was broken. `QueueService` scans `[SampleStaging, MashupSamples]` for stems, and those
+roots are *correct*: keytag's `CONTEXT.md` defines the stems output as **transient** — "a track
+fresh out of separation" — and `Sample Staging` as the holding area between the automated and
+the human halves. The stems root is not a place a finished track lives. Nothing moved the
+stems across that line, so **fully processed** was never true, the working set was never
+discarded, and the queue entry was never removable. Three loops left open by one missing step.
+
+So **handoff** is a fourth stage, and it contends for nothing — the same premise that lets the
+evidence stage run without a pause.
+
+**Its own stage rather than a step at the end of separation.** The decisive reason is the GPU.
+Staging lives on an external drive that Ableton may hold files open on, so the move can
+genuinely fail. Folded into separation, a failed move marks the *separation* failed, and the
+retry spends another six minutes of GPU redoing work that had already succeeded. Separately,
+only the move is retried.
+
+**It reads no queue**, unlike its three siblings. Moving files crateside already made is no
+business of a YouTube credential, and a lapsed one must not stop the pipeline finishing what it
+started. It selects from what is on disk, grouped by the source video ID in each file's own
+provenance — reality rather than a claim, and the same idiom as the verdict stage's ledger
+check. A file with no provenance is left alone: it joins to nothing, so moving it would put
+somebody else's audio into the user's library.
+
+**Nothing is overwritten, and a collision fails the whole track before anything moves.** A name
+already in staging means the user is part-way through the human steps on it — warp markers live
+in a `.asd` beside the file — or a re-separation is landing on finished work. Neither is
+crateside's call.
+
+**Only `KeyIdentified` is handed over.** A LOW or WITHHELD verdict produces stems the user
+cannot key-tag, and tagging is what staging is for. *The consequence is deliberate and is worth
+writing down rather than discovering later:* nothing currently moves those on, so they are
+parked in `Unresolved Key` until a verdict changes — and because they never become fully
+processed, they keep showing in "Awaiting stems" exactly as the Muse track did. **The queue
+view cannot presently tell "not separated yet" from "separated, held back for want of a key".**
+That is a known gap, not an oversight, and it is the next thing to close.
