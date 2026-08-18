@@ -49,6 +49,33 @@ public sealed class VerdictRunner(
         "Bash(uv run:*)",
     ];
 
+    /// <summary>
+    /// The built-in tools the session <em>loads</em>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>A different list from <see cref="AllowedTools"/>, and confusing the two cost real
+    /// money.</strong> <c>--allowed-tools</c> is a permission list: it decides what may run, not
+    /// what exists. Every built-in was still being handed to the session, which is enough of them
+    /// that the rarely-used ones — <c>WebSearch</c> among them — sit behind <c>ToolSearch</c>. So
+    /// both measured tracks spent a whole round trip looking up a tool they had already been
+    /// granted. <c>--tools</c> is the list that actually decides; naming it loads
+    /// <c>WebSearch</c> directly and drops ~6.9k of tool definitions from every turn.
+    /// </para>
+    /// <para>
+    /// The permission list still governs what these may do — <c>Bash</c> here and
+    /// <c>Bash(uv run:*)</c> above is the same structural guard as before, not a widening.
+    /// </para>
+    /// </remarks>
+    private static readonly string[] BuiltInTools =
+    [
+        "Skill", // /detect-key itself
+        "Read", // SOURCES.md; the evidence arrives in the prompt now
+        "Write", // the machine layer the recorder reads back
+        "WebSearch",
+        "Bash",
+    ];
+
     /// <summary>Judges one track, and reports what the ledger says afterwards.</summary>
     public async Task<VerdictResult> RunAsync(
         WorkOrder order,
@@ -77,6 +104,22 @@ public sealed class VerdictRunner(
                 "json",
                 "--permission-mode",
                 "acceptEdits",
+                // What to load, as against what to permit. See BuiltInTools.
+                "--tools",
+                string.Join(',', BuiltInTools),
+                // The skill is a project setting of the keytag repo, so that source has to stay;
+                // the user's global ones only ever contributed a listing of every skill and agent
+                // they have installed, none of which judging can use. Worth 4.7k a turn, and
+                // "" -- dropping the project source too -- is not an option: /detect-key then
+                // does not resolve at all, which was measured rather than assumed.
+                "--setting-sources",
+                "project",
+                // A backstop against a session that spirals rather than stops. Measured tracks
+                // cost $0.44 and $0.54 before this change, so this only ever catches a runaway.
+                // Tripping it leaves no ledger line, which the caller already reads as an
+                // ordinary failure -- which is what a runaway should be.
+                "--max-budget-usd",
+                "2.00",
                 "--allowed-tools",
                 .. AllowedTools,
             ],
@@ -128,9 +171,16 @@ public sealed class VerdictRunner(
     /// The work order, rendered for the session.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// Every line is something the skill would otherwise have to decide or go and find. The
     /// audio is named so a diluted whole-file read can be re-run over a window, and named
     /// read-only so it does not read as licence to start again.
+    /// </para>
+    /// <para>
+    /// <strong>The evidence is carried, not pointed at.</strong> The path is still named,
+    /// because the recorder takes it as its <c>--machine</c> argument, but the session no
+    /// longer has to spend a turn reading it.
+    /// </para>
     /// </remarks>
     internal string Prompt(WorkOrder order)
     {
@@ -157,7 +207,27 @@ public sealed class VerdictRunner(
         lines.AddRange([
             string.Empty,
             "Record the run when you have a verdict. source_url is required.",
+            string.Empty,
+            // The session opens in the keytag repo and reads its CLAUDE.md -- "commit directly
+            // to master... do not ask each time" -- as addressed to itself. One track spent
+            // three turns and ~150k tokens trying to commit the ledger, and all three were
+            // blocked by the permission list, which is the guard working and not a reason to
+            // pay for the attempts. Naming who the instruction is for beats forbidding it flat,
+            // because the session can otherwise reason its way back to obeying the file.
+            "Do not run git. keytag's instruction to commit and push is addressed to somebody "
+                + "working on keytag, not to a judging session; crateside owns what happens to "
+                + "the ledger afterwards.",
         ]);
+
+        if (workingSet.TryReadEvidence(order.VideoId, out var evidence))
+            lines.AddRange([
+                string.Empty,
+                "The evidence itself, so you do not have to read it:",
+                string.Empty,
+                "```json",
+                evidence.TrimEnd(),
+                "```",
+            ]);
 
         return string.Join(Environment.NewLine, lines);
     }

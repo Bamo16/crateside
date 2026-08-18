@@ -29,6 +29,9 @@ public sealed class WorkingSet(string? root = null)
     /// <summary>The evidence from the whole-file detection — the one a verdict run starts from.</summary>
     public const string EvidenceFileName = "evidence.json";
 
+    /// <summary>The largest evidence file worth carrying rather than pointing at.</summary>
+    private const long MaxInlineBytes = 32 * 1024;
+
     private readonly string _root =
         root
         ?? Path.Combine(
@@ -71,6 +74,44 @@ public sealed class WorkingSet(string? root = null)
 
     /// <summary>Whether evidence has been produced for this track — the evidence stage's "done".</summary>
     public bool HasEvidence(string videoId) => File.Exists(EvidencePathFor(videoId));
+
+    /// <summary>
+    /// The whole-file evidence itself, when it is small enough to hand to a reader directly.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// For inlining into the verdict prompt. A session reading this file spends a whole round
+    /// trip on it — measured at ~25k of context re-read — where the file is under a thousand
+    /// tokens sitting in a prefix that is cached anyway. So the cheap thing is to carry it.
+    /// </para>
+    /// <para>
+    /// <strong>The bound is not about any file seen so far.</strong> Real evidence is 2–4 KB of
+    /// fixed shape from <c>keytag-detect</c>; the cap is there because <c>key_events</c> is a
+    /// flicker list with no length in its definition, and one pathological track must not
+    /// quietly turn the saving back into a cost. Over the bound this reports nothing and the
+    /// prompt falls back to naming the path, which is what it did before and still works.
+    /// </para>
+    /// </remarks>
+    public bool TryReadEvidence(string videoId, out string evidence)
+    {
+        evidence = null!;
+
+        try
+        {
+            if (
+                new FileInfo(EvidencePathFor(videoId)) is
+                { Exists: true, Length: <= MaxInlineBytes }
+            )
+                evidence = File.ReadAllText(EvidencePathFor(videoId));
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // Unreadable evidence is not worth failing over here: the caller names the path
+            // instead, and the session reads it the old way.
+        }
+
+        return evidence is not null;
+    }
 
     /// <summary>
     /// The retained source audio, if it is there.

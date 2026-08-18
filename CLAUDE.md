@@ -63,6 +63,12 @@ When something misbehaves, **test it rather than reasoning about it from outside
 diagnoses in one session were settled in minutes by running the real code against the real
 state.
 
+**A measurement is a premise too.** Ask what the script counted before believing the number —
+one that overstated the verdict stage by 2× survived into a handoff unchallenged
+([ADR 0006](docs/adr/0006-a-verdict-session-costs-turns-times-context.md)). Reading token cost
+out of a session transcript: group `message.usage` by `requestId`, because one API response is
+several rows and each carries the same usage object.
+
 ## Documents hold one kind of content each
 
 Same rule as keytag ([its ADR 0005](../keytag/docs/adr/0005-instructions-carry-no-history.md)):

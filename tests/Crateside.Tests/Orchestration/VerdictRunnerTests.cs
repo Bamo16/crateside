@@ -42,10 +42,10 @@ public class VerdictRunnerTests : IDisposable
             KeyLedger.Read("does-not-exist")
         );
 
-    private void GiveEvidence()
+    private void GiveEvidence(string evidence = "{}")
     {
         Set.Prepare(VideoId);
-        File.WriteAllText(Set.EvidencePathFor(VideoId), "{}");
+        File.WriteAllText(Set.EvidencePathFor(VideoId), evidence);
     }
 
     /// <summary>Writes the ledger line a real session would have recorded.</summary>
@@ -236,5 +236,46 @@ public class VerdictRunnerTests : IDisposable
         GiveEvidence();
 
         Assert.DoesNotContain("has_vocals", Runner(records: false).Prompt(Order()));
+    }
+
+    [Fact]
+    public void The_evidence_is_carried_rather_than_left_to_be_read()
+    {
+        // A tool call is a whole round trip -- ~25k of context re-read -- against well under a
+        // thousand tokens to carry the file in a prefix that is cached anyway.
+        GiveEvidence("""{"algorithms":{"librosa_ks":{"key":"A minor"}}}""");
+
+        var prompt = Runner(records: false).Prompt(Order());
+
+        Assert.Contains("\"key\":\"A minor\"", prompt);
+        // Still named, because the recorder takes the path as its --machine argument.
+        Assert.Contains(Set.EvidencePathFor(VideoId), prompt);
+    }
+
+    [Fact]
+    public void Evidence_too_large_to_carry_is_pointed_at_instead()
+    {
+        // key_events has no length in its definition, so one pathological track must not turn
+        // the saving back into a cost. The path alone is what the prompt used to say, and works.
+        GiveEvidence($$"""{"key_events":"{{new string('x', 64 * 1024)}}"}""");
+
+        var prompt = Runner(records: false).Prompt(Order());
+
+        Assert.DoesNotContain("```json", prompt);
+        Assert.Contains(Set.EvidencePathFor(VideoId), prompt);
+    }
+
+    [Fact]
+    public void The_session_is_told_whose_repository_it_is_in()
+    {
+        // keytag's CLAUDE.md says to commit directly to master, and a judging session read that
+        // as addressed to itself: three turns and ~150k tokens trying to commit the ledger, all
+        // three blocked by the permission list.
+        GiveEvidence();
+
+        var prompt = Runner(records: false).Prompt(Order());
+
+        Assert.Contains("Do not run git", prompt);
+        Assert.Contains("not to a judging session", prompt);
     }
 }
