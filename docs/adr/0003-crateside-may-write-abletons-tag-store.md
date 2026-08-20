@@ -82,12 +82,26 @@ back after each.
   holds hand-applied tags crateside knows nothing about, and has no reason to be written.
 
 **The user does not hand-tag in staging.** Their rule, offered when the question was still
-open: staging holds only stems, the only tags they ever apply there are key and
-vocal/instrumental, and crateside can do both. Anything special — an extra tag, a
-correction — means moving the stem to `Mashup Samples` first, where crateside never
-writes. This makes the concurrent-write question *moot* rather than solved, which is
+open: staging holds only files bound for `Mashup Samples`, the only tags they ever apply
+there are key and vocal/instrumental, and crateside can do both. Anything special — an
+extra tag, a correction — means moving the file to `Mashup Samples` first, where crateside
+never writes. This makes the concurrent-write question *moot* rather than solved, which is
 better: the tests above never had both writers active simultaneously, so that is the one
 scenario still unmeasured.
+
+*Corrected in place 2026-08-20: this said "staging holds only **stems**" and "moving the
+**stem**".* [ADR 0004](0004-sample-is-the-role-word-and-stem-is-the-origin-word.md) settled
+the vocabulary the day after this was written, and by it *stem* names an origin — a
+separated part of a track. **An instrumental release's source track is a sample and no kind
+of stem at all**, and one of those is now in staging, so the narrower word made this rule
+read as not covering it. The wording is load-bearing here because the rule is a contract
+about what may be written.
+
+*What that unmeasured scenario turned out to be — 2026-08-20:* the rule makes contention
+moot only for **hand-tagging**. Moving a file out of staging to `Mashup Samples` in
+Ableton's browser is not hand-tagging, and plausibly rewrites staging's tag store as a side
+effect — a second writer the rule does not reach. Unmeasured still, and now known to be
+reachable without the user breaking any rule.
 
 ## Alternatives considered
 
