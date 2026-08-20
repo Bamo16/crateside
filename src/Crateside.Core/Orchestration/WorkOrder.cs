@@ -153,6 +153,24 @@ public sealed record SeparationRecipe
 
     public string Format { get; init; } = "flac";
 
+    /// <summary>
+    /// How many files this recipe should produce — one per preset, plus the warp guide and the
+    /// kept source where they are asked for.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Counted rather than matched by name, deliberately. The names belong to StemForge
+    /// (<c>Vocal - Full</c> against crateside's <c>vocal_full</c>) and mapping between them
+    /// would make a rename over there a silent miscount over here. A count encodes nothing about
+    /// the other tool's vocabulary.
+    /// </para>
+    /// <para>
+    /// Repeated presets are not de-duplicated, because they run as independent stem sets and
+    /// each produces a file.
+    /// </para>
+    /// </remarks>
+    public int ExpectedOutputs => Presets.Count + (ExtractDrums ? 1 : 0) + (KeepSource ? 1 : 0);
+
     /// <summary>The recipe a track's release calls for.</summary>
     public static SeparationRecipe For(QueueItem item) =>
         item.IsInstrumentalRelease ? InstrumentalRelease : Standard;

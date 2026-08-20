@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Humanizer;
 
 namespace Crateside.Core.Orchestration;
 
@@ -68,27 +69,60 @@ public sealed class SeparationRunner(
             await process.WaitForExitAsync(cancellationToken);
 
             var error = FailureFrom(process.ExitCode, stdout, stderr);
+            IReadOnlyList<string> outputs = [];
+
+            if (error is null)
+            {
+                outputs = [.. OutputFilesFrom(stdout), .. KeepSource(order, retained)];
+                error = ShortfallFrom(order.Recipe, outputs);
+            }
 
             interlock.Release(order.VideoId, error);
 
             return error is null
-                ? SeparationResult.Succeeded([
-                    .. OutputFilesFrom(stdout),
-                    .. KeepSource(order, retained),
-                ])
+                ? SeparationResult.Succeeded(outputs)
                 : SeparationResult.Failed(error);
         }
         catch (OperationCanceledException)
         {
-            // Pausing must not orphan a running separation the way a restart does: a restart is
-            // survivable because the work continues, whereas an abandoned process here would
-            // hold the GPU with nobody watching it.
+            // Shutdown, not pause. Pausing only stops the next track being picked up -- nothing
+            // reaches this token from the control, and a separation already going runs to
+            // completion and is recorded normally. This is the app going away, where an
+            // abandoned process would hold the GPU with nobody watching it.
+            //
+            // Note what that makes true: quitting cleanly discards the work, while a crash
+            // keeps it, because on Windows the child outlives the parent and the interlock
+            // adopts it on the next start.
             Stop(process);
             interlock.Release(order.VideoId, "cancelled");
 
             throw;
         }
     }
+
+    /// <summary>
+    /// Whether the run produced what the recipe asked for, said as an error when it did not.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Succeeded has to mean the work is done, not that the process exited zero.</strong>
+    /// An instrumental release once separated "successfully" having written its drums and not
+    /// the source track that <em>is</em> its sample — <c>--keep-source</c> was being ignored —
+    /// and nothing noticed, because nothing compared the output against the request. The track
+    /// then read as fully processed, which let <see cref="WorkingSetJanitor"/> discard the only
+    /// local copy of the missing file. A loud failure here would have kept it.
+    /// </para>
+    /// <para>
+    /// <strong>Only a shortfall is a failure.</strong> More files than asked for is not harm and
+    /// not crateside's business — a preset that grew a second output is StemForge's to define.
+    /// Fewer means something the recipe asked for did not happen.
+    /// </para>
+    /// </remarks>
+    private static string? ShortfallFrom(SeparationRecipe recipe, IReadOnlyList<string> outputs) =>
+        outputs.Count < recipe.ExpectedOutputs
+            ? $"the recipe asked for {"file".ToQuantity(recipe.ExpectedOutputs)} "
+                + $"and the run produced {outputs.Count}"
+            : null;
 
     /// <summary>
     /// Puts the source track in the destination itself, for a release whose source <em>is</em>

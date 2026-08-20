@@ -92,20 +92,22 @@ public class SeparationRunnerTests : IDisposable
     public async Task A_finished_run_reports_the_stems_it_wrote()
     {
         var runner = RunnerPrinting(
-            """[{"succeeded":true,"outputFiles":["C:\\Stems\\vocal.flac","C:\\Stems\\drums.flac"]}]"""
+            """[{"succeeded":true,"outputFiles":["C:\\Stems\\vocal.flac","C:\\Stems\\instrumental.flac","C:\\Stems\\drums.flac"]}]"""
         );
 
         var result = await runner.RunAsync(Order(), TestContext.Current.CancellationToken);
 
+        // A full Standard recipe's worth: the usual pair plus the warp guide. Fewer than the
+        // recipe asked for is now a failure, so the fixture has to be a real run's output.
         Assert.Equal(SeparationOutcome.Succeeded, result.Outcome);
-        Assert.Equal(2, result.OutputFiles.Count);
+        Assert.Equal(3, result.OutputFiles.Count);
         Assert.Contains(@"C:\Stems\vocal.flac", result.OutputFiles);
     }
 
     [Fact]
     public async Task A_finished_run_frees_the_gpu()
     {
-        await RunnerPrinting("""[{"succeeded":true,"outputFiles":[]}]""")
+        await RunnerPrinting("""[{"succeeded":true,"outputFiles":["v.flac","i.flac","d.flac"]}]""")
             .RunAsync(Order(), TestContext.Current.CancellationToken);
 
         Assert.True(Jobs.TryGet(VideoId, JobStage.Separation, out var job));
@@ -189,7 +191,8 @@ public class SeparationRunnerTests : IDisposable
             runner.RunAsync(Order(), cancellation.Token)
         );
 
-        // Pausing must not leave the GPU held by a process nobody is watching.
+        // Shutdown, not pause: pausing stops the next track being picked up and never reaches
+        // this token, so a separation already going finishes and is recorded normally.
         Assert.True(Jobs.TryGet(VideoId, JobStage.Separation, out var job));
         Assert.Equal(JobStatus.Failed, job.Status);
         Assert.Equal("cancelled", job.Error);
@@ -207,7 +210,7 @@ public class SeparationRunnerTests : IDisposable
             $$"""
             @echo off
             echo %* > "{{argumentsFile}}"
-            echo [{"succeeded":true}]
+            echo [{"succeeded":true,"outputFiles":["one.flac","two.flac","three.flac"]}]
             """
         );
 
@@ -288,6 +291,55 @@ public class SeparationRunnerTests : IDisposable
         await runner.RunAsync(InstrumentalOrder(), TestContext.Current.CancellationToken);
 
         Assert.Contains("--keep-source", File.ReadAllText(argumentsFile));
+    }
+
+    [Fact]
+    public async Task A_run_that_made_less_than_the_recipe_asked_for_has_not_succeeded()
+    {
+        // The exact shape that got through: an instrumental release wrote its drums and not the
+        // source track that IS its sample, reported success, and was then read as fully
+        // processed -- which let the janitor discard the only local copy of the missing file.
+        var runner = RunnerPrinting(
+            """[{"succeeded":true,"outputFiles":["C:\\Stems\\Burst Mode (Drums).flac"]}]"""
+        );
+
+        // Drums and the kept source: two files asked for, one produced.
+        var result = await runner.RunAsync(
+            InstrumentalOrder(),
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(SeparationOutcome.Failed, result.Outcome);
+        Assert.Contains("2 files", result.Error);
+        Assert.Contains("produced 1", result.Error);
+
+        // And it is the track's own failure, so it earns a strike and will be tried again.
+        Assert.True(Jobs.TryGet(VideoId, JobStage.Separation, out var job));
+        Assert.Equal(JobStatus.Failed, job.Status);
+    }
+
+    [Fact]
+    public async Task More_files_than_asked_for_is_not_a_failure()
+    {
+        // A preset that grew a second output is StemForge's to define, and extra files are not
+        // harm. Only a shortfall means something asked for did not happen.
+        var runner = RunnerPrinting(
+            """[{"succeeded":true,"outputFiles":["a.flac","b.flac","c.flac","d.flac"]}]"""
+        );
+
+        var result = await runner.RunAsync(Order(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(SeparationOutcome.Succeeded, result.Outcome);
+    }
+
+    [Fact]
+    public void The_expected_count_follows_the_recipe_rather_than_any_name()
+    {
+        // Counted, not name-matched: the names are StemForge's ("Vocal - Full" against
+        // vocal_full) and mapping between them would make a rename over there a silent
+        // miscount over here.
+        Assert.Equal(3, SeparationRecipe.Standard.ExpectedOutputs);
+        Assert.Equal(2, SeparationRecipe.InstrumentalRelease.ExpectedOutputs);
     }
 
     [Fact]
