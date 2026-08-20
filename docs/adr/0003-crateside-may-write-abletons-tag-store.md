@@ -154,3 +154,57 @@ was written down confidently by whoever was there first, and then cited rather t
 checked. A recorded decision carries its premise forward with the same authority as its
 conclusion, and nothing in the format distinguishes the measured parts from the plausible
 ones.
+
+## The move-out, measured — 2026-08-20
+
+The scenario left open above — Ableton writing the staging tag store as a side effect of the
+user moving a file to `Mashup Samples` — was measured with a watcher polling both stores at
+100 ms, logging size, hash and NTFS file id. (File id rather than creation time: Windows
+preserves creation time across a quick delete-and-recreate, so it cannot tell a replace from
+an in-place write.)
+
+**A first attempt found nothing at all**, because the file moved was *untagged*. There was no
+entry to remove and none to carry across, so neither store was touched. Worth stating on its
+own: **moving an untagged file is not a tag-store write.**
+
+Moving a tagged one — `Alan Gomez - Mission 15 (Vocal - Full).flac`, carrying `Key|E`,
+`Key|Minor`, `Type|Vocal` — produced this:
+
+9. **A move-out is two writes, about a second apart.** Staging first (16:37:37.276), then
+   `Mashup Samples` (16:37:38.354). Not one transaction, and not simultaneous.
+
+10. **The removal is surgical, and finding 4 extends to removals.** Staging went 19 entries to
+    18: exactly the moved file's entry gone, the other 18 intact, **insertion order preserved**,
+    no surviving entry's tags altered. `Mashup Samples` went 432 to 433, the entry **appended at
+    the end** with byte-identical keywords. Both files changed by exactly 453 bytes, in opposite
+    directions — the entry moved verbatim. Ableton is merging against what is on disk in both
+    directions, not rewriting from an in-memory index.
+
+11. **Both stores are written *in place* — same file id, no atomic rename.** This is the finding
+    that constrains crateside. Shrinking staging's file from 9458 to 9005 bytes in place means a
+    truncate-and-rewrite, so there is a window in which the file on disk is neither the old
+    content nor the new. **A reader can see a torn file, and a second in-place writer can corrupt
+    one.**
+
+12. `xmp:MetadataDate` is bumped on both, to the second of each write.
+
+### What this settles for the tag writer
+
+- **crateside writes atomically** — temp file in the same directory, then replace. It can then
+  never itself leave a partial file, and its write is one rename rather than an interleavable
+  truncate-and-rewrite.
+- **crateside's reads must tolerate a torn file.** Finding 11 makes this real rather than
+  defensive: a parse failure means "Ableton is mid-write", so the correct response is to skip
+  the tick and come back, never to treat it as a corrupt store worth rebuilding.
+- **Compare-and-swap on last-write-time** before replacing, so a write built on a stale read
+  becomes a retry instead of dropping whatever Ableton did in between. Cheap to retry, because
+  the audit re-derives the work list every tick.
+- **Do not gate on Ableton being closed.** Findings 2 and 3 already showed external tags are
+  picked up live and reach the search index, so a gate would cost the user real time to avoid a
+  window measured here at about a second, twice per move-out.
+
+**Still unmeasured:** genuinely simultaneous writes, which remain hard to provoke deliberately;
+and whether Ableton keeps watching a file that crateside *replaces* rather than edits in place.
+The second is a new question created by the decision above — Windows reports directory changes
+rather than watching an inode, so a replace should still notify, but that is reasoning and not
+a measurement.
