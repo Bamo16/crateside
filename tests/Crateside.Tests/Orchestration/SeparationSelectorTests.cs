@@ -41,6 +41,7 @@ public class SeparationSelectorTests : IDisposable
             Items = awaitingSeparation,
             Outstanding = [],
             FullyProcessed = [],
+            AwaitingKey = [],
             AwaitingSeparation = awaitingSeparation,
             Held = [],
         };
@@ -100,6 +101,7 @@ public class SeparationSelectorTests : IDisposable
             Items = [unjudged],
             Outstanding = [unjudged],
             FullyProcessed = [],
+            AwaitingKey = [],
             AwaitingSeparation = [],
             Held = [],
         };
@@ -119,6 +121,7 @@ public class SeparationSelectorTests : IDisposable
             Items = [held],
             Outstanding = [],
             FullyProcessed = [],
+            AwaitingKey = [],
             AwaitingSeparation = [],
             Held = [held],
         };

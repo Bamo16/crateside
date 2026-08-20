@@ -43,6 +43,7 @@ public class EvidenceSelectorTests : IDisposable
             Items = outstanding,
             Outstanding = outstanding,
             FullyProcessed = [],
+            AwaitingKey = [],
             AwaitingSeparation = [],
             Held = [],
         };
@@ -89,6 +90,7 @@ public class EvidenceSelectorTests : IDisposable
             Items = [held],
             Outstanding = [],
             FullyProcessed = [],
+            AwaitingKey = [],
             AwaitingSeparation = [],
             Held = [held],
         };

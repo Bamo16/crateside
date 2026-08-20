@@ -65,6 +65,7 @@ public class QueueBatchTests
             Items = outstanding,
             Outstanding = outstanding,
             FullyProcessed = [],
+            AwaitingKey = [],
             AwaitingSeparation = [],
             Held = [],
         };

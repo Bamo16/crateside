@@ -168,15 +168,23 @@ public sealed class QueueService(
 
         // Stems live in staging until the work is done, then move to Mashup Samples — both
         // count, because a track that moved out is still processed.
-        var processed = ProcessedTracks.Scan(
-            KeyLedger.Read(_paths.Ledger),
-            [_paths.SampleStaging, _paths.MashupSamples]
-        );
+        var ledger = KeyLedger.Read(_paths.Ledger);
+        var processed = ProcessedTracks.Scan(ledger, [_paths.SampleStaging, _paths.MashupSamples]);
+
+        // Scanned separately from the two roots above, and deliberately not added to them: a
+        // stem parked here is not processed, and counting it as such would take the track out of
+        // the queue and let the janitor discard its working set. What it does mean is that the
+        // GPU has already done this track, which is the thing "awaiting stems" could not say.
+        var parked = ProcessedTracks.Scan(ledger, [_paths.StemsUnresolvedKey]);
 
         return QueueView.Compose(
             items,
             processed.FullyProcessed,
             processed.VerdictWithoutStems,
+            items
+                .Where(i => parked.StemsFor(i.VideoId).Count > 0)
+                .Select(i => i.VideoId)
+                .ToHashSet(StringComparer.Ordinal),
             settings.Read().Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal)
         );
     }

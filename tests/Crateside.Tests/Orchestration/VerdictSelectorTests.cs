@@ -72,6 +72,7 @@ public class VerdictSelectorTests : IDisposable
             Items = outstanding,
             Outstanding = outstanding,
             FullyProcessed = [],
+            AwaitingKey = [],
             AwaitingSeparation = [],
             Held = [],
         };
@@ -191,6 +192,7 @@ public class VerdictSelectorTests : IDisposable
             Items = [held],
             Outstanding = [],
             FullyProcessed = [],
+            AwaitingKey = [],
             AwaitingSeparation = [],
             Held = [held],
         };

@@ -25,12 +25,14 @@ public class QueueViewCompositionTests
         IReadOnlyList<QueueItem> items,
         IReadOnlySet<string>? fullyProcessed = null,
         IReadOnlySet<string>? verdictWithoutStems = null,
+        IReadOnlySet<string>? separatedWithoutKey = null,
         params TrackInstruction[] instructions
     ) =>
         QueueView.Compose(
             items,
             fullyProcessed ?? new HashSet<string>(),
             verdictWithoutStems ?? new HashSet<string>(),
+            separatedWithoutKey ?? new HashSet<string>(),
             instructions.ToDictionary(t => t.VideoId, StringComparer.Ordinal)
         );
 
@@ -42,6 +44,42 @@ public class QueueViewCompositionTests
         Assert.Equal(Unjudged, Assert.Single(view.Outstanding).VideoId);
         Assert.Empty(view.AwaitingSeparation);
         Assert.Empty(view.FullyProcessed);
+    }
+
+    [Fact]
+    public void A_track_parked_for_want_of_a_key_is_not_awaiting_separation()
+    {
+        // It has a verdict and no stems in staging, which is the exact test for "awaiting
+        // stems" -- so it sat in that list permanently, reading as work the GPU had not got to
+        // when the GPU had already done it. The user held tracks by hand to work around this.
+        var view = Compose(
+            [Item(Judged)],
+            verdictWithoutStems: new HashSet<string> { Judged },
+            separatedWithoutKey: new HashSet<string> { Judged }
+        );
+
+        Assert.Empty(view.AwaitingSeparation);
+        Assert.Equal(Judged, Assert.Single(view.AwaitingKey).VideoId);
+
+        // Still not processed: its stems are parked, not staged, so the queue keeps it and the
+        // janitor keeps its working set.
+        Assert.Empty(view.FullyProcessed);
+    }
+
+    [Fact]
+    public void Holding_a_parked_track_takes_it_out_of_that_list_too()
+    {
+        // Held is subtracted from every work list rather than checked by their readers, so a
+        // new list must not quietly reintroduce the hole that guard exists to close.
+        var view = Compose(
+            [Item(Judged)],
+            verdictWithoutStems: new HashSet<string> { Judged },
+            separatedWithoutKey: new HashSet<string> { Judged },
+            instructions: new TrackInstruction { VideoId = Judged, IsHeld = true }
+        );
+
+        Assert.Empty(view.AwaitingKey);
+        Assert.Equal(Judged, Assert.Single(view.Held).VideoId);
     }
 
     [Fact]
@@ -132,17 +170,23 @@ public class QueueViewCompositionTests
     [Fact]
     public void Every_item_is_in_exactly_one_bucket()
     {
+        const string Parked = "eeeeeeeeeee";
+
         var view = Compose(
-            [Item(Judged), Item(Unjudged), Item(Done), Item("ddddddddddd")],
+            [Item(Judged), Item(Unjudged), Item(Done), Item("ddddddddddd"), Item(Parked)],
             fullyProcessed: new HashSet<string> { Done },
-            verdictWithoutStems: new HashSet<string> { Judged },
+            verdictWithoutStems: new HashSet<string> { Judged, Parked },
+            separatedWithoutKey: new HashSet<string> { Parked },
             instructions: new TrackInstruction { VideoId = "ddddddddddd", IsHeld = true }
         );
 
+        // A parked track is in verdictWithoutStems too, so a new list that failed to subtract
+        // itself from the old one would show up here as a track counted twice.
         Assert.Equal(
             view.Items.Count,
             view.Outstanding.Count
                 + view.AwaitingSeparation.Count
+                + view.AwaitingKey.Count
                 + view.FullyProcessed.Count
                 + view.Held.Count
         );

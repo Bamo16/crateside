@@ -68,11 +68,16 @@ public sealed record QueueView
     /// </remarks>
     /// <param name="fullyProcessed">Video IDs with both a verdict and stems on disk.</param>
     /// <param name="verdictWithoutStems">Video IDs with a verdict and no stems anywhere.</param>
+    /// <param name="separatedWithoutKey">
+    /// Video IDs whose stems are parked in the unresolved-key root. Separated already, and
+    /// waiting on a verdict good enough to tag with rather than on anything crateside will do.
+    /// </param>
     /// <param name="instructions">The user's standing instructions, keyed by video ID.</param>
     public static QueueView Compose(
         IReadOnlyList<QueueItem> items,
         IReadOnlySet<string> fullyProcessed,
         IReadOnlySet<string> verdictWithoutStems,
+        IReadOnlySet<string> separatedWithoutKey,
         IReadOnlyDictionary<string, TrackInstruction> instructions
     )
     {
@@ -106,7 +111,15 @@ public sealed record QueueView
             AwaitingSeparation =
             [
                 .. described.Where(i =>
-                    verdictWithoutStems.Contains(i.VideoId) && !held.Contains(i.VideoId)
+                    verdictWithoutStems.Contains(i.VideoId)
+                    && !separatedWithoutKey.Contains(i.VideoId)
+                    && !held.Contains(i.VideoId)
+                ),
+            ],
+            AwaitingKey =
+            [
+                .. described.Where(i =>
+                    separatedWithoutKey.Contains(i.VideoId) && !held.Contains(i.VideoId)
                 ),
             ],
             Held = [.. described.Where(i => held.Contains(i.VideoId))],
@@ -191,4 +204,23 @@ public sealed record QueueView
     /// </para>
     /// </remarks>
     public required IReadOnlyList<QueueItem> AwaitingSeparation { get; init; }
+
+    /// <summary>
+    /// Separated already, and parked for want of a key worth tagging with.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Split out of <see cref="AwaitingSeparation"/> because that list was lying.</strong>
+    /// A LOW or WITHHELD verdict routes its stems to the unresolved-key root, and the handoff
+    /// stage deliberately leaves them there — staging is where tagging happens and there is
+    /// nothing to tag them with. But they have a verdict and no stems in staging, which is
+    /// exactly the test for "awaiting stems", so they sat in that list permanently looking like
+    /// work the GPU had not got to yet.
+    /// </para>
+    /// <para>
+    /// Nothing crateside runs will move these on. The way out is a better verdict, which is a
+    /// human decision — so this is a resting place, not a queue, and it carries no urgency.
+    /// </para>
+    /// </remarks>
+    public required IReadOnlyList<QueueItem> AwaitingKey { get; init; }
 }

@@ -55,6 +55,7 @@ public class VerdictSelectorRealDataTests
                     [Item(videoId)],
                     new HashSet<string>(),
                     new HashSet<string>(),
+                    new HashSet<string>(),
                     new Dictionary<string, TrackInstruction>()
                 ),
                 ledger,

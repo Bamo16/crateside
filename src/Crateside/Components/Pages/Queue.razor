@@ -165,6 +165,18 @@ else
                       Detail="Left alone on purpose — usually the wrong upload of the right song. crateside will not work these, and nothing removes them automatically, so they stay here until you deal with them." />
     }
 
+    @* Separated already and parked for want of a taggable key. Its own section because it read
+       as "awaiting stems" for as long as it existed, which is work the GPU had not got to --
+       and nothing crateside runs will move these on. A resting place, not a queue. *@
+    @if (_view.AwaitingKey.Count > 0)
+    {
+        <QueueSection Title="Awaiting a key" Items="_view.AwaitingKey" Tone="muted"
+                      Detail="Separated, waiting on a verdict worth tagging with. Nothing automatic will move these."
+                      OnHoldToggled="ToggleHold" OnInstrumentalToggled="ToggleInstrumental"
+                      GivenUpReason="GivenUpOn" OnRetry="Retry"
+                      Pinned="_pinned" OnPinToggled="TogglePin" />
+    }
+
     @if (_view.AwaitingSeparation.Count > 0)
     {
         <QueueSection Title="Awaiting stems" Items="_view.AwaitingSeparation" Tone="muted" OnRemove="RemoveOne"
@@ -304,6 +316,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             (JobStage.Evidence, EvidenceSelector.DefaultMaxStrikes),
             (JobStage.Verdict, VerdictSelector.DefaultMaxStrikes),
             (JobStage.Separation, SeparationSelector.DefaultMaxStrikes),
+            (JobStage.Handoff, HandoffSelector.DefaultMaxStrikes),
         }
             .Select(s =>
                 Jobs.TryGet(videoId, s.Item1, out var job)
