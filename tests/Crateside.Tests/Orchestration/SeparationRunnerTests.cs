@@ -25,6 +25,18 @@ public class SeparationRunnerTests : IDisposable
     private SeparationInterlock Interlock => field ??= new SeparationInterlock(Jobs, _probe);
     private WorkingSet Set => field ??= new WorkingSet(Path.Combine(_directory, "working"));
 
+    /// <summary>
+    /// Destinations under the test's own directory. The runner <em>writes</em> to these now —
+    /// it places an instrumental release's source itself — so real paths here would put files
+    /// in the user's actual library every time the suite ran.
+    /// </summary>
+    private CratesidePaths Paths =>
+        field ??= new CratesidePaths
+        {
+            StemsKeyIdentified = Path.Combine(_directory, "Key Identified"),
+            StemsUnresolvedKey = Path.Combine(_directory, "Unresolved Key"),
+        };
+
     public SeparationRunnerTests() => Directory.CreateDirectory(_directory);
 
     public void Dispose()
@@ -34,6 +46,19 @@ public class SeparationRunnerTests : IDisposable
 
         GC.SuppressFinalize(this);
     }
+
+    /// <summary>A release the user has stated has no vocals: the source track is the sample.</summary>
+    private static WorkOrder InstrumentalOrder() =>
+        WorkOrder.Compose(
+            new QueueItem
+            {
+                PlaylistItemId = "PLI1",
+                VideoId = VideoId,
+                Title = "Yes - Owner of a Lonely Heart",
+                IsInstrumentalRelease = true,
+            },
+            Crateside.Core.Ledger.KeyLedger.Read("does-not-exist")
+        );
 
     private static WorkOrder Order() =>
         WorkOrder.Compose(
@@ -60,7 +85,7 @@ public class SeparationRunnerTests : IDisposable
             """
         );
 
-        return new SeparationRunner(Interlock, Set, new CratesidePaths(), script);
+        return new SeparationRunner(Interlock, Set, Paths, script);
     }
 
     [Fact]
@@ -157,7 +182,7 @@ public class SeparationRunnerTests : IDisposable
             """
         );
 
-        var runner = new SeparationRunner(Interlock, Set, new CratesidePaths(), script);
+        var runner = new SeparationRunner(Interlock, Set, Paths, script);
         using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
@@ -186,7 +211,7 @@ public class SeparationRunnerTests : IDisposable
             """
         );
 
-        return new SeparationRunner(Interlock, Set, new CratesidePaths(), script);
+        return new SeparationRunner(Interlock, Set, Paths, script);
     }
 
     [Fact]
@@ -219,5 +244,66 @@ public class SeparationRunnerTests : IDisposable
         await runner.RunAsync(Order(), TestContext.Current.CancellationToken);
 
         Assert.Contains($"watch?v={VideoId}", File.ReadAllText(argumentsFile));
+    }
+
+    [Fact]
+    public async Task An_instrumental_release_gets_its_source_placed_by_crateside()
+    {
+        // --keep-source is a flag about URL inputs: given a local file the separator correctly
+        // ignores it, which left an instrumental release producing drums and nothing else once
+        // crateside began passing the retained file. Here the source IS the sample.
+        var audio = Path.Combine(Set.Prepare(VideoId), "Yes - Owner of a Lonely Heart.flac");
+
+        File.WriteAllText(audio, "the source");
+
+        var runner = RunnerEchoingArguments(out var argumentsFile);
+
+        var result = await runner.RunAsync(
+            InstrumentalOrder(),
+            TestContext.Current.CancellationToken
+        );
+
+        var kept = Path.Combine(
+            Paths.DestinationFor(StemDestination.UnresolvedKey),
+            "Yes - Owner of a Lonely Heart.flac"
+        );
+
+        Assert.True(File.Exists(kept), "the source never reached the destination");
+        Assert.Equal("the source", File.ReadAllText(kept));
+
+        // Reported as an output, so the handoff stage and the caller both see it.
+        Assert.Contains(kept, result.OutputFiles);
+
+        // And the flag is not passed where it would do nothing.
+        Assert.DoesNotContain("--keep-source", File.ReadAllText(argumentsFile));
+    }
+
+    [Fact]
+    public async Task A_url_job_still_asks_the_separator_to_keep_the_source()
+    {
+        // Nothing retained, so the separator downloads a source crateside never had and
+        // --keep-source is the only way to get a copy back. That path is unchanged.
+        var runner = RunnerEchoingArguments(out var argumentsFile);
+
+        await runner.RunAsync(InstrumentalOrder(), TestContext.Current.CancellationToken);
+
+        Assert.Contains("--keep-source", File.ReadAllText(argumentsFile));
+    }
+
+    [Fact]
+    public async Task An_ordinary_release_keeps_no_source_either_way()
+    {
+        // Only an instrumental release's source is a keeper. Everything else has real stems.
+        File.WriteAllText(Path.Combine(Set.Prepare(VideoId), "track.flac"), "the source");
+
+        var runner = RunnerEchoingArguments(out var argumentsFile);
+
+        var result = await runner.RunAsync(Order(), TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain("--keep-source", File.ReadAllText(argumentsFile));
+        Assert.DoesNotContain(
+            result.OutputFiles,
+            f => f.EndsWith("track.flac", StringComparison.Ordinal)
+        );
     }
 }

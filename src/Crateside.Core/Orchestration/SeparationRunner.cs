@@ -42,7 +42,9 @@ public sealed class SeparationRunner(
         if (interlock.TryGetLive(out var live))
             return SeparationResult.Refused($"already separating {live.VideoId}");
 
-        using var process = Start(order);
+        var retained = workingSet.TryGetSource(order.VideoId, out var path) ? path : null;
+
+        using var process = Start(order, retained);
 
         // Claiming needs the process to exist, so there is a sliver between the check above and
         // this line. Harmless here because one worker drives this loop -- but it is why the
@@ -70,7 +72,10 @@ public sealed class SeparationRunner(
             interlock.Release(order.VideoId, error);
 
             return error is null
-                ? SeparationResult.Succeeded(OutputFilesFrom(stdout))
+                ? SeparationResult.Succeeded([
+                    .. OutputFilesFrom(stdout),
+                    .. KeepSource(order, retained),
+                ])
                 : SeparationResult.Failed(error);
         }
         catch (OperationCanceledException)
@@ -82,6 +87,53 @@ public sealed class SeparationRunner(
             interlock.Release(order.VideoId, "cancelled");
 
             throw;
+        }
+    }
+
+    /// <summary>
+    /// Puts the source track in the destination itself, for a release whose source <em>is</em>
+    /// the sample.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong><c>--keep-source</c> cannot do this, by design.</strong> It is a flag about URL
+    /// inputs: the separator downloads a source the caller never had, and the flag says whether
+    /// to hand a copy back. Given a local file the caller already has it, so StemForge quite
+    /// reasonably ignores the flag — which left an instrumental release producing drums and
+    /// nothing else, silently, once crateside started passing the retained file rather than a
+    /// URL. Asking the separator to duplicate a file we handed it would be the wrong shape of
+    /// fix; owning the copy here is the right one.
+    /// </para>
+    /// <para>
+    /// It carries provenance already, because <c>stemforge-cli download</c> wrote it — so a
+    /// plain copy keeps the source URL and therefore the video ID that the handoff stage groups
+    /// by. Copy rather than move: the working set is scratch with its own lifetime, and
+    /// <see cref="WorkingSetJanitor"/> discards it when the track is imported.
+    /// </para>
+    /// </remarks>
+    private IReadOnlyList<string> KeepSource(WorkOrder order, string? retained)
+    {
+        if (!order.Recipe.KeepSource || retained is null)
+            return [];
+
+        try
+        {
+            var destination = paths.DestinationFor(order.Destination);
+
+            Directory.CreateDirectory(destination);
+
+            var kept = Path.Combine(destination, Path.GetFileName(retained));
+
+            File.Copy(retained, kept, overwrite: true);
+
+            return [kept];
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // The stems are real and the separation did succeed, so this does not fail the run.
+            // The track keeps its working set until it is imported, and the copy is retried the
+            // next time anything separates it.
+            return [];
         }
     }
 
@@ -161,7 +213,7 @@ public sealed class SeparationRunner(
         }
     }
 
-    private Process Start(WorkOrder order)
+    private Process Start(WorkOrder order, string? retained)
     {
         var info = new ProcessStartInfo(executable)
         {
@@ -179,14 +231,12 @@ public sealed class SeparationRunner(
         // video ID -- the join key for the board, for "fully processed", and for queue cleanup.
         // A file from anywhere else would silently produce stems that join to nothing.
         //
-        // Asked of the working set here rather than carried on the order, because composing an
-        // order is pure and this is a question about what is on disk right now. The same shape
-        // as VerdictRunner, which asks it the same way for the same reason. WorkOrder used to
-        // carry a SourcePath for this and nothing ever assigned it, so every separation silently
+        // Asked of the working set rather than carried on the order, because composing an order
+        // is pure and this is a question about what is on disk right now. The same shape as
+        // VerdictRunner, which asks it the same way for the same reason. WorkOrder used to carry
+        // a SourcePath for this and nothing ever assigned it, so every separation silently
         // re-downloaded a file that was already sitting in the working set.
-        info.ArgumentList.Add(
-            workingSet.TryGetSource(order.VideoId, out var retained) ? retained : order.SourceUrl
-        );
+        info.ArgumentList.Add(retained ?? order.SourceUrl);
 
         foreach (var preset in order.Recipe.Presets)
         {
@@ -197,9 +247,11 @@ public sealed class SeparationRunner(
         if (order.Recipe.ExtractDrums)
             info.ArgumentList.Add("--extract-drums");
 
-        // An instrumental release has no stems worth keeping but the source itself, so the
-        // separator is asked to place it -- crateside directs output and never moves files.
-        if (order.Recipe.KeepSource)
+        // Only meaningful for a URL input, where the separator downloads a source we never had
+        // and this says to hand a copy back. Given a local file it is correctly ignored, so
+        // passing it there would be a flag that reads as doing something and does not --
+        // KeepSource covers that case instead.
+        if (order.Recipe.KeepSource && retained is null)
             info.ArgumentList.Add("--keep-source");
 
         info.ArgumentList.Add("--format");

@@ -130,9 +130,13 @@ public sealed record SeparationRecipe
     /// <summary>
     /// For a release that has no vocals: nothing to separate out, so the drums are the only
     /// stem and <strong>the source track is the sample</strong> — which is what
-    /// <see cref="KeepSource"/> is for, since crateside directs the separator's output rather
-    /// than placing files itself.
+    /// <see cref="KeepSource"/> is for.
     /// </summary>
+    /// <remarks>
+    /// Who <em>places</em> that source moved once crateside began separating the file it had
+    /// already downloaded: <c>--keep-source</c> is a flag about URL inputs, so it does nothing
+    /// for a local one, and crateside copies the source into the destination itself.
+    /// </remarks>
     public static SeparationRecipe InstrumentalRelease { get; } =
         new()
         {
