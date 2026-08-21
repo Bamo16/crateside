@@ -76,6 +76,17 @@ back after each.
 - **Match Ableton's file format byte-for-byte**: UTF-8, **no BOM**, and **no XML
   declaration** — Ableton's own file has none, and a writer that adds one is not
   round-tripping.
+
+  *Corrected 2026-08-20, on building it: "byte-for-byte" overstates what is achievable and
+  what is needed.* Ableton's XMP toolkit wraps the four namespace declarations on
+  `rdf:Description` one per line while writing every other element's attributes inline, and
+  `XmlWriter` offers only all-or-nothing. Matching that would mean hand-rolling an XML
+  writer, where an escaping bug would cost far more than the cosmetic difference it fixed.
+  **The rules that are load-bearing are UTF-8, no BOM, no declaration, LF endings and a
+  trailing newline** — all measured off the real file and all met. Finding 5 is what makes
+  the rest cosmetic: disk is authoritative and Ableton honoured a hand-written file, and by
+  finding 4 it reformats to its own style on its next merge anyway. The round-trip test
+  asserts entries, order and keywords survive, plus those five byte-level rules.
 - **Read-modify-write**, preserving entries crateside did not create; create the directory
   and file when absent.
 - **`Sample Staging` only. Never `Mashup Samples`.** The finished library is the user's,

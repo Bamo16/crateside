@@ -1,3 +1,4 @@
+using Crateside.Core;
 using Crateside.Core.Ledger;
 using Crateside.Core.Staging;
 
@@ -91,8 +92,14 @@ public class KeyLedgerRealDataTests
         // The file is named "Alan Gomez - Mission 15"; its ledger identity is
         // "alan gomez, luck ra - luck ra | mission 15". The filename would never have found
         // it — the video ID in the tag is what does.
-        var stem = Path.Combine(StagingRoot, "Alan Gomez - Mission 15 (Vocal - Full).flac");
-        Assert.SkipUnless(File.Exists(stem), "The Mission 15 stem is no longer staged.");
+        // Looked for in both roots rather than just staging: finishing a track moves it to
+        // Mashup Samples, so pinning this to staging meant the test retired itself the first
+        // time the user did exactly what the workflow is for.
+        var stem = new[] { StagingRoot, new CratesidePaths().MashupSamples }
+            .Select(r => Path.Combine(r, "Alan Gomez - Mission 15 (Vocal - Full).flac"))
+            .FirstOrDefault(File.Exists);
+
+        Assert.SkipWhen(stem is null, "The Mission 15 stem is no longer in the library.");
 
         var tags = StemTagReader.Read(stem);
         Assert.NotNull(tags?.SourceVideoId);

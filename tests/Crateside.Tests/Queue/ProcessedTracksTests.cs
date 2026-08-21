@@ -10,6 +10,8 @@ namespace Crateside.Tests.Queue;
 /// </summary>
 public class ProcessedTracksTests : IDisposable
 {
+    private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
+
     private const string RealStemComment =
         "stemforge/0.2.1.1 | preset: Vocal - Full | date: 2026-08-05 | "
         + "source: https://www.youtube.com/watch?v={0} | codec: mp4a.40.2";
@@ -42,17 +44,25 @@ public class ProcessedTracksTests : IDisposable
     /// </summary>
     private string? StemFor(string videoId, string name)
     {
-        const string Source =
-            @"P:\RYAN\Ableton\Sample Staging\Alan Gomez - Mission 15 (Vocal - Full).flac";
+        // Any staged FLAC will do, and naming one was a mistake: staging is the folder whose
+        // entire purpose is that things leave it, so a fixture pinned to a filename skips itself
+        // the first time the user finishes that track. Five tests here went quiet at once when
+        // "Alan Gomez - Mission 15 (Vocal - Full).flac" was moved to Mashup Samples.
+        var source = Directory.Exists(StagingRoot)
+            ? Directory
+                .EnumerateFiles(StagingRoot, "*.flac")
+                .Order(StringComparer.Ordinal)
+                .FirstOrDefault()
+            : null;
 
-        if (!File.Exists(Source))
+        if (source is null)
             return null;
 
         var stemsDir = Path.Combine(_root, "stems");
         Directory.CreateDirectory(stemsDir);
 
         var path = Path.Combine(stemsDir, name);
-        File.Copy(Source, path, overwrite: true);
+        File.Copy(source, path, overwrite: true);
 
         using (var file = TagLib.File.Create(path))
         {

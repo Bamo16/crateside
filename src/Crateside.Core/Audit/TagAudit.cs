@@ -48,7 +48,10 @@ public static class TagAudit
 
                 // No provenance means no video ID, so there is nothing to group or join on.
                 // Common for anything not produced by StemForge, and not a finding.
-                if (StemTagReader.Read(path)?.Provenance?.SourceVideoId is not { } videoId)
+                if (
+                    StemTagReader.Read(path)?.Provenance
+                    is not { SourceVideoId: { } videoId } provenance
+                )
                     continue;
 
                 var hasVerdict = ledger.TryGetLatestByVideoId(videoId, out var run);
@@ -67,6 +70,7 @@ public static class TagAudit
                         Confidence = run?.Confidence ?? KeyConfidence.Unknown,
                         AppliedKey = applied?.Key,
                         HasPartialKey = applied?.HasPartialKey ?? false,
+                        Preset = provenance.Preset,
                     }
                 );
             }
@@ -212,6 +216,17 @@ public sealed record TaggedStem
     public string? AppliedKey { get; init; }
 
     public bool HasPartialKey { get; init; }
+
+    /// <summary>
+    /// The separation preset from the file's own provenance — <c>Vocal - Full</c>,
+    /// <c>Drums - htdemucs_ft</c> — or null for a file that was never separated, which is what
+    /// an instrumental release's source track is.
+    /// </summary>
+    /// <remarks>
+    /// Read from the comment rather than the filename because renaming is one of the
+    /// human-limited steps, so the name is the part that does not survive.
+    /// </remarks>
+    public string? Preset { get; init; }
 }
 
 /// <summary>A song whose stems do not agree with each other.</summary>

@@ -179,6 +179,19 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new HandoffRunner(sp.GetRequiredService<CratesidePaths>()));
         services.AddSingleton<HandoffDrainer>();
 
+        // The last stage, and the only one that shares a file with a running Ableton. It writes
+        // Sample Staging's tag store and nothing else -- never Mashup Samples (ADR 0003).
+        services.AddSingleton<AbletonFolderInfoWriter>();
+        services.AddSingleton(sp => new TaggingSelector(
+            sp.GetRequiredService<JobStore>(),
+            sp.GetRequiredService<CratesidePaths>()
+        ));
+        services.AddSingleton(sp => new TaggingRunner(
+            sp.GetRequiredService<CratesidePaths>(),
+            sp.GetRequiredService<AbletonFolderInfoWriter>()
+        ));
+        services.AddSingleton<TaggingDrainer>();
+
         // Draining is on by default: two separations at once are ruinous, but one is
         // unnoticeable, so there is no moment for the user to pick. Pause is in the Queue view
         // for when the room is being recorded in.
@@ -207,6 +220,11 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<IHostedService>(sp => new StageWorker(
             sp.GetRequiredService<HandoffDrainer>(),
+            sp.GetRequiredService<JobStore>(),
+            sp.GetRequiredService<ILogger<StageWorker>>()
+        ));
+        services.AddSingleton<IHostedService>(sp => new StageWorker(
+            sp.GetRequiredService<TaggingDrainer>(),
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<ILogger<StageWorker>>()
         ));

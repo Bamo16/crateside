@@ -76,6 +76,12 @@ public enum JobStage
     /// A file move, so it contends for nothing — like evidence, it needs no moment picked for it.
     /// </summary>
     Handoff,
+
+    /// <summary>
+    /// Applies the settled key to the files in staging, as Ableton tags. Contends for nothing,
+    /// though it shares a file with a running Ableton — see ADR 0003.
+    /// </summary>
+    Tagging,
 }
 
 /// <summary>How a job is currently going.</summary>
