@@ -214,8 +214,11 @@ Moving a tagged one — `Alan Gomez - Mission 15 (Vocal - Full).flac`, carrying 
   picked up live and reach the search index, so a gate would cost the user real time to avoid a
   window measured here at about a second, twice per move-out.
 
-**Still unmeasured:** genuinely simultaneous writes, which remain hard to provoke deliberately;
-and whether Ableton keeps watching a file that crateside *replaces* rather than edits in place.
-The second is a new question created by the decision above — Windows reports directory changes
-rather than watching an inode, so a replace should still notify, but that is reasoning and not
-a measurement.
+**Still unmeasured:** genuinely simultaneous writes, which remain hard to provoke deliberately.
+
+*Not* unmeasured, though it was briefly written up here as if it were: **whether Ableton keeps
+watching a file that crateside replaces rather than edits in place.** Finding 5 already settles
+it — that test *deleted* the XMP and put a hand-written one in its place, which is a harder
+identity change than a rename-over, and Ableton honoured the new content. Confirmed again on
+2026-08-20 when the tag writer's first real run replaced the file (its id changed) and the tags
+appeared in a browser that was already open.

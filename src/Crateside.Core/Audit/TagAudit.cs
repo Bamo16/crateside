@@ -123,12 +123,22 @@ public sealed partial class TagAuditReport(IReadOnlyList<TaggedStem> stems)
     ];
 
     /// <summary>
-    /// A taggable verdict exists but no key was applied — the step was skipped. Deliberately
-    /// <em>not</em> counted as a problem while tagging is still the user's job: it is ordinary
-    /// work in progress, and a badge that lit up mid-batch would train them to ignore it.
-    /// <strong>Once crateside owns tagging (ADR 0003), an untagged stem stops being ordinary
-    /// and should move into <see cref="ProblemCount"/>.</strong>
+    /// A taggable verdict exists but no key was applied.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This was deliberately <em>not</em> a problem while tagging was the user's job — ordinary
+    /// work in progress, and a badge that lit up mid-batch would have trained them to ignore it.
+    /// <strong>It counts now, because crateside owns tagging</strong> and the stage that does it
+    /// runs unprompted: an untagged stem is either a few seconds old or something went wrong.
+    /// </para>
+    /// <para>
+    /// Safe to count because nothing is permanently untaggable. Every one of the 23 distinct
+    /// keys in the ledger converts to Ableton's vocabulary — there are no flats and no modal
+    /// spellings, since a mode is recorded separately and collapses to major or minor. A key
+    /// the writer could not spell would otherwise sit here lit up forever.
+    /// </para>
+    /// </remarks>
     public IReadOnlyList<TaggedStem> Untagged { get; } =
     [.. stems.Where(s => s is { AppliedKey: null, HasTaggableVerdict: true })];
 
@@ -155,8 +165,9 @@ public sealed partial class TagAuditReport(IReadOnlyList<TaggedStem> stems)
     /// <summary>Every stem carrying usable provenance, whether or not it produced a finding.</summary>
     public int ScannedCount { get; } = stems.Count;
 
-    /// <summary>Findings worth showing a badge for. See <see cref="Untagged"/> for what is not.</summary>
-    public int ProblemCount => Disagreements.Count + PartialKeys.Count + Inconsistencies.Count;
+    /// <summary>Findings worth showing a badge for.</summary>
+    public int ProblemCount =>
+        Disagreements.Count + PartialKeys.Count + Inconsistencies.Count + Untagged.Count;
 
     public bool IsClean => ProblemCount == 0;
 
