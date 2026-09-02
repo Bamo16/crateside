@@ -171,3 +171,46 @@ rationed.
   should be set rather than engineered away.
 - The transcript-reading script that produced the wrong numbers is not worth keeping; the
   deduplication rule is. **Group `message.usage` by `requestId`.**
+
+## What that costs in quota — 2026-09-02
+
+Tokens are the honest unit for comparing two invocations; they are not the unit the user feels.
+Twelve tracks were judged in two batches while watching the session meter:
+
+| | tracks | session usage | per track |
+|---|---|---|---|
+| first batch — uncertain start (~0–1%), one unrelated Sonnet question | 7 | → 46% | 6.4–6.6% |
+| second batch — clean endpoints, judging only | 5 | 46% → 73% | **5.4%** |
+
+The second is the better measurement. Separation costs no Claude quota, so both are judging alone.
+
+**A five-hour window is roughly 15–18 tracks** on this account (`subscriptionType: pro`,
+`rateLimitTier: default_claude_ai`).
+
+This corroborates rather than repeats the token figure above: at 156,671 tokens a track, 5.4%
+implies a window of about 2.9M tokens and 6.5% about 2.4M. Two measurements taken different
+ways, agreeing on the shape. The earlier number was not an artifact of how the transcript was
+read.
+
+### The meter is readable, and worth reading
+
+`GET https://api.anthropic.com/api/oauth/usage`, with `Authorization: Bearer <accessToken>` and
+`anthropic-beta: oauth-2025-04-20`. The token is in `~/.claude/.credentials.json` — plaintext on
+Windows, so no keychain step, unlike the macOS tool this was taken from. `five_hour.utilization`
+is the number; `five_hour.resets_at` says when it stops mattering. Verified working on
+2026-09-02.
+
+**It is undocumented, and the shape is already drifting.** The tool this was learned from parses
+`percent`; the live response calls it `utilization` and carries `percent` only in a parallel
+`limits[]` array. Half the top-level keys are internal codenames (`tangelo`, `iguana_necktie`,
+`omelette_promotional`). So: read `five_hour` defensively, treat an unreadable response as
+"unknown" rather than an error, and never let the display depend on a field being there.
+
+**The token is a live credential.** Read it at the moment of the call, never log it, never put
+it in an error message shown in the UI, and never send it anywhere but Anthropic.
+
+There is a robust alternative worth knowing, because it needs no credential and cannot break:
+every verdict run already returns exact `modelUsage` and `total_cost_usd` in its result JSON, so
+crateside can account for its own spend precisely. What that cannot know is the denominator, or
+what the user spent in their own interactive sessions — which is exactly why the meter is worth
+reading despite being undocumented.
