@@ -33,10 +33,30 @@ public sealed class TracksService : IDisposable
     /// </remarks>
     private static readonly TimeSpan Quiet = TimeSpan.FromSeconds(2);
 
+    /// <summary>
+    /// Tracks already announced as ready to warp, so each is announced once.
+    /// </summary>
+    /// <remarks>
+    /// Here rather than on the page because a page is a circuit, and a circuit comes and goes:
+    /// SignalR drops and reconnects, the user opens a second tab, and every one of those would be
+    /// a fresh chance to announce the same track again. The set outlives all of them.
+    /// </remarks>
+    private readonly HashSet<string> _announced = new(StringComparer.Ordinal);
+
     private readonly ReadTracks _read;
     private readonly StageHub _hub;
     private readonly TimeProvider _time;
     private readonly ITimer _timer;
+
+    /// <summary>
+    /// Whether a read has landed yet, which is what makes the first one different.
+    /// </summary>
+    /// <remarks>
+    /// The first read is the state of the world rather than a list of things that just happened. A
+    /// track rests in <em>ready to warp</em> for weeks, so announcing what is already there would
+    /// mean a wall of toasts every time the app starts.
+    /// </remarks>
+    private bool _seeded;
 
     public TracksService(ReadTracks read, StageHub hub, TimeProvider? time = null)
     {
@@ -56,6 +76,15 @@ public sealed class TracksService : IDisposable
 
     /// <summary>Raised once a rebuild has landed, on whatever thread finished it.</summary>
     public event Action? Changed;
+
+    /// <summary>
+    /// Raised the first time a track is seen to be ready to warp, once per track.
+    /// </summary>
+    /// <remarks>
+    /// The one moment in the pipeline that is worth interrupting for: everything before it is
+    /// crateside working, and this is where the track becomes the user's to finish.
+    /// </remarks>
+    public event Action<TrackRow>? ReadyToWarp;
 
     /// <summary>The rows as last built, or null before the first read.</summary>
     public TracksView? Current { get; private set; }
@@ -115,7 +144,38 @@ public sealed class TracksService : IDisposable
         // Stamped on a failure too, so a root that has gone away is not retried on every render.
         LastReadAt = _time.GetUtcNow();
 
+        if (Current is { } current)
+            Announce(current);
+
         Changed?.Invoke();
+    }
+
+    /// <summary>Says which tracks have newly become the user's turn, and remembers saying it.</summary>
+    private void Announce(TracksView view)
+    {
+        List<TrackRow> fresh;
+
+        // Refreshes overlap: the debounce timer and a page arriving both call in, and the set is
+        // the only thing keeping an announcement from being made twice.
+        lock (_announced)
+        {
+            var ready = view.Rows.Where(row => row.State is TrackState.ReadyToWarp);
+
+            if (!_seeded)
+            {
+                _seeded = true;
+
+                foreach (var row in ready)
+                    _announced.Add(row.VideoId);
+
+                return;
+            }
+
+            fresh = [.. ready.Where(row => _announced.Add(row.VideoId))];
+        }
+
+        foreach (var row in fresh)
+            ReadyToWarp?.Invoke(row);
     }
 
     /// <summary>Restarts the quiet period, so a burst of announcements costs one rebuild.</summary>

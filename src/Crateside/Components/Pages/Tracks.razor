@@ -144,7 +144,8 @@
         {
             var open = _expanded == row.VideoId;
 
-            <div class="row @(_filter is TrackFilter.InStaging ? "roomy" : null) @(open ? "open" : null)"
+            <div id="@Anchor(row)"
+                 class="row @(_filter is TrackFilter.InStaging ? "roomy" : null) @(open ? "open" : null)"
                  @onclick="() => Expand(row)">
                 <span class="chevron mono">@(open ? "⌄" : "›")</span>
 
@@ -321,6 +322,31 @@
             }
         }
     }
+
+    @* Bottom-right and outside the list, because it is about a track the user is not currently
+       looking at. The one interruption this page makes. *@
+    @if (_toasts.Count > 0)
+    {
+        <div class="toasts">
+            @foreach (var toast in _toasts)
+            {
+                <div class="toast">
+                    <span class="eyebrow">Ready to warp</span>
+                    <span class="toast-song">@toast.Title</span>
+                    <span class="mono toast-figure">@Figure(toast)</span>
+                    <span class="toast-foot">
+                        @Waiting(toast)
+                        @* An anchor rather than an interop call: the browser's own fragment jump
+                           lands the row clear of the frozen header via scroll-margin-top, and
+                           scrollIntoView on a sticky layout is what the design warned off. *@
+                        <a class="show" href="@($"#{Anchor(toast)}")" @onclick="() => Show(toast)">
+                            Show row
+                        </a>
+                    </span>
+                </div>
+            }
+        </div>
+    }
 </div>
 
 @code {
@@ -328,10 +354,19 @@
     private TrackFilter _filter = TrackFilter.All;
     private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
 
+    /// <summary>How long a toast stays up. Long enough to read and act on, short enough to ignore.</summary>
+    private static readonly TimeSpan ToastLife = TimeSpan.FromSeconds(20);
+
     // One at a time, and by video ID rather than by index: the list is rebuilt on every change,
     // so a position would open whichever row happened to land there.
     private string? _expanded;
     private string? _problem;
+
+    // Newest first. Which tracks have been announced is the singleton's business; this is only
+    // what is currently on screen, and it goes with the circuit.
+    private readonly List<TrackRow> _toasts = [];
+
+    private readonly CancellationTokenSource _circuit = new();
 
     private IReadOnlyList<TrackRow> Rows => _view?.Rows ?? [];
 
@@ -340,6 +375,7 @@
     protected override async Task OnInitializedAsync()
     {
         Source.Changed += OnChanged;
+        Source.ReadyToWarp += OnReadyToWarp;
         Separation.Changed += OnChanged;
         Judging.Changed += OnChanged;
 
@@ -355,9 +391,62 @@
     public void Dispose()
     {
         Source.Changed -= OnChanged;
+        Source.ReadyToWarp -= OnReadyToWarp;
         Separation.Changed -= OnChanged;
         Judging.Changed -= OnChanged;
+
+        _circuit.Cancel();
+        _circuit.Dispose();
     }
+
+    private void OnReadyToWarp(TrackRow row)
+    {
+        _toasts.Insert(0, row);
+        _ = InvokeAsync(StateHasChanged);
+        _ = Dismiss(row);
+    }
+
+    private async Task Dismiss(TrackRow row)
+    {
+        try
+        {
+            await Task.Delay(ToastLife, _circuit.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            // The circuit went away while the toast was up. Nothing to take down.
+            return;
+        }
+
+        _toasts.Remove(row);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void Show(TrackRow row)
+    {
+        // All rather than In staging: the anchor has to be in the list for the browser to reach
+        // it, and All is the one filter that always contains it.
+        _filter = TrackFilter.All;
+        _expanded = row.VideoId;
+        _problem = null;
+
+        _toasts.Remove(row);
+    }
+
+    private static string Anchor(TrackRow row) => $"track-{row.VideoId}";
+
+    private static string Figure(TrackRow row) =>
+        string.Join(
+            " · ",
+            new[] { Spell(row.Key), row.Bpm?.ToString("N0") }.OfType<string>()
+        );
+
+    // Samples, not stems: an instrumental release's kept file is the source track, which is a
+    // sample and no kind of stem at all (ADR 0004). The count is what is still in staging, since
+    // the user empties it progressively and may already have moved some of them.
+    private static string Waiting(TrackRow row) =>
+        $"{"sample".ToQuantity(row.Samples.Count(sample => !sample.IsWarped))} in Sample Staging, key-tagged.";
 
     // The events are raised on a background worker's thread, never the circuit's, so the render
     // has to be marshalled back. Same discipline the queue page has always used for DrainControl.
