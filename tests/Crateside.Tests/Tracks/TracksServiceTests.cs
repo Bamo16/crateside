@@ -103,6 +103,46 @@ public class TracksServiceTests
     }
 
     [Fact]
+    public async Task Fresh_enough_rows_are_not_rebuilt_but_stale_ones_are()
+    {
+        // Warping is the user in Ableton moving files crateside never sees, so nothing here can
+        // invalidate the cache for the view they opened the page to look at. Arriving has to be
+        // the trigger -- but navigating twice in a row must not pay for two walks of the library.
+        var time = new FakeTimeProvider();
+        var reads = 0;
+
+        using var service = new TracksService(
+            _ =>
+            {
+                reads++;
+                return Task.FromResult(Empty);
+            },
+            new StageHub(),
+            time
+        );
+
+        await service.EnsureFreshAsync(
+            TimeSpan.FromSeconds(30),
+            TestContext.Current.CancellationToken
+        );
+        Assert.Equal(1, reads);
+
+        time.Advance(TimeSpan.FromSeconds(5));
+        await service.EnsureFreshAsync(
+            TimeSpan.FromSeconds(30),
+            TestContext.Current.CancellationToken
+        );
+        Assert.Equal(1, reads);
+
+        time.Advance(TimeSpan.FromSeconds(30));
+        await service.EnsureFreshAsync(
+            TimeSpan.FromSeconds(30),
+            TestContext.Current.CancellationToken
+        );
+        Assert.Equal(2, reads);
+    }
+
+    [Fact]
     public void A_disposed_service_stops_listening()
     {
         // The hub outlives any one reader, so a subscription that survived disposal would keep

@@ -35,14 +35,16 @@ public sealed class TracksService : IDisposable
 
     private readonly ReadTracks _read;
     private readonly StageHub _hub;
+    private readonly TimeProvider _time;
     private readonly ITimer _timer;
 
     public TracksService(ReadTracks read, StageHub hub, TimeProvider? time = null)
     {
         _read = read;
         _hub = hub;
+        _time = time ?? TimeProvider.System;
 
-        _timer = (time ?? TimeProvider.System).CreateTimer(
+        _timer = _time.CreateTimer(
             _ => _ = RefreshAsync(),
             null,
             Timeout.InfiniteTimeSpan,
@@ -57,6 +59,24 @@ public sealed class TracksService : IDisposable
 
     /// <summary>The rows as last built, or null before the first read.</summary>
     public TracksView? Current { get; private set; }
+
+    /// <summary>When the rows were last rebuilt, whether or not that rebuild succeeded.</summary>
+    public DateTimeOffset? LastReadAt { get; private set; }
+
+    /// <summary>
+    /// Rebuilds if the rows are older than <paramref name="maxAge"/>.
+    /// </summary>
+    /// <remarks>
+    /// <strong>Because the most important changes are ones crateside never sees.</strong> The hub
+    /// announces work crateside <em>ran</em>; warping is the user in Ableton, dragging files from
+    /// <c>Sample Staging</c> to <c>Mashup Samples</c>, which publishes nothing here. Nothing would
+    /// ever invalidate the cache for the one view the user opens the page to look at, so arriving
+    /// at it has to be a reason to look again.
+    /// </remarks>
+    public Task EnsureFreshAsync(TimeSpan maxAge, CancellationToken cancellationToken = default) =>
+        Current is not null && LastReadAt is { } read && _time.GetUtcNow() - read < maxAge
+            ? Task.CompletedTask
+            : RefreshAsync(cancellationToken);
 
     /// <summary>Why the last rebuild failed, or null if it did not.</summary>
     /// <remarks>
@@ -91,6 +111,9 @@ public sealed class TracksService : IDisposable
             // that reading stopped working.
             LastError = e.Message;
         }
+
+        // Stamped on a failure too, so a root that has gone away is not retried on every render.
+        LastReadAt = _time.GetUtcNow();
 
         Changed?.Invoke();
     }

@@ -237,6 +237,33 @@ public class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
+    public void A_track_still_in_staging_keeps_its_row_after_leaving_the_playlist()
+    {
+        // A track leaves the playlist the moment it is fully processed, which is long before the
+        // user has finished with it -- the stems then sit in Sample Staging for weeks waiting to
+        // be warped. Seven of ten staged songs had no row at all because of this: the warping
+        // worklist is the folder, and the folder outlives the playlist entry.
+        var row = Assert.Single(
+            Compose(view: View([]), staging: [Staged(Stem("Vocal - Full", tagged: true))])
+        );
+
+        Assert.Equal(Video, row.VideoId);
+        Assert.Equal(TrackState.ReadyToWarp, row.State);
+
+        // Nothing left to remove from, which is the only thing the missing entry costs.
+        Assert.Null(row.PlaylistItemId);
+    }
+
+    [Fact]
+    public void A_staged_track_that_is_still_queued_gets_one_row_and_not_two()
+    {
+        var rows = Compose(staging: [Staged(Stem("Vocal - Full", tagged: true))]);
+
+        Assert.Equal(Video, Assert.Single(rows).VideoId);
+        Assert.Equal($"PLI-{Video}", rows[0].PlaylistItemId);
+    }
+
+    [Fact]
     public void The_verdict_supplies_the_key_the_confidence_and_the_bpm()
     {
         var row = Assert.Single(Compose(ledger: LedgerWith("C minor", "HIGH", bpm: 128)));

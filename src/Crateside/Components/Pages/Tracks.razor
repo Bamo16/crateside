@@ -197,8 +197,10 @@
         Separation.Changed += OnChanged;
         Judging.Changed += OnChanged;
 
-        if (Source.Current is null)
-            await Source.RefreshAsync();
+        // Arriving at the page is a reason to look again. Warping happens in Ableton and moves
+        // files crateside never hears about, so the hub cannot invalidate this — and the staging
+        // view is the one thing the user opens the page to check.
+        await Source.EnsureFreshAsync(TimeSpan.FromSeconds(30));
 
         _view = Source.Current;
         _quota = await Quota.ReadAsync();

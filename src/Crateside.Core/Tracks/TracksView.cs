@@ -67,46 +67,54 @@ public sealed record TracksView
             .Where(song => song.SourceVideoId is not null)
             .ToDictionary(song => song.SourceVideoId!, StringComparer.Ordinal);
 
+        // Everything in the playlist, and then everything still in staging that is not.
+        //
+        // A track leaves the playlist the moment it is fully processed, which is long before the
+        // user has finished with it: its stems sit in Sample Staging for weeks afterwards, waiting
+        // to be warped. Building rows from the playlist alone lost every one of those — the
+        // warping worklist is the folder, and the folder outlives the playlist entry.
+        var queued = VideoIdsOf(view.Items);
+
         return new TracksView
         {
-            Rows = [.. view.Items.Select(item => Row(item, StageProgress.For(jobs, item.VideoId)))],
+            Rows =
+            [
+                .. view.Items.Select(item => Row(item.VideoId, item.PlaylistItemId, item.Title)),
+                .. staging
+                    .Where(song => song.SourceVideoId is { } id && !queued.Contains(id))
+                    .Select(song => Row(song.SourceVideoId!, null, song.DisplayName)),
+            ],
         };
 
-        TrackRow Row(QueueItem item, StageProgress progress)
+        TrackRow Row(string videoId, string? playlistItemId, string fallbackName)
         {
-            var song = staged.GetValueOrDefault(item.VideoId);
+            var song = staged.GetValueOrDefault(videoId);
+            var progress = StageProgress.For(jobs, videoId);
 
             // Two hops, never a direct lookup: a video ID resolves to a song identity and the
             // identity resolves to the latest run, which is what makes a supersede win rather than
             // the line that happened to name this URL.
-            var verdict = ledger.TryGetLatestByVideoId(item.VideoId, out var run) ? run : null;
+            var verdict = ledger.TryGetLatestByVideoId(videoId, out var run) ? run : null;
 
             return new TrackRow
             {
-                VideoId = item.VideoId,
-                PlaylistItemId = item.PlaylistItemId,
-                Title = NameOf(item, verdict, song),
+                VideoId = videoId,
+                PlaylistItemId = playlistItemId,
+                Title = NameOf(fallbackName, verdict, song),
                 Verdict = verdict,
-                IsHeld = held.Contains(item.VideoId),
-                IsParkedForKey = parked.Contains(item.VideoId),
-                GpuPosition = gpuLine.TryGetValue(item.VideoId, out var position) ? position : null,
+                IsHeld = held.Contains(videoId),
+                IsParkedForKey = parked.Contains(videoId),
+                GpuPosition = gpuLine.TryGetValue(videoId, out var position) ? position : null,
                 RunningStage = progress.Running,
                 RunningSince = progress.RunningSince,
                 GaveUpAt = progress.GaveUpAt,
                 GaveUpStrikes = progress.GaveUpStrikes,
-                Samples = SamplesOf(
-                    song,
-                    onDisk.GetValueOrDefault(item.VideoId) ?? [],
-                    finishedRoot
-                ),
+                Samples = SamplesOf(song, onDisk.GetValueOrDefault(videoId) ?? [], finishedRoot),
                 HasWarpGuide = song?.WarpGuides.Count > 0,
                 // The only finding derivable from the board alone: Ableton holding a key that is
                 // not the ledger's current verdict, which is what a supersede leaves behind.
                 AuditNote = song?.StaleTaggedStems.Count > 0 ? "tag disagrees" : null,
-                StagedSince = StagedSinceOf(
-                    onDisk.GetValueOrDefault(item.VideoId) ?? [],
-                    finishedRoot
-                ),
+                StagedSince = StagedSinceOf(onDisk.GetValueOrDefault(videoId) ?? [], finishedRoot),
             };
         }
     }
@@ -123,10 +131,10 @@ public sealed record TracksView
     /// field is not used here because that is the normalized lowercase identity, built for
     /// matching rather than for reading.
     /// </remarks>
-    private static string NameOf(QueueItem item, LedgerRun? verdict, StagingSong? staged) =>
+    private static string NameOf(string fallback, LedgerRun? verdict, StagingSong? staged) =>
         verdict is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title }
             ? $"{artist} - {title}"
-            : staged?.DisplayName ?? item.Title;
+            : staged?.DisplayName ?? fallback;
 
     /// <summary>
     /// A track's kept files, from wherever they currently are.

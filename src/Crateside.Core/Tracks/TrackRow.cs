@@ -23,8 +23,16 @@ public sealed record TrackRow
 {
     public required string VideoId { get; init; }
 
-    /// <summary>The playlist entry, which is what removing the track targets.</summary>
-    public required string PlaylistItemId { get; init; }
+    /// <summary>
+    /// The playlist entry, which is what removing the track targets. Null once it has none.
+    /// </summary>
+    /// <remarks>
+    /// A track leaves the playlist as soon as it is fully processed, which is long before the user
+    /// has finished with it — its stems sit in <c>Sample Staging</c> for weeks afterwards. So a row
+    /// without a playlist entry is the normal end state, not a broken one, and the only thing it
+    /// costs is that there is nothing left to remove.
+    /// </remarks>
+    public string? PlaylistItemId { get; init; }
 
     public required string Title { get; init; }
 
