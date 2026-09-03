@@ -94,6 +94,24 @@ public class StagingBoardRealLibraryTests
     }
 
     [Fact]
+    public void No_row_carries_a_stem_that_is_not_on_disk()
+    {
+        Assert.SkipUnless(Available, "Staging root and ledger must both be present.");
+
+        // The staging tag store keeps entries for files that have left: Ableton prunes its own
+        // index and not the folder XMP (ADR 0003, 2026-09-02). The board is immune because it
+        // enumerates files on disk and looks tags up by path, so an entry with no file behind it
+        // is never reached.
+        //
+        // This is the property worth pinning, rather than the store's tidiness — that is not
+        // crateside's to guarantee, and the user finishing a track falsifies it.
+        Assert.All(
+            Board().SelectMany(song => song.Stems),
+            stem => Assert.True(File.Exists(stem.Path), $"{stem.FileName} is not on disk")
+        );
+    }
+
+    [Fact]
     public void An_absent_staging_folder_yields_an_empty_board()
     {
         var board = new StagingBoard().Build(

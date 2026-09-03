@@ -27,43 +27,34 @@ public class AbletonFolderInfoRealLibraryTests
         Assert.All(info.Entries, e => Assert.NotEmpty(e.Keywords));
     }
 
-    [Theory]
-    [MemberData(nameof(Roots))]
-    public void Every_entry_points_at_a_file_that_exists(string root)
-    {
-        Assert.SkipUnless(Directory.Exists(root), $"{root} not present on this machine.");
-
-        // Ableton migrates entries when files move and drops them when files vanish. If this
-        // ever fails, the index is not self-cleaning after all and the board needs
-        // reconciliation the design deliberately omits.
-        var info = new AbletonFolderInfoReader().Read(root);
-
-        var missing = info
-            .Entries.Select(e => e.RelativePath)
-            .Where(p => !File.Exists(Path.Combine(root, p)))
-            .ToArray();
-
-        Assert.Empty(missing);
-    }
+    // Removed 2026-09-02: Every_entry_points_at_a_file_that_exists. It asserted that Ableton
+    // migrates entries when files move and drops them when files vanish — "if this ever fails,
+    // the index is not self-cleaning after all". It did fail, and the premise turned out to be
+    // wrong rather than the library: Ableton prunes its own index and leaves the folder XMP
+    // alone, so five entries for departed files sat in staging while the browser showed those
+    // files correctly tagged in their new home (ADR 0003, 2026-09-02).
+    //
+    // Nothing crateside does depends on the store being tidy, and the user finishing a track
+    // falsifies it, so the assertion was a false alarm waiting to happen. What crateside does
+    // depend on — that a stale entry is never consulted — is asserted in
+    // StagingBoardRealLibraryTests, where it belongs and where ordinary work cannot break it.
 
     [Fact]
-    public void The_two_roots_share_a_uuid_but_never_a_file_path()
+    public void The_two_roots_never_share_a_file_path()
     {
         Assert.SkipUnless(
             Directory.Exists(StagingRoot) && Directory.Exists(MashupRoot),
             "Both Ableton roots must be present."
         );
 
+        // This used to also assert the two roots share one UUID, on the inference that it is
+        // per-install. Measured false on 2026-09-02: Mashup Samples is
+        // dc66a3fa-0fe1-5352-… and Sample Staging is 37a64010-9abd-4a98-…, a name-derived v5
+        // beside a random v4. ADR 0003 records crateside creating the staging store from
+        // nothing, which is consistent with it having minted that v4 — consistent with, not
+        // demonstrated. Nothing depended on the inference either way: the reader keys on the
+        // containing root and never on the filename, which is what the rest of this asserts.
         var reader = new AbletonFolderInfoReader();
-
-        // The UUID is per-install, not per-folder — which is exactly why the reader keys on
-        // the containing root and never on the filename.
-        var names = new[] { StagingRoot, MashupRoot }.Select(root =>
-            Path.GetFileName(
-                Directory.GetFiles(Path.Combine(root, "Ableton Folder Info"), "*.xmp").Single()
-            )
-        );
-        Assert.Single(names.Distinct());
 
         // Paths are relative to their root, so identical names under different roots cannot
         // collide — and in practice the two sets do not even overlap.

@@ -222,3 +222,61 @@ it — that test *deleted* the XMP and put a hand-written one in its place, whic
 identity change than a rename-over, and Ableton honoured the new content. Confirmed again on
 2026-08-20 when the tag writer's first real run replaced the file (its id changed) and the tags
 appeared in a browser that was already open.
+
+## The store is a write channel, not a read source — 2026-09-02
+
+Found by two real-library tests failing, and run down because the numbers did not add up. The
+user dragged three samples from `Sample Staging` to `Mashup Samples` in Ableton's browser
+between 16:36 and 16:40: `Eminem - Medicine Ball` (vocal and instrumental) and
+`Goreshit - Toromi Hearts 2`. Their drums were deleted, which is the ordinary workflow step.
+
+Measured that evening, with crateside not running, so Ableton was the only possible writer:
+
+13. **The tags are correct in Ableton and absent from the XMP of the folder holding the files.**
+    `Mashup Samples` has 482 entries and none for those three. The browser shows the right Key
+    and Type for all three, **before and after a full quit and restart**.
+
+14. **Quitting wrote neither store.** Both files byte-identical across the quit — same length,
+    same SHA-256, same mtime, `Mashup Samples` untouched since 15:40 and staging since 16:49.
+    Ableton did write on quit: `Indexer.txt`, `Library.cfg`, `Preferences.cfg`, `analytics.db`.
+    Just not the XMPs.
+
+15. **Staging keeps entries for files that have left.** All five, still there. Ableton does not
+    prune the folder store on a move-out; it updates its own index.
+
+16. **The indexer saw the moves.** `Indexer.txt` logs all five files at exactly the move
+    timestamps — to the second — each under its **`Sample Staging`** path.
+
+**So the authoritative tag state is Ableton's own index, not the per-root XMP.** The XMP is a
+lagging, partial mirror: it can lack tags Ableton holds, and retain entries for files that are
+gone. Where that index lives on disk was not chased down; it was not needed to establish the
+above, and finding it is a separate job.
+
+**This contradicts findings 9 and 10 for the same action, and the contradiction is not
+resolved.** On 2026-08-20 a single browser move-out wrote both stores about a second apart,
+watched at 100 ms. On 2026-09-02 a browser move-out of three files wrote neither, over five
+hours and across a quit. Both are direct observations of the same gesture. What differs between
+them is **not known** — candidates include one file versus three, and the state of the target
+root's index.
+
+*Hypothesis, explicitly not measured:* crateside's tag writer **replaces** staging's XMP — temp
+file plus rename, per this ADR's own decision — which changes the file id. Finding 5 and the
+2026-08-20 confirmation establish that Ableton keeps **reading** a replaced file. Neither
+establishes that it keeps **writing** one. If Ableton holds an identity for a store it owns, a
+replaced file could silently stop being written, which would explain the asymmetry and would
+mean crateside's own atomic write detached the mirror it reads back. The test is a move-out from
+a root crateside has never written. Recorded as a thing to check, not as a finding.
+
+### What this settles for crateside
+
+- **Writing stays sound.** The tags on those three files are crateside's own, written into
+  staging and rendered correctly by Ableton across a restart. Findings 2 and 3 stand.
+- **Reading the XMP as "what Ableton holds" is unsound.** It is trustworthy only for tags
+  crateside itself wrote into `Sample Staging` — which is most of what it reads, but not all.
+- **`TagAudit`'s findings over `Mashup Samples` are the least trustworthy of the lot**, since
+  that root is exactly where crateside never writes and the user tags by hand. A *disagreement*
+  or *untagged* finding there may be an artifact of the mirror rather than a fact about the
+  library. The tagging stage's work list is safer, being staging-only.
+- **Location beats tags as a completion signal**, which is what
+  [ADR 0002](0002-there-is-no-warped-signal.md) concluded by a different route. Across this
+  evening the file's whereabouts were right every time the tag store was wrong.
