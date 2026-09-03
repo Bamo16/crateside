@@ -9,6 +9,7 @@ builder.AddCratesideConfiguration();
 builder.Services.AddCratesideReaders();
 builder.Services.AddCratesideQueue();
 builder.Services.AddCratesideOrchestration();
+builder.Services.AddCratesideTracks();
 
 var app = builder.Build();
 

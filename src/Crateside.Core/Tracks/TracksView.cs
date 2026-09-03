@@ -19,6 +19,15 @@ public sealed record TracksView
     public required IReadOnlyList<TrackRow> Rows { get; init; }
 
     /// <summary>
+    /// When the playlist behind these rows was last fetched. Null if it never has been.
+    /// </summary>
+    /// <remarks>
+    /// Set by whoever assembled the read rather than by <see cref="Compose"/>, which knows nothing
+    /// about clocks and is kept that way.
+    /// </remarks>
+    public DateTimeOffset? ReadAt { get; init; }
+
+    /// <summary>
     /// Joins everything known about the playlist into one row per track.
     /// </summary>
     /// <param name="staging">

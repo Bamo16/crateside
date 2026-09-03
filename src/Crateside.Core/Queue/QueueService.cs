@@ -38,6 +38,16 @@ public sealed class QueueService(
     private IReadOnlyList<QueueItem>? _cachedItems;
     private DateTimeOffset _cachedAt;
 
+    /// <summary>
+    /// When the playlist was last actually fetched, or null if it never has been.
+    /// </summary>
+    /// <remarks>
+    /// The API read, not the disk scan — this is what "playlist synced 2 min ago" means, and the
+    /// two happen on different clocks: a scan runs on every read while the playlist itself is
+    /// reused for <see cref="CacheFor"/>.
+    /// </remarks>
+    public DateTimeOffset? PlaylistReadAt => _cachedItems is null ? null : _cachedAt;
+
     /// <summary>Whether an OAuth client exists, so deletion is possible at all.</summary>
     public bool CanAuthorize => authorizer.IsConfigured;
 
@@ -162,7 +172,23 @@ public sealed class QueueService(
         }
     }
 
-    public async Task<QueueView> ReadAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Reads the queue and keeps everything the read produced, not just the conclusion.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Named for what it costs.</strong> The playlist half is cached; the rest is a ledger
+    /// read plus two recursive walks that open every audio file under three roots with TagLib, and
+    /// that happens on every call. It is the most expensive thing in the app and must not run per
+    /// event.
+    /// </para>
+    /// <para>
+    /// The ledger and both scans used to be built here and dropped on the floor, leaving anything
+    /// that needed them to do the same walk again. The Tracks page needs all three, so they are
+    /// returned rather than recomputed — one pass over the library instead of two.
+    /// </para>
+    /// </remarks>
+    public async Task<QueueScan> ScanAsync(CancellationToken cancellationToken = default)
     {
         var items = await ItemsAsync(cancellationToken);
 
@@ -177,17 +203,27 @@ public sealed class QueueService(
         // GPU has already done this track, which is the thing "awaiting stems" could not say.
         var parked = ProcessedTracks.Scan(ledger, [_paths.StemsUnresolvedKey]);
 
-        return QueueView.Compose(
-            items,
-            processed.FullyProcessed,
-            processed.VerdictWithoutStems,
-            items
-                .Where(i => parked.StemsFor(i.VideoId).Count > 0)
-                .Select(i => i.VideoId)
-                .ToHashSet(StringComparer.Ordinal),
-            settings.Read().Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal)
-        );
+        return new QueueScan
+        {
+            View = QueueView.Compose(
+                items,
+                processed.FullyProcessed,
+                processed.VerdictWithoutStems,
+                items
+                    .Where(i => parked.StemsFor(i.VideoId).Count > 0)
+                    .Select(i => i.VideoId)
+                    .ToHashSet(StringComparer.Ordinal),
+                settings.Read().Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal)
+            ),
+            Ledger = ledger,
+            Processed = processed,
+            ReadAt = PlaylistReadAt,
+        };
     }
+
+    /// <summary>The queue sorted into work lists — the conclusion of a <see cref="ScanAsync"/>.</summary>
+    public async Task<QueueView> ReadAsync(CancellationToken cancellationToken = default) =>
+        (await ScanAsync(cancellationToken)).View;
 
     /// <summary>
     /// Removes every fully-processed item from the playlist.
@@ -225,4 +261,29 @@ public sealed class QueueService(
 
         return results;
     }
+}
+
+/// <summary>
+/// One reading of the queue: the work lists, and the material they were derived from.
+/// </summary>
+/// <remarks>
+/// Kept together because it was all produced by the same expensive pass and any of it recomputed
+/// separately means walking the library again. <see cref="QueueView"/> alone is the answer to a
+/// stage's question; the Tracks page asks a wider one and needs the rest.
+/// </remarks>
+public sealed record QueueScan
+{
+    public required QueueView View { get; init; }
+
+    /// <summary>The ledger as it stood for this read, so a second reader gets the same verdicts.</summary>
+    public required KeyLedger Ledger { get; init; }
+
+    /// <summary>
+    /// Every file found under <c>Sample Staging</c> and <c>Mashup Samples</c>, by video ID. Which
+    /// root a file turned up in is what says whether the user has finished with it (ADR 0007).
+    /// </summary>
+    public required ProcessedTracks Processed { get; init; }
+
+    /// <summary>When the playlist itself was last fetched. Null if it never has been.</summary>
+    public DateTimeOffset? ReadAt { get; init; }
 }

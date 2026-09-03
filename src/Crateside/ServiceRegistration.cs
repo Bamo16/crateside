@@ -3,14 +3,15 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Queue;
 using Crateside.Core.Staging;
+using Crateside.Core.Tracks;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 
 namespace Crateside;
 
 /// <summary>
-/// The service graph, in the four groups it actually divides into. Split out of
-/// <c>Program.cs</c> so the composition root reads as an outline rather than a list.
+/// The service graph, in the groups it actually divides into. Split out of <c>Program.cs</c> so
+/// the composition root reads as an outline rather than a list.
 /// </summary>
 public static class ServiceRegistration
 {
@@ -238,6 +239,49 @@ public static class ServiceRegistration
         // question about the library, which changes on human timescales.
         services.AddSingleton<WorkingSetJanitor>();
         services.AddHostedService<JanitorWorker>();
+        return services;
+    }
+
+    /// <summary>
+    /// The Tracks page's view of everything, and the cache that keeps it affordable.
+    /// </summary>
+    /// <remarks>
+    /// Its own method rather than a tail on the orchestration one, because nothing here drives the
+    /// pipeline: it reads what the pipeline did. The composition is a lambda so that
+    /// <see cref="TracksService"/> depends on <em>a read</em> rather than on the queue, the board
+    /// and the job store — which is what lets its debounce be tested without any of them.
+    /// </remarks>
+    public static IServiceCollection AddCratesideTracks(this IServiceCollection services)
+    {
+        services.AddSingleton(sp => new TracksService(
+            async cancellationToken =>
+            {
+                var scan = await sp.GetRequiredService<QueueService>().ScanAsync(cancellationToken);
+
+                // One walk of the library, shared. The scan already found every file under both
+                // real roots; the board is re-read because it is the only source of per-file tag
+                // state, and it is a shallow read of one folder rather than a recursive one.
+                var view = TracksView.Compose(
+                    scan.View,
+                    scan.Ledger,
+                    sp.GetRequiredService<StagingBoardService>().Read(),
+                    scan.View.Items.ToDictionary(
+                        item => item.VideoId,
+                        item => scan.Processed.StemsFor(item.VideoId),
+                        StringComparer.Ordinal
+                    ),
+                    sp.GetRequiredService<CratesidePaths>().MashupSamples,
+                    sp.GetRequiredService<JobStore>()
+                );
+
+                return view with
+                {
+                    ReadAt = scan.ReadAt,
+                };
+            },
+            sp.GetRequiredService<StageHub>()
+        ));
+
         return services;
     }
 }
