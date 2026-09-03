@@ -209,27 +209,37 @@ is the number; `five_hour.resets_at` says when it stops mattering. Verified work
 **The token is a live credential.** Read it at the moment of the call, never log it, never put
 it in an error message shown in the UI, and never send it anywhere but Anthropic.
 
-### A third sample, and why it is an upper bound — 2026-09-03
+### The largest clean sample — 2026-09-03
 
-Twelve tracks judged in a single run, reported by the user from the meter: **17% → 81%**. Sixty-
-four points over twelve tracks is **5.3% a track** — the largest single sample so far, and it
-lands on the second batch's 5.4% rather than the first's 6.4–6.6%.
+Twelve tracks judged in a single run, read off the meter at both ends: **17% → 81%**. Sixty-four
+points over twelve tracks is **5.3% a track**.
 
-**It is confounded, and the main error has a known direction.** A Claude Code session was working
-in this repository throughout, on the same account and therefore inside the same five-hour
-window. Whatever that session spent is inside those sixty-four points. So 5.3% is an **upper
-bound** on what a verdict costs and not an estimate of one; the true figure is lower by however
-much the session used, which was not measured.
+**Clean endpoints, confirmed by the user:** nothing else ran on the account between the two
+readings — no Claude Code session, no prompts elsewhere. Judging alone, since separation costs no
+Claude quota.
 
-A second and smaller unknown pushes the other way: the window rolls, so usage from before the 17%
-reading may have aged out mid-run, which would make the delta understate what was actually spent.
-Neither effect was quantified, and the two do not cancel in any principled way.
+| | tracks | usage | per track |
+|---|---|---|---|
+| first batch — uncertain start, one unrelated question | 7 | → 46% | 6.4–6.6% |
+| second batch | 5 | 46% → 73% | 5.4% |
+| **third batch** | **12** | **17% → 81%** | **5.3%** |
 
-**Kept anyway, because the agreement is the useful part.** Three samples, taken on three days, two
-of them confounded differently, all landing between 5.3% and 6.6%. That is a stable enough shape
-to keep planning against **15–18 tracks a window**. What it is not is a figure to optimise
-against — the clean version of this measurement is a batch judged with nothing else running on the
-account, and that is what a future pass at reducing token usage should start by taking.
+The two clean samples agree to a tenth of a point, on runs of five and twelve tracks taken a day
+apart. **The first batch is the outlier and its own row says why** — an uncertain start and an
+unrelated question in the window. Treat 5.3–5.4% as the figure and the earlier 6.4–6.6% as the
+noise it was labelled as at the time.
+
+That tightens the window estimate: at 5.3% a track, a five-hour window is **about 18 tracks**
+rather than the 15–18 recorded above from the weaker pair.
+
+*Corrected in place, hours after being written: this section first recorded the sample as an
+**upper bound**, on the reasoning that a Claude Code session had been working on the same account
+inside the same window and its usage would be inside the sixty-four points. Plausible, and wrong —
+that session was idle across the whole interval, which the user confirmed when they read it. The
+premise was inferred rather than checked, which is the exact failure [ADR 0002](0002-there-is-no-warped-signal.md)'s
+postscript names: a fact about someone else's tools or habits is a fact to check with them. Worth
+leaving visible here, because this file already documents one measurement that was wrong for a
+different reason, and a caveat invented out of caution is still a caveat that was not measured.*
 
 There is a robust alternative worth knowing, because it needs no credential and cannot break:
 every verdict run already returns exact `modelUsage` and `total_cost_usd` in its result JSON, so
