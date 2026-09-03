@@ -125,7 +125,12 @@ public static class ServiceRegistration
     /// </remarks>
     public static IServiceCollection AddCratesideOrchestration(this IServiceCollection services)
     {
-        services.AddSingleton(_ => new JobStore());
+        // One notification source for the whole pipeline, so the page hears that a track moved on
+        // instead of only finding out when the user reloads. The job store announces through it
+        // rather than each drainer doing so: the store is the single writer they all already go
+        // through, and a guard five callers must remember is one a sixth will forget.
+        services.AddSingleton<StageHub>();
+        services.AddSingleton(sp => new JobStore(hub: sp.GetRequiredService<StageHub>()));
         services.AddSingleton<IProcessProbe, SystemProcessProbe>();
         services.AddSingleton<SeparationInterlock>();
         services.AddSingleton(sp => new SeparationSelector(sp.GetRequiredService<JobStore>()));

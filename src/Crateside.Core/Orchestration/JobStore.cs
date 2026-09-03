@@ -23,7 +23,12 @@ namespace Crateside.Core.Orchestration;
 /// onto the GPU.
 /// </para>
 /// </remarks>
-public sealed class JobStore(string? path = null, TimeProvider? time = null)
+/// <param name="hub">
+/// Told about every recorded change, so a page can update the one row that moved. Optional: the
+/// store is read and written outside the app — by tests, and by anything inspecting the file —
+/// and announcing is an extra rather than a requirement.
+/// </param>
+public sealed class JobStore(string? path = null, TimeProvider? time = null, StageHub? hub = null)
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
@@ -109,14 +114,23 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null)
             Error = error,
         };
 
+        TrackJob job;
+
         lock (_gate)
         {
             var projection = Projection();
 
             Append(update);
 
-            return projection[update.Id] = Apply(projection.GetValueOrDefault(update.Id), update);
+            job = projection[update.Id] = Apply(projection.GetValueOrDefault(update.Id), update);
         }
+
+        // Outside the lock on purpose. Subscribers are browser circuits doing arbitrary work, and
+        // holding the store's gate across them would let a handler that reads the store deadlock
+        // the writer it is reacting to.
+        hub?.Publish(new StageChange { Stage = stage, VideoId = videoId });
+
+        return job;
     }
 
     /// <summary>Drops the in-memory projection so the next read comes off disk again.</summary>
