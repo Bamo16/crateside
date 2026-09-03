@@ -59,8 +59,8 @@ public sealed record TrackRow
     public int? GpuPosition { get; init; }
 
     /// <summary>
-    /// The files of this track meant to be kept and tagged — warp guides excluded, because they
-    /// are never tagged and are meant to be used up.
+    /// The files of this track meant to be kept — warp guides excluded, because they are used up
+    /// rather than kept. Not because they are untagged: they carry the key like everything else.
     /// </summary>
     /// <remarks>
     /// For most tracks the vocal and instrumental stems; for an instrumental release, the source
@@ -157,9 +157,10 @@ public sealed record TrackRow
 /// One file of a track that is meant to be kept: tagged, then warped, then moved.
 /// </summary>
 /// <remarks>
-/// A warp guide is not one of these. It carries no per-file detail worth showing — it is never
-/// tagged, never mixed, and deleting it is a step of the workflow — so the row records only that
-/// one is still on disk.
+/// A warp guide is not one of these, because it is used up rather than kept. It <em>is</em>
+/// tagged — with the key and no type, so it reads sensibly if the user happens to select it in
+/// the browser — but the key is a song-level fact the row already holds, so a guide carries no
+/// per-file detail of its own and the row records only that one is still on disk.
 /// </remarks>
 public sealed record TrackSample
 {

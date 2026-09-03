@@ -55,8 +55,15 @@ public sealed record StagingSong
 
     /// <summary>
     /// True when every <em>sample</em> carries a key — warp guides are excluded, because they are
-    /// never tagged and are meant to be deleted.
+    /// used up rather than kept.
     /// </summary>
+    /// <remarks>
+    /// <strong>Not because a warp guide is untagged.</strong> crateside tags one like anything
+    /// else, with the key and no type. The axis is retention, exactly as
+    /// <c>docs/adr/0004</c> argued: a guide is excluded from completeness because it is going to
+    /// be deleted, and a song whose guide is still present has warping outstanding rather than a
+    /// file left to tag.
+    /// </remarks>
     /// <remarks>
     /// Counting every file instead made a warp guide a permanent untagged row, clearing only when
     /// the user deleted it. That read as "warping in progress", which is nearly right and

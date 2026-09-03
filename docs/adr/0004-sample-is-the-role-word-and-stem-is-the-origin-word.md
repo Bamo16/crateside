@@ -93,3 +93,29 @@ policy, and crateside's policy is to expect the usual vocal and instrumental pai
   far too small to build on** — one positive case is a coincidence with a story attached. It is
   recorded here as something to re-measure, not as a finding, and it does not contradict ADR
   0002, whose point is that `.asd` means Ableton *looked at* the file.
+
+## A warp guide is tagged after all — 2026-09-02
+
+This ADR says a warp guide "is never tagged and never mixed". **The first half is not true, and
+that is deliberate rather than a lapse.** crateside tags one with the key and no type — the
+mapping `TaggingRunner.KeywordsFor` was read off the user's own library, where every drums entry
+in staging already carried a key — and the user confirmed on 2026-09-02 that this is what they
+want: so the key reads sensibly on the rare occasion a drum stem is selected in Ableton's
+browser, and so the library is consistent. Never *mixed* still holds.
+
+Found by noticing `Rob Dougan - Furious Angels (Drums).flac` carrying `Key|C` and `Key|Minor`,
+and raised as a suspected bug. It was not one; the behaviour was already described in the
+runner's own remarks. Recorded here because this ADR is where a reader would go to check, and it
+said the opposite.
+
+**The decision above is unaffected, and reads better for it.** The distinguishing axis was
+already stated here as **retention, not role** — and tagging turns out to be a third thing that
+is neither. A warp guide is left out of completeness because it is going to be deleted, not
+because it lacks a key, and `StagingSong.IsFullyTagged` would now give the same answer whichever
+reason it used. What needed correcting was the *reason* written beside the code, which said
+"never tagged" where it meant "never kept".
+
+**Outstanding:** keytag's `CONTEXT.md` carries the same "never tagged" wording in its *warp
+guide* definition. That file is a glossary of current fact rather than a history, so it wants
+the wording corrected in place rather than a note appended — in the other repo, and not done
+here.
