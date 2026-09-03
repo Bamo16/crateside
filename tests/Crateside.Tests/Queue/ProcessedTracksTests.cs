@@ -108,6 +108,23 @@ public class ProcessedTracksTests : IDisposable
     }
 
     [Fact]
+    public void A_stem_remembers_its_preset_and_the_root_it_was_found_in()
+    {
+        const string VideoId = "vfBJjufAG1E";
+        Assert.SkipWhen(StemFor(VideoId, "kept.flac") is null, "Needs a real stem to copy.");
+
+        var stem = Assert.Single(
+            ProcessedTracks.Scan(LedgerWith(VideoId), [_root]).StemsFor(VideoId)
+        );
+
+        // Both are read during the scan already and were being thrown away. Which root a file is
+        // in is what says whether the user has finished with it — a sample that reached Mashup
+        // Samples is warped — and the preset is what names it on the row.
+        Assert.Equal("Vocal - Full", stem.Preset);
+        Assert.Equal(_root, stem.Root);
+    }
+
+    [Fact]
     public void A_verdict_with_no_stem_is_not_processed()
     {
         // The run recorded a key and then died during separation. It must stay queued.

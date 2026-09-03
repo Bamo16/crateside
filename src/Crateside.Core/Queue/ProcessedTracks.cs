@@ -21,10 +21,10 @@ namespace Crateside.Core.Queue;
 /// </remarks>
 public sealed class ProcessedTracks
 {
-    private readonly Dictionary<string, List<string>> _stemsByVideoId;
+    private readonly Dictionary<string, List<StemOnDisk>> _stemsByVideoId;
 
     private ProcessedTracks(
-        Dictionary<string, List<string>> stemsByVideoId,
+        Dictionary<string, List<StemOnDisk>> stemsByVideoId,
         IReadOnlySet<string> fullyProcessed,
         IReadOnlySet<string> verdictWithoutStems
     )
@@ -44,7 +44,7 @@ public sealed class ProcessedTracks
     public IReadOnlySet<string> VerdictWithoutStems { get; }
 
     /// <summary>Where the stems for a video ID live. Empty when none are on disk.</summary>
-    public IReadOnlyList<string> StemsFor(string videoId) =>
+    public IReadOnlyList<StemOnDisk> StemsFor(string videoId) =>
         _stemsByVideoId.TryGetValue(videoId, out var stems) ? stems : [];
 
     public bool IsFullyProcessed(string videoId) => FullyProcessed.Contains(videoId);
@@ -58,7 +58,7 @@ public sealed class ProcessedTracks
     /// </param>
     public static ProcessedTracks Scan(KeyLedger ledger, IEnumerable<string> stemRoots)
     {
-        var stemsByVideoId = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var stemsByVideoId = new Dictionary<string, List<StemOnDisk>>(StringComparer.Ordinal);
 
         foreach (var root in stemRoots.Where(Directory.Exists))
         {
@@ -70,13 +70,23 @@ public sealed class ProcessedTracks
                 if (!StagingBoard.IsStemFile(path))
                     continue;
 
-                if (StemTagReader.Read(path)?.SourceVideoId is not { } videoId)
+                if (StemTagReader.Read(path)?.Provenance is not { SourceVideoId: { } videoId } p)
                     continue;
 
-                if (!stemsByVideoId.TryGetValue(videoId, out var paths))
-                    stemsByVideoId[videoId] = paths = [];
+                if (!stemsByVideoId.TryGetValue(videoId, out var found))
+                    stemsByVideoId[videoId] = found = [];
 
-                paths.Add(path);
+                // The root and the preset are already in hand here. Keeping them costs nothing
+                // and is what lets a caller ask which root a file ended up in — the signal that
+                // says the user has finished with it.
+                found.Add(
+                    new StemOnDisk
+                    {
+                        Path = path,
+                        Root = root,
+                        Preset = p.Preset,
+                    }
+                );
             }
         }
 
@@ -93,4 +103,27 @@ public sealed class ProcessedTracks
                 .ToHashSet(StringComparer.Ordinal)
         );
     }
+}
+
+/// <summary>One file carrying a track's provenance, and where the scan found it.</summary>
+public sealed record StemOnDisk
+{
+    public required string Path { get; init; }
+
+    /// <summary>
+    /// The stem root it was found under.
+    /// </summary>
+    /// <remarks>
+    /// Which root a file is in is the completion signal: a sample that has reached
+    /// <c>Mashup Samples</c> is one the user has warped, tagged and finished with. Nothing is
+    /// marked done — things simply move, which is what keeps this derived
+    /// (<c>docs/adr/0002</c>).
+    /// </remarks>
+    public required string Root { get; init; }
+
+    /// <summary>
+    /// The StemForge preset — <c>Vocal - Full</c>, <c>Drums</c>. Null for a verbatim source
+    /// download, which is how an instrumental release's kept sample reads.
+    /// </summary>
+    public string? Preset { get; init; }
 }
