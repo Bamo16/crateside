@@ -1,3 +1,4 @@
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Humanizer;
 
@@ -26,6 +27,24 @@ public sealed record TrackRow
     public required string PlaylistItemId { get; init; }
 
     public required string Title { get; init; }
+
+    /// <summary>The current verdict, or null when the ledger has never seen this track.</summary>
+    public LedgerRun? Verdict { get; init; }
+
+    /// <summary>The key to tag with, or null when withheld, weak, or unknown.</summary>
+    public string? Key => Verdict?.HasTaggableKey is true ? Verdict.Key : null;
+
+    public KeyConfidence Confidence => Verdict?.Confidence ?? KeyConfidence.Unknown;
+
+    /// <summary>
+    /// The warp starting point, and the one number the user needs mid-warp.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately not gated on <see cref="Key"/>. A verdict too weak to tag with still measured
+    /// a tempo, it was never a tagged value, and a parked track is exactly one the user may still
+    /// choose to work by hand.
+    /// </remarks>
+    public double? Bpm => Verdict?.Bpm;
 
     /// <summary>
     /// The stage crateside currently believes is working this track, if any.
@@ -67,6 +86,17 @@ public sealed record TrackRow
     /// track, which is a sample and no kind of stem at all (ADR 0004).
     /// </remarks>
     public IReadOnlyList<TrackSample> Samples { get; init; } = [];
+
+    /// <summary>
+    /// A warp guide is still on disk, which says warping is outstanding.
+    /// </summary>
+    /// <remarks>
+    /// A bool rather than a list because a guide has no per-file detail of its own: it carries
+    /// the song's key like everything else, and the row already holds that. Its <em>absence</em>
+    /// is not a claim that warping happened — that reading was measured at eight songs and is far
+    /// too small to build on (ADR 0004).
+    /// </remarks>
+    public bool HasWarpGuide { get; init; }
 
     /// <summary>
     /// Where the track has got to.

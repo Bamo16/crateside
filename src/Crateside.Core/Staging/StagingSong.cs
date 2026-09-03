@@ -103,7 +103,18 @@ public sealed record StagingStem
     /// perfectly mixable and could be kept; that is rare enough that the user does it by hand,
     /// outside crateside. See <c>docs/adr/0004</c>.
     /// </remarks>
-    public bool IsWarpGuide => Preset?.Contains("drum", StringComparison.OrdinalIgnoreCase) is true;
+    public bool IsWarpGuide => IsWarpGuidePreset(Preset);
+
+    /// <summary>
+    /// The rule itself, so anything reading a preset off disk decides this the same way.
+    /// </summary>
+    /// <remarks>
+    /// The staging board is not the only reader any more — the Tracks page classifies files found
+    /// in <c>Mashup Samples</c> too, and two copies of "contains drum" would be two chances to
+    /// drift.
+    /// </remarks>
+    public static bool IsWarpGuidePreset(string? preset) =>
+        preset?.Contains("drum", StringComparison.OrdinalIgnoreCase) is true;
 
     /// <summary>The key Ableton has on the file, recombined from its two keywords.</summary>
     public string? AbletonKey { get; init; }
