@@ -275,15 +275,15 @@ public static class ServiceRegistration
                 // One walk of the library, shared. The scan already found every file under both
                 // real roots; the board is re-read because it is the only source of per-file tag
                 // state, and it is a shallow read of one folder rather than a recursive one.
+                //
+                // Every file the scan found, not one lookup per playlist item: a track leaves the
+                // playlist as soon as it is processed, so keying this off the playlist gave the
+                // staged rows an empty file list and left them with no staged-since to show.
                 var view = TracksView.Compose(
                     scan.View,
                     scan.Ledger,
                     sp.GetRequiredService<StagingBoardService>().Read(),
-                    scan.View.Items.ToDictionary(
-                        item => item.VideoId,
-                        item => scan.Processed.StemsFor(item.VideoId),
-                        StringComparer.Ordinal
-                    ),
+                    scan.Processed.StemsByVideoId,
                     sp.GetRequiredService<CratesidePaths>().MashupSamples,
                     sp.GetRequiredService<JobStore>()
                 );

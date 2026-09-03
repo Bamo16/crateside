@@ -21,18 +21,31 @@ namespace Crateside.Core.Queue;
 /// </remarks>
 public sealed class ProcessedTracks
 {
-    private readonly Dictionary<string, List<StemOnDisk>> _stemsByVideoId;
-
     private ProcessedTracks(
         Dictionary<string, List<StemOnDisk>> stemsByVideoId,
         IReadOnlySet<string> fullyProcessed,
         IReadOnlySet<string> verdictWithoutStems
     )
     {
-        _stemsByVideoId = stemsByVideoId;
+        StemsByVideoId = stemsByVideoId.ToDictionary(
+            entry => entry.Key,
+            entry => (IReadOnlyList<StemOnDisk>)entry.Value,
+            StringComparer.Ordinal
+        );
         FullyProcessed = fullyProcessed;
         VerdictWithoutStems = verdictWithoutStems;
     }
+
+    /// <summary>
+    /// Every file the scan found, by the video ID it came from.
+    /// </summary>
+    /// <remarks>
+    /// The whole map, for a caller that does not already know which tracks to ask about. The
+    /// Tracks page is one: a track leaves the playlist as soon as it is processed while its files
+    /// sit in staging for weeks afterwards, so asking once per playlist item finds nothing for
+    /// exactly the rows that view exists to show.
+    /// </remarks>
+    public IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>> StemsByVideoId { get; }
 
     /// <summary>Video IDs that satisfy both halves of the test.</summary>
     public IReadOnlySet<string> FullyProcessed { get; }
@@ -45,7 +58,7 @@ public sealed class ProcessedTracks
 
     /// <summary>Where the stems for a video ID live. Empty when none are on disk.</summary>
     public IReadOnlyList<StemOnDisk> StemsFor(string videoId) =>
-        _stemsByVideoId.TryGetValue(videoId, out var stems) ? stems : [];
+        StemsByVideoId.GetValueOrDefault(videoId) ?? [];
 
     public bool IsFullyProcessed(string videoId) => FullyProcessed.Contains(videoId);
 
