@@ -25,6 +25,39 @@ namespace Crateside.Core.Quota;
 /// it. <see cref="QuotaSnapshot"/> deliberately carries no error text for the same reason — there
 /// is no message for a credential to leak into.
 /// </para>
+/// <para>
+/// The response, observed 2026-09-03 on a Pro subscription. Trimmed to the shape that matters;
+/// the dollar fields are null on a subscription and most of the codename keys are null outright:
+/// </para>
+/// <code>
+/// {
+///   "five_hour": {
+///     "utilization": 22.0,
+///     "resets_at": "2026-09-03T19:49:59.789047-05:00",
+///     "limit_dollars": null, "used_dollars": null, "remaining_dollars": null,
+///     "locked_reason": null
+///   },
+///   "seven_day": { "utilization": 25.0, "resets_at": "2026-09-09T04:00:00-05:00", ... },
+///   "limits": [
+///     { "kind": "session",     "group": "session", "percent": 23, "severity": "normal",
+///       "resets_at": "...", "scope": null, "is_active": false },
+///     { "kind": "weekly_all",  "group": "weekly",  "percent": 25, "severity": "normal",
+///       "resets_at": "...", "scope": null, "is_active": true }
+///   ],
+///   "spend": { }, "extra_usage": { }, "nimbus_quill": { },
+///   "member_dashboard_available": true,
+///   "amber_ladder": null, "cinder_cove": null, "iguana_necktie": null,
+///   "juniper_tide": null, "omelette_promotional": null, "tangelo": null
+/// }
+/// </code>
+/// <para>
+/// Three things that were guesses until that call and are now measured. <strong>Utilization is a
+/// percentage on 0–100, not a fraction</strong> — 22.0 meaning 22%. <strong><c>resets_at</c> is an
+/// ISO-8601 string with an offset</strong>, not Unix seconds. And <strong><c>percent</c> in
+/// <c>limits</c> is not the same number</strong>: it read 23 while <c>five_hour.utilization</c>
+/// read 22.0 in the same response, so the two are related but not interchangeable, and the one
+/// this reads is the more precise of them.
+/// </para>
 /// </remarks>
 public sealed class QuotaReader(HttpClient client)
 {
@@ -74,11 +107,14 @@ public sealed class QuotaReader(HttpClient client)
     }
 
     /// <summary>
-    /// Picks the two fields out of a payload whose shape is not promised.
+    /// Picks the window out of a payload whose shape is not promised.
     /// </summary>
     /// <remarks>
-    /// Reads <c>five_hour</c> and nothing else, so a rename anywhere in the rest of the response
-    /// costs nothing. A missing or malformed field yields unknown for that field alone.
+    /// <c>five_hour</c> first, then the <c>session</c> entry of <c>limits</c>. That fallback is not
+    /// speculative: this field has already been renamed once — the tool this was learned from reads
+    /// <c>percent</c> — and <c>limits</c> is where a <c>percent</c> still lives, tagged
+    /// <c>kind: "session"</c>. The tag is what makes it usable, since the array also carries the
+    /// weekly window and picking the wrong row would be worse than showing nothing.
     /// </remarks>
     internal static QuotaSnapshot Parse(string payload)
     {
@@ -86,18 +122,17 @@ public sealed class QuotaReader(HttpClient client)
         {
             using var document = JsonDocument.Parse(payload);
 
-            if (!document.RootElement.TryGetProperty("five_hour", out var window))
-                return QuotaSnapshot.Unknown;
+            if (
+                document.RootElement.TryGetProperty("five_hour", out var window)
+                && Percentage(window, "utilization") is { } utilization
+            )
+                return new QuotaSnapshot
+                {
+                    Utilization = utilization,
+                    ResetsAt = ResetTimeOf(window),
+                };
 
-            return new QuotaSnapshot
-            {
-                Utilization =
-                    window.TryGetProperty("utilization", out var used)
-                    && used.ValueKind is JsonValueKind.Number
-                        ? used.GetDouble()
-                        : null,
-                ResetsAt = ResetTimeOf(window),
-            };
+            return SessionLimit(document.RootElement);
         }
         catch (JsonException)
         {
@@ -106,11 +141,47 @@ public sealed class QuotaReader(HttpClient client)
     }
 
     /// <summary>
+    /// The five-hour window as <c>limits</c> spells it, if it is there.
+    /// </summary>
+    /// <remarks>
+    /// Its <c>percent</c> is close to but not the same as <c>five_hour.utilization</c> — 23 against
+    /// 22.0 in one response — so this is a fallback and never the preferred reading.
+    /// </remarks>
+    private static QuotaSnapshot SessionLimit(JsonElement root)
+    {
+        if (
+            !root.TryGetProperty("limits", out var limits)
+            || limits.ValueKind is not JsonValueKind.Array
+        )
+            return QuotaSnapshot.Unknown;
+
+        foreach (var limit in limits.EnumerateArray())
+        {
+            if (
+                limit.TryGetProperty("kind", out var kind)
+                && kind.ValueKind is JsonValueKind.String
+                && kind.GetString() == "session"
+                && Percentage(limit, "percent") is { } percent
+            )
+                return new QuotaSnapshot { Utilization = percent, ResetsAt = ResetTimeOf(limit) };
+        }
+
+        return QuotaSnapshot.Unknown;
+    }
+
+    /// <summary>A number on 0–100, or null where there is not one.</summary>
+    private static double? Percentage(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind is JsonValueKind.Number
+            ? value.GetDouble()
+            : null;
+
+    /// <summary>
     /// When the window rolls over, spelled either way.
     /// </summary>
     /// <remarks>
-    /// A string is read as ISO-8601 and a number as Unix seconds. Which one this endpoint actually
-    /// sends has not been observed; accepting both costs three lines and removes the guess.
+    /// It sends ISO-8601 with an offset — <c>2026-09-03T19:49:59.789047-05:00</c>, observed
+    /// 2026-09-03. Unix seconds are still accepted because it costs one arm of a switch and this
+    /// endpoint has already changed shape once.
     /// </remarks>
     private static DateTimeOffset? ResetTimeOf(JsonElement window) =>
         window.TryGetProperty("resets_at", out var resets)
@@ -168,7 +239,14 @@ public sealed class QuotaReader(HttpClient client)
 /// </remarks>
 public sealed record QuotaSnapshot
 {
-    /// <summary>How much of the window is spent, as the endpoint reports it.</summary>
+    /// <summary>
+    /// How much of the window is spent, as a percentage on 0–100.
+    /// </summary>
+    /// <remarks>
+    /// Observed 2026-09-03: the endpoint reports <c>22.0</c> to mean 22%, not <c>0.22</c>. Stored
+    /// exactly as sent rather than normalised, so a reader is never left wondering which of the
+    /// two conventions a given number is in.
+    /// </remarks>
     public double? Utilization { get; init; }
 
     /// <summary>When the window rolls over.</summary>

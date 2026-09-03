@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using Crateside.Core.Quota;
@@ -43,15 +44,24 @@ public class QuotaReaderTests : IDisposable
         return path;
     }
 
-    // Shaped after the real response: the two fields that matter, a parallel limits array that
-    // spells the same thing differently, and codename keys that must not get in the way.
+    // Copied from a real response on 2026-09-03, trimmed. Utilization is a percentage on 0-100 --
+    // 22.0 means 22% -- resets_at is ISO-8601 with an offset, and limits carries a *different*
+    // number for the same window (23 against 22.0), which is why it is a fallback and not a
+    // synonym. The null codename keys are real and must not get in the way.
     private const string RealisticPayload = """
         {
-          "tangelo": { "enabled": true },
-          "five_hour": { "utilization": 0.43, "resets_at": "2026-09-03T18:40:00+00:00" },
-          "seven_day": { "utilization": 0.12 },
-          "limits": [ { "name": "five_hour", "percent": 43 } ],
-          "iguana_necktie": "whatever this is"
+          "five_hour": {
+            "utilization": 22.0,
+            "resets_at": "2026-09-03T19:49:59.789047-05:00",
+            "limit_dollars": null, "used_dollars": null, "locked_reason": null
+          },
+          "seven_day": { "utilization": 25.0, "resets_at": "2026-09-09T04:00:00-05:00" },
+          "limits": [
+            { "kind": "session", "group": "session", "percent": 23, "is_active": false },
+            { "kind": "weekly_all", "group": "weekly", "percent": 25, "is_active": true }
+          ],
+          "member_dashboard_available": true,
+          "tangelo": null, "iguana_necktie": null, "juniper_tide": null
         }
         """;
 
@@ -63,11 +73,39 @@ public class QuotaReaderTests : IDisposable
         var quota = await reader.ReadAsync(TestContext.Current.CancellationToken);
 
         Assert.True(quota.IsKnown);
-        Assert.Equal(0.43, quota.Utilization);
+
+        // 22.0 meaning 22%, taken from five_hour rather than the 23 sitting in limits.
+        Assert.Equal(22.0, quota.Utilization);
+        // Round-tripped exactly, offset and all: the real value carries microseconds, and the
+        // point of the assertion is that the -05:00 is honoured rather than dropped.
         Assert.Equal(
-            new DateTimeOffset(2026, 9, 3, 18, 40, 0, TimeSpan.Zero),
-            quota.ResetsAt!.Value.ToUniversalTime()
+            DateTimeOffset.Parse("2026-09-03T19:49:59.789047-05:00", CultureInfo.InvariantCulture),
+            quota.ResetsAt
         );
+        Assert.Equal(4, quota.ResetsAt!.Value.ToUniversalTime().Day);
+    }
+
+    [Fact]
+    public void Falls_back_to_the_session_row_of_limits_when_utilization_is_renamed()
+    {
+        // The drift that already happened once, happening again: the tool this was learned from
+        // parses `percent`, and `percent` still lives in limits. The kind tag is what makes the
+        // fallback safe, since the weekly window is in the same array and reading it as the
+        // five-hour one would be worse than showing nothing.
+        var quota = QuotaReader.Parse(
+            """
+            {
+              "five_hour": { "percent": 22.0 },
+              "limits": [
+                { "kind": "weekly_all", "percent": 25 },
+                { "kind": "session", "percent": 23, "resets_at": "2026-09-03T19:49:59-05:00" }
+              ]
+            }
+            """
+        );
+
+        Assert.Equal(23, quota.Utilization);
+        Assert.NotNull(quota.ResetsAt);
     }
 
     [Fact]
@@ -96,8 +134,10 @@ public class QuotaReaderTests : IDisposable
         string payload
     )
     {
-        // The fifth and sixth cases are the drift that has already happened once, arriving again:
-        // the field renamed, or moved into the parallel array. Neither may take the page down.
+        // The last two are the renamed field with nothing to recover it from: five_hour carrying
+        // only `percent`, and a limits array whose row is untagged. The fallback needs
+        // kind: "session" to know which window it is looking at, and guessing between the
+        // five-hour and the weekly one would be worse than saying nothing.
         var quota = await Reader(status, payload, out _)
             .ReadAsync(TestContext.Current.CancellationToken);
 
