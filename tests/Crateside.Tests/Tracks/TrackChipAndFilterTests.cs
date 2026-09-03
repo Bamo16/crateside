@@ -25,7 +25,7 @@ public class TrackChipAndFilterTests
             TrackState.Tagging => Base with { RunningStage = JobStage.Tagging },
             TrackState.ReadyToWarp => Base with
             {
-                Samples = [new TrackSample { Label = "Vocal - Full", IsKeyTagged = true }],
+                Samples = [new TrackSample { Label = "Vocal - Full", AbletonKey = "C minor" }],
             },
             TrackState.Parked => Base with { IsParkedForKey = true },
             TrackState.GaveUp => Base with { GaveUpAt = JobStage.Separation, GaveUpStrikes = 3 },

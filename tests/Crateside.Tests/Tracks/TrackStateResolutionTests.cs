@@ -28,7 +28,7 @@ public class TrackStateResolutionTests
         new()
         {
             Label = label,
-            IsKeyTagged = tagged,
+            AbletonKey = tagged ? "C minor" : null,
             IsWarped = warped,
         };
 

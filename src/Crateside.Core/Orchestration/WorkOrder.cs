@@ -172,6 +172,12 @@ public sealed record SeparationRecipe
     public int ExpectedOutputs => Presets.Count + (ExtractDrums ? 1 : 0) + (KeepSource ? 1 : 0);
 
     /// <summary>The recipe a track's release calls for.</summary>
-    public static SeparationRecipe For(QueueItem item) =>
-        item.IsInstrumentalRelease ? InstrumentalRelease : Standard;
+    public static SeparationRecipe For(QueueItem item) => For(item.IsInstrumentalRelease);
+
+    /// <summary>
+    /// The same rule off the one fact it turns on, for a reader holding the fact and not the queue
+    /// item it came from.
+    /// </summary>
+    public static SeparationRecipe For(bool isInstrumentalRelease) =>
+        isInstrumentalRelease ? InstrumentalRelease : Standard;
 }

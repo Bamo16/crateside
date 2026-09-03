@@ -3,13 +3,17 @@
 @rendermode InteractiveServer
 @implements IDisposable
 
+@using System.Diagnostics
 @using Crateside.Core.Ledger
 @using Crateside.Core.Orchestration
+@using Crateside.Core.Queue
 @using Crateside.Core.Quota
 @using Crateside.Core.Tracks
 @using Humanizer
 
 @inject TracksService Source
+@inject QueueService Playlist
+@inject JobStore Jobs
 @inject DrainControl Separation
 @inject VerdictControl Judging
 @inject QuotaReader Quota
@@ -138,8 +142,11 @@
     {
         @foreach (var row in Shown)
         {
-            <div class="row @(_filter is TrackFilter.InStaging ? "roomy" : null)">
-                <span class="chevron mono">›</span>
+            var open = _expanded == row.VideoId;
+
+            <div class="row @(_filter is TrackFilter.InStaging ? "roomy" : null) @(open ? "open" : null)"
+                 @onclick="() => Expand(row)">
+                <span class="chevron mono">@(open ? "⌄" : "›")</span>
 
                 <span class="song">
                     @row.Title
@@ -178,6 +185,140 @@
                     }
                 </span>
             </div>
+
+            @if (open)
+            {
+                <div class="panel">
+                    @if (row.CanChangePlan)
+                    {
+                        @* The plan rather than the files, because there are no files yet: what a
+                           track before separation can say is what it is going to become. *@
+                        <div class="stems">
+                            <div class="panel-head">Will separate into</div>
+
+                            @foreach (var preset in SeparationRecipe.Standard.Presets)
+                            {
+                                var kept = row.Recipe.Presets.Contains(preset, StringComparer.Ordinal);
+
+                                <div class="stem @(kept ? null : "skipped")">
+                                    <span class="stem-label mono">@preset</span>
+                                    <span class="mono stem-tag">@(kept ? "not yet" : "skipped")</span>
+                                    <span class="mono stem-warp">@(kept ? "—" : null)</span>
+                                    <span class="stem-note">
+                                        @(kept ? null : "instrumental source — no vocal to lift")
+                                    </span>
+                                </div>
+                            }
+
+                            @if (row.Recipe.KeepSource)
+                            {
+                                <div class="stem">
+                                    <span class="stem-label mono">source</span>
+                                    <span class="mono stem-tag">not yet</span>
+                                    <span class="mono stem-warp">—</span>
+                                    <span class="stem-note">the release itself, kept whole</span>
+                                </div>
+                            }
+
+                            @if (row.Recipe.ExtractDrums)
+                            {
+                                <div class="stem guide">
+                                    <span class="stem-label mono">
+                                        drums <span class="kind">warp guide</span>
+                                    </span>
+                                    <span class="mono stem-tag">not yet</span>
+                                    <span class="mono stem-warp"></span>
+                                    <span class="stem-note">
+                                        for placing markers; deleted after warping
+                                    </span>
+                                </div>
+                            }
+
+                            @* The whole of the user's say in what gets separated, and the last
+                               moment anyone can say it: the evidence run is unattended and the
+                               verdict run is a headless session. *@
+                            <label class="toggle">
+                                <input type="checkbox" checked="@row.IsInstrumentalRelease"
+                                       @onchange="() => SetInstrumental(row)" />
+                                <span class="switch"></span>
+                                <span class="toggle-label">Instrumental source</span>
+                                <span class="toggle-hint">changeable until separation starts</span>
+                            </label>
+                        </div>
+                    }
+                    else if (row.Samples.Count > 0 || row.HasWarpGuide)
+                    {
+                        <div class="stems">
+                            <div class="panel-head">@StemsHeading(row)</div>
+
+                            @foreach (var sample in row.Samples)
+                            {
+                                <div class="stem">
+                                    <span class="stem-label">@sample.Label</span>
+                                    <span class="mono stem-tag @TagTone(sample)">@Tag(sample)</span>
+                                    <span class="mono stem-warp @(sample.IsWarped ? "good" : null)">
+                                        @(sample.IsWarped ? "warped ✓" : "not yet")
+                                    </span>
+                                    <span class="stem-note"></span>
+                                </div>
+                            }
+
+                            @* Dashed and dimmed because it is not a sample. Its tag column stays
+                               empty rather than reading "never tagged": crateside tags a guide like
+                               anything else, and it is kept out for being used up (ADR 0004). *@
+                            @if (row.HasWarpGuide)
+                            {
+                                <div class="stem guide">
+                                    <span class="stem-label">
+                                        Drums <span class="kind">warp guide</span>
+                                    </span>
+                                    <span class="mono stem-tag dim">—</span>
+                                    <span class="mono stem-warp"></span>
+                                    <span class="stem-note">
+                                        for placing markers; deleted after warping
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <div class="side">
+                        <p class="detail">@row.Detail</p>
+
+                        <div class="actions">
+                            @if (row.Folder is not null)
+                            {
+                                <button class="outline" @onclick="() => OpenFolder(row)">Open folder</button>
+                            }
+                            @if (row.GaveUpAt is not null)
+                            {
+                                <button class="outline" @onclick="() => Retry(row)">Retry</button>
+                            }
+                            @if (row.IsHeld)
+                            {
+                                <button class="primary" @onclick="() => SetHeld(row, false)">Release hold</button>
+                            }
+                            else if (row.PlaylistItemId is not null && row.State is not TrackState.Done)
+                            {
+                                <button class="outline" @onclick="() => SetHeld(row, true)">Hold</button>
+                            }
+                            @* Consent is the settings page's business; without it removal is a bare
+                               403, so the button is absent rather than broken. *@
+                            @if (row.PlaylistItemId is { } playlistItemId && Playlist.IsAuthorized)
+                            {
+                                <button class="outline" @onclick="() => Remove(row, playlistItemId)">
+                                    Remove from playlist
+                                </button>
+                            }
+                        </div>
+
+                        @if (_problem is { } problem)
+                        {
+                            <p class="problem">@problem</p>
+                        }
+                    </div>
+                </div>
+            }
         }
     }
 </div>
@@ -186,6 +327,11 @@
     private TracksView? _view;
     private TrackFilter _filter = TrackFilter.All;
     private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
+
+    // One at a time, and by video ID rather than by index: the list is rebuilt on every change,
+    // so a position would open whichever row happened to land there.
+    private string? _expanded;
+    private string? _problem;
 
     private IReadOnlyList<TrackRow> Rows => _view?.Rows ?? [];
 
@@ -220,6 +366,117 @@
         _view = Source.Current;
         _ = InvokeAsync(StateHasChanged);
     }
+
+    private void Expand(TrackRow row)
+    {
+        _expanded = _expanded == row.VideoId ? null : row.VideoId;
+        _problem = null;
+    }
+
+    // The server is this machine, so opening a folder means what it says. Nothing is read back —
+    // this hands off to Explorer, and what happens next happens there.
+    private void OpenFolder(TrackRow row)
+    {
+        if (row.Folder is not { } folder)
+            return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true });
+        }
+        catch (Exception e)
+        {
+            _problem = $"Could not open {folder}: {e.Message}";
+        }
+    }
+
+    private async Task SetHeld(TrackRow row, bool held)
+    {
+        if (held)
+            Playlist.Hold(row.VideoId);
+        else
+            Playlist.Release(row.VideoId);
+
+        await Source.RefreshAsync();
+    }
+
+    private async Task SetInstrumental(TrackRow row)
+    {
+        Playlist.SetInstrumentalRelease(row.VideoId, !row.IsInstrumentalRelease);
+
+        await Source.RefreshAsync();
+    }
+
+    // Every failed stage, not just the one that gave up: a track that failed twice at evidence and
+    // three times at verdict is stopped by the second, and clearing only that leaves the first
+    // counting against the next attempt.
+    private async Task Retry(TrackRow row)
+    {
+        foreach (var stage in Enum.GetValues<JobStage>())
+            if (Jobs.TryGet(row.VideoId, stage, out var job) && job is { Status: JobStatus.Failed })
+                Jobs.Forgive(row.VideoId, stage);
+
+        // Nothing polls the job store, so a worker part-way through its idle wait would not look
+        // again for up to two minutes — long enough for the button to read as broken.
+        Separation.Wake();
+        Judging.Wake();
+
+        await Source.RefreshAsync();
+    }
+
+    private async Task Remove(TrackRow row, string playlistItemId)
+    {
+        _problem = null;
+
+        try
+        {
+            // The playlist entry is the whole of what removal targets, and the row carries it.
+            var results = await Playlist.RemoveAsync(
+                [
+                    new QueueItem
+                    {
+                        PlaylistItemId = playlistItemId,
+                        VideoId = row.VideoId,
+                        Title = row.Title,
+                    },
+                ]
+            );
+
+            _problem = results.FirstOrDefault(result => !result.Removed)?.Reason;
+
+            await Source.RefreshAsync();
+        }
+        catch (QueueUnavailableException e)
+        {
+            _problem = e.Message;
+        }
+    }
+
+    private static string StemsHeading(TrackRow row) =>
+        row.Folder is { } folder
+            ? $"Stems · {Path.GetFileName(folder)} / {row.Title}"
+            : $"Stems · {row.Title}";
+
+    // The key Ableton actually holds, never the verdict's: on the one row where those disagree,
+    // showing the verdict with a tick beside it would say the opposite of what is true.
+    private static string Tag(TrackSample sample) =>
+        sample switch
+        {
+            { AbletonKey: { } key } => $"{Spell(key)} ✓",
+            { IsWarped: true } => "—",
+            _ => "not tagged",
+        };
+
+    // A sample that has moved is dim rather than red. Nothing here read its tag — crateside does
+    // not write tags outside Sample Staging and does not trust the store elsewhere (ADR 0003) — so
+    // "not tagged" would be a claim, and the honest mark is no claim at all.
+    private static string TagTone(TrackSample sample) =>
+        sample switch
+        {
+            { IsKeyTagged: true } => "good",
+            { IsWarped: true } => "dim",
+            _ => "bad",
+        };
 
     private void ToggleJudging()
     {

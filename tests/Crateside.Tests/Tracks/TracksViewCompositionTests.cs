@@ -315,6 +315,61 @@ public class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
+    public void A_staged_samples_tag_is_the_key_Ableton_holds()
+    {
+        // The verdict's key would be the wrong thing to carry: on the one row where the two
+        // disagree, showing it beside a tick says the opposite of what is true.
+        var row = Assert.Single(
+            Compose(
+                ledger: LedgerWith("C minor", "HIGH", bpm: 128),
+                staging: [Staged(Stem("Vocal - Full", tagged: true), Stem("Instrumental - Full"))]
+            )
+        );
+
+        Assert.Contains(row.Samples, sample => sample.AbletonKey is "C minor");
+        Assert.Contains(row.Samples, sample => sample is { AbletonKey: null, IsWarped: false });
+    }
+
+    [Fact]
+    public void A_warped_sample_carries_no_Ableton_key_because_nothing_read_one()
+    {
+        // Null here says nobody looked, not that the file is untagged: crateside writes tags only
+        // in Sample Staging and does not treat the store as a mirror of Ableton (ADR 0003).
+        var row = Assert.Single(Compose(onDisk: Finished("Vocal - Full")));
+
+        Assert.All(row.Samples, sample => Assert.Null(sample.AbletonKey));
+    }
+
+    [Fact]
+    public void The_folder_is_staging_while_anything_is_still_there()
+    {
+        var row = Assert.Single(
+            Compose(
+                staging: [Staged(Stem("Vocal - Full"))],
+                onDisk: Finished("Instrumental - Full")
+            )
+        );
+
+        // Staging wins over where the rest has got to: the button exists to open the folder the
+        // user is about to drag out of.
+        Assert.Equal(StagingRoot, row.Folder);
+    }
+
+    [Fact]
+    public void The_folder_is_wherever_the_files_got_to_once_staging_is_empty()
+    {
+        var row = Assert.Single(Compose(onDisk: Finished("Vocal - Full")));
+
+        Assert.Equal(FinishedRoot, row.Folder);
+    }
+
+    [Fact]
+    public void A_track_with_nothing_on_disk_has_no_folder()
+    {
+        Assert.Null(Assert.Single(Compose()).Folder);
+    }
+
+    [Fact]
     public void A_sample_found_in_Mashup_Samples_is_warped_and_finishes_the_track()
     {
         var row = Assert.Single(Compose(onDisk: Finished("Vocal - Full", "Instrumental - Full")));

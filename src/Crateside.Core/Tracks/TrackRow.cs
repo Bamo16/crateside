@@ -80,6 +80,16 @@ public sealed record TrackRow
     public bool IsHeld { get; init; }
 
     /// <summary>
+    /// The user has said this release has no vocals, which is what the recipe is derived from.
+    /// </summary>
+    /// <remarks>
+    /// Carried so the expanded row can draw the plan and offer the one control over it. False
+    /// means <em>not stated</em> rather than "it has vocals" — the two behave alike, because
+    /// crateside's policy for not-stated is to expect the usual pair (ADR 0004).
+    /// </remarks>
+    public bool IsInstrumentalRelease { get; init; }
+
+    /// <summary>
     /// Separated, with its stems parked in the unresolved-key root for want of a verdict good
     /// enough to tag with.
     /// </summary>
@@ -108,6 +118,16 @@ public sealed record TrackRow
     /// too small to build on (ADR 0004).
     /// </remarks>
     public bool HasWarpGuide { get; init; }
+
+    /// <summary>
+    /// The folder holding this track's files, or null when it has none on disk yet.
+    /// </summary>
+    /// <remarks>
+    /// Staging wins over wherever else the files have got to, because staging is where the work
+    /// that is left happens: the button exists to open the folder the user is about to drag out
+    /// of.
+    /// </remarks>
+    public string? Folder { get; init; }
 
     /// <summary>
     /// When this track's files arrived in <c>Sample Staging</c>, or null once none are left.
@@ -142,6 +162,28 @@ public sealed record TrackRow
             { GpuPosition: not null } => TrackState.JudgedInLine,
             _ => AtRest,
         };
+
+    /// <summary>
+    /// What separation will ask for, once it gets to this track.
+    /// </summary>
+    /// <remarks>
+    /// A plan and never a fact, which is why nothing records it: it is derived from
+    /// <see cref="IsInstrumentalRelease"/> the same way the work order derives it, so the row
+    /// draws what will actually run rather than a second opinion about it (ADR 0004).
+    /// </remarks>
+    public SeparationRecipe Recipe => SeparationRecipe.For(IsInstrumentalRelease);
+
+    /// <summary>
+    /// Whether the separation plan can still be changed, which is until separation starts.
+    /// </summary>
+    /// <remarks>
+    /// Read off what has already happened rather than off <see cref="State"/>, because a hold
+    /// outranks nearly everything below it: a track separated, parked and then held still reads
+    /// as <c>held</c>, and a plan stops being a plan the moment its stems exist.
+    /// </remarks>
+    public bool CanChangePlan =>
+        State is not (TrackState.Separating or TrackState.Staging or TrackState.Tagging)
+        && this is { IsParkedForKey: false, HasWarpGuide: false, Samples.Count: 0 };
 
     /// <summary>
     /// A finding worth flagging beside the song name, or null when there is nothing wrong.
@@ -239,6 +281,43 @@ public sealed record TrackRow
         };
 
     /// <summary>
+    /// The expanded row's sentence: what the verdict was, whether Ableton still agrees with it,
+    /// and how long the track has been sitting in staging.
+    /// </summary>
+    /// <remarks>
+    /// Beside <see cref="Next"/> and <see cref="ChipLabel"/> for the reason they are here at all:
+    /// it is copy derived from the same reading, and copy that can be edited apart from what it
+    /// describes drifts away from it.
+    /// </remarks>
+    public string Detail =>
+        string.Join(" ", new[] { Judgement, Disagreement, Since }.OfType<string>());
+
+    private string Judgement =>
+        this switch
+        {
+            { Verdict: null } => "Never judged.",
+            { Key: { } key } => $"Judged {key}, {Spoken(Confidence)} confidence.",
+            _ =>
+                $"Judged, and the verdict came back {Spoken(Confidence)} — no key worth tagging with.",
+        };
+
+    /// <summary>
+    /// Said only where a conflict was actually found.
+    /// </summary>
+    /// <remarks>
+    /// Silence here is not a claim that the tags are right. The Ableton tag store lags Ableton's
+    /// own index and keeps entries for files that have left, so the only reading worth repeating
+    /// is one that found a disagreement (ADR 0003).
+    /// </remarks>
+    private string? Disagreement =>
+        AuditNote is null ? null : "Ableton's key on these files is not the current verdict.";
+
+    private string? Since => StagedSince is { } staged ? $"Staged {staged.Humanize()}." : null;
+
+    private static string Spoken(KeyConfidence confidence) =>
+        confidence.Humanize(LetterCasing.LowerCase);
+
+    /// <summary>
     /// Every sample has left for <c>Mashup Samples</c>. The move is the signal — see
     /// <see cref="TrackSample.IsWarped"/>.
     /// </summary>
@@ -290,8 +369,19 @@ public sealed record TrackSample
     /// <summary>The StemForge preset, or <c>source</c> for a kept instrumental release.</summary>
     public required string Label { get; init; }
 
+    /// <summary>
+    /// The key Ableton holds on this file, or null when it holds none.
+    /// </summary>
+    /// <remarks>
+    /// Trustworthy only while the file is in <c>Sample Staging</c>: that is the one folder
+    /// crateside writes tags into and the one place its reading of them is a reading of Ableton
+    /// rather than of a stale store (ADR 0003). A sample that has reached <c>Mashup Samples</c>
+    /// carries null, which says nobody looked rather than that it is untagged.
+    /// </remarks>
+    public string? AbletonKey { get; init; }
+
     /// <summary>Whether Ableton has a key on the file.</summary>
-    public bool IsKeyTagged { get; init; }
+    public bool IsKeyTagged => AbletonKey is not null;
 
     /// <summary>
     /// Whether this sample has reached <c>Mashup Samples</c>, which is what says it is finished.

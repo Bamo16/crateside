@@ -79,16 +79,17 @@ public sealed record TracksView
         {
             Rows =
             [
-                .. view.Items.Select(item => Row(item.VideoId, item.PlaylistItemId, item.Title)),
+                .. view.Items.Select(item => Row(item.VideoId, item.Title, item)),
                 .. staging
                     .Where(song => song.SourceVideoId is { } id && !queued.Contains(id))
-                    .Select(song => Row(song.SourceVideoId!, null, song.DisplayName)),
+                    .Select(song => Row(song.SourceVideoId!, song.DisplayName)),
             ],
         };
 
-        TrackRow Row(string videoId, string? playlistItemId, string fallbackName)
+        TrackRow Row(string videoId, string fallbackName, QueueItem? item = null)
         {
             var song = staged.GetValueOrDefault(videoId);
+            var files = onDisk.GetValueOrDefault(videoId) ?? [];
             var progress = StageProgress.For(jobs, videoId);
 
             // Two hops, never a direct lookup: a video ID resolves to a song identity and the
@@ -99,22 +100,24 @@ public sealed record TracksView
             return new TrackRow
             {
                 VideoId = videoId,
-                PlaylistItemId = playlistItemId,
+                PlaylistItemId = item?.PlaylistItemId,
                 Title = NameOf(fallbackName, verdict, song),
                 Verdict = verdict,
                 IsHeld = held.Contains(videoId),
+                IsInstrumentalRelease = item?.IsInstrumentalRelease is true,
                 IsParkedForKey = parked.Contains(videoId),
                 GpuPosition = gpuLine.TryGetValue(videoId, out var position) ? position : null,
                 RunningStage = progress.Running,
                 RunningSince = progress.RunningSince,
                 GaveUpAt = progress.GaveUpAt,
                 GaveUpStrikes = progress.GaveUpStrikes,
-                Samples = SamplesOf(song, onDisk.GetValueOrDefault(videoId) ?? [], finishedRoot),
+                Samples = SamplesOf(song, files, finishedRoot),
                 HasWarpGuide = song?.WarpGuides.Count > 0,
                 // The only finding derivable from the board alone: Ableton holding a key that is
                 // not the ledger's current verdict, which is what a supersede leaves behind.
                 AuditNote = song?.StaleTaggedStems.Count > 0 ? "tag disagrees" : null,
-                StagedSince = StagedSinceOf(onDisk.GetValueOrDefault(videoId) ?? [], finishedRoot),
+                Folder = FolderOf(song, files),
+                StagedSince = StagedSinceOf(files, finishedRoot),
             };
         }
     }
@@ -154,7 +157,7 @@ public sealed record TracksView
             .. staged?.Samples.Select(sample => new TrackSample
             {
                 Label = sample.Label,
-                IsKeyTagged = sample.IsKeyTagged,
+                AbletonKey = sample.AbletonKey,
             }) ?? [],
             .. onDisk
                 .Where(file =>
@@ -165,13 +168,27 @@ public sealed record TracksView
                 {
                     Label = file.Preset ?? "source",
                     IsWarped = true,
-                    // IsKeyTagged is left at its default, and the omission is the point: crateside
+                    // AbletonKey is left null, and the omission is the point: crateside
                     // never writes tags in Mashup Samples, and that store is not a faithful mirror
                     // of what Ableton holds (ADR 0003), so nothing here has read this file's tag.
                     // Saying it is warped is the honest claim, and it is the one that matters —
                     // the move covers tagging along with everything else.
                 }),
         ];
+
+    /// <summary>
+    /// The folder the track's files are in: staging while anything is still there, else wherever
+    /// they have got to.
+    /// </summary>
+    /// <remarks>
+    /// Taken from a file rather than assembled from a root and a name, because the layout under a
+    /// root belongs to whoever put the files there and a rebuilt path would be a second opinion
+    /// about it.
+    /// </remarks>
+    private static string? FolderOf(StagingSong? staged, IReadOnlyList<StemOnDisk> onDisk) =>
+        (staged?.Stems.FirstOrDefault()?.Path ?? onDisk.FirstOrDefault()?.Path) is { } path
+            ? Path.GetDirectoryName(path)
+            : null;
 
     /// <summary>
     /// When the track arrived in staging: the earliest of the files still there.

@@ -298,6 +298,7 @@
 .row {
     height: 46px;
     border-top: 1px solid var(--line);
+    cursor: pointer;
 }
 
 /* The warping view is the one the user lives in, so it gets room. */
@@ -305,7 +306,8 @@
     height: 52px;
 }
 
-.row:hover {
+.row:hover,
+.row.open {
     background: rgba(255, 255, 255, 0.025);
 }
 
@@ -481,5 +483,188 @@
 }
 
 .notice.error {
+    color: var(--red);
+}
+
+/* ── the expanded row ──────────────────────────────────────────────────────────────────────── */
+
+/* Indented past the chevron and into the song column, so the panel reads as belonging to the row
+   above it rather than as another row. */
+.panel {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 32px;
+    padding: 6px 22px 20px 60px;
+}
+
+.panel-head {
+    margin-bottom: 8px;
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.stem {
+    display: grid;
+    grid-template-columns: 1fr 110px 110px 1fr;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 4px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+}
+
+/* Dashed, unfilled and dimmed, so it cannot be read as one of the samples. A warp guide is used
+   up rather than kept, and a line drawn like the others would put a file in the library that is
+   never going to be there. */
+.stem.guide {
+    background: transparent;
+    border-style: dashed;
+    opacity: 0.55;
+}
+
+.stem.skipped {
+    background: transparent;
+    opacity: 0.45;
+    text-decoration: line-through;
+}
+
+.stem-label {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.kind {
+    margin-left: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-50);
+}
+
+.stem-tag,
+.stem-warp {
+    font-size: 12px;
+    color: var(--text-60);
+}
+
+.stem-tag.good,
+.stem-warp.good {
+    color: var(--green);
+}
+
+.stem-tag.bad {
+    color: var(--red);
+}
+
+.stem-tag.dim {
+    color: var(--text-30);
+}
+
+.stem-note {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--text-50);
+}
+
+/* The one control over what gets separated, and it is only here while it still means anything. */
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: fit-content;
+    margin-top: 16px;
+    cursor: pointer;
+}
+
+.toggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.switch {
+    position: relative;
+    flex: none;
+    width: 34px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 10px;
+}
+
+.switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: var(--text-50);
+    border-radius: 50%;
+    transition:
+        transform 150ms ease,
+        background 150ms ease;
+}
+
+.toggle input:checked + .switch {
+    background: var(--amber);
+}
+
+.toggle input:checked + .switch::after {
+    background: var(--ink);
+    transform: translateX(14px);
+}
+
+.toggle-label {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.toggle-hint {
+    font-size: 12px;
+    color: var(--text-50);
+}
+
+.side {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 22px;
+}
+
+.detail {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-75);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Filled, because releasing a hold is the one thing on this panel the user came to do. */
+.primary {
+    flex: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--text);
+    border: 0;
+    border-radius: 6px;
+    padding: 7px 12px;
+    cursor: pointer;
+}
+
+.problem {
+    margin: 0;
+    font-size: 12px;
     color: var(--red);
 }
