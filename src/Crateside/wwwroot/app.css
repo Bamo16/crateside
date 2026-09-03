@@ -37,6 +37,7 @@
     --text-60: rgba(236, 231, 220, 0.6);
     --text-50: rgba(236, 231, 220, 0.5);
     --text-40: rgba(236, 231, 220, 0.4);
+    --text-35: rgba(236, 231, 220, 0.35);
     --text-30: rgba(236, 231, 220, 0.3);
 
     /* Two weights of divider: rows are quieter than the frozen header's edges. */

@@ -91,6 +91,7 @@ public sealed record TracksView
                 IsParkedForKey = parked.Contains(item.VideoId),
                 GpuPosition = gpuLine.TryGetValue(item.VideoId, out var position) ? position : null,
                 RunningStage = progress.Running,
+                RunningSince = progress.RunningSince,
                 GaveUpAt = progress.GaveUpAt,
                 GaveUpStrikes = progress.GaveUpStrikes,
                 Samples = SamplesOf(
@@ -99,6 +100,9 @@ public sealed record TracksView
                     finishedRoot
                 ),
                 HasWarpGuide = song?.WarpGuides.Count > 0,
+                // The only finding derivable from the board alone: Ableton holding a key that is
+                // not the ledger's current verdict, which is what a supersede leaves behind.
+                AuditNote = song?.StaleTaggedStems.Count > 0 ? "tag disagrees" : null,
                 StagedSince = StagedSinceOf(
                     onDisk.GetValueOrDefault(item.VideoId) ?? [],
                     finishedRoot

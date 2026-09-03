@@ -13,6 +13,16 @@ public sealed record StageProgress
     /// <summary>The stage crateside believes has this track in flight, if any.</summary>
     public JobStage? Running { get; init; }
 
+    /// <summary>
+    /// When that stage last said anything, which is when it started.
+    /// </summary>
+    /// <remarks>
+    /// The job store records <c>Running</c> once and then nothing until the work ends, so for an
+    /// open job its last update <em>is</em> its start. That is what "4:12 elapsed" counts from —
+    /// honest for separation, which reports nothing at all until it finishes.
+    /// </remarks>
+    public DateTimeOffset? RunningSince { get; init; }
+
     /// <summary>The stage that ran out of strikes, if one has.</summary>
     public JobStage? GaveUpAt { get; init; }
 
@@ -22,6 +32,7 @@ public sealed record StageProgress
     public static StageProgress For(JobStore jobs, string videoId)
     {
         JobStage? running = null;
+        DateTimeOffset? runningSince = null;
         JobStage? gaveUpAt = null;
         var gaveUpStrikes = 0;
 
@@ -31,7 +42,10 @@ public sealed record StageProgress
                 continue;
 
             if (job.Status is JobStatus.Running)
+            {
                 running = stage;
+                runningSince = job.UpdatedAt;
+            }
 
             // Cancelled is not counted, whatever the strikes say: every selector reads it as
             // "eligible again", so a track put back in line by hand has not given up.
@@ -48,6 +62,7 @@ public sealed record StageProgress
         return new StageProgress
         {
             Running = running,
+            RunningSince = runningSince,
             GaveUpAt = gaveUpAt,
             GaveUpStrikes = gaveUpStrikes,
         };

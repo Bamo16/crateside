@@ -1,0 +1,305 @@
+@page "/tracks"
+@layout Crateside.Components.Layout.BareLayout
+@rendermode InteractiveServer
+@implements IDisposable
+
+@using Crateside.Core.Ledger
+@using Crateside.Core.Orchestration
+@using Crateside.Core.Quota
+@using Crateside.Core.Tracks
+@using Humanizer
+
+@inject TracksService Source
+@inject DrainControl Separation
+@inject VerdictControl Judging
+@inject QuotaReader Quota
+
+<PageTitle>Tracks</PageTitle>
+
+<div class="tracks">
+    <header class="frozen">
+        <div class="cell brand-cell">
+            <span class="brand">crateside</span>
+            <nav>
+                <a class="tab active" href="tracks">Tracks</a>
+                <a class="tab" href="partners">Partners</a>
+            </nav>
+        </div>
+
+        <div class="cell activity">
+            <div class="label-row">
+                <span class="label">Separation</span>
+                <span class="mono waiting">@Waiting(TrackState.JudgedInLine) waiting</span>
+            </div>
+            @{
+                var separating = RowIn(TrackState.Separating);
+            }
+            <div class="activity-line">
+                <span class="dot @(separating is null ? "idle" : "teal")"></span>
+                <span class="subject">@(separating?.Title ?? "idle")</span>
+                @if (separating?.RunningSince is { } since)
+                {
+                    <span class="mono elapsed">@Elapsed(since) elapsed</span>
+                }
+            </div>
+            <div class="bar">
+                @if (separating is not null)
+                {
+                    <div class="sweep"></div>
+                }
+            </div>
+        </div>
+
+        <div class="cell activity">
+            <div class="label-row">
+                <span class="label">Judging</span>
+                <span class="mono waiting">@Waiting(TrackState.Queued) waiting</span>
+            </div>
+            @{
+                var judging = RowIn(TrackState.Judging);
+            }
+            <div class="activity-line">
+                <span class="dot @(Judging.IsPaused ? "amber" : judging is null ? "idle" : "teal")"></span>
+                <span class="subject">@(judging?.Title ?? (Judging.IsPaused ? "paused" : "idle"))</span>
+                @if (judging?.RunningSince is { } judgingSince)
+                {
+                    <span class="mono elapsed">@Elapsed(judgingSince) elapsed</span>
+                }
+                <button class="outline" @onclick="ToggleJudging">
+                    @(Judging.IsPaused ? "Resume" : "Pause")
+                </button>
+            </div>
+            <div class="bar">
+                @if (judging is not null)
+                {
+                    <div class="sweep"></div>
+                }
+            </div>
+        </div>
+
+        <div class="cell quota">
+            <div class="label-row">
+                <span class="label">Claude quota</span>
+                @if (_quota.ResetsAt is { } resets)
+                {
+                    <span class="mono waiting">resets @resets.ToLocalTime().ToString("h:mm tt").ToLowerInvariant()</span>
+                }
+            </div>
+            <div class="quota-figure">
+                <span class="mono percent">@(_quota.Utilization is { } used ? $"{used:N0}%" : "—")</span>
+                <span class="of">of this 5-hour window</span>
+            </div>
+            <div class="bar">
+                <div class="fill" style="width: @($"{Math.Clamp(_quota.Utilization ?? 0, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="filters">
+        @foreach (var filter in Enum.GetValues<TrackFilter>())
+        {
+            <button class="pill @(filter == _filter ? "on " + Tone(filter) : "off")"
+                    @onclick="() => _filter = filter">
+                @Name(filter)
+                <span class="mono count @Tone(filter)">@Rows.Count(filter)</span>
+            </button>
+        }
+        <span class="status">
+            @if (_view?.ReadAt is { } read)
+            {
+                <text>playlist synced @read.Humanize()</text>
+            }
+        </span>
+    </div>
+
+    <div class="heads">
+        <span></span>
+        <span>Song</span>
+        <span>Key</span>
+        <span>Confidence</span>
+        <span class="right">BPM</span>
+        <span>State</span>
+        <span>@(_filter is TrackFilter.InStaging ? "Since" : "Next")</span>
+    </div>
+
+    @if (_view is null)
+    {
+        <p class="notice">Reading the queue…</p>
+    }
+    else if (Source.LastError is { } error)
+    {
+        <p class="notice error">The playlist could not be read: @error</p>
+    }
+    else if (!Shown.Any())
+    {
+        <p class="notice">Nothing in this view.</p>
+    }
+    else
+    {
+        @foreach (var row in Shown)
+        {
+            <div class="row @(_filter is TrackFilter.InStaging ? "roomy" : null)">
+                <span class="chevron mono">›</span>
+
+                <span class="song">
+                    @row.Title
+                    @if (row.AuditNote is { } note)
+                    {
+                        <span class="flag">@note</span>
+                    }
+                </span>
+
+                <span class="mono key @(row.Key is null ? "none" : null)">@(Spell(row.Key) ?? "—")</span>
+
+                <span class="mono conf @ConfidenceTone(row.Confidence)">@Confidence(row.Confidence)</span>
+
+                <span class="mono bpm right @(row.State is TrackState.ReadyToWarp ? "ready" : null) @(row.Bpm is null ? "none" : null)">
+                    @(row.Bpm is { } bpm ? bpm.ToString("N0") : "—")
+                </span>
+
+                <span>
+                    <span class="chip @ChipClass(row.ChipStyle)">
+                        @if (row.ChipHasDot)
+                        {
+                            <span class="chip-dot"></span>
+                        }
+                        @row.ChipLabel
+                    </span>
+                </span>
+
+                <span class="next @NextTone(row)">
+                    @if (_filter is TrackFilter.InStaging)
+                    {
+                        @(row.StagedSince is { } staged ? $"staged {staged.Humanize()}" : "—")
+                    }
+                    else
+                    {
+                        @row.Next
+                    }
+                </span>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private TracksView? _view;
+    private TrackFilter _filter = TrackFilter.All;
+    private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
+
+    private IReadOnlyList<TrackRow> Rows => _view?.Rows ?? [];
+
+    private IEnumerable<TrackRow> Shown => Rows.Where(row => row.Matches(_filter));
+
+    protected override async Task OnInitializedAsync()
+    {
+        Source.Changed += OnChanged;
+        Separation.Changed += OnChanged;
+        Judging.Changed += OnChanged;
+
+        if (Source.Current is null)
+            await Source.RefreshAsync();
+
+        _view = Source.Current;
+        _quota = await Quota.ReadAsync();
+    }
+
+    public void Dispose()
+    {
+        Source.Changed -= OnChanged;
+        Separation.Changed -= OnChanged;
+        Judging.Changed -= OnChanged;
+    }
+
+    // The events are raised on a background worker's thread, never the circuit's, so the render
+    // has to be marshalled back. Same discipline the queue page has always used for DrainControl.
+    private void OnChanged()
+    {
+        _view = Source.Current;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleJudging()
+    {
+        if (Judging.IsPaused)
+            Judging.Resume();
+        else
+            Judging.Pause();
+    }
+
+    private TrackRow? RowIn(TrackState state) => Rows.FirstOrDefault(row => row.State == state);
+
+    // Both counts are exact rather than approximate: the GPU line is every track that has been
+    // judged and is waiting, and the judging line is every track with no verdict yet.
+    private int Waiting(TrackState state) => Rows.Count(row => row.State == state);
+
+    // Counted from when the stage recorded Running, which for an open job is when it started:
+    // nothing reports progress in between, separation least of all.
+    private static string Elapsed(DateTimeOffset since)
+    {
+        var span = DateTimeOffset.UtcNow - since;
+
+        return span.TotalHours >= 1
+            ? $"{(int)span.TotalHours}:{span.Minutes:00}:{span.Seconds:00}"
+            : $"{(int)span.TotalMinutes}:{span.Seconds:00}";
+    }
+
+    private static string Name(TrackFilter filter) =>
+        filter switch
+        {
+            TrackFilter.InStaging => "In staging",
+            TrackFilter.InFlight => "In flight",
+            TrackFilter.NeedsAttention => "Needs attention",
+            _ => filter.ToString(),
+        };
+
+    // Only three things are coloured, and only where the colour means something: amber is the
+    // user's turn, teal is the machine working, red needs attention.
+    private static string Tone(TrackFilter filter) =>
+        filter switch
+        {
+            TrackFilter.InStaging => "amber",
+            TrackFilter.InFlight => "teal",
+            TrackFilter.NeedsAttention => "red",
+            _ => "plain",
+        };
+
+    private static string ChipClass(TrackChipStyle style) =>
+        style switch
+        {
+            TrackChipStyle.TealFilled => "teal-filled",
+            TrackChipStyle.TealOutline => "teal-outline",
+            TrackChipStyle.AmberFilled => "amber-filled",
+            TrackChipStyle.RedOutline => "red-outline",
+            TrackChipStyle.RedFilled => "red-filled",
+            TrackChipStyle.GreenOutline => "green-outline",
+            TrackChipStyle.DashedOutline => "dashed-outline",
+            _ => "neutral-outline",
+        };
+
+    private static string NextTone(TrackRow row) =>
+        row.State switch
+        {
+            TrackState.ReadyToWarp => "amber",
+            TrackState.Parked or TrackState.GaveUp => "attention",
+            _ => string.Empty,
+        };
+
+    private static string Confidence(KeyConfidence confidence) =>
+        confidence is KeyConfidence.Unknown ? "—" : confidence.ToString().ToUpperInvariant();
+
+    private static string ConfidenceTone(KeyConfidence confidence) =>
+        confidence switch
+        {
+            KeyConfidence.High => "high",
+            KeyConfidence.Medium => "medium",
+            KeyConfidence.Low or KeyConfidence.Withheld => "weak",
+            _ => "none",
+        };
+
+    // The ledger spells keys in ASCII so they survive a filename; the screen is not a filename.
+    private static string? Spell(string? key) =>
+        key?.Replace("#", "♯", StringComparison.Ordinal)
+            .Replace(" major", " maj", StringComparison.Ordinal)
+            .Replace(" minor", " min", StringComparison.Ordinal);
+}

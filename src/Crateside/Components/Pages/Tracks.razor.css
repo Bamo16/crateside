@@ -1,0 +1,485 @@
+/* One page, one list, one row per track. The row never moves: state is a column rather than an
+   address, which is the whole argument for replacing the sections this page came from. */
+
+/* Cancels the body gutter so the frozen header can reach both edges. Temporary: the layout keeps
+   its padding for the pages that still expect it, and this comes out when they are retired. */
+.tracks {
+    margin: -2rem calc(-1 * clamp(1rem, 4vw, 3rem));
+}
+
+/* Every number, key, timestamp and count. They are read as values and compared down a column,
+   which proportional digits defeat — a BPM of 111 and one of 128 should be the same width. */
+.mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── the frozen header ─────────────────────────────────────────────────────────────────────── */
+
+/* Modelled on a notification shade: glanceable, and never scrolled away from. What is running is
+   something the user did not start and cannot otherwise see. */
+.frozen {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: 200px 1fr 1fr 300px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line-strong);
+}
+
+.cell + .cell {
+    border-left: 1px solid var(--line-strong);
+}
+
+.brand-cell {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 18px 22px;
+}
+
+.brand {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.brand-cell nav {
+    display: flex;
+    gap: 14px;
+}
+
+.tab {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-50);
+    text-decoration: none;
+    padding-bottom: 3px;
+    border-bottom: 2px solid transparent;
+}
+
+.tab.active {
+    color: var(--text);
+    border-bottom-color: var(--amber);
+}
+
+.activity,
+.quota {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 22px;
+}
+
+.label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-50);
+}
+
+.waiting {
+    font-size: 11px;
+    color: var(--text-50);
+}
+
+.activity-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dot {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-30);
+}
+
+.dot.teal {
+    background: var(--teal);
+}
+
+.dot.amber {
+    background: var(--amber);
+}
+
+.subject {
+    flex: 1;
+    min-width: 0;
+    font-size: 16px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.elapsed {
+    flex: none;
+    font-size: 13px;
+    color: var(--text-60);
+}
+
+.outline {
+    flex: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.outline:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* 3px because it is a status line rather than a control: present enough to read at a glance from
+   across the room, quiet enough not to compete with the track name above it. */
+.bar {
+    position: relative;
+    height: 3px;
+    overflow: hidden;
+    background: var(--line-strong);
+}
+
+/* Deliberately indeterminate. The separator emits nothing at all until it finishes, so a bar that
+   claimed a percentage would be inventing one. It becomes real when StemForge#84 lands, and the
+   element stays put until then. */
+.sweep {
+    position: absolute;
+    inset: 0;
+    width: 30%;
+    background: linear-gradient(90deg, transparent, var(--teal), transparent);
+    animation: sweep 2.4s linear infinite;
+}
+
+@keyframes sweep {
+    from {
+        transform: translateX(-40%);
+    }
+    to {
+        transform: translateX(140%);
+    }
+}
+
+.quota-figure {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.percent {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.of {
+    font-size: 13px;
+    color: var(--text-60);
+}
+
+.fill {
+    height: 100%;
+    background: var(--text);
+}
+
+/* ── filters ───────────────────────────────────────────────────────────────────────────────── */
+
+.filters {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--line);
+}
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
+.pill.off {
+    color: var(--text-75);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pill.on {
+    border: 1px solid transparent;
+    color: var(--ink);
+}
+
+.pill.on.amber {
+    background: var(--amber);
+}
+
+.pill.on.red {
+    background: var(--red);
+}
+
+.pill.on.teal,
+.pill.on.plain {
+    background: var(--text);
+}
+
+.count {
+    font-size: 11px;
+}
+
+/* The count keeps its meaning-colour only while the pill is not filled; on a filled pill it would
+   be colour on colour and unreadable. */
+.pill.off .count.amber {
+    color: var(--amber);
+}
+
+.pill.off .count.teal {
+    color: var(--teal);
+}
+
+.pill.off .count.red {
+    color: var(--red);
+}
+
+.pill.off .count.plain {
+    color: var(--text-60);
+}
+
+.pill.on .count {
+    color: var(--ink);
+    opacity: 0.65;
+}
+
+.status {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-40);
+}
+
+/* ── the list ──────────────────────────────────────────────────────────────────────────────── */
+
+.heads,
+.row {
+    display: grid;
+    grid-template-columns: 24px 1fr 90px 100px 80px 190px 1fr;
+    gap: 14px;
+    align-items: center;
+    padding: 0 22px;
+}
+
+.heads {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.row {
+    height: 46px;
+    border-top: 1px solid var(--line);
+}
+
+/* The warping view is the one the user lives in, so it gets room. */
+.row.roomy {
+    height: 52px;
+}
+
+.row:hover {
+    background: rgba(255, 255, 255, 0.025);
+}
+
+.chevron {
+    font-size: 12px;
+    color: var(--text-35);
+}
+
+.song {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.row.roomy .song {
+    font-size: 15px;
+}
+
+.flag {
+    flex: none;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--red);
+    border: 1px solid rgba(224, 122, 109, 0.5);
+    border-radius: 4px;
+    padding: 1px 6px;
+}
+
+.key {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.row.roomy .key {
+    font-size: 14px;
+}
+
+.key.none,
+.bpm.none {
+    color: var(--text-30);
+}
+
+.conf {
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+}
+
+.conf.high {
+    color: var(--text-60);
+}
+
+.conf.medium {
+    color: var(--text);
+}
+
+.conf.weak {
+    color: var(--red);
+}
+
+.conf.none {
+    color: var(--text-30);
+}
+
+/* The one number needed mid-warp, and the reason this page exists in the shape it does. Amber
+   when it is the user's turn, because that is the moment they are reading it for. */
+.bpm {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.row.roomy .bpm {
+    font-size: 16px;
+}
+
+.bpm.ready {
+    color: var(--amber);
+}
+
+.right {
+    text-align: right;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 999px;
+    padding: 4px 10px;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.chip.neutral-outline {
+    color: var(--text-75);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+.chip.teal-filled {
+    color: var(--teal);
+    background: rgba(111, 199, 214, 0.14);
+    border-color: rgba(111, 199, 214, 0.3);
+}
+
+.chip.teal-outline {
+    color: var(--teal);
+    border-color: rgba(111, 199, 214, 0.3);
+}
+
+.chip.amber-filled {
+    color: var(--amber);
+    background: rgba(232, 180, 90, 0.16);
+    border-color: rgba(232, 180, 90, 0.35);
+}
+
+.chip.red-outline {
+    color: var(--red);
+    border-color: rgba(224, 122, 109, 0.45);
+}
+
+.chip.red-filled {
+    color: var(--red);
+    background: rgba(224, 122, 109, 0.18);
+    border-color: rgba(224, 122, 109, 0.45);
+}
+
+.chip.green-outline {
+    color: var(--green);
+    border-color: rgba(127, 207, 154, 0.3);
+}
+
+/* Dashed, because a hold is a deliberate absence rather than a state something put it in. */
+.chip.dashed-outline {
+    color: var(--text-75);
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.next {
+    font-size: 13px;
+    color: var(--text-60);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.next.amber {
+    color: var(--amber);
+}
+
+.next.attention {
+    color: var(--text);
+}
+
+.notice {
+    padding: 22px;
+    font-size: 13px;
+    color: var(--text-60);
+}
+
+.notice.error {
+    color: var(--red);
+}

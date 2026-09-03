@@ -55,6 +55,9 @@ public sealed record TrackRow
     /// </remarks>
     public JobStage? RunningStage { get; init; }
 
+    /// <summary>When <see cref="RunningStage"/> started, for the header's elapsed clock.</summary>
+    public DateTimeOffset? RunningSince { get; init; }
+
     /// <summary>The stage that ran out of strikes, if one has.</summary>
     /// <remarks>
     /// Reduced in one place so that <em>every</em> stage is checked. The queue page assembled this
@@ -131,6 +134,78 @@ public sealed record TrackRow
             { GpuPosition: not null } => TrackState.JudgedInLine,
             _ => AtRest,
         };
+
+    /// <summary>
+    /// A finding worth flagging beside the song name, or null when there is nothing wrong.
+    /// </summary>
+    /// <remarks>
+    /// Currently only the one the staging board can see on its own: Ableton holding a key that is
+    /// not the ledger's current verdict, which is what a supersede leaves behind. The tag is what
+    /// pairing actually uses, so a stale one silently misroutes mashups.
+    /// </remarks>
+    public string? AuditNote { get; init; }
+
+    /// <summary>
+    /// What the state chip reads.
+    /// </summary>
+    /// <remarks>
+    /// Here rather than in the page, beside <see cref="Next"/> and derived from the same
+    /// <see cref="State"/>, because those two are the copy table and it only stays honest while
+    /// they cannot be edited apart.
+    /// </remarks>
+    public string ChipLabel =>
+        State switch
+        {
+            TrackState.Queued => "queued",
+            TrackState.Detecting => "detecting key",
+            TrackState.Judging => "judging",
+            TrackState.JudgedInLine => "judged · in line",
+            TrackState.Separating => "separating",
+            TrackState.Staging => "staging",
+            TrackState.Tagging => "tagging",
+            TrackState.ReadyToWarp => "ready to warp",
+            TrackState.Parked => "parked · no key",
+            TrackState.GaveUp =>
+                $"gave up · {GaveUpAt?.ToString().ToLowerInvariant()} ×{GaveUpStrikes}",
+            TrackState.Held => "held",
+            TrackState.Done => "done",
+            _ => string.Empty,
+        };
+
+    /// <summary>
+    /// How the chip is drawn.
+    /// </summary>
+    /// <remarks>
+    /// Teal is the machine working, amber is the user's turn, red needs attention, green is done
+    /// and behind them. Nothing else is coloured — a palette that means something stops meaning it
+    /// the moment a fifth colour appears for decoration.
+    /// </remarks>
+    public TrackChipStyle ChipStyle =>
+        State switch
+        {
+            TrackState.Detecting
+            or TrackState.Judging
+            or TrackState.Separating
+            or TrackState.Staging
+            or TrackState.Tagging => TrackChipStyle.TealFilled,
+            TrackState.JudgedInLine => TrackChipStyle.TealOutline,
+            TrackState.ReadyToWarp => TrackChipStyle.AmberFilled,
+            TrackState.Parked => TrackChipStyle.RedOutline,
+            TrackState.GaveUp => TrackChipStyle.RedFilled,
+            TrackState.Held => TrackChipStyle.DashedOutline,
+            TrackState.Done => TrackChipStyle.GreenOutline,
+            _ => TrackChipStyle.NeutralOutline,
+        };
+
+    /// <summary>
+    /// Whether the chip carries a dot — the mark of work happening right now.
+    /// </summary>
+    /// <remarks>
+    /// Exactly the filled teal states, which are the ones where a process is running this second.
+    /// Waiting in line for the GPU is teal but not filled and takes no dot: nothing is happening
+    /// to that track yet.
+    /// </remarks>
+    public bool ChipHasDot => ChipStyle is TrackChipStyle.TealFilled;
 
     /// <summary>
     /// What happens next, in plain English — or what is waiting on the user.
