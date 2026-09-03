@@ -2,6 +2,7 @@ using Crateside.Core;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Queue;
+using Crateside.Core.Quota;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
 using Microsoft.AspNetCore.DataProtection;
@@ -253,6 +254,19 @@ public static class ServiceRegistration
     /// </remarks>
     public static IServiceCollection AddCratesideTracks(this IServiceCollection services)
     {
+        // A typed client, which is a named one keyed by the type: it gets a pooled handler that
+        // rotates rather than a socket held for the life of the app, and a timeout short enough
+        // that an unreachable meter never holds up a render. QuotaReader sets its own
+        // authorization and beta headers, because the token is read at the moment of the call and
+        // the beta opt-in is part of the API contract rather than of transport.
+        services
+            .AddHttpClient<QuotaReader>(client =>
+            {
+                client.BaseAddress = new Uri("https://api.anthropic.com");
+                client.Timeout = TimeSpan.FromSeconds(5);
+            })
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5));
+
         services.AddSingleton(sp => new TracksService(
             async cancellationToken =>
             {
