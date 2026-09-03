@@ -209,6 +209,28 @@ is the number; `five_hour.resets_at` says when it stops mattering. Verified work
 **The token is a live credential.** Read it at the moment of the call, never log it, never put
 it in an error message shown in the UI, and never send it anywhere but Anthropic.
 
+### A third sample, and why it is an upper bound — 2026-09-03
+
+Twelve tracks judged in a single run, reported by the user from the meter: **17% → 81%**. Sixty-
+four points over twelve tracks is **5.3% a track** — the largest single sample so far, and it
+lands on the second batch's 5.4% rather than the first's 6.4–6.6%.
+
+**It is confounded, and the main error has a known direction.** A Claude Code session was working
+in this repository throughout, on the same account and therefore inside the same five-hour
+window. Whatever that session spent is inside those sixty-four points. So 5.3% is an **upper
+bound** on what a verdict costs and not an estimate of one; the true figure is lower by however
+much the session used, which was not measured.
+
+A second and smaller unknown pushes the other way: the window rolls, so usage from before the 17%
+reading may have aged out mid-run, which would make the delta understate what was actually spent.
+Neither effect was quantified, and the two do not cancel in any principled way.
+
+**Kept anyway, because the agreement is the useful part.** Three samples, taken on three days, two
+of them confounded differently, all landing between 5.3% and 6.6%. That is a stable enough shape
+to keep planning against **15–18 tracks a window**. What it is not is a figure to optimise
+against — the clean version of this measurement is a batch judged with nothing else running on the
+account, and that is what a future pass at reducing token usage should start by taking.
+
 There is a robust alternative worth knowing, because it needs no credential and cannot break:
 every verdict run already returns exact `modelUsage` and `total_cost_usd` in its result JSON, so
 crateside can account for its own spend precisely. What that cannot know is the denominator, or

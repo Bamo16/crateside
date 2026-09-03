@@ -99,6 +99,16 @@ public sealed record TrackRow
     public bool HasWarpGuide { get; init; }
 
     /// <summary>
+    /// When this track's files arrived in <c>Sample Staging</c>, or null once none are left.
+    /// </summary>
+    /// <remarks>
+    /// A track rests here for weeks, so how long is the one thing about it worth saying. Read from
+    /// the file rather than recorded by crateside, which is what lets it answer for tracks that
+    /// were already staged before anything thought to write it down (ADR 0008).
+    /// </remarks>
+    public DateTimeOffset? StagedSince { get; init; }
+
+    /// <summary>
     /// Where the track has got to.
     /// </summary>
     /// <remarks>

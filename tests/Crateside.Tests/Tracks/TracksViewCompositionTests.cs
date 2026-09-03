@@ -100,6 +100,15 @@ public class TracksViewCompositionTests : IDisposable
             ],
         };
 
+    private static StemOnDisk Found(string preset, string root, DateTimeOffset? created = null) =>
+        new()
+        {
+            Path = Path.Combine(root, $"track ({preset}).flac"),
+            Root = root,
+            Preset = preset,
+            CreatedAt = created,
+        };
+
     private static QueueItem Item(string videoId = Video) =>
         new()
         {
@@ -306,5 +315,44 @@ public class TracksViewCompositionTests : IDisposable
         Assert.Equal(JobStage.Tagging, row.GaveUpAt);
         Assert.Equal(TaggingSelector.DefaultMaxStrikes, row.GaveUpStrikes);
         Assert.Equal(TrackState.GaveUp, row.State);
+    }
+
+    [Fact]
+    public void A_staged_track_is_dated_by_when_the_earliest_of_its_files_arrived()
+    {
+        // "Staged three weeks ago" is the one thing on the In staging view that is about time,
+        // and a track can sit there for weeks. Handoff moves the files together, so the earliest
+        // is when the track arrived.
+        var arrived = new DateTimeOffset(2026, 8, 12, 9, 0, 0, TimeSpan.Zero);
+
+        var row = Assert.Single(
+            Compose(
+                onDisk: new Dictionary<string, IReadOnlyList<StemOnDisk>>(StringComparer.Ordinal)
+                {
+                    [Video] =
+                    [
+                        Found("Vocal - Full", StagingRoot, arrived.AddMinutes(4)),
+                        Found("Instrumental - Full", StagingRoot, arrived),
+                    ],
+                }
+            )
+        );
+
+        Assert.Equal(arrived, row.StagedSince);
+    }
+
+    [Fact]
+    public void A_track_whose_files_have_all_left_is_no_longer_staged_since_anything()
+    {
+        var row = Assert.Single(
+            Compose(
+                onDisk: new Dictionary<string, IReadOnlyList<StemOnDisk>>(StringComparer.Ordinal)
+                {
+                    [Video] = [Found("Vocal - Full", FinishedRoot, DateTimeOffset.UtcNow)],
+                }
+            )
+        );
+
+        Assert.Null(row.StagedSince);
     }
 }

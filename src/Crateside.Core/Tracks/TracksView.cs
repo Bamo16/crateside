@@ -99,6 +99,10 @@ public sealed record TracksView
                     finishedRoot
                 ),
                 HasWarpGuide = song?.WarpGuides.Count > 0,
+                StagedSince = StagedSinceOf(
+                    onDisk.GetValueOrDefault(item.VideoId) ?? [],
+                    finishedRoot
+                ),
             };
         }
     }
@@ -139,6 +143,28 @@ public sealed record TracksView
                     // the move covers tagging along with everything else.
                 }),
         ];
+
+    /// <summary>
+    /// When the track arrived in staging: the earliest of the files still there.
+    /// </summary>
+    /// <remarks>
+    /// Earliest because handoff moves a track's files together, so the oldest of them is when the
+    /// track landed. Files that have reached the finished root are excluded — they are no longer
+    /// staged, and a track with none left is not staged since anything.
+    /// </remarks>
+    private static DateTimeOffset? StagedSinceOf(
+        IReadOnlyList<StemOnDisk> onDisk,
+        string finishedRoot
+    ) =>
+        onDisk
+            .Where(file => !file.Root.Equals(finishedRoot, StringComparison.OrdinalIgnoreCase))
+            .Select(file => file.CreatedAt)
+            .OfType<DateTimeOffset>()
+            .DefaultIfEmpty()
+            .Min()
+            is { Ticks: > 0 } earliest
+            ? earliest
+            : null;
 
     private static HashSet<string> VideoIdsOf(IEnumerable<QueueItem> items) =>
         items.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);

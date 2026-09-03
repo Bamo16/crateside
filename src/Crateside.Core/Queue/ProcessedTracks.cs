@@ -50,6 +50,27 @@ public sealed class ProcessedTracks
     public bool IsFullyProcessed(string videoId) => FullyProcessed.Contains(videoId);
 
     /// <summary>
+    /// When a file arrived, or null where the filesystem will not say.
+    /// </summary>
+    /// <remarks>
+    /// Null rather than a sentinel: Windows returns 1601-01-01 when it has no answer, and a date
+    /// four centuries ago rendered as "staged 425 years ago" is worse than an absent one.
+    /// </remarks>
+    private static DateTimeOffset? CreationTimeOf(string path)
+    {
+        try
+        {
+            var created = File.GetCreationTimeUtc(path);
+
+            return created.Year > 1601 ? new DateTimeOffset(created, TimeSpan.Zero) : null;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Scans every stem root for provenance and pairs it against the ledger.
     /// </summary>
     /// <param name="stemRoots">
@@ -85,6 +106,7 @@ public sealed class ProcessedTracks
                         Path = path,
                         Root = root,
                         Preset = p.Preset,
+                        CreatedAt = CreationTimeOf(path),
                     }
                 );
             }
@@ -126,4 +148,16 @@ public sealed record StemOnDisk
     /// download, which is how an instrumental release's kept sample reads.
     /// </summary>
     public string? Preset { get; init; }
+
+    /// <summary>
+    /// When the file appeared in <see cref="Root"/>, which is when it arrived rather than when it
+    /// was made.
+    /// </summary>
+    /// <remarks>
+    /// Measured 2026-09-02 on three samples the user had just moved: their creation time in
+    /// <c>Mashup Samples</c> was <em>later</em> than their last-write time, so a move between
+    /// these roots copies and deletes rather than renaming, and creation time marks arrival in the
+    /// folder. That is what makes it usable for "staged three weeks ago" (ADR 0008).
+    /// </remarks>
+    public DateTimeOffset? CreatedAt { get; init; }
 }
