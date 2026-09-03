@@ -47,6 +47,23 @@ PowerShell's default agent it returns TTF, which is several times the size for n
 header comment back on `fonts.css` afterwards — the script above writes only the `@font-face`
 blocks.
 
+## The sharp and flat signs fall back, on purpose
+
+Keys are spelled with **♯** (U+266F) and **♭** (U+266D), matching Ableton's own tag vocabulary.
+Neither codepoint is in the `latin` or `latin-ext` subsets, so the browser renders those two glyphs
+from a system font rather than from Plex Mono.
+
+IBM Plex Mono **does** contain them — Google will describe a two-glyph subset if asked with
+`&text=♯♭` — but the `fonts.gstatic.com/l/font?kit=…` URL it hands back returns **400** when
+fetched outside the browser request that produced it, with or without a browser user agent. The
+remaining way to get them is the full face from the `@ibm/plex` package, which is about 100 KB per
+weight for two characters.
+
+Left as a fallback because the cost is smaller than it first looks: the Key column is left-aligned
+text, so a glyph of a slightly different width shifts nothing. Tabular alignment only matters in
+the BPM column, which is digits, and those come from the subsets that are loaded. If the mismatch
+ever looks wrong on screen, the fix is the full face rather than another attempt at the subsetter.
+
 ## Weights
 
 400, 500 and 600, for both families. The design uses no others: 600 for the brand and for BPM,

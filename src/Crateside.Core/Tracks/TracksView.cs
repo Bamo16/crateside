@@ -76,17 +76,17 @@ public sealed record TracksView
         {
             var song = staged.GetValueOrDefault(item.VideoId);
 
+            // Two hops, never a direct lookup: a video ID resolves to a song identity and the
+            // identity resolves to the latest run, which is what makes a supersede win rather than
+            // the line that happened to name this URL.
+            var verdict = ledger.TryGetLatestByVideoId(item.VideoId, out var run) ? run : null;
+
             return new TrackRow
             {
                 VideoId = item.VideoId,
                 PlaylistItemId = item.PlaylistItemId,
-                Title = item.Title,
-                // Two hops, never a direct lookup: a video ID resolves to a song identity and the
-                // identity resolves to the latest run, which is what makes a supersede win rather
-                // than the line that happened to name this URL.
-                Verdict = ledger.TryGetLatestByVideoId(item.VideoId, out var verdict)
-                    ? verdict
-                    : null,
+                Title = NameOf(item, verdict, song),
+                Verdict = verdict,
                 IsHeld = held.Contains(item.VideoId),
                 IsParkedForKey = parked.Contains(item.VideoId),
                 GpuPosition = gpuLine.TryGetValue(item.VideoId, out var position) ? position : null,
@@ -110,6 +110,23 @@ public sealed record TracksView
             };
         }
     }
+
+    /// <summary>
+    /// What to call the track: the ledger's identity, then the board's, then the playlist's.
+    /// </summary>
+    /// <remarks>
+    /// <strong>The playlist title is the worst of the three and is the fallback for that reason.</strong>
+    /// It is whatever the uploader named the video, which routinely omits the artist — a row
+    /// reading "99th Street" where the library holds "Starjunk 95 - 99th Street" is the same
+    /// track under a name the user cannot search for. The ledger records artist and title
+    /// separately and properly cased, which is what makes it the better source; its <c>Song</c>
+    /// field is not used here because that is the normalized lowercase identity, built for
+    /// matching rather than for reading.
+    /// </remarks>
+    private static string NameOf(QueueItem item, LedgerRun? verdict, StagingSong? staged) =>
+        verdict is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title }
+            ? $"{artist} - {title}"
+            : staged?.DisplayName ?? item.Title;
 
     /// <summary>
     /// A track's kept files, from wherever they currently are.

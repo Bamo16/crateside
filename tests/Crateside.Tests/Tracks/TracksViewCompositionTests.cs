@@ -57,6 +57,8 @@ public class TracksViewCompositionTests : IDisposable
                 {
                     timestamp = "2026-08-01T00:00:00+00:00",
                     song = "rob dougan - furious angels",
+                    artist = "Rob Dougan",
+                    title = "Furious Angels",
                     source_url = $"https://www.youtube.com/watch?v={Video}",
                     verdict = new { key, confidence },
                     bpm = new { value = bpm },
@@ -206,6 +208,32 @@ public class TracksViewCompositionTests : IDisposable
         Assert.Equal(2, rows[1].GpuPosition);
         Assert.Equal("next on the GPU", rows[0].Next);
         Assert.Equal("2nd for the GPU", rows[1].Next);
+    }
+
+    [Fact]
+    public void The_ledger_names_the_track_where_the_playlist_only_titles_it()
+    {
+        // YouTube titles routinely omit the artist: the playlist says "99th Street" where the
+        // library holds "Starjunk 95 - 99th Street", which is the same track under a name the user
+        // cannot search for. The ledger keeps artist and title apart and properly cased.
+        var row = Assert.Single(
+            Compose(
+                view: View([Item() with { Title = "Furious Angels (Official Video)" }]),
+                ledger: LedgerWith("C minor", "HIGH", bpm: 128)
+            )
+        );
+
+        Assert.Equal("Rob Dougan - Furious Angels", row.Title);
+    }
+
+    [Fact]
+    public void An_unjudged_track_keeps_the_only_name_anything_knows()
+    {
+        // Nothing has run for it, so there is no identity yet and the playlist title is not a
+        // fallback so much as the only fact available.
+        var row = Assert.Single(Compose(view: View([Item() with { Title = "some upload" }])));
+
+        Assert.Equal("some upload", row.Title);
     }
 
     [Fact]
