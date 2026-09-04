@@ -1,12 +1,6 @@
 /* One page, one list, one row per track. The row never moves: state is a column rather than an
    address, which is the whole argument for replacing the sections this page came from. */
 
-/* Cancels the body gutter so the frozen header can reach both edges. Temporary: the layout keeps
-   its padding for the pages that still expect it, and this comes out when they are retired. */
-.tracks {
-    margin: -2rem calc(-1 * clamp(1rem, 4vw, 3rem));
-}
-
 /* Every number, key, timestamp and count. They are read as values and compared down a column,
    which proportional digits defeat — a BPM of 111 and one of 128 should be the same width. */
 .mono {

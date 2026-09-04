@@ -1,54 +1,6 @@
-/* Tabs, not links. The views are peers you switch between, and hyperlink styling both
-   understated which one is current and implied navigating away somewhere. */
-.bench-nav {
-    display: flex;
-    align-items: stretch;
-    gap: 0.25rem;
-    margin-bottom: 1.75rem;
-    border-bottom: 1px solid var(--line);
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    padding: 0 1rem 0.6rem 0;
-    margin-right: 0.5rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    color: var(--muted);
-}
-
-/* ::deep throughout, because NavLink renders the anchor — without it the scope attribute lands
-   on the `a` itself, which never carries this file's scope, and every rule below silently
-   fails to match while .bench-nav and .brand above still apply. */
-.bench-nav ::deep a {
-    display: flex;
-    align-items: center;
-    padding: 0.5rem 1rem 0.6rem;
-    color: var(--muted);
-    text-decoration: none;
-    border: 1px solid transparent;
-    border-bottom: none;
-    border-radius: 6px 6px 0 0;
-    /* Sits on the container's rule so the current tab can cover it. */
-    margin-bottom: -1px;
-}
-
-.bench-nav ::deep a:hover {
-    color: var(--text);
-    background: var(--surface);
-}
-
-/* The current tab joins the page below it: lifted background, and the bottom rule cut away
-   so it reads as continuous with the content rather than as one more thing to click. */
-.bench-nav ::deep a.active {
-    color: var(--text);
-    font-weight: 600;
-    background: var(--bg);
-    border-color: var(--line);
-    border-bottom: 1px solid var(--bg);
-}
-
-.bench-nav ::deep a.active:hover {
-    background: var(--bg);
+/* All that is left of this layout. The gutter used to sit on <body>, which meant every page that
+   wanted to reach both edges had to cancel it with a negative margin; it belongs to the layout
+   that actually wants it. The pages that carry their own header do not use this one. */
+main {
+    padding: 2rem clamp(1rem, 4vw, 3rem);
 }

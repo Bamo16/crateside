@@ -69,7 +69,6 @@ html {
 
 body {
     margin: 0;
-    padding: 2rem clamp(1rem, 4vw, 3rem);
     background: var(--bg);
     color: var(--text);
     font-family: var(--font-sans);

@@ -1,12 +1,10 @@
 @inherits LayoutComponentBase
 
-<nav class="bench-nav">
-    <span class="brand">crateside</span>
-    <NavLink href="tracks">Tracks</NavLink>
-    <NavLink href="" Match="NavLinkMatch.All">Staging board</NavLink>
-    <NavLink href="partners">Partners</NavLink>
-    <NavLink href="queue">Queue</NavLink>
-</nav>
+@*
+    No tabs. Every page anyone navigates to carries the header from BrandNav now, and a second
+    set here would be the same three names on a different surface. What is left of this layout is
+    the gutter, for the two error pages that have nowhere else to be.
+*@
 
 <main>
     @Body
