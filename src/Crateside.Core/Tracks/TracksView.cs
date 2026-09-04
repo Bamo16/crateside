@@ -167,12 +167,13 @@ public sealed record TracksView
                 .Select(file => new TrackSample
                 {
                     Label = file.Preset ?? "source",
-                    IsWarped = true,
+                    IsInLibrary = true,
                     // AbletonKey is left null, and the omission is the point: crateside
                     // never writes tags in Mashup Samples, and that store is not a faithful mirror
                     // of what Ableton holds (ADR 0003), so nothing here has read this file's tag.
-                    // Saying it is warped is the honest claim, and it is the one that matters —
-                    // the move covers tagging along with everything else.
+                    // Which folder it is in is the honest claim, and it is the one that matters:
+                    // the move out of staging is the user finishing with the file, tagging and
+                    // warping and renaming together.
                 }),
         ];
 

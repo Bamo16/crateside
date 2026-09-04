@@ -120,9 +120,13 @@
 /* Deliberately indeterminate. The separator emits nothing at all until it finishes, so a bar that
    claimed a percentage would be inventing one. It becomes real when StemForge#84 lands, and the
    element stays put until then. */
+/* Animated on `left`, which is a percentage of the bar. It was a translateX, and translate
+   percentages are a proportion of the *element* — the sweep is 30% wide, so translateX(140%)
+   moved it 42% of the bar and it snapped back three-quarters of the way across. */
 .sweep {
     position: absolute;
-    inset: 0;
+    top: 0;
+    bottom: 0;
     width: 30%;
     background: linear-gradient(90deg, transparent, var(--teal), transparent);
     animation: sweep 2.4s linear infinite;
@@ -130,10 +134,10 @@
 
 @keyframes sweep {
     from {
-        transform: translateX(-40%);
+        left: -30%;
     }
     to {
-        transform: translateX(140%);
+        left: 100%;
     }
 }
 
@@ -231,10 +235,27 @@
     opacity: 0.65;
 }
 
+/* A button, but drawn as the status line it replaced: pressing it is a refinement of reading it,
+   not a separate control competing with the filter pills. */
 .status {
     margin-left: auto;
+    font: inherit;
     font-size: 12px;
     color: var(--text-40);
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+
+.status:hover:not(:disabled) {
+    color: var(--text-75);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.status:disabled {
+    cursor: default;
 }
 
 /* ── the list ──────────────────────────────────────────────────────────────────────────────── */
@@ -242,10 +263,17 @@
 .heads,
 .row {
     display: grid;
-    grid-template-columns: 24px 1fr 90px 100px 80px 190px 1fr;
+    grid-template-columns: 24px 1fr 90px 100px 80px 190px;
     gap: 14px;
     align-items: center;
     padding: 0 22px;
+}
+
+/* The warping view is the only one with a seventh column: how long a track has been sitting is
+   the one thing worth saying about a state a track rests in for weeks. */
+.heads.roomy,
+.row.roomy {
+    grid-template-columns: 24px 1fr 90px 100px 80px 190px 1fr;
 }
 
 .heads {
@@ -423,7 +451,7 @@
     border-color: rgba(255, 255, 255, 0.3);
 }
 
-.next {
+.since {
     font-size: 13px;
     color: var(--text-60);
     overflow: hidden;
@@ -431,11 +459,18 @@
     white-space: nowrap;
 }
 
-.next.amber {
+/* The sentence the Next column used to carry, now read on purpose rather than skimmed. */
+.what-next {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-60);
+}
+
+.what-next.amber {
     color: var(--amber);
 }
 
-.next.attention {
+.what-next.attention {
     color: var(--text);
 }
 
@@ -469,9 +504,10 @@
     color: var(--text-40);
 }
 
+.stem-heads,
 .stem {
     display: grid;
-    grid-template-columns: 1fr 110px 110px 1fr;
+    grid-template-columns: 1fr 120px 140px 1fr;
     gap: 14px;
     align-items: center;
     margin-bottom: 4px;
@@ -496,6 +532,18 @@
     text-decoration: line-through;
 }
 
+.stem-heads {
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 6px;
+    padding: 0 12px;
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
 .stem-label {
     font-size: 13px;
     font-weight: 500;
@@ -510,13 +558,13 @@
 }
 
 .stem-tag,
-.stem-warp {
+.stem-where {
     font-size: 12px;
     color: var(--text-60);
 }
 
 .stem-tag.good,
-.stem-warp.good {
+.stem-where.good {
     color: var(--green);
 }
 
@@ -608,8 +656,17 @@
 
 .actions {
     display: flex;
+    align-items: center;
     flex-wrap: wrap;
     gap: 8px;
+}
+
+/* The evidence link is an anchor because it navigates; it is drawn as a button because it sits in
+   a row of them and nothing about it is a different kind of act. */
+a.outline {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
 }
 
 /* Filled, because releasing a hold is the one thing on this panel the user came to do. */

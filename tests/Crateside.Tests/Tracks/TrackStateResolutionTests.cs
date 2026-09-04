@@ -24,12 +24,12 @@ public class TrackStateResolutionTests
             Title = "Track one",
         };
 
-    private static TrackSample Sample(string label, bool tagged = true, bool warped = false) =>
+    private static TrackSample Sample(string label, bool tagged = true, bool moved = false) =>
         new()
         {
             Label = label,
             AbletonKey = tagged ? "C minor" : null,
-            IsWarped = warped,
+            IsInLibrary = moved,
         };
 
     [Fact]
@@ -90,8 +90,8 @@ public class TrackStateResolutionTests
         {
             Samples =
             [
-                Sample("Vocal - Full", warped: true),
-                Sample("Instrumental - Full", warped: true),
+                Sample("Vocal - Full", moved: true),
+                Sample("Instrumental - Full", moved: true),
             ],
         };
 
@@ -120,7 +120,7 @@ public class TrackStateResolutionTests
         // empties staging progressively, so a half-moved track is still work in front of them.
         var row = Row() with
         {
-            Samples = [Sample("Vocal - Full", warped: true), Sample("Instrumental - Full")],
+            Samples = [Sample("Vocal - Full", moved: true), Sample("Instrumental - Full")],
         };
 
         Assert.Equal(TrackState.ReadyToWarp, row.State);
@@ -136,7 +136,7 @@ public class TrackStateResolutionTests
         {
             Samples =
             [
-                Sample("Vocal - Full", tagged: false, warped: true),
+                Sample("Vocal - Full", tagged: false, moved: true),
                 Sample("Instrumental - Full"),
             ],
         };

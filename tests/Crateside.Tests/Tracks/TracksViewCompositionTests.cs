@@ -310,7 +310,7 @@ public class TracksViewCompositionTests : IDisposable
             row.Samples,
             sample => sample is { Label: "Vocal - Full", IsKeyTagged: true }
         );
-        Assert.DoesNotContain(row.Samples, sample => sample.IsWarped);
+        Assert.DoesNotContain(row.Samples, sample => sample.IsInLibrary);
         Assert.Equal(TrackState.Tagging, row.State);
     }
 
@@ -327,7 +327,7 @@ public class TracksViewCompositionTests : IDisposable
         );
 
         Assert.Contains(row.Samples, sample => sample.AbletonKey is "C minor");
-        Assert.Contains(row.Samples, sample => sample is { AbletonKey: null, IsWarped: false });
+        Assert.Contains(row.Samples, sample => sample is { AbletonKey: null, IsInLibrary: false });
     }
 
     [Fact]
@@ -375,7 +375,7 @@ public class TracksViewCompositionTests : IDisposable
         var row = Assert.Single(Compose(onDisk: Finished("Vocal - Full", "Instrumental - Full")));
 
         Assert.Equal(2, row.Samples.Count);
-        Assert.All(row.Samples, sample => Assert.True(sample.IsWarped));
+        Assert.All(row.Samples, sample => Assert.True(sample.IsInLibrary));
         Assert.Equal(TrackState.Done, row.State);
     }
 

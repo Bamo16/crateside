@@ -319,9 +319,9 @@ public sealed record TrackRow
 
     /// <summary>
     /// Every sample has left for <c>Mashup Samples</c>. The move is the signal — see
-    /// <see cref="TrackSample.IsWarped"/>.
+    /// <see cref="TrackSample.IsInLibrary"/>.
     /// </summary>
-    private bool IsDone => Samples is { Count: > 0 } && Samples.All(s => s.IsWarped);
+    private bool IsDone => Samples is { Count: > 0 } && Samples.All(s => s.IsInLibrary);
 
     private static TrackState InFlight(JobStage stage) =>
         stage switch
@@ -343,7 +343,7 @@ public sealed record TrackRow
         {
             // A sample that has already moved is not waiting to be tagged: crateside never writes
             // tags in Mashup Samples, and the move covers tagging along with everything else.
-            { Count: > 0 } when Samples.All(s => s.IsWarped || s.IsKeyTagged) =>
+            { Count: > 0 } when Samples.All(s => s.IsInLibrary || s.IsKeyTagged) =>
                 TrackState.ReadyToWarp,
             { Count: > 0 } => TrackState.Tagging,
             _ => TrackState.Queued,
@@ -384,19 +384,26 @@ public sealed record TrackSample
     public bool IsKeyTagged => AbletonKey is not null;
 
     /// <summary>
-    /// Whether this sample has reached <c>Mashup Samples</c>, which is what says it is finished.
+    /// Whether this sample has reached <c>Mashup Samples</c> — the finished library.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Read from <em>where the file is</em>, never from an <c>.asd</c> sidecar. Ableton writes one
-    /// of those merely for having looked at a file — a single click to preview it is enough — so
-    /// its presence marks unfinished work as finished, which is why
-    /// <c>docs/adr/0002</c> deleted that reader rather than weakening it.
+    /// <strong>Named for what was measured, not for what it implies.</strong> This is the folder
+    /// the file is in and nothing else. crateside infers from that move that the user has warped
+    /// it (ADR 0007), and that inference is fine for deciding a track is done — but it is not
+    /// something to assert about a particular file on screen, because nobody here watched anyone
+    /// warp anything.
+    /// </para>
+    /// <para>
+    /// Read from where the file is, never from an <c>.asd</c> sidecar. Ableton writes one of those
+    /// merely for having looked at a file — a single click to preview it is enough — so its
+    /// presence marks unfinished work as finished, which is why <c>docs/adr/0002</c> deleted that
+    /// reader rather than weakening it.
     /// </para>
     /// <para>
     /// <strong>Per sample, not per track</strong>: the user empties staging progressively, so a
-    /// track can have its vocal warped and moved while its instrumental is still waiting.
+    /// track can have one file moved out while the rest are still waiting.
     /// </para>
     /// </remarks>
-    public bool IsWarped { get; init; }
+    public bool IsInLibrary { get; init; }
 }

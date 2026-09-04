@@ -32,7 +32,7 @@ public class TrackChipAndFilterTests
             TrackState.Held => Base with { IsHeld = true },
             TrackState.Done => Base with
             {
-                Samples = [new TrackSample { Label = "Vocal - Full", IsWarped = true }],
+                Samples = [new TrackSample { Label = "Vocal - Full", IsInLibrary = true }],
             },
             _ => Base,
         };

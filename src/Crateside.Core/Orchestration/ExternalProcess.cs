@@ -25,7 +25,7 @@ public static class ExternalProcess
         CancellationToken cancellationToken = default
     )
     {
-        var info = new ProcessStartInfo(executable)
+        var info = new ProcessStartInfo(executable, arguments)
         {
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -35,9 +35,6 @@ public static class ExternalProcess
             CreateNoWindow = true,
             WorkingDirectory = workingDirectory ?? string.Empty,
         };
-
-        foreach (var argument in arguments)
-            info.ArgumentList.Add(argument);
 
         using var process =
             Process.Start(info)

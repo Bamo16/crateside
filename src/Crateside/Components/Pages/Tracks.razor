@@ -106,22 +106,26 @@
                 <span class="mono count @Tone(filter)">@Rows.Count(filter)</span>
             </button>
         }
-        <span class="status">
-            @if (_view?.ReadAt is { } read)
-            {
-                <text>playlist synced @read.Humanize()</text>
-            }
-        </span>
+        @* The playlist read is cached for two minutes, so a track added on your phone shows up
+           within about that -- but nothing on this page redraws in the meantime, and there was no
+           way to say "go and look now". A list read costs one quota unit, the same as any cheaper
+           probe would, so this is simply that read. *@
+        <button class="status" @onclick="Resync" disabled="@_syncing">
+            @(_syncing ? "checking the playlist…" : Synced)
+        </button>
     </div>
 
-    <div class="heads">
+    <div class="heads @(_filter is TrackFilter.InStaging ? "roomy" : null)">
         <span></span>
         <span>Song</span>
         <span>Key</span>
         <span>Confidence</span>
         <span class="right">BPM</span>
         <span>State</span>
-        <span>@(_filter is TrackFilter.InStaging ? "Since" : "Next")</span>
+        @if (_filter is TrackFilter.InStaging)
+        {
+            <span>Since</span>
+        }
     </div>
 
     @if (_view is null)
@@ -173,16 +177,16 @@
                     </span>
                 </span>
 
-                <span class="next @NextTone(row)">
-                    @if (_filter is TrackFilter.InStaging)
-                    {
+                @* The chip already says what state the track is in, so a sentence repeating it in
+                   the next column was a column of noise. It moved into the expanded panel, where
+                   the few states that genuinely add something -- the GPU queue position, what to
+                   do about a track that gave up -- are read on purpose rather than skimmed. *@
+                @if (_filter is TrackFilter.InStaging)
+                {
+                    <span class="since">
                         @(row.StagedSince is { } staged ? $"staged {staged.Humanize()}" : "—")
-                    }
-                    else
-                    {
-                        @row.Next
-                    }
-                </span>
+                    </span>
+                }
             </div>
 
             @if (open)
@@ -195,6 +199,13 @@
                         <div class="stems">
                             <div class="panel-head">Will separate into</div>
 
+                            <div class="stem-heads">
+                                <span>Stem</span>
+                                <span>Status</span>
+                                <span></span>
+                                <span></span>
+                            </div>
+
                             @foreach (var preset in SeparationRecipe.Standard.Presets)
                             {
                                 var kept = row.Recipe.Presets.Contains(preset, StringComparer.Ordinal);
@@ -202,7 +213,7 @@
                                 <div class="stem @(kept ? null : "skipped")">
                                     <span class="stem-label mono">@preset</span>
                                     <span class="mono stem-tag">@(kept ? "not yet" : "skipped")</span>
-                                    <span class="mono stem-warp">@(kept ? "—" : null)</span>
+                                    <span></span>
                                     <span class="stem-note">
                                         @(kept ? null : "instrumental source — no vocal to lift")
                                     </span>
@@ -214,7 +225,7 @@
                                 <div class="stem">
                                     <span class="stem-label mono">source</span>
                                     <span class="mono stem-tag">not yet</span>
-                                    <span class="mono stem-warp">—</span>
+                                    <span></span>
                                     <span class="stem-note">the release itself, kept whole</span>
                                 </div>
                             }
@@ -226,7 +237,7 @@
                                         drums <span class="kind">warp guide</span>
                                     </span>
                                     <span class="mono stem-tag">not yet</span>
-                                    <span class="mono stem-warp"></span>
+                                    <span></span>
                                     <span class="stem-note">
                                         for placing markers; deleted after warping
                                     </span>
@@ -250,13 +261,24 @@
                         <div class="stems">
                             <div class="panel-head">@StemsHeading(row)</div>
 
+                            <div class="stem-heads">
+                                <span>Sample</span>
+                                <span>Ableton key</span>
+                                <span>Where it is</span>
+                                <span></span>
+                            </div>
+
+                            @* Where the file is, never whether it has been warped. The move out of
+                               staging is what crateside reads warping from (ADR 0007), and that is
+                               good enough to call a track done -- but nobody here watched anyone
+                               warp anything, so the row names the folder and stops. *@
                             @foreach (var sample in row.Samples)
                             {
                                 <div class="stem">
                                     <span class="stem-label">@sample.Label</span>
                                     <span class="mono stem-tag @TagTone(sample)">@Tag(sample)</span>
-                                    <span class="mono stem-warp @(sample.IsWarped ? "good" : null)">
-                                        @(sample.IsWarped ? "warped ✓" : "not yet")
+                                    <span class="mono stem-where @(sample.IsInLibrary ? "good" : null)">
+                                        @(sample.IsInLibrary ? "Mashup Samples" : "Sample Staging")
                                     </span>
                                     <span class="stem-note"></span>
                                 </div>
@@ -272,7 +294,7 @@
                                         Drums <span class="kind">warp guide</span>
                                     </span>
                                     <span class="mono stem-tag dim">—</span>
-                                    <span class="mono stem-warp"></span>
+                                    <span class="mono stem-where">Sample Staging</span>
                                     <span class="stem-note">
                                         for placing markers; deleted after warping
                                     </span>
@@ -282,12 +304,20 @@
                     }
 
                     <div class="side">
+                        <p class="what-next @NextTone(row)">@row.Next</p>
                         <p class="detail">@row.Detail</p>
 
                         <div class="actions">
                             @if (row.Folder is not null)
                             {
                                 <button class="outline" @onclick="() => OpenFolder(row)">Open folder</button>
+                            }
+                            @* The evidence page has existed all along and lost its only link when
+                               the staging board went. It is the whole of what was judged and why:
+                               the detectors, the candidates, the human sources. *@
+                            @if (row.Verdict is not null)
+                            {
+                                <a class="outline" href="@($"song/{row.VideoId}")">Why this key</a>
                             }
                             @if (row.GaveUpAt is not null)
                             {
@@ -355,6 +385,18 @@
     /// <summary>How long a toast stays up. Long enough to read and act on, short enough to ignore.</summary>
     private static readonly TimeSpan ToastLife = TimeSpan.FromSeconds(20);
 
+    /// <summary>
+    /// How often the page redraws itself for the clock rather than for a change.
+    /// </summary>
+    /// <remarks>
+    /// The elapsed counters and the synced line are read off <em>now</em>, and nothing publishes
+    /// the passing of time — so without this they froze at whatever they said when the last stage
+    /// change arrived, which is why judging always read "0:02 elapsed". One second, because that
+    /// is the granularity the elapsed clock is written in. The synced line deliberately is not,
+    /// and rounds to the minute.
+    /// </remarks>
+    private static readonly TimeSpan Tick = TimeSpan.FromSeconds(1);
+
     // One at a time, and by video ID rather than by index: the list is rebuilt on every change,
     // so a position would open whichever row happened to land there.
     private string? _expanded;
@@ -365,6 +407,9 @@
     private readonly List<TrackRow> _toasts = [];
 
     private readonly CancellationTokenSource _circuit = new();
+
+    private System.Threading.Timer? _clock;
+    private bool _syncing;
 
     private IReadOnlyList<TrackRow> Rows => _view?.Rows ?? [];
 
@@ -384,7 +429,61 @@
 
         _view = Source.Current;
         _quota = await Quota.ReadAsync();
+
+        _clock = new System.Threading.Timer(_ => Redraw(), null, Tick, Tick);
     }
+
+    private void Redraw()
+    {
+        if (_circuit.IsCancellationRequested)
+            return;
+
+        try
+        {
+            _ = InvokeAsync(StateHasChanged);
+        }
+        catch (ObjectDisposedException)
+        {
+            // The circuit went away between the check above and the call. Nothing to draw.
+        }
+    }
+
+    /// <summary>
+    /// Drops the cached playlist and reads it again — "go and look", rather than "show me what you
+    /// last saw".
+    /// </summary>
+    /// <remarks>
+    /// The invalidate is the point: the read is cached for two minutes, so pressing this straight
+    /// after adding a track on your phone would otherwise hand back the same list.
+    /// </remarks>
+    private async Task Resync()
+    {
+        _syncing = true;
+
+        try
+        {
+            Playlist.Invalidate();
+
+            await Source.RefreshAsync(_circuit.Token);
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+
+    /// <summary>
+    /// When the playlist was last read, to the minute.
+    /// </summary>
+    /// <remarks>
+    /// To the minute because it is the only thing here that would otherwise tick every second
+    /// without anything having happened, and a counter moving for its own sake reads as activity.
+    /// The elapsed clocks move by the second because something genuinely is.
+    /// </remarks>
+    private string Synced =>
+        _view?.ReadAt is not { } read ? "playlist not read yet"
+        : DateTimeOffset.UtcNow - read is { TotalMinutes: < 1 } ? "playlist synced just now"
+        : $"playlist synced {(DateTimeOffset.UtcNow - read).Humanize(minUnit: TimeUnit.Minute)} ago";
 
     public void Dispose()
     {
@@ -392,6 +491,8 @@
         Source.ReadyToWarp -= OnReadyToWarp;
         Separation.Changed -= OnChanged;
         Judging.Changed -= OnChanged;
+
+        _clock?.Dispose();
 
         _circuit.Cancel();
         _circuit.Dispose();
@@ -444,7 +545,7 @@
     // sample and no kind of stem at all (ADR 0004). The count is what is still in staging, since
     // the user empties it progressively and may already have moved some of them.
     private static string Waiting(TrackRow row) =>
-        $"{"sample".ToQuantity(row.Samples.Count(sample => !sample.IsWarped))} in Sample Staging, key-tagged.";
+        $"{"sample".ToQuantity(row.Samples.Count(sample => !sample.IsInLibrary))} in Sample Staging, key-tagged.";
 
     // The events are raised on a background worker's thread, never the circuit's, so the render
     // has to be marshalled back. Same discipline the queue page has always used for DrainControl.
@@ -550,18 +651,18 @@
         sample switch
         {
             { AbletonKey: { } key } => $"{Spell(key)} ✓",
-            { IsWarped: true } => "—",
+            { IsInLibrary: true } => "—",
             _ => "not tagged",
         };
 
-    // A sample that has moved is dim rather than red. Nothing here read its tag — crateside does
+    // A sample that has left staging is dim rather than red. Nothing here read its tag — crateside does
     // not write tags outside Sample Staging and does not trust the store elsewhere (ADR 0003) — so
     // "not tagged" would be a claim, and the honest mark is no claim at all.
     private static string TagTone(TrackSample sample) =>
         sample switch
         {
             { IsKeyTagged: true } => "good",
-            { IsWarped: true } => "dim",
+            { IsInLibrary: true } => "dim",
             _ => "bad",
         };
 
