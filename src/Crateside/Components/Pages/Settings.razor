@@ -1,0 +1,253 @@
+@page "/settings"
+@layout Crateside.Components.Layout.BareLayout
+@rendermode InteractiveServer
+
+@using Crateside.Core.Queue
+@using Humanizer
+
+@inject QueueService Playlist
+
+<PageTitle>Settings</PageTitle>
+
+<div class="settings">
+    @* Its own page rather than a corner of the Tracks list. Everything here is set once and then
+       left alone for weeks, which is the opposite of what that page is for. *@
+    <header class="top">
+        <BrandNav Active="BrandNav.Tab.Settings" />
+    </header>
+
+    <div class="body">
+        <section>
+            <h2>Playlist</h2>
+            <p class="detail">
+                The queue crateside works from. Paste the playlist's URL or just its ID.
+            </p>
+
+            <div class="field">
+                <input type="text" placeholder="Playlist ID, or the playlist URL"
+                       @bind="_playlist" @bind:event="oninput" />
+                <button class="primary" @onclick="Save" disabled="@(!HasPendingChange)">Save</button>
+            </div>
+
+            @if (_playlistProblem is { } problem)
+            {
+                <p class="problem">@problem</p>
+            }
+            else if (Playlist.PlaylistId is { Length: > 0 } current)
+            {
+                <a class="out" href="@($"https://www.youtube.com/playlist?list={current}")"
+                   target="_blank" rel="noopener">Open on YouTube</a>
+            }
+        </section>
+
+        @if (!Playlist.HasCredential)
+        {
+            @* The one thing this page cannot set: it is a secret, and secrets stay out of the app. *@
+            <section>
+                <h2>API key</h2>
+                <p class="detail">
+                    Reading the playlist needs one. Set it once from the repo root, then restart:
+                </p>
+                <pre><code>dotnet user-secrets set "Queue:ApiKey" "&lt;key&gt;" --project src\Crateside\Crateside.csproj</code></pre>
+                <p class="detail">
+                    A read-only key restricted to the YouTube Data API is enough. See
+                    <code>docs/secrets.md</code>.
+                </p>
+            </section>
+        }
+
+        <section>
+            <h2>Removing from the playlist</h2>
+
+            @if (!Playlist.CanAuthorize)
+            {
+                <p class="detail">
+                    Removing needs the user's consent, which an API key cannot give. Create a
+                    <em>Desktop app</em> OAuth client, then:
+                </p>
+                <pre><code>dotnet user-secrets set "Queue:ClientId" "&lt;id&gt;" --project src\Crateside\Crateside.csproj
+dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crateside\Crateside.csproj</code></pre>
+            }
+            else if (!Playlist.IsAuthorized)
+            {
+                <p class="detail">
+                    Opens a browser. The write token lapses about weekly, so expect to do this
+                    again — reading never stops working in the meantime.
+                </p>
+                <button class="primary" @onclick="Consent" disabled="@_working">
+                    @(_working ? "Waiting for consent…" : "Grant access to remove items")
+                </button>
+            }
+            else
+            {
+                @* Consent grants one channel and a Google account can own several. Deleting from a
+                   playlist owned by a different one fails as a bare 403, so say which. *@
+                <p class="detail">
+                    Authorized as <strong>@(_channel ?? "…")</strong>. Removal only works if that
+                    channel owns the playlist.
+                </p>
+
+                @if (_processed is { } processed)
+                {
+                    <p class="detail">
+                        @("track".ToQuantity(processed)) here @(processed is 1 ? "has" : "have") a
+                        verdict and stems on disk. Removing them leaves their stems exactly where
+                        they are — a track's files sit in Sample Staging long after it has left the
+                        playlist.
+                    </p>
+                }
+
+                <div class="actions">
+                    @if (_confirming)
+                    {
+                        <button class="danger" @onclick="RemoveProcessed" disabled="@_working">
+                            @(_working ? "Removing…" : "Yes, remove them")
+                        </button>
+                        <button class="outline" @onclick="() => _confirming = false" disabled="@_working">
+                            Cancel
+                        </button>
+                        <span class="detail">Re-checked at the moment of removal, not from this page.</span>
+                    }
+                    else
+                    {
+                        <button class="outline" @onclick="() => _confirming = true"
+                                disabled="@(_processed is null or 0)">
+                            Remove processed tracks
+                        </button>
+                        <button class="outline" @onclick="SignOut">Forget access</button>
+                    }
+                </div>
+            }
+
+            @if (_error is { } error)
+            {
+                <p class="problem">@error</p>
+            }
+
+            @if (_removals is { Count: > 0 })
+            {
+                <p class="detail">
+                    Removed @_removals.Count(result => result.Removed) of @_removals.Count.
+                </p>
+
+                @foreach (var failed in _removals.Where(result => !result.Removed))
+                {
+                    <p class="problem">@failed.Title — @failed.Reason</p>
+                }
+            }
+        </section>
+    </div>
+</div>
+
+@code {
+    private string _playlist = string.Empty;
+    private string? _playlistProblem;
+
+    private string? _channel;
+    private int? _processed;
+    private bool _confirming;
+    private bool _working;
+    private string? _error;
+    private IReadOnlyList<RemovalResult>? _removals;
+
+    private bool HasPendingChange =>
+        PlaylistReference.TryParse(_playlist, out var parsed) && parsed != Playlist.PlaylistId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _playlist = Playlist.PlaylistId ?? string.Empty;
+
+        await Load();
+    }
+
+    private async Task Save()
+    {
+        _playlistProblem = PlaylistReference.Problem(_playlist);
+
+        if (_playlistProblem is not null)
+            return;
+
+        Playlist.SetPlaylist(_playlist);
+        _playlist = Playlist.PlaylistId ?? string.Empty;
+
+        await Load();
+    }
+
+    private async Task Consent()
+    {
+        _working = true;
+        _error = null;
+
+        try
+        {
+            await Playlist.ConsentAsync();
+        }
+        catch (Exception e)
+        {
+            _error = $"Consent did not complete: {e.Message}";
+        }
+        finally
+        {
+            _working = false;
+        }
+
+        await Load();
+    }
+
+    private async Task SignOut()
+    {
+        await Playlist.SignOutAsync();
+
+        _confirming = false;
+        _channel = null;
+    }
+
+    private async Task RemoveProcessed()
+    {
+        _working = true;
+        _error = null;
+
+        try
+        {
+            _removals = await Playlist.RemoveProcessedAsync();
+            _confirming = false;
+
+            await Load();
+        }
+        catch (QueueUnavailableException e)
+        {
+            _error = e.Message;
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    /// <summary>
+    /// Reads enough to say what removal would do, and stops being interesting after that.
+    /// </summary>
+    /// <remarks>
+    /// The count is a preview and nothing else: <see cref="QueueService.RemoveProcessedAsync"/>
+    /// derives the set again at the moment of removal, so a stale page can never delete something
+    /// that has since stopped qualifying.
+    /// </remarks>
+    private async Task Load()
+    {
+        if (!Playlist.IsConfigured)
+            return;
+
+        try
+        {
+            _processed = (await Playlist.ReadAsync()).FullyProcessed.Count;
+
+            if (Playlist.IsAuthorized)
+                _channel = await Playlist.GetAuthorizedChannelAsync();
+        }
+        catch (QueueUnavailableException e)
+        {
+            _processed = null;
+            _error = e.Message;
+        }
+    }
+}

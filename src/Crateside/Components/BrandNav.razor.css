@@ -1,0 +1,31 @@
+.brand-cell {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 18px 22px;
+}
+
+.brand {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+nav {
+    display: flex;
+    gap: 14px;
+}
+
+.tab {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-50);
+    text-decoration: none;
+    padding-bottom: 3px;
+    border-bottom: 2px solid transparent;
+}
+
+.tab.active {
+    color: var(--text);
+    border-bottom-color: var(--amber);
+}
