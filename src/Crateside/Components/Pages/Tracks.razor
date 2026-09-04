@@ -34,12 +34,15 @@
                 var separating = RowIn(TrackState.Separating);
             }
             <div class="activity-line">
-                <span class="dot @(separating is null ? "idle" : "teal")"></span>
-                <span class="subject">@(separating?.Title ?? "idle")</span>
+                <span class="dot @(Separation.IsPaused ? "amber" : separating is null ? "idle" : "teal")"></span>
+                <span class="subject">@(separating?.Title ?? (Separation.IsPaused ? "paused" : "idle"))</span>
                 @if (separating?.RunningSince is { } since)
                 {
                     <span class="mono elapsed">@Elapsed(since) elapsed</span>
                 }
+                <button class="outline" @onclick="ToggleSeparation">
+                    @(Separation.IsPaused ? "Resume" : "Pause")
+                </button>
             </div>
             <div class="bar">
                 @if (separating is not null)
@@ -561,6 +564,17 @@
             { IsWarped: true } => "dim",
             _ => "bad",
         };
+
+    // Two toggles rather than one, and they stop for different reasons. The GPU is audible and
+    // makes the machine unusable while it runs; a verdict spends ~5.4% of a five-hour quota window
+    // before it weighs anything. Sharing a button would mean stopping the GPU to save quota.
+    private void ToggleSeparation()
+    {
+        if (Separation.IsPaused)
+            Separation.Resume();
+        else
+            Separation.Pause();
+    }
 
     private void ToggleJudging()
     {
