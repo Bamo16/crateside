@@ -88,6 +88,24 @@ public sealed record RunEvidence
     /// </summary>
     public double? BeatdetectBpm { get; init; }
 
+    /// <summary>
+    /// How far off an exact tempo octave still counts as the same tempo, in log2 space.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Measured rather than chosen: beatdetect read 86.42 against Tunebat's 176 for
+    /// <c>thørns - honestly</c> on 2026-09-04 — a ratio of 0.491, which is 1.8% off exactly half
+    /// and plainly the same tempo counted at half speed. At the previous 0.02 that was a conflict.
+    /// </para>
+    /// <para>
+    /// In log2 rather than on the ratio, because a tolerance on the ratio means different things
+    /// at 2× and at ½× — ±0.05 there is ±2.5% doubling and ±10% halving. 0.05 in log2 is ±3.5%
+    /// either way, wide enough for a noisy beat tracker and nowhere near a genuine disagreement:
+    /// 120 against 140 sits at 0.22.
+    /// </para>
+    /// </remarks>
+    private const double OctaveTolerance = 0.05;
+
     /// <summary>True when the two BPM figures are not a clean tempo-octave apart.</summary>
     /// <remarks>
     /// A 2× difference is just a choice of tempo octave. Anything else means one of them is
@@ -97,7 +115,7 @@ public sealed record RunEvidence
         Bpm is { } bpm and > 0
         && BeatdetectBpm is { } rough and > 0
         && Math.Abs(bpm - rough) > 1
-        && Math.Abs(Math.Log2(rough / bpm) - Math.Round(Math.Log2(rough / bpm))) > 0.02;
+        && Math.Abs(Math.Log2(rough / bpm) - Math.Round(Math.Log2(rough / bpm))) > OctaveTolerance;
 
     /// <summary>
     /// The latest recorded run for a song identity, or null when the ledger has never seen it.
