@@ -293,7 +293,8 @@ public static class ServiceRegistration
                     ReadAt = scan.ReadAt,
                 };
             },
-            sp.GetRequiredService<StageHub>()
+            sp.GetRequiredService<StageHub>(),
+            freshness: () => sp.GetRequiredService<QueueSettingsStore>().Read().RefreshInterval
         ));
 
         return services;

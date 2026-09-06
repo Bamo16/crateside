@@ -55,7 +55,14 @@ public sealed class TracksService : IDisposable
     /// about the view being true, not about work starting.
     /// </para>
     /// </remarks>
-    private static readonly TimeSpan Freshness = TimeSpan.FromMinutes(5);
+    /// <summary>
+    /// How often the poll wakes to ask whether the rows have gone stale.
+    /// </summary>
+    /// <remarks>
+    /// A heartbeat rather than the interval itself, so changing the setting takes effect within a
+    /// minute instead of at the next restart. Waking to find nothing to do costs nothing.
+    /// </remarks>
+    private static readonly TimeSpan Heartbeat = TimeSpan.FromMinutes(1);
 
     /// <summary>
     /// Tracks already announced as ready to warp, so each is announced once.
@@ -68,6 +75,7 @@ public sealed class TracksService : IDisposable
     private readonly HashSet<string> _announced = new(StringComparer.Ordinal);
 
     private readonly ReadTracks _read;
+    private readonly Func<TimeSpan> _freshness;
     private readonly StageHub _hub;
     private readonly TimeProvider _time;
     private readonly ITimer _timer;
@@ -83,9 +91,21 @@ public sealed class TracksService : IDisposable
     /// </remarks>
     private bool _seeded;
 
-    public TracksService(ReadTracks read, StageHub hub, TimeProvider? time = null)
+    /// <param name="freshness">
+    /// How stale the rows may get with nothing announced — read on every beat rather than captured,
+    /// because it is a user setting and changing it should not need a restart. Zero turns the poll
+    /// off. A function rather than the settings store, so this still depends on <em>a read</em>
+    /// and not on the queue.
+    /// </param>
+    public TracksService(
+        ReadTracks read,
+        StageHub hub,
+        TimeProvider? time = null,
+        Func<TimeSpan>? freshness = null
+    )
     {
         _read = read;
+        _freshness = freshness ?? (() => TimeSpan.Zero);
         _hub = hub;
         _time = time ?? TimeProvider.System;
 
@@ -98,7 +118,7 @@ public sealed class TracksService : IDisposable
 
         // Its own timer rather than a shorter debounce: the debounce is about not paying twice for
         // one burst of announcements, and this is about the things that announce nothing at all.
-        _poll = _time.CreateTimer(_ => _ = EnsureFreshAsync(Freshness), null, Freshness, Freshness);
+        _poll = _time.CreateTimer(_ => _ = PollAsync(), null, Heartbeat, Heartbeat);
 
         _hub.Changed += OnStageChanged;
     }
@@ -207,6 +227,10 @@ public sealed class TracksService : IDisposable
         foreach (var row in fresh)
             ReadyToWarp?.Invoke(row);
     }
+
+    /// <summary>Rebuilds if the setting says the rows have gone stale, and does nothing if not.</summary>
+    private Task PollAsync() =>
+        _freshness() is { Ticks: > 0 } freshness ? EnsureFreshAsync(freshness) : Task.CompletedTask;
 
     /// <summary>Restarts the quiet period, so a burst of announcements costs one rebuild.</summary>
     private void OnStageChanged(StageChange change) =>

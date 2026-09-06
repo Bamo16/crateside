@@ -87,6 +87,13 @@ public sealed class QueueService(
     /// <summary>
     /// Tells crateside to leave a track alone — it drops out of the work list until released.
     /// </summary>
+    /// <summary>How often crateside looks at the playlist unprompted.</summary>
+    public int RefreshMinutes =>
+        settings.Read().RefreshMinutes ?? QueueSettings.DefaultRefreshMinutes;
+
+    /// <summary>Sets it. Zero turns it off.</summary>
+    public void SetRefreshMinutes(int minutes) => settings.SaveRefreshMinutes(minutes);
+
     public void Hold(string videoId, string? reason = null) => settings.Hold(videoId, reason);
 
     /// <summary>Puts a held track back into the work list.</summary>

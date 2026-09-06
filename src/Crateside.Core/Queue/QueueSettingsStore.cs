@@ -62,6 +62,7 @@ public sealed class QueueSettingsStore
             return _cached = new QueueSettings
             {
                 PlaylistId = stored?.PlaylistId ?? _fallback.PlaylistId,
+                RefreshMinutes = stored?.RefreshMinutes,
                 Tracks = TracksOf(stored),
             };
         }
@@ -75,6 +76,10 @@ public sealed class QueueSettingsStore
                 PlaylistId = PlaylistReference.TryParse(playlistId, out var parsed) ? parsed : null,
             }
         );
+
+    /// <summary>How often to look at the playlist unprompted. Null restores the default.</summary>
+    public QueueSettings SaveRefreshMinutes(int? minutes) =>
+        Save(current => current with { RefreshMinutes = minutes });
 
     /// <summary>
     /// Holds a track: crateside will not work it until it is released.
@@ -213,8 +218,36 @@ public sealed class QueueSettingsStore
 /// <summary>User-editable Queue settings. Contains no secrets.</summary>
 public sealed record QueueSettings
 {
+    /// <summary>What <see cref="RefreshMinutes"/> means when nobody has said.</summary>
+    public const int DefaultRefreshMinutes = 5;
+
     [JsonPropertyName("playlistId")]
     public string? PlaylistId { get; init; }
+
+    /// <summary>
+    /// How often to rebuild the rows with nothing having been announced, in minutes. Zero is
+    /// never; null is <see cref="QueueSettings.DefaultRefreshMinutes"/>.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>Because the two things that matter most move without saying so.</strong> The
+    /// playlist is added to from a phone, and <c>Sample Staging</c> is emptied in Ableton; neither
+    /// publishes anything crateside could subscribe to, so the only way either is noticed is to
+    /// look. How often to look is a preference, which is why it is here rather than a constant.
+    /// </para>
+    /// <para>
+    /// It is nearly free at any setting. The playlist read pages at fifty, the API's maximum, so
+    /// the whole list is one quota unit against a daily ten thousand — 288 a day at five minutes,
+    /// 48 at thirty. A <c>playlists.list</c> probe for <c>itemCount</c> costs the same one unit,
+    /// so gating the read behind one buys nothing until the playlist passes fifty items.
+    /// </para>
+    /// <para>
+    /// This is about the view being true, not about work starting: the stage workers read the
+    /// queue on their own two-minute idle loop whether or not anyone has a page open.
+    /// </para>
+    /// </remarks>
+    [JsonPropertyName("refreshMinutes")]
+    public int? RefreshMinutes { get; init; }
 
     /// <summary>Standing instructions about how to work particular tracks.</summary>
     [JsonPropertyName("tracks")]
@@ -223,6 +256,10 @@ public sealed record QueueSettings
     /// <summary>
     /// The previous shape, read once so existing holds survive and then never written again.
     /// </summary>
+    /// <summary>How long the rows may go unrebuilt. Zero means never.</summary>
+    public TimeSpan RefreshInterval =>
+        TimeSpan.FromMinutes(RefreshMinutes ?? DefaultRefreshMinutes);
+
     [JsonPropertyName("held")]
     public IReadOnlyList<HeldTrack>? Held { get; init; }
 }

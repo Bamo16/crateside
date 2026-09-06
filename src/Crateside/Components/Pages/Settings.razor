@@ -40,6 +40,31 @@
             }
         </section>
 
+        <section>
+            <h2>Looking for new tracks</h2>
+            <p class="detail">
+                The playlist is added to from other devices and <code>Sample Staging</code> is
+                emptied in Ableton. Neither tells crateside anything, so the only way either is
+                noticed is to look. This is how often the Tracks page looks; the stages read the
+                queue on their own two-minute loop regardless, so work starts either way.
+            </p>
+
+            <div class="field">
+                <select @bind="_refresh" @bind:after="SaveRefresh">
+                    @foreach (var minutes in RefreshChoices)
+                    {
+                        <option value="@minutes">@RefreshLabel(minutes)</option>
+                    }
+                </select>
+            </div>
+
+            <p class="detail">
+                Nearly free at any setting: the playlist read pages at fifty, the API's maximum, so
+                the whole list is one quota unit against a daily ten thousand — 288 a day at five
+                minutes, 48 at thirty.
+            </p>
+        </section>
+
         @if (!Playlist.HasCredential)
         {
             @* The one thing this page cannot set: it is a secret, and secrets stay out of the app. *@
@@ -140,6 +165,10 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 </div>
 
 @code {
+    /// <summary>The intervals worth offering. Never, then coarser as it gets less urgent.</summary>
+    private static readonly int[] RefreshChoices = [0, 1, 5, 15, 30, 60];
+
+    private int _refresh;
     private string _playlist = string.Empty;
     private string? _playlistProblem;
 
@@ -156,9 +185,22 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     protected override async Task OnInitializedAsync()
     {
         _playlist = Playlist.PlaylistId ?? string.Empty;
+        _refresh = Playlist.RefreshMinutes;
 
         await Load();
     }
+
+    // Takes effect on the next beat rather than at the next restart: the poll reads the setting
+    // each time it wakes rather than capturing it once.
+    private void SaveRefresh() => Playlist.SetRefreshMinutes(_refresh);
+
+    private static string RefreshLabel(int minutes) =>
+        minutes switch
+        {
+            0 => "Never — only when I ask",
+            1 => "Every minute",
+            _ => $"Every {minutes} minutes",
+        };
 
     private async Task Save()
     {
