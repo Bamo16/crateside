@@ -209,7 +209,7 @@ public sealed class TracksService : IDisposable
         // the only thing keeping an announcement from being made twice.
         lock (_announced)
         {
-            var ready = view.Rows.Where(row => row.State is TrackState.ReadyToWarp);
+            var ready = view.Rows.Where(row => row.State is TrackState.ReadyToWarp).ToList();
 
             if (!_seeded)
             {
@@ -220,6 +220,11 @@ public sealed class TracksService : IDisposable
 
                 return;
             }
+
+            // Forgotten the moment a track stops being ready, so coming back counts as
+            // arriving. A re-cut is exactly that: its staged files go, separation runs again, and
+            // the track becoming the user's turn a second time is news a second time.
+            _announced.IntersectWith(ready.Select(row => row.VideoId));
 
             fresh = [.. ready.Where(row => _announced.Add(row.VideoId))];
         }

@@ -171,6 +171,24 @@ public sealed record SeparationRecipe
     /// </remarks>
     public int ExpectedOutputs => Presets.Count + (ExtractDrums ? 1 : 0) + (KeepSource ? 1 : 0);
 
+    /// <summary>
+    /// How many passes the separator makes. A kept source is not one of them: it is copied.
+    /// </summary>
+    public int Passes => Presets.Count + (ExtractDrums ? 1 : 0);
+
+    /// <summary>
+    /// Roughly how long the GPU will be busy.
+    /// </summary>
+    /// <remarks>
+    /// <strong>A shape assumed, not measured.</strong> A straight line through the only two
+    /// separations anyone has timed — 2:50 for one pass and 5:59 for three — which puts about 75
+    /// seconds of fixed cost against 95 a pass. Two points cannot disagree with a straight line,
+    /// so this is good enough to say "about six minutes" before spending them and not good enough
+    /// to build anything on. Derived rather than written down as a number because the whole point
+    /// is that it changes with the recipe.
+    /// </remarks>
+    public TimeSpan Estimate => TimeSpan.FromSeconds(75 + (95 * Passes));
+
     /// <summary>The recipe a track's release calls for.</summary>
     public static SeparationRecipe For(QueueItem item) => For(item.IsInstrumentalRelease);
 

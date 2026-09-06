@@ -15,6 +15,7 @@
 @inject TracksService Source
 @inject QueueService Playlist
 @inject JobStore Jobs
+@inject StemRecut Recut
 @inject DrainControl Separation
 @inject VerdictControl Judging
 @inject QuotaReader Quota
@@ -247,19 +248,28 @@
                             @* The whole of the user's say in what gets separated, and the last
                                moment anyone can say it: the evidence run is unattended and the
                                verdict run is a headless session. *@
-                            <label class="toggle">
-                                <input type="checkbox" checked="@row.IsInstrumentalRelease"
-                                       @onchange="() => SetInstrumental(row)" />
-                                <span class="switch"></span>
-                                <span class="toggle-label">Instrumental source</span>
-                                <span class="toggle-hint">changeable until separation starts</span>
-                            </label>
+                            <div class="release">
+                                <span class="release-label">Release</span>
+                                <select value="@row.IsInstrumentalRelease"
+                                        @onchange="e => SetInstrumental(row, e)">
+                                    <option value="false">has vocals</option>
+                                    <option value="true">no vocals</option>
+                                </select>
+                                <span class="release-hint">the stems follow from this</span>
+                            </div>
                         </div>
                     }
                     else if (row.Samples.Count > 0 || row.HasWarpGuide)
                     {
+                        var pending = PendingFor(row);
+
                         <div class="stems">
-                            <div class="panel-head">@StemsHeading(row)</div>
+                            <div class="panel-head">
+                                @StemsHeading(row)@if (pending is not null)
+                                {
+                                    <span class="pending"> · re-cut pending</span>
+                                }
+                            </div>
 
                             <div class="stem-heads">
                                 <span>Sample</span>
@@ -274,13 +284,21 @@
                                warp anything, so the row names the folder and stops. *@
                             @foreach (var sample in row.Samples)
                             {
-                                <div class="stem">
+                                <div class="stem @(pending is null ? null : "going")">
                                     <span class="stem-label">@sample.Label</span>
                                     <span class="mono stem-tag @TagTone(sample)">@Tag(sample)</span>
-                                    <span class="mono stem-where @(sample.IsInLibrary ? "good" : null)">
-                                        @(sample.IsInLibrary ? "Mashup Samples" : "Sample Staging")
-                                    </span>
-                                    <span class="stem-note"></span>
+                                    @if (pending is null)
+                                    {
+                                        <span class="mono stem-where @(sample.IsInLibrary ? "good" : null)">
+                                            @(sample.IsInLibrary ? "Mashup Samples" : "Sample Staging")
+                                        </span>
+                                        <span class="stem-note"></span>
+                                    }
+                                    else
+                                    {
+                                        <span class="mono stem-where gone">removed</span>
+                                        <span class="stem-note">deleted from Sample Staging</span>
+                                    }
                                 </div>
                             }
 
@@ -294,16 +312,153 @@
                                         Drums <span class="kind">warp guide</span>
                                     </span>
                                     <span class="mono stem-tag dim">—</span>
-                                    <span class="mono stem-where">Sample Staging</span>
-                                    <span class="stem-note">
-                                        for placing markers; deleted after warping
+                                    @if (pending is null)
+                                    {
+                                        <span class="mono stem-where">Sample Staging</span>
+                                        <span class="stem-note">
+                                            for placing markers; deleted after warping
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="mono stem-where gone">removed</span>
+                                        <span class="stem-note">re-made below</span>
+                                    }
+                                </div>
+                            }
+
+                            @* What the new recipe would put there instead. Drawn from the recipe
+                               rather than from anything on disk, because none of it exists yet. *@
+                            @if (pending is { } plan)
+                            {
+                                var first = true;
+
+                                foreach (var preset in plan.Recipe.Presets)
+                                {
+                                    <div class="stem coming">
+                                        <span class="stem-label mono">@preset</span>
+                                        <span class="mono stem-tag">@(Spell(row.Key) ?? "—")</span>
+                                        <span class="mono stem-where new">new</span>
+                                        <span class="stem-note">
+                                            @(first ? "tagged from the existing verdict" : null)
+                                        </span>
+                                    </div>
+
+                                    first = false;
+                                }
+
+                                if (plan.Recipe.KeepSource)
+                                {
+                                    <div class="stem coming">
+                                        <span class="stem-label mono">source</span>
+                                        <span class="mono stem-tag">@(Spell(row.Key) ?? "—")</span>
+                                        <span class="mono stem-where new">new</span>
+                                        <span class="stem-note">the release itself, kept whole</span>
+                                    </div>
+                                }
+
+                                if (plan.Recipe.ExtractDrums)
+                                {
+                                    <div class="stem coming guide">
+                                        <span class="stem-label mono">
+                                            drums <span class="kind">warp guide</span>
+                                        </span>
+                                        <span class="mono stem-tag">@(Spell(row.Key) ?? "—")</span>
+                                        <span class="mono stem-where new">new</span>
+                                        <span class="stem-note">
+                                            for placing markers; deleted after warping
+                                        </span>
+                                    </div>
+                                }
+                            }
+
+                            @* Locked once anything has left for the library: crateside changes what
+                               is in staging and nothing else, and the way back in is the user's own
+                               drag. *@
+                            @if (row.Samples.Any(sample => sample.IsInLibrary))
+                            {
+                                <div class="release">
+                                    <span class="release-label">Release</span>
+                                    <span class="locked">@ReleaseWord(row.IsInstrumentalRelease)</span>
+                                    <span class="release-hint">
+                                        @("file".ToQuantity(row.Samples.Count(s => s.IsInLibrary)))
+                                        in Mashup Samples. Move them back to Sample Staging to
+                                        change this.
                                     </span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="release">
+                                    <span class="release-label">Release</span>
+                                    <select value="@(pending is null ? row.IsInstrumentalRelease : !row.IsInstrumentalRelease)"
+                                            class="@(pending is null ? null : "changed")"
+                                            @onchange="e => ProposeRecut(row, e)">
+                                        <option value="false">has vocals</option>
+                                        <option value="true">no vocals</option>
+                                    </select>
+                                    @if (pending is null)
+                                    {
+                                        <span class="release-hint">
+                                            the stems follow from this · changing it re-cuts
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="release-hint">
+                                            was <strong>@ReleaseWord(row.IsInstrumentalRelease)</strong>
+                                        </span>
+                                    }
                                 </div>
                             }
                         </div>
                     }
 
                     <div class="side">
+                        @if (PendingFor(row) is { } confirm)
+                        {
+                            <p class="warning">
+                                @if (confirm.Refusal is { } refusal)
+                                {
+                                    @refusal
+                                }
+                                else
+                                {
+                                    <text>
+                                        Re-cutting removes
+                                        @("file".ToQuantity(confirm.Removing.Count))
+                                        from Sample Staging.
+                                    </text>
+                                }
+                            </p>
+
+                            <p class="detail">
+                                Anything you have done to them in Ableton is lost.
+                                @if (row.Key is { } key)
+                                {
+                                    <text>The key stays @Spell(key) — </text>
+                                }
+                                detection does not run again, so no quota is spent. The downloaded
+                                audio is still on disk; nothing is re-downloaded. About
+                                @confirm.Recipe.Estimate.Humanize() on the GPU.
+                            </p>
+
+                            <div class="actions">
+                                @if (confirm.IsPossible)
+                                {
+                                    <button class="danger" @onclick="() => ConfirmRecut(row)" disabled="@_working">
+                                        @(_working
+                                            ? "Re-cutting…"
+                                            : $"Re-cut · remove {"file".ToQuantity(confirm.Removing.Count)}")
+                                    </button>
+                                }
+                                <button class="outline" @onclick="CancelRecut" disabled="@_working">
+                                    Keep as is
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
                         <p class="what-next @NextTone(row)">@row.Next</p>
                         <p class="detail">@row.Detail</p>
 
@@ -340,6 +495,7 @@
                                 </button>
                             }
                         </div>
+                        }
 
                         @if (_problem is { } problem)
                         {
@@ -410,6 +566,12 @@
 
     private System.Threading.Timer? _clock;
     private bool _syncing;
+    private bool _working;
+
+    // The proposal, not the change: nothing runs until it is confirmed. Only one row is open at a
+    // time, so one field is the whole of the state.
+    private string? _recutting;
+    private RecutPlan? _plan;
 
     private IReadOnlyList<TrackRow> Rows => _view?.Rows ?? [];
 
@@ -559,7 +721,71 @@
     {
         _expanded = _expanded == row.VideoId ? null : row.VideoId;
         _problem = null;
+
+        CancelRecut();
     }
+
+    private RecutPlan? PendingFor(TrackRow row) =>
+        _recutting == row.VideoId ? _plan : null;
+
+    /// <summary>
+    /// Works out what changing the release would cost, and shows it. Changes nothing.
+    /// </summary>
+    /// <remarks>
+    /// Separate from <see cref="ConfirmRecut"/> because the consequence is files being deleted and
+    /// six minutes of GPU, and neither belongs behind a dropdown.
+    /// </remarks>
+    private void ProposeRecut(TrackRow row, ChangeEventArgs e)
+    {
+        _problem = null;
+
+        if (Wanted(e) == row.IsInstrumentalRelease)
+        {
+            CancelRecut();
+            return;
+        }
+
+        _recutting = row.VideoId;
+        _plan = Recut.PlanFor(row.VideoId, !row.IsInstrumentalRelease);
+    }
+
+    private void CancelRecut()
+    {
+        _recutting = null;
+        _plan = null;
+    }
+
+    private async Task ConfirmRecut(TrackRow row)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            var outcome = Recut.Apply(row.VideoId, !row.IsInstrumentalRelease);
+
+            _problem = outcome.Problem;
+
+            if (outcome.Succeeded)
+                CancelRecut();
+
+            // The stages were reopened by hand, and a worker part-way through its two-minute idle
+            // wait would not look again until it ended.
+            Separation.Wake();
+
+            await Source.RefreshAsync(_circuit.Token);
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private static bool Wanted(ChangeEventArgs e) =>
+        bool.TryParse(e.Value?.ToString(), out var wanted) && wanted;
+
+    private static string ReleaseWord(bool isInstrumentalRelease) =>
+        isInstrumentalRelease ? "no vocals" : "has vocals";
 
     // The server is this machine, so opening a folder means what it says. Nothing is read back —
     // this hands off to Explorer, and what happens next happens there.
@@ -588,11 +814,13 @@
         await Source.RefreshAsync();
     }
 
-    private async Task SetInstrumental(TrackRow row)
+    // Before separation there is nothing to undo, so this is the plain recorded fact rather than
+    // a re-cut. Same control, because to the user it is the same question.
+    private async Task SetInstrumental(TrackRow row, ChangeEventArgs e)
     {
-        Playlist.SetInstrumentalRelease(row.VideoId, !row.IsInstrumentalRelease);
+        Playlist.SetInstrumentalRelease(row.VideoId, Wanted(e));
 
-        await Source.RefreshAsync();
+        await Source.RefreshAsync(_circuit.Token);
     }
 
     // Every failed stage, not just the one that gave up: a track that failed twice at evidence and

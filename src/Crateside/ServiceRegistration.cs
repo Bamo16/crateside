@@ -238,6 +238,17 @@ public static class ServiceRegistration
 
         // Working sets go when their track is imported. Slow on purpose: it is answering a
         // question about the library, which changes on human timescales.
+        services.AddSingleton(sp => new StemRecut(
+            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<JobStore>(),
+            sp.GetRequiredService<WorkingSet>(),
+            videoId =>
+                sp.GetRequiredService<StagingBoardService>()
+                    .Read()
+                    .FirstOrDefault(song => song.SourceVideoId == videoId)
+                    ?.Stems
+                ?? []
+        ));
         services.AddSingleton<WorkingSetJanitor>();
         services.AddHostedService<JanitorWorker>();
         return services;

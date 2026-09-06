@@ -526,6 +526,48 @@
     opacity: 0.55;
 }
 
+/* A re-cut is destructive, so the panel shows the trade before it happens rather than a sentence
+   about it: what goes, in red and struck through, and what arrives, in the teal that means the
+   machine is about to work. */
+.pending {
+    color: var(--red);
+}
+
+.stem.going {
+    background: transparent;
+    border-color: rgba(224, 122, 109, 0.35);
+    opacity: 0.6;
+}
+
+.stem.going .stem-label,
+.stem.going .stem-tag {
+    text-decoration: line-through;
+}
+
+.stem.going.guide {
+    border-style: dashed;
+    opacity: 0.5;
+}
+
+.stem.coming {
+    background: rgba(111, 199, 214, 0.06);
+    border-color: rgba(111, 199, 214, 0.3);
+}
+
+.stem.coming.guide {
+    background: transparent;
+    border-style: dashed;
+    opacity: 0.7;
+}
+
+.stem-where.gone {
+    color: var(--red);
+}
+
+.stem-where.new {
+    color: var(--teal);
+}
+
 .stem.skipped {
     background: transparent;
     opacity: 0.45;
@@ -582,60 +624,53 @@
     color: var(--text-50);
 }
 
-/* The one control over what gets separated, and it is only here while it still means anything. */
-.toggle {
+/* The one control over what gets separated. A select rather than a toggle because the question is
+   which release this is, not whether a switch is on — and because the preset picker that lands
+   here later is the same box with more in it. */
+.release {
     display: flex;
     align-items: center;
     gap: 12px;
-    width: fit-content;
     margin-top: 16px;
+}
+
+.release-label {
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.release select {
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 6px 11px;
     cursor: pointer;
 }
 
-.toggle input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
+.release select:hover,
+.release select.changed {
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
-.switch {
-    position: relative;
-    flex: none;
-    width: 34px;
-    height: 20px;
-    background: rgba(255, 255, 255, 0.14);
-    border-radius: 10px;
-}
-
-.switch::after {
-    content: "";
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    background: var(--text-50);
-    border-radius: 50%;
-    transition:
-        transform 150ms ease,
-        background 150ms ease;
-}
-
-.toggle input:checked + .switch {
-    background: var(--amber);
-}
-
-.toggle input:checked + .switch::after {
-    background: var(--ink);
-    transform: translateX(14px);
-}
-
-.toggle-label {
-    font-size: 13px;
+/* Inert rather than absent once files have left for the library: the answer is still worth
+   reading, and dashed says it is not yours to change from here. */
+.locked {
+    font-size: 12px;
     font-weight: 500;
+    color: var(--text-50);
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 6px 11px;
 }
 
-.toggle-hint {
+.release-hint {
     font-size: 12px;
     color: var(--text-50);
 }
@@ -681,6 +716,31 @@ a.outline {
     border-radius: 6px;
     padding: 7px 12px;
     cursor: pointer;
+}
+
+/* The consequence, said once and in the colour that means it. */
+.warning {
+    margin: 0;
+    font-size: 13px;
+    color: var(--red);
+}
+
+.danger {
+    flex: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--red);
+    background: rgba(224, 122, 109, 0.18);
+    border: 1px solid rgba(224, 122, 109, 0.45);
+    border-radius: 6px;
+    padding: 7px 12px;
+    cursor: pointer;
+}
+
+.danger:disabled {
+    cursor: default;
+    opacity: 0.6;
 }
 
 .problem {
