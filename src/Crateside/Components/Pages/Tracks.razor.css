@@ -816,3 +816,14 @@ a.outline {
 .row {
     scroll-margin-top: 200px;
 }
+
+/* The popup is drawn by the OS, which does not inherit the page's palette — without these it
+   renders light text on a white list. */
+.release select {
+    color-scheme: dark;
+}
+
+.release option {
+    color: var(--text);
+    background: var(--surface);
+}

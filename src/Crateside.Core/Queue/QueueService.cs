@@ -210,6 +210,12 @@ public sealed class QueueService(
         // GPU has already done this track, which is the thing "awaiting stems" could not say.
         var parked = ProcessedTracks.Scan(ledger, [_paths.StemsUnresolvedKey]);
 
+        // Read once and handed on. The work lists apply them to playlist items; the Tracks page
+        // needs them for rows the playlist no longer has.
+        var instructions = settings
+            .Read()
+            .Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal);
+
         return new QueueScan
         {
             View = QueueView.Compose(
@@ -220,10 +226,11 @@ public sealed class QueueService(
                     .Where(i => parked.StemsFor(i.VideoId).Count > 0)
                     .Select(i => i.VideoId)
                     .ToHashSet(StringComparer.Ordinal),
-                settings.Read().Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal)
+                instructions
             ),
             Ledger = ledger,
             Processed = processed,
+            Instructions = instructions,
             ReadAt = PlaylistReadAt,
         };
     }
@@ -290,6 +297,17 @@ public sealed record QueueScan
     /// root a file turned up in is what says whether the user has finished with it (ADR 0007).
     /// </summary>
     public required ProcessedTracks Processed { get; init; }
+
+    /// <summary>
+    /// The user's standing instructions, by video ID.
+    /// </summary>
+    /// <remarks>
+    /// Carried whole rather than only applied to the work lists, because <em>a row is not a
+    /// playlist entry</em>. A track leaves the playlist as soon as it is processed while its files
+    /// sit in staging for weeks, and its instructions go on being true the entire time — the fact
+    /// that a release has no vocals does not stop being a fact when the entry is deleted.
+    /// </remarks>
+    public required IReadOnlyDictionary<string, TrackInstruction> Instructions { get; init; }
 
     /// <summary>When the playlist itself was last fetched. Null if it never has been.</summary>
     public DateTimeOffset? ReadAt { get; init; }

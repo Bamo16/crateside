@@ -138,7 +138,8 @@ public class TracksViewCompositionTests : IDisposable
         KeyLedger? ledger = null,
         IReadOnlyList<StagingSong>? staging = null,
         IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>>? onDisk = null,
-        JobStore? jobs = null
+        JobStore? jobs = null,
+        params TrackInstruction[] instructions
     ) =>
         TracksView
             .Compose(
@@ -147,7 +148,8 @@ public class TracksViewCompositionTests : IDisposable
                 staging ?? [],
                 onDisk ?? new Dictionary<string, IReadOnlyList<StemOnDisk>>(),
                 FinishedRoot,
-                jobs ?? Jobs()
+                jobs ?? Jobs(),
+                instructions.ToDictionary(t => t.VideoId, StringComparer.Ordinal)
             )
             .Rows;
 
@@ -312,6 +314,40 @@ public class TracksViewCompositionTests : IDisposable
         );
         Assert.DoesNotContain(row.Samples, sample => sample.IsInLibrary);
         Assert.Equal(TrackState.Tagging, row.State);
+    }
+
+    [Fact]
+    public void An_instruction_outlives_the_playlist_entry_it_was_given_for()
+    {
+        // The bug this covers: a track leaves the playlist as soon as it is processed, and its row
+        // was then built with no instruction at all -- so a release recorded as having no vocals
+        // read as having them, while its stems on disk plainly said otherwise. The instruction is
+        // keyed by video ID and never stopped being true.
+        var row = Assert.Single(
+            Compose(
+                view: View(items: []),
+                staging: [Staged(Stem("Drums"))],
+                instructions: new TrackInstruction { VideoId = Video, IsInstrumentalRelease = true }
+            )
+        );
+
+        Assert.Null(row.PlaylistItemId);
+        Assert.True(row.IsInstrumentalRelease);
+        Assert.Equal(SeparationRecipe.InstrumentalRelease, row.Recipe);
+    }
+
+    [Fact]
+    public void A_hold_outlives_it_too()
+    {
+        var row = Assert.Single(
+            Compose(
+                view: View(items: []),
+                staging: [Staged(Stem("Drums"))],
+                instructions: new TrackInstruction { VideoId = Video, IsHeld = true }
+            )
+        );
+
+        Assert.True(row.IsHeld);
     }
 
     [Fact]

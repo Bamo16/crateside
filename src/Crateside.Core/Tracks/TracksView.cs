@@ -36,6 +36,11 @@ public sealed record TracksView
     /// <param name="onDisk">
     /// Every file carrying a track's provenance, by video ID, across the roots that were scanned.
     /// </param>
+    /// <param name="instructions">
+    /// The user's standing instructions, by video ID. Read here rather than off the queue item,
+    /// because a row outlives its playlist entry and the instructions outlive it too — a release
+    /// with no vocals does not acquire them when the entry is deleted.
+    /// </param>
     /// <param name="finishedRoot">
     /// The folder that means the user is done with a file — <c>Mashup Samples</c>. Passed rather
     /// than assumed so this stays pure and testable (ADR 0007).
@@ -46,7 +51,8 @@ public sealed record TracksView
         IReadOnlyList<StagingSong> staging,
         IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>> onDisk,
         string finishedRoot,
-        JobStore jobs
+        JobStore jobs,
+        IReadOnlyDictionary<string, TrackInstruction> instructions
     )
     {
         // The work lists become values on a row rather than the row's address. A stage is right
@@ -90,6 +96,7 @@ public sealed record TracksView
         {
             var song = staged.GetValueOrDefault(videoId);
             var files = onDisk.GetValueOrDefault(videoId) ?? [];
+            var instruction = instructions.GetValueOrDefault(videoId);
             var progress = StageProgress.For(jobs, videoId);
 
             // Two hops, never a direct lookup: a video ID resolves to a song identity and the
@@ -103,8 +110,10 @@ public sealed record TracksView
                 PlaylistItemId = item?.PlaylistItemId,
                 Title = NameOf(fallbackName, verdict, song),
                 Verdict = verdict,
-                IsHeld = held.Contains(videoId),
-                IsInstrumentalRelease = item?.IsInstrumentalRelease is true,
+                // The work list for the queue item, the instruction for everything else. They
+                // agree while a track is in the playlist and only the instruction survives it.
+                IsHeld = held.Contains(videoId) || instruction?.IsHeld is true,
+                IsInstrumentalRelease = instruction?.IsInstrumentalRelease is true,
                 IsParkedForKey = parked.Contains(videoId),
                 GpuPosition = gpuLine.TryGetValue(videoId, out var position) ? position : null,
                 RunningStage = progress.Running,

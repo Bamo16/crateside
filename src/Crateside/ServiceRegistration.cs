@@ -296,7 +296,8 @@ public static class ServiceRegistration
                     sp.GetRequiredService<StagingBoardService>().Read(),
                     scan.Processed.StemsByVideoId,
                     sp.GetRequiredService<CratesidePaths>().MashupSamples,
-                    sp.GetRequiredService<JobStore>()
+                    sp.GetRequiredService<JobStore>(),
+                    scan.Instructions
                 );
 
                 return view with
