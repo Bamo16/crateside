@@ -31,6 +31,15 @@ public sealed record RunEvidence
     public required DateTimeOffset Timestamp { get; init; }
     public required string Song { get; init; }
 
+    public string? Artist { get; init; }
+    public string? Title { get; init; }
+
+    /// <summary>What to call this song on screen — see <see cref="LedgerRun.DisplayName"/>.</summary>
+    public string DisplayName =>
+        this is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title }
+            ? $"{artist} - {title}"
+            : Song;
+
     /// <summary>The verdict's key, so a source's own answer can be compared against it.</summary>
     public string? Key { get; init; }
 
@@ -174,8 +183,10 @@ public sealed record RunEvidence
             Song = dto.Song ?? string.Empty,
             Key = dto.Verdict?.Key,
             Mode = dto.Verdict?.Mode,
-            TonicCheck = dto.TonicCheck,
-            Reasoning = dto.Reasoning,
+            Artist = LedgerText.Repaired(dto.Artist),
+            Title = LedgerText.Repaired(dto.Title),
+            TonicCheck = LedgerText.Repaired(dto.TonicCheck),
+            Reasoning = LedgerText.Repaired(dto.Reasoning),
             InputKind = dto.InputKind,
             Sources =
             [
@@ -187,7 +198,7 @@ public sealed record RunEvidence
                     StatesKey = s.StatesKey,
                     StatesMode = s.StatesMode,
                     RecordedKind = s.Kind,
-                    Note = s.Note,
+                    Note = LedgerText.Repaired(s.Note),
                     VerdictKey = dto.Verdict?.Key,
                 }),
             ],
@@ -199,7 +210,7 @@ public sealed record RunEvidence
                     Pair = p.Pair ?? string.Empty,
                     Status = p.Status ?? "none",
                     Recommended = p.Recommended,
-                    Note = p.Note,
+                    Note = LedgerText.Repaired(p.Note),
                 }),
             ],
             Chords = dto.Machine?.Chords ?? [],
@@ -498,6 +509,12 @@ internal sealed record RunEvidenceDto
 
     [JsonPropertyName("song")]
     public string? Song { get; init; }
+
+    [JsonPropertyName("artist")]
+    public string? Artist { get; init; }
+
+    [JsonPropertyName("title")]
+    public string? Title { get; init; }
 
     [JsonPropertyName("verdict")]
     public VerdictDto? Verdict { get; init; }

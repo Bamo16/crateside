@@ -3,12 +3,12 @@
 @inject EvidenceService Evidence
 @inject NavigationManager Navigation
 
-<PageTitle>@(_run?.Song ?? "Song") — crateside</PageTitle>
+<PageTitle>@(_run?.DisplayName ?? "Song") — crateside</PageTitle>
 
 <header class="page-header">
     <div>
         <a class="back" href="">← Tracks</a>
-        <h1>@(_run?.Song ?? "Unknown song")</h1>
+        <h1>@(_run?.DisplayName ?? "Unknown song")</h1>
         <p class="subtitle">
             Why this key was given, and what it was based on.
         </p>

@@ -135,8 +135,8 @@ public sealed record TracksView
     /// matching rather than for reading.
     /// </remarks>
     private static string NameOf(string fallback, LedgerRun? verdict, StagingSong? staged) =>
-        verdict is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title }
-            ? $"{artist} - {title}"
+        verdict is { Artist.Length: > 0, Title.Length: > 0 }
+            ? verdict.DisplayName
             : staged?.DisplayName ?? fallback;
 
     /// <summary>

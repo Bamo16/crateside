@@ -34,6 +34,30 @@ public sealed class TracksService : IDisposable
     private static readonly TimeSpan Quiet = TimeSpan.FromSeconds(2);
 
     /// <summary>
+    /// How stale the rows may get with nothing having been announced.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>The two things that matter most move without saying so.</strong> The playlist is
+    /// added to from a phone, and <c>Sample Staging</c> is emptied in Ableton — neither publishes
+    /// anything crateside could subscribe to, so the only way either is ever noticed is to look.
+    /// </para>
+    /// <para>
+    /// Five minutes because it is nearly free and there is nothing cheaper to ask. The playlist
+    /// read pages at fifty, the API's maximum, so the whole list is one quota unit against a daily
+    /// ten thousand — 288 a day at this interval. A <c>playlists.list</c> probe for
+    /// <c>itemCount</c> costs the same one unit, so gating the read behind it would buy nothing
+    /// until the playlist passes fifty items and the read starts costing two.
+    /// </para>
+    /// <para>
+    /// Separately from this, the stage workers already read the queue on a two-minute idle loop,
+    /// so a track added elsewhere is picked up whether or not anyone has the page open. This is
+    /// about the view being true, not about work starting.
+    /// </para>
+    /// </remarks>
+    private static readonly TimeSpan Freshness = TimeSpan.FromMinutes(5);
+
+    /// <summary>
     /// Tracks already announced as ready to warp, so each is announced once.
     /// </summary>
     /// <remarks>
@@ -47,6 +71,7 @@ public sealed class TracksService : IDisposable
     private readonly StageHub _hub;
     private readonly TimeProvider _time;
     private readonly ITimer _timer;
+    private readonly ITimer _poll;
 
     /// <summary>
     /// Whether a read has landed yet, which is what makes the first one different.
@@ -70,6 +95,10 @@ public sealed class TracksService : IDisposable
             Timeout.InfiniteTimeSpan,
             Timeout.InfiniteTimeSpan
         );
+
+        // Its own timer rather than a shorter debounce: the debounce is about not paying twice for
+        // one burst of announcements, and this is about the things that announce nothing at all.
+        _poll = _time.CreateTimer(_ => _ = EnsureFreshAsync(Freshness), null, Freshness, Freshness);
 
         _hub.Changed += OnStageChanged;
     }
@@ -119,6 +148,7 @@ public sealed class TracksService : IDisposable
     {
         _hub.Changed -= OnStageChanged;
         _timer.Dispose();
+        _poll.Dispose();
     }
 
     /// <summary>Rebuilds now, whatever the timer was going to do.</summary>

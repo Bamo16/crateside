@@ -24,6 +24,20 @@ public sealed record LedgerRun
     public string? Artist { get; init; }
     public string? Title { get; init; }
 
+    /// <summary>
+    /// What to call this song on screen.
+    /// </summary>
+    /// <remarks>
+    /// <strong>Not <see cref="Song"/></strong>, which is the normalized lowercase identity built
+    /// for matching — it reads as a slug, because that is what it is. The artist and title are
+    /// recorded separately and properly cased, and joining them is the only way to get a name a
+    /// person would recognise. Falls back to the identity when a run recorded neither.
+    /// </remarks>
+    public string DisplayName =>
+        this is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title }
+            ? $"{artist} - {title}"
+            : Song;
+
     /// <summary>Usually a YouTube Music URL. Null for runs recorded from a local file.</summary>
     public string? SourceUrl { get; init; }
 
@@ -96,8 +110,8 @@ public sealed record LedgerRun
         {
             Timestamp = dto.Timestamp.Value,
             Song = song,
-            Artist = dto.Artist,
-            Title = dto.Title,
+            Artist = LedgerText.Repaired(dto.Artist),
+            Title = LedgerText.Repaired(dto.Title),
             SourceUrl = dto.SourceUrl,
             SourceVideoId = StemProvenance.ExtractYouTubeVideoId(dto.SourceUrl),
             Key = dto.Verdict?.Key,
