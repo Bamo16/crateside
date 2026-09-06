@@ -6,12 +6,23 @@ namespace Crateside.Core.Queue;
 /// <summary>
 /// The Queue view: the playlist, diffed against what has already been processed.
 /// </summary>
+/// <summary>
+/// Video IDs crateside has separation to redo for, whatever the playlist says.
+/// </summary>
+/// <remarks>
+/// A read rather than the job store itself, for the reason every other seam here is one: the
+/// queue's business is the playlist, and it should not have to know how a stage records what it
+/// did in order to be told that something needs doing again.
+/// </remarks>
+public delegate IReadOnlySet<string> ReadReopenedTracks();
+
 public sealed class QueueService(
     IOptions<CratesidePaths> paths,
     QueueSettingsStore settings,
     YouTubeQueueReader reader,
     QueueAuthorizer authorizer,
-    QueueRemover remover
+    QueueRemover remover,
+    ReadReopenedTracks? reopened = null
 )
 {
     /// <summary>
@@ -226,13 +237,65 @@ public sealed class QueueService(
                     .Where(i => parked.StemsFor(i.VideoId).Count > 0)
                     .Select(i => i.VideoId)
                     .ToHashSet(StringComparer.Ordinal),
-                instructions
+                instructions,
+                Reopened(items, ledger)
             ),
             Ledger = ledger,
             Processed = processed,
             Instructions = instructions,
             ReadAt = PlaylistReadAt,
         };
+    }
+
+    /// <summary>
+    /// Tracks with separation to redo that the playlist no longer holds.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>The playlist is the inbox, not the work list.</strong> A track leaves it as soon as
+    /// it is processed, and re-cutting one creates real work long afterwards — so a work list
+    /// built from the playlist alone could not see the very track somebody had just asked for.
+    /// Handoff and tagging never had this problem because they read the disk; separation reads
+    /// the queue.
+    /// </para>
+    /// <para>
+    /// <strong>Gated twice, because of what is on the other side.</strong> Only stages after
+    /// judging count, and only tracks the ledger has already judged — so one of these can never
+    /// reach <see cref="QueueView.Outstanding"/>, which is the only list evidence and the verdict
+    /// read. They join <see cref="QueueView.AwaitingSeparation"/> and nothing else.
+    /// </para>
+    /// </remarks>
+    private IReadOnlyList<QueueItem> Reopened(
+        IReadOnlyList<QueueItem> items,
+        Ledger.KeyLedger ledger
+    )
+    {
+        if (reopened?.Invoke() is not { Count: > 0 } videoIds)
+            return [];
+
+        var queued = items.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
+        var instructions = settings.Read().Tracks;
+
+        return
+        [
+            .. videoIds
+                .Where(videoId => !queued.Contains(videoId))
+                .Select(videoId =>
+                    ledger.TryGetLatestByVideoId(videoId, out var run)
+                        ? new QueueItem
+                        {
+                            VideoId = videoId,
+                            Title = run.DisplayName,
+                            IsInstrumentalRelease =
+                                instructions
+                                    .FirstOrDefault(t => t.VideoId == videoId)
+                                    ?.IsInstrumentalRelease
+                                    is true,
+                        }
+                        : null
+                )
+                .OfType<QueueItem>(),
+        ];
     }
 
     /// <summary>The queue sorted into work lists — the conclusion of a <see cref="ScanAsync"/>.</summary>

@@ -104,6 +104,24 @@ public static class ServiceRegistration
         services.AddSingleton<ProtectedTokenStore>();
         services.AddSingleton<QueueAuthorizer>();
         services.AddSingleton<QueueRemover>();
+        // Only the stages after judging, so a reopened track can never reach the lists evidence and
+        // the verdict read. Cancelled is what a re-cut records; queued and running cover a restart
+        // part-way through one.
+        services.AddSingleton<ReadReopenedTracks>(sp =>
+            () =>
+                sp.GetRequiredService<JobStore>()
+                    .All()
+                    .Where(job =>
+                        job.Stage is JobStage.Separation or JobStage.Handoff or JobStage.Tagging
+                        && job.Status
+                            is JobStatus.Cancelled
+                                or JobStatus.Queued
+                                or JobStatus.Running
+                    )
+                    .Select(job => job.VideoId)
+                    .ToHashSet(StringComparer.Ordinal)
+        );
+
         services.AddSingleton<QueueService>();
         return services;
     }

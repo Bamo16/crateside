@@ -7,7 +7,13 @@ public sealed record QueueItem
     /// The playlist item's own ID — what deletion targets. Distinct from the video ID: the
     /// same video added twice has two playlist items.
     /// </summary>
-    public required string PlaylistItemId { get; init; }
+    /// <remarks>
+    /// <strong>Null for a track crateside is working that the playlist no longer holds.</strong>
+    /// A track leaves the playlist as soon as it is processed, and re-cutting one creates real
+    /// work for it long afterwards. Nothing but removal needs this, and removal is the one thing
+    /// such a track cannot want.
+    /// </remarks>
+    public string? PlaylistItemId { get; init; }
 
     public required string VideoId { get; init; }
 
@@ -73,12 +79,20 @@ public sealed record QueueView
     /// waiting on a verdict good enough to tag with rather than on anything crateside will do.
     /// </param>
     /// <param name="instructions">The user's standing instructions, keyed by video ID.</param>
+    /// <param name="reopened">
+    /// Tracks with separation to redo that the playlist no longer holds — a re-cut of a track that
+    /// had already been processed and removed. They join <see cref="AwaitingSeparation"/> and
+    /// <strong>nothing else</strong>: keeping them out of <see cref="Items"/> keeps them out of
+    /// <see cref="Outstanding"/>, which is the only list evidence and judging read, so a re-cut
+    /// still cannot cost quota however this list is built.
+    /// </param>
     public static QueueView Compose(
         IReadOnlyList<QueueItem> items,
         IReadOnlySet<string> fullyProcessed,
         IReadOnlySet<string> verdictWithoutStems,
         IReadOnlySet<string> separatedWithoutKey,
-        IReadOnlyDictionary<string, TrackInstruction> instructions
+        IReadOnlyDictionary<string, TrackInstruction> instructions,
+        IReadOnlyList<QueueItem>? reopened = null
     )
     {
         // The instrumental-release fact is carried on the item rather than looked up again by
@@ -115,6 +129,7 @@ public sealed record QueueView
                     && !separatedWithoutKey.Contains(i.VideoId)
                     && !held.Contains(i.VideoId)
                 ),
+                .. reopened ?? [],
             ],
             AwaitingKey =
             [
@@ -174,11 +189,16 @@ public sealed record QueueView
         ArgumentOutOfRangeException.ThrowIfNegative(size);
 
         var picked = Outstanding.Take(size).ToList();
-        var taken = picked.Select(i => i.PlaylistItemId).ToHashSet(StringComparer.Ordinal);
+        var taken = picked
+            .Select(i => i.PlaylistItemId)
+            .OfType<string>()
+            .ToHashSet(StringComparer.Ordinal);
 
+        // Pinning addresses a playlist entry, so a track without one cannot be pinned. Outstanding
+        // only ever holds playlist items anyway; this is the type system saying so.
         picked.AddRange(
             Outstanding.Where(i =>
-                pinned?.Contains(i.PlaylistItemId) is true && !taken.Contains(i.PlaylistItemId)
+                i.PlaylistItemId is { } id && pinned?.Contains(id) is true && !taken.Contains(id)
             )
         );
 

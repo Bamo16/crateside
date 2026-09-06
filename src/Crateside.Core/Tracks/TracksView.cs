@@ -89,6 +89,16 @@ public sealed record TracksView
                 .. staging
                     .Where(song => song.SourceVideoId is { } id && !queued.Contains(id))
                     .Select(song => Row(song.SourceVideoId!, song.DisplayName)),
+                // And a track being re-cut, which for a moment is in neither: its staged files
+                // have just been deleted and the playlist let it go long ago. Without this the row
+                // vanishes at exactly the point there is most reason to watch it.
+                .. view
+                    .AwaitingSeparation.Where(item =>
+                        item.PlaylistItemId is null
+                        && !queued.Contains(item.VideoId)
+                        && !staged.ContainsKey(item.VideoId)
+                    )
+                    .Select(item => Row(item.VideoId, item.Title, item)),
             ],
         };
 

@@ -250,7 +250,7 @@
                                verdict run is a headless session. *@
                             <div class="release">
                                 <span class="release-label">Release</span>
-                                <select value="@row.IsInstrumentalRelease"
+                                <select value="@Chosen(row.IsInstrumentalRelease)"
                                         @onchange="e => SetInstrumental(row, e)">
                                     <option value="false">has vocals</option>
                                     <option value="true">no vocals</option>
@@ -391,7 +391,7 @@
                             {
                                 <div class="release">
                                     <span class="release-label">Release</span>
-                                    <select value="@(pending is null ? row.IsInstrumentalRelease : !row.IsInstrumentalRelease)"
+                                    <select value="@Chosen(pending is null ? row.IsInstrumentalRelease : !row.IsInstrumentalRelease)"
                                             class="@(pending is null ? null : "changed")"
                                             @onchange="e => ProposeRecut(row, e)">
                                         <option value="false">has vocals</option>
@@ -780,6 +780,11 @@
             _working = false;
         }
     }
+
+    // bool.ToString() is "True" and the option values are "true", so the select matched no
+    // option and the browser drew an empty box. Nothing was wrong with the colours.
+    private static string Chosen(bool isInstrumentalRelease) =>
+        isInstrumentalRelease ? "true" : "false";
 
     private static bool Wanted(ChangeEventArgs e) =>
         bool.TryParse(e.Value?.ToString(), out var wanted) && wanted;

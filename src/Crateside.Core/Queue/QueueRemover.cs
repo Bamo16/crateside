@@ -63,13 +63,25 @@ public sealed class QueueRemover(QueueAuthorizer authorizer)
         CancellationToken cancellationToken
     )
     {
+        // A track crateside is working that the playlist no longer holds has nothing to remove.
+        // Reachable only by asking for it, since the page hides the button, but the removal path
+        // must not turn that into a bare API error.
+        if (item.PlaylistItemId is not { Length: > 0 } id)
+            return new RemovalResult
+            {
+                PlaylistItemId = string.Empty,
+                Title = item.Title,
+                Removed = false,
+                Reason = "It is not in the playlist.",
+            };
+
         try
         {
-            await service.PlaylistItems.Delete(item.PlaylistItemId).ExecuteAsync(cancellationToken);
+            await service.PlaylistItems.Delete(id).ExecuteAsync(cancellationToken);
 
             return new RemovalResult
             {
-                PlaylistItemId = item.PlaylistItemId,
+                PlaylistItemId = id,
                 Title = item.Title,
                 Removed = true,
             };
@@ -79,7 +91,7 @@ public sealed class QueueRemover(QueueAuthorizer authorizer)
             // Already gone. Idempotent by design.
             return new RemovalResult
             {
-                PlaylistItemId = item.PlaylistItemId,
+                PlaylistItemId = id,
                 Title = item.Title,
                 Removed = true,
             };
@@ -88,7 +100,7 @@ public sealed class QueueRemover(QueueAuthorizer authorizer)
         {
             return new RemovalResult
             {
-                PlaylistItemId = item.PlaylistItemId,
+                PlaylistItemId = id,
                 Title = item.Title,
                 Removed = false,
                 Reason = Describe(e),
