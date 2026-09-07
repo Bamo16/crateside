@@ -76,3 +76,21 @@ Same rule as keytag ([its ADR 0005](../keytag/docs/adr/0005-instructions-carry-n
 - **`docs/adr/`** holds history. Append-only, dated, superseded in place, never pruned.
 - **`CONTEXT.md`** holds current definitions. A glossary and nothing else.
 - **This file** holds current instruction, plus at most a one-line pointer to an ADR.
+- **Code** holds what the code cannot say itself. See below.
+
+## Doc comments are short, and `<remarks>` has to earn its place
+
+The point of a doc comment is the hover popup. Anything longer than fits there is costing the
+reader more than it gives them.
+
+- **`<summary>` on anything public, one or two lines.** What it is, or what it answers. A record
+  with three properties should read as three lines and three summaries, not thirty lines.
+- **`<remarks>` only for a caveat that would cause a bug if missed** — a value that is not what
+  its name suggests, a guarantee that holds only under a condition, an ordering that matters.
+  Three lines is a lot. If it is longer than the member it documents, it is in the wrong file.
+- **Never narrate.** How a bug was found, what was tried, what a measurement was on a given day,
+  why an earlier design was wrong — none of that belongs in code. It goes in the commit message,
+  or in an ADR if it is a decision. A reader hovering a property is not asking for the story.
+- **Never restate the signature.** `/// <summary>The video ID.</summary>` on `VideoId` is noise.
+
+The same applies to inline comments: one earns its place by saying something the code cannot.
