@@ -76,6 +76,18 @@ public sealed record TrackRow
     /// <summary>How many times <see cref="GaveUpAt"/> failed before it stopped trying.</summary>
     public int GaveUpStrikes { get; init; }
 
+    /// <summary>
+    /// The row exists only because the library has files for it: crateside never queued it and it
+    /// is not in staging.
+    /// </summary>
+    /// <remarks>
+    /// Tracks keytag judged before crateside existed, and tracks crateside finished with long
+    /// enough ago that the playlist entry is gone. They belong on the page — they are the only way
+    /// to reach an old track at all — but not in the working list, which is what
+    /// <see cref="TrackFilter.All"/> is for.
+    /// </remarks>
+    public bool IsLibraryOnly { get; init; }
+
     /// <summary>The user has told crateside to leave this track alone.</summary>
     public bool IsHeld { get; init; }
 

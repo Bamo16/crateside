@@ -80,11 +80,11 @@ public sealed record TracksView
         // to be warped. Building rows from the playlist alone lost every one of those — the
         // warping worklist is the folder, and the folder outlives the playlist entry.
         var queued = VideoIdsOf(view.Items);
+        var reopened = VideoIdsOf(view.AwaitingSeparation.Where(i => i.PlaylistItemId is null));
 
         return new TracksView
         {
-            Rows =
-            [
+            Rows = InOrder([
                 .. view.Items.Select(item => Row(item.VideoId, item.Title, item)),
                 .. staging
                     .Where(song => song.SourceVideoId is { } id && !queued.Contains(id))
@@ -99,7 +99,20 @@ public sealed record TracksView
                         && !staged.ContainsKey(item.VideoId)
                     )
                     .Select(item => Row(item.VideoId, item.Title, item)),
-            ],
+                // And everything the library has that none of the above accounts for: tracks
+                // keytag judged before crateside existed, and tracks finished with long enough ago
+                // that the playlist entry is gone. Reachable under Done and nowhere else.
+                .. onDisk
+                    .Where(entry =>
+                        !queued.Contains(entry.Key)
+                        && !staged.ContainsKey(entry.Key)
+                        && !reopened.Contains(entry.Key)
+                        && entry.Value.Any(file =>
+                            file.Root.Equals(finishedRoot, StringComparison.OrdinalIgnoreCase)
+                        )
+                    )
+                    .Select(entry => Row(entry.Key, entry.Key) with { IsLibraryOnly = true }),
+            ]),
         };
 
         TrackRow Row(string videoId, string fallbackName, QueueItem? item = null)
@@ -140,6 +153,52 @@ public sealed record TracksView
             };
         }
     }
+
+    /// <summary>
+    /// Names compared the way Ableton's browser compares them, so a warping session can scan the
+    /// two lists side by side. Ordinal, which is what puts the Japanese titles last in both.
+    /// </summary>
+    private static readonly StringComparer ByName = StringComparer.OrdinalIgnoreCase;
+
+    /// <summary>
+    /// The default order: grouped by what the row wants from the user, then by name.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <strong>A row moves at most twice in its life, and only when that is the news.</strong> The
+    /// page was built on rows never moving, because the thing it replaced bucketed tracks into
+    /// sections and shuffled them between the two while you were trying to click one. The states a
+    /// track crosses while crateside works it — queued through tagging — are therefore one group,
+    /// so nothing moves as it goes. <em>Held is in that group too</em>, which matters most: a hold
+    /// is a change the user makes, and having the row jump out from under the press was the worst
+    /// of it.
+    /// </para>
+    /// <para>
+    /// What does move a row is reaching <em>ready to warp</em>, being parked for want of a key, or
+    /// being finished with — the three transitions worth noticing, and the only three.
+    /// </para>
+    /// <para>
+    /// Within a group, by name — except the working group, which keeps the order it was assembled
+    /// in. That is the playlist's own oldest-first order, which is the order the stages will take
+    /// them, and it is preserved by sorting the groups separately rather than by a second key.
+    /// </para>
+    /// </remarks>
+    internal static IReadOnlyList<TrackRow> InOrder(IReadOnlyList<TrackRow> rows) =>
+        [
+            .. rows.Where(row => Group(row) is 0).OrderBy(row => row.Title, ByName),
+            .. rows.Where(row => Group(row) is 1),
+            .. rows.Where(row => Group(row) is 2).OrderBy(row => row.Title, ByName),
+            .. rows.Where(row => Group(row) is 3).OrderBy(row => row.Title, ByName),
+        ];
+
+    private static int Group(TrackRow row) =>
+        row switch
+        {
+            { State: TrackState.Parked or TrackState.GaveUp } or { AuditNote: not null } => 0,
+            { State: TrackState.ReadyToWarp } => 2,
+            { State: TrackState.Done } => 3,
+            _ => 1,
+        };
 
     /// <summary>
     /// What to call the track: the ledger's identity, then the board's, then the playlist's.

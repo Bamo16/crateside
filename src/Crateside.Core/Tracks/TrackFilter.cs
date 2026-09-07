@@ -32,7 +32,9 @@ public enum TrackFilter
     /// <summary>Set aside on purpose.</summary>
     Held,
 
-    /// <summary>Finished and in <c>Mashup Samples</c>.</summary>
+    /// <summary>
+    /// Finished and in <c>Mashup Samples</c> — including tracks crateside never queued.
+    /// </summary>
     Done,
 }
 
@@ -40,13 +42,18 @@ public static class TrackFilters
 {
     /// <summary>Whether a row belongs in a filter.</summary>
     /// <remarks>
-    /// Every row matches exactly one filter besides <see cref="TrackFilter.All"/>, which is what
-    /// lets the counts be read as a partition of the list rather than as overlapping tallies.
+    /// Every row matches exactly one filter besides <see cref="TrackFilter.All"/> — and
+    /// <see cref="TrackFilter.Done"/> now holds more than <em>All</em> does, because the library's
+    /// own finished tracks are reachable there and are not part of the working list.
     /// </remarks>
     public static bool Matches(this TrackRow row, TrackFilter filter) =>
         filter switch
         {
-            TrackFilter.All => true,
+            // Everything crateside is working or has just worked. The library's own finished
+            // tracks are deliberately not here: they are reachable, under Done, and they would
+            // otherwise bury the handful of rows this page exists for under a hundred that need
+            // nothing. So the counts overlap rather than partition, which they used to.
+            TrackFilter.All => !row.IsLibraryOnly,
             TrackFilter.InStaging => row.State is TrackState.ReadyToWarp,
             TrackFilter.InFlight => row.State
                 is TrackState.Queued
