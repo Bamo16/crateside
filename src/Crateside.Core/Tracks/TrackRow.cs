@@ -54,6 +54,19 @@ public sealed record TrackRow
     public TrackNameSource NameSource { get; init; }
 
     /// <summary>
+    /// What this track's staged files are called, when that is not what crateside calls it.
+    /// </summary>
+    /// <remarks>
+    /// <strong>They disagree more often than they agree, and neither is wrong.</strong> The ledger
+    /// names a song from keytag's identification, while the files were named from the download's
+    /// own tags — so <c>Estelle - American Boy</c> and <c>Estelle, Kanye West, Keith Harris,
+    /// William Adams - American Boy</c> are one track. Null when they match, when there are no
+    /// staged files, or when the files disagree among themselves, which is
+    /// <see cref="AwaitingRename"/>'s to report.
+    /// </remarks>
+    public string? NameOnDisk { get; init; }
+
+    /// <summary>
     /// Staged files a rename did not reach — zero unless one was interrupted part way.
     /// </summary>
     /// <remarks>

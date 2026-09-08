@@ -131,7 +131,7 @@ public class TrackRenameTests : IDisposable
 
         var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
 
-        Assert.Null(outcome.TagNote);
+        Assert.Null(outcome.Note);
 
         // Moved rather than added: one entry, under the new name. Leaving the old one beside it
         // would grow the store by an entry per rename, for files that no longer exist.
@@ -140,6 +140,83 @@ public class TrackRenameTests : IDisposable
         Assert.Equal("Starjunk 95 - 99th Street (Vocal - Full).flac", entry.RelativePath);
         Assert.Equal("A minor", entry.Key);
         Assert.Equal("Vocal", entry.Type);
+    }
+
+    [Fact]
+    public void Abletons_analysis_file_follows_the_sample()
+    {
+        // Warp markers live in a .asd named after the whole sample. Renaming the sample alone
+        // orphans it and Ableton analyses the file again from scratch, losing the markers —
+        // measured on the real folder, where two renames left three sidecars behind.
+        var sample = Stage("99th Street (Vocal - Full).flac");
+
+        File.WriteAllText(sample + ".asd", "warp markers");
+
+        var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
+
+        Assert.True(outcome.Succeeded);
+        Assert.Null(outcome.Note);
+
+        var renamed = Staged("Starjunk 95 - 99th Street (Vocal - Full).flac");
+
+        Assert.Equal("warp markers", File.ReadAllText(renamed + ".asd"));
+        Assert.False(File.Exists(sample + ".asd"));
+    }
+
+    [Fact]
+    public void A_sample_nobody_has_analysed_carries_nothing_extra()
+    {
+        // Most of them. Ableton writes a .asd for having looked at the file, so its absence
+        // means nobody has.
+        Stage("99th Street (Vocal - Full).flac");
+
+        var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
+
+        Assert.True(outcome.Succeeded);
+        Assert.Null(outcome.Note);
+        Assert.False(File.Exists(Staged("Starjunk 95 - 99th Street (Vocal - Full).flac.asd")));
+    }
+
+    [Fact]
+    public void An_analysis_file_already_under_the_new_name_stops_the_rename()
+    {
+        // Somebody else's warp markers. Overwriting them would be the one way a rename destroys
+        // work that cannot be redone from anything crateside holds.
+        var sample = Stage("99th Street (Vocal - Full).flac");
+
+        File.WriteAllText(
+            Staged("Starjunk 95 - 99th Street (Vocal - Full).flac.asd"),
+            "somebody else's markers"
+        );
+
+        var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
+
+        Assert.False(outcome.Succeeded);
+        Assert.Contains("already in Sample Staging", outcome.Problem);
+        Assert.True(File.Exists(sample));
+        Assert.Equal(
+            "somebody else's markers",
+            File.ReadAllText(Staged("Starjunk 95 - 99th Street (Vocal - Full).flac.asd"))
+        );
+    }
+
+    [Fact]
+    public void Markers_that_could_not_follow_are_reported_rather_than_undone()
+    {
+        // The sample is renamed either way: markers can be placed again, and a half-renamed
+        // track cannot be read. So this is a note, not a failure.
+        var sample = Stage("99th Street (Vocal - Full).flac");
+
+        File.WriteAllText(sample + ".asd", "warp markers");
+
+        using var held = File.Open(sample + ".asd", FileMode.Open, FileAccess.Read, FileShare.None);
+
+        var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
+
+        Assert.True(outcome.Succeeded);
+        Assert.Equal(1, outcome.Renamed);
+        Assert.Contains("warp markers", outcome.Note);
+        Assert.True(File.Exists(Staged("Starjunk 95 - 99th Street (Vocal - Full).flac")));
     }
 
     [Fact]

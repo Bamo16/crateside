@@ -25,6 +25,17 @@ public static partial class StemFileName
                 + Path.GetExtension(path)
         );
 
+    /// <summary>
+    /// Ableton's analysis file for a sample, which is where the warp markers live.
+    /// </summary>
+    /// <remarks>
+    /// The sample's <em>whole</em> name plus <c>.asd</c>, extension included — the real folder
+    /// holds <c>Starjunk 95 - 99th Street (Drums).flac.asd</c>. So it does not survive a rename on
+    /// its own: Ableton finds no sidecar under the new name and analyses the file again from
+    /// scratch, losing the markers and leaving the old one behind pointing at nothing.
+    /// </remarks>
+    public static string AnalysisFor(string samplePath) => samplePath + ".asd";
+
     /// <summary>The name with its preset stripped — what the files of one song have in common.</summary>
     public static string WithoutPreset(string path) =>
         PresetSuffix.Replace(Path.GetFileNameWithoutExtension(path), string.Empty).Trim();

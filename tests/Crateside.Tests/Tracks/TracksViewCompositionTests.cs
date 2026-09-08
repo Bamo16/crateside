@@ -601,6 +601,69 @@ public class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
+    public void The_name_on_disk_is_carried_when_it_is_not_the_one_on_screen()
+    {
+        // The real case, and the one that reads as a bug until it is said out loud: the ledger
+        // names a song "Estelle - American Boy" from keytag's identification, while the files were
+        // named from the download's tags — "Estelle, Kanye West, Keith Harris, William Adams -
+        // American Boy". One track, two true names.
+        var row = Assert.Single(
+            Compose(
+                View([]),
+                ledger: LedgerWith("C minor", "HIGH", 120),
+                staging: [Staged(Stem("Vocal - Full"), Stem("Instrumental - Full"))]
+            )
+        );
+
+        Assert.Equal("Rob Dougan - Furious Angels", row.Title);
+        Assert.Equal("track", row.NameOnDisk);
+    }
+
+    [Fact]
+    public void Files_that_already_agree_with_the_screen_are_not_worth_saying()
+    {
+        var row = Assert.Single(
+            Compose(
+                View([]),
+                staging: [Staged(Stem("Vocal - Full"))],
+                instructions: new TrackInstruction { VideoId = Video, Name = "track" }
+            )
+        );
+
+        Assert.Null(row.NameOnDisk);
+    }
+
+    [Fact]
+    public void Files_that_disagree_with_each_other_say_nothing_rather_than_pick_one()
+    {
+        // A rename that stopped part way. What is worth saying about these is that it did not
+        // finish, which AwaitingRename says.
+        var row = Assert.Single(
+            Compose(
+                View([]),
+                staging:
+                [
+                    Staged(Stem("Vocal - Full")) with
+                    {
+                        Stems =
+                        [
+                            Stem("Vocal - Full"),
+                            Stem("Drums") with
+                            {
+                                Path = Path.Combine(StagingRoot, "half renamed (Drums).flac"),
+                            },
+                        ],
+                    },
+                ],
+                instructions: new TrackInstruction { VideoId = Video, Name = "half renamed" }
+            )
+        );
+
+        Assert.Null(row.NameOnDisk);
+        Assert.Equal(1, row.AwaitingRename);
+    }
+
+    [Fact]
     public void A_track_with_a_file_in_the_library_can_no_longer_be_renamed()
     {
         // crateside writes nothing in Mashup Samples, tag store included (ADR 0003), and renaming

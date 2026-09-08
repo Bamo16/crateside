@@ -1,5 +1,6 @@
 using Crateside.Core.Queue;
 using Crateside.Core.Staging;
+using Humanizer;
 
 namespace Crateside.Core.Orchestration;
 
@@ -44,8 +45,14 @@ public sealed class TrackRename(
             .ToArray();
 
         // Checked before anything moves, exactly as handoff does: a collision half way through
-        // leaves a track under two names, which is worse than not starting.
-        if (moves.FirstOrDefault(move => File.Exists(move.To)) is { } clash)
+        // leaves a track under two names, which is worse than not starting. The analysis file
+        // counts — overwriting one would replace somebody's warp markers with these.
+        if (
+            moves.FirstOrDefault(move =>
+                File.Exists(move.To) || File.Exists(StemFileName.AnalysisFor(move.To))
+            ) is
+            { } clash
+        )
             return Impossible(
                 wanted,
                 $"{Path.GetFileName(clash.To)} is already in Sample Staging."
@@ -93,6 +100,7 @@ public sealed class TrackRename(
         settings.SetName(videoId, stored);
 
         List<TagRename> done = [];
+        List<string> markersLost = [];
 
         foreach (var stem in plan.Renaming)
         {
@@ -102,6 +110,9 @@ public sealed class TrackRename(
             {
                 File.Move(stem.Path, to);
                 done.Add(Entry(stem.Path, to));
+
+                if (!TryMoveAnalysis(stem.Path, to))
+                    markersLost.Add(Path.GetFileName(to));
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
@@ -122,9 +133,55 @@ public sealed class TrackRename(
         {
             Name = plan.Name,
             Renamed = done.Count,
-            TagNote = MoveTags(done),
+            Note = Note(MoveTags(done), markersLost),
         };
     }
+
+    /// <summary>
+    /// Takes Ableton's analysis file along with the sample it belongs to.
+    /// </summary>
+    /// <remarks>
+    /// <strong>Without this a rename silently costs the warp markers.</strong> The sidecar is
+    /// named after the whole sample — <c>&lt;sample&gt;.flac.asd</c> — so renaming the sample
+    /// alone orphans it, and Ableton analyses the file again from scratch the next time it is
+    /// touched. Measured: two renames left three sidecars behind, and one of the samples had
+    /// already grown a fresh one under its new name.
+    /// </remarks>
+    private static bool TryMoveAnalysis(string from, string to)
+    {
+        var sidecar = StemFileName.AnalysisFor(from);
+
+        // Most samples have none. Ableton writes one for having looked at the file, so its
+        // absence means nobody has, and there is nothing to carry (ADR 0002).
+        if (!File.Exists(sidecar))
+            return true;
+
+        try
+        {
+            File.Move(sidecar, StemFileName.AnalysisFor(to));
+
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // The sample is renamed either way, and undoing that to save a sidecar would be the
+            // worse trade: the markers can be placed again, a half-renamed track cannot be read.
+            return false;
+        }
+    }
+
+    /// <summary>What did not follow the files, or null when everything did.</summary>
+    private static string? Note(string? tags, IReadOnlyList<string> markersLost) =>
+        (tags, markersLost) switch
+        {
+            (null, { Count: 0 }) => null,
+            (null, _) =>
+                $"Ableton's warp markers did not follow {"file".ToQuantity(markersLost.Count)}; "
+                    + "they will be analysed again.",
+            ({ } problem, { Count: 0 }) => problem,
+            _ => $"{tags} Warp markers were also left behind for "
+                + $"{"file".ToQuantity(markersLost.Count)}.",
+        };
 
     /// <summary>
     /// Carries the Ableton keywords across to the new names.
@@ -183,10 +240,14 @@ public sealed record RenameOutcome
     public string? Problem { get; init; }
 
     /// <summary>
-    /// The tag store could not be updated, though the files were renamed. Worth saying and not
-    /// worth stopping for: the files read as untagged and the tagging stage tags them again.
+    /// Something beside the files did not follow them, though the files were renamed.
     /// </summary>
-    public string? TagNote { get; init; }
+    /// <remarks>
+    /// The tag store, whose entries the tagging stage rewrites on its own pass, or Ableton's
+    /// analysis file, which costs the warp markers. Worth saying and not worth stopping for —
+    /// both are recoverable, and a half-renamed track is not.
+    /// </remarks>
+    public string? Note { get; init; }
 
     public bool Succeeded => Problem is null;
 }

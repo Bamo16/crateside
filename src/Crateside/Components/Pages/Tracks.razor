@@ -236,38 +236,43 @@
                         }
                         else
                         {
-                            <div class="name-shown">
-                                <span class="name">@row.Title</span>
+                            @* The row above already says the name, so saying it again here was a
+                               line of nothing. What it cannot say is where the name came from, or
+                               that the files are under a different one — which is the question
+                               the button beside it answers. *@
+                            <span class="name-from">
                                 @if (row.DerivedTitle is { } derived)
                                 {
-                                    <span class="name-from">renamed by you · was <strong>@derived</strong></span>
+                                    <text>renamed by you · was <strong>@derived</strong></text>
                                 }
                                 else
                                 {
-                                    <span class="name-from">from @From(row.NameSource)</span>
+                                    <text>named from @From(row.NameSource)</text>
                                 }
-                            </div>
-
-                            <div class="actions right">
-                                @if (row.CanRename)
+                                @if (row.NameOnDisk is { } onDisk)
                                 {
-                                    @if (row.IsRenamed)
-                                    {
-                                        <button class="outline" @onclick="() => RevertRename(row)" disabled="@_working">
-                                            Revert
-                                        </button>
-                                    }
-                                    <button class="outline" @onclick="() => StartRename(row)" disabled="@_working">
-                                        Rename
+                                    <text> · files say <strong>@onDisk</strong></text>
+                                }
+                            </span>
+
+                            @if (row.CanRename)
+                            {
+                                <button class="outline" @onclick="() => StartRename(row)" disabled="@_working">
+                                    Rename
+                                </button>
+                                @if (row.IsRenamed)
+                                {
+                                    <button class="outline" @onclick="() => RevertRename(row)" disabled="@_working">
+                                        Revert
                                     </button>
                                 }
-                                else
-                                {
-                                    @* crateside writes nothing in Mashup Samples, tag store
-                                       included, so the only honest offer is none. *@
-                                    <span class="name-from">in Mashup Samples · rename in Ableton</span>
-                                }
-                            </div>
+                            }
+                            else
+                            {
+                                @* crateside writes nothing in Mashup Samples, tag store included,
+                                   so the only honest offer is none. *@
+                                <span class="name-from">· rename it in Ableton</span>
+                            }
                         }
                     </div>
 
@@ -851,7 +856,7 @@
 
             // The tag note is not a failure — the files were renamed and the tagging stage puts
             // their keywords back on its own pass — but it is worth seeing.
-            _problem = outcome.Problem ?? outcome.TagNote;
+            _problem = outcome.Problem ?? outcome.Note;
 
             if (outcome.Succeeded)
                 CancelRename();

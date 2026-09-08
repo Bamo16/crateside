@@ -522,22 +522,16 @@
     gap: 32px;
 }
 
-.name-shown {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    min-width: 0;
-}
-
-.name {
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--text);
-}
-
+/* Left-aligned and not pushed to the far edge: the offer belongs beside the name it is about,
+   which is in the column directly above it. */
 .name-from {
     font-size: 12px;
     color: var(--text-50);
+}
+
+.name-from strong {
+    font-weight: 500;
+    color: var(--text-75);
 }
 
 .name-input {
@@ -562,12 +556,6 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-}
-
-/* Pushed to the far edge so the offer sits opposite the name it is about, rather than trailing
-   the provenance text and reading as part of it. */
-.actions.right {
-    margin-left: auto;
 }
 
 .panel-head {

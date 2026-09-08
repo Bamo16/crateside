@@ -145,6 +145,7 @@ public sealed record TracksView
                 Title = stated ?? derived,
                 DerivedTitle = stated is null ? null : derived,
                 NameSource = source,
+                NameOnDisk = NameOnDiskOf(song, stated ?? derived),
                 AwaitingRename = AwaitingRenameIn(song, stated),
                 Verdict = verdict,
                 // The work list for the queue item, the instruction for everything else. They
@@ -244,6 +245,24 @@ public sealed record TracksView
             (_, { DisplayName.Length: > 0 }) => (staged.DisplayName, TrackNameSource.StagingBoard),
             _ => (fallback, fallbackSource),
         };
+
+    /// <summary>
+    /// The one name this track's staged files share, when it is not the one on screen.
+    /// </summary>
+    /// <remarks>
+    /// The single-element list pattern is doing two jobs: it says the files agree with each other,
+    /// and it hands over the name they agree on. Files that disagree yield null, because the thing
+    /// worth saying about them is that a rename did not finish rather than what they are called.
+    /// </remarks>
+    private static string? NameOnDiskOf(StagingSong? staged, string shown) =>
+        staged
+            ?.Stems.Select(stem => StemFileName.WithoutPreset(stem.Path))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray()
+            is [var onDisk]
+        && !onDisk.Equals(shown, StringComparison.OrdinalIgnoreCase)
+            ? onDisk
+            : null;
 
     /// <summary>
     /// Staged files a rename has not reached.
