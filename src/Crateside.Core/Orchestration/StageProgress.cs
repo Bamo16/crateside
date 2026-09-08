@@ -1,32 +1,18 @@
 namespace Crateside.Core.Orchestration;
 
-/// <summary>
-/// What crateside has recorded about one track, reduced to the two facts a row needs.
-/// </summary>
-/// <remarks>
-/// The job store answers per stage; a row asks about a track. Reducing it in one place is what
-/// lets every stage be checked — <c>Queue.razor</c> assembled the same answer over four of the
-/// five and left tagging out, so a track that gave up while tagging said nothing at all.
-/// </remarks>
+/// <summary>What crateside has recorded about one track, reduced to the facts a row needs.</summary>
 public sealed record StageProgress
 {
-    /// <summary>The stage crateside believes has this track in flight, if any.</summary>
     public JobStage? Running { get; init; }
 
     /// <summary>
-    /// When that stage last said anything, which is when it started.
+    /// The job's last update. For an open job that is its start, since a stage records Running
+    /// once and says nothing more until the work ends.
     /// </summary>
-    /// <remarks>
-    /// The job store records <c>Running</c> once and then nothing until the work ends, so for an
-    /// open job its last update <em>is</em> its start. That is what "4:12 elapsed" counts from —
-    /// honest for separation, which reports nothing at all until it finishes.
-    /// </remarks>
     public DateTimeOffset? RunningSince { get; init; }
 
-    /// <summary>The stage that ran out of strikes, if one has.</summary>
     public JobStage? GaveUpAt { get; init; }
 
-    /// <summary>How many times <see cref="GaveUpAt"/> failed before it stopped trying.</summary>
     public int GaveUpStrikes { get; init; }
 
     public static StageProgress For(JobStore jobs, string videoId)
@@ -47,8 +33,8 @@ public sealed record StageProgress
                 runningSince = job.UpdatedAt;
             }
 
-            // Cancelled is not counted, whatever the strikes say: every selector reads it as
-            // "eligible again", so a track put back in line by hand has not given up.
+            // Cancelled never counts, whatever the strikes say — a track put back in line by
+            // hand has not given up.
             if (
                 job is { Status: JobStatus.Failed, Strikes: var strikes }
                 && strikes >= Limit(stage)
@@ -69,14 +55,9 @@ public sealed record StageProgress
     }
 
     /// <summary>
-    /// How many failures each stage tolerates, read from the selectors that own the numbers
-    /// rather than copied beside them.
+    /// How many failures each stage tolerates. Reads each selector's <em>default</em>, so one
+    /// constructed with a different limit would disagree.
     /// </summary>
-    /// <remarks>
-    /// Evidence is allowed more than the rest because acquiring audio fails for transient reasons
-    /// the other stages do not share. This reads each selector's <em>default</em>; one constructed
-    /// with a different limit would disagree, which nothing in the app does today.
-    /// </remarks>
     private static int Limit(JobStage stage) =>
         stage switch
         {

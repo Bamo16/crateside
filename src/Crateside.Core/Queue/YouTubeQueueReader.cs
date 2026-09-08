@@ -10,15 +10,8 @@ namespace Crateside.Core.Queue;
 /// Reads the Queue playlist over the YouTube Data API.
 /// </summary>
 /// <remarks>
-/// <para>
-/// <c>playlistItems.list</c> costs <strong>1 quota unit</strong> per call against a
-/// 10,000/day default and pages 50 at a time, so a refresh is a handful of units.
-/// </para>
-/// <para>
-/// The playlist is unlisted today, so a long-lived API key can read it. Prefer an OAuth
-/// credential when one is available: it works at every visibility, and the key silently stops
-/// working the day the playlist goes private.
-/// </para>
+/// An API key only works while the playlist is unlisted or public — it stops silently the day
+/// the playlist goes private. An OAuth credential works at every visibility.
 /// </remarks>
 public sealed class YouTubeQueueReader(IOptions<QueueOptions> options) : IDisposable
 {
@@ -27,19 +20,15 @@ public sealed class YouTubeQueueReader(IOptions<QueueOptions> options) : IDispos
     private readonly QueueOptions _options = options.Value;
     private YouTubeService? _service;
 
-    /// <summary>
-    /// Whether a credential is available. The playlist ID is passed per call, since the user
-    /// can change it from the UI without restarting.
-    /// </summary>
+    /// <summary>Whether a credential is available. The playlist ID is passed per call.</summary>
     public bool HasCredential => !string.IsNullOrWhiteSpace(_options.ApiKey);
 
     /// <summary>
     /// Lists every item in the playlist, following pagination to the end.
     /// </summary>
     /// <exception cref="QueueUnavailableException">
-    /// The playlist could not be read. A private playlist read with an API key comes back as
-    /// <em>not found</em> rather than as a permission error, so this is thrown rather than
-    /// returning empty — an unreadable queue must never render as an empty one.
+    /// Thrown rather than returning empty: a private playlist read with an API key comes back as
+    /// <em>not found</em>, and an unreadable queue must never render as an empty one.
     /// </exception>
     public async Task<IReadOnlyList<QueueItem>> ListAsync(
         string playlistId,
@@ -113,7 +102,6 @@ public sealed class YouTubeQueueReader(IOptions<QueueOptions> options) : IDispos
             AddedAt = item.Snippet.PublishedAtDateTimeOffset,
             Position = (int?)item.Snippet.Position,
             IsUnavailable = unavailable,
-            // The description comes back on this same call, so the premium signal is free.
             PremiumOutlook = PremiumOutlookReader.FromDescription(item.Snippet.Description),
         };
     }

@@ -91,7 +91,6 @@
 
     protected override void OnParametersSet()
     {
-        // Arriving from a staging row carries its key in the query string.
         if (MusicKey.FromString(KeyFromQuery) is { } fromQuery)
             _sourceKeyName = fromQuery.LedgerName;
 

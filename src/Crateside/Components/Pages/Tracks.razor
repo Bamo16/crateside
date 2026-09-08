@@ -156,8 +156,6 @@
                     {
                         <span class="flag">@note</span>
                     }
-                    @* A count rather than "rename failed": these are files not carrying the stated
-                       name, which is what was measured. Why they are not is not known from here. *@
                     @if (row.AwaitingRename > 0)
                     {
                         <span class="flag">@("file".ToQuantity(row.AwaitingRename)) not renamed</span>
@@ -186,10 +184,6 @@
                     </span>
                 </span>
 
-                @* The chip already says what state the track is in, so a sentence repeating it in
-                   the next column was a column of noise. It moved into the expanded panel, where
-                   the few states that genuinely add something -- the GPU queue position, what to
-                   do about a track that gave up -- are read on purpose rather than skimmed. *@
                 @if (_filter is TrackFilter.InStaging)
                 {
                     <span class="since">
@@ -201,8 +195,6 @@
             @if (open)
             {
                 <div class="panel">
-                    @* Spans both columns and sits above everything, because the name is the one
-                       thing every state of a track has and the only one the user supplies. *@
                     <div class="name-strip @(_renaming == row.VideoId ? "editing" : null)">
                         @if (_renaming == row.VideoId)
                         {
@@ -232,8 +224,6 @@
                         }
                         else
                         {
-                            @* The row above already says the name. What it cannot say is where the
-                               name came from, which is what the button beside it changes. *@
                             <span class="name-from">
                                 @if (row.DerivedTitle is { } derived)
                                 {
@@ -259,8 +249,6 @@
                             }
                             else
                             {
-                                @* crateside writes nothing in Mashup Samples, tag store included,
-                                   so the only honest offer is none. *@
                                 <span class="name-from">· rename it in Ableton</span>
                             }
                         }
@@ -268,8 +256,6 @@
 
                     @if (row.CanChangePlan)
                     {
-                        @* The plan rather than the files, because there are no files yet: what a
-                           track before separation can say is what it is going to become. *@
                         <div class="stems">
                             <div class="panel-head">Will separate into</div>
 
@@ -318,9 +304,6 @@
                                 </div>
                             }
 
-                            @* The whole of the user's say in what gets separated, and the last
-                               moment anyone can say it: the evidence run is unattended and the
-                               verdict run is a headless session. *@
                             <div class="release">
                                 <span class="release-label">Release</span>
                                 <select value="@Chosen(row.IsInstrumentalRelease)"
@@ -351,10 +334,6 @@
                                 <span></span>
                             </div>
 
-                            @* Where the file is, never whether it has been warped. The move out of
-                               staging is what crateside reads warping from (ADR 0007), and that is
-                               good enough to call a track done -- but nobody here watched anyone
-                               warp anything, so the row names the folder and stops. *@
                             @foreach (var sample in row.Samples)
                             {
                                 <div class="stem @(pending is null ? null : "going")">
@@ -375,9 +354,6 @@
                                 </div>
                             }
 
-                            @* Dashed and dimmed because it is not a sample. Its tag column stays
-                               empty rather than reading "never tagged": crateside tags a guide like
-                               anything else, and it is kept out for being used up (ADR 0004). *@
                             @if (row.HasWarpGuide)
                             {
                                 <div class="stem guide">
@@ -400,8 +376,6 @@
                                 </div>
                             }
 
-                            @* What the new recipe would put there instead. Drawn from the recipe
-                               rather than from anything on disk, because none of it exists yet. *@
                             @if (pending is { } plan)
                             {
                                 var first = true;
@@ -445,9 +419,6 @@
                                 }
                             }
 
-                            @* Locked once anything has left for the library: crateside changes what
-                               is in staging and nothing else, and the way back in is the user's own
-                               drag. *@
                             @if (row.Samples.Any(sample => sample.IsInLibrary))
                             {
                                 <div class="release">
@@ -540,9 +511,6 @@
                             {
                                 <button class="outline" @onclick="() => OpenFolder(row)">Open folder</button>
                             }
-                            @* The evidence page has existed all along and lost its only link when
-                               the staging board went. It is the whole of what was judged and why:
-                               the detectors, the candidates, the human sources. *@
                             @if (row.Verdict is not null)
                             {
                                 <a class="outline" href="@($"song/{row.VideoId}")">Why this key</a>
@@ -559,8 +527,6 @@
                             {
                                 <button class="outline" @onclick="() => SetHeld(row, true)">Hold</button>
                             }
-                            @* Consent is the settings page's business; without it removal is a bare
-                               403, so the button is absent rather than broken. *@
                             @if (row.PlaylistItemId is { } playlistItemId && Playlist.IsAuthorized)
                             {
                                 <button class="outline" @onclick="() => Remove(row, playlistItemId)">
@@ -580,8 +546,6 @@
         }
     }
 
-    @* Bottom-right and outside the list, because it is about a track the user is not currently
-       looking at. The one interruption this page makes. *@
     @if (_toasts.Count > 0)
     {
         <div class="toasts">
@@ -593,9 +557,6 @@
                     <span class="mono toast-figure">@Figure(toast)</span>
                     <span class="toast-foot">
                         @Waiting(toast)
-                        @* An anchor rather than an interop call: the browser's own fragment jump
-                           lands the row clear of the frozen header via scroll-margin-top, and
-                           scrollIntoView on a sticky layout is what the design warned off. *@
                         <a class="show" href="@($"#{Anchor(toast)}")" @onclick="() => Show(toast)">
                             Show row
                         </a>
@@ -611,28 +572,13 @@
     private TrackFilter _filter = TrackFilter.All;
     private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
 
-    /// <summary>How long a toast stays up. Long enough to read and act on, short enough to ignore.</summary>
     private static readonly TimeSpan ToastLife = TimeSpan.FromSeconds(20);
 
-    /// <summary>
-    /// How often the page redraws itself for the clock rather than for a change.
-    /// </summary>
-    /// <remarks>
-    /// The elapsed counters and the synced line are read off <em>now</em>, and nothing publishes
-    /// the passing of time — so without this they froze at whatever they said when the last stage
-    /// change arrived, which is why judging always read "0:02 elapsed". One second, because that
-    /// is the granularity the elapsed clock is written in. The synced line deliberately is not,
-    /// and rounds to the minute.
-    /// </remarks>
     private static readonly TimeSpan Tick = TimeSpan.FromSeconds(1);
 
-    // One at a time, and by video ID rather than by index: the list is rebuilt on every change,
-    // so a position would open whichever row happened to land there.
     private string? _expanded;
     private string? _problem;
 
-    // Newest first. Which tracks have been announced is the singleton's business; this is only
-    // what is currently on screen, and it goes with the circuit.
     private readonly List<TrackRow> _toasts = [];
 
     private readonly CancellationTokenSource _circuit = new();
@@ -641,8 +587,6 @@
     private bool _syncing;
     private bool _working;
 
-    // The proposal, not the change: nothing runs until it is confirmed. Only one row is open at a
-    // time, so one field is the whole of the state.
     private string? _recutting;
     private RecutPlan? _plan;
 
@@ -660,9 +604,6 @@
         Separation.Changed += OnChanged;
         Judging.Changed += OnChanged;
 
-        // Arriving at the page is a reason to look again. Warping happens in Ableton and moves
-        // files crateside never hears about, so the hub cannot invalidate this — and the staging
-        // view is the one thing the user opens the page to check.
         await Source.EnsureFreshAsync(TimeSpan.FromSeconds(30));
 
         _view = Source.Current;
@@ -682,18 +623,9 @@
         }
         catch (ObjectDisposedException)
         {
-            // The circuit went away between the check above and the call. Nothing to draw.
         }
     }
 
-    /// <summary>
-    /// Drops the cached playlist and reads it again — "go and look", rather than "show me what you
-    /// last saw".
-    /// </summary>
-    /// <remarks>
-    /// The invalidate is the point: the read is cached for two minutes, so pressing this straight
-    /// after adding a track on your phone would otherwise hand back the same list.
-    /// </remarks>
     private async Task Resync()
     {
         _syncing = true;
@@ -710,14 +642,6 @@
         }
     }
 
-    /// <summary>
-    /// When the playlist was last read, to the minute.
-    /// </summary>
-    /// <remarks>
-    /// To the minute because it is the only thing here that would otherwise tick every second
-    /// without anything having happened, and a counter moving for its own sake reads as activity.
-    /// The elapsed clocks move by the second because something genuinely is.
-    /// </remarks>
     private string Synced =>
         _view?.ReadAt is not { } read ? "playlist not read yet"
         : DateTimeOffset.UtcNow - read is { TotalMinutes: < 1 } ? "playlist synced just now"
@@ -751,7 +675,6 @@
         }
         catch (OperationCanceledException)
         {
-            // The circuit went away while the toast was up. Nothing to take down.
             return;
         }
 
@@ -762,8 +685,7 @@
 
     private void Show(TrackRow row)
     {
-        // All rather than In staging: the anchor has to be in the list for the browser to reach
-        // it, and All is the one filter that always contains it.
+        // All, because the anchor has to be in the list for the browser to reach it.
         _filter = TrackFilter.All;
         _expanded = row.VideoId;
         _problem = null;
@@ -779,14 +701,10 @@
             new[] { Spell(row.Key), row.Bpm?.ToString("N0") }.OfType<string>()
         );
 
-    // Samples, not stems: an instrumental release's kept file is the source track, which is a
-    // sample and no kind of stem at all (ADR 0004). The count is what is still in staging, since
-    // the user empties it progressively and may already have moved some of them.
     private static string Waiting(TrackRow row) =>
         $"{"sample".ToQuantity(row.Samples.Count(sample => !sample.IsInLibrary))} in Sample Staging, key-tagged.";
 
-    // The events are raised on a background worker's thread, never the circuit's, so the render
-    // has to be marshalled back. Same discipline the queue page has always used for DrainControl.
+    // Raised on a worker thread, never the circuit's, so the render is marshalled back.
     private void OnChanged()
     {
         _view = Source.Current;
@@ -815,13 +733,6 @@
         _name = string.Empty;
     }
 
-    /// <summary>
-    /// Records the name and puts it on the files. No confirmation step, unlike a re-cut.
-    /// </summary>
-    /// <remarks>
-    /// Nothing here is spent or destroyed: no file is deleted, no GPU is used, and Revert puts
-    /// every name back. A confirmation would be asking about a decision that costs nothing.
-    /// </remarks>
     private async Task ConfirmRename(TrackRow row)
     {
         if (!StemFileName.IsUsable(_name))
@@ -830,8 +741,6 @@
         await Renaming(() => Rename.Apply(row.VideoId, _name));
     }
 
-    // The derived name comes from the row, because deriving it is this page's join across the
-    // ledger, the staging board and the playlist rather than the rename's own business.
     private async Task RevertRename(TrackRow row) =>
         await Renaming(() => Rename.Revert(row.VideoId, row.DerivedTitle ?? row.Title));
 
@@ -844,8 +753,6 @@
         {
             var outcome = rename();
 
-            // The tag note is not a failure — the files were renamed and the tagging stage puts
-            // their keywords back on its own pass — but it is worth seeing.
             _problem = outcome.Problem ?? outcome.Note;
 
             if (outcome.Succeeded)
@@ -881,13 +788,6 @@
     private RecutPlan? PendingFor(TrackRow row) =>
         _recutting == row.VideoId ? _plan : null;
 
-    /// <summary>
-    /// Works out what changing the release would cost, and shows it. Changes nothing.
-    /// </summary>
-    /// <remarks>
-    /// Separate from <see cref="ConfirmRecut"/> because the consequence is files being deleted and
-    /// six minutes of GPU, and neither belongs behind a dropdown.
-    /// </remarks>
     private void ProposeRecut(TrackRow row, ChangeEventArgs e)
     {
         _problem = null;
@@ -922,8 +822,7 @@
             if (outcome.Succeeded)
                 CancelRecut();
 
-            // The stages were reopened by hand, and a worker part-way through its two-minute idle
-            // wait would not look again until it ended.
+            // A worker part-way through its two-minute idle wait would not look again.
             Separation.Wake();
 
             await Source.RefreshAsync(_circuit.Token);
@@ -934,8 +833,7 @@
         }
     }
 
-    // bool.ToString() is "True" and the option values are "true", so the select matched no
-    // option and the browser drew an empty box. Nothing was wrong with the colours.
+    // bool.ToString() is "True" and the option values are "true", so the select matches neither.
     private static string Chosen(bool isInstrumentalRelease) =>
         isInstrumentalRelease ? "true" : "false";
 
@@ -945,8 +843,6 @@
     private static string ReleaseWord(bool isInstrumentalRelease) =>
         isInstrumentalRelease ? "no vocals" : "has vocals";
 
-    // The server is this machine, so opening a folder means what it says. Nothing is read back —
-    // this hands off to Explorer, and what happens next happens there.
     private void OpenFolder(TrackRow row)
     {
         if (row.Folder is not { } folder)
@@ -972,8 +868,6 @@
         await Source.RefreshAsync();
     }
 
-    // Before separation there is nothing to undo, so this is the plain recorded fact rather than
-    // a re-cut. Same control, because to the user it is the same question.
     private async Task SetInstrumental(TrackRow row, ChangeEventArgs e)
     {
         Playlist.SetInstrumentalRelease(row.VideoId, Wanted(e));
@@ -981,17 +875,12 @@
         await Source.RefreshAsync(_circuit.Token);
     }
 
-    // Every failed stage, not just the one that gave up: a track that failed twice at evidence and
-    // three times at verdict is stopped by the second, and clearing only that leaves the first
-    // counting against the next attempt.
     private async Task Retry(TrackRow row)
     {
         foreach (var stage in Enum.GetValues<JobStage>())
             if (Jobs.TryGet(row.VideoId, stage, out var job) && job is { Status: JobStatus.Failed })
                 Jobs.Forgive(row.VideoId, stage);
 
-        // Nothing polls the job store, so a worker part-way through its idle wait would not look
-        // again for up to two minutes — long enough for the button to read as broken.
         Separation.Wake();
         Judging.Wake();
 
@@ -1004,7 +893,6 @@
 
         try
         {
-            // The playlist entry is the whole of what removal targets, and the row carries it.
             var results = await Playlist.RemoveAsync(
                 [
                     new QueueItem
@@ -1031,8 +919,8 @@
             ? $"Stems · {Path.GetFileName(folder)} / {row.Title}"
             : $"Stems · {row.Title}";
 
-    // The key Ableton actually holds, never the verdict's: on the one row where those disagree,
-    // showing the verdict with a tick beside it would say the opposite of what is true.
+    // The key Ableton holds, never the verdict's — on a row where they disagree, the verdict
+    // with a tick beside it would say the opposite of what is true.
     private static string Tag(TrackSample sample) =>
         sample switch
         {
@@ -1041,9 +929,7 @@
             _ => "not tagged",
         };
 
-    // A sample that has left staging is dim rather than red. Nothing here read its tag — crateside does
-    // not write tags outside Sample Staging and does not trust the store elsewhere (ADR 0003) — so
-    // "not tagged" would be a claim, and the honest mark is no claim at all.
+    // Dim, not red: nothing read this file's tag, so "not tagged" would be a claim (ADR 0003).
     private static string TagTone(TrackSample sample) =>
         sample switch
         {
@@ -1052,9 +938,6 @@
             _ => "bad",
         };
 
-    // Two toggles rather than one, and they stop for different reasons. The GPU is audible and
-    // makes the machine unusable while it runs; a verdict spends ~5.4% of a five-hour quota window
-    // before it weighs anything. Sharing a button would mean stopping the GPU to save quota.
     private void ToggleSeparation()
     {
         if (Separation.IsPaused)
@@ -1073,12 +956,8 @@
 
     private TrackRow? RowIn(TrackState state) => Rows.FirstOrDefault(row => row.State == state);
 
-    // Both counts are exact rather than approximate: the GPU line is every track that has been
-    // judged and is waiting, and the judging line is every track with no verdict yet.
     private int Waiting(TrackState state) => Rows.Count(row => row.State == state);
 
-    // Counted from when the stage recorded Running, which for an open job is when it started:
-    // nothing reports progress in between, separation least of all.
     private static string Elapsed(DateTimeOffset since)
     {
         var span = DateTimeOffset.UtcNow - since;
@@ -1097,8 +976,6 @@
             _ => filter.ToString(),
         };
 
-    // Only three things are coloured, and only where the colour means something: amber is the
-    // user's turn, teal is the machine working, red needs attention.
     private static string Tone(TrackFilter filter) =>
         filter switch
         {
@@ -1141,7 +1018,7 @@
             _ => "none",
         };
 
-    // The ledger spells keys in ASCII so they survive a filename; the screen is not a filename.
+    // The ledger spells keys in ASCII so they survive a filename. The screen is not one.
     private static string? Spell(string? key) =>
         key?.Replace("#", "♯", StringComparison.Ordinal)
             .Replace(" major", " maj", StringComparison.Ordinal)
