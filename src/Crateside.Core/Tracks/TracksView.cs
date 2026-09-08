@@ -128,12 +128,12 @@ public sealed record TracksView
             var verdict = ledger.TryGetLatestByVideoId(videoId, out var run) ? run : null;
 
             // The playlist's title while the track is still in it, and the bare video ID once
-            // neither the playlist nor staging has anything to offer.
+            // nothing else has anything to offer.
             var (derived, source) = NameOf(
                 fallbackName,
                 item is null && song is null ? TrackNameSource.VideoId : TrackNameSource.Playlist,
-                verdict,
-                song
+                NameFromFiles(song, files),
+                verdict
             );
 
             var stated = instruction?.Name is { Length: > 0 } name ? name : null;
@@ -145,7 +145,6 @@ public sealed record TracksView
                 Title = stated ?? derived,
                 DerivedTitle = stated is null ? null : derived,
                 NameSource = source,
-                NameOnDisk = NameOnDiskOf(song, stated ?? derived),
                 AwaitingRename = AwaitingRenameIn(song, stated),
                 Verdict = verdict,
                 // The work list for the queue item, the instruction for everything else. They
@@ -218,47 +217,47 @@ public sealed record TracksView
         };
 
     /// <summary>
-    /// What to call the track when the user has not said: the ledger's identity, then the board's,
-    /// then the playlist's.
+    /// What to call the track when the user has not: the files, then the ledger, then the
+    /// playlist.
     /// </summary>
     /// <remarks>
-    /// <strong>The playlist title is the worst of the three and is the fallback for that reason.</strong>
-    /// It is whatever the uploader named the video, which routinely omits the artist — a row
-    /// reading "99th Street" where the library holds "Starjunk 95 - 99th Street" is the same
-    /// track under a name the user cannot search for. The ledger records artist and title
-    /// separately and properly cased, which is what makes it the better source; its <c>Song</c>
-    /// field is not used here because that is the normalized lowercase identity, built for
-    /// matching rather than for reading.
+    /// <strong>The files come first so the row and Ableton agree.</strong> They are the name the
+    /// user actually works with, and a row that quietly showed a better one made the two libraries
+    /// impossible to scan side by side. Renaming is how the name is improved, and it moves both.
     /// </remarks>
     private static (string Name, TrackNameSource Source) NameOf(
         string fallback,
         TrackNameSource fallbackSource,
-        LedgerRun? verdict,
-        StagingSong? staged
+        string? onDisk,
+        LedgerRun? verdict
     ) =>
-        (verdict, staged) switch
+        (onDisk, verdict) switch
         {
-            ({ Artist.Length: > 0, Title.Length: > 0 }, _) => (
+            ({ Length: > 0 }, _) => (onDisk, TrackNameSource.Files),
+            (_, { Artist.Length: > 0, Title.Length: > 0 }) => (
                 verdict.DisplayName,
                 TrackNameSource.Ledger
             ),
-            (_, { DisplayName.Length: > 0 }) => (staged.DisplayName, TrackNameSource.StagingBoard),
             _ => (fallback, fallbackSource),
         };
 
     /// <summary>
-    /// The one name this track's staged files share, when it is not the one on screen. The
-    /// single-element pattern is what makes files that disagree yield null.
+    /// What this track's files are called with the preset stripped, which is what Ableton shows.
     /// </summary>
-    private static string? NameOnDiskOf(StagingSong? staged, string shown) =>
-        staged
-            ?.Stems.Select(stem => StemFileName.WithoutPreset(stem.Path))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray()
-            is [var onDisk]
-        && !onDisk.Equals(shown, StringComparison.OrdinalIgnoreCase)
-            ? onDisk
-            : null;
+    /// <remarks>
+    /// Staging wins over the finished library for the reason the folder does. Files that disagree
+    /// — a rename that stopped part way — are settled by the most common name rather than by
+    /// whichever was read first.
+    /// </remarks>
+    private static string? NameFromFiles(StagingSong? staged, IReadOnlyList<StemOnDisk> onDisk) =>
+        (staged?.Stems.Select(stem => stem.Path) ?? onDisk.Select(file => file.Path))
+            .Select(StemFileName.WithoutPreset)
+            .Where(name => name is { Length: > 0 })
+            .GroupBy(name => name, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(names => names.Count())
+            .ThenBy(names => names.Key, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault()
+            ?.Key;
 
     /// <summary>
     /// Staged files a rename has not reached — measured against a stated name only, never a

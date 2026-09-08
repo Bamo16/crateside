@@ -503,29 +503,71 @@ public class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
-    public void The_derived_name_says_which_of_the_three_sources_won()
+    public void The_files_name_the_track_even_when_the_ledger_has_a_better_name()
     {
-        // Worth showing because the three disagree often and unevenly. The ledger records artist
-        // and title separately and properly cased; a video title routinely omits the artist.
+        // The row has to say what Ableton says, or the two libraries cannot be scanned side by
+        // side. The ledger's name is often the nicer one — "Estelle - American Boy" against the
+        // file's "Estelle, Kanye West, Keith Harris, William Adams - American Boy" — and renaming
+        // is how that is applied, to both at once, rather than shown on one and not the other.
+        var row = Assert.Single(
+            Compose(
+                View([]),
+                ledger: LedgerWith("C minor", "HIGH", 120),
+                staging: [Staged(Stem("Vocal - Full"))]
+            )
+        );
+
+        Assert.Equal(TrackNameSource.Files, row.NameSource);
+        Assert.Equal("track", row.Title);
+    }
+
+    [Fact]
+    public void A_track_with_nothing_on_disk_falls_back_to_the_ledger_then_the_playlist()
+    {
         var fromLedger = Assert.Single(Compose(ledger: LedgerWith("C minor", "HIGH", 120)));
 
         Assert.Equal(TrackNameSource.Ledger, fromLedger.NameSource);
-
-        var fromBoard = Assert.Single(Compose(View([]), staging: [Staged(Stem("Vocal - Full"))]));
-
-        Assert.Equal(TrackNameSource.StagingBoard, fromBoard.NameSource);
+        Assert.Equal("Rob Dougan - Furious Angels", fromLedger.Title);
         Assert.Equal(TrackNameSource.Playlist, Assert.Single(Compose()).NameSource);
     }
 
     [Fact]
-    public void A_library_only_row_with_no_verdict_names_no_source_it_does_not_have()
+    public void A_library_only_row_is_named_by_its_files_rather_than_by_a_video_id()
     {
-        // The playlist let it go long ago and it was never staged, so "from the playlist title"
-        // would be a claim about a title nothing here has read.
+        // These have no playlist entry and no staging row, so before the files were consulted the
+        // only name left was the video ID — unreadable, and the row is reachable under Done.
         var row = Assert.Single(Compose(View([]), onDisk: Finished("Vocal - Full")));
 
-        Assert.Equal(TrackNameSource.VideoId, row.NameSource);
-        Assert.Equal(Video, row.Title);
+        Assert.Equal(TrackNameSource.Files, row.NameSource);
+        Assert.Equal("track", row.Title);
+    }
+
+    [Fact]
+    public void Files_that_disagree_are_settled_by_the_most_common_name()
+    {
+        // A rename that stopped part way. Whichever file was read first is not an answer.
+        var row = Assert.Single(
+            Compose(
+                View([]),
+                staging:
+                [
+                    Staged(Stem("Vocal - Full")) with
+                    {
+                        Stems =
+                        [
+                            Stem("Vocal - Full"),
+                            Stem("Instrumental - Full"),
+                            Stem("Drums") with
+                            {
+                                Path = Path.Combine(StagingRoot, "left behind (Drums).flac"),
+                            },
+                        ],
+                    },
+                ]
+            )
+        );
+
+        Assert.Equal("track", row.Title);
     }
 
     [Fact]
@@ -584,10 +626,10 @@ public class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
-    public void A_derived_name_that_differs_from_the_files_is_not_a_finding()
+    public void A_track_nobody_renamed_is_never_half_renamed()
     {
-        // The ledger identifies a song and the uploader named a video, so these differ for most
-        // of the library. Counting that as half-renamed would flag nearly every row.
+        // Measured against a stated name only. There is none here, and the ledger's better name is
+        // not one the files were ever asked to carry.
         var row = Assert.Single(
             Compose(
                 View([]),
@@ -596,71 +638,8 @@ public class TracksViewCompositionTests : IDisposable
             )
         );
 
-        Assert.NotEqual("track", row.Title);
         Assert.Equal(0, row.AwaitingRename);
-    }
-
-    [Fact]
-    public void The_name_on_disk_is_carried_when_it_is_not_the_one_on_screen()
-    {
-        // The real case, and the one that reads as a bug until it is said out loud: the ledger
-        // names a song "Estelle - American Boy" from keytag's identification, while the files were
-        // named from the download's tags — "Estelle, Kanye West, Keith Harris, William Adams -
-        // American Boy". One track, two true names.
-        var row = Assert.Single(
-            Compose(
-                View([]),
-                ledger: LedgerWith("C minor", "HIGH", 120),
-                staging: [Staged(Stem("Vocal - Full"), Stem("Instrumental - Full"))]
-            )
-        );
-
-        Assert.Equal("Rob Dougan - Furious Angels", row.Title);
-        Assert.Equal("track", row.NameOnDisk);
-    }
-
-    [Fact]
-    public void Files_that_already_agree_with_the_screen_are_not_worth_saying()
-    {
-        var row = Assert.Single(
-            Compose(
-                View([]),
-                staging: [Staged(Stem("Vocal - Full"))],
-                instructions: new TrackInstruction { VideoId = Video, Name = "track" }
-            )
-        );
-
-        Assert.Null(row.NameOnDisk);
-    }
-
-    [Fact]
-    public void Files_that_disagree_with_each_other_say_nothing_rather_than_pick_one()
-    {
-        // A rename that stopped part way. What is worth saying about these is that it did not
-        // finish, which AwaitingRename says.
-        var row = Assert.Single(
-            Compose(
-                View([]),
-                staging:
-                [
-                    Staged(Stem("Vocal - Full")) with
-                    {
-                        Stems =
-                        [
-                            Stem("Vocal - Full"),
-                            Stem("Drums") with
-                            {
-                                Path = Path.Combine(StagingRoot, "half renamed (Drums).flac"),
-                            },
-                        ],
-                    },
-                ],
-                instructions: new TrackInstruction { VideoId = Video, Name = "half renamed" }
-            )
-        );
-
-        Assert.Null(row.NameOnDisk);
-        Assert.Equal(1, row.AwaitingRename);
+        Assert.False(row.Matches(TrackFilter.NeedsAttention));
     }
 
     [Fact]

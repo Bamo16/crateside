@@ -49,15 +49,6 @@ public sealed record TrackRow
     public TrackNameSource NameSource { get; init; }
 
     /// <summary>
-    /// What this track's staged files are called, when that is not what crateside calls it.
-    /// </summary>
-    /// <remarks>
-    /// Null when they match, when there are none, and when they disagree among themselves — that
-    /// last is <see cref="AwaitingRename"/>'s to report.
-    /// </remarks>
-    public string? NameOnDisk { get; init; }
-
-    /// <summary>
     /// Staged files a rename did not reach — zero unless one was interrupted part way.
     /// </summary>
     /// <remarks>
@@ -420,11 +411,11 @@ public sealed record TrackRow
 /// <summary>Where a track's derived name came from, best first.</summary>
 public enum TrackNameSource
 {
-    /// <summary>keytag's verdict — the best of them.</summary>
-    Ledger,
+    /// <summary>The files themselves — what Ableton shows, so the row matches it.</summary>
+    Files,
 
-    /// <summary>The staged files' own tags.</summary>
-    StagingBoard,
+    /// <summary>keytag's verdict, for a track with nothing on disk yet.</summary>
+    Ledger,
 
     /// <summary>The playlist entry's title, which is whatever the uploader typed.</summary>
     Playlist,

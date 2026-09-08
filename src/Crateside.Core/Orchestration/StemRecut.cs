@@ -11,7 +11,7 @@ namespace Crateside.Core.Orchestration;
 /// takes one: the board opens every audio file under the root with TagLib, and a re-cut has no
 /// business depending on that in order to be understood or tested.
 /// </remarks>
-public delegate IReadOnlyList<Staging.StagingStem> ReadStagedFiles(string videoId);
+public delegate IReadOnlyList<StagingStem> ReadStagedFiles(string videoId);
 
 /// <summary>
 /// Cuts a track's stems again, to a different recipe, without judging it again.
@@ -111,6 +111,12 @@ public sealed class StemRecut(
             try
             {
                 File.Delete(stem.Path);
+
+                // The warp markers go with the audio they were placed against. Left behind, the
+                // sidecar is picked up by the file separation puts back under the same name, and
+                // Ableton warps new audio to old markers rather than analysing it.
+                File.Delete(StemFileName.AnalysisFor(stem.Path));
+
                 removed++;
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)

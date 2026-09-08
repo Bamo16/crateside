@@ -150,6 +150,31 @@ public class StemRecutTests : IDisposable
         Assert.Equal(SeparationRecipe.Standard, SeparationRecipe.For(stated));
     }
 
+    [Fact]
+    public void It_clears_Abletons_analysis_files_along_with_the_audio()
+    {
+        // Separation puts a file back under the same name, so a sidecar left behind is picked up
+        // by new audio: Ableton warps it to the old markers rather than analysing it.
+        var source = Stage("Rob Dougan - Furious Angels.flac");
+
+        File.WriteAllText(source + ".asd", "warp markers");
+
+        var recut = new StemRecut(Settings(), Jobs(), WorkingSetWithSource(), Staged());
+
+        Assert.True(recut.Apply(Video, isInstrumentalRelease: false).Succeeded);
+        Assert.False(File.Exists(source + ".asd"));
+    }
+
+    [Fact]
+    public void A_stem_nobody_analysed_is_removed_without_complaint()
+    {
+        Stage("Rob Dougan - Furious Angels.flac");
+
+        var recut = new StemRecut(Settings(), Jobs(), WorkingSetWithSource(), Staged());
+
+        Assert.True(recut.Apply(Video, isInstrumentalRelease: false).Succeeded);
+    }
+
     [Theory]
     [InlineData(JobStage.Separation)]
     [InlineData(JobStage.Handoff)]

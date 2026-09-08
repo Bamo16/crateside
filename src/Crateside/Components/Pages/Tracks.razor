@@ -236,10 +236,8 @@
                         }
                         else
                         {
-                            @* The row above already says the name, so saying it again here was a
-                               line of nothing. What it cannot say is where the name came from, or
-                               that the files are under a different one — which is the question
-                               the button beside it answers. *@
+                            @* The row above already says the name. What it cannot say is where the
+                               name came from, which is what the button beside it changes. *@
                             <span class="name-from">
                                 @if (row.DerivedTitle is { } derived)
                                 {
@@ -248,10 +246,6 @@
                                 else
                                 {
                                     <text>named from @From(row.NameSource)</text>
-                                }
-                                @if (row.NameOnDisk is { } onDisk)
-                                {
-                                    <text> · files say <strong>@onDisk</strong></text>
                                 }
                             </span>
 
@@ -882,8 +876,8 @@
     private static string From(TrackNameSource source) =>
         source switch
         {
+            TrackNameSource.Files => "the file names",
             TrackNameSource.Ledger => "the ledger",
-            TrackNameSource.StagingBoard => "the staging board",
             TrackNameSource.Playlist => "the playlist title",
             _ => "the video ID",
         };
