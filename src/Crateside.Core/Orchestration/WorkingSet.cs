@@ -4,26 +4,6 @@ namespace Crateside.Core.Orchestration;
 /// Everything crateside is holding about one track while that track is in flight: the source
 /// audio it acquired and the evidence it produced from it.
 /// </summary>
-/// <remarks>
-/// <para>
-/// <strong>Scratch, never a record.</strong> Losing a working set costs a re-run and never a
-/// fact — the verdict lives in keytag's ledger and the job history lives in
-/// <see cref="JobStore"/>. It is safe to delete by hand at any time, which is why it sits under
-/// <c>%LOCALAPPDATA%</c> rather than beside the roaming settings: this is cache.
-/// </para>
-/// <para>
-/// It exists because splitting evidence from judgment <em>in time</em> leaves the machine layer
-/// with nowhere to live. keytag persists one only inside a finished run record, since the agent
-/// used to produce both halves in one session. An evidence store in keytag would have exactly
-/// one writer — crateside — which is the dependency reversal the boundary exists to prevent, so
-/// crateside keeps it instead (ADR 0005).
-/// </para>
-/// <para>
-/// One folder per video ID, holding one audio file and one or more evidence JSONs. The audio is
-/// not named by us: <c>stemforge-cli download</c> names it from the release metadata, and that
-/// name is worth keeping because the separator reads the same tags to name the stems.
-/// </para>
-/// </remarks>
 public sealed class WorkingSet(string? root = null)
 {
     /// <summary>The evidence from the whole-file detection — the one a verdict run starts from.</summary>
@@ -46,11 +26,7 @@ public sealed class WorkingSet(string? root = null)
             ? [.. Directory.EnumerateDirectories(_root).Select(Path.GetFileName).OfType<string>()]
             : [];
 
-    /// <summary>
-    /// What the working sets are costing on disk. Surfaced because the retention window runs
-    /// until a track is imported, which can be weeks — this should be visible rather than
-    /// quietly accumulating.
-    /// </summary>
+    /// <summary>What all working sets together are costing on disk.</summary>
     public long TotalBytes =>
         Directory.Exists(_root)
             ? Directory
@@ -79,18 +55,7 @@ public sealed class WorkingSet(string? root = null)
     /// The whole-file evidence itself, when it is small enough to hand to a reader directly.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// For inlining into the verdict prompt. A session reading this file spends a whole round
-    /// trip on it — measured at ~25k of context re-read — where the file is under a thousand
-    /// tokens sitting in a prefix that is cached anyway. So the cheap thing is to carry it.
-    /// </para>
-    /// <para>
-    /// <strong>The bound is not about any file seen so far.</strong> Real evidence is 2–4 KB of
-    /// fixed shape from <c>keytag-detect</c>; the cap is there because <c>key_events</c> is a
-    /// flicker list with no length in its definition, and one pathological track must not
-    /// quietly turn the saving back into a cost. Over the bound this reports nothing and the
-    /// prompt falls back to naming the path, which is what it did before and still works.
-    /// </para>
+    /// Over the bound this returns false and the caller falls back to naming the path instead.
     /// </remarks>
     public bool TryReadEvidence(string videoId, out string evidence)
     {
@@ -104,11 +69,7 @@ public sealed class WorkingSet(string? root = null)
             )
                 evidence = File.ReadAllText(EvidencePathFor(videoId));
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            // Unreadable evidence is not worth failing over here: the caller names the path
-            // instead, and the session reads it the old way.
-        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
 
         return evidence is not null;
     }
@@ -117,10 +78,8 @@ public sealed class WorkingSet(string? root = null)
     /// The retained source audio, if it is there.
     /// </summary>
     /// <remarks>
-    /// Found by elimination rather than by name, because the downloader chooses the name. Two
-    /// audio files in one folder is not a case to reconcile — it means the folder is not what we
-    /// think it is, so this reports nothing and the caller re-acquires, which is cheap and
-    /// always correct.
+    /// Two audio files in one folder is treated as unknown rather than resolved — this reports
+    /// nothing and the caller re-acquires.
     /// </remarks>
     public bool TryGetSource(string videoId, out string path)
     {
@@ -144,11 +103,7 @@ public sealed class WorkingSet(string? root = null)
         return path is not null;
     }
 
-    /// <summary>
-    /// Throws the whole working set away. Called when the track is <em>imported</em> — the point
-    /// at which there is nothing further to do with the track, and so nothing further to do with
-    /// what was gathered about it.
-    /// </summary>
+    /// <summary>Throws the whole working set away, once the track is imported.</summary>
     public void Discard(string videoId)
     {
         try
@@ -158,8 +113,7 @@ public sealed class WorkingSet(string? root = null)
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            // A file still open somewhere. Scratch that outlives its welcome costs disk and
-            // nothing else, and the next pass will try again.
+            // A file still open somewhere; harmless, and retried next pass.
         }
     }
 

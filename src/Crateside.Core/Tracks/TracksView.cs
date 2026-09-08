@@ -9,10 +9,8 @@ namespace Crateside.Core.Tracks;
 /// The playlist as tracks: one row each, whatever state they are in.
 /// </summary>
 /// <remarks>
-/// Where <see cref="QueueView"/> sorts the playlist into the work lists each stage reads, this
-/// puts it back together again — the same tracks, addressed by identity rather than by which
-/// stage wants them next. Both exist because they answer different questions: a stage asks "what
-/// may I pick up", and a person asks "where is my track".
+/// Where <see cref="QueueView"/> sorts the playlist into per-stage work lists, this puts it back
+/// together by track identity.
 /// </remarks>
 public sealed record TracksView
 {
@@ -21,10 +19,7 @@ public sealed record TracksView
     /// <summary>
     /// When the playlist behind these rows was last fetched. Null if it never has been.
     /// </summary>
-    /// <remarks>
-    /// Set by whoever assembled the read rather than by <see cref="Compose"/>, which knows nothing
-    /// about clocks and is kept that way.
-    /// </remarks>
+    /// <remarks>Set by the caller, not by <see cref="Compose"/>, which knows nothing about clocks.</remarks>
     public DateTimeOffset? ReadAt { get; init; }
 
     /// <summary>
@@ -37,13 +32,11 @@ public sealed record TracksView
     /// Every file carrying a track's provenance, by video ID, across the roots that were scanned.
     /// </param>
     /// <param name="instructions">
-    /// The user's standing instructions, by video ID. Read here rather than off the queue item,
-    /// because a row outlives its playlist entry and the instructions outlive it too — a release
-    /// with no vocals does not acquire them when the entry is deleted.
+    /// The user's standing instructions, by video ID — read here rather than off the queue item
+    /// because they outlive the playlist entry too.
     /// </param>
     /// <param name="finishedRoot">
-    /// The folder that means the user is done with a file — <c>Mashup Samples</c>. Passed rather
-    /// than assumed so this stays pure and testable (ADR 0007).
+    /// The folder that means the user is done with a file — <c>Mashup Samples</c>.
     /// </param>
     public static TracksView Compose(
         QueueView view,
@@ -55,30 +48,18 @@ public sealed record TracksView
         IReadOnlyDictionary<string, TrackInstruction> instructions
     )
     {
-        // The work lists become values on a row rather than the row's address. A stage is right
-        // to ask "what may I pick up"; the page asks "where is my track", and answering that by
-        // membership is what made a row move every time its state changed.
         var held = VideoIdsOf(view.Held);
         var parked = VideoIdsOf(view.AwaitingKey);
 
-        // Separation is strictly one at a time, so "when" is honestly a position rather than a
-        // time. Counted from one, in the order the selector will take them.
         var gpuLine = view
             .AwaitingSeparation.Select((item, index) => (item.VideoId, Position: index + 1))
             .ToDictionary(entry => entry.VideoId, entry => entry.Position, StringComparer.Ordinal);
 
-        // The board is the only source carrying per-file tag state, so staged files come from it
-        // rather than from the scan, even though the scan saw the same files.
         var staged = staging
             .Where(song => song.SourceVideoId is not null)
             .ToDictionary(song => song.SourceVideoId!, StringComparer.Ordinal);
 
-        // Everything in the playlist, and then everything still in staging that is not.
-        //
-        // A track leaves the playlist the moment it is fully processed, which is long before the
-        // user has finished with it: its stems sit in Sample Staging for weeks afterwards, waiting
-        // to be warped. Building rows from the playlist alone lost every one of those — the
-        // warping worklist is the folder, and the folder outlives the playlist entry.
+        // Everything in the playlist, then everything still in staging that isn't.
         var queued = VideoIdsOf(view.Items);
         var reopened = VideoIdsOf(view.AwaitingSeparation.Where(i => i.PlaylistItemId is null));
 
@@ -89,9 +70,7 @@ public sealed record TracksView
                 .. staging
                     .Where(song => song.SourceVideoId is { } id && !queued.Contains(id))
                     .Select(song => Row(song.SourceVideoId!, song.DisplayName)),
-                // And a track being re-cut, which for a moment is in neither: its staged files
-                // have just been deleted and the playlist let it go long ago. Without this the row
-                // vanishes at exactly the point there is most reason to watch it.
+                // A track being re-cut: staged files just deleted, playlist entry long gone.
                 .. view
                     .AwaitingSeparation.Where(item =>
                         item.PlaylistItemId is null
@@ -99,9 +78,8 @@ public sealed record TracksView
                         && !staged.ContainsKey(item.VideoId)
                     )
                     .Select(item => Row(item.VideoId, item.Title, item)),
-                // And everything the library has that none of the above accounts for: tracks
-                // keytag judged before crateside existed, and tracks finished with long enough ago
-                // that the playlist entry is gone. Reachable under Done and nowhere else.
+                // Everything else the library has: tracks judged before crateside existed, or
+                // finished long enough ago that the playlist entry is gone.
                 .. onDisk
                     .Where(entry =>
                         !queued.Contains(entry.Key)
@@ -122,13 +100,10 @@ public sealed record TracksView
             var instruction = instructions.GetValueOrDefault(videoId);
             var progress = StageProgress.For(jobs, videoId);
 
-            // Two hops, never a direct lookup: a video ID resolves to a song identity and the
-            // identity resolves to the latest run, which is what makes a supersede win rather than
-            // the line that happened to name this URL.
+            // Resolves through song identity so a supersede wins over whichever run named this
+            // URL.
             var verdict = ledger.TryGetLatestByVideoId(videoId, out var run) ? run : null;
 
-            // The playlist's title while the track is still in it, and the bare video ID once
-            // nothing else has anything to offer.
             var (derived, source) = NameOf(
                 fallbackName,
                 item is null && song is null ? TrackNameSource.VideoId : TrackNameSource.Playlist,
@@ -147,8 +122,8 @@ public sealed record TracksView
                 NameSource = source,
                 AwaitingRename = AwaitingRenameIn(song, stated),
                 Verdict = verdict,
-                // The work list for the queue item, the instruction for everything else. They
-                // agree while a track is in the playlist and only the instruction survives it.
+                // The work list covers the queue item; the instruction covers everything after it
+                // leaves the playlist.
                 IsHeld = held.Contains(videoId) || instruction?.IsHeld is true,
                 IsInstrumentalRelease = instruction?.IsInstrumentalRelease is true,
                 IsParkedForKey = parked.Contains(videoId),
@@ -159,8 +134,6 @@ public sealed record TracksView
                 GaveUpStrikes = progress.GaveUpStrikes,
                 Samples = SamplesOf(song, files, finishedRoot),
                 HasWarpGuide = song?.WarpGuides.Count > 0,
-                // The only finding derivable from the board alone: Ableton holding a key that is
-                // not the ledger's current verdict, which is what a supersede leaves behind.
                 AuditNote = song?.StaleTaggedStems.Count > 0 ? "tag disagrees" : null,
                 Folder = FolderOf(song, files),
                 StagedSince = StagedSinceOf(files, finishedRoot),
@@ -169,34 +142,12 @@ public sealed record TracksView
     }
 
     /// <summary>
-    /// Names compared the way Ableton's browser compares them, so a warping session can scan the
-    /// two lists side by side. Ordinal, which is what puts the Japanese titles last in both.
+    /// Compared the way Ableton's browser compares them — ordinal, so a warping session can scan
+    /// both lists side by side.
     /// </summary>
     private static readonly StringComparer ByName = StringComparer.OrdinalIgnoreCase;
 
-    /// <summary>
-    /// The default order: grouped by what the row wants from the user, then by name.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <strong>A row moves at most twice in its life, and only when that is the news.</strong> The
-    /// page was built on rows never moving, because the thing it replaced bucketed tracks into
-    /// sections and shuffled them between the two while you were trying to click one. The states a
-    /// track crosses while crateside works it — queued through tagging — are therefore one group,
-    /// so nothing moves as it goes. <em>Held is in that group too</em>, which matters most: a hold
-    /// is a change the user makes, and having the row jump out from under the press was the worst
-    /// of it.
-    /// </para>
-    /// <para>
-    /// What does move a row is reaching <em>ready to warp</em>, being parked for want of a key, or
-    /// being finished with — the three transitions worth noticing, and the only three.
-    /// </para>
-    /// <para>
-    /// Within a group, by name — except the working group, which keeps the order it was assembled
-    /// in. That is the playlist's own oldest-first order, which is the order the stages will take
-    /// them, and it is preserved by sorting the groups separately rather than by a second key.
-    /// </para>
-    /// </remarks>
+    /// <summary>The default order: grouped by what the row wants from the user, then by name.</summary>
     internal static IReadOnlyList<TrackRow> InOrder(IReadOnlyList<TrackRow> rows) =>
         [
             .. rows.Where(row => Group(row) is 0).OrderBy(row => row.Title, ByName),
@@ -220,11 +171,6 @@ public sealed record TracksView
     /// What to call the track when the user has not: the files, then the ledger, then the
     /// playlist.
     /// </summary>
-    /// <remarks>
-    /// <strong>The files come first so the row and Ableton agree.</strong> They are the name the
-    /// user actually works with, and a row that quietly showed a better one made the two libraries
-    /// impossible to scan side by side. Renaming is how the name is improved, and it moves both.
-    /// </remarks>
     private static (string Name, TrackNameSource Source) NameOf(
         string fallback,
         TrackNameSource fallbackSource,
@@ -244,11 +190,7 @@ public sealed record TracksView
     /// <summary>
     /// What this track's files are called with the preset stripped, which is what Ableton shows.
     /// </summary>
-    /// <remarks>
-    /// Staging wins over the finished library for the reason the folder does. Files that disagree
-    /// — a rename that stopped part way — are settled by the most common name rather than by
-    /// whichever was read first.
-    /// </remarks>
+    /// <remarks>Settled by the most common name among the files, not by whichever was read first.</remarks>
     private static string? NameFromFiles(StagingSong? staged, IReadOnlyList<StemOnDisk> onDisk) =>
         (staged?.Stems.Select(stem => stem.Path) ?? onDisk.Select(file => file.Path))
             .Select(StemFileName.WithoutPreset)
@@ -272,14 +214,9 @@ public sealed record TracksView
                     .Equals(stem.Path, StringComparison.OrdinalIgnoreCase)
             );
 
-    /// <summary>
-    /// A track's kept files, from wherever they currently are.
-    /// </summary>
+    /// <summary>A track's kept files, from wherever they currently are.</summary>
     /// <remarks>
-    /// Two sources because staging is emptied progressively and they overlap for as long as the
-    /// user takes: the board holds what is still in <c>Sample Staging</c> and the tags on it,
-    /// while the scan finds what has reached <c>Mashup Samples</c>. A file is under exactly one
-    /// root, so nothing is counted twice.
+    /// A file is under exactly one root, so combining the two sources never double-counts.
     /// </remarks>
     private static IReadOnlyList<TrackSample> SamplesOf(
         StagingSong? staged,
@@ -301,12 +238,6 @@ public sealed record TracksView
                 {
                     Label = file.Preset ?? "source",
                     IsInLibrary = true,
-                    // AbletonKey is left null, and the omission is the point: crateside
-                    // never writes tags in Mashup Samples, and that store is not a faithful mirror
-                    // of what Ableton holds (ADR 0003), so nothing here has read this file's tag.
-                    // Which folder it is in is the honest claim, and it is the one that matters:
-                    // the move out of staging is the user finishing with the file, tagging and
-                    // warping and renaming together.
                 }),
         ];
 
@@ -314,24 +245,12 @@ public sealed record TracksView
     /// The folder the track's files are in: staging while anything is still there, else wherever
     /// they have got to.
     /// </summary>
-    /// <remarks>
-    /// Taken from a file rather than assembled from a root and a name, because the layout under a
-    /// root belongs to whoever put the files there and a rebuilt path would be a second opinion
-    /// about it.
-    /// </remarks>
     private static string? FolderOf(StagingSong? staged, IReadOnlyList<StemOnDisk> onDisk) =>
         (staged?.Stems.FirstOrDefault()?.Path ?? onDisk.FirstOrDefault()?.Path) is { } path
             ? Path.GetDirectoryName(path)
             : null;
 
-    /// <summary>
-    /// When the track arrived in staging: the earliest of the files still there.
-    /// </summary>
-    /// <remarks>
-    /// Earliest because handoff moves a track's files together, so the oldest of them is when the
-    /// track landed. Files that have reached the finished root are excluded — they are no longer
-    /// staged, and a track with none left is not staged since anything.
-    /// </remarks>
+    /// <summary>When the track arrived in staging: the earliest of the files still there.</summary>
     private static DateTimeOffset? StagedSinceOf(
         IReadOnlyList<StemOnDisk> onDisk,
         string finishedRoot

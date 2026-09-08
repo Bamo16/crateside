@@ -4,17 +4,9 @@ namespace Crateside.Core.Orchestration;
 /// What crateside has done, or is doing, about one track at one <see cref="JobStage"/>.
 /// </summary>
 /// <remarks>
-/// <para>
-/// This is a <em>projection</em> over the appended <see cref="JobUpdate"/> lines, not a stored
-/// row: the latest update for an id wins, exactly as a supersede works in the ledger.
-/// </para>
-/// <para>
-/// <strong>This is the first non-derived state in the system, and it is deliberately narrow.</strong>
-/// It records what crateside <em>ran</em> — never what is true of the library. Whether a track
-/// has a verdict still comes from the ledger, and whether its stems are finished still means
-/// they left <c>Sample Staging</c>. A job that says "succeeded" is not evidence that a track is
-/// done; it is only evidence that crateside tried.
-/// </para>
+/// A projection over the appended <see cref="JobUpdate"/> lines, not a stored row — the latest
+/// update for an id wins. A job that says "succeeded" is not evidence a track is done; it only
+/// records that crateside tried, never what is true of the library.
 /// </remarks>
 public sealed record TrackJob
 {
@@ -25,7 +17,6 @@ public sealed record TrackJob
     public required JobStage Stage { get; init; }
     public required JobStatus Status { get; init; }
 
-    /// <summary>When the latest update landed.</summary>
     public required DateTimeOffset UpdatedAt { get; init; }
 
     /// <summary>
@@ -41,14 +32,12 @@ public sealed record TrackJob
     /// </summary>
     public DateTimeOffset? ProcessStartedAt { get; init; }
 
-    /// <summary>Why the last failure failed, for the UI and for the morning after.</summary>
+    /// <summary>Why the last failure failed.</summary>
     public string? Error { get; init; }
 
     /// <summary>
     /// How many times this job has failed, counted over its whole history. Derived rather than
-    /// stored, so it cannot drift from the record it summarizes. What stops a poisoned track
-    /// from being retried every night forever — though what counts as too many is the
-    /// scheduler's call, not the store's.
+    /// stored, so it cannot drift from the record it summarizes.
     /// </summary>
     public required int Strikes { get; init; }
 
@@ -57,8 +46,8 @@ public sealed record TrackJob
 }
 
 /// <summary>
-/// Which kind of work a job is. Named separately because each contends for a <em>different</em>
-/// scarce resource — nothing, Claude quota, and the GPU — and so each wants its own moment.
+/// Which kind of work a job is. Named separately because each contends for a different scarce
+/// resource: nothing, Claude quota, or the GPU.
 /// </summary>
 public enum JobStage
 {
@@ -68,18 +57,18 @@ public enum JobStage
     /// <summary>Turn evidence into a verdict. The only stage that needs an agent.</summary>
     Verdict,
 
-    /// <summary>Separation. GPU-bound, serial, hours long, and strictly single-flight.</summary>
+    /// <summary>GPU-bound, serial, hours long, and strictly single-flight.</summary>
     Separation,
 
     /// <summary>
     /// Hands the finished stems to the human half by moving them into <c>Sample Staging</c>.
-    /// A file move, so it contends for nothing — like evidence, it needs no moment picked for it.
+    /// A file move, so it contends for nothing.
     /// </summary>
     Handoff,
 
     /// <summary>
     /// Applies the settled key to the files in staging, as Ableton tags. Contends for nothing,
-    /// though it shares a file with a running Ableton — see ADR 0003.
+    /// though it shares a file with a running Ableton.
     /// </summary>
     Tagging,
 }

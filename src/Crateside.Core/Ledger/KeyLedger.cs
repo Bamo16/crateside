@@ -7,10 +7,9 @@ namespace Crateside.Core.Ledger;
 /// keytag's <c>results/runs.jsonl</c>, read for lookup. Read-only: keytag owns this file.
 /// </summary>
 /// <remarks>
-/// The lookup that matters is <strong>video ID → song identity → latest run</strong>.
-/// Resolving to the identity first is what makes a supersede win: a re-run is filed under the
-/// same identity, so going straight from a video ID to "the run that mentioned it" would
-/// return a stale verdict whenever the newer run recorded a different URL — or none.
+/// Lookup goes video ID → song identity → latest run. Resolving to the identity first is what
+/// makes a supersede win: a re-run is filed under the same identity, so going straight from a
+/// video ID to the run that mentioned it would return a stale verdict.
 /// </remarks>
 public sealed class KeyLedger
 {
@@ -27,9 +26,8 @@ public sealed class KeyLedger
     {
         Runs = runs;
 
-        // Append-only, so later lines supersede earlier ones for the same identity. Ordering
-        // by timestamp rather than file position keeps this correct even if a line is ever
-        // appended out of order.
+        // Ordered by timestamp, not file position, so an out-of-order append still resolves
+        // correctly.
         _latestBySong = runs.GroupBy(r => r.Song, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 g => g.Key,
@@ -92,11 +90,6 @@ public sealed class KeyLedger
     public bool TryGetLatestBySong(string song, [NotNullWhen(true)] out LedgerRun? run) =>
         _latestBySong.TryGetValue(song, out run);
 
-    /// <summary>
-    /// The current verdict for a source video ID: resolve the ID to a song identity, then
-    /// take that identity's latest run — which may well be a run that carries a different
-    /// URL, or none at all.
-    /// </summary>
     public bool TryGetLatestByVideoId(string videoId, [NotNullWhen(true)] out LedgerRun? run)
     {
         run = null;
@@ -106,9 +99,8 @@ public sealed class KeyLedger
     }
 
     /// <summary>
-    /// Whether any run has been recorded for this video ID, regardless of verdict. This is
-    /// the ledger half of the "fully processed" test — a WITHHELD verdict still means the
-    /// track was worked, so it still counts.
+    /// Whether any run has been recorded for this video ID, regardless of verdict — a
+    /// WITHHELD run still counts as worked.
     /// </summary>
     public bool HasRunFor(string videoId) => _songByVideoId.ContainsKey(videoId);
 }

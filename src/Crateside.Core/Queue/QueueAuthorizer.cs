@@ -10,25 +10,12 @@ namespace Crateside.Core.Queue;
 /// Holds the OAuth credential that authorizes playlist deletions.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Reading needs no consent, so <strong>an expired or absent token is an ordinary state, not
-/// an error</strong>: the Queue keeps listing and only the delete button goes away. The write
-/// token lapses roughly weekly for an unapproved app and re-consent is interactive; that is
-/// known and accepted, not something to design around.
-/// </para>
-/// <para>
-/// Consent runs the installed-app flow, which opens a browser and listens on
-/// <c>http://localhost:&lt;port&gt;/</c>. crateside is already a browser app on this machine,
-/// so that redirect is first-class here rather than a workaround.
-/// </para>
+/// An expired or absent token is an ordinary state, not an error — the write token lapses
+/// roughly weekly for an unapproved app, and re-consent is interactive.
 /// </remarks>
 public sealed class QueueAuthorizer(IOptions<QueueOptions> options, ProtectedTokenStore tokenStore)
 {
-    /// <summary>
-    /// The narrowest scope that permits <c>playlistItems.delete</c>. Not <c>YoutubeForceSsl</c>
-    /// on its own habit — this is the write capability, so it is named explicitly and kept as
-    /// small as the operation allows.
-    /// </summary>
+    /// <summary>The narrowest scope that permits <c>playlistItems.delete</c>.</summary>
     private static readonly string[] Scopes = [YouTubeService.Scope.Youtube];
 
     private const string UserKey = "crateside";
@@ -78,8 +65,7 @@ public sealed class QueueAuthorizer(IOptions<QueueOptions> options, ProtectedTok
         }
         catch (Exception)
         {
-            // A revoked or expired refresh token throws on refresh. That is the ordinary
-            // weekly lapse, so it reads as "no credential" and the UI offers re-consent.
+            // A revoked or expired refresh token throws here; reads as "no credential".
             return null;
         }
     }
@@ -106,10 +92,9 @@ public sealed class QueueAuthorizer(IOptions<QueueOptions> options, ProtectedTok
     /// The YouTube channel the stored token actually belongs to, or null if unknown.
     /// </summary>
     /// <remarks>
-    /// Worth surfacing, because the failure it diagnoses is otherwise invisible: a Google
-    /// account can own several channels, consent grants whichever one was picked at the
-    /// consent screen, and deleting from a playlist owned by a <em>different</em> channel
-    /// fails as a bare 403. Costs 1 quota unit.
+    /// A Google account can own several channels; consent grants whichever was picked at the
+    /// consent screen, and deleting from a playlist owned by a different channel fails as a
+    /// bare 403. Costs 1 quota unit.
     /// </remarks>
     public async Task<string?> GetAuthorizedChannelAsync(
         CancellationToken cancellationToken = default

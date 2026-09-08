@@ -4,17 +4,8 @@ namespace Crateside.Core.Tracks;
 /// How the one list is narrowed.
 /// </summary>
 /// <remarks>
-/// <para>
-/// <strong>Filters rather than sections.</strong> The page used to be several lists, so managing
-/// one track meant watching it jump between them as its state changed — the row's address on
-/// screen moved every time the row's meaning did. A filter narrows one list instead: a track that
-/// stops matching disappears from the view the user chose, rather than reappearing somewhere else
-/// they have to go and find.
-/// </para>
-/// <para>
-/// Counts are always taken over every row, never over the filtered set, so the pills say what is
-/// out there rather than what is currently shown.
-/// </para>
+/// Counts are taken over every row, never the filtered set, so the pills say what is out there
+/// rather than what is currently shown.
 /// </remarks>
 public enum TrackFilter
 {
@@ -40,19 +31,10 @@ public enum TrackFilter
 
 public static class TrackFilters
 {
-    /// <summary>Whether a row belongs in a filter.</summary>
-    /// <remarks>
-    /// Every row matches exactly one filter besides <see cref="TrackFilter.All"/> — and
-    /// <see cref="TrackFilter.Done"/> now holds more than <em>All</em> does, because the library's
-    /// own finished tracks are reachable there and are not part of the working list.
-    /// </remarks>
+    /// <summary>Every row matches exactly one filter besides <see cref="TrackFilter.All"/>.</summary>
     public static bool Matches(this TrackRow row, TrackFilter filter) =>
         filter switch
         {
-            // Everything crateside is working or has just worked. The library's own finished
-            // tracks are deliberately not here: they are reachable, under Done, and they would
-            // otherwise bury the handful of rows this page exists for under a hundred that need
-            // nothing. So the counts overlap rather than partition, which they used to.
             TrackFilter.All => !row.IsLibraryOnly,
             TrackFilter.InStaging => row.State is TrackState.ReadyToWarp,
             TrackFilter.InFlight => row.State
@@ -63,10 +45,6 @@ public static class TrackFilters
                     or TrackState.Separating
                     or TrackState.Staging
                     or TrackState.Tagging,
-            // A finding counts even when the track is otherwise fine, because a stale tag is
-            // invisible everywhere else: the file looks finished and pairs on the wrong key.
-            // A rename that stopped part way is here for a different reason: the files are under
-            // two names, and only pressing Rename again finishes it.
             TrackFilter.NeedsAttention => row.State is TrackState.Parked or TrackState.GaveUp
                 || row.AuditNote is not null
                 || row.AwaitingRename > 0,

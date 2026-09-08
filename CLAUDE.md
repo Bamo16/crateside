@@ -78,19 +78,23 @@ Same rule as keytag ([its ADR 0005](../keytag/docs/adr/0005-instructions-carry-n
 - **This file** holds current instruction, plus at most a one-line pointer to an ADR.
 - **Code** holds what the code cannot say itself. See below.
 
-## Doc comments are short, and `<remarks>` has to earn its place
+## Comments are the exception, not the default
 
-The point of a doc comment is the hover popup. Anything longer than fits there is costing the
-reader more than it gives them.
+Write the code so it says what it does. A comment earns its place only by saying something the
+code cannot. **When in doubt, no comment.**
 
-- **`<summary>` on anything public, one or two lines.** What it is, or what it answers. A record
-  with three properties should read as three lines and three summaries, not thirty lines.
+- **Nothing requires a doc comment** — not public members, not records, not properties. Most
+  members should have none. Write a `<summary>` only where the name does not already say it.
 - **`<remarks>` only for a caveat that would cause a bug if missed** — a value that is not what
-  its name suggests, a guarantee that holds only under a condition, an ordering that matters.
-  Three lines is a lot. If it is longer than the member it documents, it is in the wrong file.
+  its name suggests, a guarantee that holds only under a condition, an ordering that matters. One
+  or two lines. A `<remarks>` with `<para>` in it is always wrong.
 - **Never narrate.** How a bug was found, what was tried, what a measurement was on a given day,
-  why an earlier design was wrong — none of that belongs in code. It goes in the commit message,
-  or in an ADR if it is a decision. A reader hovering a property is not asking for the story.
+  why an earlier design was wrong, why an alternative was rejected — none of it belongs in code.
+  It goes in the commit message, or in an ADR if it is a decision.
 - **Never restate the signature.** `/// <summary>The video ID.</summary>` on `VideoId` is noise.
+- **Inline comments face the same bar.** If one is genuinely needed, make it one short line saying
+  *what*, not why the design is what it is. A statement that needs a comment to be understood is
+  usually a statement to rewrite.
 
-The same applies to inline comments: one earns its place by saying something the code cannot.
+**The existing code is not the standard here.** Much of it predates this rule and is being cut
+back; matching its comment density re-creates the debt.

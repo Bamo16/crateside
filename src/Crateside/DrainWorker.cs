@@ -3,9 +3,8 @@ using Crateside.Core.Orchestration;
 namespace Crateside;
 
 /// <summary>
-/// The loop that keeps the queue draining. Deliberately thin — every decision it appears to make
-/// belongs to <see cref="SeparationDrainer"/> or <see cref="SeparationSelector"/>, which are
-/// testable without a host.
+/// The loop that keeps the queue draining. Deliberately thin — the decisions belong to
+/// <see cref="SeparationDrainer"/> and <see cref="SeparationSelector"/>.
 /// </summary>
 public sealed class DrainWorker(
     SeparationDrainer drainer,
@@ -14,11 +13,8 @@ public sealed class DrainWorker(
     ILogger<DrainWorker> logger
 ) : BackgroundService
 {
-    // Long enough that an idle queue is not re-read constantly, short enough that a track added
-    // from a phone starts within a couple of minutes.
     private static readonly TimeSpan IdleDelay = TimeSpan.FromMinutes(2);
 
-    // A separation takes ~6-7 minutes, so back-to-back ticks need no pause of their own.
     private static readonly TimeSpan BusyDelay = TimeSpan.FromSeconds(5);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -39,15 +35,11 @@ public sealed class DrainWorker(
             }
             catch (Exception e)
             {
-                // One bad tick must not end draining for the lifetime of the app. The job store
-                // already recorded whatever happened, so the next pass sees it as a strike.
                 logger.LogError(e, "Drain tick failed");
             }
 
             try
             {
-                // Waiting on the control rather than the clock, so pressing resume starts work
-                // now instead of whenever the idle delay happens to run out.
                 await control.WaitForWorkAsync(delay, stoppingToken);
             }
             catch (OperationCanceledException)
@@ -58,9 +50,9 @@ public sealed class DrainWorker(
     }
 
     /// <summary>
-    /// Squares the job store against reality before anything is allowed to launch. A
-    /// <c>stemforge-cli</c> started by a previous crateside is still running — on Windows a
-    /// child is not killed with its parent — and must be found rather than duplicated.
+    /// Squares the job store against reality before anything is allowed to launch. On Windows a
+    /// child process is not killed with its parent, so a <c>stemforge-cli</c> from a previous
+    /// crateside run may still be alive and must be found rather than duplicated.
     /// </summary>
     private void Reconcile()
     {
@@ -90,7 +82,7 @@ public sealed class DrainWorker(
             case { Outcome: DrainOutcome.Ran, Order: { } order, Result: { } result }:
                 LogRun(order, result);
 
-                // Refused means the GPU is busy with an adopted run, so wait rather than spin.
+                // Refused: the GPU is busy with an adopted run.
                 return result.Outcome is SeparationOutcome.Refused ? IdleDelay : BusyDelay;
 
             case { Outcome: DrainOutcome.Unavailable, Error: var error }:

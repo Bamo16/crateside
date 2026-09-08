@@ -7,17 +7,16 @@ namespace Crateside.Core.Ledger;
 /// One recorded detect-key run — a single line of keytag's <c>results/runs.jsonl</c>.
 /// </summary>
 /// <remarks>
-/// The file is append-only and a re-run is a <em>supersede</em>: the latest line for a given
-/// <see cref="Song"/> wins. crateside reads it and never writes it.
+/// Append-only, and a re-run is a supersede: the latest line for a given <see cref="Song"/>
+/// wins. crateside reads it and never writes it.
 /// </remarks>
 public sealed record LedgerRun
 {
-    /// <summary>When the run was recorded.</summary>
     public required DateTimeOffset Timestamp { get; init; }
 
     /// <summary>
     /// The song identity — normalized <c>artist - title</c>, lowercased, stem suffix
-    /// stripped. This, not the URL and not the filename, is what a supersede is filed under.
+    /// stripped. What a supersede is filed under.
     /// </summary>
     public required string Song { get; init; }
 
@@ -25,14 +24,9 @@ public sealed record LedgerRun
     public string? Title { get; init; }
 
     /// <summary>
-    /// What to call this song on screen.
+    /// What to call this song on screen — not <see cref="Song"/>, which is a lowercase slug.
+    /// Falls back to the identity when a run recorded neither artist nor title.
     /// </summary>
-    /// <remarks>
-    /// <strong>Not <see cref="Song"/></strong>, which is the normalized lowercase identity built
-    /// for matching — it reads as a slug, because that is what it is. The artist and title are
-    /// recorded separately and properly cased, and joining them is the only way to get a name a
-    /// person would recognise. Falls back to the identity when a run recorded neither.
-    /// </remarks>
     public string DisplayName =>
         this is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title }
             ? $"{artist} - {title}"
@@ -50,8 +44,8 @@ public sealed record LedgerRun
     public string? Key { get; init; }
 
     /// <summary>
-    /// The diatonic mode, where a human source established one. Null means <em>nobody looked</em>,
-    /// which is true of most runs — not a claim that the song is plain major/minor.
+    /// The diatonic mode, where a human source established one. Null means nobody looked, not
+    /// that the song is plain major/minor.
     /// </summary>
     public string? Mode { get; init; }
 
@@ -60,18 +54,13 @@ public sealed record LedgerRun
     /// and <see cref="Key"/> is its parallel major or minor.
     /// </summary>
     /// <remarks>
-    /// Worth a marker on the board rather than only on the evidence page. A collapsed key is one
-    /// note away from what the track actually plays (Dorian's natural sixth, Mixolydian's flat
-    /// seventh), so it is a candidate explanation when a pairing sounds wrong — and the moment
-    /// you need it, you do not yet know to go looking for it.
+    /// A collapsed key is one note away from what the track actually plays (Dorian's natural
+    /// sixth, Mixolydian's flat seventh) — a candidate explanation when a pairing sounds wrong.
     /// </remarks>
     public bool IsCollapsed => Mode is not null and not "major" and not "minor";
 
     /// <summary>The key as the song actually plays it (<c>D Dorian</c>), when that is known.</summary>
-    /// <remarks>
-    /// Reconstructed rather than stored: the collapse keeps the tonic, so the tagged key and the
-    /// mode together restate the original exactly and a second field could only drift.
-    /// </remarks>
+    /// <remarks>Reconstructed rather than stored, so a second field can't drift from the tagged key.</remarks>
     public string? ModalKey =>
         IsCollapsed && Key?.Split(' ') is [var tonic, ..] && Mode is { Length: > 0 } mode
             ? $"{tonic} {char.ToUpperInvariant(mode[0])}{mode[1..]}"
@@ -81,11 +70,7 @@ public sealed record LedgerRun
     /// False when the user stated the release is instrumental: nothing to separate out, so the
     /// drums are the only stem and the source track is the file that gets kept and tagged.
     /// </summary>
-    /// <remarks>
-    /// Null means <em>not stated</em>, not "it has vocals" — no run recorded before the field
-    /// existed said anything. What to do about not-stated is this consumer's policy, and the
-    /// policy is to expect the usual vocal and instrumental pair.
-    /// </remarks>
+    /// <remarks>Null means not stated, not "it has vocals" — older runs predate the field.</remarks>
     public bool? HasVocals { get; init; }
 
     public KeyConfidence Confidence { get; init; }
@@ -95,8 +80,7 @@ public sealed record LedgerRun
 
     /// <summary>
     /// Whether this run produced a key the user would actually tag with. A LOW verdict may
-    /// still carry candidates, but the skill's rule is that a wrong tag is worse than no
-    /// tag — so only HIGH and MEDIUM count as an answer.
+    /// carry candidates, but only HIGH and MEDIUM count as an answer.
     /// </summary>
     public bool HasTaggableKey =>
         Key is not null && Confidence is KeyConfidence.High or KeyConfidence.Medium;
@@ -146,8 +130,7 @@ public enum KeyConfidence
     High,
 }
 
-// Only the fields crateside reads. The `machine` block — three algorithms, chords, flicker —
-// is deliberately not deserialized: it is the bulk of every line and nothing here uses it.
+// Only the fields crateside reads. The `machine` block is deliberately not deserialized.
 internal sealed record LedgerRunDto
 {
     [JsonPropertyName("timestamp")]

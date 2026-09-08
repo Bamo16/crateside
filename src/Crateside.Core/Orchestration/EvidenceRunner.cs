@@ -4,24 +4,13 @@ using System.Text.Json.Serialization;
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
-/// Produces the <strong>evidence</strong> for one track: acquires the audio, then runs the
-/// detectors over it.
+/// Produces the evidence for one track: acquires the audio, then runs the detectors over it.
 /// </summary>
 /// <remarks>
-/// <para>
-/// The stage that contends for nothing — no GPU, no Claude quota, ~15–40s of CPU and a
-/// download. That is the whole reason it is a stage of its own, and why it runs unattended
-/// rather than inside an agent session: a headless run here would spend quota on work that
-/// needs no judgement, which is the split ADR 0001 exists to make.
-/// </para>
-/// <para>
-/// <strong>The downloader is not interchangeable.</strong> It must be
-/// <c>stemforge-cli download</c>, because StemForge writes its provenance into the file's
-/// <c>COMMENT</c> and reads it back when that file is later fed to <c>separate</c> — which is
-/// what carries the source URL, and therefore the video ID, into every stem. The video ID is
-/// the join key for the staging board, for "fully processed", and for queue cleanup. A file
-/// fetched any other way would separate into stems that join to nothing (ADR 0005).
-/// </para>
+/// The downloader must be <c>stemforge-cli download</c>: it writes provenance into the file's
+/// <c>COMMENT</c> tag, which <c>separate</c> reads back to carry the source URL, and therefore
+/// the video ID, into every stem. A file fetched any other way would separate into stems that
+/// join to nothing.
 /// </remarks>
 public sealed class EvidenceRunner(
     WorkingSet workingSet,
@@ -36,8 +25,6 @@ public sealed class EvidenceRunner(
         CancellationToken cancellationToken = default
     )
     {
-        // Evidence already on disk is evidence: re-detecting would burn the CPU to reach the
-        // same answer, and the stage's own selector treats its presence as "done" anyway.
         if (workingSet.HasEvidence(order.VideoId))
             return EvidenceResult.Succeeded(workingSet.EvidencePathFor(order.VideoId));
 
@@ -131,9 +118,8 @@ public sealed class EvidenceRunner(
                     ?? $"keytag-detect exited with {outcome.ExitCode}"
             );
 
-        // Checking reality rather than the exit code, the same idiom the verdict stage uses:
-        // the artifact is the point, and a detector that exited clean without writing one has
-        // not produced evidence whatever it claims.
+        // Checked against the file, not the exit code — a clean exit that wrote nothing has
+        // not produced evidence.
         return File.Exists(evidencePath)
             ? EvidenceResult.Succeeded(evidencePath)
             : EvidenceResult.Failed("keytag-detect exited cleanly but wrote no evidence");

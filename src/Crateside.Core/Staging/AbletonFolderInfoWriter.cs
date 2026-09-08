@@ -9,19 +9,8 @@ namespace Crateside.Core.Staging;
 /// Ableton has put there.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Sanctioned by ADR 0003, which measured that Ableton does not own this file exclusively: it
-/// is unlocked, it merges from disk rather than rewriting from an in-memory index, and it picks
-/// up an external edit live — including into the search index, which is what the tags are for.
-/// </para>
-/// <para>
-/// <strong>Ableton writes this file in place</strong> (ADR 0003 finding 11 — same file id, no
-/// rename, and it shrank a file by 453 bytes that way). So there is a window in which the bytes
-/// on disk are neither the old content nor the new. That is the whole reason for the two
-/// defences here: crateside replaces atomically so it can never leave a torn file of its own,
-/// and it re-checks the file's timestamp immediately before replacing so a write built on a
-/// stale read turns into a retry rather than dropping whatever Ableton did in between.
-/// </para>
+/// Ableton writes this file in place — same file id, no rename — so replaces here happen
+/// atomically via a temp file, with the source timestamp re-checked immediately before the swap.
 /// </remarks>
 public sealed class AbletonFolderInfoWriter
 {
@@ -33,15 +22,10 @@ public sealed class AbletonFolderInfoWriter
     private static readonly XNamespace Dc = "http://purl.org/dc/elements/1.1/";
     private static readonly XNamespace Xmp = "http://ns.adobe.com/xap/1.0/";
 
-    /// <summary>
-    /// Ableton's built-in tonics. Sharps, spelled with <strong>U+266F</strong>, and no flats.
-    /// </summary>
+    /// <summary>Ableton's built-in tonics — sharps only, spelled with U+266F, never ASCII '#'.</summary>
     /// <remarks>
-    /// Taken from the 451 key keywords across the user's two real roots rather than from theory:
-    /// exactly these twelve occur, and every sharp is U+266F. ADR 0003 finding 8 is why the set
-    /// is closed rather than advisory — a <c>Key|F#</c> with an ASCII hash is not rejected by
-    /// Ableton, it silently registers as a <em>new user-created tag</em> that then sits beside
-    /// the built-in one forever and can only be removed by hand.
+    /// An ASCII '#' is not rejected by Ableton — it silently creates a separate user-defined tag
+    /// that then has to be removed by hand.
     /// </remarks>
     public static readonly IReadOnlySet<string> Tonics = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -73,8 +57,8 @@ public sealed class AbletonFolderInfoWriter
     };
 
     /// <summary>
-    /// The exact bytes Ableton writes: no XML declaration, no BOM, LF line endings even on
-    /// Windows, three-space indents. Measured from the real file, not assumed.
+    /// The exact bytes Ableton writes: no XML declaration, no BOM, LF line endings, three-space
+    /// indents.
     /// </summary>
     private static readonly XmlWriterSettings Format = new()
     {
@@ -89,12 +73,7 @@ public sealed class AbletonFolderInfoWriter
     /// Applies keywords to files under <paramref name="rootFolder"/>, leaving every other entry
     /// and its position alone.
     /// </summary>
-    /// <remarks>
-    /// Nothing is written unless every keyword passes <see cref="IsValidKeyword"/>. A partial
-    /// write of a valid subset would be the worse outcome: the invalid one is the one that
-    /// pollutes the vocabulary permanently, and finding out later which files were done is
-    /// harder than doing them all again.
-    /// </remarks>
+    /// <remarks>Nothing is written unless every keyword passes <see cref="IsValidKeyword"/>.</remarks>
     public TagWriteOutcome Apply(string rootFolder, IReadOnlyList<TagAssignment> assignments)
     {
         if (assignments.Count is 0)
@@ -113,8 +92,6 @@ public sealed class AbletonFolderInfoWriter
         {
             Directory.CreateDirectory(directory);
 
-            // Captured before the read, so anything Ableton does from here on is caught by the
-            // check below rather than silently overwritten.
             var stamp = path is not null ? File.GetLastWriteTimeUtc(path) : (DateTime?)null;
             var document = path is not null ? Load(path) : NewDocument();
 
@@ -141,7 +118,6 @@ public sealed class AbletonFolderInfoWriter
     /// <summary>
     /// Points existing entries at new file names, keeping their keywords and their position.
     /// </summary>
-    /// <remarks>A file with no entry is skipped: it is untagged, which is not this to fix.</remarks>
     public TagWriteOutcome Rename(string rootFolder, IReadOnlyList<TagRename> renames)
     {
         if (renames.Count is 0)
@@ -149,8 +125,7 @@ public sealed class AbletonFolderInfoWriter
 
         var path = ExistingXmp(Path.Combine(rootFolder, FolderInfoDirectory));
 
-        // No store at all is not a failure. It means Ableton has never indexed this root and
-        // there is nothing carrying the old names.
+        // No store yet is not a failure — nothing carries the old names to rename.
         if (path is null)
             return TagWriteOutcome.Written(0);
 
@@ -205,10 +180,8 @@ public sealed class AbletonFolderInfoWriter
     /// Reads the file, or reports nothing if it cannot be parsed.
     /// </summary>
     /// <remarks>
-    /// <strong>A parse failure means "Ableton is mid-write", not "the store is corrupt".</strong>
-    /// Finding 11 makes that a real state rather than a defensive one, and the difference
-    /// matters: the right response is to come back next tick, never to rebuild a file whose
-    /// entries crateside mostly did not create.
+    /// A parse failure means Ableton is mid-write, not that the store is corrupt — the response
+    /// is to retry, never to rebuild.
     /// </remarks>
     private static XDocument? Load(string path)
     {
@@ -234,10 +207,8 @@ public sealed class AbletonFolderInfoWriter
     /// touched the target since it was read.
     /// </summary>
     /// <remarks>
-    /// The temporary file is in the same directory deliberately — a replace across volumes is
-    /// not atomic. There is still a sliver between the timestamp check and the swap, which is
-    /// microseconds against the second-long window Ableton's own in-place writes occupy; it is
-    /// narrowed rather than closed, and saying so is more useful than implying a lock exists.
+    /// The temp file is in the same directory because a replace across volumes is not atomic.
+    /// The race between the timestamp check and the swap is narrowed, not closed.
     /// </remarks>
     internal static bool Replace(string path, XDocument document, DateTime? stamp)
     {
@@ -248,9 +219,7 @@ public sealed class AbletonFolderInfoWriter
             using (var writer = XmlWriter.Create(buffer, Format))
                 document.Save(writer);
 
-            // Ableton's file ends with a newline and XmlWriter's does not. Cosmetic, but this
-            // is a file two programs take turns writing, and matching what can be matched keeps
-            // a diff between them meaningful.
+            // Match Ableton's trailing newline.
             buffer.Write("\n"u8);
 
             File.WriteAllBytes(temporary, buffer.ToArray());
@@ -280,8 +249,6 @@ public sealed class AbletonFolderInfoWriter
 
         if (Find(items, assignment.RelativePath) is { } existing)
         {
-            // Replaced in place, so the entry keeps its position. Ableton preserves insertion
-            // order through its own merges (finding 4) and there is no reason to disturb it.
             existing.Element(AblFr + "keywords")?.Remove();
             existing.Add(new XElement(AblFr + "keywords", bag));
 
@@ -335,11 +302,7 @@ public sealed class AbletonFolderInfoWriter
                 .FirstOrDefault()
             : null;
 
-    /// <summary>
-    /// The name for a store that does not exist yet. The UUID is per-install rather than
-    /// per-folder — byte-identical across both of the user's roots — so a fresh one is a new
-    /// identity and Ableton takes it (ADR 0003 finding 6).
-    /// </summary>
+    /// <summary>The name for a store that does not exist yet — a fresh UUID is a new identity.</summary>
     private static string NewName() => $"{Guid.NewGuid()}.xmp";
 
     private static XDocument NewDocument() =>
@@ -370,7 +333,6 @@ public sealed class AbletonFolderInfoWriter
 /// <summary>Keywords to put on one file, named the way Ableton names it.</summary>
 public sealed record TagAssignment
 {
-    /// <summary>Path relative to the root folder.</summary>
     public required string RelativePath { get; init; }
 
     public required IReadOnlyList<string> Keywords { get; init; }
@@ -393,8 +355,7 @@ public sealed record TagWriteOutcome
 
     /// <summary>
     /// True when nothing was wrong with the request — the store simply moved underneath it.
-    /// Worth telling apart from a rejection, because this one is fixed by trying again and the
-    /// other never is.
+    /// Unlike a rejection, this is fixed by trying again.
     /// </summary>
     public bool IsStale { get; init; }
 

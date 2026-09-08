@@ -9,9 +9,8 @@ namespace Crateside.Core.Queue;
 /// anywhere.
 /// </summary>
 /// <remarks>
-/// <c>playlistItems.delete</c> costs <strong>50 quota units</strong> per call — fifty times a
-/// list — so a bulk removal of a large batch is worth being deliberate about against the
-/// 10,000/day default.
+/// <c>playlistItems.delete</c> costs 50 quota units per call — fifty times a list — against
+/// the 10,000/day default.
 /// </remarks>
 public sealed class QueueRemover(QueueAuthorizer authorizer)
 {
@@ -20,9 +19,8 @@ public sealed class QueueRemover(QueueAuthorizer authorizer)
     /// the rest, and the caller gets a per-item account of what happened.
     /// </summary>
     /// <remarks>
-    /// An item already gone from the playlist reports as removed rather than as an error —
-    /// deletion has to be idempotent, because the whole point is that it can be re-run safely
-    /// after a partial failure.
+    /// An item already gone from the playlist reports as removed rather than as an error, so a
+    /// retry after partial failure is safe.
     /// </remarks>
     public async Task<IReadOnlyList<RemovalResult>> RemoveAsync(
         IReadOnlyList<QueueItem> items,
@@ -64,8 +62,6 @@ public sealed class QueueRemover(QueueAuthorizer authorizer)
     )
     {
         // A track crateside is working that the playlist no longer holds has nothing to remove.
-        // Reachable only by asking for it, since the page hides the button, but the removal path
-        // must not turn that into a bare API error.
         if (item.PlaylistItemId is not { Length: > 0 } id)
             return new RemovalResult
             {
@@ -109,9 +105,8 @@ public sealed class QueueRemover(QueueAuthorizer authorizer)
     }
 
     /// <summary>
-    /// Turns a Google API failure into something diagnosable. The HTTP status alone is
-    /// useless here — every interesting way a delete can fail is a 403, and it is the
-    /// <c>reason</c> code that says which, so that is what gets surfaced.
+    /// Turns a Google API failure into something diagnosable. Every interesting way a delete
+    /// can fail is a 403, so the <c>reason</c> code is what gets surfaced, not the HTTP status.
     /// </summary>
     private static string Describe(GoogleApiException e)
     {
@@ -123,8 +118,6 @@ public sealed class QueueRemover(QueueAuthorizer authorizer)
             null => message,
 
             // The token is valid but belongs to an account that does not own the playlist.
-            // A Google account can own several YouTube channels, and consent grants whichever
-            // one was picked at the consent screen.
             "playlistItemsNotAccessible" or "playlistOperationUnsupported" or "forbidden" =>
                 $"{reason}: the authorized account cannot modify this playlist. Check that "
                     + "consent was granted for the channel that owns it.",

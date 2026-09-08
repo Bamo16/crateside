@@ -1,15 +1,5 @@
 @inherits LayoutComponentBase
 
-@*
-    No chrome. The Tracks page carries its own nav inside its frozen header, where it sits beside
-    what is running rather than above it — so the shared bench nav would be a second set of tabs
-    saying the same thing, stacked on the first.
-
-    Kept as its own layout rather than a flag on MainLayout: the pages that still use the shared
-    nav are on their way out, and when they go this becomes the only layout rather than a
-    condition to unpick.
-*@
-
 <main>
     @Body
 </main>

@@ -6,17 +6,10 @@ namespace Crateside.Core.Orchestration;
 /// <summary>
 /// Runs a command to completion and hands back what it said.
 /// </summary>
-/// <remarks>
-/// For the stages that shell out and simply wait. <see cref="SeparationRunner"/> deliberately
-/// does not use this: it has to claim the interlock between starting and waiting, and kill the
-/// child on cancellation, so its process lifetime is the thing it is managing rather than an
-/// implementation detail.
-/// </remarks>
 public static class ExternalProcess
 {
     /// <param name="workingDirectory">
-    /// Where to run it. Supplied when the command's own discovery depends on where it starts —
-    /// a headless agent session finds its skills relative to the directory it opens in.
+    /// Where to run it. Supplied when the command's own discovery depends on where it starts.
     /// </param>
     public static async Task<ProcessOutcome> RunAsync(
         string executable,
@@ -40,8 +33,7 @@ public static class ExternalProcess
             Process.Start(info)
             ?? throw new InvalidOperationException($"could not start {executable}");
 
-        // Read both streams before waiting: a child that fills one pipe's buffer blocks forever
-        // if nobody is draining it, and these produce real volumes of log output.
+        // Read both streams before waiting: a full pipe with nobody draining it blocks forever.
         var stdout = process.StandardOutput.ReadToEndAsync(cancellationToken);
         var stderr = process.StandardError.ReadToEndAsync(cancellationToken);
 

@@ -4,24 +4,6 @@ namespace Crateside.Core.Orchestration;
 /// Whether the workers are draining, and what they are doing right now. Shared between the
 /// background loop and the UI.
 /// </summary>
-/// <remarks>
-/// <para>
-/// <strong>Draining is on by default.</strong> What limits separation is that two at once are
-/// ruinous, not that one costs the user their machine — a single run is unnoticeable while they
-/// work — so there is no moment to pick and nothing to start.
-/// </para>
-/// <para>
-/// Pause carries no stated reason on purpose. Whether to leave the GPU alone right now is an
-/// occasional judgement that belongs to the user, and every attempt to write down <em>why</em>
-/// they might make it has so far been a guess rather than an observation.
-/// </para>
-/// <para>
-/// <paramref name="startPaused"/> exists so that launching the app is never itself an act that
-/// consumes the GPU — useful for a debugging session, a fresh checkout, or any period where
-/// draining would conflict with work happening elsewhere. It changes where the toggle starts,
-/// not what the default behaviour is.
-/// </para>
-/// </remarks>
 public class DrainControl(bool startPaused = true)
 {
     private readonly Lock _gate = new();
@@ -30,11 +12,8 @@ public class DrainControl(bool startPaused = true)
     /// Released by <see cref="Resume"/> so the worker's idle wait ends immediately.
     /// </summary>
     /// <remarks>
-    /// Without this, resuming only took effect on the loop's next tick — up to two minutes of
-    /// "nothing to separate right now" while a track sat waiting, which reads as a broken button
-    /// rather than a slow one. Bounded at one permit because the signal is level, not edge: two
-    /// resumes in a row still mean "go", and a second permit would only make the following wait
-    /// return instantly for no reason.
+    /// Bounded at one permit: the signal is level, not edge, so a second permit would only make
+    /// the following wait return instantly for no reason.
     /// </remarks>
     private readonly SemaphoreSlim _wake = new(0, 1);
 
@@ -75,11 +54,8 @@ public class DrainControl(bool startPaused = true)
     /// Ends the worker's idle wait without changing whether it is paused.
     /// </summary>
     /// <remarks>
-    /// For a change that makes work available which the worker has no way to notice — a track
-    /// put back in line by hand. <see cref="Resume"/> cannot serve: it is level-triggered, so
-    /// calling it when nothing is paused returns without releasing anything and the worker
-    /// sleeps out its full delay. A button whose effect arrives two minutes later reads as
-    /// broken rather than slow, which is the same reason resume wakes it.
+    /// <see cref="Resume"/> cannot serve here: it is level-triggered, so calling it when nothing
+    /// is paused releases nothing and the worker sleeps out its full delay.
     /// </remarks>
     public void Wake()
     {

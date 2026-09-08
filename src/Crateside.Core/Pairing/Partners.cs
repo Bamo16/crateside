@@ -3,22 +3,18 @@ namespace Crateside.Core.Pairing;
 /// <summary>
 /// "What else can I play over this?" — the partners for a source key, ranked.
 /// </summary>
-/// <remarks>
-/// Returns <strong>keys, not files</strong>. Ableton Live Lite admits no extensions, so the
-/// filtering happens in Ableton's own browser; crateside's job is to say what to filter for.
-/// </remarks>
+/// <remarks>Returns keys, not files; the filtering happens in Ableton's own browser.</remarks>
 public static class Partners
 {
     /// <summary>The widest shift the model expresses, since shifts normalize to ±6.</summary>
     public const int MaxPossibleShift = 6;
 
     /// <summary>
-    /// Every partner for <paramref name="source"/>, ordered by <em>absolute shift first, then
-    /// score</em> — the shift dominates because it is the cost the user actually pays.
+    /// Every partner for <paramref name="source"/>, ordered by absolute shift first, then score.
     /// </summary>
     /// <param name="maxShift">
     /// Narrows the results to partners reachable within this many semitones. Defaults to all
-    /// 24 keys: the default never caps, it only narrows on request.
+    /// 24 keys.
     /// </param>
     public static IReadOnlyList<MashupPartner> For(MusicKey source, int maxShift = MaxPossibleShift)
     {

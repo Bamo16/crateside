@@ -8,25 +8,10 @@ namespace Crateside.Core.Orchestration;
 /// crateside's record of the work it has run, in <c>%APPDATA%\crateside\jobs.jsonl</c>.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Append-only, one JSON object per line, latest line wins for an id — the same shape as
-/// keytag's <c>runs.jsonl</c>, which is already the idiom in this system. SQLite would be the
-/// reflexive choice for mutable job state and buys nothing at this size: tens of records, one
-/// writer, and no query beyond "what is still open". Appending is also crash-safe for free,
-/// and the file stays readable in a text editor at 3am, which is when it will be read.
-/// </para>
-/// <para>
-/// It exists because <em>in progress</em>, <em>failed at 04:12</em> and <em>cancelled</em>
-/// cannot be derived from the filesystem, and because the app restarts on every save under
-/// <c>dotnet watch</c> — so in-memory state would be lost several times an hour while this is
-/// being built. It is also the interlock that stops a restart launching a second separation
-/// onto the GPU.
-/// </para>
+/// Append-only, one JSON object per line, latest line wins for an id.
 /// </remarks>
 /// <param name="hub">
-/// Told about every recorded change, so a page can update the one row that moved. Optional: the
-/// store is read and written outside the app — by tests, and by anything inspecting the file —
-/// and announcing is an extra rather than a requirement.
+/// Told about every recorded change, so a page can update the one row that moved. Optional.
 /// </param>
 public sealed class JobStore(string? path = null, TimeProvider? time = null, StageHub? hub = null)
 {
@@ -71,28 +56,19 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
     }
 
     /// <summary>
-    /// Appends an update and returns the job as it now stands. The only way state changes —
-    /// nothing rewrites or removes a line.
-    /// </summary>
-    /// <summary>
     /// Puts a track a stage has given up on back in line.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Strikes are counted over a job's whole history and never decrease, so without this a
-    /// track that reached the limit is unreachable forever — there is no path back except
-    /// editing the file by hand, which this store's whole design says not to do.
-    /// </para>
-    /// <para>
-    /// It records <see cref="JobStatus.Cancelled"/> rather than clearing anything, because
-    /// cancelled already means "eligible again, whatever the count" to every selector, and
-    /// because the history should still show what happened. The strikes stay on the record; they
-    /// simply stop being a verdict on the track.
-    /// </para>
+    /// Records <see cref="JobStatus.Cancelled"/> rather than clearing anything: the strikes stay
+    /// on the record, but stop being a verdict on the track.
     /// </remarks>
     public TrackJob Forgive(string videoId, JobStage stage) =>
         Record(videoId, stage, JobStatus.Cancelled, error: "put back in line by hand");
 
+    /// <summary>
+    /// Appends an update and returns the job as it now stands. The only way state changes —
+    /// nothing rewrites or removes a line.
+    /// </summary>
     public TrackJob Record(
         string videoId,
         JobStage stage,
@@ -125,9 +101,8 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
             job = projection[update.Id] = Apply(projection.GetValueOrDefault(update.Id), update);
         }
 
-        // Outside the lock on purpose. Subscribers are browser circuits doing arbitrary work, and
-        // holding the store's gate across them would let a handler that reads the store deadlock
-        // the writer it is reacting to.
+        // Outside the lock on purpose: a subscriber that reads the store would deadlock the
+        // writer it is reacting to.
         hub?.Publish(new StageChange { Stage = stage, VideoId = videoId });
 
         return job;
@@ -163,8 +138,6 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
             UpdatedAt = update.Timestamp,
             ProcessId = update.ProcessId,
             ProcessStartedAt = update.ProcessStartedAt,
-            // Keep the last failure's message visible while a retry is queued or running, so the
-            // UI can say why it is being tried again; a success clears it.
             Error = update.Status switch
             {
                 JobStatus.Failed => update.Error,
@@ -198,8 +171,7 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
                 if (line.AsSpan().IsWhiteSpace())
                     continue;
 
-                // A half-written trailing line is expected, not exceptional: the file may be
-                // caught mid-append, or the process may have died between write and flush.
+                // A half-written trailing line is expected, not exceptional.
                 JobUpdate? update;
 
                 try
@@ -217,8 +189,7 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            // An unreadable store must not take the app down with it. Losing job history costs
-            // a duplicated run; refusing to start costs the whole bench.
+            // An unreadable store must not take the app down with it.
         }
 
         return jobs;

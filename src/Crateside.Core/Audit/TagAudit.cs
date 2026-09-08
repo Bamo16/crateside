@@ -8,18 +8,6 @@ namespace Crateside.Core.Audit;
 /// Reads every stem's applied Ableton tags and hands them to <see cref="TagAuditReport"/>,
 /// which does the interpreting.
 /// </summary>
-/// <remarks>
-/// <para>
-/// The staging board already flags a stem whose Ableton key disagrees with the verdict, but
-/// only while the stem is still <em>in</em> staging. One that was mis-tagged and then moved to
-/// <c>Mashup Samples</c> leaves the board and is never looked at again — which is the case that
-/// actually bites, because the applied tag is what pairing uses, so a wrong one silently
-/// misroutes mashups for as long as it lives.
-/// </para>
-/// <para>
-/// Read-only, and safe while Ableton is running.
-/// </para>
-/// </remarks>
 public static class TagAudit
 {
     public static TagAuditReport Run(
@@ -46,8 +34,6 @@ public static class TagAudit
                 if (!StagingBoard.IsStemFile(path))
                     continue;
 
-                // No provenance means no video ID, so there is nothing to group or join on.
-                // Common for anything not produced by StemForge, and not a finding.
                 if (
                     StemTagReader.Read(path)?.Provenance
                     is not { SourceVideoId: { } videoId } provenance
@@ -80,34 +66,7 @@ public static class TagAudit
     }
 }
 
-/// <summary>
-/// What the audit found. Every property is a different reading of the same stem list, so the
-/// list is the constructor's whole input and none of the readings are settable.
-/// </summary>
-/// <remarks>
-/// <para>
-/// Two independent checks, because they cover different stems:
-/// </para>
-/// <list type="bullet">
-/// <item><strong>Against the ledger</strong> — the applied key versus the current verdict.
-/// Only possible for stems the ledger knows.</item>
-/// <item><strong>Against each other</strong> — two stems of one song must carry the same key,
-/// since key is a song-level fact. This needs no verdict at all, so it reaches the large share
-/// of the library that predates the ledger.</item>
-/// </list>
-/// <para>
-/// <strong>A ledger disagreement does not say who is wrong.</strong> It has two causes that
-/// look identical from here: the tag was applied incorrectly, or the ledger superseded it with
-/// a better verdict afterwards. Nothing records when a tag was written, so crateside reports
-/// both sides and leaves the judgement to the user. A <em>sibling</em> disagreement is
-/// different — it is wrong on its own terms whatever the ledger says.
-/// </para>
-/// <para>
-/// <c>stems</c> is read by the initializers below and then goes away: a primary constructor
-/// parameter used only in initializers is not captured into a field, so the full list is not
-/// retained or exposed.
-/// </para>
-/// </remarks>
+/// <summary>What the audit found, as different readings of the same stem list.</summary>
 public sealed partial class TagAuditReport(IReadOnlyList<TaggedStem> stems)
 {
     /// <summary>
@@ -122,37 +81,19 @@ public sealed partial class TagAuditReport(IReadOnlyList<TaggedStem> stems)
         ),
     ];
 
-    /// <summary>
-    /// A taggable verdict exists but no key was applied.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// This was deliberately <em>not</em> a problem while tagging was the user's job — ordinary
-    /// work in progress, and a badge that lit up mid-batch would have trained them to ignore it.
-    /// <strong>It counts now, because crateside owns tagging</strong> and the stage that does it
-    /// runs unprompted: an untagged stem is either a few seconds old or something went wrong.
-    /// </para>
-    /// <para>
-    /// Safe to count because nothing is permanently untaggable. Every one of the 23 distinct
-    /// keys in the ledger converts to Ableton's vocabulary — there are no flats and no modal
-    /// spellings, since a mode is recorded separately and collapses to major or minor. A key
-    /// the writer could not spell would otherwise sit here lit up forever.
-    /// </para>
-    /// </remarks>
+    /// <summary>A taggable verdict exists but no key was applied.</summary>
     public IReadOnlyList<TaggedStem> Untagged { get; } =
     [.. stems.Where(s => s is { AppliedKey: null, HasTaggableVerdict: true })];
 
-    /// <summary>Tagged with a tonic but no mode, or the reverse. Half a key is not a key.</summary>
+    /// <summary>Tagged with a tonic but no mode, or the reverse.</summary>
     public IReadOnlyList<TaggedStem> PartialKeys { get; } = [.. stems.Where(s => s.HasPartialKey)];
 
     /// <summary>
-    /// Songs whose own stems carry different keys — grouped by source video ID, which survives
-    /// the rename step where filenames do not. Needs no verdict, so this is the only check that
-    /// reaches stems the ledger has never seen.
+    /// Songs whose own stems carry different keys, grouped by source video ID since filenames
+    /// do not survive the rename step.
     /// </summary>
     public IReadOnlyList<InconsistentSong> Inconsistencies { get; } = FindInconsistencies(stems);
 
-    /// <summary>Stems whose applied tag matches the current verdict exactly.</summary>
     public int AgreedCount { get; } =
         stems.Count(s =>
             s is { AppliedKey: { } applied, LedgerKey: { } verdict }
@@ -207,7 +148,6 @@ public sealed record TaggedStem
     public required string Path { get; init; }
     public required string FileName { get; init; }
 
-    /// <summary>Which stem root it was found under.</summary>
     public required string Root { get; init; }
 
     public required string SourceVideoId { get; init; }
@@ -230,21 +170,12 @@ public sealed record TaggedStem
 
     /// <summary>
     /// The separation preset from the file's own provenance — <c>Vocal - Full</c>,
-    /// <c>Drums - htdemucs_ft</c> — or null for a file that was never separated, which is what
-    /// an instrumental release's source track is.
+    /// <c>Drums - htdemucs_ft</c> — or null for a file that was never separated. Read from the
+    /// tag rather than the filename, since renaming does not survive.
     /// </summary>
-    /// <remarks>
-    /// Read from the comment rather than the filename because renaming is one of the
-    /// human-limited steps, so the name is the part that does not survive.
-    /// </remarks>
     public string? Preset { get; init; }
 }
 
-/// <summary>A song whose stems do not agree with each other.</summary>
-/// <remarks>
-/// Wrong on its own terms: key is a song-level fact, so two stems of one song carrying
-/// different keys cannot both be right, whatever the ledger does or does not say.
-/// </remarks>
 public sealed record InconsistentSong
 {
     public required string SourceVideoId { get; init; }

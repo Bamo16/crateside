@@ -8,21 +8,6 @@ namespace Crateside.Core.Orchestration;
 /// <summary>
 /// Runs one <see cref="WorkOrder"/> through <c>stemforge-cli separate</c>.
 /// </summary>
-/// <remarks>
-/// <para>
-/// <strong>One track per invocation, not one batch.</strong> <c>separate</c> accepts many
-/// inputs and loops them serially, which is the efficient call — but batching makes "the GPU is
-/// busy" and "this track is being worked" two different facts sharing one process id. One track
-/// per process costs some repeated start-up and buys far simpler state, plus a pause that takes
-/// effect at track boundaries rather than batch boundaries.
-/// </para>
-/// <para>
-/// Shelling out is correct here and does not contradict the preference for managed .NET. That
-/// preference is about not reimplementing by scraping — <c>ffprobe</c> for tags where TagLibSharp
-/// exists. <c>stemforge-cli</c> is first-party, is the only thing that performs separation, and
-/// grew <c>--json</c> so that other tools could drive it.
-/// </para>
-/// </remarks>
 public sealed class SeparationRunner(
     SeparationInterlock interlock,
     WorkingSet workingSet,
@@ -31,9 +16,8 @@ public sealed class SeparationRunner(
 )
 {
     /// <summary>
-    /// Separates one track, start to finish. Refuses rather than queues if the GPU is already
-    /// busy: more than one separation at a time brings the machine to a standstill, so this is
-    /// the one condition the runner will not work around.
+    /// Separates one track, start to finish; refuses rather than queues if the GPU is already
+    /// busy.
     /// </summary>
     public async Task<SeparationResult> RunAsync(
         WorkOrder order,
@@ -47,19 +31,16 @@ public sealed class SeparationRunner(
 
         using var process = Start(order, retained);
 
-        // Claiming needs the process to exist, so there is a sliver between the check above and
-        // this line. Harmless here because one worker drives this loop -- but it is why the
-        // check and the claim must stay adjacent, and why nothing else may call Start.
+        // The check above and this claim must stay adjacent, and only this method may call
+        // Start — there is a gap between them since claiming needs the process to exist,
+        // harmless only because one worker drives this loop.
         interlock.Claim(order.VideoId, process.Id, StartTimeOf(process));
 
         try
         {
-            // Both reads are started before either is awaited, the same way ExternalProcess
-            // does it and for the reason its comment gives: a child that fills one pipe's
-            // buffer blocks writing to it, so draining stdout to completion first means a
-            // chatty stderr wedges the child forever -- and this is the process that holds
-            // the GPU for six minutes. It survives today only because --json keeps stderr
-            // quiet, which is a property of the callee, not a guarantee.
+            // Both reads start before either is awaited: draining stdout first would block if
+            // stderr's buffer fills, wedging the child that holds the GPU for six minutes. Only
+            // --json keeping stderr quiet makes this safe today, not a guarantee.
             var stdoutRead = process.StandardOutput.ReadToEndAsync(cancellationToken);
             var stderrRead = process.StandardError.ReadToEndAsync(cancellationToken);
 
@@ -85,14 +66,11 @@ public sealed class SeparationRunner(
         }
         catch (OperationCanceledException)
         {
-            // Shutdown, not pause. Pausing only stops the next track being picked up -- nothing
-            // reaches this token from the control, and a separation already going runs to
-            // completion and is recorded normally. This is the app going away, where an
-            // abandoned process would hold the GPU with nobody watching it.
-            //
-            // Note what that makes true: quitting cleanly discards the work, while a crash
-            // keeps it, because on Windows the child outlives the parent and the interlock
-            // adopts it on the next start.
+            // This token fires on shutdown, not pause — pausing only stops the next track being
+            // picked up; an in-flight separation is not reachable from the control and runs to
+            // completion. Quitting cleanly discards the work here, while a crash keeps it
+            // running (Windows does not kill the child), and the interlock adopts it on the
+            // next start.
             Stop(process);
             interlock.Release(order.VideoId, "cancelled");
 
@@ -104,19 +82,8 @@ public sealed class SeparationRunner(
     /// Whether the run produced what the recipe asked for, said as an error when it did not.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <strong>Succeeded has to mean the work is done, not that the process exited zero.</strong>
-    /// An instrumental release once separated "successfully" having written its drums and not
-    /// the source track that <em>is</em> its sample — <c>--keep-source</c> was being ignored —
-    /// and nothing noticed, because nothing compared the output against the request. The track
-    /// then read as fully processed, which let <see cref="WorkingSetJanitor"/> discard the only
-    /// local copy of the missing file. A loud failure here would have kept it.
-    /// </para>
-    /// <para>
-    /// <strong>Only a shortfall is a failure.</strong> More files than asked for is not harm and
-    /// not crateside's business — a preset that grew a second output is StemForge's to define.
-    /// Fewer means something the recipe asked for did not happen.
-    /// </para>
+    /// Only a shortfall counts as failure; more outputs than the recipe expected is not treated
+    /// as harm.
     /// </remarks>
     private static string? ShortfallFrom(SeparationRecipe recipe, IReadOnlyList<string> outputs) =>
         outputs.Count < recipe.ExpectedOutputs
@@ -129,21 +96,8 @@ public sealed class SeparationRunner(
     /// the sample.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <strong><c>--keep-source</c> cannot do this, by design.</strong> It is a flag about URL
-    /// inputs: the separator downloads a source the caller never had, and the flag says whether
-    /// to hand a copy back. Given a local file the caller already has it, so StemForge quite
-    /// reasonably ignores the flag — which left an instrumental release producing drums and
-    /// nothing else, silently, once crateside started passing the retained file rather than a
-    /// URL. Asking the separator to duplicate a file we handed it would be the wrong shape of
-    /// fix; owning the copy here is the right one.
-    /// </para>
-    /// <para>
-    /// It carries provenance already, because <c>stemforge-cli download</c> wrote it — so a
-    /// plain copy keeps the source URL and therefore the video ID that the handoff stage groups
-    /// by. Copy rather than move: the working set is scratch with its own lifetime, and
-    /// <see cref="WorkingSetJanitor"/> discards it when the track is imported.
-    /// </para>
+    /// <c>--keep-source</c> is ignored by <c>stemforge-cli</c> when the input is a local file
+    /// rather than a URL, so this method exists to produce the copy directly.
     /// </remarks>
     private IReadOnlyList<string> KeepSource(WorkOrder order, string? retained)
     {
@@ -164,9 +118,8 @@ public sealed class SeparationRunner(
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            // The stems are real and the separation did succeed, so this does not fail the run.
-            // The track keeps its working set until it is imported, and the copy is retried the
-            // next time anything separates it.
+            // The stems already succeeded, so this does not fail the run; the copy is retried
+            // the next time the track separates.
             return [];
         }
     }
@@ -179,8 +132,8 @@ public sealed class SeparationRunner(
         }
         catch (Exception e) when (e is InvalidOperationException or SystemException)
         {
-            // A process that exited immediately may refuse to report one. Recording nothing is
-            // honest, and the interlock treats an unverifiable live PID as ours anyway.
+            // A process that exited immediately may refuse to report a start time; the
+            // interlock treats an unverifiable PID as ours anyway.
             return default;
         }
     }
@@ -261,17 +214,9 @@ public sealed class SeparationRunner(
 
         info.ArgumentList.Add("separate");
 
-        // The retained download when there is one, so the track is fetched once for the whole
-        // pipeline. Safe only because the file is StemForge's own: it reads the input's
-        // provenance comment and carries the source URL into the stems, which is what keeps the
-        // video ID -- the join key for the board, for "fully processed", and for queue cleanup.
-        // A file from anywhere else would silently produce stems that join to nothing.
-        //
-        // Asked of the working set rather than carried on the order, because composing an order
-        // is pure and this is a question about what is on disk right now. The same shape as
-        // VerdictRunner, which asks it the same way for the same reason. WorkOrder used to carry
-        // a SourcePath for this and nothing ever assigned it, so every separation silently
-        // re-downloaded a file that was already sitting in the working set.
+        // Safe only because the file is StemForge's own — it reads back the provenance comment
+        // stemforge-cli download wrote, carrying the source URL, and therefore the video ID,
+        // into the stems. A file from elsewhere would produce stems that join to nothing.
         info.ArgumentList.Add(retained ?? order.SourceUrl);
 
         foreach (var preset in order.Recipe.Presets)
@@ -283,10 +228,8 @@ public sealed class SeparationRunner(
         if (order.Recipe.ExtractDrums)
             info.ArgumentList.Add("--extract-drums");
 
-        // Only meaningful for a URL input, where the separator downloads a source we never had
-        // and this says to hand a copy back. Given a local file it is correctly ignored, so
-        // passing it there would be a flag that reads as doing something and does not --
-        // KeepSource covers that case instead.
+        // Only meaningful for a URL input; a local file ignores it, which is why KeepSource
+        // exists to cover that case.
         if (order.Recipe.KeepSource && retained is null)
             info.ArgumentList.Add("--keep-source");
 

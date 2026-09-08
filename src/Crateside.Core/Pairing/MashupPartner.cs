@@ -1,14 +1,6 @@
 namespace Crateside.Core.Pairing;
 
-/// <summary>
-/// A key that pairs acceptably with a source key, with the cost of getting there.
-/// </summary>
-/// <remarks>
-/// Ported from <c>PSMashup.Models.MashupPartner</c>. The <c>[Hidden]</c>/<c>[Alias]</c>
-/// attributes are stripped — they are <c>System.Management.Automation</c> and exist for the
-/// cmdlet's table formatting. The static <c>MashupConfig</c> dependency is dropped too: display
-/// style is the UI's business, so this carries the key and lets the caller spell it.
-/// </remarks>
+/// <summary>A key that pairs acceptably with a source key, with the cost of getting there.</summary>
 public sealed record MashupPartner
 {
     public required MusicKey Source { get; init; }
@@ -25,15 +17,13 @@ public sealed record MashupPartner
 
     /// <summary>
     /// Semitones the partner must move to sit with the source, signed, normalized to ±6.
-    /// The dominant cost and the first sort key — an unshifted pairing can be auditioned in
-    /// seconds, while anything past ±1–2 usually sounds wrong.
+    /// The first sort key.
     /// </summary>
     public required int Shift { get; init; }
 
     /// <summary>
-    /// The other transpositions reaching this same partner, a fifth away either way.
-    /// Alternatives, not extras: use one <em>instead of</em> the shift when it suits the
-    /// material better.
+    /// The other transpositions reaching this same partner, a fifth away either way —
+    /// alternatives to <see cref="Shift"/>, not additions to it.
     /// </summary>
     public required IReadOnlyList<int> AltShifts { get; init; }
 

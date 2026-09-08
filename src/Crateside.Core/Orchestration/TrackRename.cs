@@ -22,16 +22,12 @@ public sealed class TrackRename(
         if (!StemFileName.IsUsable(wanted))
             return Impossible(wanted, @"A name cannot be blank or contain \ / : * ? "" < > |.");
 
-        // Only the files whose name would actually change: one already carrying the name is not
-        // work, and counting it would put a number in the button that nothing answers to.
         var moves = staged(videoId)
             .Select(stem => new { Stem = stem, To = StemFileName.Renamed(stem.Path, wanted) })
             .Where(move => !PathsMatch(move.Stem.Path, move.To))
             .ToArray();
 
-        // Checked before anything moves, exactly as handoff does: a collision half way through
-        // leaves a track under two names, which is worse than not starting. The analysis file
-        // counts — overwriting one would replace somebody's warp markers with these.
+        // The analysis file counts — overwriting one would replace somebody's warp markers.
         if (
             moves.FirstOrDefault(move =>
                 File.Exists(move.To) || File.Exists(StemFileName.AnalysisFor(move.To))
@@ -60,10 +56,6 @@ public sealed class TrackRename(
     /// <summary>
     /// Drops the override and puts the derived name back on the files.
     /// </summary>
-    /// <remarks>
-    /// The derived name is passed in rather than worked out here, because deriving it is the
-    /// page's join across the ledger, the staging board and the playlist — not this class's.
-    /// </remarks>
     public RenameOutcome Revert(string videoId, string derivedName) =>
         Rename(videoId, derivedName, stored: null);
 
@@ -200,7 +192,6 @@ public sealed record RenameOutcome
     /// <summary>The name now recorded, or null when nothing was changed.</summary>
     public string? Name { get; init; }
 
-    /// <summary>How many files were renamed.</summary>
     public int Renamed { get; init; }
 
     /// <summary>What went wrong, or null when nothing did.</summary>

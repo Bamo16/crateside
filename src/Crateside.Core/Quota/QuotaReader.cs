@@ -7,73 +7,18 @@ namespace Crateside.Core.Quota;
 /// Reads the user's five-hour Claude window from Anthropic's usage endpoint.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Judging is the only stage that spends something metered, at about 5.3% of a window a track, so
-/// the window is roughly eighteen tracks (ADR 0006). That is worth showing, because the number
-/// governs whether starting a batch now is reasonable and there is no other way to see it.
-/// </para>
-/// <para>
-/// <strong>The endpoint is undocumented and already drifting.</strong> The tool this was learned
-/// from parses <c>percent</c>; the live response calls it <c>utilization</c> and carries
-/// <c>percent</c> only in a parallel <c>limits</c> array, and half the top-level keys are internal
-/// codenames. So every read here is defensive and every failure is <em>unknown</em> rather than an
-/// error: a meter that cannot be read is a meter that says nothing, never a page that breaks.
-/// </para>
-/// <para>
-/// <strong>The token is a live credential.</strong> It is read at the moment of the call, sent
-/// only to Anthropic, and never stored on this object, logged, or put anywhere a UI could render
-/// it. <see cref="QuotaSnapshot"/> deliberately carries no error text for the same reason — there
-/// is no message for a credential to leak into.
-/// </para>
-/// <para>
-/// The response, observed 2026-09-03 on a Pro subscription. Trimmed to the shape that matters;
-/// the dollar fields are null on a subscription and most of the codename keys are null outright:
-/// </para>
-/// <code>
-/// {
-///   "five_hour": {
-///     "utilization": 22.0,
-///     "resets_at": "2026-09-03T19:49:59.789047-05:00",
-///     "limit_dollars": null, "used_dollars": null, "remaining_dollars": null,
-///     "locked_reason": null
-///   },
-///   "seven_day": { "utilization": 25.0, "resets_at": "2026-09-09T04:00:00-05:00", ... },
-///   "limits": [
-///     { "kind": "session",     "group": "session", "percent": 23, "severity": "normal",
-///       "resets_at": "...", "scope": null, "is_active": false },
-///     { "kind": "weekly_all",  "group": "weekly",  "percent": 25, "severity": "normal",
-///       "resets_at": "...", "scope": null, "is_active": true }
-///   ],
-///   "spend": { }, "extra_usage": { }, "nimbus_quill": { },
-///   "member_dashboard_available": true,
-///   "amber_ladder": null, "cinder_cove": null, "iguana_necktie": null,
-///   "juniper_tide": null, "omelette_promotional": null, "tangelo": null
-/// }
-/// </code>
-/// <para>
-/// Three things that were guesses until that call and are now measured. <strong>Utilization is a
-/// percentage on 0–100, not a fraction</strong> — 22.0 meaning 22%. <strong><c>resets_at</c> is an
-/// ISO-8601 string with an offset</strong>, not Unix seconds. And <strong><c>percent</c> in
-/// <c>limits</c> is not the same number</strong>: it read 23 while <c>five_hour.utilization</c>
-/// read 22.0 in the same response, so the two are related but not interchangeable, and the one
-/// this reads is the more precise of them.
-/// </para>
+/// The endpoint is undocumented, with internal codenames among its top-level keys and field
+/// names that differ from other tools reading the same data. Every read here is defensive, and
+/// every failure is <see cref="QuotaSnapshot.Unknown"/> rather than an exception.
 /// </remarks>
 public sealed class QuotaReader(HttpClient client)
 {
     private const string UsagePath = "/api/oauth/usage";
 
-    /// <summary>The beta opt-in the endpoint requires. Part of the contract, not of transport.</summary>
+    /// <summary>The beta opt-in the endpoint requires.</summary>
     private const string BetaHeader = "oauth-2025-04-20";
 
-    /// <summary>
-    /// Where Claude Code keeps its credentials. Settable so a test needs no real one.
-    /// </summary>
-    /// <remarks>
-    /// An init property rather than a constructor parameter, so the only thing the container has
-    /// to supply is the <see cref="HttpClient"/> — which is what lets this be registered as a
-    /// typed client and get a rotated handler for free.
-    /// </remarks>
+    /// <summary>Where Claude Code keeps its credentials. Settable so a test needs no real one.</summary>
     public string CredentialsPath { get; init; } = DefaultCredentialsPath();
 
     /// <summary>
@@ -107,15 +52,9 @@ public sealed class QuotaReader(HttpClient client)
     }
 
     /// <summary>
-    /// Picks the window out of a payload whose shape is not promised.
+    /// Picks the window out of a payload whose shape is not promised: <c>five_hour</c> first,
+    /// then the <c>session</c> entry of <c>limits</c>.
     /// </summary>
-    /// <remarks>
-    /// <c>five_hour</c> first, then the <c>session</c> entry of <c>limits</c>. That fallback is not
-    /// speculative: this field has already been renamed once — the tool this was learned from reads
-    /// <c>percent</c> — and <c>limits</c> is where a <c>percent</c> still lives, tagged
-    /// <c>kind: "session"</c>. The tag is what makes it usable, since the array also carries the
-    /// weekly window and picking the wrong row would be worse than showing nothing.
-    /// </remarks>
     internal static QuotaSnapshot Parse(string payload)
     {
         try
@@ -141,12 +80,9 @@ public sealed class QuotaReader(HttpClient client)
     }
 
     /// <summary>
-    /// The five-hour window as <c>limits</c> spells it, if it is there.
+    /// The five-hour window as <c>limits</c> spells it, if it is there. A fallback only:
+    /// its <c>percent</c> is a coarser reading than <c>five_hour.utilization</c>.
     /// </summary>
-    /// <remarks>
-    /// Its <c>percent</c> is close to but not the same as <c>five_hour.utilization</c> — 23 against
-    /// 22.0 in one response — so this is a fallback and never the preferred reading.
-    /// </remarks>
     private static QuotaSnapshot SessionLimit(JsonElement root)
     {
         if (
@@ -175,14 +111,7 @@ public sealed class QuotaReader(HttpClient client)
             ? value.GetDouble()
             : null;
 
-    /// <summary>
-    /// When the window rolls over, spelled either way.
-    /// </summary>
-    /// <remarks>
-    /// It sends ISO-8601 with an offset — <c>2026-09-03T19:49:59.789047-05:00</c>, observed
-    /// 2026-09-03. Unix seconds are still accepted because it costs one arm of a switch and this
-    /// endpoint has already changed shape once.
-    /// </remarks>
+    /// <summary>When the window rolls over: ISO-8601 with an offset, or Unix seconds.</summary>
     private static DateTimeOffset? ResetTimeOf(JsonElement window) =>
         window.TryGetProperty("resets_at", out var resets)
             ? resets.ValueKind switch
@@ -195,12 +124,8 @@ public sealed class QuotaReader(HttpClient client)
             : null;
 
     /// <summary>
-    /// The OAuth access token from the Claude Code credentials file.
+    /// The OAuth access token from the Claude Code credentials file. Plaintext on Windows.
     /// </summary>
-    /// <remarks>
-    /// Plaintext on Windows, so there is no keychain step. Returned rather than held: the value
-    /// lives for the length of one request and this type keeps no field for it.
-    /// </remarks>
     private string? ReadAccessToken()
     {
         try
@@ -231,22 +156,12 @@ public sealed class QuotaReader(HttpClient client)
 }
 
 /// <summary>
-/// The five-hour window as last read, or nothing at all.
+/// The five-hour window as last read, or nothing at all. Carries no error text on purpose,
+/// since the only failure here involves a live credential.
 /// </summary>
-/// <remarks>
-/// Carries no error text on purpose. The only thing that can go wrong here involves a live
-/// credential, and a snapshot with nowhere to put a message is a snapshot that cannot leak one.
-/// </remarks>
 public sealed record QuotaSnapshot
 {
-    /// <summary>
-    /// How much of the window is spent, as a percentage on 0–100.
-    /// </summary>
-    /// <remarks>
-    /// Observed 2026-09-03: the endpoint reports <c>22.0</c> to mean 22%, not <c>0.22</c>. Stored
-    /// exactly as sent rather than normalised, so a reader is never left wondering which of the
-    /// two conventions a given number is in.
-    /// </remarks>
+    /// <summary>How much of the window is spent, as a percentage on 0–100 (22.0 meaning 22%).</summary>
     public double? Utilization { get; init; }
 
     /// <summary>When the window rolls over.</summary>

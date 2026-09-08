@@ -8,17 +8,8 @@ namespace Crateside.Core.Queue;
 /// The Queue settings the user can change from the UI, persisted between runs.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Stored in <c>%APPDATA%\crateside\queue.json</c> — outside the working tree, so changing a
-/// setting never shows up as a repo modification and nothing user-specific gets committed.
-/// </para>
-/// <para>
-/// This is settings, not state: the staging board stays purely derived, and nothing here
-/// records what has been done. A <see cref="TrackInstruction"/> fits that rule — it is a
-/// standing instruction about <em>how to work</em> a track, like the playlist ID, not a record
-/// that anything ran. <strong>The API key is deliberately not here</strong> — it lives in
-/// user-secrets and is never written or displayed by the app.
-/// </para>
+/// Stored in <c>%APPDATA%\crateside\queue.json</c>, outside the working tree. The API key is
+/// deliberately not here — it lives in user-secrets and is never written or displayed by the app.
 /// </remarks>
 public sealed class QueueSettingsStore
 {
@@ -81,15 +72,7 @@ public sealed class QueueSettingsStore
     public QueueSettings SaveRefreshMinutes(int? minutes) =>
         Save(current => current with { RefreshMinutes = minutes });
 
-    /// <summary>
-    /// Holds a track: crateside will not work it until it is released.
-    /// </summary>
-    /// <remarks>
-    /// The case this exists for is a playlist entry that is not the <em>canonical version</em> —
-    /// the wrong upload of the right song — noticed long after it was added and not worth
-    /// stopping to fix. Keyed by video ID because that is the only identity these tracks have:
-    /// they have never been detected, so there is no song identity to key on.
-    /// </remarks>
+    /// <summary>Holds a track: crateside will not work it until it is released.</summary>
     public QueueSettings Hold(string videoId, string? reason = null) =>
         Upsert(videoId, t => t with { IsHeld = true, HoldReason = reason });
 
@@ -98,24 +81,10 @@ public sealed class QueueSettingsStore
         Upsert(videoId, t => t with { IsHeld = false, HoldReason = null });
 
     /// <summary>
-    /// Records that a track is an <em>instrumental release</em> — no vocals to begin with, so
-    /// there is nothing to separate out and the source track is the sample.
+    /// Records that a track is an instrumental release — no vocals to begin with, so there is
+    /// nothing to separate out and the source track is the sample.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <strong>A fact, not a plan.</strong> It says what the release is; the recipe is derived
-    /// from it. That distinction is ADR 0004's and is why this is not simply "separate drums
-    /// only" — recorded as a fact it still explains itself when the workflow changes, and it is
-    /// what reaches keytag's ledger as <c>has_vocals</c>.
-    /// </para>
-    /// <para>
-    /// It lives here rather than coming back from the ledger because it is <em>the user's
-    /// statement</em>, and this is the only place in the pipeline where a user is present:
-    /// the evidence run is unattended and the verdict run is a headless session. It is also
-    /// knowable the moment the track is queued, being a property of the release rather than
-    /// something detection discovers.
-    /// </para>
-    /// </remarks>
+    /// <remarks>Reaches keytag's ledger as <c>has_vocals</c> (ADR 0004).</remarks>
     public QueueSettings SetInstrumentalRelease(string videoId, bool isInstrumentalRelease) =>
         Upsert(videoId, t => t with { IsInstrumentalRelease = isInstrumentalRelease });
 
@@ -238,22 +207,8 @@ public sealed record QueueSettings
     /// never; null is <see cref="QueueSettings.DefaultRefreshMinutes"/>.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <strong>Because the two things that matter most move without saying so.</strong> The
-    /// playlist is added to from a phone, and <c>Sample Staging</c> is emptied in Ableton; neither
-    /// publishes anything crateside could subscribe to, so the only way either is noticed is to
-    /// look. How often to look is a preference, which is why it is here rather than a constant.
-    /// </para>
-    /// <para>
-    /// It is nearly free at any setting. The playlist read pages at fifty, the API's maximum, so
-    /// the whole list is one quota unit against a daily ten thousand — 288 a day at five minutes,
-    /// 48 at thirty. A <c>playlists.list</c> probe for <c>itemCount</c> costs the same one unit,
-    /// so gating the read behind one buys nothing until the playlist passes fifty items.
-    /// </para>
-    /// <para>
-    /// This is about the view being true, not about work starting: the stage workers read the
-    /// queue on their own two-minute idle loop whether or not anyone has a page open.
-    /// </para>
+    /// About the view being true, not about work starting — stage workers read the queue on
+    /// their own idle loop regardless of this setting.
     /// </remarks>
     [JsonPropertyName("refreshMinutes")]
     public int? RefreshMinutes { get; init; }
@@ -277,11 +232,8 @@ public sealed record QueueSettings
 /// A standing instruction about how crateside should work one track.
 /// </summary>
 /// <remarks>
-/// Keyed by video ID because that is the only identity these tracks have — an undetected track
-/// has no song identity to key on. Holds and the instrumental-release fact live together
-/// because they are the same kind of thing: something the user knows about a specific track,
-/// stated once, before anything runs. A per-track <em>recipe override</em> would be the third,
-/// and would slot in here.
+/// Keyed by video ID because that is the only identity these tracks have — an undetected
+/// track has no song identity to key on.
 /// </remarks>
 public sealed record TrackInstruction
 {
@@ -292,9 +244,8 @@ public sealed record TrackInstruction
     /// crateside will not work this track at all until it is released.
     /// </summary>
     /// <remarks>
-    /// A <em>deferral</em>, not a classification: the usual case is knowing an entry is the
-    /// wrong upload and not wanting to stop and fix it. Whether it is eventually replaced,
-    /// removed, or released is left open, which is why <see cref="HoldReason"/> is prose.
+    /// A deferral, not a classification — whether it is eventually replaced, removed, or
+    /// released is left open, which is why <see cref="HoldReason"/> is prose.
     /// </remarks>
     [JsonPropertyName("held")]
     public bool IsHeld { get; init; }

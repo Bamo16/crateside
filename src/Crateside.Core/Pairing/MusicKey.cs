@@ -6,12 +6,6 @@ namespace Crateside.Core.Pairing;
 /// <summary>
 /// One of the 24 keys, positioned on both the chromatic scale and the circle of fifths.
 /// </summary>
-/// <remarks>
-/// Ported from <c>PSMashup.Models.MusicKey</c>. The <c>[TypeConverter]</c> and the PowerShell
-/// argument-completer plumbing are dropped — they exist to serve the cmdlet's parameter
-/// binding and would drag <c>System.Management.Automation</c> into a web app. The model
-/// itself is unchanged; PSMashup keeps working as-is and is not modified.
-/// </remarks>
 public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKey>
 {
     private static readonly string[] SharpNames =
@@ -67,7 +61,7 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
     /// <summary>The harmonic-mixing notation — <c>8B</c>, <c>5A</c>.</summary>
     public string CamelotCode { get; }
 
-    /// <summary>Sharp-spelled with a Unicode ♯, as PSMashup spells it: <c>G♯ Major</c>.</summary>
+    /// <summary>Sharp-spelled with a Unicode ♯ — <c>G♯ Major</c>.</summary>
     public string Name => SharpName;
 
     public string SharpName => $"{SharpNames[Chromatic]} {Mode}";
@@ -82,7 +76,7 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
     public string LedgerName =>
         $"{SharpNames[Chromatic].Replace('♯', '#')} {Mode.ToString().ToLowerInvariant()}";
 
-    /// <summary>All 24 keys. Order is PSMashup's: majors by circle position, then minors.</summary>
+    /// <summary>All 24 keys, majors by circle position then minors.</summary>
     public static readonly ImmutableArray<MusicKey> AllKeys =
     [
         // Major keys (B) — primary ring

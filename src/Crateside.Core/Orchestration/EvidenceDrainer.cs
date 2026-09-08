@@ -7,18 +7,6 @@ namespace Crateside.Core.Orchestration;
 /// <summary>
 /// Works the queue down one detection at a time, for as long as anything is undetected.
 /// </summary>
-/// <remarks>
-/// <para>
-/// <strong>No pause.</strong> Evidence contends for nothing — no GPU, no quota — which is the
-/// premise the whole three-stage split rests on, so there is nothing to stop it for and nothing
-/// to pick a moment for.
-/// </para>
-/// <para>
-/// A loop of its own rather than a step inside one: a single sequential loop would mean a paused
-/// GPU stopped detection of everything queued behind it, and a stage failing on one track would
-/// stall other tracks in other stages.
-/// </para>
-/// </remarks>
 public sealed class EvidenceDrainer(
     QueueService queue,
     EvidenceRunner runner,
@@ -42,8 +30,6 @@ public sealed class EvidenceDrainer(
         }
         catch (QueueUnavailableException e)
         {
-            // The playlist is unreadable — a lapsed credential, or it went private. Something to
-            // report and retry, never a reason to stop draining for good.
             return StageTick.Unavailable(e.Message);
         }
 
@@ -52,9 +38,8 @@ public sealed class EvidenceDrainer(
 
         var order = WorkOrder.Compose(item, KeyLedger.Read(_paths.Ledger));
 
-        // Recorded before the work starts, so a crash mid-run leaves a job that reads "Running"
-        // rather than nothing at all — which is what the next pass needs in order to tell an
-        // interrupted attempt from one that was never made.
+        // Recorded before the run starts, so a crash leaves the job "Running" rather than
+        // absent, distinguishing an interrupted attempt from one never made.
         jobs.Record(item.VideoId, JobStage.Evidence, JobStatus.Running);
 
         var result = await runner.RunAsync(order, cancellationToken);

@@ -3,17 +3,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Queue;
 
-/// <summary>
-/// The Queue view: the playlist, diffed against what has already been processed.
-/// </summary>
-/// <summary>
-/// Video IDs crateside has separation to redo for, whatever the playlist says.
-/// </summary>
-/// <remarks>
-/// A read rather than the job store itself, for the reason every other seam here is one: the
-/// queue's business is the playlist, and it should not have to know how a stage records what it
-/// did in order to be told that something needs doing again.
-/// </remarks>
+/// <summary>Video IDs crateside has separation to redo for, whatever the playlist says.</summary>
 public delegate IReadOnlySet<string> ReadReopenedTracks();
 
 public sealed class QueueService(
@@ -25,22 +15,7 @@ public sealed class QueueService(
     ReadReopenedTracks? reopened = null
 )
 {
-    /// <summary>
-    /// How long a playlist read is reused before going back to the API.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// The playlist is a list a human adds to from their phone, so it changes on the order of
-    /// minutes at best — while the readers ask constantly: two drain loops on a five-second busy
-    /// delay, plus every visit to the Queue tab. Uncached, that is on the order of a thousand
-    /// <c>playlistItems.list</c> calls an hour against a 10,000-a-day allowance, to be told the
-    /// same thing each time.
-    /// </para>
-    /// <para>
-    /// It is also what made the Queue tab slow: the render blocked on a live API call every
-    /// time, so opening a tab to look at a list cost a network round trip.
-    /// </para>
-    /// </remarks>
+    /// <summary>How long a playlist read is reused before going back to the API.</summary>
     private static readonly TimeSpan CacheFor = TimeSpan.FromMinutes(2);
 
     private readonly CratesidePaths _paths = paths.Value;
@@ -53,9 +28,8 @@ public sealed class QueueService(
     /// When the playlist was last actually fetched, or null if it never has been.
     /// </summary>
     /// <remarks>
-    /// The API read, not the disk scan — this is what "playlist synced 2 min ago" means, and the
-    /// two happen on different clocks: a scan runs on every read while the playlist itself is
-    /// reused for <see cref="CacheFor"/>.
+    /// The API read, not the disk scan — the two run on different clocks: a scan happens on
+    /// every read while the playlist itself is cached for <see cref="CacheFor"/>.
     /// </remarks>
     public DateTimeOffset? PlaylistReadAt => _cachedItems is null ? null : _cachedAt;
 
@@ -115,9 +89,9 @@ public sealed class QueueService(
         InstructionFor(videoId) is { IsHeld: true, HoldReason: var reason } ? reason : null;
 
     /// <summary>
-    /// Records whether a track is an <em>instrumental release</em>. The user's statement, and
-    /// the only thing that stops crateside asking the separator for a vocal stem of a track
-    /// that has no vocals.
+    /// Records whether a track is an instrumental release — the user's statement, and the
+    /// only thing that stops crateside asking the separator for a vocal stem of a track with
+    /// no vocals.
     /// </summary>
     public void SetInstrumentalRelease(string videoId, bool isInstrumentalRelease) =>
         settings.SetInstrumentalRelease(videoId, isInstrumentalRelease);
@@ -128,18 +102,10 @@ public sealed class QueueService(
             .Read()
             .Tracks.FirstOrDefault(t => t.VideoId.Equals(videoId, StringComparison.Ordinal));
 
-    /// <summary>
-    /// Reads the playlist and classifies every item. Throws
-    /// <see cref="QueueUnavailableException"/> if the playlist cannot be read — the caller
-    /// must render that as its own state, never as an empty queue.
-    /// </summary>
-    /// <summary>
-    /// Forgets the cached playlist, so the next read goes to the API.
-    /// </summary>
+    /// <summary>Forgets the cached playlist, so the next read goes to the API.</summary>
     /// <remarks>
-    /// For the Refresh button and for anything that changes the playlist itself — a deletion, or
-    /// pointing at a different playlist. Everything else is content to see a two-minute-old list,
-    /// because that is roughly how fast a human adds to one.
+    /// For the Refresh button and for anything that changes the playlist itself. Everything
+    /// else is content to see a two-minute-old list.
     /// </remarks>
     public void Invalidate()
     {
@@ -160,8 +126,7 @@ public sealed class QueueService(
     /// </summary>
     /// <remarks>
     /// Gated so that several readers arriving at once make one call between them rather than
-    /// one each — which is the normal case here, with two drain loops and a page all asking
-    /// within the same second.
+    /// one each.
     /// </remarks>
     private async Task<IReadOnlyList<QueueItem>> ItemsAsync(CancellationToken cancellationToken)
     {
@@ -172,8 +137,8 @@ public sealed class QueueService(
             if (_cachedItems is { } cached && DateTimeOffset.UtcNow - _cachedAt < CacheFor)
                 return cached;
 
-            // Oldest-added first: the Queue is a queue, and added-at is the only ordering that
-            // means the same thing whether or not the playlist adds new videos to the top.
+            // Oldest-added first: the only ordering that means the same thing regardless of
+            // whether the playlist adds new videos to the top.
             _cachedItems =
             [
                 .. (await reader.ListAsync(PlaylistId ?? string.Empty, cancellationToken)).OrderBy(
@@ -194,35 +159,22 @@ public sealed class QueueService(
     /// Reads the queue and keeps everything the read produced, not just the conclusion.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <strong>Named for what it costs.</strong> The playlist half is cached; the rest is a ledger
-    /// read plus two recursive walks that open every audio file under three roots with TagLib, and
-    /// that happens on every call. It is the most expensive thing in the app and must not run per
-    /// event.
-    /// </para>
-    /// <para>
-    /// The ledger and both scans used to be built here and dropped on the floor, leaving anything
-    /// that needed them to do the same walk again. The Tracks page needs all three, so they are
-    /// returned rather than recomputed — one pass over the library instead of two.
-    /// </para>
+    /// The playlist half is cached; the rest is a ledger read plus two recursive walks that
+    /// open every audio file under three roots with TagLib — the most expensive thing in the
+    /// app, and must not run per event.
     /// </remarks>
     public async Task<QueueScan> ScanAsync(CancellationToken cancellationToken = default)
     {
         var items = await ItemsAsync(cancellationToken);
 
-        // Stems live in staging until the work is done, then move to Mashup Samples — both
-        // count, because a track that moved out is still processed.
+        // Both staging and Mashup Samples count — a track that moved out is still processed.
         var ledger = KeyLedger.Read(_paths.Ledger);
         var processed = ProcessedTracks.Scan(ledger, [_paths.SampleStaging, _paths.MashupSamples]);
 
-        // Scanned separately from the two roots above, and deliberately not added to them: a
-        // stem parked here is not processed, and counting it as such would take the track out of
-        // the queue and let the janitor discard its working set. What it does mean is that the
-        // GPU has already done this track, which is the thing "awaiting stems" could not say.
+        // Deliberately not counted as processed: that would let the janitor discard the
+        // working set. It does mean the GPU has already run this track.
         var parked = ProcessedTracks.Scan(ledger, [_paths.StemsUnresolvedKey]);
 
-        // Read once and handed on. The work lists apply them to playlist items; the Tracks page
-        // needs them for rows the playlist no longer has.
         var instructions = settings
             .Read()
             .Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal);
@@ -251,19 +203,9 @@ public sealed class QueueService(
     /// Tracks with separation to redo that the playlist no longer holds.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <strong>The playlist is the inbox, not the work list.</strong> A track leaves it as soon as
-    /// it is processed, and re-cutting one creates real work long afterwards — so a work list
-    /// built from the playlist alone could not see the very track somebody had just asked for.
-    /// Handoff and tagging never had this problem because they read the disk; separation reads
-    /// the queue.
-    /// </para>
-    /// <para>
-    /// <strong>Gated twice, because of what is on the other side.</strong> Only stages after
-    /// judging count, and only tracks the ledger has already judged — so one of these can never
-    /// reach <see cref="QueueView.Outstanding"/>, which is the only list evidence and the verdict
-    /// read. They join <see cref="QueueView.AwaitingSeparation"/> and nothing else.
-    /// </para>
+    /// Gated to only tracks the ledger has already judged, so these can never reach
+    /// <see cref="QueueView.Outstanding"/>. They join <see cref="QueueView.AwaitingSeparation"/>
+    /// and nothing else.
     /// </remarks>
     private IReadOnlyList<QueueItem> Reopened(
         IReadOnlyList<QueueItem> items,
@@ -298,7 +240,13 @@ public sealed class QueueService(
         ];
     }
 
-    /// <summary>The queue sorted into work lists — the conclusion of a <see cref="ScanAsync"/>.</summary>
+    /// <summary>
+    /// The queue sorted into work lists — the conclusion of a <see cref="ScanAsync"/>.
+    /// </summary>
+    /// <remarks>
+    /// Throws <see cref="QueueUnavailableException"/> if the playlist cannot be read — the
+    /// caller must render that as its own state, never as an empty queue.
+    /// </remarks>
     public async Task<QueueView> ReadAsync(CancellationToken cancellationToken = default) =>
         (await ScanAsync(cancellationToken)).View;
 
@@ -306,9 +254,7 @@ public sealed class QueueService(
     /// Removes every fully-processed item from the playlist.
     /// </summary>
     /// <remarks>
-    /// <strong>Re-reads and re-tests before deleting.</strong> The caller passes nothing: the
-    /// set to remove is derived here, at the moment of removal, rather than taken from
-    /// whatever a page happened to render earlier. A stale page must never be able to delete
+    /// Re-reads and re-tests before deleting — a stale page must never be able to delete
     /// something that has since stopped qualifying.
     /// </remarks>
     public async Task<IReadOnlyList<RemovalResult>> RemoveProcessedAsync(
@@ -332,8 +278,8 @@ public sealed class QueueService(
     {
         var results = await remover.RemoveAsync(items, cancellationToken);
 
-        // The playlist just changed underneath the cache, so holding the old one for another two
-        // minutes would show removed tracks as still queued -- and a drain loop would pick one.
+        // The playlist just changed underneath the cache, so holding the old one would show
+        // removed tracks as still queued — and a drain loop would pick one.
         Invalidate();
 
         return results;
@@ -343,11 +289,7 @@ public sealed class QueueService(
 /// <summary>
 /// One reading of the queue: the work lists, and the material they were derived from.
 /// </summary>
-/// <remarks>
-/// Kept together because it was all produced by the same expensive pass and any of it recomputed
-/// separately means walking the library again. <see cref="QueueView"/> alone is the answer to a
-/// stage's question; the Tracks page asks a wider one and needs the rest.
-/// </remarks>
+/// <remarks>Kept together because recomputing any of it separately means walking the library again.</remarks>
 public sealed record QueueScan
 {
     public required QueueView View { get; init; }
@@ -365,10 +307,8 @@ public sealed record QueueScan
     /// The user's standing instructions, by video ID.
     /// </summary>
     /// <remarks>
-    /// Carried whole rather than only applied to the work lists, because <em>a row is not a
-    /// playlist entry</em>. A track leaves the playlist as soon as it is processed while its files
-    /// sit in staging for weeks, and its instructions go on being true the entire time — the fact
-    /// that a release has no vocals does not stop being a fact when the entry is deleted.
+    /// Carried whole, not only applied to the work lists — a track leaves the playlist once
+    /// processed while its instructions (such as having no vocals) go on being true.
     /// </remarks>
     public required IReadOnlyDictionary<string, TrackInstruction> Instructions { get; init; }
 

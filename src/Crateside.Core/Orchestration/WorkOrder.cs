@@ -8,9 +8,7 @@ namespace Crateside.Core.Orchestration;
 /// what to ask for. What used to be prose in the detect-key skill.
 /// </summary>
 /// <remarks>
-/// A work order says what <em>should</em> happen to a track next. It is not a record that
-/// anything did — that is <see cref="TrackJob"/>. Composing one is pure: it reads the queue item
-/// and the ledger and touches nothing.
+/// Not a record that anything did — that is <see cref="TrackJob"/>. Composing one is pure.
 /// </remarks>
 public sealed record WorkOrder
 {
@@ -47,30 +45,6 @@ public sealed record WorkOrder
     /// <summary>
     /// Decides what should happen to a queued track.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <strong>Destination follows the verdict</strong>, so the library itself records which
-    /// tracks are safe to pair. Only HIGH and MEDIUM produce a key the user would tag with, so
-    /// LOW and WITHHELD route to <see cref="StemDestination.UnresolvedKey"/> — which is exactly
-    /// what that folder is for, since the bare stems root carries no signal about whether a key
-    /// was resolved.
-    /// </para>
-    /// <para>
-    /// <strong>A track with no verdict at all never reaches separation</strong>, so it cannot be
-    /// routed wrongly: <see cref="SeparationSelector"/> requires a ledger line, because nothing
-    /// moves stems afterwards and a track separated ahead of its verdict would sit in
-    /// <see cref="StemDestination.UnresolvedKey"/> permanently even once a HIGH verdict arrived
-    /// (ADR 0005). Composing an order for an earlier stage still yields a destination; it simply
-    /// means nothing until separation is the stage asking.
-    /// </para>
-    /// <para>
-    /// <strong>The URL choice is a choice of form, not of song.</strong> An art track is a
-    /// YouTube Music track, so it gets the Music URL the skill prefers. Anything else gets the
-    /// ordinary watch URL — which is <em>not</em> a claim that no better version exists; that is
-    /// what <see cref="Advisory"/> is for, and finding a different video ID for the same song
-    /// stays a human call.
-    /// </para>
-    /// </remarks>
     public static WorkOrder Compose(QueueItem item, KeyLedger ledger) =>
         new()
         {
@@ -90,10 +64,7 @@ public sealed record WorkOrder
         };
 }
 
-/// <summary>
-/// Which of the two stem folders a track's output belongs in. The split is the library's own
-/// record of what is safe to pair, so there is no third option and no neutral one.
-/// </summary>
+/// <summary>Which of the two stem folders a track's output belongs in.</summary>
 public enum StemDestination
 {
     /// <summary>A verdict the user would tag with — HIGH or MEDIUM.</summary>
@@ -104,20 +75,6 @@ public enum StemDestination
 }
 
 /// <summary>What to ask the separator for: which stems, in what form.</summary>
-/// <remarks>
-/// <para>
-/// <strong>A plan, never a fact.</strong> Nobody chooses a recipe — it is derived from what is
-/// known about the release, which is why <see cref="For"/> takes a queue item rather than being
-/// set on the order. Recording the fact and deriving the plan is ADR 0004's rule, and it is what
-/// lets the plan change later without the record becoming a lie.
-/// </para>
-/// <para>
-/// Deriving it through <see cref="For"/> rather than defaulting a property is also the seam for a
-/// per-track <strong>recipe override</strong> — a user who wants <c>vocal_clean</c> for one track
-/// for no reason a fact could express. That is a queue instruction this method would prefer over
-/// the derivation, and nothing else moves.
-/// </para>
-/// </remarks>
 public sealed record SeparationRecipe
 {
     /// <summary>
@@ -129,13 +86,11 @@ public sealed record SeparationRecipe
 
     /// <summary>
     /// For a release that has no vocals: nothing to separate out, so the drums are the only
-    /// stem and <strong>the source track is the sample</strong> — which is what
-    /// <see cref="KeepSource"/> is for.
+    /// stem and the source track is the sample — which is what <see cref="KeepSource"/> is for.
     /// </summary>
     /// <remarks>
-    /// Who <em>places</em> that source moved once crateside began separating the file it had
-    /// already downloaded: <c>--keep-source</c> is a flag about URL inputs, so it does nothing
-    /// for a local one, and crateside copies the source into the destination itself.
+    /// <c>--keep-source</c> is a flag about URL inputs, so it does nothing for a local file;
+    /// crateside copies the source into the destination itself instead.
     /// </remarks>
     public static SeparationRecipe InstrumentalRelease { get; } =
         new()
@@ -157,18 +112,6 @@ public sealed record SeparationRecipe
     /// How many files this recipe should produce — one per preset, plus the warp guide and the
     /// kept source where they are asked for.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Counted rather than matched by name, deliberately. The names belong to StemForge
-    /// (<c>Vocal - Full</c> against crateside's <c>vocal_full</c>) and mapping between them
-    /// would make a rename over there a silent miscount over here. A count encodes nothing about
-    /// the other tool's vocabulary.
-    /// </para>
-    /// <para>
-    /// Repeated presets are not de-duplicated, because they run as independent stem sets and
-    /// each produces a file.
-    /// </para>
-    /// </remarks>
     public int ExpectedOutputs => Presets.Count + (ExtractDrums ? 1 : 0) + (KeepSource ? 1 : 0);
 
     /// <summary>
@@ -180,12 +123,7 @@ public sealed record SeparationRecipe
     /// Roughly how long the GPU will be busy.
     /// </summary>
     /// <remarks>
-    /// <strong>A shape assumed, not measured.</strong> A straight line through the only two
-    /// separations anyone has timed — 2:50 for one pass and 5:59 for three — which puts about 75
-    /// seconds of fixed cost against 95 a pass. Two points cannot disagree with a straight line,
-    /// so this is good enough to say "about six minutes" before spending them and not good enough
-    /// to build anything on. Derived rather than written down as a number because the whole point
-    /// is that it changes with the recipe.
+    /// A shape assumed, not measured — good enough to say roughly how long, not to build logic on.
     /// </remarks>
     public TimeSpan Estimate => TimeSpan.FromSeconds(75 + (95 * Passes));
 

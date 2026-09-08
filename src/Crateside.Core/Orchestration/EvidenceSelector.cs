@@ -2,22 +2,14 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Core.Orchestration;
 
-/// <summary>
-/// Decides which track to detect next. Split from the runner for the same reason
-/// <see cref="SeparationSelector"/> is: this is the part with the rule in it, and it can be
-/// tested without a network, a download or a detector.
-/// </summary>
+/// <summary>Decides which track to detect next.</summary>
 public sealed class EvidenceSelector(
     JobStore jobs,
     WorkingSet workingSet,
     int maxStrikes = EvidenceSelector.DefaultMaxStrikes
 )
 {
-    /// <summary>
-    /// How many failures before a track is left alone. More patient than separation's three,
-    /// because an evidence run costs a download and some CPU rather than GPU hours, and its
-    /// usual failures — a flaky fetch, a transient upstream error — are the retryable kind.
-    /// </summary>
+    /// <summary>How many failures before a track is left alone.</summary>
     public const int DefaultMaxStrikes = 5;
 
     /// <summary>
@@ -25,16 +17,9 @@ public sealed class EvidenceSelector(
     /// flight, or given up on.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// It reads <see cref="QueueView.Outstanding"/> — tracks with no verdict — which is the
-    /// right list precisely because <em>Outstanding</em> means "not judged yet" and evidence is
-    /// what a verdict is made from. Held tracks are structurally absent from it.
-    /// </para>
-    /// <para>
-    /// <strong>Evidence already in the working set is what makes this terminate.</strong> A
-    /// detected track is still outstanding — detection records nothing in the ledger — so
-    /// without this the same track would be picked forever and no other would ever run.
-    /// </para>
+    /// Evidence already in the working set is what makes this terminate: detection records
+    /// nothing in the ledger, so a detected track is still outstanding, and without this check
+    /// the same track would be picked forever.
     /// </remarks>
     public bool TryPickNext(QueueView view, out QueueItem next)
     {
@@ -46,9 +31,9 @@ public sealed class EvidenceSelector(
     }
 
     /// <remarks>
-    /// A past success is no reason to refuse: the working-set check above has already said the
-    /// evidence is not there, so this is a re-acquire rather than a repeat. The working set is
-    /// scratch and may be deleted by hand at any time.
+    /// retrySucceeded is true here: the working-set check above already confirmed the evidence
+    /// is gone, and the working set may be deleted by hand at any time, so a past success is not
+    /// a reason to refuse a re-acquire.
     /// </remarks>
     private bool IsEligible(QueueItem item) =>
         StageEligibility.Allows(

@@ -3,18 +3,11 @@ namespace Crateside.Core.Staging;
 /// <summary>
 /// Reads a stem's tags off disk with TagLibSharp — in-process, no external binary.
 /// </summary>
-/// <remarks>
-/// Reads through <c>Tag.Comment</c>, exactly as StemForge writes it, rather than reaching
-/// for the Xiph field by name: the round-trip is already proven by StemForge's own
-/// local-file path, and it keeps this reader working if a stem is ever not FLAC.
-/// </remarks>
 public static class StemTagReader
 {
     /// <summary>
     /// Reads the tags crateside needs from a stem file. Returns null if the file is
-    /// unreadable or its format is unsupported — a stem the board cannot read is a stem
-    /// with no key and no video ID, which the staging board renders as unknown rather than
-    /// as an error.
+    /// unreadable or its format is unsupported.
     /// </summary>
     public static StemTags? Read(string path)
     {

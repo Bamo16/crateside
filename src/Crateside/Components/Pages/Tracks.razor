@@ -109,10 +109,6 @@
                 <span class="mono count @Tone(filter)">@Rows.Count(filter)</span>
             </button>
         }
-        @* The playlist read is cached for two minutes, so a track added on your phone shows up
-           within about that -- but nothing on this page redraws in the meantime, and there was no
-           way to say "go and look now". A list read costs one quota unit, the same as any cheaper
-           probe would, so this is simply that read. *@
         <button class="status" @onclick="Resync" disabled="@_syncing">
             @(_syncing ? "checking the playlist…" : Synced)
         </button>

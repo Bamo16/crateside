@@ -6,19 +6,9 @@ namespace Crateside.Core.Orchestration;
 /// Keeps separation single-flight, across restarts as well as within one.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Separation is ~6–7 minutes of GPU per track and must never run twice at once — concurrent
-/// separations thrash the GPU and make the whole machine unusable. Within one process that is
-/// easy. The hard case is a <em>restart</em>: on Windows a child process is not killed when its
-/// parent exits, so a <c>stemforge-cli</c> crateside launched keeps running after crateside
-/// goes away. A crateside that came back blind would see an unprocessed track and launch a
-/// second one onto the same GPU.
-/// </para>
-/// <para>
-/// So an orphan is <strong>adopted, not killed</strong>. Killing it would keep the bookkeeping
-/// tidy at the cost of discarding up to two hours of GPU work on every hot reload, which is the
-/// worse trade by a wide margin.
-/// </para>
+/// Windows does not kill a child process when its parent exits, so a <c>stemforge-cli</c>
+/// process crateside launched can outlive a restart; an orphan is adopted rather than killed,
+/// to avoid discarding GPU work already in progress.
 /// </remarks>
 public sealed class SeparationInterlock(JobStore jobs, IProcessProbe probe)
 {
@@ -39,8 +29,7 @@ public sealed class SeparationInterlock(JobStore jobs, IProcessProbe probe)
                 continue;
             }
 
-            // The process is gone and nothing recorded a result, so it did not finish: the
-            // machine rebooted, or it was killed. That is a real failure and earns its strike.
+            // Gone with no result recorded — the machine rebooted, or the process was killed.
             abandoned.Add(
                 jobs.Record(
                     job.VideoId,
@@ -56,10 +45,7 @@ public sealed class SeparationInterlock(JobStore jobs, IProcessProbe probe)
         return new SeparationReconciliation { Adopted = adopted, Abandoned = abandoned };
     }
 
-    /// <summary>
-    /// The separation happening right now, if there is one. This is the gate every launch must
-    /// pass through.
-    /// </summary>
+    /// <summary>The separation happening right now, if there is one — the gate every launch must pass through.</summary>
     public bool TryGetLive([NotNullWhen(true)] out TrackJob? job)
     {
         job = jobs.Open(JobStage.Separation).FirstOrDefault(IsStillRunning);
@@ -89,9 +75,8 @@ public sealed class SeparationInterlock(JobStore jobs, IProcessProbe probe)
         if (!probe.TryGetStartTime(processId, out var startedAt))
             return false;
 
-        // A live PID with no recorded start time cannot be verified. Treat it as ours, because
-        // the two mistakes are not symmetrical: a wrong adopt costs a delay, while a wrong
-        // launch puts two jobs on the GPU — the exact thing this class exists to prevent.
+        // Unverifiable PID is treated as running: a wrong adopt costs a delay, a wrong launch
+        // double-books the GPU.
         if (job.ProcessStartedAt is not { } recorded)
             return true;
 

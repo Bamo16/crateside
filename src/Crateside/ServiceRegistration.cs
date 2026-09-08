@@ -10,28 +10,17 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside;
 
-/// <summary>
-/// The service graph, in the groups it actually divides into. Split out of <c>Program.cs</c> so
-/// the composition root reads as an outline rather than a list.
-/// </summary>
 public static class ServiceRegistration
 {
     /// <summary>
     /// Configuration sources and the options bound from them.
     /// </summary>
-    /// <remarks>
-    /// Each options type is also registered as its bare value. Most consumers want the settings,
-    /// not an <see cref="IOptions{T}"/> wrapper, and doing the unwrap once here is what keeps
-    /// their constructors honest about what they depend on.
-    /// </remarks>
     public static WebApplicationBuilder AddCratesideConfiguration(
         this WebApplicationBuilder builder
     )
     {
-        // The API key comes from user-secrets, which the Development environment loads by
-        // default — it lives outside the working tree so it cannot surface in an editor or a
-        // file tree. appsettings.Secrets.json stays supported as a gitignored fallback for a
-        // non-dev run.
+        // The Development environment loads user-secrets automatically; this adds it
+        // explicitly for other environments.
         builder.Configuration.AddJsonFile(
             "appsettings.Secrets.json",
             optional: true,
@@ -59,10 +48,7 @@ public static class ServiceRegistration
         return builder;
     }
 
-    /// <summary>
-    /// Stateless readers over files crateside does not own. Safe to share, and none of them
-    /// hold anything between calls.
-    /// </summary>
+    /// <summary>Stateless readers over files crateside does not own; safe to share.</summary>
     public static IServiceCollection AddCratesideReaders(this IServiceCollection services)
     {
         services.AddSingleton<AbletonFolderInfoReader>();
@@ -79,8 +65,7 @@ public static class ServiceRegistration
     /// </summary>
     public static IServiceCollection AddCratesideQueue(this IServiceCollection services)
     {
-        // The OAuth refresh token can delete from the playlist, so it is encrypted at rest. The
-        // key ring is sealed to the current Windows user (docs/secrets.md).
+        // The key ring is sealed to the current Windows user (docs/secrets.md).
         var dataProtection = services
             .AddDataProtection()
             .PersistKeysToFileSystem(
@@ -94,19 +79,12 @@ public static class ServiceRegistration
             )
             .SetApplicationName("crateside");
 
-        // DPAPI is Windows-only. crateside is a Windows app (the Ableton roots are P:\ paths),
-        // so this always applies in practice; the guard is here because the analyzer is right
-        // that the call is not portable, and falling back to the default key protection is the
-        // honest alternative rather than suppressing the warning.
         if (OperatingSystem.IsWindows())
             dataProtection.ProtectKeysWithDpapi();
 
         services.AddSingleton<ProtectedTokenStore>();
         services.AddSingleton<QueueAuthorizer>();
         services.AddSingleton<QueueRemover>();
-        // Only the stages after judging, so a reopened track can never reach the lists evidence and
-        // the verdict read. Cancelled is what a re-cut records; queued and running cover a restart
-        // part-way through one.
         services.AddSingleton<ReadReopenedTracks>(sp =>
             () =>
                 sp.GetRequiredService<JobStore>()
@@ -130,25 +108,12 @@ public static class ServiceRegistration
     /// Draining: what turns the queue into stems on disk without anyone asking it to.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// The four factories below are not a style choice and not indirection for its own sake.
-    /// Each of these types takes a trailing primitive with a default — <c>maxStrikes</c>,
-    /// <c>executable</c>, <c>startPaused</c>, <c>path</c> — and the built-in container does not
-    /// use constructor defaults: it tries to resolve <c>int</c> and <c>string</c> from the
-    /// graph and fails. A factory is the only way to say "use the default", so every one of
-    /// them is a factory that passes nothing but the services.
-    /// </para>
-    /// <para>
-    /// The job store is the one piece of non-derived state in the system, so it is a singleton
-    /// with a single writer — the drain worker.
-    /// </para>
+    /// The registrations below use factories rather than <c>AddSingleton&lt;T&gt;</c> because the
+    /// built-in container does not apply constructor defaults for trailing primitives like
+    /// <c>maxStrikes</c> or <c>startPaused</c> — it tries to resolve them from the graph and fails.
     /// </remarks>
     public static IServiceCollection AddCratesideOrchestration(this IServiceCollection services)
     {
-        // One notification source for the whole pipeline, so the page hears that a track moved on
-        // instead of only finding out when the user reloads. The job store announces through it
-        // rather than each drainer doing so: the store is the single writer they all already go
-        // through, and a guard five callers must remember is one a sixth will forget.
         services.AddSingleton<StageHub>();
         services.AddSingleton(sp => new JobStore(hub: sp.GetRequiredService<StageHub>()));
         services.AddSingleton<IProcessProbe, SystemProcessProbe>();
@@ -164,8 +129,6 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<SeparationDrainer>();
 
-        // The working set is the second non-derived thing crateside holds, and unlike the job
-        // store it is scratch: losing it costs a re-run and never a fact.
         services.AddSingleton(_ => new WorkingSet());
 
         services.AddSingleton(sp => new EvidenceSelector(
@@ -178,10 +141,7 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<EvidenceDrainer>();
 
-        // The verdict stage has its own pause, because it and separation stop for unrelated
-        // reasons at unrelated times — quota during a working session, the GPU whenever the user
-        // wants it left alone. Starts paused: launching the app should never itself be the act
-        // that spends something.
+        // Starts paused: launching the app should never itself be the act that spends quota.
         services.AddSingleton(_ => new VerdictControl());
 
         services.AddSingleton(sp => new VerdictSelector(
@@ -194,9 +154,6 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<VerdictDrainer>();
 
-        // The last stage, and the one that makes the stems root transient as its definition
-        // says. Reads no queue: moving files crateside already made is no business of a
-        // YouTube credential.
         services.AddSingleton(sp => new HandoffSelector(
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<CratesidePaths>()
@@ -204,8 +161,7 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new HandoffRunner(sp.GetRequiredService<CratesidePaths>()));
         services.AddSingleton<HandoffDrainer>();
 
-        // The last stage, and the only one that shares a file with a running Ableton. It writes
-        // Sample Staging's tag store and nothing else -- never Mashup Samples (ADR 0003).
+        // Writes Sample Staging's tag store only, never Mashup Samples (ADR 0003).
         services.AddSingleton<AbletonFolderInfoWriter>();
         services.AddSingleton(sp => new TaggingSelector(
             sp.GetRequiredService<JobStore>(),
@@ -217,21 +173,11 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<TaggingDrainer>();
 
-        // Draining is on by default: two separations at once are ruinous, but one is
-        // unnoticeable, so there is no moment for the user to pick. Pause is in the Queue view
-        // for when the room is being recorded in.
         services.AddHostedService<DrainWorker>();
 
-        // A loop per stage, so a paused GPU never stops detection of everything behind it.
-        // Evidence has no pause -- it contends for nothing, which is the premise the whole split
-        // rests on -- while judgment does, because it spends quota.
-        //
-        // AddSingleton<IHostedService> rather than AddHostedService, and NOT a tidy-up waiting
-        // to happen: AddHostedService routes through TryAddEnumerable, which de-duplicates on
-        // implementation type, so the second StageWorker would be discarded in silence. That is
-        // exactly what happened -- the verdict stage never ran, never logged, and never ticked,
-        // while evidence worked perfectly beside it. StageWorkerRegistrationTests pins the
-        // behaviour so this cannot be quietly reverted.
+        // AddSingleton<IHostedService> rather than AddHostedService: the latter routes through
+        // TryAddEnumerable, which de-duplicates by implementation type and would silently
+        // discard the second StageWorker.
         services.AddSingleton<IHostedService>(sp => new StageWorker(
             sp.GetRequiredService<EvidenceDrainer>(),
             sp.GetRequiredService<JobStore>(),
@@ -254,9 +200,6 @@ public static class ServiceRegistration
             sp.GetRequiredService<ILogger<StageWorker>>()
         ));
 
-        // The two things a user does to a track that has already been through the pipeline. Both
-        // take the board as a read rather than as itself, so neither has to open every audio file
-        // under the root in order to be understood or tested.
         services.AddSingleton(sp => new StemRecut(
             sp.GetRequiredService<QueueSettingsStore>(),
             sp.GetRequiredService<JobStore>(),
@@ -270,8 +213,6 @@ public static class ServiceRegistration
             sp.GetRequiredService<CratesidePaths>()
         ));
 
-        // Working sets go when their track is imported. Slow on purpose: it is answering a
-        // question about the library, which changes on human timescales.
         services.AddSingleton<WorkingSetJanitor>();
         services.AddHostedService<JanitorWorker>();
         return services;
@@ -290,19 +231,10 @@ public static class ServiceRegistration
     /// <summary>
     /// The Tracks page's view of everything, and the cache that keeps it affordable.
     /// </summary>
-    /// <remarks>
-    /// Its own method rather than a tail on the orchestration one, because nothing here drives the
-    /// pipeline: it reads what the pipeline did. The composition is a lambda so that
-    /// <see cref="TracksService"/> depends on <em>a read</em> rather than on the queue, the board
-    /// and the job store — which is what lets its debounce be tested without any of them.
-    /// </remarks>
     public static IServiceCollection AddCratesideTracks(this IServiceCollection services)
     {
-        // A typed client, which is a named one keyed by the type: it gets a pooled handler that
-        // rotates rather than a socket held for the life of the app, and a timeout short enough
-        // that an unreachable meter never holds up a render. QuotaReader sets its own
-        // authorization and beta headers, because the token is read at the moment of the call and
-        // the beta opt-in is part of the API contract rather than of transport.
+        // QuotaReader sets its own authorization and beta headers per call; this configures
+        // transport only.
         services
             .AddHttpClient<QuotaReader>(client =>
             {
@@ -316,13 +248,6 @@ public static class ServiceRegistration
             {
                 var scan = await sp.GetRequiredService<QueueService>().ScanAsync(cancellationToken);
 
-                // One walk of the library, shared. The scan already found every file under both
-                // real roots; the board is re-read because it is the only source of per-file tag
-                // state, and it is a shallow read of one folder rather than a recursive one.
-                //
-                // Every file the scan found, not one lookup per playlist item: a track leaves the
-                // playlist as soon as it is processed, so keying this off the playlist gave the
-                // staged rows an empty file list and left them with no staged-since to show.
                 var view = TracksView.Compose(
                     scan.View,
                     scan.Ledger,

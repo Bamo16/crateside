@@ -1,9 +1,5 @@
 @using Crateside.Core.Ledger
 
-@* The record keeps the agent's conclusion and the runner's measurements apart, and so does
-   this: the argument is what answers "why this key", and the numbers are how you audit it
-   when the argument looks shaky. Leading with the numbers would bury the reasoning. *@
-
 <div class="evidence">
     <section class="argument">
         <h3>Why this key</h3>
@@ -19,8 +15,6 @@
         <h4>Human sources</h4>
         @if (Run.Sources.Count == 0)
         {
-            @* Not a defect: whole catalogs have no human coverage, and the skill's stop rule
-               says to settle rather than keep searching. Saying so beats an empty box. *@
             <p class="muted">
                 None found. Underground, non-Anglophone and recent album tracks often have no
                 human analysis at all — the verdict rests on the detectors and the chord check.
@@ -32,9 +26,6 @@
                 @foreach (var source in Run.Sources.OrderByDescending(s => s.Kind))
                 {
                     <li class="source @source.Kind.ToString().ToLowerInvariant() @source.Stance.ToString().ToLowerInvariant()">
-                        @* Whether each source backed the verdict is the first thing to show and
-                           the reason the schema split `states` — for most of this record's life
-                           it could only be had by reading every line. *@
                         <span class="stance" title="@StanceTitle(source.Stance)">@StanceMark(source.Stance)</span>
                         <span class="kind" title="@KindTitle(source.Kind)">@KindLabel(source.Kind)</span>
                         @if (source.Link is { } link)
@@ -43,8 +34,6 @@
                         }
                         @if (source.Via is { Length: > 0 } via)
                         {
-                            @* The case a URL cannot carry: a photograph of sheet music has no
-                               page, and is among the strongest evidence here. *@
                             <span class="via">@via</span>
                         }
                         @if (source.StatesKey is { Length: > 0 } stated)
@@ -98,9 +87,6 @@
                             }
                             else if (algorithm.RunnerUpKey is { } runnerUp)
                             {
-                                @* CREMA's winner confidence is structurally always 1.0, so
-                                   separation from the runner-up is the only real signal — and a
-                                   near-tie against the relative key is a swap warning. *@
                                 <span title="CREMA reports no usable confidence; this is how close second place was.">
                                     runner-up @runnerUp @(algorithm.RunnerUpRatio is { } r ? $"({r:F3})" : null)
                                 </span>
@@ -119,11 +105,6 @@
             </tbody>
         </table>
 
-        @* There is no agreement list. Three rows restating which of the three keys above match
-           is a table you have to read to learn what the table above it already showed. The one
-           thing pairwise agreement knows that the keys do not is `relative` — that two detectors
-           landed a minor third apart, which reads as plain disagreement unless you happen to
-           spot the relationship — so that, and only that, is surfaced. *@
         @if (Run.Agreement.FirstOrDefault(p => p.IsRelative) is { } split)
         {
             <p class="relative-split" title="@StatusTitle("relative")">
@@ -134,9 +115,6 @@
             </p>
         }
 
-        @* The tonic check is the argument that this key is not its relative, and it is made
-           *against* the chords — so it sits with them rather than in the reasoning block. Runs
-           recorded before the schema split it out have it inside `reasoning` instead. *@
         @if (Run.TonicCheck is { Length: > 0 } tonicCheck)
         {
             <h4>Tonic check</h4>
@@ -146,9 +124,6 @@
         @if (Run.Chords.Count > 0)
         {
             <h4>Chord progression</h4>
-            @* Capped when compact — a long track runs to sixty chords, which swamps the row.
-               The cadence is legible from the opening, and the runner's own report truncates
-               for the same reason. *@
             <p class="chords">
                 @string.Join(" → ", Compact ? Run.Chords.Take(CompactChordLimit) : Run.Chords)
                 @if (Compact && Run.Chords.Count > CompactChordLimit)
@@ -158,8 +133,6 @@
             </p>
         }
 
-        @* The flicker is a diagnostic for a specific doubt — is the early instability just a
-           sparse intro? — and nothing on a board row is asking that question. *@
         @if (!Compact && Run.KeyEvents.Count > 0)
         {
             <h4>Key flicker</h4>
@@ -209,16 +182,12 @@
 </div>
 
 @code {
-    // Long enough to read a cadence off, short enough not to swamp a table row.
     private const int CompactChordLimit = 24;
 
     [Parameter, EditorRequired]
     public required RunEvidence Run { get; set; }
 
-    /// <summary>
-    /// Trims to what answers "why this key" at a glance. The board row is a look, not a study —
-    /// the full record is one click away and keeps everything.
-    /// </summary>
+    /// <summary>Trims to what answers "why this key" at a glance.</summary>
     [Parameter]
     public bool Compact { get; set; }
 

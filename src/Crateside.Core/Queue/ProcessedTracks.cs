@@ -4,20 +4,12 @@ using Crateside.Core.Staging;
 namespace Crateside.Core.Queue;
 
 /// <summary>
-/// Which source video IDs are <strong>fully processed</strong>: a ledger verdict
-/// <em>and</em> a stem carrying that video ID on disk.
+/// Which source video IDs are fully processed: a ledger verdict and a stem carrying that
+/// video ID on disk.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Both halves are required, and that is the whole point — it is what makes the test immune
-/// to partial failure. A run that recorded a key and then died during separation has a
-/// verdict but no stem, fails the test, and stays queued. The predicate is idempotent, so
-/// re-running it is always safe.
-/// </para>
-/// <para>
-/// A WITHHELD verdict still counts as processed: the work was done, and the answer was
-/// "no single safe tag". Re-queueing it would only produce the same answer.
-/// </para>
+/// A WITHHELD verdict still counts as processed — the work was done, and re-queueing would
+/// only produce the same answer.
 /// </remarks>
 public sealed class ProcessedTracks
 {
@@ -36,15 +28,7 @@ public sealed class ProcessedTracks
         VerdictWithoutStems = verdictWithoutStems;
     }
 
-    /// <summary>
-    /// Every file the scan found, by the video ID it came from.
-    /// </summary>
-    /// <remarks>
-    /// The whole map, for a caller that does not already know which tracks to ask about. The
-    /// Tracks page is one: a track leaves the playlist as soon as it is processed while its files
-    /// sit in staging for weeks afterwards, so asking once per playlist item finds nothing for
-    /// exactly the rows that view exists to show.
-    /// </remarks>
+    /// <summary>Every file the scan found, by the video ID it came from.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>> StemsByVideoId { get; }
 
     /// <summary>Video IDs that satisfy both halves of the test.</summary>
@@ -65,10 +49,7 @@ public sealed class ProcessedTracks
     /// <summary>
     /// When a file arrived, or null where the filesystem will not say.
     /// </summary>
-    /// <remarks>
-    /// Null rather than a sentinel: Windows returns 1601-01-01 when it has no answer, and a date
-    /// four centuries ago rendered as "staged 425 years ago" is worse than an absent one.
-    /// </remarks>
+    /// <remarks>Null rather than a sentinel: Windows returns 1601-01-01 when it has no answer.</remarks>
     private static DateTimeOffset? CreationTimeOf(string path)
     {
         try
@@ -98,9 +79,6 @@ public sealed class ProcessedTracks
         {
             foreach (var path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
             {
-                // Roughly half the files under a stem root are .asd sidecars, and asking
-                // TagLib to open one throws — hundreds of exceptions per scan is an expensive
-                // way to learn a file is not audio.
                 if (!StagingBoard.IsStemFile(path))
                     continue;
 
@@ -110,9 +88,6 @@ public sealed class ProcessedTracks
                 if (!stemsByVideoId.TryGetValue(videoId, out var found))
                     stemsByVideoId[videoId] = found = [];
 
-                // The root and the preset are already in hand here. Keeping them costs nothing
-                // and is what lets a caller ask which root a file ended up in — the signal that
-                // says the user has finished with it.
                 found.Add(
                     new StemOnDisk
                     {
@@ -149,10 +124,8 @@ public sealed record StemOnDisk
     /// The stem root it was found under.
     /// </summary>
     /// <remarks>
-    /// Which root a file is in is the completion signal: a sample that has reached
-    /// <c>Mashup Samples</c> is one the user has warped, tagged and finished with. Nothing is
-    /// marked done — things simply move, which is what keeps this derived
-    /// (<c>docs/adr/0002</c>).
+    /// Which root a file is in is the completion signal — nothing is marked done, things
+    /// simply move (<c>docs/adr/0002</c>).
     /// </remarks>
     public required string Root { get; init; }
 
@@ -167,10 +140,8 @@ public sealed record StemOnDisk
     /// was made.
     /// </summary>
     /// <remarks>
-    /// Measured 2026-09-02 on three samples the user had just moved: their creation time in
-    /// <c>Mashup Samples</c> was <em>later</em> than their last-write time, so a move between
-    /// these roots copies and deletes rather than renaming, and creation time marks arrival in the
-    /// folder. That is what makes it usable for "staged three weeks ago" (ADR 0008).
+    /// A move between these roots copies and deletes rather than renaming, so creation time
+    /// marks arrival in the folder (ADR 0008).
     /// </remarks>
     public DateTimeOffset? CreatedAt { get; init; }
 }

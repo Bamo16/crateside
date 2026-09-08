@@ -9,13 +9,11 @@ namespace Crateside.Core.Queue;
 /// </summary>
 public static partial class PlaylistReference
 {
-    // The {2,64} bound is the whole length check — nothing else needs to test it.
     [GeneratedRegex(@"^[A-Za-z0-9_-]{2,64}$")]
     private static partial Regex PlaylistIdPattern { get; }
 
     /// <summary>
-    /// Takes a bare playlist ID or any YouTube URL carrying one. Pasting the URL straight
-    /// from the address bar is what people actually have in hand.
+    /// Takes a bare playlist ID or any YouTube URL carrying one.
     /// </summary>
     public static bool TryParse(string? input, [NotNullWhen(true)] out string? playlistId)
     {
@@ -23,8 +21,8 @@ public static partial class PlaylistReference
         {
             not { Length: > 0 } => null,
 
-            // GetValues rather than the indexer: a repeated list= would come back from the
-            // indexer joined as "A,B", which is not an ID and would fail the shape check.
+            // GetValues, not the indexer — a repeated list= would join as "A,B" via the
+            // indexer and fail the shape check.
             { } trimmed when Uri.TryCreate(trimmed, UriKind.Absolute, out var uri) => HttpUtility
                 .ParseQueryString(uri.Query)
                 .GetValues("list")
@@ -38,15 +36,14 @@ public static partial class PlaylistReference
 
     /// <summary>
     /// An explanation of why some input will not work as a playlist, or null if it is usable.
-    /// Takes the raw input, so a caller wanting the message does not have to parse first.
     /// </summary>
     public static string? Problem(string? input) =>
         input?.Trim() switch
         {
             not { Length: > 0 } => "Enter a playlist ID or paste the playlist URL.",
 
-            // WL is well-formed, so without this it fails later as a bare "not found" —
-            // which reads as a typo rather than as an impossibility.
+            // WL is well-formed but not readable via the API; without this it fails later
+            // as a bare "not found".
             { } trimmed when IsWatchLater(trimmed) =>
                 "Watch Later cannot be read through the YouTube API by any credential. "
                     + "The Queue has to be an ordinary playlist.",
@@ -59,9 +56,7 @@ public static partial class PlaylistReference
         };
 
     /// <summary>
-    /// Whether the ID looks like a playlist ID at all. Deliberately loose — YouTube's
-    /// prefixes are not documented as a closed set, so this rejects obvious nonsense rather
-    /// than trying to be authoritative.
+    /// Deliberately loose — rejects obvious nonsense rather than being authoritative.
     /// </summary>
     private static bool IsWellFormed(string id) => PlaylistIdPattern.IsMatch(id);
 

@@ -7,18 +7,6 @@ namespace Crateside.Core.Orchestration;
 /// <summary>
 /// Works the queue down one judgment at a time, for as long as anything detected is unjudged.
 /// </summary>
-/// <remarks>
-/// <para>
-/// <strong>No pause.</strong> Claude quota is genuinely tight during working sessions, but a
-/// verdict run is now cheap — evidence in, verdict out, no download and no separation — so it
-/// does not earn a control. ADR 0001's reasoning stands; the consequence it implied does not,
-/// and this note exists so nobody re-derives one from it.
-/// </para>
-/// <para>
-/// A loop of its own so that a track waiting on the GPU never holds up one that is ready to be
-/// judged, and vice versa.
-/// </para>
-/// </remarks>
 public sealed class VerdictDrainer(
     QueueService queue,
     VerdictRunner runner,
@@ -49,8 +37,7 @@ public sealed class VerdictDrainer(
             return StageTick.Unavailable(e.Message);
         }
 
-        // Read once and used for both the choice and the order, so the two cannot disagree about
-        // what the ledger said.
+        // Read once and used for both the choice and the order, so the two cannot disagree.
         var ledger = KeyLedger.Read(_paths.Ledger);
 
         if (!selector.TryPickNext(view, ledger, out var item))
@@ -66,9 +53,8 @@ public sealed class VerdictDrainer(
             var result = await runner.RunAsync(order, cancellationToken);
 
             // Cancelled, not Failed: running out of allowance is not this track's fault, and
-            // Cancelled is the status that carries no strike. Then stop, because every further
-            // attempt returns instantly, achieves nothing, and spends a strike on a condition
-            // that has nothing to do with whichever track happens to be next.
+            // Cancelled carries no strike. Then paused, since a further attempt would return
+            // instantly and spend a strike for nothing.
             if (result.IsQuotaExhausted)
             {
                 jobs.Record(

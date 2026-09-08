@@ -5,11 +5,7 @@ namespace Crateside.Core.Staging;
 /// <summary>
 /// One row of the staging board: a song, with its stems rolled up.
 /// </summary>
-/// <remarks>
-/// The row is the song because the key is a property of the song, while completion is per
-/// stem and ragged. Entirely derived — nothing here is stored, and nothing is marked done by
-/// hand.
-/// </remarks>
+/// <remarks>Entirely derived — nothing here is stored, nothing marked done by hand.</remarks>
 public sealed record StagingSong
 {
     /// <summary>The ledger join key. Null for a stem carrying no usable provenance.</summary>
@@ -45,10 +41,7 @@ public sealed record StagingSong
     /// Warp guides still on disk. Their presence means warping is outstanding — deleting one is
     /// a step of the workflow, not tidying up.
     /// </summary>
-    /// <remarks>
-    /// Whether the <em>absence</em> of a warp guide positively means "warped" is a different and
-    /// unproven claim; see <c>docs/adr/0004</c>. This says only that a warp guide is still here.
-    /// </remarks>
+    /// <remarks>This says only that a guide is still here, not that its absence means warped.</remarks>
     public IReadOnlyList<StagingStem> WarpGuides => [.. Stems.Where(s => s.IsWarpGuide)];
 
     public int TaggedStemCount => Samples.Count(s => s.IsKeyTagged);
@@ -58,17 +51,8 @@ public sealed record StagingSong
     /// used up rather than kept.
     /// </summary>
     /// <remarks>
-    /// <strong>Not because a warp guide is untagged.</strong> crateside tags one like anything
-    /// else, with the key and no type. The axis is retention, exactly as
-    /// <c>docs/adr/0004</c> argued: a guide is excluded from completeness because it is going to
-    /// be deleted, and a song whose guide is still present has warping outstanding rather than a
-    /// file left to tag.
-    /// </remarks>
-    /// <remarks>
-    /// Counting every file instead made a warp guide a permanent untagged row, clearing only when
-    /// the user deleted it. That read as "warping in progress", which is nearly right and
-    /// indistinguishable from "not tagged yet" — so the board could not say which step was
-    /// actually outstanding. Now it can say both, separately.
+    /// Not because a warp guide goes untagged — crateside tags one like anything else. The axis
+    /// is retention: a guide is excluded because it is going to be deleted.
     /// </remarks>
     public bool IsFullyTagged => Samples.Count > 0 && TaggedStemCount == Samples.Count;
 
@@ -99,20 +83,12 @@ public sealed record StagingStem
     /// what warp markers get placed against, and which is deleted once warping is done.
     /// </summary>
     /// <remarks>
-    /// Every drums stem is treated as a warp guide, with no way to say otherwise. A drum stem is
-    /// perfectly mixable and could be kept; that is rare enough that the user does it by hand,
-    /// outside crateside. See <c>docs/adr/0004</c>.
+    /// Every drums stem is treated as a warp guide, with no way to say otherwise — a kept drum
+    /// stem has to be handled by hand, outside crateside.
     /// </remarks>
     public bool IsWarpGuide => IsWarpGuidePreset(Preset);
 
-    /// <summary>
-    /// The rule itself, so anything reading a preset off disk decides this the same way.
-    /// </summary>
-    /// <remarks>
-    /// The staging board is not the only reader any more — the Tracks page classifies files found
-    /// in <c>Mashup Samples</c> too, and two copies of "contains drum" would be two chances to
-    /// drift.
-    /// </remarks>
+    /// <summary>The rule itself, so every reader of a preset decides this the same way.</summary>
     public static bool IsWarpGuidePreset(string? preset) =>
         preset?.Contains("drum", StringComparison.OrdinalIgnoreCase) is true;
 

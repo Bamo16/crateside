@@ -3,20 +3,6 @@ namespace Crateside.Core.Orchestration;
 /// <summary>
 /// The one place a stage says that something happened to a track.
 /// </summary>
-/// <remarks>
-/// <para>
-/// Stages published nothing, which is the whole reason the app looked like it needed a refresh.
-/// <see cref="DrainControl"/> already raised <c>Changed</c> for pausing and for the activity
-/// line, so the header kept up while the list under it went stale — the missing piece was a
-/// notification when a track actually moved on, not a different framework.
-/// </para>
-/// <para>
-/// Unlike <see cref="DrainControl.Changed"/>, this carries a payload. That control is
-/// level-triggered — "something is different, go and look" — which is right for a header showing
-/// one current activity. A list of thirty rows wants to know <em>which</em> track moved, so it
-/// can refresh one row instead of re-reading the playlist and rescanning both stem roots.
-/// </para>
-/// </remarks>
 public sealed class StageHub
 {
     /// <summary>Raised on the publishing thread whenever a stage finishes with a track.</summary>

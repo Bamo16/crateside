@@ -7,18 +7,6 @@ namespace Crateside.Core.Tracks;
 /// <summary>
 /// One track, with everything known about it rolled up: the row the Tracks page draws.
 /// </summary>
-/// <remarks>
-/// <para>
-/// A join across the queue item, the ledger verdict, what is on disk, and what crateside has
-/// recorded running — reduced to one <see cref="State"/> and the one sentence that says what
-/// happens next. Both the chip and the <c>Next</c> column read those two, so the copy cannot
-/// drift apart from the state it describes.
-/// </para>
-/// <para>
-/// Entirely derived, like <see cref="Staging.StagingSong"/> before it: nothing here is stored and
-/// nothing is marked done by hand.
-/// </para>
-/// </remarks>
 public sealed record TrackRow
 {
     public required string VideoId { get; init; }
@@ -26,12 +14,6 @@ public sealed record TrackRow
     /// <summary>
     /// The playlist entry, which is what removing the track targets. Null once it has none.
     /// </summary>
-    /// <remarks>
-    /// A track leaves the playlist as soon as it is fully processed, which is long before the user
-    /// has finished with it — its stems sit in <c>Sample Staging</c> for weeks afterwards. So a row
-    /// without a playlist entry is the normal end state, not a broken one, and the only thing it
-    /// costs is that there is nothing left to remove.
-    /// </remarks>
     public string? PlaylistItemId { get; init; }
 
     /// <summary>What the track is called: the user's name for it, or the derived one.</summary>
@@ -42,25 +24,20 @@ public sealed record TrackRow
     /// </summary>
     public string? DerivedTitle { get; init; }
 
-    /// <summary>The user has given this track a name of their own.</summary>
     public bool IsRenamed => DerivedTitle is not null;
 
-    /// <summary>Which source the derived name came from.</summary>
     public TrackNameSource NameSource { get; init; }
 
     /// <summary>
     /// Staged files a rename did not reach — zero unless one was interrupted part way.
     /// </summary>
     /// <remarks>
-    /// Counted against a name the user stated, never a derived one, which routinely differs from
-    /// what StemForge wrote.
+    /// Counted against the name the user stated, never a derived one, which can differ from what
+    /// StemForge wrote.
     /// </remarks>
     public int AwaitingRename { get; init; }
 
-    /// <summary>
-    /// Whether crateside can still put a name on this track's files.
-    /// </summary>
-    /// <remarks>A single file in <c>Mashup Samples</c> locks the whole row (ADR 0003).</remarks>
+    /// <summary>A single file already in <c>Mashup Samples</c> locks the whole row (ADR 0003).</summary>
     public bool CanRename => !Samples.Any(sample => sample.IsInLibrary);
 
     /// <summary>What renaming would touch, for the button that offers it.</summary>
@@ -89,29 +66,18 @@ public sealed record TrackRow
     /// The warp starting point, and the one number the user needs mid-warp.
     /// </summary>
     /// <remarks>
-    /// Deliberately not gated on <see cref="Key"/>. A verdict too weak to tag with still measured
-    /// a tempo, it was never a tagged value, and a parked track is exactly one the user may still
-    /// choose to work by hand.
+    /// Populated even when <see cref="Key"/> is null — a verdict too weak to tag with still
+    /// measured a tempo.
     /// </remarks>
     public double? Bpm => Verdict?.Bpm;
 
-    /// <summary>
-    /// The stage crateside currently believes is working this track, if any.
-    /// </summary>
-    /// <remarks>
-    /// Reduced from the job store rather than carried whole: what the row needs is which stage
-    /// has this track in flight, not five job records it would have to re-interrogate.
-    /// </remarks>
+    /// <summary>The stage crateside currently believes is working this track, if any.</summary>
     public JobStage? RunningStage { get; init; }
 
     /// <summary>When <see cref="RunningStage"/> started, for the header's elapsed clock.</summary>
     public DateTimeOffset? RunningSince { get; init; }
 
     /// <summary>The stage that ran out of strikes, if one has.</summary>
-    /// <remarks>
-    /// Reduced in one place so that <em>every</em> stage is checked. The queue page assembled this
-    /// itself and left tagging out, so a track that gave up there said nothing at all.
-    /// </remarks>
     public JobStage? GaveUpAt { get; init; }
 
     /// <summary>How many times <see cref="GaveUpAt"/> failed before it stopped trying.</summary>
@@ -122,10 +88,8 @@ public sealed record TrackRow
     /// is not in staging.
     /// </summary>
     /// <remarks>
-    /// Tracks keytag judged before crateside existed, and tracks crateside finished with long
-    /// enough ago that the playlist entry is gone. They belong on the page — they are the only way
-    /// to reach an old track at all — but not in the working list, which is what
-    /// <see cref="TrackFilter.All"/> is for.
+    /// Not part of <see cref="TrackFilter.All"/> — reachable only through
+    /// <see cref="TrackFilter.Done"/>.
     /// </remarks>
     public bool IsLibraryOnly { get; init; }
 
@@ -136,9 +100,8 @@ public sealed record TrackRow
     /// The user has said this release has no vocals, which is what the recipe is derived from.
     /// </summary>
     /// <remarks>
-    /// Carried so the expanded row can draw the plan and offer the one control over it. False
-    /// means <em>not stated</em> rather than "it has vocals" — the two behave alike, because
-    /// crateside's policy for not-stated is to expect the usual pair (ADR 0004).
+    /// False means <em>not stated</em> rather than "it has vocals" — crateside's policy for
+    /// not-stated is to expect the usual pair (ADR 0004).
     /// </remarks>
     public bool IsInstrumentalRelease { get; init; }
 
@@ -153,7 +116,7 @@ public sealed record TrackRow
 
     /// <summary>
     /// The files of this track meant to be kept — warp guides excluded, because they are used up
-    /// rather than kept. Not because they are untagged: they carry the key like everything else.
+    /// rather than kept, not because they are untagged: they carry the key like everything else.
     /// </summary>
     /// <remarks>
     /// For most tracks the vocal and instrumental stems; for an instrumental release, the source
@@ -161,34 +124,24 @@ public sealed record TrackRow
     /// </remarks>
     public IReadOnlyList<TrackSample> Samples { get; init; } = [];
 
-    /// <summary>
-    /// A warp guide is still on disk, which says warping is outstanding.
-    /// </summary>
+    /// <summary>A warp guide is still on disk, which says warping is outstanding.</summary>
     /// <remarks>
-    /// A bool rather than a list because a guide has no per-file detail of its own: it carries
-    /// the song's key like everything else, and the row already holds that. Its <em>absence</em>
-    /// is not a claim that warping happened — that reading was measured at eight songs and is far
-    /// too small to build on (ADR 0004).
+    /// Its absence is not a claim that warping happened (ADR 0004).
     /// </remarks>
     public bool HasWarpGuide { get; init; }
 
     /// <summary>
     /// The folder holding this track's files, or null when it has none on disk yet.
     /// </summary>
-    /// <remarks>
-    /// Staging wins over wherever else the files have got to, because staging is where the work
-    /// that is left happens: the button exists to open the folder the user is about to drag out
-    /// of.
-    /// </remarks>
+    /// <remarks>Staging wins over wherever else the files have got to.</remarks>
     public string? Folder { get; init; }
 
     /// <summary>
     /// When this track's files arrived in <c>Sample Staging</c>, or null once none are left.
     /// </summary>
     /// <remarks>
-    /// A track rests here for weeks, so how long is the one thing about it worth saying. Read from
-    /// the file rather than recorded by crateside, which is what lets it answer for tracks that
-    /// were already staged before anything thought to write it down (ADR 0008).
+    /// Read off the file, not recorded by crateside — it can answer for tracks staged before
+    /// anything tracked it (ADR 0008).
     /// </remarks>
     public DateTimeOffset? StagedSince { get; init; }
 
@@ -196,13 +149,8 @@ public sealed record TrackRow
     /// Where the track has got to.
     /// </summary>
     /// <remarks>
-    /// Resolved in precedence order, and the order is the argument: <em>done</em> is read off disk
-    /// and outranks everything, because a finished track is finished whatever crateside thinks it
-    /// was doing. A stage actually in flight comes next — a hold governs what crateside will
-    /// <em>start</em>, and six minutes of GPU already being spent is not something to describe as
-    /// untouched. A hold then outranks the remaining off-ramps, <em>giving up included</em>:
-    /// holding a track is the very thing <see cref="Next"/> suggests when a stage gives up, so it
-    /// has to change what the row says or the advice leads nowhere.
+    /// Resolved in precedence order — done first, then any stage in flight, then held, then given
+    /// up.
     /// </remarks>
     public TrackState State =>
         this switch
@@ -216,23 +164,15 @@ public sealed record TrackRow
             _ => AtRest,
         };
 
-    /// <summary>
-    /// What separation will ask for, once it gets to this track.
-    /// </summary>
-    /// <remarks>
-    /// A plan and never a fact, which is why nothing records it: it is derived from
-    /// <see cref="IsInstrumentalRelease"/> the same way the work order derives it, so the row
-    /// draws what will actually run rather than a second opinion about it (ADR 0004).
-    /// </remarks>
+    /// <summary>What separation will ask for, once it gets to this track.</summary>
     public SeparationRecipe Recipe => SeparationRecipe.For(IsInstrumentalRelease);
 
     /// <summary>
     /// Whether the separation plan can still be changed, which is until separation starts.
     /// </summary>
     /// <remarks>
-    /// Read off what has already happened rather than off <see cref="State"/>, because a hold
-    /// outranks nearly everything below it: a track separated, parked and then held still reads
-    /// as <c>held</c>, and a plan stops being a plan the moment its stems exist.
+    /// Read off what has already happened, not off <see cref="State"/> — a held track that was
+    /// already separated still reads as held, but its plan is fixed.
     /// </remarks>
     public bool CanChangePlan =>
         State is not (TrackState.Separating or TrackState.Staging or TrackState.Tagging)
@@ -242,20 +182,12 @@ public sealed record TrackRow
     /// A finding worth flagging beside the song name, or null when there is nothing wrong.
     /// </summary>
     /// <remarks>
-    /// Currently only the one the staging board can see on its own: Ableton holding a key that is
-    /// not the ledger's current verdict, which is what a supersede leaves behind. The tag is what
-    /// pairing actually uses, so a stale one silently misroutes mashups.
+    /// Currently just a stale Ableton tag — one that no longer matches the ledger's verdict, which
+    /// is what pairing actually uses.
     /// </remarks>
     public string? AuditNote { get; init; }
 
-    /// <summary>
-    /// What the state chip reads.
-    /// </summary>
-    /// <remarks>
-    /// Here rather than in the page, beside <see cref="Next"/> and derived from the same
-    /// <see cref="State"/>, because those two are the copy table and it only stays honest while
-    /// they cannot be edited apart.
-    /// </remarks>
+    /// <summary>What the state chip reads.</summary>
     public string ChipLabel =>
         State switch
         {
@@ -275,14 +207,7 @@ public sealed record TrackRow
             _ => string.Empty,
         };
 
-    /// <summary>
-    /// How the chip is drawn.
-    /// </summary>
-    /// <remarks>
-    /// Teal is the machine working, amber is the user's turn, red needs attention, green is done
-    /// and behind them. Nothing else is coloured — a palette that means something stops meaning it
-    /// the moment a fifth colour appears for decoration.
-    /// </remarks>
+    /// <summary>How the chip is drawn.</summary>
     public TrackChipStyle ChipStyle =>
         State switch
         {
@@ -300,22 +225,10 @@ public sealed record TrackRow
             _ => TrackChipStyle.NeutralOutline,
         };
 
-    /// <summary>
-    /// Whether the chip carries a dot — the mark of work happening right now.
-    /// </summary>
-    /// <remarks>
-    /// Exactly the filled teal states, which are the ones where a process is running this second.
-    /// Waiting in line for the GPU is teal but not filled and takes no dot: nothing is happening
-    /// to that track yet.
-    /// </remarks>
+    /// <summary>Whether the chip carries a dot — the mark of work happening right now.</summary>
     public bool ChipHasDot => ChipStyle is TrackChipStyle.TealFilled;
 
-    /// <summary>
-    /// What happens next, in plain English — or what is waiting on the user.
-    /// </summary>
-    /// <remarks>
-    /// Derived from <see cref="State"/> alone, so the sentence and the chip can never disagree.
-    /// </remarks>
+    /// <summary>What happens next, in plain English — or what is waiting on the user.</summary>
     public string Next =>
         State switch
         {
@@ -337,11 +250,6 @@ public sealed record TrackRow
     /// The expanded row's sentence: what the verdict was, whether Ableton still agrees with it,
     /// and how long the track has been sitting in staging.
     /// </summary>
-    /// <remarks>
-    /// Beside <see cref="Next"/> and <see cref="ChipLabel"/> for the reason they are here at all:
-    /// it is copy derived from the same reading, and copy that can be edited apart from what it
-    /// describes drifts away from it.
-    /// </remarks>
     public string Detail =>
         string.Join(" ", new[] { Judgement, Disagreement, Since }.OfType<string>());
 
@@ -354,13 +262,10 @@ public sealed record TrackRow
                 $"Judged, and the verdict came back {Spoken(Confidence)} — no key worth tagging with.",
         };
 
-    /// <summary>
-    /// Said only where a conflict was actually found.
-    /// </summary>
+    /// <summary>Said only where a conflict was actually found.</summary>
     /// <remarks>
-    /// Silence here is not a claim that the tags are right. The Ableton tag store lags Ableton's
-    /// own index and keeps entries for files that have left, so the only reading worth repeating
-    /// is one that found a disagreement (ADR 0003).
+    /// Null does not mean the tags are correct — the Ableton tag store lags and keeps entries for
+    /// files that have left (ADR 0003).
     /// </remarks>
     private string? Disagreement =>
         AuditNote is null ? null : "Ableton's key on these files is not the current verdict.";
@@ -394,8 +299,7 @@ public sealed record TrackRow
     private TrackState AtRest =>
         Samples switch
         {
-            // A sample that has already moved is not waiting to be tagged: crateside never writes
-            // tags in Mashup Samples, and the move covers tagging along with everything else.
+            // A moved sample counts as tagged too — crateside never re-tags in Mashup Samples.
             { Count: > 0 } when Samples.All(s => s.IsInLibrary || s.IsKeyTagged) =>
                 TrackState.ReadyToWarp,
             { Count: > 0 } => TrackState.Tagging,
@@ -427,12 +331,6 @@ public enum TrackNameSource
 /// <summary>
 /// One file of a track that is meant to be kept: tagged, then warped, then moved.
 /// </summary>
-/// <remarks>
-/// A warp guide is not one of these, because it is used up rather than kept. It <em>is</em>
-/// tagged — with the key and no type, so it reads sensibly if the user happens to select it in
-/// the browser — but the key is a song-level fact the row already holds, so a guide carries no
-/// per-file detail of its own and the row records only that one is still on disk.
-/// </remarks>
 public sealed record TrackSample
 {
     /// <summary>The StemForge preset, or <c>source</c> for a kept instrumental release.</summary>
@@ -442,37 +340,19 @@ public sealed record TrackSample
     /// The key Ableton holds on this file, or null when it holds none.
     /// </summary>
     /// <remarks>
-    /// Trustworthy only while the file is in <c>Sample Staging</c>: that is the one folder
-    /// crateside writes tags into and the one place its reading of them is a reading of Ableton
-    /// rather than of a stale store (ADR 0003). A sample that has reached <c>Mashup Samples</c>
-    /// carries null, which says nobody looked rather than that it is untagged.
+    /// Trustworthy only while the file is in <c>Sample Staging</c> (ADR 0003) — null once the
+    /// sample reaches <c>Mashup Samples</c> means nobody looked, not that it's untagged.
     /// </remarks>
     public string? AbletonKey { get; init; }
 
     /// <summary>Whether Ableton has a key on the file.</summary>
     public bool IsKeyTagged => AbletonKey is not null;
 
-    /// <summary>
-    /// Whether this sample has reached <c>Mashup Samples</c> — the finished library.
-    /// </summary>
+    /// <summary>Whether this sample has reached <c>Mashup Samples</c> — the finished library.</summary>
     /// <remarks>
-    /// <para>
-    /// <strong>Named for what was measured, not for what it implies.</strong> This is the folder
-    /// the file is in and nothing else. crateside infers from that move that the user has warped
-    /// it (ADR 0007), and that inference is fine for deciding a track is done — but it is not
-    /// something to assert about a particular file on screen, because nobody here watched anyone
-    /// warp anything.
-    /// </para>
-    /// <para>
-    /// Read from where the file is, never from an <c>.asd</c> sidecar. Ableton writes one of those
-    /// merely for having looked at a file — a single click to preview it is enough — so its
-    /// presence marks unfinished work as finished, which is why <c>docs/adr/0002</c> deleted that
-    /// reader rather than weakening it.
-    /// </para>
-    /// <para>
-    /// <strong>Per sample, not per track</strong>: the user empties staging progressively, so a
-    /// track can have one file moved out while the rest are still waiting.
-    /// </para>
+    /// Says only which folder the file is in; crateside infers warping from that but never watched
+    /// it happen. Never read from an <c>.asd</c> sidecar — Ableton writes one just from a preview
+    /// click, which would mark unfinished work as done (ADR 0002).
     /// </remarks>
     public bool IsInLibrary { get; init; }
 }

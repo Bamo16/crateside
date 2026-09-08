@@ -9,24 +9,8 @@ namespace Crateside.Core.Queue;
 /// Google's token store, encrypted at rest with Windows DPAPI.
 /// </summary>
 /// <remarks>
-/// <para>
-/// The refresh token is the credential that can <em>delete from the user's playlist</em>, so
-/// unlike the read-only API key it does not sit in plaintext. Google's own
-/// <c>FileDataStore</c> writes bare JSON; this is the same shape with the payload run through
-/// ASP.NET Core Data Protection, whose key ring is in turn sealed to the current Windows user
-/// via <c>ProtectKeysWithDpapi</c>.
-/// </para>
-/// <para>
-/// <strong>What that does and does not buy.</strong> The ciphertext is useless on another
-/// machine or under another Windows account, so it defends against the file being copied off
-/// the box or read by another user. It does <em>not</em> defend against anything running as
-/// this user. See <c>docs/secrets.md</c>.
-/// </para>
-/// <para>
-/// Unreadable or undecryptable data is treated as absent rather than fatal: the worst case is
-/// one more consent prompt, which is a state the Queue already handles. That also makes a key
-/// ring rotation a non-event instead of a crash.
-/// </para>
+/// Defends against the file being copied off the box or read by another user; it does not
+/// defend against anything running as this user. See <c>docs/secrets.md</c>.
 /// </remarks>
 public sealed class ProtectedTokenStore(IDataProtectionProvider provider, string? directory = null)
     : IDataStore
@@ -74,7 +58,7 @@ public sealed class ProtectedTokenStore(IDataProtectionProvider provider, string
         }
         catch (Exception)
         {
-            // Corrupt, or protected by a key ring this machine/user no longer has. Re-consent.
+            // Corrupt or undecryptable — treated as absent; the caller re-consents.
             return default!;
         }
     }
@@ -94,8 +78,7 @@ public sealed class ProtectedTokenStore(IDataProtectionProvider provider, string
         return Task.CompletedTask;
     }
 
-    // Google's keys are safe filename characters in practice, but they are not guaranteed to
-    // be, and a key containing a separator would otherwise write outside the directory.
+    // Not guaranteed to be safe filename characters; sanitized to avoid writing outside the directory.
     private string PathFor(string key) =>
         Path.Combine(
             _directory,

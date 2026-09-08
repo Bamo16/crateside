@@ -7,17 +7,9 @@ namespace Crateside.Core;
 /// they are settable so a test — or another machine — is not stuck with them.
 /// </summary>
 /// <remarks>
-/// <para>
-/// The middle ground between config and constants: bindable from <c>appsettings.json</c>, but
-/// with working defaults so nothing has to be configured to run.
-/// </para>
-/// <para>
-/// crateside reads all of these. It writes exactly one thing: the
-/// <c>Ableton Folder Info</c> XMP under <see cref="SampleStaging"/>, and only there
-/// (ADR 0003). <see cref="MashupSamples"/> is the finished library and is never written —
-/// it holds hand-applied tags crateside knows nothing about. The stem destinations are
-/// where it <em>directs</em> the separator's output, not somewhere it puts files itself.
-/// </para>
+/// crateside writes to exactly one of these — the Ableton Folder Info XMP under
+/// <see cref="SampleStaging"/> (ADR 0003). <see cref="MashupSamples"/> is never written, and the
+/// stem destinations are only where crateside directs the separator's output.
 /// </remarks>
 public sealed class CratesidePaths
 {
@@ -41,18 +33,13 @@ public sealed class CratesidePaths
     /// <c>keytag-detect</c> for the evidence run, and <c>runs.jsonl</c> for the verdict.
     /// </summary>
     /// <remarks>
-    /// It reaches the detector without changing directory —
-    /// <c>uv run --project &lt;this&gt; keytag-detect …</c> — so relative paths still resolve
-    /// against crateside. Nothing here may reach past those two names into keytag's tree
-    /// (keytag ADR 0006).
+    /// Relative paths passed to the detector resolve against crateside, not keytag — it runs
+    /// without changing directory. Nothing here may reach past <c>keytag-detect</c> and
+    /// <c>runs.jsonl</c> into keytag's own tree (keytag ADR 0006).
     /// </remarks>
     public string KeytagRepo { get; set; } = @"V:\Repos\keytag";
 
     /// <summary>keytag's append-only record of detect-key runs. Read-only; keytag owns it.</summary>
-    /// <remarks>
-    /// Defaults to its place inside <see cref="KeytagRepo"/> so the two cannot drift, and stays
-    /// settable on its own because a test points at a fixture without needing a whole checkout.
-    /// </remarks>
     public string Ledger
     {
         get => _ledger ?? Path.Combine(KeytagRepo, "results", "runs.jsonl");

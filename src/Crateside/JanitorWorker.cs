@@ -3,8 +3,8 @@ using Crateside.Core.Orchestration;
 namespace Crateside;
 
 /// <summary>
-/// Sweeps finished working sets, slowly. Import happens on human timescales — a track can sit in
-/// staging for weeks — so there is nothing to be gained by looking often.
+/// Sweeps finished working sets on a slow interval — a track can sit in staging for weeks
+/// before import.
 /// </summary>
 public sealed class JanitorWorker(WorkingSetJanitor janitor, ILogger<JanitorWorker> logger)
     : BackgroundService
@@ -25,7 +25,6 @@ public sealed class JanitorWorker(WorkingSetJanitor janitor, ILogger<JanitorWork
             }
             catch (Exception e)
             {
-                // Scratch that outlives its welcome costs disk and nothing else.
                 logger.LogWarning(e, "Working-set sweep failed");
             }
 

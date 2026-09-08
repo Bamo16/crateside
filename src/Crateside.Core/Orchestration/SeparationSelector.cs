@@ -3,22 +3,13 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Core.Orchestration;
 
-/// <summary>
-/// Decides which track to separate next. Split from <see cref="SeparationDrainer"/> because this
-/// is the part with the actual rule in it, and it can then be tested without a queue credential,
-/// a process or a GPU.
-/// </summary>
+/// <summary>Decides which track to separate next.</summary>
 public sealed class SeparationSelector(
     JobStore jobs,
     int maxStrikes = SeparationSelector.DefaultMaxStrikes
 )
 {
-    /// <summary>
-    /// How many failures before a track is left alone. Three, because the failures worth
-    /// retrying are transient — a dead download, a busy GPU, a reboot — and one that has failed
-    /// three times is failing for a reason retrying will not fix. Past that it costs GPU hours
-    /// every night and buries the tracks that would have worked.
-    /// </summary>
+    /// <summary>How many failures before a track is left alone.</summary>
     public const int DefaultMaxStrikes = 3;
 
     /// <summary>
@@ -27,33 +18,14 @@ public sealed class SeparationSelector(
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <strong>The job store is what makes draining terminate.</strong> A track whose separation
-    /// succeeded is still <em>outstanding</em> in queue terms until it has a verdict too — so
-    /// selecting on the queue alone would separate the same track forever. Asking what crateside
-    /// already ran is the only thing that separates "not done" from "not done yet *by me*".
+    /// Reads <see cref="QueueView.AwaitingSeparation"/> rather than
+    /// <see cref="QueueView.Outstanding"/>: separation needs a ledger line's recipe
+    /// (<c>has_vocals</c>) and destination (<c>HasTaggableKey</c>), neither of which exists
+    /// before a verdict has run.
     /// </para>
     /// <para>
-    /// <strong>It reads <see cref="QueueView.AwaitingSeparation"/>, not
-    /// <see cref="QueueView.Outstanding"/></strong>, and that is the whole verdict gate.
-    /// Separation reads two things off a ledger line and neither exists before a verdict run:
-    /// the recipe, via <c>has_vocals</c>, and the destination, via <c>HasTaggableKey</c>. An
-    /// evidence run records no line at all — keytag's recorder requires a verdict — so
-    /// "detected" and "never touched" are indistinguishable from here. Separating anyway is
-    /// what made a vocal stem of a track with no vocals, and it also strands the stems in
-    /// <c>Unresolved Key</c> for good, because nothing moves them afterwards (ADR 0005).
-    /// </para>
-    /// <para>
-    /// Making it a collection rather than a test here is deliberate, and the same choice holds
-    /// took: <em>Outstanding</em> means "no verdict yet", so a judged track is not in it and
-    /// filtering it by "has a verdict" would have quietly yielded nothing at all.
-    /// </para>
-    /// <para>
-    /// A LOW or WITHHELD verdict <em>is</em> a line, so it arrives here: the track was judged,
-    /// the answer was "no safe tag", and <c>Unresolved Key</c> is the folder that says so.
-    /// </para>
-    /// <para>
-    /// Unavailable items are skipped rather than attempted: the video is deleted or private
-    /// upstream, so it can never succeed, and trying would burn its three strikes for nothing.
+    /// A LOW or WITHHELD verdict still counts as a line, so a judged-but-unresolved track
+    /// arrives here too, routed to <c>Unresolved Key</c>.
     /// </para>
     /// </remarks>
     public bool TryPickNext(QueueView view, KeyLedger ledger, out WorkOrder order)
@@ -74,11 +46,9 @@ public sealed class SeparationSelector(
     }
 
     /// <remarks>
-    /// <paramref name="retrySucceeded"/> is false here, and it is the one thing separation does
-    /// differently. Every track in this work list has no stems on disk, so a recorded success
-    /// means they were made and have since gone — most likely deleted on purpose. Redoing that
-    /// costs GPU hours against the user's wishes, and refusing is also what keeps a genuine
-    /// stall visible instead of turning it into a loop.
+    /// <paramref name="retrySucceeded"/> is false here, unlike the other selectors: a recorded
+    /// success with no stems on disk most likely means they were deleted on purpose, and
+    /// redoing that would cost GPU hours against the user's wishes.
     /// </remarks>
     private bool IsEligible(QueueItem item) =>
         StageEligibility.Allows(

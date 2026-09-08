@@ -10,8 +10,6 @@
 <PageTitle>Settings</PageTitle>
 
 <div class="settings">
-    @* Its own page rather than a corner of the Tracks list. Everything here is set once and then
-       left alone for weeks, which is the opposite of what that page is for. *@
     <header class="top">
         <BrandNav Active="BrandNav.Tab.Settings" />
     </header>
@@ -67,7 +65,6 @@
 
         @if (!Playlist.HasCredential)
         {
-            @* The one thing this page cannot set: it is a secret, and secrets stay out of the app. *@
             <section>
                 <h2>API key</h2>
                 <p class="detail">
@@ -105,8 +102,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             }
             else
             {
-                @* Consent grants one channel and a Google account can own several. Deleting from a
-                   playlist owned by a different one fails as a bare 403, so say which. *@
+                @* Deleting from a playlist owned by a different channel fails as a bare 403. *@
                 <p class="detail">
                     Authorized as <strong>@(_channel ?? "…")</strong>. Removal only works if that
                     channel owns the playlist.
@@ -190,8 +186,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         await Load();
     }
 
-    // Takes effect on the next beat rather than at the next restart: the poll reads the setting
-    // each time it wakes rather than capturing it once.
+    // Takes effect on the next poll, not at the next restart.
     private void SaveRefresh() => Playlist.SetRefreshMinutes(_refresh);
 
     private static string RefreshLabel(int minutes) =>
@@ -270,9 +265,8 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     /// Reads enough to say what removal would do, and stops being interesting after that.
     /// </summary>
     /// <remarks>
-    /// The count is a preview and nothing else: <see cref="QueueService.RemoveProcessedAsync"/>
-    /// derives the set again at the moment of removal, so a stale page can never delete something
-    /// that has since stopped qualifying.
+    /// The count is a preview: <see cref="QueueService.RemoveProcessedAsync"/> derives the set
+    /// again at the moment of removal.
     /// </remarks>
     private async Task Load()
     {

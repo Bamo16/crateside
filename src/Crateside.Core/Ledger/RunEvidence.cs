@@ -9,17 +9,9 @@ namespace Crateside.Core.Ledger;
 /// found, and everything the three detectors reported.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Read on demand for a single song rather than with the whole ledger. The <c>machine</c> block
-/// is the bulk of every line and nothing on the board needs it, so <see cref="KeyLedger"/>
-/// deliberately does not deserialize it — this streams the file and parses only the one line
-/// asked for, which keeps that hot path as cheap as it was.
-/// </para>
-/// <para>
-/// This is keytag's <strong>evidence and judgment</strong> split as it appears in a record: the
-/// machine layer is what the runner produced, the agent layer is what was concluded from it.
-/// The view should keep them visibly distinct for the same reason the record does.
-/// </para>
+/// Read on demand for a single song rather than with the whole ledger — the <c>machine</c> block
+/// is the bulk of every line and nothing on the board needs it, so <see cref="KeyLedger"/> does
+/// not deserialize it. This streams the file and parses only the line asked for.
 /// </remarks>
 public sealed record RunEvidence
 {
@@ -44,15 +36,15 @@ public sealed record RunEvidence
     public string? Key { get; init; }
 
     /// <summary>
-    /// The diatonic mode, where a human source established one. Null means <em>nobody looked</em>
-    /// — not "plain major/minor". No detector can produce a mode, so this is always a judgment.
+    /// The diatonic mode, where a human source established one. Null means nobody looked, not
+    /// "plain major/minor". No detector can produce a mode, so this is always a judgment.
     /// </summary>
     public string? Mode { get; init; }
 
     /// <summary>
     /// The argument that the tonic is not its relative, made against the chords and the flicker.
-    /// Its own field because it is read <em>next to</em> the chords it argues about. Null on runs
-    /// recorded before the schema split it out — their prose is still in <see cref="Reasoning"/>.
+    /// Null on runs recorded before the schema split it out — their prose is still in
+    /// <see cref="Reasoning"/>.
     /// </summary>
     public string? TonicCheck { get; init; }
 
@@ -66,9 +58,8 @@ public sealed record RunEvidence
     public string? InputKind { get; init; }
 
     /// <summary>
-    /// External sources consulted. Empty for about a third of runs, which is a fact about the
-    /// catalog rather than a defect — underground and non-Anglophone releases often have no
-    /// human coverage at all.
+    /// External sources consulted. Often empty — not a defect, many releases have no human
+    /// coverage at all.
     /// </summary>
     public IReadOnlyList<EvidenceSource> Sources { get; init; } = [];
 
@@ -101,17 +92,8 @@ public sealed record RunEvidence
     /// How far off an exact tempo octave still counts as the same tempo, in log2 space.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Measured rather than chosen: beatdetect read 86.42 against Tunebat's 176 for
-    /// <c>thørns - honestly</c> on 2026-09-04 — a ratio of 0.491, which is 1.8% off exactly half
-    /// and plainly the same tempo counted at half speed. At the previous 0.02 that was a conflict.
-    /// </para>
-    /// <para>
-    /// In log2 rather than on the ratio, because a tolerance on the ratio means different things
-    /// at 2× and at ½× — ±0.05 there is ±2.5% doubling and ±10% halving. 0.05 in log2 is ±3.5%
-    /// either way, wide enough for a noisy beat tracker and nowhere near a genuine disagreement:
-    /// 120 against 140 sits at 0.22.
-    /// </para>
+    /// In log2 rather than on the ratio, because a fixed ratio tolerance means a different thing
+    /// at 2× than at ½×; log2 treats doubling and halving symmetrically.
     /// </remarks>
     private const double OctaveTolerance = 0.05;
 
@@ -247,7 +229,7 @@ public sealed partial record EvidenceSource
 
     /// <summary>
     /// What the source said, in the verdict's own spelling — so it compares. Null when the
-    /// source said something that is not a key, which is a fifth of them.
+    /// source said something that is not a key.
     /// </summary>
     public string? StatesKey { get; init; }
 
@@ -259,7 +241,7 @@ public sealed partial record EvidenceSource
 
     /// <summary>
     /// Anything else the agent said about this source: how strong it is, and how a dissent
-    /// was handled. The half of the old <c>tier</c> field that was worth keeping.
+    /// was handled.
     /// </summary>
     public string? Note { get; init; }
 
@@ -269,19 +251,11 @@ public sealed partial record EvidenceSource
     /// <summary>
     /// <see cref="Url"/> as something safe to render as a link, or null when it is not one.
     /// </summary>
-    /// <remarks>
-    /// The recorder now splits the link from its provenance on write, so this is defensive
-    /// rather than load-bearing. It stays because a line written by an older recorder still
-    /// reads, and a dead anchor is a worse failure than a plain string.
-    /// </remarks>
     public Uri? Link => ParseLink(Url);
 
     public string? Host => Link?.Host;
 
-    /// <summary>
-    /// Whether this source agreed with the verdict — the single most useful thing the sources
-    /// list can show, and what the schema split was mostly for.
-    /// </summary>
+    /// <summary>Whether this source agreed with the verdict.</summary>
     public SourceStance Stance =>
         (StatesKey, VerdictKey) switch
         {
@@ -327,11 +301,7 @@ public sealed partial record EvidenceSource
         };
 
     /// <summary>True when the agent's kind and the host's catalog entry disagree.</summary>
-    /// <remarks>
-    /// Worth surfacing rather than reconciling. Filing Chordify as anything but a chord
-    /// recogniser is precisely the mistake <c>SOURCES.md</c>'s hard rule exists to prevent,
-    /// and it was made — three HIGH verdicts once rested on a chord recogniser's key.
-    /// </remarks>
+    /// <remarks>Worth surfacing rather than reconciling.</remarks>
     public bool KindDisagreesWithHost =>
         ParseKind(RecordedKind) is { } recorded
         && KindFromHost is not (SourceKind.Unknown or SourceKind.Unclassified)
@@ -401,8 +371,8 @@ public enum SourceKind
     Algorithmic,
 
     /// <summary>
-    /// An automatic chord recogniser. Its chords are usable evidence; <strong>its key may
-    /// never be the basis of a verdict</strong>, and never lifts one to HIGH.
+    /// An automatic chord recogniser. Its chords are usable evidence; its key may never be
+    /// the basis of a verdict, and never lifts one to HIGH.
     /// </summary>
     ChordRecogniser,
 

@@ -3,8 +3,8 @@ using Crateside.Core.Ledger;
 namespace Crateside.Core.Staging;
 
 /// <summary>
-/// Builds the staging board by composing the readers. Purely derived: it holds no state, has
-/// no done-flags, and every call re-reads from disk.
+/// Builds the staging board by composing the readers. Purely derived — no state, no
+/// done-flags, every call re-reads from disk.
 /// </summary>
 public sealed class StagingBoard
 {
@@ -16,12 +16,7 @@ public sealed class StagingBoard
     /// <summary>The stem formats StemForge writes.</summary>
     internal static readonly string[] StemExtensions = [".flac", ".wav", ".aiff", ".mp3"];
 
-    /// <summary>
-    /// Whether a path is worth handing to the tag reader. Checking first matters: both stem
-    /// roots are roughly half <c>.asd</c> sidecars, and asking TagLib to open one throws — so
-    /// skipping them avoids hundreds of exceptions per scan, which is the expensive way to
-    /// discover a file is not audio.
-    /// </summary>
+    /// <summary>Whether a path is worth handing to the tag reader — TagLib throws on non-audio.</summary>
     internal static bool IsStemFile(string path) =>
         StemExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
 
@@ -45,8 +40,7 @@ public sealed class StagingBoard
         return
         [
             .. stems
-                // A stem with no video ID still belongs on the board — it is precisely the
-                // one the user needs to know about. Fall back to the filename so it groups
+                // Falls back to the filename-derived key so an untagged stem still groups
                 // with its siblings instead of becoming one row per file.
                 .GroupBy(s => s.Tags?.SourceVideoId ?? SongKeyFromFileName(s.Path))
                 .Select(group =>
@@ -116,8 +110,8 @@ public sealed class StagingBoard
     }
 
     /// <summary>
-    /// Names the row from the best source available: the ledger identity, then the stem's own
-    /// tags, then the filename with its preset suffix stripped.
+    /// The best available name: the ledger identity, then the stem's own tags, then the
+    /// filename with its preset suffix stripped.
     /// </summary>
     private static string DisplayName(
         IReadOnlyList<(string Path, StemTags? Tags)> group,
@@ -138,9 +132,5 @@ public sealed class StagingBoard
         return groupKey;
     }
 
-    /// <summary>
-    /// Groups stems of one song when provenance is missing, by stripping the trailing preset
-    /// parenthetical StemForge writes — "Artist - Title (Vocal - Full).flac".
-    /// </summary>
     private static string SongKeyFromFileName(string path) => StemFileName.WithoutPreset(path);
 }
