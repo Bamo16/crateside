@@ -333,6 +333,13 @@
     padding: 1px 6px;
 }
 
+/* A statement of fact rather than a finding, so it takes the same shape without the colour that
+   would put it in the same class as one. */
+.flag.neutral {
+    color: var(--text-60);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
 .key {
     font-size: 13px;
     font-weight: 500;
@@ -493,6 +500,74 @@
     grid-template-columns: 1fr 340px;
     gap: 32px;
     padding: 6px 22px 20px 60px;
+}
+
+/* Spans both panel columns, above everything: the name is the one thing every state of a track
+   has. Its own grid when editing, matching the columns below so the buttons line up with the
+   panel's own. */
+.name-strip {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 6px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.name-strip.editing {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    align-items: start;
+    gap: 32px;
+}
+
+.name-shown {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    min-width: 0;
+}
+
+.name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.name-from {
+    font-size: 12px;
+    color: var(--text-50);
+}
+
+.name-input {
+    width: 100%;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+
+.name-note {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--text-50);
+}
+
+.name-side {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Pushed to the far edge so the offer sits opposite the name it is about, rather than trailing
+   the provenance text and reading as part of it. */
+.actions.right {
+    margin-left: auto;
 }
 
 .panel-head {

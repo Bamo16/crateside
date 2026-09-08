@@ -1,4 +1,5 @@
 using Crateside.Core.Ledger;
+using Crateside.Core.Queue;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Orchestration;
@@ -23,7 +24,8 @@ public sealed class HandoffDrainer(
     HandoffRunner runner,
     HandoffSelector selector,
     JobStore jobs,
-    IOptions<CratesidePaths> paths
+    IOptions<CratesidePaths> paths,
+    QueueSettingsStore settings
 ) : IStageDrainer
 {
     private readonly CratesidePaths _paths = paths.Value;
@@ -45,7 +47,9 @@ public sealed class HandoffDrainer(
 
         jobs.Record(videoId, JobStage.Handoff, JobStatus.Running);
 
-        var result = runner.Run(stems);
+        // Where a rename given before the files existed reaches them. The instruction is read
+        // here rather than carried by the selector, which decides from the disk alone.
+        var result = runner.Run(stems, NameFor(videoId));
 
         jobs.Record(
             videoId,
@@ -56,4 +60,10 @@ public sealed class HandoffDrainer(
 
         return Task.FromResult(StageTick.Ran(subject, result.IsSuccess, result.Error));
     }
+
+    private string? NameFor(string videoId) =>
+        settings
+            .Read()
+            .Tracks.FirstOrDefault(track => track.VideoId.Equals(videoId, StringComparison.Ordinal))
+            ?.Name;
 }

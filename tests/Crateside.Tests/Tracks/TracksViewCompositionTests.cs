@@ -501,4 +501,138 @@ public class TracksViewCompositionTests : IDisposable
 
         Assert.Null(row.StagedSince);
     }
+
+    [Fact]
+    public void The_derived_name_says_which_of_the_three_sources_won()
+    {
+        // Worth showing because the three disagree often and unevenly. The ledger records artist
+        // and title separately and properly cased; a video title routinely omits the artist.
+        var fromLedger = Assert.Single(Compose(ledger: LedgerWith("C minor", "HIGH", 120)));
+
+        Assert.Equal(TrackNameSource.Ledger, fromLedger.NameSource);
+
+        var fromBoard = Assert.Single(Compose(View([]), staging: [Staged(Stem("Vocal - Full"))]));
+
+        Assert.Equal(TrackNameSource.StagingBoard, fromBoard.NameSource);
+        Assert.Equal(TrackNameSource.Playlist, Assert.Single(Compose()).NameSource);
+    }
+
+    [Fact]
+    public void A_library_only_row_with_no_verdict_names_no_source_it_does_not_have()
+    {
+        // The playlist let it go long ago and it was never staged, so "from the playlist title"
+        // would be a claim about a title nothing here has read.
+        var row = Assert.Single(Compose(View([]), onDisk: Finished("Vocal - Full")));
+
+        Assert.Equal(TrackNameSource.VideoId, row.NameSource);
+        Assert.Equal(Video, row.Title);
+    }
+
+    [Fact]
+    public void A_stated_name_beats_every_derived_one_and_keeps_what_it_replaced()
+    {
+        var row = Assert.Single(
+            Compose(
+                ledger: LedgerWith("C minor", "HIGH", 120),
+                instructions: new TrackInstruction { VideoId = Video, Name = "Better Name" }
+            )
+        );
+
+        Assert.Equal("Better Name", row.Title);
+        Assert.True(row.IsRenamed);
+
+        // Carried so Revert has something to put back, and set exactly when IsRenamed is true.
+        Assert.Equal("Rob Dougan - Furious Angels", row.DerivedTitle);
+    }
+
+    [Fact]
+    public void A_track_nobody_renamed_carries_no_name_to_revert_to()
+    {
+        var row = Assert.Single(Compose(ledger: LedgerWith("C minor", "HIGH", 120)));
+
+        Assert.False(row.IsRenamed);
+        Assert.Null(row.DerivedTitle);
+    }
+
+    [Fact]
+    public void A_staged_file_not_carrying_the_stated_name_is_a_rename_left_unfinished()
+    {
+        // A file Ableton had open when the rename ran. Derived from what is on disk rather than
+        // recorded, so there is no failure flag to go stale.
+        var row = Assert.Single(
+            Compose(
+                View([]),
+                staging: [Staged(Stem("Vocal - Full"), Stem("Drums"))],
+                instructions: new TrackInstruction { VideoId = Video, Name = "track" }
+            )
+        );
+
+        // The fixture names its files "track (<preset>).flac", so a stated name of "track" is
+        // already carried by both.
+        Assert.Equal(0, row.AwaitingRename);
+
+        var stale = Assert.Single(
+            Compose(
+                View([]),
+                staging: [Staged(Stem("Vocal - Full"), Stem("Drums"))],
+                instructions: new TrackInstruction { VideoId = Video, Name = "Something Else" }
+            )
+        );
+
+        Assert.Equal(2, stale.AwaitingRename);
+        Assert.True(stale.Matches(TrackFilter.NeedsAttention));
+    }
+
+    [Fact]
+    public void A_derived_name_that_differs_from_the_files_is_not_a_finding()
+    {
+        // The ledger identifies a song and the uploader named a video, so these differ for most
+        // of the library. Counting that as half-renamed would flag nearly every row.
+        var row = Assert.Single(
+            Compose(
+                View([]),
+                ledger: LedgerWith("C minor", "HIGH", 120),
+                staging: [Staged(Stem("Vocal - Full"))]
+            )
+        );
+
+        Assert.NotEqual("track", row.Title);
+        Assert.Equal(0, row.AwaitingRename);
+    }
+
+    [Fact]
+    public void A_track_with_a_file_in_the_library_can_no_longer_be_renamed()
+    {
+        // crateside writes nothing in Mashup Samples, tag store included (ADR 0003), and renaming
+        // only the files still in staging would leave one track under two names.
+        Assert.True(Assert.Single(Compose()).CanRename);
+
+        var partly = Assert.Single(
+            Compose(
+                View([]),
+                staging: [Staged(Stem("Vocal - Full"))],
+                onDisk: new Dictionary<string, IReadOnlyList<StemOnDisk>>(StringComparer.Ordinal)
+                {
+                    [Video] = [Found("Instrumental - Full", FinishedRoot)],
+                }
+            )
+        );
+
+        Assert.False(partly.CanRename);
+    }
+
+    [Fact]
+    public void What_a_rename_would_touch_is_counted_off_the_row()
+    {
+        // One sentence for every state before Mashup Samples, which is what renaming the outputs
+        // rather than the source audio buys. The warp guide counts: it is a file with the name on
+        // it, even though it is not a sample.
+        Assert.Equal("at staging", Assert.Single(Compose()).RenameScope);
+
+        var staged = Assert.Single(
+            Compose(View([]), staging: [Staged(Stem("Vocal - Full"), Stem("Drums"))])
+        );
+
+        Assert.Equal("2 files + folder info", staged.RenameScope);
+    }
 }

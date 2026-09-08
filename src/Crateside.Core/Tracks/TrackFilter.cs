@@ -65,8 +65,11 @@ public static class TrackFilters
                     or TrackState.Tagging,
             // A finding counts even when the track is otherwise fine, because a stale tag is
             // invisible everywhere else: the file looks finished and pairs on the wrong key.
+            // A rename that stopped part way is here for a different reason: the files are under
+            // two names, and only pressing Rename again finishes it.
             TrackFilter.NeedsAttention => row.State is TrackState.Parked or TrackState.GaveUp
-                || row.AuditNote is not null,
+                || row.AuditNote is not null
+                || row.AwaitingRename > 0,
             TrackFilter.Held => row.State is TrackState.Held,
             TrackFilter.Done => row.State is TrackState.Done,
             _ => false,

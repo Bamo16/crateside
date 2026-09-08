@@ -100,6 +100,51 @@ public class HandoffTests : IDisposable
     }
 
     [Fact]
+    public void A_name_given_before_there_were_files_reaches_them_here()
+    {
+        // The point of renaming the outputs rather than the source audio: a name stated while the
+        // track was still queued has had nothing to land on until now.
+        string[] stems =
+        [
+            Stem("Yes - Owner (Vocal - Full).flac"),
+            Stem("Yes - Owner (Drums).flac"),
+        ];
+
+        var result = _runner.Run(stems, "Somebody Else - A Better Name");
+
+        Assert.True(result.IsSuccess);
+        Assert.True(File.Exists(Staged("Somebody Else - A Better Name (Vocal - Full).flac")));
+        Assert.True(File.Exists(Staged("Somebody Else - A Better Name (Drums).flac")));
+    }
+
+    [Fact]
+    public void A_clash_under_the_new_name_stops_the_track_just_the_same()
+    {
+        // Checked against where the files are going, not where they came from — or the rename
+        // would be the one way to overwrite finished work.
+        Directory.CreateDirectory(_paths.SampleStaging);
+        File.WriteAllText(Staged("Renamed (Drums).flac"), "already here");
+
+        var result = _runner.Run([Stem("Yes - Owner (Drums).flac")], "Renamed");
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("already in staging", result.Error);
+        Assert.Equal("already here", File.ReadAllText(Staged("Renamed (Drums).flac")));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("  ")]
+    [InlineData("no / slashes")]
+    public void A_track_with_no_usable_name_keeps_the_one_the_separator_gave_it(string? name)
+    {
+        _runner.Run([Stem("Yes - Owner (Vocal - Full).flac")], name);
+
+        Assert.True(File.Exists(Staged("Yes - Owner (Vocal - Full).flac")));
+    }
+
+    [Fact]
     public void Unresolved_key_stems_are_left_where_they_are()
     {
         // Only KeyIdentified is handed off: a LOW or WITHHELD verdict produces stems the user

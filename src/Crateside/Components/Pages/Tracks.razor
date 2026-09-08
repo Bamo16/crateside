@@ -9,6 +9,7 @@
 @using Crateside.Core.Orchestration
 @using Crateside.Core.Queue
 @using Crateside.Core.Quota
+@using Crateside.Core.Staging
 @using Crateside.Core.Tracks
 @using Humanizer
 
@@ -16,6 +17,7 @@
 @inject QueueService Playlist
 @inject JobStore Jobs
 @inject StemRecut Recut
+@inject TrackRename Rename
 @inject DrainControl Separation
 @inject VerdictControl Judging
 @inject QuotaReader Quota
@@ -158,6 +160,16 @@
                     {
                         <span class="flag">@note</span>
                     }
+                    @* A count rather than "rename failed": these are files not carrying the stated
+                       name, which is what was measured. Why they are not is not known from here. *@
+                    @if (row.AwaitingRename > 0)
+                    {
+                        <span class="flag">@("file".ToQuantity(row.AwaitingRename)) not renamed</span>
+                    }
+                    else if (row.IsRenamed)
+                    {
+                        <span class="flag neutral">renamed</span>
+                    }
                 </span>
 
                 <span class="mono key @(row.Key is null ? "none" : null)">@(Spell(row.Key) ?? "—")</span>
@@ -193,6 +205,72 @@
             @if (open)
             {
                 <div class="panel">
+                    @* Spans both columns and sits above everything, because the name is the one
+                       thing every state of a track has and the only one the user supplies. *@
+                    <div class="name-strip @(_renaming == row.VideoId ? "editing" : null)">
+                        @if (_renaming == row.VideoId)
+                        {
+                            <div class="name-edit">
+                                <input class="name-input" value="@_name"
+                                       @oninput="e => _name = e.Value?.ToString() ?? string.Empty"
+                                       @onkeydown="e => OnRenameKey(e, row)" />
+                                <p class="name-note">
+                                    Derived <strong>@Derived(row)</strong> · from @From(row.NameSource).
+                                    Your name wins over the ledger, the staging board and the playlist.
+                                </p>
+                            </div>
+
+                            <div class="name-side">
+                                <p class="detail">@row.RenameDetail</p>
+
+                                <div class="actions">
+                                    <button class="primary" disabled="@(_working || !StemFileName.IsUsable(_name))"
+                                            @onclick="() => ConfirmRename(row)">
+                                        Rename · @row.RenameScope
+                                    </button>
+                                    <button class="outline" @onclick="CancelRename" disabled="@_working">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="name-shown">
+                                <span class="name">@row.Title</span>
+                                @if (row.DerivedTitle is { } derived)
+                                {
+                                    <span class="name-from">renamed by you · was <strong>@derived</strong></span>
+                                }
+                                else
+                                {
+                                    <span class="name-from">from @From(row.NameSource)</span>
+                                }
+                            </div>
+
+                            <div class="actions right">
+                                @if (row.CanRename)
+                                {
+                                    @if (row.IsRenamed)
+                                    {
+                                        <button class="outline" @onclick="() => RevertRename(row)" disabled="@_working">
+                                            Revert
+                                        </button>
+                                    }
+                                    <button class="outline" @onclick="() => StartRename(row)" disabled="@_working">
+                                        Rename
+                                    </button>
+                                }
+                                else
+                                {
+                                    @* crateside writes nothing in Mashup Samples, tag store
+                                       included, so the only honest offer is none. *@
+                                    <span class="name-from">in Mashup Samples · rename in Ableton</span>
+                                }
+                            </div>
+                        }
+                    </div>
+
                     @if (row.CanChangePlan)
                     {
                         @* The plan rather than the files, because there are no files yet: what a
@@ -573,6 +651,9 @@
     private string? _recutting;
     private RecutPlan? _plan;
 
+    private string? _renaming;
+    private string _name = string.Empty;
+
     private IReadOnlyList<TrackRow> Rows => _view?.Rows ?? [];
 
     private IEnumerable<TrackRow> Shown => Rows.Where(row => row.Matches(_filter));
@@ -723,7 +804,84 @@
         _problem = null;
 
         CancelRecut();
+        CancelRename();
     }
+
+    private void StartRename(TrackRow row)
+    {
+        _problem = null;
+        _renaming = row.VideoId;
+        _name = row.Title;
+    }
+
+    private void CancelRename()
+    {
+        _renaming = null;
+        _name = string.Empty;
+    }
+
+    /// <summary>
+    /// Records the name and puts it on the files. No confirmation step, unlike a re-cut.
+    /// </summary>
+    /// <remarks>
+    /// Nothing here is spent or destroyed: no file is deleted, no GPU is used, and Revert puts
+    /// every name back. A confirmation would be asking about a decision that costs nothing.
+    /// </remarks>
+    private async Task ConfirmRename(TrackRow row)
+    {
+        if (!StemFileName.IsUsable(_name))
+            return;
+
+        await Renaming(() => Rename.Apply(row.VideoId, _name));
+    }
+
+    // The derived name comes from the row, because deriving it is this page's join across the
+    // ledger, the staging board and the playlist rather than the rename's own business.
+    private async Task RevertRename(TrackRow row) =>
+        await Renaming(() => Rename.Revert(row.VideoId, row.DerivedTitle ?? row.Title));
+
+    private async Task Renaming(Func<RenameOutcome> rename)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            var outcome = rename();
+
+            // The tag note is not a failure — the files were renamed and the tagging stage puts
+            // their keywords back on its own pass — but it is worth seeing.
+            _problem = outcome.Problem ?? outcome.TagNote;
+
+            if (outcome.Succeeded)
+                CancelRename();
+
+            await Source.RefreshAsync(_circuit.Token);
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task OnRenameKey(KeyboardEventArgs e, TrackRow row)
+    {
+        if (e.Key is "Enter")
+            await ConfirmRename(row);
+        else if (e.Key is "Escape")
+            CancelRename();
+    }
+
+    private static string Derived(TrackRow row) => row.DerivedTitle ?? row.Title;
+
+    private static string From(TrackNameSource source) =>
+        source switch
+        {
+            TrackNameSource.Ledger => "the ledger",
+            TrackNameSource.StagingBoard => "the staging board",
+            TrackNameSource.Playlist => "the playlist title",
+            _ => "the video ID",
+        };
 
     private RecutPlan? PendingFor(TrackRow row) =>
         _recutting == row.VideoId ? _plan : null;

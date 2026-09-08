@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Crateside.Core.Ledger;
 
 namespace Crateside.Core.Staging;
@@ -7,7 +6,7 @@ namespace Crateside.Core.Staging;
 /// Builds the staging board by composing the readers. Purely derived: it holds no state, has
 /// no done-flags, and every call re-reads from disk.
 /// </summary>
-public sealed partial class StagingBoard
+public sealed class StagingBoard
 {
     private readonly AbletonFolderInfoReader _folderInfoReader;
 
@@ -143,9 +142,5 @@ public sealed partial class StagingBoard
     /// Groups stems of one song when provenance is missing, by stripping the trailing preset
     /// parenthetical StemForge writes — "Artist - Title (Vocal - Full).flac".
     /// </summary>
-    private static string SongKeyFromFileName(string path) =>
-        PresetSuffix().Replace(Path.GetFileNameWithoutExtension(path), string.Empty).Trim();
-
-    [GeneratedRegex(@"\s*\([^()]*\)\s*$")]
-    private static partial Regex PresetSuffix();
+    private static string SongKeyFromFileName(string path) => StemFileName.WithoutPreset(path);
 }

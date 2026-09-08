@@ -139,6 +139,61 @@ public sealed class AbletonFolderInfoWriter
     }
 
     /// <summary>
+    /// Points existing entries at new file names, keeping their keywords and their position.
+    /// </summary>
+    /// <remarks>
+    /// A file with no entry is skipped rather than invented: an entry records tags Ableton holds,
+    /// and a file that has none is untagged, which the tagging stage fixes on its own pass.
+    /// </remarks>
+    public TagWriteOutcome Rename(string rootFolder, IReadOnlyList<TagRename> renames)
+    {
+        if (renames.Count is 0)
+            return TagWriteOutcome.Written(0);
+
+        var path = ExistingXmp(Path.Combine(rootFolder, FolderInfoDirectory));
+
+        // No store at all is not a failure. It means Ableton has never indexed this root and
+        // there is nothing carrying the old names.
+        if (path is null)
+            return TagWriteOutcome.Written(0);
+
+        try
+        {
+            var stamp = File.GetLastWriteTimeUtc(path);
+            var document = Load(path);
+
+            if (document is null)
+                return TagWriteOutcome.Stale("the tag store was mid-write and could not be read");
+
+            var items = Items(document);
+
+            var moved = 0;
+
+            foreach (var rename in renames)
+            {
+                if (Find(items, rename.From)?.Element(AblFr + "filePath") is not { } filePath)
+                    continue;
+
+                filePath.Value = rename.To;
+                moved++;
+            }
+
+            if (moved is 0)
+                return TagWriteOutcome.Written(0);
+
+            Stamp(document);
+
+            return Replace(path, document, stamp)
+                ? TagWriteOutcome.Written(moved)
+                : TagWriteOutcome.Stale("the tag store changed while it was being updated");
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return TagWriteOutcome.Stale(e.Message);
+        }
+    }
+
+    /// <summary>
     /// Whether a keyword is one Ableton already has, rather than one this write would invent.
     /// </summary>
     public static bool IsValidKeyword(string keyword) =>
@@ -322,6 +377,13 @@ public sealed record TagAssignment
     public required string RelativePath { get; init; }
 
     public required IReadOnlyList<string> Keywords { get; init; }
+}
+
+/// <summary>One entry's move to a new name, both relative to the root folder.</summary>
+public sealed record TagRename
+{
+    public required string From { get; init; }
+    public required string To { get; init; }
 }
 
 /// <summary>How one write turned out.</summary>

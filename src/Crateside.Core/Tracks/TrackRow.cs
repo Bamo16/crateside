@@ -34,7 +34,76 @@ public sealed record TrackRow
     /// </remarks>
     public string? PlaylistItemId { get; init; }
 
+    /// <summary>What the track is called: the user's name for it, or the derived one.</summary>
     public required string Title { get; init; }
+
+    /// <summary>
+    /// What it would be called if the user had not named it — and null when they have not.
+    /// </summary>
+    /// <remarks>
+    /// Null rather than a copy of <see cref="Title"/>, so that carrying the name to revert to and
+    /// saying a rename happened cannot come apart: this is set exactly when
+    /// <see cref="IsRenamed"/> is true.
+    /// </remarks>
+    public string? DerivedTitle { get; init; }
+
+    /// <summary>The user has given this track a name of their own.</summary>
+    public bool IsRenamed => DerivedTitle is not null;
+
+    /// <summary>Which source the derived name came from.</summary>
+    public TrackNameSource NameSource { get; init; }
+
+    /// <summary>
+    /// Staged files a rename did not reach — zero unless one was interrupted part way.
+    /// </summary>
+    /// <remarks>
+    /// Counted against a stated name only, never a derived one: what StemForge wrote and what the
+    /// ledger identifies routinely differ, and treating that as unfinished work would flag most of
+    /// the library.
+    /// </remarks>
+    public int AwaitingRename { get; init; }
+
+    /// <summary>
+    /// Whether crateside can still put a name on this track's files.
+    /// </summary>
+    /// <remarks>
+    /// Until one reaches <c>Mashup Samples</c>, which is the user's folder and theirs to rename in
+    /// — crateside writes nothing there (ADR 0003). A single moved file locks the whole row,
+    /// because renaming the rest would leave one track under two names.
+    /// </remarks>
+    public bool CanRename => !Samples.Any(sample => sample.IsInLibrary);
+
+    /// <summary>
+    /// What renaming would touch, for the button that offers it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// One sentence for every state before <c>Mashup Samples</c>, which is what renaming the
+    /// outputs rather than the source audio buys: nothing downloaded, mid-separation and already
+    /// staged all make the same promise, so there is no fourth case to get wrong.
+    /// </para>
+    /// <para>
+    /// Counted off the row rather than by planning the rename, because a plan re-reads the
+    /// staging folder — every audio file in it, through TagLib — and this is redrawn on a
+    /// keystroke.
+    /// </para>
+    /// </remarks>
+    public string RenameScope =>
+        StagedFileCount is 0 ? "at staging" : $"{"file".ToQuantity(StagedFileCount)} + folder info";
+
+    /// <summary>The sentence beside the button, saying what <see cref="RenameScope"/> means.</summary>
+    /// <remarks>
+    /// Here rather than in the page, beside the scope and derived from the same count, so the two
+    /// cannot describe different things.
+    /// </remarks>
+    public string RenameDetail =>
+        StagedFileCount is 0
+            ? "Nothing of this track is in Sample Staging yet, so the name is recorded now and the stems are made with it."
+            : "Renames the files in Sample Staging and their entry in Ableton's tag store, so the tags follow the name.";
+
+    /// <summary>This track's files still in <c>Sample Staging</c>, warp guide included.</summary>
+    private int StagedFileCount =>
+        Samples.Count(sample => !sample.IsInLibrary) + (HasWarpGuide ? 1 : 0);
 
     /// <summary>The current verdict, or null when the ledger has never seen this track.</summary>
     public LedgerRun? Verdict { get; init; }
@@ -365,6 +434,30 @@ public sealed record TrackRow
         GpuPosition is 1
             ? "next on the GPU"
             : $"{GpuPosition.GetValueOrDefault().Ordinalize()} for the GPU";
+}
+
+/// <summary>
+/// Where a track's derived name came from, best first.
+/// </summary>
+/// <remarks>
+/// Worth showing beside the name because the three disagree often and unevenly: the ledger
+/// records artist and title separately and properly cased, while a video title routinely omits
+/// the artist altogether. Knowing which one won is what tells the user whether renaming is
+/// warranted.
+/// </remarks>
+public enum TrackNameSource
+{
+    /// <summary>keytag's verdict — the best of them.</summary>
+    Ledger,
+
+    /// <summary>The staged files' own tags.</summary>
+    StagingBoard,
+
+    /// <summary>The playlist entry's title, which is whatever the uploader typed.</summary>
+    Playlist,
+
+    /// <summary>Nothing named it. The video ID is all there is.</summary>
+    VideoId,
 }
 
 /// <summary>

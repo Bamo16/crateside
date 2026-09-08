@@ -127,11 +127,25 @@ public sealed record TracksView
             // the line that happened to name this URL.
             var verdict = ledger.TryGetLatestByVideoId(videoId, out var run) ? run : null;
 
+            // The playlist's title while the track is still in it, and the bare video ID once
+            // neither the playlist nor staging has anything to offer.
+            var (derived, source) = NameOf(
+                fallbackName,
+                item is null && song is null ? TrackNameSource.VideoId : TrackNameSource.Playlist,
+                verdict,
+                song
+            );
+
+            var stated = instruction?.Name is { Length: > 0 } name ? name : null;
+
             return new TrackRow
             {
                 VideoId = videoId,
                 PlaylistItemId = item?.PlaylistItemId,
-                Title = NameOf(fallbackName, verdict, song),
+                Title = stated ?? derived,
+                DerivedTitle = stated is null ? null : derived,
+                NameSource = source,
+                AwaitingRename = AwaitingRenameIn(song, stated),
                 Verdict = verdict,
                 // The work list for the queue item, the instruction for everything else. They
                 // agree while a track is in the playlist and only the instruction survives it.
@@ -194,14 +208,17 @@ public sealed record TracksView
     private static int Group(TrackRow row) =>
         row switch
         {
-            { State: TrackState.Parked or TrackState.GaveUp } or { AuditNote: not null } => 0,
+            { State: TrackState.Parked or TrackState.GaveUp }
+            or { AuditNote: not null }
+            or { AwaitingRename: > 0 } => 0,
             { State: TrackState.ReadyToWarp } => 2,
             { State: TrackState.Done } => 3,
             _ => 1,
         };
 
     /// <summary>
-    /// What to call the track: the ledger's identity, then the board's, then the playlist's.
+    /// What to call the track when the user has not said: the ledger's identity, then the board's,
+    /// then the playlist's.
     /// </summary>
     /// <remarks>
     /// <strong>The playlist title is the worst of the three and is the fallback for that reason.</strong>
@@ -212,10 +229,38 @@ public sealed record TracksView
     /// field is not used here because that is the normalized lowercase identity, built for
     /// matching rather than for reading.
     /// </remarks>
-    private static string NameOf(string fallback, LedgerRun? verdict, StagingSong? staged) =>
-        verdict is { Artist.Length: > 0, Title.Length: > 0 }
-            ? verdict.DisplayName
-            : staged?.DisplayName ?? fallback;
+    private static (string Name, TrackNameSource Source) NameOf(
+        string fallback,
+        TrackNameSource fallbackSource,
+        LedgerRun? verdict,
+        StagingSong? staged
+    ) =>
+        (verdict, staged) switch
+        {
+            ({ Artist.Length: > 0, Title.Length: > 0 }, _) => (
+                verdict.DisplayName,
+                TrackNameSource.Ledger
+            ),
+            (_, { DisplayName.Length: > 0 }) => (staged.DisplayName, TrackNameSource.StagingBoard),
+            _ => (fallback, fallbackSource),
+        };
+
+    /// <summary>
+    /// Staged files a rename has not reached.
+    /// </summary>
+    /// <remarks>
+    /// Counted only against a name the user stated. A <em>derived</em> name routinely differs from
+    /// what StemForge wrote — the ledger identifies a song and the uploader named a video — so
+    /// measuring against one would flag most of the library as half-renamed.
+    /// </remarks>
+    private static int AwaitingRenameIn(StagingSong? staged, string? stated) =>
+        staged is null || !StemFileName.IsUsable(stated)
+            ? 0
+            : staged.Stems.Count(stem =>
+                !StemFileName
+                    .Renamed(stem.Path, stated)
+                    .Equals(stem.Path, StringComparison.OrdinalIgnoreCase)
+            );
 
     /// <summary>
     /// A track's kept files, from wherever they currently are.

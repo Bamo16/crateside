@@ -34,28 +34,6 @@ public sealed class TracksService : IDisposable
     private static readonly TimeSpan Quiet = TimeSpan.FromSeconds(2);
 
     /// <summary>
-    /// How stale the rows may get with nothing having been announced.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <strong>The two things that matter most move without saying so.</strong> The playlist is
-    /// added to from a phone, and <c>Sample Staging</c> is emptied in Ableton — neither publishes
-    /// anything crateside could subscribe to, so the only way either is ever noticed is to look.
-    /// </para>
-    /// <para>
-    /// Five minutes because it is nearly free and there is nothing cheaper to ask. The playlist
-    /// read pages at fifty, the API's maximum, so the whole list is one quota unit against a daily
-    /// ten thousand — 288 a day at this interval. A <c>playlists.list</c> probe for
-    /// <c>itemCount</c> costs the same one unit, so gating the read behind it would buy nothing
-    /// until the playlist passes fifty items and the read starts costing two.
-    /// </para>
-    /// <para>
-    /// Separately from this, the stage workers already read the queue on a two-minute idle loop,
-    /// so a track added elsewhere is picked up whether or not anyone has the page open. This is
-    /// about the view being true, not about work starting.
-    /// </para>
-    /// </remarks>
-    /// <summary>
     /// How often the poll wakes to ask whether the rows have gone stale.
     /// </summary>
     /// <remarks>

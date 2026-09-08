@@ -120,6 +120,19 @@ public sealed class QueueSettingsStore
         Upsert(videoId, t => t with { IsInstrumentalRelease = isInstrumentalRelease });
 
     /// <summary>
+    /// Records what the user calls a track. Null or blank clears it, restoring the derived name.
+    /// </summary>
+    /// <remarks>
+    /// Stated here rather than taken from the files, because it has to be sayable before there
+    /// are any: a name given while the track is still queued is what staging names the stems.
+    /// </remarks>
+    public QueueSettings SetName(string videoId, string? name) =>
+        Upsert(
+            videoId,
+            t => t with { Name = name?.Trim() is { Length: > 0 } given ? given : null }
+        );
+
+    /// <summary>
     /// Applies a change to one track's instruction, adding it if there was none and dropping it
     /// again once it says nothing. Keeping empty entries would turn every released hold into a
     /// permanent line in the file.
@@ -253,13 +266,13 @@ public sealed record QueueSettings
     [JsonPropertyName("tracks")]
     public IReadOnlyList<TrackInstruction> Tracks { get; init; } = [];
 
-    /// <summary>
-    /// The previous shape, read once so existing holds survive and then never written again.
-    /// </summary>
     /// <summary>How long the rows may go unrebuilt. Zero means never.</summary>
     public TimeSpan RefreshInterval =>
         TimeSpan.FromMinutes(RefreshMinutes ?? DefaultRefreshMinutes);
 
+    /// <summary>
+    /// The previous shape, read once so existing holds survive and then never written again.
+    /// </summary>
     [JsonPropertyName("held")]
     public IReadOnlyList<HeldTrack>? Held { get; init; }
 }
@@ -306,9 +319,19 @@ public sealed record TrackInstruction
     [JsonPropertyName("instrumentalRelease")]
     public bool IsInstrumentalRelease { get; init; }
 
+    /// <summary>
+    /// What the user calls this track, which beats every derived name. Null when they have not said.
+    /// </summary>
+    /// <remarks>
+    /// A name, not a filename: the files add the preset and the extension back themselves, so one
+    /// statement covers the two or three of them and whatever separation makes next.
+    /// </remarks>
+    [JsonPropertyName("name")]
+    public string? Name { get; init; }
+
     /// <summary>Whether this instruction still carries anything worth storing.</summary>
     [JsonIgnore]
-    public bool SaysSomething => IsHeld || IsInstrumentalRelease;
+    public bool SaysSomething => IsHeld || IsInstrumentalRelease || Name is { Length: > 0 };
 }
 
 /// <summary>A held track as the previous file format wrote it. Read-only; see ADR 0005.</summary>

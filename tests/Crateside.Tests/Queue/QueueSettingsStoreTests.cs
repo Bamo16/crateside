@@ -149,6 +149,67 @@ public class QueueSettingsStoreTests : IDisposable
     }
 
     [Fact]
+    public void A_name_on_its_own_is_enough_to_keep_an_instruction()
+    {
+        // SaysSomething is what decides whether the entry is stored at all, so a field left out
+        // of it cannot be persisted — the name would be dropped the moment it was saved.
+        var store = Store();
+
+        store.SetName("abc123", "Starjunk 95 - 99th Street");
+
+        var track = Assert.Single(store.Read().Tracks);
+        Assert.Equal("Starjunk 95 - 99th Street", track.Name);
+        Assert.False(track.IsHeld);
+    }
+
+    [Fact]
+    public void A_name_survives_a_restart()
+    {
+        Store().SetName("abc123", "Starjunk 95 - 99th Street");
+
+        Assert.Equal("Starjunk 95 - 99th Street", Assert.Single(Store().Read().Tracks).Name);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Clearing_a_name_drops_the_instruction_with_it(string? cleared)
+    {
+        // Absence is what "not stated" means, and blank is not a name anyone typed on purpose.
+        var store = Store();
+        store.SetName("abc123", "Starjunk 95 - 99th Street");
+
+        store.SetName("abc123", cleared);
+
+        Assert.Empty(store.Read().Tracks);
+    }
+
+    [Fact]
+    public void A_name_is_stored_trimmed()
+    {
+        var store = Store();
+
+        store.SetName("abc123", "  Starjunk 95 - 99th Street  ");
+
+        Assert.Equal("Starjunk 95 - 99th Street", Assert.Single(store.Read().Tracks).Name);
+    }
+
+    [Fact]
+    public void Clearing_a_name_keeps_a_hold_that_was_also_stated()
+    {
+        var store = Store();
+        store.Hold("abc123", "not the canonical upload");
+        store.SetName("abc123", "Starjunk 95 - 99th Street");
+
+        store.SetName("abc123", null);
+
+        var track = Assert.Single(store.Read().Tracks);
+        Assert.True(track.IsHeld);
+        Assert.Null(track.Name);
+    }
+
+    [Fact]
     public void An_instrumental_release_and_a_hold_are_one_instruction()
     {
         var store = Store();

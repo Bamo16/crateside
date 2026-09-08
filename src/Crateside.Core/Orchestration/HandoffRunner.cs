@@ -40,14 +40,17 @@ public sealed class HandoffRunner(CratesidePaths paths)
     /// stem is exactly the ambiguity <strong>fully processed</strong> exists to resolve.
     /// </para>
     /// </remarks>
-    public HandoffResult Run(IReadOnlyList<string> stems)
+    /// <param name="name">
+    /// What the user calls this track, or null if they have not said. This is the only point a
+    /// rename given before there were files reaches them, which is why every rename lands here
+    /// rather than on the source audio — see <see cref="TrackRename"/>.
+    /// </param>
+    public HandoffResult Run(IReadOnlyList<string> stems, string? name = null)
     {
         if (stems.Count is 0)
             return HandoffResult.Failed("no stems to hand off");
 
-        var moves = stems
-            .Select(s => (From: s, To: Path.Combine(paths.SampleStaging, Path.GetFileName(s))))
-            .ToList();
+        var moves = stems.Select(s => (From: s, To: Destination(s, name))).ToList();
 
         if (moves.FirstOrDefault(m => File.Exists(m.To)) is { From: not null } clash)
             return HandoffResult.Failed(
@@ -70,6 +73,13 @@ public sealed class HandoffRunner(CratesidePaths paths)
             return HandoffResult.Failed(e.Message);
         }
     }
+
+    /// <summary>Where one stem lands: under the user's name for the track, or under its own.</summary>
+    private string Destination(string stem, string? name) =>
+        Path.Combine(
+            paths.SampleStaging,
+            Path.GetFileName(StemFileName.IsUsable(name) ? StemFileName.Renamed(stem, name) : stem)
+        );
 }
 
 /// <summary>How one handoff turned out.</summary>

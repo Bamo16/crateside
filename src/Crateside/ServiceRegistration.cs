@@ -254,23 +254,38 @@ public static class ServiceRegistration
             sp.GetRequiredService<ILogger<StageWorker>>()
         ));
 
-        // Working sets go when their track is imported. Slow on purpose: it is answering a
-        // question about the library, which changes on human timescales.
+        // The two things a user does to a track that has already been through the pipeline. Both
+        // take the board as a read rather than as itself, so neither has to open every audio file
+        // under the root in order to be understood or tested.
         services.AddSingleton(sp => new StemRecut(
             sp.GetRequiredService<QueueSettingsStore>(),
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<WorkingSet>(),
-            videoId =>
-                sp.GetRequiredService<StagingBoardService>()
-                    .Read()
-                    .FirstOrDefault(song => song.SourceVideoId == videoId)
-                    ?.Stems
-                ?? []
+            StagedFiles(sp)
         ));
+        services.AddSingleton(sp => new TrackRename(
+            sp.GetRequiredService<QueueSettingsStore>(),
+            StagedFiles(sp),
+            sp.GetRequiredService<AbletonFolderInfoWriter>(),
+            sp.GetRequiredService<CratesidePaths>()
+        ));
+
+        // Working sets go when their track is imported. Slow on purpose: it is answering a
+        // question about the library, which changes on human timescales.
         services.AddSingleton<WorkingSetJanitor>();
         services.AddHostedService<JanitorWorker>();
         return services;
     }
+
+    /// <summary>One track's files as they currently sit in staging, read fresh on every call.</summary>
+    private static ReadStagedFiles StagedFiles(IServiceProvider services) =>
+        videoId =>
+            services
+                .GetRequiredService<StagingBoardService>()
+                .Read()
+                .FirstOrDefault(song => song.SourceVideoId == videoId)
+                ?.Stems
+            ?? [];
 
     /// <summary>
     /// The Tracks page's view of everything, and the cache that keeps it affordable.
