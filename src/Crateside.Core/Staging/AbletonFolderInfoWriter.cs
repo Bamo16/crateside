@@ -141,10 +141,7 @@ public sealed class AbletonFolderInfoWriter
     /// <summary>
     /// Points existing entries at new file names, keeping their keywords and their position.
     /// </summary>
-    /// <remarks>
-    /// A file with no entry is skipped rather than invented: an entry records tags Ableton holds,
-    /// and a file that has none is untagged, which the tagging stage fixes on its own pass.
-    /// </remarks>
+    /// <remarks>A file with no entry is skipped: it is untagged, which is not this to fix.</remarks>
     public TagWriteOutcome Rename(string rootFolder, IReadOnlyList<TagRename> renames)
     {
         if (renames.Count is 0)

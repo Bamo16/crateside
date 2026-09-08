@@ -40,11 +40,6 @@ public sealed record TrackRow
     /// <summary>
     /// What it would be called if the user had not named it — and null when they have not.
     /// </summary>
-    /// <remarks>
-    /// Null rather than a copy of <see cref="Title"/>, so that carrying the name to revert to and
-    /// saying a rename happened cannot come apart: this is set exactly when
-    /// <see cref="IsRenamed"/> is true.
-    /// </remarks>
     public string? DerivedTitle { get; init; }
 
     /// <summary>The user has given this track a name of their own.</summary>
@@ -57,12 +52,8 @@ public sealed record TrackRow
     /// What this track's staged files are called, when that is not what crateside calls it.
     /// </summary>
     /// <remarks>
-    /// <strong>They disagree more often than they agree, and neither is wrong.</strong> The ledger
-    /// names a song from keytag's identification, while the files were named from the download's
-    /// own tags — so <c>Estelle - American Boy</c> and <c>Estelle, Kanye West, Keith Harris,
-    /// William Adams - American Boy</c> are one track. Null when they match, when there are no
-    /// staged files, or when the files disagree among themselves, which is
-    /// <see cref="AwaitingRename"/>'s to report.
+    /// Null when they match, when there are none, and when they disagree among themselves — that
+    /// last is <see cref="AwaitingRename"/>'s to report.
     /// </remarks>
     public string? NameOnDisk { get; init; }
 
@@ -70,45 +61,22 @@ public sealed record TrackRow
     /// Staged files a rename did not reach — zero unless one was interrupted part way.
     /// </summary>
     /// <remarks>
-    /// Counted against a stated name only, never a derived one: what StemForge wrote and what the
-    /// ledger identifies routinely differ, and treating that as unfinished work would flag most of
-    /// the library.
+    /// Counted against a name the user stated, never a derived one, which routinely differs from
+    /// what StemForge wrote.
     /// </remarks>
     public int AwaitingRename { get; init; }
 
     /// <summary>
     /// Whether crateside can still put a name on this track's files.
     /// </summary>
-    /// <remarks>
-    /// Until one reaches <c>Mashup Samples</c>, which is the user's folder and theirs to rename in
-    /// — crateside writes nothing there (ADR 0003). A single moved file locks the whole row,
-    /// because renaming the rest would leave one track under two names.
-    /// </remarks>
+    /// <remarks>A single file in <c>Mashup Samples</c> locks the whole row (ADR 0003).</remarks>
     public bool CanRename => !Samples.Any(sample => sample.IsInLibrary);
 
-    /// <summary>
-    /// What renaming would touch, for the button that offers it.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// One sentence for every state before <c>Mashup Samples</c>, which is what renaming the
-    /// outputs rather than the source audio buys: nothing downloaded, mid-separation and already
-    /// staged all make the same promise, so there is no fourth case to get wrong.
-    /// </para>
-    /// <para>
-    /// Counted off the row rather than by planning the rename, because a plan re-reads the
-    /// staging folder — every audio file in it, through TagLib — and this is redrawn on a
-    /// keystroke.
-    /// </para>
-    /// </remarks>
+    /// <summary>What renaming would touch, for the button that offers it.</summary>
     public string RenameScope =>
         StagedFileCount is 0 ? "at staging" : $"{"file".ToQuantity(StagedFileCount)} + folder info";
 
     /// <summary>The sentence beside the button, saying what <see cref="RenameScope"/> means.</summary>
-    /// <remarks>
-    /// Here rather than in the page, beside the scope and derived from the same count, so the two
-    /// cannot describe different things.
-    /// </remarks>
     public string RenameDetail =>
         StagedFileCount is 0
             ? "Nothing of this track is in Sample Staging yet, so the name is recorded now and the stems are made with it."
@@ -449,15 +417,7 @@ public sealed record TrackRow
             : $"{GpuPosition.GetValueOrDefault().Ordinalize()} for the GPU";
 }
 
-/// <summary>
-/// Where a track's derived name came from, best first.
-/// </summary>
-/// <remarks>
-/// Worth showing beside the name because the three disagree often and unevenly: the ledger
-/// records artist and title separately and properly cased, while a video title routinely omits
-/// the artist altogether. Knowing which one won is what tells the user whether renaming is
-/// warranted.
-/// </remarks>
+/// <summary>Where a track's derived name came from, best first.</summary>
 public enum TrackNameSource
 {
     /// <summary>keytag's verdict — the best of them.</summary>

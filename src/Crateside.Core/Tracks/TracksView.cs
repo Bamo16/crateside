@@ -247,13 +247,9 @@ public sealed record TracksView
         };
 
     /// <summary>
-    /// The one name this track's staged files share, when it is not the one on screen.
+    /// The one name this track's staged files share, when it is not the one on screen. The
+    /// single-element pattern is what makes files that disagree yield null.
     /// </summary>
-    /// <remarks>
-    /// The single-element list pattern is doing two jobs: it says the files agree with each other,
-    /// and it hands over the name they agree on. Files that disagree yield null, because the thing
-    /// worth saying about them is that a rename did not finish rather than what they are called.
-    /// </remarks>
     private static string? NameOnDiskOf(StagingSong? staged, string shown) =>
         staged
             ?.Stems.Select(stem => StemFileName.WithoutPreset(stem.Path))
@@ -265,13 +261,9 @@ public sealed record TracksView
             : null;
 
     /// <summary>
-    /// Staged files a rename has not reached.
+    /// Staged files a rename has not reached — measured against a stated name only, never a
+    /// derived one, which routinely differs from what StemForge wrote.
     /// </summary>
-    /// <remarks>
-    /// Counted only against a name the user stated. A <em>derived</em> name routinely differs from
-    /// what StemForge wrote — the ledger identifies a song and the uploader named a video — so
-    /// measuring against one would flag most of the library as half-renamed.
-    /// </remarks>
     private static int AwaitingRenameIn(StagingSong? staged, string? stated) =>
         staged is null || !StemFileName.IsUsable(stated)
             ? 0

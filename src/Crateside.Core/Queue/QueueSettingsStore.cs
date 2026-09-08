@@ -122,10 +122,6 @@ public sealed class QueueSettingsStore
     /// <summary>
     /// Records what the user calls a track. Null or blank clears it, restoring the derived name.
     /// </summary>
-    /// <remarks>
-    /// Stated here rather than taken from the files, because it has to be sayable before there
-    /// are any: a name given while the track is still queued is what staging names the stems.
-    /// </remarks>
     public QueueSettings SetName(string videoId, string? name) =>
         Upsert(
             videoId,
@@ -322,10 +318,7 @@ public sealed record TrackInstruction
     /// <summary>
     /// What the user calls this track, which beats every derived name. Null when they have not said.
     /// </summary>
-    /// <remarks>
-    /// A name, not a filename: the files add the preset and the extension back themselves, so one
-    /// statement covers the two or three of them and whatever separation makes next.
-    /// </remarks>
+    /// <remarks>A name, not a filename: the files add the preset and extension themselves.</remarks>
     [JsonPropertyName("name")]
     public string? Name { get; init; }
 
