@@ -122,6 +122,40 @@ public class KeyLedgerTests : IDisposable
     }
 
     [Fact]
+    public void A_later_line_carrying_no_verdict_takes_the_songs_key_away()
+    {
+        // What a naively written source-video alias would do: it resolves the new ID, and blanks
+        // the key for every file of that song at the same time, because latest-wins does not
+        // distinguish "says nothing" from "says no key". See docs/swapping-a-source-video.md.
+        var ledger = ReadLines(
+            Line(
+                "2026-08-01T00:00:00+00:00",
+                "a - b",
+                "https://www.youtube.com/watch?v=NSLYAT7sjAA",
+                "C# minor",
+                "HIGH"
+            ),
+            JsonSerializer.Serialize(
+                new
+                {
+                    timestamp = "2026-08-12T00:00:00+00:00",
+                    song = "a - b",
+                    source_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                }
+            )
+        );
+
+        Assert.True(ledger.TryGetLatestByVideoId("dQw4w9WgXcQ", out var swapped));
+        Assert.Null(swapped.Key);
+        Assert.False(swapped.HasTaggableKey);
+
+        // And it reaches back through the original ID too, so the damage is not confined to the
+        // new video.
+        Assert.True(ledger.TryGetLatestByVideoId("NSLYAT7sjAA", out var original));
+        Assert.Null(original.Key);
+    }
+
+    [Fact]
     public void A_withheld_run_still_counts_as_having_been_processed()
     {
         // The removal predicate is "a verdict was recorded", not "a key was produced".
