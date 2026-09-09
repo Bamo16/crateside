@@ -77,9 +77,9 @@ public sealed class VerdictRunner(
         if (KeyLedger.Read(paths.Ledger).HasRunFor(order.VideoId))
             return VerdictResult.Succeeded();
 
-        // Quota exhaustion says nothing about the track, so it must not cost a strike.
-        if (IsQuotaExhausted(outcome.StandardOutput, outcome.StandardError))
-            return VerdictResult.QuotaExhausted();
+        // A session that never ran says nothing about the track, so it must not cost a strike.
+        if (AgentUnavailableReason(outcome.StandardOutput, outcome.StandardError) is { } reason)
+            return VerdictResult.AgentUnavailable(reason);
 
         return VerdictResult.Failed(
             outcome.Succeeded
@@ -90,17 +90,26 @@ public sealed class VerdictRunner(
     }
 
     /// <summary>
-    /// Whether the session stopped because the allowance is spent rather than because anything
-    /// about this track is wrong.
+    /// Why the agent could not be run, or null when the failure is about this track.
     /// </summary>
     /// <remarks>
-    /// Checks both <c>api_error_status: 429</c> and a human sentence, since a session that stops
-    /// before emitting JSON still reports it in prose.
+    /// Reads the prose as well as the JSON, since a session that stops before emitting JSON still
+    /// says why in a sentence.
     /// </remarks>
-    private static bool IsQuotaExhausted(params string[] streams) =>
-        streams.Any(s =>
-            s.Contains("\"api_error_status\":429", StringComparison.Ordinal)
-            || s.Contains("hit your limit", StringComparison.OrdinalIgnoreCase)
+    private static string? AgentUnavailableReason(params string[] streams) =>
+        streams switch
+        {
+            _ when Mentions(streams, "\"api_error_status\":429", "hit your limit") =>
+                "the Claude allowance is spent; judging is paused until it resets",
+            // Not a bare "/login", which any searched-up URL could carry.
+            _ when Mentions(streams, "not logged in", "please run /login") =>
+                "Claude Code is not logged in; judging is paused until you run /login",
+            _ => null,
+        };
+
+    private static bool Mentions(string[] streams, params string[] phrases) =>
+        streams.Any(stream =>
+            phrases.Any(phrase => stream.Contains(phrase, StringComparison.OrdinalIgnoreCase))
         );
 
     /// <summary>
@@ -160,8 +169,11 @@ public sealed record VerdictResult
 {
     public required bool IsSuccess { get; init; }
 
-    /// <summary>The allowance is spent; not a failure of the track, and retrying will not fix it.</summary>
-    public bool IsQuotaExhausted { get; init; }
+    /// <summary>
+    /// The agent never ran — no allowance left, or nobody logged in. Says nothing about the
+    /// track, and a further attempt would fail the same way and just as fast.
+    /// </summary>
+    public bool IsAgentUnavailable { get; init; }
 
     public string? Error { get; init; }
 
@@ -169,11 +181,11 @@ public sealed record VerdictResult
 
     public static VerdictResult Failed(string error) => new() { IsSuccess = false, Error = error };
 
-    public static VerdictResult QuotaExhausted() =>
+    public static VerdictResult AgentUnavailable(string reason) =>
         new()
         {
             IsSuccess = false,
-            IsQuotaExhausted = true,
-            Error = "the Claude allowance is spent; judging is paused until it resets",
+            IsAgentUnavailable = true,
+            Error = reason,
         };
 }

@@ -52,10 +52,11 @@ public sealed class VerdictDrainer(
         {
             var result = await runner.RunAsync(order, cancellationToken);
 
-            // Cancelled, not Failed: running out of allowance is not this track's fault, and
+            // Cancelled, not Failed: a session that never ran is not this track's fault, and
             // Cancelled carries no strike. Then paused, since a further attempt would return
-            // instantly and spend a strike for nothing.
-            if (result.IsQuotaExhausted)
+            // instantly and spend a strike for nothing — on every track in the queue, not just
+            // this one.
+            if (result.IsAgentUnavailable)
             {
                 jobs.Record(
                     item.VideoId,

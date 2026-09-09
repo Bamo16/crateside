@@ -170,7 +170,25 @@ public class VerdictRunnerTests : IDisposable
             .RunAsync(Order(), TestContext.Current.CancellationToken);
 
         Assert.False(result.IsSuccess);
-        Assert.True(result.IsQuotaExhausted);
+        Assert.True(result.IsAgentUnavailable);
+    }
+
+    [Fact]
+    public async Task Nobody_being_logged_in_is_not_the_tracks_fault_either()
+    {
+        // Reported as subtype "success" with api_error_status null, so neither the exit code nor
+        // the quota test sees anything.
+        GiveEvidence();
+
+        var result = await Runner(
+                records: false,
+                stdout: """{"subtype":"success","is_error":true,"api_error_status":null,"result":"Not logged in - Please run /login"}"""
+            )
+            .RunAsync(Order(), TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        Assert.True(result.IsAgentUnavailable);
+        Assert.Contains("/login", result.Error);
     }
 
     [Fact]
@@ -181,7 +199,7 @@ public class VerdictRunnerTests : IDisposable
         var result = await Runner(records: false, exitCode: 1, stderr: "something broke")
             .RunAsync(Order(), TestContext.Current.CancellationToken);
 
-        Assert.False(result.IsQuotaExhausted);
+        Assert.False(result.IsAgentUnavailable);
     }
 
     [Fact]
