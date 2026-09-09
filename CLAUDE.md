@@ -76,6 +76,8 @@ Same rule as keytag ([its ADR 0005](../keytag/docs/adr/0005-instructions-carry-n
 - **`docs/adr/`** holds history. Append-only, dated, superseded in place, never pruned.
 - **`CONTEXT.md`** holds current definitions. A glossary and nothing else.
 - **This file** holds current instruction, plus at most a one-line pointer to an ADR.
+- **`docs/agents/`** holds how an agent should use this repo — where issues live, the triage
+  label vocabulary, the domain doc layout. Not domain content itself.
 - **Code** holds what the code cannot say itself. See below.
 
 ## Comments are the exception, not the default
@@ -98,3 +100,18 @@ code cannot. **When in doubt, no comment.**
 
 **The existing code is not the standard here.** Much of it predates this rule and is being cut
 back; matching its comment density re-creates the debt.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues on `Bamo16/crateside`, via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical names, unchanged. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — `CONTEXT.md` and `docs/adr/` at the root, with shared vocabulary in keytag's
+`CONTEXT.md`. See `docs/agents/domain.md`.
