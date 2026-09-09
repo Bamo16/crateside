@@ -48,6 +48,34 @@ public class RunEvidenceRealDataTests
         Assert.All(All(), e => Assert.False(string.IsNullOrWhiteSpace(e.Reasoning)));
     }
 
+    /// <summary>
+    /// keytag's text-integrity rule (its ADR 0007) repaired the damaged <em>names</em> and now
+    /// refuses new ones, but the prose fields still carry mojibake, so
+    /// <see cref="LedgerText.Repaired"/> is what stands between it and the screen.
+    /// </summary>
+    [Fact]
+    public void The_prose_fields_still_need_repairing_on_the_way_out()
+    {
+        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+
+        var damaged = File.ReadAllText(LedgerPath).Contains("â†’", StringComparison.Ordinal);
+
+        Assert.SkipUnless(damaged, "The ledger no longer carries damaged prose.");
+
+        Assert.All(
+            All(),
+            e =>
+            {
+                Assert.DoesNotContain("â†’", e.Reasoning ?? string.Empty, StringComparison.Ordinal);
+                Assert.DoesNotContain(
+                    "â†’",
+                    e.TonicCheck ?? string.Empty,
+                    StringComparison.Ordinal
+                );
+            }
+        );
+    }
+
     [Fact]
     public void The_machine_layer_survives_the_round_trip()
     {

@@ -122,11 +122,11 @@ public class KeyLedgerTests : IDisposable
     }
 
     [Fact]
-    public void A_later_line_carrying_no_verdict_takes_the_songs_key_away()
+    public void A_line_carrying_no_verdict_would_take_the_songs_key_away()
     {
-        // What a naively written source-video alias would do: it resolves the new ID, and blanks
-        // the key for every file of that song at the same time, because latest-wins does not
-        // distinguish "says nothing" from "says no key". See docs/swapping-a-source-video.md.
+        // Why a restatement carries the whole verdict rather than just the new URL (keytag ADR
+        // 0008): latest-wins cannot distinguish "says nothing" from "says no key", so a bare
+        // alias resolves the new ID and blanks the song at the same time.
         var ledger = ReadLines(
             Line(
                 "2026-08-01T00:00:00+00:00",
@@ -154,6 +154,125 @@ public class KeyLedgerTests : IDisposable
         Assert.True(ledger.TryGetLatestByVideoId("NSLYAT7sjAA", out var original));
         Assert.Null(original.Key);
     }
+
+    /// <summary>
+    /// A restatement as <c>keytag-restate</c> writes one — shape taken from a real
+    /// <c>--dry-run</c>, verdict copied from the run it names.
+    /// </summary>
+    private static string Restatement(
+        string timestamp,
+        string song,
+        string url,
+        string key,
+        string restates,
+        string confidence = "HIGH"
+    ) =>
+        JsonSerializer.Serialize(
+            new
+            {
+                timestamp,
+                song,
+                artist = "A",
+                title = "T",
+                verdict = new
+                {
+                    key,
+                    mode = (string?)null,
+                    confidence,
+                },
+                bpm = new
+                {
+                    value = 145,
+                    source = "web",
+                    beatdetect = 108.72,
+                },
+                has_vocals = (bool?)null,
+                source_url = url,
+                restates,
+                input_path = (string?)null,
+                input_kind = (string?)null,
+                sources = (string?)null,
+                tonic_check = (string?)null,
+                reasoning = "Restates the run of "
+                    + restates
+                    + " under a new source URL. Same song, no detectors run, verdict copied unchanged.",
+                machine = (string?)null,
+            }
+        );
+
+    [Fact]
+    public void A_restatement_resolves_the_new_video_id_to_the_same_verdict()
+    {
+        var ledger = ReadLines(
+            Line("2026-09-01T00:00:00+00:00", "a - b", Watch("OLDoldOLDol"), "C# minor", "MEDIUM"),
+            Restatement(
+                "2026-09-09T00:00:00+00:00",
+                "a - b",
+                Watch("NEWnewNEWne"),
+                "C# minor",
+                "2026-09-01T00:00:00+00:00",
+                "MEDIUM"
+            )
+        );
+
+        Assert.True(ledger.TryGetLatestByVideoId("NEWnewNEWne", out var viaNew));
+        Assert.Equal("C# minor", viaNew.Key);
+
+        // The old ID keeps resolving: stems cut from the old video are still that song.
+        Assert.True(ledger.TryGetLatestByVideoId("OLDoldOLDol", out var viaOld));
+        Assert.Equal(viaNew.Key, viaOld.Key);
+        Assert.Equal(viaNew.Confidence, viaOld.Confidence);
+
+        // Both count as judged, so neither is picked up for a second verdict run.
+        Assert.True(ledger.HasRunFor("NEWnewNEWne"));
+        Assert.True(ledger.HasRunFor("OLDoldOLDol"));
+    }
+
+    [Fact]
+    public void A_re_judgment_after_a_restatement_still_wins_through_both_ids()
+    {
+        // A restatement is not a floor: it is just the latest line until a real run is later.
+        var ledger = ReadLines(
+            Line("2026-09-01T00:00:00+00:00", "a - b", Watch("OLDoldOLDol"), "C# minor", "MEDIUM"),
+            Restatement(
+                "2026-09-09T00:00:00+00:00",
+                "a - b",
+                Watch("NEWnewNEWne"),
+                "C# minor",
+                "2026-09-01T00:00:00+00:00",
+                "MEDIUM"
+            ),
+            Line("2026-09-10T00:00:00+00:00", "a - b", Watch("NEWnewNEWne"), "F major")
+        );
+
+        foreach (var videoId in (string[])["OLDoldOLDol", "NEWnewNEWne"])
+        {
+            Assert.True(ledger.TryGetLatestByVideoId(videoId, out var run));
+            Assert.Equal("F major", run.Key);
+            Assert.Equal(KeyConfidence.High, run.Confidence);
+        }
+    }
+
+    [Fact]
+    public void A_restatement_leaves_the_song_count_alone()
+    {
+        // It names an existing identity, so it adds a source URL rather than a song.
+        var ledger = ReadLines(
+            Line("2026-09-01T00:00:00+00:00", "a - b", Watch("OLDoldOLDol"), "C# minor", "MEDIUM"),
+            Restatement(
+                "2026-09-09T00:00:00+00:00",
+                "a - b",
+                Watch("NEWnewNEWne"),
+                "C# minor",
+                "2026-09-01T00:00:00+00:00",
+                "MEDIUM"
+            )
+        );
+
+        Assert.Equal(1, ledger.SongCount);
+    }
+
+    private static string Watch(string videoId) => $"https://music.youtube.com/watch?v={videoId}";
 
     [Fact]
     public void A_withheld_run_still_counts_as_having_been_processed()
