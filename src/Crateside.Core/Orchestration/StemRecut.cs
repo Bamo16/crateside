@@ -43,13 +43,8 @@ public sealed class StemRecut(
         {
             Recipe = recipe,
             Removing = files,
-            Refusal = (files, workingSet.TryGetSource(videoId, out _)) switch
-            {
-                ({ Count: 0 }, _) => "Nothing of this track is in Sample Staging.",
-                (_, false) =>
-                    "The downloaded audio is no longer on disk, so this would have to fetch it again.",
-                _ => null,
-            },
+            WillRefetch = !workingSet.TryGetSource(videoId, out _),
+            Refusal = files is { Count: 0 } ? "Nothing of this track is in Sample Staging." : null,
         };
     }
 
@@ -106,6 +101,18 @@ public sealed record RecutPlan
 
     /// <summary>The staged files that would go — every one of them, warp guide included.</summary>
     public required IReadOnlyList<StagingStem> Removing { get; init; }
+
+    /// <summary>
+    /// The audio is no longer held, so separation downloads it again before it runs. Costs a
+    /// fetch, not a verdict: the video ID is unchanged, so the ledger still answers for it.
+    /// </summary>
+    public required bool WillRefetch { get; init; }
+
+    /// <summary>The sentence about the audio, said either way.</summary>
+    public string AudioDetail =>
+        WillRefetch
+            ? "The downloaded audio has gone, so separation fetches it again first."
+            : "The downloaded audio is still on disk; nothing is re-downloaded.";
 
     /// <summary>Why this cannot happen, or null when it can.</summary>
     public string? Refusal { get; init; }

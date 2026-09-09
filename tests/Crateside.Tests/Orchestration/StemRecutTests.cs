@@ -86,7 +86,7 @@ public class StemRecutTests : IDisposable
     }
 
     [Fact]
-    public void It_refuses_when_the_downloaded_audio_has_gone()
+    public void A_track_whose_audio_has_gone_is_re_cut_by_fetching_it_again()
     {
         // Asked of the working set rather than inferred from staging. The janitor keeps a track's
         // audio while anything of it is staged, so the inference is usually right -- but the
@@ -97,8 +97,22 @@ public class StemRecutTests : IDisposable
 
         var plan = recut.PlanFor(Video, isInstrumentalRelease: false);
 
-        Assert.False(plan.IsPossible);
-        Assert.Contains("no longer on disk", plan.Refusal);
+        Assert.True(plan.IsPossible);
+        Assert.True(plan.WillRefetch);
+        Assert.Contains("fetches it again", plan.AudioDetail);
+    }
+
+    [Fact]
+    public void A_track_whose_audio_is_still_held_says_nothing_will_be_fetched()
+    {
+        Stage("Rob Dougan - Furious Angels.flac");
+
+        var recut = new StemRecut(Settings(), Jobs(), WorkingSetWithSource(), Staged());
+
+        var plan = recut.PlanFor(Video, isInstrumentalRelease: false);
+
+        Assert.False(plan.WillRefetch);
+        Assert.Contains("still on disk", plan.AudioDetail);
     }
 
     [Fact]
