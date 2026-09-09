@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Ledger;
@@ -49,32 +50,42 @@ public class RunEvidenceRealDataTests
     }
 
     /// <summary>
-    /// keytag's text-integrity rule (its ADR 0007) repaired the damaged <em>names</em> and now
-    /// refuses new ones, but the prose fields still carry mojibake, so
-    /// <see cref="LedgerText.Repaired"/> is what stands between it and the screen.
+    /// crateside stopped repairing text on the way out once keytag swept the file
+    /// (its ADR 0007), so this is the whole of its defence against that regressing.
     /// </summary>
+    /// <remarks>
+    /// Walks every string rather than a list of fields. keytag's repair script and its own check
+    /// each enumerated fields, agreed with one another, and missed 97 damaged strings between
+    /// them for six days — a list here would be the third one to drift.
+    /// </remarks>
     [Fact]
-    public void The_prose_fields_still_need_repairing_on_the_way_out()
+    public void No_string_anywhere_in_the_ledger_is_mis_encoded()
     {
         Assert.SkipUnless(Available, "The keytag ledger must be present.");
 
-        var damaged = File.ReadAllText(LedgerPath).Contains("â†’", StringComparison.Ordinal);
+        foreach (var line in File.ReadLines(LedgerPath).Where(l => l.Trim().Length > 0))
+        {
+            using var document = JsonDocument.Parse(line);
 
-        Assert.SkipUnless(damaged, "The ledger no longer carries damaged prose.");
-
-        Assert.All(
-            All(),
-            e =>
-            {
-                Assert.DoesNotContain("â†’", e.Reasoning ?? string.Empty, StringComparison.Ordinal);
-                Assert.DoesNotContain(
-                    "â†’",
-                    e.TonicCheck ?? string.Empty,
-                    StringComparison.Ordinal
-                );
-            }
-        );
+            foreach (var text in Strings(document.RootElement))
+                Assert.DoesNotContain(text, IsMojibake);
+        }
     }
+
+    private static IEnumerable<string> Strings(JsonElement element) =>
+        element.ValueKind switch
+        {
+            JsonValueKind.Object => element.EnumerateObject().SelectMany(p => Strings(p.Value)),
+            JsonValueKind.Array => element.EnumerateArray().SelectMany(Strings),
+            JsonValueKind.String => [element.GetString()!],
+            _ => [],
+        };
+
+    /// <summary>
+    /// A CP1252 lead byte read back as UTF-8, or a character lost outright — what text looks
+    /// like after crossing a console pipe in the wrong codepage.
+    /// </summary>
+    private static bool IsMojibake(char c) => c is 'Â' or 'Ã' or 'â' or '�';
 
     [Fact]
     public void The_machine_layer_survives_the_round_trip()

@@ -69,6 +69,15 @@ in `reasoning` and `tonic_check`, which is where `RunEvidence` applies the repai
 `The_prose_fields_still_need_repairing_on_the_way_out`, which skips itself if the ledger is ever
 cleaned.
 
+*Reversed 2026-09-09, the same day, once the file was cleaned.* keytag swept the prose
+([its ADR 0007 addendum](../../../keytag/docs/adr/0007-text-integrity-is-part-of-the-ledger-contract.md)):
+99 strings over 42 lines, and `LedgerText` is deleted. It was not merely left with nothing to do.
+`Repaired` round-trips the **whole string**, so a sentence holding damaged text *beside* a
+character CP1252 cannot encode — a real `→` — fails and is returned untouched. Two strings in this
+ledger were that shape, and read-time repair left both broken where the swept file has them right.
+The count above was correct when written and is why the sweep happened; the conclusion drawn from
+it was not, because it assumed the repair could do the job it was being kept for.
+
 **Ordering.** The restatement must land before any stem cut from the new video does, or there is a
 window in which those stems resolve to nothing.
 

@@ -94,8 +94,8 @@ public sealed record LedgerRun
         {
             Timestamp = dto.Timestamp.Value,
             Song = song,
-            Artist = LedgerText.Repaired(dto.Artist),
-            Title = LedgerText.Repaired(dto.Title),
+            Artist = dto.Artist,
+            Title = dto.Title,
             SourceUrl = dto.SourceUrl,
             SourceVideoId = StemProvenance.ExtractYouTubeVideoId(dto.SourceUrl),
             Key = dto.Verdict?.Key,
