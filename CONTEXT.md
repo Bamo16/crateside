@@ -52,6 +52,21 @@ against it.
   an arbitrary vocal and an arbitrary instrumental line up on the first try. The audio
   before that point is not removed; only the drag-in position moves.
 
+## Tags
+
+- **Tag store** — the `Ableton Folder Info\<uuid>.xmp` Ableton keeps beside a watched
+  root, holding the keywords on that root's files. Not the authoritative tag state:
+  Ableton's own index is, and the store is a lagging, partial mirror of it that can lack
+  tags Ableton holds and keep entries for files that have gone
+  ([ADR 0003](docs/adr/0003-crateside-may-write-abletons-tag-store.md)).
+- **Written root** — a root whose tag store crateside writes, which is **Sample Staging**
+  and only ever that. Because crateside's own write is the record there, a file with no key
+  in the store has no key.
+- **Mirrored root** — a root crateside only reads, which is **Mashup Samples**. A file with
+  no key in the store may still be tagged, so nothing can be claimed from the absence
+  ([ADR 0011](docs/adr/0011-the-audit-may-only-claim-what-crateside-wrote.md)). The two
+  words name what the *store* is to crateside, not what the folder is for.
+
 ## Views
 
 - **Staging board** — the live answer to "what is in front of me right now?": every

@@ -12,24 +12,26 @@ public static class TagAudit
 {
     public static TagAuditReport Run(
         KeyLedger ledger,
-        IEnumerable<string> stemRoots,
+        IEnumerable<AuditRoot> roots,
         AbletonFolderInfoReader? folderInfoReader = null
-    ) => new(Scan(ledger, stemRoots, folderInfoReader));
+    ) => new(Scan(ledger, roots, folderInfoReader));
 
     private static List<TaggedStem> Scan(
         KeyLedger ledger,
-        IEnumerable<string> stemRoots,
+        IEnumerable<AuditRoot> roots,
         AbletonFolderInfoReader? folderInfoReader
     )
     {
         var folders = folderInfoReader ?? new AbletonFolderInfoReader();
         var stems = new List<TaggedStem>();
 
-        foreach (var root in stemRoots.Where(Directory.Exists))
+        foreach (var root in roots.Where(root => Directory.Exists(root.Path)))
         {
-            var folderInfo = folders.Read(root);
+            var folderInfo = folders.Read(root.Path);
 
-            foreach (var path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+            foreach (
+                var path in Directory.EnumerateFiles(root.Path, "*", SearchOption.AllDirectories)
+            )
             {
                 if (!StagingBoard.IsStemFile(path))
                     continue;
@@ -48,7 +50,8 @@ public static class TagAudit
                     {
                         Path = path,
                         FileName = Path.GetFileName(path),
-                        Root = root,
+                        Root = root.Path,
+                        TagStoreIsWritten = root.TagStoreIsWritten,
                         SourceVideoId = videoId,
                         Song = run?.Song,
                         LedgerKey = run?.Key,
@@ -66,6 +69,19 @@ public static class TagAudit
     }
 }
 
+/// <summary>A root to scan, and whether its tag store is one crateside writes.</summary>
+public sealed record AuditRoot(string Path, bool TagStoreIsWritten)
+{
+    /// <summary>A root crateside tags into, so a file with no key there is untagged.</summary>
+    public static AuditRoot Written(string path) => new(path, true);
+
+    /// <summary>
+    /// A root crateside only reads. Its store is a lagging, partial mirror of Ableton's own
+    /// index, so a file with no key there may still be tagged (ADR 0003).
+    /// </summary>
+    public static AuditRoot Mirrored(string path) => new(path, false);
+}
+
 /// <summary>What the audit found, as different readings of the same stem list.</summary>
 public sealed partial class TagAuditReport(IReadOnlyList<TaggedStem> stems)
 {
@@ -81,9 +97,16 @@ public sealed partial class TagAuditReport(IReadOnlyList<TaggedStem> stems)
         ),
     ];
 
-    /// <summary>A taggable verdict exists but no key was applied.</summary>
+    /// <summary>
+    /// A taggable verdict exists but no key was applied, in a root whose tag store crateside
+    /// writes — the only place an absent key is a fact rather than a gap in the mirror.
+    /// </summary>
     public IReadOnlyList<TaggedStem> Untagged { get; } =
-    [.. stems.Where(s => s is { AppliedKey: null, HasTaggableVerdict: true })];
+    [
+        .. stems.Where(s =>
+            s is { AppliedKey: null, HasTaggableVerdict: true, TagStoreIsWritten: true }
+        ),
+    ];
 
     /// <summary>Tagged with a tonic but no mode, or the reverse.</summary>
     public IReadOnlyList<TaggedStem> PartialKeys { get; } = [.. stems.Where(s => s.HasPartialKey)];
@@ -150,6 +173,13 @@ public sealed record TaggedStem
 
     public required string Root { get; init; }
 
+    /// <summary>
+    /// Whether crateside writes <see cref="Root"/>'s tag store. Where it does not, the store is a
+    /// lagging mirror of Ableton's own index and <see cref="AppliedKey"/> being null says nothing
+    /// (ADR 0003).
+    /// </summary>
+    public required bool TagStoreIsWritten { get; init; }
+
     public required string SourceVideoId { get; init; }
 
     /// <summary>The ledger identity, or null when the ledger has never seen this stem.</summary>
@@ -163,7 +193,10 @@ public sealed record TaggedStem
 
     public KeyConfidence Confidence { get; init; }
 
-    /// <summary>The key Ableton actually has on the file, or null when untagged.</summary>
+    /// <summary>
+    /// The key the root's tag store has on the file. Null means untagged only where
+    /// <see cref="TagStoreIsWritten"/>; elsewhere it means nobody can tell.
+    /// </summary>
     public string? AppliedKey { get; init; }
 
     public bool HasPartialKey { get; init; }

@@ -18,7 +18,10 @@ public class TagAuditRealLibraryTests
         Directory.Exists(LibraryRoot) && File.Exists(LedgerPath) && Directory.Exists(StagingRoot);
 
     private static TagAuditReport Report() =>
-        TagAudit.Run(KeyLedger.Read(LedgerPath), [StagingRoot, LibraryRoot]);
+        TagAudit.Run(
+            KeyLedger.Read(LedgerPath),
+            [AuditRoot.Written(StagingRoot), AuditRoot.Mirrored(LibraryRoot)]
+        );
 
     [Fact]
     public void The_audit_reaches_stems_that_have_left_staging()
@@ -50,6 +53,27 @@ public class TagAuditRealLibraryTests
                 Assert.NotEqual(stem.AppliedKey, stem.LedgerKey);
                 Assert.NotNull(stem.Song);
             }
+        );
+    }
+
+    [Fact]
+    public void No_untagged_finding_comes_from_a_root_crateside_does_not_write()
+    {
+        Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
+
+        Assert.All(Report().Untagged, stem => Assert.True(stem.TagStoreIsWritten, stem.Path));
+    }
+
+    [Fact]
+    public void The_librarys_tag_store_lags_far_enough_for_that_rule_to_be_doing_work()
+    {
+        Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
+
+        // What the library would report if its store were read as complete: files Ableton has
+        // tagged and never written back (ADR 0003). If this ever empties, the rule costs nothing
+        // and this test should be revisited rather than fixed.
+        Assert.NotEmpty(
+            TagAudit.Run(KeyLedger.Read(LedgerPath), [AuditRoot.Written(LibraryRoot)]).Untagged
         );
     }
 

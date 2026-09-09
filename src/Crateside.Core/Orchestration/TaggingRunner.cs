@@ -109,7 +109,7 @@ public sealed class TaggingSelector(
         stems = [];
 
         var next = TagAudit
-            .Run(ledger, [paths.SampleStaging])
+            .Run(ledger, [AuditRoot.Written(paths.SampleStaging)])
             .Untagged.GroupBy(s => s.SourceVideoId, StringComparer.Ordinal)
             .FirstOrDefault(g => IsEligible(g.Key));
 
