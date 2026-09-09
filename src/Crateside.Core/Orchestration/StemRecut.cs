@@ -25,7 +25,7 @@ public sealed class StemRecut(
     /// Recorded as <see cref="JobStatus.Cancelled"/> rather than cleared: every selector already
     /// reads cancelled as eligible again, whatever the strikes.
     /// </remarks>
-    private static readonly JobStage[] Redone =
+    internal static readonly JobStage[] Redone =
     [
         JobStage.Separation,
         JobStage.Handoff,

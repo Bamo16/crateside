@@ -47,6 +47,12 @@ public sealed record QueueItem
     /// </remarks>
     public bool IsInstrumentalRelease { get; init; }
 
+    /// <summary>The upload to fetch instead of this entry's own video, or null.</summary>
+    /// <remarks>
+    /// <see cref="VideoId"/> still names the entry's original video and stays the join key.
+    /// </remarks>
+    public string? StatedSourceUrl { get; init; }
+
     public string WatchUrl => $"https://www.youtube.com/watch?v={VideoId}";
 }
 
@@ -85,6 +91,7 @@ public sealed record QueueView
                     ? item with
                     {
                         IsInstrumentalRelease = instruction.IsInstrumentalRelease,
+                        StatedSourceUrl = instruction.SourceUrl,
                     }
                     : item
             )

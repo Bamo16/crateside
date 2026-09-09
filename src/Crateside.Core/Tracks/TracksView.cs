@@ -120,6 +120,7 @@ public sealed record TracksView
                 Title = stated ?? derived,
                 DerivedTitle = stated is null ? null : derived,
                 NameSource = source,
+                StatedSourceUrl = instruction?.SourceUrl,
                 AwaitingRename = AwaitingRenameIn(song, stated),
                 Verdict = verdict,
                 // The work list covers the queue item; the instruction covers everything after it

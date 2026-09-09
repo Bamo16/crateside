@@ -18,6 +18,7 @@
 @inject JobStore Jobs
 @inject StemRecut Recut
 @inject TrackRename Rename
+@inject TrackSwap Swap
 @inject DrainControl Separation
 @inject VerdictControl Judging
 @inject QuotaReader Quota
@@ -251,6 +252,60 @@
                             {
                                 <span class="name-from">· rename it in Ableton</span>
                             }
+                        }
+                    </div>
+
+                    <div class="name-strip @(_swapping == row.VideoId ? "editing" : null)">
+                        @if (_swapping == row.VideoId)
+                        {
+                            <div class="name-edit">
+                                <input class="name-input" value="@_swapUrl" placeholder="https://www.youtube.com/watch?v=…"
+                                       @oninput="e => OnSwapUrl(row, e)"
+                                       @onkeydown="e => OnSwapKey(e, row)" />
+                                <p class="name-note">
+                                    A better upload of the same song. The playlist entry stays as it is.
+                                </p>
+                            </div>
+
+                            <div class="name-side">
+                                <p class="detail">
+                                    @(_swapPlan?.Refusal ?? SwapPlan.Detail)
+                                    @if (row.SamplesLeftInLibrary > 0)
+                                    {
+                                        <text>
+                                            @("sample".ToQuantity(row.SamplesLeftInLibrary)) of the old upload are in
+                                            Mashup Samples; crateside never writes there, so remove them yourself.
+                                        </text>
+                                    }
+                                </p>
+
+                                <div class="actions">
+                                    <button class="danger" disabled="@(_working || _swapPlan?.IsPossible is not true)"
+                                            @onclick="() => ConfirmSwap(row)">
+                                        @(_working ? "Swapping…" : SwapScope(_swapPlan))
+                                    </button>
+                                    <button class="outline" @onclick="CancelSwap" disabled="@_working">
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="name-from">
+                                @if (row.IsSourceSwapped)
+                                {
+                                    <text>source swapped · cut from <strong>@row.StatedSourceUrl</strong></text>
+                                }
+                                else
+                                {
+                                    <text>cut from the playlist entry's own video</text>
+                                }
+                            </span>
+
+                            <button class="outline" @onclick="() => StartSwap(row)" disabled="@_working">
+                                Swap source
+                            </button>
                         }
                     </div>
 
@@ -593,6 +648,10 @@
     private string? _renaming;
     private string _name = string.Empty;
 
+    private string? _swapping;
+    private string _swapUrl = string.Empty;
+    private SwapPlan? _swapPlan;
+
     private IReadOnlyList<TrackRow> Rows => _view?.Rows ?? [];
 
     private IEnumerable<TrackRow> Shown => Rows.Where(row => row.Matches(_filter));
@@ -773,6 +832,66 @@
         else if (e.Key is "Escape")
             CancelRename();
     }
+
+    private void StartSwap(TrackRow row)
+    {
+        _problem = null;
+        _swapping = row.VideoId;
+        _swapUrl = string.Empty;
+        _swapPlan = null;
+    }
+
+    private void CancelSwap()
+    {
+        _swapping = null;
+        _swapUrl = string.Empty;
+        _swapPlan = null;
+    }
+
+    /// <summary>Re-plans as the URL is typed, so the button says what it would do.</summary>
+    private void OnSwapUrl(TrackRow row, ChangeEventArgs e)
+    {
+        _swapUrl = e.Value?.ToString() ?? string.Empty;
+        _swapPlan = _swapUrl.Length is 0 ? null : Swap.PlanFor(row.VideoId, _swapUrl);
+    }
+
+    private async Task OnSwapKey(KeyboardEventArgs e, TrackRow row)
+    {
+        if (e.Key is "Enter")
+            await ConfirmSwap(row);
+        else if (e.Key is "Escape")
+            CancelSwap();
+    }
+
+    private async Task ConfirmSwap(TrackRow row)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            var outcome = await Swap.ApplyAsync(row.VideoId, _swapUrl, _circuit.Token);
+
+            _problem = outcome.Problem;
+
+            if (outcome.Succeeded)
+            {
+                CancelSwap();
+                Separation.Wake();
+            }
+
+            await Source.RefreshAsync(_circuit.Token);
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private static string SwapScope(SwapPlan? plan) =>
+        plan?.Removing is { Count: > 0 } removing
+            ? $"Swap source · remove {"file".ToQuantity(removing.Count)}"
+            : "Swap source";
 
     private static string Derived(TrackRow row) => row.DerivedTitle ?? row.Title;
 

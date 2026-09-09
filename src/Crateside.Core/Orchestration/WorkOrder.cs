@@ -50,10 +50,13 @@ public sealed record WorkOrder
         {
             VideoId = item.VideoId,
             Title = item.Title,
-            SourceUrl =
-                item.PremiumOutlook is PremiumOutlook.ArtTrack
-                    ? $"https://music.youtube.com/watch?v={item.VideoId}"
-                    : item.WatchUrl,
+            SourceUrl = item switch
+            {
+                { StatedSourceUrl: { Length: > 0 } stated } => stated,
+                { PremiumOutlook: PremiumOutlook.ArtTrack } =>
+                    $"https://music.youtube.com/watch?v={item.VideoId}",
+                _ => item.WatchUrl,
+            },
             Destination =
                 ledger.TryGetLatestByVideoId(item.VideoId, out var run) && run.HasTaggableKey
                     ? StemDestination.KeyIdentified

@@ -26,6 +26,14 @@ public sealed record TrackRow
 
     public bool IsRenamed => DerivedTitle is not null;
 
+    /// <summary>The upload this track is cut from, when it is not the one <see cref="VideoId"/> names.</summary>
+    public string? StatedSourceUrl { get; init; }
+
+    public bool IsSourceSwapped => StatedSourceUrl is { Length: > 0 };
+
+    /// <summary>This track's samples a swap cannot reach, because crateside never writes there.</summary>
+    public int SamplesLeftInLibrary => Samples.Count(sample => sample.IsInLibrary);
+
     public TrackNameSource NameSource { get; init; }
 
     /// <summary>

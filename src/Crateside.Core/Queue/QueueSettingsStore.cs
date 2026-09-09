@@ -98,6 +98,16 @@ public sealed class QueueSettingsStore
         );
 
     /// <summary>
+    /// Records the upload to fetch this track from instead of its playlist entry's own. Null or
+    /// blank clears it, restoring the entry's video.
+    /// </summary>
+    public QueueSettings SetSourceUrl(string videoId, string? url) =>
+        Upsert(
+            videoId,
+            t => t with { SourceUrl = url?.Trim() is { Length: > 0 } given ? given : null }
+        );
+
+    /// <summary>
     /// Applies a change to one track's instruction, adding it if there was none and dropping it
     /// again once it says nothing. Keeping empty entries would turn every released hold into a
     /// permanent line in the file.
@@ -273,9 +283,17 @@ public sealed record TrackInstruction
     [JsonPropertyName("name")]
     public string? Name { get; init; }
 
+    /// <summary>
+    /// The upload to fetch instead of the playlist entry's own video. Null when it still is the
+    /// source.
+    /// </summary>
+    [JsonPropertyName("sourceUrl")]
+    public string? SourceUrl { get; init; }
+
     /// <summary>Whether this instruction still carries anything worth storing.</summary>
     [JsonIgnore]
-    public bool SaysSomething => IsHeld || IsInstrumentalRelease || Name is { Length: > 0 };
+    public bool SaysSomething =>
+        IsHeld || IsInstrumentalRelease || Name is { Length: > 0 } || SourceUrl is { Length: > 0 };
 }
 
 /// <summary>A held track as the previous file format wrote it. Read-only; see ADR 0005.</summary>

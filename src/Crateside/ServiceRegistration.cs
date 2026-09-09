@@ -212,6 +212,13 @@ public static class ServiceRegistration
             sp.GetRequiredService<AbletonFolderInfoWriter>(),
             sp.GetRequiredService<CratesidePaths>()
         ));
+        services.AddSingleton(sp => new TrackSwap(
+            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<JobStore>(),
+            sp.GetRequiredService<WorkingSet>(),
+            StagedFiles(sp),
+            sp.GetRequiredService<CratesidePaths>()
+        ));
 
         services.AddSingleton<WorkingSetJanitor>();
         services.AddHostedService<JanitorWorker>();
