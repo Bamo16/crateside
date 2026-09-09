@@ -148,6 +148,12 @@ public sealed record RunEvidence
             )
                 continue;
 
+            // A restatement carries the verdict forward under a new source URL and no evidence at
+            // all (keytag ADR 0008), so taking the latest *line* would empty this view the first
+            // time a track's source was swapped.
+            if (dto.Restates is not null)
+                continue;
+
             // Append-only, so a later line supersedes an earlier one for the same identity.
             var evidence = FromDto(dto);
 
@@ -479,6 +485,13 @@ internal sealed record RunEvidenceDto
 
     [JsonPropertyName("song")]
     public string? Song { get; init; }
+
+    /// <summary>
+    /// Set on a restatement, naming the run it copies. Its presence is what marks a line as
+    /// carrying no evidence of its own (keytag ADR 0008).
+    /// </summary>
+    [JsonPropertyName("restates")]
+    public string? Restates { get; init; }
 
     [JsonPropertyName("artist")]
     public string? Artist { get; init; }
