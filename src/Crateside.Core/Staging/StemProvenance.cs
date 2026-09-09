@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 namespace Crateside.Core.Staging;
 
 /// <summary>
@@ -9,7 +7,7 @@ namespace Crateside.Core.Staging;
 /// Ported from <c>StemForge.Core.Separation.AudioTagger</c>, copied rather than referenced.
 /// StemForge remains the writer — if its format changes, this must follow by hand.
 /// </remarks>
-public sealed partial record StemProvenance
+public sealed record StemProvenance
 {
     /// <summary>The <c>stemforge/&lt;version&gt;</c> that produced the stem.</summary>
     public required string ToolVersion { get; init; }
@@ -78,25 +76,6 @@ public sealed partial record StemProvenance
             ? value
             : null;
 
-    /// <summary>
-    /// Pulls the 11-character video ID out of a YouTube URL — or out of a bare ID — covering
-    /// the <c>watch?v=</c>, <c>youtu.be/</c>, <c>/shorts/</c> and <c>/embed/</c> spellings,
-    /// with or without a scheme and with any trailing query. Returns null for a non-YouTube
-    /// or unparseable input rather than guessing.
-    /// </summary>
-    /// <remarks>
-    /// The pattern is StemForge's, from <c>StemForge.Core.Downloading.YtUrlHelper</c>, kept so
-    /// the two tools cannot disagree about what a video ID is.
-    /// </remarks>
-    public static string? ExtractYouTubeVideoId(string? url) =>
-        url?.Trim() is { Length: > 0 } trimmed
-        && YtVideoIdRegex.Match(trimmed).Groups["VideoId"] is { Success: true, Value: var id }
-            ? id
-            : null;
-
-    [GeneratedRegex(
-        @"^(?:(?:(?:https?:\/\/)?(?:(?:www|music|m)\.)?)?(?:youtube\.com|youtu\.be)(?:\S*?(?:\?v=|\/)))?(?<VideoId>[0-9A-Za-z_-]{11})(?:[&?].*)?$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled
-    )]
-    private static partial Regex YtVideoIdRegex { get; }
+    /// <summary>The video ID a source URL names, or null when it is not a YouTube one.</summary>
+    public static string? ExtractYouTubeVideoId(string? url) => YouTubeUrl.VideoIdOf(url);
 }

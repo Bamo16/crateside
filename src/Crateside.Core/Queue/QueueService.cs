@@ -216,24 +216,16 @@ public sealed class QueueService(
             return [];
 
         var queued = items.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
-        var instructions = settings.Read().Tracks;
 
+        // Bare, with no instruction fields copied on: QueueView.Compose describes these the same
+        // way it describes playlist items.
         return
         [
             .. videoIds
                 .Where(videoId => !queued.Contains(videoId))
                 .Select(videoId =>
                     ledger.TryGetLatestByVideoId(videoId, out var run)
-                        ? new QueueItem
-                        {
-                            VideoId = videoId,
-                            Title = run.DisplayName,
-                            IsInstrumentalRelease =
-                                instructions
-                                    .FirstOrDefault(t => t.VideoId == videoId)
-                                    ?.IsInstrumentalRelease
-                                    is true,
-                        }
+                        ? new QueueItem { VideoId = videoId, Title = run.DisplayName }
                         : null
                 )
                 .OfType<QueueItem>(),

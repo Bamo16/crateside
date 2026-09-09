@@ -41,7 +41,10 @@ public class TrackSwapTests : IDisposable
     [Fact]
     public void An_unreadable_url_is_refused()
     {
-        Assert.Contains("not a YouTube URL", Swap().PlanFor(Video, "the good one").Refusal);
+        Assert.Contains(
+            "not a YouTube video ID or URL",
+            Swap().PlanFor(Video, "the good one").Refusal
+        );
     }
 
     [Fact]
@@ -96,7 +99,7 @@ public class TrackSwapTests : IDisposable
         Assert.Equal(1, outcome.Removed);
 
         var instruction = Assert.Single(settings.Read().Tracks);
-        Assert.Equal(Replacement, instruction.SourceUrl);
+        Assert.Equal("https://music.youtube.com/watch?v=NSLYAT7sjAA", instruction.SourceUrl);
 
         // The retained download is the old upload; separation prefers it over the URL.
         Assert.False(workingSet.TryGetSource(Video, out _));
@@ -156,7 +159,56 @@ public class TrackSwapTests : IDisposable
             )
             .Items.Single();
 
-        Assert.Equal(Replacement, WorkOrder.Compose(item, KeyLedger.Read(LedgerPath)).SourceUrl);
+        Assert.Equal(
+            "https://music.youtube.com/watch?v=NSLYAT7sjAA",
+            WorkOrder.Compose(item, KeyLedger.Read(LedgerPath)).SourceUrl
+        );
+    }
+
+    [Fact]
+    public void A_bare_video_id_is_accepted_and_canonicalised()
+    {
+        // keytag requires an http(s) URL, so a bare ID has to be turned into one rather than
+        // passed on and refused.
+        var plan = Swap().PlanFor(Video, "NSLYAT7sjAA");
+
+        Assert.True(plan.IsPossible);
+        Assert.Equal("NSLYAT7sjAA", plan.NewVideoId);
+        Assert.Equal("https://music.youtube.com/watch?v=NSLYAT7sjAA", plan.Url);
+    }
+
+    [Fact]
+    public async Task A_reopened_track_is_separated_from_the_stated_url()
+    {
+        // The bug the first real swap hit: reopened tracks were built with their own list of
+        // instruction fields, which did not include the source URL, so separation silently used
+        // the playlist entry's own video and re-cut the upload being replaced.
+        WriteLedger(
+            Line("2026-09-01T00:00:00+00:00", Song, Video),
+            Line("2026-09-09T00:00:00+00:00", Song, "NSLYAT7sjAA")
+        );
+
+        var settings = Settings();
+
+        await Swap(settings).ApplyAsync(Video, Replacement, TestContext.Current.CancellationToken);
+
+        var reopened = new QueueItem { VideoId = Video, Title = "Rob Dougan - Furious Angels" };
+
+        var item = QueueView
+            .Compose(
+                [],
+                new HashSet<string>(),
+                new HashSet<string>(),
+                new HashSet<string>(),
+                settings.Read().Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal),
+                [reopened]
+            )
+            .AwaitingSeparation.Single();
+
+        Assert.Equal(
+            "https://music.youtube.com/watch?v=NSLYAT7sjAA",
+            WorkOrder.Compose(item, KeyLedger.Read(LedgerPath)).SourceUrl
+        );
     }
 
     private TrackSwap Swap(

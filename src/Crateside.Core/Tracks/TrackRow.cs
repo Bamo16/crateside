@@ -157,14 +157,14 @@ public sealed record TrackRow
     /// Where the track has got to.
     /// </summary>
     /// <remarks>
-    /// Resolved in precedence order — done first, then any stage in flight, then held, then given
-    /// up.
+    /// Work in flight outranks done: a swapped track's old samples are all in the library while
+    /// its replacement is separating, and reading that as done hides a running job.
     /// </remarks>
     public TrackState State =>
         this switch
         {
-            { IsDone: true } => TrackState.Done,
             { RunningStage: { } stage } => InFlight(stage),
+            { IsDone: true } => TrackState.Done,
             { IsHeld: true } => TrackState.Held,
             { GaveUpAt: not null } => TrackState.GaveUp,
             { IsParkedForKey: true } => TrackState.Parked,

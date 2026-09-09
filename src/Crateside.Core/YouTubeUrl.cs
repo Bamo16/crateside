@@ -1,0 +1,58 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
+
+namespace Crateside.Core;
+
+/// <summary>
+/// Reads and canonicalises YouTube references. The one place in crateside that knows the shape
+/// of a video ID.
+/// </summary>
+/// <remarks>
+/// The pattern is StemForge's, from <c>StemForge.Core.Downloading.YtUrlHelper</c>, so the two
+/// tools cannot disagree about what a video ID is.
+/// </remarks>
+public static partial class YouTubeUrl
+{
+    /// <summary>
+    /// The 11-character video ID out of a URL or a bare ID — <c>watch?v=</c>, <c>youtu.be/</c>,
+    /// <c>/shorts/</c> and <c>/embed/</c>, with or without a scheme and with any trailing query.
+    /// Null for anything else, rather than a guess.
+    /// </summary>
+    public static string? VideoIdOf(string? input) =>
+        input?.Trim() is { Length: > 0 } trimmed
+        && VideoIdPattern.Match(trimmed).Groups["VideoId"] is { Success: true, Value: var id }
+            ? id
+            : null;
+
+    /// <summary>
+    /// A YouTube reference as a canonical watch URL, or any other http(s) URL unchanged.
+    /// </summary>
+    /// <remarks>
+    /// Everything crateside hands to another tool goes through here: a bare video ID is a
+    /// perfectly good thing to type and not a thing to pass on.
+    /// </remarks>
+    public static bool TryNormalize(string? input, [NotNullWhen(true)] out string? normalized)
+    {
+        if (VideoIdOf(input) is { } id)
+        {
+            normalized = $"https://music.youtube.com/watch?v={id}";
+
+            return true;
+        }
+
+        normalized =
+            input?.Trim() is { Length: > 0 } trimmed
+            && Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
+            && uri.Scheme is "http" or "https"
+                ? trimmed
+                : null;
+
+        return normalized is not null;
+    }
+
+    [GeneratedRegex(
+        @"^(?:(?:(?:https?:\/\/)?(?:(?:www|music|m)\.)?)?(?:youtube\.com|youtu\.be)(?:\S*?(?:\?v=|\/)))?(?<VideoId>[0-9A-Za-z_-]{11})(?:[&?].*)?$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled
+    )]
+    private static partial Regex VideoIdPattern { get; }
+}

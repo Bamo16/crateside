@@ -85,17 +85,19 @@ public sealed record QueueView
         IReadOnlyList<QueueItem>? reopened = null
     )
     {
-        var described = items
-            .Select(item =>
-                instructions.TryGetValue(item.VideoId, out var instruction)
-                    ? item with
-                    {
-                        IsInstrumentalRelease = instruction.IsInstrumentalRelease,
-                        StatedSourceUrl = instruction.SourceUrl,
-                    }
-                    : item
-            )
-            .ToArray();
+        var described = items.Select(Described).ToArray();
+        var reopenedItems = (reopened ?? []).Select(Described).ToArray();
+
+        // Reopened tracks are described here too. Doing it where they are built instead meant a
+        // second list of instruction fields, and the source-URL override was missing from it.
+        QueueItem Described(QueueItem item) =>
+            instructions.TryGetValue(item.VideoId, out var instruction)
+                ? item with
+                {
+                    IsInstrumentalRelease = instruction.IsInstrumentalRelease,
+                    StatedSourceUrl = instruction.SourceUrl,
+                }
+                : item;
 
         var held = instructions
             .Values.Where(t => t.IsHeld)
@@ -113,7 +115,7 @@ public sealed record QueueView
                     && !separatedWithoutKey.Contains(i.VideoId)
                     && !held.Contains(i.VideoId)
                 ),
-                .. reopened ?? [],
+                .. reopenedItems,
             ],
             AwaitingKey =
             [

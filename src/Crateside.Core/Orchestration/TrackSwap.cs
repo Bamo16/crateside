@@ -22,21 +22,23 @@ public sealed class TrackSwap(
 
     private SwapPlan PlanFor(string videoId, string? url, KeyLedger ledger)
     {
-        var wanted = url?.Trim() ?? string.Empty;
-        var newVideoId = StemProvenance.ExtractYouTubeVideoId(wanted);
+        var newVideoId = YouTubeUrl.VideoIdOf(url);
 
         return (newVideoId, ledger.TryGetLatestByVideoId(videoId, out _)) switch
         {
-            (null, _) => Impossible(
-                "That is not a YouTube URL crateside can read a video ID out of."
-            ),
+            (null, _) => Impossible("That is not a YouTube video ID or URL crateside can read."),
             (var id, _) when id.Equals(videoId, StringComparison.Ordinal) => Impossible(
                 "That is already this track's source."
             ),
             (_, false) => Impossible(
                 "This track has never been judged, so there is no verdict to carry across."
             ),
-            _ => new SwapPlan { NewVideoId = newVideoId, Removing = staged(videoId) },
+            _ => new SwapPlan
+            {
+                NewVideoId = newVideoId,
+                Url = $"https://music.youtube.com/watch?v={newVideoId}",
+                Removing = staged(videoId),
+            },
         };
     }
 
@@ -58,12 +60,12 @@ public sealed class TrackSwap(
             return new SwapOutcome { Problem = refusal };
 
         if (
-            await RestateAsync(videoId, plan.NewVideoId!, url, ledger, cancellationToken) is
+            await RestateAsync(videoId, plan.NewVideoId!, plan.Url!, ledger, cancellationToken) is
             { } failure
         )
             return new SwapOutcome { Problem = failure };
 
-        settings.SetSourceUrl(videoId, url);
+        settings.SetSourceUrl(videoId, plan.Url);
 
         var removed = 0;
 
@@ -146,6 +148,9 @@ public sealed record SwapPlan
 {
     /// <summary>The video the track would be cut from, or null when the URL was unreadable.</summary>
     public string? NewVideoId { get; init; }
+
+    /// <summary>The canonical watch URL for <see cref="NewVideoId"/>, which is what keytag is given.</summary>
+    public string? Url { get; init; }
 
     /// <summary>The staged files that would go: they came from the upload being replaced.</summary>
     public required IReadOnlyList<StagingStem> Removing { get; init; }

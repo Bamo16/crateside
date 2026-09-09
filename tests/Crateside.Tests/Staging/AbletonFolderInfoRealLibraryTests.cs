@@ -40,7 +40,7 @@ public class AbletonFolderInfoRealLibraryTests
     // StagingBoardRealLibraryTests, where it belongs and where ordinary work cannot break it.
 
     [Fact]
-    public void The_two_roots_never_share_a_file_path()
+    public void A_name_under_two_roots_still_means_its_own_roots_file()
     {
         Assert.SkipUnless(
             Directory.Exists(StagingRoot) && Directory.Exists(MashupRoot),
@@ -55,12 +55,26 @@ public class AbletonFolderInfoRealLibraryTests
         // demonstrated. Nothing depended on the inference either way: the reader keys on the
         // containing root and never on the filename, which is what the rest of this asserts.
         var reader = new AbletonFolderInfoReader();
+        var staging = reader.Read(StagingRoot);
+        var mashup = reader.Read(MashupRoot);
 
-        // Paths are relative to their root, so identical names under different roots cannot
-        // collide — and in practice the two sets do not even overlap.
-        var staging = reader.Read(StagingRoot).Entries.Select(e => e.RelativePath);
-        var mashup = reader.Read(MashupRoot).Entries.Select(e => e.RelativePath);
-        Assert.Empty(staging.Intersect(mashup, StringComparer.OrdinalIgnoreCase));
+        // The two sets used to be asserted disjoint, which was an observation about the library
+        // rather than a property of the reader: re-cutting or swapping a track whose old samples
+        // are still in Mashup Samples puts the same name under both roots on purpose. What has
+        // to hold is that a name means its own root's file.
+        foreach (
+            var shared in staging
+                .Entries.Select(e => e.RelativePath)
+                .Intersect(
+                    mashup.Entries.Select(e => e.RelativePath),
+                    StringComparer.OrdinalIgnoreCase
+                )
+        )
+        {
+            Assert.True(staging.TryGet(Path.Combine(StagingRoot, shared), out _));
+            Assert.False(staging.TryGet(Path.Combine(MashupRoot, shared), out _));
+            Assert.False(mashup.TryGet(Path.Combine(StagingRoot, shared), out _));
+        }
     }
 
     [Fact]
