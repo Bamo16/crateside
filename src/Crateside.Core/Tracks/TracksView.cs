@@ -1,4 +1,5 @@
 using Crateside.Core.Ledger;
+using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Queue;
 using Crateside.Core.Staging;
@@ -45,9 +46,12 @@ public sealed record TracksView
         IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>> onDisk,
         string finishedRoot,
         JobStore jobs,
-        IReadOnlyDictionary<string, TrackInstruction> instructions
+        IReadOnlyDictionary<string, TrackInstruction> instructions,
+        IReadOnlyDictionary<string, ResolvedName>? resolvedNames = null
     )
     {
+        var resolved = resolvedNames ?? new Dictionary<string, ResolvedName>();
+
         var held = VideoIdsOf(view.Held);
         var parked = VideoIdsOf(view.AwaitingKey);
 
@@ -148,7 +152,10 @@ public sealed record TracksView
                     ? TrackNameSource.VideoId
                     : TrackNameSource.Playlist,
                 NameFromFiles(songs, files),
-                verdict
+                verdict,
+                members
+                    .Select(seed => resolved.GetValueOrDefault(seed.VideoId)?.DisplayTitle)
+                    .FirstOrDefault(name => name is { Length: > 0 })
             );
 
             var stated = instruction?.Name is { Length: > 0 } name ? name : null;
@@ -242,15 +249,17 @@ public sealed record TracksView
         string fallback,
         TrackNameSource fallbackSource,
         string? onDisk,
-        LedgerRun? verdict
+        LedgerRun? verdict,
+        string? resolved
     ) =>
-        (onDisk, verdict) switch
+        (onDisk, verdict, resolved) switch
         {
-            ({ Length: > 0 }, _) => (onDisk, TrackNameSource.Files),
-            (_, { Artist.Length: > 0, Title.Length: > 0 }) => (
+            ({ Length: > 0 }, _, _) => (onDisk, TrackNameSource.Files),
+            (_, { Artist.Length: > 0, Title.Length: > 0 }, _) => (
                 verdict.DisplayName,
                 TrackNameSource.Ledger
             ),
+            (_, _, { Length: > 0 }) => (resolved, TrackNameSource.Resolved),
             _ => (fallback, fallbackSource),
         };
 

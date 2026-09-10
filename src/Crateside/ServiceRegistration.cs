@@ -1,6 +1,7 @@
 using Crateside.Core;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
+using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Queue;
 using Crateside.Core.Quota;
@@ -166,6 +167,15 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<TaggingDrainer>();
 
+        // Factories for the same reason as the rest: the container will not apply the trailing
+        // optional path and executable-name defaults.
+        services.AddSingleton(_ => new ResolvedNameStore());
+        services.AddSingleton(_ => new NameResolver());
+
+        // Not registered beside the pausable stages on purpose (ADR 0014): a name resolve spends
+        // one metadata fetch and contends for nothing, so it runs unattended like detection.
+        services.AddHostedService<NameWorker>();
+
         services.AddHostedService<DrainWorker>();
 
         // AddSingleton<IHostedService> rather than AddHostedService: the latter routes through
@@ -255,7 +265,8 @@ public static class ServiceRegistration
                     scan.Processed.StemsByVideoId,
                     sp.GetRequiredService<CratesidePaths>().MashupSamples,
                     sp.GetRequiredService<JobStore>(),
-                    scan.Instructions
+                    scan.Instructions,
+                    sp.GetRequiredService<ResolvedNameStore>().Read()
                 );
 
                 return view with

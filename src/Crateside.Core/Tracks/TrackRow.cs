@@ -337,6 +337,12 @@ public enum TrackNameSource
     /// <summary>keytag's verdict, for a track with nothing on disk yet.</summary>
     Ledger,
 
+    /// <summary>
+    /// What StemForge says it will call the files, for a track nothing has run for yet — so the
+    /// user can decide about a rename before the GPU does six minutes of work (ADR 0014).
+    /// </summary>
+    Resolved,
+
     /// <summary>The playlist entry's title, which is whatever the uploader typed.</summary>
     Playlist,
 
