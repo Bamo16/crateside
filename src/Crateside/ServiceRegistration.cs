@@ -52,6 +52,7 @@ public static class ServiceRegistration
     public static IServiceCollection AddCratesideReaders(this IServiceCollection services)
     {
         services.AddSingleton<AbletonFolderInfoReader>();
+        services.AddSingleton<AbletonIndexReader>();
         services.AddSingleton<StagingBoard>();
         services.AddSingleton<StagingBoardService>();
         services.AddSingleton<YouTubeQueueReader>();

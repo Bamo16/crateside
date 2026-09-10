@@ -93,3 +93,26 @@ principled version, and it would have been the right shape if finding 3 had gone
 does not: there are no keyless entries in this library, so the distinction would separate 94
 findings into 0 and 94 and change nothing. Not built, because a rule with no cases is a guess about
 what Ableton might do rather than a reading of what it does.
+
+## Amendment, 2026-09-09 — the index was chased down
+
+[ADR 0013](0013-the-index-is-the-tag-state-and-the-xmp-may-never-catch-up.md) locates and reads
+Ableton's index, so the separate piece of work this ADR named is done and **a library-wide audit
+is possible**.
+
+What that changes here is narrower than it sounds. The decision above was sound on its evidence
+and is not withdrawn: read from the XMP, `Mashup Samples` really is a mirror in which silence
+means nobody can tell. What was wrong was the implied permanence. `AuditRoot.Mirrored` describes
+**which store is stale**, not which root is auditable, and once the audit reads the index the
+distinction stops applying to `Untagged` at all.
+
+Measured against the index on the day of that ADR: `Mashup Samples` holds 579 files, 576 of them
+keyed. The honest `Untagged` count over the library is **three**, all of them genuine and all
+from June — not the 94 this ADR removed, and not the 0 it settled for.
+
+Finding 3 above — "every entry that does exist carries a `Key|`" — was a fact about the XMP and
+does not carry over: the index has entries and keys as separate things, and it happens to have no
+keyless ones either, so the alternative this ADR rejected for having no cases still has none.
+
+Nothing is changed in code by this amendment. `TagAudit` still reads the XMP, and switching it is
+its own change.

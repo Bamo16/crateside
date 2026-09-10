@@ -15,10 +15,6 @@ public sealed class AbletonFolderInfoReader
     private static readonly XNamespace Rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
     private static readonly XNamespace AblFr = "https://ns.ableton.com/xmp/fs-resources/1.0/";
 
-    private const string KeywordSeparator = "|";
-    private const string KeyCategory = "Key";
-    private const string TypeCategory = "Type";
-
     /// <summary>
     /// Reads the index for <paramref name="rootFolder"/>. Never throws — returns an empty
     /// index when the folder has no XMP yet, the file is mid-write, or it is malformed.
@@ -83,54 +79,6 @@ public sealed class AbletonFolderInfoReader
                 .ToArray()
             ?? [];
 
-        var (key, isPartial) = ReadKey(keywords);
-
-        return new AbletonFileTags
-        {
-            RelativePath = filePath,
-            Keywords = keywords,
-            Key = key,
-            Type = Values(keywords, TypeCategory).FirstOrDefault(),
-            HasPartialKey = isPartial,
-        };
-    }
-
-    /// <summary>
-    /// Ableton writes the tonic using Unicode ♯/♭ (<c>Key|G♯</c>); recombined here into the
-    /// ledger's ASCII, lowercase spelling (<c>G# major</c>).
-    /// </summary>
-    private static (string? Key, bool IsPartial) ReadKey(IReadOnlyList<string> keywords)
-    {
-        string? tonic = null;
-        string? mode = null;
-
-        foreach (var value in Values(keywords, KeyCategory))
-        {
-            if (IsMode(value))
-                mode ??= value.ToLowerInvariant();
-            else
-                tonic ??= value.Replace('♯', '#').Replace('♭', 'b');
-        }
-
-        return (tonic, mode) switch
-        {
-            ({ } t, { } m) => ($"{t} {m}", false),
-            (null, null) => (null, false),
-            _ => (null, true), // half a key is not a key
-        };
-    }
-
-    private static bool IsMode(string value) =>
-        value.Equals("Major", StringComparison.OrdinalIgnoreCase)
-        || value.Equals("Minor", StringComparison.OrdinalIgnoreCase);
-
-    private static IEnumerable<string> Values(IReadOnlyList<string> keywords, string category)
-    {
-        var prefix = category + KeywordSeparator;
-
-        return keywords
-            .Where(k => k.StartsWith(prefix, StringComparison.Ordinal))
-            .Select(k => k[prefix.Length..])
-            .Where(v => v.Length > 0);
+        return AbletonFileTags.FromKeywords(filePath, keywords);
     }
 }

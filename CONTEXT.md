@@ -54,18 +54,23 @@ against it.
 
 ## Tags
 
+- **Index** — Ableton's own file database, `Live-files-<schema>.db` under
+  `%LOCALAPPDATA%\Ableton\Live Database`. The authoritative tag state, and the thing the
+  browser shows. Read-only to crateside, and read while Live is running
+  ([ADR 0013](docs/adr/0013-the-index-is-the-tag-state-and-the-xmp-may-never-catch-up.md)).
 - **Tag store** — the `Ableton Folder Info\<uuid>.xmp` Ableton keeps beside a watched
-  root, holding the keywords on that root's files. Not the authoritative tag state:
-  Ableton's own index is, and the store is a lagging, partial mirror of it that can lack
-  tags Ableton holds and keep entries for files that have gone
-  ([ADR 0003](docs/adr/0003-crateside-may-write-abletons-tag-store.md)).
+  root, holding the keywords on that root's files. A lagging, partial mirror of the index
+  that can lack tags Ableton holds and keep entries for files that have gone
+  ([ADR 0003](docs/adr/0003-crateside-may-write-abletons-tag-store.md)). It is what
+  crateside *writes*; the index is what crateside should *read*.
 - **Written root** — a root whose tag store crateside writes, which is **Sample Staging**
   and only ever that. Because crateside's own write is the record there, a file with no key
   in the store has no key.
 - **Mirrored root** — a root crateside only reads, which is **Mashup Samples**. A file with
-  no key in the store may still be tagged, so nothing can be claimed from the absence
+  no key in *the store* may still be tagged, so nothing can be claimed from the absence
   ([ADR 0011](docs/adr/0011-the-audit-may-only-claim-what-crateside-wrote.md)). The two
-  words name what the *store* is to crateside, not what the folder is for.
+  words name what the *store* is to crateside, not what the folder is for, and neither
+  limits what the index can be asked.
 
 ## Views
 

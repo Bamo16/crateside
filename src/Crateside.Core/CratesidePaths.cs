@@ -26,6 +26,17 @@ public sealed class CratesidePaths
     /// <summary>Where stems go once the work on them is finished.</summary>
     public string MashupSamples { get; set; } = @"P:\RYAN\Ableton\Mashup Samples";
 
+    /// <summary>
+    /// The folder holding Ableton's own file index, the database behind the browser. Read-only;
+    /// Ableton owns it and holds it open.
+    /// </summary>
+    public string AbletonIndex { get; set; } =
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Ableton",
+            "Live Database"
+        );
+
     private string? _ledger;
 
     /// <summary>
