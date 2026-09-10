@@ -103,8 +103,9 @@ public sealed record TrackRow
     /// is not in staging.
     /// </summary>
     /// <remarks>
-    /// Not part of <see cref="TrackFilter.All"/> — reachable only through
-    /// <see cref="TrackFilter.Done"/>.
+    /// Always <see cref="TrackState.Done"/>, so it is outside
+    /// <see cref="TrackFilter.Unfinished"/> and reachable through
+    /// <see cref="TrackFilter.All"/>.
     /// </remarks>
     public bool IsLibraryOnly { get; init; }
 

@@ -84,17 +84,27 @@ public class TrackSearchTests
     [Fact]
     public void The_filters_holding_a_match_are_named_so_a_fruitless_search_can_point_somewhere()
     {
-        var holding = All.Holding("scrubs");
-
-        Assert.Equal([TrackFilter.Done], holding);
+        Assert.Equal([TrackFilter.InStaging], All.Holding("southern"));
     }
 
+    /// <summary>
+    /// A finished track is in no named view, so All is the only honest place to send anyone —
+    /// and without this the search would say nothing matches a track that plainly does.
+    /// </summary>
     [Fact]
-    public void All_is_never_offered_as_somewhere_to_look()
+    public void All_is_offered_only_when_nothing_more_specific_holds_the_match()
     {
+        Assert.Equal([TrackFilter.All], All.Holding("scrubs"));
         Assert.DoesNotContain(TrackFilter.All, All.Holding("southern"));
-        Assert.Contains(TrackFilter.InStaging, All.Holding("southern"));
     }
+
+    /// <summary>
+    /// Unfinished holds the staged track, but every row in it is already in a named view, so
+    /// offering it would be a second answer to a question that has a better first one.
+    /// </summary>
+    [Fact]
+    public void Unfinished_is_never_offered_as_somewhere_to_look() =>
+        Assert.DoesNotContain(TrackFilter.Unfinished, All.Holding("southern"));
 
     [Fact]
     public void A_search_nothing_answers_holds_no_filters() =>
@@ -107,11 +117,11 @@ public class TrackSearchTests
     [Fact]
     public void Searching_does_not_change_what_the_pills_count()
     {
-        var before = All.Count(TrackFilter.Done);
+        var before = All.Count(TrackFilter.All);
 
         var shown = All.Where(row => row.Matches("southern")).ToArray();
 
         Assert.Single(shown);
-        Assert.Equal(before, All.Count(TrackFilter.Done));
+        Assert.Equal(before, All.Count(TrackFilter.All));
     }
 }

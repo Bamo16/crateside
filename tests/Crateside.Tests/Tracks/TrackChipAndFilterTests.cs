@@ -51,7 +51,7 @@ public class TrackChipAndFilterTests
 
         Assert.Equal(TrackState.JudgedInLine, row.State);
         Assert.True(row.Matches(TrackFilter.InFlight));
-        Assert.False(row.Matches(TrackFilter.Done));
+        Assert.True(row.Matches(TrackFilter.Unfinished));
     }
 
     [Fact]
@@ -129,19 +129,42 @@ public class TrackChipAndFilterTests
     [InlineData(TrackState.Parked, TrackFilter.NeedsAttention)]
     [InlineData(TrackState.GaveUp, TrackFilter.NeedsAttention)]
     [InlineData(TrackState.Held, TrackFilter.Held)]
-    [InlineData(TrackState.Done, TrackFilter.Done)]
-    public void Every_state_lands_in_exactly_one_filter(TrackState state, TrackFilter expected)
+    public void Every_unfinished_state_lands_in_exactly_one_named_view(
+        TrackState state,
+        TrackFilter expected
+    )
     {
-        // A partition, not overlapping tallies. A row in two filters would be counted twice on the
-        // pills and would look like work that does not exist.
+        // What lets a fruitless search point at one place rather than several, and what makes
+        // Unfinished redundant as somewhere to send anyone: it is the union of these four.
         var row = Row(state);
-        var matched = Enum.GetValues<TrackFilter>()
-            .Where(filter => filter is not TrackFilter.All && row.Matches(filter))
-            .ToArray();
+        var matched = Named.Where(row.Matches).ToArray();
 
         Assert.Equal(expected, Assert.Single(matched));
+        Assert.True(row.Matches(TrackFilter.Unfinished));
         Assert.True(row.Matches(TrackFilter.All));
     }
+
+    /// <summary>
+    /// Done is the one state with no view of its own: seeing only finished tracks is not a thing
+    /// that gets asked for, so it is reached through All and through search.
+    /// </summary>
+    [Fact]
+    public void A_finished_track_is_in_no_named_view_and_is_not_unfinished()
+    {
+        var row = Row(TrackState.Done);
+
+        Assert.All(Named, filter => Assert.False(row.Matches(filter)));
+        Assert.False(row.Matches(TrackFilter.Unfinished));
+        Assert.True(row.Matches(TrackFilter.All));
+    }
+
+    private static readonly TrackFilter[] Named =
+    [
+        TrackFilter.InStaging,
+        TrackFilter.InFlight,
+        TrackFilter.NeedsAttention,
+        TrackFilter.Held,
+    ];
 
     [Fact]
     public void A_finding_needs_attention_even_when_the_track_is_otherwise_finished()
@@ -154,7 +177,23 @@ public class TrackChipAndFilterTests
         };
 
         Assert.True(row.Matches(TrackFilter.NeedsAttention));
-        Assert.True(row.Matches(TrackFilter.Done));
+
+        // And it stays finished: needing attention is not the same as having work left, so it
+        // does not reappear in the default view.
+        Assert.False(row.Matches(TrackFilter.Unfinished));
+    }
+
+    /// <summary>
+    /// The overlap the pills are allowed to have. A staged file nobody has renamed is genuinely
+    /// both staged and wanting attention, and would be wanted under either.
+    /// </summary>
+    [Fact]
+    public void A_staged_track_awaiting_a_rename_is_in_two_views_at_once()
+    {
+        var row = Row(TrackState.ReadyToWarp) with { AwaitingRename = 1 };
+
+        Assert.True(row.Matches(TrackFilter.InStaging));
+        Assert.True(row.Matches(TrackFilter.NeedsAttention));
     }
 
     [Fact]
@@ -166,11 +205,12 @@ public class TrackChipAndFilterTests
             Row(TrackState.ReadyToWarp),
             Row(TrackState.Separating),
             Row(TrackState.Held),
+            Row(TrackState.Done),
         ];
 
-        Assert.Equal(4, rows.Count(TrackFilter.All));
+        Assert.Equal(5, rows.Count(TrackFilter.All));
+        Assert.Equal(4, rows.Count(TrackFilter.Unfinished));
         Assert.Equal(2, rows.Count(TrackFilter.InStaging));
         Assert.Equal(1, rows.Count(TrackFilter.InFlight));
-        Assert.Equal(0, rows.Count(TrackFilter.Done));
     }
 }

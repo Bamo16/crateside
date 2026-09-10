@@ -9,7 +9,10 @@ namespace Crateside.Core.Tracks;
 /// </remarks>
 public enum TrackFilter
 {
-    All,
+    /// <summary>
+    /// Work that is not finished — the default view, and the union of the four named views below.
+    /// </summary>
+    Unfinished,
 
     /// <summary>Staged and tagged: the warping view, and the one the user lives in.</summary>
     InStaging,
@@ -24,18 +27,35 @@ public enum TrackFilter
     Held,
 
     /// <summary>
-    /// Finished and in <c>Mashup Samples</c> — including tracks crateside never queued.
+    /// Every row there is, the finished library included. Answers "do I have this track in any
+    /// shape or form", which is a search question.
     /// </summary>
-    Done,
+    All,
 }
 
 public static class TrackFilters
 {
-    /// <summary>Every row matches exactly one filter besides <see cref="TrackFilter.All"/>.</summary>
+    /// <summary>
+    /// The filters that name somewhere a track *is*, as against a set that merely contains it.
+    /// Every state but <see cref="TrackState.Done"/> falls in exactly one of them.
+    /// </summary>
+    private static readonly TrackFilter[] Named =
+    [
+        TrackFilter.InStaging,
+        TrackFilter.InFlight,
+        TrackFilter.NeedsAttention,
+        TrackFilter.Held,
+    ];
+
+    /// <remarks>
+    /// Not a partition, deliberately. <see cref="TrackFilter.NeedsAttention"/> also catches a
+    /// finding or an unrenamed file whatever the state, so a staged track awaiting a rename is in
+    /// two views at once — which is wanted, because it is both.
+    /// </remarks>
     public static bool Matches(this TrackRow row, TrackFilter filter) =>
         filter switch
         {
-            TrackFilter.All => !row.IsLibraryOnly,
+            TrackFilter.Unfinished => row.State is not TrackState.Done,
             TrackFilter.InStaging => row.State is TrackState.ReadyToWarp,
             TrackFilter.InFlight => row.State
                 is TrackState.Queued
@@ -49,7 +69,7 @@ public static class TrackFilters
                 || row.AuditNote is not null
                 || row.AwaitingRename > 0,
             TrackFilter.Held => row.State is TrackState.Held,
-            TrackFilter.Done => row.State is TrackState.Done,
+            TrackFilter.All => true,
             _ => false,
         };
 
@@ -73,10 +93,14 @@ public static class TrackFilters
         || Contains(row.VideoId, term);
 
     /// <summary>
-    /// Which filters hold a row answering the search, so a fruitless search in one view can
-    /// point at the view that has it. <see cref="TrackFilter.All"/> is never offered — it is
-    /// not somewhere a track is.
+    /// Where else a search would find something, so a fruitless one can point somewhere.
     /// </summary>
+    /// <remarks>
+    /// The named views first. <see cref="TrackFilter.All"/> is offered only when nothing more
+    /// specific holds it, which is what a finished track looks like now that there is no
+    /// <c>Done</c> view to send anyone to. <see cref="TrackFilter.Unfinished"/> is never offered:
+    /// anything in it is already in one of the named views, which is the better answer.
+    /// </remarks>
     public static IReadOnlyList<TrackFilter> Holding(
         this IEnumerable<TrackRow> rows,
         string? search
@@ -84,13 +108,12 @@ public static class TrackFilters
     {
         var matched = rows.Where(row => row.Matches(search)).ToArray();
 
-        return
-        [
-            .. Enum.GetValues<TrackFilter>()
-                .Where(filter =>
-                    filter is not TrackFilter.All && matched.Any(row => row.Matches(filter))
-                ),
-        ];
+        if (matched.Length is 0)
+            return [];
+
+        TrackFilter[] named = [.. Named.Where(filter => matched.Any(row => row.Matches(filter)))];
+
+        return named.Length > 0 ? named : [TrackFilter.All];
     }
 
     private static bool Contains(string? value, string term) =>

@@ -128,12 +128,18 @@ public class TrackOrderTests
     }
 
     [Fact]
-    public void The_librarys_own_tracks_are_reachable_under_Done_and_nowhere_else()
+    public void The_librarys_own_tracks_are_reachable_under_All_and_nowhere_else()
     {
         var library = Row("old", TrackState.Done) with { IsLibraryOnly = true };
 
-        Assert.False(library.Matches(TrackFilter.All));
-        Assert.True(library.Matches(TrackFilter.Done));
-        Assert.True(Row("recent", TrackState.Done).Matches(TrackFilter.All));
+        Assert.True(library.Matches(TrackFilter.All));
+        Assert.False(library.Matches(TrackFilter.Unfinished));
+
+        // A finished track crateside did queue is in exactly the same views. Where it came from
+        // stopped deciding what it is reachable through when All began meaning all.
+        var queued = Row("recent", TrackState.Done);
+
+        Assert.True(queued.Matches(TrackFilter.All));
+        Assert.False(queued.Matches(TrackFilter.Unfinished));
     }
 }
