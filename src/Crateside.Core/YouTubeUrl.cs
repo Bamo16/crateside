@@ -14,17 +14,6 @@ namespace Crateside.Core;
 public static partial class YouTubeUrl
 {
     /// <summary>
-    /// The 11-character video ID out of a URL or a bare ID — <c>watch?v=</c>, <c>youtu.be/</c>,
-    /// <c>/shorts/</c> and <c>/embed/</c>, with or without a scheme and with any trailing query.
-    /// Null for anything else, rather than a guess.
-    /// </summary>
-    public static string? VideoIdOf(string? input) =>
-        input?.Trim() is { Length: > 0 } trimmed
-        && VideoIdPattern.Match(trimmed).Groups["VideoId"] is { Success: true, Value: var id }
-            ? id
-            : null;
-
-    /// <summary>
     /// A YouTube reference as a canonical watch URL, or any other http(s) URL unchanged.
     /// </summary>
     /// <remarks>
@@ -33,7 +22,7 @@ public static partial class YouTubeUrl
     /// </remarks>
     public static bool TryNormalize(string? input, [NotNullWhen(true)] out string? normalized)
     {
-        if (VideoIdOf(input) is { } id)
+        if (TryGetVideoId(input, out var id))
         {
             normalized = $"https://music.youtube.com/watch?v={id}";
 
@@ -48,6 +37,23 @@ public static partial class YouTubeUrl
                 : null;
 
         return normalized is not null;
+    }
+
+    /// <summary>
+    /// The 11-character video ID out of a URL or a bare ID — <c>watch?v=</c>, <c>youtu.be/</c>,
+    /// <c>/shorts/</c> and <c>/embed/</c>, with or without a scheme and with any trailing query.
+    /// False for anything else, rather than a guess.
+    /// </summary>
+    public static bool TryGetVideoId(string? input, [NotNullWhen(true)] out string? videoId)
+    {
+        videoId =
+            input?.Trim() is { Length: > 0 } trimmed
+            && VideoIdPattern.Match(trimmed).Groups.TryGetValue("VideoId", out var group)
+            && group is { Success: true, Value: { } id }
+                ? id
+                : null;
+
+        return videoId is not null;
     }
 
     [GeneratedRegex(

@@ -97,7 +97,9 @@ public sealed record LedgerRun
             Artist = dto.Artist,
             Title = dto.Title,
             SourceUrl = dto.SourceUrl,
-            SourceVideoId = StemProvenance.ExtractYouTubeVideoId(dto.SourceUrl),
+            SourceVideoId = YouTubeUrl.TryGetVideoId(dto.SourceUrl, out var videoId)
+                ? videoId
+                : null,
             Key = dto.Verdict?.Key,
             Mode = dto.Verdict?.Mode,
             HasVocals = dto.HasVocals,

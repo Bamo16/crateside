@@ -66,7 +66,7 @@ public sealed record StemProvenance
             Preset = preset,
             SeparatedOn = separatedOn,
             SourceUrl = sourceUrl,
-            SourceVideoId = ExtractYouTubeVideoId(sourceUrl),
+            SourceVideoId = YouTubeUrl.TryGetVideoId(sourceUrl, out var videoId) ? videoId : null,
         };
     }
 
@@ -75,7 +75,4 @@ public sealed record StemProvenance
         && part[prefix.Length..] is { Length: > 0 } value
             ? value
             : null;
-
-    /// <summary>The video ID a source URL names, or null when it is not a YouTube one.</summary>
-    public static string? ExtractYouTubeVideoId(string? url) => YouTubeUrl.VideoIdOf(url);
 }

@@ -22,7 +22,7 @@ public sealed class TrackSwap(
 
     private SwapPlan PlanFor(string videoId, string? url, KeyLedger ledger)
     {
-        var newVideoId = YouTubeUrl.VideoIdOf(url);
+        YouTubeUrl.TryGetVideoId(url, out var newVideoId);
 
         return (newVideoId, ledger.TryGetLatestByVideoId(videoId, out _)) switch
         {
