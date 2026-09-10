@@ -237,8 +237,79 @@
 
 /* A button, but drawn as the status line it replaced: pressing it is a refinement of reading it,
    not a separate control competing with the filter pills. */
-.status {
+/* The search takes the free space so it sits away from the pills, and the status stays at the
+   far right where it was. */
+.search {
+    position: relative;
     margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
+.search input {
+    width: 15rem;
+    padding: 5px 22px 5px 10px;
+    font: inherit;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+}
+
+.search input::placeholder {
+    color: var(--text-40);
+}
+
+.search input:focus {
+    outline: none;
+    border-color: var(--text-40);
+}
+
+.search input::-webkit-search-cancel-button {
+    display: none;
+}
+
+.clear {
+    position: absolute;
+    right: 8px;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1;
+    color: var(--text-40);
+    background: transparent;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+}
+
+.clear:hover {
+    color: var(--text);
+}
+
+.jump {
+    font: inherit;
+    font-size: 12px;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    padding: 3px 10px;
+    margin: 0 2px;
+    cursor: pointer;
+}
+
+.jump:hover {
+    border-color: var(--text-40);
+}
+
+.jump .mono {
+    color: var(--text-40);
+    margin-left: 4px;
+}
+
+.status {
+    margin-left: 16px;
     font: inherit;
     font-size: 12px;
     color: var(--text-40);

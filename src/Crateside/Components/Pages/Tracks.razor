@@ -110,6 +110,14 @@
                 <span class="mono count @Tone(filter)">@Rows.Count(filter)</span>
             </button>
         }
+        <div class="search">
+            <input type="search" placeholder="Find a track" aria-label="Find a track"
+                   value="@_search" @oninput="OnSearch" />
+            @if (_search.Length > 0)
+            {
+                <button class="clear" @onclick="ClearSearch" title="Clear">×</button>
+            }
+        </div>
         <button class="status" @onclick="Resync" disabled="@_syncing">
             @(_syncing ? "checking the playlist…" : Synced)
         </button>
@@ -138,7 +146,27 @@
     }
     else if (!Shown.Any())
     {
-        <p class="notice">Nothing in this view.</p>
+        @if (_search.Length is 0)
+        {
+            <p class="notice">Nothing in this view.</p>
+        }
+        else if (Rows.Holding(_search) is { Count: > 0 } elsewhere)
+        {
+            <p class="notice">
+                Nothing matching <strong>@_search</strong> in @Name(_filter). Found in
+                @foreach (var filter in elsewhere)
+                {
+                    <button class="jump" @onclick="() => _filter = filter">
+                        @Name(filter)
+                        <span class="mono">@Found.Count(filter)</span>
+                    </button>
+                }
+            </p>
+        }
+        else
+        {
+            <p class="notice">No track matches <strong>@_search</strong>.</p>
+        }
     }
     else
     {
@@ -634,6 +662,8 @@
     private string? _expanded;
     private string? _problem;
 
+    private string _search = string.Empty;
+
     private readonly List<TrackRow> _toasts = [];
 
     private readonly CancellationTokenSource _circuit = new();
@@ -654,7 +684,10 @@
 
     private IReadOnlyList<TrackRow> Rows => _view?.Rows ?? [];
 
-    private IEnumerable<TrackRow> Shown => Rows.Where(row => row.Matches(_filter));
+    /// <summary>Everything answering the search, before the filter narrows it.</summary>
+    private IEnumerable<TrackRow> Found => Rows.Where(row => row.Matches(_search));
+
+    private IEnumerable<TrackRow> Shown => Found.Where(row => row.Matches(_filter));
 
     protected override async Task OnInitializedAsync()
     {
@@ -742,10 +775,15 @@
         await InvokeAsync(StateHasChanged);
     }
 
+    private void OnSearch(ChangeEventArgs e) => _search = e.Value?.ToString() ?? string.Empty;
+
+    private void ClearSearch() => _search = string.Empty;
+
     private void Show(TrackRow row)
     {
-        // All, because the anchor has to be in the list for the browser to reach it.
+        // All, and no search, because the anchor has to be in the list for the browser to reach it.
         _filter = TrackFilter.All;
+        _search = string.Empty;
         _expanded = row.VideoId;
         _problem = null;
 

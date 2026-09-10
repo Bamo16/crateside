@@ -56,6 +56,45 @@ public static class TrackFilters
     /// <summary>How many rows are in each filter, over the whole list.</summary>
     public static int Count(this IEnumerable<TrackRow> rows, TrackFilter filter) =>
         rows.Count(row => row.Matches(filter));
+
+    /// <summary>
+    /// Whether a row answers a search: the name the list shows it under, the name it arrived
+    /// with, its key, and its video ID. An empty search matches everything.
+    /// </summary>
+    /// <remarks>
+    /// The two names are both searched because a renamed track is findable by either, and the
+    /// user knows only one of them.
+    /// </remarks>
+    public static bool Matches(this TrackRow row, string? search) =>
+        search?.Trim() is not { Length: > 0 } term
+        || Contains(row.DerivedTitle, term)
+        || Contains(row.Title, term)
+        || Contains(row.Verdict?.Key, term)
+        || Contains(row.VideoId, term);
+
+    /// <summary>
+    /// Which filters hold a row answering the search, so a fruitless search in one view can
+    /// point at the view that has it. <see cref="TrackFilter.All"/> is never offered — it is
+    /// not somewhere a track is.
+    /// </summary>
+    public static IReadOnlyList<TrackFilter> Holding(
+        this IEnumerable<TrackRow> rows,
+        string? search
+    )
+    {
+        var matched = rows.Where(row => row.Matches(search)).ToArray();
+
+        return
+        [
+            .. Enum.GetValues<TrackFilter>()
+                .Where(filter =>
+                    filter is not TrackFilter.All && matched.Any(row => row.Matches(filter))
+                ),
+        ];
+    }
+
+    private static bool Contains(string? value, string term) =>
+        value?.Contains(term, StringComparison.OrdinalIgnoreCase) is true;
 }
 
 /// <summary>How a state chip is drawn. Four colours, each meaning one thing.</summary>
