@@ -9,10 +9,25 @@ namespace Crateside.Core.Orchestration;
 public sealed class HandoffRunner(CratesidePaths paths)
 {
     /// <param name="name">What the user calls this track, or null if they have not said.</param>
-    public HandoffResult Run(IReadOnlyList<string> stems, string? name = null)
+    /// <param name="superseded">
+    /// Staged files of an upload this track has been swapped away from, cleared to make room.
+    /// </param>
+    /// <remarks>
+    /// The superseded files go <em>before</em> the move rather than after: a replacement usually
+    /// carries the same filename, so both versions cannot sit in staging at once. Safe in that
+    /// order because the stems being moved are still in the separator's output folder until
+    /// <see cref="File.Move(string,string)"/> runs, so a failure here loses nothing (ADR 0014).
+    /// </remarks>
+    public HandoffResult Run(
+        IReadOnlyList<string> stems,
+        string? name = null,
+        IReadOnlyList<string>? superseded = null
+    )
     {
         if (stems.Count is 0)
             return HandoffResult.Failed("no stems to hand off");
+
+        var cleared = Clear(superseded ?? []);
 
         var moves = stems.Select(s => (From: s, To: Destination(s, name))).ToList();
 
@@ -28,13 +43,39 @@ public sealed class HandoffRunner(CratesidePaths paths)
             foreach (var (from, to) in moves)
                 File.Move(from, to);
 
-            return HandoffResult.Succeeded(moves.Count);
+            return HandoffResult.Succeeded(moves.Count, cleared);
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
             // Staging lives on an external drive Ableton may hold files open on.
             return HandoffResult.Failed(e.Message);
         }
+    }
+
+    /// <remarks>
+    /// A file that will not go is left alone rather than failing the handoff: the clash check
+    /// below is what decides whether that mattered, and it says so in the words the user needs.
+    /// </remarks>
+    private static int Clear(IReadOnlyList<string> superseded)
+    {
+        var cleared = 0;
+
+        foreach (var path in superseded)
+        {
+            try
+            {
+                // File.Delete is silent about a path that is not there, which would make the
+                // count say files went that never existed.
+                if (!File.Exists(path))
+                    continue;
+
+                File.Delete(path);
+                cleared++;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        }
+
+        return cleared;
     }
 
     private string Destination(string stem, string? name) =>
@@ -51,9 +92,18 @@ public sealed record HandoffResult
 
     public int Moved { get; init; }
 
+    /// <summary>Superseded staged files removed to make room for these (ADR 0014).</summary>
+    public int Cleared { get; init; }
+
     public string? Error { get; init; }
 
-    public static HandoffResult Succeeded(int moved) => new() { IsSuccess = true, Moved = moved };
+    public static HandoffResult Succeeded(int moved, int cleared = 0) =>
+        new()
+        {
+            IsSuccess = true,
+            Moved = moved,
+            Cleared = cleared,
+        };
 
     public static HandoffResult Failed(string error) => new() { IsSuccess = false, Error = error };
 }

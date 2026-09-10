@@ -24,13 +24,17 @@ public sealed class HandoffDrainer(
         if (!selector.TryPickNext(out var videoId, out var stems))
             return Task.FromResult(StageTick.Idle);
 
-        var subject = KeyLedger.Read(_paths.Ledger).TryGetLatestByVideoId(videoId, out var run)
-            ? run.Song
-            : videoId;
+        var ledger = KeyLedger.Read(_paths.Ledger);
+
+        var subject = ledger.TryGetLatestByVideoId(videoId, out var run) ? run.Song : videoId;
 
         jobs.Record(videoId, JobStage.Handoff, JobStatus.Running);
 
-        var result = runner.Run(stems, NameFor(videoId));
+        var result = runner.Run(
+            stems,
+            NameFor(videoId),
+            SupersededStems.In(_paths.SampleStaging, videoId, ledger)
+        );
 
         jobs.Record(
             videoId,
