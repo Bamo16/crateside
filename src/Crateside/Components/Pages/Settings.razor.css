@@ -2,7 +2,7 @@
    fits on a screen. It is the same bar so the tabs do not move between pages. */
 .top {
     display: grid;
-    grid-template-columns: 200px 1fr;
+    grid-template-columns: max-content 1fr;
     background: var(--surface);
     border-bottom: 1px solid var(--line-strong);
 }
