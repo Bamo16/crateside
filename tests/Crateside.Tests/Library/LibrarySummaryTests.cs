@@ -1,0 +1,85 @@
+using Crateside.Core;
+using Crateside.Core.Library;
+using Crateside.Core.Staging;
+using Microsoft.Extensions.Options;
+
+namespace Crateside.Tests.Library;
+
+/// <summary>
+/// The cache in front of the reader, exercised against a real folder rather than a counting
+/// double — what the page needs is that adding a file does not change the count until someone
+/// asks, which is observable without one.
+/// </summary>
+public class LibrarySummaryTests : IDisposable
+{
+    private readonly string _root = Path.Combine(
+        Path.GetTempPath(),
+        $"crateside-library-{Guid.NewGuid()}"
+    );
+
+    public LibrarySummaryTests()
+    {
+        Directory.CreateDirectory(_root);
+        Add("one.flac");
+        Add("two.flac");
+    }
+
+    public void Dispose() => Directory.Delete(_root, recursive: true);
+
+    [Fact]
+    public void A_second_look_does_not_re_scan_the_library()
+    {
+        var summary = Summary();
+
+        Assert.Equal(2, summary.Current.FileCount);
+
+        Add("three.flac");
+
+        Assert.Equal(2, summary.Current.FileCount);
+    }
+
+    [Fact]
+    public void Re_reading_picks_up_what_changed()
+    {
+        var summary = Summary();
+
+        _ = summary.Current;
+
+        Add("three.flac");
+
+        Assert.Equal(3, summary.Refresh().FileCount);
+        Assert.Equal(3, summary.Current.FileCount);
+    }
+
+    [Fact]
+    public void A_file_Ableton_knows_nothing_about_counts_as_unkeyed()
+    {
+        var distribution = Summary().Current;
+
+        Assert.Equal(2, distribution.Unkeyed.Count);
+        Assert.Equal(0, distribution.KeyedCount);
+        Assert.All(distribution.Counts, c => Assert.Equal(0, c.Files));
+    }
+
+    [Fact]
+    public void A_root_that_does_not_exist_reads_as_nothing_rather_than_throwing()
+    {
+        var paths = Options.Create(
+            new CratesidePaths { MashupSamples = Path.Combine(_root, "gone") }
+        );
+
+        var distribution = new LibraryKeyReader(paths, new AbletonIndexReader(paths)).Read();
+
+        Assert.Equal(0, distribution.FileCount);
+        Assert.Empty(distribution.Counts);
+    }
+
+    private LibrarySummary Summary()
+    {
+        var paths = Options.Create(new CratesidePaths { MashupSamples = _root });
+
+        return new LibrarySummary(new LibraryKeyReader(paths, new AbletonIndexReader(paths)));
+    }
+
+    private void Add(string name) => File.WriteAllText(Path.Combine(_root, name), string.Empty);
+}

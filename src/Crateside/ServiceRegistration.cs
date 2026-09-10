@@ -1,5 +1,6 @@
 using Crateside.Core;
 using Crateside.Core.Ledger;
+using Crateside.Core.Library;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Queue;
 using Crateside.Core.Quota;
@@ -53,6 +54,8 @@ public static class ServiceRegistration
     {
         services.AddSingleton<AbletonFolderInfoReader>();
         services.AddSingleton<AbletonIndexReader>();
+        services.AddSingleton<LibraryKeyReader>();
+        services.AddSingleton<LibrarySummary>();
         services.AddSingleton<StagingBoard>();
         services.AddSingleton<StagingBoardService>();
         services.AddSingleton<YouTubeQueueReader>();
