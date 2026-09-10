@@ -228,7 +228,7 @@
                         @if (_renaming == row.VideoId)
                         {
                             <div class="name-edit">
-                                <input class="name-input" value="@_name"
+                                <input class="name-input" @ref="_nameBox" value="@_name"
                                        @oninput="e => _name = e.Value?.ToString() ?? string.Empty"
                                        @onkeydown="e => OnRenameKey(e, row)" />
                                 <p class="name-note">
@@ -287,7 +287,7 @@
                         @if (_swapping == row.VideoId)
                         {
                             <div class="name-edit">
-                                <input class="name-input" value="@_swapUrl" placeholder="https://www.youtube.com/watch?v=…"
+                                <input class="name-input" @ref="_swapBox" value="@_swapUrl" placeholder="https://www.youtube.com/watch?v=…"
                                        @oninput="e => OnSwapUrl(row, e)"
                                        @onkeydown="e => OnSwapKey(e, row)" />
                                 <p class="name-note">
@@ -688,6 +688,11 @@
     private string? _renaming;
     private string _name = string.Empty;
 
+    private ElementReference _nameBox;
+    private ElementReference _swapBox;
+    private bool _focusName;
+    private bool _focusSwap;
+
     private string? _swapping;
     private string _swapUrl = string.Empty;
     private SwapPlan? _swapPlan;
@@ -827,11 +832,34 @@
         CancelRename();
     }
 
+    /// <summary>
+    /// A box that has just opened takes the cursor, so the user can type without clicking into it
+    /// first. Set here and acted on after the render, because an element cannot be focused before
+    /// it exists.
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusName)
+        {
+            _focusName = false;
+
+            await _nameBox.FocusAsync();
+        }
+
+        if (_focusSwap)
+        {
+            _focusSwap = false;
+
+            await _swapBox.FocusAsync();
+        }
+    }
+
     private void StartRename(TrackRow row)
     {
         _problem = null;
         _renaming = row.VideoId;
         _name = row.Title;
+        _focusName = true;
     }
 
     private void CancelRename()
@@ -887,6 +915,7 @@
         _swapping = row.VideoId;
         _swapUrl = string.Empty;
         _swapPlan = null;
+        _focusSwap = true;
     }
 
     private void CancelSwap()
