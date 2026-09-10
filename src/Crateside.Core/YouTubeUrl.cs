@@ -29,11 +29,11 @@ public static partial class YouTubeUrl
             return true;
         }
 
+        // Uri.TryCreate takes null and answers false, so nothing here has to guard it.
         normalized =
-            input?.Trim() is { Length: > 0 } trimmed
-            && Uri.TryCreate(trimmed, UriKind.Absolute, out var uri)
+            Uri.TryCreate(input?.Trim(), UriKind.Absolute, out var uri)
             && uri.Scheme is "http" or "https"
-                ? trimmed
+                ? uri.OriginalString
                 : null;
 
         return normalized is not null;
@@ -44,6 +44,7 @@ public static partial class YouTubeUrl
     /// <c>/shorts/</c> and <c>/embed/</c>, with or without a scheme and with any trailing query.
     /// False for anything else, rather than a guess.
     /// </summary>
+    /// <remarks><see cref="Regex.Match(string)"/> throws on null, so the guard is not defensive.</remarks>
     public static bool TryGetVideoId(string? input, [NotNullWhen(true)] out string? videoId)
     {
         videoId =

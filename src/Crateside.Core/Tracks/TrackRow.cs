@@ -157,18 +157,19 @@ public sealed record TrackRow
     /// Where the track has got to.
     /// </summary>
     /// <remarks>
-    /// Work in flight outranks done: a swapped track's old samples are all in the library while
-    /// its replacement is separating, and reading that as done hides a running job.
+    /// Outstanding work outranks done. A swapped track's old samples are all in the library while
+    /// its replacement is still queued or separating, and reading that as done both hides the job
+    /// and drops it from the header's waiting count.
     /// </remarks>
     public TrackState State =>
         this switch
         {
             { RunningStage: { } stage } => InFlight(stage),
+            { GpuPosition: not null } => TrackState.JudgedInLine,
             { IsDone: true } => TrackState.Done,
             { IsHeld: true } => TrackState.Held,
             { GaveUpAt: not null } => TrackState.GaveUp,
             { IsParkedForKey: true } => TrackState.Parked,
-            { GpuPosition: not null } => TrackState.JudgedInLine,
             _ => AtRest,
         };
 

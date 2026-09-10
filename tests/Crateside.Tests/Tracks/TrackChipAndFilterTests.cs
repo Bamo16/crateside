@@ -37,6 +37,35 @@ public class TrackChipAndFilterTests
             _ => Base,
         };
 
+    [Fact]
+    public void A_swapped_track_waiting_for_the_GPU_is_not_done()
+    {
+        // Its old samples are all in the library, which is what done means, while its
+        // replacement is queued. Reading that as done dropped it from the header's waiting
+        // count, so the queue looked empty and nobody resumed draining.
+        var row = Base with
+        {
+            Samples = [new TrackSample { Label = "Vocal - Full", IsInLibrary = true }],
+            GpuPosition = 1,
+        };
+
+        Assert.Equal(TrackState.JudgedInLine, row.State);
+        Assert.True(row.Matches(TrackFilter.InFlight));
+        Assert.False(row.Matches(TrackFilter.Done));
+    }
+
+    [Fact]
+    public void A_swapped_track_that_is_separating_is_not_done_either()
+    {
+        var row = Base with
+        {
+            Samples = [new TrackSample { Label = "Vocal - Full", IsInLibrary = true }],
+            RunningStage = JobStage.Separation,
+        };
+
+        Assert.Equal(TrackState.Separating, row.State);
+    }
+
     private static TrackRow Base =>
         new()
         {
