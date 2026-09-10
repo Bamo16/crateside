@@ -92,7 +92,12 @@ public sealed class StageWorker(
         {
             case { Outcome: StageOutcome.Ran, Subject: { } subject }:
                 if (tick.IsSuccess)
-                    logger.LogInformation("{Stage}: {Title}", drainer.Stage, subject);
+                    logger.LogInformation(
+                        "{Stage}: {Title}{Note}",
+                        drainer.Stage,
+                        subject,
+                        tick.Note is { } note ? $" — {note}" : string.Empty
+                    );
                 else
                     logger.LogWarning(
                         "{Stage} failed for {Title}: {Error}",

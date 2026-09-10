@@ -28,6 +28,12 @@ public sealed record StageTick
     public bool IsSuccess { get; init; }
     public string? Error { get; init; }
 
+    /// <summary>
+    /// Something a successful pass did that the user would want to know about — a deletion, say.
+    /// Not an error, and not every pass has one.
+    /// </summary>
+    public string? Note { get; init; }
+
     public static StageTick Ran(WorkOrder order, bool isSuccess, string? error) =>
         new()
         {
@@ -39,13 +45,19 @@ public sealed record StageTick
         };
 
     /// <summary>For a stage whose work is not described by a <see cref="WorkOrder"/>.</summary>
-    public static StageTick Ran(string subject, bool isSuccess, string? error) =>
+    public static StageTick Ran(
+        string subject,
+        bool isSuccess,
+        string? error,
+        string? note = null
+    ) =>
         new()
         {
             Outcome = StageOutcome.Ran,
             Subject = subject,
             IsSuccess = isSuccess,
             Error = error,
+            Note = note,
         };
 
     public static StageTick Unavailable(string error) =>

@@ -1,5 +1,6 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Queue;
+using Humanizer;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Orchestration;
@@ -43,8 +44,17 @@ public sealed class HandoffDrainer(
             error: result.Error
         );
 
-        return Task.FromResult(StageTick.Ran(subject, result.IsSuccess, result.Error));
+        return Task.FromResult(
+            StageTick.Ran(subject, result.IsSuccess, result.Error, Cleared(result.Cleared))
+        );
     }
+
+    /// <summary>
+    /// Said out loud because crateside deleted the user's audio to make room, and the only other
+    /// sign of it is samples quietly ceasing to appear in the row (ADR 0014).
+    /// </summary>
+    private static string? Cleared(int count) =>
+        count is 0 ? null : $"{"superseded file".ToQuantity(count)} removed from Sample Staging";
 
     private string? NameFor(string videoId) =>
         settings
