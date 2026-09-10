@@ -17,9 +17,17 @@
     top: 0;
     z-index: 10;
     display: grid;
-    grid-template-columns: max-content 1fr 1fr 300px;
+    /* minmax(0, …) rather than a bare 1fr: a bare one is minmax(auto, 1fr), whose auto floor is
+       the content's own width, so a long song title widened the cell, squeezed its neighbour and
+       pushed the quota off the edge behind a horizontal scrollbar. The subject already knows how
+       to ellipsize; it was never given the chance. */
+    grid-template-columns: max-content minmax(0, 1fr) minmax(0, 1fr) 300px;
     background: var(--surface);
     border-bottom: 1px solid var(--line-strong);
+}
+
+.cell {
+    min-width: 0;
 }
 
 .cell + .cell {
