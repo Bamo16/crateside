@@ -90,6 +90,12 @@ public sealed class KeyLedger
     public bool TryGetLatestBySong(string song, [NotNullWhen(true)] out LedgerRun? run) =>
         _latestBySong.TryGetValue(song, out run);
 
+    /// <summary>
+    /// The song a video ID belongs to, or null where the ledger has never seen it. Every URL a
+    /// song has been cut from resolves to the same answer (ADR 0014).
+    /// </summary>
+    public string? SongFor(string videoId) => _songByVideoId.GetValueOrDefault(videoId);
+
     public bool TryGetLatestByVideoId(string videoId, [NotNullWhen(true)] out LedgerRun? run)
     {
         run = null;

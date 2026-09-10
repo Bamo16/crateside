@@ -4,7 +4,8 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Core.Queue;
 
 /// <summary>Video IDs crateside has separation to redo for, whatever the playlist says.</summary>
-public delegate IReadOnlySet<string> ReadReopenedTracks();
+/// <remarks>Takes the ledger because the answer is per song, not per video ID (ADR 0014).</remarks>
+public delegate IReadOnlySet<string> ReadReopenedTracks(KeyLedger ledger);
 
 public sealed class QueueService(
     IOptions<CratesidePaths> paths,
@@ -212,7 +213,7 @@ public sealed class QueueService(
         Ledger.KeyLedger ledger
     )
     {
-        if (reopened?.Invoke() is not { Count: > 0 } videoIds)
+        if (reopened?.Invoke(ledger) is not { Count: > 0 } videoIds)
             return [];
 
         var queued = items.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);

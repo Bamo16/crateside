@@ -427,7 +427,17 @@
                                         <span class="mono stem-where @(sample.IsInLibrary ? "good" : null)">
                                             @(sample.IsInLibrary ? "Mashup Samples" : "Sample Staging")
                                         </span>
-                                        <span class="stem-note"></span>
+                                        <span class="stem-note">
+                                            @if (row.HasSeveralUploads)
+                                            {
+                                                var current = sample.SourceVideoId == row.VideoId;
+
+                                                <span class="upload @(current ? "current" : "superseded")">
+                                                    @(current ? "new upload" : "old upload")
+                                                    <span class="mono">@sample.SourceVideoId</span>
+                                                </span>
+                                            }
+                                        </span>
                                     }
                                     else
                                     {

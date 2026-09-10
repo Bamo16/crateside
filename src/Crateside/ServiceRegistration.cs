@@ -90,18 +90,7 @@ public static class ServiceRegistration
         services.AddSingleton<QueueAuthorizer>();
         services.AddSingleton<QueueRemover>();
         services.AddSingleton<ReadReopenedTracks>(sp =>
-            () =>
-                sp.GetRequiredService<JobStore>()
-                    .All()
-                    .Where(job =>
-                        job.Stage is JobStage.Separation or JobStage.Handoff or JobStage.Tagging
-                        && job.Status
-                            is JobStatus.Cancelled
-                                or JobStatus.Queued
-                                or JobStatus.Running
-                    )
-                    .Select(job => job.VideoId)
-                    .ToHashSet(StringComparer.Ordinal)
+            ledger => ReopenedTracks.From(sp.GetRequiredService<JobStore>().All(), ledger)
         );
 
         services.AddSingleton<QueueService>();

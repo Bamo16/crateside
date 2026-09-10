@@ -758,6 +758,27 @@
     color: var(--text-50);
 }
 
+/* Shown only where a song has been cut from more than one upload. The filenames are frequently
+   identical across a swap, so the video ID is the only thing that tells two samples apart. */
+.upload {
+    font-style: normal;
+    white-space: nowrap;
+}
+
+.upload .mono {
+    margin-left: 6px;
+    font-size: 11px;
+    color: var(--text-40);
+}
+
+.upload.current {
+    color: var(--text-75);
+}
+
+.upload.superseded {
+    color: var(--warn);
+}
+
 /* The one control over what gets separated. A select rather than a toggle because the question is
    which release this is, not whether a switch is on — and because the preset picker that lands
    here later is the same box with more in it. */

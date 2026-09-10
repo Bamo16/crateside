@@ -15,8 +15,16 @@ public sealed record StageProgress
 
     public int GaveUpStrikes { get; init; }
 
-    public static StageProgress For(JobStore jobs, string videoId)
+    public static StageProgress For(JobStore jobs, string videoId) => For(jobs, [videoId]);
+
+    /// <summary>
+    /// The same, across every upload one song has been cut from (ADR 0014): the latest record of
+    /// a stage is that stage's state, whichever video ID carries it.
+    /// </summary>
+    public static StageProgress For(JobStore jobs, IEnumerable<string> videoIds)
     {
+        var ids = videoIds.ToArray();
+
         JobStage? running = null;
         DateTimeOffset? runningSince = null;
         JobStage? gaveUpAt = null;
@@ -24,7 +32,7 @@ public sealed record StageProgress
 
         foreach (var stage in Stages)
         {
-            if (!jobs.TryGet(videoId, stage, out var job))
+            if (Latest(jobs, ids, stage) is not { } job)
                 continue;
 
             if (job.Status is JobStatus.Running)
@@ -53,6 +61,16 @@ public sealed record StageProgress
             GaveUpStrikes = gaveUpStrikes,
         };
     }
+
+    private static TrackJob? Latest(
+        JobStore jobs,
+        IReadOnlyList<string> videoIds,
+        JobStage stage
+    ) =>
+        videoIds
+            .Select(videoId => jobs.TryGet(videoId, stage, out var job) ? job : null)
+            .OfType<TrackJob>()
+            .MaxBy(job => job.UpdatedAt);
 
     /// <summary>
     /// How many failures each stage tolerates. Reads each selector's <em>default</em>, so one

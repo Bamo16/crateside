@@ -63,51 +63,91 @@ public sealed record TracksView
         var queued = VideoIdsOf(view.Items);
         var reopened = VideoIdsOf(view.AwaitingSeparation.Where(i => i.PlaylistItemId is null));
 
+        // One seed per video ID with something to say. A song that has been cut from more than
+        // one upload contributes several, and they are folded into one row below (ADR 0014).
+        List<RowSeed> seeds =
+        [
+            .. view.Items.Select(item => new RowSeed(item.VideoId, item.Title, item)),
+            .. staging
+                .Where(song => song.SourceVideoId is { } id && !queued.Contains(id))
+                .Select(song => new RowSeed(song.SourceVideoId!, song.DisplayName)),
+            // A track being re-cut: staged files just deleted, playlist entry long gone.
+            .. view
+                .AwaitingSeparation.Where(item =>
+                    item.PlaylistItemId is null
+                    && !queued.Contains(item.VideoId)
+                    && !staged.ContainsKey(item.VideoId)
+                )
+                .Select(item => new RowSeed(item.VideoId, item.Title, item)),
+            // Everything else the library has: tracks judged before crateside existed, or
+            // finished long enough ago that the playlist entry is gone.
+            .. onDisk
+                .Where(entry =>
+                    !queued.Contains(entry.Key)
+                    && !staged.ContainsKey(entry.Key)
+                    && !reopened.Contains(entry.Key)
+                    && entry.Value.Any(file =>
+                        file.Root.Equals(finishedRoot, StringComparison.OrdinalIgnoreCase)
+                    )
+                )
+                .Select(entry => new RowSeed(entry.Key, entry.Key, IsLibraryOnly: true)),
+        ];
+
         return new TracksView
         {
             Rows = InOrder([
-                .. view.Items.Select(item => Row(item.VideoId, item.Title, item)),
-                .. staging
-                    .Where(song => song.SourceVideoId is { } id && !queued.Contains(id))
-                    .Select(song => Row(song.SourceVideoId!, song.DisplayName)),
-                // A track being re-cut: staged files just deleted, playlist entry long gone.
-                .. view
-                    .AwaitingSeparation.Where(item =>
-                        item.PlaylistItemId is null
-                        && !queued.Contains(item.VideoId)
-                        && !staged.ContainsKey(item.VideoId)
+                .. seeds
+                    .GroupBy(
+                        seed => ledger.SongFor(seed.VideoId) ?? seed.VideoId,
+                        StringComparer.Ordinal
                     )
-                    .Select(item => Row(item.VideoId, item.Title, item)),
-                // Everything else the library has: tracks judged before crateside existed, or
-                // finished long enough ago that the playlist entry is gone.
-                .. onDisk
-                    .Where(entry =>
-                        !queued.Contains(entry.Key)
-                        && !staged.ContainsKey(entry.Key)
-                        && !reopened.Contains(entry.Key)
-                        && entry.Value.Any(file =>
-                            file.Root.Equals(finishedRoot, StringComparison.OrdinalIgnoreCase)
-                        )
-                    )
-                    .Select(entry => Row(entry.Key, entry.Key) with { IsLibraryOnly = true }),
+                    .Select(song => Row([.. song])),
             ]),
         };
 
-        TrackRow Row(string videoId, string fallbackName, QueueItem? item = null)
+        TrackRow Row(IReadOnlyList<RowSeed> members)
         {
-            var song = staged.GetValueOrDefault(videoId);
-            var files = onDisk.GetValueOrDefault(videoId) ?? [];
-            var instruction = instructions.GetValueOrDefault(videoId);
-            var progress = StageProgress.For(jobs, videoId);
+            // Resolves through song identity, so every upload of this song lands on the same
+            // verdict and a supersede wins over whichever run named a given URL.
+            var verdict = ledger.TryGetLatestByVideoId(members[0].VideoId, out var run)
+                ? run
+                : null;
 
-            // Resolves through song identity so a supersede wins over whichever run named this
-            // URL.
-            var verdict = ledger.TryGetLatestByVideoId(videoId, out var run) ? run : null;
+            // The upload the row speaks for: the one still in the playlist, else the one the
+            // ledger's latest run was cut from, else whichever came first.
+            var primary =
+                members.FirstOrDefault(seed => seed.Item is not null)
+                ?? members.FirstOrDefault(seed =>
+                    seed.VideoId.Equals(verdict?.SourceVideoId, StringComparison.Ordinal)
+                )
+                ?? members[0];
+
+            var songs = members
+                .Select(seed => staged.GetValueOrDefault(seed.VideoId))
+                .OfType<StagingSong>()
+                .ToArray();
+
+            var files = members
+                .SelectMany(seed => onDisk.GetValueOrDefault(seed.VideoId) ?? [])
+                .ToArray();
+
+            // One instruction, never a merge of several: the primary's if it has one, else
+            // whichever upload of this song carries one.
+            var instruction =
+                instructions.GetValueOrDefault(primary.VideoId)
+                ?? members
+                    .Select(seed => instructions.GetValueOrDefault(seed.VideoId))
+                    .OfType<TrackInstruction>()
+                    .FirstOrDefault();
+
+            var progress = StageProgress.For(jobs, members.Select(seed => seed.VideoId));
 
             var (derived, source) = NameOf(
-                fallbackName,
-                item is null && song is null ? TrackNameSource.VideoId : TrackNameSource.Playlist,
-                NameFromFiles(song, files),
+                primary.FallbackName,
+                primary.Item is null && songs.Length is 0
+                    ? TrackNameSource.VideoId
+                    : TrackNameSource.Playlist,
+                NameFromFiles(songs, files),
                 verdict
             );
 
@@ -115,32 +155,58 @@ public sealed record TracksView
 
             return new TrackRow
             {
-                VideoId = videoId,
-                PlaylistItemId = item?.PlaylistItemId,
+                VideoId = primary.VideoId,
+                PlaylistItemId = primary.Item?.PlaylistItemId,
                 Title = stated ?? derived,
                 DerivedTitle = stated is null ? null : derived,
                 NameSource = source,
                 StatedSourceUrl = instruction?.SourceUrl,
-                AwaitingRename = AwaitingRenameIn(song, stated),
+                AwaitingRename = songs.Sum(song => AwaitingRenameIn(song, stated)),
                 Verdict = verdict,
                 // The work list covers the queue item; the instruction covers everything after it
                 // leaves the playlist.
-                IsHeld = held.Contains(videoId) || instruction?.IsHeld is true,
+                IsHeld =
+                    members.Any(seed => held.Contains(seed.VideoId)) || instruction?.IsHeld is true,
                 IsInstrumentalRelease = instruction?.IsInstrumentalRelease is true,
-                IsParkedForKey = parked.Contains(videoId),
-                GpuPosition = gpuLine.TryGetValue(videoId, out var position) ? position : null,
+                IsParkedForKey = members.Any(seed => parked.Contains(seed.VideoId)),
+                GpuPosition = members
+                    .Select(seed =>
+                        gpuLine.TryGetValue(seed.VideoId, out var position) ? position : (int?)null
+                    )
+                    .Min(),
                 RunningStage = progress.Running,
                 RunningSince = progress.RunningSince,
                 GaveUpAt = progress.GaveUpAt,
                 GaveUpStrikes = progress.GaveUpStrikes,
-                Samples = SamplesOf(song, files, finishedRoot),
-                HasWarpGuide = song?.WarpGuides.Count > 0,
-                AuditNote = song?.StaleTaggedStems.Count > 0 ? "tag disagrees" : null,
-                Folder = FolderOf(song, files),
+                Samples =
+                [
+                    .. members.SelectMany(seed =>
+                        SamplesOf(
+                            staged.GetValueOrDefault(seed.VideoId),
+                            onDisk.GetValueOrDefault(seed.VideoId) ?? [],
+                            finishedRoot,
+                            seed.VideoId
+                        )
+                    ),
+                ],
+                HasWarpGuide = songs.Any(song => song.WarpGuides.Count > 0),
+                AuditNote = songs.Any(song => song.StaleTaggedStems.Count > 0)
+                    ? "tag disagrees"
+                    : null,
+                Folder = FolderOf(songs, files),
                 StagedSince = StagedSinceOf(files, finishedRoot),
+                IsLibraryOnly = members.All(seed => seed.IsLibraryOnly),
             };
         }
     }
+
+    /// <summary>One upload's contribution to a row, before a song's uploads are folded together.</summary>
+    private sealed record RowSeed(
+        string VideoId,
+        string FallbackName,
+        QueueItem? Item = null,
+        bool IsLibraryOnly = false
+    );
 
     /// <summary>
     /// Compared the way Ableton's browser compares them — ordinal, so a warping session can scan
@@ -192,8 +258,15 @@ public sealed record TracksView
     /// What this track's files are called with the preset stripped, which is what Ableton shows.
     /// </summary>
     /// <remarks>Settled by the most common name among the files, not by whichever was read first.</remarks>
-    private static string? NameFromFiles(StagingSong? staged, IReadOnlyList<StemOnDisk> onDisk) =>
-        (staged?.Stems.Select(stem => stem.Path) ?? onDisk.Select(file => file.Path))
+    private static string? NameFromFiles(
+        IReadOnlyList<StagingSong> staged,
+        IReadOnlyList<StemOnDisk> onDisk
+    ) =>
+        (
+            staged.Count > 0
+                ? staged.SelectMany(song => song.Stems).Select(stem => stem.Path)
+                : onDisk.Select(file => file.Path)
+        )
             .Select(StemFileName.WithoutPreset)
             .Where(name => name is { Length: > 0 })
             .GroupBy(name => name, StringComparer.OrdinalIgnoreCase)
@@ -222,13 +295,15 @@ public sealed record TracksView
     private static IReadOnlyList<TrackSample> SamplesOf(
         StagingSong? staged,
         IReadOnlyList<StemOnDisk> onDisk,
-        string finishedRoot
+        string finishedRoot,
+        string sourceVideoId
     ) =>
         [
             .. staged?.Samples.Select(sample => new TrackSample
             {
                 Label = sample.Label,
                 AbletonKey = sample.AbletonKey,
+                SourceVideoId = sourceVideoId,
             }) ?? [],
             .. onDisk
                 .Where(file =>
@@ -239,6 +314,7 @@ public sealed record TracksView
                 {
                     Label = file.Preset ?? "source",
                     IsInLibrary = true,
+                    SourceVideoId = sourceVideoId,
                 }),
         ];
 
@@ -246,8 +322,15 @@ public sealed record TracksView
     /// The folder the track's files are in: staging while anything is still there, else wherever
     /// they have got to.
     /// </summary>
-    private static string? FolderOf(StagingSong? staged, IReadOnlyList<StemOnDisk> onDisk) =>
-        (staged?.Stems.FirstOrDefault()?.Path ?? onDisk.FirstOrDefault()?.Path) is { } path
+    private static string? FolderOf(
+        IReadOnlyList<StagingSong> staged,
+        IReadOnlyList<StemOnDisk> onDisk
+    ) =>
+        (
+            staged.SelectMany(song => song.Stems).FirstOrDefault()?.Path
+            ?? onDisk.FirstOrDefault()?.Path
+        )
+            is { } path
             ? Path.GetDirectoryName(path)
             : null;
 

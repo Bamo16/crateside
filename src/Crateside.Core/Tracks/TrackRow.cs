@@ -34,6 +34,13 @@ public sealed record TrackRow
     /// <summary>This track's samples a swap cannot reach, because crateside never writes there.</summary>
     public int SamplesLeftInLibrary => Samples.Count(sample => sample.IsInLibrary);
 
+    /// <summary>
+    /// Whether this row's samples were cut from more than one upload, which is what makes saying
+    /// so on each of them worth the room (ADR 0014).
+    /// </summary>
+    public bool HasSeveralUploads =>
+        Samples.Select(sample => sample.SourceVideoId).Distinct(StringComparer.Ordinal).Count() > 1;
+
     public TrackNameSource NameSource { get; init; }
 
     /// <summary>
@@ -364,4 +371,10 @@ public sealed record TrackSample
     /// click, which would mark unfinished work as done (ADR 0002).
     /// </remarks>
     public bool IsInLibrary { get; init; }
+
+    /// <summary>
+    /// The upload this file was cut from. A song that has been source-swapped holds samples from
+    /// more than one, and their filenames need not differ (ADR 0014).
+    /// </summary>
+    public string? SourceVideoId { get; init; }
 }
