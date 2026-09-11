@@ -29,7 +29,6 @@ public class TrackChipAndFilterTests
             },
             TrackState.Parked => Base with { IsParkedForKey = true },
             TrackState.GaveUp => Base with { GaveUpAt = JobStage.Separation, GaveUpStrikes = 3 },
-            TrackState.Held => Base with { IsHeld = true },
             TrackState.Done => Base with
             {
                 Samples = [new TrackSample { Label = "Vocal - Full", IsInLibrary = true }],
@@ -84,7 +83,6 @@ public class TrackChipAndFilterTests
     [InlineData(TrackState.Tagging, "tagging", TrackChipStyle.TealFilled)]
     [InlineData(TrackState.ReadyToWarp, "ready to warp", TrackChipStyle.AmberFilled)]
     [InlineData(TrackState.Parked, "parked · no key", TrackChipStyle.RedOutline)]
-    [InlineData(TrackState.Held, "held", TrackChipStyle.DashedOutline)]
     [InlineData(TrackState.Done, "done", TrackChipStyle.GreenOutline)]
     public void The_chip_says_what_the_copy_table_says(
         TrackState state,
@@ -128,7 +126,6 @@ public class TrackChipAndFilterTests
     [InlineData(TrackState.ReadyToWarp, TrackFilter.InStaging)]
     [InlineData(TrackState.Parked, TrackFilter.NeedsAttention)]
     [InlineData(TrackState.GaveUp, TrackFilter.NeedsAttention)]
-    [InlineData(TrackState.Held, TrackFilter.Held)]
     public void Every_unfinished_state_lands_in_exactly_one_named_view(
         TrackState state,
         TrackFilter expected
@@ -163,7 +160,6 @@ public class TrackChipAndFilterTests
         TrackFilter.InStaging,
         TrackFilter.InFlight,
         TrackFilter.NeedsAttention,
-        TrackFilter.Held,
     ];
 
     [Fact]
@@ -204,12 +200,11 @@ public class TrackChipAndFilterTests
             Row(TrackState.ReadyToWarp),
             Row(TrackState.ReadyToWarp),
             Row(TrackState.Separating),
-            Row(TrackState.Held),
             Row(TrackState.Done),
         ];
 
-        Assert.Equal(5, rows.Count(TrackFilter.All));
-        Assert.Equal(4, rows.Count(TrackFilter.Unfinished));
+        Assert.Equal(4, rows.Count(TrackFilter.All));
+        Assert.Equal(3, rows.Count(TrackFilter.Unfinished));
         Assert.Equal(2, rows.Count(TrackFilter.InStaging));
         Assert.Equal(1, rows.Count(TrackFilter.InFlight));
     }

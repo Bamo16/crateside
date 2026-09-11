@@ -43,7 +43,6 @@ public class SeparationSelectorTests : IDisposable
             FullyProcessed = [],
             AwaitingKey = [],
             AwaitingSeparation = awaitingSeparation,
-            Held = [],
         };
 
     /// <summary>A ledger holding a verdict for each of these tracks, at a stated confidence.</summary>
@@ -103,27 +102,6 @@ public class SeparationSelectorTests : IDisposable
             FullyProcessed = [],
             AwaitingKey = [],
             AwaitingSeparation = [],
-            Held = [],
-        };
-
-        Assert.False(new SeparationSelector(Jobs).TryPickNext(view, NoLedger, out _));
-    }
-
-    [Fact]
-    public void A_held_track_cannot_be_picked_because_it_is_not_in_a_work_list()
-    {
-        // Same structural guard: QueueService subtracts held tracks from every work list, so
-        // the selector needs no knowledge of holds and cannot forget to apply them.
-        var held = Item("heldheld001");
-
-        var view = new QueueView
-        {
-            Items = [held],
-            Outstanding = [],
-            FullyProcessed = [],
-            AwaitingKey = [],
-            AwaitingSeparation = [],
-            Held = [held],
         };
 
         Assert.False(new SeparationSelector(Jobs).TryPickNext(view, NoLedger, out _));

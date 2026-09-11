@@ -40,14 +40,6 @@ public class TrackExpansionTests
         Assert.Equal(SeparationRecipe.Standard, row.Recipe);
     }
 
-    [Fact]
-    public void A_held_track_can_still_change_its_plan()
-    {
-        // Held is exactly when it still matters: nothing will start, so there is time to say the
-        // release has no vocals before its stems exist.
-        Assert.True((Row() with { IsHeld = true }).CanChangePlan);
-    }
-
     [Theory]
     [InlineData(JobStage.Separation)]
     [InlineData(JobStage.Handoff)]
@@ -70,21 +62,6 @@ public class TrackExpansionTests
 
         Assert.False(staged.CanChangePlan);
         Assert.False((Row() with { HasWarpGuide = true }).CanChangePlan);
-    }
-
-    [Fact]
-    public void A_held_track_that_was_already_separated_cannot()
-    {
-        // A hold outranks parking in the state, so this row reads "held" — which is why the plan
-        // is decided on what has happened rather than on the state.
-        var row = Row() with
-        {
-            IsHeld = true,
-            IsParkedForKey = true,
-        };
-
-        Assert.Equal(TrackState.Held, row.State);
-        Assert.False(row.CanChangePlan);
     }
 
     [Fact]

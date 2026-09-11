@@ -52,7 +52,6 @@ public sealed record TracksView
     {
         var resolved = resolvedNames ?? new Dictionary<string, ResolvedName>();
 
-        var held = VideoIdsOf(view.Held);
         var parked = VideoIdsOf(view.AwaitingKey);
 
         var gpuLine = view
@@ -172,8 +171,6 @@ public sealed record TracksView
                 Verdict = verdict,
                 // The work list covers the queue item; the instruction covers everything after it
                 // leaves the playlist.
-                IsHeld =
-                    members.Any(seed => held.Contains(seed.VideoId)) || instruction?.IsHeld is true,
                 IsInstrumentalRelease = instruction?.IsInstrumentalRelease is true,
                 IsParkedForKey = members.Any(seed => parked.Contains(seed.VideoId)),
                 GpuPosition = members

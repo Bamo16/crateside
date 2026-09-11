@@ -166,20 +166,6 @@ public class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
-    public void A_held_track_keeps_its_row_instead_of_moving_to_another_list()
-    {
-        // The queue view subtracts a hold from every work list, which is the right guard for a
-        // stage and exactly the behaviour that made a track vanish from where the user was
-        // looking. Here it becomes a value on the row that was already there.
-        var row = Assert.Single(
-            Compose(View(instructions: new TrackInstruction { VideoId = Video, IsHeld = true }))
-        );
-
-        Assert.Equal(TrackState.Held, row.State);
-        Assert.True(row.IsHeld);
-    }
-
-    [Fact]
     public void A_parked_track_says_so_rather_than_looking_like_work_the_gpu_has_not_reached()
     {
         // The distinction ADR 0005 closed by splitting AwaitingKey out of AwaitingSeparation, and
@@ -334,20 +320,6 @@ public class TracksViewCompositionTests : IDisposable
         Assert.Null(row.PlaylistItemId);
         Assert.True(row.IsInstrumentalRelease);
         Assert.Equal(SeparationRecipe.InstrumentalRelease, row.Recipe);
-    }
-
-    [Fact]
-    public void A_hold_outlives_it_too()
-    {
-        var row = Assert.Single(
-            Compose(
-                view: View(items: []),
-                staging: [Staged(Stem("Drums"))],
-                instructions: new TrackInstruction { VideoId = Video, IsHeld = true }
-            )
-        );
-
-        Assert.True(row.IsHeld);
     }
 
     [Fact]

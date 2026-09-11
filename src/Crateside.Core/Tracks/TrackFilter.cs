@@ -23,9 +23,6 @@ public enum TrackFilter
     /// <summary>Stopped, parked, or carrying a finding.</summary>
     NeedsAttention,
 
-    /// <summary>Set aside on purpose.</summary>
-    Held,
-
     /// <summary>
     /// Every row there is, the finished library included. Answers "do I have this track in any
     /// shape or form", which is a search question.
@@ -44,7 +41,6 @@ public static class TrackFilters
         TrackFilter.InStaging,
         TrackFilter.InFlight,
         TrackFilter.NeedsAttention,
-        TrackFilter.Held,
     ];
 
     /// <remarks>
@@ -68,7 +64,6 @@ public static class TrackFilters
             TrackFilter.NeedsAttention => row.State is TrackState.Parked or TrackState.GaveUp
                 || row.AuditNote is not null
                 || row.AwaitingRename > 0,
-            TrackFilter.Held => row.State is TrackState.Held,
             TrackFilter.All => true,
             _ => false,
         };

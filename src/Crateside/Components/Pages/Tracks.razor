@@ -612,14 +612,6 @@
                             {
                                 <button class="outline" @onclick="() => Retry(row)">Retry</button>
                             }
-                            @if (row.IsHeld)
-                            {
-                                <button class="primary" @onclick="() => SetHeld(row, false)">Release hold</button>
-                            }
-                            else if (row.PlaylistItemId is not null && row.State is not TrackState.Done)
-                            {
-                                <button class="outline" @onclick="() => SetHeld(row, true)">Hold</button>
-                            }
                             @if (row.PlaylistItemId is { } playlistItemId && Playlist.IsAuthorized)
                             {
                                 <button class="outline" @onclick="() => Remove(row, playlistItemId)">
@@ -1053,16 +1045,6 @@
         {
             _problem = $"Could not open {folder}: {e.Message}";
         }
-    }
-
-    private async Task SetHeld(TrackRow row, bool held)
-    {
-        if (held)
-            Playlist.Hold(row.VideoId);
-        else
-            Playlist.Release(row.VideoId);
-
-        await Source.RefreshAsync();
     }
 
     private async Task SetInstrumental(TrackRow row, ChangeEventArgs e)

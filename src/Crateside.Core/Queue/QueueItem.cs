@@ -99,11 +99,6 @@ public sealed record QueueView
                 }
                 : item;
 
-        var held = instructions
-            .Values.Where(t => t.IsHeld)
-            .Select(t => t.VideoId)
-            .ToHashSet(StringComparer.Ordinal);
-
         return new QueueView
         {
             Items = described,
@@ -113,23 +108,14 @@ public sealed record QueueView
                 .. described.Where(i =>
                     verdictWithoutStems.Contains(i.VideoId)
                     && !separatedWithoutKey.Contains(i.VideoId)
-                    && !held.Contains(i.VideoId)
                 ),
                 .. reopenedItems,
             ],
-            AwaitingKey =
-            [
-                .. described.Where(i =>
-                    separatedWithoutKey.Contains(i.VideoId) && !held.Contains(i.VideoId)
-                ),
-            ],
-            Held = [.. described.Where(i => held.Contains(i.VideoId))],
+            AwaitingKey = [.. described.Where(i => separatedWithoutKey.Contains(i.VideoId))],
             Outstanding =
             [
                 .. described.Where(i =>
-                    !fullyProcessed.Contains(i.VideoId)
-                    && !verdictWithoutStems.Contains(i.VideoId)
-                    && !held.Contains(i.VideoId)
+                    !fullyProcessed.Contains(i.VideoId) && !verdictWithoutStems.Contains(i.VideoId)
                 ),
             ],
         };
@@ -141,21 +127,7 @@ public sealed record QueueView
     /// <summary>
     /// Items with no verdict yet: the actual work list, oldest-added first.
     /// </summary>
-    /// <remarks>
-    /// Held items are not here — the drainer reads this collection directly, so a held track
-    /// cannot reach the GPU by any path.
-    /// </remarks>
     public required IReadOnlyList<QueueItem> Outstanding { get; init; }
-
-    /// <summary>
-    /// Items the user has told crateside to leave alone — usually the wrong upload of the right
-    /// song, noticed late and not worth stopping to fix.
-    /// </summary>
-    /// <remarks>
-    /// Not <see cref="FullyProcessed"/>, so nothing cleans these up automatically — they
-    /// accumulate unless kept visible here.
-    /// </remarks>
-    public required IReadOnlyList<QueueItem> Held { get; init; }
 
     /// <summary>
     /// The next <paramref name="size"/> items to work, plus anything explicitly pinned.
@@ -186,10 +158,6 @@ public sealed record QueueView
     /// <summary>
     /// Items with a verdict and no stems on disk: the separation work list, oldest-added first.
     /// </summary>
-    /// <remarks>
-    /// Held items are not here, for the same reason they are absent from
-    /// <see cref="Outstanding"/>.
-    /// </remarks>
     public required IReadOnlyList<QueueItem> AwaitingSeparation { get; init; }
 
     /// <summary>

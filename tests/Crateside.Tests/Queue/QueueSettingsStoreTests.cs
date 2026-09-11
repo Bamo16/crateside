@@ -82,24 +82,12 @@ public class QueueSettingsStoreTests : IDisposable
     }
 
     [Fact]
-    public void A_hold_survives_a_restart()
-    {
-        Store().Hold("abc123", "wrong upload — want the album version");
-
-        var reloaded = Assert.Single(Store().Read().Tracks);
-
-        Assert.Equal("abc123", reloaded.VideoId);
-        Assert.True(reloaded.IsHeld);
-        Assert.Equal("wrong upload — want the album version", reloaded.HoldReason);
-    }
-
-    [Fact]
     public void Saving_the_playlist_does_not_drop_the_instructions()
     {
         // Every mutator used to write a freshly-constructed settings object, so saving one field
         // discarded the others. Harmless while there was only one field, and not any more.
         var store = Store();
-        store.Hold("abc123");
+        store.SetInstrumentalRelease("abc123", true);
 
         store.SavePlaylistId("PL_something");
 
@@ -109,41 +97,14 @@ public class QueueSettingsStoreTests : IDisposable
     }
 
     [Fact]
-    public void Holding_the_same_track_twice_holds_it_once()
-    {
-        var store = Store();
-
-        store.Hold("abc123", "first");
-        store.Hold("abc123", "second");
-
-        Assert.Equal("second", Assert.Single(store.Read().Tracks).HoldReason);
-    }
-
-    [Fact]
-    public void Releasing_removes_only_that_track()
-    {
-        var store = Store();
-        store.Hold("abc123");
-        store.Hold("def456");
-
-        store.Release("abc123");
-
-        Assert.Equal("def456", Assert.Single(store.Read().Tracks).VideoId);
-    }
-
-    [Fact]
-    public void Releasing_something_that_was_never_held_is_not_an_error() =>
-        Assert.Empty(Store().Release("never-held").Tracks);
-
-    [Fact]
     public void An_instruction_that_says_nothing_is_not_kept()
     {
-        // Otherwise every track ever held leaves a permanent line in the file, and the list
-        // stops meaning "things I have said something about".
+        // Otherwise every track ever spoken about leaves a permanent line in the file, and the
+        // list stops meaning "things I have said something about".
         var store = Store();
-        store.Hold("abc123");
+        store.SetInstrumentalRelease("abc123", true);
 
-        store.Release("abc123");
+        store.SetInstrumentalRelease("abc123", false);
 
         Assert.Empty(store.Read().Tracks);
     }
@@ -159,7 +120,7 @@ public class QueueSettingsStoreTests : IDisposable
 
         var track = Assert.Single(store.Read().Tracks);
         Assert.Equal("Starjunk 95 - 99th Street", track.Name);
-        Assert.False(track.IsHeld);
+        Assert.False(track.IsInstrumentalRelease);
     }
 
     [Fact]
@@ -196,53 +157,25 @@ public class QueueSettingsStoreTests : IDisposable
     }
 
     [Fact]
-    public void Clearing_a_name_keeps_a_hold_that_was_also_stated()
+    public void Clearing_a_name_keeps_another_instruction_that_was_also_stated()
     {
         var store = Store();
-        store.Hold("abc123", "not the canonical upload");
+        store.SetInstrumentalRelease("abc123", true);
         store.SetName("abc123", "Starjunk 95 - 99th Street");
 
         store.SetName("abc123", null);
 
         var track = Assert.Single(store.Read().Tracks);
-        Assert.True(track.IsHeld);
+        Assert.True(track.IsInstrumentalRelease);
         Assert.Null(track.Name);
     }
 
     [Fact]
-    public void An_instrumental_release_and_a_hold_are_one_instruction()
+    public void A_file_still_carrying_the_removed_hold_fields_reads_without_error()
     {
-        var store = Store();
-
-        store.SetInstrumentalRelease("abc123", true);
-        store.Hold("abc123", "not the canonical upload");
-
-        var track = Assert.Single(store.Read().Tracks);
-        Assert.True(track.IsInstrumentalRelease);
-        Assert.True(track.IsHeld);
-    }
-
-    [Fact]
-    public void Releasing_a_hold_keeps_the_instrumental_release_fact()
-    {
-        // The two are independent: a hold is a deferral, and whether the release has vocals
-        // stays true whether or not crateside is currently allowed to work the track.
-        var store = Store();
-        store.SetInstrumentalRelease("abc123", true);
-        store.Hold("abc123");
-
-        store.Release("abc123");
-
-        var track = Assert.Single(store.Read().Tracks);
-        Assert.True(track.IsInstrumentalRelease);
-        Assert.False(track.IsHeld);
-    }
-
-    [Fact]
-    public void Holds_written_in_the_old_shape_are_still_read()
-    {
-        // queue.json predates instructions, and the holds in it are real user decisions. The
-        // next write puts them in the new shape; nothing is lost in between.
+        // Holding was removed, and a queue.json written before that still carries it — in the
+        // oldest shape, a top-level `held` array. Unknown properties are skipped rather than
+        // refused, so everything else in the file survives and the next write drops them.
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         File.WriteAllText(
             _path,
@@ -254,9 +187,23 @@ public class QueueSettingsStoreTests : IDisposable
         var settings = Store().Read();
 
         Assert.Equal("PL_old", settings.PlaylistId);
-        var track = Assert.Single(settings.Tracks);
-        Assert.Equal("abc123", track.VideoId);
-        Assert.True(track.IsHeld);
-        Assert.Equal("wrong upload", track.HoldReason);
+        Assert.Empty(settings.Tracks);
+    }
+
+    [Fact]
+    public void An_instruction_carrying_the_removed_hold_fields_keeps_the_rest()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+        File.WriteAllText(
+            _path,
+            """
+            { "tracks": [ { "videoId": "abc123", "held": true, "holdReason": "x",
+                            "name": "Starjunk 95 - 99th Street" } ] }
+            """
+        );
+
+        var track = Assert.Single(Store().Read().Tracks);
+
+        Assert.Equal("Starjunk 95 - 99th Street", track.Name);
     }
 }

@@ -67,7 +67,6 @@ public class QueueBatchTests
             FullyProcessed = [],
             AwaitingKey = [],
             AwaitingSeparation = [],
-            Held = [],
         };
 
     [Fact]

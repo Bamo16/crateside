@@ -74,7 +74,6 @@ public class VerdictSelectorTests : IDisposable
             FullyProcessed = [],
             AwaitingKey = [],
             AwaitingSeparation = [],
-            Held = [],
         };
 
     [Fact]
@@ -179,25 +178,6 @@ public class VerdictSelectorTests : IDisposable
         Assert.False(
             new VerdictSelector(Jobs, Set).TryPickNext(View(Item("aaaaaaaaaaa")), NoLedger, out _)
         );
-    }
-
-    [Fact]
-    public void A_held_track_cannot_be_picked_because_it_is_not_outstanding()
-    {
-        var held = Item("heldheld001");
-        GiveEvidence(held.VideoId);
-
-        var view = new QueueView
-        {
-            Items = [held],
-            Outstanding = [],
-            FullyProcessed = [],
-            AwaitingKey = [],
-            AwaitingSeparation = [],
-            Held = [held],
-        };
-
-        Assert.False(new VerdictSelector(Jobs, Set).TryPickNext(view, NoLedger, out _));
     }
 
     [Fact]

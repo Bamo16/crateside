@@ -109,9 +109,6 @@ public sealed record TrackRow
     /// </remarks>
     public bool IsLibraryOnly { get; init; }
 
-    /// <summary>The user has told crateside to leave this track alone.</summary>
-    public bool IsHeld { get; init; }
-
     /// <summary>
     /// The user has said this release has no vocals, which is what the recipe is derived from.
     /// </summary>
@@ -175,7 +172,6 @@ public sealed record TrackRow
             { RunningStage: { } stage } => InFlight(stage),
             { GpuPosition: not null } => TrackState.JudgedInLine,
             { IsDone: true } => TrackState.Done,
-            { IsHeld: true } => TrackState.Held,
             { GaveUpAt: not null } => TrackState.GaveUp,
             { IsParkedForKey: true } => TrackState.Parked,
             _ => AtRest,
@@ -219,7 +215,6 @@ public sealed record TrackRow
             TrackState.Parked => "parked · no key",
             TrackState.GaveUp =>
                 $"gave up · {GaveUpAt?.ToString().ToLowerInvariant()} ×{GaveUpStrikes}",
-            TrackState.Held => "held",
             TrackState.Done => "done",
             _ => string.Empty,
         };
@@ -237,7 +232,6 @@ public sealed record TrackRow
             TrackState.ReadyToWarp => TrackChipStyle.AmberFilled,
             TrackState.Parked => TrackChipStyle.RedOutline,
             TrackState.GaveUp => TrackChipStyle.RedFilled,
-            TrackState.Held => TrackChipStyle.DashedOutline,
             TrackState.Done => TrackChipStyle.GreenOutline,
             _ => TrackChipStyle.NeutralOutline,
         };
@@ -257,8 +251,7 @@ public sealed record TrackRow
             TrackState.Tagging => "writing Ableton key tags",
             TrackState.ReadyToWarp => "your turn — warp, then move to Mashup Samples",
             TrackState.Parked => "needs a better verdict — nothing automatic will move it",
-            TrackState.GaveUp => "retry, or hold it",
-            TrackState.Held => "nothing will touch it until you release it",
+            TrackState.GaveUp => "retry, or take it out of the playlist",
             TrackState.Done => "in Mashup Samples",
             _ => "downloading next",
         };

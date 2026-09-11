@@ -302,3 +302,16 @@ parked in `Unresolved Key` until a verdict changes — and because they never be
 processed, they keep showing in "Awaiting stems" exactly as the Muse track did. **The queue
 view cannot presently tell "not separated yet" from "separated, held back for want of a key".**
 That is a known gap, not an oversight, and it is the next thing to close.
+
+## Amendment, 2026-09-10 — there is no hold to sit beside
+
+[ADR 0015](0015-hold-is-removed-and-the-playlist-is-the-way-out.md) removes holding.
+
+Two passages above place the instrumental-release fact "beside a hold" and describe the Queue
+view gaining "a second per-track instruction beside holds". The instruction store is unaffected —
+it now holds the instrumental-release fact, the stated name and the source-URL override, and
+`TrackInstruction.IsHeld` and `HoldReason` are gone from it. A `queue.json` still carrying either
+reads without error, because unknown properties are skipped rather than refused.
+
+Nothing about decision 4 changes: the fact is still the fact, and the plan is still derived from
+it.

@@ -72,14 +72,6 @@ public sealed class QueueSettingsStore
     public QueueSettings SaveRefreshMinutes(int? minutes) =>
         Save(current => current with { RefreshMinutes = minutes });
 
-    /// <summary>Holds a track: crateside will not work it until it is released.</summary>
-    public QueueSettings Hold(string videoId, string? reason = null) =>
-        Upsert(videoId, t => t with { IsHeld = true, HoldReason = reason });
-
-    /// <summary>Releases a held track back into the work list.</summary>
-    public QueueSettings Release(string videoId) =>
-        Upsert(videoId, t => t with { IsHeld = false, HoldReason = null });
-
     /// <summary>
     /// Records that a track is an instrumental release — no vocals to begin with, so there is
     /// nothing to separate out and the source track is the sample.
@@ -163,27 +155,8 @@ public sealed class QueueSettingsStore
         }
     }
 
-    /// <summary>
-    /// The stored instructions, reading a file written before holds and the instrumental-release
-    /// fact became one entry. A file with only the old <c>held</c> array still describes real
-    /// user decisions, so it is read rather than discarded; the next write puts it in the new
-    /// shape.
-    /// </summary>
     private static IReadOnlyList<TrackInstruction> TracksOf(QueueSettings? stored) =>
-        stored switch
-        {
-            { Tracks: { Count: > 0 } tracks } => tracks,
-            { Held: { Count: > 0 } held } =>
-            [
-                .. held.Select(h => new TrackInstruction
-                {
-                    VideoId = h.VideoId,
-                    IsHeld = true,
-                    HoldReason = h.Reason,
-                }),
-            ],
-            _ => [],
-        };
+        stored?.Tracks ?? [];
 
     private QueueSettings? TryReadFile()
     {
@@ -230,12 +203,6 @@ public sealed record QueueSettings
     /// <summary>How long the rows may go unrebuilt. Zero means never.</summary>
     public TimeSpan RefreshInterval =>
         TimeSpan.FromMinutes(RefreshMinutes ?? DefaultRefreshMinutes);
-
-    /// <summary>
-    /// The previous shape, read once so existing holds survive and then never written again.
-    /// </summary>
-    [JsonPropertyName("held")]
-    public IReadOnlyList<HeldTrack>? Held { get; init; }
 }
 
 /// <summary>
@@ -249,20 +216,6 @@ public sealed record TrackInstruction
 {
     [JsonPropertyName("videoId")]
     public required string VideoId { get; init; }
-
-    /// <summary>
-    /// crateside will not work this track at all until it is released.
-    /// </summary>
-    /// <remarks>
-    /// A deferral, not a classification — whether it is eventually replaced, removed, or
-    /// released is left open, which is why <see cref="HoldReason"/> is prose.
-    /// </remarks>
-    [JsonPropertyName("held")]
-    public bool IsHeld { get; init; }
-
-    /// <summary>Why, in the user's words. Optional, and free text on purpose.</summary>
-    [JsonPropertyName("holdReason")]
-    public string? HoldReason { get; init; }
 
     /// <summary>
     /// The release has no vocals to begin with, so there is nothing to separate out: the drums
@@ -293,15 +246,5 @@ public sealed record TrackInstruction
     /// <summary>Whether this instruction still carries anything worth storing.</summary>
     [JsonIgnore]
     public bool SaysSomething =>
-        IsHeld || IsInstrumentalRelease || Name is { Length: > 0 } || SourceUrl is { Length: > 0 };
-}
-
-/// <summary>A held track as the previous file format wrote it. Read-only; see ADR 0005.</summary>
-public sealed record HeldTrack
-{
-    [JsonPropertyName("videoId")]
-    public required string VideoId { get; init; }
-
-    [JsonPropertyName("reason")]
-    public string? Reason { get; init; }
+        IsInstrumentalRelease || Name is { Length: > 0 } || SourceUrl is { Length: > 0 };
 }

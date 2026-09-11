@@ -45,7 +45,4 @@ public enum TrackState
 
     /// <summary>A stage failed enough times that it stopped trying.</summary>
     GaveUp,
-
-    /// <summary>The user set it aside — usually the wrong upload of the right song.</summary>
-    Held,
 }

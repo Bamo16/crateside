@@ -145,15 +145,6 @@ public class TrackStateResolutionTests
     }
 
     [Fact]
-    public void A_held_track_is_left_alone()
-    {
-        var row = Row() with { IsHeld = true };
-
-        Assert.Equal(TrackState.Held, row.State);
-        Assert.Equal("nothing will touch it until you release it", row.Next);
-    }
-
-    [Fact]
     public void A_track_separated_without_a_key_worth_tagging_is_parked()
     {
         // Not a failure and not a queue: a LOW or WITHHELD verdict sends stems to the
@@ -180,37 +171,7 @@ public class TrackStateResolutionTests
         };
 
         Assert.Equal(TrackState.GaveUp, row.State);
-        Assert.Equal("retry, or hold it", row.Next);
-    }
-
-    [Fact]
-    public void Holding_a_track_that_gave_up_is_the_answer_the_row_offered()
-    {
-        // The row's own advice when a stage gives up is "retry, or hold it". If holding it then
-        // changes nothing on screen, that advice is a dead end.
-        var row = Row() with
-        {
-            GaveUpAt = JobStage.Separation,
-            GaveUpStrikes = 3,
-            IsHeld = true,
-        };
-
-        Assert.Equal(TrackState.Held, row.State);
-    }
-
-    [Fact]
-    public void A_hold_does_not_rewrite_what_is_already_running()
-    {
-        // A hold governs what crateside will *start*. Separation is six minutes of GPU that is
-        // already being spent, and saying "nothing will touch it" while the GPU is busy with it
-        // would be a plain lie.
-        var row = Row() with
-        {
-            RunningStage = JobStage.Separation,
-            IsHeld = true,
-        };
-
-        Assert.Equal(TrackState.Separating, row.State);
+        Assert.Equal("retry, or take it out of the playlist", row.Next);
     }
 
     [Theory]

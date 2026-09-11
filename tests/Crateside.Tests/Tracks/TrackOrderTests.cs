@@ -23,7 +23,6 @@ public class TrackOrderTests
             TrackState.Judging => Base(title) with { RunningStage = JobStage.Verdict },
             TrackState.Separating => Base(title) with { RunningStage = JobStage.Separation },
             TrackState.Tagging => Base(title) with { RunningStage = JobStage.Tagging },
-            TrackState.Held => Base(title) with { IsHeld = true },
             TrackState.Parked => Base(title) with { IsParkedForKey = true },
             TrackState.GaveUp => Base(title) with
             {
@@ -61,17 +60,6 @@ public class TrackOrderTests
         );
     }
 
-    [Fact]
-    public void Holding_a_track_does_not_move_it()
-    {
-        // The one that mattered most: a hold is a change the user makes, and the row jumping out
-        // from under the press was the worst of what this page replaced.
-        var before = Ordered(Row("a"), Row("b"), Row("c"));
-        var after = Ordered(Row("a"), Row("b", TrackState.Held), Row("c"));
-
-        Assert.Equal(before, after);
-    }
-
     [Theory]
     [InlineData(TrackState.Detecting)]
     [InlineData(TrackState.Judging)]
@@ -94,7 +82,7 @@ public class TrackOrderTests
         // Sorting the groups separately is what preserves it.
         Assert.Equal(
             ["zebra", "apple", "mango"],
-            Ordered(Row("zebra"), Row("apple", TrackState.Held), Row("mango"))
+            Ordered(Row("zebra"), Row("apple"), Row("mango"))
         );
     }
 

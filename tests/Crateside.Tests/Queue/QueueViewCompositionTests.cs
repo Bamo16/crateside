@@ -67,22 +67,6 @@ public class QueueViewCompositionTests
     }
 
     [Fact]
-    public void Holding_a_parked_track_takes_it_out_of_that_list_too()
-    {
-        // Held is subtracted from every work list rather than checked by their readers, so a
-        // new list must not quietly reintroduce the hole that guard exists to close.
-        var view = Compose(
-            [Item(Judged)],
-            verdictWithoutStems: new HashSet<string> { Judged },
-            separatedWithoutKey: new HashSet<string> { Judged },
-            instructions: new TrackInstruction { VideoId = Judged, IsHeld = true }
-        );
-
-        Assert.Empty(view.AwaitingKey);
-        Assert.Equal(Judged, Assert.Single(view.Held).VideoId);
-    }
-
-    [Fact]
     public void A_verdict_without_stems_awaits_separation_and_leaves_outstanding()
     {
         // These two mean opposite things about a verdict, which is what made gating Outstanding
@@ -101,36 +85,6 @@ public class QueueViewCompositionTests
         Assert.Equal(Done, Assert.Single(view.FullyProcessed).VideoId);
         Assert.Empty(view.Outstanding);
         Assert.Empty(view.AwaitingSeparation);
-    }
-
-    [Fact]
-    public void A_held_track_is_absent_from_every_work_list()
-    {
-        // The guard has to be impossible to forget rather than merely applied everywhere today,
-        // which is why holds are subtracted here instead of checked by each stage.
-        var view = Compose(
-            [Item(Unjudged)],
-            instructions: new TrackInstruction { VideoId = Unjudged, IsHeld = true }
-        );
-
-        Assert.Equal(Unjudged, Assert.Single(view.Held).VideoId);
-        Assert.Empty(view.Outstanding);
-        Assert.Empty(view.AwaitingSeparation);
-    }
-
-    [Fact]
-    public void A_held_track_that_has_been_judged_still_cannot_reach_the_gpu()
-    {
-        // AwaitingSeparation never subtracted holds, because nothing read it at the time. Once
-        // the separation selector started reading it, that was a hole straight to the GPU.
-        var view = Compose(
-            [Item(Judged)],
-            verdictWithoutStems: new HashSet<string> { Judged },
-            instructions: new TrackInstruction { VideoId = Judged, IsHeld = true }
-        );
-
-        Assert.Empty(view.AwaitingSeparation);
-        Assert.Single(view.Held);
     }
 
     [Fact]
@@ -173,11 +127,10 @@ public class QueueViewCompositionTests
         const string Parked = "eeeeeeeeeee";
 
         var view = Compose(
-            [Item(Judged), Item(Unjudged), Item(Done), Item("ddddddddddd"), Item(Parked)],
+            [Item(Judged), Item(Unjudged), Item(Done), Item(Parked)],
             fullyProcessed: new HashSet<string> { Done },
             verdictWithoutStems: new HashSet<string> { Judged, Parked },
-            separatedWithoutKey: new HashSet<string> { Parked },
-            instructions: new TrackInstruction { VideoId = "ddddddddddd", IsHeld = true }
+            separatedWithoutKey: new HashSet<string> { Parked }
         );
 
         // A parked track is in verdictWithoutStems too, so a new list that failed to subtract
@@ -188,7 +141,6 @@ public class QueueViewCompositionTests
                 + view.AwaitingSeparation.Count
                 + view.AwaitingKey.Count
                 + view.FullyProcessed.Count
-                + view.Held.Count
         );
     }
 }

@@ -69,3 +69,15 @@ reading as unset (`40c170e`), and work that no stage could pick up (`71db24a`, [
 
 **The state is derived, so it can be wrong in one place only.** Every bug in it has been a missing
 input rather than a stale value, which is the failure mode worth having.
+
+## Amendment, 2026-09-10 — held is gone
+
+[ADR 0015](0015-hold-is-removed-and-the-playlist-is-the-way-out.md) removes holding, so the
+sentence above about **held being in the working group** describes a case that can no longer
+arise. The promise it was making is untouched: a row still moves only on reaching *ready to
+warp*, being parked, or being finished with.
+
+Worth keeping the reasoning rather than deleting it. Hold was the case that mattered most
+*because* it was a change the user makes to a track they are looking at — and that is exactly
+the shape of whatever replaces it. A bump-to-top control must not move the row either, which is
+the same rule arrived at from the other end.

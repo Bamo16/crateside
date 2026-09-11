@@ -78,18 +78,6 @@ public sealed class QueueService(
     public void SetRefreshMinutes(int minutes) => settings.SaveRefreshMinutes(minutes);
 
     /// <summary>
-    /// Tells crateside to leave a track alone — it drops out of the work list until released.
-    /// </summary>
-    public void Hold(string videoId, string? reason = null) => settings.Hold(videoId, reason);
-
-    /// <summary>Puts a held track back into the work list.</summary>
-    public void Release(string videoId) => settings.Release(videoId);
-
-    /// <summary>Why a track is being held, in the user's words, or null if it is not held.</summary>
-    public string? HoldReason(string videoId) =>
-        InstructionFor(videoId) is { IsHeld: true, HoldReason: var reason } ? reason : null;
-
-    /// <summary>
     /// Records whether a track is an instrumental release — the user's statement, and the
     /// only thing that stops crateside asking the separator for a vocal stem of a track with
     /// no vocals.

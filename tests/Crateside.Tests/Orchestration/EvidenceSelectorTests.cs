@@ -45,7 +45,6 @@ public class EvidenceSelectorTests : IDisposable
             FullyProcessed = [],
             AwaitingKey = [],
             AwaitingSeparation = [],
-            Held = [],
         };
 
     [Fact]
@@ -78,24 +77,6 @@ public class EvidenceSelectorTests : IDisposable
         );
 
         Assert.Equal("bbbbbbbbbbb", next.VideoId);
-    }
-
-    [Fact]
-    public void A_held_track_cannot_be_picked_because_it_is_not_outstanding()
-    {
-        var held = Item("heldheld001");
-
-        var view = new QueueView
-        {
-            Items = [held],
-            Outstanding = [],
-            FullyProcessed = [],
-            AwaitingKey = [],
-            AwaitingSeparation = [],
-            Held = [held],
-        };
-
-        Assert.False(new EvidenceSelector(Jobs, Set).TryPickNext(view, out _));
     }
 
     [Theory]
