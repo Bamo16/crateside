@@ -90,6 +90,7 @@ public static class ServiceRegistration
         services.AddSingleton<ProtectedTokenStore>();
         services.AddSingleton<QueueAuthorizer>();
         services.AddSingleton<QueueRemover>();
+        services.AddSingleton<BumpedTrack>();
         services.AddSingleton<ReadReopenedTracks>(sp =>
             ledger => ReopenedTracks.From(sp.GetRequiredService<JobStore>().All(), ledger)
         );

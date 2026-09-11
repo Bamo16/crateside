@@ -82,7 +82,8 @@ public sealed record QueueView
         IReadOnlySet<string> verdictWithoutStems,
         IReadOnlySet<string> separatedWithoutKey,
         IReadOnlyDictionary<string, TrackInstruction> instructions,
-        IReadOnlyList<QueueItem>? reopened = null
+        IReadOnlyList<QueueItem>? reopened = null,
+        string? bumped = null
     )
     {
         var described = items.Select(Described).ToArray();
@@ -118,8 +119,31 @@ public sealed record QueueView
                     !fullyProcessed.Contains(i.VideoId) && !verdictWithoutStems.Contains(i.VideoId)
                 ),
             ],
-        };
+        }.WithBumpedFirst(bumped);
     }
+
+    /// <summary>
+    /// The work lists with the bumped track first, where it is in them. Every other item keeps
+    /// its place, so the order stays the playlist's own until the user says otherwise.
+    /// </summary>
+    /// <remarks>
+    /// Applied to the two lists a stage picks from. <see cref="AwaitingKey"/> is not one — nothing
+    /// automatic works it, so being first in it would mean nothing (ADR 0015).
+    /// </remarks>
+    private QueueView WithBumpedFirst(string? bumped) =>
+        bumped is not { Length: > 0 } videoId
+            ? this
+            : this with
+            {
+                Outstanding = First(Outstanding, videoId),
+                AwaitingSeparation = First(AwaitingSeparation, videoId),
+            };
+
+    private static IReadOnlyList<QueueItem> First(IReadOnlyList<QueueItem> items, string videoId) =>
+        items.FirstOrDefault(i => i.VideoId.Equals(videoId, StringComparison.Ordinal))
+            is not { } bumped
+            ? items
+            : [bumped, .. items.Where(i => !ReferenceEquals(i, bumped))];
 
     /// <summary>Items whose video is fully processed — the ones deletion would remove.</summary>
     public required IReadOnlyList<QueueItem> FullyProcessed { get; init; }

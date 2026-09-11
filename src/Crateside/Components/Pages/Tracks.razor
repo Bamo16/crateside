@@ -612,6 +612,14 @@
                             {
                                 <button class="outline" @onclick="() => Retry(row)">Retry</button>
                             }
+                            @if (Playlist.BumpedVideoId == row.VideoId)
+                            {
+                                <button class="primary" @onclick="ClearBump">Stop doing this next</button>
+                            }
+                            else if (row.State is TrackState.Queued or TrackState.JudgedInLine)
+                            {
+                                <button class="outline" @onclick="() => Bump(row)">Do this next</button>
+                            }
                             @if (row.PlaylistItemId is { } playlistItemId && Playlist.IsAuthorized)
                             {
                                 <button class="outline" @onclick="() => Remove(row, playlistItemId)">
@@ -1045,6 +1053,24 @@
         {
             _problem = $"Could not open {folder}: {e.Message}";
         }
+    }
+
+    /// <summary>
+    /// Waiting is the only time this means anything: once a stage has the track, the work lists
+    /// have already been read.
+    /// </summary>
+    private async Task Bump(TrackRow row)
+    {
+        Playlist.Bump(row.VideoId);
+
+        await Source.RefreshAsync(_circuit.Token);
+    }
+
+    private async Task ClearBump()
+    {
+        Playlist.ClearBump();
+
+        await Source.RefreshAsync(_circuit.Token);
     }
 
     private async Task SetInstrumental(TrackRow row, ChangeEventArgs e)

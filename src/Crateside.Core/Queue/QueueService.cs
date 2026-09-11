@@ -13,6 +13,7 @@ public sealed class QueueService(
     YouTubeQueueReader reader,
     QueueAuthorizer authorizer,
     QueueRemover remover,
+    BumpedTrack bumped,
     ReadReopenedTracks? reopened = null
 )
 {
@@ -76,6 +77,15 @@ public sealed class QueueService(
 
     /// <summary>Sets it. Zero turns it off.</summary>
     public void SetRefreshMinutes(int minutes) => settings.SaveRefreshMinutes(minutes);
+
+    /// <summary>Puts a track at the front of the work lists a stage picks from.</summary>
+    public void Bump(string videoId) => bumped.Bump(videoId);
+
+    /// <summary>Gives up the bump, putting the queue back in the playlist's own order.</summary>
+    public void ClearBump() => bumped.Clear();
+
+    /// <summary>The track the user asked for next, or null if nobody has.</summary>
+    public string? BumpedVideoId => bumped.VideoId;
 
     /// <summary>
     /// Records whether a track is an instrumental release — the user's statement, and the
@@ -179,7 +189,8 @@ public sealed class QueueService(
                     .Select(i => i.VideoId)
                     .ToHashSet(StringComparer.Ordinal),
                 instructions,
-                Reopened(items, ledger)
+                Reopened(items, ledger),
+                bumped.VideoId
             ),
             Ledger = ledger,
             Processed = processed,
