@@ -139,6 +139,7 @@ public class TracksViewCompositionTests : IDisposable
         IReadOnlyList<StagingSong>? staging = null,
         IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>>? onDisk = null,
         JobStore? jobs = null,
+        IReadOnlyDictionary<string, Acquisition>? acquisitions = null,
         params TrackInstruction[] instructions
     ) =>
         TracksView
@@ -149,7 +150,9 @@ public class TracksViewCompositionTests : IDisposable
                 onDisk ?? new Dictionary<string, IReadOnlyList<StemOnDisk>>(),
                 FinishedRoot,
                 jobs ?? Jobs(),
-                instructions.ToDictionary(t => t.VideoId, StringComparer.Ordinal)
+                instructions.ToDictionary(t => t.VideoId, StringComparer.Ordinal),
+                resolvedNames: null,
+                acquisitions
             )
             .Rows;
 
@@ -180,6 +183,61 @@ public class TracksViewCompositionTests : IDisposable
         );
 
         Assert.Equal(TrackState.Parked, row.State);
+        Assert.Equal(ParkReason.NoKey, row.ParkedFor);
+    }
+
+    [Fact]
+    public void A_download_short_of_premium_parks_the_row_over_its_source()
+    {
+        var row = Assert.Single(
+            Compose(
+                acquisitions: new Dictionary<string, Acquisition>(StringComparer.Ordinal)
+                {
+                    [Video] = new() { PremiumStatus = PremiumStatus.NoPremiumLadder },
+                }
+            )
+        );
+
+        Assert.Equal(TrackState.Parked, row.State);
+        Assert.Equal(ParkReason.PremiumShortfall, row.ParkedFor);
+    }
+
+    [Fact]
+    public void A_download_that_got_premium_audio_leaves_the_row_alone()
+    {
+        // Recorded on every download, so the row has to read the outcome rather than the
+        // presence of a record.
+        var row = Assert.Single(
+            Compose(
+                acquisitions: new Dictionary<string, Acquisition>(StringComparer.Ordinal)
+                {
+                    [Video] = new() { PremiumStatus = PremiumStatus.Premium, IsPremium = true },
+                }
+            )
+        );
+
+        Assert.Equal(TrackState.Queued, row.State);
+        Assert.Null(row.ParkedFor);
+        Assert.NotNull(row.Acquisition);
+    }
+
+    [Fact]
+    public void Want_of_a_key_outranks_a_shortfall_because_the_gpu_has_already_run()
+    {
+        var row = Assert.Single(
+            Compose(
+                View(
+                    verdictWithoutStems: new HashSet<string> { Video },
+                    separatedWithoutKey: new HashSet<string> { Video }
+                ),
+                acquisitions: new Dictionary<string, Acquisition>(StringComparer.Ordinal)
+                {
+                    [Video] = new() { PremiumStatus = PremiumStatus.NoPremiumLadder },
+                }
+            )
+        );
+
+        Assert.Equal(ParkReason.NoKey, row.ParkedFor);
     }
 
     [Fact]

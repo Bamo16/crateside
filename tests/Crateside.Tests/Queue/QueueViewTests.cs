@@ -37,15 +37,6 @@ public class PremiumOutlookReaderTests
     [InlineData("   ")]
     public void Nothing_to_judge_by_is_unknown_rather_than_a_guess(string? description) =>
         Assert.Equal(PremiumOutlook.Unknown, PremiumOutlookReader.FromDescription(description));
-
-    [Fact]
-    public void Only_the_uncertain_outcomes_carry_an_advisory()
-    {
-        // Explaining a success is noise, and silence keeps a visible flag meaningful.
-        Assert.Null(PremiumOutlookReader.AdvisoryFor(PremiumOutlook.ArtTrack));
-        Assert.NotNull(PremiumOutlookReader.AdvisoryFor(PremiumOutlook.VideoUpload));
-        Assert.NotNull(PremiumOutlookReader.AdvisoryFor(PremiumOutlook.Unknown));
-    }
 }
 
 public class QueueBatchTests

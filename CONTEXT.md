@@ -114,11 +114,25 @@ the two run types below are named after which of them they produce.
   over; the rest stay where separation put them, because staging is where tagging
   happens and there is nothing to tag them with.
 - **Working set** — everything crateside is holding about one track while that
-  track is in flight: the source audio it acquired and the evidence it produced
-  from it. Discarded when the track is **imported**, because that is the point
-  at which there is nothing further to do with the track and therefore nothing
-  further to do with what was gathered about it. Crateside's own scratch, never a
-  record of anything — losing it costs a re-run, never a fact.
+  track is in flight: the source audio it acquired, the evidence it produced
+  from it, and the **acquisition**. Discarded when the track is **imported**, because
+  that is the point at which there is nothing further to do with the track and
+  therefore nothing further to do with what was gathered about it. Crateside's own
+  scratch, never a record of anything — losing it costs a re-run, never a fact.
+- **Acquisition** — how the download crateside is holding turned out, as
+  `stemforge-cli` reported it: which premium outcome it met, and whether the user
+  has accepted it. Kept in the working set so it dies with the audio it describes —
+  a swap re-downloads, and the answer is measured again rather than inherited.
+- **Premium shortfall** — a download that did not get YouTube Premium audio.
+  StemForge names five ways that happens; only the two that are properties of the
+  *upload* park a track, because the other two are true of every download at once
+  and no per-track action would fix them (ADR 0016).
+- **Parked** — crateside stopped and it is the user's turn. Not a failure and not a
+  standing instruction: a finding, which the user *resolves* rather than clears.
+  Two reasons, at opposite ends of the pipeline — **no key** (separated, with no
+  verdict worth tagging with; the way out is a better verdict) and **premium
+  shortfall** (stopped before the verdict; the way out is a better upload or the
+  user's say-so).
 - **Draining** — working the queue down continuously, one track at a time, for as
   long as there is anything outstanding. The normal state of the system rather than
   an action someone takes: what limits separation is that two at once are ruinous,

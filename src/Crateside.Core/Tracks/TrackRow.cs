@@ -119,10 +119,18 @@ public sealed record TrackRow
     public bool IsInstrumentalRelease { get; init; }
 
     /// <summary>
-    /// Separated, with its stems parked in the unresolved-key root for want of a verdict good
-    /// enough to tag with.
+    /// Why crateside stopped and handed this track back, or null when it has not.
     /// </summary>
-    public bool IsParkedForKey { get; init; }
+    public ParkReason? ParkedFor { get; init; }
+
+    /// <summary>
+    /// How the download crateside is holding turned out, or null when it holds none.
+    /// </summary>
+    /// <remarks>
+    /// Present for any track with a working set, shortfall or not — what makes it a finding is
+    /// <see cref="Acquisition.Stops"/>, not its being here.
+    /// </remarks>
+    public Acquisition? Acquisition { get; init; }
 
     /// <summary>Its place in the line for the GPU, counting from one. Null when it is not in it.</summary>
     public int? GpuPosition { get; init; }
@@ -173,7 +181,7 @@ public sealed record TrackRow
             { GpuPosition: not null } => TrackState.JudgedInLine,
             { IsDone: true } => TrackState.Done,
             { GaveUpAt: not null } => TrackState.GaveUp,
-            { IsParkedForKey: true } => TrackState.Parked,
+            { ParkedFor: not null } => TrackState.Parked,
             _ => AtRest,
         };
 
@@ -184,12 +192,13 @@ public sealed record TrackRow
     /// Whether the separation plan can still be changed, which is until separation starts.
     /// </summary>
     /// <remarks>
-    /// Read off what has already happened, not off <see cref="State"/> — a held track that was
-    /// already separated still reads as held, but its plan is fixed.
+    /// Read off what has already happened, not off <see cref="State"/>. Only
+    /// <see cref="ParkReason.NoKey"/> fixes the plan, because only it means the GPU has already
+    /// run — a track parked over its download has had nothing separated and is still open to one.
     /// </remarks>
     public bool CanChangePlan =>
         State is not (TrackState.Separating or TrackState.Staging or TrackState.Tagging)
-        && this is { IsParkedForKey: false, HasWarpGuide: false, Samples.Count: 0 };
+        && this is { ParkedFor: not ParkReason.NoKey, HasWarpGuide: false, Samples.Count: 0 };
 
     /// <summary>
     /// A finding worth flagging beside the song name, or null when there is nothing wrong.
@@ -212,7 +221,9 @@ public sealed record TrackRow
             TrackState.Staging => "staging",
             TrackState.Tagging => "tagging",
             TrackState.ReadyToWarp => "ready to warp",
-            TrackState.Parked => "parked · no key",
+            TrackState.Parked => ParkedFor is ParkReason.PremiumShortfall
+                ? "parked · poor audio"
+                : "parked · no key",
             TrackState.GaveUp =>
                 $"gave up · {GaveUpAt?.ToString().ToLowerInvariant()} ×{GaveUpStrikes}",
             TrackState.Done => "done",
@@ -250,7 +261,9 @@ public sealed record TrackRow
             TrackState.Staging => "moving stems into Sample Staging",
             TrackState.Tagging => "writing Ableton key tags",
             TrackState.ReadyToWarp => "your turn — warp, then move to Mashup Samples",
-            TrackState.Parked => "needs a better verdict — nothing automatic will move it",
+            TrackState.Parked => ParkedFor is ParkReason.PremiumShortfall
+                ? "check for a better upload, or use this one anyway"
+                : "needs a better verdict — nothing automatic will move it",
             TrackState.GaveUp => "retry, or take it out of the playlist",
             TrackState.Done => "in Mashup Samples",
             _ => "downloading next",
@@ -261,7 +274,11 @@ public sealed record TrackRow
     /// and how long the track has been sitting in staging.
     /// </summary>
     public string Detail =>
-        string.Join(" ", new[] { Judgement, Disagreement, Since }.OfType<string>());
+        string.Join(" ", new[] { Judgement, Shortfall, Disagreement, Since }.OfType<string>());
+
+    /// <summary>Said only while the shortfall is still the user's to resolve.</summary>
+    private string? Shortfall =>
+        ParkedFor is ParkReason.PremiumShortfall ? Acquisition?.Advisory : null;
 
     private string Judgement =>
         this switch

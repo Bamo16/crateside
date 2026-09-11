@@ -75,10 +75,34 @@ public sealed class EvidenceRunner(
         return Parse(outcome.StandardOutput) switch
         {
             null => (null, "stemforge-cli download reported success but produced no readable JSON"),
-            [{ Succeeded: true, Path: { Length: > 0 } path }, ..] => (path, null),
+            [{ Succeeded: true, Path: { Length: > 0 } path } row, ..] => (
+                Recorded(order.VideoId, row, path),
+                null
+            ),
             [{ Error: { Length: > 0 } error }, ..] => (null, error),
             _ => (null, "stemforge-cli download failed without saying why"),
         };
+    }
+
+    /// <summary>
+    /// Keeps what the download said about its own audio quality, and hands back the path.
+    /// </summary>
+    /// <remarks>
+    /// Only the success path carries these fields — a failed input reports the first four and
+    /// nulls the rest — so this is the one place they can be read.
+    /// </remarks>
+    private string Recorded(string videoId, DownloadOutput row, string path)
+    {
+        workingSet.SaveAcquisition(
+            videoId,
+            new Acquisition
+            {
+                PremiumStatus = Acquisition.StatusFrom(row.PremiumStatus),
+                IsPremium = row.IsPremium is true,
+            }
+        );
+
+        return path;
     }
 
     /// <summary>
@@ -170,4 +194,18 @@ internal sealed record DownloadOutput
 
     [JsonPropertyName("error")]
     public string? Error { get; init; }
+
+    [JsonPropertyName("isPremium")]
+    public bool? IsPremium { get; init; }
+
+    /// <summary>
+    /// The outcome's name, which is what separates a deliberate lower pick from a dead session.
+    /// </summary>
+    /// <remarks>
+    /// <c>premiumShortfall</c> sits beside it in the JSON and is deliberately not read: it is
+    /// true for every non-ideal outcome, including the two that are about the session rather
+    /// than the upload.
+    /// </remarks>
+    [JsonPropertyName("premiumStatus")]
+    public string? PremiumStatus { get; init; }
 }

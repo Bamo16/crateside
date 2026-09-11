@@ -30,14 +30,12 @@ public sealed class TrackSwap(
             (var id, _) when id.Equals(videoId, StringComparison.Ordinal) => Impossible(
                 "That is already this track's source."
             ),
-            (_, false) => Impossible(
-                "This track has never been judged, so there is no verdict to carry across."
-            ),
-            _ => new SwapPlan
+            (_, var judged) => new SwapPlan
             {
                 NewVideoId = newVideoId,
                 Url = $"https://music.youtube.com/watch?v={newVideoId}",
                 Removing = staged(videoId),
+                CarriesVerdict = judged,
             },
         };
     }
@@ -101,6 +99,11 @@ public sealed class TrackSwap(
     }
 
     /// <summary>Has keytag record that the new video is this song, or says why it could not.</summary>
+    /// <remarks>
+    /// Skipped entirely for a track with no verdict — a restatement exists to carry one across,
+    /// and a track stopped before the verdict has none. That is the case a premium shortfall
+    /// makes (ADR 0016).
+    /// </remarks>
     private async Task<string?> RestateAsync(
         string videoId,
         string newVideoId,
@@ -109,10 +112,12 @@ public sealed class TrackSwap(
         CancellationToken cancellationToken
     )
     {
+        if (!ledger.TryGetLatestByVideoId(videoId, out var current))
+            return null;
+
         // keytag refuses a URL the song already has, so a retry must skip rather than fail.
         if (
-            ledger.TryGetLatestByVideoId(videoId, out var current)
-            && ledger.TryGetLatestByVideoId(newVideoId, out var already)
+            ledger.TryGetLatestByVideoId(newVideoId, out var already)
             && already.Song.Equals(current.Song, StringComparison.OrdinalIgnoreCase)
         )
             return null;
@@ -146,6 +151,14 @@ public sealed class TrackSwap(
 /// <summary>What a swap would do. Read before it happens, to say so on screen.</summary>
 public sealed record SwapPlan
 {
+    private const string CarriedDetail =
+        "keytag records the new video as this song, so the key and BPM carry across and nothing "
+        + "is judged again. Separation downloads the replacement and runs from it.";
+
+    private const string FreshDetail =
+        "Nothing has been judged for this track yet, so there is nothing to carry across. The "
+        + "downloaded audio is thrown away and the track starts again from the new upload.";
+
     /// <summary>The video the track would be cut from, or null when the URL was unreadable.</summary>
     public string? NewVideoId { get; init; }
 
@@ -155,15 +168,20 @@ public sealed record SwapPlan
     /// <summary>The staged files that would go: they came from the upload being replaced.</summary>
     public required IReadOnlyList<StagingStem> Removing { get; init; }
 
+    /// <summary>Whether there is a verdict for keytag to carry across to the new upload.</summary>
+    public bool CarriesVerdict { get; init; }
+
     /// <summary>Why this cannot happen, or null when it can.</summary>
     public string? Refusal { get; init; }
 
     public bool IsPossible => Refusal is null;
 
     /// <summary>The sentence beside the button, saying what pressing it costs.</summary>
-    public const string Detail =
-        "keytag records the new video as this song, so the key and BPM carry across and nothing "
-        + "is judged again. Separation downloads the replacement and runs from it.";
+    public string Detail => DetailFor(CarriesVerdict);
+
+    /// <summary>The same sentence for a row with no URL typed yet, which has no plan to ask.</summary>
+    public static string DetailFor(bool carriesVerdict) =>
+        carriesVerdict ? CarriedDetail : FreshDetail;
 }
 
 /// <summary>What a swap actually did.</summary>

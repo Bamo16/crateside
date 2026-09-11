@@ -38,11 +38,6 @@ public sealed record WorkOrder
     public bool? HasVocals { get; init; }
 
     /// <summary>
-    /// What is worth saying to the user before this runs, or null when nothing is.
-    /// </summary>
-    public string? Advisory => PremiumOutlookReader.AdvisoryFor(PremiumOutlook);
-
-    /// <summary>
     /// Decides what should happen to a queued track.
     /// </summary>
     public static WorkOrder Compose(QueueItem item, KeyLedger ledger) =>

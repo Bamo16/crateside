@@ -21,6 +21,7 @@
 @inject TrackSwap Swap
 @inject DrainControl Separation
 @inject VerdictControl Judging
+@inject WorkingSet Held
 @inject QuotaReader Quota
 
 <PageTitle>Tracks</PageTitle>
@@ -224,6 +225,20 @@
             @if (open)
             {
                 <div class="panel">
+                    @if (row.ParkedFor is ParkReason.PremiumShortfall)
+                    {
+                        <div class="finding">
+                            <div class="finding-said">
+                                <strong>The download did not get premium audio.</strong>
+                                @row.Acquisition?.Advisory
+                            </div>
+
+                            <button class="outline" @onclick="() => UseAnyway(row)" disabled="@_working">
+                                Use it anyway
+                            </button>
+                        </div>
+                    }
+
                     <div class="name-strip @(_renaming == row.VideoId ? "editing" : null)">
                         @if (_renaming == row.VideoId)
                         {
@@ -297,7 +312,7 @@
 
                             <div class="name-side">
                                 <p class="detail">
-                                    @(_swapPlan?.Refusal ?? SwapPlan.Detail)
+                                    @(_swapPlan?.Refusal ?? _swapPlan?.Detail ?? SwapPlan.DetailFor(row.Verdict is not null))
                                     @if (row.SamplesLeftInLibrary > 0)
                                     {
                                         <text>
@@ -956,6 +971,28 @@
                 CancelSwap();
                 Separation.Wake();
             }
+
+            await Source.RefreshAsync(_circuit.Token);
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    /// <summary>Accepts this download's audio, so the track goes on to the verdict.</summary>
+    private async Task UseAnyway(TrackRow row)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            if (!Held.AcceptAcquisition(row.VideoId))
+                _problem = "There is no downloaded audio for this track any more, so it will be fetched again.";
+
+            // Judging is paused by default, so this only puts the track back in line for it.
+            Judging.Wake();
 
             await Source.RefreshAsync(_circuit.Token);
         }

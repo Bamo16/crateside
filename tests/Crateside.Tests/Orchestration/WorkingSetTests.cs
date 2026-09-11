@@ -118,4 +118,86 @@ public class WorkingSetTests : IDisposable
 
         Assert.Equal(["aaaaaaaaaaa", VideoId], Set.VideoIds.Order());
     }
+
+    [Fact]
+    public void How_the_download_went_survives_a_restart()
+    {
+        Set.SaveAcquisition(
+            VideoId,
+            new Acquisition { PremiumStatus = PremiumStatus.NoPremiumLadder, IsPremium = false }
+        );
+
+        var read = new WorkingSet(_root).AcquisitionFor(VideoId);
+
+        Assert.Equal(PremiumStatus.NoPremiumLadder, read?.PremiumStatus);
+        Assert.True(read?.Stops);
+    }
+
+    [Fact]
+    public void A_track_nothing_recorded_for_reads_as_no_finding_rather_than_a_shortfall()
+    {
+        // Every working set acquired before crateside read these fields is in this state, and
+        // none of them should suddenly park.
+        Set.Prepare(VideoId);
+
+        Assert.Null(Set.AcquisitionFor(VideoId));
+        Assert.Empty(Set.Acquisitions());
+    }
+
+    [Fact]
+    public void An_unreadable_record_reads_as_none_rather_than_throwing()
+    {
+        Write(WorkingSet.AcquisitionFileName, "{ this is not json");
+
+        Assert.Null(Set.AcquisitionFor(VideoId));
+    }
+
+    [Fact]
+    public void The_record_is_not_mistaken_for_the_downloaded_audio()
+    {
+        // TryGetSource finds the audio by elimination, so anything else written into the folder
+        // has to stay out of its way.
+        var audio = Write("Yes - Owner of a Lonely Heart.flac");
+
+        Set.SaveAcquisition(VideoId, new Acquisition { PremiumStatus = PremiumStatus.Premium });
+
+        Assert.True(Set.TryGetSource(VideoId, out var found));
+        Assert.Equal(audio, found);
+    }
+
+    [Fact]
+    public void Accepting_leaves_the_measurement_alone_and_only_stops_it_stopping()
+    {
+        Set.SaveAcquisition(
+            VideoId,
+            new Acquisition { PremiumStatus = PremiumStatus.SourceHasNoPremiumAudio }
+        );
+
+        Assert.True(Set.AcceptAcquisition(VideoId));
+
+        var read = Set.AcquisitionFor(VideoId);
+
+        Assert.False(read?.Stops);
+        Assert.True(read?.IsAccepted);
+        Assert.Equal(PremiumStatus.SourceHasNoPremiumAudio, read?.PremiumStatus);
+    }
+
+    [Fact]
+    public void There_is_nothing_to_accept_for_a_track_holding_no_download() =>
+        Assert.False(Set.AcceptAcquisition(VideoId));
+
+    [Fact]
+    public void Throwing_away_the_download_throws_away_the_finding_with_it()
+    {
+        // The point of keeping it here: a swap re-acquires, and the answer is measured again
+        // rather than inherited from the upload being replaced (ADR 0016).
+        Set.SaveAcquisition(
+            VideoId,
+            new Acquisition { PremiumStatus = PremiumStatus.NoPremiumLadder }
+        );
+
+        Set.Discard(VideoId);
+
+        Assert.Null(Set.AcquisitionFor(VideoId));
+    }
 }

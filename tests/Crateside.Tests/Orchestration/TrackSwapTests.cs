@@ -57,10 +57,25 @@ public class TrackSwapTests : IDisposable
     }
 
     [Fact]
-    public void A_track_the_ledger_has_never_seen_is_refused()
+    public void A_track_the_ledger_has_never_seen_can_still_be_swapped()
     {
-        // keytag restates a run, so an unjudged track has nothing to carry across.
-        Assert.Contains("never been judged", Swap().PlanFor("neverJudged", Replacement).Refusal);
+        // It used to be refused for having no verdict to carry across. But a premium shortfall
+        // stops a track *before* the verdict, so refusing the unjudged case refused exactly the
+        // tracks that most need a better upload (ADR 0016).
+        var plan = Swap().PlanFor("neverJudged", Replacement);
+
+        Assert.True(plan.IsPossible);
+        Assert.False(plan.CarriesVerdict);
+        Assert.Contains("nothing to carry across", plan.Detail);
+    }
+
+    [Fact]
+    public void A_judged_track_still_says_the_verdict_comes_with_it()
+    {
+        var plan = Swap().PlanFor(Video, Replacement);
+
+        Assert.True(plan.CarriesVerdict);
+        Assert.Contains("key and BPM carry across", plan.Detail);
     }
 
     [Fact]
@@ -209,6 +224,31 @@ public class TrackSwapTests : IDisposable
             "https://music.youtube.com/watch?v=NSLYAT7sjAA",
             WorkOrder.Compose(item, KeyLedger.Read(LedgerPath)).SourceUrl
         );
+    }
+
+    [Fact]
+    public async Task Swapping_an_unjudged_track_records_the_url_without_restating_anything()
+    {
+        // Nothing shells out to keytag here, which is what makes this safe: there is no run to
+        // restate, and the test's `uv` does not exist.
+        var settings = Settings();
+        var workingSet = new WorkingSet(WorkingRoot);
+
+        workingSet.SaveAcquisition(
+            "neverJudged",
+            new Acquisition { PremiumStatus = PremiumStatus.NoPremiumLadder }
+        );
+
+        var outcome = await Swap(settings, workingSet: workingSet)
+            .ApplyAsync("neverJudged", Replacement, TestContext.Current.CancellationToken);
+
+        Assert.True(outcome.Succeeded, outcome.Problem);
+
+        var instruction = Assert.Single(settings.Read().Tracks);
+        Assert.Equal("https://music.youtube.com/watch?v=NSLYAT7sjAA", instruction.SourceUrl);
+
+        // The finding went with the audio it was about, so the replacement is measured afresh.
+        Assert.Null(workingSet.AcquisitionFor("neverJudged"));
     }
 
     private TrackSwap Swap(

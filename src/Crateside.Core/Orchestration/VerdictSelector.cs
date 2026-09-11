@@ -15,7 +15,7 @@ public sealed class VerdictSelector(
 
     /// <summary>
     /// The next track to judge: oldest-added first, skipping anything already judged, not yet
-    /// detected, in flight, or given up on.
+    /// detected, in flight, given up on, or stopped for a premium shortfall.
     /// </summary>
     /// <remarks>
     /// This predicate is the exact negation of what <see cref="VerdictRunner"/> checks
@@ -38,6 +38,9 @@ public sealed class VerdictSelector(
                 // retrying is the only way the track moves.
                 retrySucceeded: true
             )
+            // Last, because it opens a file: a swap copies the verdict forward, so judging poor
+            // audio first would restate that key onto the better upload rather than re-derive it.
+            && workingSet.AcquisitionFor(i.VideoId)?.Stops is not true
         )!;
 
         return next is not null;

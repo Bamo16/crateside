@@ -27,7 +27,7 @@ public class TrackChipAndFilterTests
             {
                 Samples = [new TrackSample { Label = "Vocal - Full", AbletonKey = "C minor" }],
             },
-            TrackState.Parked => Base with { IsParkedForKey = true },
+            TrackState.Parked => Base with { ParkedFor = ParkReason.NoKey },
             TrackState.GaveUp => Base with { GaveUpAt = JobStage.Separation, GaveUpStrikes = 3 },
             TrackState.Done => Base with
             {

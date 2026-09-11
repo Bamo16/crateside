@@ -88,6 +88,13 @@ public class EvidenceRunnerTests : IDisposable
     private static string DownloadedTo(string path) =>
         $$"""[{"succeeded":true,"path":"{{path.Replace(@"\", @"\\")}}"}]""";
 
+    private static string DownloadedTo(string path, string premiumStatus, bool isPremium) =>
+        $$"""
+        [{"succeeded":true,"path":"{{path.Replace(@"\", @"\\")}}","isPremium":{{(
+            isPremium ? "true" : "false"
+        )}},"premiumShortfall":{{(isPremium ? "false" : "true")}},"premiumStatus":"{{premiumStatus}}"}]
+        """;
+
     [Fact]
     public async Task A_finished_run_reports_where_the_evidence_landed()
     {
@@ -196,5 +203,52 @@ public class EvidenceRunnerTests : IDisposable
 
         Assert.False(result.IsSuccess);
         Assert.Contains("ffmpeg not found", result.Error);
+    }
+
+    [Fact]
+    public async Task What_the_download_got_is_kept_instead_of_being_parsed_past()
+    {
+        // These three fields were arriving on every download and being discarded, which is what
+        // left crateside predicting audio quality it was already being told (ADR 0016).
+        await Runner(
+                Downloader(
+                    DownloadedTo(@"C:\working\track.flac", "NoPremiumLadder", isPremium: false)
+                ),
+                Detector()
+            )
+            .RunAsync(Order(), TestContext.Current.CancellationToken);
+
+        var acquisition = Set.AcquisitionFor(VideoId);
+
+        Assert.Equal(PremiumStatus.NoPremiumLadder, acquisition?.PremiumStatus);
+        Assert.False(acquisition?.IsPremium);
+        Assert.True(acquisition?.Stops);
+    }
+
+    [Fact]
+    public async Task A_premium_download_is_recorded_too_and_stops_nothing()
+    {
+        await Runner(
+                Downloader(DownloadedTo(@"C:\working\track.flac", "Premium", isPremium: true)),
+                Detector()
+            )
+            .RunAsync(Order(), TestContext.Current.CancellationToken);
+
+        var acquisition = Set.AcquisitionFor(VideoId);
+
+        Assert.Equal(PremiumStatus.Premium, acquisition?.PremiumStatus);
+        Assert.True(acquisition?.IsPremium);
+        Assert.False(acquisition?.Stops);
+    }
+
+    [Fact]
+    public async Task A_download_that_said_nothing_about_premium_records_no_finding()
+    {
+        // A StemForge too old to report the fields must not read as a shortfall.
+        await Runner(Downloader(DownloadedTo(@"C:\working\track.flac")), Detector())
+            .RunAsync(Order(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(PremiumStatus.Unreported, Set.AcquisitionFor(VideoId)?.PremiumStatus);
+        Assert.False(Set.AcquisitionFor(VideoId)?.Stops);
     }
 }

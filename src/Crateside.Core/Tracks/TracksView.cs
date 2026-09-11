@@ -39,6 +39,10 @@ public sealed record TracksView
     /// <param name="finishedRoot">
     /// The folder that means the user is done with a file — <c>Mashup Samples</c>.
     /// </param>
+    /// <param name="acquisitions">
+    /// How each retained download turned out, by video ID — the measured premium outcome a row
+    /// is parked over.
+    /// </param>
     public static TracksView Compose(
         QueueView view,
         KeyLedger ledger,
@@ -47,10 +51,12 @@ public sealed record TracksView
         string finishedRoot,
         JobStore jobs,
         IReadOnlyDictionary<string, TrackInstruction> instructions,
-        IReadOnlyDictionary<string, ResolvedName>? resolvedNames = null
+        IReadOnlyDictionary<string, ResolvedName>? resolvedNames = null,
+        IReadOnlyDictionary<string, Acquisition>? acquisitions = null
     )
     {
         var resolved = resolvedNames ?? new Dictionary<string, ResolvedName>();
+        var acquired = acquisitions ?? new Dictionary<string, Acquisition>();
 
         var parked = VideoIdsOf(view.AwaitingKey);
 
@@ -145,6 +151,14 @@ public sealed record TracksView
 
             var progress = StageProgress.For(jobs, members.Select(seed => seed.VideoId));
 
+            // The primary's download, since that is the upload the row currently speaks for.
+            var acquisition =
+                acquired.GetValueOrDefault(primary.VideoId)
+                ?? members
+                    .Select(seed => acquired.GetValueOrDefault(seed.VideoId))
+                    .OfType<Acquisition>()
+                    .FirstOrDefault();
+
             var (derived, source) = NameOf(
                 primary.FallbackName,
                 primary.Item is null && songs.Length is 0
@@ -172,7 +186,13 @@ public sealed record TracksView
                 // The work list covers the queue item; the instruction covers everything after it
                 // leaves the playlist.
                 IsInstrumentalRelease = instruction?.IsInstrumentalRelease is true,
-                IsParkedForKey = members.Any(seed => parked.Contains(seed.VideoId)),
+                // Want of a key outranks a shortfall: it is the later stage, and the GPU has
+                // already been spent by the time a track can be in it.
+                ParkedFor =
+                    members.Any(seed => parked.Contains(seed.VideoId)) ? ParkReason.NoKey
+                    : acquisition?.Stops is true ? ParkReason.PremiumShortfall
+                    : null,
+                Acquisition = acquisition,
                 GpuPosition = members
                     .Select(seed =>
                         gpuLine.TryGetValue(seed.VideoId, out var position) ? position : (int?)null

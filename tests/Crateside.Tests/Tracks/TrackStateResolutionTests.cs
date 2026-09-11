@@ -152,11 +152,39 @@ public class TrackStateResolutionTests
         // staging is where tagging happens and there is nothing to tag them with.
         var row = Row() with
         {
-            IsParkedForKey = true,
+            ParkedFor = ParkReason.NoKey,
         };
 
         Assert.Equal(TrackState.Parked, row.State);
         Assert.Equal("needs a better verdict — nothing automatic will move it", row.Next);
+        Assert.Equal("parked · no key", row.ChipLabel);
+    }
+
+    [Fact]
+    public void A_track_whose_download_missed_premium_audio_is_parked_over_its_source()
+    {
+        // The same "crateside stopped, your turn" as above, at the opposite end of the pipeline:
+        // nothing has been separated, so what resolves it is a different upload rather than a
+        // better verdict (ADR 0016).
+        var row = Row() with
+        {
+            ParkedFor = ParkReason.PremiumShortfall,
+            Acquisition = new Acquisition { PremiumStatus = PremiumStatus.NoPremiumLadder },
+        };
+
+        Assert.Equal(TrackState.Parked, row.State);
+        Assert.Equal("check for a better upload, or use this one anyway", row.Next);
+        Assert.Equal("parked · poor audio", row.ChipLabel);
+        Assert.Contains("song version exists", row.Detail);
+    }
+
+    [Fact]
+    public void Parking_over_the_source_leaves_the_separation_plan_open()
+    {
+        // The GPU has not run, so the recipe can still be changed -- unlike a track parked for
+        // want of a key, whose stems already exist.
+        Assert.True((Row() with { ParkedFor = ParkReason.PremiumShortfall }).CanChangePlan);
+        Assert.False((Row() with { ParkedFor = ParkReason.NoKey }).CanChangePlan);
     }
 
     [Fact]

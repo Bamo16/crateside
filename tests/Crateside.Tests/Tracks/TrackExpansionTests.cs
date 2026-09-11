@@ -52,7 +52,7 @@ public class TrackExpansionTests
     {
         // Parked is separated: its stems are in the unresolved-key root rather than in staging,
         // so nothing about it shows up in Samples — and a plan is not a plan once stems exist.
-        Assert.False((Row() with { IsParkedForKey = true }).CanChangePlan);
+        Assert.False((Row() with { ParkedFor = ParkReason.NoKey }).CanChangePlan);
     }
 
     [Fact]

@@ -581,6 +581,29 @@
     padding: 6px 22px 20px 60px;
 }
 
+/* Above the name, because it is the reason the row stopped and everything else is secondary to
+   resolving it. Red to match the chip that led the user here. */
+.finding {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--red);
+    border-radius: 4px;
+}
+
+.finding-said {
+    color: var(--text-75);
+    line-height: 1.5;
+}
+
+.finding-said strong {
+    color: var(--text);
+}
+
 /* Spans both panel columns, above everything: the name is the one thing every state of a track
    has. Its own grid when editing, matching the columns below so the buttons line up with the
    panel's own. */

@@ -267,7 +267,8 @@ public static class ServiceRegistration
                     sp.GetRequiredService<CratesidePaths>().MashupSamples,
                     sp.GetRequiredService<JobStore>(),
                     scan.Instructions,
-                    sp.GetRequiredService<ResolvedNameStore>().Read()
+                    sp.GetRequiredService<ResolvedNameStore>().Read(),
+                    sp.GetRequiredService<WorkingSet>().Acquisitions()
                 );
 
                 return view with

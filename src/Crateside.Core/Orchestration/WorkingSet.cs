@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
@@ -9,8 +12,18 @@ public sealed class WorkingSet(string? root = null)
     /// <summary>The evidence from the whole-file detection — the one a verdict run starts from.</summary>
     public const string EvidenceFileName = "evidence.json";
 
+    /// <summary>How the download went, as <c>stemforge-cli</c> reported it.</summary>
+    public const string AcquisitionFileName = "acquisition.json";
+
     /// <summary>The largest evidence file worth carrying rather than pointing at.</summary>
     private const long MaxInlineBytes = 32 * 1024;
+
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter() },
+    };
 
     private readonly string _root =
         root
@@ -72,6 +85,77 @@ public sealed class WorkingSet(string? root = null)
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
 
         return evidence is not null;
+    }
+
+    /// <summary>Where the download's own account of itself belongs.</summary>
+    public string AcquisitionPathFor(string videoId) =>
+        Path.Combine(DirectoryFor(videoId), AcquisitionFileName);
+
+    /// <summary>
+    /// How this track's retained download went, or null when nothing recorded it.
+    /// </summary>
+    /// <remarks>
+    /// Null for every track acquired before crateside read these fields, which reads as no
+    /// finding rather than as a shortfall.
+    /// </remarks>
+    public Acquisition? AcquisitionFor(string videoId)
+    {
+        try
+        {
+            return File.Exists(AcquisitionPathFor(videoId))
+                ? JsonSerializer.Deserialize<Acquisition>(
+                    File.ReadAllText(AcquisitionPathFor(videoId)),
+                    SerializerOptions
+                )
+                : null;
+        }
+        catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Every recorded acquisition, by video ID — what the rows are drawn from.</summary>
+    public IReadOnlyDictionary<string, Acquisition> Acquisitions() =>
+        VideoIds
+            .Select(videoId => (videoId, acquisition: AcquisitionFor(videoId)))
+            .Where(entry => entry.acquisition is not null)
+            .ToDictionary(
+                entry => entry.videoId,
+                entry => entry.acquisition!,
+                StringComparer.Ordinal
+            );
+
+    /// <summary>Writes down how the download went, replacing whatever was there.</summary>
+    public void SaveAcquisition(string videoId, Acquisition acquisition)
+    {
+        try
+        {
+            Prepare(videoId);
+
+            File.WriteAllText(
+                AcquisitionPathFor(videoId),
+                JsonSerializer.Serialize(acquisition, SerializerOptions)
+            );
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // Losing this costs a finding, not the download it describes.
+        }
+    }
+
+    /// <summary>
+    /// Records that the user has accepted this download's audio, and says whether there was one
+    /// to accept.
+    /// </summary>
+    public bool AcceptAcquisition(string videoId)
+    {
+        if (AcquisitionFor(videoId) is not { } acquisition)
+            return false;
+
+        SaveAcquisition(videoId, acquisition with { IsAccepted = true });
+
+        return true;
     }
 
     /// <summary>

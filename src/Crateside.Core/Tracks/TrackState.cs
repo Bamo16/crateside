@@ -39,10 +39,38 @@ public enum TrackState
     /// <remarks>The move is the signal — nothing has to be marked done.</remarks>
     Done,
 
-    /// <summary>Separated, and parked for want of a key worth tagging with.</summary>
-    /// <remarks>Nothing automatic moves these on — the way out is a better verdict.</remarks>
+    /// <summary>
+    /// crateside stopped and it is the user's turn. <see cref="ParkReason"/> says what over.
+    /// </summary>
+    /// <remarks>
+    /// Nothing automatic moves these on. Not a failure and not a standing instruction — a
+    /// finding, which the user resolves rather than clears (ADR 0015).
+    /// </remarks>
     Parked,
 
     /// <summary>A stage failed enough times that it stopped trying.</summary>
     GaveUp,
+}
+
+/// <summary>
+/// Why a track is parked, which is the axis that says what resolving it takes.
+/// </summary>
+/// <remarks>
+/// The two sit at opposite ends of the pipeline: one has had the GPU spent on it and the other
+/// has had nothing but a download.
+/// </remarks>
+public enum ParkReason
+{
+    /// <summary>Separated, with no verdict good enough to tag with. The way out is a better verdict.</summary>
+    NoKey,
+
+    /// <summary>
+    /// The download came back short of premium audio, and was stopped before the verdict.
+    /// </summary>
+    /// <remarks>
+    /// The way out is a better upload or the user's say-so. Only ever a shortfall about the
+    /// upload itself — a dead or non-premium session is true of every download at once and never
+    /// parks a single track (ADR 0016).
+    /// </remarks>
+    PremiumShortfall,
 }

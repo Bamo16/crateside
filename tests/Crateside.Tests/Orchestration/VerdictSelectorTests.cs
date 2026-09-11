@@ -195,6 +195,74 @@ public class VerdictSelectorTests : IDisposable
         Assert.Equal("bbbbbbbbbbb", next.VideoId);
     }
 
+    [Theory]
+    [InlineData(PremiumStatus.NoPremiumLadder)]
+    [InlineData(PremiumStatus.SourceHasNoPremiumAudio)]
+    public void A_download_short_of_premium_is_not_judged(PremiumStatus status)
+    {
+        // Before the verdict rather than before the GPU, because a swap copies the verdict
+        // forward: a key derived from poor audio would be restated onto the better upload
+        // instead of re-derived, and nothing would say so (ADR 0016).
+        GiveEvidence("aaaaaaaaaaa");
+        GiveEvidence("bbbbbbbbbbb");
+        Set.SaveAcquisition("aaaaaaaaaaa", new Acquisition { PremiumStatus = status });
+
+        new VerdictSelector(Jobs, Set).TryPickNext(
+            View(Item("aaaaaaaaaaa"), Item("bbbbbbbbbbb")),
+            NoLedger,
+            out var next
+        );
+
+        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+    }
+
+    [Theory]
+    [InlineData(PremiumStatus.NotSignedIn)]
+    [InlineData(PremiumStatus.AccountNotPremium)]
+    [InlineData(PremiumStatus.Premium)]
+    public void A_session_problem_holds_nothing_up(PremiumStatus status)
+    {
+        // These are true of every download at once. Stopping tracks one at a time for them would
+        // halt the whole queue for something no per-track action can fix.
+        GiveEvidence("aaaaaaaaaaa");
+        Set.SaveAcquisition("aaaaaaaaaaa", new Acquisition { PremiumStatus = status });
+
+        Assert.True(
+            new VerdictSelector(Jobs, Set).TryPickNext(View(Item("aaaaaaaaaaa")), NoLedger, out _)
+        );
+    }
+
+    [Fact]
+    public void The_users_say_so_lets_a_stopped_track_through()
+    {
+        GiveEvidence("aaaaaaaaaaa");
+        Set.SaveAcquisition(
+            "aaaaaaaaaaa",
+            new Acquisition { PremiumStatus = PremiumStatus.NoPremiumLadder }
+        );
+
+        Assert.False(
+            new VerdictSelector(Jobs, Set).TryPickNext(View(Item("aaaaaaaaaaa")), NoLedger, out _)
+        );
+
+        Set.AcceptAcquisition("aaaaaaaaaaa");
+
+        Assert.True(
+            new VerdictSelector(Jobs, Set).TryPickNext(View(Item("aaaaaaaaaaa")), NoLedger, out _)
+        );
+    }
+
+    [Fact]
+    public void A_track_acquired_before_any_of_this_is_judged_as_before()
+    {
+        // No record is not a shortfall: every working set already on disk has none.
+        GiveEvidence("aaaaaaaaaaa");
+
+        Assert.True(
+            new VerdictSelector(Jobs, Set).TryPickNext(View(Item("aaaaaaaaaaa")), NoLedger, out _)
+        );
+    }
+
     [Fact]
     public void Judgment_is_no_more_patient_than_separation()
     {

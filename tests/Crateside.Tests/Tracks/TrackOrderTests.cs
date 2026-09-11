@@ -23,7 +23,7 @@ public class TrackOrderTests
             TrackState.Judging => Base(title) with { RunningStage = JobStage.Verdict },
             TrackState.Separating => Base(title) with { RunningStage = JobStage.Separation },
             TrackState.Tagging => Base(title) with { RunningStage = JobStage.Tagging },
-            TrackState.Parked => Base(title) with { IsParkedForKey = true },
+            TrackState.Parked => Base(title) with { ParkedFor = ParkReason.NoKey },
             TrackState.GaveUp => Base(title) with
             {
                 GaveUpAt = JobStage.Separation,

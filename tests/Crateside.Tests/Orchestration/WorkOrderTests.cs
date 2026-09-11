@@ -145,22 +145,6 @@ public class WorkOrderTests : IDisposable
     }
 
     [Fact]
-    public void A_video_upload_carries_the_advisory_that_a_better_url_may_exist()
-    {
-        var order = WorkOrder.Compose(Item(PremiumOutlook.VideoUpload), Ledger("A minor"));
-
-        Assert.NotNull(order.Advisory);
-    }
-
-    [Fact]
-    public void An_art_track_says_nothing_because_explaining_a_success_is_noise()
-    {
-        var order = WorkOrder.Compose(Item(PremiumOutlook.ArtTrack), Ledger("A minor"));
-
-        Assert.Null(order.Advisory);
-    }
-
-    [Fact]
     public void The_standard_recipe_is_vocal_instrumental_and_drums()
     {
         var recipe = WorkOrder.Compose(Item(), Ledger("A minor")).Recipe;
