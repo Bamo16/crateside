@@ -6,6 +6,11 @@ namespace Crateside.Core.Staging;
 /// Builds the staging board by composing the readers. Purely derived — no state, no
 /// done-flags, every call re-reads from disk.
 /// </summary>
+/// <remarks>
+/// Reads the XMP rather than Ableton's index, deliberately: this is the one root crateside
+/// writes, so the XMP is *ahead* of the index there and the board would otherwise show a stem as
+/// untagged for hours after being tagged (ADR 0017).
+/// </remarks>
 public sealed class StagingBoard
 {
     private readonly AbletonFolderInfoReader _folderInfoReader;

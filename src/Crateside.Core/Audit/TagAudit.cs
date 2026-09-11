@@ -1,8 +1,12 @@
 using System.Text.RegularExpressions;
 using Crateside.Core.Ledger;
 using Crateside.Core.Staging;
+using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Audit;
+
+/// <summary>Reads the tag state an audit of <paramref name="root"/> should be based on.</summary>
+public delegate AbletonFolderInfo ReadTagState(AuditRoot root);
 
 /// <summary>
 /// Reads every stem's applied Ableton tags and hands them to <see cref="TagAuditReport"/>,
@@ -10,24 +14,48 @@ namespace Crateside.Core.Audit;
 /// </summary>
 public static class TagAudit
 {
+    /// <param name="tagState">
+    /// Where each root's tags are read from. Defaults to <see cref="FromEitherStore"/>, which is
+    /// the rule rather than a convenience — see <see cref="AuditRoot.ReadsTheIndex"/>.
+    /// </param>
     public static TagAuditReport Run(
         KeyLedger ledger,
         IEnumerable<AuditRoot> roots,
-        AbletonFolderInfoReader? folderInfoReader = null
-    ) => new(Scan(ledger, roots, folderInfoReader));
+        ReadTagState? tagState = null
+    ) => new(Scan(ledger, roots, tagState ?? FromEitherStore));
+
+    /// <summary>
+    /// Reads the store this root's tags actually live in: the XMP where crateside writes it, and
+    /// Ableton's index everywhere else (ADR 0017).
+    /// </summary>
+    /// <remarks>
+    /// Finds the index at this machine's default location. Use <see cref="Using"/> where the
+    /// paths are configured.
+    /// </remarks>
+    public static AbletonFolderInfo FromEitherStore(AuditRoot root) =>
+        Using(new AbletonIndexReader(Options.Create(new CratesidePaths())))(root);
+
+    /// <summary>The same rule, against readers the caller already has.</summary>
+    public static ReadTagState Using(
+        AbletonIndexReader index,
+        AbletonFolderInfoReader? folderInfo = null
+    ) =>
+        root =>
+            root.ReadsTheIndex
+                ? index.Read(root.Path)
+                : (folderInfo ?? new AbletonFolderInfoReader()).Read(root.Path);
 
     private static List<TaggedStem> Scan(
         KeyLedger ledger,
         IEnumerable<AuditRoot> roots,
-        AbletonFolderInfoReader? folderInfoReader
+        ReadTagState tagState
     )
     {
-        var folders = folderInfoReader ?? new AbletonFolderInfoReader();
         var stems = new List<TaggedStem>();
 
         foreach (var root in roots.Where(root => Directory.Exists(root.Path)))
         {
-            var folderInfo = folders.Read(root.Path);
+            var folderInfo = tagState(root);
 
             foreach (
                 var path in Directory.EnumerateFiles(root.Path, "*", SearchOption.AllDirectories)
@@ -51,7 +79,6 @@ public static class TagAudit
                         Path = path,
                         FileName = Path.GetFileName(path),
                         Root = root.Path,
-                        TagStoreIsWritten = root.TagStoreIsWritten,
                         SourceVideoId = videoId,
                         Song = run?.Song,
                         LedgerKey = run?.Key,
@@ -70,15 +97,26 @@ public static class TagAudit
 }
 
 /// <summary>A root to scan, and whether its tag store is one crateside writes.</summary>
+/// <remarks>
+/// That one fact decides everything else. It used to gate which findings were trustworthy;
+/// it now picks which store is read, which is the thing it was always really about (ADR 0017).
+/// </remarks>
 public sealed record AuditRoot(string Path, bool TagStoreIsWritten)
 {
-    /// <summary>A root crateside tags into, so a file with no key there is untagged.</summary>
+    /// <summary>
+    /// Whether this root's tags come from Ableton's index rather than its own XMP.
+    /// </summary>
+    /// <remarks>
+    /// crateside reads the store it writes, because that is the only place it can see its own
+    /// work at once — the index takes hours to catch up. Everywhere else it reads the index,
+    /// which is the tag state rather than a mirror that may never converge on it.
+    /// </remarks>
+    public bool ReadsTheIndex => !TagStoreIsWritten;
+
+    /// <summary>A root crateside tags into, read from the XMP its own writes land in.</summary>
     public static AuditRoot Written(string path) => new(path, true);
 
-    /// <summary>
-    /// A root crateside only reads. Its store is a lagging, partial mirror of Ableton's own
-    /// index, so a file with no key there may still be tagged (ADR 0003).
-    /// </summary>
+    /// <summary>A root crateside only reads, read from Ableton's index.</summary>
     public static AuditRoot Mirrored(string path) => new(path, false);
 }
 
@@ -97,16 +135,15 @@ public sealed partial class TagAuditReport(IReadOnlyList<TaggedStem> stems)
         ),
     ];
 
-    /// <summary>
-    /// A taggable verdict exists but no key was applied, in a root whose tag store crateside
-    /// writes — the only place an absent key is a fact rather than a gap in the mirror.
-    /// </summary>
+    /// <summary>A taggable verdict exists but no key was applied.</summary>
+    /// <remarks>
+    /// Restricted to roots crateside writes until ADR 0013, because the XMP could not tell
+    /// "untagged" from "not flushed yet". Each root is now read from the store that actually
+    /// holds its tags, so an absent key is a fact everywhere and the restriction is retired
+    /// (ADR 0017).
+    /// </remarks>
     public IReadOnlyList<TaggedStem> Untagged { get; } =
-    [
-        .. stems.Where(s =>
-            s is { AppliedKey: null, HasTaggableVerdict: true, TagStoreIsWritten: true }
-        ),
-    ];
+    [.. stems.Where(s => s is { AppliedKey: null, HasTaggableVerdict: true })];
 
     /// <summary>Tagged with a tonic but no mode, or the reverse.</summary>
     public IReadOnlyList<TaggedStem> PartialKeys { get; } = [.. stems.Where(s => s.HasPartialKey)];
@@ -173,13 +210,6 @@ public sealed record TaggedStem
 
     public required string Root { get; init; }
 
-    /// <summary>
-    /// Whether crateside writes <see cref="Root"/>'s tag store. Where it does not, the store is a
-    /// lagging mirror of Ableton's own index and <see cref="AppliedKey"/> being null says nothing
-    /// (ADR 0003).
-    /// </summary>
-    public required bool TagStoreIsWritten { get; init; }
-
     public required string SourceVideoId { get; init; }
 
     /// <summary>The ledger identity, or null when the ledger has never seen this stem.</summary>
@@ -193,10 +223,7 @@ public sealed record TaggedStem
 
     public KeyConfidence Confidence { get; init; }
 
-    /// <summary>
-    /// The key the root's tag store has on the file. Null means untagged only where
-    /// <see cref="TagStoreIsWritten"/>; elsewhere it means nobody can tell.
-    /// </summary>
+    /// <summary>The key Ableton has on the file, read from whichever store holds it.</summary>
     public string? AppliedKey { get; init; }
 
     public bool HasPartialKey { get; init; }

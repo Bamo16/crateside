@@ -120,7 +120,13 @@ Ableton's.
 `AuditRoot.Written` / `AuditRoot.Mirrored` distinction was the right call on the evidence it
 had, but it turns out to describe **which store is stale**, not which root can be audited. Read
 from the index, both roots are auditable and the honest finding count over `Mashup Samples` is
-three, not 94 and not 0.
+~~three~~ **zero**.
+
+> **Corrected 2026-09-10 ([ADR 0017](0017-each-root-is-audited-from-the-store-that-holds-its-tags.md)).**
+> "Three" was this ADR's own coverage number — the files the index does not key — reused as a
+> finding count without being run. `Untagged` also requires a taggable verdict, and all three are
+> unjudged, so they land in `NoVerdictCount` instead. Measured by running the switched audit:
+> zero findings of any kind across both roots.
 
 **Item #1's key-distribution panel no longer needs a union.** One source reaches 576 of 579.
 

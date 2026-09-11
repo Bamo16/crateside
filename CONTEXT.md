@@ -62,15 +62,18 @@ against it.
   root, holding the keywords on that root's files. A lagging, partial mirror of the index
   that can lack tags Ableton holds and keep entries for files that have gone
   ([ADR 0003](docs/adr/0003-crateside-may-write-abletons-tag-store.md)). It is what
-  crateside *writes*; the index is what crateside should *read*.
+  crateside *writes*; the index is what crateside *reads* everywhere else.
 - **Written root** — a root whose tag store crateside writes, which is **Sample Staging**
-  and only ever that. Because crateside's own write is the record there, a file with no key
-  in the store has no key.
-- **Mirrored root** — a root crateside only reads, which is **Mashup Samples**. A file with
-  no key in *the store* may still be tagged, so nothing can be claimed from the absence
-  ([ADR 0011](docs/adr/0011-the-audit-may-only-claim-what-crateside-wrote.md)). The two
-  words name what the *store* is to crateside, not what the folder is for, and neither
-  limits what the index can be asked.
+  and only ever that. Read from its **tag store**, because that is where crateside's own
+  writes land and the only place it can see them at once — the index takes hours to catch
+  up. A file with no key there has no key.
+- **Mirrored root** — a root crateside only reads, which is **Mashup Samples**. Read from
+  the **index**, because its tag store is a mirror that may never converge: measured
+  2026-09-10, 108 of 591 files were keyed in the index and not in the store, and the store
+  had been rewritten that same day
+  ([ADR 0017](docs/adr/0017-each-root-is-audited-from-the-store-that-holds-its-tags.md)).
+  The two words name what the *store* is to crateside, not what the folder is for — and
+  that one fact is what picks the source, so they are one axis rather than two.
 
 ## Views
 

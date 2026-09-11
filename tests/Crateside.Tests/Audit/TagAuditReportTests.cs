@@ -4,45 +4,54 @@ using Crateside.Core.Ledger;
 namespace Crateside.Tests.Audit;
 
 /// <summary>
-/// The readings the audit takes of a stem list, tested without a disk. What a root's silence
-/// means is the whole subject: see <see cref="AuditRoot"/> and ADR 0003.
+/// The readings the audit takes of a stem list, tested without a disk.
 /// </summary>
+/// <remarks>
+/// What a root's silence means used to be the whole subject: an absent key was a finding only
+/// where crateside wrote the store, because the XMP could not tell "untagged" from "not flushed
+/// yet". Each root is now read from the store that actually holds its tags, so silence means the
+/// same thing everywhere and these tests are about the readings rather than the source
+/// (ADR 0017).
+/// </remarks>
 public class TagAuditReportTests
 {
     [Fact]
-    public void An_absent_key_is_untagged_where_crateside_writes_the_tag_store()
+    public void An_absent_key_against_a_taggable_verdict_is_untagged()
     {
-        var report = new TagAuditReport([Stem(applied: null, tagStoreIsWritten: true)]);
+        var report = new TagAuditReport([Stem(applied: null)]);
 
         Assert.Single(report.Untagged);
     }
 
     [Fact]
-    public void An_absent_key_is_no_finding_where_the_tag_store_is_only_mirrored()
+    public void An_absent_key_with_nothing_to_tag_it_with_is_not_a_finding()
     {
-        var report = new TagAuditReport([Stem(applied: null, tagStoreIsWritten: false)]);
+        // "No single safe tag" means the stem is supposed to be untagged. Reporting it would
+        // train the user to ignore the list.
+        var report = new TagAuditReport([
+            Stem(applied: null) with
+            {
+                LedgerKey = null,
+                HasTaggableVerdict = false,
+            },
+        ]);
 
         Assert.Empty(report.Untagged);
         Assert.True(report.IsClean);
     }
 
     [Fact]
-    public void A_disagreement_stands_in_a_mirrored_root_because_the_key_is_there_to_read()
+    public void An_applied_key_that_is_not_the_verdict_is_a_disagreement()
     {
-        var report = new TagAuditReport([Stem(applied: "C major", tagStoreIsWritten: false)]);
+        var report = new TagAuditReport([Stem(applied: "C major")]);
 
         Assert.Single(report.Disagreements);
     }
 
     [Fact]
-    public void A_partial_key_stands_in_a_mirrored_root_for_the_same_reason()
+    public void A_partial_key_is_a_finding_on_its_own()
     {
-        var report = new TagAuditReport([
-            Stem(applied: null, tagStoreIsWritten: false) with
-            {
-                HasPartialKey = true,
-            },
-        ]);
+        var report = new TagAuditReport([Stem(applied: null) with { HasPartialKey = true }]);
 
         Assert.Single(report.PartialKeys);
     }
@@ -51,8 +60,8 @@ public class TagAuditReportTests
     public void Siblings_carrying_different_keys_are_inconsistent_wherever_they_sit()
     {
         var report = new TagAuditReport([
-            Stem(applied: "C major", tagStoreIsWritten: false),
-            Stem(applied: "D minor", tagStoreIsWritten: false) with
+            Stem(applied: "C major"),
+            Stem(applied: "D minor") with
             {
                 FileName = "song (Vocal - Full).flac",
             },
@@ -62,26 +71,19 @@ public class TagAuditReportTests
     }
 
     [Fact]
-    public void A_withheld_verdict_leaves_an_untagged_stem_alone()
+    public void A_root_crateside_writes_is_read_from_the_xmp_and_every_other_from_the_index()
     {
-        var report = new TagAuditReport([
-            Stem(applied: null, tagStoreIsWritten: true) with
-            {
-                LedgerKey = null,
-                HasTaggableVerdict = false,
-            },
-        ]);
-
-        Assert.Empty(report.Untagged);
+        // The one fact an audit root carries, and now the only thing it decides.
+        Assert.False(AuditRoot.Written(@"C:\staging").ReadsTheIndex);
+        Assert.True(AuditRoot.Mirrored(@"C:\library").ReadsTheIndex);
     }
 
-    private static TaggedStem Stem(string? applied, bool tagStoreIsWritten) =>
+    private static TaggedStem Stem(string? applied) =>
         new()
         {
             Path = @"C:\root\song (Instrumental - Full).flac",
             FileName = "song (Instrumental - Full).flac",
             Root = @"C:\root",
-            TagStoreIsWritten = tagStoreIsWritten,
             SourceVideoId = "abc123",
             Song = "artist - song",
             LedgerKey = "A minor",

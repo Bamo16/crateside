@@ -99,6 +99,11 @@ public sealed class TaggingSelector(
     public const int DefaultMaxStrikes = 3;
 
     /// <summary>The next track with files in staging that have a verdict and no key applied.</summary>
+    /// <remarks>
+    /// <see cref="AuditRoot.Written"/> reads the XMP, which is what makes this terminate: the
+    /// stage writes that store, so it sees its own work on the next pass. Against Ableton's
+    /// index it would re-pick the same track for hours (ADR 0017).
+    /// </remarks>
     public bool TryPickNext(
         KeyLedger ledger,
         out string videoId,

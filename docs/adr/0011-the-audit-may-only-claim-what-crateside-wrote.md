@@ -107,8 +107,15 @@ means nobody can tell. What was wrong was the implied permanence. `AuditRoot.Mir
 distinction stops applying to `Untagged` at all.
 
 Measured against the index on the day of that ADR: `Mashup Samples` holds 579 files, 576 of them
-keyed. The honest `Untagged` count over the library is **three**, all of them genuine and all
-from June — not the 94 this ADR removed, and not the 0 it settled for.
+keyed. ~~The honest `Untagged` count over the library is **three**, all of them genuine and all
+from June — not the 94 this ADR removed, and not the 0 it settled for.~~
+
+**Corrected 2026-09-10 ([ADR 0017](0017-each-root-is-audited-from-the-store-that-holds-its-tags.md)):
+the honest `Untagged` count is zero, and "three" was never a finding count.** Those three files
+are the ones the index does not key, which is a different question — `Untagged` also requires a
+taggable verdict, and the ledger has never seen any of them. They are counted by `NoVerdictCount`
+and cannot reach `Untagged` by any route. Measured by running the switched audit rather than by
+inferring from the coverage table.
 
 Finding 3 above — "every entry that does exist carries a `Key|`" — was a fact about the XMP and
 does not carry over: the index has entries and keys as separate things, and it happens to have no
