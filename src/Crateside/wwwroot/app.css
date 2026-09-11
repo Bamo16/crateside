@@ -49,6 +49,15 @@
     --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
     --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
 
+    /* How wide a table may get before it stops being readable. One token per table shape rather
+       than one for the app, because they genuinely want different answers: Partners' values are
+       every one of them short and known — a key, a Camelot code, a shift, a relationship, a
+       score — and it reads worse the wider it gets, because the eye has to travel between
+       related numbers. Tracks has song titles in it and needs the room (#20). */
+    --table-partners: 50rem;
+    --table-library: 64rem;
+    --table-tracks: 92rem;
+
     /* Older names, kept as aliases. --text-dim and --muted were doing the job --text-75 and
        --text-50 do now; --accent was a blue that no longer exists. */
     --text-dim: var(--text-75);

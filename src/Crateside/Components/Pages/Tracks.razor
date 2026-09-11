@@ -27,8 +27,7 @@
 <PageTitle>Tracks</PageTitle>
 
 <div class="tracks">
-    <header class="frozen">
-        <BrandNav Active="BrandNav.Tab.Tracks" />
+    <PageHeader Active="BrandNav.Tab.Tracks" Shape="PageHeader.Shapes.Shade">
 
         <div class="cell activity">
             <div class="label-row">
@@ -100,7 +99,7 @@
                 <div class="fill" style="width: @($"{Math.Clamp(_quota.Utilization ?? 0, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
             </div>
         </div>
-    </header>
+    </PageHeader>
 
     <div class="filters">
         @foreach (var filter in Enum.GetValues<TrackFilter>())
@@ -238,118 +237,119 @@
                             </button>
                         </div>
                     }
-
-                    <div class="name-strip @(_renaming == row.VideoId ? "editing" : null)">
-                        @if (_renaming == row.VideoId)
-                        {
-                            <div class="name-edit">
-                                <input class="name-input" @ref="_nameBox" value="@_name"
-                                       @oninput="e => _name = e.Value?.ToString() ?? string.Empty"
-                                       @onkeydown="e => OnRenameKey(e, row)" />
-                                <p class="name-note">
-                                    Derived <strong>@Derived(row)</strong> · from @From(row.NameSource).
-                                    Your name wins over the ledger, the staging board and the playlist.
-                                </p>
-                            </div>
-
-                            <div class="name-side">
-                                <p class="detail">@row.RenameDetail</p>
-
-                                <div class="actions">
-                                    <button class="primary" disabled="@(_working || !StemFileName.IsUsable(_name))"
-                                            @onclick="() => ConfirmRename(row)">
-                                        Rename · @row.RenameScope
-                                    </button>
-                                    <button class="outline" @onclick="CancelRename" disabled="@_working">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <span class="name-from">
-                                @if (row.DerivedTitle is { } derived)
-                                {
-                                    <text>renamed by you · was <strong>@derived</strong></text>
-                                }
-                                else
-                                {
-                                    <text>named from @From(row.NameSource)</text>
-                                }
-                            </span>
-
-                            @if (row.CanRename)
+                    <div class="edits">
+                        <div class="name-strip @(_renaming == row.VideoId ? "editing" : null)">
+                            @if (_renaming == row.VideoId)
                             {
-                                <button class="outline" @onclick="() => StartRename(row)" disabled="@_working">
-                                    Rename
-                                </button>
-                                @if (row.IsRenamed)
-                                {
-                                    <button class="outline" @onclick="() => RevertRename(row)" disabled="@_working">
-                                        Revert
-                                    </button>
-                                }
+                                <div class="name-edit">
+                                    <input class="name-input" @ref="_nameBox" value="@_name"
+                                           @oninput="e => _name = e.Value?.ToString() ?? string.Empty"
+                                           @onkeydown="e => OnRenameKey(e, row)" />
+                                    <p class="name-note">
+                                        Derived <strong>@Derived(row)</strong> · from @From(row.NameSource).
+                                        Your name wins over the ledger, the staging board and the playlist.
+                                    </p>
+                                </div>
+
+                                <div class="name-side">
+                                    <p class="detail">@row.RenameDetail</p>
+
+                                    <div class="actions">
+                                        <button class="primary" disabled="@(_working || !StemFileName.IsUsable(_name))"
+                                                @onclick="() => ConfirmRename(row)">
+                                            Rename · @row.RenameScope
+                                        </button>
+                                        <button class="outline" @onclick="CancelRename" disabled="@_working">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
                             }
                             else
                             {
-                                <span class="name-from">· rename it in Ableton</span>
-                            }
-                        }
-                    </div>
-
-                    <div class="name-strip @(_swapping == row.VideoId ? "editing" : null)">
-                        @if (_swapping == row.VideoId)
-                        {
-                            <div class="name-edit">
-                                <input class="name-input" @ref="_swapBox" value="@_swapUrl" placeholder="https://www.youtube.com/watch?v=…"
-                                       @oninput="e => OnSwapUrl(row, e)"
-                                       @onkeydown="e => OnSwapKey(e, row)" />
-                                <p class="name-note">
-                                    A better upload of the same song. The playlist entry stays as it is.
-                                </p>
-                            </div>
-
-                            <div class="name-side">
-                                <p class="detail">
-                                    @(_swapPlan?.Refusal ?? _swapPlan?.Detail ?? SwapPlan.DetailFor(row.Verdict is not null))
-                                    @if (row.SamplesLeftInLibrary > 0)
+                                <span class="name-from">
+                                    @if (row.DerivedTitle is { } derived)
                                     {
-                                        <text>
-                                            @("sample".ToQuantity(row.SamplesLeftInLibrary)) of the old upload are in
-                                            Mashup Samples; crateside never writes there, so remove them yourself.
-                                        </text>
+                                        <text>renamed by you · was <strong>@derived</strong></text>
                                     }
-                                </p>
+                                    else
+                                    {
+                                        <text>named from @From(row.NameSource)</text>
+                                    }
+                                </span>
 
-                                <div class="actions">
-                                    <button class="danger" disabled="@(_working || _swapPlan?.IsPossible is not true)"
-                                            @onclick="() => ConfirmSwap(row)">
-                                        @(_working ? "Swapping…" : SwapScope(_swapPlan))
-                                    </button>
-                                    <button class="outline" @onclick="CancelSwap" disabled="@_working">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <span class="name-from">
-                                @if (row.IsSourceSwapped)
+                                @if (row.CanRename)
                                 {
-                                    <text>source swapped · cut from <strong>@row.StatedSourceUrl</strong></text>
+                                    <button class="outline" @onclick="() => StartRename(row)" disabled="@_working">
+                                        Rename
+                                    </button>
+                                    @if (row.IsRenamed)
+                                    {
+                                        <button class="outline" @onclick="() => RevertRename(row)" disabled="@_working">
+                                            Revert
+                                        </button>
+                                    }
                                 }
                                 else
                                 {
-                                    <text>cut from the playlist entry's own video</text>
+                                    <span class="name-from">· rename it in Ableton</span>
                                 }
-                            </span>
+                            }
+                        </div>
 
-                            <button class="outline" @onclick="() => StartSwap(row)" disabled="@_working">
-                                Swap source
-                            </button>
-                        }
+                        <div class="name-strip @(_swapping == row.VideoId ? "editing" : null)">
+                            @if (_swapping == row.VideoId)
+                            {
+                                <div class="name-edit">
+                                    <input class="name-input" @ref="_swapBox" value="@_swapUrl" placeholder="https://www.youtube.com/watch?v=…"
+                                           @oninput="e => OnSwapUrl(row, e)"
+                                           @onkeydown="e => OnSwapKey(e, row)" />
+                                    <p class="name-note">
+                                        A better upload of the same song. The playlist entry stays as it is.
+                                    </p>
+                                </div>
+
+                                <div class="name-side">
+                                    <p class="detail">
+                                        @(_swapPlan?.Refusal ?? _swapPlan?.Detail ?? SwapPlan.DetailFor(row.Verdict is not null))
+                                        @if (row.SamplesLeftInLibrary > 0)
+                                        {
+                                            <text>
+                                                @("sample".ToQuantity(row.SamplesLeftInLibrary)) of the old upload are in
+                                                Mashup Samples; crateside never writes there, so remove them yourself.
+                                            </text>
+                                        }
+                                    </p>
+
+                                    <div class="actions">
+                                        <button class="danger" disabled="@(_working || _swapPlan?.IsPossible is not true)"
+                                                @onclick="() => ConfirmSwap(row)">
+                                            @(_working ? "Swapping…" : SwapScope(_swapPlan))
+                                        </button>
+                                        <button class="outline" @onclick="CancelSwap" disabled="@_working">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="name-from">
+                                    @if (row.IsSourceSwapped)
+                                    {
+                                        <text>source swapped · cut from <strong>@row.StatedSourceUrl</strong></text>
+                                    }
+                                    else
+                                    {
+                                        <text>cut from the playlist entry's own video</text>
+                                    }
+                                </span>
+
+                                <button class="outline" @onclick="() => StartSwap(row)" disabled="@_working">
+                                    Swap source
+                                </button>
+                            }
+                        </div>
                     </div>
 
                     @if (row.CanChangePlan)
@@ -869,9 +869,14 @@
         }
     }
 
+    /// <remarks>
+    /// Closes the swap box, because the two share the row: one open at a time is the decision,
+    /// and it used to be possible to have both (#19).
+    /// </remarks>
     private void StartRename(TrackRow row)
     {
         _problem = null;
+        CancelSwap();
         _renaming = row.VideoId;
         _name = row.Title;
         _focusName = true;
@@ -927,6 +932,7 @@
     private void StartSwap(TrackRow row)
     {
         _problem = null;
+        CancelRename();
         _swapping = row.VideoId;
         _swapUrl = string.Empty;
         _swapPlan = null;

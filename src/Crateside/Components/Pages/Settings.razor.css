@@ -1,12 +1,3 @@
-/* Not sticky, and deliberately: there is nothing running to keep in view here, and the whole page
-   fits on a screen. It is the same bar so the tabs do not move between pages. */
-.top {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    background: var(--surface);
-    border-bottom: 1px solid var(--line-strong);
-}
-
 .body {
     display: flex;
     flex-direction: column;

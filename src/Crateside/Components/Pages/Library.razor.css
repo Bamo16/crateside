@@ -1,12 +1,3 @@
-/* The shared header, same bar as Tracks and Partners so the tabs do not move between pages. */
-.top {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    margin: 0 0 1.75rem;
-    background: var(--surface);
-    border-bottom: 1px solid var(--line-strong);
-}
-
 .body {
     padding: 0 clamp(1rem, 4vw, 3rem) 2rem;
 }
@@ -62,6 +53,7 @@
 
 .distribution {
     width: 100%;
+    max-width: var(--table-library);
     border-collapse: collapse;
 }
 
@@ -96,7 +88,11 @@
     white-space: nowrap;
 }
 
-.numeric {
+/* `.distribution th` also sets text-align, and an element selector beats a bare class, so the
+   header stayed left over right-aligned values despite carrying `.numeric`. Same collision as
+   Partners (#20). */
+.numeric,
+.distribution th.numeric {
     text-align: right;
     font-family: var(--font-mono);
     white-space: nowrap;

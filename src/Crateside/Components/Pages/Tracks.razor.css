@@ -8,23 +8,7 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* ── the frozen header ─────────────────────────────────────────────────────────────────────── */
-
-/* Modelled on a notification shade: glanceable, and never scrolled away from. What is running is
-   something the user did not start and cannot otherwise see. */
-.frozen {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    display: grid;
-    /* minmax(0, …) rather than a bare 1fr: a bare one is minmax(auto, 1fr), whose auto floor is
-       the content's own width, so a long song title widened the cell, squeezed its neighbour and
-       pushed the quota off the edge behind a horizontal scrollbar. The subject already knows how
-       to ellipsize; it was never given the chance. */
-    grid-template-columns: max-content minmax(0, 1fr) minmax(0, 1fr) 300px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--line-strong);
-}
+/* ── the header's cells ────────────────────────────────────────────────────────────────── */
 
 .cell {
     min-width: 0;
@@ -172,10 +156,14 @@
 
 /* ── filters ───────────────────────────────────────────────────────────────────────────────── */
 
+/* Capped with the list below it: the search box is pushed right by margin, so uncapped it would
+   sit against the window edge with the rows ending well short of it. The header above stays
+   full-bleed, which is the point of a shade. */
 .filters {
     display: flex;
     align-items: center;
     gap: 6px;
+    max-width: var(--table-tracks);
     padding: 14px 22px;
     border-bottom: 1px solid var(--line);
 }
@@ -339,12 +327,17 @@
 
 /* ── the list ──────────────────────────────────────────────────────────────────────────────── */
 
+/* Capped, because the song column is the only flexible one and every pixel of a wide window
+   landed in it — at full screen there was a hand's width of nothing between the title and the
+   key. The cap is generous: the fixed columns take about 37rem, so a title still has well over
+   fifty before it ellipsizes (#20). */
 .heads,
 .row {
     display: grid;
     grid-template-columns: 24px 1fr 90px 100px 80px 190px;
     gap: 14px;
     align-items: center;
+    max-width: var(--table-tracks);
     padding: 0 22px;
 }
 
@@ -560,7 +553,9 @@
     color: var(--text);
 }
 
+/* Sits where the list would, so it is bounded like the list. */
 .notice {
+    max-width: var(--table-tracks);
     padding: 22px;
     font-size: 13px;
     color: var(--text-60);
@@ -574,10 +569,13 @@
 
 /* Indented past the chevron and into the song column, so the panel reads as belonging to the row
    above it rather than as another row. */
+/* Capped with the rows, so the panel's right-hand column stays under the row's own instead of
+   drifting off toward the window edge. */
 .panel {
     display: grid;
     grid-template-columns: 1fr 340px;
     gap: 32px;
+    max-width: var(--table-tracks);
     padding: 6px 22px 20px 60px;
 }
 
@@ -604,20 +602,33 @@
     color: var(--text);
 }
 
-/* Spans both panel columns, above everything: the name is the one thing every state of a track
-   has. Its own grid when editing, matching the columns below so the buttons line up with the
-   panel's own. */
-.name-strip {
+/* Spans both panel columns, above everything: what the track is called and what it is cut from
+   are the two things every state of a track has.
+
+   Side by side rather than stacked. They are two rarely-used controls, a swap especially, and
+   stacked they took a large share of the panel for what is usually just two lines of status
+   (#19). */
+.edits {
     grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 32px;
+    margin-bottom: 6px;
+}
+
+.name-strip {
     display: flex;
     align-items: baseline;
     gap: 12px;
-    margin-bottom: 6px;
     padding-bottom: 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+/* The one being edited takes the whole row and the other keeps its place below, so the box has
+   room without the panel growing by a second one. Only ever one at a time — opening either
+   closes the other. */
 .name-strip.editing {
+    grid-column: 1 / -1;
     display: grid;
     grid-template-columns: 1fr 340px;
     align-items: start;

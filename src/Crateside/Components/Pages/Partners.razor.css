@@ -1,12 +1,3 @@
-/* The shared header, same bar as Tracks and Settings so the tabs do not move between pages. */
-.top {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    margin: 0 0 1.75rem;
-    background: var(--surface);
-    border-bottom: 1px solid var(--line-strong);
-}
-
 .body {
     padding: 0 clamp(1rem, 4vw, 3rem) 2rem;
 }
@@ -76,6 +67,7 @@
 
 .partners {
     width: 100%;
+    max-width: var(--table-partners);
     border-collapse: collapse;
 }
 
@@ -118,7 +110,11 @@
     color: var(--muted);
 }
 
-.numeric {
+/* `.partners th` also sets text-align, and an element selector beats a bare class — so the
+   headers stayed left while their values were right, even though both carry `.numeric`. Matching
+   its specificity is the fix; adding the class was never the problem (#20). */
+.numeric,
+.partners th.numeric {
     text-align: right;
 }
 

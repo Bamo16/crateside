@@ -1,0 +1,48 @@
+@* The bar every page starts with. Declared once so the tabs cannot move between pages and a
+   layout fix cannot land on three of the four. *@
+
+<header class="top @Class(Shape)">
+    <BrandNav Active="Active" />
+    @ChildContent
+</header>
+
+@code {
+    /// <summary>Which tab this page is.</summary>
+    [Parameter]
+    public BrandNav.Tab Active { get; set; }
+
+    [Parameter]
+    public Shapes Shape { get; set; }
+
+    /// <summary>
+    /// The cells beside the brand, which become the header's remaining columns.
+    /// </summary>
+    /// <remarks>Only <see cref="Shapes.Shade"/> has room for any.</remarks>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// The three headers the app actually has. Kept as a closed set rather than as loose
+    /// styling hooks, so adding a page means choosing one of these rather than inventing a
+    /// fourth by hand.
+    /// </summary>
+    public enum Shapes
+    {
+        /// <summary>Brand and tabs, with room beneath before the page's own heading.</summary>
+        Bar,
+
+        /// <summary>The same, sitting directly on the content below it.</summary>
+        Flush,
+
+        /// <summary>
+        /// Sticky, carrying what is running beside the brand.
+        /// </summary>
+        /// <remarks>
+        /// Modelled on a notification shade: glanceable, and never scrolled away from. What is
+        /// running is something the user did not start and cannot otherwise see.
+        /// </remarks>
+        Shade,
+    }
+
+    private static string Class(Shapes shape) => shape.ToString().ToLowerInvariant();
+}
