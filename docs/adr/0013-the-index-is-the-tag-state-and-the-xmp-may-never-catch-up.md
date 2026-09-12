@@ -134,6 +134,32 @@ from the index, both roots are auditable and the honest finding count over `Mash
 Switching them is a separate change with its own test pass, and doing it inside this
 investigation would have mixed a measurement with a migration.
 
+## Amendment, 2026-09-12 — an index keyword with no XMP behind it is not durable
+
+This ADR's reading is unchanged: the index is what the browser shows, and it reaches files the
+XMP has never heard of. What it did not know is what happens when the XMP is *written*.
+
+**Writing a root's XMP makes Ableton reconcile that root's index keywords to match it.** Measured
+directly: writing one entry into `Mashup Samples`' XMP took that root's index-only keywords from
+17 to 0 in under a minute. Every file whose tags lived in the index and not the XMP lost them.
+
+So the two stores are not simply "authoritative" and "lagging mirror". For **reading**, the index
+is still ahead and still right. For **durability**, an index entry with no XMP entry behind it
+survives only until the next write to that root. The gap between them is not merely cosmetic; it
+is the thing that gets destroyed.
+
+This is the mechanism behind [#24](https://github.com/Bamo16/crateside/issues/24), where 91 files
+lost their keys between 09-10 and 09-12 — though what performed that earlier write is still
+unknown, crateside having never written that root before today.
+
+Two things this ADR left open are now measured and closed:
+
+- **Writing a root other than `Sample Staging` works**, and Ableton reads it immediately. This was
+  assumption everywhere except staging.
+- **A read-only open attaches to the WAL properly.** A copy with `-wal` and `-shm` replayed
+  returns identical row counts to the live read-only connection, so nothing is being read from a
+  stale checkpoint. That leaves only the Live-not-running case untested, below.
+
 ## What is not settled
 
 - **How long catch-up takes.** Measured only as "within hours" on one occasion. The next real

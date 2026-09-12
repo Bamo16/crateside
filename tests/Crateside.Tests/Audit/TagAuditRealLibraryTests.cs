@@ -80,31 +80,30 @@ public class TagAuditRealLibraryTests
     }
 
     [Fact]
-    public void Reading_the_library_from_the_xmp_would_invent_findings_the_index_does_not()
+    public void The_index_never_knows_less_than_the_xmp()
     {
         Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
 
-        // The measurement this whole change turns on. The XMP is ~108 files behind and was
-        // still behind after Ableton rewrote it, so auditing the library through it would
-        // report scores of tagged files as untagged -- ADR 0011's "findings the user would
-        // learn to scroll past".
-        var viaXmp = TagAudit
-            .Run(
-                KeyLedger.Read(LedgerPath),
-                [AuditRoot.Mirrored(LibraryRoot)],
-                root => new AbletonFolderInfoReader().Read(root.Path)
-            )
-            .Untagged.Count;
+        // Why the audit reads the index for a root crateside does not write. This used to assert
+        // the stronger thing -- that the XMP lags far enough to invent findings -- which was true
+        // while it was 108 files behind and stopped being true the moment that gap was repaired
+        // (#24). The containment is the part that does not depend on the day.
+        //
+        // The reverse direction is the one that would matter: a file keyed in the XMP and not the
+        // index would mean the index is not the tag state and ADR 0013 is wrong.
+        var index = new AbletonIndexReader(Options.Create(Paths)).Read(LibraryRoot);
+        var xmp = new AbletonFolderInfoReader().Read(LibraryRoot);
 
-        var viaIndex = Report()
-            .Untagged.Count(stem =>
-                stem.Root.Equals(LibraryRoot, StringComparison.OrdinalIgnoreCase)
-            );
+        var xmpOnly = xmp
+            .Entries.Where(e => e.IsKeyTagged)
+            .Where(e => !(index.TryGet(e.RelativePath, out var i) && i.IsKeyTagged))
+            .Select(e => e.RelativePath)
+            .ToArray();
 
         Assert.True(
-            viaXmp > viaIndex,
-            $"The XMP reported {viaXmp} untagged and the index {viaIndex}. If these ever agree, "
-                + "the XMP has caught up and ADR 0017's reason for reading the index is gone."
+            xmpOnly.Length is 0,
+            $"{xmpOnly.Length} file(s) are keyed in the XMP and not in the index, so the index is "
+                + $"not the tag state: {string.Join(", ", xmpOnly.Take(5))}"
         );
     }
 

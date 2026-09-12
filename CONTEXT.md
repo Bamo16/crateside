@@ -63,6 +63,9 @@ against it.
   that can lack tags Ableton holds and keep entries for files that have gone
   ([ADR 0003](docs/adr/0003-crateside-may-write-abletons-tag-store.md)). It is what
   crateside *writes*; the index is what crateside *reads* everywhere else.
+  **But writing it reconciles the index down to it**: a keyword in the index with no entry
+  here is destroyed by the next write to that root, so the store is behind for reading and
+  decisive for keeping (ADR 0013's 2026-09-12 amendment).
 - **Written root** — a root whose tag store crateside writes, which is **Sample Staging**
   and only ever that. Read from its **tag store**, because that is where crateside's own
   writes land and the only place it can see them at once — the index takes hours to catch
