@@ -1,55 +1,135 @@
+<!-- LOGO: full lockup (mark + wordmark), ~320px wide, dark background. Asset TBD — the
+     branding is still being drawn. Uncomment the line below once docs/brand/ exists; as it
+     stands it renders as a broken image.
+<p align="center"><img src="docs/brand/crateside-lockup.svg" alt="crateside" width="320"></p>
+-->
+
 # crateside
 
-A helper bench for the parts of the Ableton mashup workflow that only a human can
-do — **warping, tagging, renaming** — plus the intake queue that feeds them.
+**A bench for building a mashup sample library in Ableton Live.**
 
-A Blazor Server app, run locally, left open on a second monitor while working in
-Ableton. Three views:
+You keep a YouTube playlist of songs you want to mash. crateside turns each one into
+key-tagged vocal and instrumental samples in Ableton's browser, and stops exactly where a
+human has to take over — warping — telling you, in one list, what is waiting on you and
+what the machine is still doing.
 
-- **Staging board** — every track in `Sample Staging` with its key and BPM, and how
-  far through warping and tagging each of its stems is. Replaces scrolling back
-  through agent conversations to find the key/BPM table for the current batch.
-- **Partners** — pick a key (or a track from the board) and get the compatible keys
-  to filter for in Ableton's browser, ordered by how cheap they are to try.
-- **Queue** — the YouTube intake playlist: what is in it, what is already processed,
-  what is new. Removes processed items once they are genuinely done, and **drains the
-  queue** by separating outstanding tracks one at a time.
+It is a Blazor Server app that runs on your own PC, meant to sit on a second monitor
+next to Ableton. There is no cloud, no account, and nothing to deploy.
 
-## Relationship to keytag
+## What it does with a song
 
-`crateside` reads [`keytag`](../keytag) as **data** and keytag never learns it
-exists — the same one-way boundary keytag drew around `keydetect-harness`. It
-reads two things:
+For every track in the playlist, in order, crateside:
 
-- `keytag/results/runs.jsonl` — the key/BPM ledger (schema in that repo's
-  `results/README.md`)
-- the Ableton folders on `P:\` — `Ableton Folder Info\*.xmp` for applied tags
+1. **Downloads** the audio (via [StemForge](https://github.com/Bamo16/StemForge)'s
+   `stemforge-cli`), and notes whether it got YouTube Premium quality.
+2. **Detects the key** with several detectors, then has a Claude agent **judge** the
+   evidence into a single verdict with a confidence — HIGH, MEDIUM, LOW, or withheld.
+3. **Separates** the track into stems on the GPU: by default a full vocal, a full
+   instrumental, and a drums stem that exists only as a **warp guide** for placing
+   markers and is meant to be deleted afterwards.
+4. **Stages** the stems into your `Sample Staging` folder and **writes the key tag**
+   Ableton's browser reads.
 
-There is deliberately **no warp signal**: a `.asd` sidecar means Ableton analysed the
-file, not that it was warped, so it is not read at all ([ADR 0002](docs/adr/0002-there-is-no-warped-signal.md)).
+Then it is your turn: warp the samples in Ableton, set their default clips, and drag them
+into `Mashup Samples`. That move is the only "done" signal crateside looks for — nothing
+is marked finished by hand.
 
-**The Staging board holds no state of its own.** Everything on it is derived from
-those sources, so nothing can fall out of sync and nothing is marked done by hand.
-The app keeps exactly two things: the OAuth refresh token for playlist writes, and a
-record of the work it has run ([ADR 0001](docs/adr/0001-crateside-orchestrates-the-workflow.md)).
+Only one of those stages costs anything scarce (judging spends Claude quota; separation
+occupies the GPU), so each runs at its own moment and the whole queue **drains**
+continuously, one track at a time, until nothing is outstanding.
 
-The design and its rejected alternatives are recorded in
-[`keytag/docs/adr/0003`](../keytag/docs/adr/0003-a-separate-blazor-app-owns-the-human-half.md).
-Domain language is in [CONTEXT.md](CONTEXT.md).
+## The pages
 
-## Status
+Every page carries the same bar, so the tabs never move between them. Tracks' is taller
+and stays stuck to the top of the window: it also shows what is separating, what is
+judging, and how much of the current Claude quota window is used.
 
-v1 is complete: all three views work against the real library, and playlist removal has
-been exercised. crateside is now taking over the workflow decisions that used to live in
-keytag's `detect-key` skill — see [ADR 0001](docs/adr/0001-crateside-orchestrates-the-workflow.md).
+<!-- SCREENSHOT: Tracks page, default filter, one row expanded. -->
 
-## Working on it
+- **Tracks** — one row per song. A row moves only on reaching _ready to warp_, being
+  parked, or being finished with — never on an ordinary stage change, so the thing you
+  were looking at stays where you left it. Filters: _Unfinished_, _In staging_ (ready to
+  warp), _In flight_, _Needs attention_, _All_. Expanding a row shows its files, where
+  each one is, the verdict and why, and the controls for that track: rename it, swap the
+  upload its stems are cut from, change which stems are cut (a **re-cut**, with a
+  confirmation that lists exactly what will be deleted), or remove it from the playlist.
+- **Song** — one page per track, the long form of an expanded row.
+- **Library** — how many samples you have in each key, across everything already in
+  `Mashup Samples`. Counted from Ableton's own index, which is what the browser shows,
+  so it reaches files the folder's tag store has never caught up with.
+- **Partners** — pick a key and get the keys that pair with it, ranked by how cheap
+  they are to try (pitch shift first, circle-of-fifths distance second). It returns
+  keys, not files, because the filtering happens in Ableton's own browser.
+- **Settings** — paths, pause/resume, the YouTube connection.
+
+## Things it deliberately does not do
+
+- **It never guesses that a file is warped.** An `.asd` sidecar means Ableton analysed
+  a file, not that you warped it, so crateside does not read them. Presence in
+  `Mashup Samples` is the signal ([ADR 0002](docs/adr/0002-there-is-no-warped-signal.md),
+  [ADR 0007](docs/adr/0007-the-move-out-of-staging-is-the-warp-signal.md)).
+- **It never writes into Ableton's own database.** Tags go into the
+  `Ableton Folder Info\*.xmp` store for `Sample Staging` only; everything else is read
+  from Ableton's index, which is what the browser actually shows
+  ([ADR 0003](docs/adr/0003-crateside-may-write-abletons-tag-store.md),
+  [ADR 0013](docs/adr/0013-the-index-is-the-tag-state-and-the-xmp-may-never-catch-up.md)).
+- **It does not stop to ask.** When it cannot proceed — no key worth tagging with, or a
+  download that missed Premium audio because of the upload itself — the track is
+  **parked** and shows up under _Needs attention_ with the reason and the one action that
+  clears it. Parking is a finding you resolve, not a flag you clear.
+- **There is no "hold".** The playlist is the inbox; the way to stop a track is to
+  remove it from the playlist ([ADR 0010](docs/adr/0010-the-playlist-is-the-inbox-not-the-work-list.md),
+  [ADR 0015](docs/adr/0015-hold-is-removed-and-the-playlist-is-the-way-out.md)).
+- **A song is identified by the ledger's song, not by a name or a URL.** One song can
+  have been cut from several uploads — that is what swapping a source leaves behind — so
+  the row is keyed by the song and its files say which upload each came from. Renaming a
+  track renames its files and tags; swapping its source changes what the stems are cut
+  from; neither changes what the song _is_
+  ([ADR 0012](docs/adr/0012-the-source-url-is-an-instruction-not-an-identity.md),
+  [ADR 0014](docs/adr/0014-the-song-is-the-identity-and-the-name-is-not.md)).
+
+## How it relates to keytag and StemForge
+
+- [**keytag**](../keytag) (private) is the key-detection tool and the owner of the
+  **ledger** — an append-only `results/runs.jsonl` of every verdict. crateside reads it
+  as data; keytag never learns crateside exists.
+- [**StemForge**](https://github.com/Bamo16/StemForge) does the downloading and the stem
+  separation. crateside calls its CLI and reads the provenance it writes into each file's
+  tags — that provenance (the video ID) is how every later step recognises a file.
+
+crateside itself keeps very little: the YouTube OAuth token, a record of the work it has
+run, and per-track instructions (the plan for which stems to cut, a name override, a
+chosen source). Everything else on screen is derived from the ledger and the Ableton
+folders, so nothing falls out of sync.
+
+## Running it
+
+Requirements: Windows, .NET 10 SDK, Ableton Live with `Sample Staging` and
+`Mashup Samples` folders as watched roots, keytag and StemForge checked out as siblings,
+a GPU for separation, and a Claude subscription for judging.
 
 ```
-dotnet watch --project src/Crateside run   # the usual way to work on the UI
-dotnet test --solution Crateside.slnx      # MTP; a positional solution path is an error
-dotnet csharpier format .                  # before every commit
+dotnet run --project src/Crateside          # the app
+dotnet watch --project src/Crateside run    # UI work only — see below
+dotnet test --solution Crateside.slnx       # MTP; a positional solution path is an error
+dotnet csharpier format .                   # before every commit
 ```
 
-Many tests assert against the real Ableton roots and the keytag ledger, and skip when
+`watch` hot-reloads by patching the running process, which it cannot do for a change that
+reshapes an object already in memory — so a multi-file edit can leave the app running code
+that is genuinely inconsistent while reporting *"Hot reload succeeded"*. Use it for razor and
+CSS; use `run` for anything else.
+
+Many tests assert against the real Ableton roots and the keytag ledger and skip when
 those are absent — that has repeatedly caught things fixtures would not have.
+
+## Reading further
+
+- [CONTEXT.md](CONTEXT.md) — the glossary. Every noun above (track, stem, sample, warp
+  guide, verdict, parked, recipe, work order) is defined there or in keytag's.
+- [docs/adr](docs/adr) — seventeen decision records; the ones linked above are the
+  load-bearing ones.
+- [docs/the-manual-workflow.md](docs/the-manual-workflow.md) — the human half, step
+  by step, for what to do once a track is ready to warp.
+
+<!-- LOGO: small mark, 24px, could sit before the footer line or be omitted. -->
