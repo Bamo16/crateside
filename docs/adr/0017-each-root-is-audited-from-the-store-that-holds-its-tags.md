@@ -42,6 +42,22 @@ passing `AuditRoot.Written`, which is the same rule and not a special case.
 **The library is auditable, and it audits clean.** Zero findings of any kind across 548 stems in
 both roots.
 
+> **Amended 2026-09-12.** It does not audit clean any more, and that is this decision working
+> rather than failing. Two days later the audit reported **110 untagged** files in `Mashup
+> Samples` — every one a file crateside had successfully tagged, whose Ableton keywords have since
+> disappeared. Confirmed in the browser, not only in the stores. See
+> [#24](https://github.com/Bamo16/crateside/issues/24).
+>
+> **These are genuine findings, and an earlier note calling them false was wrong.** The first
+> guess was that the index had fallen behind and the audit was inventing findings — the thing
+> ADR 0011 removed, re-created. Measurement killed that: the index holds all 610 file rows, the
+> XMP has nothing the index lacks, and a WAL-replayed copy reads identically to the live
+> connection. The keywords are simply gone.
+>
+> Read from the XMP, as before ADR 0017, this would have been invisible: `Untagged` was restricted
+> to roots crateside writes precisely so the library could not be claimed about. Lifting that
+> restriction is what surfaced 110 real losses on its first real outing.
+
 **The audit has no screen, so its real-library test is its surface.** `TagAudit`'s only production
 caller is `TaggingSelector`, which uses one reading of it — `Untagged` over staging. Everything
 else the report computes is exercised only by tests. The clean assertion is written so that a

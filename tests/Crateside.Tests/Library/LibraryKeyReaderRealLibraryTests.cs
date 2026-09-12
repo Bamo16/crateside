@@ -36,41 +36,65 @@ public class LibraryKeyReaderRealLibraryTests
     }
 
     /// <summary>
-    /// The measurement the panel's single source rests on
-    /// ([ADR 0013](../../../docs/adr/0013-the-index-is-the-tag-state-and-the-xmp-may-never-catch-up.md)).
-    /// The original spec for this panel required a union of the ledger and the tag store; it was
-    /// dropped because the index covers the ledger entirely. If this ever fails, the panel is
-    /// under-counting and the union has to come back.
+    /// The index and the ledger never disagree about a key.
     /// </summary>
+    /// <remarks>
+    /// This replaces an assertion that the index keys every file the ledger can. That was true on
+    /// 2026-09-09 and is what let the panel drop the ledger ∪ tag-store union it was originally
+    /// specified with; it is false now, because 110 files have lost their Ableton keywords
+    /// (<see href="https://github.com/Bamo16/crateside/issues/24">#24</see>).
+    ///
+    /// The union is deliberately <em>not</em> coming back. The panel answers "what can I find by
+    /// key in Ableton's browser", and a file whose tag is gone cannot be found there whatever the
+    /// ledger remembers — counting it would overstate the library by exactly the number of
+    /// samples that have stopped working. The gap is a fault to fix, not a source to paper over.
+    ///
+    /// What still has to hold is that the two never contradict each other where both have an
+    /// answer, which is the assumption the panel's arithmetic actually rests on.
+    /// </remarks>
     [Fact]
-    public void The_index_keys_every_file_the_ledger_can_key()
+    public void The_index_and_the_ledger_never_disagree_about_a_key()
     {
         SkipUnlessPresent();
 
         var ledger = KeyLedger.Read(Paths.Ledger);
         var tags = new AbletonIndexReader(Options.Create(Paths)).Read(Paths.MashupSamples);
 
-        var missed = Directory
+        var conflicts = Directory
             .EnumerateFiles(Paths.MashupSamples, "*", SearchOption.AllDirectories)
             .Where(StagingBoard.IsStemFile)
-            .Where(file => LedgerKeys(ledger, file) && !IndexKeys(tags, file))
-            .Select(Path.GetFileName)
+            .Select(file =>
+                (
+                    File: Path.GetFileName(file),
+                    Applied: Applied(tags, file),
+                    Verdict: Verdict(ledger, file)
+                )
+            )
+            .Where(e => e.Applied is not null && e.Verdict is not null)
+            .Where(e => !e.Applied!.Equals(e.Verdict, StringComparison.OrdinalIgnoreCase))
             .ToArray();
 
         Assert.True(
-            missed.Length is 0,
-            $"The ledger keys {missed.Length} file(s) the index does not, so counting from the "
-                + $"index alone under-reports: {string.Join(", ", missed.Take(5))}"
+            conflicts.Length is 0,
+            $"{conflicts.Length} file(s) carry a key that is not the verdict: "
+                + string.Join(
+                    ", ",
+                    conflicts
+                        .Take(5)
+                        .Select(e => $"{e.File} tagged {e.Applied}, judged {e.Verdict}")
+                )
         );
     }
 
-    private static bool LedgerKeys(KeyLedger ledger, string file) =>
+    private static string? Applied(AbletonFolderInfo tags, string file) =>
+        tags.TryGet(file, out var applied) && applied.IsKeyTagged ? applied.Key : null;
+
+    private static string? Verdict(KeyLedger ledger, string file) =>
         StemTagReader.Read(file)?.Provenance is { SourceVideoId: { } videoId }
         && ledger.TryGetLatestByVideoId(videoId, out var run)
-        && run.HasTaggableKey;
-
-    private static bool IndexKeys(AbletonFolderInfo tags, string file) =>
-        tags.TryGet(file, out var applied) && applied.IsKeyTagged;
+        && run.HasTaggableKey
+            ? run.Key
+            : null;
 
     private static KeyDistribution Read()
     {

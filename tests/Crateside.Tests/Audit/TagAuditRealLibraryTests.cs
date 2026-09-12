@@ -51,22 +51,32 @@ public class TagAuditRealLibraryTests
     }
 
     [Fact]
-    public void Both_roots_audit_clean_which_is_now_an_answer_rather_than_a_refusal()
+    public void The_audit_never_calls_a_file_untagged_that_carries_a_key_anywhere()
     {
         Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
 
-        // Measured 2026-09-10: zero findings across 548 stems, with the library in scope for
-        // every reading rather than excluded from Untagged by ADR 0011's rule.
+        // This replaces an assertion that both roots audit clean. They did on 2026-09-10 and do
+        // not now: 110 files crateside had tagged have since lost their Ableton keywords (#24).
+        // Those findings are real -- confirmed in the browser -- so the test was right and the
+        // library was wrong, which is not something a test can hold still.
         //
-        // The audit has no screen of its own, so this assertion is its surface. A failure here
-        // is a real finding in the library to go and look at -- not a broken test to relax.
-        var report = Report();
+        // What is worth holding is the fear ADR 0011 actually had: that reading a lagging store
+        // would make the audit invent findings. A file reported untagged must carry no key in
+        // *either* store, whichever one its root is audited from.
+        var xmp = new AbletonFolderInfoReader();
+        var index = new AbletonIndexReader(Options.Create(Paths));
 
-        Assert.True(
-            report.IsClean,
-            $"{report.Untagged.Count} untagged, {report.Disagreements.Count} disagreeing, "
-                + $"{report.PartialKeys.Count} partial, {report.Inconsistencies.Count} inconsistent."
-        );
+        foreach (var stem in Report().Untagged)
+        {
+            var fromXmp = xmp.Read(stem.Root).TryGet(stem.Path, out var x) && x.IsKeyTagged;
+            var fromIndex = index.Read(stem.Root).TryGet(stem.Path, out var i) && i.IsKeyTagged;
+
+            Assert.False(
+                fromXmp || fromIndex,
+                $"{stem.FileName} is reported untagged but carries a key "
+                    + $"(xmp: {fromXmp}, index: {fromIndex})."
+            );
+        }
     }
 
     [Fact]
