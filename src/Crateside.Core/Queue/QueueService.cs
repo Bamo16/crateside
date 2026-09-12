@@ -87,13 +87,8 @@ public sealed class QueueService(
     /// <summary>The track the user asked for next, or null if nobody has.</summary>
     public string? BumpedVideoId => bumped.VideoId;
 
-    /// <summary>
-    /// Records whether a track is an instrumental release — the user's statement, and the
-    /// only thing that stops crateside asking the separator for a vocal stem of a track with
-    /// no vocals.
-    /// </summary>
-    public void SetInstrumentalRelease(string videoId, bool isInstrumentalRelease) =>
-        settings.SetInstrumentalRelease(videoId, isInstrumentalRelease);
+    /// <summary>Records which files the user wants made for a track.</summary>
+    public void SetPlan(string videoId, StemPlan? plan) => settings.SetPlan(videoId, plan);
 
     /// <summary>The standing instruction for a track, or null when there is none.</summary>
     public TrackInstruction? InstructionFor(string videoId) =>

@@ -37,7 +37,7 @@ public class VerdictRunnerTests : IDisposable
                 PlaylistItemId = "PLI1",
                 VideoId = VideoId,
                 Title = "Yes - Owner of a Lonely Heart",
-                IsInstrumentalRelease = instrumentalRelease,
+                Plan = instrumentalRelease ? StemPlan.InstrumentalRelease : StemPlan.Default,
             },
             KeyLedger.Read("does-not-exist")
         );
@@ -236,16 +236,18 @@ public class VerdictRunnerTests : IDisposable
     }
 
     [Fact]
-    public void An_instrumental_release_is_passed_through_rather_than_left_to_be_inferred()
+    public void The_stem_plan_is_never_mentioned_to_the_judge()
     {
-        // The user stated it in the Queue view, which is the only place in the pipeline where a
-        // user is present. The session must record it, never re-derive it from a title.
+        // It used to be, as `has_vocals: false — record it; do not re-derive it`. That was a
+        // pass-through to the ledger, not a judging signal — the prompt said so itself — and it
+        // dates from when keytag's skill ran the whole workflow and had to know which stems to
+        // pull. Judging has nothing to do with which files get cut (ADR 0018).
         GiveEvidence();
 
         var prompt = Runner(records: false).Prompt(Order(instrumentalRelease: true));
 
-        Assert.Contains("has_vocals: false", prompt);
-        Assert.Contains("do not re-derive", prompt);
+        Assert.DoesNotContain("has_vocals", prompt);
+        Assert.DoesNotContain("instrumental", prompt, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

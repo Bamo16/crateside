@@ -55,7 +55,7 @@ public class SeparationRunnerTests : IDisposable
                 PlaylistItemId = "PLI1",
                 VideoId = VideoId,
                 Title = "Yes - Owner of a Lonely Heart",
-                IsInstrumentalRelease = true,
+                Plan = StemPlan.InstrumentalRelease,
             },
             Crateside.Core.Ledger.KeyLedger.Read("does-not-exist")
         );

@@ -50,6 +50,11 @@ public class VerdictSelectorRealDataTests
                 retrySucceeded: true
             );
 
+            // The fourth condition, added after this test was written: a download that came back
+            // short of premium audio stops before the verdict, so it is detected, unjudged,
+            // eligible — and correctly not picked (ADR 0016).
+            var stopped = Set.AcquisitionFor(videoId)?.Stops is true;
+
             var picked = new VerdictSelector(Jobs, Set).TryPickNext(
                 QueueView.Compose(
                     [Item(videoId)],
@@ -62,12 +67,13 @@ public class VerdictSelectorRealDataTests
                 out var next
             );
 
-            // Detected, unjudged and not given up on == pickable. Stating all three is what
+            // Detected, unjudged, not given up on and not stopped == pickable. Stating each one is what
             // makes a failure name the reason: the bug this was written for had every condition
             // satisfied and still picked nothing.
             Assert.True(
-                picked == (!judged && allowed),
-                $"{videoId}: hasEvidence=true judged={judged} allowed={allowed} picked={picked}"
+                picked == (!judged && allowed && !stopped),
+                $"{videoId}: hasEvidence=true judged={judged} allowed={allowed} "
+                    + $"stopped={stopped} picked={picked}"
             );
 
             if (picked)

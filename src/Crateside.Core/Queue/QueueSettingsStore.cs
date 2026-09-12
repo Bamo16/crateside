@@ -73,12 +73,11 @@ public sealed class QueueSettingsStore
         Save(current => current with { RefreshMinutes = minutes });
 
     /// <summary>
-    /// Records that a track is an instrumental release — no vocals to begin with, so there is
-    /// nothing to separate out and the source track is the sample.
+    /// Records which files the user wants made for a track. Null clears the choice, putting the
+    /// track back on <see cref="StemPlan.Default"/>.
     /// </summary>
-    /// <remarks>Reaches keytag's ledger as <c>has_vocals</c> (ADR 0004).</remarks>
-    public QueueSettings SetInstrumentalRelease(string videoId, bool isInstrumentalRelease) =>
-        Upsert(videoId, t => t with { IsInstrumentalRelease = isInstrumentalRelease });
+    public QueueSettings SetPlan(string videoId, StemPlan? plan) =>
+        Upsert(videoId, t => t with { Plan = plan });
 
     /// <summary>
     /// Records what the user calls a track. Null or blank clears it, restoring the derived name.
@@ -156,7 +155,30 @@ public sealed class QueueSettingsStore
     }
 
     private static IReadOnlyList<TrackInstruction> TracksOf(QueueSettings? stored) =>
-        stored?.Tracks ?? [];
+        [.. (stored?.Tracks ?? []).Select(Converted)];
+
+    /// <summary>
+    /// Turns a pre-<see cref="StemPlan"/> instruction into one: the instrumental-release fact
+    /// becomes the plan it used to derive.
+    /// </summary>
+    /// <remarks>
+    /// Clearing the old field is what makes this a conversion rather than a permanent reader —
+    /// it is omitted when written, so the file loses it the first time anything saves, and this
+    /// can go once no instruction carries it. An instruction that says nothing else is then
+    /// dropped by <c>Upsert</c>, which is how the entries recording "has vocals" — the default,
+    /// stated — clean themselves up.
+    /// </remarks>
+    private static TrackInstruction Converted(TrackInstruction stored) =>
+        stored is { Plan: null, WasInstrumentalRelease: true }
+            ? stored with
+            {
+                Plan = StemPlan.InstrumentalRelease,
+                WasInstrumentalRelease = false,
+            }
+            : stored with
+            {
+                WasInstrumentalRelease = false,
+            };
 
     private QueueSettings? TryReadFile()
     {
@@ -218,16 +240,20 @@ public sealed record TrackInstruction
     public required string VideoId { get; init; }
 
     /// <summary>
-    /// The release has no vocals to begin with, so there is nothing to separate out: the drums
-    /// are the only stem and the source track is the sample.
+    /// Which files the user wants made for this track. Null means they have not said, which is
+    /// <see cref="StemPlan.Default"/> and is not the same as having chosen it.
     /// </summary>
-    /// <remarks>
-    /// The user's statement about the release, never crateside's inference — not from the audio,
-    /// and not from a title containing the word "Instrumental", which also describes an official
-    /// instrumental of a track that does have vocals.
-    /// </remarks>
+    [JsonPropertyName("plan")]
+    public StemPlan? Plan { get; init; }
+
+    /// <summary>
+    /// The pre-<see cref="StemPlan"/> fact, read only so that an existing <c>queue.json</c>
+    /// converts itself — see <c>QueueSettingsStore.Converted</c>. Never written: conversion
+    /// clears it, and a cleared one is omitted.
+    /// </summary>
     [JsonPropertyName("instrumentalRelease")]
-    public bool IsInstrumentalRelease { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool WasInstrumentalRelease { get; init; }
 
     /// <summary>
     /// What the user calls this track, which beats every derived name. Null when they have not said.
@@ -246,5 +272,5 @@ public sealed record TrackInstruction
     /// <summary>Whether this instruction still carries anything worth storing.</summary>
     [JsonIgnore]
     public bool SaysSomething =>
-        IsInstrumentalRelease || Name is { Length: > 0 } || SourceUrl is { Length: > 0 };
+        Plan is not null || Name is { Length: > 0 } || SourceUrl is { Length: > 0 };
 }

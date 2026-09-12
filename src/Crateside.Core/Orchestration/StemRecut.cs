@@ -33,9 +33,9 @@ public sealed class StemRecut(
     ];
 
     /// <summary>What re-cutting this track would do, or why it cannot be done.</summary>
-    public RecutPlan PlanFor(string videoId, bool isInstrumentalRelease)
+    public RecutPlan PlanFor(string videoId, StemPlan wanted)
     {
-        var recipe = SeparationRecipe.For(isInstrumentalRelease);
+        var recipe = SeparationRecipe.From(wanted);
 
         var files = staged(videoId);
 
@@ -55,9 +55,9 @@ public sealed class StemRecut(
     /// The order matters on failure: files are deleted first, and the stages are only reopened
     /// once every one of them went.
     /// </remarks>
-    public RecutOutcome Apply(string videoId, bool isInstrumentalRelease)
+    public RecutOutcome Apply(string videoId, StemPlan wanted)
     {
-        var plan = PlanFor(videoId, isInstrumentalRelease);
+        var plan = PlanFor(videoId, wanted);
 
         if (plan.Refusal is { } refusal)
             return new RecutOutcome { Problem = refusal };
@@ -85,7 +85,7 @@ public sealed class StemRecut(
             }
         }
 
-        settings.SetInstrumentalRelease(videoId, isInstrumentalRelease);
+        settings.SetPlan(videoId, wanted);
 
         foreach (var stage in Redone)
             jobs.Record(videoId, stage, JobStatus.Cancelled, error: "re-cut requested");

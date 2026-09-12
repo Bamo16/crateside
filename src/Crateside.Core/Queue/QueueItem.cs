@@ -38,14 +38,14 @@ public sealed record QueueItem
     public bool IsUnavailable { get; init; }
 
     /// <summary>
-    /// The release has no vocals to begin with, so there is nothing to separate out.
+    /// Which files the user wants made for this track.
     /// </summary>
     /// <remarks>
-    /// Carried from the user's standing instruction, not inferred here. False means "not
-    /// stated", not "it has vocals" — but crateside's policy for not-stated is to expect the
-    /// usual pair, so the two behave alike here (ADR 0004).
+    /// Carried from the user's standing instruction, never inferred here. Defaults to
+    /// <see cref="StemPlan.Default"/> for a track nobody has chosen for, so a reader never has to
+    /// handle "not stated" separately.
     /// </remarks>
-    public bool IsInstrumentalRelease { get; init; }
+    public StemPlan Plan { get; init; } = StemPlan.Default;
 
     /// <summary>The upload to fetch instead of this entry's own video, or null.</summary>
     /// <remarks>
@@ -95,7 +95,7 @@ public sealed record QueueView
             instructions.TryGetValue(item.VideoId, out var instruction)
                 ? item with
                 {
-                    IsInstrumentalRelease = instruction.IsInstrumentalRelease,
+                    Plan = instruction.Plan ?? StemPlan.Default,
                     StatedSourceUrl = instruction.SourceUrl,
                 }
                 : item;

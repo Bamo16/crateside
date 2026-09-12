@@ -1,5 +1,6 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
+using Crateside.Core.Queue;
 using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Tracks;
@@ -67,7 +68,7 @@ public class TrackExpansionTests
     [Fact]
     public void An_instrumental_release_plans_no_vocal_stem_and_keeps_the_source()
     {
-        var row = Row() with { IsInstrumentalRelease = true };
+        var row = Row() with { Plan = StemPlan.InstrumentalRelease };
 
         Assert.Equal(SeparationRecipe.InstrumentalRelease, row.Recipe);
         Assert.Empty(row.Recipe.Presets);

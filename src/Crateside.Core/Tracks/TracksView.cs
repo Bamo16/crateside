@@ -185,7 +185,7 @@ public sealed record TracksView
                 Verdict = verdict,
                 // The work list covers the queue item; the instruction covers everything after it
                 // leaves the playlist.
-                IsInstrumentalRelease = instruction?.IsInstrumentalRelease is true,
+                Plan = instruction?.Plan ?? StemPlan.Default,
                 // Want of a key outranks a shortfall: it is the later stage, and the GPU has
                 // already been spent by the time a track can be in it.
                 ParkedFor =

@@ -371,7 +371,11 @@ public class TracksViewCompositionTests : IDisposable
             Compose(
                 view: View(items: []),
                 staging: [Staged(Stem("Drums"))],
-                instructions: new TrackInstruction { VideoId = Video, IsInstrumentalRelease = true }
+                instructions: new TrackInstruction
+                {
+                    VideoId = Video,
+                    Plan = StemPlan.InstrumentalRelease,
+                }
             )
         );
 

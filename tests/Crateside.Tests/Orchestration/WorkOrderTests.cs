@@ -36,7 +36,7 @@ public class WorkOrderTests : IDisposable
             VideoId = VideoId,
             Title = "Yes - Owner of a Lonely Heart",
             PremiumOutlook = outlook,
-            IsInstrumentalRelease = instrumentalRelease,
+            Plan = instrumentalRelease ? StemPlan.InstrumentalRelease : StemPlan.Default,
         };
 
     private KeyLedger Ledger(string? key, string confidence = "HIGH")
@@ -108,22 +108,24 @@ public class WorkOrderTests : IDisposable
     }
 
     [Fact]
-    public void The_instrumental_release_fact_travels_to_the_ledger_as_has_vocals()
+    public void The_users_plan_is_what_the_separator_is_asked_for()
     {
-        // crateside is where the user is, so the statement is made here and passed through --
-        // rather than read back from a ledger line that only exists after somebody was asked.
-        Assert.False(
-            WorkOrder.Compose(Item(instrumentalRelease: true), Ledger("A minor")).HasVocals
-        );
+        // The plan is the record: nothing is derived from a fact about the release any more, so
+        // what the order carries is what the user ticked (ADR 0018).
+        var order = WorkOrder.Compose(Item(instrumentalRelease: true), Ledger("A minor"));
+
+        Assert.Empty(order.Recipe.Presets);
+        Assert.True(order.Recipe.KeepSource);
+        Assert.True(order.Recipe.ExtractDrums);
     }
 
     [Fact]
-    public void Saying_nothing_about_vocals_is_not_saying_it_has_them()
+    public void A_track_nobody_has_chosen_for_gets_the_usual_pair()
     {
-        // Absent means nobody stated it, the same null semantics as verdict.mode. crateside's
-        // policy for not-stated is to expect the usual pair, but the record must not claim the
-        // user said so.
-        Assert.Null(WorkOrder.Compose(Item(), Ledger("A minor")).HasVocals);
+        var order = WorkOrder.Compose(Item(), Ledger("A minor"));
+
+        Assert.Equal(["vocal_full", "instrumental_full"], order.Recipe.Presets);
+        Assert.False(order.Recipe.KeepSource);
     }
 
     [Fact]

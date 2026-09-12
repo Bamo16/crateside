@@ -1,5 +1,6 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
+using Crateside.Core.Queue;
 using Humanizer;
 
 namespace Crateside.Core.Tracks;
@@ -109,14 +110,17 @@ public sealed record TrackRow
     /// </remarks>
     public bool IsLibraryOnly { get; init; }
 
+    /// <summary>Which files the user wants made for this track.</summary>
+    public StemPlan Plan { get; init; } = StemPlan.Default;
+
     /// <summary>
-    /// The user has said this release has no vocals, which is what the recipe is derived from.
+    /// Whether the plan is the one an instrumental release calls for.
     /// </summary>
     /// <remarks>
-    /// False means <em>not stated</em> rather than "it has vocals" — crateside's policy for
-    /// not-stated is to expect the usual pair (ADR 0004).
+    /// Interim, for the Release select the picker replaces — a plan is no longer a fact about
+    /// the release, and once the picker lands nothing should be asking this question (#22).
     /// </remarks>
-    public bool IsInstrumentalRelease { get; init; }
+    public bool IsInstrumentalRelease => Plan.AsksTheSameAs(StemPlan.InstrumentalRelease);
 
     /// <summary>
     /// Why crateside stopped and handed this track back, or null when it has not.
@@ -186,7 +190,7 @@ public sealed record TrackRow
         };
 
     /// <summary>What separation will ask for, once it gets to this track.</summary>
-    public SeparationRecipe Recipe => SeparationRecipe.For(IsInstrumentalRelease);
+    public SeparationRecipe Recipe => SeparationRecipe.From(Plan);
 
     /// <summary>
     /// Whether the separation plan can still be changed, which is until separation starts.

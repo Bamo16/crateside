@@ -1028,6 +1028,11 @@
     private RecutPlan? PendingFor(TrackRow row) =>
         _recutting == row.VideoId ? _plan : null;
 
+    /// <summary>The other of the two plans the Release select can express.</summary>
+    /// <remarks>Interim: the picker offers all of them, and this goes with the select (#22).</remarks>
+    private static StemPlan Flipped(TrackRow row) =>
+        row.IsInstrumentalRelease ? StemPlan.Default : StemPlan.InstrumentalRelease;
+
     private void ProposeRecut(TrackRow row, ChangeEventArgs e)
     {
         _problem = null;
@@ -1039,7 +1044,7 @@
         }
 
         _recutting = row.VideoId;
-        _plan = Recut.PlanFor(row.VideoId, !row.IsInstrumentalRelease);
+        _plan = Recut.PlanFor(row.VideoId, Flipped(row));
     }
 
     private void CancelRecut()
@@ -1055,7 +1060,7 @@
 
         try
         {
-            var outcome = Recut.Apply(row.VideoId, !row.IsInstrumentalRelease);
+            var outcome = Recut.Apply(row.VideoId, Flipped(row));
 
             _problem = outcome.Problem;
 
@@ -1118,7 +1123,10 @@
 
     private async Task SetInstrumental(TrackRow row, ChangeEventArgs e)
     {
-        Playlist.SetInstrumentalRelease(row.VideoId, Wanted(e));
+        Playlist.SetPlan(
+            row.VideoId,
+            Wanted(e) ? StemPlan.InstrumentalRelease : StemPlan.Default
+        );
 
         await Source.RefreshAsync(_circuit.Token);
     }

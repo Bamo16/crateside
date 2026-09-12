@@ -135,12 +135,6 @@ public sealed class VerdictRunner(
         if (workingSet.TryGetSource(order.VideoId, out var audio))
             lines.Add($"- audio (read-only, for a --segment re-run only): {audio}");
 
-        if (order.HasVocals is false)
-            lines.Add(
-                "- has_vocals: false — the user states this is an instrumental release. "
-                    + "Record it; do not re-derive it."
-            );
-
         lines.AddRange([
             string.Empty,
             "Record the run when you have a verdict. source_url is required.",

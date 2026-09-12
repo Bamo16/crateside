@@ -87,7 +87,7 @@ public class QueueSettingsStoreTests : IDisposable
         // Every mutator used to write a freshly-constructed settings object, so saving one field
         // discarded the others. Harmless while there was only one field, and not any more.
         var store = Store();
-        store.SetInstrumentalRelease("abc123", true);
+        store.SetPlan("abc123", StemPlan.InstrumentalRelease);
 
         store.SavePlaylistId("PL_something");
 
@@ -102,9 +102,9 @@ public class QueueSettingsStoreTests : IDisposable
         // Otherwise every track ever spoken about leaves a permanent line in the file, and the
         // list stops meaning "things I have said something about".
         var store = Store();
-        store.SetInstrumentalRelease("abc123", true);
+        store.SetPlan("abc123", StemPlan.InstrumentalRelease);
 
-        store.SetInstrumentalRelease("abc123", false);
+        store.SetPlan("abc123", null);
 
         Assert.Empty(store.Read().Tracks);
     }
@@ -120,7 +120,7 @@ public class QueueSettingsStoreTests : IDisposable
 
         var track = Assert.Single(store.Read().Tracks);
         Assert.Equal("Starjunk 95 - 99th Street", track.Name);
-        Assert.False(track.IsInstrumentalRelease);
+        Assert.Null(track.Plan);
     }
 
     [Fact]
@@ -160,13 +160,13 @@ public class QueueSettingsStoreTests : IDisposable
     public void Clearing_a_name_keeps_another_instruction_that_was_also_stated()
     {
         var store = Store();
-        store.SetInstrumentalRelease("abc123", true);
+        store.SetPlan("abc123", StemPlan.InstrumentalRelease);
         store.SetName("abc123", "Starjunk 95 - 99th Street");
 
         store.SetName("abc123", null);
 
         var track = Assert.Single(store.Read().Tracks);
-        Assert.True(track.IsInstrumentalRelease);
+        Assert.True(track.Plan?.AsksTheSameAs(StemPlan.InstrumentalRelease));
         Assert.Null(track.Name);
     }
 

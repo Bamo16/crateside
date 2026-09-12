@@ -9,8 +9,8 @@ namespace Crateside.Tests.Orchestration;
 /// Cutting a track's stems again to a different recipe, without judging it again.
 /// </summary>
 /// <remarks>
-/// The case is a fact discovered late: a release marked as having no vocals turns out to have
-/// them, and the mistake only surfaces during warping. What matters most here is what it refuses
+/// The case is a plan corrected late: a track cut without a vocal stem turns out to need one,
+/// and the mistake only surfaces during warping. What matters most here is what it refuses
 /// to do — spend quota, or leave a half-emptied staging folder behind an eligible separation.
 /// </remarks>
 public class StemRecutTests : IDisposable
@@ -79,7 +79,7 @@ public class StemRecutTests : IDisposable
     {
         var recut = new StemRecut(Settings(), Jobs(), WorkingSetWithSource(), Staged());
 
-        var plan = recut.PlanFor(Video, isInstrumentalRelease: false);
+        var plan = recut.PlanFor(Video, StemPlan.Default);
 
         Assert.False(plan.IsPossible);
         Assert.Contains("Sample Staging", plan.Refusal);
@@ -95,7 +95,7 @@ public class StemRecutTests : IDisposable
 
         var recut = new StemRecut(Settings(), Jobs(), new WorkingSet(_working), Staged());
 
-        var plan = recut.PlanFor(Video, isInstrumentalRelease: false);
+        var plan = recut.PlanFor(Video, StemPlan.Default);
 
         Assert.True(plan.IsPossible);
         Assert.True(plan.WillRefetch);
@@ -109,29 +109,26 @@ public class StemRecutTests : IDisposable
 
         var recut = new StemRecut(Settings(), Jobs(), WorkingSetWithSource(), Staged());
 
-        var plan = recut.PlanFor(Video, isInstrumentalRelease: false);
+        var plan = recut.PlanFor(Video, StemPlan.Default);
 
         Assert.False(plan.WillRefetch);
         Assert.Contains("still on disk", plan.AudioDetail);
     }
 
     [Fact]
-    public void The_plan_is_the_recipe_the_corrected_fact_calls_for()
+    public void The_plan_is_the_recipe_the_user_asked_for()
     {
         var recut = new StemRecut(Settings(), Jobs(), WorkingSetWithSource(), Staged());
 
-        Assert.Equal(
-            SeparationRecipe.Standard,
-            recut.PlanFor(Video, isInstrumentalRelease: false).Recipe
-        );
+        Assert.Equal(SeparationRecipe.Standard, recut.PlanFor(Video, StemPlan.Default).Recipe);
         Assert.Equal(
             SeparationRecipe.InstrumentalRelease,
-            recut.PlanFor(Video, isInstrumentalRelease: true).Recipe
+            recut.PlanFor(Video, StemPlan.InstrumentalRelease).Recipe
         );
     }
 
     [Fact]
-    public void It_clears_the_staged_files_and_records_the_corrected_fact()
+    public void It_clears_the_staged_files_and_records_the_new_plan()
     {
         // The whole of the reported case: marked as having no vocals, separated to a kept source
         // plus a guide, and the vocals turn out to be there after all.
@@ -142,26 +139,22 @@ public class StemRecutTests : IDisposable
         var jobs = Jobs();
         var recut = new StemRecut(settings, jobs, WorkingSetWithSource(), Staged());
 
-        settings.SetInstrumentalRelease(Video, true);
+        settings.SetPlan(Video, StemPlan.InstrumentalRelease);
 
-        var outcome = recut.Apply(Video, isInstrumentalRelease: false);
+        var outcome = recut.Apply(Video, StemPlan.Default);
 
         Assert.True(outcome.Succeeded);
         Assert.Equal(2, outcome.Removed);
         Assert.False(File.Exists(source));
         Assert.False(File.Exists(guide));
 
-        // The instruction is dropped rather than written as false, because absence already means
-        // "not stated" and crateside's policy for not-stated is the usual pair. What matters is the
-        // recipe the fact now derives, so that is what is asserted.
-        var stated =
-            settings
-                .Read()
-                .Tracks.FirstOrDefault(track => track.VideoId == Video)
-                ?.IsInstrumentalRelease
-            is true;
+        // The plan is now kept rather than dropped. It used to be written as a fact, and "not an
+        // instrumental release" was indistinguishable from never having said — so the entry went.
+        // A plan is what the user asked for, and asking for the usual pair is a thing they said.
+        var stored = settings.Read().Tracks.Single(track => track.VideoId == Video).Plan;
 
-        Assert.Equal(SeparationRecipe.Standard, SeparationRecipe.For(stated));
+        Assert.NotNull(stored);
+        Assert.True(stored.AsksTheSameAs(StemPlan.Default));
     }
 
     [Fact]
@@ -175,7 +168,7 @@ public class StemRecutTests : IDisposable
 
         var recut = new StemRecut(Settings(), Jobs(), WorkingSetWithSource(), Staged());
 
-        Assert.True(recut.Apply(Video, isInstrumentalRelease: false).Succeeded);
+        Assert.True(recut.Apply(Video, StemPlan.Default).Succeeded);
         Assert.False(File.Exists(source + ".asd"));
     }
 
@@ -186,7 +179,7 @@ public class StemRecutTests : IDisposable
 
         var recut = new StemRecut(Settings(), Jobs(), WorkingSetWithSource(), Staged());
 
-        Assert.True(recut.Apply(Video, isInstrumentalRelease: false).Succeeded);
+        Assert.True(recut.Apply(Video, StemPlan.Default).Succeeded);
     }
 
     [Theory]
@@ -202,7 +195,7 @@ public class StemRecutTests : IDisposable
 
         jobs.Record(Video, stage, JobStatus.Succeeded);
 
-        recut.Apply(Video, isInstrumentalRelease: false);
+        recut.Apply(Video, StemPlan.Default);
 
         Assert.True(jobs.TryGet(Video, stage, out var job));
         Assert.Equal(JobStatus.Cancelled, job.Status);
@@ -223,7 +216,7 @@ public class StemRecutTests : IDisposable
 
         jobs.Record(Video, stage, JobStatus.Succeeded);
 
-        recut.Apply(Video, isInstrumentalRelease: false);
+        recut.Apply(Video, StemPlan.Default);
 
         Assert.True(jobs.TryGet(Video, stage, out var job));
         Assert.Equal(JobStatus.Succeeded, job.Status);
@@ -245,7 +238,7 @@ public class StemRecutTests : IDisposable
 
         using (File.Open(held, FileMode.Open, FileAccess.Read, FileShare.None))
         {
-            var outcome = recut.Apply(Video, isInstrumentalRelease: false);
+            var outcome = recut.Apply(Video, StemPlan.Default);
 
             Assert.False(outcome.Succeeded);
             Assert.Contains("open in Ableton", outcome.Problem);

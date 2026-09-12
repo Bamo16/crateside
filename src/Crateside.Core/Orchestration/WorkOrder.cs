@@ -24,18 +24,8 @@ public sealed record WorkOrder
     /// <summary>The pre-flight quality hint, carried so the caller can surface it.</summary>
     public PremiumOutlook PremiumOutlook { get; init; }
 
-    /// <summary>What to ask the separator for, derived from what is known about the release.</summary>
+    /// <summary>What to ask the separator for: the user's plan, rendered as a recipe.</summary>
     public SeparationRecipe Recipe { get; init; } = SeparationRecipe.Standard;
-
-    /// <summary>
-    /// Whether the user has stated the release has no vocals, for the verdict run to pass
-    /// through to the ledger. Null means nobody said, which is not "it has vocals".
-    /// </summary>
-    /// <remarks>
-    /// Only ever <c>false</c> or null: crateside carries the user's statement that a release is
-    /// instrumental, and has nothing to say about a track they have not spoken about.
-    /// </remarks>
-    public bool? HasVocals { get; init; }
 
     /// <summary>
     /// Decides what should happen to a queued track.
@@ -57,8 +47,7 @@ public sealed record WorkOrder
                     ? StemDestination.KeyIdentified
                     : StemDestination.UnresolvedKey,
             PremiumOutlook = item.PremiumOutlook,
-            Recipe = SeparationRecipe.For(item),
-            HasVocals = item.IsInstrumentalRelease ? false : null,
+            Recipe = SeparationRecipe.From(item.Plan),
         };
 }
 
@@ -79,8 +68,12 @@ public sealed record SeparationRecipe
     /// The usual pair plus a warp guide. Repeated presets run as independent stem sets rather
     /// than being blended.
     /// </summary>
-    public static SeparationRecipe Standard { get; } =
-        new() { Presets = ["vocal_full", "instrumental_full"], ExtractDrums = true };
+    /// <remarks>
+    /// Built from the plan rather than beside it, so the preset list has one definition and two
+    /// recipes for the same plan compare equal — the record's equality is by reference on
+    /// <see cref="Presets"/>, so a second identical array would not.
+    /// </remarks>
+    public static SeparationRecipe Standard { get; } = From(StemPlan.Default);
 
     /// <summary>
     /// For a release that has no vocals: nothing to separate out, so the drums are the only
@@ -91,12 +84,7 @@ public sealed record SeparationRecipe
     /// crateside copies the source into the destination itself instead.
     /// </remarks>
     public static SeparationRecipe InstrumentalRelease { get; } =
-        new()
-        {
-            Presets = [],
-            ExtractDrums = true,
-            KeepSource = true,
-        };
+        From(StemPlan.InstrumentalRelease);
 
     public required IReadOnlyList<string> Presets { get; init; }
     public required bool ExtractDrums { get; init; }
@@ -125,13 +113,18 @@ public sealed record SeparationRecipe
     /// </remarks>
     public TimeSpan Estimate => TimeSpan.FromSeconds(75 + (95 * Passes));
 
-    /// <summary>The recipe a track's release calls for.</summary>
-    public static SeparationRecipe For(QueueItem item) => For(item.IsInstrumentalRelease);
-
     /// <summary>
-    /// The same rule off the one fact it turns on, for a reader holding the fact and not the queue
-    /// item it came from.
+    /// What to ask the separator for, given what the user asked for.
     /// </summary>
-    public static SeparationRecipe For(bool isInstrumentalRelease) =>
-        isInstrumentalRelease ? InstrumentalRelease : Standard;
+    /// <remarks>
+    /// The warp guide is not part of the plan and is always requested: it is not a sample, it is
+    /// deleted after warping, and no workflow yet exists that does not want one (ADR 0018).
+    /// </remarks>
+    public static SeparationRecipe From(StemPlan plan) =>
+        new()
+        {
+            Presets = plan.Presets,
+            ExtractDrums = true,
+            KeepSource = plan.KeepSource,
+        };
 }

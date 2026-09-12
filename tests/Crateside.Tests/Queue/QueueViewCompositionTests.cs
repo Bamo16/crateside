@@ -95,16 +95,26 @@ public class QueueViewCompositionTests
         // silently does nothing and a vocal stem gets made anyway.
         var view = Compose(
             [Item(Unjudged)],
-            instructions: new TrackInstruction { VideoId = Unjudged, IsInstrumentalRelease = true }
+            instructions: new TrackInstruction
+            {
+                VideoId = Unjudged,
+                Plan = StemPlan.InstrumentalRelease,
+            }
         );
 
-        Assert.True(Assert.Single(view.Outstanding).IsInstrumentalRelease);
+        Assert.True(
+            Assert.Single(view.Outstanding).Plan.AsksTheSameAs(StemPlan.InstrumentalRelease)
+        );
     }
 
     [Fact]
     public void A_track_nobody_has_spoken_about_says_nothing_about_vocals()
     {
-        Assert.False(Assert.Single(Compose([Item(Unjudged)]).Outstanding).IsInstrumentalRelease);
+        Assert.True(
+            Assert
+                .Single(Compose([Item(Unjudged)]).Outstanding)
+                .Plan.AsksTheSameAs(StemPlan.Default)
+        );
     }
 
     [Fact]
@@ -115,10 +125,16 @@ public class QueueViewCompositionTests
         var view = Compose(
             [Item(Judged)],
             verdictWithoutStems: new HashSet<string> { Judged },
-            instructions: new TrackInstruction { VideoId = Judged, IsInstrumentalRelease = true }
+            instructions: new TrackInstruction
+            {
+                VideoId = Judged,
+                Plan = StemPlan.InstrumentalRelease,
+            }
         );
 
-        Assert.True(Assert.Single(view.AwaitingSeparation).IsInstrumentalRelease);
+        Assert.True(
+            Assert.Single(view.AwaitingSeparation).Plan.AsksTheSameAs(StemPlan.InstrumentalRelease)
+        );
     }
 
     [Fact]
