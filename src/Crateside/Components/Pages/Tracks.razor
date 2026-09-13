@@ -722,11 +722,11 @@
                             }
                             @if (Playlist.BumpedVideoId == row.VideoId)
                             {
-                                <button class="primary" @onclick="ClearBump">Stop doing this next</button>
+                                <button class="primary" @onclick="ClearBump">Stop working this first</button>
                             }
                             else if (row.State is TrackState.Queued or TrackState.JudgedInLine)
                             {
-                                <button class="outline" @onclick="() => Bump(row)">Do this next</button>
+                                <button class="outline" @onclick="() => Bump(row)">Work this first</button>
                             }
                             @if (row.PlaylistItemId is { } playlistItemId && Playlist.IsAuthorized)
                             {
