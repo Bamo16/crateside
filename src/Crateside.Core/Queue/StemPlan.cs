@@ -93,7 +93,12 @@ public sealed record StemPlan
     public bool AsksTheSameAs(StemPlan other) =>
         KeepSource == other.KeepSource
         && Presets.Count == other.Presets.Count
-        && !Presets.Except(other.Presets, StringComparer.Ordinal).Any();
+        && !Presets.Except(other.Presets, StringComparer.Ordinal).Any()
+        && AddedSources.Count == other.AddedSources.Count
+        && !AddedSources
+            .Select(source => source.VideoId)
+            .Except(other.AddedSources.Select(source => source.VideoId), StringComparer.Ordinal)
+            .Any();
 }
 
 /// <summary>A whole file of this song the user attached: downloaded, staged, tagged, never cut.</summary>

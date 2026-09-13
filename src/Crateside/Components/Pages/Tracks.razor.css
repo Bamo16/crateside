@@ -1099,27 +1099,62 @@ a.outline {
 }
 
 
-/* The form sits where the line it is about to create will be. */
+/* Sits where the line it is about to create will be, and says what it is next to the boxes
+   rather than in the far column, so the two read as one thing. */
 .add-source {
-    display: grid;
-    grid-template-columns: 1fr 280px;
-    gap: 10px;
     margin-bottom: 4px;
-    padding: 8px 12px;
+    padding: 12px;
     background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 6px;
 }
 
-.add-source input {
+.add-fields {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 16px;
+}
+
+.add-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.add-fields label span {
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.add-fields input {
     font: inherit;
     font-size: 13px;
     color: var(--text);
-    background: transparent;
-    border: 0;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 8px 11px;
     outline: none;
 }
 
-.add-source input::placeholder {
+.add-fields input:focus {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.add-fields input::placeholder {
     color: var(--text-35);
+}
+
+.add-note {
+    margin: 10px 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-75);
+}
+
+.add-note.bad {
+    color: var(--red);
 }

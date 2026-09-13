@@ -56,9 +56,23 @@ public sealed class HandoffDrainer(
     private static string? Cleared(int count) =>
         count is 0 ? null : $"{"superseded file".ToQuantity(count)} removed from Sample Staging";
 
+    /// <summary>
+    /// What the user calls the track this file belongs to, or null when they have not said.
+    /// </summary>
+    /// <remarks>
+    /// An added source carries a video ID of its own and arrives named after its own upload, so
+    /// it is looked up through the track that asked for it — otherwise it sits somewhere else
+    /// entirely in Ableton's browser from the stems it was added to sit beside (ADR 0014).
+    /// </remarks>
     private string? NameFor(string videoId) =>
         settings
             .Read()
-            .Tracks.FirstOrDefault(track => track.VideoId.Equals(videoId, StringComparison.Ordinal))
+            .Tracks.FirstOrDefault(track =>
+                track.VideoId.Equals(videoId, StringComparison.Ordinal)
+                || track.Plan?.AddedSources.Any(source =>
+                    source.VideoId.Equals(videoId, StringComparison.Ordinal)
+                )
+                    is true
+            )
             ?.Name;
 }

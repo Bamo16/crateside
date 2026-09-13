@@ -46,9 +46,10 @@ public class StemFileNameRealLibraryTests
             var name = Path.GetFileNameWithoutExtension(path);
             var kept = name[StemFileName.WithoutPreset(path).Length..].Trim().Trim('(', ')');
 
-            if (preset is null)
-                Assert.Equal(string.Empty, kept);
-            else
+            // A file with no preset is a source, and its parentheses hold the label the user
+            // typed for it rather than nothing at all (ADR 0019) — so only the preset half of
+            // this can be checked against the tag.
+            if (preset is not null)
                 Assert.StartsWith(kept, preset, StringComparison.Ordinal);
         }
     }
