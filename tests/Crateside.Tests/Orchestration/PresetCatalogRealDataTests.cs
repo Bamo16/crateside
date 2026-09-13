@@ -1,0 +1,72 @@
+using Crateside.Core.Ledger;
+using Crateside.Core.Orchestration;
+using Crateside.Core.Queue;
+using Crateside.Core.Staging;
+
+namespace Crateside.Tests.Orchestration;
+
+/// <summary>
+/// Asks the real separator, and joins its answer against the real library. The whole design of
+/// the picker rests on every name a file carries resolving back to a preset the plan can ask
+/// for, and only a real read of both sides can say whether it does.
+/// </summary>
+public class PresetCatalogRealDataTests
+{
+    private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
+    private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
+    private const string MashupRoot = @"P:\RYAN\Ableton\Mashup Samples";
+
+    private static async Task<PresetCatalog> RealCatalogAsync()
+    {
+        var catalog = await new PresetCatalogReader().ReadAsync(
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.SkipWhen(catalog.IsEmpty, "stemforge-cli is not on PATH, or reported no presets.");
+
+        return catalog;
+    }
+
+    [Fact]
+    public async Task The_separator_reports_a_display_name_for_every_preset_it_offers()
+    {
+        var catalog = await RealCatalogAsync();
+
+        Assert.All(
+            catalog.Presets,
+            preset =>
+            {
+                Assert.NotEmpty(preset.Id);
+                Assert.NotEmpty(preset.DisplayName);
+                Assert.NotEmpty(preset.Category);
+            }
+        );
+
+        // The pair crateside has always asked for, by the names the files carry.
+        Assert.Equal("Vocal - Full", catalog.ById("vocal_full")?.DisplayName);
+        Assert.Equal("Instrumental - Full", catalog.ById("instrumental_full")?.DisplayName);
+    }
+
+    [Fact]
+    public async Task Every_preset_the_library_carries_resolves_back_to_an_id()
+    {
+        Assert.SkipUnless(
+            File.Exists(LedgerPath) && Directory.Exists(MashupRoot),
+            "Needs the real ledger and stem roots."
+        );
+
+        var catalog = await RealCatalogAsync();
+
+        var unresolved = ProcessedTracks
+            .Scan(KeyLedger.Read(LedgerPath), [StagingRoot, MashupRoot])
+            .StemsByVideoId.SelectMany(entry => entry.Value)
+            .Select(file => file.Preset)
+            // A warp guide is never asked for by name, and a source download carries no preset.
+            .Where(preset => preset is not null && !StagingStem.IsWarpGuidePreset(preset))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(preset => !catalog.TryGetId(preset, out _))
+            .ToArray();
+
+        Assert.Empty(unresolved);
+    }
+}
