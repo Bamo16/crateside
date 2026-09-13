@@ -153,7 +153,9 @@ public sealed record SeparationRecipe
         return new SeparationRecipe
         {
             Presets = outstanding.Presets,
-            ExtractDrums = !inventory.HasWarpGuide,
+            // Only alongside something to warp. A track that owes nothing is not made to sit
+            // through a pass for a guide it would only delete again.
+            ExtractDrums = !inventory.HasWarpGuide && !outstanding.IsEmpty,
             KeepSource = outstanding.KeepSource,
         };
     }

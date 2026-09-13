@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Tests.Orchestration;
 
 /// <summary>
-/// Cutting a track's stems again to a different recipe, without judging it again.
+/// Changing which files a track has, without judging it again.
 /// </summary>
 /// <remarks>
 /// The case is a plan corrected late: a track cut without a vocal stem turns out to need one,
@@ -16,6 +16,16 @@ namespace Crateside.Tests.Orchestration;
 public class StemRecutTests : IDisposable
 {
     private const string Video = "aaaaaaaaaaa";
+
+    private static readonly PresetCatalog Catalog = PresetCatalogReader.Parse(
+        """
+        [
+          {"id":"vocal_full","displayName":"Vocal - Full","category":"Vocals"},
+          {"id":"instrumental_full","displayName":"Instrumental - Full","category":"Instrumentals"},
+          {"id":"instrumental_clean","displayName":"Instrumental - Clean","category":"Instrumentals"}
+        ]
+        """
+    );
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -64,25 +74,75 @@ public class StemRecutTests : IDisposable
     /// audio has to be real for this to be exercised.</summary>
     private ReadStagedFiles Staged() => _ => _staged;
 
-    private string Stage(string name)
+    /// <summary>Stages one file, named and tagged the way StemForge writes it.</summary>
+    private string Stage(string preset = "")
     {
+        var name = preset is { Length: > 0 }
+            ? $"Rob Dougan - Furious Angels ({preset}).flac"
+            : "Rob Dougan - Furious Angels.flac";
+
         var path = Path.Combine(_staging, name);
 
         File.WriteAllText(path, "stem");
-        _staged.Add(new StagingStem { Path = path, FileName = name });
+        _staged.Add(
+            new StagingStem
+            {
+                Path = path,
+                FileName = name,
+                Preset = preset is { Length: > 0 } ? preset : null,
+            }
+        );
 
         return path;
     }
 
+    private StemRecut Recut(JobStore? jobs = null, QueueSettingsStore? settings = null) =>
+        new(settings ?? Settings(), jobs ?? Jobs(), WorkingSetWithSource(), Staged());
+
     [Fact]
     public void It_refuses_when_nothing_of_the_track_is_staged()
     {
-        var recut = new StemRecut(Settings(), Jobs(), WorkingSetWithSource(), Staged());
-
-        var plan = recut.PlanFor(Video, StemPlan.Default);
+        var plan = Recut().PlanFor(Video, StemPlan.Default, Catalog);
 
         Assert.False(plan.IsPossible);
         Assert.Contains("Sample Staging", plan.Refusal);
+    }
+
+    [Fact]
+    public void It_refuses_when_the_separator_could_not_say_what_these_files_are()
+    {
+        // Without the catalog every stem reads as one the plan cannot name, so the whole plan
+        // looks outstanding — and cutting it would make a second copy of every file this track
+        // already has, under a suffixed name.
+        Stage("Vocal - Full");
+
+        var plan = Recut().PlanFor(Video, StemPlan.Default, PresetCatalog.Empty);
+
+        Assert.False(plan.IsPossible);
+        Assert.Contains("could not be asked", plan.Refusal);
+    }
+
+    [Fact]
+    public void It_refuses_a_plan_that_asks_for_nothing()
+    {
+        Stage("Vocal - Full");
+
+        var plan = Recut().PlanFor(Video, new StemPlan { Presets = [] }, Catalog);
+
+        Assert.False(plan.IsPossible);
+        Assert.Contains("keep something", plan.Refusal);
+    }
+
+    [Fact]
+    public void It_refuses_when_the_track_already_has_exactly_these_files()
+    {
+        Stage("Vocal - Full");
+        Stage("Instrumental - Full");
+
+        var plan = Recut().PlanFor(Video, StemPlan.Default, Catalog);
+
+        Assert.False(plan.IsPossible);
+        Assert.Contains("already has exactly these files", plan.Refusal);
     }
 
     [Fact]
@@ -91,11 +151,11 @@ public class StemRecutTests : IDisposable
         // Asked of the working set rather than inferred from staging. The janitor keeps a track's
         // audio while anything of it is staged, so the inference is usually right -- but the
         // working set is cache and is safe to delete by hand, so the only honest way is to look.
-        Stage("Rob Dougan - Furious Angels.flac");
+        Stage();
 
         var recut = new StemRecut(Settings(), Jobs(), new WorkingSet(_working), Staged());
 
-        var plan = recut.PlanFor(Video, StemPlan.Default);
+        var plan = recut.PlanFor(Video, StemPlan.Default, Catalog);
 
         Assert.True(plan.IsPossible);
         Assert.True(plan.WillRefetch);
@@ -105,56 +165,102 @@ public class StemRecutTests : IDisposable
     [Fact]
     public void A_track_whose_audio_is_still_held_says_nothing_will_be_fetched()
     {
-        Stage("Rob Dougan - Furious Angels.flac");
+        Stage();
 
-        var recut = new StemRecut(Settings(), Jobs(), WorkingSetWithSource(), Staged());
-
-        var plan = recut.PlanFor(Video, StemPlan.Default);
+        var plan = Recut().PlanFor(Video, StemPlan.Default, Catalog);
 
         Assert.False(plan.WillRefetch);
         Assert.Contains("still on disk", plan.AudioDetail);
     }
 
     [Fact]
-    public void The_plan_is_the_recipe_the_user_asked_for()
+    public void The_recipe_is_what_the_user_asked_for_minus_what_is_already_there()
     {
-        var recut = new StemRecut(Settings(), Jobs(), WorkingSetWithSource(), Staged());
+        var recut = Recut();
 
-        Assert.Equal(SeparationRecipe.Standard, recut.PlanFor(Video, StemPlan.Default).Recipe);
         Assert.Equal(
-            SeparationRecipe.InstrumentalRelease,
-            recut.PlanFor(Video, StemPlan.InstrumentalRelease).Recipe
+            SeparationRecipe.Standard,
+            recut.PlanFor(Video, StemPlan.Default, Catalog).Recipe
+        );
+
+        Stage("Vocal - Full");
+
+        Assert.Equal(
+            ["instrumental_full"],
+            recut.PlanFor(Video, StemPlan.Default, Catalog).Recipe.Presets
         );
     }
 
     [Fact]
-    public void It_clears_the_staged_files_and_records_the_new_plan()
+    public void Adding_a_preset_removes_nothing_and_leaves_the_guide_alone()
     {
-        // The whole of the reported case: marked as having no vocals, separated to a kept source
-        // plus a guide, and the vocals turn out to be there after all.
-        var source = Stage("Rob Dougan - Furious Angels.flac");
-        var guide = Stage("Rob Dougan - Furious Angels (Drums).flac");
+        // The common case, and the reason any of this exists: the defaults did not isolate
+        // cleanly, so a third preset is wanted and the two already staged are worth keeping.
+        var vocal = Stage("Vocal - Full");
+        var instrumental = Stage("Instrumental - Full");
+        var guide = Stage("Drums - htdemucs_ft");
+
+        var recut = Recut();
+        var wanted = new StemPlan
+        {
+            Presets = ["vocal_full", "instrumental_full", "instrumental_clean"],
+        };
+
+        var plan = recut.PlanFor(Video, wanted, Catalog);
+
+        Assert.True(plan.IsAdditive);
+        Assert.Equal(["instrumental_clean"], plan.Recipe.Presets);
+        Assert.False(plan.Recipe.ExtractDrums);
+
+        Assert.Equal(0, recut.Apply(Video, wanted, Catalog).Removed);
+        Assert.True(File.Exists(vocal));
+        Assert.True(File.Exists(instrumental));
+        Assert.True(File.Exists(guide));
+    }
+
+    [Fact]
+    public void Dropping_a_preset_removes_only_that_file_and_records_the_new_plan()
+    {
+        var vocal = Stage("Vocal - Full");
+        var instrumental = Stage("Instrumental - Full");
+        var guide = Stage("Drums - htdemucs_ft");
 
         var settings = Settings();
-        var jobs = Jobs();
-        var recut = new StemRecut(settings, jobs, WorkingSetWithSource(), Staged());
+        var wanted = new StemPlan { Presets = ["instrumental_full"] };
 
-        settings.SetPlan(Video, StemPlan.InstrumentalRelease);
-
-        var outcome = recut.Apply(Video, StemPlan.Default);
+        var outcome = Recut(settings: settings).Apply(Video, wanted, Catalog);
 
         Assert.True(outcome.Succeeded);
-        Assert.Equal(2, outcome.Removed);
-        Assert.False(File.Exists(source));
-        Assert.False(File.Exists(guide));
+        Assert.Equal(1, outcome.Removed);
+        Assert.False(File.Exists(vocal));
+        Assert.True(File.Exists(instrumental));
 
-        // The plan is now kept rather than dropped. It used to be written as a fact, and "not an
-        // instrumental release" was indistinguishable from never having said — so the entry went.
-        // A plan is what the user asked for, and asking for the usual pair is a thing they said.
+        // The guide is used up rather than kept, so it is nobody's to drop — least of all a
+        // plan that was never able to name it.
+        Assert.True(File.Exists(guide));
+
         var stored = settings.Read().Tracks.Single(track => track.VideoId == Video).Plan;
 
         Assert.NotNull(stored);
-        Assert.True(stored.AsksTheSameAs(StemPlan.Default));
+        Assert.True(stored.AsksTheSameAs(wanted));
+    }
+
+    [Fact]
+    public void An_instrumental_release_that_turns_out_to_have_vocals_loses_its_source()
+    {
+        // The originally reported case: marked as having no vocals, separated to a kept source
+        // plus a guide, and the vocals turn out to be there after all.
+        var source = Stage();
+        var guide = Stage("Drums - htdemucs_ft");
+
+        var outcome = Recut().Apply(Video, StemPlan.Default, Catalog);
+
+        Assert.True(outcome.Succeeded);
+        Assert.Equal(1, outcome.Removed);
+        Assert.False(File.Exists(source));
+
+        // Cut from the same audio, so it is still the right guide for the stems replacing it.
+        Assert.True(File.Exists(guide));
     }
 
     [Fact]
@@ -162,24 +268,20 @@ public class StemRecutTests : IDisposable
     {
         // Separation puts a file back under the same name, so a sidecar left behind is picked up
         // by new audio: Ableton warps it to the old markers rather than analysing it.
-        var source = Stage("Rob Dougan - Furious Angels.flac");
+        var source = Stage();
 
         File.WriteAllText(source + ".asd", "warp markers");
 
-        var recut = new StemRecut(Settings(), Jobs(), WorkingSetWithSource(), Staged());
-
-        Assert.True(recut.Apply(Video, StemPlan.Default).Succeeded);
+        Assert.True(Recut().Apply(Video, StemPlan.Default, Catalog).Succeeded);
         Assert.False(File.Exists(source + ".asd"));
     }
 
     [Fact]
     public void A_stem_nobody_analysed_is_removed_without_complaint()
     {
-        Stage("Rob Dougan - Furious Angels.flac");
+        Stage();
 
-        var recut = new StemRecut(Settings(), Jobs(), WorkingSetWithSource(), Staged());
-
-        Assert.True(recut.Apply(Video, StemPlan.Default).Succeeded);
+        Assert.True(Recut().Apply(Video, StemPlan.Default, Catalog).Succeeded);
     }
 
     [Theory]
@@ -188,14 +290,13 @@ public class StemRecutTests : IDisposable
     [InlineData(JobStage.Tagging)]
     public void It_reopens_the_stages_that_have_to_run_again(JobStage stage)
     {
-        Stage("Rob Dougan - Furious Angels.flac");
+        Stage();
 
         var jobs = Jobs();
-        var recut = new StemRecut(Settings(), jobs, WorkingSetWithSource(), Staged());
 
         jobs.Record(Video, stage, JobStatus.Succeeded);
 
-        recut.Apply(Video, StemPlan.Default);
+        Recut(jobs).Apply(Video, StemPlan.Default, Catalog);
 
         Assert.True(jobs.TryGet(Video, stage, out var job));
         Assert.Equal(JobStatus.Cancelled, job.Status);
@@ -206,19 +307,38 @@ public class StemRecutTests : IDisposable
     [InlineData(JobStage.Verdict)]
     public void It_leaves_the_stages_that_cost_quota_alone(JobStage stage)
     {
-        // The structural guard is elsewhere and is the better one: once the staged files are gone
-        // the track has a verdict and no stems, which puts it in AwaitingSeparation and therefore
-        // out of Outstanding -- the only list evidence and judging read. This is the belt.
-        Stage("Rob Dougan - Furious Angels.flac");
+        // The structural guard is elsewhere and is the better one: a re-cut track is in
+        // AwaitingSeparation and therefore out of Outstanding -- the only list evidence and
+        // judging read. This is the belt.
+        Stage();
 
         var jobs = Jobs();
-        var recut = new StemRecut(Settings(), jobs, WorkingSetWithSource(), Staged());
 
         jobs.Record(Video, stage, JobStatus.Succeeded);
 
-        recut.Apply(Video, StemPlan.Default);
+        Recut(jobs).Apply(Video, StemPlan.Default, Catalog);
 
         Assert.True(jobs.TryGet(Video, stage, out var job));
+        Assert.Equal(JobStatus.Succeeded, job.Status);
+    }
+
+    [Fact]
+    public void A_change_that_only_drops_files_never_reaches_the_GPU()
+    {
+        // Nothing is made and nothing is moved, so reopening separation would put the track in
+        // line for a separator with nothing to do for it.
+        Stage("Vocal - Full");
+        Stage("Instrumental - Full");
+
+        var jobs = Jobs();
+
+        jobs.Record(Video, JobStage.Separation, JobStatus.Succeeded);
+
+        var outcome = Recut(jobs)
+            .Apply(Video, new StemPlan { Presets = ["instrumental_full"] }, Catalog);
+
+        Assert.Equal(1, outcome.Removed);
+        Assert.True(jobs.TryGet(Video, JobStage.Separation, out var job));
         Assert.Equal(JobStatus.Succeeded, job.Status);
     }
 
@@ -226,19 +346,23 @@ public class StemRecutTests : IDisposable
     public void A_file_it_cannot_delete_stops_it_before_the_stages_reopen()
     {
         // Nearly always a file Ableton has open. Reopening separation over a folder that still
-        // holds some of the old files would separate into the mess rather than replacing it, so
-        // the stages stay shut and the user closes Ableton and presses again.
-        Stage("Rob Dougan - Furious Angels.flac");
+        // holds a file the plan dropped would separate into the mess rather than replacing it,
+        // so the stages stay shut and the user closes Ableton and presses again.
+        Stage("Instrumental - Full");
 
-        var held = Stage("Rob Dougan - Furious Angels (Drums).flac");
+        var held = Stage("Vocal - Full");
         var jobs = Jobs();
-        var recut = new StemRecut(Settings(), jobs, WorkingSetWithSource(), Staged());
+        var recut = Recut(jobs);
 
         jobs.Record(Video, JobStage.Separation, JobStatus.Succeeded);
 
         using (File.Open(held, FileMode.Open, FileAccess.Read, FileShare.None))
         {
-            var outcome = recut.Apply(Video, StemPlan.Default);
+            var outcome = recut.Apply(
+                Video,
+                new StemPlan { Presets = ["instrumental_full", "instrumental_clean"] },
+                Catalog
+            );
 
             Assert.False(outcome.Succeeded);
             Assert.Contains("open in Ableton", outcome.Problem);

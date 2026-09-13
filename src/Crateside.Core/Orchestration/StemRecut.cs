@@ -9,8 +9,12 @@ namespace Crateside.Core.Orchestration;
 public delegate IReadOnlyList<StagingStem> ReadStagedFiles(string videoId);
 
 /// <summary>
-/// Cuts a track's stems again, to a different recipe, without judging it again.
+/// Changes which files a track has, without judging it again.
 /// </summary>
+/// <remarks>
+/// Not always destructive. A plan that only adds removes nothing and leaves every staged file
+/// where it is; one that only drops presets makes nothing and never touches the GPU (ADR 0018).
+/// </remarks>
 public sealed class StemRecut(
     QueueSettingsStore settings,
     JobStore jobs,
@@ -32,32 +36,34 @@ public sealed class StemRecut(
         JobStage.Tagging,
     ];
 
-    /// <summary>What re-cutting this track would do, or why it cannot be done.</summary>
-    public RecutPlan PlanFor(string videoId, StemPlan wanted)
+    /// <summary>What changing this track's plan would do, or why it cannot be done.</summary>
+    public RecutPlan PlanFor(string videoId, StemPlan wanted, PresetCatalog catalog)
     {
-        var recipe = SeparationRecipe.From(wanted);
-
         var files = staged(videoId);
+        var inventory = StemInventory.Of(files.Select(AsOnDisk), catalog);
+        var recipe = SeparationRecipe.For(wanted, inventory);
+        var removing = inventory.Superseded(wanted);
 
         return new RecutPlan
         {
             Recipe = recipe,
-            Removing = files,
+            Removing = removing,
             WillRefetch = !workingSet.TryGetSource(videoId, out _),
-            Refusal = files is { Count: 0 } ? "Nothing of this track is in Sample Staging." : null,
+            Refusal = RefusalFor(catalog, wanted, files, recipe, removing),
         };
     }
 
     /// <summary>
-    /// Records the corrected fact, clears the staged files, and puts the track back in line.
+    /// Removes what the plan dropped, records it, and puts the track back in line for whatever
+    /// it now owes.
     /// </summary>
     /// <remarks>
     /// The order matters on failure: files are deleted first, and the stages are only reopened
     /// once every one of them went.
     /// </remarks>
-    public RecutOutcome Apply(string videoId, StemPlan wanted)
+    public RecutOutcome Apply(string videoId, StemPlan wanted, PresetCatalog catalog)
     {
-        var plan = PlanFor(videoId, wanted);
+        var plan = PlanFor(videoId, wanted, catalog);
 
         if (plan.Refusal is { } refusal)
             return new RecutOutcome { Problem = refusal };
@@ -68,8 +74,8 @@ public sealed class StemRecut(
         {
             try
             {
-                File.Delete(stem.Path);
-                File.Delete(StemFileName.AnalysisFor(stem.Path));
+                File.Delete(stem.File.Path);
+                File.Delete(StemFileName.AnalysisFor(stem.File.Path));
 
                 removed++;
             }
@@ -79,28 +85,68 @@ public sealed class StemRecut(
                 {
                     Removed = removed,
                     Problem =
-                        $"{stem.FileName} could not be removed — it is probably open in Ableton. "
-                        + "Close it and try again.",
+                        $"{Path.GetFileName(stem.File.Path)} could not be removed — it is "
+                        + "probably open in Ableton. Close it and try again.",
                 };
             }
         }
 
         settings.SetPlan(videoId, wanted);
 
-        foreach (var stage in Redone)
-            jobs.Record(videoId, stage, JobStatus.Cancelled, error: "re-cut requested");
+        // A change that only drops files needs no stage at all: nothing is made and nothing is
+        // moved, so reopening separation would put the track in the line for a GPU that has
+        // nothing to do for it.
+        if (plan.MakesSomething)
+            foreach (var stage in Redone)
+                jobs.Record(videoId, stage, JobStatus.Cancelled, error: "re-cut requested");
 
         return new RecutOutcome { Removed = removed, Recipe = plan.Recipe };
     }
+
+    /// <summary>
+    /// The staging board's view of a file as the scanner's, which is what the classifier reads.
+    /// </summary>
+    /// <remarks>
+    /// A staged file's root is the folder it is in; only a scan across several roots has to be
+    /// told which one it was looking at.
+    /// </remarks>
+    private static StemOnDisk AsOnDisk(StagingStem stem) =>
+        new()
+        {
+            Path = stem.Path,
+            Root = Path.GetDirectoryName(stem.Path) ?? string.Empty,
+            Preset = stem.Preset,
+        };
+
+    private static string? RefusalFor(
+        PresetCatalog catalog,
+        StemPlan wanted,
+        IReadOnlyList<StagingStem> staged,
+        SeparationRecipe recipe,
+        IReadOnlyList<ClassifiedStem> removing
+    ) =>
+        (catalog, wanted, staged, removing) switch
+        {
+            // Without it nothing can say which of these files already exist, and cutting every
+            // preset again would make a second copy of each under a suffixed name.
+            ({ IsEmpty: true }, _, _, _) =>
+                "The separator could not be asked what it can make, so crateside cannot tell "
+                    + "which of these files this track already has.",
+            (_, { IsEmpty: true }, _, _) => "A track has to keep something.",
+            (_, _, { Count: 0 }, _) => "Nothing of this track is in Sample Staging.",
+            _ when recipe is { Presets.Count: 0, KeepSource: false } && removing.Count is 0 =>
+                "This track already has exactly these files.",
+            _ => null,
+        };
 }
 
-/// <summary>What a re-cut would do. Read before it happens, to say so on screen.</summary>
+/// <summary>What changing a track's plan would do. Read before it happens, to say so on screen.</summary>
 public sealed record RecutPlan
 {
     public required SeparationRecipe Recipe { get; init; }
 
-    /// <summary>The staged files that would go — every one of them, warp guide included.</summary>
-    public required IReadOnlyList<StagingStem> Removing { get; init; }
+    /// <summary>The staged files the plan no longer asks for. Empty when it only adds.</summary>
+    public required IReadOnlyList<ClassifiedStem> Removing { get; init; }
 
     /// <summary>
     /// The audio is no longer held, so separation downloads it again before it runs. Costs a
@@ -108,7 +154,14 @@ public sealed record RecutPlan
     /// </summary>
     public required bool WillRefetch { get; init; }
 
+    /// <summary>Nothing is lost — every file already staged stays where it is.</summary>
+    public bool IsAdditive => Removing.Count is 0;
+
+    /// <summary>Something new is made, so the pipeline has work to do.</summary>
+    public bool MakesSomething => Recipe is { Presets.Count: > 0 } or { KeepSource: true };
+
     /// <summary>The sentence about the audio, said either way.</summary>
+    /// <remarks>Only worth saying where something is going to be cut from it.</remarks>
     public string AudioDetail =>
         WillRefetch
             ? "The downloaded audio has gone, so separation fetches it again first."

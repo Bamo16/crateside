@@ -86,10 +86,12 @@ public class AdditiveRecipeTests
 
         var recipe = SeparationRecipe.For(new StemPlan { Presets = [], KeepSource = true }, kept);
 
-        // Nothing to separate and nothing to copy, so the guide is the only thing left to make.
+        // Nothing to separate and nothing to copy, so there is nothing to make at all — not even
+        // a guide, which is only cut alongside something to warp.
         Assert.False(recipe.KeepSource);
         Assert.Empty(recipe.Presets);
-        Assert.True(recipe.ExtractDrums);
+        Assert.False(recipe.ExtractDrums);
+        Assert.Equal(0, recipe.ExpectedOutputs);
     }
 
     [Fact]

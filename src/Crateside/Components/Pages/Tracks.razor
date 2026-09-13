@@ -17,6 +17,7 @@
 @inject QueueService Playlist
 @inject JobStore Jobs
 @inject StemRecut Recut
+@inject PresetCatalogReader Presets
 @inject TrackRename Rename
 @inject TrackSwap Swap
 @inject DrainControl Separation
@@ -700,6 +701,9 @@
     private string? _recutting;
     private RecutPlan? _plan;
 
+    /// <summary>What the separator can make. Read once; empty when it could not be asked.</summary>
+    private PresetCatalog _presets = PresetCatalog.Empty;
+
     private string? _renaming;
     private string _name = string.Empty;
 
@@ -730,6 +734,7 @@
 
         _view = Source.Current;
         _quota = await Quota.ReadAsync();
+        _presets = await Presets.ReadAsync(_circuit.Token);
 
         _clock = new System.Threading.Timer(_ => Redraw(), null, Tick, Tick);
     }
@@ -1044,7 +1049,7 @@
         }
 
         _recutting = row.VideoId;
-        _plan = Recut.PlanFor(row.VideoId, Flipped(row));
+        _plan = Recut.PlanFor(row.VideoId, Flipped(row), _presets);
     }
 
     private void CancelRecut()
@@ -1060,7 +1065,7 @@
 
         try
         {
-            var outcome = Recut.Apply(row.VideoId, Flipped(row));
+            var outcome = Recut.Apply(row.VideoId, Flipped(row), _presets);
 
             _problem = outcome.Problem;
 

@@ -29,6 +29,17 @@ public sealed class SeparationRunner(
 
         var retained = workingSet.TryGetSource(order.VideoId, out var path) ? path : null;
 
+        // Nothing to separate. Reachable once a plan can be added to: a track that already has
+        // every preset it asks for and then asks to keep its source owes a copy and no passes.
+        // stemforge-cli refuses an invocation with neither a preset nor drums, so the copy is
+        // made here and the GPU is never claimed.
+        if (order.Recipe.Passes is 0)
+            return KeepSource(order, retained) is { Count: > 0 } copied
+                ? SeparationResult.Succeeded(copied)
+                : SeparationResult.Failed(
+                    "the source track is the only thing outstanding and it is no longer on disk"
+                );
+
         using var process = Start(order, retained);
 
         // The check above and this claim must stay adjacent, and only this method may call
