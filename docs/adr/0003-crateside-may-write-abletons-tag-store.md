@@ -280,3 +280,15 @@ a root crateside has never written. Recorded as a thing to check, not as a findi
 - **Location beats tags as a completion signal**, which is what
   [ADR 0002](0002-there-is-no-warped-signal.md) concluded by a different route. Across this
   evening the file's whereabouts were right every time the tag store was wrong.
+
+## This ADR is about tags, not files — 2026-09-12
+
+`TrackRename.CanRename` and the stem picker both cited this ADR for a rule it does not contain:
+that crateside may not *delete* a file from `Mashup Samples`. What is decided here is narrower —
+crateside writes the **tag store** of `Sample Staging` and never of `Mashup Samples`.
+
+The file rule is real and is stated in
+[ADR 0019](0019-a-track-has-many-sources-and-one-of-them-is-the-separation-source.md), with its
+own reason: those files are warped and carry `.asd` sidecars. Separating the two matters because
+they were being weighed as one — the tag rule costs nothing in practice, and only the file rule
+was making the picker inconvenient.

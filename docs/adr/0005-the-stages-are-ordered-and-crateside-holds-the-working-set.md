@@ -315,3 +315,12 @@ reads without error, because unknown properties are skipped rather than refused.
 
 Nothing about decision 4 changes: the fact is still the fact, and the plan is still derived from
 it.
+
+## The download moves out of the evidence run — 2026-09-12
+
+§4 says "the evidence run acquires the audio with `stemforge-cli download`". That call becomes a
+stage of its own, shared with added sources
+([ADR 0019](0019-a-track-has-many-sources-and-one-of-them-is-the-separation-source.md)).
+
+**§4's decision is unaffected.** Its two load-bearing halves — one download per track, and it must
+be StemForge's so provenance survives — are properties of the call, not of which stage makes it.

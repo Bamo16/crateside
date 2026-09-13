@@ -100,10 +100,23 @@ the two run types below are named after which of them they produce.
   where its stems belong, what quality to ask for. The thing that replaces a
   hand-written prompt. A work order says what should happen to a track next; it is
   not a record that anything did.
+- **Source** — a whole file of a track's audio, as against a **stem** cut out of
+  one. crateside's own download is a source; so is an official instrumental found
+  later, or a local file. A track has as many as the user gives it, and each is a
+  **sample** in its own right once kept. Distinct from keytag's *source*, which is
+  an external reference consulted for a verdict — that sense reaches crateside only
+  compounded, as **evidence source**.
+- **Separation source** — the one source a track's stems are cut from, and the one
+  *Swap source* changes. Every other source is an **added source**: downloaded or
+  copied, tagged and staged like anything else, but never separated.
+- **Detection source** — the source the **evidence run** measured. Usually the
+  separation source and not necessarily: a swap moves the latter and leaves the
+  former where it was. Nothing lets the user choose it.
 - **Stem plan** — which files the user wants made for one track: the separator
-  presets to run, and whether the source track is itself a keeper. The user's own
-  statement, stored against the track and derived from nothing. An **instrumental
-  release** is not a mode but a shape of plan — no vocal preset, source kept.
+  presets to run, and whether the separation source is itself a keeper. The user's
+  own statement, stored against the track and derived from nothing. An
+  **instrumental release** is not a mode but a shape of plan — no vocal preset,
+  source kept.
 - **Recipe** — the part of a work order that says what to make: which stems, in
   what form. A **stem plan** rendered for the separator, plus the **warp guide**,
   which is always asked for and is never part of the plan. A recipe is crateside's
