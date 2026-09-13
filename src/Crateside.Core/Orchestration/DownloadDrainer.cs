@@ -4,10 +4,10 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Orchestration;
 
-/// <summary>Decides which source to fetch next.</summary>
+/// <summary>Decides which source to acquire next.</summary>
 /// <remarks>
-/// Two kinds, and the detection source comes first: nothing can be judged or cut until it is
-/// here, where an added source is only ever one more sample (ADR 0019).
+/// Three kinds, and audio comes first: nothing can be judged or cut until it is here, where a
+/// kept source and an added one are each only one more sample (ADR 0019).
 /// </remarks>
 public sealed class DownloadSelector(
     JobStore jobs,
@@ -20,15 +20,24 @@ public sealed class DownloadSelector(
 
     public bool TryPickNext(QueueView view, out WantedDownload next)
     {
-        next = Detection(view) ?? Added(view)!;
+        next = Audio(view) ?? Kept(view) ?? Added(view)!;
 
         return next is not null;
     }
 
-    /// <summary>A queued track with no audio held for it yet.</summary>
-    private WantedDownload? Detection(QueueView view) =>
+    /// <summary>
+    /// A track with no audio held for it yet.
+    /// </summary>
+    /// <remarks>
+    /// Both work lists, not just the outstanding one: a track whose stems were cut and then
+    /// re-cut has a verdict and an empty working set, and separation used to cover that by
+    /// handing the URL to the separator — acquisition inside the stage that separates.
+    /// </remarks>
+    private WantedDownload? Audio(QueueView view) =>
         view
-            .Outstanding.Where(item =>
+            .Outstanding.Concat(view.AwaitingSeparation)
+            .DistinctBy(item => item.VideoId, StringComparer.Ordinal)
+            .Where(item =>
                 !item.IsUnavailable
                 && !workingSet.TryGetSource(item.VideoId, out _)
                 && IsEligible(item.VideoId)
@@ -39,6 +48,31 @@ public sealed class DownloadSelector(
                 Url = item.StatedSourceUrl is { Length: > 0 } stated ? stated : item.WatchUrl,
                 Into = workingSet.Prepare(item.VideoId),
                 Track = item,
+            })
+            .FirstOrDefault();
+
+    /// <summary>
+    /// A track whose plan keeps its separation source, with the audio held and no copy made.
+    /// </summary>
+    /// <remarks>
+    /// Copied rather than separated, so it has no business in the stage that spends the GPU —
+    /// it used to live there because <c>--keep-source</c> was a flag on <c>separate</c>, which
+    /// meant pausing separation stopped a file copy (ADR 0019).
+    /// </remarks>
+    private WantedDownload? Kept(QueueView view) =>
+        view
+            .Everything.Where(item =>
+                item.Plan.KeepSource
+                && !item.Inventory.HasSource
+                && workingSet.TryGetSource(item.VideoId, out var held)
+                && !AwaitingHandoff(Path.GetFileName(held))
+            )
+            .Select(item => new WantedDownload
+            {
+                VideoId = item.VideoId,
+                Url = item.WatchUrl,
+                Track = item,
+                Copy = true,
             })
             .FirstOrDefault();
 
@@ -54,7 +88,7 @@ public sealed class DownloadSelector(
             .Everything.SelectMany(item =>
                 item.Plan.AddedSources.Where(added =>
                         !item.Inventory.Has(added)
-                        && !AwaitingHandoff(added)
+                        && !AwaitingHandoff($"*({added.Label}).*")
                         && IsEligible(added.VideoId)
                     )
                     .Select(added => new WantedDownload
@@ -75,10 +109,10 @@ public sealed class DownloadSelector(
     /// stems output is invisible to it — and the gap between a download finishing and a handoff
     /// running is long enough to fetch the same upload 280 times, which is what it did.
     /// </remarks>
-    private bool AwaitingHandoff(AddedSource added) =>
+    private bool AwaitingHandoff(string pattern) =>
         new[] { paths.StemsKeyIdentified, paths.StemsUnresolvedKey }
             .Where(Directory.Exists)
-            .SelectMany(root => Directory.EnumerateFiles(root, $"*({added.Label}).*"))
+            .SelectMany(root => Directory.EnumerateFiles(root, pattern))
             .Any();
 
     /// <remarks>
@@ -105,6 +139,9 @@ public sealed record WantedDownload
 
     /// <summary>What the user called it, which becomes its filename suffix. Null for a detection source.</summary>
     public string? Label { get; init; }
+
+    /// <summary>The audio is already held, so this is a copy out of the working set.</summary>
+    public bool Copy { get; init; }
 
     public bool IsAdded => Label is not null;
 }
@@ -144,15 +181,11 @@ public sealed class DownloadDrainer(
 
         jobs.Record(wanted.VideoId, JobStage.Download, JobStatus.Running);
 
-        var into = wanted.Into ?? _paths.DestinationFor(order.Destination);
-        var result = await runner.RunAsync(
-            wanted.Url,
-            into,
-            order.Recipe.Format,
-            cancellationToken
-        );
+        var destination = _paths.DestinationFor(order.Destination);
 
-        var error = result.IsSuccess ? Placed(wanted, result) : result.Error;
+        var error = wanted.Copy
+            ? Copied(wanted.VideoId, destination)
+            : await FetchedAsync(wanted, order, destination, cancellationToken);
 
         jobs.Record(
             wanted.VideoId,
@@ -162,6 +195,48 @@ public sealed class DownloadDrainer(
         );
 
         return StageTick.Ran(order, error is null, error);
+    }
+
+    private async Task<string?> FetchedAsync(
+        WantedDownload wanted,
+        WorkOrder order,
+        string destination,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await runner.RunAsync(
+            wanted.Url,
+            wanted.Into ?? destination,
+            order.Recipe.Format,
+            cancellationToken
+        );
+
+        return result.IsSuccess ? Placed(wanted, result) : result.Error;
+    }
+
+    /// <summary>
+    /// Copies the separation source into the destination, for a plan that keeps it as a sample.
+    /// </summary>
+    /// <remarks>
+    /// The same bytes separation is cut from, so there is nothing to fetch and nothing to check
+    /// about its quality — it is the file the track was judged on.
+    /// </remarks>
+    private string? Copied(string videoId, string destination)
+    {
+        if (!workingSet.TryGetSource(videoId, out var held))
+            return "the audio to copy is no longer on disk";
+
+        try
+        {
+            Directory.CreateDirectory(destination);
+            File.Copy(held, Path.Combine(destination, Path.GetFileName(held)), overwrite: true);
+
+            return null;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            return $"the source could not be copied: {e.Message}";
+        }
     }
 
     /// <summary>

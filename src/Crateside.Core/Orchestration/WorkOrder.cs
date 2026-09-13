@@ -75,10 +75,7 @@ public sealed record SeparationRecipe
     /// For a release that has no vocals: nothing to separate out, so the drums are the only
     /// stem and the source track is the sample — which is what <see cref="KeepSource"/> is for.
     /// </summary>
-    /// <remarks>
-    /// <c>--keep-source</c> is a flag about URL inputs, so it does nothing for a local file;
-    /// crateside copies the source into the destination itself instead.
-    /// </remarks>
+    /// <remarks>The copy is the download stage's; separation only ever cuts the guide.</remarks>
     public static SeparationRecipe InstrumentalRelease { get; } =
         From(StemPlan.InstrumentalRelease);
 
@@ -91,10 +88,13 @@ public sealed record SeparationRecipe
     public string Format { get; init; } = "flac";
 
     /// <summary>
-    /// How many files this recipe should produce — one per preset, plus the warp guide and the
-    /// kept source where they are asked for.
+    /// How many files the separator should produce — one per preset, plus the warp guide.
     /// </summary>
-    public int ExpectedOutputs => Presets.Count + (ExtractDrums ? 1 : 0) + (KeepSource ? 1 : 0);
+    /// <remarks>
+    /// A kept source is not among them. It is copied out of the working set by the download
+    /// stage, which needs no GPU and must not wait on one (ADR 0019).
+    /// </remarks>
+    public int ExpectedOutputs => Presets.Count + (ExtractDrums ? 1 : 0);
 
     /// <summary>
     /// How many passes the separator makes. A kept source is not one of them: it is copied.

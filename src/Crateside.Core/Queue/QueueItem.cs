@@ -130,12 +130,17 @@ public sealed record QueueView
                 // Two ways in: nothing of the track is on disk, or the user asked for a cut it
                 // has not had. The second is what makes adding to a track possible at all —
                 // deleting every file used to be the only way back into this list.
+                //
+                // Either way the separator must have something to do. A plan whose outstanding
+                // half is only its source owes a copy, which the download stage makes, and being
+                // in this list would queue it for a GPU it never reaches (ADR 0019).
                 .. described.Where(i =>
                     !separatedWithoutKey.Contains(i.VideoId)
                     && (
                         verdictWithoutStems.Contains(i.VideoId)
                         || awaitingCut?.Contains(i.VideoId) is true
                     )
+                    && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory).Passes > 0
                 ),
                 .. reopenedItems,
             ],

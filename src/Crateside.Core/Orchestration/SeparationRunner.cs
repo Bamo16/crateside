@@ -26,17 +26,6 @@ public sealed class SeparationRunner(
     {
         var retained = workingSet.TryGetSource(order.VideoId, out var path) ? path : null;
 
-        // Nothing to separate, so the interlock is not consulted: a copy needs no GPU, and
-        // asking would queue it behind six minutes of work it has nothing to do with. Reachable
-        // once a plan can be added to — a track that already has every preset it asks for and
-        // then asks to keep its source owes a copy and no passes.
-        if (order.Recipe.Passes is 0)
-            return KeepSource(order, retained) is { Count: > 0 } copied
-                ? SeparationResult.Succeeded(copied)
-                : SeparationResult.Failed(
-                    "the source track is the only thing outstanding and it is no longer on disk"
-                );
-
         if (interlock.TryGetLive(out var live))
             return SeparationResult.Refused($"already separating {live.VideoId}");
 
@@ -65,7 +54,7 @@ public sealed class SeparationRunner(
 
             if (error is null)
             {
-                outputs = [.. OutputFilesFrom(stdout), .. KeepSource(order, retained)];
+                outputs = OutputFilesFrom(stdout);
                 error = ShortfallFrom(order.Recipe, outputs);
             }
 
@@ -101,39 +90,6 @@ public sealed class SeparationRunner(
             ? $"the recipe asked for {"file".ToQuantity(recipe.ExpectedOutputs)} "
                 + $"and the run produced {outputs.Count}"
             : null;
-
-    /// <summary>
-    /// Puts the source track in the destination itself, for a release whose source <em>is</em>
-    /// the sample.
-    /// </summary>
-    /// <remarks>
-    /// <c>--keep-source</c> is ignored by <c>stemforge-cli</c> when the input is a local file
-    /// rather than a URL, so this method exists to produce the copy directly.
-    /// </remarks>
-    private IReadOnlyList<string> KeepSource(WorkOrder order, string? retained)
-    {
-        if (!order.Recipe.KeepSource || retained is null)
-            return [];
-
-        try
-        {
-            var destination = paths.DestinationFor(order.Destination);
-
-            Directory.CreateDirectory(destination);
-
-            var kept = Path.Combine(destination, Path.GetFileName(retained));
-
-            File.Copy(retained, kept, overwrite: true);
-
-            return [kept];
-        }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
-        {
-            // The stems already succeeded, so this does not fail the run; the copy is retried
-            // the next time the track separates.
-            return [];
-        }
-    }
 
     private static DateTimeOffset StartTimeOf(Process process)
     {
@@ -238,11 +194,6 @@ public sealed class SeparationRunner(
 
         if (order.Recipe.ExtractDrums)
             info.ArgumentList.Add("--extract-drums");
-
-        // Only meaningful for a URL input; a local file ignores it, which is why KeepSource
-        // exists to cover that case.
-        if (order.Recipe.KeepSource && retained is null)
-            info.ArgumentList.Add("--keep-source");
 
         info.ArgumentList.Add("--format");
         info.ArgumentList.Add(order.Recipe.Format);

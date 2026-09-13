@@ -392,6 +392,6 @@ public class SeparationEstimateTests
     {
         // It is copied, not separated, so it costs no GPU at all.
         Assert.Equal(1, SeparationRecipe.InstrumentalRelease.Passes);
-        Assert.Equal(2, SeparationRecipe.InstrumentalRelease.ExpectedOutputs);
+        Assert.Equal(1, SeparationRecipe.InstrumentalRelease.ExpectedOutputs);
     }
 }

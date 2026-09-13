@@ -250,11 +250,12 @@ public class SeparationRunnerTests : IDisposable
     }
 
     [Fact]
-    public async Task An_instrumental_release_gets_its_source_placed_by_crateside()
+    public async Task A_kept_source_is_no_longer_this_stages_business()
     {
-        // --keep-source is a flag about URL inputs: given a local file the separator correctly
-        // ignores it, which left an instrumental release producing drums and nothing else once
-        // crateside began passing the retained file. Here the source IS the sample.
+        // It used to be, because --keep-source was a flag on `separate` and the separator
+        // ignores it for a local input — so crateside made the copy here instead. That put a
+        // file copy behind the GPU interlock and behind the pause button, and the download
+        // stage owns it now (ADR 0019).
         var audio = Path.Combine(Set.Prepare(VideoId), "Yes - Owner of a Lonely Heart.flac");
 
         File.WriteAllText(audio, "the source");
@@ -271,46 +272,26 @@ public class SeparationRunnerTests : IDisposable
             "Yes - Owner of a Lonely Heart.flac"
         );
 
-        Assert.True(File.Exists(kept), "the source never reached the destination");
-        Assert.Equal("the source", File.ReadAllText(kept));
-
-        // Reported as an output, so the handoff stage and the caller both see it.
-        Assert.Contains(kept, result.OutputFiles);
-
-        // And the flag is not passed where it would do nothing.
+        Assert.False(File.Exists(kept), "separation copied a source it no longer owns");
+        Assert.DoesNotContain(kept, result.OutputFiles);
         Assert.DoesNotContain("--keep-source", File.ReadAllText(argumentsFile));
-    }
-
-    [Fact]
-    public async Task A_url_job_still_asks_the_separator_to_keep_the_source()
-    {
-        // Nothing retained, so the separator downloads a source crateside never had and
-        // --keep-source is the only way to get a copy back. That path is unchanged.
-        var runner = RunnerEchoingArguments(out var argumentsFile);
-
-        await runner.RunAsync(InstrumentalOrder(), TestContext.Current.CancellationToken);
-
-        Assert.Contains("--keep-source", File.ReadAllText(argumentsFile));
     }
 
     [Fact]
     public async Task A_run_that_made_less_than_the_recipe_asked_for_has_not_succeeded()
     {
-        // The exact shape that got through: an instrumental release wrote its drums and not the
-        // source track that IS its sample, reported success, and was then read as fully
-        // processed -- which let the janitor discard the only local copy of the missing file.
+        // The shape that got through: a run reported success having written fewer files than
+        // were asked for, and the track was then read as fully processed — which let the janitor
+        // discard the only local copy of whatever was missing.
         var runner = RunnerPrinting(
-            """[{"succeeded":true,"outputFiles":["C:\\Stems\\Burst Mode (Drums).flac"]}]"""
+            """[{"succeeded":true,"outputFiles":["C:\\Stems\\Burst Mode (Vocal - Full).flac"]}]"""
         );
 
-        // Drums and the kept source: two files asked for, one produced.
-        var result = await runner.RunAsync(
-            InstrumentalOrder(),
-            TestContext.Current.CancellationToken
-        );
+        // The usual pair plus a guide: three asked for, one produced.
+        var result = await runner.RunAsync(Order(), TestContext.Current.CancellationToken);
 
         Assert.Equal(SeparationOutcome.Failed, result.Outcome);
-        Assert.Contains("2 files", result.Error);
+        Assert.Contains("3 files", result.Error);
         Assert.Contains("produced 1", result.Error);
 
         // And it is the track's own failure, so it earns a strike and will be tried again.
@@ -339,7 +320,8 @@ public class SeparationRunnerTests : IDisposable
         // vocal_full) and mapping between them would make a rename over there a silent
         // miscount over here.
         Assert.Equal(3, SeparationRecipe.Standard.ExpectedOutputs);
-        Assert.Equal(2, SeparationRecipe.InstrumentalRelease.ExpectedOutputs);
+        // The kept source is not among them: the download stage copies it (ADR 0019).
+        Assert.Equal(1, SeparationRecipe.InstrumentalRelease.ExpectedOutputs);
     }
 
     [Fact]

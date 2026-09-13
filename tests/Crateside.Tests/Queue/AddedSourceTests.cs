@@ -112,6 +112,23 @@ public class AddedSourceTests
     }
 
     [Fact]
+    public void A_plan_that_keeps_its_source_gives_the_separator_nothing_to_do()
+    {
+        // So it must not enter the separation list. The copy is the download stage's — it used
+        // to be the separation runner's, because `--keep-source` was a flag on `separate`, which
+        // meant a file copy queued behind the GPU and stopped when separation was paused.
+        var plan = new StemPlan { Presets = [], KeepSource = true };
+        var guideOnly = StemInventory.Of(
+            [File("x (Drums).flac", Track, "Drums - htdemucs_ft")],
+            Catalog
+        );
+
+        Assert.True(guideOnly.Outstanding(plan).KeepSource);
+        Assert.Equal(0, SeparationRecipe.For(plan, guideOnly).Passes);
+        Assert.Equal(0, SeparationRecipe.For(plan, guideOnly).ExpectedOutputs);
+    }
+
+    [Fact]
     public void Adding_and_dropping_are_the_same_plan_either_side()
     {
         var plan = StemPlan.Default.Adding(Official);
