@@ -205,6 +205,17 @@ public sealed record TrackRow
         && this is { ParkedFor: not ParkReason.NoKey, HasWarpGuide: false, Samples.Count: 0 };
 
     /// <summary>
+    /// A change to this track's files is already being made, so the plan is not open to another.
+    /// </summary>
+    /// <remarks>
+    /// Only once a track has files, because only then is a change a re-cut. A track waiting its
+    /// first turn on the GPU is still free to edit: nothing has been made, and the recipe is read
+    /// when the separator picks it up rather than when the plan was recorded.
+    /// </remarks>
+    public bool IsCutInFlight =>
+        !CanChangePlan && (RunningStage is not null || GpuPosition is not null);
+
+    /// <summary>
     /// A finding worth flagging beside the song name, or null when there is nothing wrong.
     /// </summary>
     /// <remarks>

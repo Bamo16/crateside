@@ -45,6 +45,16 @@ public class StemPickerTests
             Samples = samples,
         };
 
+    /// <summary>
+    /// The window between confirming a cut and its files landing: the plan is recorded, the
+    /// track is back in the line for the GPU, and nothing new is on disk yet.
+    /// </summary>
+    private static TrackRow Cutting(StemPlan plan, params TrackSample[] samples) =>
+        Row(plan, hasWarpGuide: true, samples) with
+        {
+            GpuPosition = 1,
+        };
+
     private static StemChoice Line(StemPicker picker, string label) =>
         picker.Lines.Single(line => line.Label == label);
 
@@ -188,6 +198,56 @@ public class StemPickerTests
 
         // It survives every plan, so nothing here can propose deleting it.
         Assert.Equal(0, picker.Removing);
+    }
+
+    [Fact]
+    public void A_cut_already_in_flight_is_not_offered_a_second_time()
+    {
+        // What the user saw: confirming a kept source put the track back in line, and until the
+        // copy landed the source line still read as wanted-and-not-on-disk — so the panel offered
+        // to cut the very file it was waiting for.
+        var picker = StemPicker.For(
+            Cutting(
+                new StemPlan { Presets = ["vocal_full"], KeepSource = true },
+                Made("vocal_full", "Vocal - Full")
+            ),
+            Catalog
+        );
+
+        Assert.Equal(PickerLock.CutInFlight, picker.Lock);
+
+        // The line is still honestly coming — the lock is what says who is making it.
+        Assert.Equal(
+            StemState.Coming,
+            picker.Lines.Single(line => line.Kind is StemKind.Source).State
+        );
+    }
+
+    [Fact]
+    public void A_track_waiting_its_first_turn_on_the_GPU_is_still_free_to_edit()
+    {
+        // Nothing has been made, so there is nothing to lose and no cut to collide with: the
+        // recipe is read when the separator picks the track up, not when the plan was recorded.
+        var queued = Row() with
+        {
+            GpuPosition = 1,
+        };
+
+        Assert.False(queued.IsCutInFlight);
+        Assert.Equal(PickerLock.None, StemPicker.For(queued, Catalog).Lock);
+    }
+
+    [Fact]
+    public void The_library_outranks_a_cut_in_flight()
+    {
+        // Both are true of a swapped track mid-work. The library one is the harder rule and the
+        // one whose hint tells the user what to actually do about it.
+        var picker = StemPicker.For(
+            Cutting(StemPlan.Default, Made("vocal_full", "Vocal - Full", inLibrary: true)),
+            Catalog
+        );
+
+        Assert.Equal(PickerLock.InLibrary, picker.Lock);
     }
 
     [Fact]

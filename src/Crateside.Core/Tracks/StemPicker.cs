@@ -19,11 +19,10 @@ public sealed record StemPicker
     /// <summary>What the user has ticked, which is what a confirm would record.</summary>
     public required StemPlan Wanted { get; init; }
 
-    /// <summary>
-    /// A file has left for <c>Mashup Samples</c>, so the plan is no longer crateside's to change
-    /// (ADR 0003).
-    /// </summary>
-    public bool IsLocked { get; init; }
+    /// <summary>Why the ticks are not the user's to change, or <see cref="PickerLock.None"/>.</summary>
+    public PickerLock Lock { get; init; }
+
+    public bool IsLocked => Lock is not PickerLock.None;
 
     public IEnumerable<StemChoice> Lines => Bands.SelectMany(band => band.Lines);
 
@@ -141,7 +140,12 @@ public sealed record StemPicker
         {
             Bands = [.. bands.Where(band => band.Lines.Count > 0)],
             Wanted = plan,
-            IsLocked = row.Samples.Any(sample => sample.IsInLibrary),
+            Lock = row switch
+            {
+                _ when row.Samples.Any(sample => sample.IsInLibrary) => PickerLock.InLibrary,
+                { IsCutInFlight: true } => PickerLock.CutInFlight,
+                _ => PickerLock.None,
+            },
         };
     }
 
@@ -218,6 +222,27 @@ public sealed record StemChoice
             (true, false) => StemState.Going,
             _ => StemState.NotMade,
         };
+}
+
+/// <summary>Why a picker's ticks are inert.</summary>
+public enum PickerLock
+{
+    None,
+
+    /// <summary>
+    /// A file has reached <c>Mashup Samples</c>, which crateside never writes to (ADR 0003).
+    /// </summary>
+    InLibrary,
+
+    /// <summary>
+    /// The change already asked for has not landed yet.
+    /// </summary>
+    /// <remarks>
+    /// Without this the picker offers to cut the very files it is waiting on: a wanted line with
+    /// no file on disk reads as <em>coming</em> whether the separator is about to make it or has
+    /// never been asked, and the panel would invite a second identical cut.
+    /// </remarks>
+    CutInFlight,
 }
 
 /// <summary>Where a line stands between what is on disk and what is ticked.</summary>

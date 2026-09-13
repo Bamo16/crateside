@@ -409,7 +409,7 @@
                                                 <span class="mono stem-tag @(line.AbletonKey is null ? "dim" : null)">
                                                     @Tag(line, row)
                                                 </span>
-                                                <span class="mono stem-where @WhereTone(line)">@Where(line)</span>
+                                                <span class="mono stem-where @WhereTone(line)">@Where(line, picker)</span>
                                             }
 
                                             <span class="stem-note">@Note(line, row)</span>
@@ -468,7 +468,7 @@
                                         <span class="mono">·</span>
                                         <span>Change what is cut</span>
                                         <span class="opener-hint">
-                                            @LockedHint(row)
+                                            @LockedHint(row, picker)
                                         </span>
                                     </div>
                                 }
@@ -487,7 +487,16 @@
                     <div class="side">
                         @if (picking && _plan is { } confirm)
                         {
-                            @if (!picker.ChangesAnything)
+                            @if (picker.Lock is PickerLock.CutInFlight)
+                            {
+                                <p class="what-next @NextTone(row)">@row.Next</p>
+
+                                <p class="detail">
+                                    crateside is already making what this plan asks for. The ticks
+                                    open again once it lands.
+                                </p>
+                            }
+                            else if (!picker.ChangesAnything)
                             {
                                 <p class="what-next">Tick what this track should have.</p>
 
@@ -536,7 +545,7 @@
                             }
 
                             <div class="actions">
-                                @if (confirm.IsPossible && picker.ChangesAnything)
+                                @if (confirm.IsPossible && picker.ChangesAnything && !picker.IsLocked)
                                 {
                                     <button class="@(picker.IsAdditive ? "primary" : "danger")"
                                             @onclick="() => ConfirmRecut(row)" disabled="@_working">
@@ -1072,9 +1081,11 @@
             : $"{"more preset".ToQuantity(unmade)}, the source track";
     }
 
-    private static string LockedHint(TrackRow row) =>
-        $"{"file".ToQuantity(row.Samples.Count(sample => sample.IsInLibrary))} in Mashup Samples. "
-        + "Move them back to Sample Staging first.";
+    private static string LockedHint(TrackRow row, StemPicker picker) =>
+        picker.Lock is PickerLock.CutInFlight
+            ? "crateside is working on this track. What it makes lands in Sample Staging."
+            : $"{"file".ToQuantity(row.Samples.Count(sample => sample.IsInLibrary))} in Mashup "
+                + "Samples. Move them back to Sample Staging first.";
 
     /// <summary>The mark in a line's first cell: a tick, an empty box, or a pinned dot.</summary>
     private static string TickMark(StemChoice line) =>
@@ -1123,10 +1134,16 @@
             _ => "—",
         };
 
-    private static string Where(StemChoice line) =>
+    /// <remarks>
+    /// A wanted line with no file reads the same whether the separator is making it right now or
+    /// has never been asked, so the lock is what tells those two apart.
+    /// </remarks>
+    private static string Where(StemChoice line, StemPicker picker) =>
         line switch
         {
-            { State: StemState.Coming } => "new",
+            { State: StemState.Coming } => picker.Lock is PickerLock.CutInFlight
+                ? "being made"
+                : "new",
             { State: StemState.Going } => "removed",
             { State: StemState.NotMade, Kind: StemKind.Source } => "not kept",
             { State: StemState.NotMade } => "not made",
