@@ -553,7 +553,7 @@
                                         <span class="mono">·</span>
                                         <span>Change what is cut</span>
                                         <span class="opener-hint">
-                                            @LockedHint(row, picker)
+                                            @LockedHint()
                                         </span>
                                     </div>
                                 }
@@ -1257,11 +1257,8 @@
             : $"{"more preset".ToQuantity(unmade)}, the source track";
     }
 
-    private static string LockedHint(TrackRow row, StemPicker picker) =>
-        picker.Lock is PickerLock.CutInFlight
-            ? "crateside is working on this track. What it makes lands in Sample Staging."
-            : $"{"file".ToQuantity(row.Samples.Count(sample => sample.IsInLibrary))} in Mashup "
-                + "Samples. Move them back to Sample Staging first.";
+    private static string LockedHint() =>
+        "crateside is working on this track. What it makes lands in Sample Staging.";
 
     /// <summary>The mark in a line's first cell: a tick, an empty box, or a pinned dot.</summary>
     private static string TickMark(StemChoice line) =>
@@ -1344,6 +1341,7 @@
             { Kind: StemKind.WarpGuide, IsOnDisk: true } => "already cut — no new guide is made",
             { Kind: StemKind.WarpGuide, IsWanted: true } => "cut alongside the new files",
             { Kind: StemKind.WarpGuide } => "nothing is being made, so no guide is needed",
+            { IsInLibrary: true, State: StemState.Kept } => "in Mashup Samples — not crateside's to remove",
             { Kind: StemKind.Unrecognised } => line.Description,
             { State: StemState.Kept } when row.HasSeveralUploads => string.Join(
                 " · ",

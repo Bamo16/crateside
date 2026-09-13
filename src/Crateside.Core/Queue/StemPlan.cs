@@ -47,6 +47,7 @@ public sealed record StemPlan
     /// <summary>
     /// Whether this plan asks for nothing at all, which no track should be left in.
     /// </summary>
+    [JsonIgnore]
     public bool IsEmpty => Presets.Count is 0 && !KeepSource;
 
     /// <summary>The same plan with one preset ticked or unticked.</summary>
@@ -117,5 +118,6 @@ public sealed record AddedSource
     [JsonPropertyName("label")]
     public required string Label { get; init; }
 
+    [JsonIgnore]
     public string WatchUrl => $"https://music.youtube.com/watch?v={VideoId}";
 }

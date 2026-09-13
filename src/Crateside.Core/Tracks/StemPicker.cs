@@ -170,12 +170,7 @@ public sealed record StemPicker
         {
             Bands = [.. bands.Where(band => band.Lines.Count > 0)],
             Wanted = plan,
-            Lock = row switch
-            {
-                _ when row.Samples.Any(sample => sample.IsInLibrary) => PickerLock.InLibrary,
-                { IsCutInFlight: true } => PickerLock.CutInFlight,
-                _ => PickerLock.None,
-            },
+            Lock = row.IsCutInFlight ? PickerLock.CutInFlight : PickerLock.None,
         };
     }
 
@@ -240,9 +235,11 @@ public sealed record StemChoice
     /// </summary>
     /// <remarks>
     /// The guide is always made and never chosen; a preset the separator has dropped can be seen
-    /// but never asked for again.
+    /// but never asked for again; and a file that has reached <c>Mashup Samples</c> cannot be
+    /// unticked, because crateside does not delete from there (ADR 0019). Adding stays open
+    /// either way — it writes only to <c>Sample Staging</c>.
     /// </remarks>
-    public bool IsPinned => !IsSample;
+    public bool IsPinned => !IsSample || IsInLibrary;
 
     public bool IsInLibrary => Files.Any(file => file.IsInLibrary);
 
@@ -272,11 +269,6 @@ public sealed record StemChoice
 public enum PickerLock
 {
     None,
-
-    /// <summary>
-    /// A file has reached <c>Mashup Samples</c>, which crateside never writes to (ADR 0003).
-    /// </summary>
-    InLibrary,
 
     /// <summary>
     /// The change already asked for has not landed yet.

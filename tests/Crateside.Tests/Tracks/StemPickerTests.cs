@@ -278,27 +278,19 @@ public class StemPickerTests
     }
 
     [Fact]
-    public void The_library_outranks_a_cut_in_flight()
+    public void A_file_in_the_library_locks_its_own_line_and_nothing_else()
     {
-        // Both are true of a swapped track mid-work. The library one is the harder rule and the
-        // one whose hint tells the user what to actually do about it.
-        var picker = StemPicker.For(
-            Cutting(StemPlan.Default, Made("vocal_full", "Vocal - Full", inLibrary: true)),
-            Catalog
-        );
-
-        Assert.Equal(PickerLock.InLibrary, picker.Lock);
-    }
-
-    [Fact]
-    public void A_file_in_the_library_locks_the_whole_picker()
-    {
+        // crateside does not delete from Mashup Samples, so that one line cannot be unticked.
+        // Ticking anything else only ever writes to Sample Staging, so it stays open — which is
+        // what lets a finished track gain a preset without moving files back by hand (ADR 0019).
         var picker = StemPicker.For(
             Row(StemPlan.Default, false, Made("vocal_full", "Vocal - Full", inLibrary: true)),
             Catalog
         );
 
-        Assert.True(picker.IsLocked);
+        Assert.False(picker.IsLocked);
+        Assert.True(Line(picker, "Vocal - Full").IsPinned);
+        Assert.False(Line(picker, "Instrumental - Full").IsPinned);
     }
 
     [Fact]
