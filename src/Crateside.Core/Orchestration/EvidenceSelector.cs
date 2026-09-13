@@ -24,7 +24,13 @@ public sealed class EvidenceSelector(
     public bool TryPickNext(QueueView view, out QueueItem next)
     {
         next = view.Outstanding.FirstOrDefault(i =>
-            !i.IsUnavailable && !workingSet.HasEvidence(i.VideoId) && IsEligible(i)
+            !i.IsUnavailable
+            && !workingSet.HasEvidence(i.VideoId)
+            // Not this stage's turn until the download stage has been (ADR 0019). Picking one up
+            // early costs it a strike for arriving before its audio, which is not a fault of the
+            // track and would eventually make it give up.
+            && workingSet.TryGetSource(i.VideoId, out _)
+            && IsEligible(i)
         )!;
 
         return next is not null;

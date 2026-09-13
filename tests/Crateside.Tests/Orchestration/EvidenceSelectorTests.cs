@@ -24,9 +24,13 @@ public class EvidenceSelectorTests : IDisposable
 
     private void GiveEvidence(string videoId)
     {
-        Set.Prepare(videoId);
+        GiveAudio(videoId);
         File.WriteAllText(Set.EvidencePathFor(videoId), "{}");
     }
+
+    /// <summary>What the download stage leaves behind, and what detection needs to run at all.</summary>
+    private void GiveAudio(string videoId) =>
+        File.WriteAllText(Path.Combine(Set.Prepare(videoId), "track.flac"), "audio");
 
     private static QueueItem Item(string videoId, bool unavailable = false) =>
         new()
@@ -37,8 +41,17 @@ public class EvidenceSelectorTests : IDisposable
             IsUnavailable = unavailable,
         };
 
-    private static QueueView View(params QueueItem[] outstanding) =>
-        new()
+    /// <remarks>
+    /// Every item arrives with audio held for it, because by the time this stage looks at a
+    /// track the download stage has been (ADR 0019). The one case where it has not is its own
+    /// test.
+    /// </remarks>
+    private QueueView View(params QueueItem[] outstanding)
+    {
+        foreach (var item in outstanding)
+            GiveAudio(item.VideoId);
+
+        return new QueueView
         {
             Items = outstanding,
             Outstanding = outstanding,
@@ -46,6 +59,7 @@ public class EvidenceSelectorTests : IDisposable
             AwaitingKey = [],
             AwaitingSeparation = [],
         };
+    }
 
     [Fact]
     public void An_empty_queue_yields_nothing() =>
@@ -105,6 +119,21 @@ public class EvidenceSelectorTests : IDisposable
             new EvidenceSelector(Jobs, Set).TryPickNext(View(Item("aaaaaaaaaaa")), out var next)
         );
         Assert.Equal("aaaaaaaaaaa", next.VideoId);
+    }
+
+    [Fact]
+    public void A_track_whose_audio_has_not_arrived_is_not_this_stages_yet()
+    {
+        // Splitting the download out made it possible to reach this stage before the audio does.
+        // Picking one up early fails it for arriving early, and five of those make a track give
+        // up on itself for nothing.
+        var waiting = Item("aaaaaaaaaaa");
+
+        var view = View(waiting);
+
+        Directory.Delete(Set.Prepare(waiting.VideoId), recursive: true);
+
+        Assert.False(new EvidenceSelector(Jobs, Set).TryPickNext(view, out _));
     }
 
     [Fact]
