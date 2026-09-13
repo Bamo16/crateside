@@ -18,9 +18,22 @@ public static class SupersededStems
     /// <paramref name="videoId"/>. Empty for a track the ledger has never judged, which cannot
     /// have been swapped.
     /// </summary>
-    public static IReadOnlyList<string> In(string stagingRoot, string videoId, KeyLedger ledger)
+    /// <param name="kept">
+    /// Uploads the user asked this song to keep, which are never superseded however many of them
+    /// there are. Without it a swap's rule eats every added source of the song, and an added
+    /// source's own handoff eats the stems it was added to sit beside (ADR 0019).
+    /// </param>
+    public static IReadOnlyList<string> In(
+        string stagingRoot,
+        string videoId,
+        KeyLedger ledger,
+        IReadOnlySet<string>? kept = null
+    )
     {
         if (ledger.SongFor(videoId) is not { } song || !Directory.Exists(stagingRoot))
+            return [];
+
+        if (kept?.Contains(videoId) is true)
             return [];
 
         return
@@ -30,7 +43,7 @@ public static class SupersededStems
                 .Where(StagingBoard.IsStemFile)
                 .Select(StemTagReader.Read)
                 .OfType<StemTags>()
-                .Where(tags => IsAnEarlierUpload(tags, videoId, song, ledger))
+                .Where(tags => IsAnEarlierUpload(tags, videoId, song, ledger, kept))
                 .Select(tags => tags.Path),
         ];
     }
@@ -39,9 +52,11 @@ public static class SupersededStems
         StemTags tags,
         string videoId,
         string song,
-        KeyLedger ledger
+        KeyLedger ledger,
+        IReadOnlySet<string>? kept
     ) =>
         tags.SourceVideoId is { Length: > 0 } id
         && !id.Equals(videoId, StringComparison.Ordinal)
+        && kept?.Contains(id) is not true
         && song.Equals(ledger.SongFor(id), StringComparison.Ordinal);
 }

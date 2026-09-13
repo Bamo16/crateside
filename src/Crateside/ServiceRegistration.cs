@@ -140,7 +140,8 @@ public static class ServiceRegistration
         services.AddSingleton(_ => new DownloadRunner());
         services.AddSingleton(sp => new DownloadSelector(
             sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<WorkingSet>()
+            sp.GetRequiredService<WorkingSet>(),
+            sp.GetRequiredService<CratesidePaths>()
         ));
         services.AddSingleton<DownloadDrainer>();
 

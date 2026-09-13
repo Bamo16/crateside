@@ -12,6 +12,7 @@ namespace Crateside.Core.Orchestration;
 public sealed class DownloadSelector(
     JobStore jobs,
     WorkingSet workingSet,
+    CratesidePaths paths,
     int maxStrikes = DownloadSelector.DefaultMaxStrikes
 )
 {
@@ -52,7 +53,9 @@ public sealed class DownloadSelector(
         view
             .Everything.SelectMany(item =>
                 item.Plan.AddedSources.Where(added =>
-                        !item.Inventory.Has(added) && IsEligible(added.VideoId)
+                        !item.Inventory.Has(added)
+                        && !AwaitingHandoff(added)
+                        && IsEligible(added.VideoId)
                     )
                     .Select(added => new WantedDownload
                     {
@@ -63,6 +66,20 @@ public sealed class DownloadSelector(
                     })
             )
             .FirstOrDefault();
+
+    /// <summary>
+    /// The file has been fetched and is waiting for the handoff to move it into staging.
+    /// </summary>
+    /// <remarks>
+    /// The inventory reads <c>Sample Staging</c> and <c>Mashup Samples</c>, so a file in the
+    /// stems output is invisible to it — and the gap between a download finishing and a handoff
+    /// running is long enough to fetch the same upload 280 times, which is what it did.
+    /// </remarks>
+    private bool AwaitingHandoff(AddedSource added) =>
+        new[] { paths.StemsKeyIdentified, paths.StemsUnresolvedKey }
+            .Where(Directory.Exists)
+            .SelectMany(root => Directory.EnumerateFiles(root, $"*({added.Label}).*"))
+            .Any();
 
     /// <remarks>
     /// retrySucceeded is true: the checks above already confirmed the file is gone, and both

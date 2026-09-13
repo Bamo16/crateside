@@ -34,7 +34,7 @@ public sealed class HandoffDrainer(
         var result = runner.Run(
             stems,
             NameFor(videoId),
-            SupersededStems.In(_paths.SampleStaging, videoId, ledger)
+            SupersededStems.In(_paths.SampleStaging, videoId, ledger, Kept())
         );
 
         jobs.Record(
@@ -55,6 +55,18 @@ public sealed class HandoffDrainer(
     /// </summary>
     private static string? Cleared(int count) =>
         count is 0 ? null : $"{"superseded file".ToQuantity(count)} removed from Sample Staging";
+
+    /// <summary>Every upload the user has asked to keep, across all tracks.</summary>
+    /// <remarks>
+    /// An added source is a second upload of a song that is wanted alongside the first, which is
+    /// the one shape "superseded" was never written for.
+    /// </remarks>
+    private IReadOnlySet<string> Kept() =>
+        settings
+            .Read()
+            .Tracks.SelectMany(track => track.Plan?.AddedSources ?? [])
+            .Select(source => source.VideoId)
+            .ToHashSet(StringComparer.Ordinal);
 
     /// <summary>
     /// What the user calls the track this file belongs to, or null when they have not said.
