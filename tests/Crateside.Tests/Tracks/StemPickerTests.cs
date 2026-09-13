@@ -201,6 +201,46 @@ public class StemPickerTests
     }
 
     [Fact]
+    public void A_preset_this_workflow_never_wants_is_not_put_in_front_of_you()
+    {
+        var offered = PresetCatalogReader.Parse(
+            """
+            [
+              {"id":"vocal_full","displayName":"Vocal - Full","category":"Vocals"},
+              {"id":"vocal_rvc","displayName":"Vocal - RVC","category":"Vocals"},
+              {"id":"instrumental_low_resource","displayName":"Instrumental - Low Resource",
+               "category":"Instrumentals"}
+            ]
+            """
+        );
+
+        var labels = StemPicker.For(Row(), offered).Lines.Select(line => line.Label);
+
+        Assert.DoesNotContain("Vocal - RVC", labels);
+        Assert.DoesNotContain("Instrumental - Low Resource", labels);
+        Assert.Contains("Vocal - Full", labels);
+    }
+
+    [Fact]
+    public void One_a_track_already_has_is_shown_anyway_so_the_file_is_not_hidden()
+    {
+        // Hiding the line would leave a file on disk with nothing on screen to unpick it — and
+        // taking these out of the catalog instead would make it read as a preset the separator
+        // no longer offers, which is a different and untrue thing.
+        var offered = PresetCatalogReader.Parse(
+            """[{"id":"vocal_rvc","displayName":"Vocal - RVC","category":"Vocals"}]"""
+        );
+
+        var picker = StemPicker.For(
+            Row(new StemPlan { Presets = ["vocal_rvc"] }, false, Made("vocal_rvc", "Vocal - RVC")),
+            offered
+        );
+
+        Assert.Equal(StemState.Kept, Line(picker, "Vocal - RVC").State);
+        Assert.False(Line(picker, "Vocal - RVC").IsPinned);
+    }
+
+    [Fact]
     public void A_cut_already_in_flight_is_not_offered_a_second_time()
     {
         // What the user saw: confirming a kept source put the track back in line, and until the

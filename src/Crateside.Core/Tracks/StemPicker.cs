@@ -60,7 +60,11 @@ public sealed record StemPicker
         List<StemBand> bands =
         [
             .. catalog
-                .Presets.GroupBy(preset => preset.Category, StringComparer.OrdinalIgnoreCase)
+                .Presets.Where(preset =>
+                    !Unoffered.Contains(preset.Id, StringComparer.OrdinalIgnoreCase)
+                    || byPreset[preset.Id].Any()
+                )
+                .GroupBy(preset => preset.Category, StringComparer.OrdinalIgnoreCase)
                 .Select(group => new StemBand(
                     group.Key.Singularize(inputIsKnownToBePlural: false),
                     [
@@ -148,6 +152,17 @@ public sealed record StemPicker
             },
         };
     }
+
+    /// <summary>
+    /// Presets the picker leaves out, because nothing in this workflow wants them: one is for
+    /// AI voice training data and the other trades quality for VRAM this machine has.
+    /// </summary>
+    /// <remarks>
+    /// Left in the catalog rather than filtered out of it, and shown anyway on a track that has
+    /// one. The catalog is what says a file on disk <em>is</em> a preset — take these out of it
+    /// and a stem already cut with one would read as a preset the separator no longer offers.
+    /// </remarks>
+    private static readonly string[] Unoffered = ["vocal_rvc", "instrumental_low_resource"];
 
     /// <summary>Stands in for the guide's file, which the row counts but does not list.</summary>
     /// <remarks>
