@@ -57,6 +57,15 @@ public sealed record StemPicker
 
         var sources = row.Samples.Where(sample => sample.Kind is StemKind.Source).ToArray();
 
+        // Files belonging to an added source, so the separation source line does not claim them.
+        var added = sources
+            .Where(sample =>
+                plan.AddedSources.Any(source =>
+                    source.VideoId.Equals(sample.SourceVideoId, StringComparison.Ordinal)
+                )
+            )
+            .ToHashSet();
+
         List<StemBand> bands =
         [
             .. catalog
@@ -83,7 +92,7 @@ public sealed record StemPicker
                     ]
                 )),
             new StemBand(
-                "Whole track",
+                "Sources",
                 [
                     new StemChoice
                     {
@@ -91,8 +100,25 @@ public sealed record StemPicker
                         Description = "copied, not separated · costs nothing",
                         Kind = StemKind.Source,
                         IsWanted = plan.KeepSource,
-                        Files = sources,
+                        Files = [.. sources.Where(sample => !added.Contains(sample))],
                     },
+                    .. plan.AddedSources.Select(source => new StemChoice
+                    {
+                        Label = $"{row.Title} ({source.Label})",
+                        Description = "added by you · downloaded whole, never separated",
+                        Kind = StemKind.Source,
+                        AddedSource = source,
+                        IsWanted = true,
+                        Files =
+                        [
+                            .. sources.Where(sample =>
+                                source.VideoId.Equals(
+                                    sample.SourceVideoId,
+                                    StringComparison.Ordinal
+                                )
+                            ),
+                        ],
+                    }),
                 ]
             ),
         ];
@@ -189,6 +215,9 @@ public sealed record StemChoice
 
     /// <summary>The preset to tick, or null for a line that is not chosen by name.</summary>
     public string? PresetId { get; init; }
+
+    /// <summary>The source this line stands for, when the user attached it.</summary>
+    public AddedSource? AddedSource { get; init; }
 
     public required bool IsWanted { get; init; }
 

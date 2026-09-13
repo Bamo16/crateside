@@ -72,7 +72,7 @@ public class StemPickerTests
     {
         var labels = StemPicker.For(Row(), Catalog).Bands.Select(band => band.Label);
 
-        Assert.Equal(["Vocal", "Instrumental", "Whole track", "Warp guide"], labels);
+        Assert.Equal(["Vocal", "Instrumental", "Sources", "Warp guide"], labels);
     }
 
     [Fact]
@@ -309,7 +309,7 @@ public class StemPickerTests
         var picker = StemPicker.For(Row(), PresetCatalog.Empty);
 
         Assert.DoesNotContain(picker.Lines, line => line.Kind is StemKind.Preset);
-        Assert.Equal(["Whole track", "Warp guide"], picker.Bands.Select(band => band.Label));
+        Assert.Equal(["Sources", "Warp guide"], picker.Bands.Select(band => band.Label));
     }
 
     [Fact]

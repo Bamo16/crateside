@@ -227,6 +227,11 @@ public static class ServiceRegistration
             sp.GetRequiredService<ILogger<StageWorker>>()
         ));
 
+        services.AddSingleton(sp => new SourceAdd(
+            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<CratesidePaths>()
+        ));
+
         services.AddSingleton(sp => new StemRecut(
             sp.GetRequiredService<QueueSettingsStore>(),
             sp.GetRequiredService<JobStore>(),

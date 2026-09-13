@@ -94,6 +94,7 @@ public sealed class ProcessedTracks
                         Path = path,
                         Root = root,
                         Preset = p.Preset,
+                        SourceVideoId = videoId,
                         CreatedAt = CreationTimeOf(path),
                     }
                 );
@@ -131,9 +132,16 @@ public sealed record StemOnDisk
 
     /// <summary>
     /// The StemForge preset — <c>Vocal - Full</c>, <c>Drums</c>. Null for a verbatim source
-    /// download, which is how an instrumental release's kept sample reads.
+    /// download, which is how a kept source reads.
     /// </summary>
     public string? Preset { get; init; }
+
+    /// <summary>The upload this file was cut from or downloaded from.</summary>
+    /// <remarks>
+    /// What tells a track's separation source from a source the user added, which are otherwise
+    /// the same kind of file (ADR 0019).
+    /// </remarks>
+    public string? SourceVideoId { get; init; }
 
     /// <summary>
     /// When the file appeared in <see cref="Root"/>, which is when it arrived rather than when it
@@ -153,11 +161,12 @@ public sealed record StemOnDisk
     /// A staged file's root is the folder it is in; only a scan across several roots has to be
     /// told which one it was looking at.
     /// </remarks>
-    public static StemOnDisk Of(StagingStem stem) =>
+    public static StemOnDisk Of(StagingStem stem, string? sourceVideoId = null) =>
         new()
         {
             Path = stem.Path,
             Root = System.IO.Path.GetDirectoryName(stem.Path) ?? string.Empty,
             Preset = stem.Preset,
+            SourceVideoId = sourceVideoId,
         };
 }

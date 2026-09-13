@@ -17,6 +17,7 @@
 @inject QueueService Playlist
 @inject JobStore Jobs
 @inject StemRecut Recut
+@inject SourceAdd Sources
 @inject PresetCatalogReader Presets
 @inject TrackRename Rename
 @inject TrackSwap Swap
@@ -394,9 +395,13 @@
 
                                             <span class="stem-label">
                                                 @line.Label
-                                                @if (line.Kind is StemKind.Source)
+                                                @if (line.AddedSource is not null)
                                                 {
-                                                    <span class="kind">source track</span>
+                                                    <span class="kind">added by you</span>
+                                                }
+                                                else if (line.Kind is StemKind.Source)
+                                                {
+                                                    <span class="kind">separation source</span>
                                                 }
                                                 @if (line.Kind is StemKind.WarpGuide)
                                                 {
@@ -414,6 +419,31 @@
 
                                             <span class="stem-note">@Note(line, row)</span>
                                         </div>
+                                    }
+
+                                    @if (band.Label == "Sources" && !picker.IsLocked)
+                                    {
+                                        @if (_adding == row.VideoId)
+                                        {
+                                            <div class="add-source">
+                                                <input class="mono" placeholder="YouTube URL or video ID"
+                                                       value="@_addUrl"
+                                                       @oninput="e => OnAdd(row, url: e.Value?.ToString())" />
+                                                <input placeholder="what it is — Official Instrumental"
+                                                       value="@_addLabel"
+                                                       @oninput="e => OnAdd(row, label: e.Value?.ToString())" />
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <button class="opener" @onclick="() => StartAdding(row)" disabled="@_working">
+                                                <span class="mono">+</span>
+                                                <span>Add a source</span>
+                                                <span class="opener-hint">
+                                                    another whole file of this song · never separated
+                                                </span>
+                                            </button>
+                                        }
                                     }
                                 }
                             }
@@ -485,7 +515,39 @@
                     }
 
                     <div class="side">
-                        @if (picking && _plan is { } confirm)
+                        @if (_adding == row.VideoId)
+                        {
+                            <p class="what-next">Another whole file of this song.</p>
+
+                            <p class="detail">
+                                @if (_addPlan?.Refusal is { } why)
+                                {
+                                    <span class="warning">@why</span>
+                                }
+                                else
+                                {
+                                    <text>
+                                        Downloaded whole and never separated. keytag records it as
+                                        this song, so it lands beside the stems
+                                        @(row.Key is { } inherited
+                                            ? $"and is tagged {Spell(inherited)} like them."
+                                            : "and is tagged once this track has a key.")
+                                        No quota, no GPU.
+                                    </text>
+                                }
+                            </p>
+
+                            <div class="actions">
+                                <button class="primary" disabled="@(_working || _addPlan?.IsPossible is not true)"
+                                        @onclick="() => ConfirmAdd(row)">
+                                    @(_working ? "Adding…" : "Add source")
+                                </button>
+                                <button class="outline" @onclick="CancelAdding" disabled="@_working">
+                                    Cancel
+                                </button>
+                            </div>
+                        }
+                        else if (picking && _plan is { } confirm)
                         {
                             @if (picker.Lock is PickerLock.CutInFlight)
                             {
@@ -657,6 +719,13 @@
 
     /// <summary>The plan being ticked, which is not recorded until the confirm.</summary>
     private StemPlan _wanted = StemPlan.Default;
+
+    /// <summary>The row whose add-a-source form is open, or null when none is.</summary>
+    private string? _adding;
+
+    private string _addUrl = string.Empty;
+    private string _addLabel = string.Empty;
+    private AddPlan? _addPlan;
 
     private RecutPlan? _plan;
 
@@ -1012,6 +1081,60 @@
         _picking = null;
         _wanted = StemPlan.Default;
         _plan = null;
+
+        CancelAdding();
+    }
+
+    private void StartAdding(TrackRow row)
+    {
+        _problem = null;
+        _adding = row.VideoId;
+        _addUrl = string.Empty;
+        _addLabel = string.Empty;
+        _addPlan = null;
+    }
+
+    private void CancelAdding()
+    {
+        _adding = null;
+        _addUrl = string.Empty;
+        _addLabel = string.Empty;
+        _addPlan = null;
+    }
+
+    /// <summary>Re-reads what adding would do on every keystroke, so the refusal arrives early.</summary>
+    private void OnAdd(TrackRow row, string? url = null, string? label = null)
+    {
+        _addUrl = url ?? _addUrl;
+        _addLabel = label ?? _addLabel;
+        _addPlan = Sources.PlanFor(row.Facts, _addUrl, _addLabel);
+    }
+
+    private async Task ConfirmAdd(TrackRow row)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            var outcome = await Sources.ApplyAsync(
+                row.Facts,
+                _addUrl,
+                _addLabel,
+                _circuit.Token
+            );
+
+            _problem = outcome.Problem;
+
+            if (outcome.Succeeded)
+                CancelPicking();
+
+            await Source.RefreshAsync(_circuit.Token);
+        }
+        finally
+        {
+            _working = false;
+        }
     }
 
     /// <summary>
@@ -1026,9 +1149,16 @@
         if (line.IsPinned || PickerFor(row).IsLocked)
             return;
 
-        var wanted = line.Kind is StemKind.Source
-            ? (_picking == row.VideoId ? _wanted : row.Plan).TogglingSource()
-            : (_picking == row.VideoId ? _wanted : row.Plan).Toggling(line.PresetId!);
+        var plan = _picking == row.VideoId ? _wanted : row.Plan;
+
+        var wanted = line switch
+        {
+            // Unticking an added source drops it from the plan; there is nothing to re-fetch,
+            // so it is never ticked back on from here.
+            { AddedSource: { } added } => plan.Dropping(added.Label),
+            { Kind: StemKind.Source } => plan.TogglingSource(),
+            _ => plan.Toggling(line.PresetId!),
+        };
 
         if (row.CanChangePlan)
         {

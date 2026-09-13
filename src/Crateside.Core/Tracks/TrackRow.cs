@@ -206,6 +206,22 @@ public sealed record TrackRow
     public bool IsCutInFlight =>
         !CanChangePlan && (RunningStage is not null || GpuPosition is not null);
 
+    /// <summary>What this row knows about itself that attaching another source needs.</summary>
+    public TrackRowFacts Facts =>
+        new()
+        {
+            VideoId = VideoId,
+            Song = Verdict?.Song,
+            Key = Key,
+            Plan = Plan,
+            Uploads =
+            [
+                VideoId,
+                .. Samples.Select(sample => sample.SourceVideoId).OfType<string>(),
+                .. Plan.AddedSources.Select(source => source.VideoId),
+            ],
+        };
+
     /// <summary>
     /// A finding worth flagging beside the song name, or null when there is nothing wrong.
     /// </summary>

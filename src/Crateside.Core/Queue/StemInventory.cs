@@ -72,7 +72,12 @@ public sealed record StemInventory
     /// The warp guide is never among them: it is used up rather than kept, and is not the plan's
     /// to drop.
     /// </remarks>
-    public IReadOnlyList<ClassifiedStem> Superseded(StemPlan wanted) =>
+    /// <param name="stored">
+    /// The plan the track currently has, which is the only thing that says which files were
+    /// added sources — a dropped one is gone from <paramref name="wanted"/>, and its file is
+    /// otherwise indistinguishable from the separation source.
+    /// </param>
+    public IReadOnlyList<ClassifiedStem> Superseded(StemPlan wanted, StemPlan? stored = null) =>
         [
             .. Files.Where(file =>
                 file switch
@@ -81,11 +86,24 @@ public sealed record StemInventory
                         preset,
                         StringComparer.OrdinalIgnoreCase
                     ),
-                    { Kind: StemKind.Source } => !wanted.KeepSource,
+                    { Kind: StemKind.Source } => IsDropped(file, wanted, stored ?? wanted),
                     _ => false,
                 }
             ),
         ];
+
+    /// <remarks>
+    /// Matched on the upload rather than the label, because a source download whose own title
+    /// ends in brackets — <c>Schala's Theme (Instrumental)</c> — reads as labelled and would be
+    /// deleted as an added source the plan no longer names.
+    /// </remarks>
+    private static bool IsDropped(ClassifiedStem file, StemPlan wanted, StemPlan stored) =>
+        file.File.SourceVideoId is { } upload
+        && stored.AddedSources.Any(added => added.VideoId.Equals(upload, StringComparison.Ordinal))
+            ? !wanted.AddedSources.Any(added =>
+                added.VideoId.Equals(upload, StringComparison.Ordinal)
+            )
+            : !wanted.KeepSource;
 
     /// <summary>Reads a track's files back as presets, a source, and a guide.</summary>
     public static StemInventory Of(IEnumerable<StemOnDisk> files, PresetCatalog catalog) =>

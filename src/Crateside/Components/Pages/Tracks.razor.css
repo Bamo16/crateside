@@ -1098,3 +1098,28 @@ a.outline {
     scroll-margin-top: 200px;
 }
 
+
+/* The form sits where the line it is about to create will be. */
+.add-source {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 10px;
+    margin-bottom: 4px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 6px;
+}
+
+.add-source input {
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    outline: none;
+}
+
+.add-source input::placeholder {
+    color: var(--text-35);
+}

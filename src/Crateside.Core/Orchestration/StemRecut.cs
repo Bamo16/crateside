@@ -42,7 +42,7 @@ public sealed class StemRecut(
         var files = staged(videoId);
         var inventory = StemInventory.Of(files.Select(AsOnDisk), catalog);
         var recipe = SeparationRecipe.For(wanted, inventory);
-        var removing = inventory.Superseded(wanted);
+        var removing = inventory.Superseded(wanted, Stored(videoId));
 
         return new RecutPlan
         {
@@ -102,6 +102,14 @@ public sealed class StemRecut(
 
         return new RecutOutcome { Removed = removed, Recipe = plan.Recipe };
     }
+
+    /// <summary>The plan this track currently has, which says which of its files were added.</summary>
+    private StemPlan Stored(string videoId) =>
+        settings
+            .Read()
+            .Tracks.FirstOrDefault(track => track.VideoId.Equals(videoId, StringComparison.Ordinal))
+            ?.Plan
+        ?? StemPlan.Default;
 
     /// <summary>
     /// The staging board's view of a file as the scanner's, which is what the classifier reads.
