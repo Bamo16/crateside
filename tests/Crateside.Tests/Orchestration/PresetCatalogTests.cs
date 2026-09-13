@@ -1,4 +1,5 @@
 using Crateside.Core.Orchestration;
+using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Orchestration;
 

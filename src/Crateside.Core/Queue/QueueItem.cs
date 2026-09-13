@@ -47,6 +47,15 @@ public sealed record QueueItem
     /// </remarks>
     public StemPlan Plan { get; init; } = StemPlan.Default;
 
+    /// <summary>
+    /// What this track already has on disk, which is what makes a cut additive.
+    /// </summary>
+    /// <remarks>
+    /// Empty for a track nothing has been cut for, which is the same thing as owing the whole
+    /// plan — so a reader never has to handle "not yet separated" separately.
+    /// </remarks>
+    public StemInventory Inventory { get; init; } = StemInventory.Empty;
+
     /// <summary>The upload to fetch instead of this entry's own video, or null.</summary>
     /// <remarks>
     /// <see cref="VideoId"/> still names the entry's original video and stays the join key.
@@ -76,6 +85,13 @@ public sealed record QueueView
     /// <see cref="AwaitingSeparation"/> only — kept out of <see cref="Items"/> and
     /// <see cref="Outstanding"/> so a re-cut cannot cost quota.
     /// </param>
+    /// <param name="awaitingCut">
+    /// Video IDs whose separation is owed, which is the only thing that puts a track the playlist
+    /// still holds back in line with its files left where they are.
+    /// </param>
+    /// <param name="inventories">
+    /// What each track already has on disk, by video ID, so a cut asks only for what is missing.
+    /// </param>
     public static QueueView Compose(
         IReadOnlyList<QueueItem> items,
         IReadOnlySet<string> fullyProcessed,
@@ -83,7 +99,9 @@ public sealed record QueueView
         IReadOnlySet<string> separatedWithoutKey,
         IReadOnlyDictionary<string, TrackInstruction> instructions,
         IReadOnlyList<QueueItem>? reopened = null,
-        string? bumped = null
+        string? bumped = null,
+        IReadOnlySet<string>? awaitingCut = null,
+        IReadOnlyDictionary<string, StemInventory>? inventories = null
     )
     {
         var described = items.Select(Described).ToArray();
@@ -91,14 +109,17 @@ public sealed record QueueView
 
         // Reopened tracks are described here too. Doing it where they are built instead meant a
         // second list of instruction fields, and the source-URL override was missing from it.
-        QueueItem Described(QueueItem item) =>
-            instructions.TryGetValue(item.VideoId, out var instruction)
-                ? item with
-                {
-                    Plan = instruction.Plan ?? StemPlan.Default,
-                    StatedSourceUrl = instruction.SourceUrl,
-                }
-                : item;
+        QueueItem Described(QueueItem item)
+        {
+            var instruction = instructions.GetValueOrDefault(item.VideoId);
+
+            return item with
+            {
+                Plan = instruction?.Plan ?? StemPlan.Default,
+                StatedSourceUrl = instruction?.SourceUrl,
+                Inventory = inventories?.GetValueOrDefault(item.VideoId) ?? StemInventory.Empty,
+            };
+        }
 
         return new QueueView
         {
@@ -106,9 +127,15 @@ public sealed record QueueView
             FullyProcessed = [.. described.Where(i => fullyProcessed.Contains(i.VideoId))],
             AwaitingSeparation =
             [
+                // Two ways in: nothing of the track is on disk, or the user asked for a cut it
+                // has not had. The second is what makes adding to a track possible at all —
+                // deleting every file used to be the only way back into this list.
                 .. described.Where(i =>
-                    verdictWithoutStems.Contains(i.VideoId)
-                    && !separatedWithoutKey.Contains(i.VideoId)
+                    !separatedWithoutKey.Contains(i.VideoId)
+                    && (
+                        verdictWithoutStems.Contains(i.VideoId)
+                        || awaitingCut?.Contains(i.VideoId) is true
+                    )
                 ),
                 .. reopenedItems,
             ],

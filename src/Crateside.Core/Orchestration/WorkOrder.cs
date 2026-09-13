@@ -47,7 +47,7 @@ public sealed record WorkOrder
                     ? StemDestination.KeyIdentified
                     : StemDestination.UnresolvedKey,
             PremiumOutlook = item.PremiumOutlook,
-            Recipe = SeparationRecipe.From(item.Plan),
+            Recipe = SeparationRecipe.For(item.Plan, item.Inventory),
         };
 }
 
@@ -68,11 +68,7 @@ public sealed record SeparationRecipe
     /// The usual pair plus a warp guide. Repeated presets run as independent stem sets rather
     /// than being blended.
     /// </summary>
-    /// <remarks>
-    /// Built from the plan rather than beside it, so the preset list has one definition and two
-    /// recipes for the same plan compare equal — the record's equality is by reference on
-    /// <see cref="Presets"/>, so a second identical array would not.
-    /// </remarks>
+    /// <remarks>Built from the plan rather than beside it, so the preset list has one definition.</remarks>
     public static SeparationRecipe Standard { get; } = From(StemPlan.Default);
 
     /// <summary>
@@ -114,17 +110,51 @@ public sealed record SeparationRecipe
     public TimeSpan Estimate => TimeSpan.FromSeconds(75 + (95 * Passes));
 
     /// <summary>
+    /// Two recipes asking for the same files in the same order are the same recipe.
+    /// </summary>
+    /// <remarks>
+    /// Written out because a record compares <see cref="Presets"/> by reference, so two recipes
+    /// built a moment apart from the same plan were unequal. That held together only while every
+    /// recipe shared one array, which stopped being true the moment a recipe could be narrowed to
+    /// what a track still owes.
+    /// </remarks>
+    public bool Equals(SeparationRecipe? other) =>
+        other is not null
+        && ExtractDrums == other.ExtractDrums
+        && KeepSource == other.KeepSource
+        && Format == other.Format
+        && Presets.SequenceEqual(other.Presets, StringComparer.Ordinal);
+
+    public override int GetHashCode() =>
+        HashCode.Combine(ExtractDrums, KeepSource, Format, Presets.Count);
+
+    /// <summary>
     /// What to ask the separator for, given what the user asked for.
     /// </summary>
     /// <remarks>
     /// The warp guide is not part of the plan and is always requested: it is not a sample, it is
     /// deleted after warping, and no workflow yet exists that does not want one (ADR 0018).
     /// </remarks>
-    public static SeparationRecipe From(StemPlan plan) =>
-        new()
+    public static SeparationRecipe From(StemPlan plan) => For(plan, StemInventory.Empty);
+
+    /// <summary>
+    /// What to ask the separator for, given what the user asked for and what is already made.
+    /// </summary>
+    /// <remarks>
+    /// A preset already on disk is <em>kept</em>, never cut again — which is what makes adding to
+    /// a track cost only the passes it adds, and what keeps the handoff from meeting a filename
+    /// it already has. The guide follows the same rule for a different reason: it is always
+    /// wanted, so the only question is whether one is already there.
+    /// </remarks>
+    public static SeparationRecipe For(StemPlan plan, StemInventory inventory)
+    {
+        var outstanding = inventory.Outstanding(plan);
+
+        return new SeparationRecipe
         {
-            Presets = plan.Presets,
-            ExtractDrums = true,
-            KeepSource = plan.KeepSource,
+            Presets = outstanding.Presets,
+            ExtractDrums = !inventory.HasWarpGuide,
+            KeepSource = outstanding.KeepSource,
         };
+    }
 }

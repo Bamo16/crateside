@@ -24,11 +24,30 @@ public static class ReopenedTracks
     /// and completes them under the new one, so reading this per video ID leaves the old ID
     /// owing a handoff and a tagging that have in fact already happened — for ever.
     /// </remarks>
-    public static IReadOnlySet<string> From(IEnumerable<TrackJob> jobs, KeyLedger ledger)
+    public static IReadOnlySet<string> From(IEnumerable<TrackJob> jobs, KeyLedger ledger) =>
+        Owing(jobs, ledger, Reopenable);
+
+    /// <summary>
+    /// The same, narrowed to songs owing a <em>separation</em>.
+    /// </summary>
+    /// <remarks>
+    /// The only thing that may put a track the playlist still holds back in the line for the
+    /// GPU. The wider set above also carries tracks owing a handoff or a tagging, which need no
+    /// GPU and whose rows already exist — reading it here would show them as waiting for a
+    /// separator that is not going to touch them.
+    /// </remarks>
+    public static IReadOnlySet<string> AwaitingCut(IEnumerable<TrackJob> jobs, KeyLedger ledger) =>
+        Owing(jobs, ledger, [JobStage.Separation]);
+
+    private static IReadOnlySet<string> Owing(
+        IEnumerable<TrackJob> jobs,
+        KeyLedger ledger,
+        JobStage[] stages
+    )
     {
         string Identity(TrackJob job) => ledger.SongFor(job.VideoId) ?? job.VideoId;
 
-        return jobs.Where(job => Reopenable.Contains(job.Stage))
+        return jobs.Where(job => stages.Contains(job.Stage))
             .GroupBy(Identity, StringComparer.Ordinal)
             .Where(song => song.GroupBy(job => job.Stage).Select(Latest).Any(IsOwed))
             .Select(song => Latest(song).VideoId)

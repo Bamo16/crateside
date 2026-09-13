@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace Crateside.Core.Orchestration;
+namespace Crateside.Core.Queue;
 
 /// <summary>
 /// What the separator can make, and what it calls each one.

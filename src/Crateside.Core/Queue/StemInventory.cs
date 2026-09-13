@@ -1,7 +1,6 @@
-using Crateside.Core.Queue;
 using Crateside.Core.Staging;
 
-namespace Crateside.Core.Orchestration;
+namespace Crateside.Core.Queue;
 
 /// <summary>
 /// What a track already has, read off disk and said in the vocabulary the plan speaks.

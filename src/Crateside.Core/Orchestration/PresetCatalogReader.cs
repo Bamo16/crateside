@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Crateside.Core.Queue;
 
 namespace Crateside.Core.Orchestration;
 

@@ -91,11 +91,22 @@ public static class ServiceRegistration
         services.AddSingleton<QueueAuthorizer>();
         services.AddSingleton<QueueRemover>();
         services.AddSingleton<BumpedTrack>();
-        services.AddSingleton<ReadReopenedTracks>(sp =>
-            ledger => ReopenedTracks.From(sp.GetRequiredService<JobStore>().All(), ledger)
-        );
+        services.AddSingleton(_ => new PresetCatalogReader());
 
-        services.AddSingleton<QueueService>();
+        // Both trailing delegates and the catalog are passed by hand: the container resolves the
+        // two ReadReopenedTracks parameters to the same registration, and they mean different
+        // sets.
+        services.AddSingleton(sp => new QueueService(
+            sp.GetRequiredService<IOptions<CratesidePaths>>(),
+            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<YouTubeQueueReader>(),
+            sp.GetRequiredService<QueueAuthorizer>(),
+            sp.GetRequiredService<QueueRemover>(),
+            sp.GetRequiredService<BumpedTrack>(),
+            ledger => ReopenedTracks.From(sp.GetRequiredService<JobStore>().All(), ledger),
+            ledger => ReopenedTracks.AwaitingCut(sp.GetRequiredService<JobStore>().All(), ledger),
+            sp.GetRequiredService<PresetCatalogReader>().ReadAsync
+        ));
         return services;
     }
 

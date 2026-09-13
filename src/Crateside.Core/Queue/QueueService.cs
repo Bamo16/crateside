@@ -7,6 +7,16 @@ namespace Crateside.Core.Queue;
 /// <remarks>Takes the ledger because the answer is per song, not per video ID (ADR 0014).</remarks>
 public delegate IReadOnlySet<string> ReadReopenedTracks(KeyLedger ledger);
 
+/// <summary>
+/// What the separator can make, and what it calls each one.
+/// </summary>
+/// <remarks>
+/// A delegate rather than the reader itself, for the same reason as
+/// <see cref="ReadReopenedTracks"/>: reading it means running StemForge, which is orchestration's
+/// job and not the queue's.
+/// </remarks>
+public delegate Task<PresetCatalog> ReadPresetCatalog(CancellationToken cancellationToken);
+
 public sealed class QueueService(
     IOptions<CratesidePaths> paths,
     QueueSettingsStore settings,
@@ -14,7 +24,9 @@ public sealed class QueueService(
     QueueAuthorizer authorizer,
     QueueRemover remover,
     BumpedTrack bumped,
-    ReadReopenedTracks? reopened = null
+    ReadReopenedTracks? reopened = null,
+    ReadReopenedTracks? awaitingCut = null,
+    ReadPresetCatalog? presets = null
 )
 {
     /// <summary>How long a playlist read is reused before going back to the API.</summary>
@@ -173,6 +185,8 @@ public sealed class QueueService(
             .Read()
             .Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal);
 
+        var catalog = presets is null ? PresetCatalog.Empty : await presets(cancellationToken);
+
         return new QueueScan
         {
             View = QueueView.Compose(
@@ -185,7 +199,13 @@ public sealed class QueueService(
                     .ToHashSet(StringComparer.Ordinal),
                 instructions,
                 Reopened(items, ledger),
-                bumped.VideoId
+                bumped.VideoId,
+                awaitingCut?.Invoke(ledger),
+                processed.StemsByVideoId.ToDictionary(
+                    entry => entry.Key,
+                    entry => StemInventory.Of(entry.Value, catalog),
+                    StringComparer.Ordinal
+                )
             ),
             Ledger = ledger,
             Processed = processed,

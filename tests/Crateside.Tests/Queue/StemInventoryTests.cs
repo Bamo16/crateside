@@ -1,7 +1,7 @@
 using Crateside.Core.Orchestration;
 using Crateside.Core.Queue;
 
-namespace Crateside.Tests.Orchestration;
+namespace Crateside.Tests.Queue;
 
 public class StemInventoryTests
 {

@@ -1,3 +1,4 @@
+using Crateside.Core.Orchestration;
 using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Queue;
@@ -158,5 +159,73 @@ public class QueueViewCompositionTests
                 + view.AwaitingKey.Count
                 + view.FullyProcessed.Count
         );
+    }
+
+    [Fact]
+    public void A_track_the_playlist_still_holds_reaches_separation_when_a_cut_is_owed()
+    {
+        // The whole of an additive re-cut. Its stems are still on disk, so it is not in
+        // verdictWithoutStems and nothing would ever pick it up — deleting every file used to be
+        // the only way back into this list, which is what made a re-cut destructive by
+        // construction rather than by choice.
+        var view = QueueView.Compose(
+            [Item(Judged)],
+            fullyProcessed: new HashSet<string> { Judged },
+            verdictWithoutStems: new HashSet<string>(),
+            separatedWithoutKey: new HashSet<string>(),
+            instructions: new Dictionary<string, TrackInstruction>(),
+            awaitingCut: new HashSet<string> { Judged }
+        );
+
+        Assert.Equal(Judged, Assert.Single(view.AwaitingSeparation).VideoId);
+    }
+
+    [Fact]
+    public void A_cut_owed_for_a_track_parked_for_want_of_a_key_is_still_refused()
+    {
+        // The GPU has already run it and the way out is a better verdict, not more stems.
+        var view = QueueView.Compose(
+            [Item(Judged)],
+            fullyProcessed: new HashSet<string>(),
+            verdictWithoutStems: new HashSet<string> { Judged },
+            separatedWithoutKey: new HashSet<string> { Judged },
+            instructions: new Dictionary<string, TrackInstruction>(),
+            awaitingCut: new HashSet<string> { Judged }
+        );
+
+        Assert.Empty(view.AwaitingSeparation);
+    }
+
+    [Fact]
+    public void What_a_track_already_has_reaches_the_item_that_asks_for_more()
+    {
+        var inventory = StemInventory.Of(
+            [
+                new StemOnDisk
+                {
+                    Path = @"P:\Staging\x (Vocal - Full).flac",
+                    Root = @"P:\Staging",
+                    Preset = "Vocal - Full",
+                },
+            ],
+            PresetCatalogReader.Parse(
+                """[{"id":"vocal_full","displayName":"Vocal - Full","category":"Vocals"}]"""
+            )
+        );
+
+        var view = QueueView.Compose(
+            [Item(Judged)],
+            fullyProcessed: new HashSet<string>(),
+            verdictWithoutStems: new HashSet<string> { Judged },
+            separatedWithoutKey: new HashSet<string>(),
+            instructions: new Dictionary<string, TrackInstruction>(),
+            inventories: new Dictionary<string, StemInventory> { [Judged] = inventory }
+        );
+
+        // The plan is still the pair; only what it owes has narrowed.
+        var item = Assert.Single(view.AwaitingSeparation);
+
+        Assert.True(item.Plan.AsksTheSameAs(StemPlan.Default));
+        Assert.Equal(["instrumental_full"], item.Inventory.Outstanding(item.Plan).Presets);
     }
 }
