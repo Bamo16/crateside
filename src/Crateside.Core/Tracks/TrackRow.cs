@@ -114,15 +114,6 @@ public sealed record TrackRow
     public StemPlan Plan { get; init; } = StemPlan.Default;
 
     /// <summary>
-    /// Whether the plan is the one an instrumental release calls for.
-    /// </summary>
-    /// <remarks>
-    /// Interim, for the Release select the picker replaces — a plan is no longer a fact about
-    /// the release, and once the picker lands nothing should be asking this question (#22).
-    /// </remarks>
-    public bool IsInstrumentalRelease => Plan.AsksTheSameAs(StemPlan.InstrumentalRelease);
-
-    /// <summary>
     /// Why crateside stopped and handed this track back, or null when it has not.
     /// </summary>
     public ParkReason? ParkedFor { get; init; }

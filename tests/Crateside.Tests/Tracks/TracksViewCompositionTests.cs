@@ -380,7 +380,7 @@ public class TracksViewCompositionTests : IDisposable
         );
 
         Assert.Null(row.PlaylistItemId);
-        Assert.True(row.IsInstrumentalRelease);
+        Assert.True(row.Plan.AsksTheSameAs(StemPlan.InstrumentalRelease));
         Assert.Equal(SeparationRecipe.InstrumentalRelease, row.Recipe);
     }
 
