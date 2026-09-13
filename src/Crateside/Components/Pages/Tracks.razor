@@ -390,6 +390,7 @@
                                     @foreach (var line in band.Lines)
                                     {
                                         <div class="stem picking @(row.CanChangePlan ? "planning" : null) @LineTone(line)"
+                                             title="@(line.Kind is StemKind.Preset ? line.Description : null)"
                                              @onclick="() => Toggle(row, line)">
                                             <span class="tick @TickTone(line, picker)">@TickMark(line)</span>
 
@@ -441,15 +442,36 @@
                                                     </label>
                                                 </div>
 
-                                                <p class="add-note @(_addPlan?.Refusal is null ? null : "bad")">
-                                                    @(_addPlan?.Refusal ?? AddNote(row))
+                                                <p class="add-note @(_addPlan?.Refusal is null && _shortfall is null ? null : "bad")">
+                                                    @if (_shortfall is { } poor)
+                                                    {
+                                                        <text>
+                                                            This upload offers no premium format.
+                                                            The best it has is @poor.Quality, and
+                                                            that is what would land in your library.
+                                                        </text>
+                                                    }
+                                                    else
+                                                    {
+                                                        @(_addPlan?.Refusal ?? AddNote(row))
+                                                    }
                                                 </p>
 
                                                 <div class="actions">
-                                                    <button class="primary" disabled="@(_working || _addPlan?.IsPossible is not true)"
-                                                            @onclick="() => ConfirmAdd(row)">
-                                                        @(_working ? "Adding…" : "Add source")
-                                                    </button>
+                                                    @if (_shortfall is not null)
+                                                    {
+                                                        <button class="danger" disabled="@_working"
+                                                                @onclick="() => ConfirmAdd(row, anyway: true)">
+                                                            @(_working ? "Adding…" : "Add it anyway")
+                                                        </button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button class="primary" disabled="@(_working || _addPlan?.IsPossible is not true)"
+                                                                @onclick="() => ConfirmAdd(row)">
+                                                            @(_working ? "Checking…" : "Add source")
+                                                        </button>
+                                                    }
                                                     <button class="outline" @onclick="CancelAdding" disabled="@_working">
                                                         Cancel
                                                     </button>
@@ -718,6 +740,9 @@
     private string _addUrl = string.Empty;
     private string _addLabel = string.Empty;
     private AddPlan? _addPlan;
+
+    /// <summary>What the upload offers, once it has been asked and found wanting.</summary>
+    private ProbedSource? _shortfall;
 
     private RecutPlan? _plan;
 
@@ -1093,6 +1118,7 @@
         _addUrl = string.Empty;
         _addLabel = string.Empty;
         _addPlan = null;
+        _shortfall = null;
     }
 
     /// <summary>What an added source is, said where the boxes to describe one are.</summary>
@@ -1108,6 +1134,7 @@
         _addUrl = string.Empty;
         _addLabel = string.Empty;
         _addPlan = null;
+        _shortfall = null;
     }
 
     /// <summary>Re-reads what adding would do on every keystroke, so the refusal arrives early.</summary>
@@ -1115,10 +1142,16 @@
     {
         _addUrl = url ?? _addUrl;
         _addLabel = label ?? _addLabel;
+        _shortfall = null;
         _addPlan = Sources.PlanFor(row.Facts, _addUrl, _addLabel);
     }
 
-    private async Task ConfirmAdd(TrackRow row)
+    /// <summary>Adds the source, or comes back with what the upload actually offers.</summary>
+    /// <remarks>
+    /// The quality is asked before anything is fetched, so a poor upload costs a second press
+    /// rather than a file the library gained unannounced (ADR 0019).
+    /// </remarks>
+    private async Task ConfirmAdd(TrackRow row, bool anyway = false)
     {
         _working = true;
         _problem = null;
@@ -1129,10 +1162,12 @@
                 row.Facts,
                 _addUrl,
                 _addLabel,
+                anyway,
                 _circuit.Token
             );
 
             _problem = outcome.Problem;
+            _shortfall = outcome.Shortfall;
 
             if (outcome.Succeeded)
                 CancelPicking();
@@ -1315,6 +1350,9 @@
                 line.Uploads
             ),
             { State: StemState.Kept } => "kept",
+            // A preset's description is nine lines of wrapped text across the panel; it reads
+            // on hover instead, where it is wanted only once.
+            { Kind: StemKind.Preset } => null,
             _ => line.Description,
         };
 

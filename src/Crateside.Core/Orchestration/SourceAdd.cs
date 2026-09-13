@@ -8,7 +8,12 @@ namespace Crateside.Core.Orchestration;
 /// Attaches another whole file of a song to a track: downloaded, staged and tagged like any
 /// sample, and never separated (ADR 0019).
 /// </summary>
-public sealed class SourceAdd(QueueSettingsStore settings, CratesidePaths paths, string uv = "uv")
+public sealed class SourceAdd(
+    QueueSettingsStore settings,
+    CratesidePaths paths,
+    SourceProbe probe,
+    string uv = "uv"
+)
 {
     /// <summary>What adding this source would do, or why it cannot be done.</summary>
     public AddPlan PlanFor(TrackRowFacts track, string? url, string? label) =>
@@ -51,10 +56,16 @@ public sealed class SourceAdd(QueueSettingsStore settings, CratesidePaths paths,
     /// The restatement lands first, as it does for a swap: until keytag agrees the two are one
     /// song, the downloaded file arrives as a row of its own rather than as part of this track.
     /// </remarks>
+    /// <param name="anyway">
+    /// The user has seen what the audio is and wants it regardless. Most instrumentals and
+    /// acapellas on YouTube are unofficial and offer no premium format, so this is the ordinary
+    /// path rather than an override.
+    /// </param>
     public async Task<AddOutcome> ApplyAsync(
         TrackRowFacts track,
         string? url,
         string? label,
+        bool anyway = false,
         CancellationToken cancellationToken = default
     )
     {
@@ -64,6 +75,15 @@ public sealed class SourceAdd(QueueSettingsStore settings, CratesidePaths paths,
             return new AddOutcome { Problem = refusal };
 
         var source = plan.Source!;
+        var probed = await probe.ReadAsync(source.WatchUrl, cancellationToken);
+
+        if (!probed.IsReadable)
+            return new AddOutcome { Problem = probed.Problem };
+
+        // Asked before anything is fetched, because the cost of a poor download is not the
+        // download: it is a file the library gained that nobody was warned about.
+        if (probed.FallsShort && !anyway)
+            return new AddOutcome { Shortfall = probed };
 
         if (await RestateAsync(track.VideoId, source.VideoId, cancellationToken) is { } failure)
             return new AddOutcome { Problem = failure };
@@ -154,7 +174,10 @@ public sealed record AddOutcome
 {
     public AddedSource? Source { get; init; }
 
+    /// <summary>What the upload offers, when that is why nothing was added.</summary>
+    public ProbedSource? Shortfall { get; init; }
+
     public string? Problem { get; init; }
 
-    public bool Succeeded => Problem is null;
+    public bool Succeeded => Problem is null && Shortfall is null;
 }
