@@ -113,6 +113,9 @@ public sealed record TrackRow
     /// <summary>Which files the user wants made for this track.</summary>
     public StemPlan Plan { get; init; } = StemPlan.Default;
 
+    /// <summary>The user pasted this track in rather than adding it to the playlist (ADR 0010).</summary>
+    public bool IsAddedByUrl { get; init; }
+
     /// <summary>
     /// Why crateside stopped and handed this track back, or null when it has not.
     /// </summary>

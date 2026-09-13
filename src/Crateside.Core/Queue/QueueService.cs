@@ -171,7 +171,7 @@ public sealed class QueueService(
     /// </remarks>
     public async Task<QueueScan> ScanAsync(CancellationToken cancellationToken = default)
     {
-        var items = await ItemsAsync(cancellationToken);
+        var items = Pasted(await ItemsAsync(cancellationToken));
 
         // Both staging and Mashup Samples count — a track that moved out is still processed.
         var ledger = KeyLedger.Read(_paths.Ledger);
@@ -208,6 +208,28 @@ public sealed class QueueService(
             Instructions = instructions,
             ReadAt = PlaylistReadAt,
         };
+    }
+
+    /// <summary>
+    /// The playlist, plus the tracks the user pasted in.
+    /// </summary>
+    /// <remarks>
+    /// These join <see cref="QueueView.Items"/> and therefore <see cref="QueueView.Outstanding"/>,
+    /// which is the whole point and the thing a re-cut is gated out of: a pasted track is meant to
+    /// be detected and judged, and that spends quota the user asked to spend (ADR 0010).
+    /// </remarks>
+    private IReadOnlyList<QueueItem> Pasted(IReadOnlyList<QueueItem> playlist)
+    {
+        var held = playlist.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
+
+        return
+        [
+            .. playlist,
+            .. settings
+                .Read()
+                .Tracks.Where(track => track.AddedByUrl && !held.Contains(track.VideoId))
+                .Select(track => new QueueItem { VideoId = track.VideoId, Title = track.VideoId }),
+        ];
     }
 
     /// <summary>

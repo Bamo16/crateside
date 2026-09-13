@@ -18,6 +18,7 @@
 @inject JobStore Jobs
 @inject StemRecut Recut
 @inject SourceAdd Sources
+@inject TrackAdd Adding
 @inject PresetCatalogReader Presets
 @inject TrackRename Rename
 @inject TrackSwap Swap
@@ -120,10 +121,67 @@
                 <button class="clear" @onclick="ClearSearch" title="Clear">×</button>
             }
         </div>
+        <button class="pill off" @onclick="ToggleAddTrack" disabled="@_working">
+            + Add track
+        </button>
         <button class="status" @onclick="Resync" disabled="@_syncing">
             @(_syncing ? "checking the playlist…" : Synced)
         </button>
     </div>
+
+    @if (_addingTrack)
+    {
+        <div class="add-track">
+            <label>
+                <span>YouTube URL or video ID</span>
+                <input class="mono" value="@_trackUrl"
+                       @oninput="e => OnAddTrack(e.Value?.ToString())" />
+            </label>
+
+            <p class="add-note @(_trackPlan?.Refusal is null && _trackShortfall is null ? null : "bad")">
+                @if (_trackShortfall is { } poor)
+                {
+                    <text>
+                        This upload offers no premium format. The best it has is @poor.Quality.
+                    </text>
+                }
+                else if (_trackPlan?.Refusal is { } why)
+                {
+                    @why
+                }
+                else
+                {
+                    <text>
+                        Runs the whole workflow — download, detect, judge, separate, stage, tag.
+                        Judging spends Claude quota. It is not added to the playlist; crateside
+                        keeps its own record of it.
+                        @if (_trackPlan?.Song is { } song)
+                        {
+                            <text>keytag already has this video as <strong>@song</strong>.</text>
+                        }
+                    </text>
+                }
+            </p>
+
+            <div class="actions">
+                @if (_trackShortfall is not null)
+                {
+                    <button class="danger" disabled="@_working"
+                            @onclick="() => ConfirmAddTrack(anyway: true)">
+                        @(_working ? "Adding…" : "Add it anyway")
+                    </button>
+                }
+                else
+                {
+                    <button class="primary" disabled="@(_working || _trackPlan?.IsPossible is not true)"
+                            @onclick="() => ConfirmAddTrack()">
+                        @(_working ? "Checking…" : "Add track")
+                    </button>
+                }
+                <button class="outline" @onclick="CancelAddTrack" disabled="@_working">Cancel</button>
+            </div>
+        </div>
+    }
 
     <div class="heads @(_filter is TrackFilter.InStaging ? "roomy" : null)">
         <span></span>
@@ -194,6 +252,10 @@
                     else if (row.IsRenamed)
                     {
                         <span class="flag neutral">renamed</span>
+                    }
+                    @if (row.IsAddedByUrl)
+                    {
+                        <span class="flag neutral">added by URL</span>
                     }
                 </span>
 
@@ -672,6 +734,10 @@
                                     Remove from playlist
                                 </button>
                             }
+                            else if (row.IsAddedByUrl)
+                            {
+                                <button class="outline" @onclick="() => Forget(row)">Remove</button>
+                            }
                         </div>
                         }
 
@@ -734,6 +800,76 @@
     /// <summary>The plan being ticked, which is not recorded until the confirm.</summary>
     private StemPlan _wanted = StemPlan.Default;
 
+
+    /// <summary>The add-a-track form, which is the second way into the work lists (ADR 0010).</summary>
+    private bool _addingTrack;
+
+    private string _trackUrl = string.Empty;
+    private AddTrackPlan? _trackPlan;
+    private ProbedSource? _trackShortfall;
+
+    private void ToggleAddTrack()
+    {
+        if (_addingTrack)
+        {
+            CancelAddTrack();
+            return;
+        }
+
+        _addingTrack = true;
+        _problem = null;
+    }
+
+    private void CancelAddTrack()
+    {
+        _addingTrack = false;
+        _trackUrl = string.Empty;
+        _trackPlan = null;
+        _trackShortfall = null;
+    }
+
+    private void OnAddTrack(string? url)
+    {
+        _trackUrl = url ?? string.Empty;
+        _trackShortfall = null;
+        _trackPlan = Adding.PlanFor(_trackUrl, [.. Rows.Select(row => row.Facts)]);
+    }
+
+    private async Task ConfirmAddTrack(bool anyway = false)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            var outcome = await Adding.ApplyAsync(
+                _trackUrl,
+                [.. Rows.Select(row => row.Facts)],
+                anyway,
+                _circuit.Token
+            );
+
+            _problem = outcome.Problem;
+            _trackShortfall = outcome.Shortfall;
+
+            if (outcome.Succeeded)
+                CancelAddTrack();
+
+            await Source.RefreshAsync(_circuit.Token);
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    /// <summary>Drops crateside's own record of a pasted track. Nothing on disk is touched.</summary>
+    private async Task Forget(TrackRow row)
+    {
+        Adding.Forget(row.VideoId);
+
+        await Source.RefreshAsync(_circuit.Token);
+    }
     /// <summary>The row whose add-a-source form is open, or null when none is.</summary>
     private string? _adding;
 

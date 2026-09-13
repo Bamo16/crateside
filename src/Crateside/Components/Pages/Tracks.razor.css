@@ -1158,3 +1158,44 @@ a.outline {
 .add-note.bad {
     color: var(--red);
 }
+
+/* Sits under the filter bar rather than in a popover: it is one field and a sentence, and a
+   layer that has to be dismissed would be heavier than what it holds. */
+.add-track {
+    max-width: var(--table-tracks);
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    background: var(--raised);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+}
+
+.add-track label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.add-track label span {
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.add-track input {
+    width: 100%;
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 8px 11px;
+    outline: none;
+}
+
+.add-track input:focus {
+    border-color: rgba(255, 255, 255, 0.4);
+}

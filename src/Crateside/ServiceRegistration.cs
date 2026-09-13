@@ -228,6 +228,11 @@ public static class ServiceRegistration
         ));
 
         services.AddSingleton(_ => new SourceProbe());
+        services.AddSingleton(sp => new TrackAdd(
+            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<CratesidePaths>(),
+            sp.GetRequiredService<SourceProbe>()
+        ));
         services.AddSingleton(sp => new SourceAdd(
             sp.GetRequiredService<QueueSettingsStore>(),
             sp.GetRequiredService<CratesidePaths>(),

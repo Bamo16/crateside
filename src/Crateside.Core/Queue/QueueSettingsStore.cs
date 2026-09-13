@@ -92,6 +92,14 @@ public sealed class QueueSettingsStore
     /// Records the upload to fetch this track from instead of its playlist entry's own. Null or
     /// blank clears it, restoring the entry's video.
     /// </summary>
+    /// <summary>Records that crateside should work a track the playlist does not hold.</summary>
+    public QueueSettings AddByUrl(string videoId) =>
+        Upsert(videoId, track => track with { AddedByUrl = true });
+
+    /// <summary>Drops crateside's own record of a track, which is what removing one means.</summary>
+    public QueueSettings Forget(string videoId) =>
+        Upsert(videoId, _ => new TrackInstruction { VideoId = videoId });
+
     public QueueSettings SetSourceUrl(string videoId, string? url) =>
         Upsert(
             videoId,
@@ -269,8 +277,20 @@ public sealed record TrackInstruction
     [JsonPropertyName("sourceUrl")]
     public string? SourceUrl { get; init; }
 
+    /// <summary>
+    /// crateside was told to work this track by something other than the playlist.
+    /// </summary>
+    /// <remarks>
+    /// The playlist is the inbox (ADR 0010) and this is the second way in, accepted on purpose.
+    /// It is what lets a pasted track reach <see cref="QueueView.Outstanding"/>, which a re-cut
+    /// deliberately never does.
+    /// </remarks>
+    [JsonPropertyName("addedByUrl")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool AddedByUrl { get; init; }
+
     /// <summary>Whether this instruction still carries anything worth storing.</summary>
     [JsonIgnore]
     public bool SaysSomething =>
-        Plan is not null || Name is { Length: > 0 } || SourceUrl is { Length: > 0 };
+        AddedByUrl || Plan is not null || Name is { Length: > 0 } || SourceUrl is { Length: > 0 };
 }

@@ -151,7 +151,16 @@ public sealed record TracksView
                     .OfType<TrackInstruction>()
                     .FirstOrDefault();
 
-            var progress = StageProgress.For(jobs, members.Select(seed => seed.VideoId));
+            // Sources the plan names are included even before their files exist: an added one
+            // carries a video ID of its own, and until it lands nothing else on the row is
+            // holding its download open (ADR 0019).
+            var progress = StageProgress.For(
+                jobs,
+                [
+                    .. members.Select(seed => seed.VideoId),
+                    .. instruction?.Plan?.AddedSources.Select(source => source.VideoId) ?? [],
+                ]
+            );
 
             // The primary's download, since that is the upload the row currently speaks for.
             var acquisition =
@@ -223,6 +232,7 @@ public sealed record TracksView
                 Folder = FolderOf(songs, files),
                 StagedSince = StagedSinceOf(files, finishedRoot),
                 IsLibraryOnly = members.All(seed => seed.IsLibraryOnly),
+                IsAddedByUrl = instruction?.AddedByUrl is true,
             };
         }
     }
