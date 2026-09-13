@@ -100,12 +100,14 @@ the two run types below are named after which of them they produce.
   where its stems belong, what quality to ask for. The thing that replaces a
   hand-written prompt. A work order says what should happen to a track next; it is
   not a record that anything did.
+- **Stem plan** — which files the user wants made for one track: the separator
+  presets to run, and whether the source track is itself a keeper. The user's own
+  statement, stored against the track and derived from nothing. An **instrumental
+  release** is not a mode but a shape of plan — no vocal preset, source kept.
 - **Recipe** — the part of a work order that says what to make: which stems, in
-  what form. Normally nobody chooses one — it is *derived* from what is known
-  about the release, so an **instrumental release** yields a drums-only recipe
-  that keeps the source, and every other track yields the usual pair plus a
-  **warp guide**. A recipe is a plan and never a fact, so it is crateside's alone
-  and is not recorded anywhere keytag reads.
+  what form. A **stem plan** rendered for the separator, plus the **warp guide**,
+  which is always asked for and is never part of the plan. A recipe is crateside's
+  alone and is not recorded anywhere keytag reads.
 - **Evidence run** — the stage that produces the **evidence** for a track:
   acquiring the audio and running the detectors. Deterministic, needs no judgement,
   and contends for nothing scarce.

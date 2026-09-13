@@ -119,3 +119,15 @@ reason it used. What needed correcting was the *reason* written beside the code,
 guide* definition. That file is a glossary of current fact rather than a history, so it wants
 the wording corrected in place rather than a note appended — in the other repo, and not done
 here.
+
+## The fact is no longer recorded — 2026-09-12
+
+**The decision above to record `has_vocals` rather than the plan is reversed by
+[ADR 0018](0018-the-plan-is-the-record-and-the-warp-guide-is-not-part-of-it.md).** Its reasoning —
+that a fact still explains itself when the workflow changes — held while there was one fact and two
+recipes. Once a track can ask for any of nine presets and the source, there is no fact underneath,
+and what the user asked for is the only thing left to keep.
+
+**Everything else here stands**, and ADR 0018 leans on it: *sample* as the role word, *warp guide*
+as a role distinguished by retention, and crateside treating every drums stem as one with no
+override. The warp guide staying out of the plan is that same argument, applied to the picker.
