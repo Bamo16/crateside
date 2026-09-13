@@ -90,3 +90,20 @@ stops forbidding it.
 `stemforge-cli download` writes, and a local file has none. Two files in the library are already
 in that state — `SUPADOPA (Official Instrumental)` and `The Mandalorian` — and they are what the
 problem looks like.
+
+## The kept source is the download stage's too — 2026-09-13
+
+This ADR gave the download stage two kinds of work: the detection source before judging, and an
+added source at any time. It has three. **Copying the separation source into the destination, for
+a plan that keeps it, belongs here as well** — and it did not move when the stage was first split
+out, because `--keep-source` was a flag on `stemforge-cli separate` and the copy had grown up
+inside `SeparationRunner`.
+
+The cost of leaving it there was visible rather than theoretical: pausing separation stopped a file
+copy, and a track whose only outstanding item was its source sat at *judged · in line* waiting for
+a GPU it was never going to reach. **A recipe with no passes now keeps a track out of the
+separation list entirely**, since the separator has nothing to do for it.
+
+The same move took the URL fallback with it. The audio branch reads both work lists, so a re-cut
+track with an empty working set is fetched here rather than by handing the URL to the separator —
+acquisition inside the stage that separates, which is the same confusion one level down.
