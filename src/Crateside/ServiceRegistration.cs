@@ -279,7 +279,8 @@ public static class ServiceRegistration
                     sp.GetRequiredService<JobStore>(),
                     scan.Instructions,
                     sp.GetRequiredService<ResolvedNameStore>().Read(),
-                    sp.GetRequiredService<WorkingSet>().Acquisitions()
+                    sp.GetRequiredService<WorkingSet>().Acquisitions(),
+                    await sp.GetRequiredService<PresetCatalogReader>().ReadAsync(cancellationToken)
                 );
 
                 return view with

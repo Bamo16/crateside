@@ -353,93 +353,84 @@
                         </div>
                     </div>
 
-                    @if (row.CanChangePlan)
-                    {
-                        <div class="stems">
-                            <div class="panel-head">Will separate into</div>
-
-                            <div class="stem-heads">
-                                <span>Stem</span>
-                                <span>Status</span>
-                                <span></span>
-                                <span></span>
-                            </div>
-
-                            @foreach (var preset in SeparationRecipe.Standard.Presets)
-                            {
-                                var kept = row.Recipe.Presets.Contains(preset, StringComparer.Ordinal);
-
-                                <div class="stem @(kept ? null : "skipped")">
-                                    <span class="stem-label mono">@preset</span>
-                                    <span class="mono stem-tag">@(kept ? "not yet" : "skipped")</span>
-                                    <span></span>
-                                    <span class="stem-note">
-                                        @(kept ? null : "instrumental source — no vocal to lift")
-                                    </span>
-                                </div>
-                            }
-
-                            @if (row.Recipe.KeepSource)
-                            {
-                                <div class="stem">
-                                    <span class="stem-label mono">source</span>
-                                    <span class="mono stem-tag">not yet</span>
-                                    <span></span>
-                                    <span class="stem-note">the release itself, kept whole</span>
-                                </div>
-                            }
-
-                            @if (row.Recipe.ExtractDrums)
-                            {
-                                <div class="stem guide">
-                                    <span class="stem-label mono">
-                                        drums <span class="kind">warp guide</span>
-                                    </span>
-                                    <span class="mono stem-tag">not yet</span>
-                                    <span></span>
-                                    <span class="stem-note">
-                                        for placing markers; deleted after warping
-                                    </span>
-                                </div>
-                            }
-
-                            <div class="release">
-                                <span class="release-label">Release</span>
-                                <select value="@Chosen(row.IsInstrumentalRelease)"
-                                        @onchange="e => SetInstrumental(row, e)">
-                                    <option value="false">has vocals</option>
-                                    <option value="true">no vocals</option>
-                                </select>
-                                <span class="release-hint">the stems follow from this</span>
-                            </div>
-                        </div>
+                    @{
+                        var picker = PickerFor(row);
+                        var picking = _picking == row.VideoId;
+                        var ticking = row.CanChangePlan || picking;
                     }
-                    else if (row.Samples.Count > 0 || row.HasWarpGuide)
-                    {
-                        var pending = PendingFor(row);
 
+                    @if (ticking || row.Samples.Count > 0 || row.HasWarpGuide)
+                    {
                         <div class="stems">
                             <div class="panel-head">
-                                @StemsHeading(row)@if (pending is not null)
+                                @(row.CanChangePlan ? "Will be cut into" : StemsHeading(row))@if (picking && !picker.IsAdditive)
                                 {
                                     <span class="pending"> · re-cut pending</span>
                                 }
                             </div>
 
-                            <div class="stem-heads">
-                                <span>Sample</span>
-                                <span>Ableton key</span>
-                                <span>Where it is</span>
-                                <span></span>
-                            </div>
-
-                            @foreach (var sample in row.Samples)
+                            @if (ticking)
                             {
-                                <div class="stem @(pending is null ? null : "going")">
-                                    <span class="stem-label">@sample.Label</span>
-                                    <span class="mono stem-tag @TagTone(sample)">@Tag(sample)</span>
-                                    @if (pending is null)
+                                <div class="stem-heads picking @(row.CanChangePlan ? "planning" : null)">
+                                    <span></span>
+                                    <span>Sample</span>
+                                    @if (!row.CanChangePlan)
                                     {
+                                        <span>Ableton key</span>
+                                        <span>Where it is</span>
+                                    }
+                                    <span></span>
+                                </div>
+
+                                @foreach (var band in picker.Bands)
+                                {
+                                    <div class="stem-band">@band.Label</div>
+
+                                    @foreach (var line in band.Lines)
+                                    {
+                                        <div class="stem picking @(row.CanChangePlan ? "planning" : null) @LineTone(line)"
+                                             @onclick="() => Toggle(row, line)">
+                                            <span class="tick @TickTone(line, picker)">@TickMark(line)</span>
+
+                                            <span class="stem-label">
+                                                @line.Label
+                                                @if (line.Kind is StemKind.Source)
+                                                {
+                                                    <span class="kind">source track</span>
+                                                }
+                                                @if (line.Kind is StemKind.WarpGuide)
+                                                {
+                                                    <span class="kind">warp guide</span>
+                                                }
+                                            </span>
+
+                                            @if (!row.CanChangePlan)
+                                            {
+                                                <span class="mono stem-tag @(line.AbletonKey is null ? "dim" : null)">
+                                                    @Tag(line, row)
+                                                </span>
+                                                <span class="mono stem-where @WhereTone(line)">@Where(line)</span>
+                                            }
+
+                                            <span class="stem-note">@Note(line, row)</span>
+                                        </div>
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                <div class="stem-heads">
+                                    <span>Sample</span>
+                                    <span>Ableton key</span>
+                                    <span>Where it is</span>
+                                    <span></span>
+                                </div>
+
+                                @foreach (var sample in row.Samples)
+                                {
+                                    <div class="stem">
+                                        <span class="stem-label">@sample.Label</span>
+                                        <span class="mono stem-tag @TagTone(sample)">@Tag(sample)</span>
                                         <span class="mono stem-where @(sample.IsInLibrary ? "good" : null)">
                                             @(sample.IsInLibrary ? "Mashup Samples" : "Sample Staging")
                                         </span>
@@ -454,158 +445,105 @@
                                                 </span>
                                             }
                                         </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="mono stem-where gone">removed</span>
-                                        <span class="stem-note">deleted from Sample Staging</span>
-                                    }
-                                </div>
-                            }
+                                    </div>
+                                }
 
-                            @if (row.HasWarpGuide)
-                            {
-                                <div class="stem guide">
-                                    <span class="stem-label">
-                                        Drums <span class="kind">warp guide</span>
-                                    </span>
-                                    <span class="mono stem-tag dim">—</span>
-                                    @if (pending is null)
-                                    {
+                                @if (row.HasWarpGuide)
+                                {
+                                    <div class="stem guide">
+                                        <span class="stem-label">
+                                            Drums <span class="kind">warp guide</span>
+                                        </span>
+                                        <span class="mono stem-tag dim">—</span>
                                         <span class="mono stem-where">Sample Staging</span>
                                         <span class="stem-note">
                                             for placing markers; deleted after warping
                                         </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="mono stem-where gone">removed</span>
-                                        <span class="stem-note">re-made below</span>
-                                    }
-                                </div>
-                            }
-
-                            @if (pending is { } plan)
-                            {
-                                var first = true;
-
-                                foreach (var preset in plan.Recipe.Presets)
-                                {
-                                    <div class="stem coming">
-                                        <span class="stem-label mono">@preset</span>
-                                        <span class="mono stem-tag">@(Spell(row.Key) ?? "—")</span>
-                                        <span class="mono stem-where new">new</span>
-                                        <span class="stem-note">
-                                            @(first ? "tagged from the existing verdict" : null)
-                                        </span>
-                                    </div>
-
-                                    first = false;
-                                }
-
-                                if (plan.Recipe.KeepSource)
-                                {
-                                    <div class="stem coming">
-                                        <span class="stem-label mono">source</span>
-                                        <span class="mono stem-tag">@(Spell(row.Key) ?? "—")</span>
-                                        <span class="mono stem-where new">new</span>
-                                        <span class="stem-note">the release itself, kept whole</span>
                                     </div>
                                 }
 
-                                if (plan.Recipe.ExtractDrums)
+                                @if (picker.IsLocked)
                                 {
-                                    <div class="stem coming guide">
-                                        <span class="stem-label mono">
-                                            drums <span class="kind">warp guide</span>
-                                        </span>
-                                        <span class="mono stem-tag">@(Spell(row.Key) ?? "—")</span>
-                                        <span class="mono stem-where new">new</span>
-                                        <span class="stem-note">
-                                            for placing markers; deleted after warping
+                                    <div class="opener locked">
+                                        <span class="mono">·</span>
+                                        <span>Change what is cut</span>
+                                        <span class="opener-hint">
+                                            @LockedHint(row)
                                         </span>
                                     </div>
                                 }
-                            }
-
-                            @if (row.Samples.Any(sample => sample.IsInLibrary))
-                            {
-                                <div class="release">
-                                    <span class="release-label">Release</span>
-                                    <span class="locked">@ReleaseWord(row.IsInstrumentalRelease)</span>
-                                    <span class="release-hint">
-                                        @("file".ToQuantity(row.Samples.Count(s => s.IsInLibrary)))
-                                        in Mashup Samples. Move them back to Sample Staging to
-                                        change this.
-                                    </span>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="release">
-                                    <span class="release-label">Release</span>
-                                    <select value="@Chosen(pending is null ? row.IsInstrumentalRelease : !row.IsInstrumentalRelease)"
-                                            class="@(pending is null ? null : "changed")"
-                                            @onchange="e => ProposeRecut(row, e)">
-                                        <option value="false">has vocals</option>
-                                        <option value="true">no vocals</option>
-                                    </select>
-                                    @if (pending is null)
-                                    {
-                                        <span class="release-hint">
-                                            the stems follow from this · changing it re-cuts
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="release-hint">
-                                            was <strong>@ReleaseWord(row.IsInstrumentalRelease)</strong>
-                                        </span>
-                                    }
-                                </div>
+                                else
+                                {
+                                    <button class="opener" @onclick="() => StartPicking(row)" disabled="@_working">
+                                        <span class="mono">+</span>
+                                        <span>Change what is cut</span>
+                                        <span class="opener-hint">@OpenerHint(picker)</span>
+                                    </button>
+                                }
                             }
                         </div>
                     }
 
                     <div class="side">
-                        @if (PendingFor(row) is { } confirm)
+                        @if (picking && _plan is { } confirm)
                         {
-                            <p class="warning">
-                                @if (confirm.Refusal is { } refusal)
-                                {
-                                    @refusal
-                                }
-                                else
-                                {
-                                    <text>
-                                        Re-cutting removes
-                                        @("file".ToQuantity(confirm.Removing.Count))
-                                        from Sample Staging.
-                                    </text>
-                                }
-                            </p>
+                            @if (!picker.ChangesAnything)
+                            {
+                                <p class="what-next">Tick what this track should have.</p>
 
-                            <p class="detail">
-                                Anything you have done to them in Ableton is lost.
-                                @if (row.Key is { } key)
-                                {
-                                    <text>The key stays @Spell(key) — </text>
-                                }
-                                detection does not run again, so no quota is spent.
-                                @confirm.AudioDetail About
-                                @confirm.Recipe.Estimate.Humanize() on the GPU.
-                            </p>
+                                <p class="detail">
+                                    A preset already on disk stays where it is. Nothing happens
+                                    until you confirm.
+                                </p>
+                            }
+                            else if (confirm.Refusal is { } refusal)
+                            {
+                                <p class="warning">@refusal</p>
+                            }
+                            else if (picker.IsAdditive)
+                            {
+                                <p class="adding">
+                                    @("more file".ToQuantity(picker.Adding)). Nothing removed.
+                                </p>
+
+                                <p class="detail">
+                                    @Cost(confirm.Recipe)
+                                    @if (row.Key is { } key)
+                                    {
+                                        <text>Tagged @Spell(key) from the verdict already in hand, so no quota is spent. </text>
+                                    }
+                                    @confirm.AudioDetail
+                                    @Untouched(picker)
+                                </p>
+                            }
+                            else
+                            {
+                                <p class="warning">
+                                    Removes @("file".ToQuantity(picker.Removing)) from Sample Staging.
+                                    @Balance(picker)
+                                </p>
+
+                                <p class="detail">
+                                    Anything you have done to @(picker.Removing is 1 ? "it" : "them")
+                                    in Ableton is lost.
+                                    @Cost(confirm.Recipe)
+                                    @if (row.Key is { } key)
+                                    {
+                                        <text>The key stays @Spell(key) — detection does not run again, so no quota is spent. </text>
+                                    }
+                                    @(confirm.MakesSomething ? confirm.AudioDetail : null)
+                                </p>
+                            }
 
                             <div class="actions">
-                                @if (confirm.IsPossible)
+                                @if (confirm.IsPossible && picker.ChangesAnything)
                                 {
-                                    <button class="danger" @onclick="() => ConfirmRecut(row)" disabled="@_working">
-                                        @(_working
-                                            ? "Re-cutting…"
-                                            : $"Re-cut · remove {"file".ToQuantity(confirm.Removing.Count)}")
+                                    <button class="@(picker.IsAdditive ? "primary" : "danger")"
+                                            @onclick="() => ConfirmRecut(row)" disabled="@_working">
+                                        @(_working ? "Cutting…" : CutLabel(picker))
                                     </button>
                                 }
-                                <button class="outline" @onclick="CancelRecut" disabled="@_working">
+                                <button class="outline" @onclick="CancelPicking" disabled="@_working">
                                     Keep as is
                                 </button>
                             </div>
@@ -613,7 +551,14 @@
                         else
                         {
                         <p class="what-next @NextTone(row)">@row.Next</p>
-                        <p class="detail">@row.Detail</p>
+                        <p class="detail">
+                            @row.Detail
+                            @if (row.CanChangePlan)
+                            {
+                                @Cost(row.Recipe)
+                                <text>Changes apply now — nothing has been made yet.</text>
+                            }
+                        </p>
 
                         <div class="actions">
                             @if (row.Folder is not null)
@@ -698,7 +643,12 @@
     private bool _syncing;
     private bool _working;
 
-    private string? _recutting;
+    /// <summary>The row whose picker is open, or null when none is.</summary>
+    private string? _picking;
+
+    /// <summary>The plan being ticked, which is not recorded until the confirm.</summary>
+    private StemPlan _wanted = StemPlan.Default;
+
     private RecutPlan? _plan;
 
     /// <summary>What the separator can make. Read once; empty when it could not be asked.</summary>
@@ -848,7 +798,7 @@
         _expanded = _expanded == row.VideoId ? null : row.VideoId;
         _problem = null;
 
-        CancelRecut();
+        CancelPicking();
         CancelRename();
     }
 
@@ -1030,32 +980,59 @@
             _ => "the video ID",
         };
 
-    private RecutPlan? PendingFor(TrackRow row) =>
-        _recutting == row.VideoId ? _plan : null;
+    /// <summary>
+    /// The track's files as lines to tick, against the plan being edited or its own.
+    /// </summary>
+    private StemPicker PickerFor(TrackRow row) =>
+        StemPicker.For(row, _presets, _picking == row.VideoId ? _wanted : null);
 
-    /// <summary>The other of the two plans the Release select can express.</summary>
-    /// <remarks>Interim: the picker offers all of them, and this goes with the select (#22).</remarks>
-    private static StemPlan Flipped(TrackRow row) =>
-        row.IsInstrumentalRelease ? StemPlan.Default : StemPlan.InstrumentalRelease;
-
-    private void ProposeRecut(TrackRow row, ChangeEventArgs e)
+    /// <summary>Opens the picker on the plan the track already has, so nothing is a change yet.</summary>
+    private void StartPicking(TrackRow row)
     {
         _problem = null;
+        _picking = row.VideoId;
+        _wanted = row.Plan;
+        _plan = Recut.PlanFor(row.VideoId, _wanted, _presets);
 
-        if (Wanted(e) == row.IsInstrumentalRelease)
+        CancelRename();
+        CancelSwap();
+    }
+
+    private void CancelPicking()
+    {
+        _picking = null;
+        _wanted = StemPlan.Default;
+        _plan = null;
+    }
+
+    /// <summary>
+    /// Ticks one line.
+    /// </summary>
+    /// <remarks>
+    /// Before separation the tick <em>is</em> the change and is recorded at once; after it, the
+    /// tick only proposes, and the confirm in the side column is what spends anything.
+    /// </remarks>
+    private async Task Toggle(TrackRow row, StemChoice line)
+    {
+        if (line.IsPinned || PickerFor(row).IsLocked)
+            return;
+
+        var wanted = line.Kind is StemKind.Source
+            ? (_picking == row.VideoId ? _wanted : row.Plan).TogglingSource()
+            : (_picking == row.VideoId ? _wanted : row.Plan).Toggling(line.PresetId!);
+
+        if (row.CanChangePlan)
         {
-            CancelRecut();
+            // Nothing has been made, so there is nothing to confirm and nothing to lose.
+            Playlist.SetPlan(row.VideoId, wanted);
+
+            await Source.RefreshAsync(_circuit.Token);
+
             return;
         }
 
-        _recutting = row.VideoId;
-        _plan = Recut.PlanFor(row.VideoId, Flipped(row), _presets);
-    }
-
-    private void CancelRecut()
-    {
-        _recutting = null;
-        _plan = null;
+        _wanted = wanted;
+        _plan = Recut.PlanFor(row.VideoId, wanted, _presets);
     }
 
     private async Task ConfirmRecut(TrackRow row)
@@ -1065,12 +1042,12 @@
 
         try
         {
-            var outcome = Recut.Apply(row.VideoId, Flipped(row), _presets);
+            var outcome = Recut.Apply(row.VideoId, _wanted, _presets);
 
             _problem = outcome.Problem;
 
             if (outcome.Succeeded)
-                CancelRecut();
+                CancelPicking();
 
             // A worker part-way through its two-minute idle wait would not look again.
             Separation.Wake();
@@ -1083,15 +1060,130 @@
         }
     }
 
-    // bool.ToString() is "True" and the option values are "true", so the select matches neither.
-    private static string Chosen(bool isInstrumentalRelease) =>
-        isInstrumentalRelease ? "true" : "false";
+    /// <summary>What the opener says it would let you reach, without opening it.</summary>
+    private static string OpenerHint(StemPicker picker)
+    {
+        var unmade = picker.Lines.Count(line =>
+            line is { State: StemState.NotMade, Kind: StemKind.Preset }
+        );
 
-    private static bool Wanted(ChangeEventArgs e) =>
-        bool.TryParse(e.Value?.ToString(), out var wanted) && wanted;
+        return unmade is 0
+            ? "the source track"
+            : $"{"more preset".ToQuantity(unmade)}, the source track";
+    }
 
-    private static string ReleaseWord(bool isInstrumentalRelease) =>
-        isInstrumentalRelease ? "no vocals" : "has vocals";
+    private static string LockedHint(TrackRow row) =>
+        $"{"file".ToQuantity(row.Samples.Count(sample => sample.IsInLibrary))} in Mashup Samples. "
+        + "Move them back to Sample Staging first.";
+
+    /// <summary>The mark in a line's first cell: a tick, an empty box, or a pinned dot.</summary>
+    private static string TickMark(StemChoice line) =>
+        line switch
+        {
+            { Kind: StemKind.WarpGuide } => "●",
+            { Kind: StemKind.Unrecognised } => "✓",
+            { IsWanted: true } => "✓",
+            _ => string.Empty,
+        };
+
+    private static string? TickTone(StemChoice line, StemPicker picker) =>
+        (line, picker.IsLocked) switch
+        {
+            ({ IsPinned: true }, _) => "pinned",
+            (_, true) => "locked",
+            ({ State: StemState.Coming }, _) => "coming",
+            ({ State: StemState.Going }, _) => "going",
+            ({ IsWanted: true }, _) => "on",
+            _ => null,
+        };
+
+    private static string? LineTone(StemChoice line) =>
+        line switch
+        {
+            { Kind: StemKind.WarpGuide } => "guide",
+            { Kind: StemKind.Unrecognised } => "unrecognised",
+            { State: StemState.Coming } => "coming",
+            { State: StemState.Going } => "going",
+            { State: StemState.NotMade } => "unmade",
+            _ => null,
+        };
+
+    /// <summary>The key cell: what Ableton holds, or what the file would be tagged with.</summary>
+    /// <remarks>
+    /// A file in <c>Mashup Samples</c> reads <c>—</c> rather than untagged: crateside does not
+    /// look there, so a missing key means nobody asked (ADR 0003).
+    /// </remarks>
+    private static string Tag(StemChoice line, TrackRow row) =>
+        (line, row.Key) switch
+        {
+            ({ AbletonKey: { } tagged }, _) => Spell(tagged) ?? tagged,
+            ({ IsInLibrary: true }, _) => "—",
+            ({ State: StemState.Coming }, { } key) => Spell(key) ?? key,
+            ({ State: StemState.Kept }, _) => "untagged",
+            _ => "—",
+        };
+
+    private static string Where(StemChoice line) =>
+        line switch
+        {
+            { State: StemState.Coming } => "new",
+            { State: StemState.Going } => "removed",
+            { State: StemState.NotMade, Kind: StemKind.Source } => "not kept",
+            { State: StemState.NotMade } => "not made",
+            { IsInLibrary: true } => "Mashup Samples",
+            _ => "Sample Staging",
+        };
+
+    private static string? WhereTone(StemChoice line) =>
+        line switch
+        {
+            { State: StemState.Coming } => "new",
+            { State: StemState.Going } => "gone",
+            { State: StemState.NotMade } => "dim",
+            { IsInLibrary: true } => "good",
+            _ => null,
+        };
+
+    private static string? Note(StemChoice line, TrackRow row) =>
+        line switch
+        {
+            { State: StemState.Going } => "deleted from Sample Staging, with its .asd",
+            { Kind: StemKind.WarpGuide, IsOnDisk: true } => "already cut — no new guide is made",
+            { Kind: StemKind.WarpGuide, IsWanted: true } => "cut alongside the new files",
+            { Kind: StemKind.WarpGuide } => "nothing is being made, so no guide is needed",
+            { Kind: StemKind.Unrecognised } => line.Description,
+            { State: StemState.Kept } when row.HasSeveralUploads => string.Join(
+                " · ",
+                line.Uploads
+            ),
+            { State: StemState.Kept } => "kept",
+            _ => line.Description,
+        };
+
+    /// <summary>What the button does, named by what it costs.</summary>
+    private static string CutLabel(StemPicker picker) =>
+        picker switch
+        {
+            { IsAdditive: true } => $"Cut {"more file".ToQuantity(picker.Adding)}",
+            { Adding: 0 } => $"Remove {"file".ToQuantity(picker.Removing)}",
+            _ => $"Cut {picker.Adding} · remove {picker.Removing}",
+        };
+
+    /// <summary>How many of the ticked lines survive untouched.</summary>
+    private static string Balance(StemPicker picker) =>
+        $"{picker.Adding} new, {picker.Keeping} kept.";
+
+    private static string Untouched(StemPicker picker) =>
+        picker.Keeping is 0
+            ? string.Empty
+            : $"The {"file".ToQuantity(picker.Keeping)} already in Sample Staging "
+                + $"{(picker.Keeping is 1 ? "is" : "are")} untouched.";
+
+    /// <summary>What the GPU is being asked for, or nothing where it is not being asked.</summary>
+    private static string Cost(SeparationRecipe recipe) =>
+        recipe.Passes is 0
+            ? string.Empty
+            : $"{"pass".ToQuantity(recipe.Passes)} on the GPU, about {recipe.Estimate.Humanize()}.";
 
     private void OpenFolder(TrackRow row)
     {
@@ -1122,16 +1214,6 @@
     private async Task ClearBump()
     {
         Playlist.ClearBump();
-
-        await Source.RefreshAsync(_circuit.Token);
-    }
-
-    private async Task SetInstrumental(TrackRow row, ChangeEventArgs e)
-    {
-        Playlist.SetPlan(
-            row.VideoId,
-            Wanted(e) ? StemPlan.InstrumentalRelease : StemPlan.Default
-        );
 
         await Source.RefreshAsync(_circuit.Token);
     }

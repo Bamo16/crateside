@@ -45,6 +45,23 @@ public sealed record StemPlan
     /// </summary>
     public bool IsEmpty => Presets.Count is 0 && !KeepSource;
 
+    /// <summary>The same plan with one preset ticked or unticked.</summary>
+    public StemPlan Toggling(string presetId) =>
+        this with
+        {
+            Presets = Presets.Contains(presetId, StringComparer.OrdinalIgnoreCase)
+                ?
+                [
+                    .. Presets.Where(preset =>
+                        !preset.Equals(presetId, StringComparison.OrdinalIgnoreCase)
+                    ),
+                ]
+                : [.. Presets, presetId],
+        };
+
+    /// <summary>The same plan with the source track kept, or not.</summary>
+    public StemPlan TogglingSource() => this with { KeepSource = !KeepSource };
+
     /// <summary>Whether two plans ask for the same files, whatever order they were built in.</summary>
     /// <remarks>
     /// The record's own equality is sequence-sensitive on <see cref="Presets"/>, which would make

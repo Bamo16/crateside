@@ -370,8 +370,21 @@ public enum TrackNameSource
 /// </summary>
 public sealed record TrackSample
 {
-    /// <summary>The StemForge preset, or <c>source</c> for a kept instrumental release.</summary>
+    /// <summary>What the separator called this file — <c>Vocal - Full</c> — or <c>source</c>.</summary>
     public required string Label { get; init; }
+
+    /// <summary>Whether it is a stem, the source track kept whole, or neither any more.</summary>
+    public StemKind Kind { get; init; }
+
+    /// <summary>
+    /// The preset the plan would ask for to make this file again, or null when it cannot ask.
+    /// </summary>
+    /// <remarks>
+    /// Not read off <see cref="Label"/>: 68 files in this library carry no preset in their
+    /// provenance and are named only by the separator's display name, and five kept sources have
+    /// a parenthesised title that reads like one.
+    /// </remarks>
+    public string? PresetId { get; init; }
 
     /// <summary>
     /// The key Ableton holds on this file, or null when it holds none.

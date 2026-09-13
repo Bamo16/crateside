@@ -52,10 +52,12 @@ public sealed record TracksView
         JobStore jobs,
         IReadOnlyDictionary<string, TrackInstruction> instructions,
         IReadOnlyDictionary<string, ResolvedName>? resolvedNames = null,
-        IReadOnlyDictionary<string, Acquisition>? acquisitions = null
+        IReadOnlyDictionary<string, Acquisition>? acquisitions = null,
+        PresetCatalog? presets = null
     )
     {
         var resolved = resolvedNames ?? new Dictionary<string, ResolvedName>();
+        var catalog = presets ?? PresetCatalog.Empty;
         var acquired = acquisitions ?? new Dictionary<string, Acquisition>();
 
         var parked = VideoIdsOf(view.AwaitingKey);
@@ -209,7 +211,8 @@ public sealed record TracksView
                             staged.GetValueOrDefault(seed.VideoId),
                             onDisk.GetValueOrDefault(seed.VideoId) ?? [],
                             finishedRoot,
-                            seed.VideoId
+                            seed.VideoId,
+                            catalog
                         )
                     ),
                 ],
@@ -322,27 +325,41 @@ public sealed record TracksView
         StagingSong? staged,
         IReadOnlyList<StemOnDisk> onDisk,
         string finishedRoot,
-        string sourceVideoId
+        string sourceVideoId,
+        PresetCatalog catalog
     ) =>
         [
-            .. staged?.Samples.Select(sample => new TrackSample
-            {
-                Label = sample.Label,
-                AbletonKey = sample.AbletonKey,
-                SourceVideoId = sourceVideoId,
-            }) ?? [],
+            .. staged?.Samples.Select(sample =>
+                Sample(StemOnDisk.Of(sample), catalog, sourceVideoId) with
+                {
+                    AbletonKey = sample.AbletonKey,
+                }
+            )
+                ?? [],
             .. onDisk
                 .Where(file =>
                     file.Root.Equals(finishedRoot, StringComparison.OrdinalIgnoreCase)
                     && !StagingStem.IsWarpGuidePreset(file.Preset)
                 )
-                .Select(file => new TrackSample
-                {
-                    Label = file.Preset ?? "source",
-                    IsInLibrary = true,
-                    SourceVideoId = sourceVideoId,
-                }),
+                .Select(file => Sample(file, catalog, sourceVideoId) with { IsInLibrary = true }),
         ];
+
+    /// <summary>
+    /// One file, said in both vocabularies: what the separator called it, and what the plan would
+    /// ask for to make it again.
+    /// </summary>
+    private static TrackSample Sample(StemOnDisk file, PresetCatalog catalog, string sourceVideoId)
+    {
+        var classified = ClassifiedStem.Of(file, catalog);
+
+        return new TrackSample
+        {
+            Label = classified.DisplayName ?? "source",
+            Kind = classified.Kind,
+            PresetId = classified.PresetId,
+            SourceVideoId = sourceVideoId,
+        };
+    }
 
     /// <summary>
     /// The folder the track's files are in: staging while anything is still there, else wherever

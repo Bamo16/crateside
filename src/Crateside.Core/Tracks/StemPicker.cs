@@ -1,0 +1,237 @@
+using Crateside.Core.Queue;
+using Humanizer;
+
+namespace Crateside.Core.Tracks;
+
+/// <summary>
+/// Every file a track could have, and whether the user wants it.
+/// </summary>
+/// <remarks>
+/// The stem list <em>is</em> the picker: a line is either on disk or not, and the tick says
+/// whether it is wanted. The two cross, which is the whole of what the panel draws — a wanted
+/// line with no file is coming, an unwanted line with a file is going, and the other two are
+/// kept and never made.
+/// </remarks>
+public sealed record StemPicker
+{
+    public required IReadOnlyList<StemBand> Bands { get; init; }
+
+    /// <summary>What the user has ticked, which is what a confirm would record.</summary>
+    public required StemPlan Wanted { get; init; }
+
+    /// <summary>
+    /// A file has left for <c>Mashup Samples</c>, so the plan is no longer crateside's to change
+    /// (ADR 0003).
+    /// </summary>
+    public bool IsLocked { get; init; }
+
+    public IEnumerable<StemChoice> Lines => Bands.SelectMany(band => band.Lines);
+
+    /// <summary>Samples to be made. The warp guide is not one — it is not kept.</summary>
+    public int Adding => Lines.Count(line => line is { State: StemState.Coming, IsSample: true });
+
+    /// <summary>Staged files the plan has stopped asking for.</summary>
+    public int Removing => Lines.Count(line => line.State is StemState.Going);
+
+    /// <summary>Files already made that the plan still wants, and that nothing will touch.</summary>
+    public int Keeping => Lines.Count(line => line is { State: StemState.Kept, IsSample: true });
+
+    /// <summary>Nothing is lost: every file already made stays where it is.</summary>
+    public bool IsAdditive => Removing is 0;
+
+    /// <summary>Whether pressing confirm would do anything at all.</summary>
+    public bool ChangesAnything => Adding > 0 || Removing > 0;
+
+    /// <summary>
+    /// The files a track could have, in the separator's own vocabulary.
+    /// </summary>
+    /// <param name="wanted">
+    /// The plan being edited, which is the row's own until the user starts ticking.
+    /// </param>
+    public static StemPicker For(TrackRow row, PresetCatalog catalog, StemPlan? wanted = null)
+    {
+        var plan = wanted ?? row.Plan;
+
+        var byPreset = row
+            .Samples.Where(sample => sample.PresetId is not null)
+            .ToLookup(sample => sample.PresetId!, StringComparer.OrdinalIgnoreCase);
+
+        var sources = row.Samples.Where(sample => sample.Kind is StemKind.Source).ToArray();
+
+        List<StemBand> bands =
+        [
+            .. catalog
+                .Presets.GroupBy(preset => preset.Category, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new StemBand(
+                    group.Key.Singularize(inputIsKnownToBePlural: false),
+                    [
+                        .. group.Select(preset => new StemChoice
+                        {
+                            Label = preset.DisplayName,
+                            Description = preset.Description,
+                            PresetId = preset.Id,
+                            Kind = StemKind.Preset,
+                            IsWanted = plan.Presets.Contains(
+                                preset.Id,
+                                StringComparer.OrdinalIgnoreCase
+                            ),
+                            Files = [.. byPreset[preset.Id]],
+                        }),
+                    ]
+                )),
+            new StemBand(
+                "Whole track",
+                [
+                    new StemChoice
+                    {
+                        Label = $"{row.Title} (Source)",
+                        Description = "copied, not separated · costs nothing",
+                        Kind = StemKind.Source,
+                        IsWanted = plan.KeepSource,
+                        Files = sources,
+                    },
+                ]
+            ),
+        ];
+
+        // Read off the lines rather than the recipe, so the panel and the separator cannot
+        // disagree about whether a guide is being cut.
+        var making = bands
+            .SelectMany(band => band.Lines)
+            .Any(line => line.State is StemState.Coming);
+
+        bands.Add(
+            new StemBand(
+                "Warp guide",
+                [
+                    new StemChoice
+                    {
+                        Label = "Drums",
+                        Description = "always made · delete it once the track is warped",
+                        Kind = StemKind.WarpGuide,
+                        IsWanted = row.HasWarpGuide || making,
+                        Files = row.HasWarpGuide ? [Guide] : [],
+                    },
+                ]
+            )
+        );
+
+        if (
+            row.Samples.Where(sample => sample.Kind is StemKind.Unrecognised).ToArray() is
+            { Length: > 0 } orphaned
+        )
+            bands.Add(
+                new StemBand(
+                    "No longer offered",
+                    [
+                        .. orphaned.Select(sample => new StemChoice
+                        {
+                            Label = sample.Label,
+                            Description =
+                                "the separator no longer offers this preset, so it cannot be cut again",
+                            Kind = StemKind.Unrecognised,
+                            IsWanted = true,
+                            Files = [sample],
+                        }),
+                    ]
+                )
+            );
+
+        return new StemPicker
+        {
+            Bands = [.. bands.Where(band => band.Lines.Count > 0)],
+            Wanted = plan,
+            IsLocked = row.Samples.Any(sample => sample.IsInLibrary),
+        };
+    }
+
+    /// <summary>Stands in for the guide's file, which the row counts but does not list.</summary>
+    /// <remarks>
+    /// <see cref="TrackRow.Samples"/> excludes warp guides on purpose — they are used up rather
+    /// than kept — so the only thing the row can say about one is that it is there.
+    /// </remarks>
+    private static readonly TrackSample Guide = new()
+    {
+        Label = "Drums",
+        Kind = StemKind.WarpGuide,
+    };
+}
+
+/// <summary>A run of lines under one heading — the separator's categories, then the rest.</summary>
+public sealed record StemBand(string Label, IReadOnlyList<StemChoice> Lines);
+
+/// <summary>One file a track could have, and whether it does.</summary>
+public sealed record StemChoice
+{
+    /// <summary>What the separator calls it, which is what the filename and Ableton show.</summary>
+    public required string Label { get; init; }
+
+    public required StemKind Kind { get; init; }
+
+    /// <summary>The preset to tick, or null for a line that is not chosen by name.</summary>
+    public string? PresetId { get; init; }
+
+    public required bool IsWanted { get; init; }
+
+    /// <summary>
+    /// The files on disk for this line. More than one where a source swap left the old upload's
+    /// samples behind under the same preset (ADR 0014).
+    /// </summary>
+    public required IReadOnlyList<TrackSample> Files { get; init; }
+
+    /// <summary>What the preset is for, in the separator's words. Null for anything else.</summary>
+    public string? Description { get; init; }
+
+    public bool IsOnDisk => Files.Count > 0;
+
+    /// <summary>A file meant to be kept, as opposed to a guide that is used up (ADR 0004).</summary>
+    public bool IsSample => Kind is StemKind.Preset or StemKind.Source;
+
+    /// <summary>
+    /// Whether ticking it is the user's to do.
+    /// </summary>
+    /// <remarks>
+    /// The guide is always made and never chosen; a preset the separator has dropped can be seen
+    /// but never asked for again.
+    /// </remarks>
+    public bool IsPinned => !IsSample;
+
+    public bool IsInLibrary => Files.Any(file => file.IsInLibrary);
+
+    public string? AbletonKey =>
+        Files.Select(file => file.AbletonKey).FirstOrDefault(key => key is not null);
+
+    /// <summary>The uploads this line's files were cut from, where they differ (ADR 0014).</summary>
+    public IReadOnlyList<string> Uploads =>
+        [
+            .. Files
+                .Select(file => file.SourceVideoId)
+                .OfType<string>()
+                .Distinct(StringComparer.Ordinal),
+        ];
+
+    public StemState State =>
+        (IsOnDisk, IsWanted) switch
+        {
+            (true, true) => StemState.Kept,
+            (false, true) => StemState.Coming,
+            (true, false) => StemState.Going,
+            _ => StemState.NotMade,
+        };
+}
+
+/// <summary>Where a line stands between what is on disk and what is ticked.</summary>
+public enum StemState
+{
+    /// <summary>Made already, still wanted. Nothing touches it.</summary>
+    Kept,
+
+    /// <summary>Wanted and not made. What a cut would produce.</summary>
+    Coming,
+
+    /// <summary>Made and no longer wanted. What a cut would delete.</summary>
+    Going,
+
+    /// <summary>Neither. The ordinary state of most of the catalog.</summary>
+    NotMade,
+}

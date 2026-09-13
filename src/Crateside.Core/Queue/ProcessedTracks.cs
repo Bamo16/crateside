@@ -144,4 +144,20 @@ public sealed record StemOnDisk
     /// marks arrival in the folder (ADR 0008).
     /// </remarks>
     public DateTimeOffset? CreatedAt { get; init; }
+
+    /// <summary>
+    /// A staged file as the scanner would have found it, so one classifier answers for both
+    /// readers.
+    /// </summary>
+    /// <remarks>
+    /// A staged file's root is the folder it is in; only a scan across several roots has to be
+    /// told which one it was looking at.
+    /// </remarks>
+    public static StemOnDisk Of(StagingStem stem) =>
+        new()
+        {
+            Path = stem.Path,
+            Root = System.IO.Path.GetDirectoryName(stem.Path) ?? string.Empty,
+            Preset = stem.Preset,
+        };
 }

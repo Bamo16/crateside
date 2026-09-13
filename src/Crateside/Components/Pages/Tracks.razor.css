@@ -744,12 +744,6 @@
     color: var(--teal);
 }
 
-.stem.skipped {
-    background: transparent;
-    opacity: 0.45;
-    text-decoration: line-through;
-}
-
 .stem-heads {
     align-items: center;
     gap: 14px;
@@ -821,55 +815,145 @@
     color: var(--warn);
 }
 
-/* The one control over what gets separated. A select rather than a toggle because the question is
-   which release this is, not whether a switch is on — and because the preset picker that lands
-   here later is the same box with more in it. */
-.release {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 16px;
+/* The stem list is the picker. A line is either on disk or not; the tick says whether it is
+   wanted, and the two crossing is the whole control — so opening it adds a column rather than a
+   screen, and the diff a re-cut used to show on a separate state is just the same lines recoloured. */
+.stem-heads.picking,
+.stem.picking {
+    grid-template-columns: 22px 1fr 120px 140px 1fr;
 }
 
-.release-label {
+/* Before separation there is no file to have a key or a folder, so those two columns would be a
+   row of dashes. */
+.stem-heads.planning,
+.stem.planning {
+    grid-template-columns: 22px 1fr 1fr;
+}
+
+.stem.picking {
+    cursor: pointer;
+}
+
+.stem.picking.guide,
+.stem.picking.unrecognised {
+    cursor: default;
+}
+
+/* Present but never made: readable, and plainly not one of the track's files. */
+.stem.unmade {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.08);
+    opacity: 0.6;
+}
+
+.stem.picking:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.stem.picking.unmade:hover {
+    opacity: 0.85;
+}
+
+.stem-band {
+    padding: 8px 12px 4px;
+    font-family: var(--font-mono);
     font-size: 10.5px;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--text-40);
+    color: var(--text-35);
 }
 
-.release select {
+.tick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    color: transparent;
+}
+
+.tick.on {
+    color: var(--ink);
+    background: var(--text);
+    border-color: var(--text);
+}
+
+.tick.coming {
+    color: var(--ink);
+    background: var(--teal);
+    border-color: var(--teal);
+}
+
+.tick.going {
+    border-color: rgba(224, 122, 109, 0.6);
+}
+
+/* Not a box, because it is not a choice: the guide is always made and always deleted again. */
+.tick.pinned {
+    color: var(--text-50);
+    border: 0;
+}
+
+/* Dashed says the answer is still worth reading but is not yours to change from here. */
+.tick.locked {
+    color: var(--text-50);
+    border-style: dashed;
+}
+
+.stem-where.dim {
+    color: var(--text-30);
+}
+
+/* Dashed and quiet: an invitation rather than an action, sitting where the list ends. */
+.opener {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 12px;
     font: inherit;
     font-size: 12px;
     font-weight: 500;
-    color: var(--text);
+    text-align: left;
+    color: var(--text-75);
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px dashed rgba(255, 255, 255, 0.18);
     border-radius: 6px;
-    padding: 6px 11px;
     cursor: pointer;
 }
 
-.release select:hover,
-.release select.changed {
+.opener:hover:not(:disabled) {
+    color: var(--text);
     border-color: rgba(255, 255, 255, 0.4);
 }
 
-/* Inert rather than absent once files have left for the library: the answer is still worth
-   reading, and dashed says it is not yours to change from here. */
-.locked {
-    font-size: 12px;
-    font-weight: 500;
+.opener.locked {
     color: var(--text-50);
-    border: 1px dashed rgba(255, 255, 255, 0.18);
-    border-radius: 6px;
-    padding: 6px 11px;
+    cursor: default;
 }
 
-.release-hint {
-    font-size: 12px;
+.opener-hint {
+    margin-left: auto;
+    overflow: hidden;
+    font-weight: 400;
     color: var(--text-50);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Teal rather than red: the machine is about to work and nothing is being lost. */
+.adding {
+    margin: 0;
+    font-size: 13px;
+    color: var(--teal);
 }
 
 .side {
@@ -1014,13 +1098,3 @@ a.outline {
     scroll-margin-top: 200px;
 }
 
-/* The popup is drawn by the OS, which does not inherit the page's palette — without these it
-   renders light text on a white list. */
-.release select {
-    color-scheme: dark;
-}
-
-.release option {
-    color: var(--text);
-    background: var(--surface);
-}
