@@ -24,21 +24,21 @@ public sealed class SeparationRunner(
         CancellationToken cancellationToken = default
     )
     {
-        if (interlock.TryGetLive(out var live))
-            return SeparationResult.Refused($"already separating {live.VideoId}");
-
         var retained = workingSet.TryGetSource(order.VideoId, out var path) ? path : null;
 
-        // Nothing to separate. Reachable once a plan can be added to: a track that already has
-        // every preset it asks for and then asks to keep its source owes a copy and no passes.
-        // stemforge-cli refuses an invocation with neither a preset nor drums, so the copy is
-        // made here and the GPU is never claimed.
+        // Nothing to separate, so the interlock is not consulted: a copy needs no GPU, and
+        // asking would queue it behind six minutes of work it has nothing to do with. Reachable
+        // once a plan can be added to — a track that already has every preset it asks for and
+        // then asks to keep its source owes a copy and no passes.
         if (order.Recipe.Passes is 0)
             return KeepSource(order, retained) is { Count: > 0 } copied
                 ? SeparationResult.Succeeded(copied)
                 : SeparationResult.Failed(
                     "the source track is the only thing outstanding and it is no longer on disk"
                 );
+
+        if (interlock.TryGetLive(out var live))
+            return SeparationResult.Refused($"already separating {live.VideoId}");
 
         using var process = Start(order, retained);
 

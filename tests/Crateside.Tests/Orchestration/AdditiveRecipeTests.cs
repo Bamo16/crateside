@@ -103,6 +103,22 @@ public class AdditiveRecipeTests
     }
 
     [Fact]
+    public void A_plan_owing_only_its_source_makes_no_passes_at_all()
+    {
+        // What a re-cut down to just the source leaves: the guide is already on disk, so there
+        // is nothing to separate and nothing to warp against. It owes a file copy, and anything
+        // the row says about the GPU would be a lie.
+        var recipe = SeparationRecipe.For(
+            new StemPlan { Presets = [], KeepSource = true },
+            Inventory("Drums - htdemucs_ft")
+        );
+
+        Assert.Equal(0, recipe.Passes);
+        Assert.True(recipe.KeepSource);
+        Assert.False(recipe.ExtractDrums);
+    }
+
+    [Fact]
     public void Two_recipes_asking_for_the_same_files_are_the_same_recipe()
     {
         // They are built from different arrays, a moment apart. Comparing them by reference made

@@ -183,8 +183,11 @@ public sealed record TrackRow
             _ => AtRest,
         };
 
+    /// <summary>What this track already has on disk, which is what narrows the recipe.</summary>
+    public StemInventory Inventory { get; init; } = StemInventory.Empty;
+
     /// <summary>What separation will ask for, once it gets to this track.</summary>
-    public SeparationRecipe Recipe => SeparationRecipe.From(Plan);
+    public SeparationRecipe Recipe => SeparationRecipe.For(Plan, Inventory);
 
     /// <summary>
     /// Whether the separation plan can still be changed, which is until separation starts.
@@ -362,10 +365,14 @@ public sealed record TrackRow
             _ => TrackState.Queued,
         };
 
+    /// <remarks>
+    /// A plan whose outstanding half is only the source owes a copy and no passes, so saying
+    /// anything about the GPU would be a lie about a track that never reaches it.
+    /// </remarks>
     private string InLine =>
-        GpuPosition is 1
-            ? "next on the GPU"
-            : $"{GpuPosition.GetValueOrDefault().Ordinalize()} for the GPU";
+        Recipe.Passes is 0 ? "copying the source — no GPU needed"
+        : GpuPosition is 1 ? "next on the GPU"
+        : $"{GpuPosition.GetValueOrDefault().Ordinalize()} for the GPU";
 }
 
 /// <summary>Where a track's derived name came from, best first.</summary>
