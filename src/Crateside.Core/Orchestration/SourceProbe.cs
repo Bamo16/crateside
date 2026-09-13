@@ -44,6 +44,7 @@ public sealed class SourceProbe(string stemforge = "stemforge-cli")
             [{ Succeeded: true } row, ..] => new ProbedSource
             {
                 Title = row.DisplayTitle ?? row.Title,
+                BaseName = row.BaseName,
                 Best =
                     row.Formats?.FirstOrDefault(format => format.IsAutoSelected)
                     ?? row.Formats?.FirstOrDefault(),
@@ -76,6 +77,9 @@ public sealed class SourceProbe(string stemforge = "stemforge-cli")
 public sealed record ProbedSource
 {
     public string? Title { get; init; }
+
+    /// <summary>The filename StemForge would give it, which a rename starts from.</summary>
+    public string? BaseName { get; init; }
 
     /// <summary>The format a download would take, which is what the warning is about.</summary>
     public AudioFormat? Best { get; init; }
@@ -123,6 +127,9 @@ internal sealed record ProbeOutput
 
     [JsonPropertyName("displayTitle")]
     public string? DisplayTitle { get; init; }
+
+    [JsonPropertyName("baseName")]
+    public string? BaseName { get; init; }
 
     [JsonPropertyName("premiumShortfall")]
     public bool? PremiumShortfall { get; init; }

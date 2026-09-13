@@ -1,4 +1,5 @@
 using Crateside.Core.Ledger;
+using Crateside.Core.Naming;
 using Crateside.Core.Queue;
 
 namespace Crateside.Core.Orchestration;
@@ -12,7 +13,12 @@ namespace Crateside.Core.Orchestration;
 /// grain: a pasted track reaches <c>Outstanding</c>, so it is detected and judged, and that costs
 /// quota. Unlike a re-cut, which is deliberately gated out of that list.
 /// </remarks>
-public sealed class TrackAdd(QueueSettingsStore settings, CratesidePaths paths, SourceProbe probe)
+public sealed class TrackAdd(
+    QueueSettingsStore settings,
+    CratesidePaths paths,
+    SourceProbe probe,
+    ResolvedNameStore names
+)
 {
     /// <summary>What adding this track would do, or why it cannot be done.</summary>
     public AddTrackPlan PlanFor(string? url, IReadOnlyList<TrackRowFacts> known) =>
@@ -65,6 +71,18 @@ public sealed class TrackAdd(QueueSettingsStore settings, CratesidePaths paths, 
             return new AddTrackOutcome { Shortfall = probed };
 
         settings.AddByUrl(plan.VideoId!);
+
+        // The probe already resolved the name, so keeping it is what stops a pasted row reading
+        // as its own video ID until the name worker gets round to asking the same question.
+        if (probed is { Title: { Length: > 0 } title })
+            names.Save(
+                plan.VideoId!,
+                new ResolvedName
+                {
+                    DisplayTitle = title,
+                    BaseName = probed.BaseName is { Length: > 0 } file ? file : title,
+                }
+            );
 
         return new AddTrackOutcome { VideoId = plan.VideoId, Title = probed.Title };
     }
