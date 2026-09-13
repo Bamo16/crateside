@@ -220,6 +220,7 @@ public sealed record TrackRow
         State switch
         {
             TrackState.Queued => "queued",
+            TrackState.Downloading => "downloading",
             TrackState.Detecting => "detecting key",
             TrackState.Judging => "judging",
             TrackState.JudgedInLine => "judged · in line",
@@ -240,7 +241,8 @@ public sealed record TrackRow
     public TrackChipStyle ChipStyle =>
         State switch
         {
-            TrackState.Detecting
+            TrackState.Downloading
+            or TrackState.Detecting
             or TrackState.Judging
             or TrackState.Separating
             or TrackState.Staging
@@ -260,6 +262,7 @@ public sealed record TrackRow
     public string Next =>
         State switch
         {
+            TrackState.Downloading => "then judging",
             TrackState.Detecting => "then judging",
             TrackState.Judging => "verdict in about a minute",
             TrackState.JudgedInLine => InLine,
@@ -317,6 +320,7 @@ public sealed record TrackRow
     private static TrackState InFlight(JobStage stage) =>
         stage switch
         {
+            JobStage.Download => TrackState.Downloading,
             JobStage.Evidence => TrackState.Detecting,
             JobStage.Verdict => TrackState.Judging,
             JobStage.Separation => TrackState.Separating,

@@ -212,6 +212,19 @@ public sealed record QueueView
     public required IReadOnlyList<QueueItem> AwaitingSeparation { get; init; }
 
     /// <summary>
+    /// Every item the read produced, once each — what a stage that works any track reads.
+    /// </summary>
+    /// <remarks>
+    /// A source can be added to a track at any point, including one already finished with, so
+    /// the download stage cannot read the outstanding list alone (ADR 0019).
+    /// </remarks>
+    public IEnumerable<QueueItem> Everything =>
+        Items
+            .Concat(AwaitingSeparation)
+            .Concat(AwaitingKey)
+            .DistinctBy(item => item.VideoId, StringComparer.Ordinal);
+
+    /// <summary>
     /// Separated already, and parked for want of a key worth tagging with.
     /// </summary>
     /// <remarks>

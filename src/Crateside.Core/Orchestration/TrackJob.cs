@@ -51,7 +51,10 @@ public sealed record TrackJob
 /// </summary>
 public enum JobStage
 {
-    /// <summary>Acquire the audio and run the detectors. Deterministic; contends for nothing.</summary>
+    /// <summary>Fetch a source. Network-bound; contends for nothing (ADR 0019).</summary>
+    Download,
+
+    /// <summary>Run the detectors over audio already held. Deterministic; contends for nothing.</summary>
     Evidence,
 
     /// <summary>Turn evidence into a verdict. The only stage that needs an agent.</summary>

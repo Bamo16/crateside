@@ -55,6 +55,7 @@ public static class TrackFilters
             TrackFilter.InStaging => row.State is TrackState.ReadyToWarp,
             TrackFilter.InFlight => row.State
                 is TrackState.Queued
+                    or TrackState.Downloading
                     or TrackState.Detecting
                     or TrackState.Judging
                     or TrackState.JudgedInLine

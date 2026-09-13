@@ -36,9 +36,13 @@ public sealed record StemPlan
     [JsonPropertyName("presets")]
     public required IReadOnlyList<string> Presets { get; init; }
 
-    /// <summary>Whether the downloaded source track is itself one of the track's samples.</summary>
+    /// <summary>Whether the separation source is itself one of the track's samples.</summary>
     [JsonPropertyName("keepSource")]
     public bool KeepSource { get; init; }
+
+    /// <summary>Whole files of this song the user attached, which nothing separates (ADR 0019).</summary>
+    [JsonPropertyName("addedSources")]
+    public IReadOnlyList<AddedSource> AddedSources { get; init; } = [];
 
     /// <summary>
     /// Whether this plan asks for nothing at all, which no track should be left in.
@@ -59,8 +63,27 @@ public sealed record StemPlan
                 : [.. Presets, presetId],
         };
 
-    /// <summary>The same plan with the source track kept, or not.</summary>
+    /// <summary>The same plan with the separation source kept, or not.</summary>
     public StemPlan TogglingSource() => this with { KeepSource = !KeepSource };
+
+    /// <summary>The same plan with one more source attached.</summary>
+    public StemPlan Adding(AddedSource source) =>
+        this with
+        {
+            AddedSources = [.. AddedSources, source],
+        };
+
+    /// <summary>The same plan without the added source that carries this label.</summary>
+    public StemPlan Dropping(string label) =>
+        this with
+        {
+            AddedSources =
+            [
+                .. AddedSources.Where(source =>
+                    !source.Label.Equals(label, StringComparison.OrdinalIgnoreCase)
+                ),
+            ],
+        };
 
     /// <summary>Whether two plans ask for the same files, whatever order they were built in.</summary>
     /// <remarks>
@@ -71,4 +94,23 @@ public sealed record StemPlan
         KeepSource == other.KeepSource
         && Presets.Count == other.Presets.Count
         && !Presets.Except(other.Presets, StringComparer.Ordinal).Any();
+}
+
+/// <summary>A whole file of this song the user attached: downloaded, staged, tagged, never cut.</summary>
+public sealed record AddedSource
+{
+    [JsonPropertyName("videoId")]
+    public required string VideoId { get; init; }
+
+    /// <summary>
+    /// What the user called it, which becomes the file's parenthesised suffix.
+    /// </summary>
+    /// <remarks>
+    /// Required and unique per track: it is what tells two added sources apart on disk, and a
+    /// file without one reads as though its whole name were the track's (ADR 0019).
+    /// </remarks>
+    [JsonPropertyName("label")]
+    public required string Label { get; init; }
+
+    public string WatchUrl => $"https://music.youtube.com/watch?v={VideoId}";
 }

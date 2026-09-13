@@ -137,6 +137,13 @@ public static class ServiceRegistration
 
         services.AddSingleton(_ => new WorkingSet());
 
+        services.AddSingleton(_ => new DownloadRunner());
+        services.AddSingleton(sp => new DownloadSelector(
+            sp.GetRequiredService<JobStore>(),
+            sp.GetRequiredService<WorkingSet>()
+        ));
+        services.AddSingleton<DownloadDrainer>();
+
         services.AddSingleton(sp => new EvidenceSelector(
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<WorkingSet>()
@@ -193,6 +200,11 @@ public static class ServiceRegistration
         // AddSingleton<IHostedService> rather than AddHostedService: the latter routes through
         // TryAddEnumerable, which de-duplicates by implementation type and would silently
         // discard the second StageWorker.
+        services.AddSingleton<IHostedService>(sp => new StageWorker(
+            sp.GetRequiredService<DownloadDrainer>(),
+            sp.GetRequiredService<JobStore>(),
+            sp.GetRequiredService<ILogger<StageWorker>>()
+        ));
         services.AddSingleton<IHostedService>(sp => new StageWorker(
             sp.GetRequiredService<EvidenceDrainer>(),
             sp.GetRequiredService<JobStore>(),

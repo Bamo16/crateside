@@ -79,6 +79,7 @@ public sealed record StageProgress
     private static int Limit(JobStage stage) =>
         stage switch
         {
+            JobStage.Download => DownloadSelector.DefaultMaxStrikes,
             JobStage.Evidence => EvidenceSelector.DefaultMaxStrikes,
             JobStage.Verdict => VerdictSelector.DefaultMaxStrikes,
             JobStage.Separation => SeparationSelector.DefaultMaxStrikes,

@@ -56,6 +56,17 @@ public sealed record StemInventory
             KeepSource = wanted.KeepSource && !HasSource,
         };
 
+    /// <summary>Whether an added source has been fetched.</summary>
+    /// <remarks>
+    /// Matched on the label, which is the file's parenthesised suffix and unique per track — the
+    /// only thing that survives a rename and tells two added sources apart.
+    /// </remarks>
+    public bool Has(AddedSource added) =>
+        Files.Any(file =>
+            file.Kind is StemKind.Source
+            && added.Label.Equals(file.DisplayName, StringComparison.OrdinalIgnoreCase)
+        );
+
     /// <summary>The files <paramref name="wanted"/> no longer asks for, which a re-cut removes.</summary>
     /// <remarks>
     /// The warp guide is never among them: it is used up rather than kept, and is not the plan's

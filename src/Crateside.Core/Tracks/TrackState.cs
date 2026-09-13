@@ -9,6 +9,9 @@ public enum TrackState
     /// <summary>In the playlist, with nothing run for it yet.</summary>
     Queued,
 
+    /// <summary>Fetching a source: the one to detect and cut from, or one the user added.</summary>
+    Downloading,
+
     /// <summary>The evidence run is in flight: acquiring the audio and running the detectors.</summary>
     Detecting,
 
