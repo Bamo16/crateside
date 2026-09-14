@@ -1375,7 +1375,9 @@
 
         // Only once a tick has actually moved: until then there is nothing to confirm and the
         // side column has no business offering to.
-        _plan = wanted.AsksTheSameAs(row.Plan) ? null : Recut.PlanFor(row.VideoId, wanted, _presets);
+        _plan =
+            wanted.AsksTheSameAs(row.Plan) ? null
+            : Recut.PlanFor(row.VideoId, wanted, _presets, row.Inventory);
     }
 
     private async Task ConfirmRecut(TrackRow row)
@@ -1385,7 +1387,7 @@
 
         try
         {
-            var outcome = Recut.Apply(row.VideoId, _wanted, _presets);
+            var outcome = Recut.Apply(row.VideoId, _wanted, _presets, row.Inventory);
 
             _problem = outcome.Problem;
 

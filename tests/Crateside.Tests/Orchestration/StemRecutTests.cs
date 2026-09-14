@@ -109,6 +109,64 @@ public class StemRecutTests : IDisposable
     }
 
     [Fact]
+    public void A_source_can_be_added_to_a_track_whose_stems_already_left_for_the_library()
+    {
+        // The reported case: everything this track has is in Mashup Samples, not Sample
+        // Staging, and all that is being asked for is a copy of the source — no separation, so
+        // nothing about the presets already in the library is at risk of being redone.
+        var known = StemInventory.Of(
+            [
+                new StemOnDisk
+                {
+                    Path = "M:/Vocal - Full.flac",
+                    Root = "M:/",
+                    Preset = "Vocal - Full",
+                },
+                new StemOnDisk
+                {
+                    Path = "M:/Instrumental - Full.flac",
+                    Root = "M:/",
+                    Preset = "Instrumental - Full",
+                },
+            ],
+            Catalog
+        );
+
+        var wanted = StemPlan.Default with { KeepSource = true };
+
+        var plan = Recut().PlanFor(Video, wanted, Catalog, known);
+
+        Assert.True(plan.IsPossible);
+        Assert.Empty(plan.Recipe.Presets);
+        Assert.True(plan.Recipe.KeepSource);
+        Assert.Empty(plan.Removing);
+    }
+
+    [Fact]
+    public void A_preset_already_in_the_library_is_never_offered_for_deletion()
+    {
+        // ADR 0019: crateside never deletes from Mashup Samples. A library file must not be
+        // able to reach Removing even if it were somehow no longer wanted.
+        var known = StemInventory.Of(
+            [
+                new StemOnDisk
+                {
+                    Path = "M:/Vocal - Full.flac",
+                    Root = "M:/",
+                    Preset = "Vocal - Full",
+                },
+            ],
+            Catalog
+        );
+
+        var wanted = new StemPlan { Presets = ["instrumental_full"] };
+
+        var plan = Recut().PlanFor(Video, wanted, Catalog, known);
+
+        Assert.DoesNotContain(plan.Removing, stem => stem.File.Path == "M:/Vocal - Full.flac");
+    }
+
+    [Fact]
     public void It_refuses_when_the_separator_could_not_say_what_these_files_are()
     {
         // Without the catalog every stem reads as one the plan cannot name, so the whole plan

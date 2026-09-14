@@ -37,19 +37,39 @@ public sealed class StemRecut(
     ];
 
     /// <summary>What changing this track's plan would do, or why it cannot be done.</summary>
-    public RecutPlan PlanFor(string videoId, StemPlan wanted, PresetCatalog catalog)
+    /// <param name="known">
+    /// This track's files as the last queue scan found them, staged or already in
+    /// <c>Mashup Samples</c> — passed in rather than read here because scanning the library is the
+    /// most expensive thing the app does and must not run on every tick of the picker. Only
+    /// <see cref="staged"/> is read fresh, because that is the cheap read and the one a deletion
+    /// has to trust.
+    /// </param>
+    public RecutPlan PlanFor(
+        string videoId,
+        StemPlan wanted,
+        PresetCatalog catalog,
+        StemInventory? known = null
+    )
     {
         var files = staged(videoId);
-        var inventory = StemInventory.Of(files.Select(AsOnDisk), catalog);
-        var recipe = SeparationRecipe.For(wanted, inventory);
-        var removing = inventory.Superseded(wanted, Stored(videoId));
+        var stagedInventory = StemInventory.Of(files.Select(AsOnDisk), catalog);
+
+        // Everywhere the track's files could be, so a preset already sitting in Mashup Samples
+        // is never asked for again — only staging is trusted to say what a re-cut may delete.
+        var everywhere = new StemInventory
+        {
+            Files = [.. stagedInventory.Files, .. (known ?? StemInventory.Empty).Files],
+        };
+
+        var recipe = SeparationRecipe.For(wanted, everywhere);
+        var removing = stagedInventory.Superseded(wanted, Stored(videoId));
 
         return new RecutPlan
         {
             Recipe = recipe,
             Removing = removing,
             WillRefetch = !workingSet.TryGetSource(videoId, out _),
-            Refusal = RefusalFor(catalog, wanted, files, recipe, removing),
+            Refusal = RefusalFor(catalog, wanted, everywhere, recipe, removing),
         };
     }
 
@@ -61,9 +81,14 @@ public sealed class StemRecut(
     /// The order matters on failure: files are deleted first, and the stages are only reopened
     /// once every one of them went.
     /// </remarks>
-    public RecutOutcome Apply(string videoId, StemPlan wanted, PresetCatalog catalog)
+    public RecutOutcome Apply(
+        string videoId,
+        StemPlan wanted,
+        PresetCatalog catalog,
+        StemInventory? known = null
+    )
     {
-        var plan = PlanFor(videoId, wanted, catalog);
+        var plan = PlanFor(videoId, wanted, catalog, known);
 
         if (plan.Refusal is { } refusal)
             return new RecutOutcome { Problem = refusal };
@@ -129,11 +154,11 @@ public sealed class StemRecut(
     private static string? RefusalFor(
         PresetCatalog catalog,
         StemPlan wanted,
-        IReadOnlyList<StagingStem> staged,
+        StemInventory everywhere,
         SeparationRecipe recipe,
         IReadOnlyList<ClassifiedStem> removing
     ) =>
-        (catalog, wanted, staged, removing) switch
+        (catalog, wanted, everywhere, removing) switch
         {
             // Without it nothing can say which of these files already exist, and cutting every
             // preset again would make a second copy of each under a suffixed name.
@@ -141,7 +166,8 @@ public sealed class StemRecut(
                 "The separator could not be asked what it can make, so crateside cannot tell "
                     + "which of these files this track already has.",
             (_, { IsEmpty: true }, _, _) => "A track has to keep something.",
-            (_, _, { Count: 0 }, _) => "Nothing of this track is in Sample Staging.",
+            (_, _, { Files.Count: 0 }, _) =>
+                "Nothing of this track is in Sample Staging or Mashup Samples.",
             _ when recipe is { Presets.Count: 0, KeepSource: false } && removing.Count is 0 =>
                 "This track already has exactly these files.",
             _ => null,
