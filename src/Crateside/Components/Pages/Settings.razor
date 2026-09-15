@@ -106,18 +106,22 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                     channel owns the playlist.
                 </p>
 
+                <p class="detail">
+                    An entry is a message, not a record: once crateside has stored what it needs,
+                    the entry has done its job.
+                </p>
+
                 <div class="field">
                     <label>
                         <input type="checkbox" checked="@_consume" @onchange="SaveConsume" />
                         Empty the playlist as crateside takes tracks on
                     </label>
-                    <p class="detail">
-                        An entry is a message, not a record: once crateside has stored what it
-                        needs, the entry has done its job. Turning this on removes every entry
-                        crateside already knows of on the next scan, and a playlist deletion
-                        cannot be undone from here.
-                    </p>
                 </div>
+
+                <p class="detail">
+                    Every entry crateside has recorded goes on the next scan, not only ones that
+                    arrive after this is ticked. A playlist deletion cannot be undone from here.
+                </p>
 
                 @if (_processed is { } processed)
                 {

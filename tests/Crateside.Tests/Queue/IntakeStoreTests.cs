@@ -122,6 +122,58 @@ public class IntakeStoreTests : IDisposable
         Assert.Empty(new IntakeStore(path).Read());
     }
 
+    /// <summary>
+    /// What the playlist has delivered, which is every entry already recorded — not only the ones
+    /// this scan recorded.
+    /// </summary>
+    /// <remarks>
+    /// Consuming only what a scan reported as new means a setting turned on after the first scan
+    /// never fires: nothing is new again, so nothing is ever given back.
+    /// </remarks>
+    [Fact]
+    public void Everything_recorded_stays_recorded_for_a_later_scan_to_act_on()
+    {
+        var store = Store();
+
+        store.Record([Item(Track), Item(Other)]);
+
+        var recorded = Store().Read().Select(r => r.VideoId).ToHashSet(StringComparer.Ordinal);
+
+        Assert.Contains(Track, recorded);
+        Assert.Contains(Other, recorded);
+        Assert.Empty(Store().Record([Item(Track), Item(Other)]));
+    }
+
+    [Fact]
+    public void A_store_that_has_written_cleanly_is_durable()
+    {
+        var store = Store();
+
+        store.Record([Item(Track)]);
+
+        Assert.True(store.IsDurable);
+    }
+
+    /// <remarks>
+    /// The entry is the only other copy of the track, so a record that never reached disk must
+    /// not be grounds for deleting it.
+    /// </remarks>
+    [Fact]
+    public void A_store_that_cannot_write_is_not_durable()
+    {
+        var path = Path.Combine(_directory, "intake.json");
+
+        // A directory where the file belongs: writing it fails the way a locked or read-only
+        // store would, without needing either.
+        Directory.CreateDirectory(path);
+
+        var store = new IntakeStore(path);
+
+        store.Record([Item(Track)]);
+
+        Assert.False(store.IsDurable);
+    }
+
     [Fact]
     public void Forgetting_a_track_drops_its_record()
     {

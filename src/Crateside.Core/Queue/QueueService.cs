@@ -179,10 +179,9 @@ public sealed class QueueService(
     public async Task<QueueScan> ScanAsync(CancellationToken cancellationToken = default)
     {
         var held = Pasted(await ItemsAsync(cancellationToken));
-        var arrived = intake.Record(held);
         var items = TakenOn(held);
 
-        await ConsumeAsync(held, arrived, cancellationToken);
+        await ConsumeAsync(held, cancellationToken);
 
         // Both staging and Mashup Samples count — a track that moved out is still processed.
         var ledger = KeyLedger.Read(_paths.Ledger);
@@ -254,6 +253,7 @@ public sealed class QueueService(
     /// </remarks>
     private IReadOnlyList<QueueItem> TakenOn(IReadOnlyList<QueueItem> held)
     {
+        intake.Record(held);
         intake.Backfill(settings.Read().Tracks.Select(track => track.VideoId));
 
         return IntakeStore.Merge(held, intake.Read());
@@ -270,14 +270,18 @@ public sealed class QueueService(
     /// </remarks>
     private async Task ConsumeAsync(
         IReadOnlyList<QueueItem> held,
-        IReadOnlyList<IntakeRecord> arrived,
         CancellationToken cancellationToken
     )
     {
-        if (!settings.Read().ConsumeOnArrival || arrived.Count is 0 || !IsAuthorized)
+        // Not "recorded by this scan": a track recorded before the setting was turned on would
+        // then never be new again, and the playlist would never empty at all.
+        if (!settings.Read().ConsumeOnArrival || !IsAuthorized || !intake.IsDurable)
             return;
 
-        var recorded = arrived.Select(record => record.VideoId).ToHashSet(StringComparer.Ordinal);
+        var recorded = intake
+            .Read()
+            .Select(record => record.VideoId)
+            .ToHashSet(StringComparer.Ordinal);
         var entries = held.Where(item =>
                 item.PlaylistItemId is not null && recorded.Contains(item.VideoId)
             )

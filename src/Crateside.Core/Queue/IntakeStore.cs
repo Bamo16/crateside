@@ -23,6 +23,24 @@ public sealed class IntakeStore
     private readonly Lock _gate = new();
 
     private IReadOnlyList<IntakeRecord>? _cached;
+    private bool _durable = true;
+
+    /// <summary>
+    /// Whether everything recorded has reached disk.
+    /// </summary>
+    /// <remarks>
+    /// False once a write has failed, and it does not recover within a run. Consuming a playlist
+    /// entry on the strength of a record that exists only in memory would lose the track at the
+    /// next restart — the entry is the only other copy.
+    /// </remarks>
+    public bool IsDurable
+    {
+        get
+        {
+            lock (_gate)
+                return _durable;
+        }
+    }
 
     public IntakeStore(string? path = null) =>
         _path =
@@ -181,8 +199,9 @@ public sealed class IntakeStore
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            // Kept in memory for this run rather than failing the scan. The next scan re-reads
-            // the playlist, which is the same position as before the write was attempted.
+            // Kept in memory rather than failing the scan, but nothing may be consumed on the
+            // strength of it: see IsDurable.
+            _durable = false;
         }
     }
 }
