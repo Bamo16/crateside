@@ -102,3 +102,26 @@ asks, and every byte parsed is a byte that can break on a Live update.
   through `Try`-shaped code that fails to `false` rather than throwing, and the real-library test
   parses all 652 sidecars — so a Live update that changes the layout shows up as a failing test
   rather than as wrong tempos.
+
+## Postscript — 2026-09-15: a marker list was transplanted and Ableton accepted it
+
+Two stems of one song had been warped separately and their grids had drifted. **The marker run of
+one sidecar was spliced onto the other by hand** — a throwaway script, outside this repo — and
+Ableton took the result without complaint.
+
+**The reader in this ADR verified the edit; it did not make it.** It stays read-only, and
+crateside still has no way to write a sidecar. That would be its own decision, and this is not it.
+
+What the exercise establishes, beyond what was measured above:
+
+- **A marker list transfers verbatim between two files whose audio is sample-aligned**, because
+  `Seconds` is absolute into the file rather than relative to anything. Confirmed on playback.
+- **The splice needs no other edit.** Replacing the run and the id allocator in front of it was
+  enough; the file has no internal byte offsets to repair, as the measurements predicted.
+- **Ableton offers an exact test of marker equality, for free.** Selecting two clips and warping
+  them as a group is only permitted when their markers match exactly — so "are these two grids the
+  same" is answerable in the UI without reading a byte.
+
+That last point is why this is worth recording: drift between two stems of one song is invisible
+until someone tries to warp them together, and it is **the marker list, not the tempo, that has to
+agree**. Any future feature that pairs stems should compare marker lists, not BPMs.
