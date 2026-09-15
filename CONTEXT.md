@@ -51,6 +51,15 @@ against it.
   first verse begins, so that dragging it out of the library lands it there. What makes
   an arbitrary vocal and an arbitrary instrumental line up on the first try. The audio
   before that point is not removed; only the drag-in position moves.
+- **Warp marker** — one point where a sample's audio is pinned to Ableton's grid: a
+  position in the audio paired with a position in beats. A sample carries an ordered list
+  of them in its **sidecar**, and a **tempo** is the slope between two consecutive
+  markers — no tempo is recorded as such
+  ([ADR 0020](docs/adr/0020-the-sidecar-is-parseable-and-a-warp-marker-is-a-second-and-a-beat.md)).
+- **Sidecar** — the `.asd` Ableton writes beside a sample. Its *presence* means only that
+  Ableton analysed the file and says nothing about warping
+  ([ADR 0002](docs/adr/0002-there-is-no-warped-signal.md)); its **warp markers** are what
+  describe the warp.
 
 ## Tags
 
