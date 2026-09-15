@@ -123,6 +123,13 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                     arrive after this is ticked. A playlist deletion cannot be undone from here.
                 </p>
 
+                <p class="detail">
+                    Not free, unlike reading: a removal costs fifty quota units against a daily ten
+                    thousand, so emptying a hundred entries spends half a day's worth. Each entry is
+                    offered once and never retried, so a removal that fails stays failed rather than
+                    coming back on the next scan.
+                </p>
+
                 @if (_processed is { } processed)
                 {
                     <p class="detail">

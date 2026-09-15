@@ -117,6 +117,34 @@ public sealed class IntakeStore
         }
     }
 
+    /// <summary>
+    /// Records that these entries have been offered back, so no scan offers them again.
+    /// </summary>
+    /// <remarks>
+    /// Called before the removal rather than after. A crash between the two then costs one
+    /// un-removed entry, where the other order costs the whole playlist's quota on every scan
+    /// until someone notices.
+    /// </remarks>
+    public void MarkRemovalAttempted(IEnumerable<string> videoIds, DateTimeOffset at)
+    {
+        lock (_gate)
+        {
+            var marking = videoIds.ToHashSet(StringComparer.Ordinal);
+
+            Write([
+                .. Read()
+                    .Select(record =>
+                        marking.Contains(record.VideoId)
+                            ? record with
+                            {
+                                RemovalAttemptedAt = at,
+                            }
+                            : record
+                    ),
+            ]);
+        }
+    }
+
     /// <summary>Drops a record, which is what forgetting a track means.</summary>
     public void Forget(string videoId)
     {
@@ -223,4 +251,15 @@ public sealed record IntakeRecord
 
     [JsonPropertyName("isUnavailable")]
     public bool IsUnavailable { get; init; }
+
+    /// <summary>
+    /// When the playlist entry was offered back, or null while it never has been.
+    /// </summary>
+    /// <remarks>
+    /// Set whether the removal succeeded or not, and never cleared: a delete costs fifty quota
+    /// units against a daily ten thousand, so one that fails must not be tried again on the next
+    /// scan. Retrying is the user's to ask for, through Settings.
+    /// </remarks>
+    [JsonPropertyName("removalAttemptedAt")]
+    public DateTimeOffset? RemovalAttemptedAt { get; init; }
 }

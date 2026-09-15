@@ -43,6 +43,32 @@ public class AddedSourceTests
         Assert.True(inventory.Has(Official));
     }
 
+    /// <summary>
+    /// The row invites renaming in Ableton, and renaming used to part the file from the plan and
+    /// fetch the upload a second time.
+    /// </summary>
+    [Fact]
+    public void An_added_source_stays_fetched_after_the_user_renames_it()
+    {
+        var inventory = StemInventory.Of([File("Some Other Name (Acapella).flac", Added)], Catalog);
+
+        Assert.True(inventory.Has(Official));
+    }
+
+    /// <remarks>
+    /// Pre-1.0 files carry no provenance at all, so the label stays the fallback for them.
+    /// </remarks>
+    [Fact]
+    public void A_file_with_no_provenance_is_still_matched_on_its_label()
+    {
+        var inventory = StemInventory.Of(
+            [File("SUPADOPA (Official Instrumental).flac", videoId: null!)],
+            Catalog
+        );
+
+        Assert.True(inventory.Has(Official));
+    }
+
     [Fact]
     public void A_track_without_it_yet_still_owes_it()
     {

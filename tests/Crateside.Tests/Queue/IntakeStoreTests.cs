@@ -174,6 +174,44 @@ public class IntakeStoreTests : IDisposable
         Assert.False(store.IsDurable);
     }
 
+    /// <summary>
+    /// An entry is offered back once and never again, whatever the removal said.
+    /// </summary>
+    /// <remarks>
+    /// Consumption had no backoff at all, and a delete costs fifty quota units. Failing removals
+    /// were retried on every scan — every page read and every stage worker's two-minute loop —
+    /// and spent a day's YouTube quota.
+    /// </remarks>
+    [Fact]
+    public void An_entry_offered_back_is_not_offered_again()
+    {
+        var store = Store();
+
+        store.Record([Item(Track), Item(Other)]);
+
+        Assert.All(store.Read(), record => Assert.Null(record.RemovalAttemptedAt));
+
+        store.MarkRemovalAttempted([Track], DateTimeOffset.UtcNow);
+
+        var offerable = Offerable(Store());
+
+        Assert.Equal([Other], offerable);
+    }
+
+    [Fact]
+    public void The_mark_survives_a_restart()
+    {
+        var store = Store();
+
+        store.Record([Item(Track)]);
+        store.MarkRemovalAttempted([Track], DateTimeOffset.UtcNow);
+
+        Assert.Empty(Offerable(new IntakeStore(Path.Combine(_directory, "intake.json"))));
+    }
+
+    private static string[] Offerable(IntakeStore store) =>
+        [.. store.Read().Where(r => r.RemovalAttemptedAt is null).Select(r => r.VideoId)];
+
     [Fact]
     public void Forgetting_a_track_drops_its_record()
     {

@@ -585,10 +585,11 @@
                                         <span class="stem-note">
                                             @if (row.HasSeveralUploads)
                                             {
+                                                var added = row.IsAddedSource(sample.SourceVideoId);
                                                 var current = sample.SourceVideoId == row.VideoId;
 
-                                                <span class="upload @(current ? "current" : "superseded")">
-                                                    @(current ? "new upload" : "old upload")
+                                                <span class="upload @(added ? "added" : current ? "current" : "superseded")">
+                                                    @(added ? "added source" : current ? "new upload" : "old upload")
                                                     <span class="mono">@sample.SourceVideoId</span>
                                                 </span>
                                             }

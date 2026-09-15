@@ -58,13 +58,19 @@ public sealed record StemInventory
 
     /// <summary>Whether an added source has been fetched.</summary>
     /// <remarks>
-    /// Matched on the label, which is the file's parenthesised suffix and unique per track — the
-    /// only thing that survives a rename and tells two added sources apart.
+    /// Matched on the upload, which is what <see cref="Superseded"/> already matches on and the
+    /// only thing a rename cannot change. The label was the join once, and renaming a file in
+    /// Ableton — which the row invites — parted it from the plan and fetched the upload again.
+    /// The label is asked only of a file carrying no provenance at all.
     /// </remarks>
     public bool Has(AddedSource added) =>
         Files.Any(file =>
             file.Kind is StemKind.Source
-            && added.Label.Equals(file.DisplayName, StringComparison.OrdinalIgnoreCase)
+            && (
+                file.File.SourceVideoId is { } upload
+                    ? upload.Equals(added.VideoId, StringComparison.Ordinal)
+                    : added.Label.Equals(file.DisplayName, StringComparison.OrdinalIgnoreCase)
+            )
         );
 
     /// <summary>The files <paramref name="wanted"/> no longer asks for, which a re-cut removes.</summary>

@@ -1,4 +1,5 @@
 using Crateside.Core.Ledger;
+using Crateside.Core.Naming;
 using Crateside.Core.Queue;
 using Humanizer;
 using Microsoft.Extensions.Options;
@@ -13,7 +14,8 @@ public sealed class HandoffDrainer(
     HandoffSelector selector,
     JobStore jobs,
     IOptions<CratesidePaths> paths,
-    QueueSettingsStore settings
+    QueueSettingsStore settings,
+    ResolvedNameStore names
 ) : IStageDrainer
 {
     private readonly CratesidePaths _paths = paths.Value;
@@ -77,6 +79,16 @@ public sealed class HandoffDrainer(
     /// entirely in Ableton's browser from the stems it was added to sit beside (ADR 0014).
     /// </remarks>
     private string? NameFor(string videoId) =>
+        Owner(videoId) switch
+        {
+            null => null,
+            { Name: { Length: > 0 } stated } => stated,
+            // A track's own download already arrives under the name the separator was asked for.
+            { VideoId: var owner } when owner.Equals(videoId, StringComparison.Ordinal) => null,
+            { VideoId: var owner } => names.Read().GetValueOrDefault(owner)?.BaseName,
+        };
+
+    private TrackInstruction? Owner(string videoId) =>
         settings
             .Read()
             .Tracks.FirstOrDefault(track =>
@@ -85,6 +97,5 @@ public sealed class HandoffDrainer(
                     source.VideoId.Equals(videoId, StringComparison.Ordinal)
                 )
                     is true
-            )
-            ?.Name;
+            );
 }

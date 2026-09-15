@@ -53,7 +53,8 @@ public sealed record TracksView
         IReadOnlyDictionary<string, TrackInstruction> instructions,
         IReadOnlyDictionary<string, ResolvedName>? resolvedNames = null,
         IReadOnlyDictionary<string, Acquisition>? acquisitions = null,
-        PresetCatalog? presets = null
+        PresetCatalog? presets = null,
+        AbletonFolderInfo? libraryTags = null
     )
     {
         var resolved = resolvedNames ?? new Dictionary<string, ResolvedName>();
@@ -162,10 +163,19 @@ public sealed record TracksView
                 ]
             );
 
+            var added = (instruction?.Plan?.AddedSources ?? [])
+                .Select(source => source.VideoId)
+                .ToHashSet(StringComparer.Ordinal);
+
             // The primary's download, since that is the upload the row currently speaks for.
+            // Never an added source's: its quality is a finding about that one file and does not
+            // park the track (ADR 0019). The fallback used to reach one whenever the primary's
+            // own acquisition had been discarded with its working set, which is every finished
+            // track — so attaching a source to one put a shortfall banner across the whole row.
             var acquisition =
                 acquired.GetValueOrDefault(primary.VideoId)
                 ?? members
+                    .Where(seed => !added.Contains(seed.VideoId))
                     .Select(seed => acquired.GetValueOrDefault(seed.VideoId))
                     .OfType<Acquisition>()
                     .FirstOrDefault();
@@ -221,7 +231,8 @@ public sealed record TracksView
                             onDisk.GetValueOrDefault(seed.VideoId) ?? [],
                             finishedRoot,
                             seed.VideoId,
-                            catalog
+                            catalog,
+                            libraryTags
                         )
                     ),
                 ],
@@ -337,7 +348,8 @@ public sealed record TracksView
         IReadOnlyList<StemOnDisk> onDisk,
         string finishedRoot,
         string sourceVideoId,
-        PresetCatalog catalog
+        PresetCatalog catalog,
+        AbletonFolderInfo? libraryTags
     ) =>
         [
             .. staged?.Samples.Select(sample =>
@@ -352,8 +364,24 @@ public sealed record TracksView
                     file.Root.Equals(finishedRoot, StringComparison.OrdinalIgnoreCase)
                     && !StagingStem.IsWarpGuidePreset(file.Preset)
                 )
-                .Select(file => Sample(file, catalog, sourceVideoId) with { IsInLibrary = true }),
+                .Select(file =>
+                    Sample(file, catalog, sourceVideoId) with
+                    {
+                        IsInLibrary = true,
+                        AbletonKey = KeyIn(libraryTags, file.Path),
+                    }
+                ),
         ];
+
+    /// <summary>
+    /// What Ableton has tagged a library file with.
+    /// </summary>
+    /// <remarks>
+    /// The staging board carries this for a staged file and reads only its own root, so a file
+    /// that had moved to the library lost its key on the row while keeping it in the browser.
+    /// </remarks>
+    private static string? KeyIn(AbletonFolderInfo? tags, string path) =>
+        tags?.TryGet(path, out var tagged) is true ? tagged.Key : null;
 
     /// <summary>
     /// One file, said in both vocabularies: what the separator called it, and what the plan would
@@ -368,7 +396,10 @@ public sealed record TracksView
             Label = classified.DisplayName ?? "source",
             Kind = classified.Kind,
             PresetId = classified.PresetId,
-            SourceVideoId = sourceVideoId,
+            // What the file says it was cut from, which is the seed only where it says nothing.
+            // Reading the seed first made every file of a song report the same upload, so an
+            // attached source could not be told from a stem cut alongside it.
+            SourceVideoId = file.SourceVideoId ?? sourceVideoId,
         };
     }
 

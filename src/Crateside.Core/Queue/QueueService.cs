@@ -278,17 +278,26 @@ public sealed class QueueService(
         if (!settings.Read().ConsumeOnArrival || !IsAuthorized || !intake.IsDurable)
             return;
 
-        var recorded = intake
+        var offerable = intake
             .Read()
+            .Where(record => record.RemovalAttemptedAt is null)
             .Select(record => record.VideoId)
             .ToHashSet(StringComparer.Ordinal);
+
         var entries = held.Where(item =>
-                item.PlaylistItemId is not null && recorded.Contains(item.VideoId)
+                item.PlaylistItemId is not null && offerable.Contains(item.VideoId)
             )
             .ToList();
 
-        if (entries.Count is not 0)
-            await RemoveAsync(entries, cancellationToken);
+        if (entries.Count is 0)
+            return;
+
+        // Marked first, and regardless of what the removal reports. A delete costs fifty quota
+        // units against a daily ten thousand, so a failure retried on every scan spends the day
+        // rather than reporting a fault — which is what it did.
+        intake.MarkRemovalAttempted(entries.Select(item => item.VideoId), DateTimeOffset.UtcNow);
+
+        await RemoveAsync(entries, cancellationToken);
     }
 
     /// <summary>

@@ -35,6 +35,17 @@ public sealed record TrackRow
     /// <summary>This track's samples a swap cannot reach, because crateside never writes there.</summary>
     public int SamplesLeftInLibrary => Samples.Count(sample => sample.IsInLibrary);
 
+    /// <summary>Whether an upload is one the user attached rather than one cut from (ADR 0019).</summary>
+    /// <remarks>
+    /// An added source is kept <em>alongside</em> the stems, so calling it an old upload reads as
+    /// though a swap had superseded it — the one thing it is not.
+    /// </remarks>
+    public bool IsAddedSource(string? videoId) =>
+        videoId is { Length: > 0 }
+        && Plan.AddedSources.Any(source =>
+            source.VideoId.Equals(videoId, StringComparison.Ordinal)
+        );
+
     /// <summary>
     /// Whether this row's samples were cut from more than one upload, which is what makes saying
     /// so on each of them worth the room (ADR 0014).
@@ -422,8 +433,9 @@ public sealed record TrackSample
     /// The key Ableton holds on this file, or null when it holds none.
     /// </summary>
     /// <remarks>
-    /// Trustworthy only while the file is in <c>Sample Staging</c> (ADR 0003) — null once the
-    /// sample reaches <c>Mashup Samples</c> means nobody looked, not that it's untagged.
+    /// Read from the tag store while the file is staged and from Ableton's index once it reaches
+    /// <c>Mashup Samples</c> (ADR 0013), so a null now means untagged in both places. It used to
+    /// mean nobody had looked, because the staging board reads only its own root.
     /// </remarks>
     public string? AbletonKey { get; init; }
 

@@ -308,7 +308,9 @@ public static class ServiceRegistration
                     scan.Instructions,
                     sp.GetRequiredService<ResolvedNameStore>().Read(),
                     sp.GetRequiredService<WorkingSet>().Acquisitions(),
-                    await sp.GetRequiredService<PresetCatalogReader>().ReadAsync(cancellationToken)
+                    await sp.GetRequiredService<PresetCatalogReader>().ReadAsync(cancellationToken),
+                    sp.GetRequiredService<AbletonIndexReader>()
+                        .Read(sp.GetRequiredService<CratesidePaths>().MashupSamples)
                 );
 
                 return view with
