@@ -54,6 +54,7 @@ public sealed class QueueSettingsStore
             {
                 PlaylistId = stored?.PlaylistId ?? _fallback.PlaylistId,
                 RefreshMinutes = stored?.RefreshMinutes,
+                ConsumeOnArrival = stored?.ConsumeOnArrival is true,
                 Tracks = TracksOf(stored),
             };
         }
@@ -71,6 +72,10 @@ public sealed class QueueSettingsStore
     /// <summary>How often to look at the playlist unprompted. Null restores the default.</summary>
     public QueueSettings SaveRefreshMinutes(int? minutes) =>
         Save(current => current with { RefreshMinutes = minutes });
+
+    /// <summary>Whether crateside empties the playlist as it takes tracks on.</summary>
+    public QueueSettings SaveConsumeOnArrival(bool consume) =>
+        Save(current => current with { ConsumeOnArrival = consume });
 
     /// <summary>
     /// Records which files the user wants made for a track. Null clears the choice, putting the
@@ -225,6 +230,17 @@ public sealed record QueueSettings
     /// </remarks>
     [JsonPropertyName("refreshMinutes")]
     public int? RefreshMinutes { get; init; }
+
+    /// <summary>
+    /// Whether an entry is removed from the playlist as soon as crateside has recorded it
+    /// (ADR 0021).
+    /// </summary>
+    /// <remarks>
+    /// Off until asked for. Turning it on removes every entry crateside already knows of on the
+    /// next scan, which is not undoable from here.
+    /// </remarks>
+    [JsonPropertyName("consumeOnArrival")]
+    public bool ConsumeOnArrival { get; init; }
 
     /// <summary>Standing instructions about how to work particular tracks.</summary>
     [JsonPropertyName("tracks")]

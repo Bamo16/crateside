@@ -18,9 +18,16 @@ public sealed class DownloadSelector(
 {
     public const int DefaultMaxStrikes = 5;
 
+    /// <remarks>
+    /// Audio comes last of the three, having once come first. Both of the others are bounded by
+    /// something the user did — a plan that keeps its source, a source they attached — while the
+    /// audio list refills from the playlist, so ordering audio first starves the other two for as
+    /// long as anything is arriving. A source added to a finished track waited that way and was
+    /// never fetched.
+    /// </remarks>
     public bool TryPickNext(QueueView view, out WantedDownload next)
     {
-        next = Audio(view) ?? Kept(view) ?? Added(view)!;
+        next = Kept(view) ?? Added(view) ?? Audio(view)!;
 
         return next is not null;
     }

@@ -24,6 +24,7 @@ public sealed class QueueService(
     QueueAuthorizer authorizer,
     QueueRemover remover,
     BumpedTrack bumped,
+    IntakeStore intake,
     ReadReopenedTracks? reopened = null,
     ReadReopenedTracks? awaitingCut = null,
     ReadPresetCatalog? presets = null
@@ -89,6 +90,12 @@ public sealed class QueueService(
 
     /// <summary>Sets it. Zero turns it off.</summary>
     public void SetRefreshMinutes(int minutes) => settings.SaveRefreshMinutes(minutes);
+
+    /// <summary>Whether crateside empties the playlist as it takes tracks on (ADR 0021).</summary>
+    public bool ConsumeOnArrival => settings.Read().ConsumeOnArrival;
+
+    /// <summary>Sets it. The first scan after turning it on removes everything already known.</summary>
+    public void SetConsumeOnArrival(bool consume) => settings.SaveConsumeOnArrival(consume);
 
     /// <summary>Puts a track at the front of the work lists a stage picks from.</summary>
     public void Bump(string videoId) => bumped.Bump(videoId);
@@ -171,7 +178,11 @@ public sealed class QueueService(
     /// </remarks>
     public async Task<QueueScan> ScanAsync(CancellationToken cancellationToken = default)
     {
-        var items = Pasted(await ItemsAsync(cancellationToken));
+        var held = Pasted(await ItemsAsync(cancellationToken));
+        var arrived = intake.Record(held);
+        var items = TakenOn(held);
+
+        await ConsumeAsync(held, arrived, cancellationToken);
 
         // Both staging and Mashup Samples count — a track that moved out is still processed.
         var ledger = KeyLedger.Read(_paths.Ledger);
@@ -230,6 +241,50 @@ public sealed class QueueService(
                 .Tracks.Where(track => track.AddedByUrl && !held.Contains(track.VideoId))
                 .Select(track => new QueueItem { VideoId = track.VideoId, Title = track.VideoId }),
         ];
+    }
+
+    /// <summary>
+    /// Everything crateside has taken on: what the playlist holds now, plus what it held once.
+    /// </summary>
+    /// <remarks>
+    /// The playlist is an arrival signal and nothing else (ADR 0021). Reading work from
+    /// membership is what left a source added to a finished track unreachable by any list, and
+    /// what stalled a re-cut before it — the same fault twice, one stage apart, because the
+    /// remedy named stages instead of removing the dependency.
+    /// </remarks>
+    private IReadOnlyList<QueueItem> TakenOn(IReadOnlyList<QueueItem> held)
+    {
+        intake.Backfill(settings.Read().Tracks.Select(track => track.VideoId));
+
+        return IntakeStore.Merge(held, intake.Read());
+    }
+
+    /// <summary>
+    /// Gives back the entries crateside has just recorded, so the playlist stops holding what it
+    /// has already delivered (ADR 0021).
+    /// </summary>
+    /// <remarks>
+    /// Only what <see cref="IntakeStore.Record"/> reported as new, so a steady state costs no
+    /// writes at all. Off until the user asks for it: the first run removes every entry at once,
+    /// and a playlist deletion is not undoable from here.
+    /// </remarks>
+    private async Task ConsumeAsync(
+        IReadOnlyList<QueueItem> held,
+        IReadOnlyList<IntakeRecord> arrived,
+        CancellationToken cancellationToken
+    )
+    {
+        if (!settings.Read().ConsumeOnArrival || arrived.Count is 0 || !IsAuthorized)
+            return;
+
+        var recorded = arrived.Select(record => record.VideoId).ToHashSet(StringComparer.Ordinal);
+        var entries = held.Where(item =>
+                item.PlaylistItemId is not null && recorded.Contains(item.VideoId)
+            )
+            .ToList();
+
+        if (entries.Count is not 0)
+            await RemoveAsync(entries, cancellationToken);
     }
 
     /// <summary>

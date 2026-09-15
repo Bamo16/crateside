@@ -106,6 +106,19 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                     channel owns the playlist.
                 </p>
 
+                <div class="field">
+                    <label>
+                        <input type="checkbox" checked="@_consume" @onchange="SaveConsume" />
+                        Empty the playlist as crateside takes tracks on
+                    </label>
+                    <p class="detail">
+                        An entry is a message, not a record: once crateside has stored what it
+                        needs, the entry has done its job. Turning this on removes every entry
+                        crateside already knows of on the next scan, and a playlist deletion
+                        cannot be undone from here.
+                    </p>
+                </div>
+
                 @if (_processed is { } processed)
                 {
                     <p class="detail">
@@ -163,6 +176,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     private static readonly int[] RefreshChoices = [0, 1, 5, 15, 30, 60];
 
     private int _refresh;
+    private bool _consume;
     private string _playlist = string.Empty;
     private string? _playlistProblem;
 
@@ -180,12 +194,19 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     {
         _playlist = Playlist.PlaylistId ?? string.Empty;
         _refresh = Playlist.RefreshMinutes;
+        _consume = Playlist.ConsumeOnArrival;
 
         await Load();
     }
 
     // Takes effect on the next poll, not at the next restart.
     private void SaveRefresh() => Playlist.SetRefreshMinutes(_refresh);
+
+    private void SaveConsume(ChangeEventArgs e)
+    {
+        _consume = e.Value is true;
+        Playlist.SetConsumeOnArrival(_consume);
+    }
 
     private static string RefreshLabel(int minutes) =>
         minutes switch

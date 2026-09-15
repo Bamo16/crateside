@@ -90,6 +90,7 @@ public static class ServiceRegistration
         services.AddSingleton<ProtectedTokenStore>();
         services.AddSingleton<QueueAuthorizer>();
         services.AddSingleton<QueueRemover>();
+        services.AddSingleton<IntakeStore>();
         services.AddSingleton<BumpedTrack>();
         services.AddSingleton(_ => new PresetCatalogReader());
 
@@ -103,6 +104,7 @@ public static class ServiceRegistration
             sp.GetRequiredService<QueueAuthorizer>(),
             sp.GetRequiredService<QueueRemover>(),
             sp.GetRequiredService<BumpedTrack>(),
+            sp.GetRequiredService<IntakeStore>(),
             ledger => ReopenedTracks.From(sp.GetRequiredService<JobStore>().All(), ledger),
             ledger => ReopenedTracks.AwaitingCut(sp.GetRequiredService<JobStore>().All(), ledger),
             sp.GetRequiredService<PresetCatalogReader>().ReadAsync

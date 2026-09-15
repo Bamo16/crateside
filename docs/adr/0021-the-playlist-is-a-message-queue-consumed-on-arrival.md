@@ -1,6 +1,6 @@
 # 0021 — the playlist is a message queue, consumed on arrival
 
-- Status: **Proposed.** Nothing is built, and the premise is recorded ahead of the design
+- Status: **Accepted.** Built 2026-09-15; see *As built* for what was and was not done
 - Date: 2026-09-15
 - Answers: the *Standing* question in
   [ADR 0010](0010-the-playlist-is-the-inbox-not-the-work-list.md)
@@ -49,7 +49,7 @@ no work list could express, and it was fixed by naming three stages. Here a down
 naming did not cover it. A mechanism that must be extended per stage reintroduces the hole every
 time a stage is added — which is the argument for ADR 0010's own alternative, not its decision.
 
-## Decision (proposed)
+## Decision
 
 **Playlist membership stops being readable state.** An entry is a message: crateside takes what it
 needs from it on arrival, removes it, and never asks again whether it is there.
@@ -62,26 +62,74 @@ Two halves, and the first is worth having even alone:
 2. **Consumption removes the entry**, rather than removal being a manual button for the
    fully-processed (`RemoveProcessedAsync`, today in Settings).
 
-## Why this is Proposed rather than Accepted
+## As built
 
-- **Nothing is built.** Recording it now so the premise stops being unwritten, which is the whole
-  reason it was said.
-- **"Whatever info it needs" is undecided**, and it is the real design question. An entry currently
-  carries title, channel, added-at, position and premium outlook, and rows are composed partly from
-  it. Consuming on arrival means persisting that somewhere, and `queue.json` holds instructions
-  rather than observations.
-- **Doing half of it is worse than doing neither.** Removing entries on arrival while anything
-  still derives work from membership would orphan tracks faster, not slower. Order matters: (1)
-  before (2).
-- The immediate orphan — Medicine Ball's added source — can be unblocked without any of this, and
-  that fix should not be mistaken for this decision.
+`IntakeStore` (`%APPDATA%\crateside\intake.json`) records a track the first time it is seen —
+video ID, title, added-at, premium outlook, availability — and `IntakeStore.Merge` gives the scan
+the playlist's entries followed by everything it has ever held. `Backfill` takes in tracks known
+only from a stored plan, which is how a track that left the playlist *before* any of this existed
+becomes reachable at all.
 
-## Consequences if adopted
+Two things the proposal got wrong, both in the safe direction:
+
+- **`QueueView.Compose` did not have to change.** The merge happens before it, so the signature
+  stands and none of the 14 call sites in tests moved. The estimate of widespread churn was wrong.
+- **The quota guard was never structural in the first place.** `EvidenceSelector` requires the
+  audio to be in the working set — which the janitor discards once separation has succeeded and
+  staging is empty — and `VerdictSelector` requires the ledger to have no run for the track.
+  Either refuses a finished track on its own. `QuotaGuardTests` pins both, and was written and
+  run *before* the change so that it pinned existing behaviour rather than new.
+
+**The download stage now takes a kept or attached source before audio.** Audio had been first
+since ADR 0019, and the audio list refills from the playlist while the other two are bounded by
+something the user did — so audio going first starved them for as long as anything was arriving.
+That is the half of the Medicine Ball fault that had nothing to do with membership, and it had no
+tests at all: `DownloadSelectorTests` is new.
+
+**Consumption is behind a setting, off by default.** Turning it on removes every entry crateside
+already knows of on the next scan, and a playlist deletion cannot be undone from here. Once past
+that first pass it costs nothing in a steady state: only tracks the intake reports as *newly*
+recorded are removed, so an unchanged playlist is no API writes at all.
+
+## Deliberately not done
+
+- **`ReopenedTracks.From` is still there.** The proposal said delete it. It is now redundant for
+  any track with an intake record, but it is the only thing covering a track being re-cut that has
+  neither a record nor a stored plan, and removing it would trade a fixed bug for a possible one.
+  It should go once the intake has been running long enough to have seen everything.
+- **`QueueItem.ChannelTitle` and `Position` are still there**, though nothing reads either. Dead,
+  and not worth widening this change for.
+- **A playlist that cannot be read still fails the whole scan.** `YouTubeQueueReader.ListAsync`
+  throws `QueueUnavailableException`, and every drainer catches it and backs off — so with no API
+  key crateside will not work even on tracks it has fully recorded and needs no network for. That
+  is the purest remaining form of leaning on the playlist and it is the obvious next step, but it
+  changes how four drainers behave when YouTube is unreachable, which is its own decision.
+
+## Why this was recorded before it was built
+
+The premise was the thing that had been missing for eight days, so it went down first and the
+design followed. Two of the reasons for waiting were settled by building it: *what to persist*
+turned out to be five fields, of which only `Title`, `PremiumOutlook`, `IsUnavailable` and
+`AddedAt` are ever read; and the guard the decision seemed to dissolve turned out not to rest on
+it.
+
+The third stands and shaped the result: **doing half of this is worse than doing neither.**
+Removing entries while anything still derived work from membership would have orphaned tracks
+faster, not slower — so nothing is consumed until the intake is what the work lists are built
+from, and consumption is off until asked for.
+
+## Consequences
 
 - `QueueRemover`'s refusal for entries that do not exist stays load-bearing and gets exercised far
   more often.
-- ADR 0010's structural safety argument — that judging cannot be bought twice because reopened
-  tracks are not in `Items` — **rests on `Items` meaning "the playlist"** and must be re-derived
-  some other way before `Items` stops meaning that. This is the sharpest constraint here: judging
-  spends the user's Claude quota ([ADR 0006](0006-a-verdict-session-costs-turns-times-context.md)),
-  and the guard protecting it is the thing this decision dissolves.
+- **ADR 0010's structural safety argument is gone, and was never what held.** It said judging
+  could not be bought twice because reopened tracks were kept out of `Items`; `Items` no longer
+  means "the playlist", so that is spent. What actually refuses a second judging is a working set
+  the janitor has discarded and a ledger that already has a run — both reads of state that
+  outlives the entry, which is the same argument as the rest of this decision. Judging spends the
+  user's Claude quota ([ADR 0006](0006-a-verdict-session-costs-turns-times-context.md)), so the
+  guard is now pinned by tests rather than by a shape.
+- **`Items` grows without bound.** Every track ever taken on stays in it, where before the
+  playlist forgot them. At this library's size that is a few hundred records and costs nothing;
+  if it ever matters, the answer is to drop records the disk and the ledger agree are finished,
+  not to go back to asking the playlist.
