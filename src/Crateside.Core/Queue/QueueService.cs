@@ -278,10 +278,27 @@ public sealed class QueueService(
     private IReadOnlyList<QueueItem> TakenOn(IReadOnlyList<QueueItem> held)
     {
         intake.Record(held);
-        intake.Backfill(settings.Read().Tracks.Select(track => track.VideoId));
+        intake.Backfill(Owed());
 
         return IntakeStore.Merge(held, intake.Read());
     }
+
+    /// <summary>
+    /// Tracks the playlist may no longer hold that crateside still owes something for.
+    /// </summary>
+    /// <remarks>
+    /// Only instructions that ask for something. Backfilling every stored track took in entries
+    /// that say nothing at all — residue of tracks long finished — and put them back in the work
+    /// lists, where a separation the janitor had already swept left them looking uncut. They
+    /// re-downloaded every ten minutes for a day.
+    /// </remarks>
+    private IEnumerable<string> Owed() =>
+        settings
+            .Read()
+            .Tracks.Where(track =>
+                track.Plan is { } plan && (plan.KeepSource || plan.AddedSources.Count > 0)
+            )
+            .Select(track => track.VideoId);
 
     /// <summary>
     /// Gives back the entries crateside has just recorded, so the playlist stops holding what it

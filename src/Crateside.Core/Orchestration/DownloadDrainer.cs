@@ -47,6 +47,7 @@ public sealed class DownloadSelector(
             .Where(item =>
                 !item.IsUnavailable
                 && !workingSet.TryGetSource(item.VideoId, out _)
+                && !IsSweptUp(item.VideoId)
                 && IsEligible(item.VideoId)
             )
             .Select(item => new WantedDownload
@@ -128,6 +129,23 @@ public sealed class DownloadSelector(
     /// </remarks>
     private bool IsEligible(string videoId) =>
         StageEligibility.Allows(jobs, videoId, JobStage.Download, maxStrikes, retrySucceeded: true);
+
+    /// <summary>
+    /// The audio is absent because the janitor took it, not because it was never fetched.
+    /// </summary>
+    /// <remarks>
+    /// The eligibility check above retries after a success on purpose: the working set can be
+    /// emptied by hand and the file really is gone. But the janitor empties it too, once
+    /// separation has succeeded and staging is clear — so a finished track with no working set
+    /// looks exactly like an unfetched one, and re-downloading it makes the janitor sweep it
+    /// again. That ran every ten minutes for a day, 125 times on one track.
+    ///
+    /// A re-cut is not caught by this: putting a track back in line reopens its separation job,
+    /// so the latest is no longer a success.
+    /// </remarks>
+    private bool IsSweptUp(string videoId) =>
+        jobs.TryGet(videoId, JobStage.Separation, out var job)
+        && job is { Status: JobStatus.Succeeded };
 }
 
 /// <summary>One source crateside owes.</summary>

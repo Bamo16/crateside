@@ -193,3 +193,36 @@ join them, and crateside is right that *that* track has a verdict and no stems.
 
 The join is keytag's to make — a restate, which is what *Swap source* and adding a source both do
 already. Nothing here should paper over it by guessing that two songs with similar names are one.
+
+
+## Amendment — 2026-09-16: the backfill was indiscriminate, and re-downloaded finished tracks
+
+`Backfill` took **every** stored instruction, including entries that say nothing at all —
+`{videoId, plan: null, name: null, sourceUrl: null}`, residue of tracks long finished. Those
+became intake records, the records became rows, and the rows reached `Outstanding`.
+
+Where that led is worth stating exactly, because no single step is wrong:
+
+1. The janitor discards a working set once separation has succeeded and staging is clear.
+2. A finished track with no working set is indistinguishable from one never fetched.
+3. `Audio` fetches it. `StageEligibility` is asked with `retrySucceeded: true` here on purpose,
+   because the working set can be emptied by hand and the file really is gone — so there is no
+   ceiling.
+4. The janitor sweeps it again.
+
+Measured: **125 downloads of one track and 105 of another in a day**, on a ten-minute cycle, at
+roughly 50 MB each. A 280× loop on 2026-09-13 has the same shape and a different cause — the gap
+between a download and its handoff — which `AwaitingHandoff` was written for. Neither guard covered
+this one.
+
+Two changes, because either alone leaves the hole:
+
+- **The backfill now takes only instructions that ask for something** — a kept source or an added
+  one. That is what it was for: reaching a track the playlist let go of while crateside still owed
+  it a file.
+- **`Audio` skips a track whose latest separation succeeded.** If the janitor considers a track
+  finished, the download stage may not resurrect it. A re-cut reopens that job, so it is untouched.
+
+The lesson is the one ADR 0002's postscript already names. *Work is read from the disk, the ledger
+and the intake* is a good rule, and **"what crateside has a record of" is not the same as "what
+crateside owes"** — the backfill quietly equated them.

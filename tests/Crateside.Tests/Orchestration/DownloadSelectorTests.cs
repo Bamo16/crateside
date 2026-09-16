@@ -135,6 +135,36 @@ public class DownloadSelectorTests : IDisposable
     public void An_empty_queue_owes_nothing() =>
         Assert.False(Selector().TryPickNext(View(), out _));
 
+    /// <summary>
+    /// Audio the janitor swept is not fetched again.
+    /// </summary>
+    /// <remarks>
+    /// The janitor discards a working set once separation has succeeded and staging is clear, so
+    /// a finished track looks exactly like an unfetched one. Fetching it made the janitor sweep
+    /// it again: 125 downloads of one track in a day.
+    /// </remarks>
+    [Fact]
+    public void A_finished_track_whose_working_set_the_janitor_took_is_not_fetched_again()
+    {
+        Jobs.Record(Fresh, JobStage.Separation, JobStatus.Succeeded);
+
+        Assert.False(Selector().TryPickNext(View(Held(Fresh)), out _));
+    }
+
+    /// <remarks>
+    /// A re-cut reopens the separation job, so the latest is no longer a success and the audio
+    /// it needs is fetched as usual.
+    /// </remarks>
+    [Fact]
+    public void A_track_put_back_in_line_still_gets_its_audio()
+    {
+        Jobs.Record(Fresh, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(Fresh, JobStage.Separation, JobStatus.Cancelled);
+
+        Assert.True(Selector().TryPickNext(View(Held(Fresh)), out var next));
+        Assert.Equal(Fresh, next.VideoId);
+    }
+
     [Fact]
     public void A_track_whose_audio_is_already_held_is_not_fetched_again()
     {
