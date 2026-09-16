@@ -235,7 +235,8 @@ public static class ServiceRegistration
             sp.GetRequiredService<QueueSettingsStore>(),
             sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SourceProbe>(),
-            sp.GetRequiredService<ResolvedNameStore>()
+            sp.GetRequiredService<ResolvedNameStore>(),
+            sp.GetRequiredService<IntakeStore>()
         ));
         services.AddSingleton(sp => new SourceAdd(
             sp.GetRequiredService<QueueSettingsStore>(),

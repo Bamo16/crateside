@@ -17,7 +17,8 @@ public sealed class TrackAdd(
     QueueSettingsStore settings,
     CratesidePaths paths,
     SourceProbe probe,
-    ResolvedNameStore names
+    ResolvedNameStore names,
+    IntakeStore intake
 )
 {
     /// <summary>What adding this track would do, or why it cannot be done.</summary>
@@ -89,10 +90,15 @@ public sealed class TrackAdd(
 
     /// <summary>Drops crateside's own record of a track it was told to work.</summary>
     /// <remarks>
-    /// The whole of removing one: nothing on disk is touched, and a track that has produced
-    /// files keeps its row through them.
+    /// Nothing on disk is touched, and a track that has produced files keeps its row through
+    /// them. Both records go: the instruction, and the intake that outlives the playlist entry
+    /// (ADR 0021) — dropping one alone leaves the other to put the track back on the next scan.
     /// </remarks>
-    public void Forget(string videoId) => settings.Forget(videoId);
+    public void Forget(string videoId)
+    {
+        settings.Forget(videoId);
+        intake.Forget(videoId);
+    }
 }
 
 /// <summary>What adding a track would do. Read before it happens, to say so on screen.</summary>

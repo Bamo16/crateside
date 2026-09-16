@@ -743,7 +743,7 @@
                                     Remove from playlist
                                 </button>
                             }
-                            else if (row.IsAddedByUrl)
+                            else if (row.CanForget)
                             {
                                 <button class="outline" @onclick="() => Forget(row)">Remove</button>
                             }

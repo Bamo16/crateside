@@ -161,3 +161,35 @@ written without any of that.
 offered once and never again; a removal that fails stays failed, and retrying is the user's to ask
 for. The cost is stated in Settings, where it was not before: emptying a hundred entries spends
 half a day's quota, which is inherent to the feature rather than a fault, and nobody had said so.
+
+
+## Amendment — 2026-09-16: a record that outlives the entry needs a way out
+
+Two tracks had stems parked under `Unresolved Key` that the user deleted by hand, wanting one
+gone and already having the other's stems in the library. Both rows went straight into the line
+for the GPU, and one started separating.
+
+**This follows from the decision rather than contradicting it.** Work is now read from the disk,
+the ledger and the intake, none of which the playlist can end. A judged track whose files are gone
+reads as one that has never been cut, which is exactly right for a re-cut and exactly wrong for a
+track the user is finished with — and before this decision the track would simply have had no row,
+because `Items` meant the playlist.
+
+So the escape hatch that used to be implicit had to become explicit. `TrackAdd.Forget` now drops
+**both** records, the instruction and the intake — dropping one alone leaves the other to put the
+track back on the next scan — and the row offers it whenever crateside's own record is all that
+holds the row (`TrackRow.CanForget`). A track with files keeps its row through them, so forgetting
+one is not offered and would do nothing.
+
+**Deleting files is not a way to remove a track, and never really was.** It is how a re-cut asks
+for the work again.
+
+## Postscript — the same song under two uploads is two songs
+
+*nimino - Better* was not a fault of any of this. The library's stems carry upload `9Zo8jqTqju0`,
+which keytag knows as `nimino, manta - better`; the row is upload `V0rMY9WgtKE`, judged separately
+as `nimino - better (feat. manta)`. Two ledger identities, so ADR 0014's grouping by song cannot
+join them, and crateside is right that *that* track has a verdict and no stems.
+
+The join is keytag's to make — a restate, which is what *Swap source* and adding a source both do
+already. Nothing here should paper over it by guessing that two songs with similar names are one.

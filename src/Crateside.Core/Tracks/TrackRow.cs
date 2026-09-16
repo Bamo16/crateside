@@ -128,6 +128,18 @@ public sealed record TrackRow
     public bool IsAddedByUrl { get; init; }
 
     /// <summary>
+    /// Whether crateside's own record is all that holds this row, so dropping it removes the
+    /// track rather than redrawing it.
+    /// </summary>
+    /// <remarks>
+    /// Needed once the intake outlives the playlist entry (ADR 0021): before that, a track the
+    /// playlist no longer held simply had no row, and deleting its files was how it went away.
+    /// Now the record keeps it — and a judged track with its files deleted reads as one that has
+    /// never been cut, which puts it back in the line for the GPU.
+    /// </remarks>
+    public bool CanForget => PlaylistItemId is null && (IsAddedByUrl || Samples.Count is 0);
+
+    /// <summary>
     /// Why crateside stopped and handed this track back, or null when it has not.
     /// </summary>
     public ParkReason? ParkedFor { get; init; }

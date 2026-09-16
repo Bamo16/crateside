@@ -176,6 +176,29 @@ public class AddedSourceRowTests : IDisposable
         Assert.True(sample.IsInLibrary);
     }
 
+    /// <summary>
+    /// A track whose files are gone and whose entry is gone can be dropped.
+    /// </summary>
+    /// <remarks>
+    /// Before the intake outlived the playlist entry, deleting a track's files was how it went
+    /// away. Now the record holds the row, and a judged track with no files reads as one never
+    /// cut — which puts it back in the line for the GPU. Deleting two parked stem sets did
+    /// exactly that on 2026-09-16.
+    /// </remarks>
+    [Fact]
+    public void A_track_with_no_entry_and_no_files_can_be_forgotten()
+    {
+        Assert.True(Row([]).CanForget);
+    }
+
+    [Fact]
+    public void A_track_that_still_has_files_keeps_its_row_so_forgetting_it_is_not_offered()
+    {
+        Assert.False(
+            Row([Library("Some Track (Vocal - Full).flac", Track, "Vocal - Full")]).CanForget
+        );
+    }
+
     [Fact]
     public void A_library_sample_Ableton_has_no_key_for_reads_as_untagged()
     {
