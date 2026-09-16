@@ -24,6 +24,15 @@ public sealed record TracksView
     public DateTimeOffset? ReadAt { get; init; }
 
     /// <summary>
+    /// Why the playlist could not be read, or null when it could.
+    /// </summary>
+    /// <remarks>
+    /// The rows stand either way — they are built from what crateside has taken on, not from the
+    /// playlist (ADR 0021). Shown beside them rather than instead of them.
+    /// </remarks>
+    public string? PlaylistProblem { get; init; }
+
+    /// <summary>
     /// Joins everything known about the playlist into one row per track.
     /// </summary>
     /// <param name="staging">

@@ -48,6 +48,15 @@ public sealed class QueueService(
     /// </remarks>
     public DateTimeOffset? PlaylistReadAt => _cachedItems is null ? null : _cachedAt;
 
+    /// <summary>
+    /// Why the playlist could not be read, or null when the last read worked.
+    /// </summary>
+    /// <remarks>
+    /// A report rather than a failure: the rows are still built, from what crateside has already
+    /// taken on. Says so on the page, because silence would read as an empty playlist.
+    /// </remarks>
+    public string? PlaylistProblem { get; private set; }
+
     /// <summary>Whether an OAuth client exists, so deletion is possible at all.</summary>
     public bool CanAuthorize => authorizer.IsConfigured;
 
@@ -150,17 +159,31 @@ public sealed class QueueService(
             if (_cachedItems is { } cached && DateTimeOffset.UtcNow - _cachedAt < CacheFor)
                 return cached;
 
-            // Oldest-added first: the only ordering that means the same thing regardless of
-            // whether the playlist adds new videos to the top.
-            _cachedItems =
-            [
-                .. (await reader.ListAsync(PlaylistId ?? string.Empty, cancellationToken)).OrderBy(
-                    item => item.AddedAt ?? DateTimeOffset.MaxValue
-                ),
-            ];
-            _cachedAt = DateTimeOffset.UtcNow;
+            try
+            {
+                // Oldest-added first: the only ordering that means the same thing regardless of
+                // whether the playlist adds new videos to the top.
+                _cachedItems =
+                [
+                    .. (
+                        await reader.ListAsync(PlaylistId ?? string.Empty, cancellationToken)
+                    ).OrderBy(item => item.AddedAt ?? DateTimeOffset.MaxValue),
+                ];
+                _cachedAt = DateTimeOffset.UtcNow;
+                PlaylistProblem = null;
 
-            return _cachedItems;
+                return _cachedItems;
+            }
+            catch (QueueUnavailableException e)
+            {
+                // A playlist that cannot be read means no new arrivals, not no queue (ADR 0021).
+                // Everything already taken on is on disk, in the ledger and in the intake, and
+                // none of it needs the network — so failing the scan here stopped crateside
+                // working on tracks it had fully recorded. A spent daily quota did exactly that.
+                PlaylistProblem = e.Message;
+
+                return _cachedItems ?? [];
+            }
         }
         finally
         {
@@ -217,6 +240,7 @@ public sealed class QueueService(
             Processed = processed,
             Instructions = instructions,
             ReadAt = PlaylistReadAt,
+            PlaylistProblem = PlaylistProblem,
         };
     }
 
@@ -275,7 +299,14 @@ public sealed class QueueService(
     {
         // Not "recorded by this scan": a track recorded before the setting was turned on would
         // then never be new again, and the playlist would never empty at all.
-        if (!settings.Read().ConsumeOnArrival || !IsAuthorized || !intake.IsDurable)
+        // Never on a failed read: what is held is then stale or empty, and an entry offered
+        // back is offered only once.
+        if (
+            !settings.Read().ConsumeOnArrival
+            || !IsAuthorized
+            || !intake.IsDurable
+            || PlaylistProblem is not null
+        )
             return;
 
         var offerable = intake
@@ -416,6 +447,9 @@ public sealed class QueueService(
 public sealed record QueueScan
 {
     public required QueueView View { get; init; }
+
+    /// <summary>Why the playlist could not be read, or null when it could.</summary>
+    public string? PlaylistProblem { get; init; }
 
     /// <summary>The ledger as it stood for this read, so a second reader gets the same verdicts.</summary>
     public required KeyLedger Ledger { get; init; }

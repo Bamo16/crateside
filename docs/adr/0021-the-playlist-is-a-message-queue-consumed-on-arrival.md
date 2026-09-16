@@ -86,10 +86,9 @@ something the user did — so audio going first starved them for as long as anyt
 That is the half of the Medicine Ball fault that had nothing to do with membership, and it had no
 tests at all: `DownloadSelectorTests` is new.
 
-**Consumption is behind a setting, off by default.** Turning it on removes every entry crateside
-already knows of on the next scan, and a playlist deletion cannot be undone from here. Once past
-that first pass it costs nothing in a steady state: only tracks the intake reports as *newly*
-recorded are removed, so an unchanged playlist is no API writes at all.
+**Consumption is behind a setting, off by default.** Turning it on offers back every entry crateside
+already knows of, once each, and a playlist deletion cannot be undone from here. See the backoff
+amendment below: as first built it re-offered them on every scan and spent the day's quota.
 
 ## Deliberately not done
 
@@ -99,11 +98,6 @@ recorded are removed, so an unchanged playlist is no API writes at all.
   It should go once the intake has been running long enough to have seen everything.
 - **`QueueItem.ChannelTitle` and `Position` are still there**, though nothing reads either. Dead,
   and not worth widening this change for.
-- **A playlist that cannot be read still fails the whole scan.** `YouTubeQueueReader.ListAsync`
-  throws `QueueUnavailableException`, and every drainer catches it and backs off — so with no API
-  key crateside will not work even on tracks it has fully recorded and needs no network for. That
-  is the purest remaining form of leaning on the playlist and it is the obvious next step, but it
-  changes how four drainers behave when YouTube is unreachable, which is its own decision.
 
 ## Why this was recorded before it was built
 
@@ -133,3 +127,37 @@ from, and consumption is off until asked for.
   playlist forgot them. At this library's size that is a few hundred records and costs nothing;
   if it ever matters, the answer is to drop records the disk and the ledger agree are finished,
   not to go back to asking the playlist.
+
+
+## Amendment — 2026-09-15: an unreadable playlist is no longer a failed scan
+
+Listed above as deliberately not done, and it took hours to bite. Consuming entries spent the
+day's YouTube quota (see the *runaway* note below); the playlist then refused every read, the scan
+threw, and the Tracks page sat on "Reading the queue…" with nothing on it — while the library, the
+ledger and the intake all sat on disk needing no network at all.
+
+**A playlist that cannot be read now means no new arrivals.** `ItemsAsync` reports the refusal as
+`PlaylistProblem` and gives back what it last held, the scan completes, and the page draws its rows
+with the refusal beside them rather than instead of them. Nothing is consumed while a read is
+failing: what is held is then stale or empty, and an entry is offered back only once.
+
+This is the decision the *Standing* section of ADR 0010 pointed at, arrived at from the other end.
+The reason it was deferred — that it changes how four drainers behave when YouTube is unreachable —
+turned out to be the point rather than the risk: they now go on working the tracks they already
+have.
+
+## Amendment — 2026-09-15: consumption had no backoff, and spent a day's quota
+
+`ConsumeAsync` re-offered every recorded entry the playlist still held on **every** scan, and a
+scan runs on each page read and each stage worker's two-minute loop. A `playlistItems.delete`
+costs fifty quota units against a daily ten thousand. The removals were evidently failing — a 403
+from a playlist the authorised channel does not own would do it — and the result checked nothing,
+so they were retried until the quota was gone.
+
+Every other stage in this repo goes through `StageEligibility` and strikes out. This one was
+written without any of that.
+
+**An entry is now marked as offered before the call and regardless of the result**, so it is
+offered once and never again; a removal that fails stays failed, and retrying is the user's to ask
+for. The cost is stated in Settings, where it was not before: emptying a hundred entries spends
+half a day's quota, which is inherent to the feature rather than a fault, and nobody had said so.

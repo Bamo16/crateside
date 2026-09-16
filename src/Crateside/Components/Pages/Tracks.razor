@@ -197,6 +197,14 @@
         }
     </div>
 
+    @if (_view is { PlaylistProblem: { } stale })
+    {
+        @* The rows below are built from what crateside has taken on, so they stand. *@
+        <p class="notice error">
+            The playlist could not be read, so nothing new can arrive: @stale
+        </p>
+    }
+
     @if (_view is null)
     {
         <p class="notice">Reading the queue…</p>

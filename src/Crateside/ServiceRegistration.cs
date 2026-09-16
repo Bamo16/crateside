@@ -316,6 +316,7 @@ public static class ServiceRegistration
                 return view with
                 {
                     ReadAt = scan.ReadAt,
+                    PlaylistProblem = scan.PlaylistProblem,
                 };
             },
             sp.GetRequiredService<StageHub>(),
