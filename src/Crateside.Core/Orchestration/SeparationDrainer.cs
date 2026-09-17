@@ -41,12 +41,73 @@ public sealed class SeparationDrainer(
 
         try
         {
-            return DrainTick.Ran(order, await runner.RunAsync(order, cancellationToken));
+            var result = await runner.RunAsync(order, cancellationToken);
+
+            if (result.Outcome is SeparationOutcome.Succeeded)
+                StemLanding.Reconcile(
+                    _paths,
+                    KeyLedger.Read(_paths.Ledger),
+                    order,
+                    result.OutputFiles
+                );
+
+            return DrainTick.Ran(order, result);
         }
         finally
         {
             control.Report(null);
         }
+    }
+}
+
+/// <summary>Where a finished run's stems belong, once it is finished.</summary>
+public static class StemLanding
+{
+    /// <summary>
+    /// Moves a run into the key-identified root when the verdict arrived while it was running.
+    /// </summary>
+    /// <remarks>
+    /// The destination is chosen when the order is composed, from the ledger as it stood then. A
+    /// re-cut restarts separation at once, so a track being re-judged can be cut before its
+    /// verdict lands — and the handoff reads only the key-identified root, so the output parks in
+    /// the other one with nothing to move it on. One re-cut sat there for eighteen hours with a
+    /// perfectly good key, reported as next on the GPU.
+    /// </remarks>
+    public static IReadOnlyList<string> Reconcile(
+        CratesidePaths paths,
+        KeyLedger ledger,
+        WorkOrder order,
+        IReadOnlyList<string> outputs
+    )
+    {
+        if (
+            order.Destination is not StemDestination.UnresolvedKey
+            || !ledger.TryGetLatestByVideoId(order.VideoId, out var run)
+            || !run.HasTaggableKey
+        )
+            return [];
+
+        var destination = paths.DestinationFor(StemDestination.KeyIdentified);
+        List<string> moved = [];
+
+        Directory.CreateDirectory(destination);
+
+        foreach (var file in outputs.Where(File.Exists))
+        {
+            var landing = Path.Combine(destination, Path.GetFileName(file));
+
+            try
+            {
+                File.Move(file, landing, overwrite: true);
+                moved.Add(landing);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                // Left parked rather than lost, which is where it would have stayed anyway.
+            }
+        }
+
+        return moved;
     }
 }
 
