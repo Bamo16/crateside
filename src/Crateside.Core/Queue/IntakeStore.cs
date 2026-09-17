@@ -8,8 +8,7 @@ namespace Crateside.Core.Queue;
 /// (ADR 0021).
 /// </summary>
 /// <remarks>
-/// Stored in <c>%APPDATA%\crateside\intake.json</c>, beside the settings and apart from them: an
-/// instruction is what the user asked for, and this is what the playlist said.
+/// Stored in <c>%APPDATA%\crateside\intake.json</c>, beside the settings and apart from them.
 /// </remarks>
 public sealed class IntakeStore
 {
@@ -29,9 +28,8 @@ public sealed class IntakeStore
     /// Whether everything recorded has reached disk.
     /// </summary>
     /// <remarks>
-    /// False once a write has failed, and it does not recover within a run. Consuming a playlist
-    /// entry on the strength of a record that exists only in memory would lose the track at the
-    /// next restart — the entry is the only other copy.
+    /// False once a write has failed, and it does not recover within a run: a record that exists
+    /// only in memory is lost at the next restart.
     /// </remarks>
     public bool IsDurable
     {
@@ -61,9 +59,8 @@ public sealed class IntakeStore
     /// Remembers every track it has not seen before, and returns the ones it added.
     /// </summary>
     /// <remarks>
-    /// Existing records are left alone rather than refreshed. The playlist entry is the weaker
-    /// source the moment it has been read once: a title can be edited upstream, and a track the
-    /// user has since renamed should not have that undone by a later scan.
+    /// Existing records are left alone rather than refreshed: a title the user has since changed
+    /// must not be undone by a later scan.
     /// </remarks>
     public IReadOnlyList<IntakeRecord> Record(IEnumerable<QueueItem> items)
     {
@@ -94,10 +91,6 @@ public sealed class IntakeStore
     /// <summary>
     /// Takes tracks crateside already knows of into the intake, for a store that predates it.
     /// </summary>
-    /// <remarks>
-    /// Without this a track that left the playlist before intake existed would never gain a
-    /// record, and so would stay unreachable — which is the fault ADR 0021 was written for.
-    /// </remarks>
     public void Backfill(IEnumerable<string> videoIds)
     {
         lock (_gate)
@@ -117,9 +110,8 @@ public sealed class IntakeStore
     /// Records that these entries have been offered back, so no scan offers them again.
     /// </summary>
     /// <remarks>
-    /// Called before the removal rather than after. A crash between the two then costs one
-    /// un-removed entry, where the other order costs the whole playlist's quota on every scan
-    /// until someone notices.
+    /// Called before the removal, not after: the other order costs the whole playlist's quota on
+    /// every scan after a crash.
     /// </remarks>
     public void MarkRemovalAttempted(IEnumerable<string> videoIds, DateTimeOffset at)
     {
@@ -146,13 +138,8 @@ public sealed class IntakeStore
     /// that asks for nothing.
     /// </summary>
     /// <remarks>
-    /// The backfill once took every stored instruction, residue included, and those records put
-    /// finished tracks back in the work lists. Narrowing it stops new ones; this clears the ones
-    /// already written, which would otherwise sit in the line for the GPU for ever.
-    ///
-    /// A backfilled record is known by its shape — it stands in for a track nobody has seen in
-    /// the playlist, so it has the video ID for a title and no added-at. A record made from a
-    /// real entry has both, so none is at risk.
+    /// A backfilled record is known by its shape: the video ID for a title and no added-at. A
+    /// record made from a real entry has both, so none is at risk.
     /// </remarks>
     public void Prune(IReadOnlySet<string> owed, IReadOnlySet<string> held)
     {
@@ -192,9 +179,8 @@ public sealed class IntakeStore
     /// Everything crateside has taken on: what the playlist holds now, then what it held once.
     /// </summary>
     /// <remarks>
-    /// An entry that is still there wins, because it is the same track with a live
-    /// <see cref="QueueItem.PlaylistItemId"/> — the difference that tells removal whether there
-    /// is anything upstream to delete.
+    /// An entry that is still there wins: it carries a live
+    /// <see cref="QueueItem.PlaylistItemId"/>, which is what removal needs to delete it.
     /// </remarks>
     public static IReadOnlyList<QueueItem> Merge(
         IReadOnlyList<QueueItem> held,
@@ -285,9 +271,8 @@ public sealed record IntakeRecord
     /// When the playlist entry was offered back, or null while it never has been.
     /// </summary>
     /// <remarks>
-    /// Set whether the removal succeeded or not, and never cleared: a delete costs fifty quota
-    /// units against a daily ten thousand, so one that fails must not be tried again on the next
-    /// scan. Retrying is the user's to ask for, through Settings.
+    /// Set whether the removal succeeded or not, and never cleared: a failed delete costs fifty
+    /// quota units and must not be retried on the next scan.
     /// </remarks>
     [JsonPropertyName("removalAttemptedAt")]
     public DateTimeOffset? RemovalAttemptedAt { get; init; }

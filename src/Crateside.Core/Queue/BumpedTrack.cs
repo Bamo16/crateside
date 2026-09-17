@@ -4,10 +4,8 @@ namespace Crateside.Core.Queue;
 /// The one track the user wants worked next, if they have said so.
 /// </summary>
 /// <remarks>
-/// Deliberately not persisted, and deliberately one at a time. A bump is about the queue in
-/// front of you now: one made last week still jumping ahead today would be wrong, and a list of
-/// them would be a priority scheme nobody asked for. FIFO is right until the moment it is not
-/// (ADR 0015).
+/// Deliberately not persisted, and deliberately one at a time: a bump is about the queue in
+/// front of you now (ADR 0015).
 /// </remarks>
 public sealed class BumpedTrack
 {

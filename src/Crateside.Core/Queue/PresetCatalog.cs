@@ -7,10 +7,8 @@ namespace Crateside.Core.Queue;
 /// What the separator can make, and what it calls each one.
 /// </summary>
 /// <remarks>
-/// The link between the two vocabularies a track is described in: a <see cref="Queue.StemPlan"/>
-/// says <c>vocal_full</c>, and the file it produces says <c>Vocal - Full</c>. The rule relating
-/// them is StemForge's — it follows the audio-separator catalog underneath — so it is read rather
-/// than mirrored (ADR 0018).
+/// The link between the two vocabularies: a <see cref="Queue.StemPlan"/> says <c>vocal_full</c>
+/// and the file says <c>Vocal - Full</c>. Read from StemForge rather than mirrored (ADR 0018).
 /// </remarks>
 public sealed record PresetCatalog
 {
@@ -29,9 +27,8 @@ public sealed record PresetCatalog
     /// The id behind a name the separator wrote, which is the join a file on disk needs.
     /// </summary>
     /// <remarks>
-    /// A warp guide never resolves: <c>Drums - htdemucs_ft</c> carries the model name, is not a
-    /// catalog preset, and is not something the plan can ask for — see
-    /// <see cref="Staging.StagingStem.IsWarpGuidePreset"/>.
+    /// A warp guide never resolves: <c>Drums - htdemucs_ft</c> carries the model name and is no
+    /// catalog preset — see <see cref="Staging.StagingStem.IsWarpGuidePreset"/>.
     /// </remarks>
     public bool TryGetId(string? displayName, [NotNullWhen(true)] out string? id)
     {
@@ -67,8 +64,7 @@ public sealed record SeparatorPreset
 
     /// <summary>What the preset is for, in the separator's own words.</summary>
     /// <remarks>
-    /// Worth showing: the picker offers nine presets where the app used to ask for two, and this
-    /// is the only thing that tells <c>Clean</c> from <c>Balanced</c>.
+    /// The only thing that tells <c>Clean</c> from <c>Balanced</c> among nine presets.
     /// </remarks>
     [JsonPropertyName("description")]
     public string? Description { get; init; }

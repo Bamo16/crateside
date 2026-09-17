@@ -53,8 +53,7 @@ public sealed record Acquisition
     /// </summary>
     /// <remarks>
     /// <see cref="PremiumStatus.NotSignedIn"/> and <see cref="PremiumStatus.AccountNotPremium"/>
-    /// are deliberately absent: they are true of every download at once, so stopping one track
-    /// for them would be the wrong shape of alarm.
+    /// are deliberately absent: they are true of every download at once.
     /// </remarks>
     private bool IsAboutTheSource =>
         PremiumStatus is PremiumStatus.NoPremiumLadder or PremiumStatus.SourceHasNoPremiumAudio;

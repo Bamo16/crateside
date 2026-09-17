@@ -9,9 +9,8 @@ namespace Crateside.Core.Ledger;
 /// found, and everything the three detectors reported.
 /// </summary>
 /// <remarks>
-/// Read on demand for a single song rather than with the whole ledger — the <c>machine</c> block
-/// is the bulk of every line and nothing on the board needs it, so <see cref="KeyLedger"/> does
-/// not deserialize it. This streams the file and parses only the line asked for.
+/// Read on demand for a single song rather than with the whole ledger: this streams the file
+/// and parses only the line asked for.
 /// </remarks>
 public sealed record RunEvidence
 {
@@ -36,16 +35,20 @@ public sealed record RunEvidence
     public string? Key { get; init; }
 
     /// <summary>
-    /// The diatonic mode, where a human source established one. Null means nobody looked, not
-    /// "plain major/minor". No detector can produce a mode, so this is always a judgment.
+    /// The diatonic mode, where a human source established one.
     /// </summary>
+    /// <remarks>
+    /// Null means nobody looked, not "plain major/minor": no detector can produce a mode.
+    /// </remarks>
     public string? Mode { get; init; }
 
     /// <summary>
     /// The argument that the tonic is not its relative, made against the chords and the flicker.
-    /// Null on runs recorded before the schema split it out — their prose is still in
-    /// <see cref="Reasoning"/>.
     /// </summary>
+    /// <remarks>
+    /// Null on runs recorded before the schema split it out; their prose is still in
+    /// <see cref="Reasoning"/>.
+    /// </remarks>
     public string? TonicCheck { get; init; }
 
     /// <summary>The confidence rationale, and anything else the agent thought worth saying.</summary>
@@ -83,9 +86,11 @@ public sealed record RunEvidence
     public string? BpmSource { get; init; }
 
     /// <summary>
-    /// The runner's own tempo estimate, always kept beside the recommendation. Frequently wrong
-    /// — especially by a factor of two — so it is shown as a cross-check, never as the answer.
+    /// The runner's own tempo estimate, always kept beside the recommendation.
     /// </summary>
+    /// <remarks>
+    /// Frequently wrong, especially by a factor of two, so it is a cross-check and never the answer.
+    /// </remarks>
     public double? BeatdetectBpm { get; init; }
 
     /// <summary>
@@ -224,10 +229,11 @@ public sealed partial record EvidenceSource
     public string? Url { get; init; }
 
     /// <summary>
-    /// How the source was obtained, when that is not simply "this link". Carries the case a
-    /// URL cannot: <c>"user-provided image"</c> is the user photographing sheet music, which
-    /// is among the strongest evidence in the record and has no page at all.
+    /// How the source was obtained, when that is not simply "this link".
     /// </summary>
+    /// <remarks>
+    /// <c>"user-provided image"</c> is the user photographing sheet music, which has no page at all.
+    /// </remarks>
     public string? Via { get; init; }
 
     /// <summary>Everything the source said about the key, verbatim.</summary>
@@ -281,10 +287,12 @@ public sealed partial record EvidenceSource
     public SourceKind Kind => ParseKind(RecordedKind) ?? KindFromHost;
 
     /// <summary>
-    /// The kind the host implies. Kept as a <em>cross-check</em>, not the authority: a host
-    /// catalog cannot classify a photograph of sheet music, cannot tell a rigorous analysis
-    /// from a bare assertion on the same blog, and cannot cover an unbounded set of domains.
+    /// The kind the host implies.
     /// </summary>
+    /// <remarks>
+    /// A <em>cross-check</em>, not the authority: a host catalog cannot classify a photograph of
+    /// sheet music, nor tell a rigorous analysis from a bare assertion on the same blog.
+    /// </remarks>
     public SourceKind KindFromHost =>
         Host?.Replace("www.", string.Empty, StringComparison.OrdinalIgnoreCase) switch
         {
@@ -399,10 +407,12 @@ public sealed record AlgorithmResult
     public double? Confidence { get; init; }
 
     /// <summary>
-    /// CREMA's runner-up and how close it was. CREMA has no real confidence — its winner's
-    /// value is structurally always 1.0 — so separation from the runner-up is the actual
-    /// signal, and a near-tie against the relative key is a swap warning.
+    /// CREMA's runner-up and how close it was.
     /// </summary>
+    /// <remarks>
+    /// CREMA's winner is structurally always 1.0, so separation from the runner-up is the signal;
+    /// a near-tie against the relative key is a swap warning.
+    /// </remarks>
     public string? RunnerUpKey { get; init; }
 
     public double? RunnerUpRatio { get; init; }
@@ -463,8 +473,8 @@ public sealed record AgreementPair
     public bool Agrees => Status.Equals("full", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// The dangerous outcome: relative keys share every note, so this cannot be broken by any
-    /// confidence value — only by the cadence or a human source.
+    /// The dangerous outcome: relative keys share every note, so only the cadence or a human
+    /// source can break it.
     /// </summary>
     public bool IsRelative => Status.Equals("relative", StringComparison.OrdinalIgnoreCase);
 }

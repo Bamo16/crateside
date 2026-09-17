@@ -40,10 +40,12 @@ public static partial class YouTubeUrl
     }
 
     /// <summary>
-    /// The 11-character video ID out of a URL or a bare ID — <c>watch?v=</c>, <c>youtu.be/</c>,
-    /// <c>/shorts/</c> and <c>/embed/</c>, with or without a scheme and with any trailing query.
-    /// False for anything else, rather than a guess.
+    /// The 11-character video ID out of a URL or a bare ID.
     /// </summary>
+    /// <remarks>
+    /// <c>watch?v=</c>, <c>youtu.be/</c>, <c>/shorts/</c> and <c>/embed/</c>, with or without a
+    /// scheme and with any trailing query. False for anything else, rather than a guess.
+    /// </remarks>
     public static bool TryGetVideoId(string? input, [NotNullWhen(true)] out string? videoId)
     {
         videoId =

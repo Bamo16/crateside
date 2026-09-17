@@ -153,9 +153,11 @@ public static class AbletonWarpReader
 
     /// <summary>
     /// Offsets of every fixed-width value in the instance, keyed by dotted path, up to the first
-    /// variable-length member — which is <c>WarpMarkers</c>, reached through
-    /// <paramref name="markers"/> instead.
+    /// variable-length member.
     /// </summary>
+    /// <remarks>
+    /// That member is <c>WarpMarkers</c>, reached through <paramref name="markers"/> instead.
+    /// </remarks>
     private static bool TryLayout(
         Dictionary<string, SchemaField[]?> types,
         int instance,

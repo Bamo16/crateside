@@ -6,9 +6,8 @@ namespace Crateside.Core.Orchestration;
 /// Keeps separation single-flight, across restarts as well as within one.
 /// </summary>
 /// <remarks>
-/// Windows does not kill a child process when its parent exits, so a <c>stemforge-cli</c>
-/// process crateside launched can outlive a restart; an orphan is adopted rather than killed,
-/// to avoid discarding GPU work already in progress.
+/// Windows does not kill a child when its parent exits, so a <c>stemforge-cli</c> can outlive a
+/// restart; an orphan is adopted rather than killed, so GPU work in progress is not discarded.
 /// </remarks>
 public sealed class SeparationInterlock(JobStore jobs, IProcessProbe probe)
 {

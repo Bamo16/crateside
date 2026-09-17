@@ -8,10 +8,8 @@ namespace Crateside.Core.Orchestration;
 /// Puts a track into the work lists without the playlist.
 /// </summary>
 /// <remarks>
-/// A second way in, added on purpose and against
-/// <see href="https://github.com/Bamo16/crateside/blob/master/docs/adr/0010-the-playlist-is-the-inbox-not-the-work-list.md">ADR 0010</see>'s
-/// grain: a pasted track reaches <c>Outstanding</c>, so it is detected and judged, and that costs
-/// quota. Unlike a re-cut, which is deliberately gated out of that list.
+/// A second way in, against ADR 0010's grain: a pasted track reaches <c>Outstanding</c> and so
+/// costs quota, unlike a re-cut.
 /// </remarks>
 public sealed class TrackAdd(
     QueueSettingsStore settings,
@@ -90,9 +88,8 @@ public sealed class TrackAdd(
 
     /// <summary>Drops crateside's own record of a track it was told to work.</summary>
     /// <remarks>
-    /// Nothing on disk is touched, and a track that has produced files keeps its row through
-    /// them. Both records go: the instruction, and the intake that outlives the playlist entry
-    /// (ADR 0021) — dropping one alone leaves the other to put the track back on the next scan.
+    /// Nothing on disk is touched. Both records go — instruction and intake — because dropping
+    /// one alone leaves the other to put the track back on the next scan (ADR 0021).
     /// </remarks>
     public void Forget(string videoId)
     {

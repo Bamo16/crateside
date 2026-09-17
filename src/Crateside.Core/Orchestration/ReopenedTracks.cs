@@ -20,9 +20,8 @@ public static class ReopenedTracks
     /// One video ID per song still owing work, the most recently touched of that song's.
     /// </summary>
     /// <remarks>
-    /// Grouped by song, not by video ID (ADR 0014). A source swap cancels the old ID's stages
-    /// and completes them under the new one, so reading this per video ID leaves the old ID
-    /// owing a handoff and a tagging that have in fact already happened — for ever.
+    /// Grouped by song, not by video ID (ADR 0014): a swap completes the old ID's stages under
+    /// the new one, so reading per video ID leaves the old ID owing them for ever.
     /// </remarks>
     public static IReadOnlySet<string> From(IEnumerable<TrackJob> jobs, KeyLedger ledger) =>
         Owing(jobs, ledger, Reopenable);
@@ -31,10 +30,8 @@ public static class ReopenedTracks
     /// The same, narrowed to songs owing a <em>separation</em>.
     /// </summary>
     /// <remarks>
-    /// The only thing that may put a track the playlist still holds back in the line for the
-    /// GPU. The wider set above also carries tracks owing a handoff or a tagging, which need no
-    /// GPU and whose rows already exist — reading it here would show them as waiting for a
-    /// separator that is not going to touch them.
+    /// The only thing that may put a track the playlist still holds back in the line for the GPU.
+    /// The wider set above also carries tracks owing a handoff or a tagging, which need none.
     /// </remarks>
     public static IReadOnlySet<string> AwaitingCut(IEnumerable<TrackJob> jobs, KeyLedger ledger) =>
         Owing(jobs, ledger, [JobStage.Separation]);

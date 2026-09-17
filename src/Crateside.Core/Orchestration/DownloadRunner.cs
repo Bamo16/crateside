@@ -7,14 +7,15 @@ namespace Crateside.Core.Orchestration;
 /// Fetches one source, and keeps what the download said about its own audio.
 /// </summary>
 /// <remarks>
-/// It must be <c>stemforge-cli download</c>: that writes provenance into the file's
-/// <c>COMMENT</c> tag, which every reader joins on. A file fetched any other way is invisible
-/// to crateside (ADR 0005 §4).
+/// It must be <c>stemforge-cli download</c>: it writes the provenance every reader joins on, so
+/// a file fetched any other way is invisible to crateside (ADR 0005 §4).
 /// </remarks>
 public sealed class DownloadRunner(string stemforge = "stemforge-cli")
 {
-    /// <param name="into">Where the file lands. The working set for a detection source, the
-    /// stems output for an added one.</param>
+    /// <param name="into">
+    /// Where the file lands: the working set for a detection source, the stems output for an
+    /// added one.
+    /// </param>
     public async Task<DownloadResult> RunAsync(
         string url,
         string into,

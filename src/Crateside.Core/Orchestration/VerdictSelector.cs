@@ -18,10 +18,8 @@ public sealed class VerdictSelector(
     /// detected, in flight, given up on, or stopped for a premium shortfall.
     /// </summary>
     /// <remarks>
-    /// This predicate is the exact negation of what <see cref="VerdictRunner"/> checks
-    /// afterward, which is why a half-finished session needs no special handling. The ledger
-    /// check re-verifies a <see cref="QueueView.Outstanding"/> snapshot that may be stale, since
-    /// this stage writes the very thing the snapshot measures.
+    /// The ledger check re-verifies a <see cref="QueueView.Outstanding"/> snapshot that may be
+    /// stale, because this stage writes the very thing the snapshot measures.
     /// </remarks>
     public bool TryPickNext(QueueView view, KeyLedger ledger, out QueueItem next)
     {

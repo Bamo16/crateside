@@ -9,10 +9,8 @@ namespace Crateside;
 /// to rename before the GPU runs rather than after.
 /// </summary>
 /// <remarks>
-/// Not an <see cref="IStageDrainer"/> and deliberately not pausable. It spends one yt-dlp
-/// metadata fetch per track and contends for nothing — no GPU, no Claude quota — which is the
-/// same reason detection runs unattended. A worker that started paused would sit there resolving
-/// nothing while the rows went on showing YouTube's titles.
+/// Not an <see cref="IStageDrainer"/> and deliberately not pausable: it contends for nothing
+/// — no GPU, no Claude quota.
 /// </remarks>
 public sealed class NameWorker(
     QueueService queue,
@@ -27,9 +25,9 @@ public sealed class NameWorker(
 
     /// <summary>
     /// Uploads that would not resolve, so a removed or private video is not asked about every
-    /// tick for ever. Not persisted: a restart is a cheap enough place to retry a network call
-    /// that may simply have been unlucky.
+    /// tick for ever.
     /// </summary>
+    /// <remarks>Not persisted: a restart is a cheap place to retry a call that may have been unlucky.</remarks>
     private readonly HashSet<string> _unresolvable = new(StringComparer.Ordinal);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

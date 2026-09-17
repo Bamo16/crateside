@@ -71,9 +71,8 @@ public enum ParkReason
     /// The download came back short of premium audio, and was stopped before the verdict.
     /// </summary>
     /// <remarks>
-    /// The way out is a better upload or the user's say-so. Only ever a shortfall about the
-    /// upload itself — a dead or non-premium session is true of every download at once and never
-    /// parks a single track (ADR 0016).
+    /// The way out is a better upload or the user's say-so. Only ever about the upload itself,
+    /// never a session-wide shortfall (ADR 0016).
     /// </remarks>
     PremiumShortfall,
 }

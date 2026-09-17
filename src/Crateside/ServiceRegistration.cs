@@ -115,9 +115,8 @@ public static class ServiceRegistration
     /// Draining: what turns the queue into stems on disk without anyone asking it to.
     /// </summary>
     /// <remarks>
-    /// The registrations below use factories rather than <c>AddSingleton&lt;T&gt;</c> because the
-    /// built-in container does not apply constructor defaults for trailing primitives like
-    /// <c>maxStrikes</c> or <c>startPaused</c> — it tries to resolve them from the graph and fails.
+    /// Factories rather than <c>AddSingleton&lt;T&gt;</c>: the built-in container does not apply
+    /// constructor defaults for trailing primitives like <c>maxStrikes</c>, and fails resolving them.
     /// </remarks>
     public static IServiceCollection AddCratesideOrchestration(this IServiceCollection services)
     {

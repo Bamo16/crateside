@@ -32,9 +32,8 @@ public sealed class WorkingSetJanitor(
     }
 
     /// <remarks>
-    /// Both halves are required: "nothing in staging" alone is also true of a track that has
-    /// never been separated, and the manual workflow empties staging progressively as a track is
-    /// imported, so a partly imported song must not trip this either.
+    /// Both halves are required: "nothing in staging" is also true of a track never separated,
+    /// and of one only partly imported.
     /// </remarks>
     private bool IsFinishedWith(string videoId, ProcessedTracks staged) =>
         jobs.TryGet(videoId, JobStage.Separation, out var job)

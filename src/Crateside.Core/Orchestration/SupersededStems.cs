@@ -7,21 +7,19 @@ namespace Crateside.Core.Orchestration;
 /// A song's staged files cut from an upload it is no longer cut from.
 /// </summary>
 /// <remarks>
-/// Only ever in <c>Sample Staging</c>, which crateside manages. A superseded sample that has
-/// reached <c>Mashup Samples</c> is the user's to remove, and Ableton asks before overwriting one
-/// (ADR 0014).
+/// Only ever in <c>Sample Staging</c>: a superseded sample that has reached
+/// <c>Mashup Samples</c> is the user's to remove (ADR 0014).
 /// </remarks>
 public static class SupersededStems
 {
     /// <summary>
     /// Files in <paramref name="stagingRoot"/> cut from a different upload of the same song as
-    /// <paramref name="videoId"/>. Empty for a track the ledger has never judged, which cannot
-    /// have been swapped.
+    /// <paramref name="videoId"/>.
     /// </summary>
+    /// <remarks>Empty for a track the ledger has never judged, which cannot have been swapped.</remarks>
     /// <param name="kept">
-    /// Uploads the user asked this song to keep, which are never superseded however many of them
-    /// there are. Without it a swap's rule eats every added source of the song, and an added
-    /// source's own handoff eats the stems it was added to sit beside (ADR 0019).
+    /// Uploads the user asked this song to keep, which are never superseded. Without it a swap's
+    /// rule eats every added source of the song (ADR 0019).
     /// </param>
     public static IReadOnlyList<string> In(
         string stagingRoot,

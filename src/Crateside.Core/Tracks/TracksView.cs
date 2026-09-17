@@ -38,19 +38,14 @@ public sealed record TracksView
     /// <param name="staging">
     /// The staging board, which carries per-file tag state that no other source has.
     /// </param>
-    /// <param name="onDisk">
-    /// Every file carrying a track's provenance, by video ID, across the roots that were scanned.
-    /// </param>
     /// <param name="instructions">
-    /// The user's standing instructions, by video ID — read here rather than off the queue item
-    /// because they outlive the playlist entry too.
+    /// The user's standing instructions, by video ID; they outlive the playlist entry.
     /// </param>
     /// <param name="finishedRoot">
     /// The folder that means the user is done with a file — <c>Mashup Samples</c>.
     /// </param>
     /// <param name="acquisitions">
-    /// How each retained download turned out, by video ID — the measured premium outcome a row
-    /// is parked over.
+    /// How each retained download turned out, by video ID — what a row is parked over.
     /// </param>
     public static TracksView Compose(
         QueueView view,
@@ -386,8 +381,8 @@ public sealed record TracksView
     /// What Ableton has tagged a library file with.
     /// </summary>
     /// <remarks>
-    /// The staging board carries this for a staged file and reads only its own root, so a file
-    /// that had moved to the library lost its key on the row while keeping it in the browser.
+    /// The staging board carries this only for a staged file and reads only its own root, so a
+    /// file in the library needs its key from elsewhere.
     /// </remarks>
     private static string? KeyIn(AbletonFolderInfo? tags, string path) =>
         tags?.TryGet(path, out var tagged) is true ? tagged.Key : null;

@@ -18,10 +18,12 @@ public sealed record QueueItem
     public string? ChannelTitle { get; init; }
 
     /// <summary>
-    /// When the item was added to the playlist. This, not <see cref="Position"/>, is the queue
-    /// order — "Add new videos to top of playlist" is a per-playlist setting, so position can
-    /// mean opposite things across playlists.
+    /// When the item was added to the playlist.
     /// </summary>
+    /// <remarks>
+    /// This, not <see cref="Position"/>, is the queue order: position is relative to a
+    /// per-playlist setting and can mean opposite things across playlists.
+    /// </remarks>
     public DateTimeOffset? AddedAt { get; init; }
 
     /// <summary>Where the item sits in the playlist. Display only; see <see cref="AddedAt"/>.</summary>
@@ -31,10 +33,11 @@ public sealed record QueueItem
     public PremiumOutlook PremiumOutlook { get; init; }
 
     /// <summary>
-    /// True when the video is no longer playable — deleted or made private upstream. YouTube
-    /// keeps the playlist entry and blanks its title, so it can never become processed and
-    /// would otherwise sit in the queue forever.
+    /// True when the video is no longer playable, deleted or made private upstream.
     /// </summary>
+    /// <remarks>
+    /// YouTube keeps the playlist entry and blanks its title, so it can never become processed.
+    /// </remarks>
     public bool IsUnavailable { get; init; }
 
     /// <summary>
@@ -42,8 +45,7 @@ public sealed record QueueItem
     /// </summary>
     /// <remarks>
     /// Carried from the user's standing instruction, never inferred here. Defaults to
-    /// <see cref="StemPlan.Default"/> for a track nobody has chosen for, so a reader never has to
-    /// handle "not stated" separately.
+    /// <see cref="StemPlan.Default"/>, so a reader never has to handle "not stated".
     /// </remarks>
     public StemPlan Plan { get; init; } = StemPlan.Default;
 
@@ -73,24 +75,14 @@ public sealed record QueueView
     /// <summary>
     /// Sorts the playlist into the work lists each stage reads.
     /// </summary>
-    /// <param name="fullyProcessed">Video IDs with both a verdict and stems on disk.</param>
-    /// <param name="verdictWithoutStems">Video IDs with a verdict and no stems anywhere.</param>
     /// <param name="separatedWithoutKey">
-    /// Video IDs whose stems are parked in the unresolved-key root, separated already and
-    /// waiting on a verdict good enough to tag with.
+    /// Video IDs parked in the unresolved-key root, waiting on a verdict good enough to tag with.
     /// </param>
-    /// <param name="instructions">The user's standing instructions, keyed by video ID.</param>
     /// <param name="reopened">
-    /// Tracks with separation to redo that the playlist no longer holds. Join
-    /// <see cref="AwaitingSeparation"/> only — kept out of <see cref="Items"/> and
-    /// <see cref="Outstanding"/> so a re-cut cannot cost quota.
+    /// Kept out of <see cref="Items"/> and <see cref="Outstanding"/>, so a re-cut cannot cost quota.
     /// </param>
     /// <param name="awaitingCut">
-    /// Video IDs whose separation is owed, which is the only thing that puts a track the playlist
-    /// still holds back in line with its files left where they are.
-    /// </param>
-    /// <param name="inventories">
-    /// What each track already has on disk, by video ID, so a cut asks only for what is missing.
+    /// Video IDs whose separation is owed with their files left where they are.
     /// </param>
     public static QueueView Compose(
         IReadOnlyList<QueueItem> items,

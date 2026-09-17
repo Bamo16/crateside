@@ -12,8 +12,7 @@ public interface IProcessProbe
     /// The start time of a live process, or false if no process is running under this id.
     /// </summary>
     /// <remarks>
-    /// A PID is not an identity: Windows reuses process ids freely, so a live PID matching one
-    /// we wrote down is not proof it is the same process. The start time is what turns a
+    /// A PID is not an identity: Windows reuses them, so the start time is what turns a
     /// coincidence into a match.
     /// </remarks>
     bool TryGetStartTime(int processId, out DateTimeOffset startedAt);

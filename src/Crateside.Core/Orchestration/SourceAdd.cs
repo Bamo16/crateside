@@ -57,9 +57,8 @@ public sealed class SourceAdd(
     /// song, the downloaded file arrives as a row of its own rather than as part of this track.
     /// </remarks>
     /// <param name="anyway">
-    /// The user has seen what the audio is and wants it regardless. Most instrumentals and
-    /// acapellas on YouTube are unofficial and offer no premium format, so this is the ordinary
-    /// path rather than an override.
+    /// The user has seen what the audio is and wants it regardless. The ordinary path for an
+    /// unofficial upload, not an override.
     /// </param>
     public async Task<AddOutcome> ApplyAsync(
         TrackRowFacts track,

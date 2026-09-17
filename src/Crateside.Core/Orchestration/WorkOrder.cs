@@ -5,7 +5,7 @@ namespace Crateside.Core.Orchestration;
 
 /// <summary>
 /// crateside's instruction for one track: which URL is canonical, where its stems belong, and
-/// what to ask for. What used to be prose in the detect-key skill.
+/// what to ask for.
 /// </summary>
 /// <remarks>
 /// Not a record that anything did — that is <see cref="TrackJob"/>. Composing one is pure.
@@ -114,9 +114,7 @@ public sealed record SeparationRecipe
     /// </summary>
     /// <remarks>
     /// Written out because a record compares <see cref="Presets"/> by reference, so two recipes
-    /// built a moment apart from the same plan were unequal. That held together only while every
-    /// recipe shared one array, which stopped being true the moment a recipe could be narrowed to
-    /// what a track still owes.
+    /// built from the same plan would be unequal.
     /// </remarks>
     public bool Equals(SeparationRecipe? other) =>
         other is not null
@@ -141,10 +139,8 @@ public sealed record SeparationRecipe
     /// What to ask the separator for, given what the user asked for and what is already made.
     /// </summary>
     /// <remarks>
-    /// A preset already on disk is <em>kept</em>, never cut again — which is what makes adding to
-    /// a track cost only the passes it adds, and what keeps the handoff from meeting a filename
-    /// it already has. The guide follows the same rule for a different reason: it is always
-    /// wanted, so the only question is whether one is already there.
+    /// A preset already on disk is <em>kept</em>, never cut again, so the handoff never meets a
+    /// filename it already has. The guide is always wanted, whether or not one is there.
     /// </remarks>
     public static SeparationRecipe For(StemPlan plan, StemInventory inventory)
     {

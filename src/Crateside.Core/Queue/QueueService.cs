@@ -10,11 +10,6 @@ public delegate IReadOnlySet<string> ReadReopenedTracks(KeyLedger ledger);
 /// <summary>
 /// What the separator can make, and what it calls each one.
 /// </summary>
-/// <remarks>
-/// A delegate rather than the reader itself, for the same reason as
-/// <see cref="ReadReopenedTracks"/>: reading it means running StemForge, which is orchestration's
-/// job and not the queue's.
-/// </remarks>
 public delegate Task<PresetCatalog> ReadPresetCatalog(CancellationToken cancellationToken);
 
 public sealed class QueueService(
@@ -195,9 +190,8 @@ public sealed class QueueService(
     /// Reads the queue and keeps everything the read produced, not just the conclusion.
     /// </summary>
     /// <remarks>
-    /// The playlist half is cached; the rest is a ledger read plus two recursive walks that
-    /// open every audio file under three roots with TagLib — the most expensive thing in the
-    /// app, and must not run per event.
+    /// The most expensive thing in the app — a ledger read plus two recursive walks that open
+    /// every audio file under three roots. Must not run per event.
     /// </remarks>
     public async Task<QueueScan> ScanAsync(CancellationToken cancellationToken = default)
     {
@@ -249,8 +243,7 @@ public sealed class QueueService(
     /// </summary>
     /// <remarks>
     /// These join <see cref="QueueView.Items"/> and therefore <see cref="QueueView.Outstanding"/>,
-    /// which is the whole point and the thing a re-cut is gated out of: a pasted track is meant to
-    /// be detected and judged, and that spends quota the user asked to spend (ADR 0010).
+    /// which a re-cut is gated out of (ADR 0010).
     /// </remarks>
     private IReadOnlyList<QueueItem> Pasted(IReadOnlyList<QueueItem> playlist)
     {
@@ -270,10 +263,7 @@ public sealed class QueueService(
     /// Everything crateside has taken on: what the playlist holds now, plus what it held once.
     /// </summary>
     /// <remarks>
-    /// The playlist is an arrival signal and nothing else (ADR 0021). Reading work from
-    /// membership is what left a source added to a finished track unreachable by any list, and
-    /// what stalled a re-cut before it — the same fault twice, one stage apart, because the
-    /// remedy named stages instead of removing the dependency.
+    /// The playlist is an arrival signal and nothing else (ADR 0021).
     /// </remarks>
     private IReadOnlyList<QueueItem> TakenOn(IReadOnlyList<QueueItem> held)
     {
@@ -290,10 +280,8 @@ public sealed class QueueService(
     /// Tracks the playlist may no longer hold that crateside still owes something for.
     /// </summary>
     /// <remarks>
-    /// Only instructions that ask for something. Backfilling every stored track took in entries
-    /// that say nothing at all — residue of tracks long finished — and put them back in the work
-    /// lists, where a separation the janitor had already swept left them looking uncut. They
-    /// re-downloaded every ten minutes for a day.
+    /// Only instructions that ask for something: an entry that says nothing is residue of a
+    /// finished track, and putting it back in the work lists re-downloads it.
     /// </remarks>
     private IEnumerable<string> Owed() =>
         settings
@@ -309,8 +297,7 @@ public sealed class QueueService(
     /// </summary>
     /// <remarks>
     /// Only what <see cref="IntakeStore.Record"/> reported as new, so a steady state costs no
-    /// writes at all. Off until the user asks for it: the first run removes every entry at once,
-    /// and a playlist deletion is not undoable from here.
+    /// writes. Off until the user asks: the first run removes every entry, and a deletion is final.
     /// </remarks>
     private async Task ConsumeAsync(
         IReadOnlyList<QueueItem> held,
@@ -385,9 +372,8 @@ public sealed class QueueService(
     /// Tracks with separation to redo that the playlist no longer holds.
     /// </summary>
     /// <remarks>
-    /// Gated to only tracks the ledger has already judged, so these can never reach
-    /// <see cref="QueueView.Outstanding"/>. They join <see cref="QueueView.AwaitingSeparation"/>
-    /// and nothing else.
+    /// Gated to tracks the ledger has already judged, so these never reach
+    /// <see cref="QueueView.Outstanding"/> — only <see cref="QueueView.AwaitingSeparation"/>.
     /// </remarks>
     private IReadOnlyList<QueueItem> Reopened(
         IReadOnlyList<QueueItem> items,
@@ -441,10 +427,10 @@ public sealed class QueueService(
     }
 
     /// <summary>
-    /// Removes specific items the user picked by hand — the escape hatch for anything the
-    /// automatic predicate will never claim, such as a track whose stems were deleted rather
-    /// than moved. Deliberately does no qualification check: this is the user's explicit call.
+    /// Removes specific items the user picked by hand, whatever the automatic predicate would
+    /// claim.
     /// </summary>
+    /// <remarks>Does no qualification check: this is the user's explicit call.</remarks>
     public async Task<IReadOnlyList<RemovalResult>> RemoveAsync(
         IReadOnlyList<QueueItem> items,
         CancellationToken cancellationToken = default

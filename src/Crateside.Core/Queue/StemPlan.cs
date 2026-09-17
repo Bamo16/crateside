@@ -7,11 +7,8 @@ namespace Crateside.Core.Queue;
 /// source track is itself a keeper.
 /// </summary>
 /// <remarks>
-/// The plan is the record. crateside used to store a <em>fact</em> — the release has no vocals —
-/// and derive the recipe from it, so the plan could change later without the record becoming a
-/// lie (ADR 0004). That reasoning needed there to be one fact underneath; once a track can ask
-/// for any of six presets and the source, there is none, and what the user asked for is the only
-/// thing left to keep (ADR 0018).
+/// The plan is the record: what the user asked for, not a fact the recipe is derived from
+/// (ADR 0018).
 /// </remarks>
 public sealed record StemPlan
 {
@@ -23,9 +20,8 @@ public sealed record StemPlan
     /// No vocal to separate out, so the source track is the sample.
     /// </summary>
     /// <remarks>
-    /// What <c>instrumentalRelease: true</c> used to derive, and what it converts to. Not a mode
-    /// the picker offers — it is reachable by unticking the vocal preset and ticking the source,
-    /// which is the same thing said in the picker's own vocabulary.
+    /// What <c>instrumentalRelease: true</c> converts to. Not a mode the picker offers: unticking
+    /// the vocal preset and ticking the source says the same thing.
     /// </remarks>
     public static StemPlan InstrumentalRelease { get; } = new() { Presets = [], KeepSource = true };
 

@@ -61,9 +61,7 @@ public sealed class StageWorker(
     /// </summary>
     /// <remarks>
     /// A job left <c>Running</c> by an interrupted restart looks like work still in progress to
-    /// every selector, so without this the track would be skipped forever. It is recorded as
-    /// <see cref="JobStatus.Cancelled"/> rather than failed, since a restart is not the track's
-    /// fault.
+    /// every selector, so without this the track would be skipped for ever.
     /// </remarks>
     private void Reopen()
     {

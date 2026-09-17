@@ -31,15 +31,16 @@ public sealed record StagingSong
     public bool AwaitingDetection => Verdict is null;
 
     /// <summary>
-    /// The files meant to be kept and tagged. For most songs the vocal and instrumental stems;
-    /// for an instrumental release, the source track, because there was never anything to
-    /// separate out of it.
+    /// The files meant to be kept and tagged.
     /// </summary>
+    /// <remarks>
+    /// For most songs the vocal and instrumental stems; for an instrumental release, the source
+    /// track (ADR 0004).
+    /// </remarks>
     public IReadOnlyList<StagingStem> Samples => [.. Stems.Where(s => !s.IsWarpGuide)];
 
     /// <summary>
-    /// Warp guides still on disk. Their presence means warping is outstanding — deleting one is
-    /// a step of the workflow, not tidying up.
+    /// Warp guides still on disk, whose presence means warping is outstanding.
     /// </summary>
     /// <remarks>This says only that a guide is still here, not that its absence means warped.</remarks>
     public IReadOnlyList<StagingStem> WarpGuides => [.. Stems.Where(s => s.IsWarpGuide)];
@@ -47,20 +48,19 @@ public sealed record StagingSong
     public int TaggedStemCount => Samples.Count(s => s.IsKeyTagged);
 
     /// <summary>
-    /// True when every <em>sample</em> carries a key — warp guides are excluded, because they are
-    /// used up rather than kept.
+    /// True when every <em>sample</em> carries a key; warp guides are excluded.
     /// </summary>
     /// <remarks>
-    /// Not because a warp guide goes untagged — crateside tags one like anything else. The axis
-    /// is retention: a guide is excluded because it is going to be deleted.
+    /// Excluded on retention, not on tagging: crateside tags a guide like anything else.
     /// </remarks>
     public bool IsFullyTagged => Samples.Count > 0 && TaggedStemCount == Samples.Count;
 
     /// <summary>
-    /// Stems tagged in Ableton with a key that is not the ledger's current verdict — which is
-    /// what a supersede leaves behind. Worth surfacing: the tag is what pairing actually uses,
-    /// so a stale one silently misroutes mashups.
+    /// Stems tagged in Ableton with a key that is not the ledger's current verdict.
     /// </summary>
+    /// <remarks>
+    /// The tag is what pairing uses, so a stale one silently misroutes mashups.
+    /// </remarks>
     public IReadOnlyList<StagingStem> StaleTaggedStems =>
         [.. Stems.Where(s => s.KeyDisagreesWithVerdict)];
 }
@@ -72,15 +72,16 @@ public sealed record StagingStem
     public required string FileName { get; init; }
 
     /// <summary>
-    /// The StemForge preset — Vocal - Full, Instrumental - Full, Drums. Null when the file is a
-    /// verbatim source download rather than a separation output: StemForge tags those too, but
-    /// deliberately without a preset descriptor.
+    /// The StemForge preset, or null when the file is a verbatim source download.
     /// </summary>
+    /// <remarks>
+    /// StemForge tags a source download too, but deliberately without a preset descriptor.
+    /// </remarks>
     public string? Preset { get; init; }
 
     /// <summary>
-    /// A stem made to be <em>looked at</em> rather than heard — the drums, whose transients are
-    /// what warp markers get placed against, and which is deleted once warping is done.
+    /// A stem made to be <em>looked at</em> rather than heard: the drums, deleted once warping
+    /// is done.
     /// </summary>
     /// <remarks>
     /// Every drums stem is treated as a warp guide, with no way to say otherwise — a kept drum

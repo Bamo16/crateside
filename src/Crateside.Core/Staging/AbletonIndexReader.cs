@@ -77,10 +77,12 @@ public sealed class AbletonIndexReader(IOptions<CratesidePaths> paths)
     }
 
     /// <summary>
-    /// The database Live is currently using — the one being written, not the highest-numbered.
-    /// The number is a schema version rather than an app version, so an upgrade need not mint a
-    /// new file and a stale one may sit beside the live one.
+    /// The database Live is currently using: the one being written, not the highest-numbered.
     /// </summary>
+    /// <remarks>
+    /// The number is a schema version, not an app version, so a stale file may sit beside the
+    /// live one.
+    /// </remarks>
     private string? FindDatabase() =>
         Directory.Exists(_paths.AbletonIndex)
             ? Directory

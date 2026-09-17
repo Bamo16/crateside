@@ -8,10 +8,8 @@ namespace Crateside.Core.Naming;
 /// Asks StemForge what it will call a track's files, before any work runs.
 /// </summary>
 /// <remarks>
-/// <c>download --list-formats</c> resolves yt-dlp's metadata without fetching audio. Neither
-/// field is ever composed here: a display title is deliberately lossier than
-/// <c>{artist} - {title}</c> — it collapses credits YouTube Music repeats per role, and drops one
-/// the title already carries — so rebuilding it from parts reproduces neither (ADR 0014).
+/// Neither field is ever composed here: a display title is deliberately lossier than
+/// <c>{artist} - {title}</c>, so rebuilding it from parts reproduces neither (ADR 0014).
 /// </remarks>
 public sealed class NameResolver(string stemforge = "stemforge-cli")
 {
@@ -78,10 +76,12 @@ public sealed record ResolvedName
     public required string DisplayTitle { get; init; }
 
     /// <summary>
-    /// The filename the source is given, without extension. Stems are conventionally
-    /// <c>"{BaseName} ({stem})"</c>, but that is StemForge's documented default rather than a
-    /// promise — a preset may template it and a collision may suffix it.
+    /// The filename the source is given, without extension.
     /// </summary>
+    /// <remarks>
+    /// Stems are conventionally <c>"{BaseName} ({stem})"</c>, but that is StemForge's default
+    /// rather than a promise.
+    /// </remarks>
     public required string BaseName { get; init; }
 }
 

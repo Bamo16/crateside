@@ -8,9 +8,6 @@ namespace Crateside.Core.Orchestration;
 /// </summary>
 public static class ExternalProcess
 {
-    /// <param name="workingDirectory">
-    /// Where to run it. Supplied when the command's own discovery depends on where it starts.
-    /// </param>
     public static async Task<ProcessOutcome> RunAsync(
         string executable,
         IEnumerable<string> arguments,
@@ -57,10 +54,11 @@ public static class ExternalProcess
     }
 
     /// <summary>
-    /// The last thing a failing command said, for an error message a human reads. Prefers
-    /// stderr, falls back to stdout, and takes the last non-blank line — a stack trace's useful
-    /// end rather than its start.
+    /// The last thing a failing command said, for an error message a human reads.
     /// </summary>
+    /// <remarks>
+    /// Prefers stderr, falls back to stdout, and takes the last non-blank line.
+    /// </remarks>
     public static string? Describe(params string[] streams) =>
         streams
             .Select(s => s.Trim())

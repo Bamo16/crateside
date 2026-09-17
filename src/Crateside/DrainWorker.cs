@@ -50,10 +50,12 @@ public sealed class DrainWorker(
     }
 
     /// <summary>
-    /// Squares the job store against reality before anything is allowed to launch. On Windows a
-    /// child process is not killed with its parent, so a <c>stemforge-cli</c> from a previous
-    /// crateside run may still be alive and must be found rather than duplicated.
+    /// Squares the job store against reality before anything is allowed to launch.
     /// </summary>
+    /// <remarks>
+    /// On Windows a child is not killed with its parent, so a <c>stemforge-cli</c> from a previous
+    /// run may still be alive and must be found rather than duplicated.
+    /// </remarks>
     private void Reconcile()
     {
         var reconciliation = interlock.Reconcile();

@@ -18,8 +18,7 @@ public sealed class EvidenceSelector(
     /// </summary>
     /// <remarks>
     /// Evidence already in the working set is what makes this terminate: detection records
-    /// nothing in the ledger, so a detected track is still outstanding, and without this check
-    /// the same track would be picked forever.
+    /// nothing in the ledger, so a detected track is still outstanding.
     /// </remarks>
     public bool TryPickNext(QueueView view, out QueueItem next)
     {
@@ -37,9 +36,8 @@ public sealed class EvidenceSelector(
     }
 
     /// <remarks>
-    /// retrySucceeded is true here: the working-set check above already confirmed the evidence
-    /// is gone, and the working set may be deleted by hand at any time, so a past success is not
-    /// a reason to refuse a re-acquire.
+    /// retrySucceeded is true here: the check above already confirmed the evidence is gone, and
+    /// the working set may be deleted by hand at any time.
     /// </remarks>
     private bool IsEligible(QueueItem item) =>
         StageEligibility.Allows(

@@ -8,8 +8,7 @@ namespace Crateside.Core.Ledger;
 /// </summary>
 /// <remarks>
 /// Lookup goes video ID → song identity → latest run. Resolving to the identity first is what
-/// makes a supersede win: a re-run is filed under the same identity, so going straight from a
-/// video ID to the run that mentioned it would return a stale verdict.
+/// makes a supersede win.
 /// </remarks>
 public sealed class KeyLedger
 {

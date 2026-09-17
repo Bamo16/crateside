@@ -15,8 +15,8 @@ public delegate AbletonFolderInfo ReadTagState(AuditRoot root);
 public static class TagAudit
 {
     /// <param name="tagState">
-    /// Where each root's tags are read from. Defaults to <see cref="FromEitherStore"/>, which is
-    /// the rule rather than a convenience — see <see cref="AuditRoot.ReadsTheIndex"/>.
+    /// Where each root's tags are read from. The default is the rule, not a convenience — see
+    /// <see cref="AuditRoot.ReadsTheIndex"/>.
     /// </param>
     public static TagAuditReport Run(
         KeyLedger ledger,
@@ -98,8 +98,7 @@ public static class TagAudit
 
 /// <summary>A root to scan, and whether its tag store is one crateside writes.</summary>
 /// <remarks>
-/// That one fact decides everything else. It used to gate which findings were trustworthy;
-/// it now picks which store is read, which is the thing it was always really about (ADR 0017).
+/// That one fact decides which store is read (ADR 0017).
 /// </remarks>
 public sealed record AuditRoot(string Path, bool TagStoreIsWritten)
 {
@@ -107,9 +106,8 @@ public sealed record AuditRoot(string Path, bool TagStoreIsWritten)
     /// Whether this root's tags come from Ableton's index rather than its own XMP.
     /// </summary>
     /// <remarks>
-    /// crateside reads the store it writes, because that is the only place it can see its own
-    /// work at once — the index takes hours to catch up. Everywhere else it reads the index,
-    /// which is the tag state rather than a mirror that may never converge on it.
+    /// crateside reads the store it writes, the only place it can see its own work at once — the
+    /// index takes hours to catch up. Everywhere else the index is the tag state.
     /// </remarks>
     public bool ReadsTheIndex => !TagStoreIsWritten;
 
@@ -136,12 +134,6 @@ public sealed partial class TagAuditReport(IReadOnlyList<TaggedStem> stems)
     ];
 
     /// <summary>A taggable verdict exists but no key was applied.</summary>
-    /// <remarks>
-    /// Restricted to roots crateside writes until ADR 0013, because the XMP could not tell
-    /// "untagged" from "not flushed yet". Each root is now read from the store that actually
-    /// holds its tags, so an absent key is a fact everywhere and the restriction is retired
-    /// (ADR 0017).
-    /// </remarks>
     public IReadOnlyList<TaggedStem> Untagged { get; } =
     [.. stems.Where(s => s is { AppliedKey: null, HasTaggableVerdict: true })];
 
@@ -229,10 +221,10 @@ public sealed record TaggedStem
     public bool HasPartialKey { get; init; }
 
     /// <summary>
-    /// The separation preset from the file's own provenance — <c>Vocal - Full</c>,
-    /// <c>Drums - htdemucs_ft</c> — or null for a file that was never separated. Read from the
-    /// tag rather than the filename, since renaming does not survive.
+    /// The separation preset from the file's own provenance, or null for a file that was never
+    /// separated.
     /// </summary>
+    /// <remarks>Read from the tag rather than the filename, which a rename does not survive.</remarks>
     public string? Preset { get; init; }
 }
 

@@ -74,9 +74,8 @@ public sealed class HandoffDrainer(
     /// What the user calls the track this file belongs to, or null when they have not said.
     /// </summary>
     /// <remarks>
-    /// An added source carries a video ID of its own and arrives named after its own upload, so
-    /// it is looked up through the track that asked for it — otherwise it sits somewhere else
-    /// entirely in Ableton's browser from the stems it was added to sit beside (ADR 0014).
+    /// An added source carries a video ID of its own, so it is looked up through the track that
+    /// asked for it — otherwise it sits apart from those stems in Ableton's browser (ADR 0014).
     /// </remarks>
     private string? NameFor(string videoId) =>
         Owner(videoId) switch

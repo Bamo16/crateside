@@ -33,9 +33,7 @@ public static partial class StemFileName
     /// </summary>
     /// <remarks>
     /// A claim and not a fact: a source download called <c>Gucci Gucci (Acapella)</c> reads the
-    /// same way. Only the separator's catalog can confirm one, and the reason to ask at all is
-    /// that StemForge before 1.0 wrote no preset into a stem's provenance — leaving the filename
-    /// as the only thing that says what 68 files in this library are.
+    /// same way, and only the separator's catalog can confirm one.
     /// </remarks>
     public static string? PresetOf(string path) =>
         PresetSuffix.Match(Path.GetFileNameWithoutExtension(path)) is { Success: true } match

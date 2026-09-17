@@ -16,11 +16,8 @@ public sealed class StageHub
     /// Tells every subscriber, and lets none of them stop the rest or the caller.
     /// </summary>
     /// <remarks>
-    /// A plain <c>Changed?.Invoke(...)</c> runs the handlers in registration order and abandons
-    /// the list at the first exception, so one page that had gone away would silence every other
-    /// subscriber and end the drain loop's tick. The publisher here is a background worker with
-    /// real work in flight, and the subscribers are browser circuits that come and go — the
-    /// asymmetry is the argument for swallowing.
+    /// A plain <c>Changed?.Invoke(...)</c> abandons the list at the first exception, so one page
+    /// that had gone away would silence every other subscriber and end the drain loop's tick.
     /// </remarks>
     public void Publish(StageChange change)
     {

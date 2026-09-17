@@ -38,11 +38,9 @@ public sealed class StemRecut(
 
     /// <summary>What changing this track's plan would do, or why it cannot be done.</summary>
     /// <param name="known">
-    /// This track's files as the last queue scan found them, staged or already in
-    /// <c>Mashup Samples</c> — passed in rather than read here because scanning the library is the
-    /// most expensive thing the app does and must not run on every tick of the picker. Only
-    /// <see cref="staged"/> is read fresh, because that is the cheap read and the one a deletion
-    /// has to trust.
+    /// This track's files as the last queue scan found them, passed in rather than read here
+    /// because scanning the library is the most expensive thing the app does. Only
+    /// <paramref name="staged"/> is read fresh.
     /// </param>
     public RecutPlan PlanFor(
         string videoId,

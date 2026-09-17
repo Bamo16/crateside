@@ -6,8 +6,7 @@ namespace Crateside.Core.Orchestration;
 
 /// <summary>Decides which source to acquire next.</summary>
 /// <remarks>
-/// Three kinds, and audio comes first: nothing can be judged or cut until it is here, where a
-/// kept source and an added one are each only one more sample (ADR 0019).
+/// Three kinds: a kept source and an added one are each only one more sample (ADR 0019).
 /// </remarks>
 public sealed class DownloadSelector(
     JobStore jobs,
@@ -19,11 +18,8 @@ public sealed class DownloadSelector(
     public const int DefaultMaxStrikes = 5;
 
     /// <remarks>
-    /// Audio comes last of the three, having once come first. Both of the others are bounded by
-    /// something the user did — a plan that keeps its source, a source they attached — while the
-    /// audio list refills from the playlist, so ordering audio first starves the other two for as
-    /// long as anything is arriving. A source added to a finished track waited that way and was
-    /// never fetched.
+    /// Audio comes last: the other two are bounded by something the user did, while the audio list
+    /// refills from the playlist and would starve them.
     /// </remarks>
     public bool TryPickNext(QueueView view, out WantedDownload next)
     {
@@ -36,9 +32,8 @@ public sealed class DownloadSelector(
     /// A track with no audio held for it yet.
     /// </summary>
     /// <remarks>
-    /// Both work lists, not just the outstanding one: a track whose stems were cut and then
-    /// re-cut has a verdict and an empty working set, and separation used to cover that by
-    /// handing the URL to the separator — acquisition inside the stage that separates.
+    /// Both work lists, not just the outstanding one: a re-cut track has a verdict and an empty
+    /// working set.
     /// </remarks>
     private WantedDownload? Audio(QueueView view) =>
         view
@@ -63,9 +58,8 @@ public sealed class DownloadSelector(
     /// A track whose plan keeps its separation source, with the audio held and no copy made.
     /// </summary>
     /// <remarks>
-    /// Copied rather than separated, so it has no business in the stage that spends the GPU —
-    /// it used to live there because <c>--keep-source</c> was a flag on <c>separate</c>, which
-    /// meant pausing separation stopped a file copy (ADR 0019).
+    /// Copied rather than separated, so it has no business in the stage that spends the GPU
+    /// (ADR 0019).
     /// </remarks>
     private WantedDownload? Kept(QueueView view) =>
         view
@@ -113,9 +107,8 @@ public sealed class DownloadSelector(
     /// The file has been fetched and is waiting for the handoff to move it into staging.
     /// </summary>
     /// <remarks>
-    /// The inventory reads <c>Sample Staging</c> and <c>Mashup Samples</c>, so a file in the
-    /// stems output is invisible to it — and the gap between a download finishing and a handoff
-    /// running is long enough to fetch the same upload 280 times, which is what it did.
+    /// The inventory reads <c>Sample Staging</c> and <c>Mashup Samples</c>, so a file still in the
+    /// stems output is invisible to it and would be fetched again.
     /// </remarks>
     private bool AwaitingHandoff(string pattern) =>
         new[] { paths.StemsKeyIdentified, paths.StemsUnresolvedKey }
@@ -124,8 +117,8 @@ public sealed class DownloadSelector(
             .Any();
 
     /// <remarks>
-    /// retrySucceeded is true: the checks above already confirmed the file is gone, and both
-    /// the working set and staging may be emptied by hand at any time.
+    /// retrySucceeded is true: the checks above already confirmed the file is gone, and the
+    /// working set may be emptied by hand at any time.
     /// </remarks>
     private bool IsEligible(string videoId) =>
         StageEligibility.Allows(jobs, videoId, JobStage.Download, maxStrikes, retrySucceeded: true);
@@ -134,14 +127,8 @@ public sealed class DownloadSelector(
     /// The audio is absent because the janitor took it, not because it was never fetched.
     /// </summary>
     /// <remarks>
-    /// The eligibility check above retries after a success on purpose: the working set can be
-    /// emptied by hand and the file really is gone. But the janitor empties it too, once
-    /// separation has succeeded and staging is clear — so a finished track with no working set
-    /// looks exactly like an unfetched one, and re-downloading it makes the janitor sweep it
-    /// again. That ran every ten minutes for a day, 125 times on one track.
-    ///
-    /// A re-cut is not caught by this: putting a track back in line reopens its separation job,
-    /// so the latest is no longer a success.
+    /// The janitor empties the working set once separation has succeeded, so a finished track
+    /// looks exactly like an unfetched one. A re-cut reopens its job, so it is not caught by this.
     /// </remarks>
     private bool IsSweptUp(string videoId) =>
         jobs.TryGet(videoId, JobStage.Separation, out var job)

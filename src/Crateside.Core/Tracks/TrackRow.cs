@@ -36,10 +36,6 @@ public sealed record TrackRow
     public int SamplesLeftInLibrary => Samples.Count(sample => sample.IsInLibrary);
 
     /// <summary>Whether an upload is one the user attached rather than one cut from (ADR 0019).</summary>
-    /// <remarks>
-    /// An added source is kept <em>alongside</em> the stems, so calling it an old upload reads as
-    /// though a swap had superseded it — the one thing it is not.
-    /// </remarks>
     public bool IsAddedSource(string? videoId) =>
         videoId is { Length: > 0 }
         && Plan.AddedSources.Any(source =>
@@ -116,8 +112,7 @@ public sealed record TrackRow
     /// </summary>
     /// <remarks>
     /// Always <see cref="TrackState.Done"/>, so it is outside
-    /// <see cref="TrackFilter.Unfinished"/> and reachable through
-    /// <see cref="TrackFilter.All"/>.
+    /// <see cref="TrackFilter.Unfinished"/> and reachable through <see cref="TrackFilter.All"/>.
     /// </remarks>
     public bool IsLibraryOnly { get; init; }
 
@@ -132,10 +127,7 @@ public sealed record TrackRow
     /// track rather than redrawing it.
     /// </summary>
     /// <remarks>
-    /// Needed once the intake outlives the playlist entry (ADR 0021): before that, a track the
-    /// playlist no longer held simply had no row, and deleting its files was how it went away.
-    /// Now the record keeps it — and a judged track with its files deleted reads as one that has
-    /// never been cut, which puts it back in the line for the GPU.
+    /// The intake outlives the playlist entry, so the record is what holds the row (ADR 0021).
     /// </remarks>
     public bool CanForget => PlaylistItemId is null && (IsAddedByUrl || Samples.Count is 0);
 
@@ -191,9 +183,8 @@ public sealed record TrackRow
     /// Where the track has got to.
     /// </summary>
     /// <remarks>
-    /// Outstanding work outranks done. A swapped track's old samples are all in the library while
-    /// its replacement is still queued or separating, and reading that as done both hides the job
-    /// and drops it from the header's waiting count.
+    /// Outstanding work outranks done: a swapped track's old samples are all in the library while
+    /// its replacement is still queued.
     /// </remarks>
     public TrackState State =>
         this switch
@@ -216,9 +207,8 @@ public sealed record TrackRow
     /// Whether the separation plan can still be changed, which is until separation starts.
     /// </summary>
     /// <remarks>
-    /// Read off what has already happened, not off <see cref="State"/>. Only
-    /// <see cref="ParkReason.NoKey"/> fixes the plan, because only it means the GPU has already
-    /// run — a track parked over its download has had nothing separated and is still open to one.
+    /// Read off what has already happened, not off <see cref="State"/>: only
+    /// <see cref="ParkReason.NoKey"/> means the GPU has already run.
     /// </remarks>
     public bool CanChangePlan =>
         State is not (TrackState.Separating or TrackState.Staging or TrackState.Tagging)
@@ -228,9 +218,8 @@ public sealed record TrackRow
     /// A change to this track's files is already being made, so the plan is not open to another.
     /// </summary>
     /// <remarks>
-    /// Only once a track has files, because only then is a change a re-cut. A track waiting its
-    /// first turn on the GPU is still free to edit: nothing has been made, and the recipe is read
-    /// when the separator picks it up rather than when the plan was recorded.
+    /// Only once a track has files: the recipe is read when the separator picks the track up,
+    /// not when the plan was recorded.
     /// </remarks>
     public bool IsCutInFlight =>
         !CanChangePlan && (RunningStage is not null || GpuPosition is not null);
@@ -388,10 +377,6 @@ public sealed record TrackRow
             _ => TrackState.Queued,
         };
 
-    /// <remarks>
-    /// A plan whose outstanding half is only the source owes a copy and no passes, so saying
-    /// anything about the GPU would be a lie about a track that never reaches it.
-    /// </remarks>
     private string InLine =>
         Recipe.Passes is 0 ? "copying the source — no GPU needed"
         : GpuPosition is 1 ? "next on the GPU"
@@ -435,9 +420,8 @@ public sealed record TrackSample
     /// The preset the plan would ask for to make this file again, or null when it cannot ask.
     /// </summary>
     /// <remarks>
-    /// Not read off <see cref="Label"/>: 68 files in this library carry no preset in their
-    /// provenance and are named only by the separator's display name, and five kept sources have
-    /// a parenthesised title that reads like one.
+    /// Not read off <see cref="Label"/>: files with no preset in their provenance carry the
+    /// separator's display name, and some kept sources have a parenthesised title that reads like one.
     /// </remarks>
     public string? PresetId { get; init; }
 
@@ -446,8 +430,7 @@ public sealed record TrackSample
     /// </summary>
     /// <remarks>
     /// Read from the tag store while the file is staged and from Ableton's index once it reaches
-    /// <c>Mashup Samples</c> (ADR 0013), so a null now means untagged in both places. It used to
-    /// mean nobody had looked, because the staging board reads only its own root.
+    /// <c>Mashup Samples</c> (ADR 0013), so a null means untagged in both places.
     /// </remarks>
     public string? AbletonKey { get; init; }
 
@@ -456,9 +439,8 @@ public sealed record TrackSample
 
     /// <summary>Whether this sample has reached <c>Mashup Samples</c> — the finished library.</summary>
     /// <remarks>
-    /// Says only which folder the file is in; crateside infers warping from that but never watched
-    /// it happen. Never read from an <c>.asd</c> sidecar — Ableton writes one just from a preview
-    /// click, which would mark unfinished work as done (ADR 0002).
+    /// Says only which folder the file is in; warping is inferred from that, and never from an
+    /// <c>.asd</c> sidecar (ADR 0002).
     /// </remarks>
     public bool IsInLibrary { get; init; }
 

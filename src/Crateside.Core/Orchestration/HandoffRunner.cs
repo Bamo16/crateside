@@ -8,15 +8,12 @@ namespace Crateside.Core.Orchestration;
 /// </summary>
 public sealed class HandoffRunner(CratesidePaths paths)
 {
-    /// <param name="name">What the user calls this track, or null if they have not said.</param>
     /// <param name="superseded">
     /// Staged files of an upload this track has been swapped away from, cleared to make room.
     /// </param>
     /// <remarks>
-    /// The superseded files go <em>before</em> the move rather than after: a replacement usually
-    /// carries the same filename, so both versions cannot sit in staging at once. Safe in that
-    /// order because the stems being moved are still in the separator's output folder until
-    /// <see cref="File.Move(string,string)"/> runs, so a failure here loses nothing (ADR 0014).
+    /// The superseded files go <em>before</em> the move: a replacement usually carries the same
+    /// filename, and the stems are still in the separator's output until the move runs (ADR 0014).
     /// </remarks>
     public HandoffResult Run(
         IReadOnlyList<string> stems,

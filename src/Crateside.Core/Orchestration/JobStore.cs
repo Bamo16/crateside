@@ -11,7 +11,7 @@ namespace Crateside.Core.Orchestration;
 /// Append-only, one JSON object per line, latest line wins for an id.
 /// </remarks>
 /// <param name="hub">
-/// Told about every recorded change, so a page can update the one row that moved. Optional.
+/// Told about every recorded change, so a page can update the one row that moved.
 /// </param>
 public sealed class JobStore(string? path = null, TimeProvider? time = null, StageHub? hub = null)
 {

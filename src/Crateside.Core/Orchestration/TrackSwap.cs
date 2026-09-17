@@ -100,9 +100,8 @@ public sealed class TrackSwap(
 
     /// <summary>Has keytag record that the new video is this song, or says why it could not.</summary>
     /// <remarks>
-    /// Skipped entirely for a track with no verdict — a restatement exists to carry one across,
-    /// and a track stopped before the verdict has none. That is the case a premium shortfall
-    /// makes (ADR 0016).
+    /// Skipped for a track with no verdict: a restatement exists to carry one across, which is
+    /// the case a premium shortfall makes (ADR 0016).
     /// </remarks>
     private async Task<string?> RestateAsync(
         string videoId,

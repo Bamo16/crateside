@@ -7,9 +7,8 @@ namespace Crateside.Core.Orchestration;
 /// What an upload offers, asked before any audio is fetched.
 /// </summary>
 /// <remarks>
-/// <c>--list-formats</c> resolves yt-dlp's metadata without downloading, which makes the moment
-/// the user presses Add the right one to say the audio is poor: nothing is on disk yet, and the
-/// library cannot quietly gain a file nobody was warned about (ADR 0019).
+/// <c>--list-formats</c> resolves yt-dlp's metadata without downloading, so poor audio can be
+/// called out before anything is on disk (ADR 0019).
 /// </remarks>
 public sealed class SourceProbe(string stemforge = "stemforge-cli")
 {

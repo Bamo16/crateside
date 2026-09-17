@@ -106,10 +106,12 @@ public sealed class SeparationRunner(
     }
 
     /// <summary>
-    /// Reads the outcome out of the run. A non-zero exit is decisive; a zero exit still has to
-    /// be checked, because the CLI reports per-input failures inside its JSON rather than by
-    /// failing the whole process.
+    /// Reads the outcome out of the run.
     /// </summary>
+    /// <remarks>
+    /// A zero exit still has to be checked: the CLI reports per-input failures inside its JSON
+    /// rather than by failing the whole process.
+    /// </remarks>
     private static string? FailureFrom(int exitCode, string stdout, string stderr)
     {
         if (exitCode != 0)

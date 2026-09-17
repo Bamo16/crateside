@@ -21,9 +21,8 @@ public sealed class PresetCatalogReader(string stemforge = "stemforge-cli")
     /// Never throws: not having StemForge on PATH is an answer, not a fault.
     /// </summary>
     /// <remarks>
-    /// Only a non-empty read is kept. Empty is how both failures read — the command is not there,
-    /// or its output did not parse — and caching one would pin a first-run failure for the life
-    /// of the process, long after the thing that would have answered came back.
+    /// Only a non-empty read is cached: empty is how both failures read, and caching one would
+    /// pin a first-run failure for the life of the process.
     /// </remarks>
     public async Task<PresetCatalog> ReadAsync(CancellationToken cancellationToken = default)
     {

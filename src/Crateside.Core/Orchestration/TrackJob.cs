@@ -4,9 +4,8 @@ namespace Crateside.Core.Orchestration;
 /// What crateside has done, or is doing, about one track at one <see cref="JobStage"/>.
 /// </summary>
 /// <remarks>
-/// A projection over the appended <see cref="JobUpdate"/> lines, not a stored row — the latest
-/// update for an id wins. A job that says "succeeded" is not evidence a track is done; it only
-/// records that crateside tried, never what is true of the library.
+/// A projection over the appended <see cref="JobUpdate"/> lines; the latest for an id wins. A
+/// job that says "succeeded" records only that crateside tried, never what is true of the library.
 /// </remarks>
 public sealed record TrackJob
 {
@@ -26,10 +25,12 @@ public sealed record TrackJob
     public int? ProcessId { get; init; }
 
     /// <summary>
-    /// The OS-reported start time of <see cref="ProcessId"/>. Carried because a PID alone is
-    /// not an identity: Windows reuses them, so a live process with a matching PID but a
-    /// different start time is somebody else's, not ours to adopt.
+    /// The OS-reported start time of <see cref="ProcessId"/>.
     /// </summary>
+    /// <remarks>
+    /// A PID alone is not an identity: Windows reuses them, so a matching PID with a different
+    /// start time is somebody else's.
+    /// </remarks>
     public DateTimeOffset? ProcessStartedAt { get; init; }
 
     /// <summary>Why the last failure failed.</summary>

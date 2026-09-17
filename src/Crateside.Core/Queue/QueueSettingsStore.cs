@@ -34,9 +34,9 @@ public sealed class QueueSettingsStore
     }
 
     /// <summary>
-    /// The current settings: what the user saved, falling back to configuration for a first
-    /// run. Never throws — an unreadable or corrupt file degrades to the fallback.
+    /// The current settings: what the user saved, falling back to configuration for a first run.
     /// </summary>
+    /// <remarks>Never throws: an unreadable or corrupt file degrades to the fallback.</remarks>
     public QueueSettings Read()
     {
         lock (_gate)
@@ -89,10 +89,6 @@ public sealed class QueueSettingsStore
             t => t with { Name = name?.Trim() is { Length: > 0 } given ? given : null }
         );
 
-    /// <summary>
-    /// Records the upload to fetch this track from instead of its playlist entry's own. Null or
-    /// blank clears it, restoring the entry's video.
-    /// </summary>
     /// <summary>Records that crateside should work a track the playlist does not hold.</summary>
     public QueueSettings AddByUrl(string videoId) =>
         Upsert(videoId, track => track with { AddedByUrl = true });
@@ -101,6 +97,10 @@ public sealed class QueueSettingsStore
     public QueueSettings Forget(string videoId) =>
         Upsert(videoId, _ => new TrackInstruction { VideoId = videoId });
 
+    /// <summary>
+    /// Records the upload to fetch this track from instead of its playlist entry's own. Null or
+    /// blank clears it, restoring the entry's video.
+    /// </summary>
     public QueueSettings SetSourceUrl(string videoId, string? url) =>
         Upsert(
             videoId,
@@ -109,8 +109,7 @@ public sealed class QueueSettingsStore
 
     /// <summary>
     /// Applies a change to one track's instruction, adding it if there was none and dropping it
-    /// again once it says nothing. Keeping empty entries would turn every released hold into a
-    /// permanent line in the file.
+    /// again once it says nothing.
     /// </summary>
     private QueueSettings Upsert(string videoId, Func<TrackInstruction, TrackInstruction> change)
     {
@@ -137,10 +136,9 @@ public sealed class QueueSettingsStore
     }
 
     /// <summary>
-    /// Reads, applies, writes. Every mutator goes through here so that saving one setting cannot
-    /// drop another — writing a freshly-constructed object would have silently discarded the
-    /// holds the moment the playlist ID was changed.
+    /// Reads, applies, writes.
     /// </summary>
+    /// <remarks>Every mutator goes through here, so saving one setting cannot drop another.</remarks>
     private QueueSettings Save(Func<QueueSettings, QueueSettings> change)
     {
         lock (_gate)
@@ -171,11 +169,8 @@ public sealed class QueueSettingsStore
     /// becomes the plan it used to derive.
     /// </summary>
     /// <remarks>
-    /// Clearing the old field is what makes this a conversion rather than a permanent reader —
-    /// it is omitted when written, so the file loses it the first time anything saves, and this
-    /// can go once no instruction carries it. An instruction that says nothing else is then
-    /// dropped by <c>Upsert</c>, which is how the entries recording "has vocals" — the default,
-    /// stated — clean themselves up.
+    /// Clearing the old field is what makes this a conversion rather than a permanent reader: it
+    /// is omitted when written, so this can go once no instruction carries it.
     /// </remarks>
     private static TrackInstruction Converted(TrackInstruction stored) =>
         stored is { Plan: null, WasInstrumentalRelease: true }
@@ -268,9 +263,9 @@ public sealed record TrackInstruction
 
     /// <summary>
     /// The pre-<see cref="StemPlan"/> fact, read only so that an existing <c>queue.json</c>
-    /// converts itself — see <c>QueueSettingsStore.Converted</c>. Never written: conversion
-    /// clears it, and a cleared one is omitted.
+    /// converts itself — see <c>QueueSettingsStore.Converted</c>.
     /// </summary>
+    /// <remarks>Never written: conversion clears it, and a cleared one is omitted.</remarks>
     [JsonPropertyName("instrumentalRelease")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool WasInstrumentalRelease { get; init; }
@@ -293,9 +288,8 @@ public sealed record TrackInstruction
     /// crateside was told to work this track by something other than the playlist.
     /// </summary>
     /// <remarks>
-    /// The playlist is the inbox (ADR 0010) and this is the second way in, accepted on purpose.
-    /// It is what lets a pasted track reach <see cref="QueueView.Outstanding"/>, which a re-cut
-    /// deliberately never does.
+    /// The second way in (ADR 0010): what lets a pasted track reach
+    /// <see cref="QueueView.Outstanding"/>, which a re-cut never does.
     /// </remarks>
     [JsonPropertyName("addedByUrl")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

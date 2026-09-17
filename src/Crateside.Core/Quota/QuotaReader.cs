@@ -7,9 +7,8 @@ namespace Crateside.Core.Quota;
 /// Reads the user's five-hour Claude window from Anthropic's usage endpoint.
 /// </summary>
 /// <remarks>
-/// The endpoint is undocumented, with internal codenames among its top-level keys and field
-/// names that differ from other tools reading the same data. Every read here is defensive, and
-/// every failure is <see cref="QuotaSnapshot.Unknown"/> rather than an exception.
+/// The endpoint is undocumented, so every read is defensive and every failure is
+/// <see cref="QuotaSnapshot.Unknown"/> rather than an exception.
 /// </remarks>
 public sealed class QuotaReader(HttpClient client)
 {

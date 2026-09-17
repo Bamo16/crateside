@@ -67,11 +67,8 @@ public static class StemLanding
     /// Moves a run into the key-identified root when the verdict arrived while it was running.
     /// </summary>
     /// <remarks>
-    /// The destination is chosen when the order is composed, from the ledger as it stood then. A
-    /// re-cut restarts separation at once, so a track being re-judged can be cut before its
-    /// verdict lands — and the handoff reads only the key-identified root, so the output parks in
-    /// the other one with nothing to move it on. One re-cut sat there for eighteen hours with a
-    /// perfectly good key, reported as next on the GPU.
+    /// The destination is chosen when the order is composed, so a track re-judged after that can
+    /// be cut before its verdict lands and park in the root the handoff does not read.
     /// </remarks>
     public static IReadOnlyList<string> Reconcile(
         CratesidePaths paths,

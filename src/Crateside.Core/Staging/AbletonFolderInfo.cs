@@ -62,9 +62,11 @@ public sealed record AbletonFileTags
 
     /// <summary>
     /// Recombined from the separate tonic and mode keywords, normalized to the ledger's ASCII
-    /// spelling (<c>G# major</c>). Null when the file has no key, or only half of one — see
-    /// <see cref="HasPartialKey"/>.
+    /// spelling (<c>G# major</c>).
     /// </summary>
+    /// <remarks>
+    /// Null when the file has no key, or only half of one — see <see cref="HasPartialKey"/>.
+    /// </remarks>
     public string? Key { get; init; }
 
     /// <summary>The <c>Type|</c> keyword — Instrumental, Vocal, Loop.</summary>

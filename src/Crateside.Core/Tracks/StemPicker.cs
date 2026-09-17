@@ -8,9 +8,7 @@ namespace Crateside.Core.Tracks;
 /// </summary>
 /// <remarks>
 /// The stem list <em>is</em> the picker: a line is either on disk or not, and the tick says
-/// whether it is wanted. The two cross, which is the whole of what the panel draws — a wanted
-/// line with no file is coming, an unwanted line with a file is going, and the other two are
-/// kept and never made.
+/// whether it is wanted. The two cross to give <see cref="StemState"/>.
 /// </remarks>
 public sealed record StemPicker
 {
@@ -175,20 +173,18 @@ public sealed record StemPicker
     }
 
     /// <summary>
-    /// Presets the picker leaves out, because nothing in this workflow wants them: one is for
-    /// AI voice training data and the other trades quality for VRAM this machine has.
+    /// Presets the picker leaves out, because nothing in this workflow wants them.
     /// </summary>
     /// <remarks>
-    /// Left in the catalog rather than filtered out of it, and shown anyway on a track that has
-    /// one. The catalog is what says a file on disk <em>is</em> a preset — take these out of it
-    /// and a stem already cut with one would read as a preset the separator no longer offers.
+    /// Left in the catalog rather than filtered out of it: the catalog is what says a file on disk
+    /// <em>is</em> a preset, so removing them would make an already-cut stem read as unrecognised.
     /// </remarks>
     private static readonly string[] Unoffered = ["vocal_rvc", "instrumental_low_resource"];
 
     /// <summary>Stands in for the guide's file, which the row counts but does not list.</summary>
     /// <remarks>
-    /// <see cref="TrackRow.Samples"/> excludes warp guides on purpose — they are used up rather
-    /// than kept — so the only thing the row can say about one is that it is there.
+    /// <see cref="TrackRow.Samples"/> excludes warp guides, so the only thing the row can say
+    /// about one is that it is there.
     /// </remarks>
     private static readonly TrackSample Guide = new()
     {
@@ -234,10 +230,8 @@ public sealed record StemChoice
     /// Whether ticking it is the user's to do.
     /// </summary>
     /// <remarks>
-    /// The guide is always made and never chosen; a preset the separator has dropped can be seen
-    /// but never asked for again; and a file that has reached <c>Mashup Samples</c> cannot be
-    /// unticked, because crateside does not delete from there (ADR 0019). Adding stays open
-    /// either way — it writes only to <c>Sample Staging</c>.
+    /// The guide is never chosen, a dropped preset never asked for again, and a file in
+    /// <c>Mashup Samples</c> never unticked (ADR 0019). Adding stays open either way.
     /// </remarks>
     public bool IsPinned => !IsSample || IsInLibrary;
 
@@ -274,9 +268,8 @@ public enum PickerLock
     /// The change already asked for has not landed yet.
     /// </summary>
     /// <remarks>
-    /// Without this the picker offers to cut the very files it is waiting on: a wanted line with
-    /// no file on disk reads as <em>coming</em> whether the separator is about to make it or has
-    /// never been asked, and the panel would invite a second identical cut.
+    /// A wanted line with no file on disk reads as <em>coming</em> whether the separator is about
+    /// to make it or has never been asked, so without this the panel invites a second cut.
     /// </remarks>
     CutInFlight,
 }

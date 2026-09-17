@@ -22,9 +22,8 @@ public sealed record StemProvenance
     /// The source URL the track was downloaded from.
     /// </summary>
     /// <remarks>
-    /// Only present when the local file is one StemForge downloaded. A file acquired any other
-    /// way has no <c>stemforge/</c> comment, so it yields no URL and no
-    /// <see cref="SourceVideoId"/>.
+    /// Only present when StemForge downloaded the file: any other way yields no
+    /// <c>stemforge/</c> comment, no URL and no <see cref="SourceVideoId"/>.
     /// </remarks>
     public string? SourceUrl { get; init; }
 

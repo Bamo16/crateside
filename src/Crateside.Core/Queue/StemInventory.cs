@@ -6,9 +6,8 @@ namespace Crateside.Core.Queue;
 /// What a track already has, read off disk and said in the vocabulary the plan speaks.
 /// </summary>
 /// <remarks>
-/// The other half of <see cref="PresetCatalog"/>: the plan asks for <c>vocal_full</c> and the
-/// files answer <c>Vocal - Full</c>. Derived on every read and stored nowhere, so a file deleted
-/// by hand is simply outstanding again.
+/// Derived on every read and stored nowhere, so a file deleted by hand is simply outstanding
+/// again.
 /// </remarks>
 public sealed record StemInventory
 {
@@ -34,9 +33,8 @@ public sealed record StemInventory
     /// Files carrying a preset the separator no longer offers.
     /// </summary>
     /// <remarks>
-    /// Kept apart rather than folded in with the sources, which is the mistake that made 68
-    /// pre-1.0 stems read as source tracks. One of these can be shown and removed; it can never
-    /// be asked for again, because nothing knows what to ask for.
+    /// One of these can be shown and removed, but never asked for again — nothing knows what
+    /// to ask for.
     /// </remarks>
     public IReadOnlyList<ClassifiedStem> Unrecognised =>
         [.. Files.Where(file => file.Kind is StemKind.Unrecognised)];
@@ -45,9 +43,8 @@ public sealed record StemInventory
     /// What <paramref name="wanted"/> asks for that is not here yet.
     /// </summary>
     /// <remarks>
-    /// The whole of an additive re-cut. A preset already on disk is <em>kept</em> and never cut
-    /// again, so the separator is only ever asked for filenames that are free and the handoff
-    /// cannot collide with what is already staged.
+    /// A preset already on disk is <em>kept</em> and never cut again, so the separator is only
+    /// ever asked for filenames that are free.
     /// </remarks>
     public StemPlan Outstanding(StemPlan wanted) =>
         new()
@@ -58,10 +55,8 @@ public sealed record StemInventory
 
     /// <summary>Whether an added source has been fetched.</summary>
     /// <remarks>
-    /// Matched on the upload, which is what <see cref="Superseded"/> already matches on and the
-    /// only thing a rename cannot change. The label was the join once, and renaming a file in
-    /// Ableton — which the row invites — parted it from the plan and fetched the upload again.
-    /// The label is asked only of a file carrying no provenance at all.
+    /// Matched on the upload, the only thing a rename cannot change. The label is asked only of a
+    /// file carrying no provenance at all.
     /// </remarks>
     public bool Has(AddedSource added) =>
         Files.Any(file =>
@@ -79,9 +74,7 @@ public sealed record StemInventory
     /// to drop.
     /// </remarks>
     /// <param name="stored">
-    /// The plan the track currently has, which is the only thing that says which files were
-    /// added sources — a dropped one is gone from <paramref name="wanted"/>, and its file is
-    /// otherwise indistinguishable from the separation source.
+    /// The plan the track currently has, the only thing that says which files were added sources.
     /// </param>
     public IReadOnlyList<ClassifiedStem> Superseded(StemPlan wanted, StemPlan? stored = null) =>
         [
@@ -99,9 +92,8 @@ public sealed record StemInventory
         ];
 
     /// <remarks>
-    /// Matched on the upload rather than the label, because a source download whose own title
-    /// ends in brackets — <c>Schala's Theme (Instrumental)</c> — reads as labelled and would be
-    /// deleted as an added source the plan no longer names.
+    /// Matched on the upload, not the label: a source download whose title ends in brackets reads
+    /// as labelled and would be deleted as a dropped added source.
     /// </remarks>
     private static bool IsDropped(ClassifiedStem file, StemPlan wanted, StemPlan stored) =>
         file.File.SourceVideoId is { } upload
@@ -133,11 +125,8 @@ public sealed record ClassifiedStem
     /// What one file is: the preset it came from, the source track, or the warp guide.
     /// </summary>
     /// <remarks>
-    /// Provenance first, because StemForge writes it and it survives a rename. The filename is
-    /// asked only where provenance carries no preset at all — StemForge before 1.0 wrote none,
-    /// leaving the name as the only thing that says what 68 files in this library are — and only
-    /// an exact catalog match is believed, so a source download called
-    /// <c>SUPADOPA (Official Instrumental)</c> stays a source.
+    /// Provenance first; the filename is asked only where provenance carries no preset at all,
+    /// and only an exact catalog match is believed.
     /// </remarks>
     public static ClassifiedStem Of(StemOnDisk file, PresetCatalog catalog) =>
         file switch

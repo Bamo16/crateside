@@ -17,16 +17,8 @@ public sealed class SeparationSelector(
     /// flight, or given up on.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Reads <see cref="QueueView.AwaitingSeparation"/> rather than
-    /// <see cref="QueueView.Outstanding"/>: separation needs a ledger line's recipe
-    /// (<c>has_vocals</c>) and destination (<c>HasTaggableKey</c>), neither of which exists
-    /// before a verdict has run.
-    /// </para>
-    /// <para>
-    /// A LOW or WITHHELD verdict still counts as a line, so a judged-but-unresolved track
-    /// arrives here too, routed to <c>Unresolved Key</c>.
-    /// </para>
+    /// Reads <see cref="QueueView.AwaitingSeparation"/>, not <see cref="QueueView.Outstanding"/>:
+    /// separation needs a verdict's recipe and destination. LOW and WITHHELD still count as one.
     /// </remarks>
     public bool TryPickNext(QueueView view, KeyLedger ledger, out WorkOrder order)
     {
@@ -47,8 +39,7 @@ public sealed class SeparationSelector(
 
     /// <remarks>
     /// <paramref name="retrySucceeded"/> is false here, unlike the other selectors: a recorded
-    /// success with no stems on disk most likely means they were deleted on purpose, and
-    /// redoing that would cost GPU hours against the user's wishes.
+    /// success with no stems on disk most likely means they were deleted on purpose.
     /// </remarks>
     private bool IsEligible(QueueItem item) =>
         StageEligibility.Allows(

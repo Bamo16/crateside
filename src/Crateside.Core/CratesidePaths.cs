@@ -7,9 +7,8 @@ namespace Crateside.Core;
 /// they are settable so a test — or another machine — is not stuck with them.
 /// </summary>
 /// <remarks>
-/// crateside writes to exactly one of these — the Ableton Folder Info XMP under
-/// <see cref="SampleStaging"/> (ADR 0003). <see cref="MashupSamples"/> is never written, and the
-/// stem destinations are only where crateside directs the separator's output.
+/// crateside writes to exactly one of these: the Ableton Folder Info XMP under
+/// <see cref="SampleStaging"/> (ADR 0003). <see cref="MashupSamples"/> is never written.
 /// </remarks>
 public sealed class CratesidePaths
 {
@@ -39,9 +38,8 @@ public sealed class CratesidePaths
     /// <c>keytag-detect</c> for the evidence run, and <c>runs.jsonl</c> for the verdict.
     /// </summary>
     /// <remarks>
-    /// Relative paths passed to the detector resolve against crateside, not keytag — it runs
-    /// without changing directory. Nothing here may reach past <c>keytag-detect</c> and
-    /// <c>runs.jsonl</c> into keytag's own tree (keytag ADR 0006).
+    /// Relative paths passed to the detector resolve against crateside, not keytag. Nothing here
+    /// may reach past <c>keytag-detect</c> and <c>runs.jsonl</c> (keytag ADR 0006).
     /// </remarks>
     public string KeytagRepo { get; set; } = @"V:\Repos\keytag";
 

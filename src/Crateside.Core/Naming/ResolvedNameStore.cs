@@ -6,9 +6,8 @@ namespace Crateside.Core.Naming;
 /// The names StemForge has already been asked for, kept between runs.
 /// </summary>
 /// <remarks>
-/// Stored in <c>%APPDATA%\crateside\names.json</c>. Deliberately not in <c>queue.json</c> beside
-/// the user's instructions: a stated name is something the user owns and a resolved one is a fact
-/// about an upload, and ADR 0014 turns on not confusing the two.
+/// Stored in <c>%APPDATA%\crateside\names.json</c>, not in <c>queue.json</c>: a stated name is
+/// the user's and a resolved one is a fact about an upload (ADR 0014).
 /// </remarks>
 public sealed class ResolvedNameStore
 {

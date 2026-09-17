@@ -44,9 +44,8 @@ public static class TrackFilters
     ];
 
     /// <remarks>
-    /// Not a partition, deliberately. <see cref="TrackFilter.NeedsAttention"/> also catches a
-    /// finding or an unrenamed file whatever the state, so a staged track awaiting a rename is in
-    /// two views at once — which is wanted, because it is both.
+    /// Not a partition: <see cref="TrackFilter.NeedsAttention"/> also catches a finding or an
+    /// unrenamed file whatever the state, so a row can be in two views at once.
     /// </remarks>
     public static bool Matches(this TrackRow row, TrackFilter filter) =>
         filter switch
@@ -92,10 +91,8 @@ public static class TrackFilters
     /// Where else a search would find something, so a fruitless one can point somewhere.
     /// </summary>
     /// <remarks>
-    /// The named views first. <see cref="TrackFilter.All"/> is offered only when nothing more
-    /// specific holds it, which is what a finished track looks like now that there is no
-    /// <c>Done</c> view to send anyone to. <see cref="TrackFilter.Unfinished"/> is never offered:
-    /// anything in it is already in one of the named views, which is the better answer.
+    /// The named views first, then <see cref="TrackFilter.All"/> only when nothing more specific
+    /// holds the row. <see cref="TrackFilter.Unfinished"/> is never offered.
     /// </remarks>
     public static IReadOnlyList<TrackFilter> Holding(
         this IEnumerable<TrackRow> rows,

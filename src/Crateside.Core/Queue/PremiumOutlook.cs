@@ -23,10 +23,8 @@ public enum PremiumOutlook
 /// description.
 /// </summary>
 /// <remarks>
-/// The marker's presence is precise, but its absence predicts nothing — 42% of videos without it
-/// were still premium audio, which is why nothing is said to the user off this and the one live
-/// use is routing an art track to its <c>music.youtube.com</c> URL. What a download actually got
-/// is <see cref="Orchestration.Acquisition"/> (ADR 0016). See <c>docs/premium-outlook.md</c>.
+/// Presence is precise, absence predicts nothing; what a download got is
+/// <see cref="Orchestration.Acquisition"/> (ADR 0016). See <c>docs/premium-outlook.md</c>.
 /// </remarks>
 public static class PremiumOutlookReader
 {

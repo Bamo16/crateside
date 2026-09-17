@@ -31,10 +31,13 @@ public sealed class QueueAuthorizer(IOptions<QueueOptions> options, ProtectedTok
     public bool HasStoredToken => tokenStore.HasStoredToken;
 
     /// <summary>
-    /// The stored credential, refreshed if needed, or null when there is none or it can no
-    /// longer be refreshed. Never prompts — call <see cref="ConsentAsync"/> for that, so a
-    /// page render can never launch a browser window.
+    /// The stored credential, refreshed if needed, or null when there is none or it can no longer
+    /// be refreshed.
     /// </summary>
+    /// <remarks>
+    /// Never prompts: call <see cref="ConsentAsync"/> for that, so a page render cannot launch a
+    /// browser window.
+    /// </remarks>
     public async Task<UserCredential?> GetCredentialAsync(
         CancellationToken cancellationToken = default
     )
@@ -92,9 +95,8 @@ public sealed class QueueAuthorizer(IOptions<QueueOptions> options, ProtectedTok
     /// The YouTube channel the stored token actually belongs to, or null if unknown.
     /// </summary>
     /// <remarks>
-    /// A Google account can own several channels; consent grants whichever was picked at the
-    /// consent screen, and deleting from a playlist owned by a different channel fails as a
-    /// bare 403. Costs 1 quota unit.
+    /// Consent grants whichever channel was picked, and deleting from a playlist owned by another
+    /// fails as a bare 403. Costs 1 quota unit.
     /// </remarks>
     public async Task<string?> GetAuthorizedChannelAsync(
         CancellationToken cancellationToken = default
