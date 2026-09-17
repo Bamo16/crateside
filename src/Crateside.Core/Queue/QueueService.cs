@@ -277,8 +277,11 @@ public sealed class QueueService(
     /// </remarks>
     private IReadOnlyList<QueueItem> TakenOn(IReadOnlyList<QueueItem> held)
     {
+        var owed = Owed().ToHashSet(StringComparer.Ordinal);
+
         intake.Record(held);
-        intake.Backfill(Owed());
+        intake.Backfill(owed);
+        intake.Prune(owed, held.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal));
 
         return IntakeStore.Merge(held, intake.Read());
     }

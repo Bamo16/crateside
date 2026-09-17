@@ -219,7 +219,9 @@ Two changes, because either alone leaves the hole:
 
 - **The backfill now takes only instructions that ask for something** — a kept source or an added
   one. That is what it was for: reaching a track the playlist let go of while crateside still owed
-  it a file.
+  it a file. Narrowing it stops new ones, so the records already written are pruned as well: a
+  stand-in is known by its shape, having the video ID for a title and no added-at, which a record
+  made from a real entry never has. Nineteen of twenty-nine stood for nothing.
 - **`Audio` skips a track whose latest separation succeeded.** If the janitor considers a track
   finished, the download stage may not resurrect it. A re-cut reopens that job, so it is untouched.
 

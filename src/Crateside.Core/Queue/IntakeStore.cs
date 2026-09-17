@@ -145,6 +145,39 @@ public sealed class IntakeStore
         }
     }
 
+    /// <summary>
+    /// Drops records the backfill should never have made: ones standing in for an instruction
+    /// that asks for nothing.
+    /// </summary>
+    /// <remarks>
+    /// The backfill once took every stored instruction, residue included, and those records put
+    /// finished tracks back in the work lists. Narrowing it stops new ones; this clears the ones
+    /// already written, which would otherwise sit in the line for the GPU for ever.
+    ///
+    /// A backfilled record is known by its shape — it stands in for a track nobody has seen in
+    /// the playlist, so it has the video ID for a title and no added-at. A record made from a
+    /// real entry has both, so none is at risk.
+    /// </remarks>
+    public void Prune(IReadOnlySet<string> owed, IReadOnlySet<string> held)
+    {
+        lock (_gate)
+        {
+            var kept = Read()
+                .Where(record =>
+                    !IsStandIn(record)
+                    || owed.Contains(record.VideoId)
+                    || held.Contains(record.VideoId)
+                )
+                .ToList();
+
+            if (kept.Count != Read().Count)
+                Write(kept);
+        }
+    }
+
+    private static bool IsStandIn(IntakeRecord record) =>
+        record.AddedAt is null && record.Title.Equals(record.VideoId, StringComparison.Ordinal);
+
     /// <summary>Drops a record, which is what forgetting a track means.</summary>
     public void Forget(string videoId)
     {

@@ -212,6 +212,46 @@ public class IntakeStoreTests : IDisposable
     private static string[] Offerable(IntakeStore store) =>
         [.. store.Read().Where(r => r.RemovalAttemptedAt is null).Select(r => r.VideoId)];
 
+    /// <summary>
+    /// A stand-in the backfill should never have made is cleared.
+    /// </summary>
+    /// <remarks>
+    /// Narrowing the backfill stops new ones; without this the ones already written sit in the
+    /// line for the GPU for ever.
+    /// </remarks>
+    [Fact]
+    public void A_stand_in_for_an_instruction_that_asks_nothing_is_pruned()
+    {
+        var store = Store();
+
+        store.Backfill([Track, Other]);
+        store.Prune(owed: new HashSet<string> { Other }, held: new HashSet<string>());
+
+        Assert.Equal(Other, Assert.Single(store.Read()).VideoId);
+    }
+
+    [Fact]
+    public void A_record_made_from_a_real_entry_is_never_pruned()
+    {
+        var store = Store();
+
+        store.Record([Item(Track, "Some Track")]);
+        store.Prune(owed: new HashSet<string>(), held: new HashSet<string>());
+
+        Assert.Equal("Some Track", Assert.Single(store.Read()).Title);
+    }
+
+    [Fact]
+    public void A_stand_in_for_a_track_the_playlist_still_holds_is_kept()
+    {
+        var store = Store();
+
+        store.Backfill([Track]);
+        store.Prune(owed: new HashSet<string>(), held: new HashSet<string> { Track });
+
+        Assert.Single(store.Read());
+    }
+
     [Fact]
     public void Forgetting_a_track_drops_its_record()
     {
