@@ -75,8 +75,7 @@ public static class ServiceRegistration
             .AddDataProtection()
             .PersistKeysToFileSystem(
                 new DirectoryInfo(
-                    Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    Environment.SpecialFolder.LocalApplicationData.GetFolderPath(
                         "crateside",
                         "keys"
                     )

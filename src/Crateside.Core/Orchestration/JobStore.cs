@@ -118,11 +118,7 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
     private static string IdFor(string videoId, JobStage stage) => $"{videoId}:{stage}";
 
     private static string DefaultPath() =>
-        System.IO.Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "crateside",
-            "jobs.jsonl"
-        );
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "jobs.jsonl");
 
     /// <summary>
     /// Folds one update onto what came before. Strikes accumulate here rather than being

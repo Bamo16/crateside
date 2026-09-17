@@ -20,12 +20,7 @@ public sealed class ProtectedTokenStore(IDataProtectionProvider provider, string
     private readonly IDataProtector _protector = provider.CreateProtector(Purpose);
 
     private readonly string _directory =
-        directory
-        ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "crateside",
-            "tokens"
-        );
+        directory ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "tokens");
 
     /// <summary>Whether any token is stored at all — "have we ever consented?".</summary>
     public bool HasStoredToken =>

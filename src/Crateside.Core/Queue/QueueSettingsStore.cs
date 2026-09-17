@@ -30,11 +30,7 @@ public sealed class QueueSettingsStore
         _fallback = fallback.Value;
         _path =
             path
-            ?? Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "crateside",
-                "queue.json"
-            );
+            ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "queue.json");
     }
 
     /// <summary>

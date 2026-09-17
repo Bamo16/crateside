@@ -45,11 +45,7 @@ public sealed class IntakeStore
     public IntakeStore(string? path = null) =>
         _path =
             path
-            ?? Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "crateside",
-                "intake.json"
-            );
+            ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "intake.json");
 
     /// <summary>
     /// Every track crateside has taken on. Never throws — an unreadable file reads as empty,

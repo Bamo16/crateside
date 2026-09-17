@@ -27,11 +27,7 @@ public sealed class WorkingSet(string? root = null)
 
     private readonly string _root =
         root
-        ?? Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "crateside",
-            "working"
-        );
+        ?? Environment.SpecialFolder.LocalApplicationData.GetFolderPath("crateside", "working");
 
     /// <summary>Every video ID currently holding a working set.</summary>
     public IReadOnlyList<string> VideoIds =>

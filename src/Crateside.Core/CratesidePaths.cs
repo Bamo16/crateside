@@ -15,8 +15,7 @@ public sealed class CratesidePaths
 {
     public const string SectionName = "Paths";
 
-    private static readonly string MusicStems = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.MyMusic),
+    private static readonly string MusicStems = Environment.SpecialFolder.MyMusic.GetFolderPath(
         "Stems"
     );
 
@@ -31,11 +30,7 @@ public sealed class CratesidePaths
     /// Ableton owns it and holds it open.
     /// </summary>
     public string AbletonIndex { get; set; } =
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Ableton",
-            "Live Database"
-        );
+        Environment.SpecialFolder.LocalApplicationData.GetFolderPath("Ableton", "Live Database");
 
     private string? _ledger;
 

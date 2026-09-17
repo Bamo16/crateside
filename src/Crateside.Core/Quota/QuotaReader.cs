@@ -148,11 +148,7 @@ public sealed class QuotaReader(HttpClient client)
     }
 
     private static string DefaultCredentialsPath() =>
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".claude",
-            ".credentials.json"
-        );
+        Environment.SpecialFolder.UserProfile.GetFolderPath(".claude", ".credentials.json");
 }
 
 /// <summary>

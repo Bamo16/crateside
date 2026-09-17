@@ -26,11 +26,7 @@ public sealed class ResolvedNameStore
     public ResolvedNameStore(string? path = null) =>
         _path =
             path
-            ?? Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "crateside",
-                "names.json"
-            );
+            ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "names.json");
 
     /// <summary>Never throws — an unreadable or corrupt file reads as nothing resolved yet.</summary>
     public IReadOnlyDictionary<string, ResolvedName> Read()
