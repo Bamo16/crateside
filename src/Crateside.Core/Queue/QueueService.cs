@@ -292,12 +292,12 @@ public sealed class QueueService(
             .Select(track => track.VideoId);
 
     /// <summary>
-    /// Gives back the entries crateside has just recorded, so the playlist stops holding what it
-    /// has already delivered (ADR 0021).
+    /// Gives back the entries crateside has recorded, so the playlist stops holding what it has
+    /// already delivered (ADR 0021).
     /// </summary>
     /// <remarks>
-    /// Only what <see cref="IntakeStore.Record"/> reported as new, so a steady state costs no
-    /// writes. Off until the user asks: the first run removes every entry, and a deletion is final.
+    /// Every record not yet offered back, not only this scan's. Off until the user asks: the first
+    /// run offers all of them at fifty quota units each, and a deletion is final.
     /// </remarks>
     private async Task ConsumeAsync(
         IReadOnlyList<QueueItem> held,
