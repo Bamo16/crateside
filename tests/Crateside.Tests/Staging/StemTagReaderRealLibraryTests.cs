@@ -50,8 +50,12 @@ public class StemTagReaderRealLibraryTests
 
         foreach (var song in songs)
         {
-            var presets = song.Select(s => s!.Provenance!.Preset).ToArray();
-            Assert.Equal(presets.Length, presets.Distinct().Count());
+            // Preset, or the label where there is none: an adopted sample carries no preset and
+            // is named by the user instead, so a song can hold more than one preset-less file
+            // (ADR 0022). The kept source is the one that is named by neither.
+            var named = song.Select(s => s!.Provenance!.Preset ?? s!.Provenance!.Label).ToArray();
+
+            Assert.Equal(named.Length, named.Distinct().Count());
         }
     }
 }
