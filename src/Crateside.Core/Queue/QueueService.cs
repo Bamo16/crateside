@@ -342,10 +342,10 @@ public sealed class QueueService(
     /// What each video ID already has, counting every upload of the same song (ADR 0014).
     /// </summary>
     /// <remarks>
-    /// Song-wide rather than per upload, because an added source carries a video ID of its own —
-    /// looked up per upload, its file would never be found and it would be fetched forever.
+    /// Keyed by every upload the ledger files under the song, not only those carrying a file of
+    /// their own: a second upload of a song already cut has nothing on disk to be found by.
     /// </remarks>
-    private static IReadOnlyDictionary<string, StemInventory> InventoriesBySong(
+    internal static IReadOnlyDictionary<string, StemInventory> InventoriesBySong(
         ProcessedTracks processed,
         Ledger.KeyLedger ledger,
         PresetCatalog catalog
@@ -361,11 +361,17 @@ public sealed class QueueService(
                 StringComparer.Ordinal
             );
 
-        return processed.StemsByVideoId.Keys.ToDictionary(
-            videoId => videoId,
-            videoId => bySong[Song(videoId)],
-            StringComparer.Ordinal
-        );
+        return ledger
+            .Runs.Select(run => run.SourceVideoId)
+            .OfType<string>()
+            .Concat(processed.StemsByVideoId.Keys)
+            .Distinct(StringComparer.Ordinal)
+            .Where(videoId => bySong.ContainsKey(Song(videoId)))
+            .ToDictionary(
+                videoId => videoId,
+                videoId => bySong[Song(videoId)],
+                StringComparer.Ordinal
+            );
     }
 
     /// <summary>
