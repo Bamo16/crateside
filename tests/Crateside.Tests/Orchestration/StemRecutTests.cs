@@ -429,6 +429,59 @@ public class StemRecutTests : IDisposable
         Assert.True(jobs.TryGet(Video, JobStage.Separation, out var job));
         Assert.Equal(JobStatus.Succeeded, job.Status);
     }
+
+    /// <summary>Stages a file crateside adopted: a label of the user's own, and no preset.</summary>
+    private string StageAdopted(string label)
+    {
+        var name = $"Rob Dougan - Furious Angels ({label}).flac";
+        var path = Path.Combine(_staging, name);
+
+        File.WriteAllText(path, "mix");
+        _staged.Add(
+            new StagingStem
+            {
+                Path = path,
+                FileName = name,
+                AdoptedAs = label,
+            }
+        );
+
+        return path;
+    }
+
+    /// <remarks>
+    /// The case that deleted a real file: an adopted sample carries no preset, so anything
+    /// reading only the preset takes it for the separation source and drops it with KeepSource.
+    /// </remarks>
+    [Fact]
+    public void A_recut_that_drops_the_source_leaves_an_adopted_sample_alone()
+    {
+        var source = Stage();
+        var mix = StageAdopted("Instrumental - Mix");
+
+        var wanted = new StemPlan { Presets = ["vocal_full"], KeepSource = false }.Keeping(
+            new AdoptedSample { Label = "Instrumental - Mix" }
+        );
+
+        var plan = Recut().PlanFor(Video, wanted, Catalog);
+
+        Assert.True(plan.IsPossible);
+        Assert.Contains(plan.Removing, stem => stem.File.Path == source);
+        Assert.DoesNotContain(plan.Removing, stem => stem.File.Path == mix);
+    }
+
+    [Fact]
+    public void A_recut_removes_an_adopted_sample_once_the_plan_forgets_it()
+    {
+        Stage();
+        var mix = StageAdopted("Instrumental - Mix");
+
+        var wanted = new StemPlan { Presets = ["vocal_full"], KeepSource = true };
+
+        var plan = Recut().PlanFor(Video, wanted, Catalog);
+
+        Assert.Contains(plan.Removing, stem => stem.File.Path == mix);
+    }
 }
 
 /// <summary>

@@ -147,6 +147,8 @@ public sealed class StemRecut(
             Path = stem.Path,
             Root = Path.GetDirectoryName(stem.Path) ?? string.Empty,
             Preset = stem.Preset,
+            Label = stem.AdoptedAs,
+            IsAdopted = stem.IsAdopted,
         };
 
     private static string? RefusalFor(

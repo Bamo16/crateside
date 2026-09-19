@@ -80,6 +80,18 @@ public sealed record StagingStem
     public string? Preset { get; init; }
 
     /// <summary>
+    /// What the user calls this file when crateside adopted it rather than made it (ADR 0022).
+    /// </summary>
+    /// <remarks>
+    /// Must reach every reader that decides what a re-cut may delete: an adopted file carries no
+    /// preset, so anything seeing only <see cref="Preset"/> reads it as the separation source.
+    /// </remarks>
+    public string? AdoptedAs { get; init; }
+
+    /// <summary>crateside took this file in rather than making it.</summary>
+    public bool IsAdopted => AdoptedAs is not null;
+
+    /// <summary>
     /// A stem made to be <em>looked at</em> rather than heard: the drums, deleted once warping
     /// is done.
     /// </summary>
@@ -107,5 +119,5 @@ public sealed record StagingStem
     public bool KeyDisagreesWithVerdict { get; init; }
 
     /// <summary>What to show in the stem column when there is no preset to show.</summary>
-    public string Label => Preset ?? "source";
+    public string Label => Preset ?? AdoptedAs ?? "source";
 }

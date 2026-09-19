@@ -104,6 +104,9 @@ public sealed class StagingBoard
             Path = path,
             FileName = Path.GetFileName(path),
             Preset = tags?.Provenance?.Preset,
+            AdoptedAs = tags?.Provenance is { IsAdopted: true, Label: { } adopted }
+                ? adopted
+                : null,
             AbletonKey = abletonKey,
             HasPartialKey = abletonTags?.HasPartialKey ?? false,
             KeyDisagreesWithVerdict =
