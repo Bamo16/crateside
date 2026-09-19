@@ -292,3 +292,20 @@ The file rule is real and is stated in
 own reason: those files are warped and carry `.asd` sidecars. Separating the two matters because
 they were being weighed as one — the tag rule costs nothing in practice, and only the file rule
 was making the picker inconvenient.
+
+## The tag store is no longer the only thing crateside writes — 2026-09-19
+
+This ADR is quoted elsewhere as "crateside writes exactly one thing". That reading is now false:
+[ADR 0022](0022-an-adopted-sample-is-a-file-crateside-did-not-make.md) has crateside write a
+`COMMENT` tag into a file the user made, so the file can be joined to a track at all.
+
+It does not weaken what is decided here. The two writes differ on every axis that made this one
+cautious:
+
+- **The tag store** is Ableton's, shared, written continuously, and read back by a program that
+  also writes it. The care in this ADR is about that contention.
+- **An adopted file's comment** is written once, to a file the user has just handed over, at the
+  moment they ask, and never again. Nothing else writes it and nothing races for it.
+
+The rule that has not moved: crateside still never writes the tag store of `Mashup Samples`, and
+still never deletes a file from it.

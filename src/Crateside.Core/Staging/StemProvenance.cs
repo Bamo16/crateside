@@ -1,16 +1,29 @@
 namespace Crateside.Core.Staging;
 
 /// <summary>
-/// The separation provenance StemForge writes into a stem's <c>COMMENT</c> tag.
+/// The provenance comment carried in a sample's <c>COMMENT</c> tag.
 /// </summary>
 /// <remarks>
-/// Ported from <c>StemForge.Core.Separation.AudioTagger</c>, copied rather than referenced.
-/// StemForge remains the writer — if its format changes, this must follow by hand.
+/// StemForge writes most of these and owns its own format — if that changes, this must follow by
+/// hand. crateside writes the <c>crateside/</c> ones itself, for a file it adopted (ADR 0022).
 /// </remarks>
 public sealed record StemProvenance
 {
-    /// <summary>The <c>stemforge/&lt;version&gt;</c> that produced the stem.</summary>
+    /// <summary>What crateside writes in front of a comment it wrote itself.</summary>
+    public const string AdoptedPrefix = "crateside/";
+
+    private const string SeparatedPrefix = "stemforge/";
+
+    /// <summary>The <c>stemforge/&lt;version&gt;</c> or <c>crateside/&lt;version&gt;</c> that wrote it.</summary>
     public required string ToolVersion { get; init; }
+
+    /// <summary>What the user calls an adopted sample, which is also its filename suffix.</summary>
+    public string? Label { get; init; }
+
+    /// <summary>
+    /// crateside wrote this comment, so the file is one it adopted rather than made (ADR 0022).
+    /// </summary>
+    public bool IsAdopted => ToolVersion.StartsWith(AdoptedPrefix, StringComparison.Ordinal);
 
     /// <summary>The separation preset, e.g. <c>Vocal - Full</c>. Absent on older stems.</summary>
     public string? Preset { get; init; }
@@ -34,15 +47,22 @@ public sealed record StemProvenance
     public string? SourceVideoId { get; init; }
 
     /// <summary>
-    /// Parses a StemForge provenance comment. Returns null for anything not carrying the
-    /// <c>stemforge/</c> prefix, rather than attempt to parse it as garbage.
+    /// Parses a provenance comment. Returns null for anything carrying neither known prefix,
+    /// rather than attempt to parse it as garbage.
     /// </summary>
     public static StemProvenance? Parse(string? comment)
     {
-        if (comment is null || !comment.StartsWith("stemforge/", StringComparison.Ordinal))
+        if (
+            comment is null
+            || !(
+                comment.StartsWith(SeparatedPrefix, StringComparison.Ordinal)
+                || comment.StartsWith(AdoptedPrefix, StringComparison.Ordinal)
+            )
+        )
             return null;
 
         string? preset = null;
+        string? label = null;
         DateOnly? separatedOn = null;
         string? sourceUrl = null;
 
@@ -53,6 +73,8 @@ public sealed record StemProvenance
         {
             if (Value(part, "preset: ") is { } p)
                 preset = p;
+            else if (Value(part, "label: ") is { } l)
+                label = l;
             else if (Value(part, "date: ") is { } d && DateOnly.TryParse(d, out var parsed))
                 separatedOn = parsed;
             else if (Value(part, "source: ") is { } s)
@@ -63,6 +85,7 @@ public sealed record StemProvenance
         {
             ToolVersion = parts[0],
             Preset = preset,
+            Label = label,
             SeparatedOn = separatedOn,
             SourceUrl = sourceUrl,
             SourceVideoId = YouTubeUrl.TryGetVideoId(sourceUrl, out var videoId) ? videoId : null,

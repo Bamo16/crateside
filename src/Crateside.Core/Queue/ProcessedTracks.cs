@@ -94,6 +94,8 @@ public sealed class ProcessedTracks
                         Path = path,
                         Root = root,
                         Preset = p.Preset,
+                        Label = p.Label,
+                        IsAdopted = p.IsAdopted,
                         SourceVideoId = videoId,
                         CreatedAt = CreationTimeOf(path),
                     }
@@ -135,6 +137,12 @@ public sealed record StemOnDisk
     /// download, which is how a kept source reads.
     /// </summary>
     public string? Preset { get; init; }
+
+    /// <summary>What the user calls an adopted sample. Null for anything crateside made.</summary>
+    public string? Label { get; init; }
+
+    /// <summary>crateside took this file into the track rather than making it (ADR 0022).</summary>
+    public bool IsAdopted { get; init; }
 
     /// <summary>The upload this file was cut from or downloaded from.</summary>
     /// <remarks>

@@ -121,8 +121,17 @@ the two run types below are named after which of them they produce.
 - **Detection source** — the source the **evidence run** measured. Usually the
   separation source and not necessarily: a swap moves the latter and leaves the
   former where it was. Nothing lets the user choose it.
+- **Adopted sample** — a file of a track's audio that crateside took in rather than
+  made, such as an instrumental the user built by hand in Ableton. A sample like any
+  other, differing in one way that settles everything else: **nothing can make it
+  again**, so it is never outstanding, and dropping it from the plan deletes it with
+  no way back. Identified by a **label** rather than an upload, because it came from
+  none — which is the whole difference between it and an **added source**. The one
+  file crateside writes an audio tag on
+  ([ADR 0022](docs/adr/0022-an-adopted-sample-is-a-file-crateside-did-not-make.md)).
 - **Stem plan** — which files the user wants made for one track: the separator
-  presets to run, and whether the separation source is itself a keeper. The user's
+  presets to run, whether the separation source is itself a keeper, and any
+  **adopted samples** kept alongside. The user's
   own statement, stored against the track and derived from nothing. An
   **instrumental release** is not a mode but a shape of plan — no vocal preset,
   source kept.

@@ -40,11 +40,15 @@ public sealed record StemPlan
     [JsonPropertyName("addedSources")]
     public IReadOnlyList<AddedSource> AddedSources { get; init; } = [];
 
+    /// <summary>Files of this song the user made and gave to crateside (ADR 0022).</summary>
+    [JsonPropertyName("adoptedSamples")]
+    public IReadOnlyList<AdoptedSample> AdoptedSamples { get; init; } = [];
+
     /// <summary>
     /// Whether this plan asks for nothing at all, which no track should be left in.
     /// </summary>
     [JsonIgnore]
-    public bool IsEmpty => Presets.Count is 0 && !KeepSource;
+    public bool IsEmpty => Presets.Count is 0 && !KeepSource && AdoptedSamples.Count is 0;
 
     /// <summary>The same plan with one preset ticked or unticked.</summary>
     public StemPlan Toggling(string presetId) =>
@@ -82,6 +86,28 @@ public sealed record StemPlan
             ],
         };
 
+    /// <summary>The same plan with one more file of the user's own kept.</summary>
+    public StemPlan Keeping(AdoptedSample adopted) =>
+        this with
+        {
+            AdoptedSamples = [.. AdoptedSamples, adopted],
+        };
+
+    /// <summary>The same plan without the adopted sample that carries this label.</summary>
+    /// <remarks>
+    /// Nothing can make one again, so a re-cut deletes the file and the label is free to reuse.
+    /// </remarks>
+    public StemPlan Forgetting(string label) =>
+        this with
+        {
+            AdoptedSamples =
+            [
+                .. AdoptedSamples.Where(adopted =>
+                    !adopted.Label.Equals(label, StringComparison.OrdinalIgnoreCase)
+                ),
+            ],
+        };
+
     /// <summary>Whether two plans ask for the same files, whatever order they were built in.</summary>
     /// <remarks>
     /// The record's own equality is sequence-sensitive on <see cref="Presets"/>, which would make
@@ -95,7 +121,29 @@ public sealed record StemPlan
         && !AddedSources
             .Select(source => source.VideoId)
             .Except(other.AddedSources.Select(source => source.VideoId), StringComparer.Ordinal)
+            .Any()
+        && AdoptedSamples.Count == other.AdoptedSamples.Count
+        && !AdoptedSamples
+            .Select(adopted => adopted.Label)
+            .Except(
+                other.AdoptedSamples.Select(adopted => adopted.Label),
+                StringComparer.OrdinalIgnoreCase
+            )
             .Any();
+}
+
+/// <summary>
+/// A file of this song the user made themselves, kept as a sample and never separated.
+/// </summary>
+/// <remarks>
+/// Identified by its label rather than an upload: it came from no upload, which is the whole
+/// difference between it and an <see cref="AddedSource"/> (ADR 0022).
+/// </remarks>
+public sealed record AdoptedSample
+{
+    /// <summary>What the user calls it, which is also the file's parenthesised suffix.</summary>
+    [JsonPropertyName("label")]
+    public required string Label { get; init; }
 }
 
 /// <summary>A whole file of this song the user attached: downloaded, staged, tagged, never cut.</summary>

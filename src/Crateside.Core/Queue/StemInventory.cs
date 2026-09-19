@@ -85,6 +85,12 @@ public sealed record StemInventory
                         preset,
                         StringComparer.OrdinalIgnoreCase
                     ),
+                    // The label is the only handle on an adopted sample: nothing can re-make it,
+                    // so dropping it from the plan is the only way it ever goes.
+                    { Kind: StemKind.Adopted, DisplayName: { } label } =>
+                        !wanted.AdoptedSamples.Any(adopted =>
+                            adopted.Label.Equals(label, StringComparison.OrdinalIgnoreCase)
+                        ),
                     { Kind: StemKind.Source } => IsDropped(file, wanted, stored ?? wanted),
                     _ => false,
                 }
@@ -118,8 +124,8 @@ public sealed record ClassifiedStem
     /// <summary>What the plan would ask for to make this file, or null when it cannot ask.</summary>
     public string? PresetId { get; init; }
 
-    /// <summary>What the separator called it, or null for a source download.</summary>
-    public string? DisplayName => File.Preset ?? StemFileName.PresetOf(File.Path);
+    /// <summary>What the separator called it, the user's label, or null for a source download.</summary>
+    public string? DisplayName => File.Label ?? File.Preset ?? StemFileName.PresetOf(File.Path);
 
     /// <summary>
     /// What one file is: the preset it came from, the source track, or the warp guide.
@@ -131,6 +137,9 @@ public sealed record ClassifiedStem
     public static ClassifiedStem Of(StemOnDisk file, PresetCatalog catalog) =>
         file switch
         {
+            // Before the catalog is consulted: an adopted sample carries a label of the user's
+            // choosing, which nothing can be asked to make again (ADR 0022).
+            { IsAdopted: true } => new() { File = file, Kind = StemKind.Adopted },
             { Preset: { } guide } when StagingStem.IsWarpGuidePreset(guide) => new()
             {
                 File = file,
@@ -168,4 +177,7 @@ public enum StemKind
 
     /// <summary>A stem carrying a preset the separator no longer offers.</summary>
     Unrecognised,
+
+    /// <summary>A file crateside took into the track rather than made (ADR 0022).</summary>
+    Adopted,
 }
