@@ -97,8 +97,8 @@ public sealed class StemRecut(
         {
             try
             {
-                File.Delete(stem.File.Path);
-                File.Delete(StemFileName.AnalysisFor(stem.File.Path));
+                RecycleBin.Remove(stem.File.Path);
+                RecycleBin.Remove(StemFileName.AnalysisFor(stem.File.Path));
 
                 removed++;
             }

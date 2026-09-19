@@ -61,12 +61,12 @@ public sealed class HandoffRunner(CratesidePaths paths)
         {
             try
             {
-                // File.Delete is silent about a path that is not there, which would make the
+                // Removal is silent about a path that is not there, which would make the
                 // count say files went that never existed.
                 if (!File.Exists(path))
                     continue;
 
-                File.Delete(path);
+                RecycleBin.Remove(path);
                 cleared++;
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }

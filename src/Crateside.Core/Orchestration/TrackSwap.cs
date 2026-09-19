@@ -71,8 +71,8 @@ public sealed class TrackSwap(
         {
             try
             {
-                File.Delete(stem.Path);
-                File.Delete(StemFileName.AnalysisFor(stem.Path));
+                RecycleBin.Remove(stem.Path);
+                RecycleBin.Remove(StemFileName.AnalysisFor(stem.Path));
 
                 removed++;
             }

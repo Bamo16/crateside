@@ -86,3 +86,24 @@ once it has been made by hand; making it is [#39](https://github.com/Bamo16/crat
 
 **A UI to adopt.** The domain and the writer land first so the model can be argued with before a
 form is built on top of it.
+
+## A re-cut recycles rather than deletes — 2026-09-19
+
+Hours after this was written, a re-cut deleted the first adopted sample there had ever been. The
+cause was a missed construction site and is fixed. What the incident exposed is separate: the
+removal used `File.Delete`, which does not use the recycle bin, so the file was only recovered
+because the user happened to have exported a second copy elsewhere.
+
+This ADR already said an adopted sample is the one thing in a track nothing can make again, and
+then left its deletion permanent. That was an oversight rather than a decision.
+
+Everything a re-cut, a source swap or a handoff removes now goes to the recycle bin
+(`RecycleBin.Remove`). The *Consequences* above still hold for a file the user deletes themselves
+— crateside does not keep copies of files it did not make — but crateside's own removals are now
+undoable.
+
+It is deliberately not narrowed to adopted samples. A preset stem can be cut again, so recycling
+it is only a convenience, but two rules for "what happens when crateside deletes your audio" is a
+worse thing to hold in your head than one. The shell call is silent by construction: a dialog in a
+drain loop would block the thread rather than reach anyone, which is why
+`Microsoft.VisualBasic`'s helper is not used.
