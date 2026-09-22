@@ -100,7 +100,11 @@ public class LibraryKeyReaderRealLibraryTests
     {
         var paths = Options.Create(Paths);
 
-        return new LibraryKeyReader(paths, new AbletonIndexReader(paths)).Read();
+        return new LibraryKeyReader(
+            paths,
+            new AbletonIndexReader(paths),
+            new AbletonFolderInfoReader()
+        ).Read();
     }
 
     private static void SkipUnlessPresent()

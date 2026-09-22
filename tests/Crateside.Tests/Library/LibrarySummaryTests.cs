@@ -68,7 +68,11 @@ public class LibrarySummaryTests : IDisposable
             new CratesidePaths { MashupSamples = Path.Combine(_root, "gone") }
         );
 
-        var distribution = new LibraryKeyReader(paths, new AbletonIndexReader(paths)).Read();
+        var distribution = new LibraryKeyReader(
+            paths,
+            new AbletonIndexReader(paths),
+            new AbletonFolderInfoReader()
+        ).Read();
 
         Assert.Equal(0, distribution.FileCount);
         Assert.Empty(distribution.Counts);
@@ -78,7 +82,13 @@ public class LibrarySummaryTests : IDisposable
     {
         var paths = Options.Create(new CratesidePaths { MashupSamples = _root });
 
-        return new LibrarySummary(new LibraryKeyReader(paths, new AbletonIndexReader(paths)));
+        return new LibrarySummary(
+            new LibraryKeyReader(
+                paths,
+                new AbletonIndexReader(paths),
+                new AbletonFolderInfoReader()
+            )
+        );
     }
 
     private void Add(string name) => File.WriteAllText(Path.Combine(_root, name), string.Empty);

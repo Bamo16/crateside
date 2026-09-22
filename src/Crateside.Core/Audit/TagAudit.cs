@@ -96,25 +96,26 @@ public static class TagAudit
     }
 }
 
-/// <summary>A root to scan, and whether its tag store is one crateside writes.</summary>
+/// <summary>A root to scan, and whether its tag store holds the root's whole tag state.</summary>
 /// <remarks>
-/// That one fact decides which store is read (ADR 0017).
+/// That one fact decides which store is read (ADR 0017). It is not "does crateside write this
+/// store" — it writes both (ADR 0023).
 /// </remarks>
-public sealed record AuditRoot(string Path, bool TagStoreIsWritten)
+public sealed record AuditRoot(string Path, bool TagStoreIsWhole)
 {
     /// <summary>
     /// Whether this root's tags come from Ableton's index rather than its own XMP.
     /// </summary>
     /// <remarks>
-    /// crateside reads the store it writes, the only place it can see its own work at once — the
-    /// index takes hours to catch up. Everywhere else the index is the tag state.
+    /// A whole store is read directly, the only place crateside sees its own work at once — the
+    /// index takes hours to catch up. Where the store is partial, the index is the tag state.
     /// </remarks>
-    public bool ReadsTheIndex => !TagStoreIsWritten;
+    public bool ReadsTheIndex => !TagStoreIsWhole;
 
     /// <summary>A root crateside tags into, read from the XMP its own writes land in.</summary>
     public static AuditRoot Written(string path) => new(path, true);
 
-    /// <summary>A root crateside only reads, read from Ableton's index.</summary>
+    /// <summary>A root whose store holds only some of its tags, read from Ableton's index.</summary>
     public static AuditRoot Mirrored(string path) => new(path, false);
 }
 

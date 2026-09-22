@@ -46,6 +46,16 @@
     color: var(--text-dim);
 }
 
+.perishable {
+    max-width: var(--table-library);
+    margin: 0 0 1.25rem;
+    padding: 0.6rem 0.8rem;
+    border-left: 3px solid var(--warn);
+    background: var(--line-strong);
+    color: var(--text-dim);
+    font-size: 0.9rem;
+}
+
 .empty {
     margin: 2rem 0;
     color: var(--muted);

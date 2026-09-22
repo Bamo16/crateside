@@ -18,7 +18,7 @@ public sealed class TaggingRunner(CratesidePaths paths, AbletonFolderInfoWriter?
         List<TagAssignment> assignments =
         [
             .. stems
-                .Select(s => new { Stem = s, Keywords = KeywordsFor(s) })
+                .Select(s => new { Stem = s, Keywords = KeywordsFor(s.LedgerKey, s.Preset) })
                 .Where(x => x.Keywords.Count > 0)
                 .Select(x => new TagAssignment
                 {
@@ -36,17 +36,14 @@ public sealed class TaggingRunner(CratesidePaths paths, AbletonFolderInfoWriter?
     /// The keywords one file should carry: the key from the ledger, and the type from what the
     /// separator made it.
     /// </summary>
-    internal static IReadOnlyList<string> KeywordsFor(TaggedStem stem)
+    internal static IReadOnlyList<string> KeywordsFor(string? ledgerKey, string? preset)
     {
-        if (
-            stem.LedgerKey is not { Length: > 0 } key
-            || !TryReadKey(key, out var tonic, out var mode)
-        )
+        if (ledgerKey is not { Length: > 0 } key || !TryReadKey(key, out var tonic, out var mode))
             return [];
 
         List<string> keywords = [$"Key|{tonic}", $"Key|{mode}"];
 
-        if (TypeFor(stem.Preset) is { } type)
+        if (TypeFor(preset) is { } type)
             keywords.Add($"Type|{type}");
 
         return keywords;

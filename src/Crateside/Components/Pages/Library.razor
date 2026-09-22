@@ -36,6 +36,17 @@
             @("key".ToQuantity(Represented)) of 24.
         </p>
 
+        @if (_distribution.PerishableCount > 0)
+        {
+            <p class="perishable">
+                <strong>@("key".ToQuantity(_distribution.PerishableCount))</strong> here are not
+                backed by an entry in the folder's tag store. Ableton shows them, but the next
+                time anything writes that store — tagging a file in this folder by hand will do
+                it — they are reconciled away. crateside backs them within a few minutes of
+                starting.
+            </p>
+        }
+
         <table class="distribution">
             <thead>
                 <tr>

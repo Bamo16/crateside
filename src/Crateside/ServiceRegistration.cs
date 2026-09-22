@@ -175,7 +175,6 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new HandoffRunner(sp.GetRequiredService<CratesidePaths>()));
         services.AddSingleton<HandoffDrainer>();
 
-        // Writes Sample Staging's tag store only, never Mashup Samples (ADR 0003).
         services.AddSingleton<AbletonFolderInfoWriter>();
         services.AddSingleton(sp => new TaggingSelector(
             sp.GetRequiredService<JobStore>(),
@@ -187,6 +186,11 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<TaggingDrainer>();
 
+        services.AddSingleton(sp => new BackingRunner(
+            sp.GetRequiredService<AbletonFolderInfoReader>(),
+            sp.GetRequiredService<AbletonFolderInfoWriter>()
+        ));
+
         // Factories for the same reason as the rest: the container will not apply the trailing
         // optional path and executable-name defaults.
         services.AddSingleton(_ => new ResolvedNameStore());
@@ -195,6 +199,10 @@ public static class ServiceRegistration
         // Not registered beside the pausable stages on purpose (ADR 0014): a name resolve spends
         // one metadata fetch and contends for nothing, so it runs unattended like detection.
         services.AddHostedService<NameWorker>();
+
+        // Unattended for the same reason, and it has to be: the gap opens on every import and is
+        // collected by an ordinary hand-applied tag (ADR 0023).
+        services.AddHostedService<BackingWorker>();
 
         services.AddHostedService<DrainWorker>();
 

@@ -8,7 +8,11 @@ namespace Crateside.Core.Library;
 /// How many files in the finished library carry each key, counted from Ableton's index
 /// (ADR 0013).
 /// </summary>
-public sealed class LibraryKeyReader(IOptions<CratesidePaths> paths, AbletonIndexReader index)
+public sealed class LibraryKeyReader(
+    IOptions<CratesidePaths> paths,
+    AbletonIndexReader index,
+    AbletonFolderInfoReader folderInfo
+)
 {
     private readonly CratesidePaths _paths = paths.Value;
 
@@ -20,9 +24,11 @@ public sealed class LibraryKeyReader(IOptions<CratesidePaths> paths, AbletonInde
             return KeyDistribution.Empty(root);
 
         var tags = index.Read(root);
+        var backed = folderInfo.Read(root);
         var counts = new Dictionary<MusicKey, int>();
         var unkeyed = new List<string>();
         var files = 0;
+        var perishable = 0;
 
         foreach (
             var file in Directory
@@ -33,7 +39,12 @@ public sealed class LibraryKeyReader(IOptions<CratesidePaths> paths, AbletonInde
             files++;
 
             if (tags.TryGet(file, out var applied) && MusicKey.FromString(applied.Key) is { } key)
+            {
                 counts[key] = counts.GetValueOrDefault(key) + 1;
+
+                if (!backed.TryGet(file, out _))
+                    perishable++;
+            }
             else
                 unkeyed.Add(Path.GetRelativePath(root, file));
         }
@@ -47,6 +58,7 @@ public sealed class LibraryKeyReader(IOptions<CratesidePaths> paths, AbletonInde
             ],
             FileCount = files,
             Unkeyed = [.. unkeyed.Order(StringComparer.OrdinalIgnoreCase)],
+            PerishableCount = perishable,
         };
     }
 }
@@ -66,6 +78,12 @@ public sealed record KeyDistribution
     /// three of them is a list the user can act on.
     /// </summary>
     public required IReadOnlyList<string> Unkeyed { get; init; }
+
+    /// <summary>
+    /// Keyed files with no tag-store entry, whose key the next write to this root destroys
+    /// (ADR 0023).
+    /// </summary>
+    public int PerishableCount { get; init; }
 
     public int KeyedCount => FileCount - Unkeyed.Count;
 

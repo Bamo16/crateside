@@ -75,17 +75,27 @@ against it.
   **But writing it reconciles the index down to it**: a keyword in the index with no entry
   here is destroyed by the next write to that root, so the store is behind for reading and
   decisive for keeping (ADR 0013's 2026-09-12 amendment).
-- **Written root** — a root whose tag store crateside writes, which is **Sample Staging**
-  and only ever that. Read from its **tag store**, because that is where crateside's own
-  writes land and the only place it can see them at once — the index takes hours to catch
-  up. A file with no key there has no key.
-- **Mirrored root** — a root crateside only reads, which is **Mashup Samples**. Read from
-  the **index**, because its tag store is a mirror that may never converge: measured
-  2026-09-10, 108 of 591 files were keyed in the index and not in the store, and the store
-  had been rewritten that same day
+- **Backing** — a file's entry in its root's **tag store**. A key held only in the **index**, with
+  no entry behind it, is destroyed by the next write to that root, so backing is what makes a key
+  *durable* rather than what records it. Every file arrives in **Mashup Samples** unbacked, because
+  a move carries the keyword in the index and writes no entry
+  ([ADR 0023](docs/adr/0023-a-key-with-no-store-entry-is-not-durable.md)).
+- **Written root** — a root whose **tag store** holds its whole tag state, which is
+  **Sample Staging** and only ever that: every key there is one crateside wrote into the
+  store itself. Read from the store, because that is the only place crateside can see its
+  own writes at once — the index takes hours to catch up. A file with no key there has no
+  key.
+- **Mirrored root** — a root whose store holds only part of its tag state, which is
+  **Mashup Samples**. Read from the **index**, because the store is a mirror that may never
+  converge: measured 2026-09-10, 108 of 591 files were keyed in the index and not in the
+  store, and the store had been rewritten that same day
   ([ADR 0017](docs/adr/0017-each-root-is-audited-from-the-store-that-holds-its-tags.md)).
-  The two words name what the *store* is to crateside, not what the folder is for — and
-  that one fact is what picks the source, so they are one axis rather than two.
+  A file moved in arrives keyed in the index and absent from the store, which is the gap
+  **backing** closes.
+  The two words name how complete the *store* is, not what the folder is for — and that one
+  fact is what picks the source, so they are one axis rather than two. crateside writes
+  both stores; which it writes stopped being the distinction when it began backing the
+  library ([ADR 0023](docs/adr/0023-a-key-with-no-store-entry-is-not-durable.md)).
 
 ## Views
 

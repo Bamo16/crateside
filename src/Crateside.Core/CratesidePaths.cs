@@ -7,8 +7,8 @@ namespace Crateside.Core;
 /// they are settable so a test — or another machine — is not stuck with them.
 /// </summary>
 /// <remarks>
-/// crateside writes to exactly one of these: the Ableton Folder Info XMP under
-/// <see cref="SampleStaging"/> (ADR 0003). <see cref="MashupSamples"/> is never written.
+/// crateside writes the Ableton Folder Info XMP under <see cref="SampleStaging"/> and
+/// <see cref="MashupSamples"/>, and nothing else here (ADR 0023).
 /// </remarks>
 public sealed class CratesidePaths
 {
