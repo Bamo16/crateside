@@ -333,11 +333,23 @@ public sealed class QueueService(
         // Marked first, and regardless of what the removal reports. A delete costs fifty quota
         // units against a daily ten thousand, so a failure retried on every scan spends the day
         // rather than reporting a fault — which is what it did.
-        intake.MarkRemovalAttempted(entries.Select(item => item.VideoId), DateTimeOffset.UtcNow);
+        var offered = entries.Select(item => item.VideoId).ToList();
 
-        // Kept, not discarded: nothing will try these again, so this is the only record that they
-        // were left in the playlist and why (#34).
-        authorizer.WriteAccess.Record(await RemoveAsync(entries, cancellationToken));
+        intake.MarkRemovalAttempted(offered, DateTimeOffset.UtcNow);
+
+        try
+        {
+            // Kept, not discarded: nothing will try these again, so this is the only record that
+            // they were left in the playlist and why (#34).
+            authorizer.WriteAccess.Record(await RemoveAsync(entries, cancellationToken));
+        }
+        catch (QueueUnavailableException)
+        {
+            // Consent has lapsed, so no delete was attempted and no quota was spent. Swallowed
+            // rather than thrown: the playlist read itself worked, and failing the scan here
+            // stopped every stage on a write the stages do not need (ADR 0026).
+            intake.ClearRemovalAttempted(offered);
+        }
     }
 
     /// <summary>

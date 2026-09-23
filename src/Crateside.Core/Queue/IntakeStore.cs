@@ -113,7 +113,20 @@ public sealed class IntakeStore
     /// Called before the removal, not after: the other order costs the whole playlist's quota on
     /// every scan after a crash.
     /// </remarks>
-    public void MarkRemovalAttempted(IEnumerable<string> videoIds, DateTimeOffset at)
+    public void MarkRemovalAttempted(IEnumerable<string> videoIds, DateTimeOffset at) =>
+        SetRemovalAttempted(videoIds, at);
+
+    /// <summary>
+    /// Puts these entries back in line to be offered, for a removal that never reached the API.
+    /// </summary>
+    /// <remarks>
+    /// Only for a failure that spent no quota — a lapsed token is refused before the first delete,
+    /// so the mark cost those entries their one offer and nothing was paid for it (#34).
+    /// </remarks>
+    public void ClearRemovalAttempted(IEnumerable<string> videoIds) =>
+        SetRemovalAttempted(videoIds, null);
+
+    private void SetRemovalAttempted(IEnumerable<string> videoIds, DateTimeOffset? at)
     {
         lock (_gate)
         {

@@ -209,6 +209,25 @@ public class IntakeStoreTests : IDisposable
         Assert.Empty(Offerable(new IntakeStore(Path.Combine(_directory, "intake.json"))));
     }
 
+    /// <summary>
+    /// A lapsed token is refused before the first delete, so the mark cost those entries their one
+    /// offer and bought nothing. Clearing it is what lets re-consent offer them again (#34).
+    /// </summary>
+    [Fact]
+    public void An_entry_a_lapse_never_offered_is_offered_again()
+    {
+        var store = Store();
+
+        store.Record([Item(Track), Item(Other)]);
+        store.MarkRemovalAttempted([Track, Other], DateTimeOffset.UtcNow);
+
+        Assert.Empty(Offerable(store));
+
+        store.ClearRemovalAttempted([Track]);
+
+        Assert.Equal([Track], Offerable(Store()));
+    }
+
     private static string[] Offerable(IntakeStore store) =>
         [.. store.Read().Where(r => r.RemovalAttemptedAt is null).Select(r => r.VideoId)];
 
