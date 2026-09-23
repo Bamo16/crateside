@@ -87,6 +87,7 @@ public static class ServiceRegistration
             dataProtection.ProtectKeysWithDpapi();
 
         services.AddSingleton<ProtectedTokenStore>();
+        services.AddSingleton<QueueWriteAccess>();
         services.AddSingleton<QueueAuthorizer>();
         services.AddSingleton<QueueRemover>();
         services.AddSingleton<IntakeStore>();

@@ -23,6 +23,7 @@
 @inject TrackRename Rename
 @inject TrackSwap Swap
 @inject DrainControl Separation
+@inject QueueWriteAccess Access
 @inject VerdictControl Judging
 @inject WorkingSet Held
 @inject QuotaReader Quota
@@ -767,9 +768,20 @@
         }
     }
 
-    @if (_toasts.Count > 0)
+    @if (_toasts.Count > 0 || _consentToast)
     {
         <div class="toasts">
+            @if (_consentToast)
+            {
+                <div class="toast lapsed">
+                    <span class="eyebrow">Playlist access expired</span>
+                    <span class="toast-song">crateside cannot empty the playlist</span>
+                    <span class="toast-foot">
+                        @Lapsed()
+                        <a class="show" href="/settings">Refresh access</a>
+                    </span>
+                </div>
+            }
             @foreach (var toast in _toasts)
             {
                 <div class="toast">
@@ -794,6 +806,14 @@
     private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
 
     private static readonly TimeSpan ToastLife = TimeSpan.FromSeconds(20);
+
+    /// <summary>
+    /// How often the lapsed-access toast comes back. Nothing automatic renews the token, so it
+    /// is said again rather than once.
+    /// </summary>
+    private static readonly TimeSpan TellEvery = TimeSpan.FromMinutes(30);
+
+    private DateTimeOffset _consentUntil;
 
     private static readonly TimeSpan Tick = TimeSpan.FromSeconds(1);
 
@@ -951,10 +971,23 @@
         _clock = new System.Threading.Timer(_ => Redraw(), null, Tick, Tick);
     }
 
+    private bool _consentToast => DateTimeOffset.UtcNow < _consentUntil;
+
+    /// <summary>How long access has been lapsed, for the toast to say.</summary>
+    private string Lapsed() =>
+        Access.LapsedAt is { } at
+            ? $"expired {(DateTimeOffset.UtcNow - at).Humanize()} ago"
+            : "expired";
+
     private void Redraw()
     {
         if (_circuit.IsCancellationRequested)
             return;
+
+        // On the clock the page already runs, so a lapse that began while this page was open
+        // still surfaces without a second timer.
+        if (!_consentToast && Access.ShouldTell(TellEvery))
+            _consentUntil = DateTimeOffset.UtcNow + ToastLife;
 
         try
         {

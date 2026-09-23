@@ -13,7 +13,11 @@ namespace Crateside.Core.Queue;
 /// An expired or absent token is an ordinary state, not an error — the write token lapses
 /// roughly weekly for an unapproved app, and re-consent is interactive.
 /// </remarks>
-public sealed class QueueAuthorizer(IOptions<QueueOptions> options, ProtectedTokenStore tokenStore)
+public sealed class QueueAuthorizer(
+    IOptions<QueueOptions> options,
+    ProtectedTokenStore tokenStore,
+    QueueWriteAccess access
+)
 {
     /// <summary>The narrowest scope that permits <c>playlistItems.delete</c>.</summary>
     private static readonly string[] Scopes = [YouTubeService.Scope.Youtube];
@@ -29,6 +33,9 @@ public sealed class QueueAuthorizer(IOptions<QueueOptions> options, ProtectedTok
 
     /// <summary>Whether consent has ever been given and a token stored.</summary>
     public bool HasStoredToken => tokenStore.HasStoredToken;
+
+    /// <summary>Whether writing still works, and what happened when it last did not.</summary>
+    public QueueWriteAccess WriteAccess => access;
 
     /// <summary>
     /// The stored credential, refreshed if needed, or null when there is none or it can no longer
@@ -64,11 +71,17 @@ public sealed class QueueAuthorizer(IOptions<QueueOptions> options, ProtectedTok
             if (credential.Token.IsStale)
                 await credential.RefreshTokenAsync(cancellationToken);
 
+            access.Works();
+
             return credential;
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            // A revoked or expired refresh token throws here; reads as "no credential".
+            // A revoked or expired refresh token throws here. It still reads as "no credential"
+            // to every caller — but it is not the same as never having consented, and collapsing
+            // the two is what made the lapse silent (#34).
+            access.Lapsed(e.Message);
+
             return null;
         }
     }

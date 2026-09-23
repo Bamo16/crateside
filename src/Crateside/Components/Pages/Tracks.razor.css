@@ -1199,3 +1199,13 @@ a.outline {
 .add-track input:focus {
     border-color: rgba(255, 255, 255, 0.4);
 }
+
+/* The lapsed-access toast is a fault, not a result, so it does not borrow the amber the
+   ready-to-warp toast uses to mean "your turn". */
+.toast.lapsed {
+    border-color: rgba(220, 90, 90, 0.5);
+}
+
+.toast.lapsed .eyebrow {
+    color: var(--warn);
+}

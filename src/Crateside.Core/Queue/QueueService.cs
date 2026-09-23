@@ -335,7 +335,9 @@ public sealed class QueueService(
         // rather than reporting a fault — which is what it did.
         intake.MarkRemovalAttempted(entries.Select(item => item.VideoId), DateTimeOffset.UtcNow);
 
-        await RemoveAsync(entries, cancellationToken);
+        // Kept, not discarded: nothing will try these again, so this is the only record that they
+        // were left in the playlist and why (#34).
+        authorizer.WriteAccess.Record(await RemoveAsync(entries, cancellationToken));
     }
 
     /// <summary>

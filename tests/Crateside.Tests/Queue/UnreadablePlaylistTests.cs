@@ -44,7 +44,8 @@ public class UnreadablePlaylistTests : IDisposable
             new ProtectedTokenStore(
                 DataProtectionProvider.Create("crateside-tests"),
                 PathIn("tokens")
-            )
+            ),
+            new QueueWriteAccess()
         );
 
         return new QueueService(
