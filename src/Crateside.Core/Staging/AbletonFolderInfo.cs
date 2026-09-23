@@ -61,6 +61,15 @@ public sealed record AbletonFileTags
     public required IReadOnlyList<string> Keywords { get; init; }
 
     /// <summary>
+    /// Keywords Ableton records as taken off this file, which is the user saying "not this one".
+    /// </summary>
+    /// <remarks>
+    /// Writing one of these back would silently undo a correction made by hand. Only the store
+    /// carries them; the index has no equivalent, so it always reads empty.
+    /// </remarks>
+    public IReadOnlyList<string> HiddenKeywords { get; init; } = [];
+
+    /// <summary>
     /// Recombined from the separate tonic and mode keywords, normalized to the ledger's ASCII
     /// spelling (<c>G# major</c>).
     /// </summary>
@@ -90,7 +99,8 @@ public sealed record AbletonFileTags
     /// </summary>
     internal static AbletonFileTags FromKeywords(
         string relativePath,
-        IReadOnlyList<string> keywords
+        IReadOnlyList<string> keywords,
+        IReadOnlyList<string>? hidden = null
     )
     {
         var (key, isPartial) = ReadKey(keywords);
@@ -99,6 +109,7 @@ public sealed record AbletonFileTags
         {
             RelativePath = relativePath,
             Keywords = keywords,
+            HiddenKeywords = hidden ?? [],
             Key = key,
             Type = Values(keywords, TypeCategory).FirstOrDefault(),
             HasPartialKey = isPartial,

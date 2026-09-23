@@ -54,10 +54,19 @@ public sealed class BackingRunner(
                     Keywords = KeywordsFor(file.Path, ledger),
                 })
                 .Where(file => file.Keywords.Count > 0)
+                .Select(file => new
+                {
+                    file.Path,
+                    Keywords = Merged(file.Existing, file.Keywords),
+                    Had = file.Existing?.Keywords.Count ?? 0,
+                })
+                // A write that adds nothing is not worth a reconcile — and one whose whole key
+                // the user had taken off adds nothing.
+                .Where(file => file.Keywords.Count > file.Had)
                 .Select(file => new TagAssignment
                 {
                     RelativePath = Path.GetRelativePath(root, file.Path),
-                    Keywords = Merged(file.Existing, file.Keywords),
+                    Keywords = file.Keywords,
                 }),
         ];
     }
@@ -83,7 +92,8 @@ public sealed class BackingRunner(
     /// </summary>
     /// <remarks>
     /// The writer replaces an entry's whole keyword bag, so anything not carried across here is
-    /// destroyed. A <c>Type</c> the user set wins over the one the preset implies.
+    /// destroyed. A <c>Type</c> the user set wins over the one the preset implies, and a keyword
+    /// they took off is never put back.
     /// </remarks>
     internal static IReadOnlyList<string> Merged(
         AbletonFileTags? existing,
@@ -95,10 +105,13 @@ public sealed class BackingRunner(
             [
                 .. existing.Keywords,
                 .. keywords.Where(keyword =>
-                    keyword.StartsWith("Key|", StringComparison.Ordinal)
-                    || (
-                        existing.Type is null
-                        && keyword.StartsWith("Type|", StringComparison.Ordinal)
+                    !existing.HiddenKeywords.Contains(keyword, StringComparer.Ordinal)
+                    && (
+                        keyword.StartsWith("Key|", StringComparison.Ordinal)
+                        || (
+                            existing.Type is null
+                            && keyword.StartsWith("Type|", StringComparison.Ordinal)
+                        )
                     )
                 ),
             ];

@@ -53,32 +53,25 @@ public sealed class AbletonFolderInfoReader
         }
     }
 
-    private static string? FindXmp(string rootFolder)
-    {
-        var directory = Path.Combine(rootFolder, FolderInfoDirectory);
-
-        if (!Directory.Exists(directory))
-            return null;
-
-        return Directory
-            .EnumerateFiles(directory, "*.xmp")
-            .Order(StringComparer.Ordinal)
-            .FirstOrDefault();
-    }
+    private static string? FindXmp(string rootFolder) => AbletonFolderInfoFile.In(rootFolder);
 
     private static AbletonFileTags? ParseEntry(XElement item)
     {
         if (item.Element(AblFr + "filePath")?.Value is not { Length: > 0 } filePath)
             return null;
 
-        var keywords =
-            item.Element(AblFr + "keywords")
-                ?.Descendants(Rdf + "li")
-                .Select(li => li.Value)
-                .Where(value => value.Length > 0)
-                .ToArray()
-            ?? [];
-
-        return AbletonFileTags.FromKeywords(filePath, keywords);
+        return AbletonFileTags.FromKeywords(
+            filePath,
+            Values(item, "keywords"),
+            Values(item, "hideKeywords")
+        );
     }
+
+    private static string[] Values(XElement item, string element) =>
+        item.Element(AblFr + element)
+            ?.Descendants(Rdf + "li")
+            .Select(li => li.Value)
+            .Where(value => value.Length > 0)
+            .ToArray()
+        ?? [];
 }

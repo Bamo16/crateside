@@ -96,6 +96,34 @@ public class BackingRunnerTests : IDisposable
         Assert.Empty(runner.Unbacked(Path.Combine(_root, "gone"), KeyLedger.Read("no-such-file")));
     }
 
+    [Fact]
+    public void A_keyword_the_user_took_off_is_not_put_back()
+    {
+        // hideKeywords is Ableton's record of a keyword removed by hand -- measured live on
+        // Porter Robinson - Language, where Key|Major was taken off and Key|Minor set.
+        var merged = Merge(
+            AbletonFileTags.FromKeywords(File1, ["Type|Vocal"], ["Key|Major"]),
+            ["Key|F♯", "Key|Major", "Type|Instrumental"]
+        );
+
+        Assert.Contains("Key|F♯", merged);
+        Assert.DoesNotContain("Key|Major", merged);
+    }
+
+    [Fact]
+    public void A_type_the_user_took_off_is_not_put_back_either()
+    {
+        // A Milli (A Cappella): crateside tagged it Instrumental because an added source has no
+        // preset (#42), the user removed that and set Vocal.
+        var merged = Merge(
+            AbletonFileTags.FromKeywords(File1, [], ["Type|Instrumental"]),
+            ["Key|G♯", "Key|Minor", "Type|Instrumental"]
+        );
+
+        Assert.Contains("Key|G♯", merged);
+        Assert.DoesNotContain("Type|Instrumental", merged);
+    }
+
     private static AbletonFileTags Tags(params string[] keywords) =>
         AbletonFileTags.FromKeywords(File1, keywords);
 

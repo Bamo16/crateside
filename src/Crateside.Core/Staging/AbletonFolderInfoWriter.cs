@@ -86,7 +86,7 @@ public sealed class AbletonFolderInfoWriter
             return TagWriteOutcome.Rejected($"'{bad}' is not a keyword Ableton already knows");
 
         var directory = Path.Combine(rootFolder, FolderInfoDirectory);
-        var path = ExistingXmp(directory);
+        var path = ExistingXmp(rootFolder);
 
         try
         {
@@ -123,7 +123,7 @@ public sealed class AbletonFolderInfoWriter
         if (renames.Count is 0)
             return TagWriteOutcome.Written(0);
 
-        var path = ExistingXmp(Path.Combine(rootFolder, FolderInfoDirectory));
+        var path = ExistingXmp(rootFolder);
 
         // No store yet is not a failure — nothing carries the old names to rename.
         if (path is null)
@@ -294,13 +294,11 @@ public sealed class AbletonFolderInfoWriter
             description.Add(new XElement(Xmp + "MetadataDate", now));
     }
 
-    private static string? ExistingXmp(string directory) =>
-        Directory.Exists(directory)
-            ? Directory
-                .EnumerateFiles(directory, "*.xmp")
-                .Order(StringComparer.Ordinal)
-                .FirstOrDefault()
-            : null;
+    /// <remarks>
+    /// Takes the root, not the folder-info directory, so reader and writer resolve the same file
+    /// through the same rule (#40).
+    /// </remarks>
+    private static string? ExistingXmp(string rootFolder) => AbletonFolderInfoFile.In(rootFolder);
 
     /// <summary>The name for a store that does not exist yet — a fresh UUID is a new identity.</summary>
     private static string NewName() => $"{Guid.NewGuid()}.xmp";
