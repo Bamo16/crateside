@@ -21,12 +21,12 @@ public sealed class BackingRunner(
         writer.Apply(root, Unbacked(root, ledger));
 
     /// <summary>
-    /// Every file under <paramref name="root"/> that has no store entry and could have one, with
-    /// what that entry should say.
+    /// Every file under <paramref name="root"/> whose key is not backed and could be, with what
+    /// its entry should say.
     /// </summary>
     /// <remarks>
-    /// Files that already have an entry are left alone, whatever it says — the store is where the
-    /// user's own hand-applied tags land (ADR 0023).
+    /// A key already in the store is never rewritten — that is where the user's own hand-applied
+    /// tags land (ADR 0023).
     /// </remarks>
     public IReadOnlyList<TagAssignment> Unbacked(string root, KeyLedger ledger)
     {
@@ -39,16 +39,69 @@ public sealed class BackingRunner(
         [
             .. Directory
                 .EnumerateFiles(root, "*", SearchOption.AllDirectories)
-                .Where(path => StagingBoard.IsStemFile(path) && !backed.TryGet(path, out _))
-                .Select(path => new { Path = path, Keywords = KeywordsFor(path, ledger) })
+                .Where(StagingBoard.IsStemFile)
+                .Select(path => new
+                {
+                    Path = path,
+                    Existing = backed.TryGet(path, out var tags) ? tags : null,
+                })
+                // Before reading any provenance, which costs a tag read per file.
+                .Where(file => NeedsAKey(file.Existing))
+                .Select(file => new
+                {
+                    file.Path,
+                    file.Existing,
+                    Keywords = KeywordsFor(file.Path, ledger),
+                })
                 .Where(file => file.Keywords.Count > 0)
                 .Select(file => new TagAssignment
                 {
                     RelativePath = Path.GetRelativePath(root, file.Path),
-                    Keywords = file.Keywords,
+                    Keywords = Merged(file.Existing, file.Keywords),
                 }),
         ];
     }
+
+    /// <summary>
+    /// Whether this file's entry is missing a key that writing one would supply.
+    /// </summary>
+    /// <remarks>
+    /// Half a key is left alone: the audit reports it, and completing one is a guess about which
+    /// half is right rather than filling a blank.
+    /// </remarks>
+    internal static bool NeedsAKey(AbletonFileTags? existing) =>
+        existing is null
+        || (
+            existing is { Key: null, HasPartialKey: false }
+            // A keyword the writer does not know would be refused, taking the whole pass with it,
+            // and dropping it to get the write through would lose what the user put there.
+            && existing.Keywords.All(AbletonFolderInfoWriter.IsValidKeyword)
+        );
+
+    /// <summary>
+    /// The keywords to write: everything the entry already has, plus the key it lacks.
+    /// </summary>
+    /// <remarks>
+    /// The writer replaces an entry's whole keyword bag, so anything not carried across here is
+    /// destroyed. A <c>Type</c> the user set wins over the one the preset implies.
+    /// </remarks>
+    internal static IReadOnlyList<string> Merged(
+        AbletonFileTags? existing,
+        IReadOnlyList<string> keywords
+    ) =>
+        existing is null
+            ? keywords
+            :
+            [
+                .. existing.Keywords,
+                .. keywords.Where(keyword =>
+                    keyword.StartsWith("Key|", StringComparison.Ordinal)
+                    || (
+                        existing.Type is null
+                        && keyword.StartsWith("Type|", StringComparison.Ordinal)
+                    )
+                ),
+            ];
 
     /// <summary>
     /// What one file's entry should say, from its own provenance and the verdict the ledger

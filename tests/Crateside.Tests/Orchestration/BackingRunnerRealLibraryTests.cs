@@ -23,15 +23,39 @@ public class BackingRunnerRealLibraryTests
         );
 
     [Fact]
-    public void Nothing_already_backed_is_offered_again()
+    public void No_key_the_store_already_holds_is_offered_again()
     {
         Assert.SkipUnless(Available, "The library and the ledger must be present.");
 
         var backed = new AbletonFolderInfoReader().Read(LibraryRoot);
 
+        // Having an entry is not the test — an entry with a Type and no key is one this pass
+        // completes. Having a key is.
         Assert.DoesNotContain(
             Unbacked(),
-            a => backed.TryGet(Path.Combine(LibraryRoot, a.RelativePath), out _)
+            a =>
+                backed.TryGet(Path.Combine(LibraryRoot, a.RelativePath), out var tags)
+                && tags.IsKeyTagged
+        );
+    }
+
+    [Fact]
+    public void An_entry_it_completes_keeps_every_keyword_that_was_there()
+    {
+        Assert.SkipUnless(Available, "The library and the ledger must be present.");
+
+        var backed = new AbletonFolderInfoReader().Read(LibraryRoot);
+
+        Assert.All(
+            Unbacked(),
+            assignment =>
+            {
+                if (!backed.TryGet(Path.Combine(LibraryRoot, assignment.RelativePath), out var was))
+                    return;
+
+                // The writer replaces the whole bag, so a keyword dropped here is destroyed.
+                Assert.All(was.Keywords, keyword => Assert.Contains(keyword, assignment.Keywords));
+            }
         );
     }
 
