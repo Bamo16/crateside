@@ -238,6 +238,8 @@ public sealed record TrackRow
                 .. Samples.Select(sample => sample.SourceVideoId).OfType<string>(),
                 .. Plan.AddedSources.Select(source => source.VideoId),
             ],
+            IsLibraryOnly = IsLibraryOnly,
+            HasVerdict = Verdict is not null,
         };
 
     /// <summary>

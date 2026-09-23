@@ -150,6 +150,16 @@ public sealed record TrackRowFacts
     /// <summary>Every upload this track already speaks for, so none is added twice.</summary>
     public required IReadOnlyList<string> Uploads { get; init; }
 
+    /// <summary>The row exists only because the library holds files for it.</summary>
+    public bool IsLibraryOnly { get; init; }
+
+    /// <summary>Whether the ledger has ever judged this track, whatever it decided.</summary>
+    /// <remarks>
+    /// Not <see cref="Key"/>: a LOW or WITHHELD verdict leaves that null and is still a judgement
+    /// that has been made.
+    /// </remarks>
+    public bool HasVerdict { get; init; }
+
     /// <summary>Labels already in use, which a new one may not repeat.</summary>
     public IReadOnlyList<string> Labels => [.. Plan.AddedSources.Select(source => source.Label)];
 }

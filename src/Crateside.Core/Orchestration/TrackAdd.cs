@@ -33,11 +33,38 @@ public sealed class TrackAdd(
             {
                 Refusal = "That is not a YouTube video ID or URL crateside can read.",
             },
-            _ when known.Any(track => track.Uploads.Contains(videoId, StringComparer.Ordinal)) =>
-                new AddTrackPlan { Refusal = "crateside already has that upload." },
+            // A library-only row means the files are here and nothing ever judged them, which is
+            // the one case where adding an upload crateside "has" is the point rather than a
+            // duplicate. Separation skips it: the inventory already satisfies the plan.
+            _ when Holder(known, videoId) is { IsLibraryOnly: true, HasVerdict: false } holder
+                    && !IsAddedSource(holder, videoId) => new AddTrackPlan
+            {
+                VideoId = videoId,
+                Song = ledger.SongFor(videoId),
+                JudgesWhatIsHere = true,
+            },
+            _ when Holder(known, videoId) is not null => new AddTrackPlan
+            {
+                Refusal = "crateside already has that upload.",
+            },
             _ => new AddTrackPlan { VideoId = videoId, Song = ledger.SongFor(videoId) },
         };
     }
+
+    private static TrackRowFacts? Holder(IReadOnlyList<TrackRowFacts> known, string videoId) =>
+        known.FirstOrDefault(track => track.Uploads.Contains(videoId, StringComparer.Ordinal));
+
+    /// <summary>
+    /// Whether this upload is one the row merely carries, rather than the track it speaks for.
+    /// </summary>
+    /// <remarks>
+    /// Judging an added source as a track of its own would give one song two identities, which
+    /// is the thing a source is attached to a track to avoid (ADR 0019).
+    /// </remarks>
+    private static bool IsAddedSource(TrackRowFacts holder, string videoId) =>
+        holder.Plan.AddedSources.Any(source =>
+            source.VideoId.Equals(videoId, StringComparison.Ordinal)
+        );
 
     /// <summary>
     /// Records the track, having said what its audio is first.
@@ -107,6 +134,11 @@ public sealed record AddTrackPlan
     public string? Song { get; init; }
 
     public string? Refusal { get; init; }
+
+    /// <summary>
+    /// Adding this buys a verdict for files the library already holds, not a separation.
+    /// </summary>
+    public bool JudgesWhatIsHere { get; init; }
 
     public bool IsPossible => Refusal is null && VideoId is not null;
 }
