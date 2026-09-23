@@ -11,7 +11,7 @@ public class StemTagReaderRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
 
-    private static bool StagingPresent => Directory.Exists(StagingRoot);
+    private static bool StagingPresent => RealLibrary.HasStems(StagingRoot);
 
     private static string[] Stems() =>
         Directory.GetFiles(StagingRoot, "*.flac", SearchOption.TopDirectoryOnly);

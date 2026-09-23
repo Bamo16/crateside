@@ -238,9 +238,21 @@ public class RunEvidenceRealDataTests
             {
                 Assert.NotNull(e.Bpm);
                 Assert.NotNull(e.BeatdetectBpm);
+
                 var ratio = e.BeatdetectBpm!.Value / e.Bpm!.Value;
+
+                // Proportional to the octave, not absolute. An absolute 0.05 is 2.5% at 2x and
+                // 10% at 1/2x, so it called Delta Heavy - White Flag's 6.2% miss (92.38 against
+                // 174, where half-time is 87) an octave on the way down while it would have
+                // called the same error a conflict on the way up.
+                //
+                // Deliberately tighter than BpmConflicts' own 0.05 in log2 (~3.5% here). This
+                // catches octaves being flagged at all; pinning the exact boundary from live
+                // data is what made it wrong.
+                bool NearlyAt(double octave) => Math.Abs(ratio - octave) / octave < 0.02;
+
                 Assert.False(
-                    Math.Abs(ratio - 2) < 0.05 || Math.Abs(ratio - 0.5) < 0.05,
+                    NearlyAt(2) || NearlyAt(0.5),
                     $"{e.Song}: {ratio:F3} is a tempo octave and should not be flagged."
                 );
             }

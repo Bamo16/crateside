@@ -12,7 +12,7 @@ public class StagingBoardRealLibraryTests
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
     private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
 
-    private static bool Available => Directory.Exists(StagingRoot) && File.Exists(LedgerPath);
+    private static bool Available => RealLibrary.HasStems(StagingRoot) && File.Exists(LedgerPath);
 
     private static IReadOnlyList<StagingSong> Board() =>
         new StagingBoard().Build(StagingRoot, KeyLedger.Read(LedgerPath));

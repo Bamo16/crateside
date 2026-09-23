@@ -15,7 +15,7 @@ public class StemFileNameRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
 
-    private static bool Available => Directory.Exists(StagingRoot);
+    private static bool Available => RealLibrary.HasStems(StagingRoot);
 
     private static IEnumerable<string> Staged() =>
         Directory.EnumerateFiles(StagingRoot).Where(StagingBoard.IsStemFile);

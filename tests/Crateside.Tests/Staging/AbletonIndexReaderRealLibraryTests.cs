@@ -93,7 +93,7 @@ public class AbletonIndexReaderRealLibraryTests
 
     private static void SkipUnlessPresent(string root)
     {
-        Assert.SkipUnless(Directory.Exists(root), $"{root} not present on this machine.");
+        Assert.SkipUnless(RealLibrary.HasStems(root), $"{root} holds no stems on this machine.");
         Assert.SkipUnless(
             Directory.Exists(Paths.AbletonIndex),
             "Ableton's index is not present on this machine."
