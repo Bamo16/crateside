@@ -10,6 +10,7 @@ public sealed class DrainWorker(
     SeparationDrainer drainer,
     SeparationInterlock interlock,
     DrainControl control,
+    StageSignals signals,
     ILogger<DrainWorker> logger
 ) : BackgroundService
 {
@@ -83,6 +84,11 @@ public sealed class DrainWorker(
         {
             case { Outcome: DrainOutcome.Ran, Order: { } order, Result: { } result }:
                 LogRun(order, result);
+
+                // Stems nobody has been told about yet: the handoff would otherwise wait out its
+                // own interval behind a separation that has already finished.
+                if (result.Outcome is SeparationOutcome.Succeeded)
+                    signals.WakeAllBut(JobStage.Separation);
 
                 // Refused: the GPU is busy with an adopted run.
                 return result.Outcome is SeparationOutcome.Refused ? IdleDelay : BusyDelay;

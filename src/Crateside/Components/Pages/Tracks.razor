@@ -23,6 +23,7 @@
 @inject TrackRename Rename
 @inject TrackSwap Swap
 @inject DrainControl Separation
+@inject StageSignals Signals
 @inject QueueWriteAccess Access
 @inject VerdictControl Judging
 @inject WorkingSet Held
@@ -1232,7 +1233,7 @@
             if (outcome.Succeeded)
             {
                 CancelSwap();
-                Separation.Wake();
+                Signals.Wake(JobStage.Download, JobStage.Separation);
             }
 
             await Source.RefreshAsync(_circuit.Token);
@@ -1377,7 +1378,10 @@
             _shortfall = outcome.Shortfall;
 
             if (outcome.Succeeded)
+            {
                 CancelPicking();
+                Signals.Wake(JobStage.Download);
+            }
 
             await Source.RefreshAsync(_circuit.Token);
         }
@@ -1415,6 +1419,10 @@
             // Nothing has been made, so there is nothing to confirm and nothing to lose.
             Playlist.SetPlan(row.VideoId, wanted);
 
+            // Producing what was just ticked is a copy or a fetch, not a wait: without this the
+            // stage is part-way through a two-minute idle delay and would not look again (#48).
+            Signals.Wake(JobStage.Download, JobStage.Separation);
+
             await Source.RefreshAsync(_circuit.Token);
 
             return;
@@ -1444,7 +1452,7 @@
                 CancelPicking();
 
             // A worker part-way through its two-minute idle wait would not look again.
-            Separation.Wake();
+            Signals.Wake(JobStage.Download, JobStage.Separation);
 
             await Source.RefreshAsync(_circuit.Token);
         }
@@ -1623,12 +1631,17 @@
 
     private async Task Retry(TrackRow row)
     {
+        List<JobStage> forgiven = [];
+
         foreach (var stage in Enum.GetValues<JobStage>())
             if (Jobs.TryGet(row.VideoId, stage, out var job) && job is { Status: JobStatus.Failed })
+            {
                 Jobs.Forgive(row.VideoId, stage);
+                forgiven.Add(stage);
+            }
 
-        Separation.Wake();
-        Judging.Wake();
+        // Every stage was forgivable, so waking only two left the rest to wait out the interval.
+        Signals.Wake([.. forgiven]);
 
         await Source.RefreshAsync();
     }

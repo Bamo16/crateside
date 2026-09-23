@@ -159,6 +159,11 @@ public static class ServiceRegistration
         // Starts paused: launching the app should never itself be the act that spends quota.
         services.AddSingleton(_ => new VerdictControl());
 
+        services.AddSingleton(sp => new StageSignals(
+            sp.GetRequiredService<DrainControl>(),
+            sp.GetRequiredService<VerdictControl>()
+        ));
+
         services.AddSingleton(sp => new VerdictSelector(
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<WorkingSet>()
@@ -210,32 +215,11 @@ public static class ServiceRegistration
         // AddSingleton<IHostedService> rather than AddHostedService: the latter routes through
         // TryAddEnumerable, which de-duplicates by implementation type and would silently
         // discard the second StageWorker.
-        services.AddSingleton<IHostedService>(sp => new StageWorker(
-            sp.GetRequiredService<DownloadDrainer>(),
-            sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<ILogger<StageWorker>>()
-        ));
-        services.AddSingleton<IHostedService>(sp => new StageWorker(
-            sp.GetRequiredService<EvidenceDrainer>(),
-            sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<ILogger<StageWorker>>()
-        ));
-        services.AddSingleton<IHostedService>(sp => new StageWorker(
-            sp.GetRequiredService<VerdictDrainer>(),
-            sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<ILogger<StageWorker>>(),
-            sp.GetRequiredService<VerdictControl>()
-        ));
-        services.AddSingleton<IHostedService>(sp => new StageWorker(
-            sp.GetRequiredService<HandoffDrainer>(),
-            sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<ILogger<StageWorker>>()
-        ));
-        services.AddSingleton<IHostedService>(sp => new StageWorker(
-            sp.GetRequiredService<TaggingDrainer>(),
-            sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<ILogger<StageWorker>>()
-        ));
+        services.AddSingleton<IHostedService>(sp => Worker<DownloadDrainer>(sp));
+        services.AddSingleton<IHostedService>(sp => Worker<EvidenceDrainer>(sp));
+        services.AddSingleton<IHostedService>(sp => Worker<VerdictDrainer>(sp));
+        services.AddSingleton<IHostedService>(sp => Worker<HandoffDrainer>(sp));
+        services.AddSingleton<IHostedService>(sp => Worker<TaggingDrainer>(sp));
 
         services.AddSingleton(_ => new SourceProbe());
         services.AddSingleton(sp => new TrackAdd(
@@ -275,6 +259,15 @@ public static class ServiceRegistration
         services.AddHostedService<JanitorWorker>();
         return services;
     }
+
+    private static StageWorker Worker<TDrainer>(IServiceProvider services)
+        where TDrainer : notnull, IStageDrainer =>
+        new(
+            services.GetRequiredService<TDrainer>(),
+            services.GetRequiredService<JobStore>(),
+            services.GetRequiredService<ILogger<StageWorker>>(),
+            services.GetRequiredService<StageSignals>()
+        );
 
     /// <summary>One track's files as they currently sit in staging, read fresh on every call.</summary>
     private static ReadStagedFiles StagedFiles(IServiceProvider services) =>

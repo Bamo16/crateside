@@ -6,15 +6,11 @@ namespace Crateside;
 /// The loop that keeps one stage draining. Deliberately thin — the decisions belong to a drainer
 /// or a selector.
 /// </summary>
-/// <param name="control">
-/// Only stages that can be paused supply this. Null means the stage always waits out the idle
-/// delay instead of waking on resume.
-/// </param>
 public sealed class StageWorker(
     IStageDrainer drainer,
     JobStore jobs,
     ILogger<StageWorker> logger,
-    DrainControl? control = null
+    StageSignals signals
 ) : BackgroundService
 {
     private static readonly TimeSpan IdleDelay = TimeSpan.FromMinutes(2);
@@ -44,10 +40,7 @@ public sealed class StageWorker(
 
             try
             {
-                if (control is not null)
-                    await control.WaitForWorkAsync(delay, stoppingToken);
-                else
-                    await Task.Delay(delay, stoppingToken);
+                await signals.For(drainer.Stage).WaitForWorkAsync(delay, stoppingToken);
             }
             catch (OperationCanceledException)
             {
@@ -90,12 +83,17 @@ public sealed class StageWorker(
         {
             case { Outcome: StageOutcome.Ran, Subject: { } subject }:
                 if (tick.IsSuccess)
+                {
                     logger.LogInformation(
                         "{Stage}: {Title}{Note}",
                         drainer.Stage,
                         subject,
                         tick.Note is { } note ? $" — {note}" : string.Empty
                     );
+
+                    // A failure made nothing for anyone downstream, so only success broadcasts.
+                    signals.WakeAllBut(drainer.Stage);
+                }
                 else
                     logger.LogWarning(
                         "{Stage} failed for {Title}: {Error}",
