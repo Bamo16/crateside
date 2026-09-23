@@ -149,9 +149,19 @@ public sealed record SeparationRecipe
         return new SeparationRecipe
         {
             Presets = outstanding.Presets,
-            // Only alongside something to warp. A track that owes nothing is not made to sit
-            // through a pass for a guide it would only delete again.
-            ExtractDrums = !inventory.HasWarpGuide && !outstanding.IsEmpty,
+            // A guide is for warping new samples by eye, so new presets get one. A re-downloaded
+            // source does not: it is the same audio as the stems already warped, whose markers
+            // ADR 0020 copies verbatim. With no sample on disk to copy from it is the guide or
+            // nothing, which is what an instrumental release needs (#30).
+            ExtractDrums =
+                !inventory.HasWarpGuide
+                && (
+                    outstanding.Presets.Count > 0
+                    || (
+                        outstanding.KeepSource
+                        && inventory is { Presets.Count: 0, HasSource: false }
+                    )
+                ),
             KeepSource = outstanding.KeepSource,
         };
     }

@@ -118,6 +118,60 @@ public class AdditiveRecipeTests
         Assert.False(recipe.ExtractDrums);
     }
 
+    /// <summary>
+    /// Mr. Oizo - Ruhe, 2026-09-15: ticking *keep the source* on a track already cut queued the GPU
+    /// and produced a `(Drums)` file beside the copy.
+    /// </summary>
+    /// <remarks>
+    /// The guide was wanted for nothing. The source is the same audio as the stems already in the
+    /// library, which are already warped, so the markers exist and ADR 0020 copies them (#30).
+    /// </remarks>
+    [Fact]
+    public void Re_downloading_a_cut_tracks_own_source_asks_for_no_guide_and_no_gpu()
+    {
+        var recipe = SeparationRecipe.For(
+            new StemPlan { Presets = ["vocal_full", "instrumental_full"], KeepSource = true },
+            // No guide: deleting it is how warping ends, so its absence is the ordinary state of a
+            // track that has been worked. That is what let the old rule ask for another.
+            Inventory("Vocal - Full", "Instrumental - Full")
+        );
+
+        Assert.False(recipe.ExtractDrums);
+        Assert.True(recipe.KeepSource);
+        Assert.Empty(recipe.Presets);
+
+        // The whole point: nothing for the separator to do, so the row never claims the GPU and
+        // QueueView.Compose leaves it out of AwaitingSeparation.
+        Assert.Equal(0, recipe.Passes);
+    }
+
+    [Fact]
+    public void An_instrumental_release_still_gets_its_guide_on_a_first_cut()
+    {
+        // The other side of the same rule. Nothing is on disk to copy markers from, the guide is
+        // the only stem there is, and the separator has to run to place the source at all.
+        var recipe = SeparationRecipe.For(
+            new StemPlan { Presets = [], KeepSource = true },
+            StemInventory.Empty
+        );
+
+        Assert.True(recipe.ExtractDrums);
+        Assert.True(recipe.KeepSource);
+        Assert.Equal(1, recipe.Passes);
+    }
+
+    [Fact]
+    public void A_source_arriving_beside_a_guide_that_is_still_there_asks_for_no_second_one()
+    {
+        var recipe = SeparationRecipe.For(
+            new StemPlan { Presets = ["vocal_full"], KeepSource = true },
+            Inventory("Vocal - Full", "Drums - htdemucs_ft")
+        );
+
+        Assert.False(recipe.ExtractDrums);
+        Assert.Equal(0, recipe.Passes);
+    }
+
     [Fact]
     public void Two_recipes_asking_for_the_same_files_are_the_same_recipe()
     {
