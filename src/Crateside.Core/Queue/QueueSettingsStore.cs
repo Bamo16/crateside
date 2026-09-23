@@ -25,6 +25,9 @@ public sealed class QueueSettingsStore
 
     private QueueSettings? _cached;
 
+    /// <summary>When the file was last written as of <see cref="_cached"/>, or null for no file.</summary>
+    private DateTime? _cachedStamp;
+
     public QueueSettingsStore(IOptions<QueueOptions> fallback, string? path = null)
     {
         _fallback = fallback.Value;
@@ -40,20 +43,7 @@ public sealed class QueueSettingsStore
     public QueueSettings Read()
     {
         lock (_gate)
-        {
-            if (_cached is not null)
-                return _cached;
-
-            var stored = TryReadFile();
-
-            return _cached = new QueueSettings
-            {
-                PlaylistId = stored?.PlaylistId ?? _fallback.PlaylistId,
-                RefreshMinutes = stored?.RefreshMinutes,
-                ConsumeOnArrival = stored?.ConsumeOnArrival is true,
-                Tracks = TracksOf(stored),
-            };
-        }
+            return Current();
     }
 
     /// <summary>Saves the playlist ID. Pass null or empty to clear it.</summary>
@@ -143,23 +133,47 @@ public sealed class QueueSettingsStore
     {
         lock (_gate)
         {
-            var stored = _cached is null ? TryReadFile() : null;
-
-            var settings = change(
-                _cached
-                    ?? new QueueSettings
-                    {
-                        PlaylistId = stored?.PlaylistId ?? _fallback.PlaylistId,
-                        Tracks = TracksOf(stored),
-                    }
-            );
+            var settings = change(Current());
 
             Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
             File.WriteAllText(_path, JsonSerializer.Serialize(settings, SerializerOptions));
 
+            _cachedStamp = StampOf(_path);
+
             return _cached = settings;
         }
     }
+
+    /// <summary>
+    /// The settings as the file has them now, re-reading when it has changed since the cache
+    /// was filled.
+    /// </summary>
+    /// <remarks>
+    /// The stamp is what makes an edit from outside this process visible. Without it, a save of
+    /// anything at all silently reverts one. Callers hold <see cref="_gate"/>.
+    /// </remarks>
+    private QueueSettings Current()
+    {
+        var stamp = StampOf(_path);
+
+        if (_cached is { } cached && stamp == _cachedStamp)
+            return cached;
+
+        var stored = TryReadFile();
+
+        _cachedStamp = stamp;
+
+        return _cached = new QueueSettings
+        {
+            PlaylistId = stored?.PlaylistId ?? _fallback.PlaylistId,
+            RefreshMinutes = stored?.RefreshMinutes,
+            ConsumeOnArrival = stored?.ConsumeOnArrival is true,
+            Tracks = TracksOf(stored),
+        };
+    }
+
+    private static DateTime? StampOf(string path) =>
+        File.Exists(path) ? File.GetLastWriteTimeUtc(path) : null;
 
     private static IReadOnlyList<TrackInstruction> TracksOf(QueueSettings? stored) =>
         [.. (stored?.Tracks ?? []).Select(Converted)];

@@ -206,4 +206,59 @@ public class QueueSettingsStoreTests : IDisposable
 
         Assert.Equal("Starjunk 95 - 99th Street", track.Name);
     }
+
+    [Fact]
+    public void An_edit_made_outside_the_process_is_picked_up()
+    {
+        var store = Store();
+
+        store.SaveConsumeOnArrival(false);
+        EditOutside("""{ "consumeOnArrival": true }""");
+
+        Assert.True(store.Read().ConsumeOnArrival);
+    }
+
+    [Fact]
+    public void An_edit_made_outside_the_process_is_not_reverted_by_the_next_save()
+    {
+        var store = Store();
+
+        store.SaveConsumeOnArrival(false);
+        EditOutside("""{ "consumeOnArrival": true }""");
+
+        // Saving anything at all read-applies-writes the whole file, so an unrelated save is
+        // exactly how the reverting happened.
+        store.SetName("abc123", "Starjunk 95 - 99th Street");
+
+        Assert.True(store.Read().ConsumeOnArrival);
+    }
+
+    [Fact]
+    public void A_save_on_a_fresh_store_keeps_settings_it_is_not_changing()
+    {
+        var store = Store();
+
+        store.SaveRefreshMinutes(11);
+        store.SaveConsumeOnArrival(true);
+
+        // Save used to build its own fallback that set neither of these, so the first Upsert
+        // after them dropped both.
+        store.SetName("abc123", "Starjunk 95 - 99th Street");
+
+        var settings = store.Read();
+
+        Assert.Equal(11, settings.RefreshMinutes);
+        Assert.True(settings.ConsumeOnArrival);
+    }
+
+    /// <summary>Writes the file behind the store's back, as an agent or an editor would.</summary>
+    private void EditOutside(string json)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+        File.WriteAllText(_path, json);
+
+        // The cache turns on the last-write time, and two writes inside the filesystem's
+        // resolution are one timestamp.
+        File.SetLastWriteTimeUtc(_path, DateTime.UtcNow.AddSeconds(1));
+    }
 }
