@@ -53,6 +53,16 @@ public static class ReopenedTracks
 
     private static TrackJob Latest(IEnumerable<TrackJob> jobs) => jobs.MaxBy(job => job.UpdatedAt)!;
 
+    /// <remarks>
+    /// A failure with strikes left is owed a retry, and without that a track whose separation died
+    /// is reachable from nowhere once the playlist has let it go (ADR 0025). Having given up is not
+    /// owed: it would sit in the line for a GPU at a position it never advances from (#32).
+    /// </remarks>
     private static bool IsOwed(TrackJob job) =>
-        job.Status is JobStatus.Cancelled or JobStatus.Queued or JobStatus.Running;
+        job.Status switch
+        {
+            JobStatus.Cancelled or JobStatus.Queued or JobStatus.Running => true,
+            JobStatus.Failed => job.Strikes < StageEligibility.MaxStrikesFor(job.Stage),
+            _ => false,
+        };
 }

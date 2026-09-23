@@ -6,6 +6,19 @@ namespace Crateside.Core.Orchestration;
 /// </summary>
 public static class StageEligibility
 {
+    /// <summary>How many failures a stage takes before it leaves a track alone.</summary>
+    public static int MaxStrikesFor(JobStage stage) =>
+        stage switch
+        {
+            JobStage.Download => DownloadSelector.DefaultMaxStrikes,
+            JobStage.Evidence => EvidenceSelector.DefaultMaxStrikes,
+            JobStage.Verdict => VerdictSelector.DefaultMaxStrikes,
+            JobStage.Separation => SeparationSelector.DefaultMaxStrikes,
+            JobStage.Handoff => HandoffSelector.DefaultMaxStrikes,
+            JobStage.Tagging => TaggingSelector.DefaultMaxStrikes,
+            _ => throw new ArgumentOutOfRangeException(nameof(stage)),
+        };
+
     /// <param name="retrySucceeded">
     /// Whether a past success may be attempted again. True where the stage has its own artifact
     /// check that already confirmed the work is missing, so redoing it is cheap and correct.

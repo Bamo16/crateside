@@ -45,7 +45,7 @@ public sealed record StageProgress
             // hand has not given up.
             if (
                 job is { Status: JobStatus.Failed, Strikes: var strikes }
-                && strikes >= Limit(stage)
+                && strikes >= StageEligibility.MaxStrikesFor(stage)
             )
             {
                 gaveUpAt = stage;
@@ -76,17 +76,5 @@ public sealed record StageProgress
     /// How many failures each stage tolerates. Reads each selector's <em>default</em>, so one
     /// constructed with a different limit would disagree.
     /// </summary>
-    private static int Limit(JobStage stage) =>
-        stage switch
-        {
-            JobStage.Download => DownloadSelector.DefaultMaxStrikes,
-            JobStage.Evidence => EvidenceSelector.DefaultMaxStrikes,
-            JobStage.Verdict => VerdictSelector.DefaultMaxStrikes,
-            JobStage.Separation => SeparationSelector.DefaultMaxStrikes,
-            JobStage.Handoff => HandoffSelector.DefaultMaxStrikes,
-            JobStage.Tagging => TaggingSelector.DefaultMaxStrikes,
-            _ => throw new ArgumentOutOfRangeException(nameof(stage)),
-        };
-
     private static readonly JobStage[] Stages = Enum.GetValues<JobStage>();
 }

@@ -4,6 +4,8 @@
 - Date: 2026-09-23
 - Narrows [ADR 0014](0014-the-stems-root-is-transient-and-staging-is-the-handoff.md): the handoff
   reads the cut root, but no longer treats everything in it as finished.
+- **Amended 2026-09-23**, below: the self-heal this ADR claimed did not exist yet. See
+  *A failure with strikes left is owed*.
 
 ## Context
 
@@ -73,3 +75,45 @@ cut root at that point for the handoff to take.
   stops the case where the remainder is never coming.
 - Not fixed, and filed: "a stem" satisfying fully-processed, and the adopted run that is never
   released. Either can still make a partial set permanent by another route.
+
+## Amendment, 2026-09-23 — a failure with strikes left is owed
+
+The decision above says the retry "produces the rest and the handoff moves a complete set", and
+that **was wrong for the very track it was written about.** Tested rather than reasoned about, once
+the user reported that the fix left them with no way forward.
+
+`Moe Shop - HARDCODED` was reachable from nowhere:
+
+| way in | why it was shut |
+|---|---|
+| `Outstanding` | fully processed — a verdict and *a* stem in staging |
+| `verdictWithoutStems` → `AwaitingSeparation` | it has a stem, so not this either |
+| `AwaitingCut` → `AwaitingSeparation` | `ReopenedTracks.IsOwed` was `Cancelled or Queued or Running`. **`Failed` was not owed.** |
+| re-cut in the picker | the plan already asks for `Instrumental - Full`, so `AsksTheSameAs` holds and no confirm is offered |
+| the **Retry** button | shown only when `GaveUpAt is not null`, which needs the strikes exhausted. It had one of three. |
+
+`consumeOnArrival` is on, so the playlist had let the track go the moment crateside took it on. That
+matters: a track still *in* the playlist retries through `verdictWithoutStems`, which is why this
+went unnoticed. Once consumed, the only route back is as a reopened item, and `IsOwed` refused it.
+
+The state had happened before and gone unnoticed: `4PffwRpiw-A` has sat on a failed separation since
+2026-08-16. It stays inert even now, because `QueueService.Reopened` builds an item only for a video
+ID the ledger knows and that one was never judged.
+
+**So `IsOwed` now counts a `Failed` stage whose strikes have not run out.** A failure is work still
+owed; that is what strikes *mean*. Having given up is not owed, deliberately — it would sit in the
+line for a GPU at a position it never advances from (#32), and by then Retry is on screen because
+the strikes ran out. The sequence reads, end to end: fail → retry up to the limit → give up → Retry.
+
+`StageProgress.Limit` became `StageEligibility.MaxStrikesFor` so the two places that need a stage's
+strike budget share one, rather than the new caller adding a third copy.
+
+A failed *handoff* is owed too and correctly does not reach the GPU: `AwaitingSeparation` filters
+reopened items through `AwaitingCut`, which is narrowed to `JobStage.Separation`.
+
+### What this does not fix
+
+The dead end had five shut doors and this opens one. The other four are still shut, and two of them
+are wrong on their own terms — a re-cut that offers nothing when the plan already asks for a missing
+file, and a Retry button that appears only after a track has given up. Both are in
+[#49](https://github.com/Bamo16/crateside/issues/49).
