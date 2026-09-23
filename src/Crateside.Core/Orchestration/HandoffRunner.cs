@@ -142,5 +142,24 @@ public sealed class HandoffSelector(
     }
 
     private bool IsEligible(string videoId) =>
-        StageEligibility.Allows(jobs, videoId, JobStage.Handoff, maxStrikes, retrySucceeded: true);
+        SeparationOwesNothingMore(videoId)
+        && StageEligibility.Allows(
+            jobs,
+            videoId,
+            JobStage.Handoff,
+            maxStrikes,
+            retrySucceeded: true
+        );
+
+    /// <summary>
+    /// Whether what is on disk for this track is all there is going to be.
+    /// </summary>
+    /// <remarks>
+    /// Only <see cref="JobStatus.Failed"/> blocks, and deliberately: a copied source has no
+    /// separation job at all, and a recorded <see cref="JobStatus.Running"/> may be an adopted run
+    /// nobody releases (ADR 0025).
+    /// </remarks>
+    private bool SeparationOwesNothingMore(string videoId) =>
+        !jobs.TryGet(videoId, JobStage.Separation, out var separation)
+        || separation is not { Status: JobStatus.Failed };
 }

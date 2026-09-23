@@ -51,6 +51,31 @@ public class HandoffTests : IDisposable
 
     private string Staged(string name) => Path.Combine(_paths.SampleStaging, name);
 
+    /// <summary>A stem in the cut root carrying a given video ID in its StemForge provenance.</summary>
+    private void Provenanced(string fileName, string videoId)
+    {
+        var source = Directory
+            .EnumerateFiles(
+                @"P:\RYAN\Ableton\Sample Staging",
+                "*.flac",
+                SearchOption.TopDirectoryOnly
+            )
+            .FirstOrDefault();
+
+        Assert.SkipWhen(source is null, "no real staged stem to copy provenance from");
+
+        var path = Path.Combine(_paths.StemsKeyIdentified, fileName);
+
+        File.Copy(source!, path, overwrite: true);
+
+        using var file = TagLib.File.Create(path);
+
+        file.Tag.Comment =
+            "stemforge/0.2.1.1 | preset: Vocal - Full | date: 2026-09-23 | "
+            + $"source: https://www.youtube.com/watch?v={videoId}";
+        file.Save();
+    }
+
     [Fact]
     public void Stems_reach_staging()
     {
@@ -164,6 +189,55 @@ public class HandoffTests : IDisposable
         // reachable from here at all.
         Assert.False(selector.TryPickNext(out _, out _));
         Assert.True(File.Exists(parked));
+    }
+
+    /// <summary>
+    /// The shape that lost Moe Shop - HARDCODED its instrumental: a separation killed with VS Code
+    /// mid-run, whose one finished stem the handoff then moved 75ms after startup marked it failed.
+    /// </summary>
+    [Fact]
+    public void A_failed_separations_partial_output_is_not_handed_off()
+    {
+        var jobs = new JobStore(Path.Combine(_directory, "jobs.jsonl"));
+
+        Provenanced("Moe Shop - HARDCODED (Vocal - Full).flac", "_DiMKyZwaA0");
+
+        jobs.Record(
+            "_DiMKyZwaA0",
+            JobStage.Separation,
+            JobStatus.Failed,
+            error: "separation process 25220 is gone without recording a result"
+        );
+
+        // Left where it is, so the track stays in AwaitingSeparation and the retry produces the
+        // rest. Moving it makes one stem satisfy "fully processed" and the loss is permanent.
+        Assert.False(new HandoffSelector(jobs, _paths).TryPickNext(out _, out _));
+    }
+
+    [Fact]
+    public void A_separation_that_succeeded_is_handed_off()
+    {
+        var jobs = new JobStore(Path.Combine(_directory, "jobs.jsonl"));
+
+        Provenanced("Moe Shop - HARDCODED (Vocal - Full).flac", "_DiMKyZwaA0");
+
+        jobs.Record("_DiMKyZwaA0", JobStage.Separation, JobStatus.Succeeded);
+
+        Assert.True(new HandoffSelector(jobs, _paths).TryPickNext(out var videoId, out _));
+        Assert.Equal("_DiMKyZwaA0", videoId);
+    }
+
+    [Fact]
+    public void A_copied_source_has_no_separation_job_and_is_still_handed_off()
+    {
+        // An added or kept source is copied into the cut root by the download stage and never
+        // separated (ADR 0019), so "no separation job" must not read as "separation is owed".
+        var jobs = new JobStore(Path.Combine(_directory, "jobs.jsonl"));
+
+        Provenanced("Moe Shop - HARDCODED (Original).flac", "_DiMKyZwaA0");
+
+        Assert.True(new HandoffSelector(jobs, _paths).TryPickNext(out var videoId, out _));
+        Assert.Equal("_DiMKyZwaA0", videoId);
     }
 
     [Fact]
