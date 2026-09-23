@@ -134,8 +134,19 @@ public sealed record QueueView
                     )
                     && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory).Passes > 0
                 ),
-                .. reopenedItems,
+                // Filtered, not appended bare: a reopened track owing only a handoff or a tagging
+                // needs no GPU, and one whose stems are parked for want of a key must not be in
+                // the line at the same time as it is parked (#32).
+                //
+                // No awaitingCut means the caller has not said which of them owe a cut, not that
+                // none do, so they all still count.
+                .. reopenedItems.Where(i =>
+                    !separatedWithoutKey.Contains(i.VideoId)
+                    && (awaitingCut is null || awaitingCut.Contains(i.VideoId))
+                    && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory).Passes > 0
+                ),
             ],
+            Reopened = reopenedItems,
             AwaitingKey = [.. described.Where(i => separatedWithoutKey.Contains(i.VideoId))],
             Outstanding =
             [
@@ -209,6 +220,16 @@ public sealed record QueueView
     public required IReadOnlyList<QueueItem> AwaitingSeparation { get; init; }
 
     /// <summary>
+    /// Tracks still owing a stage that the playlist no longer holds, whichever stage it is.
+    /// </summary>
+    /// <remarks>
+    /// Keeping a row alive and queueing for the GPU are different jobs. This is the first;
+    /// <see cref="AwaitingSeparation"/> is the second, and a track owing only a handoff belongs
+    /// in one and not the other (#32).
+    /// </remarks>
+    public IReadOnlyList<QueueItem> Reopened { get; init; } = [];
+
+    /// <summary>
     /// Every item the read produced, once each — what a stage that works any track reads.
     /// </summary>
     /// <remarks>
@@ -218,6 +239,7 @@ public sealed record QueueView
     public IEnumerable<QueueItem> Everything =>
         Items
             .Concat(AwaitingSeparation)
+            .Concat(Reopened)
             .Concat(AwaitingKey)
             .DistinctBy(item => item.VideoId, StringComparer.Ordinal);
 

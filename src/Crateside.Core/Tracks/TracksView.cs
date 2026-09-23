@@ -77,7 +77,7 @@ public sealed record TracksView
 
         // Everything in the playlist, then everything still in staging that isn't.
         var queued = VideoIdsOf(view.Items);
-        var reopened = VideoIdsOf(view.AwaitingSeparation.Where(i => i.PlaylistItemId is null));
+        var reopened = VideoIdsOf(view.Reopened);
 
         // One seed per video ID with something to say. A song that has been cut from more than
         // one upload contributes several, and they are folded into one row below (ADR 0014).
@@ -87,12 +87,12 @@ public sealed record TracksView
             .. staging
                 .Where(song => song.SourceVideoId is { } id && !queued.Contains(id))
                 .Select(song => new RowSeed(song.SourceVideoId!, song.DisplayName)),
-            // A track being re-cut: staged files just deleted, playlist entry long gone.
+            // A track still owing a stage with its playlist entry long gone — a re-cut, or a
+            // handoff or tagging left open. Read from Reopened rather than AwaitingSeparation so
+            // a track that owes no cut keeps its row without joining the GPU line (#32).
             .. view
-                .AwaitingSeparation.Where(item =>
-                    item.PlaylistItemId is null
-                    && !queued.Contains(item.VideoId)
-                    && !staged.ContainsKey(item.VideoId)
+                .Reopened.Where(item =>
+                    !queued.Contains(item.VideoId) && !staged.ContainsKey(item.VideoId)
                 )
                 .Select(item => new RowSeed(item.VideoId, item.Title, item)),
             // Everything else the library has: tracks judged before crateside existed, or

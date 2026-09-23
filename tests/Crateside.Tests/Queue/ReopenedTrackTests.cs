@@ -81,4 +81,44 @@ public class ReopenedTrackTests
         Assert.Contains(view.AwaitingSeparation, item => item.VideoId == Queued);
         Assert.Single(view.AwaitingSeparation);
     }
+
+    [Fact]
+    public void One_owing_only_a_handoff_keeps_its_row_without_joining_the_gpu_line()
+    {
+        // The reported case: separation had succeeded and what it owed was a handoff, yet it read
+        // "next on the GPU" for eighteen hours (#32).
+        var view = QueueView.Compose(
+            [Item(Queued)],
+            fullyProcessed: new HashSet<string>(),
+            verdictWithoutStems: new HashSet<string> { Queued, Reopened },
+            separatedWithoutKey: new HashSet<string>(),
+            instructions: new Dictionary<string, TrackInstruction>(),
+            reopened: [Off(Reopened)],
+            // It owes a stage, but not this one.
+            awaitingCut: new HashSet<string>()
+        );
+
+        Assert.DoesNotContain(view.AwaitingSeparation, item => item.VideoId == Reopened);
+
+        // Still reachable, or the row it was keeping alive disappears instead.
+        Assert.Contains(view.Reopened, item => item.VideoId == Reopened);
+        Assert.Contains(view.Everything, item => item.VideoId == Reopened);
+    }
+
+    [Fact]
+    public void One_parked_for_want_of_a_key_is_not_in_the_gpu_line_either()
+    {
+        // The appended items used to skip the separatedWithoutKey filter that the rest get, so a
+        // track could be parked and queued for the GPU at the same time.
+        var view = QueueView.Compose(
+            [Item(Queued)],
+            fullyProcessed: new HashSet<string>(),
+            verdictWithoutStems: new HashSet<string> { Queued },
+            separatedWithoutKey: new HashSet<string> { Reopened },
+            instructions: new Dictionary<string, TrackInstruction>(),
+            reopened: [Off(Reopened)]
+        );
+
+        Assert.DoesNotContain(view.AwaitingSeparation, item => item.VideoId == Reopened);
+    }
 }
