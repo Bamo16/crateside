@@ -145,6 +145,18 @@ the two run types below are named after which of them they produce.
   own statement, stored against the track and derived from nothing. An
   **instrumental release** is not a mode but a shape of plan — no vocal preset,
   source kept.
+- **Shortfall** — what a track's **stem plan** asks for that is not on disk.
+  Computed on every read and stored nowhere: the plan is a statement of want, and
+  the shortfall is however much of it is still unmet. A track with no shortfall is
+  complete; one with a shortfall is not, however many files it already has. Said
+  bare it is always this sense — the download kind is compounded, as **premium
+  shortfall**.
+- **Re-cut** — cutting a track's **shortfall**, on a track that has already been
+  cut once. Always asked for and never automatic: a stem the user deleted on
+  purpose and one that was never made look identical on disk, so crateside states
+  a shortfall and leaves the spending to the user
+  ([ADR 0027](docs/adr/0027-a-shortfall-is-stated-and-never-acted-on.md)). Changing
+  a **stem plan** is *not* a re-cut — it states a want and makes nothing.
 - **Recipe** — the part of a work order that says what to make: which stems, in
   what form. A **stem plan** rendered for the separator, plus the **warp guide**,
   which is always asked for and is never part of the plan. A recipe is crateside's
