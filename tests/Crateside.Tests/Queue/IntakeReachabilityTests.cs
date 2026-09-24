@@ -2,14 +2,7 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Queue;
 
-/// <summary>
-/// A track crateside has taken on stays reachable after the playlist lets it go (ADR 0021).
-/// </summary>
-/// <remarks>
-/// The join that was missing, rather than either half of it: the intake store kept records and
-/// the download stage could act on one, and nothing put the two together — so a source attached
-/// to a finished track was in no work list at all.
-/// </remarks>
+/// <summary>A track crateside has taken on stays reachable after the playlist lets it go (ADR 0021).</summary>
 public class IntakeReachabilityTests : IDisposable
 {
     private const string Gone = "RzQRxV2XqFU";
@@ -56,10 +49,6 @@ public class IntakeReachabilityTests : IDisposable
         Assert.Null(item.PlaylistItemId);
     }
 
-    /// <remarks>
-    /// The live entry wins because it still has something to delete upstream; a merged record
-    /// does not, and removal reads exactly that difference.
-    /// </remarks>
     [Fact]
     public void A_track_still_in_the_playlist_keeps_its_entry()
     {
@@ -85,9 +74,6 @@ public class IntakeReachabilityTests : IDisposable
         Assert.Equal([Held, Gone], merged.Select(item => item.VideoId));
     }
 
-    /// <summary>
-    /// The store predates the intake, so a plan is the only trace the track was ever taken on.
-    /// </summary>
     [Fact]
     public void A_track_known_only_from_its_plan_is_backfilled()
     {

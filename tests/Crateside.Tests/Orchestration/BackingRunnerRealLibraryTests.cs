@@ -4,11 +4,7 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// What a backing pass would do to the user's actual library, asserted without writing to it.
-/// Real data because the question is whether the gap is real and closable here, on this machine
-/// (ADR 0023).
-/// </summary>
+/// <summary>What a backing pass would do to the user's actual library, without writing to it.</summary>
 public class BackingRunnerRealLibraryTests
 {
     private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";
@@ -29,8 +25,7 @@ public class BackingRunnerRealLibraryTests
 
         var backed = new AbletonFolderInfoReader().Read(LibraryRoot);
 
-        // Having an entry is not the test — an entry with a Type and no key is one this pass
-        // completes. Having a key is.
+        // Having a key is the test, not having an entry.
         Assert.DoesNotContain(
             Unbacked(),
             a =>
@@ -53,7 +48,6 @@ public class BackingRunnerRealLibraryTests
                 if (!backed.TryGet(Path.Combine(LibraryRoot, assignment.RelativePath), out var was))
                     return;
 
-                // The writer replaces the whole bag, so a keyword dropped here is destroyed.
                 Assert.All(was.Keywords, keyword => Assert.Contains(keyword, assignment.Keywords));
             }
         );
@@ -64,8 +58,6 @@ public class BackingRunnerRealLibraryTests
     {
         Assert.SkipUnless(Available, "The library and the ledger must be present.");
 
-        // A keyword Ableton does not have is not rejected -- it silently becomes a second,
-        // permanent user tag -- so the writer refuses the whole pass over one bad word.
         Assert.All(
             Unbacked().SelectMany(a => a.Keywords),
             keyword =>
@@ -81,8 +73,6 @@ public class BackingRunnerRealLibraryTests
     {
         Assert.SkipUnless(Available, "The library and the ledger must be present.");
 
-        // A tonic without a mode is the partial key the audit reports, and writing one would
-        // create the finding rather than clear it.
         Assert.All(
             Unbacked(),
             assignment =>

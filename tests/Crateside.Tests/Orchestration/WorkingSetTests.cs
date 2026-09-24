@@ -51,9 +51,7 @@ public class WorkingSetTests : IDisposable
     [Fact]
     public void The_source_is_found_by_elimination_because_the_downloader_names_it()
     {
-        // stemforge-cli names the file from the release metadata, and that name is worth keeping
-        // -- the separator reads the same tags to name the stems. So it is found by not being
-        // one of ours rather than by a name we chose.
+        // Found by not being one of ours, rather than by a name we chose.
         var audio = Write("Yes - Owner of a Lonely Heart.flac");
         Write(WorkingSet.EvidenceFileName);
 
@@ -75,9 +73,6 @@ public class WorkingSetTests : IDisposable
     [Fact]
     public void Two_audio_files_report_none_rather_than_guessing()
     {
-        // Not a case to reconcile -- it means the folder is not what we think it is. Reporting
-        // nothing makes the caller re-acquire, which is cheap and always right; picking one
-        // could separate a track from the wrong audio, which is neither.
         Write("first.flac");
         Write("second.flac");
 
@@ -136,8 +131,6 @@ public class WorkingSetTests : IDisposable
     [Fact]
     public void A_track_nothing_recorded_for_reads_as_no_finding_rather_than_a_shortfall()
     {
-        // Every working set acquired before crateside read these fields is in this state, and
-        // none of them should suddenly park.
         Set.Prepare(VideoId);
 
         Assert.Null(Set.AcquisitionFor(VideoId));
@@ -155,8 +148,6 @@ public class WorkingSetTests : IDisposable
     [Fact]
     public void The_record_is_not_mistaken_for_the_downloaded_audio()
     {
-        // TryGetSource finds the audio by elimination, so anything else written into the folder
-        // has to stay out of its way.
         var audio = Write("Yes - Owner of a Lonely Heart.flac");
 
         Set.SaveAcquisition(VideoId, new Acquisition { PremiumStatus = PremiumStatus.Premium });
@@ -189,8 +180,6 @@ public class WorkingSetTests : IDisposable
     [Fact]
     public void Throwing_away_the_download_throws_away_the_finding_with_it()
     {
-        // The point of keeping it here: a swap re-acquires, and the answer is measured again
-        // rather than inherited from the upload being replaced (ADR 0016).
         Set.SaveAcquisition(
             VideoId,
             new Acquisition { PremiumStatus = PremiumStatus.NoPremiumLadder }

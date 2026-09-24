@@ -3,10 +3,7 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Staging;
 
-/// <summary>
-/// The board composed against the real staging folder and the real ledger — the whole point
-/// of the readers, assembled.
-/// </summary>
+/// <summary>The board composed against the real staging folder and the real ledger.</summary>
 public class StagingBoardRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
@@ -25,7 +22,6 @@ public class StagingBoardRealLibraryTests
         var board = Board();
 
         Assert.NotEmpty(board);
-        // Every staged file lands on exactly one row, and no row is empty.
         Assert.Equal(
             Directory.GetFiles(StagingRoot, "*.flac").Length,
             board.Sum(s => s.Stems.Count)
@@ -50,8 +46,6 @@ public class StagingBoardRealLibraryTests
     {
         Assert.SkipUnless(Available, "Staging root and ledger must both be present.");
 
-        // "Alan Gomez - Mission 15" on disk is "Alan Gomez, Luck Ra - Luck Ra | Mission 15"
-        // in the ledger. The board shows the identity, because that is what was detected.
         var song = Board()
             .SingleOrDefault(s =>
                 s.Stems.Any(stem => stem.FileName.StartsWith("Alan Gomez - Mission 15"))
@@ -85,7 +79,6 @@ public class StagingBoardRealLibraryTests
                 song.Stems,
                 stem =>
                 {
-                    // A stem is tagged only when Ableton holds a whole key for it.
                     Assert.Equal(stem.AbletonKey is not null, stem.IsKeyTagged);
                     Assert.False(stem.HasPartialKey && stem.IsKeyTagged);
                 }
@@ -98,13 +91,7 @@ public class StagingBoardRealLibraryTests
     {
         Assert.SkipUnless(Available, "Staging root and ledger must both be present.");
 
-        // The staging tag store keeps entries for files that have left: Ableton prunes its own
-        // index and not the folder XMP (ADR 0003, 2026-09-02). The board is immune because it
-        // enumerates files on disk and looks tags up by path, so an entry with no file behind it
-        // is never reached.
-        //
-        // This is the property worth pinning, rather than the store's tidiness — that is not
-        // crateside's to guarantee, and the user finishing a track falsifies it.
+        // The store keeps entries for files that have left (ADR 0003); none may reach the board.
         Assert.All(
             Board().SelectMany(song => song.Stems),
             stem => Assert.True(File.Exists(stem.Path), $"{stem.FileName} is not on disk")

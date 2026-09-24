@@ -47,10 +47,6 @@ public class WorkingSetJanitorTests : IDisposable
         File.WriteAllText(Set.EvidencePathFor(VideoId), "{}");
     }
 
-    /// <summary>
-    /// A source-only re-cut fetches the audio and copies it on the next pass. Sweeping in between
-    /// would fetch it again, and again.
-    /// </summary>
     [Fact]
     public void A_track_still_owed_a_handoff_keeps_its_working_set()
     {
@@ -75,8 +71,7 @@ public class WorkingSetJanitorTests : IDisposable
     [Fact]
     public void A_track_that_was_never_separated_keeps_its_working_set()
     {
-        // "Nothing in staging" is also true before the stems exist, so on its own it would
-        // delete the source of every track in flight -- including the one being detected.
+        // "Nothing in staging" is also true before the stems exist.
         GiveWorkingSet();
 
         Assert.Equal(0, Janitor.Sweep());
@@ -97,9 +92,7 @@ public class WorkingSetJanitorTests : IDisposable
     [Fact]
     public void A_partly_imported_song_is_not_finished_with()
     {
-        // The manual workflow empties staging progressively -- the warp guide is deleted
-        // mid-warp, the vocal dragged out before the instrumental -- so this has to be
-        // "nothing left" rather than "no samples left".
+        // Staging empties progressively, so this has to be "nothing left", not "no samples left".
         GiveWorkingSet();
         Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
         WriteStem("Yes - Owner of a Lonely Heart (Drums).flac");
@@ -121,7 +114,6 @@ public class WorkingSetJanitorTests : IDisposable
     [Fact]
     public void Sweeping_nothing_is_not_an_error() => Assert.Equal(0, Janitor.Sweep());
 
-    /// <summary>A staged stem carrying this track's video ID in its StemForge provenance.</summary>
     private void WriteStem(string fileName)
     {
         var source = Directory
@@ -138,7 +130,6 @@ public class WorkingSetJanitorTests : IDisposable
 
         File.Copy(source!, path, overwrite: true);
 
-        // The join is on the video ID StemForge embedded, so the file has to carry ours.
         using var file = TagLib.File.Create(path);
         file.Tag.Comment =
             $"stemforge/0.2.1.1 | preset: Vocal - Full | date: 2026-08-17 | source: https://www.youtube.com/watch?v={VideoId}";

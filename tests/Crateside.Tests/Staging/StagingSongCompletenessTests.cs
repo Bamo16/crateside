@@ -2,11 +2,7 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Staging;
 
-/// <summary>
-/// Completeness is asked of <em>samples</em>, not of files. A warp guide is a stem made to be
-/// looked at while warping and then deleted, so counting it made "is this song finished?"
-/// unanswerable — see docs/adr/0004.
-/// </summary>
+/// <summary>Completeness is asked of samples, not of files (ADR 0004).</summary>
 public class StagingSongCompletenessTests
 {
     private static StagingStem Stem(string? preset, bool tagged = false) =>
@@ -33,9 +29,7 @@ public class StagingSongCompletenessTests
     [Fact]
     public void A_song_is_finished_once_its_samples_are_tagged_even_with_a_guide_still_present()
     {
-        // The case that was previously unreachable: both keepers tagged, warping still to do.
-        // Counting the guide left this at "one stem untagged", indistinguishable from having
-        // forgotten to tag something.
+        // Both keepers tagged, warping still to do.
         var song = Song(
             Stem("Vocal - Full", tagged: true),
             Stem("Instrumental - Full", tagged: true),
@@ -58,16 +52,14 @@ public class StagingSongCompletenessTests
     [Fact]
     public void A_song_of_nothing_but_a_warp_guide_is_not_finished()
     {
-        // Guarding a real edge of the rule rather than a hypothetical: "every sample is tagged"
-        // is vacuously true of no samples, which would report a song with nothing kept as done.
+        // "Every sample is tagged" is vacuously true of no samples.
         Assert.False(Song(Stem("Drums")).IsFullyTagged);
     }
 
     [Fact]
     public void An_instrumental_release_keeps_its_source_as_the_sample()
     {
-        // Snail's House and similar: nothing to separate out, so the drums are the only stem
-        // and the source track itself is what gets warped, tagged and kept.
+        // An instrumental release: the source is kept and the drums are only the guide.
         var song = Song(Stem(preset: null, tagged: true), Stem("Drums"));
 
         Assert.True(song.IsFullyTagged);

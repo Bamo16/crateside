@@ -3,16 +3,7 @@ using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Audit;
 
-/// <summary>
-/// The readings the audit takes of a stem list, tested without a disk.
-/// </summary>
-/// <remarks>
-/// What a root's silence means used to be the whole subject: an absent key was a finding only
-/// where crateside wrote the store, because the XMP could not tell "untagged" from "not flushed
-/// yet". Each root is now read from the store that actually holds its tags, so silence means the
-/// same thing everywhere and these tests are about the readings rather than the source
-/// (ADR 0017).
-/// </remarks>
+/// <summary>The readings the audit takes of a stem list, tested without a disk.</summary>
 public class TagAuditReportTests
 {
     [Fact]
@@ -26,8 +17,6 @@ public class TagAuditReportTests
     [Fact]
     public void An_absent_key_with_nothing_to_tag_it_with_is_not_a_finding()
     {
-        // "No single safe tag" means the stem is supposed to be untagged. Reporting it would
-        // train the user to ignore the list.
         var report = new TagAuditReport([
             Stem(applied: null) with
             {
@@ -73,7 +62,6 @@ public class TagAuditReportTests
     [Fact]
     public void A_root_crateside_writes_is_read_from_the_xmp_and_every_other_from_the_index()
     {
-        // The one fact an audit root carries, and now the only thing it decides.
         Assert.False(AuditRoot.Written(@"C:\staging").ReadsTheIndex);
         Assert.True(AuditRoot.Mirrored(@"C:\library").ReadsTheIndex);
     }

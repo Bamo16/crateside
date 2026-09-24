@@ -3,10 +3,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Queue;
 
-/// <summary>
-/// crateside's own record of a track the playlist does not hold — the second way in, and the
-/// only one besides the playlist that reaches <see cref="QueueView.Outstanding"/> (ADR 0010).
-/// </summary>
+/// <summary>crateside's own record of a track the playlist does not hold (ADR 0010).</summary>
 public class PastedTrackTests : IDisposable
 {
     private const string Pasted = "aaaaaaaaaaa";
@@ -33,9 +30,6 @@ public class PastedTrackTests : IDisposable
     [Fact]
     public void A_pasted_track_is_worth_storing_on_its_own()
     {
-        // Every other instruction is something the user said *about* a track the playlist
-        // already held. This one is the only reason the track exists at all, so the rule that
-        // drops an instruction saying nothing has to know about it.
         var store = Store();
 
         store.AddByUrl(Pasted);
@@ -60,8 +54,6 @@ public class PastedTrackTests : IDisposable
     [Fact]
     public void Forgetting_it_drops_the_plan_with_it()
     {
-        // Removing a pasted track means crateside was never told to work it. Keeping its plan
-        // would leave an instruction for a row that no longer exists.
         var store = Store();
 
         store.AddByUrl(Pasted);
@@ -82,8 +74,7 @@ public class PastedTrackTests : IDisposable
     [Fact]
     public void A_plan_is_stored_without_the_answers_it_computes()
     {
-        // `isEmpty` and `watchUrl` are derived from the fields beside them. Written out, they
-        // are a stored answer that cannot disagree with its question until one of them changes.
+        // `isEmpty` and `watchUrl` are derived, so they are never written.
         var store = Store();
 
         store.SetPlan(

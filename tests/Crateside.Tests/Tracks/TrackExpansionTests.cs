@@ -6,14 +6,7 @@ using Humanizer;
 
 namespace Crateside.Tests.Tracks;
 
-/// <summary>
-/// What the expanded row shows: the plan while there is still a plan, and the sentence beside it.
-/// </summary>
-/// <remarks>
-/// Here rather than in the page for the reason <see cref="TrackRow.Next"/> and
-/// <see cref="TrackRow.ChipLabel"/> are: it is copy derived from the same reading, and copy that
-/// can be edited apart from what it describes drifts away from it.
-/// </remarks>
+/// <summary>What the expanded row shows: the plan while there is still a plan, and the sentence beside it.</summary>
 public class TrackExpansionTests
 {
     private static TrackRow Row() =>
@@ -52,8 +45,7 @@ public class TrackExpansionTests
     [Fact]
     public void A_parked_track_cannot()
     {
-        // Parked is separated: its stems are in the unresolved-key root rather than in staging,
-        // so nothing about it shows up in Samples — and a plan is not a plan once stems exist.
+        // Parked means separated, so its stems already exist.
         Assert.False((Row() with { ParkedFor = ParkReason.NoKey }).CanChangePlan);
     }
 
@@ -99,13 +91,7 @@ public class TrackExpansionTests
         string spoken
     )
     {
-        // The Key column is a dash for these, which says nothing about whether anyone looked. The
-        // sentence is where the difference between "not judged" and "judged, and the answer was
-        // no" gets said.
-        var row = Row() with
-        {
-            Verdict = Judged("C minor", confidence),
-        };
+        var row = Row() with { Verdict = Judged("C minor", confidence) };
 
         Assert.Equal(
             $"Judged, and the verdict came back {spoken} — no key worth tagging with.",
@@ -143,8 +129,7 @@ public class TrackExpansionTests
     [Fact]
     public void Tags_that_agree_are_not_mentioned()
     {
-        // Silence is not a claim that they agree. The tag store lags Ableton's own index and keeps
-        // entries for files that have left, so the only reading worth repeating is a conflict.
+        // Silence is not a claim that they agree.
         var row = Row() with
         {
             Verdict = Judged("C minor", KeyConfidence.High),

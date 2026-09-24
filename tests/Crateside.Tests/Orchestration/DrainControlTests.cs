@@ -8,10 +8,7 @@ public class DrainControlTests
     [Fact]
     public void The_safe_default_is_paused()
     {
-        // Not a change of behaviour — a configured deployment still turns draining on. This is
-        // about what happens when configuration does not load, which on 2026-08-16 meant a
-        // separation started a second after launch. The fallback must not be the one that
-        // consumes the GPU.
+        // What happens when configuration does not load.
         Assert.True(new DrainControl().IsPaused);
         Assert.True(new DrainOptions().StartPaused);
     }
@@ -22,8 +19,7 @@ public class DrainControlTests
         var control = new DrainControl(startPaused: true);
         var clock = Stopwatch.StartNew();
 
-        // The real worker passes its two-minute idle delay here. If resume did not signal, this
-        // would block for all of it — which is exactly what read as a dead button.
+        // The real worker passes its two-minute idle delay here.
         var waiting = control.WaitForWorkAsync(
             TimeSpan.FromSeconds(30),
             TestContext.Current.CancellationToken
@@ -52,8 +48,6 @@ public class DrainControlTests
     [Fact]
     public async Task Resuming_twice_does_not_bank_a_second_wake()
     {
-        // The signal is level, not edge: two resumes still mean "go". Banking a permit would
-        // make the *following* idle wait return instantly for no reason.
         var control = new DrainControl(startPaused: true);
 
         control.Resume();
@@ -92,17 +86,12 @@ public class DrainControlTests
     [Fact]
     public void Judgment_starts_paused_too()
     {
-        // Launching the app should never itself be the act that spends something -- quota here,
-        // as the GPU is for separation.
         Assert.True(new VerdictControl().IsPaused);
     }
 
     [Fact]
     public void The_two_stages_stop_independently()
     {
-        // They stop for unrelated reasons at unrelated times: quota during a working session,
-        // the GPU whenever the user wants it left alone. One toggle would mean stopping the GPU
-        // to save quota, or spending quota to free the GPU.
         var separation = new DrainControl(startPaused: false);
         var verdict = new VerdictControl(startPaused: false);
 

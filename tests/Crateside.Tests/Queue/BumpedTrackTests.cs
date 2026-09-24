@@ -2,10 +2,7 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Queue;
 
-/// <summary>
-/// Putting one track at the front of the work lists. What replaced holding: the ordering wish
-/// that was real, in the space taken by the control that was not (ADR 0015).
-/// </summary>
+/// <summary>Putting one track at the front of the work lists (ADR 0015).</summary>
 public class BumpedTrackTests
 {
     private const string First = "aaaaaaaaaaa";
@@ -45,10 +42,6 @@ public class BumpedTrackTests
         Assert.Equal([Third, First, Second], Ids(view.Outstanding));
     }
 
-    /// <summary>
-    /// The rest keep the playlist's own order, which is what the stages read. A bump is one
-    /// exception to FIFO, not a re-sort.
-    /// </summary>
     [Fact]
     public void Everything_else_keeps_its_place()
     {
@@ -64,10 +57,6 @@ public class BumpedTrackTests
         Assert.Equal([First, Second, Third], Ids(Compose(bumped: string.Empty).Outstanding));
     }
 
-    /// <summary>
-    /// A bump for a track that is not in this list — already separating, say, or finished —
-    /// changes nothing rather than throwing or emptying it.
-    /// </summary>
     [Fact]
     public void Bumping_a_track_the_list_does_not_hold_is_harmless() =>
         Assert.Equal([First, Second, Third], Ids(Compose(bumped: "zzzzzzzzzzz").Outstanding));

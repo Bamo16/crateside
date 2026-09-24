@@ -5,16 +5,7 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// Detection and judging cannot be bought twice, whatever puts a track in front of them.
-/// </summary>
-/// <remarks>
-/// ADR 0010 argued this structurally — reopened tracks were kept out of
-/// <see cref="QueueView.Items"/>, so there was no path from a re-cut to a second judging. ADR 0021
-/// dissolves that argument by making <see cref="QueueView.Items"/> stop meaning "the playlist".
-/// These pin the guards that remain, which are reads of the working set and the ledger and were
-/// always the load-bearing half.
-/// </remarks>
+/// <summary>Detection and judging cannot be bought twice, whatever puts a track in front of them.</summary>
 public class QuotaGuardTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
@@ -70,9 +61,6 @@ public class QuotaGuardTests : IDisposable
         );
     }
 
-    /// <summary>
-    /// The whole point: a finished track put back in the outstanding list buys neither stage.
-    /// </summary>
     [Fact]
     public void A_finished_track_back_in_the_outstanding_list_buys_nothing()
     {

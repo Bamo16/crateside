@@ -5,10 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// Remove is the user saying they do not want a track, and it has to be able to finish saying
-/// it (#33, ADR 0027).
-/// </summary>
+/// <summary>Remove has to be able to finish (#33, ADR 0027).</summary>
 public class TrackRemovalTests : IDisposable
 {
     private const string Video = "OwGuSPXPyX4";
@@ -39,11 +36,6 @@ public class TrackRemovalTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>
-    /// Rob Dougan - Clubbed to Death: a plan whose only member is its kept source. Deleting the
-    /// file brought it straight back from the working set, and Remove was never offered because
-    /// the file it kept regenerating was a sample.
-    /// </summary>
     [Fact]
     public void Removing_a_track_that_keeps_its_source_drops_the_instruction_before_the_file()
     {
@@ -57,7 +49,6 @@ public class TrackRemovalTests : IDisposable
         Assert.Equal(1, outcome.Recycled);
         Assert.False(File.Exists(source));
 
-        // Without the plan, nothing in the download stage is asked to copy it back.
         Assert.DoesNotContain(
             Settings().Read().Tracks,
             track => track.VideoId == Video && track.Plan is not null
@@ -78,7 +69,6 @@ public class TrackRemovalTests : IDisposable
     [Fact]
     public void A_sample_the_user_built_by_hand_is_left_where_it_is()
     {
-        // Nothing can make it again (ADR 0022), and Remove recycles what crateside put there.
         var built = Stage(
             "Rob Dougan - Clubbed to Death (My Instrumental).flac",
             adopted: "My Instrumental"

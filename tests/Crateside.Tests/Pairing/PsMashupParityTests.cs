@@ -4,16 +4,8 @@ using Crateside.Core.Pairing;
 
 namespace Crateside.Tests.Pairing;
 
-/// <summary>
-/// The port checked against the cmdlet it was ported from, for every one of the 24 keys.
-/// </summary>
-/// <remarks>
-/// The fixture is the real output of <c>Get-MashupPartner -MaxShift 6</c> captured from the
-/// built PSMashup module, not something hand-written to match this implementation. A port is
-/// only faithful if it agrees with the original on every input, and "the model is duplicated
-/// knowingly" is only acceptable while the duplicate behaves identically — this is what makes
-/// that checkable.
-/// </remarks>
+/// <summary>The port checked against the cmdlet it was ported from, for every one of the 24 keys.</summary>
+/// <remarks>The fixture is the real output of <c>Get-MashupPartner -MaxShift 6</c>.</remarks>
 public class PsMashupParityTests
 {
     private static readonly IReadOnlyList<FixtureKey> Fixture = LoadFixture();
@@ -39,7 +31,6 @@ public class PsMashupParityTests
 
         var actual = Partners.For(source);
 
-        // Same partners, in the same order.
         Assert.Equal(expected.Partners.Select(p => p.Key), actual.Select(p => p.Key.Name));
 
         foreach (var (want, got) in expected.Partners.Zip(actual))
@@ -55,7 +46,6 @@ public class PsMashupParityTests
     [Fact]
     public void The_fixture_covers_all_24_keys()
     {
-        // Guards the guard: a truncated fixture would make every parity test vacuous.
         Assert.Equal(24, Fixture.Count);
         Assert.All(Fixture, f => Assert.Equal(24, f.Partners.Count));
     }

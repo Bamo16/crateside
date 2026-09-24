@@ -59,9 +59,7 @@ public class TrackSwapTests : IDisposable
     [Fact]
     public void A_track_the_ledger_has_never_seen_can_still_be_swapped()
     {
-        // It used to be refused for having no verdict to carry across. But a premium shortfall
-        // stops a track *before* the verdict, so refusing the unjudged case refused exactly the
-        // tracks that most need a better upload (ADR 0016).
+        // A premium shortfall stops a track before the verdict (ADR 0016).
         var plan = Swap().PlanFor("neverJudged", Replacement);
 
         Assert.True(plan.IsPossible);
@@ -129,7 +127,6 @@ public class TrackSwapTests : IDisposable
     [Fact]
     public async Task The_verdict_still_resolves_through_both_video_ids_afterwards()
     {
-        // The whole point: the key survives the swap, so nothing is judged again.
         WriteLedger(
             Line("2026-09-01T00:00:00+00:00", Song, Video),
             Line("2026-09-09T00:00:00+00:00", Song, "NSLYAT7sjAA")
@@ -183,8 +180,7 @@ public class TrackSwapTests : IDisposable
     [Fact]
     public void A_bare_video_id_is_accepted_and_canonicalised()
     {
-        // keytag requires an http(s) URL, so a bare ID has to be turned into one rather than
-        // passed on and refused.
+        // keytag requires an http(s) URL.
         var plan = Swap().PlanFor(Video, "NSLYAT7sjAA");
 
         Assert.True(plan.IsPossible);
@@ -195,9 +191,6 @@ public class TrackSwapTests : IDisposable
     [Fact]
     public async Task A_reopened_track_is_separated_from_the_stated_url()
     {
-        // The bug the first real swap hit: reopened tracks were built with their own list of
-        // instruction fields, which did not include the source URL, so separation silently used
-        // the playlist entry's own video and re-cut the upload being replaced.
         WriteLedger(
             Line("2026-09-01T00:00:00+00:00", Song, Video),
             Line("2026-09-09T00:00:00+00:00", Song, "NSLYAT7sjAA")
@@ -229,8 +222,7 @@ public class TrackSwapTests : IDisposable
     [Fact]
     public async Task Swapping_an_unjudged_track_records_the_url_without_restating_anything()
     {
-        // Nothing shells out to keytag here, which is what makes this safe: there is no run to
-        // restate, and the test's `uv` does not exist.
+        // Nothing shells out to keytag here: there is no run to restate.
         var settings = Settings();
         var workingSet = new WorkingSet(WorkingRoot);
 
@@ -247,7 +239,6 @@ public class TrackSwapTests : IDisposable
         var instruction = Assert.Single(settings.Read().Tracks);
         Assert.Equal("https://music.youtube.com/watch?v=NSLYAT7sjAA", instruction.SourceUrl);
 
-        // The finding went with the audio it was about, so the replacement is measured afresh.
         Assert.Null(workingSet.AcquisitionFor("neverJudged"));
     }
 

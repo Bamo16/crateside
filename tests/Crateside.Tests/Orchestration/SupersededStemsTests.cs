@@ -3,14 +3,8 @@ using Crateside.Core.Orchestration;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// Which of a song's staged files a handoff may clear out of the way.
-/// </summary>
-/// <remarks>
-/// Written after this deleted three of a track's stems. "A different upload of the same song"
-/// described a swap exactly and an added source exactly as well, and an added source is the one
-/// case where a second upload is wanted rather than replaced (ADR 0019).
-/// </remarks>
+/// <summary>Which of a song's staged files a handoff may clear out of the way.</summary>
+/// <remarks>An added source is a second upload that is wanted, not replaced (ADR 0019).</remarks>
 public class SupersededStemsTests : IDisposable
 {
     private const string Song = "chris brown, lil' wayne, busta rhymes - look at me now";
@@ -33,7 +27,6 @@ public class SupersededStemsTests : IDisposable
 
         Directory.CreateDirectory(_staging);
 
-        // Two uploads under one song, which is what a restatement produces.
         File.WriteAllLines(
             _ledgerPath,
             new[] { Cut, Added }.Select(id =>
@@ -57,8 +50,7 @@ public class SupersededStemsTests : IDisposable
     [Fact]
     public void A_swap_still_clears_the_upload_it_replaced()
     {
-        // Unchanged behaviour, and the reason this exists: after a swap both uploads' files
-        // carry the same filenames, so the old ones cannot stay.
+        // After a swap both uploads' files carry the same filenames.
         var superseded = SupersededStems.In(_staging, Added, Ledger());
 
         Assert.NotNull(superseded);
@@ -67,9 +59,6 @@ public class SupersededStemsTests : IDisposable
     [Fact]
     public void An_added_sources_handoff_clears_nothing()
     {
-        // What went wrong: the added source reached the handoff, asked which files belonged to a
-        // different upload of this song, and was handed the three stems it had been added to sit
-        // beside. All three were deleted.
         var kept = new HashSet<string>(StringComparer.Ordinal) { Added };
 
         Assert.Empty(SupersededStems.In(_staging, Added, Ledger(), kept));
@@ -78,8 +67,6 @@ public class SupersededStemsTests : IDisposable
     [Fact]
     public void A_swap_does_not_eat_the_added_sources_of_the_song()
     {
-        // The same bug from the other side: handing off the track's own stems would have asked
-        // the same question and been given the added source.
         var kept = new HashSet<string>(StringComparer.Ordinal) { Added };
 
         Assert.Empty(SupersededStems.In(_staging, Cut, Ledger(), kept));

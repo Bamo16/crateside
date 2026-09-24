@@ -4,10 +4,7 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// What a backing pass writes over an entry that already exists, which is the whole risk in it:
-/// the writer replaces an entry's keyword bag, so anything not carried across is destroyed.
-/// </summary>
+/// <summary>What a backing pass writes over an entry that already exists.</summary>
 public class BackingRunnerTests : IDisposable
 {
     private const string File1 = "Lil Wayne - A Milli (A Cappella).flac";
@@ -41,7 +38,6 @@ public class BackingRunnerTests : IDisposable
     [Fact]
     public void Half_a_key_is_left_for_a_human()
     {
-        // The audit reports it. Choosing the missing half is a guess about which half is right.
         Assert.False(Needs(Tags("Key|G♯")));
         Assert.False(Needs(Tags("Key|Minor")));
     }
@@ -49,8 +45,6 @@ public class BackingRunnerTests : IDisposable
     [Fact]
     public void An_entry_carrying_a_keyword_the_writer_cannot_write_is_left_alone()
     {
-        // Carrying it across would have the writer refuse the whole pass; dropping it would lose
-        // what the user put there. Skipping the file costs nothing either way.
         Assert.False(Needs(Tags("Type|Vocal", "Genre|Rap")));
     }
 
@@ -98,8 +92,7 @@ public class BackingRunnerTests : IDisposable
     [Fact]
     public void A_keyword_the_user_took_off_is_not_put_back()
     {
-        // hideKeywords is Ableton's record of a keyword removed by hand -- measured live on
-        // Porter Robinson - Language, where Key|Major was taken off and Key|Minor set.
+        // Shaped after Porter Robinson - Language, where Key|Major was taken off and Key|Minor set.
         var merged = Merge(
             AbletonFileTags.FromKeywords(File1, ["Type|Vocal"], ["Key|Major"]),
             ["Key|F♯", "Key|Major", "Type|Instrumental"]
@@ -112,8 +105,6 @@ public class BackingRunnerTests : IDisposable
     [Fact]
     public void A_type_the_user_took_off_is_not_put_back_either()
     {
-        // A Milli (A Cappella): crateside tagged it Instrumental because an added source has no
-        // preset (#42), the user removed that and set Vocal.
         var merged = Merge(
             AbletonFileTags.FromKeywords(File1, [], ["Type|Instrumental"]),
             ["Key|G♯", "Key|Minor", "Type|Instrumental"]

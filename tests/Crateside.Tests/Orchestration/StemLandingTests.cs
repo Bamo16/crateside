@@ -5,14 +5,7 @@ using Crateside.Core.Orchestration;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// Where a run's stems belong once it has finished, which is not always where it was sent.
-/// </summary>
-/// <remarks>
-/// The destination is chosen when the order is composed, from the ledger as it stood then. A
-/// re-cut restarts separation at once, so a track being re-judged can be cut before its verdict
-/// lands — and the handoff reads only the key-identified root.
-/// </remarks>
+/// <summary>Where a run's stems belong once it has finished, which is not always where it was sent.</summary>
 public class StemLandingTests : IDisposable
 {
     private const string Video = "adjcmOELKIM";
@@ -116,10 +109,6 @@ public class StemLandingTests : IDisposable
         );
     }
 
-    /// <remarks>
-    /// Parking is the resting place for a track with no key worth tagging (ADR 0015), so a run
-    /// that is genuinely unresolved stays put.
-    /// </remarks>
     [Fact]
     public void A_run_with_no_taggable_verdict_stays_parked()
     {
