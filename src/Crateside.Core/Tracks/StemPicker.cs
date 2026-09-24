@@ -227,8 +227,8 @@ public sealed record StemChoice
 
     public bool IsOnDisk => Files.Count > 0;
 
-    /// <summary>A file of this line was downloaded below premium audio.</summary>
-    public bool IsBelowPremium => Files.Any(file => file.IsPremium is false);
+    /// <summary>A file of this line was not downloaded as premium audio.</summary>
+    public bool IsNotPremium => Files.Any(file => file.IsPremium is false);
 
     /// <summary>A file meant to be kept, as opposed to a guide that is used up (ADR 0004).</summary>
     public bool IsSample => Kind is StemKind.Preset or StemKind.Source;

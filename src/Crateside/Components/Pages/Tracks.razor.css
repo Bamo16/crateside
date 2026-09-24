@@ -769,8 +769,15 @@
     color: var(--text-50);
 }
 
-.kind.below-premium {
+.premium-badge {
+    margin-left: 6px;
+    padding: 1px 7px;
+    font-size: 10.5px;
+    font-weight: 500;
     color: var(--amber);
+    border: 1px solid var(--amber);
+    border-radius: 999px;
+    white-space: nowrap;
 }
 
 .stem-tag,
@@ -931,6 +938,12 @@
 .opener:hover:not(:disabled) {
     color: var(--text);
     border-color: rgba(255, 255, 255, 0.4);
+}
+
+.opener.closer {
+    background: rgba(255, 255, 255, 0.05);
+    border-style: solid;
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
 .opener-hint {

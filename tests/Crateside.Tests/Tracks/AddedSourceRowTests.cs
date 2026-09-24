@@ -100,7 +100,7 @@ public class AddedSourceRowTests : IDisposable
     }
 
     [Fact]
-    public void An_attached_source_that_arrived_below_premium_says_so_long_after_it_landed()
+    public void An_attached_source_that_is_not_premium_says_so_long_after_it_landed()
     {
         // Read from the file itself, not the acquisition record, which the janitor discards.
         var row = Row([
@@ -119,7 +119,7 @@ public class AddedSourceRowTests : IDisposable
             Files = [.. row.Samples.Where(sample => sample.SourceVideoId == Attached)],
         };
 
-        Assert.True(line.IsBelowPremium);
+        Assert.True(line.IsNotPremium);
     }
 
     [Fact]
