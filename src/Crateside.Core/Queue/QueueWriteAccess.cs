@@ -15,7 +15,6 @@ public sealed class QueueWriteAccess
     private string? _reason;
     private DateTimeOffset? _lapsedAt;
     private DateTimeOffset? _toldAt;
-    private IReadOnlyList<RemovalResult> _failures = [];
 
     /// <summary>Raised when the state changes, so a rendered page can catch up.</summary>
     public event Action? Changed;
@@ -49,20 +48,6 @@ public sealed class QueueWriteAccess
         }
     }
 
-    /// <summary>Entries the last consume tried to remove and could not, with the reason each gave.</summary>
-    /// <remarks>
-    /// <see cref="IntakeStore.MarkRemovalAttempted"/> runs before the delete and is never cleared,
-    /// so nothing will try these again — this list is the only record that they were left behind.
-    /// </remarks>
-    public IReadOnlyList<RemovalResult> Failures
-    {
-        get
-        {
-            lock (_gate)
-                return _failures;
-        }
-    }
-
     /// <summary>Records that consent no longer authorizes a write.</summary>
     public void Lapsed(string reason)
     {
@@ -91,18 +76,6 @@ public sealed class QueueWriteAccess
         }
 
         Changed?.Invoke();
-    }
-
-    /// <summary>Keeps what a consume could not remove, replacing the previous run's.</summary>
-    public void Record(IReadOnlyList<RemovalResult> results)
-    {
-        var failures = results.Where(r => !r.Removed).ToArray();
-
-        lock (_gate)
-            _failures = failures;
-
-        if (failures.Length > 0)
-            Changed?.Invoke();
     }
 
     /// <summary>

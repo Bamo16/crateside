@@ -100,9 +100,22 @@ public sealed class QueueRemover(QueueAuthorizer authorizer)
                 Title = item.Title,
                 Removed = false,
                 Reason = Describe(e),
+                CanSucceedLater = CanSucceedLater(e),
             };
         }
     }
+
+    /// <summary>A failure of the moment, rather than one that will fail the same way for ever.</summary>
+    /// <remarks>
+    /// A 403 for the wrong account or a missing scope is permanent: retrying it only spends fifty
+    /// units to be told the same thing (#34).
+    /// </remarks>
+    internal static bool CanSucceedLater(GoogleApiException e) =>
+        (int)e.HttpStatusCode >= 500
+        || e.Error?.Errors?.FirstOrDefault()?.Reason
+            is "quotaExceeded"
+                or "rateLimitExceeded"
+                or "backendError";
 
     /// <summary>
     /// Turns a Google API failure into something diagnosable. Every interesting way a delete
@@ -143,4 +156,6 @@ public sealed record RemovalResult
 
     /// <summary>Why it was not removed. Null when it was.</summary>
     public string? Reason { get; init; }
+
+    public bool CanSucceedLater { get; init; }
 }

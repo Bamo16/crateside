@@ -130,6 +130,29 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                     coming back on the next scan.
                 </p>
 
+                @if (Playlist.LeftInPlaylist is { Count: > 0 } left)
+                {
+                    <p class="detail">
+                        Removal failed for @("entry".ToQuantity(left.Count)), still in the playlist:
+                    </p>
+
+                    <ul class="left-behind">
+                        @foreach (var record in left)
+                        {
+                            <li>
+                                <strong>@record.Title</strong>
+                                <span class="detail">@record.RemovalFailure!.Reason</span>
+                                @if (record.RemovalFailure.CanSucceedLater)
+                                {
+                                    <button class="outline" @onclick="() => Playlist.RetryRemoval(record.VideoId)">
+                                        Try again
+                                    </button>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+
                 @if (_processed is { } processed)
                 {
                     <p class="detail">

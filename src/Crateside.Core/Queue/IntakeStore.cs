@@ -126,22 +126,34 @@ public sealed class IntakeStore
     public void ClearRemovalAttempted(IEnumerable<string> videoIds) =>
         SetRemovalAttempted(videoIds, null);
 
-    private void SetRemovalAttempted(IEnumerable<string> videoIds, DateTimeOffset? at)
+    /// <summary>Keeps why each of these entries was left in the playlist.</summary>
+    public void RecordRemovalFailures(IReadOnlyDictionary<string, RemovalFailure> byVideoId) =>
+        Update(
+            byVideoId.Keys,
+            record => record with { RemovalFailure = byVideoId[record.VideoId] }
+        );
+
+    // A cleared attempt takes its failure with it: the entry is back in line, not still failed.
+    private void SetRemovalAttempted(IEnumerable<string> videoIds, DateTimeOffset? at) =>
+        Update(
+            videoIds,
+            record =>
+                record with
+                {
+                    RemovalAttemptedAt = at,
+                    RemovalFailure = at is null ? null : record.RemovalFailure,
+                }
+        );
+
+    private void Update(IEnumerable<string> videoIds, Func<IntakeRecord, IntakeRecord> change)
     {
         lock (_gate)
         {
-            var marking = videoIds.ToHashSet(StringComparer.Ordinal);
+            var changing = videoIds.ToHashSet(StringComparer.Ordinal);
 
             Write([
                 .. Read()
-                    .Select(record =>
-                        marking.Contains(record.VideoId)
-                            ? record with
-                            {
-                                RemovalAttemptedAt = at,
-                            }
-                            : record
-                    ),
+                    .Select(record => changing.Contains(record.VideoId) ? change(record) : record),
             ]);
         }
     }
@@ -284,9 +296,24 @@ public sealed record IntakeRecord
     /// When the playlist entry was offered back, or null while it never has been.
     /// </summary>
     /// <remarks>
-    /// Set whether the removal succeeded or not, and never cleared: a failed delete costs fifty
-    /// quota units and must not be retried on the next scan.
+    /// Set whether the removal succeeded or not: a failed delete costs fifty quota units and must
+    /// not be retried on the next scan. Cleared only for a removal that never reached the API, or
+    /// when the user asks for another try.
     /// </remarks>
     [JsonPropertyName("removalAttemptedAt")]
     public DateTimeOffset? RemovalAttemptedAt { get; init; }
+
+    /// <summary>Why the removal failed, or null when it did not (#34).</summary>
+    [JsonPropertyName("removalFailure")]
+    public RemovalFailure? RemovalFailure { get; init; }
+}
+
+/// <summary>Why a playlist entry was left behind, kept because nothing retries it on its own.</summary>
+public sealed record RemovalFailure
+{
+    [JsonPropertyName("reason")]
+    public required string Reason { get; init; }
+
+    [JsonPropertyName("canSucceedLater")]
+    public bool CanSucceedLater { get; init; }
 }

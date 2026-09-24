@@ -113,6 +113,13 @@ public sealed class QueueService(
     /// <summary>Records which files the user wants made for a track.</summary>
     public void SetPlan(string videoId, StemPlan? plan) => settings.SetPlan(videoId, plan);
 
+    /// <summary>Entries crateside tried to empty from the playlist and could not.</summary>
+    public IReadOnlyList<IntakeRecord> LeftInPlaylist =>
+        [.. intake.Read().Where(record => record.RemovalFailure is not null)];
+
+    /// <summary>Offers an entry back on the next scan, spending another removal on it.</summary>
+    public void RetryRemoval(string videoId) => intake.ClearRemovalAttempted([videoId]);
+
     /// <summary>The standing instruction for a track, or null when there is none.</summary>
     public TrackInstruction? InstructionFor(string videoId) =>
         settings
@@ -339,9 +346,30 @@ public sealed class QueueService(
 
         try
         {
-            // Kept, not discarded: nothing will try these again, so this is the only record that
-            // they were left in the playlist and why (#34).
-            authorizer.WriteAccess.Record(await RemoveAsync(entries, cancellationToken));
+            var results = await RemoveAsync(entries, cancellationToken);
+            var videoIdOf = entries.ToDictionary(
+                item => item.PlaylistItemId!,
+                item => item.VideoId,
+                StringComparer.Ordinal
+            );
+
+            // Kept on the record rather than discarded: nothing will try these again, so this is
+            // the only trace that they were left in the playlist, and why (#34).
+            intake.RecordRemovalFailures(
+                results
+                    .Where(result =>
+                        !result.Removed && videoIdOf.ContainsKey(result.PlaylistItemId)
+                    )
+                    .ToDictionary(
+                        result => videoIdOf[result.PlaylistItemId],
+                        result => new RemovalFailure
+                        {
+                            Reason = result.Reason ?? "the API gave no reason",
+                            CanSucceedLater = result.CanSucceedLater,
+                        },
+                        StringComparer.Ordinal
+                    )
+            );
         }
         catch (QueueUnavailableException)
         {
