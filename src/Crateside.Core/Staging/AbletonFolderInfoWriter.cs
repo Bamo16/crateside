@@ -1,6 +1,7 @@
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using Crateside.Core.Genres;
 
 namespace Crateside.Core.Staging;
 
@@ -167,6 +168,7 @@ public sealed class AbletonFolderInfoWriter
         {
             ["Key", var value] => Tonics.Contains(value) || Modes.Contains(value),
             ["Type", var value] => Types.Contains(value),
+            [GenreVocabulary.Group, var value] => GenreVocabulary.IsGenre(value),
             _ => false,
         };
 

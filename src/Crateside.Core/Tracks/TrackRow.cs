@@ -1,3 +1,4 @@
+using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Queue;
@@ -82,6 +83,15 @@ public sealed record TrackRow
     /// whether it is (#41).
     /// </summary>
     public LedgerRun? Lookalike { get; init; }
+
+    /// <summary>
+    /// What the genre store knows this song by: the ledger's identity, or the upload for a song it
+    /// never judged (ADR 0030).
+    /// </summary>
+    public string Song => Verdict?.Song ?? VideoId;
+
+    /// <summary>The song's genre as settled or suggested, or null when nothing has asked yet.</summary>
+    public GenreRecord? Genre { get; init; }
 
     /// <summary>The key to tag with, or null when withheld, weak, or unknown.</summary>
     public string? Key => Verdict?.HasTaggableKey is true ? Verdict.Key : null;

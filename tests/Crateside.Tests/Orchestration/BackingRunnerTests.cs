@@ -114,6 +114,57 @@ public class BackingRunnerTests : IDisposable
         Assert.DoesNotContain("Type|Instrumental", merged);
     }
 
+    [Fact]
+    public void A_settled_genre_is_added_to_a_keyed_entry_and_everything_else_survives()
+    {
+        var merged = Merge(Tags("Key|G♯", "Key|Minor", "Type|Vocal"), ["Genre|Hip Hop"]);
+
+        Assert.Equal(["Key|G♯", "Key|Minor", "Type|Vocal", "Genre|Hip Hop"], merged);
+    }
+
+    [Fact]
+    public void A_changed_genre_replaces_the_one_crateside_wrote_before()
+    {
+        var merged = Merge(Tags("Key|G♯", "Key|Minor", "Genre|Pop"), ["Genre|K-Pop"]);
+
+        Assert.Contains("Genre|K-Pop", merged);
+        Assert.DoesNotContain("Genre|Pop", merged);
+    }
+
+    [Fact]
+    public void A_genre_the_user_took_off_is_not_put_back()
+    {
+        var merged = Merge(
+            AbletonFileTags.FromKeywords(File1, ["Key|G♯", "Key|Minor"], ["Genre|Rock"]),
+            ["Genre|Rock"]
+        );
+
+        Assert.DoesNotContain("Genre|Rock", merged);
+    }
+
+    [Fact]
+    public void Only_a_keyed_entry_takes_a_genre()
+    {
+        Assert.True(BackingRunner.CanTakeAGenre(Tags("Key|G♯", "Key|Minor")));
+        Assert.False(BackingRunner.CanTakeAGenre(Tags("Type|Vocal")));
+        Assert.False(BackingRunner.CanTakeAGenre(null));
+        Assert.False(BackingRunner.CanTakeAGenre(Tags("Key|G♯", "Key|Minor", "Genre|Rap")));
+    }
+
+    [Fact]
+    public void Every_genre_on_the_list_is_a_keyword_the_writer_accepts()
+    {
+        Assert.All(
+            Crateside.Core.Genres.GenreVocabulary.All,
+            genre =>
+                Assert.True(
+                    AbletonFolderInfoWriter.IsValidKeyword(
+                        Crateside.Core.Genres.GenreVocabulary.Keyword(genre)
+                    )
+                )
+        );
+    }
+
     private static AbletonFileTags Tags(params string[] keywords) =>
         AbletonFileTags.FromKeywords(File1, keywords);
 

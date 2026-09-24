@@ -1,3 +1,4 @@
+using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
@@ -53,7 +54,8 @@ public sealed record TracksView
         IReadOnlyDictionary<string, Acquisition>? acquisitions = null,
         PresetCatalog? presets = null,
         AbletonFolderInfo? libraryTags = null,
-        IReadOnlyList<Deletion>? deletions = null
+        IReadOnlyList<Deletion>? deletions = null,
+        IReadOnlyDictionary<string, GenreRecord>? genres = null
     )
     {
         var resolved = resolvedNames ?? new Dictionary<string, ResolvedName>();
@@ -216,6 +218,7 @@ public sealed record TracksView
                 StatedSourceUrl = instruction?.SourceUrl,
                 AwaitingRename = songs.Sum(song => AwaitingRenameIn(song, stated)),
                 Verdict = verdict,
+                Genre = genres?.GetValueOrDefault(verdict?.Song ?? primary.VideoId),
                 Lookalike =
                     verdict is null && primary.Item is { } item
                         ? VerdictSelector.LookalikeOf(

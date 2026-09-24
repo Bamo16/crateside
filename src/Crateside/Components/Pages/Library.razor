@@ -1,10 +1,12 @@
 @page "/library"
 @layout Crateside.Components.Layout.BareLayout
 @using System.Globalization
+@using Crateside.Core.Genres
 @using Crateside.Core.Library
 @using Humanizer
 @rendermode InteractiveServer
 @inject LibrarySummary Summary
+@inject GenreStore GenreRecords
 
 <PageTitle>Library — crateside</PageTitle>
 
@@ -72,6 +74,52 @@
             </tbody>
         </table>
 
+        <section class="genres">
+            <h2>By genre</h2>
+            <p class="subtitle">
+                <strong>@("file".ToQuantity(_distribution.UngenredCount))</strong> carry no genre
+                yet. That means nobody has settled one, not that they have none: a genre is settled
+                on each track's row, and written within a few minutes.
+            </p>
+
+            <table class="distribution">
+                <thead>
+                    <tr>
+                        <th>Genre</th>
+                        <th class="bar-head">Files</th>
+                        <th class="numeric">Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var genre in _distribution.Genres.OrderByDescending(g => g.Files))
+                    {
+                        <tr class="@(genre.Files is 0 ? "empty-bucket" : null)">
+                            <td class="key">@genre.Genre</td>
+                            <td class="bar-cell">
+                                <span class="bar" style="width: @GenreWidth(genre)%"></span>
+                            </td>
+                            <td class="numeric">@genre.Files</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (_gaps.Count > 0)
+            {
+                <h3>What the sources called the rest</h3>
+                <p class="subtitle">
+                    Songs settled as none of the list, or that the sources could not place on it. A
+                    label that keeps coming up is a genre the list may want.
+                </p>
+                <ul class="gaps">
+                    @foreach (var gap in _gaps.Take(15))
+                    {
+                        <li><span>@gap.Label</span> <span class="numeric">@("song".ToQuantity(gap.Songs))</span></li>
+                    }
+                </ul>
+            }
+        </section>
+
         @if (_distribution.Unkeyed.Count > 0)
         {
             <section class="unkeyed">
@@ -92,6 +140,7 @@
 
 @code {
     private KeyDistribution _distribution = null!;
+    private IReadOnlyList<GenreGap> _gaps = [];
     private bool _reading;
 
     private IEnumerable<KeyCount> Ordered =>
@@ -99,16 +148,26 @@
 
     private int Represented => _distribution.Counts.Count(c => c.Files > 0);
 
-    protected override void OnInitialized() => _distribution = Summary.Current;
+    protected override void OnInitialized()
+    {
+        _distribution = Summary.Current;
+        _gaps = GenreGaps.From(GenreRecords.Read().Values);
+    }
 
     private async Task Reread()
     {
         _reading = true;
 
         _distribution = await Task.Run(Summary.Refresh);
+        _gaps = GenreGaps.From(GenreRecords.Read().Values);
 
         _reading = false;
     }
+
+    private string GenreWidth(GenreCount genre) =>
+        (_distribution.Genres.Max(g => g.Files) is var largest and > 0
+            ? genre.Files * 100.0 / largest
+            : 0).ToString("0.#", CultureInfo.InvariantCulture);
 
     private string Width(KeyCount count) =>
         (_distribution.Largest is 0 ? 0 : count.Files * 100.0 / _distribution.Largest).ToString(

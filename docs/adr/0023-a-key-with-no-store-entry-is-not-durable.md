@@ -121,3 +121,24 @@ a root rather than hardcoded, so pointing it at another one later is configurati
 
 **Repairing disagreements.** The audit reports them and a human decides, which is ADR 0011's
 instinct and still right. Nothing here automates a judgement call.
+
+## Amendment, 2026-09-24 — a backing pass may add one genre to an entry that exists
+
+*What a backing pass may touch* said: only files with no entry at all. That still holds for
+**keys**. It no longer holds for **genre** ([ADR 0030](0030-genre-is-a-tag-group-of-our-own-settled-by-the-user.md)).
+
+The user decided on 2026-09-24 that genre is library-wide, not staging-only (#2). That means a
+file already in `Mashup Samples`, with a hand-tagged or backed entry, has to gain a `Genre|`
+keyword. The rule now reads:
+
+- **An entry with no key** is still given one, exactly as before.
+- **An entry that carries a key** may gain the song's **settled** genre. Everything else in its bag
+  is carried across, since the writer replaces the whole bag. If the entry already holds a
+  different `Genre|` keyword, that one is replaced, because the *Genre* group is crateside's own.
+- **A genre the user took off** (a hidden keyword in the store) is never put back, like a key.
+- **A keyless entry gets no genre.** In staging, the tagging stage's next write would replace
+  its bag and drop the genre again.
+- The pass now also runs over **`Sample Staging`**, for the genre only. Staging's keys stay the
+  tagging stage's to write, so the *Deliberately not done* entry above still stands for keys.
+
+It is still one `Apply` per root, for the same reason as before.

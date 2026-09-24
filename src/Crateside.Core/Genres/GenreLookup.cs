@@ -1,0 +1,165 @@
+using System.Text.Json;
+
+namespace Crateside.Core.Genres;
+
+/// <summary>
+/// Asks free sources what genre a song is: MusicBrainz's community tags, which know drum and bass
+/// from dance, then iTunes's one storefront genre (#4). Needs no key.
+/// </summary>
+public sealed class GenreLookup(HttpClient client)
+{
+    public const string UserAgent = "crateside/1.0 ( https://github.com/Bamo16/crateside )";
+
+    /// <summary>MusicBrainz allows one request a second from a client like this.</summary>
+    private static readonly TimeSpan MusicBrainzPace = TimeSpan.FromSeconds(1.1);
+
+    /// <summary>
+    /// Everything the sources said, recording first and artist last, or null when a source could
+    /// not be reached — which is worth asking again, where an empty answer is not.
+    /// </summary>
+    public async Task<IReadOnlyList<string>?> HearAsync(
+        string artist,
+        string title,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var (recording, byArtist) = await MusicBrainzAsync(artist, title, cancellationToken);
+            var storefront = await ITunesAsync(artist, title, cancellationToken);
+
+            return
+            [
+                .. recording
+                    .Concat(storefront is null ? [] : [storefront])
+                    .Concat(byArtist)
+                    .Distinct(StringComparer.OrdinalIgnoreCase),
+            ];
+        }
+        catch (Exception e)
+            when (e is HttpRequestException or TaskCanceledException or JsonException
+                && !cancellationToken.IsCancellationRequested
+            )
+        {
+            return null;
+        }
+    }
+
+    private async Task<(
+        IReadOnlyList<string> Recording,
+        IReadOnlyList<string> Artist
+    )> MusicBrainzAsync(string artist, string title, CancellationToken cancellationToken)
+    {
+        var query = Uri.EscapeDataString(
+            $"recording:\"{Quoted(title)}\" AND artist:\"{Quoted(artist)}\""
+        );
+
+        using var search = await GetAsync(
+            $"https://musicbrainz.org/ws/2/recording?query={query}&limit=1&fmt=json",
+            cancellationToken
+        );
+
+        if (
+            !search.RootElement.TryGetProperty("recordings", out var recordings)
+            || recordings.GetArrayLength() is 0
+        )
+            return ([], []);
+
+        var hit = recordings[0];
+
+        await Task.Delay(MusicBrainzPace, cancellationToken);
+
+        using var recording = await GetAsync(
+            $"https://musicbrainz.org/ws/2/recording/{hit.GetProperty("id").GetString()}?inc=genres+artist-credits&fmt=json",
+            cancellationToken
+        );
+
+        IReadOnlyList<string> byArtist = [];
+
+        if (
+            recording.RootElement.TryGetProperty("artist-credit", out var credits)
+            && credits.GetArrayLength() > 0
+        )
+        {
+            await Task.Delay(MusicBrainzPace, cancellationToken);
+
+            using var credited = await GetAsync(
+                $"https://musicbrainz.org/ws/2/artist/{credits[0].GetProperty("artist").GetProperty("id").GetString()}?inc=genres&fmt=json",
+                cancellationToken
+            );
+
+            byArtist = Genres(credited.RootElement, take: 5);
+        }
+
+        await Task.Delay(MusicBrainzPace, cancellationToken);
+
+        return (Genres(recording.RootElement, take: 5), byArtist);
+    }
+
+    /// <summary>The storefront's genre, when its first hit is by the same artist; else null.</summary>
+    private async Task<string?> ITunesAsync(
+        string artist,
+        string title,
+        CancellationToken cancellationToken
+    )
+    {
+        using var found = await GetAsync(
+            $"https://itunes.apple.com/search?term={Uri.EscapeDataString($"{artist} {title}")}&entity=song&limit=1",
+            cancellationToken
+        );
+
+        return
+            found.RootElement.TryGetProperty("results", out var results)
+            && results.GetArrayLength() > 0
+            && results[0] is var hit
+            && hit.TryGetProperty("artistName", out var name)
+            && SameArtist(artist, name.GetString())
+            && hit.TryGetProperty("primaryGenreName", out var genre)
+            ? genre.GetString()
+            : null;
+    }
+
+    private async Task<JsonDocument> GetAsync(string url, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+        request.Headers.UserAgent.ParseAdd(UserAgent);
+
+        using var response = await client.SendAsync(request, cancellationToken);
+
+        response.EnsureSuccessStatusCode();
+
+        return await JsonDocument.ParseAsync(
+            await response.Content.ReadAsStreamAsync(cancellationToken),
+            cancellationToken: cancellationToken
+        );
+    }
+
+    /// <summary>A source's genres, most-voted first.</summary>
+    private static IReadOnlyList<string> Genres(JsonElement entity, int take) =>
+        entity.TryGetProperty("genres", out var genres)
+            ?
+            [
+                .. genres
+                    .EnumerateArray()
+                    .OrderByDescending(g =>
+                        g.TryGetProperty("count", out var count) ? count.GetInt32() : 0
+                    )
+                    .Select(g => g.GetProperty("name").GetString())
+                    .OfType<string>()
+                    .Take(take),
+            ]
+            : [];
+
+    /// <summary>A hit counts only when it shares a word with the artist asked for, so a cover lends nothing.</summary>
+    private static bool SameArtist(string asked, string? found) =>
+        found is not null && Words(asked).Overlaps(Words(found));
+
+    private static HashSet<string> Words(string text) =>
+        text.ToLowerInvariant()
+            .Split([' ', ',', '&', '-', '.', '(', ')'], StringSplitOptions.RemoveEmptyEntries)
+            .Where(word => word.Length > 1 && word is not ("the" or "feat" or "ft" or "and"))
+            .ToHashSet(StringComparer.Ordinal);
+
+    private static string Quoted(string text) => text.Replace("\"", string.Empty);
+}

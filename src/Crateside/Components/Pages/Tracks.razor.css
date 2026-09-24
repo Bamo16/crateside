@@ -624,6 +624,57 @@
    Side by side rather than stacked. They are two rarely-used controls, a swap especially, and
    stacked they took a large share of the panel for what is usually just two lines of status
    (#19). */
+/* One line of small buttons, because a genre is picked once and then only glanced at. */
+.genre-strip {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.genre-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-50);
+    margin-right: 6px;
+}
+
+.genre {
+    font: inherit;
+    font-size: 12px;
+    color: var(--text-75);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    padding: 3px 10px;
+    cursor: pointer;
+}
+
+.genre:hover:not(:disabled) {
+    border-color: var(--text-40);
+}
+
+.genre.suggested {
+    color: var(--amber);
+    border: 1px dashed var(--amber);
+}
+
+.genre.settled {
+    color: var(--ink);
+    background: var(--text);
+    border-color: var(--text);
+}
+
+.genre-heard {
+    margin-left: 8px;
+    font-size: 12px;
+    color: var(--text-50);
+}
+
 .edits {
     grid-column: 1 / -1;
     display: grid;

@@ -1,3 +1,4 @@
+using Crateside.Core.Genres;
 using Crateside.Core.Pairing;
 using Crateside.Core.Staging;
 using Microsoft.Extensions.Options;
@@ -26,6 +27,7 @@ public sealed class LibraryKeyReader(
         var tags = index.Read(root);
         var backed = folderInfo.Read(root);
         var counts = new Dictionary<MusicKey, int>();
+        var genres = new Dictionary<string, int>(StringComparer.Ordinal);
         var unkeyed = new List<string>();
         var files = 0;
         var perishable = 0;
@@ -37,6 +39,9 @@ public sealed class LibraryKeyReader(
         )
         {
             files++;
+
+            if (tags.TryGet(file, out var tagged) && tagged.Genre is { } genre)
+                genres[genre] = genres.GetValueOrDefault(genre) + 1;
 
             if (tags.TryGet(file, out var applied) && MusicKey.FromString(applied.Key) is { } key)
             {
@@ -57,6 +62,10 @@ public sealed class LibraryKeyReader(
                 .. MusicKey.AllKeys.Select(k => new KeyCount(k, counts.GetValueOrDefault(k))),
             ],
             FileCount = files,
+            Genres =
+            [
+                .. GenreVocabulary.All.Select(g => new GenreCount(g, genres.GetValueOrDefault(g))),
+            ],
             Unkeyed = [.. unkeyed.Order(StringComparer.OrdinalIgnoreCase)],
             PerishableCount = perishable,
         };
@@ -72,6 +81,12 @@ public sealed record KeyDistribution
     public required IReadOnlyList<KeyCount> Counts { get; init; }
 
     public required int FileCount { get; init; }
+
+    /// <summary>Every genre on the list, a zero included, from the same scan (ADR 0030).</summary>
+    public IReadOnlyList<GenreCount> Genres { get; init; } = [];
+
+    /// <summary>Files with no genre yet — not looked at, which is not the same as having none.</summary>
+    public int UngenredCount => FileCount - Genres.Sum(g => g.Files);
 
     /// <summary>
     /// Files carrying no key anywhere Ableton can see, named rather than merely counted:
@@ -101,3 +116,5 @@ public sealed record KeyDistribution
 }
 
 public sealed record KeyCount(MusicKey Key, int Files);
+
+public sealed record GenreCount(string Genre, int Files);

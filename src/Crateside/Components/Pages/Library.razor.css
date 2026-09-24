@@ -130,6 +130,39 @@
     background: var(--line-strong);
 }
 
+.genres {
+    margin-top: 2.5rem;
+}
+
+.genres h2 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.genres .distribution {
+    margin-top: 0.75rem;
+}
+
+.genres h3 {
+    margin: 1.75rem 0 0;
+    font-size: 0.9rem;
+}
+
+.gaps {
+    max-width: var(--table-library);
+    margin: 0.75rem 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-dim);
+}
+
+.gaps li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.2rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
 .unkeyed {
     margin-top: 2.5rem;
 }

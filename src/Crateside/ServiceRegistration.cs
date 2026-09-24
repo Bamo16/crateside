@@ -1,4 +1,5 @@
 using Crateside.Core;
+using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
 using Crateside.Core.Naming;
@@ -320,6 +321,12 @@ public static class ServiceRegistration
             })
             .SetHandlerLifetime(TimeSpan.FromMinutes(5));
 
+        services.AddSingleton(_ => new GenreStore());
+        services
+            .AddHttpClient<GenreLookup>(client => client.Timeout = TimeSpan.FromSeconds(15))
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5));
+        services.AddHostedService<GenreWorker>();
+
         services.AddSingleton(sp => new TracksService(
             async cancellationToken =>
             {
@@ -338,7 +345,8 @@ public static class ServiceRegistration
                     await sp.GetRequiredService<PresetCatalogReader>().ReadAsync(cancellationToken),
                     sp.GetRequiredService<AbletonIndexReader>()
                         .Read(sp.GetRequiredService<CratesidePaths>().MashupSamples),
-                    sp.GetRequiredService<DeletionLog>().All()
+                    sp.GetRequiredService<DeletionLog>().All(),
+                    sp.GetRequiredService<GenreStore>().Read()
                 );
 
                 return view with

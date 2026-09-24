@@ -1,16 +1,19 @@
 using Crateside.Core;
+using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
+using Crateside.Core.Staging;
 using Microsoft.Extensions.Options;
 
 namespace Crateside;
 
 /// <summary>
-/// Keeps the library's keys backed by a tag-store entry, so a hand-applied tag in Ableton does
-/// not reconcile them away (ADR 0023). Never paused: it contends for nothing.
+/// Keeps the library's keys backed against hand-applied tags (ADR 0023) and every keyed file's
+/// genre written (ADR 0030). Never paused: it contends for nothing.
 /// </summary>
 public sealed class BackingWorker(
     BackingRunner runner,
+    GenreStore genres,
     IOptions<CratesidePaths> paths,
     ILogger<BackingWorker> logger
 ) : BackgroundService
@@ -51,8 +54,23 @@ public sealed class BackingWorker(
 
     private TimeSpan Tick()
     {
-        var outcome = runner.Run(_paths.MashupSamples, KeyLedger.Read(_paths.Ledger));
+        var ledger = KeyLedger.Read(_paths.Ledger);
+        var settled = genres.Read();
 
+        string? GenreOf(string videoId) =>
+            settled.GetValueOrDefault(ledger.SongFor(videoId) ?? videoId)?.Written;
+
+        var library = Report(runner.Run(_paths.MashupSamples, ledger, GenreOf), "the library");
+        var staging = Report(
+            runner.Run(_paths.SampleStaging, ledger, GenreOf, backKeys: false),
+            "Sample Staging"
+        );
+
+        return library < staging ? library : staging;
+    }
+
+    private TimeSpan Report(TagWriteOutcome outcome, string root)
+    {
         switch (outcome)
         {
             case { IsSuccess: true, Applied: 0 }:
@@ -60,19 +78,20 @@ public sealed class BackingWorker(
 
             case { IsSuccess: true } written:
                 logger.LogInformation(
-                    "Backed {Applied} of the library's keys against the tag store",
-                    written.Applied
+                    "Backed {Applied} entries in {Root} against the tag store",
+                    written.Applied,
+                    root
                 );
 
                 return IdleDelay;
 
             case { IsStale: true }:
-                logger.LogInformation("The tag store moved while backing the library; retrying");
+                logger.LogInformation("The tag store moved while backing {Root}; retrying", root);
 
                 return AfterStale;
 
             default:
-                logger.LogWarning("Could not back the library: {Error}", outcome.Error);
+                logger.LogWarning("Could not back {Root}: {Error}", root, outcome.Error);
 
                 return AfterFailure;
         }

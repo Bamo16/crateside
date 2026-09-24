@@ -1,0 +1,134 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace Crateside.Core.Genres;
+
+/// <summary>
+/// Each song's genre as the user settled it and as the sources suggested it, kept in
+/// <c>%APPDATA%\crateside\genres.json</c> by song identity, as the ledger keeps its key (ADR 0030).
+/// </summary>
+public sealed class GenreStore
+{
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
+    private readonly string _path;
+    private readonly Lock _gate = new();
+
+    private Dictionary<string, GenreRecord>? _cached;
+
+    public GenreStore(string? path = null) =>
+        _path =
+            path
+            ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "genres.json");
+
+    /// <summary>Every record, by song identity. Never throws: an unreadable file reads as empty.</summary>
+    public IReadOnlyDictionary<string, GenreRecord> Read()
+    {
+        lock (_gate)
+            return new Dictionary<string, GenreRecord>(
+                _cached ??= TryReadFile(),
+                StringComparer.OrdinalIgnoreCase
+            );
+    }
+
+    /// <summary>Records what the sources said, leaving anything the user settled alone.</summary>
+    public void Suggest(string song, IReadOnlyList<string> heard, DateTimeOffset at) =>
+        Update(
+            song,
+            record =>
+                record with
+                {
+                    Heard = heard,
+                    Suggested = heard
+                        .Select(GenreVocabulary.FromHeard)
+                        .OfType<string>()
+                        .FirstOrDefault(),
+                    LookedUpAt = at,
+                }
+        );
+
+    /// <summary>The user's answer: a genre from the list, or null for none of them.</summary>
+    public void Settle(string song, string? genre)
+    {
+        if (genre is not null && !GenreVocabulary.IsGenre(genre))
+            throw new ArgumentException($"'{genre}' is not on the genre list.", nameof(genre));
+
+        Update(song, record => record with { Genre = genre, IsSettled = true });
+    }
+
+    private void Update(string song, Func<GenreRecord, GenreRecord> change)
+    {
+        lock (_gate)
+        {
+            var records = _cached ??= TryReadFile();
+
+            records[song] = change(
+                records.GetValueOrDefault(song) ?? new GenreRecord { Song = song }
+            );
+
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+                File.WriteAllText(
+                    _path,
+                    JsonSerializer.Serialize(records.Values.OrderBy(r => r.Song), SerializerOptions)
+                );
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        }
+    }
+
+    private Dictionary<string, GenreRecord> TryReadFile()
+    {
+        try
+        {
+            return File.Exists(_path)
+                ? (
+                    JsonSerializer.Deserialize<List<GenreRecord>>(
+                        File.ReadAllText(_path),
+                        SerializerOptions
+                    ) ?? []
+                ).ToDictionary(r => r.Song, StringComparer.OrdinalIgnoreCase)
+                : new(StringComparer.OrdinalIgnoreCase);
+        }
+        catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
+        {
+            return new(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+}
+
+/// <summary>One song's genre, settled or suggested.</summary>
+public sealed record GenreRecord
+{
+    /// <summary>The ledger's song identity, or the upload's video ID for a song it never judged.</summary>
+    [JsonPropertyName("song")]
+    public required string Song { get; init; }
+
+    /// <summary>What the user settled on, or null — which, once settled, means none of the list.</summary>
+    [JsonPropertyName("genre")]
+    public string? Genre { get; init; }
+
+    [JsonPropertyName("isSettled")]
+    public bool IsSettled { get; init; }
+
+    /// <summary>The first thing the sources said that maps onto the list, or null.</summary>
+    [JsonPropertyName("suggested")]
+    public string? Suggested { get; init; }
+
+    /// <summary>Everything the sources said, verbatim, whether it maps onto the list or not.</summary>
+    [JsonPropertyName("heard")]
+    public IReadOnlyList<string> Heard { get; init; } = [];
+
+    /// <summary>When the sources were last asked, or null when they never have been.</summary>
+    [JsonPropertyName("lookedUpAt")]
+    public DateTimeOffset? LookedUpAt { get; init; }
+
+    /// <summary>The genre to write: only ever a settled one.</summary>
+    [JsonIgnore]
+    public string? Written => IsSettled ? Genre : null;
+}

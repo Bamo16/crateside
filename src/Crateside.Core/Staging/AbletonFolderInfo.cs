@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Crateside.Core.Genres;
 
 namespace Crateside.Core.Staging;
 
@@ -71,6 +72,9 @@ public sealed record AbletonFileTags
     /// <summary>The <c>Type|</c> keyword — Instrumental, Vocal, Loop.</summary>
     public string? Type { get; init; }
 
+    /// <summary>The <c>Genre|</c> keyword crateside writes, or null (ADR 0030).</summary>
+    public string? Genre { get; init; }
+
     /// <summary>
     /// True when the file has a tonic but no mode, or a mode but no tonic. <see cref="Key"/>
     /// stays null in that case.
@@ -102,6 +106,7 @@ public sealed record AbletonFileTags
             HiddenKeywords = hidden ?? [],
             Key = key,
             Type = Values(keywords, TypeCategory).FirstOrDefault(),
+            Genre = Values(keywords, GenreVocabulary.Group).FirstOrDefault(),
             HasPartialKey = isPartial,
         };
     }
