@@ -127,4 +127,5 @@ calls below were taken as defaults and are for their review:
   the next backing pass keys it.
 
 Fixing a misspelt name at the same time, which #44 suggested for the High Contrast file, is not
-done. Renaming a track's files is already its own gesture.
+done. crateside's rename reaches only `Sample Staging`, so a file already in `Mashup Samples`
+is renamed by hand, in Ableton's browser, which carries its tags.
