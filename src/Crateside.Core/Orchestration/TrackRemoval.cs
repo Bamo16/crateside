@@ -12,9 +12,12 @@ public sealed class TrackRemoval(
     QueueSettingsStore settings,
     IntakeStore intake,
     WorkingSet workingSet,
-    ReadStagedFiles staged
+    ReadStagedFiles staged,
+    DeletionLog? deletions = null
 )
 {
+    private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
+
     /// <summary>The staged files removing this track would recycle.</summary>
     /// <remarks>Not an adopted sample: the user made that, and nothing can make it again.</remarks>
     public IReadOnlyList<StagingStem> Recycling(IReadOnlyList<string> uploads) =>
@@ -42,7 +45,7 @@ public sealed class TrackRemoval(
         {
             try
             {
-                RecycleBin.Remove(stem.Path);
+                _deletions.Recycle(stem.Path, "removed with the track");
                 RecycleBin.Remove(StemFileName.AnalysisFor(stem.Path));
 
                 recycled++;

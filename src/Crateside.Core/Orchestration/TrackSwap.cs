@@ -13,9 +13,12 @@ public sealed class TrackSwap(
     WorkingSet workingSet,
     ReadStagedFiles staged,
     CratesidePaths paths,
-    string uv = "uv"
+    string uv = "uv",
+    DeletionLog? deletions = null
 )
 {
+    private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
+
     /// <summary>What swapping this track's source would do, or why it cannot be done.</summary>
     public SwapPlan PlanFor(string videoId, string? url) =>
         PlanFor(videoId, url, KeyLedger.Read(paths.Ledger));
@@ -71,7 +74,7 @@ public sealed class TrackSwap(
         {
             try
             {
-                RecycleBin.Remove(stem.Path);
+                _deletions.Recycle(stem.Path, "superseded by a source swap");
                 RecycleBin.Remove(StemFileName.AnalysisFor(stem.Path));
 
                 removed++;

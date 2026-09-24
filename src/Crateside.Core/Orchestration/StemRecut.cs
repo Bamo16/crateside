@@ -19,7 +19,8 @@ public sealed class StemRecut(
     QueueSettingsStore settings,
     JobStore jobs,
     WorkingSet workingSet,
-    ReadStagedFiles staged
+    ReadStagedFiles staged,
+    DeletionLog? deletions = null
 )
 {
     /// <summary>
@@ -35,6 +36,8 @@ public sealed class StemRecut(
         JobStage.Handoff,
         JobStage.Tagging,
     ];
+
+    private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
 
     /// <summary>What changing this track's plan would do, or why it cannot be done.</summary>
     /// <param name="known">
@@ -97,7 +100,7 @@ public sealed class StemRecut(
         {
             try
             {
-                RecycleBin.Remove(stem.File.Path);
+                _deletions.Recycle(stem.File.Path, "dropped from the plan by a re-cut");
                 RecycleBin.Remove(StemFileName.AnalysisFor(stem.File.Path));
 
                 removed++;

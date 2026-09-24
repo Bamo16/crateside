@@ -750,6 +750,24 @@
                         {
                             <p class="detail" title="@row.Retrying?.Error">@retrying</p>
                         }
+                        @if (row.Deletions.Count > 0)
+                        {
+                            <div class="recycled">
+                                <span class="recycled-head">Sent to the Recycle Bin by crateside</span>
+                                @foreach (var deletion in row.Deletions.Take(RecycledShown))
+                                {
+                                    <span class="recycled-line">
+                                        <span class="mono">@deletion.At.ToLocalTime().ToString("d MMM")</span>
+                                        @deletion.FileName
+                                        <span class="recycled-why">@deletion.Reason</span>
+                                    </span>
+                                }
+                                @if (row.Deletions.Count > RecycledShown)
+                                {
+                                    <span class="recycled-why">and @("earlier file".ToQuantity(row.Deletions.Count - RecycledShown))</span>
+                                }
+                            </div>
+                        }
 
                         <div class="actions">
                             @if (row.Folder is not null)
@@ -853,6 +871,8 @@
     private TracksView? _view;
     private TrackFilter _filter = TrackFilter.Unfinished;
     private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
+
+    private const int RecycledShown = 5;
 
     private static readonly TimeSpan ToastLife = TimeSpan.FromSeconds(20);
 

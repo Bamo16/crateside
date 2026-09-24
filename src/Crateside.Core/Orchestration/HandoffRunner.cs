@@ -6,8 +6,10 @@ namespace Crateside.Core.Orchestration;
 /// Hands one track's finished stems to the human half, by moving them into
 /// <c>Sample Staging</c>.
 /// </summary>
-public sealed class HandoffRunner(CratesidePaths paths)
+public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions = null)
 {
+    private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
+
     /// <param name="superseded">
     /// Staged files of an upload this track has been swapped away from, cleared to make room.
     /// </param>
@@ -53,7 +55,7 @@ public sealed class HandoffRunner(CratesidePaths paths)
     /// A file that will not go is left alone rather than failing the handoff: the clash check
     /// below is what decides whether that mattered, and it says so in the words the user needs.
     /// </remarks>
-    private static int Clear(IReadOnlyList<string> superseded)
+    private int Clear(IReadOnlyList<string> superseded)
     {
         var cleared = 0;
 
@@ -66,7 +68,7 @@ public sealed class HandoffRunner(CratesidePaths paths)
                 if (!File.Exists(path))
                     continue;
 
-                RecycleBin.Remove(path);
+                _deletions.Recycle(path, "superseded by the new upload");
                 cleared++;
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }

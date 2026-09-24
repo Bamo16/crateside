@@ -49,7 +49,7 @@ public sealed record StemPlan
     /// Whether this plan asks for nothing at all, which no track should be left in.
     /// </summary>
     [JsonIgnore]
-    public bool IsEmpty => Presets.Count is 0 && !KeepSource && AdoptedSamples.Count is 0;
+    public bool IsEmpty => this is { Presets.Count: 0, KeepSource: false, AdoptedSamples.Count: 0 };
 
     /// <summary>The same plan with one preset ticked or unticked.</summary>
     public StemPlan Toggling(string presetId) =>

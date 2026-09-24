@@ -157,6 +157,60 @@ public class TracksViewCompositionTests : IDisposable
             .Rows;
 
     [Fact]
+    public void A_superseded_uploads_recycled_files_show_on_the_song_that_replaced_it()
+    {
+        const string Old = "ooooooooooo";
+
+        // Two runs of one song, so the old upload resolves to this row's song after its files
+        // are gone and nothing else joins it.
+        var path = Path.Combine(_root, "runs.jsonl");
+        File.WriteAllLines(
+            path,
+            [
+                .. new[] { Old, Video }.Select(upload =>
+                    System.Text.Json.JsonSerializer.Serialize(
+                        new
+                        {
+                            timestamp = "2026-08-01T00:00:00+00:00",
+                            song = "rob dougan - furious angels",
+                            source_url = $"https://www.youtube.com/watch?v={upload}",
+                        }
+                    )
+                ),
+            ]
+        );
+
+        var row = Assert.Single(
+            TracksView
+                .Compose(
+                    View(),
+                    KeyLedger.Read(path),
+                    [],
+                    new Dictionary<string, IReadOnlyList<StemOnDisk>>(),
+                    FinishedRoot,
+                    Jobs(),
+                    new Dictionary<string, TrackInstruction>(),
+                    deletions:
+                    [
+                        new Deletion
+                        {
+                            At = DateTimeOffset.Parse("2026-09-24T12:00:00+00:00"),
+                            VideoId = Old,
+                            FileName = "Rob Dougan - Furious Angels (Vocal - Full).flac",
+                            Reason = "superseded by a source swap",
+                        },
+                    ]
+                )
+                .Rows
+        );
+
+        Assert.Equal(
+            "Rob Dougan - Furious Angels (Vocal - Full).flac",
+            Assert.Single(row.Deletions).FileName
+        );
+    }
+
+    [Fact]
     public void Every_playlist_entry_becomes_exactly_one_row()
     {
         // One row per track, never per stem, and it never moves: state is a column rather than an

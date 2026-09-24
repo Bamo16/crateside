@@ -1166,6 +1166,27 @@ a.outline {
     color: var(--text-60);
 }
 
+.recycled {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 8px 0;
+    font-size: 12px;
+    color: var(--text-75);
+}
+
+.recycled-head {
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.recycled-why {
+    color: var(--text-50);
+}
+
 .add-note {
     margin: 10px 0;
     font-size: 12.5px;

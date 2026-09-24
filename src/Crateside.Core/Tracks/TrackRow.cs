@@ -108,6 +108,9 @@ public sealed record TrackRow
 
     public StageFailure? Retrying { get; init; }
 
+    /// <summary>Samples of this song crateside sent to the recycle bin, most recent first.</summary>
+    public IReadOnlyList<Deletion> Deletions { get; init; } = [];
+
     /// <summary>
     /// The row exists only because the library has files for it: crateside never queued it and it
     /// is not in staging.

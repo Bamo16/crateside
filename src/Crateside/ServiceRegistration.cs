@@ -178,7 +178,11 @@ public static class ServiceRegistration
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<CratesidePaths>()
         ));
-        services.AddSingleton(sp => new HandoffRunner(sp.GetRequiredService<CratesidePaths>()));
+        services.AddSingleton(_ => DeletionLog.Default());
+        services.AddSingleton(sp => new HandoffRunner(
+            sp.GetRequiredService<CratesidePaths>(),
+            sp.GetRequiredService<DeletionLog>()
+        ));
         services.AddSingleton<HandoffDrainer>();
 
         services.AddSingleton<AbletonFolderInfoWriter>();
@@ -232,7 +236,8 @@ public static class ServiceRegistration
             sp.GetRequiredService<QueueSettingsStore>(),
             sp.GetRequiredService<IntakeStore>(),
             sp.GetRequiredService<WorkingSet>(),
-            StagedFiles(sp)
+            StagedFiles(sp),
+            sp.GetRequiredService<DeletionLog>()
         ));
         services.AddSingleton(sp => new SourceAdd(
             sp.GetRequiredService<QueueSettingsStore>(),
@@ -244,7 +249,8 @@ public static class ServiceRegistration
             sp.GetRequiredService<QueueSettingsStore>(),
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<WorkingSet>(),
-            StagedFiles(sp)
+            StagedFiles(sp),
+            sp.GetRequiredService<DeletionLog>()
         ));
         services.AddSingleton(sp => new TrackRename(
             sp.GetRequiredService<QueueSettingsStore>(),
@@ -257,7 +263,8 @@ public static class ServiceRegistration
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<WorkingSet>(),
             StagedFiles(sp),
-            sp.GetRequiredService<CratesidePaths>()
+            sp.GetRequiredService<CratesidePaths>(),
+            deletions: sp.GetRequiredService<DeletionLog>()
         ));
 
         services.AddSingleton<WorkingSetJanitor>();
@@ -316,7 +323,8 @@ public static class ServiceRegistration
                     sp.GetRequiredService<WorkingSet>().Acquisitions(),
                     await sp.GetRequiredService<PresetCatalogReader>().ReadAsync(cancellationToken),
                     sp.GetRequiredService<AbletonIndexReader>()
-                        .Read(sp.GetRequiredService<CratesidePaths>().MashupSamples)
+                        .Read(sp.GetRequiredService<CratesidePaths>().MashupSamples),
+                    sp.GetRequiredService<DeletionLog>().All()
                 );
 
                 return view with

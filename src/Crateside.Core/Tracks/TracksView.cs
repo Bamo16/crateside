@@ -58,7 +58,8 @@ public sealed record TracksView
         IReadOnlyDictionary<string, ResolvedName>? resolvedNames = null,
         IReadOnlyDictionary<string, Acquisition>? acquisitions = null,
         PresetCatalog? presets = null,
-        AbletonFolderInfo? libraryTags = null
+        AbletonFolderInfo? libraryTags = null,
+        IReadOnlyList<Deletion>? deletions = null
     )
     {
         var resolved = resolvedNames ?? new Dictionary<string, ResolvedName>();
@@ -66,6 +67,19 @@ public sealed record TracksView
         var acquired = acquisitions ?? new Dictionary<string, Acquisition>();
 
         var parked = VideoIdsOf(view.AwaitingKey);
+
+        // By song, not upload: a swap's old upload stops being a member once its files are gone.
+        var deletedBySong = (deletions ?? [])
+            .Where(deletion => deletion.VideoId is not null)
+            .GroupBy(
+                deletion => ledger.SongFor(deletion.VideoId!) ?? deletion.VideoId!,
+                StringComparer.Ordinal
+            )
+            .ToDictionary(
+                song => song.Key,
+                song => (IReadOnlyList<Deletion>)[.. song.OrderByDescending(d => d.At)],
+                StringComparer.Ordinal
+            );
 
         var gpuLine = view
             .AwaitingSeparation.Select((item, index) => (item.VideoId, Position: index + 1))
@@ -225,6 +239,10 @@ public sealed record TracksView
                     .Min(),
                 RunningStage = progress.Running,
                 RunningSince = progress.RunningSince,
+                Deletions =
+                    deletedBySong.GetValueOrDefault(
+                        ledger.SongFor(members[0].VideoId) ?? members[0].VideoId
+                    ) ?? [],
                 GaveUpAt = progress.GaveUpAt,
                 GaveUpStrikes = progress.GaveUpStrikes,
                 Retrying = progress.Retrying,
