@@ -19,6 +19,7 @@
 @inject JobStore Jobs
 @inject StemRecut Recut
 @inject SourceAdd Sources
+@inject SampleAdoption Adoption
 @inject TrackRemoval Removal
 @inject TrackAdd Adding
 @inject PresetCatalogReader Presets
@@ -579,6 +580,54 @@
                                                 </div>
                                             </div>
                                         }
+                                        else if (_adopting == row.VideoId)
+                                        {
+                                            <div class="add-source">
+                                                <div class="add-fields">
+                                                    <label>
+                                                        <span>The file</span>
+                                                        <select value="@_adoptPath"
+                                                                @onchange="e => OnAdopt(row, e.Value?.ToString())">
+                                                            <option value="">Choose a file nothing has placed…</option>
+                                                            @foreach (var candidate in _adoptCandidates)
+                                                            {
+                                                                <option value="@candidate">@Path.GetFileName(candidate)</option>
+                                                            }
+                                                        </select>
+                                                    </label>
+                                                    <label>
+                                                        <span>What the track calls it</span>
+                                                        <input value="@(_adoptPlan?.Label ?? string.Empty)" readonly
+                                                               placeholder="read from the brackets in its name" />
+                                                    </label>
+                                                </div>
+
+                                                <div class="add-type">
+                                                    <span class="add-type-label">Plays as</span>
+                                                    @foreach (var type in Enum.GetValues<SampleType>())
+                                                    {
+                                                        <button class="pill @(_adoptType == type ? "on plain" : "off")"
+                                                                @onclick="() => ChooseAdoptType(row, type)" disabled="@_working">
+                                                            @type
+                                                        </button>
+                                                    }
+                                                </div>
+
+                                                <p class="add-note @(_adoptPlan?.Refusal is null ? null : "bad")">
+                                                    @(_adoptPlan?.Refusal ?? AdoptNote)
+                                                </p>
+
+                                                <div class="actions">
+                                                    <button class="primary" disabled="@(_working || _adoptPlan?.IsPossible is not true)"
+                                                            @onclick="() => ConfirmAdopt(row)">
+                                                        Adopt it
+                                                    </button>
+                                                    <button class="outline" @onclick="CancelAdopting" disabled="@_working">
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
                                         else
                                         {
                                             <button class="opener" @onclick="() => StartAdding(row)" disabled="@_working">
@@ -586,6 +635,13 @@
                                                 <span>Add a source</span>
                                                 <span class="opener-hint">
                                                     another file of this song · kept whole, never separated
+                                                </span>
+                                            </button>
+                                            <button class="opener" @onclick="() => StartAdopting(row)" disabled="@_working">
+                                                <span class="mono">+</span>
+                                                <span>Adopt a file</span>
+                                                <span class="opener-hint">
+                                                    one you made by hand · taken in where it is
                                                 </span>
                                             </button>
                                         }
@@ -874,6 +930,10 @@
 
     private const int RecycledShown = 5;
 
+    private const string AdoptNote =
+        "crateside writes this file's provenance once, where it is, and the track keeps it. "
+        + "Nothing can make it again, so dropping it from the plan later deletes it.";
+
     private static readonly TimeSpan ToastLife = TimeSpan.FromSeconds(20);
 
     /// <summary>
@@ -1056,6 +1116,14 @@
     private AddPlan? _addPlan;
 
     private SampleType? _addType;
+
+    /// <summary>The row whose adopt-a-file form is open, or null when none is.</summary>
+    private string? _adopting;
+
+    private IReadOnlyList<string> _adoptCandidates = [];
+    private string? _adoptPath;
+    private SampleType? _adoptType;
+    private AdoptPlan? _adoptPlan;
 
     /// <summary>The user picked the type, so the title no longer gets a say.</summary>
     private bool _addTypeChosen;
@@ -1464,6 +1532,7 @@
     private void StartAdding(TrackRow row)
     {
         CancelAdding();
+        CancelAdopting();
 
         _problem = null;
         _adding = row.VideoId;
@@ -1489,6 +1558,57 @@
         _titleOf = null;
         _addTitle = null;
         _readingTitle = false;
+    }
+
+    private void StartAdopting(TrackRow row)
+    {
+        CancelAdding();
+        CancelAdopting();
+
+        _problem = null;
+        _adopting = row.VideoId;
+        _adoptCandidates = Adoption.Candidates();
+    }
+
+    private void CancelAdopting()
+    {
+        _adopting = null;
+        _adoptCandidates = [];
+        _adoptPath = null;
+        _adoptType = null;
+        _adoptPlan = null;
+    }
+
+    private void OnAdopt(TrackRow row, string? path)
+    {
+        _adoptPath = path is { Length: > 0 } ? path : null;
+        _adoptType = SampleTypes.InferredFrom(StemFileName.PresetOf(_adoptPath ?? string.Empty));
+        _adoptPlan = Adoption.PlanFor(row.Facts, _adoptPath, _adoptType);
+    }
+
+    private void ChooseAdoptType(TrackRow row, SampleType type)
+    {
+        _adoptType = type;
+        _adoptPlan = Adoption.PlanFor(row.Facts, _adoptPath, _adoptType);
+    }
+
+    private async Task ConfirmAdopt(TrackRow row)
+    {
+        _working = true;
+
+        try
+        {
+            _problem = Adoption.Apply(row.Facts, _adoptPath, _adoptType);
+
+            if (_problem is null)
+                CancelAdopting();
+
+            await Source.RefreshAsync(_circuit.Token);
+        }
+        finally
+        {
+            _working = false;
+        }
     }
 
     /// <summary>Re-reads what adding would do on every keystroke, so the refusal arrives early.</summary>

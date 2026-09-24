@@ -239,6 +239,10 @@ public static class ServiceRegistration
             StagedFiles(sp),
             sp.GetRequiredService<DeletionLog>()
         ));
+        services.AddSingleton(sp => new SampleAdoption(
+            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<CratesidePaths>()
+        ));
         services.AddSingleton(sp => new SourceAdd(
             sp.GetRequiredService<QueueSettingsStore>(),
             sp.GetRequiredService<CratesidePaths>(),

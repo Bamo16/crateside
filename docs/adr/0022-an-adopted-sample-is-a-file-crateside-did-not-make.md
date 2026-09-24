@@ -107,3 +107,24 @@ it is only a convenience, but two rules for "what happens when crateside deletes
 worse thing to hold in your head than one. The shell call is silent by construction: a dialog in a
 drain loop would block the thread rather than reach anyone, which is why
 `Microsoft.VisualBasic`'s helper is not used.
+
+## The form — 2026-09-24
+
+Built for [#44](https://github.com/Bamo16/crateside/issues/44), while the user was away. The
+calls below were taken as defaults and are for their review:
+
+- **Adopted where it is.** The file is written in whichever root it is in. A finished file in
+  `Mashup Samples` is not routed back through staging, which would move a warped file for nothing.
+- **The user names the track** by opening the form on its row. Nothing is inferred from the
+  filename.
+- **The file is picked from those carrying no provenance at all**, in either root. There were 3 on
+  2026-09-24.
+- **The label is the bracketed suffix of the filename** and cannot be edited on the form. A file
+  with no suffix is refused until it is renamed.
+- **The type is chosen as for an added source** ([ADR 0028](0028-a-file-that-was-never-cut-carries-its-type-in-its-comment.md)),
+  pre-selected from the label.
+- **Backing is not triggered.** Once the file carries provenance and its track has a verdict,
+  the next backing pass keys it.
+
+Fixing a misspelt name at the same time, which #44 suggested for the High Contrast file, is not
+done. Renaming a track's files is already its own gesture.

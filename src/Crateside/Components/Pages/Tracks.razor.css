@@ -1127,7 +1127,8 @@ a.outline {
     color: var(--text-40);
 }
 
-.add-fields input {
+.add-fields input,
+.add-fields select {
     font: inherit;
     font-size: 13px;
     color: var(--text);
@@ -1138,7 +1139,8 @@ a.outline {
     outline: none;
 }
 
-.add-fields input:focus {
+.add-fields input:focus,
+.add-fields select:focus {
     border-color: rgba(255, 255, 255, 0.4);
 }
 
