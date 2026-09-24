@@ -84,6 +84,10 @@ against it.
   file's **tag store** entry beside the keywords it still has. It records the removal itself, not
   what was there before: a tag added and taken off a minute later is hidden too. crateside never
   writes one back.
+- **Type** — the part a **sample** plays in a mashup: **Vocal** or **Instrumental**, and
+  nothing else. It names a use, not the audio: a kept full mix is Instrumental. Carried in
+  Ableton's own *Type* tag group, whose built-in tags (Loop, One Shot and the rest) mean
+  nothing here.
 - **Written root** — a root whose **tag store** holds its whole tag state, which is
   **Sample Staging** and only ever that: every key there is one crateside wrote into the
   store itself. Read from the store, because that is the only place crateside can see its
