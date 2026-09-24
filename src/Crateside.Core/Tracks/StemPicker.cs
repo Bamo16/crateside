@@ -4,12 +4,9 @@ using Humanizer;
 namespace Crateside.Core.Tracks;
 
 /// <summary>
-/// Every file a track could have, and whether the user wants it.
+/// Every file a track could have, and whether the user wants it; on disk crossed with wanted gives
+/// <see cref="StemState"/>.
 /// </summary>
-/// <remarks>
-/// The stem list <em>is</em> the picker: a line is either on disk or not, and the tick says
-/// whether it is wanted. The two cross to give <see cref="StemState"/>.
-/// </remarks>
 public sealed record StemPicker
 {
     public required IReadOnlyList<StemBand> Bands { get; init; }
@@ -18,12 +15,9 @@ public sealed record StemPicker
     public required StemPlan Wanted { get; init; }
 
     /// <summary>
-    /// A cut is running or queued, so a tick records the want at once and unticking waits.
+    /// A cut is running or queued, so a tick records the want at once and unticking waits
+    /// (ADR 0027).
     /// </summary>
-    /// <remarks>
-    /// Nothing says which wanted lines the running cut is making: its recipe was read at pickup,
-    /// and one ticked since is made only by a re-cut once it lands (ADR 0027).
-    /// </remarks>
     public bool IsCutInFlight { get; init; }
 
     public IEnumerable<StemChoice> Lines => Bands.SelectMany(band => band.Lines);
@@ -177,19 +171,12 @@ public sealed record StemPicker
     }
 
     /// <summary>
-    /// Presets the picker leaves out, because nothing in this workflow wants them.
+    /// Presets the picker leaves out. Never drop them from the catalog, or a stem already cut
+    /// with one reads as unrecognised.
     /// </summary>
-    /// <remarks>
-    /// Left in the catalog rather than filtered out of it: the catalog is what says a file on disk
-    /// <em>is</em> a preset, so removing them would make an already-cut stem read as unrecognised.
-    /// </remarks>
     private static readonly string[] Unoffered = ["vocal_rvc", "instrumental_low_resource"];
 
     /// <summary>Stands in for the guide's file, which the row counts but does not list.</summary>
-    /// <remarks>
-    /// <see cref="TrackRow.Samples"/> excludes warp guides, so the only thing the row can say
-    /// about one is that it is there.
-    /// </remarks>
     private static readonly TrackSample Guide = new()
     {
         Label = "Drums",
@@ -234,12 +221,9 @@ public sealed record StemChoice
     public bool IsSample => Kind is StemKind.Preset or StemKind.Source;
 
     /// <summary>
-    /// Whether ticking it is the user's to do.
+    /// Whether ticking it is out of the user's hands: a guide, or a file already in
+    /// <c>Mashup Samples</c> (ADR 0019).
     /// </summary>
-    /// <remarks>
-    /// The guide is never chosen, a dropped preset never asked for again, and a file in
-    /// <c>Mashup Samples</c> never unticked (ADR 0019). Adding stays open either way.
-    /// </remarks>
     public bool IsPinned => !IsSample || IsInLibrary;
 
     public bool IsInLibrary => Files.Any(file => file.IsInLibrary);

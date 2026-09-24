@@ -1,12 +1,9 @@
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
-/// How the download crateside is holding for one track turned out.
+/// How the download crateside is holding for one track turned out, kept beside the audio so it
+/// dies with it.
 /// </summary>
-/// <remarks>
-/// Kept beside the audio in the working set, so it dies with it: a swap or a hand-deleted working
-/// set re-acquires, and the answer is measured again rather than inherited.
-/// </remarks>
 public sealed record Acquisition
 {
     public PremiumStatus PremiumStatus { get; init; }
@@ -15,12 +12,8 @@ public sealed record Acquisition
     public bool IsPremium { get; init; }
 
     /// <summary>
-    /// The user has seen the shortfall and said to go on anyway.
+    /// The user has seen the shortfall of this download, not the track, and said to go on anyway.
     /// </summary>
-    /// <remarks>
-    /// Recorded here rather than with the standing instructions because it is about this
-    /// download and not about the track — replacing the audio has to ask again.
-    /// </remarks>
     public bool IsAccepted { get; init; }
 
     /// <summary>
@@ -28,11 +21,9 @@ public sealed record Acquisition
     /// </summary>
     public bool Stops => !IsAccepted && IsAboutTheSource;
 
-    /// <summary>What to tell the user, or null when there is nothing worth saying.</summary>
-    /// <remarks>
-    /// Says what crateside can do about it, which is why it is not StemForge's wording for the
-    /// same outcome: that advises a person choosing a format, this advises one choosing an upload.
-    /// </remarks>
+    /// <summary>
+    /// What to tell a user choosing an upload, or null when there is nothing worth saying.
+    /// </summary>
     public string? Advisory =>
         PremiumStatus switch
         {
@@ -48,21 +39,16 @@ public sealed record Acquisition
         };
 
     /// <summary>
-    /// The shortfall is about the upload, which is the only kind the user can act on one track
-    /// at a time.
+    /// The shortfall is about the upload, the only kind the user can act on one track at a time;
+    /// an account problem is true of every download at once.
     /// </summary>
-    /// <remarks>
-    /// <see cref="PremiumStatus.NotSignedIn"/> and <see cref="PremiumStatus.AccountNotPremium"/>
-    /// are deliberately absent: they are true of every download at once.
-    /// </remarks>
     private bool IsAboutTheSource =>
         PremiumStatus is PremiumStatus.NoPremiumLadder or PremiumStatus.SourceHasNoPremiumAudio;
 
-    /// <summary>Reads what <c>stemforge-cli download --json</c> reported for one input.</summary>
-    /// <remarks>
-    /// An unrecognized name reads as <see cref="PremiumStatus.Unreported"/> rather than throwing,
-    /// so a StemForge that names a new outcome cannot stop a download being recorded at all.
-    /// </remarks>
+    /// <summary>
+    /// Reads what <c>stemforge-cli download --json</c> reported for one input; a name it does not
+    /// know reads as <see cref="PremiumStatus.Unreported"/>.
+    /// </summary>
     public static PremiumStatus StatusFrom(string? reported) =>
         Enum.TryParse<PremiumStatus>(reported, out var status) && Enum.IsDefined(status)
             ? status
@@ -70,12 +56,9 @@ public sealed record Acquisition
 }
 
 /// <summary>
-/// How an acquisition compared against the premium audio the user's cookies entitle them to.
+/// How an acquisition compared against the premium audio the user's cookies entitle them to:
+/// StemForge's <c>PremiumStatus</c>, by the names it serializes.
 /// </summary>
-/// <remarks>
-/// StemForge's <c>PremiumStatus</c>, by the names it serializes. It owns the reasoning; crateside
-/// only decides what to do about each outcome.
-/// </remarks>
 public enum PremiumStatus
 {
     /// <summary>Nothing was reported — an older StemForge, or an input that never resolved.</summary>
@@ -87,8 +70,9 @@ public enum PremiumStatus
     /// <summary>The format fetched was premium. Nothing to report.</summary>
     Premium,
 
-    /// <summary>A premium format was on offer and a different one was taken deliberately.</summary>
-    /// <remarks>crateside pins no format, so its own downloads never land here.</remarks>
+    /// <summary>
+    /// A premium format was on offer and a different one was taken deliberately — never by crateside.
+    /// </summary>
     PremiumNotSelected,
 
     /// <summary>A music track, signed in, no premium offered — most likely the wrong profile.</summary>

@@ -5,12 +5,8 @@ namespace Crateside.Core.Queue;
 
 /// <summary>
 /// Which source video IDs are fully processed: a ledger verdict and a stem carrying that
-/// video ID on disk.
+/// video ID on disk. A WITHHELD verdict counts: re-queueing would give the same answer.
 /// </summary>
-/// <remarks>
-/// A WITHHELD verdict still counts as processed — the work was done, and re-queueing would
-/// only produce the same answer.
-/// </remarks>
 public sealed class ProcessedTracks
 {
     private ProcessedTracks(
@@ -47,9 +43,9 @@ public sealed class ProcessedTracks
     public bool IsFullyProcessed(string videoId) => FullyProcessed.Contains(videoId);
 
     /// <summary>
-    /// When a file arrived, or null where the filesystem will not say.
+    /// When a file arrived, or null where the filesystem will not say — which Windows reports as
+    /// 1601-01-01.
     /// </summary>
-    /// <remarks>Null rather than a sentinel: Windows returns 1601-01-01 when it has no answer.</remarks>
     private static DateTimeOffset? CreationTimeOf(string path)
     {
         try
@@ -125,12 +121,8 @@ public sealed record StemOnDisk
     public required string Path { get; init; }
 
     /// <summary>
-    /// The stem root it was found under.
+    /// The stem root it was found under, which is the completion signal (ADR 0002).
     /// </summary>
-    /// <remarks>
-    /// Which root a file is in is the completion signal — nothing is marked done, things
-    /// simply move (<c>docs/adr/0002</c>).
-    /// </remarks>
     public required string Root { get; init; }
 
     /// <summary>
@@ -148,31 +140,22 @@ public sealed record StemOnDisk
     /// <summary>Whether it was downloaded as premium audio. Null when the file does not say.</summary>
     public bool? IsPremium { get; init; }
 
-    /// <summary>The upload this file was cut from or downloaded from.</summary>
-    /// <remarks>
-    /// What tells a track's separation source from a source the user added, which are otherwise
-    /// the same kind of file (ADR 0019).
-    /// </remarks>
+    /// <summary>
+    /// The upload this file was cut or downloaded from — what tells a separation source from an
+    /// added one (ADR 0019).
+    /// </summary>
     public string? SourceVideoId { get; init; }
 
     /// <summary>
     /// When the file appeared in <see cref="Root"/>, which is when it arrived rather than when it
-    /// was made.
+    /// was made (ADR 0008).
     /// </summary>
-    /// <remarks>
-    /// A move between these roots copies and deletes rather than renaming, so creation time
-    /// marks arrival in the folder (ADR 0008).
-    /// </remarks>
     public DateTimeOffset? CreatedAt { get; init; }
 
     /// <summary>
     /// A staged file as the scanner would have found it, so one classifier answers for both
     /// readers.
     /// </summary>
-    /// <remarks>
-    /// A staged file's root is the folder it is in; only a scan across several roots has to be
-    /// told which one it was looking at.
-    /// </remarks>
     public static StemOnDisk Of(StagingStem stem, string? sourceVideoId = null) =>
         new()
         {

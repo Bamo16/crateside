@@ -5,12 +5,8 @@ namespace Crateside.Core.Queue;
 
 /// <summary>
 /// Which files the user wants made for one track: the separator presets to run, and whether the
-/// source track is itself a keeper.
+/// source track is itself a keeper (ADR 0018).
 /// </summary>
-/// <remarks>
-/// The plan is the record: what the user asked for, not a fact the recipe is derived from
-/// (ADR 0018).
-/// </remarks>
 public sealed record StemPlan
 {
     /// <summary>What a track nobody has chosen for gets: the usual pair.</summary>
@@ -18,12 +14,9 @@ public sealed record StemPlan
         new() { Presets = ["vocal_full", "instrumental_full"] };
 
     /// <summary>
-    /// No vocal to separate out, so the source track is the sample.
+    /// No vocal to separate out, so the source track is the sample; what
+    /// <c>instrumentalRelease: true</c> converts to.
     /// </summary>
-    /// <remarks>
-    /// What <c>instrumentalRelease: true</c> converts to. Not a mode the picker offers: unticking
-    /// the vocal preset and ticking the source says the same thing.
-    /// </remarks>
     public static StemPlan InstrumentalRelease { get; } = new() { Presets = [], KeepSource = true };
 
     /// <summary>
@@ -94,10 +87,10 @@ public sealed record StemPlan
             AdoptedSamples = [.. AdoptedSamples, adopted],
         };
 
-    /// <summary>The same plan without the adopted sample that carries this label.</summary>
-    /// <remarks>
-    /// Nothing can make one again, so a re-cut deletes the file and the label is free to reuse.
-    /// </remarks>
+    /// <summary>
+    /// The same plan without the adopted sample that carries this label, which a re-cut then
+    /// deletes for good.
+    /// </summary>
     public StemPlan Forgetting(string label) =>
         this with
         {
@@ -109,11 +102,10 @@ public sealed record StemPlan
             ],
         };
 
-    /// <summary>Whether two plans ask for the same files, whatever order they were built in.</summary>
-    /// <remarks>
-    /// The record's own equality is sequence-sensitive on <see cref="Presets"/>, which would make
-    /// a reordered list read as a change and offer a re-cut that would make nothing new.
-    /// </remarks>
+    /// <summary>
+    /// Whether two plans ask for the same files, whatever order they were built in — which the
+    /// record's own equality does not ignore.
+    /// </summary>
     public bool AsksTheSameAs(StemPlan other) =>
         KeepSource == other.KeepSource
         && Presets.Count == other.Presets.Count
@@ -134,12 +126,9 @@ public sealed record StemPlan
 }
 
 /// <summary>
-/// A file of this song the user made themselves, kept as a sample and never separated.
+/// A file of this song the user made themselves, kept as a sample and never separated. It came
+/// from no upload, so its label is its identity (ADR 0022).
 /// </summary>
-/// <remarks>
-/// Identified by its label rather than an upload: it came from no upload, which is the whole
-/// difference between it and an <see cref="AddedSource"/> (ADR 0022).
-/// </remarks>
 public sealed record AdoptedSample
 {
     /// <summary>What the user calls it, which is also the file's parenthesised suffix.</summary>
@@ -154,16 +143,13 @@ public sealed record AddedSource
     public required string VideoId { get; init; }
 
     /// <summary>
-    /// What the user called it, which becomes the file's parenthesised suffix.
+    /// What the user called it, which becomes the file's parenthesised suffix — unique per track,
+    /// since it tells two added sources apart on disk (ADR 0019).
     /// </summary>
-    /// <remarks>
-    /// Required and unique per track: it is what tells two added sources apart on disk, and a
-    /// file without one reads as though its whole name were the track's (ADR 0019).
-    /// </remarks>
     [JsonPropertyName("label")]
     public required string Label { get; init; }
 
-    /// <remarks>Null only on a source added before the user was asked (ADR 0028).</remarks>
+    /// <summary>Null only on a source added before the user was asked (ADR 0028).</summary>
     [JsonPropertyName("type")]
     public SampleType? Type { get; init; }
 

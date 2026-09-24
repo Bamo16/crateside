@@ -3,10 +3,6 @@ namespace Crateside.Core.Tracks;
 /// <summary>
 /// How the one list is narrowed.
 /// </summary>
-/// <remarks>
-/// Counts are taken over every row, never the filtered set, so the pills say what is out there
-/// rather than what is currently shown.
-/// </remarks>
 public enum TrackFilter
 {
     /// <summary>
@@ -43,10 +39,7 @@ public static class TrackFilters
         TrackFilter.NeedsAttention,
     ];
 
-    /// <remarks>
-    /// Not a partition: <see cref="TrackFilter.NeedsAttention"/> also catches a finding or an
-    /// unrenamed file whatever the state, so a row can be in two views at once.
-    /// </remarks>
+    /// <summary>Not a partition: a row can be in two views at once.</summary>
     public static bool Matches(this TrackRow row, TrackFilter filter) =>
         filter switch
         {
@@ -79,10 +72,6 @@ public static class TrackFilters
     /// Whether a row answers a search: the name the list shows it under, the name it arrived
     /// with, its key, and its video ID. An empty search matches everything.
     /// </summary>
-    /// <remarks>
-    /// The two names are both searched because a renamed track is findable by either, and the
-    /// user knows only one of them.
-    /// </remarks>
     public static bool Matches(this TrackRow row, string? search) =>
         search?.Trim() is not { Length: > 0 } term
         || Contains(row.DerivedTitle, term)
@@ -91,12 +80,9 @@ public static class TrackFilters
         || Contains(row.VideoId, term);
 
     /// <summary>
-    /// Where else a search would find something, so a fruitless one can point somewhere.
+    /// Where else a search would find something: the named views, else <see cref="TrackFilter.All"/>,
+    /// never <see cref="TrackFilter.Unfinished"/>.
     /// </summary>
-    /// <remarks>
-    /// The named views first, then <see cref="TrackFilter.All"/> only when nothing more specific
-    /// holds the row. <see cref="TrackFilter.Unfinished"/> is never offered.
-    /// </remarks>
     public static IReadOnlyList<TrackFilter> Holding(
         this IEnumerable<TrackRow> rows,
         string? search

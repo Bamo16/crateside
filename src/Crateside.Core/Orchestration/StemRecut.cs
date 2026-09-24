@@ -9,12 +9,8 @@ namespace Crateside.Core.Orchestration;
 public delegate IReadOnlyList<StagingStem> ReadStagedFiles(string videoId);
 
 /// <summary>
-/// Changes which files a track has, without judging it again.
+/// Changes which files a track has, without judging it again (ADR 0018).
 /// </summary>
-/// <remarks>
-/// Not always destructive. A plan that only adds removes nothing and leaves every staged file
-/// where it is; one that only drops presets makes nothing and never touches the GPU (ADR 0018).
-/// </remarks>
 public sealed class StemRecut(
     QueueSettingsStore settings,
     JobStore jobs,
@@ -24,12 +20,9 @@ public sealed class StemRecut(
 )
 {
     /// <summary>
-    /// The stages that run again. Not evidence and not the verdict — that is the whole point.
+    /// The stages that run again — never evidence or the verdict — each recorded as
+    /// <see cref="JobStatus.Cancelled"/>, which every selector reads as eligible.
     /// </summary>
-    /// <remarks>
-    /// Recorded as <see cref="JobStatus.Cancelled"/> rather than cleared: every selector already
-    /// reads cancelled as eligible again, whatever the strikes.
-    /// </remarks>
     internal static readonly JobStage[] Redone =
     [
         JobStage.Separation,
@@ -75,13 +68,9 @@ public sealed class StemRecut(
     }
 
     /// <summary>
-    /// Removes what the plan dropped, records it, and puts the track back in line for whatever
-    /// it now owes.
+    /// Removes what the plan dropped, records it, and only once every file has gone puts the
+    /// track back in line for whatever it now owes.
     /// </summary>
-    /// <remarks>
-    /// The order matters on failure: files are deleted first, and the stages are only reopened
-    /// once every one of them went.
-    /// </remarks>
     public RecutOutcome Apply(
         string videoId,
         StemPlan wanted,
@@ -141,10 +130,6 @@ public sealed class StemRecut(
     /// <summary>
     /// The staging board's view of a file as the scanner's, which is what the classifier reads.
     /// </summary>
-    /// <remarks>
-    /// A staged file's root is the folder it is in; only a scan across several roots has to be
-    /// told which one it was looking at.
-    /// </remarks>
     private static StemOnDisk AsOnDisk(StagingStem stem) =>
         new()
         {
@@ -199,7 +184,6 @@ public sealed record RecutPlan
     public bool MakesSomething => Recipe is { Presets.Count: > 0 } or { KeepSource: true };
 
     /// <summary>The sentence about the audio, said either way.</summary>
-    /// <remarks>Only worth saying where something is going to be cut from it.</remarks>
     public string AudioDetail =>
         WillRefetch
             ? "The downloaded audio has gone, so separation fetches it again first."

@@ -7,29 +7,23 @@ using Crateside.Core.Staging;
 namespace Crateside.Core.Tracks;
 
 /// <summary>
-/// The playlist as tracks: one row each, whatever state they are in.
+/// The playlist as tracks: one row each, whatever state they are in — the work lists of
+/// <see cref="QueueView"/> put back together by track identity.
 /// </summary>
-/// <remarks>
-/// Where <see cref="QueueView"/> sorts the playlist into per-stage work lists, this puts it back
-/// together by track identity.
-/// </remarks>
 public sealed record TracksView
 {
     public required IReadOnlyList<TrackRow> Rows { get; init; }
 
     /// <summary>
-    /// When the playlist behind these rows was last fetched. Null if it never has been.
+    /// When the playlist behind these rows was last fetched, set by the caller. Null if it never
+    /// has been.
     /// </summary>
-    /// <remarks>Set by the caller, not by <see cref="Compose"/>, which knows nothing about clocks.</remarks>
     public DateTimeOffset? ReadAt { get; init; }
 
     /// <summary>
-    /// Why the playlist could not be read, or null when it could.
+    /// Why the playlist could not be read, or null when it could. Shown beside the rows, which
+    /// stand either way (ADR 0021).
     /// </summary>
-    /// <remarks>
-    /// The rows stand either way — they are built from what crateside has taken on, not from the
-    /// playlist (ADR 0021). Shown beside them rather than instead of them.
-    /// </remarks>
     public string? PlaylistProblem { get; init; }
 
     /// <summary>
@@ -329,9 +323,9 @@ public sealed record TracksView
         };
 
     /// <summary>
-    /// What this track's files are called with the preset stripped, which is what Ableton shows.
+    /// The most common name among this track's files with the preset stripped, which is what
+    /// Ableton shows.
     /// </summary>
-    /// <remarks>Settled by the most common name among the files, not by whichever was read first.</remarks>
     private static string? NameFromFiles(
         IReadOnlyList<StagingSong> staged,
         IReadOnlyList<StemOnDisk> onDisk
@@ -363,9 +357,6 @@ public sealed record TracksView
             );
 
     /// <summary>A track's kept files, from wherever they currently are.</summary>
-    /// <remarks>
-    /// A file is under exactly one root, so combining the two sources never double-counts.
-    /// </remarks>
     private static IReadOnlyList<TrackSample> SamplesOf(
         StagingSong? staged,
         IReadOnlyList<StemOnDisk> onDisk,
@@ -397,12 +388,8 @@ public sealed record TracksView
         ];
 
     /// <summary>
-    /// What Ableton has tagged a library file with.
+    /// What Ableton has tagged a library file with, which the staging board cannot say.
     /// </summary>
-    /// <remarks>
-    /// The staging board carries this only for a staged file and reads only its own root, so a
-    /// file in the library needs its key from elsewhere.
-    /// </remarks>
     private static string? KeyIn(AbletonFolderInfo? tags, string path) =>
         tags?.TryGet(path, out var tagged) is true ? tagged.Key : null;
 

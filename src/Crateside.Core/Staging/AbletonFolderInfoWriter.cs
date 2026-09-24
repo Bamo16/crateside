@@ -8,10 +8,6 @@ namespace Crateside.Core.Staging;
 /// Writes keywords into a root's <c>Ableton Folder Info\&lt;uuid&gt;.xmp</c>, alongside whatever
 /// Ableton has put there.
 /// </summary>
-/// <remarks>
-/// Ableton writes this file in place — same file id, no rename — so replaces here happen
-/// atomically via a temp file, with the source timestamp re-checked immediately before the swap.
-/// </remarks>
 public sealed class AbletonFolderInfoWriter
 {
     private const string FolderInfoDirectory = "Ableton Folder Info";
@@ -22,11 +18,10 @@ public sealed class AbletonFolderInfoWriter
     private static readonly XNamespace Dc = "http://purl.org/dc/elements/1.1/";
     private static readonly XNamespace Xmp = "http://ns.adobe.com/xap/1.0/";
 
-    /// <summary>Ableton's built-in tonics — sharps only, spelled with U+266F, never ASCII '#'.</summary>
-    /// <remarks>
-    /// An ASCII '#' is not rejected by Ableton — it silently creates a separate user-defined tag
-    /// that then has to be removed by hand.
-    /// </remarks>
+    /// <summary>
+    /// Ableton's built-in tonics — sharps only, spelled with U+266F. An ASCII '#' silently makes a
+    /// separate user tag that has to be removed by hand.
+    /// </summary>
     public static readonly IReadOnlySet<string> Tonics = new HashSet<string>(StringComparer.Ordinal)
     {
         "C",
@@ -71,9 +66,8 @@ public sealed class AbletonFolderInfoWriter
 
     /// <summary>
     /// Applies keywords to files under <paramref name="rootFolder"/>, leaving every other entry
-    /// and its position alone.
+    /// and its position alone — or nothing at all unless every keyword is valid.
     /// </summary>
-    /// <remarks>Nothing is written unless every keyword passes <see cref="IsValidKeyword"/>.</remarks>
     public TagWriteOutcome Apply(string rootFolder, IReadOnlyList<TagAssignment> assignments)
     {
         if (assignments.Count is 0)
@@ -177,12 +171,8 @@ public sealed class AbletonFolderInfoWriter
         };
 
     /// <summary>
-    /// Reads the file, or reports nothing if it cannot be parsed.
+    /// Reads the file, or null if Ableton is mid-write — which calls for a retry, never a rebuild.
     /// </summary>
-    /// <remarks>
-    /// A parse failure means Ableton is mid-write, not that the store is corrupt — the response
-    /// is to retry, never to rebuild.
-    /// </remarks>
     private static XDocument? Load(string path)
     {
         try
@@ -204,14 +194,11 @@ public sealed class AbletonFolderInfoWriter
 
     /// <summary>
     /// Writes to a temporary file beside the target and swaps it in, but only if nothing has
-    /// touched the target since it was read.
+    /// touched the target since it was read. Narrows the race with Ableton; does not close it.
     /// </summary>
-    /// <remarks>
-    /// The temp file is in the same directory because a replace across volumes is not atomic.
-    /// The race between the timestamp check and the swap is narrowed, not closed.
-    /// </remarks>
     internal static bool Replace(string path, XDocument document, DateTime? stamp)
     {
+        // Beside the target: a replace across volumes is not atomic.
         var temporary = path + ".crateside-tmp";
 
         using (var buffer = new MemoryStream())
@@ -294,10 +281,7 @@ public sealed class AbletonFolderInfoWriter
             description.Add(new XElement(Xmp + "MetadataDate", now));
     }
 
-    /// <remarks>
-    /// Takes the root, not the folder-info directory, so reader and writer resolve the same file
-    /// through the same rule (#40).
-    /// </remarks>
+    /// <summary>Resolved from the root through the reader's own rule, so both find the same file (#40).</summary>
     private static string? ExistingXmp(string rootFolder) => AbletonFolderInfoFile.In(rootFolder);
 
     /// <summary>The name for a store that does not exist yet — a fresh UUID is a new identity.</summary>

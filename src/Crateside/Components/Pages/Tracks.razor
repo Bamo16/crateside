@@ -995,10 +995,7 @@
         _trackPlan = Adding.PlanFor(_trackUrl, [.. Rows.Select(row => row.Facts)]);
     }
 
-    /// <remarks>
-    /// Enter confirms whatever the button would do, the second press included: once the upload
-    /// has been read and found wanting, Enter is the acceptance.
-    /// </remarks>
+    /// <summary>Enter does what the button would, so on an upload found wanting it is the acceptance.</summary>
     private async Task OnAddTrackKey(KeyboardEventArgs e)
     {
         if (e.Key is "Escape")
@@ -1303,9 +1300,8 @@
     }
 
     /// <summary>
-    /// A box that has just opened takes the cursor, so the user can type without clicking into it
-    /// first. Set here and acted on after the render, because an element cannot be focused before
-    /// it exists.
+    /// A box that has just opened takes the cursor — after the render, since an element cannot be
+    /// focused before it exists.
     /// </summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -1331,10 +1327,7 @@
         }
     }
 
-    /// <remarks>
-    /// Closes the swap box, because the two share the row: one open at a time is the decision,
-    /// and it used to be possible to have both (#19).
-    /// </remarks>
+    /// <summary>Opens the rename box and closes the swap box, which shares the row (#19).</summary>
     private void StartRename(TrackRow row)
     {
         _problem = null;
@@ -1680,11 +1673,10 @@
         : _addTypeChosen || _addType is null ? $"“{title}”"
         : $"“{title}”, so {_addType} is suggested";
 
-    /// <summary>Adds the source, or comes back with what the upload actually offers.</summary>
-    /// <remarks>
-    /// The quality is asked before anything is fetched, so a poor upload costs a second press
-    /// rather than a file the library gained unannounced (ADR 0019).
-    /// </remarks>
+    /// <summary>
+    /// Adds the source, or comes back with what the upload actually offers before anything is
+    /// fetched (ADR 0019).
+    /// </summary>
     private async Task ConfirmAdd(TrackRow row, bool anyway = false)
     {
         _working = true;
@@ -1719,12 +1711,9 @@
     }
 
     /// <summary>
-    /// Ticks one line.
+    /// Ticks one line: recorded at once before separation, only proposed after it, when the
+    /// confirm is what spends anything.
     /// </summary>
-    /// <remarks>
-    /// Before separation the tick <em>is</em> the change and is recorded at once; after it, the
-    /// tick only proposes, and the confirm in the side column is what spends anything.
-    /// </remarks>
     private async Task Toggle(TrackRow row, StemChoice line)
     {
         if (line.IsPinned)
@@ -1774,12 +1763,9 @@
     }
 
     /// <summary>
-    /// Records a tick on a track already in a cut, and makes nothing: the running cut read its
-    /// recipe at pickup, so whatever it does not make is a shortfall once it lands (ADR 0027).
+    /// Records a tick on a track already in a cut and makes nothing; an untick waits, since the
+    /// separator may be writing that very file (ADR 0027).
     /// </summary>
-    /// <remarks>
-    /// Unticking waits, because the separator may be writing the very file being dropped.
-    /// </remarks>
     private async Task ToggleInFlight(TrackRow row, StemChoice line)
     {
         _problem = null;
@@ -1902,11 +1888,10 @@
             _ => null,
         };
 
-    /// <summary>The key cell: what Ableton holds, or what the file would be tagged with.</summary>
-    /// <remarks>
-    /// A file in <c>Mashup Samples</c> reads <c>—</c> rather than untagged: crateside does not
-    /// look there, so a missing key means nobody asked (ADR 0003).
-    /// </remarks>
+    /// <summary>
+    /// The key cell: what Ableton holds, or what the file would be tagged with. A library file
+    /// with no key reads <c>—</c>, since nobody asked (ADR 0003).
+    /// </summary>
     private static string Tag(StemChoice line, TrackRow row) =>
         (line, row.Key) switch
         {
@@ -1917,10 +1902,10 @@
             _ => "—",
         };
 
-    /// <remarks>
-    /// In flight a coming line may be in the running cut or ticked since, and nothing records
-    /// which, so it claims neither.
-    /// </remarks>
+    /// <summary>
+    /// A coming line in flight says only "coming", since nothing records whether the running cut
+    /// has it.
+    /// </summary>
     private static string Where(StemChoice line, StemPicker picker) =>
         line switch
         {

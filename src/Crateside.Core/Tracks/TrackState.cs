@@ -1,9 +1,8 @@
 namespace Crateside.Core.Tracks;
 
 /// <summary>
-/// Where a track has got to, as one value.
+/// Where a track has got to, as one value — derived, never stored.
 /// </summary>
-/// <remarks>Derived, never stored — nothing writes a state down.</remarks>
 public enum TrackState
 {
     /// <summary>In the playlist, with nothing run for it yet.</summary>
@@ -33,22 +32,17 @@ public enum TrackState
     /// <summary>
     /// Staged and tagged: every automatic stage is done and the human-limited steps are next.
     /// </summary>
-    /// <remarks>Not a queue — implies no urgency; a track can rest here for weeks.</remarks>
     ReadyToWarp,
 
     /// <summary>
     /// Every sample has reached <c>Mashup Samples</c>: warped, tagged, and in the finished library.
     /// </summary>
-    /// <remarks>The move is the signal — nothing has to be marked done.</remarks>
     Done,
 
     /// <summary>
-    /// crateside stopped and it is the user's turn. <see cref="ParkReason"/> says what over.
+    /// crateside stopped over a finding the user resolves; <see cref="ParkReason"/> says what
+    /// (ADR 0015).
     /// </summary>
-    /// <remarks>
-    /// Nothing automatic moves these on. Not a failure and not a standing instruction — a
-    /// finding, which the user resolves rather than clears (ADR 0015).
-    /// </remarks>
     Parked,
 
     /// <summary>A stage failed enough times that it stopped trying.</summary>
@@ -61,21 +55,14 @@ public enum TrackState
 /// <summary>
 /// Why a track is parked, which is the axis that says what resolving it takes.
 /// </summary>
-/// <remarks>
-/// The two sit at opposite ends of the pipeline: one has had the GPU spent on it and the other
-/// has had nothing but a download.
-/// </remarks>
 public enum ParkReason
 {
     /// <summary>Separated, with no verdict good enough to tag with. The way out is a better verdict.</summary>
     NoKey,
 
     /// <summary>
-    /// The download came back short of premium audio, and was stopped before the verdict.
+    /// The upload itself came back short of premium audio, and was stopped before the verdict.
+    /// The way out is a better upload or the user's say-so (ADR 0016).
     /// </summary>
-    /// <remarks>
-    /// The way out is a better upload or the user's say-so. Only ever about the upload itself,
-    /// never a session-wide shortfall (ADR 0016).
-    /// </remarks>
     PremiumShortfall,
 }
