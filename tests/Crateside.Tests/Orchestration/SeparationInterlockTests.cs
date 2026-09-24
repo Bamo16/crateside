@@ -51,8 +51,7 @@ public class SeparationInterlockTests : IDisposable
         Interlock().Claim(VideoId, processId: 4242, Launched);
         _probe.Running[4242] = Launched;
 
-        // crateside restarts. The child kept running, because on Windows it is not killed
-        // with its parent -- so the new instance must find it, not start a second one.
+        // crateside restarts; on Windows the child is not killed with its parent.
         var reconciliation = Interlock().Reconcile();
 
         Assert.Equal(VideoId, Assert.Single(reconciliation.Adopted).VideoId);
@@ -129,8 +128,7 @@ public class SeparationInterlockTests : IDisposable
     [Fact]
     public void A_live_pid_with_no_recorded_start_time_is_treated_as_ours()
     {
-        // Written by an older crateside that did not record start times. The two mistakes are
-        // not symmetrical -- a wrong adopt costs a delay, a wrong launch thrashes the GPU.
+        // Written by an older crateside that did not record start times.
         new JobStore(_path).Record(
             VideoId,
             JobStage.Separation,

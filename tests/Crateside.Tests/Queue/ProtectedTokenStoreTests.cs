@@ -3,10 +3,7 @@ using Microsoft.AspNetCore.DataProtection;
 
 namespace Crateside.Tests.Queue;
 
-/// <summary>
-/// The refresh token is the credential that can delete from the user's playlist, so what is
-/// on disk must not be readable and a failure to decrypt must not be fatal.
-/// </summary>
+/// <summary>The refresh token on disk must not be readable, and failing to decrypt must not be fatal.</summary>
 public class ProtectedTokenStoreTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
@@ -61,8 +58,7 @@ public class ProtectedTokenStoreTests : IDisposable
     [Fact]
     public async Task A_token_this_key_ring_cannot_decrypt_reads_as_absent()
     {
-        // What a key-ring rotation or a copied file looks like. One more consent prompt is a
-        // state the Queue already handles; a crash is not.
+        // What a key-ring rotation or a copied file looks like.
         await Store("crateside-tests").StoreAsync("user", new StoredToken("refresh", "access"));
 
         var other = new ProtectedTokenStore(

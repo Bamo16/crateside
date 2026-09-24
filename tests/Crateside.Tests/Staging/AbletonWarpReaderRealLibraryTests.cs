@@ -3,10 +3,7 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Staging;
 
-/// <summary>
-/// The reader against every `.asd` the real library holds. Machine-bound by design; skips where
-/// the library is absent.
-/// </summary>
+/// <summary>The reader against every <c>.asd</c> the real library holds.</summary>
 public class AbletonWarpReaderRealLibraryTests
 {
     private static readonly CratesidePaths Paths = new();

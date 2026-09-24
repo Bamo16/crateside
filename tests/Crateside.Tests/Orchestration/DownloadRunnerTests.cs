@@ -2,11 +2,7 @@ using Crateside.Core.Orchestration;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// Driven against real child processes rather than mocks, for the same reason
-/// <see cref="SeparationRunnerTests"/> is: the argument lists, the stdout plumbing and the
-/// exit-code handling are the parts most likely to be wrong, and a fake exercises none of them.
-/// </summary>
+/// <summary>Driven against real child processes rather than mocks.</summary>
 public class DownloadRunnerTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
@@ -83,8 +79,7 @@ public class DownloadRunnerTests : IDisposable
     [Fact]
     public async Task A_per_input_failure_is_read_out_of_the_json_despite_a_clean_exit()
     {
-        // The CLI reports per-input failures inside its JSON rather than by failing the process,
-        // so a zero exit is not an answer on its own.
+        // Per-input failures are reported inside the JSON, so a zero exit is not an answer.
         var result = await RunAsync("""[{"succeeded":false,"error":"ffmpeg not found"}]""");
 
         Assert.False(result.IsSuccess);
@@ -103,8 +98,6 @@ public class DownloadRunnerTests : IDisposable
     [Fact]
     public async Task What_the_download_got_is_kept_instead_of_being_parsed_past()
     {
-        // These fields arrive on every download and were once discarded, which is what left
-        // crateside predicting audio quality it was already being told (ADR 0016).
         var result = await RunAsync(Says(@"C:\t.flac", "NoPremiumLadder", isPremium: false));
 
         Assert.Equal(PremiumStatus.NoPremiumLadder, result.Acquisition?.PremiumStatus);

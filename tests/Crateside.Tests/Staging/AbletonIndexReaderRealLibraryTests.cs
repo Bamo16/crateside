@@ -4,11 +4,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Staging;
 
-/// <summary>
-/// Ableton's own index, asserted against the real database on this machine rather than a
-/// fixture — the point of reading it at all is that it says something the XMP does not.
-/// Machine-bound by design; skips where Ableton or the roots are absent.
-/// </summary>
+/// <summary>Ableton's own index, asserted against the real database on this machine.</summary>
 public class AbletonIndexReaderRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
@@ -31,10 +27,7 @@ public class AbletonIndexReaderRealLibraryTests
         Assert.All(info.Entries, e => Assert.NotEmpty(e.Keywords));
     }
 
-    /// <summary>
-    /// The index spells tonics with U+266F, the same as the XMP. A key that reached a caller
-    /// still carrying one would not match the ledger.
-    /// </summary>
+    /// <summary>The index spells tonics with U+266F, which must not reach a caller.</summary>
     [Theory]
     [MemberData(nameof(Roots))]
     public void Keys_arrive_in_the_ledgers_ascii_spelling(string root)
@@ -48,7 +41,6 @@ public class AbletonIndexReaderRealLibraryTests
         Assert.All(keyed, e => Assert.DoesNotContain('♭', e.Key!));
     }
 
-    /// <summary>Same lookup contract as the XMP reader, so the two are interchangeable.</summary>
     [Theory]
     [MemberData(nameof(Roots))]
     public void Finds_an_entry_by_absolute_path_as_well_as_relative(string root)

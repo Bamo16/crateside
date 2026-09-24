@@ -162,7 +162,6 @@ public class AbletonFolderInfoReaderTests : IDisposable
     [Fact]
     public void Reads_while_the_file_is_held_open_for_writing()
     {
-        // Ableton owns this file while it runs; the board must still read it.
         var info = ReadXmp(Entry("Held.flac", "Key|F", "Key|Major"));
         var xmp = Directory.GetFiles(Path.Combine(_root, "Ableton Folder Info"), "*.xmp")[0];
 

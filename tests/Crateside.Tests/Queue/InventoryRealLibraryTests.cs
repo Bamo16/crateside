@@ -3,11 +3,7 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Queue;
 
-/// <summary>
-/// The inventory lookup run against the user's actual library and ledger. A second upload of a
-/// song that is already cut carries no file of its own, so only real data shows whether it still
-/// reaches the song's stems.
-/// </summary>
+/// <summary>The inventory lookup run against the user's actual library and ledger.</summary>
 public class InventoryRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
@@ -30,8 +26,7 @@ public class InventoryRealLibraryTests
 
         var cut = processed.StemsByVideoId.Keys.Select(Song).ToHashSet(StringComparer.Ordinal);
 
-        // An upload the ledger files under a song that has stems, which the lookup cannot answer
-        // for. Before the key set covered the ledger it was every such upload without a file.
+        // An upload the ledger files under a song that has stems.
         var stranded = ledger
             .Runs.Select(run => run.SourceVideoId)
             .OfType<string>()

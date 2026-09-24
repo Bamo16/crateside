@@ -10,14 +10,12 @@ public class PartnersTests
     [Fact]
     public void All_24_keys_are_reachable_by_default()
     {
-        // The default never caps; max-shift narrows only on request.
         Assert.Equal(24, Partners.For(Key("D# major")).Count);
     }
 
     [Fact]
     public void The_reproduced_d_sharp_major_ordering()
     {
-        // The exact output the design was verified against, unshifted partners only.
         var unshifted = Partners.For(Key("D# major"), maxShift: 0);
 
         Assert.Equal([0, 0.1, 10, 10, 20, 30, 40], unshifted.Select(p => p.Score));
@@ -30,8 +28,6 @@ public class PartnersTests
     [Fact]
     public void Shift_outranks_circle_distance()
     {
-        // A distant key needing no shift beats a close one needing two, because the shift is
-        // the cost actually paid.
         var partners = Partners.For(Key("C major"));
 
         var shifts = partners.Select(p => p.AbsoluteShift).ToArray();
@@ -67,7 +63,6 @@ public class PartnersTests
             {
                 Assert.DoesNotContain(partner.Shift, partner.AltShifts);
                 Assert.All(partner.AltShifts, alt => Assert.InRange(alt, -6, 6));
-                // The primary is the smallest-magnitude route to the same partner.
                 Assert.All(
                     partner.AltShifts,
                     alt => Assert.True(Math.Abs(alt) >= partner.AbsoluteShift)
@@ -110,8 +105,6 @@ public class MusicKeyTests
     [Fact]
     public void The_ledger_spelling_round_trips()
     {
-        // Ableton's recombined keywords and keytag's verdicts are both ASCII+lowercase, so
-        // every key must survive the trip out to that form and back.
         foreach (var key in MusicKey.AllKeys)
             Assert.Equal(key, MusicKey.FromString(key.LedgerName));
     }

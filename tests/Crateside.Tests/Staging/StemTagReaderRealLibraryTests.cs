@@ -2,11 +2,7 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Staging;
 
-/// <summary>
-/// Asserts the reader against the real Sample Staging folder, as the handoff asks. These
-/// are machine-bound by design — the point is to prove the inference against actual files,
-/// not against fixtures we wrote ourselves. They skip where the folder is absent.
-/// </summary>
+/// <summary>The reader against the real Sample Staging folder.</summary>
 public class StemTagReaderRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
@@ -39,7 +35,6 @@ public class StemTagReaderRealLibraryTests
     {
         Assert.SkipUnless(StagingPresent, $"{StagingRoot} not present on this machine.");
 
-        // Song-level rollup depends on this: the video ID is the song, the preset is the stem.
         var songs = Stems()
             .Select(StemTagReader.Read)
             .Where(t => t?.SourceVideoId is not null)
@@ -50,9 +45,7 @@ public class StemTagReaderRealLibraryTests
 
         foreach (var song in songs)
         {
-            // Preset, or the label where there is none: an adopted sample carries no preset and
-            // is named by the user instead, so a song can hold more than one preset-less file
-            // (ADR 0022). The kept source is the one that is named by neither.
+            // An adopted sample has a label and no preset (ADR 0022); the kept source has neither.
             var named = song.Select(s => s!.Provenance!.Preset ?? s!.Provenance!.Label).ToArray();
 
             Assert.Equal(named.Length, named.Distinct().Count());

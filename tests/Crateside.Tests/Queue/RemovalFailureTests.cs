@@ -5,10 +5,7 @@ using Google.Apis.Requests;
 
 namespace Crateside.Tests.Queue;
 
-/// <summary>
-/// A playlist entry crateside could not remove says so, and says whether trying again could
-/// help (#34).
-/// </summary>
+/// <summary>A playlist entry crateside could not remove says so, and whether a retry could help (#34).</summary>
 public class RemovalFailureTests : IDisposable
 {
     private const string Track = "2E33rkabbF4";
@@ -30,10 +27,6 @@ public class RemovalFailureTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>
-    /// Light Years Away, 2026-09-17: left in the playlist with nothing to say why, and what little
-    /// there was lived in memory and went with the next restart.
-    /// </summary>
     [Fact]
     public void Why_an_entry_was_left_behind_survives_a_restart()
     {

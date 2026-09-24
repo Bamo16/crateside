@@ -44,9 +44,7 @@ public class StemInventoryTests
     [Fact]
     public void A_stem_written_before_provenance_carried_a_preset_is_read_off_its_name()
     {
-        // 68 files in the real library are in exactly this state: stemforge/0.1.x wrote the
-        // models it used and no preset at all. Reading them as source tracks would say a track
-        // has no vocal stem when it plainly has one.
+        // Old StemForge wrote the models it used and no preset at all.
         var inventory = StemInventory.Of(
             [File("Awich - Queendom (Vocal - Full).flac", preset: null)],
             Catalog
@@ -166,8 +164,6 @@ public class StemInventoryTests
     [Fact]
     public void An_unrecognised_stem_is_not_swept_away_by_a_plan_that_cannot_name_it()
     {
-        // Removing it has to be the user unticking that line, not a side effect of a plan that
-        // was never able to ask for it in the first place.
         var inventory = StemInventory.Of(
             [File("x (Vocal - Balanced).flac", "Vocal - Balanced")],
             Catalog
@@ -179,8 +175,7 @@ public class StemInventoryTests
     [Fact]
     public void With_no_catalog_every_stem_reads_as_unrecognised_rather_than_as_a_source()
     {
-        // The separator could not be asked. Saying "this track has nothing" would offer a re-cut
-        // of files that are already there; saying "these are sources" would be worse still.
+        // The separator could not be asked.
         var inventory = StemInventory.Of(
             [File("x (Vocal - Full).flac", "Vocal - Full"), File("x.flac", preset: null)],
             PresetCatalog.Empty

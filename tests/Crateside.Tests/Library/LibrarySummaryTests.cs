@@ -5,11 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Library;
 
-/// <summary>
-/// The cache in front of the reader, exercised against a real folder rather than a counting
-/// double — what the page needs is that adding a file does not change the count until someone
-/// asks, which is observable without one.
-/// </summary>
+/// <summary>The cache in front of the reader, exercised against a real folder.</summary>
 public class LibrarySummaryTests : IDisposable
 {
     private readonly string _root = Path.Combine(

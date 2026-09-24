@@ -2,10 +2,7 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Staging;
 
-/// <summary>
-/// Removing a sample recoverably. The contract callers rely on is narrow: the path stops
-/// existing, an absent path is not a failure, and a file that cannot go says so by throwing.
-/// </summary>
+/// <summary>Removing a sample recoverably.</summary>
 public class RecycleBinTests : IDisposable
 {
     private readonly string _root = Path.Combine(
@@ -49,9 +46,6 @@ public class RecycleBinTests : IDisposable
         RecycleBin.Remove(Path.Combine(_root, "never-existed.flac"));
     }
 
-    /// <remarks>
-    /// The callers delete a stem and its sidecar in a pair, and a stem often has no sidecar.
-    /// </remarks>
     [Fact]
     public void Removing_the_same_file_twice_is_not_a_failure()
     {

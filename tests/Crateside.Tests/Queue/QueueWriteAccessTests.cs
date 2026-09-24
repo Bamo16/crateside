@@ -20,7 +20,6 @@ public class QueueWriteAccessTests
         Assert.True(access.ShouldTell(TimeSpan.FromMinutes(30)));
         Assert.False(access.ShouldTell(TimeSpan.FromMinutes(30)));
 
-        // Nothing automatic renews the token, so it is worth saying again.
         Assert.True(access.ShouldTell(TimeSpan.Zero));
     }
 
@@ -35,8 +34,6 @@ public class QueueWriteAccessTests
 
         access.Lapsed("invalid_grant again");
 
-        // How long it has been broken is the useful figure; every later attempt fails the same
-        // way and would otherwise keep resetting the clock.
         Assert.Equal(first, access.LapsedAt);
     }
 

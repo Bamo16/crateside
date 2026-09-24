@@ -4,10 +4,7 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Queue;
 
-/// <summary>
-/// Not an assertion about correctness — a measurement of what a Queue refresh actually costs,
-/// so the answer to "are we doing more work than we need to?" is a number rather than a guess.
-/// </summary>
+/// <summary>A measurement of what a Queue refresh costs, not an assertion about correctness.</summary>
 public class ProcessedTracksCostTests
 {
     private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
@@ -34,8 +31,7 @@ public class ProcessedTracksCostTests
 
         Assert.NotEmpty(processed.FullyProcessed);
 
-        // Recorded so a regression is visible; deliberately loose, since it is I/O on a real
-        // library and the point is the order of magnitude, not a threshold.
+        // Deliberately loose: real-library I/O, where the order of magnitude is the point.
         Assert.True(
             stopwatch.ElapsedMilliseconds < 60_000,
             $"scanned {files} files in {stopwatch.ElapsedMilliseconds} ms"

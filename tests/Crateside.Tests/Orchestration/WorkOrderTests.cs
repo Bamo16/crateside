@@ -86,8 +86,6 @@ public class WorkOrderTests : IDisposable
     [Fact]
     public void A_track_with_no_verdict_yet_routes_to_unresolved_rather_than_nowhere()
     {
-        // The bare stems root is never a valid destination for a track that went through this
-        // workflow -- a stem there carries no signal about whether its key was resolved.
         var order = WorkOrder.Compose(Item(), KeyLedger.Read(_ledgerPath));
 
         Assert.Equal(StemDestination.UnresolvedKey, order.Destination);
@@ -96,10 +94,6 @@ public class WorkOrderTests : IDisposable
     [Fact]
     public void An_instrumental_release_asks_for_drums_and_keeps_the_source()
     {
-        // There is nothing to separate out, so the drums are the only stem and the source track
-        // is the sample -- which the separator has to place, since crateside directs output and
-        // never moves files itself. Asking for vocal_full here is what made a vocal stem of a
-        // track with no vocals.
         var order = WorkOrder.Compose(Item(instrumentalRelease: true), Ledger("A minor"));
 
         Assert.Empty(order.Recipe.Presets);
@@ -110,8 +104,7 @@ public class WorkOrderTests : IDisposable
     [Fact]
     public void The_users_plan_is_what_the_separator_is_asked_for()
     {
-        // The plan is the record: nothing is derived from a fact about the release any more, so
-        // what the order carries is what the user ticked (ADR 0018).
+        // What the order carries is what the user ticked (ADR 0018).
         var order = WorkOrder.Compose(Item(instrumentalRelease: true), Ledger("A minor"));
 
         Assert.Empty(order.Recipe.Presets);

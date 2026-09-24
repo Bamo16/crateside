@@ -56,7 +56,6 @@ public class JobStoreTests : IDisposable
     {
         Store().Record(VideoId, JobStage.Separation, JobStatus.Running, processId: 4242);
 
-        // A fresh store reads the file, exactly as the next run after a hot reload would.
         Assert.True(Store().TryGet(VideoId, JobStage.Separation, out var job));
         Assert.Equal(JobStatus.Running, job.Status);
         Assert.Equal(4242, job.ProcessId);
@@ -85,8 +84,6 @@ public class JobStoreTests : IDisposable
 
         Assert.Equal(3, job.Strikes);
 
-        // And the count is derived, so it is identical after a reload rather than re-counted
-        // from a number somebody remembered to increment.
         Assert.True(Store().TryGet(VideoId, JobStage.Verdict, out var reloaded));
         Assert.Equal(3, reloaded.Strikes);
     }
@@ -109,7 +106,6 @@ public class JobStoreTests : IDisposable
 
         store.Record(VideoId, JobStage.Verdict, JobStatus.Failed, error: "quota exhausted");
 
-        // The UI needs to say why it is trying again while it is trying again.
         Assert.Equal(
             "quota exhausted",
             store.Record(VideoId, JobStage.Verdict, JobStatus.Running).Error
@@ -151,7 +147,6 @@ public class JobStoreTests : IDisposable
     {
         Store().Record(VideoId, JobStage.Evidence, JobStatus.Succeeded);
 
-        // The process can die between write and flush; the store must not go blind because of it.
         File.AppendAllText(_path, "{\"id\":\"trunc");
 
         Assert.True(Store().TryGet(VideoId, JobStage.Evidence, out var job));
@@ -167,7 +162,6 @@ public class JobStoreTests : IDisposable
         store.Record(VideoId, JobStage.Evidence, JobStatus.Running);
         store.Record(VideoId, JobStage.Evidence, JobStatus.Succeeded);
 
-        // Three state changes, three lines. Nothing was rewritten in place.
         Assert.Equal(3, File.ReadAllLines(_path).Length);
     }
 
@@ -180,7 +174,6 @@ public class JobStoreTests : IDisposable
 
         Assert.Contains("\"Separation\"", line);
         Assert.Contains("\"Running\"", line);
-        // Nulls are omitted rather than written out, so a line stays scannable.
         Assert.DoesNotContain("error", line, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -5,10 +5,7 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// Running the detectors over audio crateside already holds. The download is
-/// <see cref="DownloadRunnerTests"/>'s (ADR 0019).
-/// </summary>
+/// <summary>Running the detectors over audio crateside already holds (ADR 0019).</summary>
 public class EvidenceRunnerTests : IDisposable
 {
     private const string VideoId = "dQw4w9WgXcQ";
@@ -43,7 +40,6 @@ public class EvidenceRunnerTests : IDisposable
             KeyLedger.Read("does-not-exist")
         );
 
-    /// <summary>Puts audio in the working set, which is what the download stage would have done.</summary>
     private void Held()
     {
         File.WriteAllText(
@@ -91,8 +87,7 @@ public class EvidenceRunnerTests : IDisposable
     [Fact]
     public async Task Evidence_already_on_disk_is_not_produced_again()
     {
-        // Re-detecting burns 15-40s of CPU to reach the answer already sitting there. The
-        // stand-in fails, so anything that ran at all would fail the run.
+        // The stand-in fails, so anything that ran at all would fail the run.
         Held();
         File.WriteAllText(Set.EvidencePathFor(VideoId), "{}");
 
@@ -105,8 +100,6 @@ public class EvidenceRunnerTests : IDisposable
     [Fact]
     public async Task A_track_with_no_audio_held_for_it_is_not_this_stages_to_run()
     {
-        // The download stage owes it. Detecting over nothing would fail in the detector with a
-        // message about a missing file, which says nothing about whose turn it is.
         var result = await Runner(Detector())
             .RunAsync(Order(), TestContext.Current.CancellationToken);
 

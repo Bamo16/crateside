@@ -3,11 +3,7 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Queue;
 
-/// <summary>
-/// Whether an added source the user has renamed and moved to the library is still recognised as
-/// fetched. Only real data answers this: the rename is something a person does in Ableton, and
-/// the fetch decision is made from what the scan can still see afterwards.
-/// </summary>
+/// <summary>An added source renamed and moved to the library is still recognised as fetched.</summary>
 public class AddedSourceRenameRealLibraryTests
 {
     private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";
@@ -22,8 +18,6 @@ public class AddedSourceRenameRealLibraryTests
 
         var ledger = KeyLedger.Read(LedgerPath);
 
-        // The library alone, which is the state the moment the user moves the file out of staging
-        // and before anything is fetched again.
         var processed = ProcessedTracks.Scan(ledger, [LibraryRoot]);
         var inventories = QueueService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
 
@@ -37,8 +31,6 @@ public class AddedSourceRenameRealLibraryTests
 
         Assert.SkipWhen(held.Count is 0, "No kept source has reached the library.");
 
-        // Every kept source in the library must answer Has() for its own upload, whatever the
-        // user renamed the file to. The label is only consulted when provenance is absent.
         foreach (var upload in held)
         {
             var inventory = inventories[upload];

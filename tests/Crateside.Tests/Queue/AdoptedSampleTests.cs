@@ -3,10 +3,7 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Queue;
 
-/// <summary>
-/// A file the user made and gave to crateside: how it is recognised, and what a re-cut may do to
-/// it. Nothing can make one again, which is what separates it from every other kind of sample.
-/// </summary>
+/// <summary>An adopted sample: how it is recognised, and what a re-cut may do to it.</summary>
 public class AdoptedSampleTests
 {
     private const string VideoId = "aaaaaaaaaaa";
@@ -104,7 +101,6 @@ public class AdoptedSampleTests
     {
         var inventory = StemInventory.Of([Adopted()], PresetCatalog.Empty);
 
-        // Outstanding is what a separation is asked to make. Nothing can make one of these.
         Assert.Empty(inventory.Shortfall(PlanKeeping(Label)).AdoptedSamples);
     }
 

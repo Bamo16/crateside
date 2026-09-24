@@ -5,11 +5,7 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// Asks the real separator, and joins its answer against the real library. The whole design of
-/// the picker rests on every name a file carries resolving back to a preset the plan can ask
-/// for, and only a real read of both sides can say whether it does.
-/// </summary>
+/// <summary>Asks the real separator, and joins its answer against the real library.</summary>
 public class PresetCatalogRealDataTests
 {
     private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
@@ -42,7 +38,6 @@ public class PresetCatalogRealDataTests
             }
         );
 
-        // The pair crateside has always asked for, by the names the files carry.
         Assert.Equal("Vocal - Full", catalog.ById("vocal_full")?.DisplayName);
         Assert.Equal("Instrumental - Full", catalog.ById("instrumental_full")?.DisplayName);
     }
@@ -61,7 +56,6 @@ public class PresetCatalogRealDataTests
             .Scan(KeyLedger.Read(LedgerPath), [StagingRoot, MashupRoot])
             .StemsByVideoId.SelectMany(entry => entry.Value)
             .Select(file => file.Preset)
-            // A warp guide is never asked for by name, and a source download carries no preset.
             .Where(preset => preset is not null && !StagingStem.IsWarpGuidePreset(preset))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Where(preset => !catalog.TryGetId(preset, out _))

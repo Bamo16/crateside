@@ -5,14 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Queue;
 
-/// <summary>
-/// A playlist that cannot be read means no new arrivals, not no queue (ADR 0021).
-/// </summary>
-/// <remarks>
-/// It used to throw out of the scan, so a spent daily quota — or simply no API key — stopped
-/// crateside working on tracks it had fully recorded and needed no network for. The page sat on
-/// "Reading the queue…" and never recovered.
-/// </remarks>
+/// <summary>A playlist that cannot be read means no new arrivals, not no queue (ADR 0021).</summary>
 public class UnreadablePlaylistTests : IDisposable
 {
     private const string Known = "RzQRxV2XqFU";

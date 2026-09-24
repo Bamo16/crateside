@@ -32,16 +32,13 @@ public class TrackAddTests : IDisposable
         Assert.Null(plan.Refusal);
         Assert.True(plan.IsPossible);
 
-        // The whole point of letting it through: the caller has to be able to say that this
-        // buys a verdict rather than a separation.
         Assert.True(plan.JudgesWhatIsHere);
     }
 
     [Fact]
     public void A_library_track_already_judged_is_still_refused()
     {
-        // A LOW or WITHHELD verdict leaves the row's key null and is still a judgement, which is
-        // why this turns on the verdict rather than the key.
+        // A LOW or WITHHELD verdict leaves the key null and is still a judgement.
         var plan = Add().PlanFor(Upload, [Row(isLibraryOnly: true, hasVerdict: true)]);
 
         Assert.NotNull(plan.Refusal);
@@ -67,8 +64,7 @@ public class TrackAddTests : IDisposable
     [Fact]
     public void A_source_the_row_merely_carries_is_still_refused()
     {
-        // Uploads folds in the plan's added sources, so a library-only row would otherwise offer
-        // to judge one as a track of its own — which is the second identity attaching it avoided.
+        // Uploads folds in the plan's added sources.
         const string added = "C_DIhh3sWO0";
 
         var row = Row(isLibraryOnly: true, hasVerdict: false) with
