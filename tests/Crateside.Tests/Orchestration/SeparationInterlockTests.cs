@@ -61,6 +61,45 @@ public class SeparationInterlockTests : IDisposable
     }
 
     [Fact]
+    public void An_adoption_is_recorded_on_the_job_and_keeps_the_process()
+    {
+        Interlock().Claim(VideoId, processId: 4242, Launched);
+        _probe.Running[4242] = Launched;
+
+        Interlock().Reconcile();
+
+        Assert.True(new JobStore(_path).TryGet(VideoId, JobStage.Separation, out var job));
+        Assert.NotNull(job.AdoptedAt);
+        Assert.Equal(JobStatus.Running, job.Status);
+        Assert.Equal(4242, job.ProcessId);
+        Assert.Equal(Launched, job.ProcessStartedAt);
+        Assert.True(Interlock().TryGetLive(out _));
+    }
+
+    [Fact]
+    public void An_adopted_run_that_is_gone_by_the_next_restart_is_abandoned()
+    {
+        Interlock().Claim(VideoId, processId: 4242, Launched);
+        _probe.Running[4242] = Launched;
+        Interlock().Reconcile();
+
+        _probe.Running.Remove(4242);
+        var abandoned = Assert.Single(Interlock().Reconcile().Abandoned);
+
+        Assert.Null(abandoned.AdoptedAt);
+        Assert.Equal(JobStatus.Failed, abandoned.Status);
+    }
+
+    [Fact]
+    public void A_claimed_separation_is_not_adopted()
+    {
+        Interlock().Claim(VideoId, processId: 4242, Launched);
+
+        Assert.True(new JobStore(_path).TryGet(VideoId, JobStage.Separation, out var job));
+        Assert.Null(job.AdoptedAt);
+    }
+
+    [Fact]
     public void A_process_that_died_without_recording_a_result_is_abandoned_and_strikes()
     {
         Interlock().Claim(VideoId, processId: 4242, Launched);

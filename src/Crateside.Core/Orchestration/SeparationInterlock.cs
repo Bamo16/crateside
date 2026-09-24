@@ -24,7 +24,16 @@ public sealed class SeparationInterlock(JobStore jobs, IProcessProbe probe)
         {
             if (IsStillRunning(job))
             {
-                adopted.Add(job);
+                adopted.Add(
+                    jobs.Record(
+                        job.VideoId,
+                        JobStage.Separation,
+                        JobStatus.Running,
+                        job.ProcessId,
+                        job.ProcessStartedAt,
+                        adopted: true
+                    )
+                );
                 continue;
             }
 

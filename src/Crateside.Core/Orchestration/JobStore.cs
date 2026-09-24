@@ -75,7 +75,8 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
         JobStatus status,
         int? processId = null,
         DateTimeOffset? processStartedAt = null,
-        string? error = null
+        string? error = null,
+        bool adopted = false
     )
     {
         var update = new JobUpdate
@@ -88,6 +89,7 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
             ProcessId = processId,
             ProcessStartedAt = processStartedAt,
             Error = error,
+            Adopted = adopted ? true : null,
         };
 
         TrackJob job;
@@ -141,6 +143,7 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
                 _ => update.Error ?? previous?.Error,
             },
             Strikes = (previous?.Strikes ?? 0) + (update.Status is JobStatus.Failed ? 1 : 0),
+            AdoptedAt = update.Adopted is true ? update.Timestamp : null,
         };
 
     private Dictionary<string, TrackJob> Projection() => _cached ??= ReadFile();
@@ -216,4 +219,7 @@ public sealed record JobUpdate
     public int? ProcessId { get; init; }
     public DateTimeOffset? ProcessStartedAt { get; init; }
     public string? Error { get; init; }
+
+    /// <summary>True on the line a restarted crateside wrote on finding the process still alive.</summary>
+    public bool? Adopted { get; init; }
 }

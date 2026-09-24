@@ -42,6 +42,10 @@ public sealed record TrackJob
     /// </summary>
     public required int Strikes { get; init; }
 
+    /// <summary>When a restarted crateside found this separation's process still alive.</summary>
+    /// <remarks>Null once anything else is recorded: it describes the latest line only.</remarks>
+    public DateTimeOffset? AdoptedAt { get; init; }
+
     /// <summary>Whether crateside currently believes work is in flight for this job.</summary>
     public bool IsOpen => Status is JobStatus.Queued or JobStatus.Running;
 }

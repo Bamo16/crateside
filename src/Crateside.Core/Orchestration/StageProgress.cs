@@ -6,9 +6,10 @@ public sealed record StageProgress
     public JobStage? Running { get; init; }
 
     /// <summary>
-    /// The job's last update. For an open job that is its start, since a stage records Running
-    /// once and says nothing more until the work ends.
+    /// When the process started, for a separation; otherwise the job's last update, which for an
+    /// open job is its start.
     /// </summary>
+    /// <remarks>An adopted separation records Running a second time, at the restart.</remarks>
     public DateTimeOffset? RunningSince { get; init; }
 
     public JobStage? GaveUpAt { get; init; }
@@ -38,7 +39,7 @@ public sealed record StageProgress
             if (job.Status is JobStatus.Running)
             {
                 running = stage;
-                runningSince = job.UpdatedAt;
+                runningSince = job.ProcessStartedAt ?? job.UpdatedAt;
             }
 
             // Cancelled never counts, whatever the strikes say — a track put back in line by

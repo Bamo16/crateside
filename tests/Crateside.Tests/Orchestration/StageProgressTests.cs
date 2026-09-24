@@ -43,6 +43,17 @@ public class StageProgressTests : IDisposable
     }
 
     [Fact]
+    public void An_adopted_separation_is_running_since_its_process_started_not_since_the_restart()
+    {
+        var launched = new DateTimeOffset(2026, 9, 23, 20, 0, 0, TimeSpan.Zero);
+        var jobs = Store();
+        jobs.Record(Video, JobStage.Separation, JobStatus.Running, 4242, launched);
+        jobs.Record(Video, JobStage.Separation, JobStatus.Running, 4242, launched, adopted: true);
+
+        Assert.Equal(launched, StageProgress.For(jobs, Video).RunningSince);
+    }
+
+    [Fact]
     public void A_stage_out_of_strikes_has_given_up_and_tagging_counts()
     {
         // Tagging is the stage the queue page never checked. It fails for a real reason — Ableton
