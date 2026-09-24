@@ -61,7 +61,10 @@ public static class TrackFilters
                     or TrackState.Separating
                     or TrackState.Staging
                     or TrackState.Tagging,
-            TrackFilter.NeedsAttention => row.State is TrackState.Parked or TrackState.GaveUp
+            TrackFilter.NeedsAttention => row.State
+                is TrackState.Parked
+                    or TrackState.GaveUp
+                    or TrackState.Short
                 || row.AuditNote is not null
                 || row.AwaitingRename > 0,
             TrackFilter.All => true,

@@ -404,6 +404,7 @@ public sealed class QueueService(
             return [];
 
         var queued = items.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
+        var held = intake.Read().Select(record => record.VideoId).ToHashSet(StringComparer.Ordinal);
 
         // Bare, with no instruction fields copied on: QueueView.Compose describes these the same
         // way it describes playlist items.
@@ -411,6 +412,9 @@ public sealed class QueueService(
         [
             .. videoIds
                 .Where(videoId => !queued.Contains(videoId))
+                // A track the user removed owes nothing, whatever its jobs say (ADR 0027). No
+                // records at all is an intake that could not be read, not one that holds nothing.
+                .Where(videoId => held.Count is 0 || held.Contains(videoId))
                 .Select(videoId =>
                     ledger.TryGetLatestByVideoId(videoId, out var run)
                         ? new QueueItem { VideoId = videoId, Title = run.DisplayName }

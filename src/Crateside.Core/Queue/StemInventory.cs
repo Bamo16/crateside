@@ -6,8 +6,7 @@ namespace Crateside.Core.Queue;
 /// What a track already has, read off disk and said in the vocabulary the plan speaks.
 /// </summary>
 /// <remarks>
-/// Derived on every read and stored nowhere, so a file deleted by hand is simply outstanding
-/// again.
+/// Derived on every read and stored nowhere, so a file deleted by hand is simply short again.
 /// </remarks>
 public sealed record StemInventory
 {
@@ -15,6 +14,13 @@ public sealed record StemInventory
 
     /// <summary>Every file of this track, with what each one is.</summary>
     public required IReadOnlyList<ClassifiedStem> Files { get; init; }
+
+    /// <summary>Read against a catalog that could say which preset each file is.</summary>
+    /// <remarks>
+    /// False when the separator could not be asked: every file then reads as no preset at all,
+    /// and the whole plan would look missing.
+    /// </remarks>
+    public bool IsClassified { get; init; }
 
     /// <summary>The presets this track already has a file for.</summary>
     public IReadOnlySet<string> Presets =>
@@ -39,14 +45,12 @@ public sealed record StemInventory
     public IReadOnlyList<ClassifiedStem> Unrecognised =>
         [.. Files.Where(file => file.Kind is StemKind.Unrecognised)];
 
-    /// <summary>
-    /// What <paramref name="wanted"/> asks for that is not here yet.
-    /// </summary>
+    /// <summary>What <paramref name="wanted"/> asks for that is not here yet (ADR 0027).</summary>
     /// <remarks>
     /// A preset already on disk is <em>kept</em> and never cut again, so the separator is only
     /// ever asked for filenames that are free.
     /// </remarks>
-    public StemPlan Outstanding(StemPlan wanted) =>
+    public StemPlan Shortfall(StemPlan wanted) =>
         new()
         {
             Presets = [.. wanted.Presets.Where(preset => !Presets.Contains(preset))],
@@ -111,7 +115,11 @@ public sealed record StemInventory
 
     /// <summary>Reads a track's files back as presets, a source, and a guide.</summary>
     public static StemInventory Of(IEnumerable<StemOnDisk> files, PresetCatalog catalog) =>
-        new() { Files = [.. files.Select(file => ClassifiedStem.Of(file, catalog))] };
+        new()
+        {
+            Files = [.. files.Select(file => ClassifiedStem.Of(file, catalog))],
+            IsClassified = !catalog.IsEmpty,
+        };
 }
 
 /// <summary>One of a track's files, and what it is to the plan.</summary>

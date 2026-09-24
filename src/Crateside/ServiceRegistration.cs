@@ -226,8 +226,13 @@ public static class ServiceRegistration
             sp.GetRequiredService<QueueSettingsStore>(),
             sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SourceProbe>(),
-            sp.GetRequiredService<ResolvedNameStore>(),
-            sp.GetRequiredService<IntakeStore>()
+            sp.GetRequiredService<ResolvedNameStore>()
+        ));
+        services.AddSingleton(sp => new TrackRemoval(
+            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<IntakeStore>(),
+            sp.GetRequiredService<WorkingSet>(),
+            StagedFiles(sp)
         ));
         services.AddSingleton(sp => new SourceAdd(
             sp.GetRequiredService<QueueSettingsStore>(),

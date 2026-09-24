@@ -17,10 +17,14 @@ public sealed record StemPicker
     /// <summary>What the user has ticked, which is what a confirm would record.</summary>
     public required StemPlan Wanted { get; init; }
 
-    /// <summary>Why the ticks are not the user's to change, or <see cref="PickerLock.None"/>.</summary>
-    public PickerLock Lock { get; init; }
-
-    public bool IsLocked => Lock is not PickerLock.None;
+    /// <summary>
+    /// A cut is running or queued, so a tick records the want at once and unticking waits.
+    /// </summary>
+    /// <remarks>
+    /// Nothing says which wanted lines the running cut is making: its recipe was read at pickup,
+    /// and one ticked since is made only by a re-cut once it lands (ADR 0027).
+    /// </remarks>
+    public bool IsCutInFlight { get; init; }
 
     public IEnumerable<StemChoice> Lines => Bands.SelectMany(band => band.Lines);
 
@@ -168,7 +172,7 @@ public sealed record StemPicker
         {
             Bands = [.. bands.Where(band => band.Lines.Count > 0)],
             Wanted = plan,
-            Lock = row.IsCutInFlight ? PickerLock.CutInFlight : PickerLock.None,
+            IsCutInFlight = row.IsCutInFlight,
         };
     }
 
@@ -257,21 +261,6 @@ public sealed record StemChoice
             (true, false) => StemState.Going,
             _ => StemState.NotMade,
         };
-}
-
-/// <summary>Why a picker's ticks are inert.</summary>
-public enum PickerLock
-{
-    None,
-
-    /// <summary>
-    /// The change already asked for has not landed yet.
-    /// </summary>
-    /// <remarks>
-    /// A wanted line with no file on disk reads as <em>coming</em> whether the separator is about
-    /// to make it or has never been asked, so without this the panel invites a second cut.
-    /// </remarks>
-    CutInFlight,
 }
 
 /// <summary>Where a line stands between what is on disk and what is ticked.</summary>

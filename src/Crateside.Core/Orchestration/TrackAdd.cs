@@ -15,8 +15,7 @@ public sealed class TrackAdd(
     QueueSettingsStore settings,
     CratesidePaths paths,
     SourceProbe probe,
-    ResolvedNameStore names,
-    IntakeStore intake
+    ResolvedNameStore names
 )
 {
     /// <summary>What adding this track would do, or why it cannot be done.</summary>
@@ -111,17 +110,6 @@ public sealed class TrackAdd(
             );
 
         return new AddTrackOutcome { VideoId = plan.VideoId, Title = probed.Title };
-    }
-
-    /// <summary>Drops crateside's own record of a track it was told to work.</summary>
-    /// <remarks>
-    /// Nothing on disk is touched. Both records go — instruction and intake — because dropping
-    /// one alone leaves the other to put the track back on the next scan (ADR 0021).
-    /// </remarks>
-    public void Forget(string videoId)
-    {
-        settings.Forget(videoId);
-        intake.Forget(videoId);
     }
 }
 

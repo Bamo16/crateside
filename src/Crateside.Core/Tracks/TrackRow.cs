@@ -122,14 +122,14 @@ public sealed record TrackRow
     /// <summary>The user pasted this track in rather than adding it to the playlist (ADR 0010).</summary>
     public bool IsAddedByUrl { get; init; }
 
-    /// <summary>
-    /// Whether crateside's own record is all that holds this row, so dropping it removes the
-    /// track rather than redrawing it.
-    /// </summary>
+    /// <summary>Whether Remove can take this track out of crateside (ADR 0027).</summary>
     /// <remarks>
-    /// The intake outlives the playlist entry, so the record is what holds the row (ADR 0021).
+    /// Not while a stage runs, since the handoff picks stems by provenance and would bring them
+    /// back; nor once a file is in the library, which draws the row and is never touched.
     /// </remarks>
-    public bool CanForget => PlaylistItemId is null && (IsAddedByUrl || Samples.Count is 0);
+    public bool CanForget =>
+        this is { PlaylistItemId: null, RunningStage: null }
+        && !Samples.Any(sample => sample.IsInLibrary);
 
     /// <summary>
     /// Why crateside stopped and handed this track back, or null when it has not.
@@ -191,6 +191,8 @@ public sealed record TrackRow
         {
             { RunningStage: { } stage } => InFlight(stage),
             { GpuPosition: not null } => TrackState.JudgedInLine,
+            // Ahead of done and ready-to-warp, which are both claims that nothing is missing.
+            { IsShort: true, ParkedFor: null, GaveUpAt: null } => TrackState.Short,
             { IsDone: true } => TrackState.Done,
             { GaveUpAt: not null } => TrackState.GaveUp,
             { ParkedFor: not null } => TrackState.Parked,
@@ -202,6 +204,20 @@ public sealed record TrackRow
 
     /// <summary>What separation will ask for, once it gets to this track.</summary>
     public SeparationRecipe Recipe => SeparationRecipe.For(Plan, Inventory);
+
+    /// <summary>What the plan asks for that is not on disk (ADR 0027).</summary>
+    public StemPlan Shortfall => Inventory.Shortfall(Plan);
+
+    /// <summary>
+    /// Cut once and missing presets its plan asks for, which only a re-cut the user asks for makes.
+    /// </summary>
+    /// <remarks>
+    /// Never for a library-only track: its plan is the default, which is nobody's statement. And
+    /// presets only, since a kept source that has gone is copied back by the download stage.
+    /// </remarks>
+    public bool IsShort =>
+        this is { IsLibraryOnly: false, Inventory.IsClassified: true, Samples.Count: > 0 }
+        && Shortfall.Presets.Count > 0;
 
     /// <summary>
     /// Whether the separation plan can still be changed, which is until separation starts.
@@ -264,6 +280,7 @@ public sealed record TrackRow
             TrackState.Staging => "staging",
             TrackState.Tagging => "tagging",
             TrackState.ReadyToWarp => "ready to warp",
+            TrackState.Short => $"short · {"file".ToQuantity(Shortfall.Presets.Count)} missing",
             TrackState.Parked => ParkedFor is ParkReason.PremiumShortfall
                 ? "parked · poor audio"
                 : "parked · no key",
@@ -285,7 +302,7 @@ public sealed record TrackRow
             or TrackState.Tagging => TrackChipStyle.TealFilled,
             TrackState.JudgedInLine => TrackChipStyle.TealOutline,
             TrackState.ReadyToWarp => TrackChipStyle.AmberFilled,
-            TrackState.Parked => TrackChipStyle.RedOutline,
+            TrackState.Parked or TrackState.Short => TrackChipStyle.RedOutline,
             TrackState.GaveUp => TrackChipStyle.RedFilled,
             TrackState.Done => TrackChipStyle.GreenOutline,
             _ => TrackChipStyle.NeutralOutline,
@@ -310,6 +327,7 @@ public sealed record TrackRow
                 ? "check for a better upload, or use this one anyway"
                 : "needs a better verdict — nothing automatic will move it",
             TrackState.GaveUp => "retry, or take it out of the playlist",
+            TrackState.Short => "cut what is missing, or drop it from the plan",
             TrackState.Done => "in Mashup Samples",
             _ => "downloading next",
         };
@@ -319,10 +337,13 @@ public sealed record TrackRow
     /// and how long the track has been sitting in staging.
     /// </summary>
     public string Detail =>
-        string.Join(" ", new[] { Judgement, Shortfall, Disagreement, Since }.OfType<string>());
+        string.Join(
+            " ",
+            new[] { Judgement, PremiumShortfall, Disagreement, Since }.OfType<string>()
+        );
 
-    /// <summary>Said only while the shortfall is still the user's to resolve.</summary>
-    private string? Shortfall =>
+    /// <summary>Said only while the premium shortfall is still the user's to resolve.</summary>
+    private string? PremiumShortfall =>
         ParkedFor is ParkReason.PremiumShortfall ? Acquisition?.Advisory : null;
 
     private string Judgement =>

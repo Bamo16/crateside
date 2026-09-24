@@ -144,11 +144,11 @@ public sealed record SeparationRecipe
     /// </remarks>
     public static SeparationRecipe For(StemPlan plan, StemInventory inventory)
     {
-        var outstanding = inventory.Outstanding(plan);
+        var shortfall = inventory.Shortfall(plan);
 
         return new SeparationRecipe
         {
-            Presets = outstanding.Presets,
+            Presets = shortfall.Presets,
             // A guide is for warping new samples by eye, so new presets get one. A re-downloaded
             // source does not: it is the same audio as the stems already warped, whose markers
             // ADR 0020 copies verbatim. With no sample on disk to copy from it is the guide or
@@ -156,13 +156,10 @@ public sealed record SeparationRecipe
             ExtractDrums =
                 !inventory.HasWarpGuide
                 && (
-                    outstanding.Presets.Count > 0
-                    || (
-                        outstanding.KeepSource
-                        && inventory is { Presets.Count: 0, HasSource: false }
-                    )
+                    shortfall.Presets.Count > 0
+                    || (shortfall.KeepSource && inventory is { Presets.Count: 0, HasSource: false })
                 ),
-            KeepSource = outstanding.KeepSource,
+            KeepSource = shortfall.KeepSource,
         };
     }
 }

@@ -99,7 +99,7 @@ public class AdoptedSampleTests
         var inventory = StemInventory.Of([Adopted()], PresetCatalog.Empty);
 
         // Outstanding is what a separation is asked to make. Nothing can make one of these.
-        Assert.Empty(inventory.Outstanding(PlanKeeping(Label)).AdoptedSamples);
+        Assert.Empty(inventory.Shortfall(PlanKeeping(Label)).AdoptedSamples);
     }
 
     [Fact]

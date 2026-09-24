@@ -86,3 +86,34 @@ to discard — so the guard no longer traps anything.
   overlooked: fully-processed stays a disk fact, and the shortfall is the thing that knows better.
 - A track can now sit visibly short for ever, and that is intended. The alternative was spending the
   user's GPU on a guess about why a file is absent.
+
+## Amendment, 2026-09-23 — what building it changed
+
+Five things the design above did not say, each forced by the code or by a measurement.
+
+**A short track is one crateside cut.** Measured on the real library: 16 of 393 rows would have
+read short, **every one library-only** — an acapella among them, told it was missing a vocal and an
+instrumental. A library-only row has no stored plan and falls back to `StemPlan.Default`, which is
+nobody's statement. So `IsShort` excludes library-only rows, and also any row whose inventory was
+read without a catalog: when the separator cannot be asked, every file reads as no preset and the
+whole plan would look missing. `StemInventory.IsClassified` carries that.
+
+**Remove had to reach the job store's view as well.** Dropping the instruction and the intake
+record was not enough: `QueueService.Reopened` keeps a row alive for any track still owing
+Separation, Handoff or Tagging, and since ADR 0025's amendment a failed separation with strikes
+left is owed — so a removed track could come straight back into the GPU line. Reopened now admits
+only tracks the intake still holds. Measured first: all 9 tracks reopened on 2026-09-23 had an
+intake record, so this changes nothing but a removal. An intake that reads as empty is treated as
+unreadable rather than as holding nothing, or one corrupt file would hide every reopened row.
+
+**Remove waits for a running stage, and is not offered once a file is in the library.** The
+handoff picks stems by provenance rather than from the queue, so removing mid-cut would recycle
+staging and have the finishing run hand fresh stems in behind it. And rows are also drawn from
+library files, which Remove never touches, so there it could change nothing.
+
+**Remove leaves an adopted sample where it is.** "What crateside put in Sample Staging" excludes a
+file the user built by hand, which nothing can make again (ADR 0022).
+
+**A coming line in flight says "coming", not "being made".** A tick can now land mid-cut, and the
+running cut read its recipe at pickup, so a line ticked since will not be made by it. Nothing
+records which lines the running cut is making, so the label claims neither.

@@ -105,8 +105,7 @@ public class TrackAddTests : IDisposable
             ),
             paths,
             new SourceProbe(),
-            new ResolvedNameStore(Path.Combine(_scratch, "names.json")),
-            new IntakeStore(Path.Combine(_scratch, "intake.json"))
+            new ResolvedNameStore(Path.Combine(_scratch, "names.json"))
         );
     }
 }

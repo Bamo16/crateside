@@ -149,7 +149,7 @@ public class AddedSourceTests
             Catalog
         );
 
-        Assert.True(guideOnly.Outstanding(plan).KeepSource);
+        Assert.True(guideOnly.Shortfall(plan).KeepSource);
         Assert.Equal(0, SeparationRecipe.For(plan, guideOnly).Passes);
         Assert.Equal(0, SeparationRecipe.For(plan, guideOnly).ExpectedOutputs);
     }

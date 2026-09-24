@@ -226,6 +226,6 @@ public class QueueViewCompositionTests
         var item = Assert.Single(view.AwaitingSeparation);
 
         Assert.True(item.Plan.AsksTheSameAs(StemPlan.Default));
-        Assert.Equal(["instrumental_full"], item.Inventory.Outstanding(item.Plan).Presets);
+        Assert.Equal(["instrumental_full"], item.Inventory.Shortfall(item.Plan).Presets);
     }
 }

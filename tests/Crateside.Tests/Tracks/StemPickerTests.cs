@@ -241,7 +241,7 @@ public class StemPickerTests
     }
 
     [Fact]
-    public void A_cut_already_in_flight_is_not_offered_a_second_time()
+    public void A_cut_in_flight_says_so_rather_than_offering_a_second_one()
     {
         // What the user saw: confirming a kept source put the track back in line, and until the
         // copy landed the source line still read as wanted-and-not-on-disk — so the panel offered
@@ -254,9 +254,9 @@ public class StemPickerTests
             Catalog
         );
 
-        Assert.Equal(PickerLock.CutInFlight, picker.Lock);
+        Assert.True(picker.IsCutInFlight);
 
-        // The line is still honestly coming — the lock is what says who is making it.
+        // Still honestly coming. What it no longer claims is who is making it (ADR 0027).
         Assert.Equal(
             StemState.Coming,
             picker.Lines.Single(line => line.Kind is StemKind.Source).State
@@ -274,7 +274,7 @@ public class StemPickerTests
         };
 
         Assert.False(queued.IsCutInFlight);
-        Assert.Equal(PickerLock.None, StemPicker.For(queued, Catalog).Lock);
+        Assert.False(StemPicker.For(queued, Catalog).IsCutInFlight);
     }
 
     [Fact]
@@ -288,7 +288,7 @@ public class StemPickerTests
             Catalog
         );
 
-        Assert.False(picker.IsLocked);
+        Assert.False(picker.IsCutInFlight);
         Assert.True(Line(picker, "Vocal - Full").IsPinned);
         Assert.False(Line(picker, "Instrumental - Full").IsPinned);
     }

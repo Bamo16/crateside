@@ -279,7 +279,7 @@ public sealed record TracksView
     private static int Group(TrackRow row) =>
         row switch
         {
-            { State: TrackState.Parked or TrackState.GaveUp }
+            { State: TrackState.Parked or TrackState.GaveUp or TrackState.Short }
             or { AuditNote: not null }
             or { AwaitingRename: > 0 } => 0,
             { State: TrackState.ReadyToWarp } => 2,

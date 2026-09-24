@@ -901,12 +901,6 @@
     border: 0;
 }
 
-/* Dashed says the answer is still worth reading but is not yours to change from here. */
-.tick.locked {
-    color: var(--text-50);
-    border-style: dashed;
-}
-
 .stem-where.dim {
     color: var(--text-30);
 }
@@ -933,11 +927,6 @@
 .opener:hover:not(:disabled) {
     color: var(--text);
     border-color: rgba(255, 255, 255, 0.4);
-}
-
-.opener.locked {
-    color: var(--text-50);
-    cursor: default;
 }
 
 .opener-hint {
@@ -975,6 +964,11 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 8px;
+}
+
+.actions .confirm {
+    font-size: 12px;
+    color: var(--text-75);
 }
 
 /* The evidence link is an anchor because it navigates; it is drawn as a button because it sits in

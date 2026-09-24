@@ -18,6 +18,7 @@
 @inject JobStore Jobs
 @inject StemRecut Recut
 @inject SourceAdd Sources
+@inject TrackRemoval Removal
 @inject TrackAdd Adding
 @inject PresetCatalogReader Presets
 @inject TrackRename Rename
@@ -472,7 +473,7 @@
                                         <div class="stem picking @(row.CanChangePlan ? "planning" : null) @LineTone(line)"
                                              title="@(line.Kind is StemKind.Preset ? line.Description : null)"
                                              @onclick="() => Toggle(row, line)">
-                                            <span class="tick @TickTone(line, picker)">@TickMark(line)</span>
+                                            <span class="tick @TickTone(line)">@TickMark(line)</span>
 
                                             <span class="stem-label">
                                                 @line.Label
@@ -502,7 +503,7 @@
                                         </div>
                                     }
 
-                                    @if (band.Label == "Sources" && !picker.IsLocked)
+                                    @if (band.Label == "Sources")
                                     {
                                         @if (_adding == row.VideoId)
                                         {
@@ -628,24 +629,11 @@
                                     </div>
                                 }
 
-                                @if (picker.IsLocked)
-                                {
-                                    <div class="opener locked">
-                                        <span class="mono">·</span>
-                                        <span>Change what is cut</span>
-                                        <span class="opener-hint">
-                                            @LockedHint()
-                                        </span>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <button class="opener" @onclick="() => TogglePicking(row)" disabled="@_working">
-                                        <span class="mono">+</span>
-                                        <span>Change what is cut</span>
-                                        <span class="opener-hint">@OpenerHint(picker)</span>
-                                    </button>
-                                }
+                                <button class="opener" @onclick="() => TogglePicking(row)" disabled="@_working">
+                                    <span class="mono">+</span>
+                                    <span>Change what is cut</span>
+                                    <span class="opener-hint">@OpenerHint(picker)</span>
+                                </button>
                             }
                         </div>
                     }
@@ -653,13 +641,14 @@
                     <div class="side">
                         @if (picking && _plan is { } confirm)
                         {
-                            @if (picker.Lock is PickerLock.CutInFlight)
+                            @if (picker.IsCutInFlight)
                             {
                                 <p class="what-next @NextTone(row)">@row.Next</p>
 
                                 <p class="detail">
-                                    crateside is already making what this plan asks for. The ticks
-                                    open again once it lands.
+                                    crateside is cutting this track. A tick is kept straight away;
+                                    anything this cut does not make shows as missing once it lands,
+                                    and dropping a file waits until then.
                                 </p>
                             }
                             else if (confirm.Refusal is { } refusal)
@@ -702,7 +691,7 @@
                             }
 
                             <div class="actions">
-                                @if (confirm.IsPossible && picker.ChangesAnything && !picker.IsLocked)
+                                @if (confirm.IsPossible && picker.ChangesAnything && !picker.IsCutInFlight)
                                 {
                                     <button class="@(picker.IsAdditive ? "primary" : "danger")"
                                             @onclick="() => ConfirmRecut(row)" disabled="@_working">
@@ -723,6 +712,10 @@
                             {
                                 <text> @Cost(row.Recipe) Changes apply now — nothing has been made yet.</text>
                             }
+                            @if (row.State is TrackState.Short)
+                            {
+                                <text> Not on disk: @Missing(row). Cutting it is @Cost(row.Recipe)</text>
+                            }
                         </p>
 
                         <div class="actions">
@@ -738,6 +731,12 @@
                             {
                                 <button class="outline" @onclick="() => Retry(row)">Retry</button>
                             }
+                            @if (row.State is TrackState.Short)
+                            {
+                                <button class="primary" @onclick="() => CutShortfall(row)" disabled="@_working">
+                                    @(_working ? "Cutting…" : "Cut what is missing")
+                                </button>
+                            }
                             @if (Playlist.BumpedVideoId == row.VideoId)
                             {
                                 <button class="primary" @onclick="ClearBump">Stop working this first</button>
@@ -752,9 +751,17 @@
                                     Remove from playlist
                                 </button>
                             }
+                            else if (row.CanForget && _removing == row.VideoId)
+                            {
+                                <span class="confirm">@RemovalQuestion()</span>
+                                <button class="danger" @onclick="() => ConfirmRemove(row)" disabled="@_working">
+                                    Remove
+                                </button>
+                                <button class="outline" @onclick="CancelRemove" disabled="@_working">Keep</button>
+                            }
                             else if (row.CanForget)
                             {
-                                <button class="outline" @onclick="() => Forget(row)">Remove</button>
+                                <button class="outline" @onclick="() => StartRemove(row)">Remove</button>
                             }
                         </div>
                         }
@@ -769,9 +776,17 @@
         }
     }
 
-    @if (_toasts.Count > 0 || _consentToast)
+    @if (_toasts.Count > 0 || _consentToast || _removed is not null)
     {
         <div class="toasts">
+            @if (_removed is { } removed)
+            {
+                <div class="toast">
+                    <span class="eyebrow">Removed</span>
+                    <span class="toast-song">@removed.Title</span>
+                    <span class="toast-foot">@removed.Note</span>
+                </div>
+            }
             @if (_consentToast)
             {
                 <div class="toast lapsed">
@@ -914,11 +929,71 @@
     }
 
     /// <summary>Drops crateside's own record of a pasted track. Nothing on disk is touched.</summary>
-    private async Task Forget(TrackRow row)
-    {
-        Adding.Forget(row.VideoId);
+    /// <summary>The row asking to be removed, held until the user confirms.</summary>
+    private string? _removing;
 
-        await Source.RefreshAsync(_circuit.Token);
+    private IReadOnlyList<StagingStem> _recycling = [];
+
+    /// <summary>The last track removed, said once because its row is no longer there to say it.</summary>
+    private (string Title, string Note)? _removed;
+
+    private void StartRemove(TrackRow row)
+    {
+        _problem = null;
+        _removing = row.VideoId;
+        _recycling = Removal.Recycling(row.Facts.Uploads);
+    }
+
+    private void CancelRemove()
+    {
+        _removing = null;
+        _recycling = [];
+    }
+
+    private string RemovalQuestion() =>
+        _recycling.Count is 0
+            ? "Drop crateside's record of this track? No file is touched."
+            : $"Drop crateside's record and recycle {"staged file".ToQuantity(_recycling.Count)}? "
+                + "Nothing in Mashup Samples is touched.";
+
+    private async Task ConfirmRemove(TrackRow row)
+    {
+        _working = true;
+
+        try
+        {
+            var outcome = Removal.Apply(row.VideoId, row.Facts.Uploads);
+
+            _removed = (
+                row.Title,
+                outcome.Problem
+                    ?? (
+                        outcome.Recycled is 0
+                            ? "No file was touched."
+                            : $"{"staged file".ToQuantity(outcome.Recycled)} recycled."
+                    )
+            );
+            CancelRemove();
+
+            await Source.RefreshAsync(_circuit.Token);
+        }
+        finally
+        {
+            _working = false;
+        }
+
+        try
+        {
+            await Task.Delay(ToastLife, _circuit.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        _removed = null;
+
+        await InvokeAsync(StateHasChanged);
     }
     /// <summary>The row whose add-a-source form is open, or null when none is.</summary>
     private string? _adding;
@@ -1400,8 +1475,15 @@
     /// </remarks>
     private async Task Toggle(TrackRow row, StemChoice line)
     {
-        if (line.IsPinned || PickerFor(row).IsLocked)
+        if (line.IsPinned)
             return;
+
+        if (row.IsCutInFlight)
+        {
+            await ToggleInFlight(row, line);
+
+            return;
+        }
 
         var plan = _picking == row.VideoId ? _wanted : row.Plan;
 
@@ -1432,9 +1514,46 @@
 
         // Only once a tick has actually moved: until then there is nothing to confirm and the
         // side column has no business offering to.
+        // A short track has something to confirm even when the plan is unchanged: making up the
+        // shortfall is a re-cut of its own (#38).
         _plan =
-            wanted.AsksTheSameAs(row.Plan) ? null
+            wanted.AsksTheSameAs(row.Plan) && !row.IsShort ? null
             : Recut.PlanFor(row.VideoId, wanted, _presets, row.Inventory);
+    }
+
+    /// <summary>
+    /// Records a tick on a track already in a cut, and makes nothing: the running cut read its
+    /// recipe at pickup, so whatever it does not make is a shortfall once it lands (ADR 0027).
+    /// </summary>
+    /// <remarks>
+    /// Unticking waits, because the separator may be writing the very file being dropped.
+    /// </remarks>
+    private async Task ToggleInFlight(TrackRow row, StemChoice line)
+    {
+        _problem = null;
+
+        if (line.IsWanted)
+        {
+            _problem = "crateside is cutting this track. You can drop files once it has finished.";
+
+            return;
+        }
+
+        var wanted = line switch
+        {
+            { Kind: StemKind.Source } => row.Plan.TogglingSource(),
+            _ => row.Plan.Toggling(line.PresetId!),
+        };
+
+        Playlist.SetPlan(row.VideoId, wanted);
+
+        _wanted = wanted;
+        _plan = null;
+
+        // A kept source is a copy the download stage makes whatever the GPU is doing.
+        Signals.Wake(JobStage.Download);
+
+        await Source.RefreshAsync(_circuit.Token);
     }
 
     private async Task ConfirmRecut(TrackRow row)
@@ -1462,6 +1581,32 @@
         }
     }
 
+    /// <summary>Makes what the plan already asks for and disk lacks, leaving the plan as it is.</summary>
+    private async Task CutShortfall(TrackRow row)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            _problem = Recut.Apply(row.VideoId, row.Plan, _presets, row.Inventory).Problem;
+
+            Signals.Wake(JobStage.Separation);
+
+            await Source.RefreshAsync(_circuit.Token);
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private string Missing(TrackRow row) =>
+        string.Join(
+            ", ",
+            row.Shortfall.Presets.Select(id => _presets.ById(id)?.DisplayName ?? id)
+        );
+
     /// <summary>What the opener says it would let you reach, without opening it.</summary>
     private static string OpenerHint(StemPicker picker)
     {
@@ -1474,9 +1619,6 @@
             : $"{"more preset".ToQuantity(unmade)}, the source track";
     }
 
-    private static string LockedHint() =>
-        "crateside is working on this track. What it makes lands in Sample Staging.";
-
     /// <summary>The mark in a line's first cell: a tick, an empty box, or a pinned dot.</summary>
     private static string TickMark(StemChoice line) =>
         line switch
@@ -1487,14 +1629,13 @@
             _ => string.Empty,
         };
 
-    private static string? TickTone(StemChoice line, StemPicker picker) =>
-        (line, picker.IsLocked) switch
+    private static string? TickTone(StemChoice line) =>
+        line switch
         {
-            ({ IsPinned: true }, _) => "pinned",
-            (_, true) => "locked",
-            ({ State: StemState.Coming }, _) => "coming",
-            ({ State: StemState.Going }, _) => "going",
-            ({ IsWanted: true }, _) => "on",
+            { IsPinned: true } => "pinned",
+            { State: StemState.Coming } => "coming",
+            { State: StemState.Going } => "going",
+            { IsWanted: true } => "on",
             _ => null,
         };
 
@@ -1525,15 +1666,13 @@
         };
 
     /// <remarks>
-    /// A wanted line with no file reads the same whether the separator is making it right now or
-    /// has never been asked, so the lock is what tells those two apart.
+    /// In flight a coming line may be in the running cut or ticked since, and nothing records
+    /// which, so it claims neither.
     /// </remarks>
     private static string Where(StemChoice line, StemPicker picker) =>
         line switch
         {
-            { State: StemState.Coming } => picker.Lock is PickerLock.CutInFlight
-                ? "being made"
-                : "new",
+            { State: StemState.Coming } => picker.IsCutInFlight ? "coming" : "new",
             { State: StemState.Going } => "removed",
             { State: StemState.NotMade, Kind: StemKind.Source } => "not kept",
             { State: StemState.NotMade } => "not made",
@@ -1761,7 +1900,7 @@
         row.State switch
         {
             TrackState.ReadyToWarp => "amber",
-            TrackState.Parked or TrackState.GaveUp => "attention",
+            TrackState.Parked or TrackState.GaveUp or TrackState.Short => "attention",
             _ => string.Empty,
         };
 

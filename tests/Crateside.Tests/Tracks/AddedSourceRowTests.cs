@@ -192,11 +192,43 @@ public class AddedSourceRowTests : IDisposable
     }
 
     [Fact]
-    public void A_track_that_still_has_files_keeps_its_row_so_forgetting_it_is_not_offered()
+    public void A_track_with_a_file_in_the_library_keeps_its_row_so_removing_it_is_not_offered()
     {
+        // The library draws the row and is never touched, so Remove would change nothing.
         Assert.False(
             Row([Library("Some Track (Vocal - Full).flac", Track, "Vocal - Full")]).CanForget
         );
+    }
+
+    /// <summary>
+    /// Rob Dougan - Clubbed to Death: a kept source staged, no playlist entry. Remove was never
+    /// offered, because the plan kept regenerating the sample that ruled it out (#33).
+    /// </summary>
+    [Fact]
+    public void A_track_with_files_only_in_staging_can_be_removed()
+    {
+        var row = new TrackRow
+        {
+            VideoId = Track,
+            Title = "Rob Dougan - Clubbed to Death",
+            Samples = [new TrackSample { Label = "source" }],
+        };
+
+        Assert.True(row.CanForget);
+    }
+
+    [Fact]
+    public void A_track_mid_stage_cannot_be_removed()
+    {
+        // The handoff picks stems by provenance, so a running cut would stage them again after.
+        var row = new TrackRow
+        {
+            VideoId = Track,
+            Title = "Rob Dougan - Clubbed to Death",
+            RunningStage = JobStage.Separation,
+        };
+
+        Assert.False(row.CanForget);
     }
 
     [Fact]

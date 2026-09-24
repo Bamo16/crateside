@@ -103,7 +103,7 @@ public class StemInventoryTests
     {
         var inventory = StemInventory.Of([File("x (Vocal - Full).flac", "Vocal - Full")], Catalog);
 
-        var outstanding = inventory.Outstanding(
+        var outstanding = inventory.Shortfall(
             new StemPlan { Presets = ["vocal_full", "instrumental_clean"] }
         );
 
@@ -119,7 +119,7 @@ public class StemInventoryTests
             Catalog
         );
 
-        var outstanding = inventory.Outstanding(
+        var outstanding = inventory.Shortfall(
             new StemPlan { Presets = ["vocal_full"], KeepSource = true }
         );
 
@@ -130,7 +130,7 @@ public class StemInventoryTests
     public void A_track_with_nothing_on_disk_owes_the_whole_plan()
     {
         Assert.True(
-            StemInventory.Empty.Outstanding(StemPlan.Default).AsksTheSameAs(StemPlan.Default)
+            StemInventory.Empty.Shortfall(StemPlan.Default).AsksTheSameAs(StemPlan.Default)
         );
     }
 

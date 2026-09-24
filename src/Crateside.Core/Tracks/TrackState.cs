@@ -53,6 +53,9 @@ public enum TrackState
 
     /// <summary>A stage failed enough times that it stopped trying.</summary>
     GaveUp,
+
+    /// <summary>Cut once, and missing files its plan asks for. A re-cut is the user's to ask for.</summary>
+    Short,
 }
 
 /// <summary>
