@@ -17,15 +17,39 @@ public sealed class VerdictDrainer(
 ) : IStageDrainer
 {
     private readonly CratesidePaths _paths = paths.Value;
+    private readonly SemaphoreSlim _oneAtATime = new(1, 1);
 
     public JobStage Stage => JobStage.Verdict;
 
     /// <summary>Judges the next detected-but-unjudged track, if there is one.</summary>
-    public async Task<StageTick> DrainOnceAsync(CancellationToken cancellationToken = default)
-    {
-        if (control.IsPaused)
-            return StageTick.Paused;
+    public Task<StageTick> DrainOnceAsync(CancellationToken cancellationToken = default) =>
+        DrainOnceAsync(evenIfPaused: false, cancellationToken);
 
+    /// <summary>
+    /// The same, optionally past the pause: how a window roll judges one track without resuming
+    /// the stage (#46).
+    /// </summary>
+    public async Task<StageTick> DrainOnceAsync(
+        bool evenIfPaused,
+        CancellationToken cancellationToken = default
+    )
+    {
+        await _oneAtATime.WaitAsync(cancellationToken);
+
+        try
+        {
+            return control.IsPaused && !evenIfPaused
+                ? StageTick.Paused
+                : await JudgeNextAsync(cancellationToken);
+        }
+        finally
+        {
+            _oneAtATime.Release();
+        }
+    }
+
+    private async Task<StageTick> JudgeNextAsync(CancellationToken cancellationToken)
+    {
         QueueView view;
 
         try

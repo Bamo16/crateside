@@ -155,6 +155,7 @@ public static class ServiceRegistration
 
         // Starts paused: launching the app should never itself be the act that spends quota.
         services.AddSingleton(_ => new VerdictControl());
+        services.AddSingleton<WindowRoll>();
 
         services.AddSingleton(sp => new StageSignals(
             sp.GetRequiredService<DrainControl>(),
@@ -221,6 +222,8 @@ public static class ServiceRegistration
         services.AddSingleton<IHostedService>(sp => Worker<VerdictDrainer>(sp));
         services.AddSingleton<IHostedService>(sp => Worker<HandoffDrainer>(sp));
         services.AddSingleton<IHostedService>(sp => Worker<TaggingDrainer>(sp));
+
+        services.AddHostedService<WindowRollWorker>();
 
         services.AddSingleton(_ => new SourceProbe());
         services.AddSingleton(sp => new TrackAdd(
