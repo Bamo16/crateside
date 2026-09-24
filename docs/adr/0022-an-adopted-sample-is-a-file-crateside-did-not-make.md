@@ -128,4 +128,4 @@ calls below were taken as defaults and are for their review:
 
 Fixing a misspelt name at the same time, which #44 suggested for the High Contrast file, is not
 done. crateside's rename reaches only `Sample Staging`, so a file already in `Mashup Samples`
-is renamed by hand, in Ableton's browser, which carries its tags.
+has to be renamed by hand.
