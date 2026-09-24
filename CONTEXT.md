@@ -87,7 +87,7 @@ against it.
 - **Written root** — a root whose **tag store** holds its whole tag state, which is
   **Sample Staging** and only ever that: every key there is one crateside wrote into the
   store itself. Read from the store, because that is the only place crateside can see its
-  own writes at once — the index takes hours to catch up. A file with no key there has no
+  own writes at once — the index follows, but not at once. A file with no key there has no
   key.
 - **Mirrored root** — a root whose store holds only part of its tag state, which is
   **Mashup Samples**. Read from the **index**, because the store is a mirror that may never
