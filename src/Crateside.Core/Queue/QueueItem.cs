@@ -4,10 +4,9 @@ namespace Crateside.Core.Queue;
 public sealed record QueueItem
 {
     /// <summary>
-    /// The playlist item's own ID — what deletion targets. Distinct from the video ID: the
-    /// same video added twice has two playlist items.
+    /// The playlist item's own ID, which deletion targets and one video can have two of. Null once
+    /// the playlist no longer holds the track.
     /// </summary>
-    /// <remarks>Null for a track crateside is working that the playlist no longer holds.</remarks>
     public string? PlaylistItemId { get; init; }
 
     public required string VideoId { get; init; }
@@ -18,12 +17,9 @@ public sealed record QueueItem
     public string? ChannelTitle { get; init; }
 
     /// <summary>
-    /// When the item was added to the playlist.
+    /// When the item was added — the queue order, since <see cref="Position"/> can mean opposite
+    /// things across playlists.
     /// </summary>
-    /// <remarks>
-    /// This, not <see cref="Position"/>, is the queue order: position is relative to a
-    /// per-playlist setting and can mean opposite things across playlists.
-    /// </remarks>
     public DateTimeOffset? AddedAt { get; init; }
 
     /// <summary>Where the item sits in the playlist. Display only; see <see cref="AddedAt"/>.</summary>
@@ -33,35 +29,27 @@ public sealed record QueueItem
     public PremiumOutlook PremiumOutlook { get; init; }
 
     /// <summary>
-    /// True when the video is no longer playable, deleted or made private upstream.
+    /// True when the video was deleted or made private upstream; YouTube keeps the entry, so it
+    /// can never become processed.
     /// </summary>
-    /// <remarks>
-    /// YouTube keeps the playlist entry and blanks its title, so it can never become processed.
-    /// </remarks>
     public bool IsUnavailable { get; init; }
 
     /// <summary>
-    /// Which files the user wants made for this track.
+    /// Which files the user wants made for this track, from their standing instruction, or
+    /// <see cref="StemPlan.Default"/> when they have not said.
     /// </summary>
-    /// <remarks>
-    /// Carried from the user's standing instruction, never inferred here. Defaults to
-    /// <see cref="StemPlan.Default"/>, so a reader never has to handle "not stated".
-    /// </remarks>
     public StemPlan Plan { get; init; } = StemPlan.Default;
 
     /// <summary>
-    /// What this track already has on disk, which is what makes a cut additive.
+    /// What this track already has on disk, which is what makes a cut additive. Empty means it
+    /// owes the whole plan.
     /// </summary>
-    /// <remarks>
-    /// Empty for a track nothing has been cut for, which is the same thing as owing the whole
-    /// plan — so a reader never has to handle "not yet separated" separately.
-    /// </remarks>
     public StemInventory Inventory { get; init; } = StemInventory.Empty;
 
-    /// <summary>The upload to fetch instead of this entry's own video, or null.</summary>
-    /// <remarks>
-    /// <see cref="VideoId"/> still names the entry's original video and stays the join key.
-    /// </remarks>
+    /// <summary>
+    /// The upload to fetch instead of this entry's own video, or null; <see cref="VideoId"/> stays
+    /// the join key.
+    /// </summary>
     public string? StatedSourceUrl { get; init; }
 
     public string WatchUrl => $"https://www.youtube.com/watch?v={VideoId}";
@@ -158,13 +146,9 @@ public sealed record QueueView
     }
 
     /// <summary>
-    /// The work lists with the bumped track first, where it is in them. Every other item keeps
-    /// its place, so the order stays the playlist's own until the user says otherwise.
+    /// The two lists a stage picks from, with the bumped track first and every other item where
+    /// it was (ADR 0015).
     /// </summary>
-    /// <remarks>
-    /// Applied to the two lists a stage picks from. <see cref="AwaitingKey"/> is not one — nothing
-    /// automatic works it, so being first in it would mean nothing (ADR 0015).
-    /// </remarks>
     private QueueView WithBumpedFirst(string? bumped) =>
         bumped is not { Length: > 0 } videoId
             ? this
@@ -189,12 +173,9 @@ public sealed record QueueView
     public required IReadOnlyList<QueueItem> Outstanding { get; init; }
 
     /// <summary>
-    /// The next <paramref name="size"/> items to work, plus anything explicitly pinned.
+    /// The next <paramref name="size"/> items to work, plus anything pinned — on top of the size,
+    /// never instead.
     /// </summary>
-    /// <remarks>
-    /// Pinned items are included on top of the size, never instead of, so pinning one track
-    /// never drops another off the end.
-    /// </remarks>
     public IReadOnlyList<QueueItem> NextBatch(int size, ISet<string>? pinned = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(size);
@@ -220,22 +201,15 @@ public sealed record QueueView
     public required IReadOnlyList<QueueItem> AwaitingSeparation { get; init; }
 
     /// <summary>
-    /// Tracks still owing a stage that the playlist no longer holds, whichever stage it is.
+    /// Tracks the playlist no longer holds that still owe some stage — which keeps their rows, not
+    /// their place in <see cref="AwaitingSeparation"/>.
     /// </summary>
-    /// <remarks>
-    /// Keeping a row alive and queueing for the GPU are different jobs. This is the first;
-    /// <see cref="AwaitingSeparation"/> is the second, and a track owing only a handoff belongs
-    /// in one and not the other (#32).
-    /// </remarks>
     public IReadOnlyList<QueueItem> Reopened { get; init; } = [];
 
     /// <summary>
-    /// Every item the read produced, once each — what a stage that works any track reads.
+    /// Every item the read produced, once each — what a stage that works any track reads, since a
+    /// source can be added even to a finished one (ADR 0019).
     /// </summary>
-    /// <remarks>
-    /// A source can be added to a track at any point, including one already finished with, so
-    /// the download stage cannot read the outstanding list alone (ADR 0019).
-    /// </remarks>
     public IEnumerable<QueueItem> Everything =>
         Items
             .Concat(AwaitingSeparation)
@@ -244,11 +218,8 @@ public sealed record QueueView
             .DistinctBy(item => item.VideoId, StringComparer.Ordinal);
 
     /// <summary>
-    /// Separated already, and parked for want of a key worth tagging with.
+    /// Separated already, and parked for want of a key worth tagging with. Nothing automatic moves
+    /// these on.
     /// </summary>
-    /// <remarks>
-    /// Nothing crateside runs moves these on — the way out is a better verdict, a human
-    /// decision, so this is a resting place with no urgency.
-    /// </remarks>
     public required IReadOnlyList<QueueItem> AwaitingKey { get; init; }
 }

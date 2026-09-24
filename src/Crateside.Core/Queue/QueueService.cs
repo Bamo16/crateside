@@ -3,8 +3,10 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Queue;
 
-/// <summary>Video IDs crateside has separation to redo for, whatever the playlist says.</summary>
-/// <remarks>Takes the ledger because the answer is per song, not per video ID (ADR 0014).</remarks>
+/// <summary>
+/// Video IDs crateside has separation to redo for, whatever the playlist says, decided per song
+/// (ADR 0014).
+/// </summary>
 public delegate IReadOnlySet<string> ReadReopenedTracks(KeyLedger ledger);
 
 /// <summary>
@@ -35,21 +37,15 @@ public sealed class QueueService(
     private DateTimeOffset _cachedAt;
 
     /// <summary>
-    /// When the playlist was last actually fetched, or null if it never has been.
+    /// When the playlist was last fetched from the API — not when the disk was last scanned — or
+    /// null if it never has been.
     /// </summary>
-    /// <remarks>
-    /// The API read, not the disk scan — the two run on different clocks: a scan happens on
-    /// every read while the playlist itself is cached for <see cref="CacheFor"/>.
-    /// </remarks>
     public DateTimeOffset? PlaylistReadAt => _cachedItems is null ? null : _cachedAt;
 
     /// <summary>
-    /// Why the playlist could not be read, or null when the last read worked.
+    /// Why the playlist could not be read, or null when the last read worked. A report, not a
+    /// failure: the rows are still built from what crateside has already taken on.
     /// </summary>
-    /// <remarks>
-    /// A report rather than a failure: the rows are still built, from what crateside has already
-    /// taken on. Says so on the page, because silence would read as an empty playlist.
-    /// </remarks>
     public string? PlaylistProblem { get; private set; }
 
     /// <summary>Whether an OAuth client exists, so deletion is possible at all.</summary>
@@ -127,10 +123,6 @@ public sealed class QueueService(
             .Tracks.FirstOrDefault(t => t.VideoId.Equals(videoId, StringComparison.Ordinal));
 
     /// <summary>Forgets the cached playlist, so the next read goes to the API.</summary>
-    /// <remarks>
-    /// For the Refresh button and for anything that changes the playlist itself. Everything
-    /// else is content to see a two-minute-old list.
-    /// </remarks>
     public void Invalidate()
     {
         _readGate.Wait();
@@ -146,12 +138,8 @@ public sealed class QueueService(
     }
 
     /// <summary>
-    /// The playlist, from the API or from the last read.
+    /// The playlist, from the API or from the last read; readers arriving together share one call.
     /// </summary>
-    /// <remarks>
-    /// Gated so that several readers arriving at once make one call between them rather than
-    /// one each.
-    /// </remarks>
     private async Task<IReadOnlyList<QueueItem>> ItemsAsync(CancellationToken cancellationToken)
     {
         await _readGate.WaitAsync(cancellationToken);
@@ -194,12 +182,9 @@ public sealed class QueueService(
     }
 
     /// <summary>
-    /// Reads the queue and keeps everything the read produced, not just the conclusion.
+    /// Reads the queue and keeps everything the read produced. The most expensive thing in the
+    /// app — it opens every audio file under three roots — so it must not run per event.
     /// </summary>
-    /// <remarks>
-    /// The most expensive thing in the app — a ledger read plus two recursive walks that open
-    /// every audio file under three roots. Must not run per event.
-    /// </remarks>
     public async Task<QueueScan> ScanAsync(CancellationToken cancellationToken = default)
     {
         var held = Pasted(await ItemsAsync(cancellationToken));
@@ -245,13 +230,7 @@ public sealed class QueueService(
         };
     }
 
-    /// <summary>
-    /// The playlist, plus the tracks the user pasted in.
-    /// </summary>
-    /// <remarks>
-    /// These join <see cref="QueueView.Items"/> and therefore <see cref="QueueView.Outstanding"/>,
-    /// which a re-cut is gated out of (ADR 0010).
-    /// </remarks>
+    /// <summary>The playlist, plus the tracks the user pasted in (ADR 0010).</summary>
     private IReadOnlyList<QueueItem> Pasted(IReadOnlyList<QueueItem> playlist)
     {
         var held = playlist.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
@@ -267,11 +246,9 @@ public sealed class QueueService(
     }
 
     /// <summary>
-    /// Everything crateside has taken on: what the playlist holds now, plus what it held once.
+    /// Everything crateside has taken on: what the playlist holds now, plus what it held once
+    /// (ADR 0021).
     /// </summary>
-    /// <remarks>
-    /// The playlist is an arrival signal and nothing else (ADR 0021).
-    /// </remarks>
     private IReadOnlyList<QueueItem> TakenOn(IReadOnlyList<QueueItem> held)
     {
         var owed = Owed().ToHashSet(StringComparer.Ordinal);
@@ -284,12 +261,9 @@ public sealed class QueueService(
     }
 
     /// <summary>
-    /// Tracks the playlist may no longer hold that crateside still owes something for.
+    /// Tracks the playlist may no longer hold whose instruction still asks for something; an
+    /// empty one is a finished track's residue, and owing it would re-download it.
     /// </summary>
-    /// <remarks>
-    /// Only instructions that ask for something: an entry that says nothing is residue of a
-    /// finished track, and putting it back in the work lists re-downloads it.
-    /// </remarks>
     private IEnumerable<string> Owed() =>
         settings
             .Read()
@@ -302,10 +276,6 @@ public sealed class QueueService(
     /// Gives back the entries crateside has recorded, so the playlist stops holding what it has
     /// already delivered (ADR 0021).
     /// </summary>
-    /// <remarks>
-    /// Every record not yet offered back, not only this scan's. Off until the user asks: the first
-    /// run offers all of them at fifty quota units each, and a deletion is final.
-    /// </remarks>
     private async Task ConsumeAsync(
         IReadOnlyList<QueueItem> held,
         CancellationToken cancellationToken
@@ -381,12 +351,9 @@ public sealed class QueueService(
     }
 
     /// <summary>
-    /// What each video ID already has, counting every upload of the same song (ADR 0014).
+    /// What each video ID already has, counting every upload of the same song — including those
+    /// with no file of their own (ADR 0014).
     /// </summary>
-    /// <remarks>
-    /// Keyed by every upload the ledger files under the song, not only those carrying a file of
-    /// their own: a second upload of a song already cut has nothing on disk to be found by.
-    /// </remarks>
     internal static IReadOnlyDictionary<string, StemInventory> InventoriesBySong(
         ProcessedTracks processed,
         Ledger.KeyLedger ledger,
@@ -417,12 +384,9 @@ public sealed class QueueService(
     }
 
     /// <summary>
-    /// Tracks with separation to redo that the playlist no longer holds.
+    /// Judged tracks with separation to redo that the playlist no longer holds — so they reach
+    /// <see cref="QueueView.AwaitingSeparation"/>, never <see cref="QueueView.Outstanding"/>.
     /// </summary>
-    /// <remarks>
-    /// Gated to tracks the ledger has already judged, so these never reach
-    /// <see cref="QueueView.Outstanding"/> — only <see cref="QueueView.AwaitingSeparation"/>.
-    /// </remarks>
     private IReadOnlyList<QueueItem> Reopened(
         IReadOnlyList<QueueItem> items,
         Ledger.KeyLedger ledger
@@ -455,20 +419,13 @@ public sealed class QueueService(
     /// <summary>
     /// The queue sorted into work lists — the conclusion of a <see cref="ScanAsync"/>.
     /// </summary>
-    /// <remarks>
-    /// Throws <see cref="QueueUnavailableException"/> if the playlist cannot be read — the
-    /// caller must render that as its own state, never as an empty queue.
-    /// </remarks>
     public async Task<QueueView> ReadAsync(CancellationToken cancellationToken = default) =>
         (await ScanAsync(cancellationToken)).View;
 
     /// <summary>
-    /// Removes every fully-processed item from the playlist.
+    /// Removes every fully-processed item from the playlist, re-testing first so a stale page
+    /// cannot delete something that has since stopped qualifying.
     /// </summary>
-    /// <remarks>
-    /// Re-reads and re-tests before deleting — a stale page must never be able to delete
-    /// something that has since stopped qualifying.
-    /// </remarks>
     public async Task<IReadOnlyList<RemovalResult>> RemoveProcessedAsync(
         CancellationToken cancellationToken = default
     )
@@ -482,7 +439,6 @@ public sealed class QueueService(
     /// Removes specific items the user picked by hand, whatever the automatic predicate would
     /// claim.
     /// </summary>
-    /// <remarks>Does no qualification check: this is the user's explicit call.</remarks>
     public async Task<IReadOnlyList<RemovalResult>> RemoveAsync(
         IReadOnlyList<QueueItem> items,
         CancellationToken cancellationToken = default
@@ -501,7 +457,6 @@ public sealed class QueueService(
 /// <summary>
 /// One reading of the queue: the work lists, and the material they were derived from.
 /// </summary>
-/// <remarks>Kept together because recomputing any of it separately means walking the library again.</remarks>
 public sealed record QueueScan
 {
     public required QueueView View { get; init; }
@@ -519,12 +474,9 @@ public sealed record QueueScan
     public required ProcessedTracks Processed { get; init; }
 
     /// <summary>
-    /// The user's standing instructions, by video ID.
+    /// The user's standing instructions by video ID, carried whole because they stay true after
+    /// the track leaves the playlist.
     /// </summary>
-    /// <remarks>
-    /// Carried whole, not only applied to the work lists — a track leaves the playlist once
-    /// processed while its instructions (such as having no vocals) go on being true.
-    /// </remarks>
     public required IReadOnlyDictionary<string, TrackInstruction> Instructions { get; init; }
 
     /// <summary>When the playlist itself was last fetched. Null if it never has been.</summary>

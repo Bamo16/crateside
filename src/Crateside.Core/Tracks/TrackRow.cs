@@ -52,12 +52,9 @@ public sealed record TrackRow
     public TrackNameSource NameSource { get; init; }
 
     /// <summary>
-    /// Staged files a rename did not reach — zero unless one was interrupted part way.
+    /// Staged files not yet carrying the name the user stated — zero unless a rename was
+    /// interrupted part way.
     /// </summary>
-    /// <remarks>
-    /// Counted against the name the user stated, never a derived one, which can differ from what
-    /// StemForge wrote.
-    /// </remarks>
     public int AwaitingRename { get; init; }
 
     /// <summary>A single file already in <c>Mashup Samples</c> locks the whole row (ADR 0003).</summary>
@@ -86,12 +83,9 @@ public sealed record TrackRow
     public KeyConfidence Confidence => Verdict?.Confidence ?? KeyConfidence.Unknown;
 
     /// <summary>
-    /// The warp starting point, and the one number the user needs mid-warp.
+    /// The warp starting point — set even when <see cref="Key"/> is null, since a verdict too
+    /// weak to tag with still measured a tempo.
     /// </summary>
-    /// <remarks>
-    /// Populated even when <see cref="Key"/> is null — a verdict too weak to tag with still
-    /// measured a tempo.
-    /// </remarks>
     public double? Bpm => Verdict?.Bpm;
 
     /// <summary>The stage crateside currently believes is working this track, if any.</summary>
@@ -115,10 +109,6 @@ public sealed record TrackRow
     /// The row exists only because the library has files for it: crateside never queued it and it
     /// is not in staging.
     /// </summary>
-    /// <remarks>
-    /// Always <see cref="TrackState.Done"/>, so it is outside
-    /// <see cref="TrackFilter.Unfinished"/> and reachable through <see cref="TrackFilter.All"/>.
-    /// </remarks>
     public bool IsLibraryOnly { get; init; }
 
     /// <summary>Which files the user wants made for this track.</summary>
@@ -128,10 +118,6 @@ public sealed record TrackRow
     public bool IsAddedByUrl { get; init; }
 
     /// <summary>Whether Remove can take this track out of crateside (ADR 0027).</summary>
-    /// <remarks>
-    /// Not while a stage runs, since the handoff picks stems by provenance and would bring them
-    /// back; nor once a file is in the library, which draws the row and is never touched.
-    /// </remarks>
     public bool CanForget =>
         this is { PlaylistItemId: null, RunningStage: null }
         && !Samples.Any(sample => sample.IsInLibrary);
@@ -142,55 +128,40 @@ public sealed record TrackRow
     public ParkReason? ParkedFor { get; init; }
 
     /// <summary>
-    /// How the download crateside is holding turned out, or null when it holds none.
+    /// How the held download turned out, or null when there is none; a finding only when
+    /// <see cref="Acquisition.Stops"/> says so, not by being here.
     /// </summary>
-    /// <remarks>
-    /// Present for any track with a working set, shortfall or not — what makes it a finding is
-    /// <see cref="Acquisition.Stops"/>, not its being here.
-    /// </remarks>
     public Acquisition? Acquisition { get; init; }
 
     /// <summary>Its place in the line for the GPU, counting from one. Null when it is not in it.</summary>
     public int? GpuPosition { get; init; }
 
     /// <summary>
-    /// The files of this track meant to be kept — warp guides excluded, because they are used up
-    /// rather than kept, not because they are untagged: they carry the key like everything else.
+    /// The files meant to be kept, warp guides excluded — usually stems, but for an instrumental
+    /// release the source track itself (ADR 0004).
     /// </summary>
-    /// <remarks>
-    /// For most tracks the vocal and instrumental stems; for an instrumental release, the source
-    /// track, which is a sample and no kind of stem at all (ADR 0004).
-    /// </remarks>
     public IReadOnlyList<TrackSample> Samples { get; init; } = [];
 
-    /// <summary>A warp guide is still on disk, which says warping is outstanding.</summary>
-    /// <remarks>
-    /// Its absence is not a claim that warping happened (ADR 0004).
-    /// </remarks>
+    /// <summary>
+    /// A warp guide is still on disk, so warping is outstanding; its absence claims nothing (ADR 0004).
+    /// </summary>
     public bool HasWarpGuide { get; init; }
 
     /// <summary>
-    /// The folder holding this track's files, or null when it has none on disk yet.
+    /// The folder holding this track's files, staging first, or null when none are on disk yet.
     /// </summary>
-    /// <remarks>Staging wins over wherever else the files have got to.</remarks>
     public string? Folder { get; init; }
 
     /// <summary>
-    /// When this track's files arrived in <c>Sample Staging</c>, or null once none are left.
+    /// When this track's files arrived in <c>Sample Staging</c>, read off the files, or null once
+    /// none are left (ADR 0008).
     /// </summary>
-    /// <remarks>
-    /// Read off the file, not recorded by crateside — it can answer for tracks staged before
-    /// anything tracked it (ADR 0008).
-    /// </remarks>
     public DateTimeOffset? StagedSince { get; init; }
 
     /// <summary>
-    /// Where the track has got to.
+    /// Where the track has got to — outstanding work outranks done, since a swapped track's old
+    /// samples can all be in the library while its replacement is still queued.
     /// </summary>
-    /// <remarks>
-    /// Outstanding work outranks done: a swapped track's old samples are all in the library while
-    /// its replacement is still queued.
-    /// </remarks>
     public TrackState State =>
         this switch
         {
@@ -216,21 +187,14 @@ public sealed record TrackRow
     /// <summary>
     /// Cut once and missing presets its plan asks for, which only a re-cut the user asks for makes.
     /// </summary>
-    /// <remarks>
-    /// Never for a library-only track: its plan is the default, which is nobody's statement. And
-    /// presets only, since a kept source that has gone is copied back by the download stage.
-    /// </remarks>
     public bool IsShort =>
         this is { IsLibraryOnly: false, Inventory.IsClassified: true, Samples.Count: > 0 }
         && Shortfall.Presets.Count > 0;
 
     /// <summary>
-    /// Whether the separation plan can still be changed, which is until separation starts.
+    /// Whether the plan can still change, which is until separation starts — read off what has
+    /// happened, not <see cref="State"/>, since only <see cref="ParkReason.NoKey"/> follows the GPU.
     /// </summary>
-    /// <remarks>
-    /// Read off what has already happened, not off <see cref="State"/>: only
-    /// <see cref="ParkReason.NoKey"/> means the GPU has already run.
-    /// </remarks>
     public bool CanChangePlan =>
         State is not (TrackState.Separating or TrackState.Staging or TrackState.Tagging)
         && this is { ParkedFor: not ParkReason.NoKey, HasWarpGuide: false, Samples.Count: 0 };
@@ -238,10 +202,6 @@ public sealed record TrackRow
     /// <summary>
     /// A change to this track's files is already being made, so the plan is not open to another.
     /// </summary>
-    /// <remarks>
-    /// Only once a track has files: the recipe is read when the separator picks the track up,
-    /// not when the plan was recorded.
-    /// </remarks>
     public bool IsCutInFlight =>
         !CanChangePlan && (RunningStage is not null || GpuPosition is not null);
 
@@ -264,12 +224,9 @@ public sealed record TrackRow
         };
 
     /// <summary>
-    /// A finding worth flagging beside the song name, or null when there is nothing wrong.
+    /// A finding to flag beside the song name — for now an Ableton tag that no longer matches the
+    /// ledger — or null when there is nothing wrong.
     /// </summary>
-    /// <remarks>
-    /// Currently just a stale Ableton tag — one that no longer matches the ledger's verdict, which
-    /// is what pairing actually uses.
-    /// </remarks>
     public string? AuditNote { get; init; }
 
     /// <summary>What the state chip reads.</summary>
@@ -366,11 +323,9 @@ public sealed record TrackRow
                 $"Judged, and the verdict came back {Spoken(Confidence)} — no key worth tagging with.",
         };
 
-    /// <summary>Said only where a conflict was actually found.</summary>
-    /// <remarks>
-    /// Null does not mean the tags are correct — the Ableton tag store lags and keeps entries for
-    /// files that have left (ADR 0003).
-    /// </remarks>
+    /// <summary>
+    /// Said only where a conflict was found; null does not mean the tags are correct (ADR 0003).
+    /// </summary>
     private string? Disagreement =>
         AuditNote is null ? null : "Ableton's key on these files is not the current verdict.";
 
@@ -452,20 +407,14 @@ public sealed record TrackSample
 
     /// <summary>
     /// The preset the plan would ask for to make this file again, or null when it cannot ask.
+    /// Never parse it out of <see cref="Label"/>, which can read like one when it is not.
     /// </summary>
-    /// <remarks>
-    /// Not read off <see cref="Label"/>: files with no preset in their provenance carry the
-    /// separator's display name, and some kept sources have a parenthesised title that reads like one.
-    /// </remarks>
     public string? PresetId { get; init; }
 
     /// <summary>
-    /// The key Ableton holds on this file, or null when it holds none.
+    /// The key Ableton holds on this file — from the tag store while staged, from its index once
+    /// in the library (ADR 0013) — or null when it holds none.
     /// </summary>
-    /// <remarks>
-    /// Read from the tag store while the file is staged and from Ableton's index once it reaches
-    /// <c>Mashup Samples</c> (ADR 0013), so a null means untagged in both places.
-    /// </remarks>
     public string? AbletonKey { get; init; }
 
     /// <summary>Whether Ableton has a key on the file.</summary>
@@ -474,11 +423,10 @@ public sealed record TrackSample
     /// <summary>Whether it was downloaded as premium audio. Null when the file does not say.</summary>
     public bool? IsPremium { get; init; }
 
-    /// <summary>Whether this sample has reached <c>Mashup Samples</c> — the finished library.</summary>
-    /// <remarks>
-    /// Says only which folder the file is in; warping is inferred from that, and never from an
-    /// <c>.asd</c> sidecar (ADR 0002).
-    /// </remarks>
+    /// <summary>
+    /// Whether this sample has reached <c>Mashup Samples</c>; warping is inferred from that, never
+    /// from an <c>.asd</c> sidecar (ADR 0002).
+    /// </summary>
     public bool IsInLibrary { get; init; }
 
     /// <summary>

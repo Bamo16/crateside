@@ -4,12 +4,9 @@ using System.Text.Json.Serialization;
 namespace Crateside.Core.Queue;
 
 /// <summary>
-/// What crateside keeps about a playlist entry so that it never has to read the entry again
-/// (ADR 0021).
+/// What crateside keeps in <c>%APPDATA%\crateside\intake.json</c> about a playlist entry, so it
+/// never has to read the entry again (ADR 0021).
 /// </summary>
-/// <remarks>
-/// Stored in <c>%APPDATA%\crateside\intake.json</c>, beside the settings and apart from them.
-/// </remarks>
 public sealed class IntakeStore
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
@@ -25,12 +22,9 @@ public sealed class IntakeStore
     private bool _durable = true;
 
     /// <summary>
-    /// Whether everything recorded has reached disk.
+    /// Whether everything recorded has reached disk — false for the rest of the run once a write
+    /// has failed.
     /// </summary>
-    /// <remarks>
-    /// False once a write has failed, and it does not recover within a run: a record that exists
-    /// only in memory is lost at the next restart.
-    /// </remarks>
     public bool IsDurable
     {
         get
@@ -56,12 +50,9 @@ public sealed class IntakeStore
     }
 
     /// <summary>
-    /// Remembers every track it has not seen before, and returns the ones it added.
+    /// Remembers every track it has not seen before, and returns the ones it added. Existing
+    /// records are never refreshed.
     /// </summary>
-    /// <remarks>
-    /// Existing records are left alone rather than refreshed: a title the user has since changed
-    /// must not be undone by a later scan.
-    /// </remarks>
     public IReadOnlyList<IntakeRecord> Record(IEnumerable<QueueItem> items)
     {
         lock (_gate)
@@ -107,22 +98,16 @@ public sealed class IntakeStore
     }
 
     /// <summary>
-    /// Records that these entries have been offered back, so no scan offers them again.
+    /// Records that these entries have been offered back, so no scan offers them again. Call it
+    /// before the removal, never after.
     /// </summary>
-    /// <remarks>
-    /// Called before the removal, not after: the other order costs the whole playlist's quota on
-    /// every scan after a crash.
-    /// </remarks>
     public void MarkRemovalAttempted(IEnumerable<string> videoIds, DateTimeOffset at) =>
         SetRemovalAttempted(videoIds, at);
 
     /// <summary>
-    /// Puts these entries back in line to be offered, for a removal that never reached the API.
+    /// Puts these entries back in line to be offered — only for a removal that never reached the
+    /// API and so spent no quota (#34).
     /// </summary>
-    /// <remarks>
-    /// Only for a failure that spent no quota — a lapsed token is refused before the first delete,
-    /// so the mark cost those entries their one offer and nothing was paid for it (#34).
-    /// </remarks>
     public void ClearRemovalAttempted(IEnumerable<string> videoIds) =>
         SetRemovalAttempted(videoIds, null);
 
@@ -162,10 +147,6 @@ public sealed class IntakeStore
     /// Drops records the backfill should never have made: ones standing in for an instruction
     /// that asks for nothing.
     /// </summary>
-    /// <remarks>
-    /// A backfilled record is known by its shape: the video ID for a title and no added-at. A
-    /// record made from a real entry has both, so none is at risk.
-    /// </remarks>
     public void Prune(IReadOnlySet<string> owed, IReadOnlySet<string> held)
     {
         lock (_gate)
@@ -201,12 +182,9 @@ public sealed class IntakeStore
     }
 
     /// <summary>
-    /// Everything crateside has taken on: what the playlist holds now, then what it held once.
+    /// Everything crateside has taken on: what the playlist holds now, which wins because removal
+    /// needs its live entry, then what it held once.
     /// </summary>
-    /// <remarks>
-    /// An entry that is still there wins: it carries a live
-    /// <see cref="QueueItem.PlaylistItemId"/>, which is what removal needs to delete it.
-    /// </remarks>
     public static IReadOnlyList<QueueItem> Merge(
         IReadOnlyList<QueueItem> held,
         IEnumerable<IntakeRecord> recorded
@@ -224,11 +202,9 @@ public sealed class IntakeStore
         ];
     }
 
-    /// <summary>The record read back as the queue item it stands in for.</summary>
-    /// <remarks>
-    /// No <see cref="QueueItem.PlaylistItemId"/>: there is no entry behind it any more, which is
-    /// what tells removal it has nothing to delete.
-    /// </remarks>
+    /// <summary>
+    /// The record read back as the queue item it stands in for, with no playlist entry to delete.
+    /// </summary>
     public static QueueItem AsQueueItem(IntakeRecord record) =>
         new()
         {
@@ -293,13 +269,9 @@ public sealed record IntakeRecord
     public bool IsUnavailable { get; init; }
 
     /// <summary>
-    /// When the playlist entry was offered back, or null while it never has been.
+    /// When the playlist entry was offered back, whether or not the removal worked, or null while
+    /// it never has been.
     /// </summary>
-    /// <remarks>
-    /// Set whether the removal succeeded or not: a failed delete costs fifty quota units and must
-    /// not be retried on the next scan. Cleared only for a removal that never reached the API, or
-    /// when the user asks for another try.
-    /// </remarks>
     [JsonPropertyName("removalAttemptedAt")]
     public DateTimeOffset? RemovalAttemptedAt { get; init; }
 

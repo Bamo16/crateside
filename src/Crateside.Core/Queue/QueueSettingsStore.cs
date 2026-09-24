@@ -5,12 +5,9 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Core.Queue;
 
 /// <summary>
-/// The Queue settings the user can change from the UI, persisted between runs.
+/// The Queue settings the user can change from the UI, kept in <c>%APPDATA%\crateside\queue.json</c>.
+/// The API key is never here: it lives in user-secrets.
 /// </summary>
-/// <remarks>
-/// Stored in <c>%APPDATA%\crateside\queue.json</c>, outside the working tree. The API key is
-/// deliberately not here — it lives in user-secrets and is never written or displayed by the app.
-/// </remarks>
 public sealed class QueueSettingsStore
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
@@ -37,9 +34,9 @@ public sealed class QueueSettingsStore
     }
 
     /// <summary>
-    /// The current settings: what the user saved, falling back to configuration for a first run.
+    /// What the user saved, falling back to configuration for a first run. Never throws: an
+    /// unreadable file degrades to the fallback.
     /// </summary>
-    /// <remarks>Never throws: an unreadable or corrupt file degrades to the fallback.</remarks>
     public QueueSettings Read()
     {
         lock (_gate)
@@ -126,9 +123,9 @@ public sealed class QueueSettingsStore
     }
 
     /// <summary>
-    /// Reads, applies, writes.
+    /// Reads, applies, writes — the one path every mutator takes, so saving one setting cannot
+    /// drop another.
     /// </summary>
-    /// <remarks>Every mutator goes through here, so saving one setting cannot drop another.</remarks>
     private QueueSettings Save(Func<QueueSettings, QueueSettings> change)
     {
         lock (_gate)
@@ -145,13 +142,9 @@ public sealed class QueueSettingsStore
     }
 
     /// <summary>
-    /// The settings as the file has them now, re-reading when it has changed since the cache
-    /// was filled.
+    /// The settings as the file has them now, re-read when its stamp shows an edit from outside.
+    /// Callers hold <see cref="_gate"/>.
     /// </summary>
-    /// <remarks>
-    /// The stamp is what makes an edit from outside this process visible. Without it, a save of
-    /// anything at all silently reverts one. Callers hold <see cref="_gate"/>.
-    /// </remarks>
     private QueueSettings Current()
     {
         var stamp = StampOf(_path);
@@ -179,13 +172,9 @@ public sealed class QueueSettingsStore
         [.. (stored?.Tracks ?? []).Select(Converted)];
 
     /// <summary>
-    /// Turns a pre-<see cref="StemPlan"/> instruction into one: the instrumental-release fact
-    /// becomes the plan it used to derive.
+    /// Turns a pre-<see cref="StemPlan"/> instruction into one, clearing the old field so this
+    /// can go once no instruction carries it.
     /// </summary>
-    /// <remarks>
-    /// Clearing the old field is what makes this a conversion rather than a permanent reader: it
-    /// is omitted when written, so this can go once no instruction carries it.
-    /// </remarks>
     private static TrackInstruction Converted(TrackInstruction stored) =>
         stored is { Plan: null, WasInstrumentalRelease: true }
             ? stored with
@@ -226,24 +215,16 @@ public sealed record QueueSettings
     public string? PlaylistId { get; init; }
 
     /// <summary>
-    /// How often to rebuild the rows with nothing having been announced, in minutes. Zero is
-    /// never; null is <see cref="QueueSettings.DefaultRefreshMinutes"/>.
+    /// How often to rebuild the rows unprompted, in minutes; zero is never. Stage workers read
+    /// the queue on their own loop regardless.
     /// </summary>
-    /// <remarks>
-    /// About the view being true, not about work starting — stage workers read the queue on
-    /// their own idle loop regardless of this setting.
-    /// </remarks>
     [JsonPropertyName("refreshMinutes")]
     public int? RefreshMinutes { get; init; }
 
     /// <summary>
-    /// Whether an entry is removed from the playlist as soon as crateside has recorded it
-    /// (ADR 0021).
+    /// Whether an entry leaves the playlist once recorded; turning it on removes every known entry
+    /// on the next scan, for good (ADR 0021).
     /// </summary>
-    /// <remarks>
-    /// Off until asked for. Turning it on removes every entry crateside already knows of on the
-    /// next scan, which is not undoable from here.
-    /// </remarks>
     [JsonPropertyName("consumeOnArrival")]
     public bool ConsumeOnArrival { get; init; }
 
@@ -257,12 +238,9 @@ public sealed record QueueSettings
 }
 
 /// <summary>
-/// A standing instruction about how crateside should work one track.
+/// A standing instruction about how crateside should work one track, keyed by video ID because an
+/// undetected track has no song to key on.
 /// </summary>
-/// <remarks>
-/// Keyed by video ID because that is the only identity these tracks have — an undetected
-/// track has no song identity to key on.
-/// </remarks>
 public sealed record TrackInstruction
 {
     [JsonPropertyName("videoId")]
@@ -276,18 +254,17 @@ public sealed record TrackInstruction
     public StemPlan? Plan { get; init; }
 
     /// <summary>
-    /// The pre-<see cref="StemPlan"/> fact, read only so that an existing <c>queue.json</c>
-    /// converts itself — see <c>QueueSettingsStore.Converted</c>.
+    /// The pre-<see cref="StemPlan"/> fact, read so an existing <c>queue.json</c> converts itself
+    /// and never written back.
     /// </summary>
-    /// <remarks>Never written: conversion clears it, and a cleared one is omitted.</remarks>
     [JsonPropertyName("instrumentalRelease")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool WasInstrumentalRelease { get; init; }
 
     /// <summary>
-    /// What the user calls this track, which beats every derived name. Null when they have not said.
+    /// What the user calls this track, which beats every derived name — a name, not a filename.
+    /// Null when they have not said.
     /// </summary>
-    /// <remarks>A name, not a filename: the files add the preset and extension themselves.</remarks>
     [JsonPropertyName("name")]
     public string? Name { get; init; }
 
@@ -299,12 +276,8 @@ public sealed record TrackInstruction
     public string? SourceUrl { get; init; }
 
     /// <summary>
-    /// crateside was told to work this track by something other than the playlist.
+    /// crateside was told to work this track by something other than the playlist (ADR 0010).
     /// </summary>
-    /// <remarks>
-    /// The second way in (ADR 0010): what lets a pasted track reach
-    /// <see cref="QueueView.Outstanding"/>, which a re-cut never does.
-    /// </remarks>
     [JsonPropertyName("addedByUrl")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool AddedByUrl { get; init; }

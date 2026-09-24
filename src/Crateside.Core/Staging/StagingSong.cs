@@ -3,9 +3,8 @@ using Crateside.Core.Ledger;
 namespace Crateside.Core.Staging;
 
 /// <summary>
-/// One row of the staging board: a song, with its stems rolled up.
+/// One row of the staging board: a song, with its stems rolled up. Entirely derived, nothing stored.
 /// </summary>
-/// <remarks>Entirely derived — nothing here is stored, nothing marked done by hand.</remarks>
 public sealed record StagingSong
 {
     /// <summary>The ledger join key. Null for a stem carrying no usable provenance.</summary>
@@ -31,36 +30,29 @@ public sealed record StagingSong
     public bool AwaitingDetection => Verdict is null;
 
     /// <summary>
-    /// The files meant to be kept and tagged.
+    /// The files meant to be kept and tagged — usually stems, but for an instrumental release the
+    /// source track (ADR 0004).
     /// </summary>
-    /// <remarks>
-    /// For most songs the vocal and instrumental stems; for an instrumental release, the source
-    /// track (ADR 0004).
-    /// </remarks>
     public IReadOnlyList<StagingStem> Samples => [.. Stems.Where(s => !s.IsWarpGuide)];
 
     /// <summary>
-    /// Warp guides still on disk, whose presence means warping is outstanding.
+    /// Warp guides still on disk, whose presence means warping is outstanding; their absence means
+    /// nothing.
     /// </summary>
-    /// <remarks>This says only that a guide is still here, not that its absence means warped.</remarks>
     public IReadOnlyList<StagingStem> WarpGuides => [.. Stems.Where(s => s.IsWarpGuide)];
 
     public int TaggedStemCount => Samples.Count(s => s.IsKeyTagged);
 
     /// <summary>
-    /// True when every <em>sample</em> carries a key; warp guides are excluded.
+    /// True when every <em>sample</em> carries a key — warp guides excluded because they are not
+    /// kept, though they are tagged too.
     /// </summary>
-    /// <remarks>
-    /// Excluded on retention, not on tagging: crateside tags a guide like anything else.
-    /// </remarks>
     public bool IsFullyTagged => Samples.Count > 0 && TaggedStemCount == Samples.Count;
 
     /// <summary>
-    /// Stems tagged in Ableton with a key that is not the ledger's current verdict.
+    /// Stems tagged in Ableton with a key that is not the ledger's current verdict, which silently
+    /// misroutes pairing.
     /// </summary>
-    /// <remarks>
-    /// The tag is what pairing uses, so a stale one silently misroutes mashups.
-    /// </remarks>
     public IReadOnlyList<StagingStem> StaleTaggedStems =>
         [.. Stems.Where(s => s.KeyDisagreesWithVerdict)];
 }
@@ -74,18 +66,12 @@ public sealed record StagingStem
     /// <summary>
     /// The StemForge preset, or null when the file is a verbatim source download.
     /// </summary>
-    /// <remarks>
-    /// StemForge tags a source download too, but deliberately without a preset descriptor.
-    /// </remarks>
     public string? Preset { get; init; }
 
     /// <summary>
-    /// What the user calls this file when crateside adopted it rather than made it (ADR 0022).
+    /// What the user calls this file when crateside adopted it (ADR 0022). Anything deciding what a
+    /// re-cut may delete must read it, or it takes the file for the separation source.
     /// </summary>
-    /// <remarks>
-    /// Must reach every reader that decides what a re-cut may delete: an adopted file carries no
-    /// preset, so anything seeing only <see cref="Preset"/> reads it as the separation source.
-    /// </remarks>
     public string? AdoptedAs { get; init; }
 
     /// <summary>Whether it was downloaded as premium audio. Null when the file does not say.</summary>
@@ -96,12 +82,8 @@ public sealed record StagingStem
 
     /// <summary>
     /// A stem made to be <em>looked at</em> rather than heard: the drums, deleted once warping
-    /// is done.
+    /// is done. Every drums stem is one, with no way to say otherwise.
     /// </summary>
-    /// <remarks>
-    /// Every drums stem is treated as a warp guide, with no way to say otherwise — a kept drum
-    /// stem has to be handled by hand, outside crateside.
-    /// </remarks>
     public bool IsWarpGuide => IsWarpGuidePreset(Preset);
 
     /// <summary>The rule itself, so every reader of a preset decides this the same way.</summary>

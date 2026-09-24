@@ -5,13 +5,9 @@ using System.Text.RegularExpressions;
 namespace Crateside.Core.Ledger;
 
 /// <summary>
-/// The full evidence behind one verdict: what the agent concluded and why, the sources it
-/// found, and everything the three detectors reported.
+/// The full evidence behind one verdict — conclusion, sources and every detector's report — read
+/// for one song on demand, never with the whole ledger.
 /// </summary>
-/// <remarks>
-/// Read on demand for a single song rather than with the whole ledger: this streams the file
-/// and parses only the line asked for.
-/// </remarks>
 public sealed record RunEvidence
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()
@@ -35,20 +31,15 @@ public sealed record RunEvidence
     public string? Key { get; init; }
 
     /// <summary>
-    /// The diatonic mode, where a human source established one.
+    /// The diatonic mode, where a human source established one. Null means nobody looked, not
+    /// plain major or minor.
     /// </summary>
-    /// <remarks>
-    /// Null means nobody looked, not "plain major/minor": no detector can produce a mode.
-    /// </remarks>
     public string? Mode { get; init; }
 
     /// <summary>
-    /// The argument that the tonic is not its relative, made against the chords and the flicker.
-    /// </summary>
-    /// <remarks>
-    /// Null on runs recorded before the schema split it out; their prose is still in
+    /// The argument that the tonic is not its relative. Null on older runs, whose prose is in
     /// <see cref="Reasoning"/>.
-    /// </remarks>
+    /// </summary>
     public string? TonicCheck { get; init; }
 
     /// <summary>The confidence rationale, and anything else the agent thought worth saying.</summary>
@@ -86,27 +77,20 @@ public sealed record RunEvidence
     public string? BpmSource { get; init; }
 
     /// <summary>
-    /// The runner's own tempo estimate, always kept beside the recommendation.
+    /// The runner's own tempo estimate — often wrong, by a factor of two especially, so a
+    /// cross-check and never the answer.
     /// </summary>
-    /// <remarks>
-    /// Frequently wrong, especially by a factor of two, so it is a cross-check and never the answer.
-    /// </remarks>
     public double? BeatdetectBpm { get; init; }
 
     /// <summary>
-    /// How far off an exact tempo octave still counts as the same tempo, in log2 space.
+    /// How far off an exact tempo octave still counts as the same tempo, in log2 space so that
+    /// doubling and halving are treated alike.
     /// </summary>
-    /// <remarks>
-    /// In log2 rather than on the ratio, because a fixed ratio tolerance means a different thing
-    /// at 2× than at ½×; log2 treats doubling and halving symmetrically.
-    /// </remarks>
     private const double OctaveTolerance = 0.05;
 
-    /// <summary>True when the two BPM figures are not a clean tempo-octave apart.</summary>
-    /// <remarks>
-    /// A 2× difference is just a choice of tempo octave. Anything else means one of them is
-    /// simply wrong, which is worth flagging rather than reconciling.
-    /// </remarks>
+    /// <summary>
+    /// True when the two BPM figures are not a clean tempo-octave apart, so one of them is wrong.
+    /// </summary>
     public bool BpmConflicts =>
         Bpm is { } bpm and > 0
         && BeatdetectBpm is { } rough and > 0
@@ -229,11 +213,9 @@ public sealed partial record EvidenceSource
     public string? Url { get; init; }
 
     /// <summary>
-    /// How the source was obtained, when that is not simply "this link".
+    /// How the source was obtained, when not simply "this link" — <c>"user-provided image"</c> is a
+    /// photograph of sheet music.
     /// </summary>
-    /// <remarks>
-    /// <c>"user-provided image"</c> is the user photographing sheet music, which has no page at all.
-    /// </remarks>
     public string? Via { get; init; }
 
     /// <summary>Everything the source said about the key, verbatim.</summary>
@@ -287,12 +269,9 @@ public sealed partial record EvidenceSource
     public SourceKind Kind => ParseKind(RecordedKind) ?? KindFromHost;
 
     /// <summary>
-    /// The kind the host implies.
+    /// The kind the host implies — a cross-check, not the authority, since a host cannot tell an
+    /// analysis from a bare assertion on the same site.
     /// </summary>
-    /// <remarks>
-    /// A <em>cross-check</em>, not the authority: a host catalog cannot classify a photograph of
-    /// sheet music, nor tell a rigorous analysis from a bare assertion on the same blog.
-    /// </remarks>
     public SourceKind KindFromHost =>
         Host?.Replace("www.", string.Empty, StringComparison.OrdinalIgnoreCase) switch
         {
@@ -315,7 +294,6 @@ public sealed partial record EvidenceSource
         };
 
     /// <summary>True when the agent's kind and the host's catalog entry disagree.</summary>
-    /// <remarks>Worth surfacing rather than reconciling.</remarks>
     public bool KindDisagreesWithHost =>
         ParseKind(RecordedKind) is { } recorded
         && KindFromHost is not (SourceKind.Unknown or SourceKind.Unclassified)
@@ -407,12 +385,9 @@ public sealed record AlgorithmResult
     public double? Confidence { get; init; }
 
     /// <summary>
-    /// CREMA's runner-up and how close it was.
+    /// CREMA's runner-up. Its winner is always 1.0, so the gap to this is the signal; a near-tie
+    /// against the relative key is a swap warning.
     /// </summary>
-    /// <remarks>
-    /// CREMA's winner is structurally always 1.0, so separation from the runner-up is the signal;
-    /// a near-tie against the relative key is a swap warning.
-    /// </remarks>
     public string? RunnerUpKey { get; init; }
 
     public double? RunnerUpRatio { get; init; }

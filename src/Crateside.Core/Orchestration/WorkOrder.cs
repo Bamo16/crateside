@@ -5,11 +5,8 @@ namespace Crateside.Core.Orchestration;
 
 /// <summary>
 /// crateside's instruction for one track: which URL is canonical, where its stems belong, and
-/// what to ask for.
+/// what to ask for. What actually ran is a <see cref="TrackJob"/>.
 /// </summary>
-/// <remarks>
-/// Not a record that anything did — that is <see cref="TrackJob"/>. Composing one is pure.
-/// </remarks>
 public sealed record WorkOrder
 {
     public required string VideoId { get; init; }
@@ -68,14 +65,12 @@ public sealed record SeparationRecipe
     /// The usual pair plus a warp guide. Repeated presets run as independent stem sets rather
     /// than being blended.
     /// </summary>
-    /// <remarks>Built from the plan rather than beside it, so the preset list has one definition.</remarks>
     public static SeparationRecipe Standard { get; } = From(StemPlan.Default);
 
     /// <summary>
     /// For a release that has no vocals: nothing to separate out, so the drums are the only
     /// stem and the source track is the sample — which is what <see cref="KeepSource"/> is for.
     /// </summary>
-    /// <remarks>The copy is the download stage's; separation only ever cuts the guide.</remarks>
     public static SeparationRecipe InstrumentalRelease { get; } =
         From(StemPlan.InstrumentalRelease);
 
@@ -88,12 +83,9 @@ public sealed record SeparationRecipe
     public string Format { get; init; } = "flac";
 
     /// <summary>
-    /// How many files the separator should produce — one per preset, plus the warp guide.
+    /// How many files the separator should produce — one per preset, plus the warp guide. A kept
+    /// source is not among them: the download stage copies it (ADR 0019).
     /// </summary>
-    /// <remarks>
-    /// A kept source is not among them. It is copied out of the working set by the download
-    /// stage, which needs no GPU and must not wait on one (ADR 0019).
-    /// </remarks>
     public int ExpectedOutputs => Presets.Count + (ExtractDrums ? 1 : 0);
 
     /// <summary>
@@ -102,20 +94,15 @@ public sealed record SeparationRecipe
     public int Passes => Presets.Count + (ExtractDrums ? 1 : 0);
 
     /// <summary>
-    /// Roughly how long the GPU will be busy.
+    /// Roughly how long the GPU will be busy — an assumed shape, not a measurement, so build no
+    /// logic on it.
     /// </summary>
-    /// <remarks>
-    /// A shape assumed, not measured — good enough to say roughly how long, not to build logic on.
-    /// </remarks>
     public TimeSpan Estimate => TimeSpan.FromSeconds(75 + (95 * Passes));
 
     /// <summary>
-    /// Two recipes asking for the same files in the same order are the same recipe.
+    /// Two recipes asking for the same files in the same order are the same recipe, where a record
+    /// would compare <see cref="Presets"/> by reference.
     /// </summary>
-    /// <remarks>
-    /// Written out because a record compares <see cref="Presets"/> by reference, so two recipes
-    /// built from the same plan would be unequal.
-    /// </remarks>
     public bool Equals(SeparationRecipe? other) =>
         other is not null
         && ExtractDrums == other.ExtractDrums
@@ -127,21 +114,13 @@ public sealed record SeparationRecipe
         HashCode.Combine(ExtractDrums, KeepSource, Format, Presets.Count);
 
     /// <summary>
-    /// What to ask the separator for, given what the user asked for.
+    /// What to ask the separator for, given what the user asked for (ADR 0018).
     /// </summary>
-    /// <remarks>
-    /// The warp guide is not part of the plan and is always requested: it is not a sample, it is
-    /// deleted after warping, and no workflow yet exists that does not want one (ADR 0018).
-    /// </remarks>
     public static SeparationRecipe From(StemPlan plan) => For(plan, StemInventory.Empty);
 
     /// <summary>
     /// What to ask the separator for, given what the user asked for and what is already made.
     /// </summary>
-    /// <remarks>
-    /// A preset already on disk is <em>kept</em>, never cut again, so the handoff never meets a
-    /// filename it already has. The guide is always wanted, whether or not one is there.
-    /// </remarks>
     public static SeparationRecipe For(StemPlan plan, StemInventory inventory)
     {
         var shortfall = inventory.Shortfall(plan);

@@ -6,10 +6,9 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Orchestration;
 
-/// <summary>Decides which source to acquire next.</summary>
-/// <remarks>
-/// Three kinds: a kept source and an added one are each only one more sample (ADR 0019).
-/// </remarks>
+/// <summary>
+/// Decides which source to acquire next: audio to cut from, a kept source, or an added one (ADR 0019).
+/// </summary>
 public sealed class DownloadSelector(
     JobStore jobs,
     WorkingSet workingSet,
@@ -19,10 +18,7 @@ public sealed class DownloadSelector(
 {
     public const int DefaultMaxStrikes = 5;
 
-    /// <remarks>
-    /// Audio comes last: the other two are bounded by something the user did, while the audio list
-    /// refills from the playlist and would starve them.
-    /// </remarks>
+    /// <summary>Picks audio last, since its list refills from the playlist and would starve the others.</summary>
     public bool TryPickNext(QueueView view, out WantedDownload next)
     {
         next = Kept(view) ?? Added(view) ?? Audio(view)!;
@@ -31,12 +27,9 @@ public sealed class DownloadSelector(
     }
 
     /// <summary>
-    /// A track with no audio held for it yet.
+    /// A track with no audio held for it yet, from both work lists: a re-cut track has a verdict
+    /// and an empty working set.
     /// </summary>
-    /// <remarks>
-    /// Both work lists, not just the outstanding one: a re-cut track has a verdict and an empty
-    /// working set.
-    /// </remarks>
     private WantedDownload? Audio(QueueView view) =>
         view
             .Outstanding.Concat(view.AwaitingSeparation)
@@ -58,12 +51,8 @@ public sealed class DownloadSelector(
 
     /// <summary>
     /// A track whose plan keeps its separation source and has no copy made: copied from the audio
-    /// held, or the audio fetched first when it is not.
+    /// held, or the audio fetched first when it is not (ADR 0019).
     /// </summary>
-    /// <remarks>
-    /// Never a separation, so it has no business in the stage that spends the GPU (ADR 0019). The
-    /// fetch is only for a track a re-cut reopened: one that finished long ago owes nothing unasked.
-    /// </remarks>
     private WantedDownload? Kept(QueueView view) =>
         view
             .Everything.Where(item => item is { Plan.KeepSource: true, Inventory.HasSource: false })
@@ -103,12 +92,9 @@ public sealed class DownloadSelector(
     }
 
     /// <summary>
-    /// A source the user attached that is not on disk.
+    /// A source the user attached that is not on disk, from every work list: one can be added
+    /// even to a finished track.
     /// </summary>
-    /// <remarks>
-    /// Read from every work list rather than just the outstanding one: a source can be added to
-    /// a track at any point, including one that was finished with.
-    /// </remarks>
     private WantedDownload? Added(QueueView view) =>
         view
             .Everything.SelectMany(item =>
@@ -129,32 +115,23 @@ public sealed class DownloadSelector(
             .FirstOrDefault();
 
     /// <summary>
-    /// The file has been fetched and is waiting for the handoff to move it into staging.
+    /// The file is fetched and waiting for the handoff, where the inventory cannot see it yet — so
+    /// it must not be fetched again.
     /// </summary>
-    /// <remarks>
-    /// The inventory reads <c>Sample Staging</c> and <c>Mashup Samples</c>, so a file still in the
-    /// stems output is invisible to it and would be fetched again.
-    /// </remarks>
     private bool AwaitingHandoff(string pattern) =>
         new[] { paths.StemsKeyIdentified, paths.StemsUnresolvedKey }
             .Where(Directory.Exists)
             .SelectMany(root => Directory.EnumerateFiles(root, pattern))
             .Any();
 
-    /// <remarks>
-    /// retrySucceeded is true: the checks above already confirmed the file is gone, and the
-    /// working set may be emptied by hand at any time.
-    /// </remarks>
+    /// <summary>Retries even a succeeded download, since every caller has already found its file gone.</summary>
     private bool IsEligible(string videoId) =>
         StageEligibility.Allows(jobs, videoId, JobStage.Download, maxStrikes, retrySucceeded: true);
 
     /// <summary>
-    /// The audio is absent because the janitor took it, not because it was never fetched.
+    /// The audio is absent because the janitor took it after separation succeeded, not because it
+    /// was never fetched.
     /// </summary>
-    /// <remarks>
-    /// The janitor empties the working set once separation has succeeded, so a finished track
-    /// looks exactly like an unfetched one. A re-cut reopens its job, so it is not caught by this.
-    /// </remarks>
     private bool IsSweptUp(string videoId) =>
         jobs.TryGet(videoId, JobStage.Separation, out var job)
         && job is { Status: JobStatus.Succeeded };
@@ -257,10 +234,6 @@ public sealed class DownloadDrainer(
     /// <summary>
     /// Copies the separation source into the destination, for a plan that keeps it as a sample.
     /// </summary>
-    /// <remarks>
-    /// The same bytes separation is cut from, so there is nothing to fetch and nothing to check
-    /// about its quality — it is the file the track was judged on.
-    /// </remarks>
     private string? Copied(string videoId, string destination)
     {
         if (!workingSet.TryGetSource(videoId, out var held))
@@ -280,13 +253,9 @@ public sealed class DownloadDrainer(
     }
 
     /// <summary>
-    /// Puts the fetched file where the rest of the pipeline expects it, and keeps what the
-    /// download said about its own audio.
+    /// Puts the fetched file where the pipeline expects it, recording its quality against its own
+    /// video ID so a poor added source never parks the track (ADR 0019).
     /// </summary>
-    /// <remarks>
-    /// An added source's quality is recorded against its own video ID, so a poor one is a
-    /// finding about that file and never parks the track (ADR 0019).
-    /// </remarks>
     private string? Placed(WantedDownload wanted, DownloadResult result)
     {
         workingSet.SaveAcquisition(wanted.VideoId, result.Acquisition!);
@@ -314,10 +283,6 @@ public sealed class DownloadDrainer(
     /// Renames a fetched source to carry its label, which the handoff then preserves while it
     /// swaps the track-name half.
     /// </summary>
-    /// <remarks>
-    /// Without a suffix the file reads as though its whole name were the track's, so a rename
-    /// would append rather than replace and two sources would collide.
-    /// </remarks>
     private static bool TrySuffix(
         string path,
         string label,

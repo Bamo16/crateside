@@ -3,11 +3,9 @@ using Crateside.Core.Staging;
 namespace Crateside.Core.Queue;
 
 /// <summary>
-/// What a track already has, read off disk and said in the vocabulary the plan speaks.
+/// What a track already has, read off disk on every read and said in the vocabulary the plan
+/// speaks.
 /// </summary>
-/// <remarks>
-/// Derived on every read and stored nowhere, so a file deleted by hand is simply short again.
-/// </remarks>
 public sealed record StemInventory
 {
     public static StemInventory Empty { get; } = new() { Files = [] };
@@ -15,11 +13,10 @@ public sealed record StemInventory
     /// <summary>Every file of this track, with what each one is.</summary>
     public required IReadOnlyList<ClassifiedStem> Files { get; init; }
 
-    /// <summary>Read against a catalog that could say which preset each file is.</summary>
-    /// <remarks>
-    /// False when the separator could not be asked: every file then reads as no preset at all,
-    /// and the whole plan would look missing.
-    /// </remarks>
+    /// <summary>
+    /// Read against a catalog that could say which preset each file is. When false, the whole plan
+    /// looks missing and must not be believed.
+    /// </summary>
     public bool IsClassified { get; init; }
 
     /// <summary>The presets this track already has a file for.</summary>
@@ -36,20 +33,16 @@ public sealed record StemInventory
     public bool HasWarpGuide => Files.Any(file => file.Kind is StemKind.WarpGuide);
 
     /// <summary>
-    /// Files carrying a preset the separator no longer offers.
+    /// Files carrying a preset the separator no longer offers, which can be removed but never
+    /// asked for again.
     /// </summary>
-    /// <remarks>
-    /// One of these can be shown and removed, but never asked for again — nothing knows what
-    /// to ask for.
-    /// </remarks>
     public IReadOnlyList<ClassifiedStem> Unrecognised =>
         [.. Files.Where(file => file.Kind is StemKind.Unrecognised)];
 
-    /// <summary>What <paramref name="wanted"/> asks for that is not here yet (ADR 0027).</summary>
-    /// <remarks>
-    /// A preset already on disk is <em>kept</em> and never cut again, so the separator is only
-    /// ever asked for filenames that are free.
-    /// </remarks>
+    /// <summary>
+    /// What <paramref name="wanted"/> asks for that is not here yet; a preset on disk is never cut
+    /// again (ADR 0027).
+    /// </summary>
     public StemPlan Shortfall(StemPlan wanted) =>
         new()
         {
@@ -57,11 +50,10 @@ public sealed record StemInventory
             KeepSource = wanted.KeepSource && !HasSource,
         };
 
-    /// <summary>Whether an added source has been fetched.</summary>
-    /// <remarks>
-    /// Matched on the upload, the only thing a rename cannot change. The label is asked only of a
-    /// file carrying no provenance at all.
-    /// </remarks>
+    /// <summary>
+    /// Whether an added source has been fetched, matched on the upload, which a rename cannot
+    /// change, and on the label only without provenance.
+    /// </summary>
     public bool Has(AddedSource added) =>
         Files.Any(file =>
             file.Kind is StemKind.Source
@@ -72,11 +64,10 @@ public sealed record StemInventory
             )
         );
 
-    /// <summary>The files <paramref name="wanted"/> no longer asks for, which a re-cut removes.</summary>
-    /// <remarks>
-    /// The warp guide is never among them: it is used up rather than kept, and is not the plan's
-    /// to drop.
-    /// </remarks>
+    /// <summary>
+    /// The files <paramref name="wanted"/> no longer asks for, which a re-cut removes. Never the
+    /// warp guide, which is not the plan's to drop.
+    /// </summary>
     /// <param name="stored">
     /// The plan the track currently has, the only thing that says which files were added sources.
     /// </param>
@@ -101,10 +92,10 @@ public sealed record StemInventory
             ),
         ];
 
-    /// <remarks>
-    /// Matched on the upload, not the label: a source download whose title ends in brackets reads
-    /// as labelled and would be deleted as a dropped added source.
-    /// </remarks>
+    /// <summary>
+    /// Matched on the upload, never the label: a source download whose title ends in brackets
+    /// reads as labelled.
+    /// </summary>
     private static bool IsDropped(ClassifiedStem file, StemPlan wanted, StemPlan stored) =>
         file.File.SourceVideoId is { } upload
         && stored.AddedSources.Any(added => added.VideoId.Equals(upload, StringComparison.Ordinal))
@@ -136,12 +127,9 @@ public sealed record ClassifiedStem
     public string? DisplayName => File.Label ?? File.Preset ?? StemFileName.PresetOf(File.Path);
 
     /// <summary>
-    /// What one file is: the preset it came from, the source track, or the warp guide.
+    /// What one file is, from its provenance first; the filename is asked only when that carries
+    /// no preset, and only an exact catalog match counts.
     /// </summary>
-    /// <remarks>
-    /// Provenance first; the filename is asked only where provenance carries no preset at all,
-    /// and only an exact catalog match is believed.
-    /// </remarks>
     public static ClassifiedStem Of(StemOnDisk file, PresetCatalog catalog) =>
         file switch
         {
