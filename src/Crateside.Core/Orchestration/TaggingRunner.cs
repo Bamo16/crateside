@@ -18,7 +18,11 @@ public sealed class TaggingRunner(CratesidePaths paths, AbletonFolderInfoWriter?
         List<TagAssignment> assignments =
         [
             .. stems
-                .Select(s => new { Stem = s, Keywords = KeywordsFor(s.LedgerKey, s.Preset) })
+                .Select(s => new
+                {
+                    Stem = s,
+                    Keywords = KeywordsFor(s.LedgerKey, s.Preset, s.Type),
+                })
                 .Where(x => x.Keywords.Count > 0)
                 .Select(x => new TagAssignment
                 {
@@ -33,26 +37,31 @@ public sealed class TaggingRunner(CratesidePaths paths, AbletonFolderInfoWriter?
     }
 
     /// <summary>
-    /// The keywords one file should carry: the key from the ledger, and the type from what the
-    /// separator made it.
+    /// The keywords one file should carry: the key from the ledger, and the type from its preset or,
+    /// for a file never cut, from what the user said it is.
     /// </summary>
-    internal static IReadOnlyList<string> KeywordsFor(string? ledgerKey, string? preset)
+    internal static IReadOnlyList<string> KeywordsFor(
+        string? ledgerKey,
+        string? preset,
+        SampleType? type
+    )
     {
         if (ledgerKey is not { Length: > 0 } key || !TryReadKey(key, out var tonic, out var mode))
             return [];
 
         List<string> keywords = [$"Key|{tonic}", $"Key|{mode}"];
 
-        if (TypeFor(preset) is { } type)
-            keywords.Add($"Type|{type}");
+        if (TypeFor(preset, type) is { } tagged)
+            keywords.Add($"Type|{tagged}");
 
         return keywords;
     }
 
-    private static string? TypeFor(string? preset) =>
+    /// <remarks>A file with neither is a kept source, which is used as an instrumental (ADR 0028).</remarks>
+    private static string? TypeFor(string? preset, SampleType? type) =>
         preset switch
         {
-            null or "" => "Instrumental",
+            null or "" => (type ?? SampleType.Instrumental).ToString(),
             var p when p.StartsWith("Vocal", StringComparison.OrdinalIgnoreCase) => "Vocal",
             var p when p.StartsWith("Instrumental", StringComparison.OrdinalIgnoreCase) =>
                 "Instrumental",

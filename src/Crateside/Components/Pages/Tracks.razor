@@ -5,6 +5,7 @@
 @implements IDisposable
 
 @using System.Diagnostics
+@using Crateside.Core
 @using Crateside.Core.Ledger
 @using Crateside.Core.Orchestration
 @using Crateside.Core.Queue
@@ -523,6 +524,18 @@
                                                     </label>
                                                 </div>
 
+                                                <div class="add-type">
+                                                    <span class="add-type-label">Plays as</span>
+                                                    @foreach (var type in Enum.GetValues<SampleType>())
+                                                    {
+                                                        <button class="pill @(_addType == type ? "on plain" : "off")"
+                                                                @onclick="() => ChooseType(row, type)" disabled="@_working">
+                                                            @type
+                                                        </button>
+                                                    }
+                                                    <span class="add-title">@TitleNote</span>
+                                                </div>
+
                                                 <p class="add-note @(_addPlan?.Refusal is null && _shortfall is null ? null : "bad")">
                                                     @if (_shortfall is { } poor)
                                                     {
@@ -1006,6 +1019,20 @@
     private string _addLabel = string.Empty;
     private AddPlan? _addPlan;
 
+    private SampleType? _addType;
+
+    /// <summary>The user picked the type, so the title no longer gets a say.</summary>
+    private bool _addTypeChosen;
+
+    /// <summary>The label crateside last filled in, which it may replace; one the user typed it may not.</summary>
+    private string? _addLabelOffered;
+
+    /// <summary>The video whose title was last asked for.</summary>
+    private string? _titleOf;
+
+    private string? _addTitle;
+    private bool _readingTitle;
+
     /// <summary>What the upload offers, once it has been asked and found wanting.</summary>
     private ProbedSource? _shortfall;
 
@@ -1400,12 +1427,10 @@
 
     private void StartAdding(TrackRow row)
     {
+        CancelAdding();
+
         _problem = null;
         _adding = row.VideoId;
-        _addUrl = string.Empty;
-        _addLabel = string.Empty;
-        _addPlan = null;
-        _shortfall = null;
     }
 
     /// <summary>What an added source is, said where the boxes to describe one are.</summary>
@@ -1422,6 +1447,12 @@
         _addLabel = string.Empty;
         _addPlan = null;
         _shortfall = null;
+        _addType = null;
+        _addTypeChosen = false;
+        _addLabelOffered = null;
+        _titleOf = null;
+        _addTitle = null;
+        _readingTitle = false;
     }
 
     /// <summary>Re-reads what adding would do on every keystroke, so the refusal arrives early.</summary>
@@ -1430,8 +1461,74 @@
         _addUrl = url ?? _addUrl;
         _addLabel = label ?? _addLabel;
         _shortfall = null;
-        _addPlan = Sources.PlanFor(row.Facts, _addUrl, _addLabel);
+
+        if (YouTubeUrl.TryGetVideoId(_addUrl, out var videoId) && videoId != _titleOf)
+            _ = ReadTitleAsync(row, videoId);
+
+        Replan(row);
     }
+
+    private void ChooseType(TrackRow row, SampleType type)
+    {
+        _addTypeChosen = true;
+        Offer(type);
+        Replan(row);
+    }
+
+    /// <summary>Suggests a type from what the upload is called, until the user has picked one.</summary>
+    private async Task ReadTitleAsync(TrackRow row, string videoId)
+    {
+        _titleOf = videoId;
+        _addTitle = null;
+        _readingTitle = true;
+
+        if (!_addTypeChosen)
+            _addType = null;
+
+        string? title;
+
+        try
+        {
+            title = await Sources.TitleOfAsync(videoId, _circuit.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        // The URL moved on while this was being asked.
+        if (_titleOf != videoId || _adding != row.VideoId)
+            return;
+
+        _readingTitle = false;
+        _addTitle = title;
+
+        if (!_addTypeChosen && SampleTypes.InferredFrom(title) is { } inferred)
+            Offer(inferred);
+
+        Replan(row);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void Offer(SampleType type)
+    {
+        _addType = type;
+
+        if (_addLabel.Length > 0 && _addLabel != _addLabelOffered)
+            return;
+
+        _addLabel = SampleTypes.LabelFor(type);
+        _addLabelOffered = _addLabel;
+    }
+
+    private void Replan(TrackRow row) =>
+        _addPlan = Sources.PlanFor(row.Facts, _addUrl, _addLabel, _addType);
+
+    private string? TitleNote =>
+        _readingTitle ? "Reading the upload's title…"
+        : _addTitle is not { } title ? null
+        : _addTypeChosen || _addType is null ? $"“{title}”"
+        : $"“{title}”, so {_addType} is suggested";
 
     /// <summary>Adds the source, or comes back with what the upload actually offers.</summary>
     /// <remarks>
@@ -1449,6 +1546,7 @@
                 row.Facts,
                 _addUrl,
                 _addLabel,
+                _addType,
                 anyway,
                 _circuit.Token
             );

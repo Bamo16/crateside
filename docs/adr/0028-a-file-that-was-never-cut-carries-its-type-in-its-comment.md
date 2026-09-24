@@ -24,9 +24,10 @@ exists.
 **The user chooses Vocal or Instrumental when adding a source or adopting a sample, and crateside
 appends it to the file's provenance comment as `| type: Vocal`.**
 
-- For an **added source**, the type is appended to the `stemforge/` comment at handoff, the same
-  kind of completion as a #45 claim. For an **adopted sample**, it goes into the `crateside/`
-  comment adoption already writes.
+- For an **added source**, the type is appended to the `stemforge/` comment as soon as the
+  download lands, before any Ableton root has seen the file. It is the same kind of completion as
+  a #45 claim. For an **adopted sample**, it goes into the `crateside/` comment adoption already
+  writes.
 - **A file with no preset and no `type:` stays Instrumental.** That is every kept source, and it is
   what the user wants: a kept source is used as an instrumental, and belongs under that filter.
 - **Type means the part a file plays in a mashup, not what the audio is** (`CONTEXT.md`). So there

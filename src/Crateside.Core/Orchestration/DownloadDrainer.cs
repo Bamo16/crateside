@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using Crateside.Core.Ledger;
 using Crateside.Core.Queue;
+using Crateside.Core.Staging;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Orchestration;
@@ -120,6 +122,7 @@ public sealed class DownloadSelector(
                         VideoId = added.VideoId,
                         Url = added.WatchUrl,
                         Label = added.Label,
+                        Type = added.Type,
                         Track = item,
                     })
             )
@@ -173,6 +176,9 @@ public sealed record WantedDownload
 
     /// <summary>What the user called it, which becomes its filename suffix. Null for a detection source.</summary>
     public string? Label { get; init; }
+
+    /// <summary>What the user said an added source is. Null for any other download.</summary>
+    public SampleType? Type { get; init; }
 
     /// <summary>The audio is already held, so this is a copy out of the working set.</summary>
     public bool Copy { get; init; }
@@ -285,7 +291,23 @@ public sealed class DownloadDrainer(
     {
         workingSet.SaveAcquisition(wanted.VideoId, result.Acquisition!);
 
-        return wanted.Label is { } label ? Suffixed(result.Path!, label) : null;
+        if (wanted.Label is not { } label)
+            return null;
+
+        if (!TrySuffix(result.Path!, label, out var suffixed, out var problem))
+            return problem;
+
+        if (wanted.Type is not { } type || SampleTyping.TryWrite(suffixed, type, out var untyped))
+            return null;
+
+        // Removed so the retry fetches it again rather than staging it untyped.
+        try
+        {
+            File.Delete(suffixed);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+
+        return $"downloaded, but could not be marked {type}: {untyped}";
     }
 
     /// <summary>
@@ -296,9 +318,14 @@ public sealed class DownloadDrainer(
     /// Without a suffix the file reads as though its whole name were the track's, so a rename
     /// would append rather than replace and two sources would collide.
     /// </remarks>
-    private static string? Suffixed(string path, string label)
+    private static bool TrySuffix(
+        string path,
+        string label,
+        out string renamed,
+        [NotNullWhen(false)] out string? problem
+    )
     {
-        var renamed = Path.Combine(
+        renamed = Path.Combine(
             Path.GetDirectoryName(path) ?? string.Empty,
             $"{Path.GetFileNameWithoutExtension(path)} ({label}){Path.GetExtension(path)}"
         );
@@ -306,12 +333,15 @@ public sealed class DownloadDrainer(
         try
         {
             File.Move(path, renamed, overwrite: true);
+            problem = null;
 
-            return null;
+            return true;
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            return $"downloaded, but could not be named ({label}): {e.Message}";
+            problem = $"downloaded, but could not be named ({label}): {e.Message}";
+
+            return false;
         }
     }
 }

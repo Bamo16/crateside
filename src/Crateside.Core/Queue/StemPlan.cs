@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Crateside.Core.Staging;
 
 namespace Crateside.Core.Queue;
 
@@ -161,6 +162,10 @@ public sealed record AddedSource
     /// </remarks>
     [JsonPropertyName("label")]
     public required string Label { get; init; }
+
+    /// <remarks>Null only on a source added before the user was asked (ADR 0028).</remarks>
+    [JsonPropertyName("type")]
+    public SampleType? Type { get; init; }
 
     [JsonIgnore]
     public string WatchUrl => $"https://music.youtube.com/watch?v={VideoId}";

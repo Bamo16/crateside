@@ -123,6 +123,6 @@ public sealed class BackingRunner(
     private static IReadOnlyList<string> KeywordsFor(string path, KeyLedger ledger) =>
         StemTagReader.Read(path)?.Provenance is { SourceVideoId: { } videoId } provenance
         && ledger.TryGetLatestByVideoId(videoId, out var run)
-            ? TaggingRunner.KeywordsFor(run.Key, provenance.Preset)
+            ? TaggingRunner.KeywordsFor(run.Key, provenance.Preset, provenance.Type)
             : [];
 }

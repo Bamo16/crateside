@@ -87,6 +87,7 @@ public static class TagAudit
                         AppliedKey = applied?.Key,
                         HasPartialKey = applied?.HasPartialKey ?? false,
                         Preset = provenance.Preset,
+                        Type = provenance.Type,
                     }
                 );
             }
@@ -227,6 +228,8 @@ public sealed record TaggedStem
     /// </summary>
     /// <remarks>Read from the tag rather than the filename, which a rename does not survive.</remarks>
     public string? Preset { get; init; }
+
+    public SampleType? Type { get; init; }
 }
 
 public sealed record InconsistentSong

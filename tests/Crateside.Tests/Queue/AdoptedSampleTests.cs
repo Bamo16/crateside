@@ -32,7 +32,12 @@ public class AdoptedSampleTests
     [Fact]
     public void Crateside_provenance_round_trips_through_the_parser()
     {
-        var comment = StemAdoption.Comment(VideoId, Label, new DateOnly(2026, 9, 19));
+        var comment = StemAdoption.Comment(
+            VideoId,
+            Label,
+            SampleType.Instrumental,
+            new DateOnly(2026, 9, 19)
+        );
 
         var parsed = StemProvenance.Parse(comment);
 
@@ -40,6 +45,7 @@ public class AdoptedSampleTests
         Assert.True(parsed.IsAdopted);
         Assert.Equal(Label, parsed.Label);
         Assert.Equal(VideoId, parsed.SourceVideoId);
+        Assert.Equal(SampleType.Instrumental, parsed.Type);
         Assert.Null(parsed.Preset);
     }
 
@@ -127,7 +133,15 @@ public class AdoptedSampleTests
 
         try
         {
-            Assert.False(StemAdoption.TryAdopt(path, VideoId, Label, out var problem));
+            Assert.False(
+                StemAdoption.TryAdopt(
+                    path,
+                    VideoId,
+                    Label,
+                    SampleType.Instrumental,
+                    out var problem
+                )
+            );
             Assert.NotNull(problem);
         }
         finally
@@ -139,7 +153,23 @@ public class AdoptedSampleTests
     [Fact]
     public void Adoption_refuses_a_missing_file_and_a_blank_label()
     {
-        Assert.False(StemAdoption.TryAdopt(@"P:\nowhere\absent.flac", VideoId, Label, out _));
-        Assert.False(StemAdoption.TryAdopt(@"P:\nowhere\absent.flac", VideoId, "  ", out _));
+        Assert.False(
+            StemAdoption.TryAdopt(
+                @"P:\nowhere\absent.flac",
+                VideoId,
+                Label,
+                SampleType.Instrumental,
+                out _
+            )
+        );
+        Assert.False(
+            StemAdoption.TryAdopt(
+                @"P:\nowhere\absent.flac",
+                VideoId,
+                "  ",
+                SampleType.Instrumental,
+                out _
+            )
+        );
     }
 }

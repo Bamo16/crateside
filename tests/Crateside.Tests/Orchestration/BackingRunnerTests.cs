@@ -62,8 +62,7 @@ public class BackingRunnerTests : IDisposable
         Assert.Contains("Key|G♯", merged);
         Assert.Contains("Key|Minor", merged);
 
-        // The hand-applied type wins: an added source has no preset, so the one crateside derives
-        // is "Instrumental" for everything, which is what put the wrong tag here to begin with.
+        // The hand-applied type wins over the one crateside derives.
         Assert.Contains("Type|Vocal", merged);
         Assert.DoesNotContain("Type|Instrumental", merged);
     }

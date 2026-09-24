@@ -14,6 +14,9 @@ public sealed record StemProvenance
 
     private const string SeparatedPrefix = "stemforge/";
 
+    /// <summary>The part crateside appends to say what a file never cut is (ADR 0028).</summary>
+    public const string TypePrefix = "type: ";
+
     /// <summary>The <c>stemforge/&lt;version&gt;</c> or <c>crateside/&lt;version&gt;</c> that wrote it.</summary>
     public required string ToolVersion { get; init; }
 
@@ -27,6 +30,9 @@ public sealed record StemProvenance
 
     /// <summary>The separation preset, e.g. <c>Vocal - Full</c>. Absent on older stems.</summary>
     public string? Preset { get; init; }
+
+    /// <summary>What the user said a file never cut is. Null on every stem, whose preset says it.</summary>
+    public SampleType? Type { get; init; }
 
     /// <summary>The separation date as written (<c>yyyy-MM-dd</c>, UTC).</summary>
     public DateOnly? SeparatedOn { get; init; }
@@ -65,6 +71,7 @@ public sealed record StemProvenance
         string? label = null;
         DateOnly? separatedOn = null;
         string? sourceUrl = null;
+        SampleType? type = null;
 
         // BuildProvenance joins with " | "; the first part is always the tool version.
         var parts = comment.Split(" | ");
@@ -79,6 +86,11 @@ public sealed record StemProvenance
                 separatedOn = parsed;
             else if (Value(part, "source: ") is { } s)
                 sourceUrl = s;
+            else if (
+                Value(part, TypePrefix) is { } t
+                && Enum.TryParse<SampleType>(t, ignoreCase: false, out var parsedType)
+            )
+                type = parsedType;
         }
 
         return new StemProvenance
@@ -88,6 +100,7 @@ public sealed record StemProvenance
             Label = label,
             SeparatedOn = separatedOn,
             SourceUrl = sourceUrl,
+            Type = type,
             SourceVideoId = YouTubeUrl.TryGetVideoId(sourceUrl, out var videoId) ? videoId : null,
         };
     }

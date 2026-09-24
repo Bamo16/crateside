@@ -16,16 +16,23 @@ public sealed class SourceAdd(
 )
 {
     /// <summary>What adding this source would do, or why it cannot be done.</summary>
-    public AddPlan PlanFor(TrackRowFacts track, string? url, string? label) =>
-        PlanFor(track, url, label, KeyLedger.Read(paths.Ledger));
+    public AddPlan PlanFor(TrackRowFacts track, string? url, string? label, SampleType? type) =>
+        PlanFor(track, url, label, type, KeyLedger.Read(paths.Ledger));
 
-    private AddPlan PlanFor(TrackRowFacts track, string? url, string? label, KeyLedger ledger)
+    private AddPlan PlanFor(
+        TrackRowFacts track,
+        string? url,
+        string? label,
+        SampleType? type,
+        KeyLedger ledger
+    )
     {
         YouTubeUrl.TryGetVideoId(url, out var videoId);
 
         return (videoId, label?.Trim()) switch
         {
             (null, _) => Impossible("That is not a YouTube video ID or URL crateside can read."),
+            _ when type is null => Impossible("Say whether it is a vocal or an instrumental."),
             (_, not { Length: > 0 }) => Impossible(
                 "Give it a name. It becomes the file's suffix, which is what tells it apart."
             ),
@@ -42,7 +49,12 @@ public sealed class SourceAdd(
             ),
             (_, { } given) => new AddPlan
             {
-                Source = new AddedSource { VideoId = videoId, Label = given },
+                Source = new AddedSource
+                {
+                    VideoId = videoId,
+                    Label = given,
+                    Type = type,
+                },
                 CarriesKey = track.Key,
             },
         };
@@ -64,11 +76,12 @@ public sealed class SourceAdd(
         TrackRowFacts track,
         string? url,
         string? label,
+        SampleType? type,
         bool anyway = false,
         CancellationToken cancellationToken = default
     )
     {
-        var plan = PlanFor(track, url, label, KeyLedger.Read(paths.Ledger));
+        var plan = PlanFor(track, url, label, type, KeyLedger.Read(paths.Ledger));
 
         if (plan.Refusal is { } refusal)
             return new AddOutcome { Problem = refusal };
@@ -91,6 +104,17 @@ public sealed class SourceAdd(
 
         return new AddOutcome { Source = source };
     }
+
+    /// <summary>What the upload is called, for suggesting what kind of file it is.</summary>
+    public async Task<string?> TitleOfAsync(string? url, CancellationToken cancellationToken) =>
+        YouTubeUrl.TryGetVideoId(url, out var videoId)
+            ? (
+                await probe.ReadAsync(
+                    $"https://music.youtube.com/watch?v={videoId}",
+                    cancellationToken
+                )
+            ).Title
+            : null;
 
     /// <summary>The song keytag already has this video under, when it is not this track's.</summary>
     private static string? OtherSong(KeyLedger ledger, string videoId, string? song) =>

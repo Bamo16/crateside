@@ -7,23 +7,20 @@ namespace Crateside.Core.Staging;
 /// Takes a file crateside did not make into a track, by writing the provenance every reader
 /// joins on (ADR 0022).
 /// </summary>
-/// <remarks>
-/// The only audio tag crateside writes. Everything else it writes goes to the Ableton Folder
-/// Info XMP under <c>Sample Staging</c> (ADR 0003, amended).
-/// </remarks>
 public static class StemAdoption
 {
     private static readonly string Version =
         Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
 
     /// <summary>The comment written into an adopted file, and read back by <see cref="StemProvenance"/>.</summary>
-    public static string Comment(string videoId, string label, DateOnly on) =>
+    public static string Comment(string videoId, string label, SampleType type, DateOnly on) =>
         string.Join(
             " | ",
             $"{StemProvenance.AdoptedPrefix}{Version}",
             $"label: {label}",
             $"date: {on:yyyy-MM-dd}",
-            $"source: https://www.youtube.com/watch?v={videoId}"
+            $"source: https://www.youtube.com/watch?v={videoId}",
+            $"{StemProvenance.TypePrefix}{type}"
         );
 
     /// <summary>
@@ -38,6 +35,7 @@ public static class StemAdoption
         string path,
         string videoId,
         string label,
+        SampleType type,
         [NotNullWhen(false)] out string? problem
     )
     {
@@ -66,7 +64,12 @@ public static class StemAdoption
                 return false;
             }
 
-            file.Tag.Comment = Comment(videoId, label, DateOnly.FromDateTime(DateTime.UtcNow));
+            file.Tag.Comment = Comment(
+                videoId,
+                label,
+                type,
+                DateOnly.FromDateTime(DateTime.UtcNow)
+            );
             file.Save();
         }
         catch (Exception e)
