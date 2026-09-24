@@ -76,6 +76,10 @@ public sealed class QueueSettingsStore
             t => t with { Name = name?.Trim() is { Length: > 0 } given ? given : null }
         );
 
+    /// <summary>Records that a track is not the ledger song its name looks like (#41).</summary>
+    public QueueSettings SetDifferentFrom(string videoId, string song) =>
+        Upsert(videoId, track => track with { DifferentFrom = song });
+
     /// <summary>Records that crateside should work a track the playlist does not hold.</summary>
     public QueueSettings AddByUrl(string videoId) =>
         Upsert(videoId, track => track with { AddedByUrl = true });
@@ -282,8 +286,19 @@ public sealed record TrackInstruction
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool AddedByUrl { get; init; }
 
+    /// <summary>
+    /// A song the ledger knows that the user said this track is not, though its name looks like
+    /// it (#41).
+    /// </summary>
+    [JsonPropertyName("differentFrom")]
+    public string? DifferentFrom { get; init; }
+
     /// <summary>Whether this instruction still carries anything worth storing.</summary>
     [JsonIgnore]
     public bool SaysSomething =>
-        AddedByUrl || Plan is not null || Name is { Length: > 0 } || SourceUrl is { Length: > 0 };
+        AddedByUrl
+        || Plan is not null
+        || Name is { Length: > 0 }
+        || SourceUrl is { Length: > 0 }
+        || DifferentFrom is { Length: > 0 };
 }

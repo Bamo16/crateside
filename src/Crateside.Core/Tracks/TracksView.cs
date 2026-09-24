@@ -216,6 +216,14 @@ public sealed record TracksView
                 StatedSourceUrl = instruction?.SourceUrl,
                 AwaitingRename = songs.Sum(song => AwaitingRenameIn(song, stated)),
                 Verdict = verdict,
+                Lookalike =
+                    verdict is null && primary.Item is { } item
+                        ? VerdictSelector.LookalikeOf(
+                            item,
+                            ledger,
+                            videoId => resolved.GetValueOrDefault(videoId)?.DisplayTitle
+                        )
+                        : null,
                 // The work list covers the queue item; the instruction covers everything after it
                 // leaves the playlist.
                 Plan = instruction?.Plan ?? StemPlan.Default,
@@ -294,6 +302,7 @@ public sealed record TracksView
         {
             { State: TrackState.Parked or TrackState.GaveUp or TrackState.Short }
             or { AuditNote: not null }
+            or { Lookalike: not null }
             or { AwaitingRename: > 0 } => 0,
             { State: TrackState.ReadyToWarp } => 2,
             { State: TrackState.Done } => 3,

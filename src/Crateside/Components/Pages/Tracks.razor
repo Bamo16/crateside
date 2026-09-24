@@ -25,6 +25,7 @@
 @inject PresetCatalogReader Presets
 @inject TrackRename Rename
 @inject TrackSwap Swap
+@inject LookalikeAnswer Lookalike
 @inject DrainControl Separation
 @inject StageSignals Signals
 @inject QueueWriteAccess Access
@@ -314,6 +315,25 @@
             @if (open)
             {
                 <div class="panel">
+                    @if (row.Lookalike is { } like)
+                    {
+                        <div class="finding">
+                            <div class="finding-said">
+                                <strong>This looks like @like.DisplayName, which is already judged.</strong>
+                                Judging waits until you say whether it is the same song. The same
+                                song carries its key and files across, and nothing is judged or cut again.
+                            </div>
+
+                            <div class="finding-actions">
+                                <button class="outline" @onclick="() => SameSong(row, like)" disabled="@_working">
+                                    Same song
+                                </button>
+                                <button class="outline" @onclick="() => DifferentSong(row, like)" disabled="@_working">
+                                    Different song
+                                </button>
+                            </div>
+                        </div>
+                    }
                     @if (row.ParkedFor is ParkReason.PremiumShortfall)
                     {
                         <div class="finding">
@@ -1439,6 +1459,41 @@
                 CancelSwap();
                 Signals.Wake(JobStage.Download, JobStage.Separation);
             }
+
+            await Source.RefreshAsync(_circuit.Token);
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task SameSong(TrackRow row, LedgerRun like)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            _problem = await Lookalike.SameSongAsync(row.VideoId, like, _circuit.Token);
+
+            await Source.RefreshAsync(_circuit.Token);
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task DifferentSong(TrackRow row, LedgerRun like)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            Lookalike.DifferentSong(row.VideoId, like);
+            Judging.Wake();
 
             await Source.RefreshAsync(_circuit.Token);
         }

@@ -77,6 +77,12 @@ public sealed record TrackRow
     /// <summary>The current verdict, or null when the ledger has never seen this track.</summary>
     public LedgerRun? Verdict { get; init; }
 
+    /// <summary>
+    /// The judged song this unjudged track's name looks like; judging waits until the user says
+    /// whether it is (#41).
+    /// </summary>
+    public LedgerRun? Lookalike { get; init; }
+
     /// <summary>The key to tag with, or null when withheld, weak, or unknown.</summary>
     public string? Key => Verdict?.HasTaggableKey is true ? Verdict.Key : null;
 
@@ -233,6 +239,7 @@ public sealed record TrackRow
     public string ChipLabel =>
         State switch
         {
+            TrackState.Queued when Lookalike is not null => "same song?",
             TrackState.Queued => "queued",
             TrackState.Downloading => "downloading",
             TrackState.Detecting => "detecting key",
@@ -265,6 +272,7 @@ public sealed record TrackRow
             TrackState.JudgedInLine => TrackChipStyle.TealOutline,
             TrackState.ReadyToWarp => TrackChipStyle.AmberFilled,
             TrackState.Parked or TrackState.Short => TrackChipStyle.RedOutline,
+            TrackState.Queued when Lookalike is not null => TrackChipStyle.RedOutline,
             TrackState.GaveUp => TrackChipStyle.RedFilled,
             TrackState.Done => TrackChipStyle.GreenOutline,
             _ => TrackChipStyle.NeutralOutline,
@@ -277,6 +285,8 @@ public sealed record TrackRow
     public string Next =>
         State switch
         {
+            TrackState.Queued when Lookalike is { } like =>
+                $"is this {like.DisplayName}? judging waits for your answer",
             TrackState.Downloading => "then judging",
             TrackState.Detecting => "then judging",
             TrackState.Judging => "verdict in about a minute",

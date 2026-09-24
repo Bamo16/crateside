@@ -164,7 +164,12 @@ public static class ServiceRegistration
 
         services.AddSingleton(sp => new VerdictSelector(
             sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<WorkingSet>()
+            sp.GetRequiredService<WorkingSet>(),
+            resolvedName: videoId =>
+                sp.GetRequiredService<ResolvedNameStore>()
+                    .Read()
+                    .GetValueOrDefault(videoId)
+                    ?.DisplayTitle
         ));
         services.AddSingleton(sp => new VerdictRunner(
             sp.GetRequiredService<WorkingSet>(),
@@ -262,6 +267,11 @@ public static class ServiceRegistration
             sp.GetRequiredService<AbletonFolderInfoWriter>(),
             sp.GetRequiredService<CratesidePaths>()
         ));
+        services.AddSingleton(sp => new LookalikeAnswer(
+            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<CratesidePaths>()
+        ));
+
         services.AddSingleton(sp => new TrackSwap(
             sp.GetRequiredService<QueueSettingsStore>(),
             sp.GetRequiredService<JobStore>(),

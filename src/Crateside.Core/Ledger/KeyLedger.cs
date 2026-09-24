@@ -18,6 +18,9 @@ public sealed class KeyLedger
     /// <summary>The number of distinct songs the ledger knows about.</summary>
     public int SongCount => _latestBySong.Count;
 
+    /// <summary>The current verdict of every song.</summary>
+    public IEnumerable<LedgerRun> Latest => _latestBySong.Values;
+
     private KeyLedger(IReadOnlyList<LedgerRun> runs)
     {
         Runs = runs;

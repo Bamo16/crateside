@@ -247,6 +247,68 @@ public class VerdictSelectorTests : IDisposable
         );
     }
 
+    private KeyLedger SouthSide()
+    {
+        var path = Path.Combine(_directory, "south-side.jsonl");
+
+        Directory.CreateDirectory(_directory);
+        File.WriteAllText(
+            path,
+            JsonSerializer.Serialize(
+                new
+                {
+                    timestamp = "2026-08-10T00:00:00+00:00",
+                    song = "moby - south side (feat. gwen stefani)",
+                    source_url = "https://music.youtube.com/watch?v=GXKg0sNTKXE",
+                    verdict = new { key = "C major", confidence = "HIGH" },
+                }
+            )
+        );
+
+        return KeyLedger.Read(path);
+    }
+
+    [Fact]
+    public void A_track_that_looks_like_a_judged_song_waits_for_the_user()
+    {
+        GiveEvidence("jWj-UVA1304");
+
+        var item = Item("jWj-UVA1304") with { Title = "Moby - South Side (Official Video)" };
+
+        Assert.False(new VerdictSelector(Jobs, Set).TryPickNext(View(item), SouthSide(), out _));
+    }
+
+    [Fact]
+    public void Saying_it_is_a_different_song_lets_it_be_judged()
+    {
+        GiveEvidence("jWj-UVA1304");
+
+        var item = Item("jWj-UVA1304") with
+        {
+            Title = "Moby - South Side",
+            DifferentFrom = "moby - south side (feat. gwen stefani)",
+        };
+
+        Assert.True(new VerdictSelector(Jobs, Set).TryPickNext(View(item), SouthSide(), out _));
+    }
+
+    [Fact]
+    public void The_resolved_name_is_asked_before_the_playlist_title()
+    {
+        GiveEvidence("jWj-UVA1304");
+
+        var item = Item("jWj-UVA1304") with { Title = "some upload" };
+
+        Assert.True(new VerdictSelector(Jobs, Set).TryPickNext(View(item), SouthSide(), out _));
+        Assert.False(
+            new VerdictSelector(Jobs, Set, resolvedName: _ => "Moby - South Side").TryPickNext(
+                View(item),
+                SouthSide(),
+                out _
+            )
+        );
+    }
+
     [Fact]
     public void Judgment_is_no_more_patient_than_separation()
     {

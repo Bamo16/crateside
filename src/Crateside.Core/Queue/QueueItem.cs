@@ -52,6 +52,9 @@ public sealed record QueueItem
     /// </summary>
     public string? StatedSourceUrl { get; init; }
 
+    /// <summary>The ledger song the user said this track is not, despite its name (#41).</summary>
+    public string? DifferentFrom { get; init; }
+
     public string WatchUrl => $"https://www.youtube.com/watch?v={VideoId}";
 }
 
@@ -97,6 +100,7 @@ public sealed record QueueView
             {
                 Plan = instruction?.Plan ?? StemPlan.Default,
                 StatedSourceUrl = instruction?.SourceUrl,
+                DifferentFrom = instruction?.DifferentFrom,
                 Inventory = inventories?.GetValueOrDefault(item.VideoId) ?? StemInventory.Empty,
             };
         }

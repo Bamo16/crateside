@@ -612,6 +612,12 @@
     color: var(--text);
 }
 
+.finding-actions {
+    flex: none;
+    display: flex;
+    gap: 8px;
+}
+
 /* Spans both panel columns, above everything: what the track is called and what it is cut from
    are the two things every state of a track has.
 

@@ -59,6 +59,7 @@ public static class TrackFilters
                     or TrackState.GaveUp
                     or TrackState.Short
                 || row.AuditNote is not null
+                || row.Lookalike is not null
                 || row.AwaitingRename > 0,
             TrackFilter.All => true,
             _ => false,
