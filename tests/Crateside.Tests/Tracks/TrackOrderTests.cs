@@ -4,16 +4,7 @@ using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Tracks;
 
-/// <summary>
-/// The default order, and — more to the point — what it refuses to reorder.
-/// </summary>
-/// <remarks>
-/// The page was built on rows never moving, because what it replaced bucketed tracks into sections
-/// and shuffled them between the two while the user was trying to click one. Grouping brings some
-/// of that back, so the group boundaries are drawn at exactly the three transitions worth
-/// noticing: reaching <em>ready to warp</em>, being parked, and being finished with. Everything
-/// else has to leave a row where it is, and that is what most of these assert.
-/// </remarks>
+/// <summary>The default order, and what it refuses to reorder.</summary>
 public class TrackOrderTests
 {
     private static TrackRow Row(string title, TrackState state = TrackState.Queued) =>
@@ -42,7 +33,6 @@ public class TrackOrderTests
 
     private static TrackRow Base(string title) => new() { VideoId = title, Title = title };
 
-    /// <summary>The ordering as the composition applies it, without the whole join around it.</summary>
     private static IReadOnlyList<string> Ordered(params TrackRow[] rows) =>
         [.. TracksView.InOrder(rows).Select(row => row.Title)];
 
@@ -67,8 +57,7 @@ public class TrackOrderTests
     [InlineData(TrackState.Tagging)]
     public void Crossing_the_pipeline_does_not_move_a_track(TrackState state)
     {
-        // Queued through tagging is one group, so a track works its way across without the row
-        // shifting once.
+        // Queued through tagging is one group.
         var before = Ordered(Row("a"), Row("b"), Row("c"));
         var after = Ordered(Row("a"), Row("b", state), Row("c"));
 
@@ -78,8 +67,6 @@ public class TrackOrderTests
     [Fact]
     public void The_working_group_keeps_the_order_it_arrived_in()
     {
-        // Which is the playlist's own oldest-first order — the order the stages will take them.
-        // Sorting the groups separately is what preserves it.
         Assert.Equal(
             ["zebra", "apple", "mango"],
             Ordered(Row("zebra"), Row("apple"), Row("mango"))
@@ -89,7 +76,6 @@ public class TrackOrderTests
     [Fact]
     public void Ready_to_warp_is_sorted_by_name()
     {
-        // Ableton's browser lists Sample Staging by name, and this is the list read beside it.
         Assert.Equal(
             ["Avril Lavigne", "Snail's House", "Starjunk 95", "星街すいせい"],
             Ordered(
@@ -123,8 +109,6 @@ public class TrackOrderTests
         Assert.True(library.Matches(TrackFilter.All));
         Assert.False(library.Matches(TrackFilter.Unfinished));
 
-        // A finished track crateside did queue is in exactly the same views. Where it came from
-        // stopped deciding what it is reachable through when All began meaning all.
         var queued = Row("recent", TrackState.Done);
 
         Assert.True(queued.Matches(TrackFilter.All));

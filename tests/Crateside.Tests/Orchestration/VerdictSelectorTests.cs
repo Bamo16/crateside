@@ -79,8 +79,6 @@ public class VerdictSelectorTests : IDisposable
     [Fact]
     public void A_track_with_no_evidence_has_nothing_to_judge()
     {
-        // The entry condition. Spending quota to open a session with no input is the expensive
-        // way to discover there is nothing to do.
         Assert.False(
             new VerdictSelector(Jobs, Set).TryPickNext(View(Item("aaaaaaaaaaa")), NoLedger, out _)
         );
@@ -104,8 +102,6 @@ public class VerdictSelectorTests : IDisposable
     [Fact]
     public void A_track_that_already_has_a_verdict_is_not_judged_again()
     {
-        // The exit condition, and the exact negation of what the runner checks afterwards --
-        // which is what makes a half-finished session need no special handling.
         GiveEvidence("aaaaaaaaaaa");
         GiveEvidence("bbbbbbbbbbb");
 
@@ -121,8 +117,6 @@ public class VerdictSelectorTests : IDisposable
     [Fact]
     public void The_undetected_are_skipped_rather_than_blocking_the_detected()
     {
-        // The stages run as independent loops, so a track waiting on the evidence stage must not
-        // hold up one that is ready to judge.
         GiveEvidence("bbbbbbbbbbb");
 
         new VerdictSelector(Jobs, Set).TryPickNext(
@@ -155,8 +149,6 @@ public class VerdictSelectorTests : IDisposable
     [Fact]
     public void A_success_that_recorded_nothing_is_judged_again()
     {
-        // The ledger check has already said no verdict exists, so a job claiming success
-        // produced nothing that survived. Judging again is the only way that track ever moves.
         GiveEvidence("aaaaaaaaaaa");
         Jobs.Record("aaaaaaaaaaa", JobStage.Verdict, JobStatus.Succeeded);
 
@@ -168,8 +160,6 @@ public class VerdictSelectorTests : IDisposable
     [Fact]
     public void A_track_that_keeps_failing_is_eventually_left_alone()
     {
-        // ADR 0001's point: a poisoned track should stop being retried nightly, because every
-        // attempt spends quota that a track which would have succeeded could have had.
         GiveEvidence("aaaaaaaaaaa");
 
         for (var i = 0; i < VerdictSelector.DefaultMaxStrikes; i++)
@@ -200,9 +190,6 @@ public class VerdictSelectorTests : IDisposable
     [InlineData(PremiumStatus.SourceHasNoPremiumAudio)]
     public void A_download_short_of_premium_is_not_judged(PremiumStatus status)
     {
-        // Before the verdict rather than before the GPU, because a swap copies the verdict
-        // forward: a key derived from poor audio would be restated onto the better upload
-        // instead of re-derived, and nothing would say so (ADR 0016).
         GiveEvidence("aaaaaaaaaaa");
         GiveEvidence("bbbbbbbbbbb");
         Set.SaveAcquisition("aaaaaaaaaaa", new Acquisition { PremiumStatus = status });
@@ -222,8 +209,6 @@ public class VerdictSelectorTests : IDisposable
     [InlineData(PremiumStatus.Premium)]
     public void A_session_problem_holds_nothing_up(PremiumStatus status)
     {
-        // These are true of every download at once. Stopping tracks one at a time for them would
-        // halt the whole queue for something no per-track action can fix.
         GiveEvidence("aaaaaaaaaaa");
         Set.SaveAcquisition("aaaaaaaaaaa", new Acquisition { PremiumStatus = status });
 
@@ -255,7 +240,6 @@ public class VerdictSelectorTests : IDisposable
     [Fact]
     public void A_track_acquired_before_any_of_this_is_judged_as_before()
     {
-        // No record is not a shortfall: every working set already on disk has none.
         GiveEvidence("aaaaaaaaaaa");
 
         Assert.True(
@@ -266,8 +250,6 @@ public class VerdictSelectorTests : IDisposable
     [Fact]
     public void Judgment_is_no_more_patient_than_separation()
     {
-        // It spends quota, and its usual failures are not the transient kind: a track with no
-        // human coverage fails the same way every time.
         Assert.Equal(SeparationSelector.DefaultMaxStrikes, VerdictSelector.DefaultMaxStrikes);
         Assert.True(VerdictSelector.DefaultMaxStrikes < EvidenceSelector.DefaultMaxStrikes);
     }

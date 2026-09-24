@@ -2,14 +2,7 @@ using Crateside.Core.Orchestration;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// What the job store says about one track, reduced to the two facts a row needs: which stage
-/// has it in flight, and whether any stage has stopped trying.
-/// </summary>
-/// <remarks>
-/// Assembled ad hoc in <c>Queue.razor</c> before this, over four of the five stages — tagging was
-/// missing, so a track that gave up there said nothing at all.
-/// </remarks>
+/// <summary>What the job store says about one track, reduced to what a row needs.</summary>
 public class StageProgressTests : IDisposable
 {
     private const string Video = "aaaaaaaaaaa";
@@ -92,8 +85,6 @@ public class StageProgressTests : IDisposable
     [Fact]
     public void A_stage_out_of_strikes_has_given_up_and_tagging_counts()
     {
-        // Tagging is the stage the queue page never checked. It fails for a real reason — Ableton
-        // holding the tag store — so a track can genuinely exhaust it and then say nothing.
         var jobs = Store();
 
         for (var attempt = 0; attempt < TaggingSelector.DefaultMaxStrikes; attempt++)
@@ -108,9 +99,6 @@ public class StageProgressTests : IDisposable
     [Fact]
     public void Evidence_is_allowed_more_tries_than_the_rest()
     {
-        // The same count that ends separation leaves evidence still going, because acquiring
-        // audio fails for transient reasons the other stages do not share. Copying the limit
-        // beside this logic instead of reading it off the selector is how the two would drift.
         var jobs = Store();
 
         for (var attempt = 0; attempt < SeparationSelector.DefaultMaxStrikes; attempt++)
@@ -122,9 +110,7 @@ public class StageProgressTests : IDisposable
     [Fact]
     public void Putting_a_track_back_in_line_undoes_giving_up()
     {
-        // Strikes never decrease, so forgiveness cannot work by clearing the count. Every
-        // selector reads Cancelled as "eligible again, whatever the count", and this has to agree
-        // or the row would keep saying "gave up" about a track already back in the work list.
+        // Strikes never decrease; every selector reads Cancelled as eligible again.
         var jobs = Store();
 
         for (var attempt = 0; attempt < SeparationSelector.DefaultMaxStrikes; attempt++)

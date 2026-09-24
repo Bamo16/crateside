@@ -4,11 +4,7 @@ using Crateside.Core.Orchestration;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// Handing off a swapped track's replacement over the version it replaces. Staging is
-/// crateside's to manage, so a superseded stem there is cleared; one that has reached
-/// `Mashup Samples` is the user's and is never touched (ADR 0014).
-/// </summary>
+/// <summary>Handing off a swapped track's replacement over the version it replaces (ADR 0014).</summary>
 public class HandoffSupersedeTests : IDisposable
 {
     private readonly string _root = Path.Combine(
@@ -37,10 +33,6 @@ public class HandoffSupersedeTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>
-    /// The replacement carries the same filename as the thing it replaces, which is the case the
-    /// clearing exists for: without it the handoff refuses and the swap stalls half-done.
-    /// </summary>
     [Fact]
     public void A_replacement_lands_over_the_version_it_supersedes()
     {
@@ -79,11 +71,6 @@ public class HandoffSupersedeTests : IDisposable
         Assert.Equal(0, result.Cleared);
     }
 
-    /// <summary>
-    /// A superseded file whose name differs still goes. The rule is about the upload being
-    /// replaced, not about a collision — a swap to an upload with different metadata produces
-    /// differently named stems and the old cut is no more wanted for that.
-    /// </summary>
     [Fact]
     public void A_superseded_file_goes_even_when_its_name_does_not_collide()
     {
@@ -109,10 +96,6 @@ public class HandoffSupersedeTests : IDisposable
         Assert.Equal(0, result.Cleared);
     }
 
-    /// <summary>
-    /// The safety property. If this predicate were ever inverted the handoff would delete the
-    /// very stems it is about to move, and the replacement would be lost with the original.
-    /// </summary>
     [Fact]
     public void Superseded_never_names_the_incoming_uploads_own_files()
     {

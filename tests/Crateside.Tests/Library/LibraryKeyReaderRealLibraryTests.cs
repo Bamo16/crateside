@@ -6,10 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Library;
 
-/// <summary>
-/// The key distribution over the real `Mashup Samples`. Machine-bound by design; skips where
-/// the library or Ableton's index is absent.
-/// </summary>
+/// <summary>The key distribution over the real <c>Mashup Samples</c>.</summary>
 public class LibraryKeyReaderRealLibraryTests
 {
     private static readonly CratesidePaths Paths = new();
@@ -35,23 +32,6 @@ public class LibraryKeyReaderRealLibraryTests
         Assert.Equal(24, Read().Counts.Count);
     }
 
-    /// <summary>
-    /// The index and the ledger never disagree about a key.
-    /// </summary>
-    /// <remarks>
-    /// This replaces an assertion that the index keys every file the ledger can. That was true on
-    /// 2026-09-09 and is what let the panel drop the ledger ∪ tag-store union it was originally
-    /// specified with; it is false now, because 110 files have lost their Ableton keywords
-    /// (<see href="https://github.com/Bamo16/crateside/issues/24">#24</see>).
-    ///
-    /// The union is deliberately <em>not</em> coming back. The panel answers "what can I find by
-    /// key in Ableton's browser", and a file whose tag is gone cannot be found there whatever the
-    /// ledger remembers — counting it would overstate the library by exactly the number of
-    /// samples that have stopped working. The gap is a fault to fix, not a source to paper over.
-    ///
-    /// What still has to hold is that the two never contradict each other where both have an
-    /// answer, which is the assumption the panel's arithmetic actually rests on.
-    /// </remarks>
     [Fact]
     public void The_index_and_the_ledger_never_disagree_about_a_key()
     {

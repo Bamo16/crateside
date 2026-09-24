@@ -5,26 +5,10 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// The composed prompt against this machine's real working sets.
-/// </summary>
-/// <remarks>
-/// <para>
-/// The prompt is what the verdict stage actually costs, and the fixture in
-/// <see cref="VerdictRunnerTests"/> is <c>{}</c> — which says nothing about what a real
-/// <c>keytag-detect</c> run produces. These check the size of the thing being carried against
-/// real evidence, because the whole reason to carry it is that it is small.
-/// </para>
-/// <para>
-/// Skips when the machine has no working sets, so it is a no-op on a fresh checkout.
-/// </para>
-/// </remarks>
+/// <summary>The composed prompt's size against this machine's real evidence.</summary>
 public class VerdictRunnerRealDataTests
 {
-    /// <summary>
-    /// What the inlining is bought against: a tool call is a whole round trip, and the measured
-    /// per-turn floor after this change is ~13k.
-    /// </summary>
+    /// <summary>A tool call's round trip: the measured per-turn floor, in tokens.</summary>
     private const int RoundTripTokens = 13_000;
 
     private static readonly WorkingSet Set = new();
@@ -56,8 +40,7 @@ public class VerdictRunnerRealDataTests
                 $"{videoId} produced evidence too large to inline"
             );
 
-            // Roughly four characters to the token. The point is the order of magnitude: this
-            // is carried on every turn, and it is bought against one round trip that is not.
+            // Roughly four characters to the token; the order of magnitude is what matters.
             Assert.True(
                 evidence.Length / 4 < RoundTripTokens,
                 $"{videoId} evidence is ~{evidence.Length / 4} tokens a turn"
@@ -74,8 +57,6 @@ public class VerdictRunnerRealDataTests
         {
             var prompt = Runner.Prompt(Order(videoId));
 
-            // The detector names the file it read, so this is present in every real evidence
-            // JSON and absent from the rest of the prompt.
             Assert.Contains("\"algorithms\"", prompt);
             Assert.Contains("```json", prompt);
         }

@@ -36,7 +36,6 @@ public class QueueSettingsStoreTests : IDisposable
     {
         Store("PL_FROM_CONFIG").SavePlaylistId("PL_FROM_USER");
 
-        // A fresh store is what the next run gets.
         Assert.Equal("PL_FROM_USER", Store("PL_FROM_CONFIG").Read().PlaylistId);
     }
 
@@ -84,8 +83,6 @@ public class QueueSettingsStoreTests : IDisposable
     [Fact]
     public void Saving_the_playlist_does_not_drop_the_instructions()
     {
-        // Every mutator used to write a freshly-constructed settings object, so saving one field
-        // discarded the others. Harmless while there was only one field, and not any more.
         var store = Store();
         store.SetPlan("abc123", StemPlan.InstrumentalRelease);
 
@@ -99,8 +96,6 @@ public class QueueSettingsStoreTests : IDisposable
     [Fact]
     public void An_instruction_that_says_nothing_is_not_kept()
     {
-        // Otherwise every track ever spoken about leaves a permanent line in the file, and the
-        // list stops meaning "things I have said something about".
         var store = Store();
         store.SetPlan("abc123", StemPlan.InstrumentalRelease);
 
@@ -112,8 +107,7 @@ public class QueueSettingsStoreTests : IDisposable
     [Fact]
     public void A_name_on_its_own_is_enough_to_keep_an_instruction()
     {
-        // SaysSomething is what decides whether the entry is stored at all, so a field left out
-        // of it cannot be persisted — the name would be dropped the moment it was saved.
+        // SaysSomething decides whether the entry is stored at all.
         var store = Store();
 
         store.SetName("abc123", "Starjunk 95 - 99th Street");
@@ -137,7 +131,6 @@ public class QueueSettingsStoreTests : IDisposable
     [InlineData("   ")]
     public void Clearing_a_name_drops_the_instruction_with_it(string? cleared)
     {
-        // Absence is what "not stated" means, and blank is not a name anyone typed on purpose.
         var store = Store();
         store.SetName("abc123", "Starjunk 95 - 99th Street");
 
@@ -173,9 +166,7 @@ public class QueueSettingsStoreTests : IDisposable
     [Fact]
     public void A_file_still_carrying_the_removed_hold_fields_reads_without_error()
     {
-        // Holding was removed, and a queue.json written before that still carries it — in the
-        // oldest shape, a top-level `held` array. Unknown properties are skipped rather than
-        // refused, so everything else in the file survives and the next write drops them.
+        // A queue.json from before holding was removed still carries a top-level `held` array.
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         File.WriteAllText(
             _path,
@@ -226,8 +217,7 @@ public class QueueSettingsStoreTests : IDisposable
         store.SaveConsumeOnArrival(false);
         EditOutside("""{ "consumeOnArrival": true }""");
 
-        // Saving anything at all read-applies-writes the whole file, so an unrelated save is
-        // exactly how the reverting happened.
+        // Saving anything read-applies-writes the whole file.
         store.SetName("abc123", "Starjunk 95 - 99th Street");
 
         Assert.True(store.Read().ConsumeOnArrival);
@@ -241,8 +231,6 @@ public class QueueSettingsStoreTests : IDisposable
         store.SaveRefreshMinutes(11);
         store.SaveConsumeOnArrival(true);
 
-        // Save used to build its own fallback that set neither of these, so the first Upsert
-        // after them dropped both.
         store.SetName("abc123", "Starjunk 95 - 99th Street");
 
         var settings = store.Read();
@@ -251,14 +239,12 @@ public class QueueSettingsStoreTests : IDisposable
         Assert.True(settings.ConsumeOnArrival);
     }
 
-    /// <summary>Writes the file behind the store's back, as an agent or an editor would.</summary>
     private void EditOutside(string json)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         File.WriteAllText(_path, json);
 
-        // The cache turns on the last-write time, and two writes inside the filesystem's
-        // resolution are one timestamp.
+        // Two writes inside the filesystem's resolution are one timestamp.
         File.SetLastWriteTimeUtc(_path, DateTime.UtcNow.AddSeconds(1));
     }
 }

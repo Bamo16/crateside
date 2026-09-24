@@ -251,8 +251,7 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void A_download_that_got_premium_audio_leaves_the_row_alone()
     {
-        // Recorded on every download, so the row has to read the outcome rather than the
-        // presence of a record.
+        // Recorded on every download, so the outcome counts, not the record's presence.
         var row = Assert.Single(
             Compose(
                 acquisitions: new Dictionary<string, Acquisition>(StringComparer.Ordinal)

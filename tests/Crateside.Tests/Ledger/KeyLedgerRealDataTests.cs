@@ -4,10 +4,7 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Ledger;
 
-/// <summary>
-/// The whole point of the design is that a stem on disk joins to a ledger verdict. This
-/// asserts that end-to-end against the real ledger and the real staging folder.
-/// </summary>
+/// <summary>A stem on disk joins to a ledger verdict, against the real ledger and library.</summary>
 public class KeyLedgerRealDataTests
 {
     private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
@@ -22,7 +19,6 @@ public class KeyLedgerRealDataTests
 
         Assert.NotEmpty(ledger.Runs);
         Assert.All(ledger.Runs, r => Assert.NotEmpty(r.Song));
-        // A supersede files under an existing identity, so there are fewer songs than runs.
         Assert.True(ledger.SongCount <= ledger.Runs.Count);
     }
 
@@ -33,9 +29,7 @@ public class KeyLedgerRealDataTests
 
         var modal = KeyLedger.Read(LedgerPath).Runs.Where(r => r.IsCollapsed).ToList();
 
-        // Asserting the shape rather than a count: what matters is that a mode never contradicts
-        // the tag it collapses to, since the tonic is shared and only the quality follows from
-        // the mode. Uptown Funk is the first of these — D Dorian, tagged D minor.
+        // A mode must never contradict the tag it collapses to.
         Assert.NotEmpty(modal);
         Assert.All(modal, r => Assert.NotNull(r.ModalKey));
         Assert.All(modal, r => Assert.Equal(r.Key!.Split(' ')[0], r.ModalKey!.Split(' ')[0]));
@@ -49,9 +43,7 @@ public class KeyLedgerRealDataTests
         var runs = KeyLedger.Read(LedgerPath).Runs;
         var withId = runs.Count(r => r.SourceVideoId is not null);
 
-        // The design was measured at 124/125. Asserting a ratio rather than a count keeps
-        // this meaningful as the ledger grows; a run recorded from a local file legitimately
-        // has no URL.
+        // Measured at 124/125 at design; a run from a local file has no URL.
         Assert.True(
             withId >= runs.Count - 2,
             $"only {withId} of {runs.Count} runs carry a video ID"
@@ -89,12 +81,8 @@ public class KeyLedgerRealDataTests
             "Ledger and staging root must both be present."
         );
 
-        // The file is named "Alan Gomez - Mission 15"; its ledger identity is
-        // "alan gomez, luck ra - luck ra | mission 15". The filename would never have found
-        // it — the video ID in the tag is what does.
-        // Looked for in both roots rather than just staging: finishing a track moves it to
-        // Mashup Samples, so pinning this to staging meant the test retired itself the first
-        // time the user did exactly what the workflow is for.
+        // Its ledger identity is "alan gomez, luck ra - luck ra | mission 15": only the video ID
+        // in the tag can find it.
         var stem = new[] { StagingRoot, new CratesidePaths().MashupSamples }
             .Select(r => Path.Combine(r, "Alan Gomez - Mission 15 (Vocal - Full).flac"))
             .FirstOrDefault(File.Exists);

@@ -4,10 +4,6 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Queue;
 
-/// <summary>
-/// The removal predicate gates an irreversible action — deleting from the user's playlist —
-/// so it is tested for what it must <em>refuse</em> as much as what it accepts.
-/// </summary>
 public class ProcessedTracksTests : IDisposable
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
@@ -38,16 +34,10 @@ public class ProcessedTracksTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>
-    /// Copies a real staged stem and rewrites its provenance, so the scan is exercised against
-    /// an actual FLAC that TagLibSharp must parse — not a stub reader.
-    /// </summary>
+    /// <summary>Copies a real staged stem and rewrites its provenance.</summary>
     private string? StemFor(string videoId, string name)
     {
-        // Any staged FLAC will do, and naming one was a mistake: staging is the folder whose
-        // entire purpose is that things leave it, so a fixture pinned to a filename skips itself
-        // the first time the user finishes that track. Five tests here went quiet at once when
-        // "Alan Gomez - Mission 15 (Vocal - Full).flac" was moved to Mashup Samples.
+        // Any staged FLAC: a named one skips itself once the user finishes that track.
         var source = Directory.Exists(StagingRoot)
             ? Directory
                 .EnumerateFiles(StagingRoot, "*.flac")
@@ -117,9 +107,6 @@ public class ProcessedTracksTests : IDisposable
             ProcessedTracks.Scan(LedgerWith(VideoId), [_root]).StemsFor(VideoId)
         );
 
-        // Both are read during the scan already and were being thrown away. Which root a file is
-        // in is what says whether the user has finished with it — a sample that reached Mashup
-        // Samples is warped — and the preset is what names it on the row.
         Assert.Equal("Vocal - Full", stem.Preset);
         Assert.Equal(_root, stem.Root);
     }
@@ -151,8 +138,7 @@ public class ProcessedTracksTests : IDisposable
     [Fact]
     public void Deleted_stems_leave_a_track_queued_rather_than_processed()
     {
-        // The open question, pinned as behaviour: deleting stems is indistinguishable from a
-        // separation that never finished, and both correctly fail the test.
+        // Deleted stems and a separation that never finished are indistinguishable.
         const string VideoId = "vfBJjufAG1E";
         var stem = StemFor(VideoId, "deleted.flac");
         Assert.SkipWhen(stem is null, "Needs a real stem to copy.");

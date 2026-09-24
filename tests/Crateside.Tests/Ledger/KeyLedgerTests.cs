@@ -102,9 +102,7 @@ public class KeyLedgerTests : IDisposable
     [Fact]
     public void A_video_id_resolves_through_the_identity_to_the_newest_verdict()
     {
-        // The supersede carries no URL at all. Going straight from video ID to "the run that
-        // mentioned it" would return the stale WITHHELD; resolving to the identity first is
-        // what makes the newer verdict win.
+        // The supersede carries no URL, so only resolving to the identity first finds it.
         var ledger = ReadLines(
             Line(
                 "2026-08-01T00:00:00+00:00",
@@ -124,9 +122,7 @@ public class KeyLedgerTests : IDisposable
     [Fact]
     public void A_line_carrying_no_verdict_would_take_the_songs_key_away()
     {
-        // Why a restatement carries the whole verdict rather than just the new URL (keytag ADR
-        // 0008): latest-wins cannot distinguish "says nothing" from "says no key", so a bare
-        // alias resolves the new ID and blanks the song at the same time.
+        // Why a restatement carries the whole verdict (keytag ADR 0008).
         var ledger = ReadLines(
             Line(
                 "2026-08-01T00:00:00+00:00",
@@ -149,16 +145,11 @@ public class KeyLedgerTests : IDisposable
         Assert.Null(swapped.Key);
         Assert.False(swapped.HasTaggableKey);
 
-        // And it reaches back through the original ID too, so the damage is not confined to the
-        // new video.
         Assert.True(ledger.TryGetLatestByVideoId("NSLYAT7sjAA", out var original));
         Assert.Null(original.Key);
     }
 
-    /// <summary>
-    /// A restatement as <c>keytag-restate</c> writes one — shape taken from a real
-    /// <c>--dry-run</c>, verdict copied from the run it names.
-    /// </summary>
+    /// <summary>A restatement shaped like a real <c>keytag-restate --dry-run</c>.</summary>
     private static string Restatement(
         string timestamp,
         string song,
@@ -218,12 +209,10 @@ public class KeyLedgerTests : IDisposable
         Assert.True(ledger.TryGetLatestByVideoId("NEWnewNEWne", out var viaNew));
         Assert.Equal("C# minor", viaNew.Key);
 
-        // The old ID keeps resolving: stems cut from the old video are still that song.
         Assert.True(ledger.TryGetLatestByVideoId("OLDoldOLDol", out var viaOld));
         Assert.Equal(viaNew.Key, viaOld.Key);
         Assert.Equal(viaNew.Confidence, viaOld.Confidence);
 
-        // Both count as judged, so neither is picked up for a second verdict run.
         Assert.True(ledger.HasRunFor("NEWnewNEWne"));
         Assert.True(ledger.HasRunFor("OLDoldOLDol"));
     }
@@ -231,7 +220,6 @@ public class KeyLedgerTests : IDisposable
     [Fact]
     public void A_re_judgment_after_a_restatement_still_wins_through_both_ids()
     {
-        // A restatement is not a floor: it is just the latest line until a real run is later.
         var ledger = ReadLines(
             Line("2026-09-01T00:00:00+00:00", "a - b", Watch("OLDoldOLDol"), "C# minor", "MEDIUM"),
             Restatement(
@@ -256,7 +244,6 @@ public class KeyLedgerTests : IDisposable
     [Fact]
     public void A_restatement_leaves_the_song_count_alone()
     {
-        // It names an existing identity, so it adds a source URL rather than a song.
         var ledger = ReadLines(
             Line("2026-09-01T00:00:00+00:00", "a - b", Watch("OLDoldOLDol"), "C# minor", "MEDIUM"),
             Restatement(
@@ -277,7 +264,6 @@ public class KeyLedgerTests : IDisposable
     [Fact]
     public void A_withheld_run_still_counts_as_having_been_processed()
     {
-        // The removal predicate is "a verdict was recorded", not "a key was produced".
         var ledger = ReadLines(
             Line(
                 "2026-08-01T00:00:00+00:00",
@@ -310,7 +296,6 @@ public class KeyLedgerTests : IDisposable
     [Fact]
     public void A_malformed_line_is_skipped_not_fatal()
     {
-        // The file is append-only and may be caught mid-write.
         var ledger = ReadLines(
             Line("2026-08-01T00:00:00+00:00", "a - b", null, "C major"),
             "",

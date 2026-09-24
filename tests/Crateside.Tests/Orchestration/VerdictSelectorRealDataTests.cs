@@ -5,15 +5,7 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// The verdict selector against this machine's real working set, job store and ledger.
-/// </summary>
-/// <remarks>
-/// Written after the stage sat idle with a track that appeared to satisfy every one of its
-/// conditions. Reasoning about it from outside produced two wrong diagnoses, so this asks the
-/// code instead — the same reason the other real-data tests here exist. Skips when the machine
-/// has no working sets, so it is a no-op on a fresh checkout.
-/// </remarks>
+/// <summary>The verdict selector against this machine's real working set, job store and ledger.</summary>
 public class VerdictSelectorRealDataTests
 {
     private static readonly WorkingSet Set = new();
@@ -37,8 +29,7 @@ public class VerdictSelectorRealDataTests
 
         var ledger = KeyLedger.Read(Paths.Ledger);
 
-        // The stage's own entry and exit conditions, checked one at a time so a failure names
-        // which of them is actually false rather than just "nothing was picked".
+        // Checked one at a time so a failure names which condition is false.
         foreach (var videoId in detected)
         {
             var judged = ledger.HasRunFor(videoId);
@@ -50,9 +41,7 @@ public class VerdictSelectorRealDataTests
                 retrySucceeded: true
             );
 
-            // The fourth condition, added after this test was written: a download that came back
-            // short of premium audio stops before the verdict, so it is detected, unjudged,
-            // eligible — and correctly not picked (ADR 0016).
+            // A download short of premium audio stops before the verdict (ADR 0016).
             var stopped = Set.AcquisitionFor(videoId)?.Stops is true;
 
             var picked = new VerdictSelector(Jobs, Set).TryPickNext(
@@ -67,9 +56,6 @@ public class VerdictSelectorRealDataTests
                 out var next
             );
 
-            // Detected, unjudged, not given up on and not stopped == pickable. Stating each one is what
-            // makes a failure name the reason: the bug this was written for had every condition
-            // satisfied and still picked nothing.
             Assert.True(
                 picked == (!judged && allowed && !stopped),
                 $"{videoId}: hasEvidence=true judged={judged} allowed={allowed} "

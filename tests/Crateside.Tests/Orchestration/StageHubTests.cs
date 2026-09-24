@@ -2,14 +2,7 @@ using Crateside.Core.Orchestration;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// The one place a stage says something happened.
-/// </summary>
-/// <remarks>
-/// Stages published nothing at all, which is why the app appeared to need a refresh: the drain
-/// controls raised <c>Changed</c> for pausing and for the activity line, so the header updated
-/// live while the list underneath it went stale.
-/// </remarks>
+/// <summary>The one place a stage says something happened.</summary>
 public class StageHubTests : IDisposable
 {
     private const string Video = "aaaaaaaaaaa";
@@ -47,10 +40,7 @@ public class StageHubTests : IDisposable
     [Fact]
     public void A_subscriber_falling_over_does_not_rob_the_others_or_the_publisher()
     {
-        // The publisher is a drain loop and the subscribers are pages. A circuit that has gone
-        // away throws from its handler, and letting that reach the loop would end a stage's tick
-        // over a browser tab — or, worse, let the first subscriber registered decide whether the
-        // second ever hears anything.
+        // A circuit that has gone away throws from its handler.
         var hub = new StageHub();
         var reached = false;
 
@@ -65,11 +55,6 @@ public class StageHubTests : IDisposable
     [Fact]
     public void Every_recorded_job_announces_itself()
     {
-        // Announced from the job store rather than from each drainer, because the store is the
-        // single writer every stage already goes through. The same argument the queue view makes
-        // for subtracting held tracks structurally: a guard that each of five callers has to
-        // remember is one that a sixth will forget, and forgetting it is precisely the bug this
-        // hub exists to fix.
         var hub = new StageHub();
         var seen = new List<StageChange>();
 
@@ -88,8 +73,6 @@ public class StageHubTests : IDisposable
     [Fact]
     public void A_store_with_no_hub_still_records()
     {
-        // Every test in this repo builds one without a hub, and so does anything reading the
-        // store outside the app. Announcing is an extra, never a requirement.
         var jobs = new JobStore(_path);
 
         Assert.Equal(

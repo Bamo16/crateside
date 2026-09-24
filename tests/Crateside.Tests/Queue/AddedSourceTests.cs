@@ -3,10 +3,7 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Queue;
 
-/// <summary>
-/// An added source and a separation source are the same kind of file, which is what makes
-/// telling them apart on disk the part worth testing (ADR 0019).
-/// </summary>
+/// <summary>Telling an added source from a separation source on disk (ADR 0019).</summary>
 public class AddedSourceTests
 {
     private const string Staging = @"P:\RYAN\Ableton\Sample Staging";
@@ -43,10 +40,6 @@ public class AddedSourceTests
         Assert.True(inventory.Has(Official));
     }
 
-    /// <summary>
-    /// The row invites renaming in Ableton, and renaming used to part the file from the plan and
-    /// fetch the upload a second time.
-    /// </summary>
     [Fact]
     public void An_added_source_stays_fetched_after_the_user_renames_it()
     {
@@ -103,8 +96,6 @@ public class AddedSourceTests
     [Fact]
     public void Unticking_the_separation_source_leaves_the_added_ones_alone()
     {
-        // Both are Source-kind files. Reading "keep source" as a statement about all of them
-        // would delete a file the user attached on purpose and never asked to lose.
         var inventory = StemInventory.Of(
             [File("SUPADOPA.flac", Track), File("SUPADOPA (Official Instrumental).flac", Added)],
             Catalog
@@ -125,8 +116,6 @@ public class AddedSourceTests
     [Fact]
     public void A_separation_source_whose_own_title_ends_in_brackets_is_not_an_added_one()
     {
-        // The trap the label would have set: matched on the label, this reads as an added
-        // source the plan no longer names, and unticking anything would delete it.
         var inventory = StemInventory.Of(
             [File("Schala's Theme (Instrumental).flac", Track)],
             Catalog
@@ -140,9 +129,7 @@ public class AddedSourceTests
     [Fact]
     public void A_plan_that_keeps_its_source_gives_the_separator_nothing_to_do()
     {
-        // So it must not enter the separation list. The copy is the download stage's — it used
-        // to be the separation runner's, because `--keep-source` was a flag on `separate`, which
-        // meant a file copy queued behind the GPU and stopped when separation was paused.
+        // So it must not enter the separation list: the download stage copies it.
         var plan = new StemPlan { Presets = [], KeepSource = true };
         var guideOnly = StemInventory.Of(
             [File("x (Drums).flac", Track, "Drums - htdemucs_ft")],

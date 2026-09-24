@@ -28,7 +28,6 @@ public class EvidenceSelectorTests : IDisposable
         File.WriteAllText(Set.EvidencePathFor(videoId), "{}");
     }
 
-    /// <summary>What the download stage leaves behind, and what detection needs to run at all.</summary>
     private void GiveAudio(string videoId) =>
         File.WriteAllText(Path.Combine(Set.Prepare(videoId), "track.flac"), "audio");
 
@@ -41,11 +40,7 @@ public class EvidenceSelectorTests : IDisposable
             IsUnavailable = unavailable,
         };
 
-    /// <remarks>
-    /// Every item arrives with audio held for it, because by the time this stage looks at a
-    /// track the download stage has been (ADR 0019). The one case where it has not is its own
-    /// test.
-    /// </remarks>
+    /// <remarks>Every item arrives with audio held for it.</remarks>
     private QueueView View(params QueueItem[] outstanding)
     {
         foreach (var item in outstanding)
@@ -80,9 +75,7 @@ public class EvidenceSelectorTests : IDisposable
     [Fact]
     public void A_track_that_already_has_evidence_is_not_detected_again()
     {
-        // This is the one that makes the stage terminate. Detection records nothing in the
-        // ledger, so a detected track is still outstanding -- without this the same track would
-        // be picked forever and nothing else would ever run.
+        // Detection records nothing in the ledger, so a detected track is still outstanding.
         GiveEvidence("aaaaaaaaaaa");
 
         new EvidenceSelector(Jobs, Set).TryPickNext(
@@ -111,8 +104,6 @@ public class EvidenceSelectorTests : IDisposable
     [Fact]
     public void A_succeeded_run_whose_evidence_has_gone_is_acquired_again()
     {
-        // The working set is scratch and may be deleted by hand at any time. Losing it costs a
-        // re-run, so a past success is not a reason to refuse one.
         Jobs.Record("aaaaaaaaaaa", JobStage.Evidence, JobStatus.Succeeded);
 
         Assert.True(
@@ -124,9 +115,6 @@ public class EvidenceSelectorTests : IDisposable
     [Fact]
     public void A_track_whose_audio_has_not_arrived_is_not_this_stages_yet()
     {
-        // Splitting the download out made it possible to reach this stage before the audio does.
-        // Picking one up early fails it for arriving early, and five of those make a track give
-        // up on itself for nothing.
         var waiting = Item("aaaaaaaaaaa");
 
         var view = View(waiting);
@@ -161,8 +149,6 @@ public class EvidenceSelectorTests : IDisposable
     [Fact]
     public void Evidence_is_more_patient_than_separation()
     {
-        // A download and some CPU, against GPU hours -- and its usual failures are the
-        // retryable kind. Being given up on as fast as separation would be wrong.
         Assert.True(EvidenceSelector.DefaultMaxStrikes > SeparationSelector.DefaultMaxStrikes);
     }
 

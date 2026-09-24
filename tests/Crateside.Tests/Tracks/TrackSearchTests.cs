@@ -3,11 +3,7 @@ using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Tracks;
 
-/// <summary>
-/// Finding one track in a list that has grown past reading. The list is client-side and the
-/// pills count the whole set, so the only thing search has to get right is what counts as a
-/// match and where to point when there is none here.
-/// </summary>
+/// <summary>What counts as a match, and where to point when there is none here.</summary>
 public class TrackSearchTests
 {
     private static readonly TrackRow Staged = new()
@@ -56,10 +52,6 @@ public class TrackSearchTests
         Assert.All(All, row => Assert.True(row.Matches(null)));
     }
 
-    /// <summary>
-    /// A renamed track is findable by either name, because the user knows one of them and not
-    /// necessarily the one the list is showing.
-    /// </summary>
     [Fact]
     public void A_renamed_track_answers_to_both_its_names()
     {
@@ -87,10 +79,6 @@ public class TrackSearchTests
         Assert.Equal([TrackFilter.InStaging], All.Holding("southern"));
     }
 
-    /// <summary>
-    /// A finished track is in no named view, so All is the only honest place to send anyone —
-    /// and without this the search would say nothing matches a track that plainly does.
-    /// </summary>
     [Fact]
     public void All_is_offered_only_when_nothing_more_specific_holds_the_match()
     {
@@ -98,10 +86,6 @@ public class TrackSearchTests
         Assert.DoesNotContain(TrackFilter.All, All.Holding("southern"));
     }
 
-    /// <summary>
-    /// Unfinished holds the staged track, but every row in it is already in a named view, so
-    /// offering it would be a second answer to a question that has a better first one.
-    /// </summary>
     [Fact]
     public void Unfinished_is_never_offered_as_somewhere_to_look() =>
         Assert.DoesNotContain(TrackFilter.Unfinished, All.Holding("southern"));
@@ -110,10 +94,6 @@ public class TrackSearchTests
     public void A_search_nothing_answers_holds_no_filters() =>
         Assert.Empty(All.Holding("nonesuch"));
 
-    /// <summary>
-    /// The counts on the pills are taken over every row, so narrowing the list must not narrow
-    /// them — searching tells you what is here, not what exists.
-    /// </summary>
     [Fact]
     public void Searching_does_not_change_what_the_pills_count()
     {
