@@ -89,11 +89,10 @@ code cannot. **When in doubt, no comment.**
   members should have none. Write a `<summary>` only where the name does not already say it.
 - **A `<summary>` is one sentence and at most two lines.** Needing a third is the member asking to
   be split, not the summary asking for more room.
-- **`<remarks>` only for a caveat that would cause a bug if missed** — a value that is not what
-  its name suggests, a guarantee that holds only under a condition, an ordering that matters. One
-  or two lines. A `<remarks>` with `<para>` in it is always wrong.
-- **The test is: would a reader who skipped it write a bug?** If no, it is not a `<remarks>`. The
-  one other thing a `<remarks>` may be is a one-line pointer to an ADR.
+- **No `<remarks>`, ever.** A caveat that would cause a bug if missed goes in the `<summary>`, within
+  its limit, or in a one-line `//` at the place the bug would happen. An ADR pointer goes at the
+  end of the summary: `… (ADR 0027).` Anything that fits neither is narration, and belongs in a
+  commit message or an ADR.
 - **No `<param>`, `<returns>` or `<exception>`** unless it carries something the signature cannot
   — a unit, a range, a null that means something. The name is the documentation.
 - **Never narrate.** How a bug was found, what was tried, what a measurement was on a given day,
