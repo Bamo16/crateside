@@ -66,6 +66,19 @@ public class DownloadSelectorTests : IDisposable
     private static StemPlan WithSource =>
         new() { Presets = ["vocal_full"], AddedSources = [Source] };
 
+    private static StemPlan KeepingTheSource => new() { Presets = [], KeepSource = true };
+
+    /// <summary>A track crateside finished with: in no work list, only still held on record.</summary>
+    private static QueueView FinishedWith(StemPlan plan) =>
+        new()
+        {
+            Items = [Absent(Finished, plan)],
+            Outstanding = [],
+            FullyProcessed = [Absent(Finished, plan)],
+            AwaitingKey = [],
+            AwaitingSeparation = [],
+        };
+
     private static QueueView View(params QueueItem[] items) =>
         new()
         {
@@ -120,6 +133,35 @@ public class DownloadSelectorTests : IDisposable
         Assert.True(Selector().TryPickNext(view, out var next));
         Assert.Equal(Finished, next.VideoId);
         Assert.True(next.Copy);
+    }
+
+    /// <summary>
+    /// 1991 - If Only, 2026-09-23: source ticked on a track long finished, whose working set had
+    /// been cleared. Nothing fetched it — the copy needs the audio held, and the fetch path only
+    /// reads the work lists, which a source-only re-cut is rightly kept out of since 42f3fcf.
+    /// </summary>
+    [Fact]
+    public void A_kept_source_a_re_cut_asked_for_is_fetched_when_its_audio_has_gone()
+    {
+        Jobs.Record(Finished, JobStage.Separation, JobStatus.Cancelled, error: "re-cut requested");
+
+        Assert.True(Selector().TryPickNext(FinishedWith(KeepingTheSource), out var next));
+
+        Assert.Equal(Finished, next.VideoId);
+        Assert.False(next.Copy);
+        Assert.NotNull(next.Into);
+    }
+
+    /// <summary>
+    /// Röyksopp - So Easy: keeps its source, separated on 2026-09-02, and nothing of it on disk.
+    /// Nobody has asked for it since, so it owes nothing (ADR 0027).
+    /// </summary>
+    [Fact]
+    public void A_finished_track_that_keeps_its_source_is_not_fetched_unasked()
+    {
+        Jobs.Record(Finished, JobStage.Separation, JobStatus.Succeeded);
+
+        Assert.False(Selector().TryPickNext(FinishedWith(KeepingTheSource), out _));
     }
 
     [Fact]

@@ -55,28 +55,45 @@ public sealed class DownloadSelector(
             .FirstOrDefault();
 
     /// <summary>
-    /// A track whose plan keeps its separation source, with the audio held and no copy made.
+    /// A track whose plan keeps its separation source and has no copy made: copied from the audio
+    /// held, or the audio fetched first when it is not.
     /// </summary>
     /// <remarks>
-    /// Copied rather than separated, so it has no business in the stage that spends the GPU
-    /// (ADR 0019).
+    /// Never a separation, so it has no business in the stage that spends the GPU (ADR 0019). The
+    /// fetch is only for a track a re-cut reopened: one that finished long ago owes nothing unasked.
     /// </remarks>
     private WantedDownload? Kept(QueueView view) =>
         view
-            .Everything.Where(item =>
-                item.Plan.KeepSource
-                && !item.Inventory.HasSource
-                && workingSet.TryGetSource(item.VideoId, out var held)
-                && !AwaitingHandoff(Path.GetFileName(held))
-            )
-            .Select(item => new WantedDownload
-            {
-                VideoId = item.VideoId,
-                Url = item.WatchUrl,
-                Track = item,
-                Copy = true,
-            })
+            .Everything.Where(item => item is { Plan.KeepSource: true, Inventory.HasSource: false })
+            .Select(KeptSource)
+            .OfType<WantedDownload>()
             .FirstOrDefault();
+
+    private WantedDownload? KeptSource(QueueItem item)
+    {
+        if (workingSet.TryGetSource(item.VideoId, out var held))
+            return AwaitingHandoff(Path.GetFileName(held))
+                ? null
+                : new WantedDownload
+                {
+                    VideoId = item.VideoId,
+                    Url = item.WatchUrl,
+                    Track = item,
+                    Copy = true,
+                };
+
+        if (IsSweptUp(item.VideoId) || !IsEligible(item.VideoId))
+            return null;
+
+        // Into the working set, so the next pass copies it the same way as audio already held.
+        return new WantedDownload
+        {
+            VideoId = item.VideoId,
+            Url = item.StatedSourceUrl is { Length: > 0 } stated ? stated : item.WatchUrl,
+            Into = workingSet.Prepare(item.VideoId),
+            Track = item,
+        };
+    }
 
     /// <summary>
     /// A source the user attached that is not on disk.

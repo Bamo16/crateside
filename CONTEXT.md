@@ -80,6 +80,10 @@ against it.
   *durable* rather than what records it. Every file arrives in **Mashup Samples** unbacked, because
   a move carries the keyword in the index and writes no entry
   ([ADR 0023](docs/adr/0023-a-key-with-no-store-entry-is-not-durable.md)).
+- **Hidden keyword** — a keyword the user took off a file by hand, which Ableton keeps in the
+  file's **tag store** entry beside the keywords it still has. It records the removal itself, not
+  what was there before: a tag added and taken off a minute later is hidden too. crateside never
+  writes one back.
 - **Written root** — a root whose **tag store** holds its whole tag state, which is
   **Sample Staging** and only ever that: every key there is one crateside wrote into the
   store itself. Read from the store, because that is the only place crateside can see its
