@@ -7,12 +7,9 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Core.Queue;
 
 /// <summary>
-/// Holds the OAuth credential that authorizes playlist deletions.
+/// Holds the OAuth credential that authorizes playlist deletions. A lapsed token is an ordinary
+/// state: it expires about weekly for an unapproved app.
 /// </summary>
-/// <remarks>
-/// An expired or absent token is an ordinary state, not an error — the write token lapses
-/// roughly weekly for an unapproved app, and re-consent is interactive.
-/// </remarks>
 public sealed class QueueAuthorizer(
     IOptions<QueueOptions> options,
     ProtectedTokenStore tokenStore,
@@ -38,13 +35,9 @@ public sealed class QueueAuthorizer(
     public QueueWriteAccess WriteAccess => access;
 
     /// <summary>
-    /// The stored credential, refreshed if needed, or null when there is none or it can no longer
-    /// be refreshed.
+    /// The stored credential, refreshed if needed, or null when there is none or it cannot be.
+    /// Never prompts: that is <see cref="ConsentAsync"/>.
     /// </summary>
-    /// <remarks>
-    /// Never prompts: call <see cref="ConsentAsync"/> for that, so a page render cannot launch a
-    /// browser window.
-    /// </remarks>
     public async Task<UserCredential?> GetCredentialAsync(
         CancellationToken cancellationToken = default
     )
@@ -105,12 +98,9 @@ public sealed class QueueAuthorizer(
     public Task SignOutAsync() => tokenStore.ClearAsync();
 
     /// <summary>
-    /// The YouTube channel the stored token actually belongs to, or null if unknown.
+    /// The YouTube channel the stored token belongs to, or null if unknown — the wrong one fails
+    /// deletes as a bare 403. Costs 1 quota unit.
     /// </summary>
-    /// <remarks>
-    /// Consent grants whichever channel was picked, and deleting from a playlist owned by another
-    /// fails as a bare 403. Costs 1 quota unit.
-    /// </remarks>
     public async Task<string?> GetAuthorizedChannelAsync(
         CancellationToken cancellationToken = default
     )

@@ -5,11 +5,8 @@ namespace Crateside.Core.Staging;
 
 /// <summary>
 /// Reads Ableton's own file index — the SQLite database behind the browser — as the same
-/// <see cref="AbletonFolderInfo"/> the folder XMP yields.
+/// <see cref="AbletonFolderInfo"/> the folder XMP yields. Read-only: it is Ableton's store.
 /// </summary>
-/// <remarks>
-/// Opened read-only and never written. This is Ableton's store, not a mirror it merges.
-/// </remarks>
 public sealed class AbletonIndexReader(IOptions<CratesidePaths> paths)
 {
     private const string DatabasePattern = "Live-files-*.db";
@@ -77,12 +74,9 @@ public sealed class AbletonIndexReader(IOptions<CratesidePaths> paths)
     }
 
     /// <summary>
-    /// The database Live is currently using: the one being written, not the highest-numbered.
+    /// The database Live is currently using: the one being written, not the highest-numbered,
+    /// since a stale schema version may sit beside it.
     /// </summary>
-    /// <remarks>
-    /// The number is a schema version, not an app version, so a stale file may sit beside the
-    /// live one.
-    /// </remarks>
     private string? FindDatabase() =>
         Directory.Exists(_paths.AbletonIndex)
             ? Directory
@@ -90,10 +84,7 @@ public sealed class AbletonIndexReader(IOptions<CratesidePaths> paths)
                 .MaxBy(File.GetLastWriteTimeUtc)
             : null;
 
-    /// <remarks>
-    /// Unpooled: a pooled connection holds the file open after it is closed, and this file is
-    /// Ableton's.
-    /// </remarks>
+    /// <summary>Unpooled, since a pooled connection holds Ableton's file open after closing.</summary>
     private static SqliteConnection Open(string database)
     {
         var connection = new SqliteConnection(

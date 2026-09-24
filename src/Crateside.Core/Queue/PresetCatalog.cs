@@ -4,12 +4,9 @@ using System.Text.Json.Serialization;
 namespace Crateside.Core.Queue;
 
 /// <summary>
-/// What the separator can make, and what it calls each one.
+/// What the separator can make and what it calls each one, read from StemForge: <c>vocal_full</c>
+/// in a plan is <c>Vocal - Full</c> on a file (ADR 0018).
 /// </summary>
-/// <remarks>
-/// The link between the two vocabularies: a <see cref="Queue.StemPlan"/> says <c>vocal_full</c>
-/// and the file says <c>Vocal - Full</c>. Read from StemForge rather than mirrored (ADR 0018).
-/// </remarks>
 public sealed record PresetCatalog
 {
     /// <summary>What a read that could not reach the separator produces.</summary>
@@ -24,12 +21,9 @@ public sealed record PresetCatalog
         Presets.FirstOrDefault(preset => preset.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
-    /// The id behind a name the separator wrote, which is the join a file on disk needs.
+    /// The id behind a name the separator wrote, which is the join a file on disk needs. A warp
+    /// guide's never resolves.
     /// </summary>
-    /// <remarks>
-    /// A warp guide never resolves: <c>Drums - htdemucs_ft</c> carries the model name and is no
-    /// catalog preset — see <see cref="Staging.StagingStem.IsWarpGuidePreset"/>.
-    /// </remarks>
     public bool TryGetId(string? displayName, [NotNullWhen(true)] out string? id)
     {
         id = displayName is null
@@ -63,9 +57,6 @@ public sealed record SeparatorPreset
     public required string Category { get; init; }
 
     /// <summary>What the preset is for, in the separator's own words.</summary>
-    /// <remarks>
-    /// The only thing that tells <c>Clean</c> from <c>Balanced</c> among nine presets.
-    /// </remarks>
     [JsonPropertyName("description")]
     public string? Description { get; init; }
 }

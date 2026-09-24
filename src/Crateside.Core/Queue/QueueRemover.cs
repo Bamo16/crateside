@@ -5,23 +5,14 @@ using Google.Apis.YouTube.v3;
 namespace Crateside.Core.Queue;
 
 /// <summary>
-/// Deletes items from the Queue playlist. The only part of crateside that writes anything,
-/// anywhere.
+/// Deletes items from the Queue playlist, at 50 quota units each against the default 10,000 a day.
 /// </summary>
-/// <remarks>
-/// <c>playlistItems.delete</c> costs 50 quota units per call — fifty times a list — against
-/// the 10,000/day default.
-/// </remarks>
 public sealed class QueueRemover(QueueAuthorizer authorizer)
 {
     /// <summary>
-    /// Removes the given items. Each is attempted independently: one failure does not abandon
-    /// the rest, and the caller gets a per-item account of what happened.
+    /// Removes the given items independently, with a per-item account; one already gone reports
+    /// as removed, so a retry is safe.
     /// </summary>
-    /// <remarks>
-    /// An item already gone from the playlist reports as removed rather than as an error, so a
-    /// retry after partial failure is safe.
-    /// </remarks>
     public async Task<IReadOnlyList<RemovalResult>> RemoveAsync(
         IReadOnlyList<QueueItem> items,
         CancellationToken cancellationToken = default
@@ -105,11 +96,9 @@ public sealed class QueueRemover(QueueAuthorizer authorizer)
         }
     }
 
-    /// <summary>A failure of the moment, rather than one that will fail the same way for ever.</summary>
-    /// <remarks>
-    /// A 403 for the wrong account or a missing scope is permanent: retrying it only spends fifty
-    /// units to be told the same thing (#34).
-    /// </remarks>
+    /// <summary>
+    /// A failure of the moment, rather than one — like a 403 — that fails the same way for ever (#34).
+    /// </summary>
     internal static bool CanSucceedLater(GoogleApiException e) =>
         (int)e.HttpStatusCode >= 500
         || e.Error?.Errors?.FirstOrDefault()?.Reason

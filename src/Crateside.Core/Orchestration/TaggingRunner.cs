@@ -57,7 +57,7 @@ public sealed class TaggingRunner(CratesidePaths paths, AbletonFolderInfoWriter?
         return keywords;
     }
 
-    /// <remarks>A file with neither is a kept source, which is used as an instrumental (ADR 0028).</remarks>
+    /// <summary>A file with neither is a kept source, used as an instrumental (ADR 0028).</summary>
     private static string? TypeFor(string? preset, SampleType? type) =>
         preset switch
         {
@@ -70,12 +70,8 @@ public sealed class TaggingRunner(CratesidePaths paths, AbletonFolderInfoWriter?
 
     /// <summary>
     /// Splits the ledger's spelling — <c>G# major</c> — into the two keywords Ableton keeps,
-    /// <c>Key|G♯</c> and <c>Key|Major</c>.
+    /// <c>Key|G♯</c> and <c>Key|Major</c> — never an ASCII hash, which makes a second tag.
     /// </summary>
-    /// <remarks>
-    /// An ASCII hash is not rejected by Ableton — it silently creates a second, permanent
-    /// "F#" tag beside the real one.
-    /// </remarks>
     private static bool TryReadKey(string key, out string tonic, out string mode)
     {
         tonic = string.Empty;
@@ -104,11 +100,10 @@ public sealed class TaggingSelector(
 {
     public const int DefaultMaxStrikes = 3;
 
-    /// <summary>The next track with files in staging that have a verdict and no key applied.</summary>
-    /// <remarks>
-    /// <see cref="AuditRoot.Written"/> reads the XMP, which is what makes this terminate: against
-    /// Ableton's index it would re-pick the same track for hours (ADR 0017).
-    /// </remarks>
+    /// <summary>
+    /// The next track with staged files that have a verdict and no key applied, read from the XMP
+    /// so it terminates (ADR 0017).
+    /// </summary>
     public bool TryPickNext(
         KeyLedger ledger,
         out string videoId,

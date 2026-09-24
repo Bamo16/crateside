@@ -5,12 +5,8 @@ using Crateside.Core.Queue;
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
-/// Puts a track into the work lists without the playlist.
+/// Puts a track into the work lists without the playlist (ADR 0010).
 /// </summary>
-/// <remarks>
-/// A second way in, against ADR 0010's grain: a pasted track reaches <c>Outstanding</c> and so
-/// costs quota, unlike a re-cut.
-/// </remarks>
 public sealed class TrackAdd(
     QueueSettingsStore settings,
     CratesidePaths paths,
@@ -54,24 +50,18 @@ public sealed class TrackAdd(
         known.FirstOrDefault(track => track.Uploads.Contains(videoId, StringComparer.Ordinal));
 
     /// <summary>
-    /// Whether this upload is one the row merely carries, rather than the track it speaks for.
+    /// Whether this upload is one the row merely carries, and so must never be judged as a track
+    /// of its own (ADR 0019).
     /// </summary>
-    /// <remarks>
-    /// Judging an added source as a track of its own would give one song two identities, which
-    /// is the thing a source is attached to a track to avoid (ADR 0019).
-    /// </remarks>
     private static bool IsAddedSource(TrackRowFacts holder, string videoId) =>
         holder.Plan.AddedSources.Any(source =>
             source.VideoId.Equals(videoId, StringComparison.Ordinal)
         );
 
     /// <summary>
-    /// Records the track, having said what its audio is first.
+    /// Records the track, having said what its audio is first so a poor upload is the user's to
+    /// accept (ADR 0019).
     /// </summary>
-    /// <remarks>
-    /// Asked here for the same reason as an added source: nothing is on disk yet, and a poor
-    /// upload is the user's to accept rather than crateside's to take quietly (ADR 0019).
-    /// </remarks>
     public async Task<AddTrackOutcome> ApplyAsync(
         string? url,
         IReadOnlyList<TrackRowFacts> known,

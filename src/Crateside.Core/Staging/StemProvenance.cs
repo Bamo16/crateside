@@ -1,12 +1,9 @@
 namespace Crateside.Core.Staging;
 
 /// <summary>
-/// The provenance comment carried in a sample's <c>COMMENT</c> tag.
+/// The provenance comment in a sample's <c>COMMENT</c> tag: StemForge's format, followed by hand,
+/// or crateside's own for an adopted file (ADR 0022).
 /// </summary>
-/// <remarks>
-/// StemForge writes most of these and owns its own format — if that changes, this must follow by
-/// hand. crateside writes the <c>crateside/</c> ones itself, for a file it adopted (ADR 0022).
-/// </remarks>
 public sealed record StemProvenance
 {
     /// <summary>What crateside writes in front of a comment it wrote itself.</summary>
@@ -34,8 +31,9 @@ public sealed record StemProvenance
     /// <summary>The YouTube format StemForge downloaded, e.g. <c>141</c>. Absent before 2026-06-01.</summary>
     public string? FormatId { get; init; }
 
-    /// <summary>Whether the download was premium audio. Null when no format was recorded.</summary>
-    /// <remarks>StemForge's rule, which in practice only formats 141 and 774 ever meet.</remarks>
+    /// <summary>
+    /// Whether the download was premium audio, by StemForge's rule. Null when no format was recorded.
+    /// </summary>
     public bool? IsPremium => FormatId is null ? null : FormatId is "141" or "774";
 
     /// <summary>What the user said a file never cut is. Null on every stem, whose preset says it.</summary>
@@ -45,12 +43,8 @@ public sealed record StemProvenance
     public DateOnly? SeparatedOn { get; init; }
 
     /// <summary>
-    /// The source URL the track was downloaded from.
+    /// The source URL the track was downloaded from — present only when StemForge downloaded it.
     /// </summary>
-    /// <remarks>
-    /// Only present when StemForge downloaded the file: any other way yields no
-    /// <c>stemforge/</c> comment, no URL and no <see cref="SourceVideoId"/>.
-    /// </remarks>
     public string? SourceUrl { get; init; }
 
     /// <summary>

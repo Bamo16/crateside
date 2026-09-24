@@ -1,12 +1,9 @@
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
-/// What crateside has done, or is doing, about one track at one <see cref="JobStage"/>.
+/// What crateside has done, or is doing, about one track at one <see cref="JobStage"/> — never
+/// what is true of the library.
 /// </summary>
-/// <remarks>
-/// A projection over the appended <see cref="JobUpdate"/> lines; the latest for an id wins. A
-/// job that says "succeeded" records only that crateside tried, never what is true of the library.
-/// </remarks>
 public sealed record TrackJob
 {
     /// <summary>Stable across attempts: <c>{videoId}:{stage}</c>. Retrying does not mint a new id.</summary>
@@ -25,12 +22,9 @@ public sealed record TrackJob
     public int? ProcessId { get; init; }
 
     /// <summary>
-    /// The OS-reported start time of <see cref="ProcessId"/>.
+    /// The OS-reported start time of <see cref="ProcessId"/>, without which a reused PID would pass
+    /// for the same process.
     /// </summary>
-    /// <remarks>
-    /// A PID alone is not an identity: Windows reuses them, so a matching PID with a different
-    /// start time is somebody else's.
-    /// </remarks>
     public DateTimeOffset? ProcessStartedAt { get; init; }
 
     /// <summary>Why the last failure failed.</summary>
@@ -42,8 +36,10 @@ public sealed record TrackJob
     /// </summary>
     public required int Strikes { get; init; }
 
-    /// <summary>When a restarted crateside found this separation's process still alive.</summary>
-    /// <remarks>Null once anything else is recorded: it describes the latest line only.</remarks>
+    /// <summary>
+    /// When a restarted crateside found this separation's process still alive; null once anything
+    /// else is recorded.
+    /// </summary>
     public DateTimeOffset? AdoptedAt { get; init; }
 
     /// <summary>Whether crateside currently believes work is in flight for this job.</summary>

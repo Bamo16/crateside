@@ -12,22 +12,17 @@ public sealed class BackingRunner(
     AbletonFolderInfoWriter writer
 )
 {
-    /// <summary>Backs everything under <paramref name="root"/> that is not backed yet.</summary>
-    /// <remarks>
-    /// One <c>Apply</c> for the whole root, never one per file: each write reconciles the root's
-    /// index down to the store, so a second write would destroy what the first had not reached.
-    /// </remarks>
+    /// <summary>
+    /// Backs everything under <paramref name="root"/> not backed yet, in one write: each write
+    /// reconciles the index to the store, so a second would undo the first.
+    /// </summary>
     public TagWriteOutcome Run(string root, KeyLedger ledger) =>
         writer.Apply(root, Unbacked(root, ledger));
 
     /// <summary>
     /// Every file under <paramref name="root"/> whose key is not backed and could be, with what
-    /// its entry should say.
+    /// its entry should say; a key already in the store is never rewritten (ADR 0023).
     /// </summary>
-    /// <remarks>
-    /// A key already in the store is never rewritten — that is where the user's own hand-applied
-    /// tags land (ADR 0023).
-    /// </remarks>
     public IReadOnlyList<TagAssignment> Unbacked(string root, KeyLedger ledger)
     {
         if (!Directory.Exists(root))
@@ -72,12 +67,9 @@ public sealed class BackingRunner(
     }
 
     /// <summary>
-    /// Whether this file's entry is missing a key that writing one would supply.
+    /// Whether this file's entry is missing a key that writing one would supply. Half a key is
+    /// the audit's to report, not this to complete.
     /// </summary>
-    /// <remarks>
-    /// Half a key is left alone: the audit reports it, and completing one is a guess about which
-    /// half is right rather than filling a blank.
-    /// </remarks>
     internal static bool NeedsAKey(AbletonFileTags? existing) =>
         existing is null
         || (
@@ -88,13 +80,9 @@ public sealed class BackingRunner(
         );
 
     /// <summary>
-    /// The keywords to write: everything the entry already has, plus the key it lacks.
+    /// The keywords to write: everything the entry already has, plus the key it lacks. The writer
+    /// replaces the whole bag, so anything left out here is destroyed.
     /// </summary>
-    /// <remarks>
-    /// The writer replaces an entry's whole keyword bag, so anything not carried across here is
-    /// destroyed. A <c>Type</c> the user set wins over the one the preset implies, and a keyword
-    /// they took off is never put back.
-    /// </remarks>
     internal static IReadOnlyList<string> Merged(
         AbletonFileTags? existing,
         IReadOnlyList<string> keywords

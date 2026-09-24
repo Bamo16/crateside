@@ -25,13 +25,9 @@ public static class TagAudit
     ) => new(Scan(ledger, roots, tagState ?? FromEitherStore));
 
     /// <summary>
-    /// Reads the store this root's tags actually live in: the XMP where crateside writes it, and
-    /// Ableton's index everywhere else (ADR 0017).
+    /// Reads the store this root's tags live in — its XMP where whole, else Ableton's index at the
+    /// default location; <see cref="Using"/> takes configured paths (ADR 0017).
     /// </summary>
-    /// <remarks>
-    /// Finds the index at this machine's default location. Use <see cref="Using"/> where the
-    /// paths are configured.
-    /// </remarks>
     public static AbletonFolderInfo FromEitherStore(AuditRoot root) =>
         Using(new AbletonIndexReader(Options.Create(new CratesidePaths())))(root);
 
@@ -97,20 +93,16 @@ public static class TagAudit
     }
 }
 
-/// <summary>A root to scan, and whether its tag store holds the root's whole tag state.</summary>
-/// <remarks>
-/// That one fact decides which store is read (ADR 0017). It is not "does crateside write this
-/// store" — it writes both (ADR 0023).
-/// </remarks>
+/// <summary>
+/// A root to scan, and whether its tag store holds the root's whole tag state — which decides the
+/// store read, not whether crateside writes it (ADR 0017, 0023).
+/// </summary>
 public sealed record AuditRoot(string Path, bool TagStoreIsWhole)
 {
     /// <summary>
-    /// Whether this root's tags come from Ableton's index rather than its own XMP.
+    /// Whether this root's tags come from Ableton's index, which lags hours behind, rather than
+    /// its own XMP.
     /// </summary>
-    /// <remarks>
-    /// A whole store is read directly, the only place crateside sees its own work at once — the
-    /// index takes hours to catch up. Where the store is partial, the index is the tag state.
-    /// </remarks>
     public bool ReadsTheIndex => !TagStoreIsWhole;
 
     /// <summary>A root crateside tags into, read from the XMP its own writes land in.</summary>
@@ -223,10 +215,9 @@ public sealed record TaggedStem
     public bool HasPartialKey { get; init; }
 
     /// <summary>
-    /// The separation preset from the file's own provenance, or null for a file that was never
-    /// separated.
+    /// The separation preset from the file's own provenance, which survives a rename, or null for
+    /// a file that was never separated.
     /// </summary>
-    /// <remarks>Read from the tag rather than the filename, which a rename does not survive.</remarks>
     public string? Preset { get; init; }
 
     public SampleType? Type { get; init; }

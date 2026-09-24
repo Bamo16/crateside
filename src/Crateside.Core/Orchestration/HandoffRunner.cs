@@ -11,12 +11,9 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
     private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
 
     /// <param name="superseded">
-    /// Staged files of an upload this track has been swapped away from, cleared to make room.
+    /// Staged files of an upload this track has been swapped away from, cleared <em>before</em>
+    /// the move to make room for same-named replacements (ADR 0014).
     /// </param>
-    /// <remarks>
-    /// The superseded files go <em>before</em> the move: a replacement usually carries the same
-    /// filename, and the stems are still in the separator's output until the move runs (ADR 0014).
-    /// </remarks>
     public HandoffResult Run(
         IReadOnlyList<string> stems,
         string? name = null,
@@ -51,10 +48,7 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
         }
     }
 
-    /// <remarks>
-    /// A file that will not go is left alone rather than failing the handoff: the clash check
-    /// below is what decides whether that mattered, and it says so in the words the user needs.
-    /// </remarks>
+    /// <summary>A file that will not go is left for the clash check to judge, not a failure here.</summary>
     private int Clear(IReadOnlyList<string> superseded)
     {
         var cleared = 0;
@@ -154,13 +148,9 @@ public sealed class HandoffSelector(
         );
 
     /// <summary>
-    /// Whether what is on disk for this track is all there is going to be.
+    /// Whether what is on disk for this track is all there is going to be. Only a failed
+    /// separation says otherwise; a running one may never be released (ADR 0025).
     /// </summary>
-    /// <remarks>
-    /// Only <see cref="JobStatus.Failed"/> blocks, and deliberately: a copied source has no
-    /// separation job at all, and a recorded <see cref="JobStatus.Running"/> may be an adopted run
-    /// nobody releases (ADR 0025).
-    /// </remarks>
     private bool SeparationOwesNothingMore(string videoId) =>
         !jobs.TryGet(videoId, JobStage.Separation, out var separation)
         || separation is not { Status: JobStatus.Failed };

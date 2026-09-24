@@ -61,13 +61,9 @@ public sealed class SourceAdd(
     }
 
     /// <summary>
-    /// Tells keytag the video is this song, then records it on the plan for the download stage
-    /// to fetch.
+    /// Tells keytag the video is this song, then — never before — records it on the plan for the
+    /// download stage to fetch.
     /// </summary>
-    /// <remarks>
-    /// The restatement lands first, as it does for a swap: until keytag agrees the two are one
-    /// song, the downloaded file arrives as a row of its own rather than as part of this track.
-    /// </remarks>
     /// <param name="anyway">
     /// The user has seen what the audio is and wants it regardless. The ordinary path for an
     /// unofficial upload, not an override.
@@ -154,11 +150,7 @@ public sealed class SourceAdd(
     private static AddPlan Impossible(string refusal) => new() { Refusal = refusal };
 }
 
-/// <summary>What a row knows about itself that adding a source needs.</summary>
-/// <remarks>
-/// Passed rather than re-derived: the row already folded a song's uploads together, and doing
-/// it again here would be a second answer to the same question (ADR 0014).
-/// </remarks>
+/// <summary>What a row knows about itself that adding a source needs (ADR 0014).</summary>
 public sealed record TrackRowFacts
 {
     public required string VideoId { get; init; }
@@ -177,11 +169,10 @@ public sealed record TrackRowFacts
     /// <summary>The row exists only because the library holds files for it.</summary>
     public bool IsLibraryOnly { get; init; }
 
-    /// <summary>Whether the ledger has ever judged this track, whatever it decided.</summary>
-    /// <remarks>
-    /// Not <see cref="Key"/>: a LOW or WITHHELD verdict leaves that null and is still a judgement
-    /// that has been made.
-    /// </remarks>
+    /// <summary>
+    /// Whether the ledger has ever judged this track, even to a verdict that left
+    /// <see cref="Key"/> null.
+    /// </summary>
     public bool HasVerdict { get; init; }
 
     /// <summary>Labels already in use, which a new one may not repeat.</summary>

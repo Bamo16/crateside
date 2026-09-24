@@ -4,12 +4,9 @@ using Crateside.Core.Staging;
 namespace Crateside.Core.Ledger;
 
 /// <summary>
-/// One recorded detect-key run — a single line of keytag's <c>results/runs.jsonl</c>.
+/// One recorded detect-key run — a single line of keytag's <c>results/runs.jsonl</c>, which
+/// crateside never writes.
 /// </summary>
-/// <remarks>
-/// Append-only, and a re-run is a supersede: the latest line for a given <see cref="Song"/>
-/// wins. crateside reads it and never writes it.
-/// </remarks>
 public sealed record LedgerRun
 {
     public required DateTimeOffset Timestamp { get; init; }
@@ -51,16 +48,11 @@ public sealed record LedgerRun
 
     /// <summary>
     /// True when the tagged key is a <em>collapse</em> of something else — the track is modal,
-    /// and <see cref="Key"/> is its parallel major or minor.
+    /// and <see cref="Key"/> is its parallel major or minor, one note away from what it plays.
     /// </summary>
-    /// <remarks>
-    /// A collapsed key is one note away from what the track actually plays (Dorian's natural
-    /// sixth, Mixolydian's flat seventh) — a candidate explanation when a pairing sounds wrong.
-    /// </remarks>
     public bool IsCollapsed => Mode is not null and not "major" and not "minor";
 
     /// <summary>The key as the song actually plays it (<c>D Dorian</c>), when that is known.</summary>
-    /// <remarks>Reconstructed rather than stored, so a second field can't drift from the tagged key.</remarks>
     public string? ModalKey =>
         IsCollapsed && Key?.Split(' ') is [var tonic, ..] && Mode is { Length: > 0 } mode
             ? $"{tonic} {char.ToUpperInvariant(mode[0])}{mode[1..]}"

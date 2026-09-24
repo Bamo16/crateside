@@ -3,13 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 namespace Crateside.Core.Staging;
 
 /// <summary>
-/// The keyword index Ableton keeps for one root folder, however it was read — from the folder's
-/// <c>Ableton Folder Info\&lt;uuid&gt;.xmp</c> or from Ableton's own database.
+/// The keyword index Ableton keeps for one root folder, from its XMP or Ableton's own database.
+/// Key it on the root folder, never on the XMP's per-install UUID.
 /// </summary>
-/// <remarks>
-/// The UUID in the XMP filename is per-install, not a folder identifier — key on the root
-/// folder, never on that filename.
-/// </remarks>
 public sealed class AbletonFolderInfo
 {
     private readonly Dictionary<string, AbletonFileTags> _byRelativePath;
@@ -61,21 +57,15 @@ public sealed record AbletonFileTags
     public required IReadOnlyList<string> Keywords { get; init; }
 
     /// <summary>
-    /// Keywords Ableton records as taken off this file, which is the user saying "not this one".
+    /// Keywords the user took off this file, never to be written back. Only the XMP carries them;
+    /// read from the index, always empty.
     /// </summary>
-    /// <remarks>
-    /// Writing one of these back would silently undo a correction made by hand. Only the store
-    /// carries them; the index has no equivalent, so it always reads empty.
-    /// </remarks>
     public IReadOnlyList<string> HiddenKeywords { get; init; } = [];
 
     /// <summary>
-    /// Recombined from the separate tonic and mode keywords, normalized to the ledger's ASCII
-    /// spelling (<c>G# major</c>).
+    /// The tonic and mode keywords recombined in the ledger's spelling (<c>G# major</c>), or null
+    /// for no key or only half of one.
     /// </summary>
-    /// <remarks>
-    /// Null when the file has no key, or only half of one — see <see cref="HasPartialKey"/>.
-    /// </remarks>
     public string? Key { get; init; }
 
     /// <summary>The <c>Type|</c> keyword — Instrumental, Vocal, Loop.</summary>

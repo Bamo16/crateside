@@ -63,9 +63,6 @@ public sealed class WorkingSet(string? root = null)
     /// <summary>
     /// The whole-file evidence itself, when it is small enough to hand to a reader directly.
     /// </summary>
-    /// <remarks>
-    /// Over the bound this returns false and the caller falls back to naming the path instead.
-    /// </remarks>
     public bool TryReadEvidence(string videoId, out string evidence)
     {
         evidence = null!;
@@ -88,12 +85,8 @@ public sealed class WorkingSet(string? root = null)
         Path.Combine(DirectoryFor(videoId), AcquisitionFileName);
 
     /// <summary>
-    /// How this track's retained download went, or null when nothing recorded it.
+    /// How this track's retained download went, or null — no finding — when nothing recorded it.
     /// </summary>
-    /// <remarks>
-    /// Null for every track acquired before crateside read these fields, which reads as no
-    /// finding rather than as a shortfall.
-    /// </remarks>
     public Acquisition? AcquisitionFor(string videoId)
     {
         try
@@ -155,12 +148,8 @@ public sealed class WorkingSet(string? root = null)
     }
 
     /// <summary>
-    /// The retained source audio, if it is there.
+    /// The retained source audio, if exactly one file of it is there.
     /// </summary>
-    /// <remarks>
-    /// Two audio files in one folder is treated as unknown rather than resolved — this reports
-    /// nothing and the caller re-acquires.
-    /// </remarks>
     public bool TryGetSource(string videoId, out string path)
     {
         var directory = DirectoryFor(videoId);

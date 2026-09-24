@@ -4,22 +4,15 @@ using System.Text.RegularExpressions;
 namespace Crateside.Core;
 
 /// <summary>
-/// Reads and canonicalises YouTube references. The one place in crateside that knows the shape
-/// of a video ID.
+/// Reads and canonicalises YouTube references — the one place that knows the shape of a video
+/// ID, copied from StemForge's <c>YtUrlHelper</c>.
 /// </summary>
-/// <remarks>
-/// The pattern is StemForge's, from <c>StemForge.Core.Downloading.YtUrlHelper</c>, so the two
-/// tools cannot disagree about what a video ID is.
-/// </remarks>
 public static partial class YouTubeUrl
 {
     /// <summary>
-    /// A YouTube reference as a canonical watch URL, or any other http(s) URL unchanged.
+    /// A YouTube reference as a canonical watch URL, or any other http(s) URL unchanged. Anything
+    /// handed to another tool goes through here.
     /// </summary>
-    /// <remarks>
-    /// Everything crateside hands to another tool goes through here: a bare video ID is a
-    /// perfectly good thing to type and not a thing to pass on.
-    /// </remarks>
     public static bool TryNormalize(string? input, [NotNullWhen(true)] out string? normalized)
     {
         if (TryGetVideoId(input, out var id))
@@ -40,12 +33,9 @@ public static partial class YouTubeUrl
     }
 
     /// <summary>
-    /// The 11-character video ID out of a URL or a bare ID.
+    /// The 11-character video ID out of a bare ID or a watch, youtu.be, shorts or embed URL —
+    /// false for anything else, rather than a guess.
     /// </summary>
-    /// <remarks>
-    /// <c>watch?v=</c>, <c>youtu.be/</c>, <c>/shorts/</c> and <c>/embed/</c>, with or without a
-    /// scheme and with any trailing query. False for anything else, rather than a guess.
-    /// </remarks>
     public static bool TryGetVideoId(string? input, [NotNullWhen(true)] out string? videoId)
     {
         videoId =
