@@ -80,6 +80,10 @@ public sealed class QueueSettingsStore
     public QueueSettings SetDifferentFrom(string videoId, string song) =>
         Upsert(videoId, track => track with { DifferentFrom = song });
 
+    /// <summary>Records that the user takes this upload's audio as it comes (#31).</summary>
+    public QueueSettings AcceptUpload(string videoId, string upload) =>
+        Upsert(videoId, track => track with { AcceptedUpload = upload });
+
     /// <summary>Records that crateside should work a track the playlist does not hold.</summary>
     public QueueSettings AddByUrl(string videoId) =>
         Upsert(videoId, track => track with { AddedByUrl = true });
@@ -293,6 +297,13 @@ public sealed record TrackInstruction
     [JsonPropertyName("differentFrom")]
     public string? DifferentFrom { get; init; }
 
+    /// <summary>
+    /// The upload whose short-of-premium audio the user said to use anyway, kept here because the
+    /// working set holding the download does not last (#31).
+    /// </summary>
+    [JsonPropertyName("acceptedUpload")]
+    public string? AcceptedUpload { get; init; }
+
     /// <summary>Whether this instruction still carries anything worth storing.</summary>
     [JsonIgnore]
     public bool SaysSomething =>
@@ -300,5 +311,6 @@ public sealed record TrackInstruction
         || Plan is not null
         || Name is { Length: > 0 }
         || SourceUrl is { Length: > 0 }
-        || DifferentFrom is { Length: > 0 };
+        || DifferentFrom is { Length: > 0 }
+        || AcceptedUpload is { Length: > 0 };
 }

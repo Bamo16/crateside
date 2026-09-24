@@ -106,6 +106,10 @@ public sealed class QueueService(
     /// <summary>The track the user asked for next, or null if nobody has.</summary>
     public string? BumpedVideoId => bumped.VideoId;
 
+    /// <summary>Records that the user takes this upload's audio as it comes (#31).</summary>
+    public void AcceptUpload(string videoId, string upload) =>
+        settings.AcceptUpload(videoId, upload);
+
     /// <summary>Records which files the user wants made for a track.</summary>
     public void SetPlan(string videoId, StemPlan? plan) => settings.SetPlan(videoId, plan);
 

@@ -1563,8 +1563,13 @@
 
         try
         {
+            if (
+                YouTubeUrl.TryGetVideoId(row.StatedSourceUrl ?? row.VideoId, out var upload)
+            )
+                Playlist.AcceptUpload(row.VideoId, upload);
+
             if (!Held.AcceptAcquisition(row.VideoId))
-                _problem = "There is no downloaded audio for this track any more, so it will be fetched again.";
+                _problem = "There is no downloaded audio for this track any more. It will be fetched again, and taken as it comes.";
 
             // Judging is paused by default, so this only puts the track back in line for it.
             Judging.Wake();

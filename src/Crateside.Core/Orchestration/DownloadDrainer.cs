@@ -258,7 +258,13 @@ public sealed class DownloadDrainer(
     /// </summary>
     private string? Placed(WantedDownload wanted, DownloadResult result)
     {
-        workingSet.SaveAcquisition(wanted.VideoId, result.Acquisition!);
+        workingSet.SaveAcquisition(
+            wanted.VideoId,
+            result.Acquisition! with
+            {
+                IsAccepted = IsAccepted(wanted),
+            }
+        );
 
         if (wanted.Label is not { } label)
             return null;
@@ -278,6 +284,15 @@ public sealed class DownloadDrainer(
 
         return $"downloaded, but could not be marked {type}: {untyped}";
     }
+
+    /// <summary>
+    /// Whether the user already took this upload's audio as it comes, before this download of it
+    /// landed (#31).
+    /// </summary>
+    internal static bool IsAccepted(WantedDownload wanted) =>
+        wanted is { IsAdded: false, Track.AcceptedUpload: { } accepted }
+        && YouTubeUrl.TryGetVideoId(wanted.Url, out var upload)
+        && upload.Equals(accepted, StringComparison.Ordinal);
 
     /// <summary>
     /// Renames a fetched source to carry its label, which the handoff then preserves while it
