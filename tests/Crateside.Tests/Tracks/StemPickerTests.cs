@@ -4,10 +4,6 @@ using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Tracks;
 
-/// <summary>
-/// The stem list as the picker. A line is either on disk or not and either ticked or not, and
-/// those two crossing is the whole control.
-/// </summary>
 public class StemPickerTests
 {
     private static readonly PresetCatalog Catalog = PresetCatalogReader.Parse(
@@ -45,10 +41,7 @@ public class StemPickerTests
             Samples = samples,
         };
 
-    /// <summary>
-    /// The window between confirming a cut and its files landing: the plan is recorded, the
-    /// track is back in the line for the GPU, and nothing new is on disk yet.
-    /// </summary>
+    /// <summary>A cut confirmed and nothing new on disk yet.</summary>
     private static TrackRow Cutting(StemPlan plan, params TrackSample[] samples) =>
         Row(plan, hasWarpGuide: true, samples) with
         {
@@ -131,8 +124,6 @@ public class StemPickerTests
     [Fact]
     public void An_instrumental_release_is_the_vocal_unticked_and_the_source_ticked()
     {
-        // The replacement for the has-vocals select, said in the picker's own vocabulary and
-        // needing no mode of its own (ADR 0018).
         var picker = StemPicker.For(Row(StemPlan.InstrumentalRelease), Catalog);
 
         Assert.All(
@@ -163,7 +154,7 @@ public class StemPickerTests
         Assert.True(guide.IsPinned);
         Assert.True(guide.IsWanted);
 
-        // Two presets are coming; the guide is not one of them, because it is not kept.
+        // The guide is not counted, because it is not kept.
         Assert.Equal(2, picker.Adding);
     }
 
@@ -196,7 +187,6 @@ public class StemPickerTests
         Assert.True(orphan.IsPinned);
         Assert.Equal(StemState.Kept, orphan.State);
 
-        // It survives every plan, so nothing here can propose deleting it.
         Assert.Equal(0, picker.Removing);
     }
 
@@ -224,9 +214,6 @@ public class StemPickerTests
     [Fact]
     public void One_a_track_already_has_is_shown_anyway_so_the_file_is_not_hidden()
     {
-        // Hiding the line would leave a file on disk with nothing on screen to unpick it — and
-        // taking these out of the catalog instead would make it read as a preset the separator
-        // no longer offers, which is a different and untrue thing.
         var offered = PresetCatalogReader.Parse(
             """[{"id":"vocal_rvc","displayName":"Vocal - RVC","category":"Vocals"}]"""
         );
@@ -243,9 +230,6 @@ public class StemPickerTests
     [Fact]
     public void A_cut_in_flight_says_so_rather_than_offering_a_second_one()
     {
-        // What the user saw: confirming a kept source put the track back in line, and until the
-        // copy landed the source line still read as wanted-and-not-on-disk — so the panel offered
-        // to cut the very file it was waiting for.
         var picker = StemPicker.For(
             Cutting(
                 new StemPlan { Presets = ["vocal_full"], KeepSource = true },
@@ -256,7 +240,6 @@ public class StemPickerTests
 
         Assert.True(picker.IsCutInFlight);
 
-        // Still honestly coming. What it no longer claims is who is making it (ADR 0027).
         Assert.Equal(
             StemState.Coming,
             picker.Lines.Single(line => line.Kind is StemKind.Source).State
@@ -266,12 +249,7 @@ public class StemPickerTests
     [Fact]
     public void A_track_waiting_its_first_turn_on_the_GPU_is_still_free_to_edit()
     {
-        // Nothing has been made, so there is nothing to lose and no cut to collide with: the
-        // recipe is read when the separator picks the track up, not when the plan was recorded.
-        var queued = Row() with
-        {
-            GpuPosition = 1,
-        };
+        var queued = Row() with { GpuPosition = 1 };
 
         Assert.False(queued.IsCutInFlight);
         Assert.False(StemPicker.For(queued, Catalog).IsCutInFlight);
@@ -280,9 +258,7 @@ public class StemPickerTests
     [Fact]
     public void A_file_in_the_library_locks_its_own_line_and_nothing_else()
     {
-        // crateside does not delete from Mashup Samples, so that one line cannot be unticked.
-        // Ticking anything else only ever writes to Sample Staging, so it stays open — which is
-        // what lets a finished track gain a preset without moving files back by hand (ADR 0019).
+        // Only the library line is pinned (ADR 0019).
         var picker = StemPicker.For(
             Row(StemPlan.Default, false, Made("vocal_full", "Vocal - Full", inLibrary: true)),
             Catalog
@@ -296,8 +272,6 @@ public class StemPickerTests
     [Fact]
     public void With_no_catalog_the_only_thing_offered_is_the_source()
     {
-        // The separator could not be asked, so nothing can say what the presets are called. The
-        // panel still draws, and the re-cut refuses separately.
         var picker = StemPicker.For(Row(), PresetCatalog.Empty);
 
         Assert.DoesNotContain(picker.Lines, line => line.Kind is StemKind.Preset);
@@ -342,8 +316,6 @@ public class StemPlanTogglingTests
     [Fact]
     public void It_matches_the_way_a_file_on_disk_is_matched()
     {
-        // The join onto provenance is case-insensitive, so ticking must be too, or a plan could
-        // hold two spellings of one preset and ask for it twice.
         Assert.DoesNotContain("vocal_full", StemPlan.Default.Toggling("VOCAL_FULL").Presets);
     }
 

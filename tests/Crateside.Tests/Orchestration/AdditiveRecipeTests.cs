@@ -3,10 +3,7 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// What a cut asks for once the track already has files. The point of the picker: adding a
-/// preset should cost the passes it adds and leave everything else alone.
-/// </summary>
+/// <summary>What a cut asks for once the track already has files.</summary>
 public class AdditiveRecipeTests
 {
     private static readonly PresetCatalog Catalog = PresetCatalogReader.Parse(
@@ -38,8 +35,6 @@ public class AdditiveRecipeTests
             Inventory("Vocal - Full", "Instrumental - Full", "Drums - htdemucs_ft")
         );
 
-        // One pass rather than three, and the two staged files are untouched — which is also
-        // what stops the handoff meeting a filename it already has.
         Assert.Equal(["instrumental_clean"], recipe.Presets);
         Assert.Equal(1, recipe.Passes);
     }
@@ -59,8 +54,7 @@ public class AdditiveRecipeTests
     [Fact]
     public void A_track_whose_guide_has_been_used_up_gets_another_with_its_new_stems()
     {
-        // Deleting the guide is how warping ends, so its absence is the ordinary state of a
-        // track that has been worked. Adding a preset later means warping the new file too.
+        // A worked track has no guide, and a new preset still has to be warped.
         var recipe = SeparationRecipe.For(
             new StemPlan { Presets = ["vocal_full", "instrumental_clean"] },
             Inventory("Vocal - Full")
@@ -86,8 +80,6 @@ public class AdditiveRecipeTests
 
         var recipe = SeparationRecipe.For(new StemPlan { Presets = [], KeepSource = true }, kept);
 
-        // Nothing to separate and nothing to copy, so there is nothing to make at all — not even
-        // a guide, which is only cut alongside something to warp.
         Assert.False(recipe.KeepSource);
         Assert.Empty(recipe.Presets);
         Assert.False(recipe.ExtractDrums);
@@ -105,9 +97,6 @@ public class AdditiveRecipeTests
     [Fact]
     public void A_plan_owing_only_its_source_makes_no_passes_at_all()
     {
-        // What a re-cut down to just the source leaves: the guide is already on disk, so there
-        // is nothing to separate and nothing to warp against. It owes a file copy, and anything
-        // the row says about the GPU would be a lie.
         var recipe = SeparationRecipe.For(
             new StemPlan { Presets = [], KeepSource = true },
             Inventory("Drums - htdemucs_ft")
@@ -118,21 +107,12 @@ public class AdditiveRecipeTests
         Assert.False(recipe.ExtractDrums);
     }
 
-    /// <summary>
-    /// Mr. Oizo - Ruhe, 2026-09-15: ticking *keep the source* on a track already cut queued the GPU
-    /// and produced a `(Drums)` file beside the copy.
-    /// </summary>
-    /// <remarks>
-    /// The guide was wanted for nothing. The source is the same audio as the stems already in the
-    /// library, which are already warped, so the markers exist and ADR 0020 copies them (#30).
-    /// </remarks>
     [Fact]
     public void Re_downloading_a_cut_tracks_own_source_asks_for_no_guide_and_no_gpu()
     {
         var recipe = SeparationRecipe.For(
             new StemPlan { Presets = ["vocal_full", "instrumental_full"], KeepSource = true },
-            // No guide: deleting it is how warping ends, so its absence is the ordinary state of a
-            // track that has been worked. That is what let the old rule ask for another.
+            // No guide: the track has been worked.
             Inventory("Vocal - Full", "Instrumental - Full")
         );
 
@@ -140,16 +120,12 @@ public class AdditiveRecipeTests
         Assert.True(recipe.KeepSource);
         Assert.Empty(recipe.Presets);
 
-        // The whole point: nothing for the separator to do, so the row never claims the GPU and
-        // QueueView.Compose leaves it out of AwaitingSeparation.
         Assert.Equal(0, recipe.Passes);
     }
 
     [Fact]
     public void An_instrumental_release_still_gets_its_guide_on_a_first_cut()
     {
-        // The other side of the same rule. Nothing is on disk to copy markers from, the guide is
-        // the only stem there is, and the separator has to run to place the source at all.
         var recipe = SeparationRecipe.For(
             new StemPlan { Presets = [], KeepSource = true },
             StemInventory.Empty
@@ -175,8 +151,7 @@ public class AdditiveRecipeTests
     [Fact]
     public void Two_recipes_asking_for_the_same_files_are_the_same_recipe()
     {
-        // They are built from different arrays, a moment apart. Comparing them by reference made
-        // a narrowed recipe unequal to an identical one, which is a lie about a value type.
+        // Built from different arrays, so this compares values, not references.
         Assert.Equal(
             SeparationRecipe.For(StemPlan.Default, StemInventory.Empty),
             SeparationRecipe.For(StemPlan.Default, StemInventory.Empty)

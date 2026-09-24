@@ -3,10 +3,6 @@ using Crateside.Core.Orchestration;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// The stage that makes the stems root transient. Driven against real files, because every
-/// decision it makes is about what is on disk.
-/// </summary>
 public class HandoffTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
@@ -96,9 +92,6 @@ public class HandoffTests : IDisposable
     [Fact]
     public void A_name_already_in_staging_stops_the_whole_track()
     {
-        // Warp markers live in a .asd beside the file and tags in Ableton's own store, so a name
-        // already there means the user is part-way through the human steps -- or a re-separation
-        // is landing on finished work. Neither is crateside's call to make.
         Directory.CreateDirectory(_paths.SampleStaging);
         File.WriteAllText(Staged("Yes - Owner (Drums).flac"), "already here");
 
@@ -113,7 +106,6 @@ public class HandoffTests : IDisposable
         Assert.False(result.IsSuccess);
         Assert.Contains("already in staging", result.Error);
 
-        // Nothing moved, rather than the half of it that did not clash.
         Assert.All(stems, s => Assert.True(File.Exists(s)));
         Assert.Equal("already here", File.ReadAllText(Staged("Yes - Owner (Drums).flac")));
     }
@@ -127,8 +119,6 @@ public class HandoffTests : IDisposable
     [Fact]
     public void A_name_given_before_there_were_files_reaches_them_here()
     {
-        // The point of renaming the outputs rather than the source audio: a name stated while the
-        // track was still queued has had nothing to land on until now.
         string[] stems =
         [
             Stem("Yes - Owner (Vocal - Full).flac"),
@@ -145,8 +135,7 @@ public class HandoffTests : IDisposable
     [Fact]
     public void A_clash_under_the_new_name_stops_the_track_just_the_same()
     {
-        // Checked against where the files are going, not where they came from — or the rename
-        // would be the one way to overwrite finished work.
+        // Checked against where the files are going, not where they came from.
         Directory.CreateDirectory(_paths.SampleStaging);
         File.WriteAllText(Staged("Renamed (Drums).flac"), "already here");
 
@@ -172,8 +161,6 @@ public class HandoffTests : IDisposable
     [Fact]
     public void Unresolved_key_stems_are_left_where_they_are()
     {
-        // Only KeyIdentified is handed off: a LOW or WITHHELD verdict produces stems the user
-        // cannot key-tag, and tagging is what staging is for. They are parked on purpose.
         Directory.CreateDirectory(_paths.StemsUnresolvedKey);
 
         var parked = Path.Combine(_paths.StemsUnresolvedKey, "Nobody - Unknown (Drums).flac");
@@ -185,16 +172,10 @@ public class HandoffTests : IDisposable
             _paths
         );
 
-        // Nothing in the key-identified root, so nothing is picked -- the unresolved one is not
-        // reachable from here at all.
         Assert.False(selector.TryPickNext(out _, out _));
         Assert.True(File.Exists(parked));
     }
 
-    /// <summary>
-    /// The shape that lost Moe Shop - HARDCODED its instrumental: a separation killed with VS Code
-    /// mid-run, whose one finished stem the handoff then moved 75ms after startup marked it failed.
-    /// </summary>
     [Fact]
     public void A_failed_separations_partial_output_is_not_handed_off()
     {
@@ -209,8 +190,6 @@ public class HandoffTests : IDisposable
             error: "separation process 25220 is gone without recording a result"
         );
 
-        // Left where it is, so the track stays in AwaitingSeparation and the retry produces the
-        // rest. Moving it makes one stem satisfy "fully processed" and the loss is permanent.
         Assert.False(new HandoffSelector(jobs, _paths).TryPickNext(out _, out _));
     }
 
@@ -230,8 +209,6 @@ public class HandoffTests : IDisposable
     [Fact]
     public void A_copied_source_has_no_separation_job_and_is_still_handed_off()
     {
-        // An added or kept source is copied into the cut root by the download stage and never
-        // separated (ADR 0019), so "no separation job" must not read as "separation is owed".
         var jobs = new JobStore(Path.Combine(_directory, "jobs.jsonl"));
 
         Provenanced("Moe Shop - HARDCODED (Original).flac", "_DiMKyZwaA0");
@@ -243,8 +220,7 @@ public class HandoffTests : IDisposable
     [Fact]
     public void A_file_crateside_did_not_make_is_left_alone()
     {
-        // Grouping is by the video ID in the file's own provenance comment. A file with none
-        // joins to nothing, so moving it would put somebody else's audio in the user's library.
+        // No provenance, so it joins to nothing.
         Stem("Something Else.flac");
 
         var selector = new HandoffSelector(

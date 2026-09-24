@@ -5,15 +5,7 @@ using Crateside.Core.Quota;
 
 namespace Crateside.Tests.Quota;
 
-/// <summary>
-/// Reading a meter nobody promised would stay the same shape.
-/// </summary>
-/// <remarks>
-/// The endpoint is undocumented and has already drifted once — the tool this was learned from
-/// parses <c>percent</c> and the live response says <c>utilization</c>. So these assert the
-/// failure modes as much as the happy path: every one of them has to end as <em>unknown</em>
-/// rather than as an exception reaching a page.
-/// </remarks>
+/// <summary>Reading an undocumented meter: every failure has to end as unknown, not a throw.</summary>
 public class QuotaReaderTests : IDisposable
 {
     private readonly string _root = Path.Combine(
@@ -44,10 +36,8 @@ public class QuotaReaderTests : IDisposable
         return path;
     }
 
-    // Copied from a real response on 2026-09-03, trimmed. Utilization is a percentage on 0-100 --
-    // 22.0 means 22% -- resets_at is ISO-8601 with an offset, and limits carries a *different*
-    // number for the same window (23 against 22.0), which is why it is a fallback and not a
-    // synonym. The null codename keys are real and must not get in the way.
+    // A real response from 2026-09-03, trimmed. limits carries a different number for the same
+    // window (23 against 22.0), so it is a fallback and not a synonym.
     private const string RealisticPayload = """
         {
           "five_hour": {
@@ -74,10 +64,7 @@ public class QuotaReaderTests : IDisposable
 
         Assert.True(quota.IsKnown);
 
-        // 22.0 meaning 22%, taken from five_hour rather than the 23 sitting in limits.
         Assert.Equal(22.0, quota.Utilization);
-        // Round-tripped exactly, offset and all: the real value carries microseconds, and the
-        // point of the assertion is that the -05:00 is honoured rather than dropped.
         Assert.Equal(
             DateTimeOffset.Parse("2026-09-03T19:49:59.789047-05:00", CultureInfo.InvariantCulture),
             quota.ResetsAt
@@ -88,10 +75,7 @@ public class QuotaReaderTests : IDisposable
     [Fact]
     public void Falls_back_to_the_session_row_of_limits_when_utilization_is_renamed()
     {
-        // The drift that already happened once, happening again: the tool this was learned from
-        // parses `percent`, and `percent` still lives in limits. The kind tag is what makes the
-        // fallback safe, since the weekly window is in the same array and reading it as the
-        // five-hour one would be worse than showing nothing.
+        // The kind tag keeps the weekly window, in the same array, from being read as this one.
         var quota = QuotaReader.Parse(
             """
             {
@@ -111,8 +95,6 @@ public class QuotaReaderTests : IDisposable
     [Fact]
     public async Task Sends_the_token_and_the_beta_opt_in()
     {
-        // Both are the contract with an undocumented endpoint. The authorization header is built
-        // per request because the token is read at the moment of the call and never held.
         var reader = Reader(HttpStatusCode.OK, RealisticPayload, out var handler);
 
         await reader.ReadAsync(TestContext.Current.CancellationToken);
@@ -134,10 +116,7 @@ public class QuotaReaderTests : IDisposable
         string payload
     )
     {
-        // The last two are the renamed field with nothing to recover it from: five_hour carrying
-        // only `percent`, and a limits array whose row is untagged. The fallback needs
-        // kind: "session" to know which window it is looking at, and guessing between the
-        // five-hour and the weekly one would be worse than saying nothing.
+        // The last two carry the renamed field with no kind tag to recover it from.
         var quota = await Reader(status, payload, out _)
             .ReadAsync(TestContext.Current.CancellationToken);
 

@@ -6,11 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Audit;
 
-/// <summary>
-/// The audit run against the user's actual library. Asserted here rather than only in the app
-/// because the whole value of the check is whether it holds against real, hand-applied tags —
-/// fixtures cannot disagree with a ledger in the ways a person can.
-/// </summary>
+/// <summary>The audit run against the user's actual library.</summary>
 public class TagAuditRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
@@ -28,7 +24,6 @@ public class TagAuditRealLibraryTests
             Ledger = LedgerPath,
         };
 
-    /// <summary>Each root read from the store that holds its tags — the shipped arrangement.</summary>
     private static TagAuditReport Report() =>
         TagAudit.Run(
             KeyLedger.Read(LedgerPath),
@@ -43,7 +38,6 @@ public class TagAuditRealLibraryTests
 
         var report = Report();
 
-        // The point of the audit: the finished library is in scope, not just the board.
         Assert.True(
             report.ScannedCount > Directory.GetFiles(StagingRoot, "*.flac").Length,
             "The audit saw no more stems than staging holds, so it never reached the library."
@@ -55,14 +49,7 @@ public class TagAuditRealLibraryTests
     {
         Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
 
-        // This replaces an assertion that both roots audit clean. They did on 2026-09-10 and do
-        // not now: 110 files crateside had tagged have since lost their Ableton keywords (#24).
-        // Those findings are real -- confirmed in the browser -- so the test was right and the
-        // library was wrong, which is not something a test can hold still.
-        //
-        // What is worth holding is the fear ADR 0011 actually had: that reading a lagging store
-        // would make the audit invent findings. A file reported untagged must carry no key in
-        // *either* store, whichever one its root is audited from.
+        // A file reported untagged must carry no key in either store (ADR 0011).
         var xmp = new AbletonFolderInfoReader();
         var index = new AbletonIndexReader(Options.Create(Paths));
 
@@ -84,13 +71,7 @@ public class TagAuditRealLibraryTests
     {
         Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
 
-        // Why the audit reads the index for a root crateside does not write. This used to assert
-        // the stronger thing -- that the XMP lags far enough to invent findings -- which was true
-        // while it was 108 files behind and stopped being true the moment that gap was repaired
-        // (#24). The containment is the part that does not depend on the day.
-        //
-        // The reverse direction is the one that would matter: a file keyed in the XMP and not the
-        // index would mean the index is not the tag state and ADR 0013 is wrong.
+        // A file keyed in the XMP and not the index would mean ADR 0013 is wrong.
         var index = new AbletonIndexReader(Options.Create(Paths)).Read(LibraryRoot);
         var xmp = new AbletonFolderInfoReader().Read(LibraryRoot);
 
@@ -112,8 +93,6 @@ public class TagAuditRealLibraryTests
     {
         Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
 
-        // crateside cannot tell a mis-tag from a supersede, so it must never report one
-        // without showing what each side says.
         Assert.All(
             Report().Disagreements,
             stem =>
@@ -131,8 +110,6 @@ public class TagAuditRealLibraryTests
     {
         Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
 
-        // "No single safe tag" means the stem is *supposed* to be untagged. Reporting it
-        // would train the user to ignore the list.
         Assert.All(Report().Untagged, stem => Assert.NotNull(stem.LedgerKey));
     }
 
@@ -141,10 +118,7 @@ public class TagAuditRealLibraryTests
     {
         Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
 
-        // Measured 2026-09-10: the three library files the index does not key are exactly
-        // these, and all three are unjudged. ADR 0013 called them "the honest finding count",
-        // which conflated files-the-index-does-not-key with findings -- Untagged needs a
-        // taggable verdict, and no verdict is not one (ADR 0017).
+        // Untagged needs a taggable verdict, and no verdict is not one (ADR 0017).
         var report = Report();
 
         Assert.True(report.NoVerdictCount > 0, "Nothing is unjudged, so this covers nothing.");
@@ -160,8 +134,6 @@ public class TagAuditRealLibraryTests
             Report().Inconsistencies,
             song =>
             {
-                // The finding *is* the disagreement, so there must be at least two keys and
-                // at least two stems to have disagreed.
                 Assert.True(song.AppliedKeys.Count > 1);
                 Assert.True(song.Stems.Count > 1);
                 Assert.NotEmpty(song.Label);
@@ -176,9 +148,7 @@ public class TagAuditRealLibraryTests
 
         var report = Report();
 
-        // Roughly a third of this library predates the ledger. If that stops being true the
-        // sibling check loses its reason to exist, and this test should be revisited rather
-        // than fixed.
+        // If this stops holding, revisit the sibling check rather than fixing the test.
         Assert.True(
             report.NoVerdictCount > 0,
             "Every stem now has a verdict, so the ledger-free check covers nothing extra."

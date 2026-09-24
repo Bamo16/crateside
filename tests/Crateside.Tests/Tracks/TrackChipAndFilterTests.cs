@@ -3,14 +3,7 @@ using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Tracks;
 
-/// <summary>
-/// The copy table, and the filters that replace the old sections.
-/// </summary>
-/// <remarks>
-/// The chip and the <c>Next</c> sentence are the two halves of one table and both derive from
-/// <see cref="TrackState"/>, so this asserts them together — the failure worth catching is one
-/// drifting from the other, which no test of either alone would see.
-/// </remarks>
+/// <summary>The chip and <c>Next</c> copy, asserted together, and the filters.</summary>
 public class TrackChipAndFilterTests
 {
     private static TrackRow Row(TrackState state) =>
@@ -39,9 +32,7 @@ public class TrackChipAndFilterTests
     [Fact]
     public void A_swapped_track_waiting_for_the_GPU_is_not_done()
     {
-        // Its old samples are all in the library, which is what done means, while its
-        // replacement is queued. Reading that as done dropped it from the header's waiting
-        // count, so the queue looked empty and nobody resumed draining.
+        // Its old samples are all in the library while its replacement is queued.
         var row = Base with
         {
             Samples = [new TrackSample { Label = "Vocal - Full", IsInLibrary = true }],
@@ -100,8 +91,6 @@ public class TrackChipAndFilterTests
     [Fact]
     public void Giving_up_names_the_stage_and_counts_the_tries()
     {
-        // The one chip that is not a fixed string, because "gave up" without saying where is not
-        // actionable — the answer differs entirely between separation and tagging.
         var row = Row(TrackState.GaveUp);
 
         Assert.Equal("gave up · separation ×3", row.ChipLabel);
@@ -111,8 +100,6 @@ public class TrackChipAndFilterTests
     [Fact]
     public void Only_work_happening_this_second_carries_a_dot()
     {
-        // Waiting in line for the GPU is teal, because the machine owns it, but nothing is
-        // happening to that track yet and a pulsing dot would say otherwise.
         Assert.True(Row(TrackState.Separating).ChipHasDot);
         Assert.False(Row(TrackState.JudgedInLine).ChipHasDot);
         Assert.False(Row(TrackState.ReadyToWarp).ChipHasDot);
@@ -131,8 +118,6 @@ public class TrackChipAndFilterTests
         TrackFilter expected
     )
     {
-        // What lets a fruitless search point at one place rather than several, and what makes
-        // Unfinished redundant as somewhere to send anyone: it is the union of these four.
         var row = Row(state);
         var matched = Named.Where(row.Matches).ToArray();
 
@@ -141,10 +126,6 @@ public class TrackChipAndFilterTests
         Assert.True(row.Matches(TrackFilter.All));
     }
 
-    /// <summary>
-    /// Done is the one state with no view of its own: seeing only finished tracks is not a thing
-    /// that gets asked for, so it is reached through All and through search.
-    /// </summary>
     [Fact]
     public void A_finished_track_is_in_no_named_view_and_is_not_unfinished()
     {
@@ -165,24 +146,13 @@ public class TrackChipAndFilterTests
     [Fact]
     public void A_finding_needs_attention_even_when_the_track_is_otherwise_finished()
     {
-        // A stale tag is invisible everywhere else: the file looks done and pairs on the wrong
-        // key. This is the only place it surfaces, so being done must not hide it.
-        var row = Row(TrackState.Done) with
-        {
-            AuditNote = "tag disagrees",
-        };
+        var row = Row(TrackState.Done) with { AuditNote = "tag disagrees" };
 
         Assert.True(row.Matches(TrackFilter.NeedsAttention));
 
-        // And it stays finished: needing attention is not the same as having work left, so it
-        // does not reappear in the default view.
         Assert.False(row.Matches(TrackFilter.Unfinished));
     }
 
-    /// <summary>
-    /// The overlap the pills are allowed to have. A staged file nobody has renamed is genuinely
-    /// both staged and wanting attention, and would be wanted under either.
-    /// </summary>
     [Fact]
     public void A_staged_track_awaiting_a_rename_is_in_two_views_at_once()
     {

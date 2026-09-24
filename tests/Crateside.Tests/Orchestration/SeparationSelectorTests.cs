@@ -23,18 +23,9 @@ public class SeparationSelectorTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>A ledger that has never heard of any of these tracks.</summary>
     private static readonly KeyLedger NoLedger = KeyLedger.Read("does-not-exist");
 
-    /// <summary>
-    /// A queue whose separation work list is these tracks: judged, no stems, not held.
-    /// </summary>
-    /// <remarks>
-    /// They go in <see cref="QueueView.AwaitingSeparation"/> and not
-    /// <see cref="QueueView.Outstanding"/>, because those two mean opposite things about a
-    /// verdict — <em>Outstanding</em> is "no verdict yet", so nothing the selector may separate
-    /// is ever in it.
-    /// </remarks>
+    /// <summary>A queue whose separation work list is these tracks: judged, no stems, not held.</summary>
     private static QueueView View(params QueueItem[] awaitingSeparation) =>
         new()
         {
@@ -45,7 +36,6 @@ public class SeparationSelectorTests : IDisposable
             AwaitingSeparation = awaitingSeparation,
         };
 
-    /// <summary>A ledger holding a verdict for each of these tracks, at a stated confidence.</summary>
     private KeyLedger JudgedAs(string confidence, params string[] videoIds)
     {
         var path = Path.Combine(_directory, "runs.jsonl");
@@ -87,12 +77,7 @@ public class SeparationSelectorTests : IDisposable
     [Fact]
     public void A_track_with_no_verdict_cannot_be_picked_because_it_is_not_awaiting_separation()
     {
-        // The Eat Sleep Dance case, and the guard is structural rather than a check here.
-        // An evidence run records nothing in the ledger, so "detected" and "never touched" are
-        // indistinguishable -- and separation reads both the recipe (has_vocals) and the
-        // destination (HasTaggableKey) off a line that does not exist. Separating anyway asked
-        // for a vocal stem of a track with no vocals, and stranded the stems in Unresolved Key
-        // for good, because nothing moves them once a verdict arrives.
+        // The guard is structural: an unjudged track never reaches the work list.
         var unjudged = Item("aaaaaaaaaaa");
 
         var view = new QueueView
@@ -110,7 +95,6 @@ public class SeparationSelectorTests : IDisposable
     [Fact]
     public void The_first_track_awaiting_separation_is_picked()
     {
-        // The work list is already oldest-added first, so first is the queue order.
         var picked = new SeparationSelector(Jobs).TryPickNext(
             View(Item("aaaaaaaaaaa"), Item("bbbbbbbbbbb")),
             NoLedger,
@@ -124,8 +108,6 @@ public class SeparationSelectorTests : IDisposable
     [Fact]
     public void A_track_we_already_separated_is_not_separated_again()
     {
-        // This is the one that makes draining terminate: a track keeps its verdict and stays in
-        // the work list until its stems exist, so the queue alone would loop on it forever.
         Jobs.Record("aaaaaaaaaaa", JobStage.Separation, JobStatus.Succeeded);
 
         var picked = new SeparationSelector(Jobs).TryPickNext(
@@ -226,7 +208,6 @@ public class SeparationSelectorTests : IDisposable
     [Fact]
     public void An_upstream_deleted_video_is_never_attempted()
     {
-        // It can never succeed, so trying would burn its three strikes for nothing.
         new SeparationSelector(Jobs).TryPickNext(
             View(Item("aaaaaaaaaaa", unavailable: true), Item("bbbbbbbbbbb")),
             NoLedger,
@@ -260,9 +241,7 @@ public class SeparationSelectorTests : IDisposable
     [Fact]
     public void A_withheld_verdict_still_separates_into_unresolved_key()
     {
-        // WITHHELD is a line: the track was judged and the answer was "no safe tag". That is
-        // precisely what Unresolved Key is for, so it separates -- unlike a track nobody judged,
-        // which never reaches the work list at all.
+        // WITHHELD is a verdict, and Unresolved Key is for exactly that.
         var picked = new SeparationSelector(Jobs).TryPickNext(
             View(Item("aaaaaaaaaaa")),
             JudgedAs("WITHHELD", "aaaaaaaaaaa"),

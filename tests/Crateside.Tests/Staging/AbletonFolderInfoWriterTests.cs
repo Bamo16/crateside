@@ -4,9 +4,6 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Staging;
 
-/// <summary>
-/// The one writer crateside has that shares a file with another running program.
-/// </summary>
 public class AbletonFolderInfoWriterTests : IDisposable
 {
     private readonly string _root = Path.Combine(
@@ -37,8 +34,7 @@ public class AbletonFolderInfoWriterTests : IDisposable
     [Fact]
     public void A_store_is_created_where_there_is_none()
     {
-        // ADR 0003 finding 6: crateside can create the file, directory included, for a file
-        // Ableton has never indexed, and Ableton honours it.
+        // ADR 0003 finding 6.
         var outcome = _writer.Apply(_root, [Assign("a.flac", "Key|A", "Key|Minor")]);
 
         Assert.True(outcome.IsSuccess);
@@ -49,8 +45,7 @@ public class AbletonFolderInfoWriterTests : IDisposable
     [Fact]
     public void The_file_has_no_declaration_no_bom_and_lf_endings()
     {
-        // Measured from Ableton's own file rather than assumed. A writer that adds any of these
-        // is not round-tripping, whatever the XML says.
+        // Measured from Ableton's own file.
         _writer.Apply(_root, [Assign("a.flac", "Key|A", "Key|Minor")]);
 
         var bytes = File.ReadAllBytes(XmpPath);
@@ -63,8 +58,6 @@ public class AbletonFolderInfoWriterTests : IDisposable
     [Fact]
     public void Entries_crateside_did_not_create_survive_with_their_order()
     {
-        // Ableton merges rather than rewriting from memory, and crateside has to hold up its
-        // side of that -- these entries are the user's work.
         _writer.Apply(
             _root,
             [
@@ -83,7 +76,6 @@ public class AbletonFolderInfoWriterTests : IDisposable
             info.Entries.Select(e => e.RelativePath)
         );
 
-        // Rewritten in place, so it keeps its position rather than moving to the end.
         Assert.True(info.TryGet("second.flac", out var second));
         Assert.Equal("F major", second.Key);
         Assert.Equal("Vocal", second.Type);
@@ -92,9 +84,7 @@ public class AbletonFolderInfoWriterTests : IDisposable
     [Fact]
     public void A_keyword_Ableton_does_not_already_know_is_refused()
     {
-        // ADR 0003 finding 8: an ASCII hash is not rejected by Ableton -- it silently registers
-        // a second, permanent "F#" beside the built-in one, removable only by hand. So the
-        // guard has to be here, before the bytes are written.
+        // ADR 0003 finding 8: Ableton would register a second, permanent "F#".
         var outcome = _writer.Apply(_root, [Assign("a.flac", "Key|F#", "Key|Major")]);
 
         Assert.False(outcome.IsSuccess);
@@ -106,8 +96,6 @@ public class AbletonFolderInfoWriterTests : IDisposable
     [Fact]
     public void One_bad_keyword_stops_the_whole_write()
     {
-        // A partial write would leave the invalid one to be retried on its own -- and the
-        // invalid one is precisely the one that does permanent damage.
         var outcome = _writer.Apply(
             _root,
             [Assign("good.flac", "Key|A", "Key|Minor"), Assign("bad.flac", "Key|H", "Key|Major")]
@@ -117,20 +105,10 @@ public class AbletonFolderInfoWriterTests : IDisposable
         Assert.False(Directory.Exists(Path.Combine(_root, "Ableton Folder Info")));
     }
 
-    /// <summary>
-    /// The compare-and-swap itself, driven directly.
-    /// </summary>
-    /// <remarks>
-    /// The interesting moment is <em>between</em> the read and the replace, and no test can
-    /// reach it from outside <c>Apply</c> — changing the file first only means <c>Apply</c>
-    /// reads the newer stamp and is perfectly happy. So the swap is exercised as the unit it
-    /// is, with a stamp that no longer matches the file.
-    /// </remarks>
+    /// <remarks>Driven directly: the moment between read and replace is unreachable from Apply.</remarks>
     [Fact]
     public void A_store_that_changed_under_the_write_is_left_alone()
     {
-        // Ableton writes this file in place (finding 11), so a write built on a stale read
-        // would drop whatever it did in between.
         _writer.Apply(_root, [Assign("a.flac", "Key|A", "Key|Minor")]);
 
         var path = XmpPath;
@@ -146,7 +124,6 @@ public class AbletonFolderInfoWriterTests : IDisposable
         Assert.False(replaced);
         Assert.Equal(before, File.ReadAllBytes(path));
 
-        // And the half-written candidate does not outlive the attempt.
         Assert.Empty(
             Directory.EnumerateFiles(Path.Combine(_root, "Ableton Folder Info"), "*.crateside-tmp")
         );
@@ -155,8 +132,6 @@ public class AbletonFolderInfoWriterTests : IDisposable
     [Fact]
     public void A_store_nobody_touched_is_replaced()
     {
-        // The other half of the same decision: an unchanged stamp must not block the write, or
-        // nothing would ever be tagged.
         _writer.Apply(_root, [Assign("a.flac", "Key|A", "Key|Minor")]);
 
         var path = XmpPath;
@@ -173,8 +148,7 @@ public class AbletonFolderInfoWriterTests : IDisposable
     [Fact]
     public void Every_tonic_Ableton_knows_is_accepted_and_nothing_else_is()
     {
-        // The closed set, taken from the 451 key keywords across the user's real roots: twelve
-        // tonics, sharps as U+266F, no flats.
+        // Taken from the 451 key keywords across the real roots: sharps as U+266F, no flats.
         Assert.Equal(12, AbletonFolderInfoWriter.Tonics.Count);
 
         Assert.All(

@@ -2,15 +2,7 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Staging;
 
-/// <summary>
-/// The naming rule against the real staging folder — the files renaming would actually move.
-/// </summary>
-/// <remarks>
-/// The rule keeps whatever is in the last parentheses and replaces everything before it. That is
-/// only right while the last parentheses hold a preset, and titles have parentheses of their own:
-/// <c>1991 - Jungle (Colin Hennerz Remix) (Instrumental - Full)</c> is a real name in this
-/// library. A fixture cannot answer whether the assumption holds; the folder can.
-/// </remarks>
+/// <summary>The naming rule against the real staging folder, where titles have parentheses too.</summary>
 public class StemFileNameRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
@@ -20,14 +12,8 @@ public class StemFileNameRealLibraryTests
     private static IEnumerable<string> Staged() =>
         Directory.EnumerateFiles(StagingRoot).Where(StagingBoard.IsStemFile);
 
-    /// <summary>
-    /// What the rule keeps is a preset, not part of a title.
-    /// </summary>
     /// <remarks>
-    /// <strong>The two spellings of a preset are not the same string.</strong> The filename says
-    /// <c>(Drums)</c> where the provenance says <c>Drums - htdemucs_ft</c> — the separator's model
-    /// reaches the tag and not the name. So the name is a <em>prefix</em> of the tag, which is
-    /// what this asserts; equality was tried against the real folder and is false.
+    /// A prefix, not equality: the name says <c>(Drums)</c> where the tag says <c>Drums - htdemucs_ft</c>.
     /// </remarks>
     [Fact]
     public void The_last_parentheses_hold_a_preset_rather_than_part_of_the_title()
@@ -40,15 +26,11 @@ public class StemFileNameRealLibraryTests
 
         foreach (var path in files)
         {
-            // Read off the file's own tags rather than a list of preset names, so this keeps
-            // answering if StemForge grows another one.
             var preset = StemTagReader.Read(path)?.Provenance?.Preset;
             var name = Path.GetFileNameWithoutExtension(path);
             var kept = name[StemFileName.WithoutPreset(path).Length..].Trim().Trim('(', ')');
 
-            // A file with no preset is a source, and its parentheses hold the label the user
-            // typed for it rather than nothing at all (ADR 0019) — so only the preset half of
-            // this can be checked against the tag.
+            // A source's parentheses hold its label, so only a preset can be checked against the tag.
             if (preset is not null)
                 Assert.StartsWith(kept, preset, StringComparison.Ordinal);
         }
@@ -71,7 +53,6 @@ public class StemFileNameRealLibraryTests
                 StringComparison.Ordinal
             );
 
-            // And it is reversible, which is what Revert relies on.
             Assert.Equal(path, StemFileName.Renamed(renamed, StemFileName.WithoutPreset(path)));
         }
     }

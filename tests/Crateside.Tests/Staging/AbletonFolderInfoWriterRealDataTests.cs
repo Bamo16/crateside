@@ -4,20 +4,8 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Staging;
 
-/// <summary>
-/// The writer against the tag store Ableton actually wrote.
-/// </summary>
-/// <remarks>
-/// <para>
-/// ADR 0003 requires crateside to match Ableton's format byte-for-byte, and every fixture in
-/// the unit tests is a file crateside wrote itself — which proves only that it agrees with
-/// itself. This reads the user's real store and checks that writing it back changes nothing.
-/// </para>
-/// <para>
-/// <strong>Never writes to the real roots.</strong> Everything happens on a copy in the
-/// temporary directory. Skips when the machine has no such store.
-/// </para>
-/// </remarks>
+/// <summary>The writer against the tag store Ableton actually wrote.</summary>
+/// <remarks>Never writes to the real roots: everything happens on a copy.</remarks>
 public class AbletonFolderInfoWriterRealDataTests : IDisposable
 {
     private readonly string _root = Path.Combine(
@@ -36,7 +24,6 @@ public class AbletonFolderInfoWriterRealDataTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>Copies a real store into the test's own root, so nothing real is at risk.</summary>
     private string? CopyRealStore()
     {
         var source = new[]
@@ -62,25 +49,9 @@ public class AbletonFolderInfoWriterRealDataTests : IDisposable
         return destination;
     }
 
-    /// <summary>
-    /// Writing Ableton's own file back preserves every entry, and the format rules that matter.
-    /// </summary>
     /// <remarks>
-    /// <para>
-    /// <strong>Not byte-for-byte, and it cannot be.</strong> Ableton's XMP toolkit wraps the
-    /// four namespace declarations on <c>rdf:Description</c> one per line while writing every
-    /// other element's attributes inline. <c>XmlWriter</c> offers all-or-nothing
-    /// (<c>NewLineOnAttributes</c>), so matching that would mean hand-rolling an XML writer —
-    /// and an escaping bug in one of those would do far more damage than the cosmetic
-    /// difference it fixed.
-    /// </para>
-    /// <para>
-    /// What is checked instead is everything that can affect Ableton: the entries, their order,
-    /// their keywords, and the four byte-level properties measured off the real file. ADR 0003
-    /// finding 5 is what makes that sufficient — disk is authoritative and Ableton honoured a
-    /// hand-written file — and finding 4 means it reformats to its own style on its next merge
-    /// anyway.
-    /// </para>
+    /// Not byte-for-byte: Ableton wraps only <c>rdf:Description</c>'s namespace declarations, which
+    /// <c>XmlWriter</c> cannot match. ADR 0003 findings 4 and 5 are why that is enough.
     /// </remarks>
     [Fact]
     public void Writing_Abletons_own_file_back_preserves_it()
@@ -115,9 +86,7 @@ public class AbletonFolderInfoWriterRealDataTests : IDisposable
     [Fact]
     public void Every_keyword_already_in_the_library_is_one_the_writer_would_accept()
     {
-        // The validator is a closed set derived from this library. If it rejects something the
-        // library already contains, the set is wrong -- and a keyword crateside refuses to
-        // write is a stem it silently never tags.
+        // The validator is a closed set derived from this library, so it must accept all of it.
         var reader = new AbletonFolderInfoReader();
         var paths = new CratesidePaths();
 

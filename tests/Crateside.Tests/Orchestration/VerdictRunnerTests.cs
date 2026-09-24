@@ -48,7 +48,6 @@ public class VerdictRunnerTests : IDisposable
         File.WriteAllText(Set.EvidencePathFor(VideoId), evidence);
     }
 
-    /// <summary>Writes the ledger line a real session would have recorded.</summary>
     private void RecordVerdict() =>
         File.WriteAllText(
             LedgerPath,
@@ -105,9 +104,6 @@ public class VerdictRunnerTests : IDisposable
     [Fact]
     public async Task A_session_that_exits_clean_without_recording_has_not_produced_a_verdict()
     {
-        // Reality, not a claim. The artifact is the point, and it is the exact negation of the
-        // selector's own predicate -- so a session that died halfway is simply picked up again
-        // with no special handling.
         GiveEvidence();
 
         var result = await Runner(records: false)
@@ -120,8 +116,6 @@ public class VerdictRunnerTests : IDisposable
     [Fact]
     public async Task A_verdict_recorded_before_a_crash_still_counts()
     {
-        // The exit code is kept for the message and the strike count and decides nothing. A
-        // session that recorded the line and then fell over has done the work.
         GiveEvidence();
 
         var result = await Runner(records: true, exitCode: 1, stderr: "connection reset")
@@ -145,8 +139,6 @@ public class VerdictRunnerTests : IDisposable
     [Fact]
     public async Task There_is_nothing_to_judge_without_evidence()
     {
-        // Spending an agent session to discover there is no input would be the expensive way to
-        // find out, on the one stage that costs quota.
         var result = await Runner(records: true)
             .RunAsync(Order(), TestContext.Current.CancellationToken);
 
@@ -157,10 +149,7 @@ public class VerdictRunnerTests : IDisposable
     [Fact]
     public async Task Running_out_of_allowance_is_not_the_tracks_fault()
     {
-        // The session reports this as a successful run that carries an error, so the exit code
-        // says nothing. Left as an ordinary failure it burned all three strikes in about a
-        // second -- the retries returned instantly, cost nothing, and killed the track for good,
-        // so that when the allowance came back it was already out.
+        // Reported as a successful run carrying an error, so the exit code says nothing.
         GiveEvidence();
 
         var result = await Runner(
@@ -176,8 +165,6 @@ public class VerdictRunnerTests : IDisposable
     [Fact]
     public async Task Nobody_being_logged_in_is_not_the_tracks_fault_either()
     {
-        // Reported as subtype "success" with api_error_status null, so neither the exit code nor
-        // the quota test sees anything.
         GiveEvidence();
 
         var result = await Runner(
@@ -238,10 +225,7 @@ public class VerdictRunnerTests : IDisposable
     [Fact]
     public void The_stem_plan_is_never_mentioned_to_the_judge()
     {
-        // It used to be, as `has_vocals: false — record it; do not re-derive it`. That was a
-        // pass-through to the ledger, not a judging signal — the prompt said so itself — and it
-        // dates from when keytag's skill ran the whole workflow and had to know which stems to
-        // pull. Judging has nothing to do with which files get cut (ADR 0018).
+        // Judging has nothing to do with which files get cut (ADR 0018).
         GiveEvidence();
 
         var prompt = Runner(records: false).Prompt(Order(instrumentalRelease: true));
@@ -261,22 +245,18 @@ public class VerdictRunnerTests : IDisposable
     [Fact]
     public void The_evidence_is_carried_rather_than_left_to_be_read()
     {
-        // A tool call is a whole round trip -- ~25k of context re-read -- against well under a
-        // thousand tokens to carry the file in a prefix that is cached anyway.
         GiveEvidence("""{"algorithms":{"librosa_ks":{"key":"A minor"}}}""");
 
         var prompt = Runner(records: false).Prompt(Order());
 
         Assert.Contains("\"key\":\"A minor\"", prompt);
-        // Still named, because the recorder takes the path as its --machine argument.
         Assert.Contains(Set.EvidencePathFor(VideoId), prompt);
     }
 
     [Fact]
     public void Evidence_too_large_to_carry_is_pointed_at_instead()
     {
-        // key_events has no length in its definition, so one pathological track must not turn
-        // the saving back into a cost. The path alone is what the prompt used to say, and works.
+        // key_events has no length limit, so a huge file falls back to the path alone.
         GiveEvidence($$"""{"key_events":"{{new string('x', 64 * 1024)}}"}""");
 
         var prompt = Runner(records: false).Prompt(Order());
@@ -288,9 +268,7 @@ public class VerdictRunnerTests : IDisposable
     [Fact]
     public void The_session_is_told_whose_repository_it_is_in()
     {
-        // keytag's CLAUDE.md says to commit directly to master, and a judging session read that
-        // as addressed to itself: three turns and ~150k tokens trying to commit the ledger, all
-        // three blocked by the permission list.
+        // keytag's CLAUDE.md says to commit, and a judging session read that as addressed to itself.
         GiveEvidence();
 
         var prompt = Runner(records: false).Prompt(Order());

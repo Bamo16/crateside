@@ -7,11 +7,7 @@ using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Tracks;
 
-/// <summary>
-/// One song cut from two uploads. Shaped after the real `Ludacris, Pharrell - Southern
-/// Hospitality` swap of 2026-09-09, which left two rows in the list and a track in the GPU line
-/// that had already been separated (ADR 0014).
-/// </summary>
+/// <summary>One song cut from two uploads (ADR 0014).</summary>
 public class SwappedSourceTests : IDisposable
 {
     private const string Original = "AhtkGlO7O8c";
@@ -57,11 +53,7 @@ public class SwappedSourceTests : IDisposable
         Assert.Single(rows);
     }
 
-    /// <summary>
-    /// The point of the merge: the panel shows every sample, not just those belonging to
-    /// whichever upload the row happened to be keyed by. The replacement's third file is its
-    /// warp guide, which is used up rather than kept and is therefore not a sample.
-    /// </summary>
+    /// <remarks>The replacement's third file is its warp guide, which is not a sample.</remarks>
     [Fact]
     public void The_row_carries_every_sample_from_both_uploads()
     {
@@ -76,10 +68,6 @@ public class SwappedSourceTests : IDisposable
     public void The_replacements_warp_guide_is_still_outstanding() =>
         Assert.True(Compose().Single().HasWarpGuide);
 
-    /// <summary>
-    /// The filenames are identical across the two uploads, so the video ID is the only thing
-    /// that tells them apart.
-    /// </summary>
     [Fact]
     public void Every_sample_says_which_upload_it_came_from() =>
         Assert.All(Compose().Single().Samples, sample => Assert.NotNull(sample.SourceVideoId));
@@ -99,11 +87,6 @@ public class SwappedSourceTests : IDisposable
         );
     }
 
-    /// <summary>
-    /// The swap cancels the original's three stages and the replacement completes them. Read per
-    /// video ID the original owes a handoff for ever, which is what put an already-separated
-    /// track back in the GPU line.
-    /// </summary>
     [Fact]
     public void A_stage_completed_under_the_replacement_settles_it_for_the_song()
     {
@@ -131,10 +114,6 @@ public class SwappedSourceTests : IDisposable
         Assert.Equal([Original], ReopenedTracks.From(jobs, Ledger()));
     }
 
-    /// <summary>
-    /// A cancellation that lands after the success is a fresh reopening, not the stale one this
-    /// change exists to ignore.
-    /// </summary>
     [Fact]
     public void A_cancellation_later_than_the_success_reopens_the_song_again()
     {
@@ -231,7 +210,6 @@ public class SwappedSourceTests : IDisposable
             Strikes = 0,
         };
 
-    /// <summary>The original run and the restatement that named the replacement upload.</summary>
     private KeyLedger Ledger()
     {
         var path = Path.Combine(_root, "runs.jsonl");
