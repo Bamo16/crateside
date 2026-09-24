@@ -4,11 +4,7 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// Driven against a real child process rather than a mocked one: the argument list, the stdout
-/// plumbing and the exit-code handling are the parts most likely to be wrong, and none of them
-/// are exercised by a fake.
-/// </summary>
+/// <summary>Driven against a real child process rather than a mocked one.</summary>
 public class SeparationRunnerTests : IDisposable
 {
     private const string VideoId = "dQw4w9WgXcQ";
@@ -25,11 +21,7 @@ public class SeparationRunnerTests : IDisposable
     private SeparationInterlock Interlock => field ??= new SeparationInterlock(Jobs, _probe);
     private WorkingSet Set => field ??= new WorkingSet(Path.Combine(_directory, "working"));
 
-    /// <summary>
-    /// Destinations under the test's own directory. The runner <em>writes</em> to these now —
-    /// it places an instrumental release's source itself — so real paths here would put files
-    /// in the user's actual library every time the suite ran.
-    /// </summary>
+    /// <remarks>Never the real paths: the runner writes to these.</remarks>
     private CratesidePaths Paths =>
         field ??= new CratesidePaths
         {
@@ -47,7 +39,6 @@ public class SeparationRunnerTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>A release the user has stated has no vocals: the source track is the sample.</summary>
     private static WorkOrder InstrumentalOrder() =>
         WorkOrder.Compose(
             new QueueItem
@@ -97,8 +88,7 @@ public class SeparationRunnerTests : IDisposable
 
         var result = await runner.RunAsync(Order(), TestContext.Current.CancellationToken);
 
-        // A full Standard recipe's worth: the usual pair plus the warp guide. Fewer than the
-        // recipe asked for is now a failure, so the fixture has to be a real run's output.
+        // A full Standard recipe's worth; fewer than the recipe asked for is a failure.
         Assert.Equal(SeparationOutcome.Succeeded, result.Outcome);
         Assert.Equal(3, result.OutputFiles.Count);
         Assert.Contains(@"C:\Stems\vocal.flac", result.OutputFiles);
@@ -144,7 +134,6 @@ public class SeparationRunnerTests : IDisposable
     [Fact]
     public async Task Success_with_no_readable_json_is_not_treated_as_success()
     {
-        // Better to record a failure and retry than to mark a track done on no evidence.
         var result = await RunnerPrinting("Separating...")
             .RunAsync(Order(), TestContext.Current.CancellationToken);
 
@@ -161,11 +150,9 @@ public class SeparationRunnerTests : IDisposable
         var result = await RunnerPrinting("""[{"succeeded":true}]""")
             .RunAsync(Order(), TestContext.Current.CancellationToken);
 
-        // Never two at once -- this is the one condition the runner will not work around.
         Assert.Equal(SeparationOutcome.Refused, result.Outcome);
         Assert.Contains("otherVideo0", result.Error);
 
-        // And being refused is not the track's fault, so it earns no strike and no record.
         Assert.False(Jobs.TryGet(VideoId, JobStage.Separation, out _));
     }
 
@@ -191,8 +178,6 @@ public class SeparationRunnerTests : IDisposable
             runner.RunAsync(Order(), cancellation.Token)
         );
 
-        // Shutdown, not pause: pausing stops the next track being picked up and never reaches
-        // this token, so a separation already going finishes and is recorded normally.
         Assert.True(Jobs.TryGet(VideoId, JobStage.Separation, out var job));
         Assert.Equal(JobStatus.Failed, job.Status);
         Assert.Equal("cancelled", job.Error);
@@ -220,9 +205,6 @@ public class SeparationRunnerTests : IDisposable
     [Fact]
     public async Task The_retained_download_is_separated_rather_than_fetched_again()
     {
-        // WorkOrder used to carry a SourcePath for this and nothing ever assigned it, so every
-        // separation silently re-downloaded a file already sitting in the working set -- and
-        // ADR 0005's "one download for the whole pipeline" was never true.
         var audio = Path.Combine(Set.Prepare(VideoId), "Yes - Owner of a Lonely Heart.flac");
 
         File.WriteAllText(audio, "audio");
@@ -240,8 +222,6 @@ public class SeparationRunnerTests : IDisposable
     [Fact]
     public async Task A_track_with_nothing_retained_is_still_fetched_by_url()
     {
-        // The fallback is correct rather than merely tolerated: a working set discarded at
-        // import, or a separation retried long afterwards, has nothing on disk to reuse.
         var runner = RunnerEchoingArguments(out var argumentsFile);
 
         await runner.RunAsync(Order(), TestContext.Current.CancellationToken);
@@ -252,10 +232,7 @@ public class SeparationRunnerTests : IDisposable
     [Fact]
     public async Task A_kept_source_is_no_longer_this_stages_business()
     {
-        // It used to be, because --keep-source was a flag on `separate` and the separator
-        // ignores it for a local input — so crateside made the copy here instead. That put a
-        // file copy behind the GPU interlock and behind the pause button, and the download
-        // stage owns it now (ADR 0019).
+        // The download stage copies it (ADR 0019).
         var audio = Path.Combine(Set.Prepare(VideoId), "Yes - Owner of a Lonely Heart.flac");
 
         File.WriteAllText(audio, "the source");
@@ -280,9 +257,6 @@ public class SeparationRunnerTests : IDisposable
     [Fact]
     public async Task A_run_that_made_less_than_the_recipe_asked_for_has_not_succeeded()
     {
-        // The shape that got through: a run reported success having written fewer files than
-        // were asked for, and the track was then read as fully processed — which let the janitor
-        // discard the only local copy of whatever was missing.
         var runner = RunnerPrinting(
             """[{"succeeded":true,"outputFiles":["C:\\Stems\\Burst Mode (Vocal - Full).flac"]}]"""
         );
@@ -294,7 +268,6 @@ public class SeparationRunnerTests : IDisposable
         Assert.Contains("3 files", result.Error);
         Assert.Contains("produced 1", result.Error);
 
-        // And it is the track's own failure, so it earns a strike and will be tried again.
         Assert.True(Jobs.TryGet(VideoId, JobStage.Separation, out var job));
         Assert.Equal(JobStatus.Failed, job.Status);
     }
@@ -302,8 +275,6 @@ public class SeparationRunnerTests : IDisposable
     [Fact]
     public async Task More_files_than_asked_for_is_not_a_failure()
     {
-        // A preset that grew a second output is StemForge's to define, and extra files are not
-        // harm. Only a shortfall means something asked for did not happen.
         var runner = RunnerPrinting(
             """[{"succeeded":true,"outputFiles":["a.flac","b.flac","c.flac","d.flac"]}]"""
         );
@@ -316,9 +287,7 @@ public class SeparationRunnerTests : IDisposable
     [Fact]
     public void The_expected_count_follows_the_recipe_rather_than_any_name()
     {
-        // Counted, not name-matched: the names are StemForge's ("Vocal - Full" against
-        // vocal_full) and mapping between them would make a rename over there a silent
-        // miscount over here.
+        // Counted, not name-matched: the names are StemForge's.
         Assert.Equal(3, SeparationRecipe.Standard.ExpectedOutputs);
         // The kept source is not among them: the download stage copies it (ADR 0019).
         Assert.Equal(1, SeparationRecipe.InstrumentalRelease.ExpectedOutputs);
@@ -327,7 +296,6 @@ public class SeparationRunnerTests : IDisposable
     [Fact]
     public async Task An_ordinary_release_keeps_no_source_either_way()
     {
-        // Only an instrumental release's source is a keeper. Everything else has real stems.
         File.WriteAllText(Path.Combine(Set.Prepare(VideoId), "track.flac"), "the source");
 
         var runner = RunnerEchoingArguments(out var argumentsFile);

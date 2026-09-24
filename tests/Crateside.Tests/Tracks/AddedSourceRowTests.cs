@@ -6,9 +6,7 @@ using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Tracks;
 
-/// <summary>
-/// How a track wearing an attached source draws, which is where three faults met at once.
-/// </summary>
+/// <summary>How a track wearing an attached source draws.</summary>
 public class AddedSourceRowTests : IDisposable
 {
     private const string Track = "aaaaaaaaaaa";
@@ -101,15 +99,6 @@ public class AddedSourceRowTests : IDisposable
         );
     }
 
-    /// <summary>
-    /// An attached source's audio is a finding about that one file and never parks the track
-    /// (ADR 0019).
-    /// </summary>
-    /// <remarks>
-    /// The row used to fall back to any member's acquisition when the primary's had gone, and the
-    /// janitor discards the primary's with its working set — so every finished track that gained a
-    /// source wore a shortfall banner belonging to the source.
-    /// </remarks>
     [Fact]
     public void An_attached_source_that_arrived_below_premium_says_so_long_after_it_landed()
     {
@@ -155,10 +144,6 @@ public class AddedSourceRowTests : IDisposable
         Assert.Equal(ParkReason.PremiumShortfall, row.ParkedFor);
     }
 
-    /// <remarks>
-    /// A swap supersedes the upload it replaces; an attached source is kept beside the stems, so
-    /// calling it an old upload says the one thing that is not true of it.
-    /// </remarks>
     [Fact]
     public void An_attached_upload_is_not_an_old_upload()
     {
@@ -173,14 +158,6 @@ public class AddedSourceRowTests : IDisposable
         Assert.False(row.IsAddedSource(Track));
     }
 
-    /// <summary>
-    /// A key Ableton holds on a library file reaches the row.
-    /// </summary>
-    /// <remarks>
-    /// The staging board carries this and reads only <c>Sample Staging</c>, so a sample showed a
-    /// key until it was finished with and then showed none — while Ableton's browser went on
-    /// showing one.
-    /// </remarks>
     [Fact]
     public void A_library_samples_key_is_read_from_abletons_index()
     {
@@ -199,15 +176,6 @@ public class AddedSourceRowTests : IDisposable
         Assert.True(sample.IsInLibrary);
     }
 
-    /// <summary>
-    /// A track whose files are gone and whose entry is gone can be dropped.
-    /// </summary>
-    /// <remarks>
-    /// Before the intake outlived the playlist entry, deleting a track's files was how it went
-    /// away. Now the record holds the row, and a judged track with no files reads as one never
-    /// cut — which puts it back in the line for the GPU. Deleting two parked stem sets did
-    /// exactly that on 2026-09-16.
-    /// </remarks>
     [Fact]
     public void A_track_with_no_entry_and_no_files_can_be_forgotten()
     {
@@ -217,16 +185,11 @@ public class AddedSourceRowTests : IDisposable
     [Fact]
     public void A_track_with_a_file_in_the_library_keeps_its_row_so_removing_it_is_not_offered()
     {
-        // The library draws the row and is never touched, so Remove would change nothing.
         Assert.False(
             Row([Library("Some Track (Vocal - Full).flac", Track, "Vocal - Full")]).CanForget
         );
     }
 
-    /// <summary>
-    /// Rob Dougan - Clubbed to Death: a kept source staged, no playlist entry. Remove was never
-    /// offered, because the plan kept regenerating the sample that ruled it out (#33).
-    /// </summary>
     [Fact]
     public void A_track_with_files_only_in_staging_can_be_removed()
     {

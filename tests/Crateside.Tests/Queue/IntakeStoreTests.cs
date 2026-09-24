@@ -60,10 +60,6 @@ public class IntakeStoreTests : IDisposable
         Assert.Single(store.Read());
     }
 
-    /// <remarks>
-    /// The entry is the weaker source once read: a title edited upstream, or a track the user has
-    /// since renamed, must not be overwritten by a later scan.
-    /// </remarks>
     [Fact]
     public void A_later_scan_does_not_overwrite_what_was_recorded()
     {
@@ -97,9 +93,6 @@ public class IntakeStoreTests : IDisposable
         Assert.Equal("Medicine Ball", Assert.Single(store.Read()).Title);
     }
 
-    /// <summary>
-    /// Nothing to delete upstream, which is what <see cref="QueueRemover"/> reads to refuse.
-    /// </summary>
     [Fact]
     public void A_record_read_back_carries_no_playlist_entry()
     {
@@ -126,10 +119,6 @@ public class IntakeStoreTests : IDisposable
     /// What the playlist has delivered, which is every entry already recorded — not only the ones
     /// this scan recorded.
     /// </summary>
-    /// <remarks>
-    /// Consuming only what a scan reported as new means a setting turned on after the first scan
-    /// never fires: nothing is new again, so nothing is ever given back.
-    /// </remarks>
     [Fact]
     public void Everything_recorded_stays_recorded_for_a_later_scan_to_act_on()
     {
@@ -154,17 +143,12 @@ public class IntakeStoreTests : IDisposable
         Assert.True(store.IsDurable);
     }
 
-    /// <remarks>
-    /// The entry is the only other copy of the track, so a record that never reached disk must
-    /// not be grounds for deleting it.
-    /// </remarks>
     [Fact]
     public void A_store_that_cannot_write_is_not_durable()
     {
         var path = Path.Combine(_directory, "intake.json");
 
-        // A directory where the file belongs: writing it fails the way a locked or read-only
-        // store would, without needing either.
+        // A directory where the file belongs, so writing it fails.
         Directory.CreateDirectory(path);
 
         var store = new IntakeStore(path);
@@ -174,14 +158,6 @@ public class IntakeStoreTests : IDisposable
         Assert.False(store.IsDurable);
     }
 
-    /// <summary>
-    /// An entry is offered back once and never again, whatever the removal said.
-    /// </summary>
-    /// <remarks>
-    /// Consumption had no backoff at all, and a delete costs fifty quota units. Failing removals
-    /// were retried on every scan — every page read and every stage worker's two-minute loop —
-    /// and spent a day's YouTube quota.
-    /// </remarks>
     [Fact]
     public void An_entry_offered_back_is_not_offered_again()
     {
@@ -209,10 +185,6 @@ public class IntakeStoreTests : IDisposable
         Assert.Empty(Offerable(new IntakeStore(Path.Combine(_directory, "intake.json"))));
     }
 
-    /// <summary>
-    /// A lapsed token is refused before the first delete, so the mark cost those entries their one
-    /// offer and bought nothing. Clearing it is what lets re-consent offer them again (#34).
-    /// </summary>
     [Fact]
     public void An_entry_a_lapse_never_offered_is_offered_again()
     {
@@ -231,13 +203,6 @@ public class IntakeStoreTests : IDisposable
     private static string[] Offerable(IntakeStore store) =>
         [.. store.Read().Where(r => r.RemovalAttemptedAt is null).Select(r => r.VideoId)];
 
-    /// <summary>
-    /// A stand-in the backfill should never have made is cleared.
-    /// </summary>
-    /// <remarks>
-    /// Narrowing the backfill stops new ones; without this the ones already written sit in the
-    /// line for the GPU for ever.
-    /// </remarks>
     [Fact]
     public void A_stand_in_for_an_instruction_that_asks_nothing_is_pruned()
     {

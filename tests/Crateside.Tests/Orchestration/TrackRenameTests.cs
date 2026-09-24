@@ -6,15 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// Giving a track a name of the user's own, and putting it on the files.
-/// </summary>
-/// <remarks>
-/// The case is a name nobody would search for: the uploader called the video "99th Street" and
-/// the library calls the same track "Starjunk 95 - 99th Street". What matters most is that one
-/// path covers a track at any point in the pipeline — the files that exist are renamed now, and
-/// the ones that do not are named at staging from the same stored instruction.
-/// </remarks>
+/// <summary>Giving a track a name of the user's own, and putting it on the files.</summary>
 public class TrackRenameTests : IDisposable
 {
     private const string Video = "aaaaaaaaaaa";
@@ -51,7 +43,6 @@ public class TrackRenameTests : IDisposable
     private TrackRename Renamer(QueueSettingsStore? settings = null) =>
         new(settings ?? Settings(), _ => _staged, _writer, _paths);
 
-    /// <summary>A file in staging, as the board would report it.</summary>
     private string Stage(string name)
     {
         var path = Path.Combine(_paths.SampleStaging, name);
@@ -70,8 +61,6 @@ public class TrackRenameTests : IDisposable
     [Fact]
     public void The_preset_and_the_extension_survive_the_new_name()
     {
-        // The whole rule: everything before the parenthetical is the name, and the parenthetical
-        // is StemForge's and stays.
         Stage("99th Street (Vocal - Full).flac");
         Stage("99th Street (Instrumental - Full).flac");
         Stage("99th Street (Drums).flac");
@@ -88,8 +77,7 @@ public class TrackRenameTests : IDisposable
     [Fact]
     public void A_file_with_no_preset_keeps_only_its_extension()
     {
-        // An instrumental release's kept source. StemForge tags it but writes no preset
-        // descriptor, so there is no parenthetical to preserve.
+        // A kept source, which has no parenthetical to preserve.
         Stage("99th Street.flac");
 
         Renamer().Apply(Video, "Starjunk 95 - 99th Street");
@@ -100,8 +88,6 @@ public class TrackRenameTests : IDisposable
     [Fact]
     public void A_track_with_nothing_on_disk_records_the_name_anyway()
     {
-        // The point of renaming the outputs rather than the source audio: before separation there
-        // is nothing to rename, so the instruction stands until handoff reads it.
         var settings = Settings();
 
         var outcome = Renamer(settings).Apply(Video, "Starjunk 95 - 99th Street");
@@ -114,8 +100,6 @@ public class TrackRenameTests : IDisposable
     [Fact]
     public void The_ableton_entry_follows_the_file()
     {
-        // Renaming a file out from under its entry is what makes a tagged file read as untagged,
-        // which is the bug "+ folder info" in the button is about.
         Stage("99th Street (Vocal - Full).flac");
 
         _writer.Apply(
@@ -133,8 +117,6 @@ public class TrackRenameTests : IDisposable
 
         Assert.Null(outcome.Note);
 
-        // Moved rather than added: one entry, under the new name. Leaving the old one beside it
-        // would grow the store by an entry per rename, for files that no longer exist.
         var entry = Assert.Single(_reader.Read(_paths.SampleStaging).Entries);
 
         Assert.Equal("Starjunk 95 - 99th Street (Vocal - Full).flac", entry.RelativePath);
@@ -145,9 +127,7 @@ public class TrackRenameTests : IDisposable
     [Fact]
     public void Abletons_analysis_file_follows_the_sample()
     {
-        // Warp markers live in a .asd named after the whole sample. Renaming the sample alone
-        // orphans it and Ableton analyses the file again from scratch, losing the markers —
-        // measured on the real folder, where two renames left three sidecars behind.
+        // Warp markers live in a .asd named after the whole sample.
         var sample = Stage("99th Street (Vocal - Full).flac");
 
         File.WriteAllText(sample + ".asd", "warp markers");
@@ -166,8 +146,6 @@ public class TrackRenameTests : IDisposable
     [Fact]
     public void A_sample_nobody_has_analysed_carries_nothing_extra()
     {
-        // Most of them. Ableton writes a .asd for having looked at the file, so its absence
-        // means nobody has.
         Stage("99th Street (Vocal - Full).flac");
 
         var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
@@ -180,8 +158,7 @@ public class TrackRenameTests : IDisposable
     [Fact]
     public void An_analysis_file_already_under_the_new_name_stops_the_rename()
     {
-        // Somebody else's warp markers. Overwriting them would be the one way a rename destroys
-        // work that cannot be redone from anything crateside holds.
+        // Somebody else's warp markers.
         var sample = Stage("99th Street (Vocal - Full).flac");
 
         File.WriteAllText(
@@ -203,8 +180,6 @@ public class TrackRenameTests : IDisposable
     [Fact]
     public void Markers_that_could_not_follow_are_reported_rather_than_undone()
     {
-        // The sample is renamed either way: markers can be placed again, and a half-renamed
-        // track cannot be read. So this is a note, not a failure.
         var sample = Stage("99th Street (Vocal - Full).flac");
 
         File.WriteAllText(sample + ".asd", "warp markers");
@@ -222,7 +197,6 @@ public class TrackRenameTests : IDisposable
     [Fact]
     public void Entries_for_other_files_are_left_alone()
     {
-        // The store is shared with a running Ableton and mostly holds the user's own work.
         Stage("99th Street (Vocal - Full).flac");
 
         _writer.Apply(
@@ -259,7 +233,6 @@ public class TrackRenameTests : IDisposable
 
         renamer.Apply(Video, "Starjunk 95 - 99th Street");
 
-        // The board would report the renamed file on its next read; this stands in for that.
         _staged.Clear();
         _staged.Add(
             new StagingStem
@@ -274,15 +247,12 @@ public class TrackRenameTests : IDisposable
         Assert.True(outcome.Succeeded);
         Assert.True(File.Exists(original));
 
-        // Dropped rather than written empty: absence is what "not stated" means, and an entry
-        // saying nothing would be a permanent line in the file.
         Assert.Null(StoredName(settings));
     }
 
     [Fact]
     public void A_file_already_carrying_the_name_is_not_work()
     {
-        // What makes pressing Rename again finish an interrupted one rather than start over.
         Stage("Starjunk 95 - 99th Street (Vocal - Full).flac");
         Stage("99th Street (Drums).flac");
 
@@ -310,9 +280,6 @@ public class TrackRenameTests : IDisposable
     [Fact]
     public void A_name_that_is_already_in_staging_is_refused_before_anything_moves()
     {
-        // Someone else's file, or the same track under a name it half carries already. Either way
-        // nothing is overwritten, and the refusal comes before the first move rather than after
-        // it — which is the difference between a track under one name and a track under two.
         var mine = Stage("99th Street (Vocal - Full).flac");
         var theirs = Path.Combine(_paths.SampleStaging, "Taken (Vocal - Full).flac");
 
@@ -331,8 +298,7 @@ public class TrackRenameTests : IDisposable
     [Fact]
     public void Two_files_that_would_collide_are_refused()
     {
-        // Only reachable with no presets to tell them apart, which is a track whose provenance
-        // was lost. Better refused than silently reduced to one file.
+        // Only reachable with no presets to tell them apart.
         Stage("99th Street.flac");
         Stage("99th Street take two.flac");
 
@@ -345,8 +311,7 @@ public class TrackRenameTests : IDisposable
     [Fact]
     public void A_file_it_cannot_rename_keeps_the_name_that_was_stated()
     {
-        // Nearly always a file Ableton has open. The name is the user's statement and is true
-        // whether or not every file caught up; pressing again finishes the ones that did not.
+        // Nearly always a file Ableton has open.
         Stage("99th Street (Vocal - Full).flac");
 
         var held = Stage("99th Street (Drums).flac");

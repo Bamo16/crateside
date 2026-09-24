@@ -3,10 +3,6 @@ using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Ledger;
 
-/// <summary>
-/// Read against the real ledger, because the point of this type is what agents have actually
-/// written — and what they wrote is messier than the schema suggests.
-/// </summary>
 public class RunEvidenceRealDataTests
 {
     private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
@@ -34,7 +30,6 @@ public class RunEvidenceRealDataTests
 
         var ledger = KeyLedger.Read(LedgerPath);
 
-        // A detail view that silently fails for some songs is worse than none.
         Assert.All(
             ledger.Runs.Select(r => r.Song).Distinct(StringComparer.OrdinalIgnoreCase),
             song => Assert.NotNull(RunEvidence.ReadLatestFor(LedgerPath, song))
@@ -49,15 +44,7 @@ public class RunEvidenceRealDataTests
         Assert.All(All(), e => Assert.False(string.IsNullOrWhiteSpace(e.Reasoning)));
     }
 
-    /// <summary>
-    /// crateside stopped repairing text on the way out once keytag swept the file
-    /// (its ADR 0007), so this is the whole of its defence against that regressing.
-    /// </summary>
-    /// <remarks>
-    /// Walks every string rather than a list of fields. keytag's repair script and its own check
-    /// each enumerated fields, agreed with one another, and missed 97 damaged strings between
-    /// them for six days — a list here would be the third one to drift.
-    /// </remarks>
+    /// <remarks>Walks every string rather than a list of fields, which is what drifted before.</remarks>
     [Fact]
     public void No_string_anywhere_in_the_ledger_is_mis_encoded()
     {
@@ -96,10 +83,8 @@ public class RunEvidenceRealDataTests
             All(),
             e =>
             {
-                // Three algorithms and three pairings, on every run ever recorded.
                 Assert.Equal(3, e.Algorithms.Count);
                 Assert.Equal(3, e.Agreement.Count);
-                // The status vocabulary is closed; anything else means the runner changed.
                 Assert.All(
                     e.Agreement,
                     pair =>
@@ -108,12 +93,7 @@ public class RunEvidenceRealDataTests
                             (string[])["full", "relative", "none", "single"]
                         )
                 );
-                // Chords may legitimately be empty, and that is information rather than a gap:
-                // a track the recogniser commits nothing on leaves the tonic check with only
-                // the flicker to argue from, which is exactly when a verdict should not claim
-                // positive confirmation. Held for 125 of 126 runs until an underground techno
-                // single produced none, so the old assertion was an observation about the
-                // corpus rather than a property of the runner.
+                // Chords may legitimately be empty.
                 Assert.NotNull(e.Chords);
                 Assert.NotEmpty(e.KeyEvents);
             }
@@ -125,8 +105,6 @@ public class RunEvidenceRealDataTests
     {
         Assert.SkipUnless(Available, "The keytag ledger must be present.");
 
-        // About a third have none — whole catalogs have no tier-1/2 coverage, which is a fact
-        // about the catalog and not a defect. The view must render it as such.
         var all = All();
 
         Assert.Contains(all, e => e.Sources.Count == 0);
@@ -141,8 +119,6 @@ public class RunEvidenceRealDataTests
         var sources = All().SelectMany(e => e.Sources).ToList();
 
         Assert.NotEmpty(sources);
-        // The whole point of the closed vocabulary: nothing falls through. This is the assertion
-        // the old `tier` field could never have passed — it held over thirty distinct values.
         Assert.All(sources, s => Assert.NotEqual(SourceKind.Unknown, s.Kind));
         Assert.All(sources, s => Assert.NotEqual(SourceKind.Unclassified, s.Kind));
         Assert.Contains(sources, s => s.Kind is SourceKind.Authoritative);
@@ -156,9 +132,6 @@ public class RunEvidenceRealDataTests
 
         var sources = All().SelectMany(e => e.Sources).ToList();
 
-        // The single most useful thing the sources list can show, and for most of this record's
-        // life it could only be had by reading every line of prose. Both stances are real: the
-        // ledger contains sources that back the verdict and sources that argue with it.
         Assert.Contains(sources, s => s.Stance is SourceStance.Agrees);
         Assert.Contains(sources, s => s.Stance is SourceStance.Dissents);
     }
@@ -168,8 +141,6 @@ public class RunEvidenceRealDataTests
     {
         Assert.SkipUnless(Available, "The keytag ledger must be present.");
 
-        // The user photographed sheet music: no host to classify by, and among the strongest
-        // evidence in the record. The old schema could only record that as a URL that wasn't one.
         Assert.Contains(
             All().SelectMany(e => e.Sources),
             s => s.Url is null && s.Via is { Length: > 0 }
@@ -183,8 +154,7 @@ public class RunEvidenceRealDataTests
 
         var sources = All().SelectMany(e => e.Sources).ToList();
 
-        // Real entries include "user-provided image" — the user photographed sheet music, and
-        // there is no page to visit. Rendering that as an anchor would be a dead link.
+        // Real entries include "user-provided image", which has no page to link to.
         Assert.All(
             sources.Where(s => s.Link is null),
             s => Assert.True(s.Url is null || s.Url.Contains(' ') || !s.Url.Contains('.'))
@@ -202,8 +172,6 @@ public class RunEvidenceRealDataTests
     {
         Assert.SkipUnless(Available, "The keytag ledger must be present.");
 
-        // Chordify and ChordU are present in the real data, and their key field may never be
-        // the basis of a verdict. The view has to be able to say so.
         Assert.Contains(
             All().SelectMany(e => e.Sources),
             s => s.Kind is SourceKind.ChordRecogniser
@@ -215,9 +183,6 @@ public class RunEvidenceRealDataTests
     {
         Assert.SkipUnless(Available, "The keytag ledger must be present.");
 
-        // Guards a real bug: the shape was guessed as {agree, relation} when it is
-        // {status, recommended, note}, so every pair rendered as a disagreement while the
-        // algorithms plainly agreed.
         var pairs = All().SelectMany(e => e.Agreement).ToList();
 
         Assert.Contains(pairs, p => p.Agrees);
@@ -230,8 +195,6 @@ public class RunEvidenceRealDataTests
     {
         Assert.SkipUnless(Available, "The keytag ledger must be present.");
 
-        // Half or double time is just a choice of octave and is not a conflict; anything else
-        // means one of the two figures is simply wrong.
         Assert.All(
             All().Where(e => e.BpmConflicts),
             e =>
@@ -241,14 +204,7 @@ public class RunEvidenceRealDataTests
 
                 var ratio = e.BeatdetectBpm!.Value / e.Bpm!.Value;
 
-                // Proportional to the octave, not absolute. An absolute 0.05 is 2.5% at 2x and
-                // 10% at 1/2x, so it called Delta Heavy - White Flag's 6.2% miss (92.38 against
-                // 174, where half-time is 87) an octave on the way down while it would have
-                // called the same error a conflict on the way up.
-                //
-                // Deliberately tighter than BpmConflicts' own 0.05 in log2 (~3.5% here). This
-                // catches octaves being flagged at all; pinning the exact boundary from live
-                // data is what made it wrong.
+                // Proportional to the octave: an absolute tolerance is looser below 1x than above it.
                 bool NearlyAt(double octave) => Math.Abs(ratio - octave) / octave < 0.02;
 
                 Assert.False(

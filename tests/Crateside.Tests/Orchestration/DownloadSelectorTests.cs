@@ -4,9 +4,6 @@ using Crateside.Core.Queue;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// Which source the download stage takes next, and in what order.
-/// </summary>
 public class DownloadSelectorTests : IDisposable
 {
     private const string Finished = "RzQRxV2XqFU";
@@ -43,9 +40,6 @@ public class DownloadSelectorTests : IDisposable
 
     private static readonly AddedSource Source = new() { VideoId = Attached, Label = "A Cappella" };
 
-    /// <summary>
-    /// A track the playlist no longer holds, which is what the intake store reads back.
-    /// </summary>
     private static QueueItem Absent(string videoId, StemPlan plan) =>
         new()
         {
@@ -68,7 +62,6 @@ public class DownloadSelectorTests : IDisposable
 
     private static StemPlan KeepingTheSource => new() { Presets = [], KeepSource = true };
 
-    /// <summary>A track crateside finished with: in no work list, only still held on record.</summary>
     private static QueueView FinishedWith(StemPlan plan) =>
         new()
         {
@@ -89,10 +82,6 @@ public class DownloadSelectorTests : IDisposable
             AwaitingSeparation = [],
         };
 
-    /// <summary>
-    /// The fault ADR 0021 was written for: a source attached to a track the playlist had already
-    /// let go of was reachable by no work list, and was never fetched.
-    /// </summary>
     [Fact]
     public void A_source_attached_to_a_track_the_playlist_has_let_go_is_still_fetched()
     {
@@ -103,10 +92,6 @@ public class DownloadSelectorTests : IDisposable
         Assert.Equal("A Cappella", next.Label);
     }
 
-    /// <remarks>
-    /// The audio list refills from the playlist while the other two are bounded by something the
-    /// user did, so audio going first starves them for as long as anything is arriving.
-    /// </remarks>
     [Fact]
     public void An_attached_source_outranks_a_track_still_waiting_for_its_audio()
     {
@@ -135,11 +120,6 @@ public class DownloadSelectorTests : IDisposable
         Assert.True(next.Copy);
     }
 
-    /// <summary>
-    /// 1991 - If Only, 2026-09-23: source ticked on a track long finished, whose working set had
-    /// been cleared. Nothing fetched it — the copy needs the audio held, and the fetch path only
-    /// reads the work lists, which a source-only re-cut is rightly kept out of since 42f3fcf.
-    /// </summary>
     [Fact]
     public void A_kept_source_a_re_cut_asked_for_is_fetched_when_its_audio_has_gone()
     {
@@ -154,10 +134,6 @@ public class DownloadSelectorTests : IDisposable
         Assert.NotNull(next.Into);
     }
 
-    /// <summary>
-    /// Röyksopp - So Easy: keeps its source, separated on 2026-09-02, and nothing of it on disk.
-    /// Nobody has asked for it since, so it owes nothing (ADR 0027).
-    /// </summary>
     [Fact]
     public void A_finished_track_that_keeps_its_source_is_not_fetched_unasked()
     {
@@ -179,14 +155,6 @@ public class DownloadSelectorTests : IDisposable
     public void An_empty_queue_owes_nothing() =>
         Assert.False(Selector().TryPickNext(View(), out _));
 
-    /// <summary>
-    /// Audio the janitor swept is not fetched again.
-    /// </summary>
-    /// <remarks>
-    /// The janitor discards a working set once separation has succeeded and staging is clear, so
-    /// a finished track looks exactly like an unfetched one. Fetching it made the janitor sweep
-    /// it again: 125 downloads of one track in a day.
-    /// </remarks>
     [Fact]
     public void A_finished_track_whose_working_set_the_janitor_took_is_not_fetched_again()
     {
@@ -195,10 +163,6 @@ public class DownloadSelectorTests : IDisposable
         Assert.False(Selector().TryPickNext(View(Held(Fresh)), out _));
     }
 
-    /// <remarks>
-    /// A re-cut reopens the separation job, so the latest is no longer a success and the audio
-    /// it needs is fetched as usual.
-    /// </remarks>
     [Fact]
     public void A_track_put_back_in_line_still_gets_its_audio()
     {

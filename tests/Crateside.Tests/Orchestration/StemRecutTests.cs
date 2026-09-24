@@ -5,14 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration;
 
-/// <summary>
-/// Changing which files a track has, without judging it again.
-/// </summary>
-/// <remarks>
-/// The case is a plan corrected late: a track cut without a vocal stem turns out to need one,
-/// and the mistake only surfaces during warping. What matters most here is what it refuses
-/// to do — spend quota, or leave a half-emptied staging folder behind an eligible separation.
-/// </remarks>
+/// <summary>Changing which files a track has, without judging it again.</summary>
 public class StemRecutTests : IDisposable
 {
     private const string Video = "aaaaaaaaaaa";
@@ -70,11 +63,8 @@ public class StemRecutTests : IDisposable
 
     private readonly List<StagingStem> _staged = [];
 
-    /// <summary>The staged files, as the board would report them. Read as a delegate, so no
-    /// audio has to be real for this to be exercised.</summary>
     private ReadStagedFiles Staged() => _ => _staged;
 
-    /// <summary>Stages one file, named and tagged the way StemForge writes it.</summary>
     private string Stage(string preset = "")
     {
         var name = preset is { Length: > 0 }
@@ -111,9 +101,7 @@ public class StemRecutTests : IDisposable
     [Fact]
     public void A_source_can_be_added_to_a_track_whose_stems_already_left_for_the_library()
     {
-        // The reported case: everything this track has is in Mashup Samples, not Sample
-        // Staging, and all that is being asked for is a copy of the source — no separation, so
-        // nothing about the presets already in the library is at risk of being redone.
+        // Everything is in Mashup Samples, and only a copy of the source is asked for.
         var known = StemInventory.Of(
             [
                 new StemOnDisk
@@ -145,8 +133,7 @@ public class StemRecutTests : IDisposable
     [Fact]
     public void A_preset_already_in_the_library_is_never_offered_for_deletion()
     {
-        // ADR 0019: crateside never deletes from Mashup Samples. A library file must not be
-        // able to reach Removing even if it were somehow no longer wanted.
+        // crateside never deletes from Mashup Samples (ADR 0019).
         var known = StemInventory.Of(
             [
                 new StemOnDisk
@@ -169,9 +156,6 @@ public class StemRecutTests : IDisposable
     [Fact]
     public void It_refuses_when_the_separator_could_not_say_what_these_files_are()
     {
-        // Without the catalog every stem reads as one the plan cannot name, so the whole plan
-        // looks outstanding — and cutting it would make a second copy of every file this track
-        // already has, under a suffixed name.
         Stage("Vocal - Full");
 
         var plan = Recut().PlanFor(Video, StemPlan.Default, PresetCatalog.Empty);
@@ -206,9 +190,6 @@ public class StemRecutTests : IDisposable
     [Fact]
     public void A_track_whose_audio_has_gone_is_re_cut_by_fetching_it_again()
     {
-        // Asked of the working set rather than inferred from staging. The janitor keeps a track's
-        // audio while anything of it is staged, so the inference is usually right -- but the
-        // working set is cache and is safe to delete by hand, so the only honest way is to look.
         Stage();
 
         var recut = new StemRecut(Settings(), Jobs(), new WorkingSet(_working), Staged());
@@ -252,8 +233,6 @@ public class StemRecutTests : IDisposable
     [Fact]
     public void Adding_a_preset_removes_nothing_and_leaves_the_guide_alone()
     {
-        // The common case, and the reason any of this exists: the defaults did not isolate
-        // cleanly, so a third preset is wanted and the two already staged are worth keeping.
         var vocal = Stage("Vocal - Full");
         var instrumental = Stage("Instrumental - Full");
         var guide = Stage("Drums - htdemucs_ft");
@@ -293,8 +272,6 @@ public class StemRecutTests : IDisposable
         Assert.False(File.Exists(vocal));
         Assert.True(File.Exists(instrumental));
 
-        // The guide is used up rather than kept, so it is nobody's to drop — least of all a
-        // plan that was never able to name it.
         Assert.True(File.Exists(guide));
 
         var stored = settings.Read().Tracks.Single(track => track.VideoId == Video).Plan;
@@ -306,8 +283,7 @@ public class StemRecutTests : IDisposable
     [Fact]
     public void An_instrumental_release_that_turns_out_to_have_vocals_loses_its_source()
     {
-        // The originally reported case: marked as having no vocals, separated to a kept source
-        // plus a guide, and the vocals turn out to be there after all.
+        // Marked as having no vocals, and the vocals turn out to be there after all.
         var source = Stage();
         var guide = Stage("Drums - htdemucs_ft");
 
@@ -317,15 +293,13 @@ public class StemRecutTests : IDisposable
         Assert.Equal(1, outcome.Removed);
         Assert.False(File.Exists(source));
 
-        // Cut from the same audio, so it is still the right guide for the stems replacing it.
         Assert.True(File.Exists(guide));
     }
 
     [Fact]
     public void It_clears_Abletons_analysis_files_along_with_the_audio()
     {
-        // Separation puts a file back under the same name, so a sidecar left behind is picked up
-        // by new audio: Ableton warps it to the old markers rather than analysing it.
+        // A sidecar left behind would be picked up by the new audio under the same name.
         var source = Stage();
 
         File.WriteAllText(source + ".asd", "warp markers");
@@ -360,10 +334,6 @@ public class StemRecutTests : IDisposable
         Assert.Equal(JobStatus.Cancelled, job.Status);
     }
 
-    /// <summary>
-    /// 1991 - If Only: a source-only re-cut reopened separation, which then had nothing to make and
-    /// stayed owed for ever — and so did the working set the janitor would otherwise have cleared.
-    /// </summary>
     [Fact]
     public void Keeping_only_the_source_reopens_the_handoff_and_not_the_gpu()
     {
@@ -388,9 +358,6 @@ public class StemRecutTests : IDisposable
     [InlineData(JobStage.Verdict)]
     public void It_leaves_the_stages_that_cost_quota_alone(JobStage stage)
     {
-        // The structural guard is elsewhere and is the better one: a re-cut track is in
-        // AwaitingSeparation and therefore out of Outstanding -- the only list evidence and
-        // judging read. This is the belt.
         Stage();
 
         var jobs = Jobs();
@@ -406,8 +373,6 @@ public class StemRecutTests : IDisposable
     [Fact]
     public void A_change_that_only_drops_files_never_reaches_the_GPU()
     {
-        // Nothing is made and nothing is moved, so reopening separation would put the track in
-        // line for a separator with nothing to do for it.
         Stage("Vocal - Full");
         Stage("Instrumental - Full");
 
@@ -426,9 +391,7 @@ public class StemRecutTests : IDisposable
     [Fact]
     public void A_file_it_cannot_delete_stops_it_before_the_stages_reopen()
     {
-        // Nearly always a file Ableton has open. Reopening separation over a folder that still
-        // holds a file the plan dropped would separate into the mess rather than replacing it,
-        // so the stages stay shut and the user closes Ableton and presses again.
+        // Nearly always a file Ableton has open.
         Stage("Instrumental - Full");
 
         var held = Stage("Vocal - Full");
@@ -453,7 +416,6 @@ public class StemRecutTests : IDisposable
         Assert.Equal(JobStatus.Succeeded, job.Status);
     }
 
-    /// <summary>Stages a file crateside adopted: a label of the user's own, and no preset.</summary>
     private string StageAdopted(string label)
     {
         var name = $"Rob Dougan - Furious Angels ({label}).flac";
@@ -472,10 +434,6 @@ public class StemRecutTests : IDisposable
         return path;
     }
 
-    /// <remarks>
-    /// The case that deleted a real file: an adopted sample carries no preset, so anything
-    /// reading only the preset takes it for the separation source and drops it with KeepSource.
-    /// </remarks>
     [Fact]
     public void A_recut_that_drops_the_source_leaves_an_adopted_sample_alone()
     {
@@ -524,7 +482,6 @@ public class SeparationEstimateTests
     [Fact]
     public void A_kept_source_is_not_a_pass()
     {
-        // It is copied, not separated, so it costs no GPU at all.
         Assert.Equal(1, SeparationRecipe.InstrumentalRelease.Passes);
         Assert.Equal(1, SeparationRecipe.InstrumentalRelease.ExpectedOutputs);
     }
