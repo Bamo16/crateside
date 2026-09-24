@@ -19,6 +19,23 @@ public static class StageEligibility
             _ => throw new ArgumentOutOfRangeException(nameof(stage)),
         };
 
+    /// <summary>Whether this job is work still to be done, rather than work that ended.</summary>
+    /// <remarks>
+    /// A failure with strikes left is owed a retry, and without that a track whose separation died
+    /// is reachable from nowhere once the playlist has let it go (ADR 0025). Having given up is not
+    /// owed: it would sit in the line for a GPU at a position it never advances from (#32).
+    /// </remarks>
+    public static bool IsOwed(TrackJob job) =>
+        job.Status switch
+        {
+            JobStatus.Cancelled or JobStatus.Queued or JobStatus.Running => true,
+            JobStatus.Failed => job.Strikes < MaxStrikesFor(job.Stage),
+            _ => false,
+        };
+
+    public static bool Owes(JobStore jobs, string videoId, JobStage stage) =>
+        jobs.TryGet(videoId, stage, out var job) && IsOwed(job);
+
     /// <param name="retrySucceeded">
     /// Whether a past success may be attempted again. True where the stage has its own artifact
     /// check that already confirmed the work is missing, so redoing it is cheap and correct.

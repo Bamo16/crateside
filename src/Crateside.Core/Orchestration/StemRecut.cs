@@ -116,15 +116,16 @@ public sealed class StemRecut(
 
         settings.SetPlan(videoId, wanted);
 
-        // A change that only drops files needs no stage at all: nothing is made and nothing is
-        // moved, so reopening separation would put the track in the line for a GPU that has
-        // nothing to do for it.
-        if (plan.MakesSomething)
-            foreach (var stage in Redone)
-                jobs.Record(videoId, stage, JobStatus.Cancelled, error: "re-cut requested");
+        // Only the stages this cut needs: one that only drops files needs none, and one that
+        // only keeps the source is a copy, which reopening separation would leave owed for ever.
+        foreach (var stage in plan.MakesSomething ? StagesFor(plan.Recipe) : [])
+            jobs.Record(videoId, stage, JobStatus.Cancelled, error: "re-cut requested");
 
         return new RecutOutcome { Removed = removed, Recipe = plan.Recipe };
     }
+
+    private static JobStage[] StagesFor(SeparationRecipe recipe) =>
+        recipe.Passes > 0 ? Redone : [JobStage.Handoff, JobStage.Tagging];
 
     /// <summary>The plan this track currently has, which says which of its files were added.</summary>
     private StemPlan Stored(string videoId) =>

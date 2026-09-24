@@ -82,7 +82,12 @@ public sealed class DownloadSelector(
                     Copy = true,
                 };
 
-        if (IsSweptUp(item.VideoId) || !IsEligible(item.VideoId))
+        // An owed handoff is what a re-cut asking for the source leaves behind. Without one, a
+        // track finished with owes nothing unasked (ADR 0027).
+        if (
+            IsSweptUp(item.VideoId) && !StageEligibility.Owes(jobs, item.VideoId, JobStage.Handoff)
+            || !IsEligible(item.VideoId)
+        )
             return null;
 
         // Into the working set, so the next pass copies it the same way as audio already held.

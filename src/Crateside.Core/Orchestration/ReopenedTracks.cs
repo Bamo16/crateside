@@ -46,23 +46,12 @@ public static class ReopenedTracks
 
         return jobs.Where(job => stages.Contains(job.Stage))
             .GroupBy(Identity, StringComparer.Ordinal)
-            .Where(song => song.GroupBy(job => job.Stage).Select(Latest).Any(IsOwed))
+            .Where(song =>
+                song.GroupBy(job => job.Stage).Select(Latest).Any(StageEligibility.IsOwed)
+            )
             .Select(song => Latest(song).VideoId)
             .ToHashSet(StringComparer.Ordinal);
     }
 
     private static TrackJob Latest(IEnumerable<TrackJob> jobs) => jobs.MaxBy(job => job.UpdatedAt)!;
-
-    /// <remarks>
-    /// A failure with strikes left is owed a retry, and without that a track whose separation died
-    /// is reachable from nowhere once the playlist has let it go (ADR 0025). Having given up is not
-    /// owed: it would sit in the line for a GPU at a position it never advances from (#32).
-    /// </remarks>
-    private static bool IsOwed(TrackJob job) =>
-        job.Status switch
-        {
-            JobStatus.Cancelled or JobStatus.Queued or JobStatus.Running => true,
-            JobStatus.Failed => job.Strikes < StageEligibility.MaxStrikesFor(job.Stage),
-            _ => false,
-        };
 }

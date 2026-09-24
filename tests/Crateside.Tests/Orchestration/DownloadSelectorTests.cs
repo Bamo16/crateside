@@ -143,7 +143,9 @@ public class DownloadSelectorTests : IDisposable
     [Fact]
     public void A_kept_source_a_re_cut_asked_for_is_fetched_when_its_audio_has_gone()
     {
-        Jobs.Record(Finished, JobStage.Separation, JobStatus.Cancelled, error: "re-cut requested");
+        // What a source-only re-cut leaves: the separation that already ran, and a handoff owed.
+        Jobs.Record(Finished, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(Finished, JobStage.Handoff, JobStatus.Cancelled, error: "re-cut requested");
 
         Assert.True(Selector().TryPickNext(FinishedWith(KeepingTheSource), out var next));
 

@@ -47,6 +47,21 @@ public class WorkingSetJanitorTests : IDisposable
         File.WriteAllText(Set.EvidencePathFor(VideoId), "{}");
     }
 
+    /// <summary>
+    /// A source-only re-cut fetches the audio and copies it on the next pass. Sweeping in between
+    /// would fetch it again, and again.
+    /// </summary>
+    [Fact]
+    public void A_track_still_owed_a_handoff_keeps_its_working_set()
+    {
+        GiveWorkingSet();
+        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(VideoId, JobStage.Handoff, JobStatus.Cancelled, error: "re-cut requested");
+
+        Assert.Equal(0, Janitor.Sweep());
+        Assert.Single(Set.VideoIds);
+    }
+
     [Fact]
     public void A_track_whose_stems_have_left_staging_is_finished_with()
     {

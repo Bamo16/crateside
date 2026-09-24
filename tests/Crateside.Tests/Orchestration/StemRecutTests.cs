@@ -360,6 +360,29 @@ public class StemRecutTests : IDisposable
         Assert.Equal(JobStatus.Cancelled, job.Status);
     }
 
+    /// <summary>
+    /// 1991 - If Only: a source-only re-cut reopened separation, which then had nothing to make and
+    /// stayed owed for ever — and so did the working set the janitor would otherwise have cleared.
+    /// </summary>
+    [Fact]
+    public void Keeping_only_the_source_reopens_the_handoff_and_not_the_gpu()
+    {
+        Stage("Vocal - Full");
+        Stage("Instrumental - Full");
+        Stage("Drums - htdemucs_ft");
+
+        var jobs = Jobs();
+
+        jobs.Record(Video, JobStage.Separation, JobStatus.Succeeded);
+
+        Recut(jobs).Apply(Video, StemPlan.Default with { KeepSource = true }, Catalog);
+
+        Assert.True(jobs.TryGet(Video, JobStage.Separation, out var separation));
+        Assert.Equal(JobStatus.Succeeded, separation.Status);
+        Assert.True(StageEligibility.Owes(jobs, Video, JobStage.Handoff));
+        Assert.True(StageEligibility.Owes(jobs, Video, JobStage.Tagging));
+    }
+
     [Theory]
     [InlineData(JobStage.Evidence)]
     [InlineData(JobStage.Verdict)]

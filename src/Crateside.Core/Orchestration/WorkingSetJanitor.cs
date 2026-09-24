@@ -38,5 +38,7 @@ public sealed class WorkingSetJanitor(
     private bool IsFinishedWith(string videoId, ProcessedTracks staged) =>
         jobs.TryGet(videoId, JobStage.Separation, out var job)
         && job is { Status: JobStatus.Succeeded }
-        && staged.StemsFor(videoId) is { Count: 0 };
+        && staged.StemsFor(videoId) is { Count: 0 }
+        // A source a re-cut fetched is copied on the next pass; sweeping it first starts a loop.
+        && !StageEligibility.Owes(jobs, videoId, JobStage.Handoff);
 }
