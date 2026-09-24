@@ -3,19 +3,13 @@ namespace Crateside.Core.Orchestration;
 /// <summary>Ends a stage's idle wait early, so a change does not wait out the interval.</summary>
 public class DrainSignal
 {
-    /// <remarks>
-    /// Bounded at one permit: the signal is level, not edge, so a second permit would only make
-    /// the following wait return instantly for no reason.
-    /// </remarks>
+    // One permit at most: a second would end the following wait for no reason.
     private readonly SemaphoreSlim _wake = new(0, 1);
 
     /// <summary>
-    /// Ends the worker's idle wait without changing whether it is paused.
+    /// Ends the worker's idle wait without changing whether it is paused, which
+    /// <see cref="DrainControl.Resume"/> cannot do.
     /// </summary>
-    /// <remarks>
-    /// <see cref="DrainControl.Resume"/> cannot serve here: it is level-triggered, so calling it
-    /// when nothing is paused releases nothing and the worker sleeps out its full delay.
-    /// </remarks>
     public void Wake()
     {
         try

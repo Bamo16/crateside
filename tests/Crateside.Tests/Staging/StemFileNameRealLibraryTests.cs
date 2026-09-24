@@ -12,9 +12,9 @@ public class StemFileNameRealLibraryTests
     private static IEnumerable<string> Staged() =>
         Directory.EnumerateFiles(StagingRoot).Where(StagingBoard.IsStemFile);
 
-    /// <remarks>
+    /// <summary>
     /// A prefix, not equality: the name says <c>(Drums)</c> where the tag says <c>Drums - htdemucs_ft</c>.
-    /// </remarks>
+    /// </summary>
     [Fact]
     public void The_last_parentheses_hold_a_preset_rather_than_part_of_the_title()
     {

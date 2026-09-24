@@ -105,7 +105,7 @@ public class AbletonFolderInfoWriterTests : IDisposable
         Assert.False(Directory.Exists(Path.Combine(_root, "Ableton Folder Info")));
     }
 
-    /// <remarks>Driven directly: the moment between read and replace is unreachable from Apply.</remarks>
+    /// <summary>Driven directly: the moment between read and replace is unreachable from Apply.</summary>
     [Fact]
     public void A_store_that_changed_under_the_write_is_left_alone()
     {

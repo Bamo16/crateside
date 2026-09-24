@@ -50,12 +50,9 @@ public sealed class StageWorker(
     }
 
     /// <summary>
-    /// Squares the job store against reality before anything is allowed to start.
+    /// Squares the job store against reality before anything starts, or a job an interrupted run
+    /// left <c>Running</c> is skipped for ever.
     /// </summary>
-    /// <remarks>
-    /// A job left <c>Running</c> by an interrupted restart looks like work still in progress to
-    /// every selector, so without this the track would be skipped for ever.
-    /// </remarks>
     private void Reopen()
     {
         foreach (var job in jobs.Open(drainer.Stage))

@@ -2,12 +2,8 @@ namespace Crateside.Core.Orchestration;
 
 /// <summary>
 /// Whether the workers are draining, and what they are doing right now. Shared between the
-/// background loop and the UI.
+/// background loop and the UI — for the stages that spend the GPU or quota (ADR 0024).
 /// </summary>
-/// <remarks>
-/// Only a stage that contends for something scarce needs one. Every stage is wakeable; this adds
-/// pausing, which is the GPU's and the quota's concern alone (ADR 0024).
-/// </remarks>
 public class DrainControl(bool startPaused = true) : DrainSignal
 {
     private readonly Lock _gate = new();

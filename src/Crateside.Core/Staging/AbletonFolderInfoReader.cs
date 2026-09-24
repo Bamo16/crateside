@@ -5,9 +5,6 @@ namespace Crateside.Core.Staging;
 /// <summary>
 /// Reads the <c>Ableton Folder Info\&lt;uuid&gt;.xmp</c> keyword index for a root folder.
 /// </summary>
-/// <remarks>
-/// Read only, never write — Ableton owns this file while it is running.
-/// </remarks>
 public sealed class AbletonFolderInfoReader
 {
     private const string FolderInfoDirectory = "Ableton Folder Info";

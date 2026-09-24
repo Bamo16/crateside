@@ -6,11 +6,8 @@ public sealed class DrainOptions
     public const string SectionName = "Drain";
 
     /// <summary>
-    /// Whether the app comes up with draining paused. Defaults to true.
+    /// Whether the app comes up with draining paused. Never set <c>false</c> in the base
+    /// <c>appsettings.json</c>, which every environment loads.
     /// </summary>
-    /// <remarks>
-    /// Do not set <c>false</c> in the base <c>appsettings.json</c>: it loads in every environment.
-    /// Draining is turned on by an environment-specific choice.
-    /// </remarks>
     public bool StartPaused { get; set; } = true;
 }

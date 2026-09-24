@@ -1,9 +1,9 @@
 namespace Crateside.Core.Pairing;
 
 /// <summary>
-/// "What else can I play over this?" — the partners for a source key, ranked.
+/// "What else can I play over this?" — the partner keys for a source key, ranked; Ableton's
+/// browser finds the files.
 /// </summary>
-/// <remarks>Returns keys, not files; the filtering happens in Ableton's own browser.</remarks>
 public static class Partners
 {
     /// <summary>The widest shift the model expresses, since shifts normalize to ±6.</summary>

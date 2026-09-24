@@ -4,8 +4,10 @@ using Crateside.Core.Pairing;
 
 namespace Crateside.Tests.Pairing;
 
-/// <summary>The port checked against the cmdlet it was ported from, for every one of the 24 keys.</summary>
-/// <remarks>The fixture is the real output of <c>Get-MashupPartner -MaxShift 6</c>.</remarks>
+/// <summary>
+/// The port checked against the real output of <c>Get-MashupPartner -MaxShift 6</c>, the cmdlet
+/// it was ported from, for every one of the 24 keys.
+/// </summary>
 public class PsMashupParityTests
 {
     private static readonly IReadOnlyList<FixtureKey> Fixture = LoadFixture();

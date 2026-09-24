@@ -4,12 +4,9 @@ using System.Text.Json.Serialization;
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
-/// Fetches one source, and keeps what the download said about its own audio.
+/// Fetches one source through <c>stemforge-cli download</c>, which writes the provenance every
+/// reader joins on (ADR 0005 §4).
 /// </summary>
-/// <remarks>
-/// It must be <c>stemforge-cli download</c>: it writes the provenance every reader joins on, so
-/// a file fetched any other way is invisible to crateside (ADR 0005 §4).
-/// </remarks>
 public sealed class DownloadRunner(string stemforge = "stemforge-cli")
 {
     /// <param name="into">
@@ -92,7 +89,6 @@ public sealed record DownloadResult
     public string? Path { get; init; }
 
     /// <summary>What the download said about its own quality. Null unless it succeeded.</summary>
-    /// <remarks>Only the success path carries these fields, so this is the one place to read them.</remarks>
     public Acquisition? Acquisition { get; init; }
 
     public string? Error { get; init; }

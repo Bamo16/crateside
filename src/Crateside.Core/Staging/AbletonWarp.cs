@@ -30,12 +30,9 @@ public sealed record AbletonWarp(
     }
 }
 
+/// <summary>A point pinning the audio to the grid; a tempo exists only between two of them.</summary>
 /// <param name="Seconds">Position in the audio file.</param>
 /// <param name="Beat">Position on Ableton's grid.</param>
-/// <remarks>
-/// A tempo is the slope between two consecutive markers; the sidecar stores no tempo of its own,
-/// so a single marker carries none.
-/// </remarks>
 public readonly record struct WarpMarker(double Seconds, double Beat);
 
 public enum WarpMode

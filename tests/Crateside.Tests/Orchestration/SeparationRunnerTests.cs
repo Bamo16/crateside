@@ -21,7 +21,7 @@ public class SeparationRunnerTests : IDisposable
     private SeparationInterlock Interlock => field ??= new SeparationInterlock(Jobs, _probe);
     private WorkingSet Set => field ??= new WorkingSet(Path.Combine(_directory, "working"));
 
-    /// <remarks>Never the real paths: the runner writes to these.</remarks>
+    /// <summary>Never the real paths: the runner writes to these.</summary>
     private CratesidePaths Paths =>
         field ??= new CratesidePaths
         {

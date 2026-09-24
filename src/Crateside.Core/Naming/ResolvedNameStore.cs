@@ -3,12 +3,9 @@ using System.Text.Json;
 namespace Crateside.Core.Naming;
 
 /// <summary>
-/// The names StemForge has already been asked for, kept between runs.
+/// The names StemForge has already been asked for, kept in <c>%APPDATA%\crateside\names.json</c>
+/// apart from the user's own (ADR 0014).
 /// </summary>
-/// <remarks>
-/// Stored in <c>%APPDATA%\crateside\names.json</c>, not in <c>queue.json</c>: a stated name is
-/// the user's and a resolved one is a fact about an upload (ADR 0014).
-/// </remarks>
 public sealed class ResolvedNameStore
 {
     private static readonly JsonSerializerOptions SerializerOptions = new()

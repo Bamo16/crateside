@@ -7,12 +7,8 @@ namespace Crateside;
 
 /// <summary>
 /// Keeps the library's keys backed by a tag-store entry, so a hand-applied tag in Ableton does
-/// not reconcile them away (ADR 0023).
+/// not reconcile them away (ADR 0023). Never paused: it contends for nothing.
 /// </summary>
-/// <remarks>
-/// Not an <see cref="IStageDrainer"/> and deliberately not pausable, for the same reason as
-/// <see cref="NameWorker"/>: it contends for nothing.
-/// </remarks>
 public sealed class BackingWorker(
     BackingRunner runner,
     IOptions<CratesidePaths> paths,

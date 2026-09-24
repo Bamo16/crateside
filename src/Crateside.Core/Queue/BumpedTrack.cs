@@ -1,12 +1,9 @@
 namespace Crateside.Core.Queue;
 
 /// <summary>
-/// The one track the user wants worked next, if they have said so.
+/// The one track the user wants worked next, if they have said so — held in memory only
+/// (ADR 0015).
 /// </summary>
-/// <remarks>
-/// Deliberately not persisted, and deliberately one at a time: a bump is about the queue in
-/// front of you now (ADR 0015).
-/// </remarks>
 public sealed class BumpedTrack
 {
     private readonly Lock _gate = new();

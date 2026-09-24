@@ -31,10 +31,9 @@ public sealed class WorkingSetJanitor(
         return discarded.Count;
     }
 
-    /// <remarks>
-    /// Both halves are required: "nothing in staging" is also true of a track never separated,
-    /// and of one only partly imported.
-    /// </remarks>
+    /// <summary>
+    /// Separated and nothing left in staging — either alone is also true of unfinished tracks.
+    /// </summary>
     private bool IsFinishedWith(string videoId, ProcessedTracks staged) =>
         jobs.TryGet(videoId, JobStage.Separation, out var job)
         && job is { Status: JobStatus.Succeeded }

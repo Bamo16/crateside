@@ -14,13 +14,9 @@ public sealed class VerdictSelector(
     public const int DefaultMaxStrikes = 3;
 
     /// <summary>
-    /// The next track to judge: oldest-added first, skipping anything already judged, not yet
-    /// detected, in flight, given up on, or stopped for a premium shortfall.
+    /// The next track to judge, oldest-added first, skipping anything the ledger (not the view)
+    /// has judged, undetected, in flight, given up on, or parked for a premium shortfall.
     /// </summary>
-    /// <remarks>
-    /// The ledger check re-verifies a <see cref="QueueView.Outstanding"/> snapshot that may be
-    /// stale, because this stage writes the very thing the snapshot measures.
-    /// </remarks>
     public bool TryPickNext(QueueView view, KeyLedger ledger, out QueueItem next)
     {
         next = view.Outstanding.FirstOrDefault(i =>

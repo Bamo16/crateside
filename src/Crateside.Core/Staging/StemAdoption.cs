@@ -25,12 +25,8 @@ public static class StemAdoption
 
     /// <summary>
     /// Writes the provenance into <paramref name="path"/>, so the file reads as a sample of
-    /// <paramref name="videoId"/>.
+    /// <paramref name="videoId"/> — refusing a file that already carries some.
     /// </summary>
-    /// <remarks>
-    /// Refuses a file that already carries provenance: overwriting StemForge's would lose which
-    /// separation a stem came from, and re-adopting is a rename rather than a second write.
-    /// </remarks>
     public static bool TryAdopt(
         string path,
         string videoId,

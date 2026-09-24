@@ -40,7 +40,7 @@ public class EvidenceSelectorTests : IDisposable
             IsUnavailable = unavailable,
         };
 
-    /// <remarks>Every item arrives with audio held for it.</remarks>
+    /// <summary>Every item arrives with audio held for it.</summary>
     private QueueView View(params QueueItem[] outstanding)
     {
         foreach (var item in outstanding)

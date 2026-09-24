@@ -5,12 +5,9 @@ using Crateside.Core.Orchestration;
 namespace Crateside.Core.Naming;
 
 /// <summary>
-/// Asks StemForge what it will call a track's files, before any work runs.
+/// Asks StemForge what it will call a track's files, before any work runs. Never rebuild either
+/// name from parts (ADR 0014).
 /// </summary>
-/// <remarks>
-/// Neither field is ever composed here: a display title is deliberately lossier than
-/// <c>{artist} - {title}</c>, so rebuilding it from parts reproduces neither (ADR 0014).
-/// </remarks>
 public sealed class NameResolver(string stemforge = "stemforge-cli")
 {
     /// <summary>
@@ -78,10 +75,6 @@ public sealed record ResolvedName
     /// <summary>
     /// The filename the source is given, without extension.
     /// </summary>
-    /// <remarks>
-    /// Stems are conventionally <c>"{BaseName} ({stem})"</c>, but that is StemForge's default
-    /// rather than a promise.
-    /// </remarks>
     public required string BaseName { get; init; }
 }
 

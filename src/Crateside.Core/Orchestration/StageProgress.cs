@@ -6,10 +6,9 @@ public sealed record StageProgress
     public JobStage? Running { get; init; }
 
     /// <summary>
-    /// When the process started, for a separation; otherwise the job's last update, which for an
-    /// open job is its start.
+    /// When the process started, for a separation, even one adopted at a restart; otherwise the
+    /// job's last update, which for an open job is its start.
     /// </summary>
-    /// <remarks>An adopted separation records Running a second time, at the restart.</remarks>
     public DateTimeOffset? RunningSince { get; init; }
 
     public JobStage? GaveUpAt { get; init; }

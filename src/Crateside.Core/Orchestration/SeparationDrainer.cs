@@ -64,12 +64,9 @@ public sealed class SeparationDrainer(
 public static class StemLanding
 {
     /// <summary>
-    /// Moves a run into the key-identified root when the verdict arrived while it was running.
+    /// Moves a run into the key-identified root when the verdict arrived while it was running,
+    /// after its destination was chosen.
     /// </summary>
-    /// <remarks>
-    /// The destination is chosen when the order is composed, so a track re-judged after that can
-    /// be cut before its verdict lands and park in the root the handoff does not read.
-    /// </remarks>
     public static IReadOnlyList<string> Reconcile(
         CratesidePaths paths,
         KeyLedger ledger,

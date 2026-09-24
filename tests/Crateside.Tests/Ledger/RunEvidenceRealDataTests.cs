@@ -44,7 +44,7 @@ public class RunEvidenceRealDataTests
         Assert.All(All(), e => Assert.False(string.IsNullOrWhiteSpace(e.Reasoning)));
     }
 
-    /// <remarks>Walks every string rather than a list of fields, which is what drifted before.</remarks>
+    /// <summary>Walks every string rather than a list of fields, which can drift.</summary>
     [Fact]
     public void No_string_anywhere_in_the_ledger_is_mis_encoded()
     {

@@ -24,8 +24,10 @@ public sealed class DeletionLog(string path, TimeProvider? time = null)
             Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "deletions.jsonl")
         );
 
-    /// <summary>Sends a sample to the recycle bin and records which upload it was of, and why.</summary>
-    /// <remarks>The upload is read off the file before it goes, since nothing can read it after.</remarks>
+    /// <summary>
+    /// Sends a sample to the recycle bin and records which upload it was of — read before it goes
+    /// — and why.
+    /// </summary>
     public void Recycle(string sample, string reason)
     {
         if (!File.Exists(sample))

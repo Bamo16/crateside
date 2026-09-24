@@ -6,8 +6,10 @@ namespace Crateside.Core.Orchestration;
 /// <summary>Takes a file the user made into a track, where it already is (ADR 0022).</summary>
 public sealed class SampleAdoption(QueueSettingsStore settings, CratesidePaths paths)
 {
-    /// <summary>Every sample in either root that carries no provenance, so nothing can place it.</summary>
-    /// <remarks>Reads a tag per file across the library, so ask it when the form opens, not per render.</remarks>
+    /// <summary>
+    /// Every sample in either root with no provenance to place it. Reads every file's tag, so never
+    /// call it per render.
+    /// </summary>
     public IReadOnlyList<string> Candidates() =>
         [
             .. new[] { paths.SampleStaging, paths.MashupSamples }

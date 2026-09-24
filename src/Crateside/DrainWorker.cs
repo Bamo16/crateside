@@ -51,12 +51,9 @@ public sealed class DrainWorker(
     }
 
     /// <summary>
-    /// Squares the job store against reality before anything is allowed to launch.
+    /// Squares the job store against reality before anything launches, since a previous run's
+    /// <c>stemforge-cli</c> may still be alive.
     /// </summary>
-    /// <remarks>
-    /// On Windows a child is not killed with its parent, so a <c>stemforge-cli</c> from a previous
-    /// run may still be alive and must be found rather than duplicated.
-    /// </remarks>
     private void Reconcile()
     {
         var reconciliation = interlock.Reconcile();

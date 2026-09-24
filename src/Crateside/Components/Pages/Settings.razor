@@ -315,12 +315,8 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     }
 
     /// <summary>
-    /// Reads enough to say what removal would do, and stops being interesting after that.
+    /// Reads enough to preview what removal would do; the removal derives its set again.
     /// </summary>
-    /// <remarks>
-    /// The count is a preview: <see cref="QueueService.RemoveProcessedAsync"/> derives the set
-    /// again at the moment of removal.
-    /// </remarks>
     private async Task Load()
     {
         if (!Playlist.IsConfigured)

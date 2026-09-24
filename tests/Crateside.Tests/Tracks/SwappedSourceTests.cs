@@ -53,7 +53,7 @@ public class SwappedSourceTests : IDisposable
         Assert.Single(rows);
     }
 
-    /// <remarks>The replacement's third file is its warp guide, which is not a sample.</remarks>
+    /// <summary>The replacement's third file is its warp guide, which is not a sample.</summary>
     [Fact]
     public void The_row_carries_every_sample_from_both_uploads()
     {

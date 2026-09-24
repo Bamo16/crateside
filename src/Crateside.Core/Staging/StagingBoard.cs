@@ -3,13 +3,9 @@ using Crateside.Core.Ledger;
 namespace Crateside.Core.Staging;
 
 /// <summary>
-/// Builds the staging board by composing the readers. Purely derived — no state, no
-/// done-flags, every call re-reads from disk.
+/// Builds the staging board from disk on every call, reading the XMP, which is ahead of Ableton's
+/// index where crateside writes (ADR 0017).
 /// </summary>
-/// <remarks>
-/// Reads the XMP rather than Ableton's index: this is the one root crateside writes, so the XMP
-/// is ahead of the index there (ADR 0017).
-/// </remarks>
 public sealed class StagingBoard
 {
     private readonly AbletonFolderInfoReader _folderInfoReader;

@@ -9,12 +9,9 @@ namespace Crateside.Core.Orchestration;
 public interface IProcessProbe
 {
     /// <summary>
-    /// The start time of a live process, or false if no process is running under this id.
+    /// The start time of a live process — what tells it from a reused PID — or false if none runs
+    /// under this id.
     /// </summary>
-    /// <remarks>
-    /// A PID is not an identity: Windows reuses them, so the start time is what turns a
-    /// coincidence into a match.
-    /// </remarks>
     bool TryGetStartTime(int processId, out DateTimeOffset startedAt);
 }
 

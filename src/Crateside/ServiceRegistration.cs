@@ -113,12 +113,9 @@ public static class ServiceRegistration
     }
 
     /// <summary>
-    /// Draining: what turns the queue into stems on disk without anyone asking it to.
+    /// Draining, registered by factory: the container cannot resolve a constructor default like
+    /// <c>maxStrikes</c>.
     /// </summary>
-    /// <remarks>
-    /// Factories rather than <c>AddSingleton&lt;T&gt;</c>: the built-in container does not apply
-    /// constructor defaults for trailing primitives like <c>maxStrikes</c>, and fails resolving them.
-    /// </remarks>
     public static IServiceCollection AddCratesideOrchestration(this IServiceCollection services)
     {
         services.AddSingleton<StageHub>();

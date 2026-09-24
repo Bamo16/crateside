@@ -3,13 +3,9 @@ using Crateside.Core.Orchestration;
 namespace Crateside.Core;
 
 /// <summary>
-/// Where crateside looks for the things it reads. Defaults are this machine's real paths;
-/// they are settable so a test — or another machine — is not stuck with them.
+/// Where crateside looks for the things it reads, defaulting to this machine's real paths
+/// (ADR 0023).
 /// </summary>
-/// <remarks>
-/// crateside writes the Ableton Folder Info XMP under <see cref="SampleStaging"/> and
-/// <see cref="MashupSamples"/>, and nothing else here (ADR 0023).
-/// </remarks>
 public sealed class CratesidePaths
 {
     public const string SectionName = "Paths";
@@ -34,13 +30,9 @@ public sealed class CratesidePaths
     private string? _ledger;
 
     /// <summary>
-    /// The keytag checkout, which crateside drives through its two declared interfaces:
-    /// <c>keytag-detect</c> for the evidence run, and <c>runs.jsonl</c> for the verdict.
+    /// The keytag checkout, reached only through <c>keytag-detect</c> for the evidence run and
+    /// <c>runs.jsonl</c> for the verdict (keytag ADR 0006).
     /// </summary>
-    /// <remarks>
-    /// Relative paths passed to the detector resolve against crateside, not keytag. Nothing here
-    /// may reach past <c>keytag-detect</c> and <c>runs.jsonl</c> (keytag ADR 0006).
-    /// </remarks>
     public string KeytagRepo { get; set; } = @"V:\Repos\keytag";
 
     /// <summary>keytag's append-only record of detect-key runs. Read-only; keytag owns it.</summary>

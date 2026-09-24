@@ -19,12 +19,10 @@ public static class StageEligibility
             _ => throw new ArgumentOutOfRangeException(nameof(stage)),
         };
 
-    /// <summary>Whether this job is work still to be done, rather than work that ended.</summary>
-    /// <remarks>
-    /// A failure with strikes left is owed a retry, and without that a track whose separation died
-    /// is reachable from nowhere once the playlist has let it go (ADR 0025). Having given up is not
-    /// owed: it would sit in the line for a GPU at a position it never advances from (#32).
-    /// </remarks>
+    /// <summary>
+    /// Whether this job is work still to be done: open, or failed with strikes left, but never
+    /// given up on (ADR 0025, #32).
+    /// </summary>
     public static bool IsOwed(TrackJob job) =>
         job.Status switch
         {

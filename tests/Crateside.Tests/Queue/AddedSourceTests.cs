@@ -48,9 +48,7 @@ public class AddedSourceTests
         Assert.True(inventory.Has(Official));
     }
 
-    /// <remarks>
-    /// Pre-1.0 files carry no provenance at all, so the label stays the fallback for them.
-    /// </remarks>
+    /// <summary>Pre-1.0 files carry no provenance at all, so the label stays their fallback.</summary>
     [Fact]
     public void A_file_with_no_provenance_is_still_matched_on_its_label()
     {

@@ -6,12 +6,9 @@ using Microsoft.AspNetCore.DataProtection;
 namespace Crateside.Core.Queue;
 
 /// <summary>
-/// Google's token store, encrypted at rest with Windows DPAPI.
+/// Google's token store, encrypted at rest with Windows DPAPI — no defence against anything
+/// running as this user (<c>docs/secrets.md</c>).
 /// </summary>
-/// <remarks>
-/// Defends against the file being copied off the box or read by another user; it does not
-/// defend against anything running as this user. See <c>docs/secrets.md</c>.
-/// </remarks>
 public sealed class ProtectedTokenStore(IDataProtectionProvider provider, string? directory = null)
     : IDataStore
 {

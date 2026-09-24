@@ -4,12 +4,9 @@ using System.Text.Json;
 namespace Crateside.Core.Ledger;
 
 /// <summary>
-/// keytag's <c>results/runs.jsonl</c>, read for lookup. Read-only: keytag owns this file.
+/// keytag's <c>results/runs.jsonl</c>, read-only, looked up video ID → song → latest run so a
+/// supersede wins.
 /// </summary>
-/// <remarks>
-/// Lookup goes video ID → song identity → latest run. Resolving to the identity first is what
-/// makes a supersede win.
-/// </remarks>
 public sealed class KeyLedger
 {
     private readonly Dictionary<string, LedgerRun> _latestBySong;

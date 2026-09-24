@@ -3,12 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
-/// Keeps separation single-flight, across restarts as well as within one.
+/// Keeps separation single-flight across restarts, adopting a <c>stemforge-cli</c> that outlived
+/// one rather than killing it.
 /// </summary>
-/// <remarks>
-/// Windows does not kill a child when its parent exits, so a <c>stemforge-cli</c> can outlive a
-/// restart; an orphan is adopted rather than killed, so GPU work in progress is not discarded.
-/// </remarks>
 public sealed class SeparationInterlock(JobStore jobs, IProcessProbe probe)
 {
     /// <summary>

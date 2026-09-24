@@ -54,11 +54,8 @@ public static class ExternalProcess
     }
 
     /// <summary>
-    /// The last thing a failing command said, for an error message a human reads.
+    /// The last non-blank line a failing command said, stderr before stdout, for a human to read.
     /// </summary>
-    /// <remarks>
-    /// Prefers stderr, falls back to stdout, and takes the last non-blank line.
-    /// </remarks>
     public static string? Describe(params string[] streams) =>
         streams
             .Select(s => s.Trim())

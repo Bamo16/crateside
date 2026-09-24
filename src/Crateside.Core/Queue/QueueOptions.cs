@@ -1,10 +1,9 @@
 namespace Crateside.Core.Queue;
 
-/// <summary>How to reach the Queue playlist.</summary>
-/// <remarks>
-/// The API key is a secret: put it in <c>appsettings.Secrets.json</c> or user-secrets, both
-/// gitignored. The playlist ID is not a secret.
-/// </remarks>
+/// <summary>
+/// How to reach the Queue playlist. The API key is a secret, kept in user-secrets or the
+/// gitignored <c>appsettings.Secrets.json</c>.
+/// </summary>
 public sealed class QueueOptions
 {
     public const string SectionName = "Queue";

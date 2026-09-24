@@ -4,12 +4,8 @@ using System.Text.Json.Serialization;
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
-/// What an upload offers, asked before any audio is fetched.
+/// What an upload offers, asked with <c>--list-formats</c> before any audio is fetched (ADR 0019).
 /// </summary>
-/// <remarks>
-/// <c>--list-formats</c> resolves yt-dlp's metadata without downloading, so poor audio can be
-/// called out before anything is on disk (ADR 0019).
-/// </remarks>
 public sealed class SourceProbe(string stemforge = "stemforge-cli")
 {
     /// <summary>

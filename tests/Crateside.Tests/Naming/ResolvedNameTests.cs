@@ -53,7 +53,7 @@ public class ResolvedNameTests : IDisposable
         Assert.Empty(Store().Read());
     }
 
-    /// <remarks>Adding <c>artist</c> or <c>title</c> here is the first step to composing a name (ADR 0014).</remarks>
+    /// <summary>Reading <c>artist</c> or <c>title</c> is the first step to composing a name (ADR 0014).</summary>
     [Fact]
     public void The_resolver_never_reads_artist_or_title_from_stemforge()
     {

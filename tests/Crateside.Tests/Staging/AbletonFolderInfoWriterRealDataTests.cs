@@ -4,8 +4,7 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Staging;
 
-/// <summary>The writer against the tag store Ableton actually wrote.</summary>
-/// <remarks>Never writes to the real roots: everything happens on a copy.</remarks>
+/// <summary>The writer against the tag store Ableton actually wrote, only ever on a copy.</summary>
 public class AbletonFolderInfoWriterRealDataTests : IDisposable
 {
     private readonly string _root = Path.Combine(
@@ -49,10 +48,10 @@ public class AbletonFolderInfoWriterRealDataTests : IDisposable
         return destination;
     }
 
-    /// <remarks>
-    /// Not byte-for-byte: Ableton wraps only <c>rdf:Description</c>'s namespace declarations, which
-    /// <c>XmlWriter</c> cannot match. ADR 0003 findings 4 and 5 are why that is enough.
-    /// </remarks>
+    /// <summary>
+    /// Not byte-for-byte: <c>XmlWriter</c> cannot match how Ableton wraps namespace declarations,
+    /// and ADR 0003 findings 4 and 5 show that is enough.
+    /// </summary>
     [Fact]
     public void Writing_Abletons_own_file_back_preserves_it()
     {

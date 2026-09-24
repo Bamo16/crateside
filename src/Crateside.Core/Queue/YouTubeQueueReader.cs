@@ -7,12 +7,9 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Core.Queue;
 
 /// <summary>
-/// Reads the Queue playlist over the YouTube Data API.
+/// Reads the Queue playlist over the YouTube Data API. An API key silently stops working if the
+/// playlist goes private; OAuth does not.
 /// </summary>
-/// <remarks>
-/// An API key only works while the playlist is unlisted or public — it stops silently the day
-/// the playlist goes private. An OAuth credential works at every visibility.
-/// </remarks>
 public sealed class YouTubeQueueReader(IOptions<QueueOptions> options) : IDisposable
 {
     private const int MaxPageSize = 50;
