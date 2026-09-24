@@ -16,6 +16,9 @@ public sealed record StageProgress
 
     public int GaveUpStrikes { get; init; }
 
+    /// <summary>A stage whose latest attempt failed with strikes left, so it is owed another.</summary>
+    public StageFailure? Retrying { get; init; }
+
     public static StageProgress For(JobStore jobs, string videoId) => For(jobs, [videoId]);
 
     /// <summary>
@@ -30,6 +33,7 @@ public sealed record StageProgress
         DateTimeOffset? runningSince = null;
         JobStage? gaveUpAt = null;
         var gaveUpStrikes = 0;
+        StageFailure? retrying = null;
 
         foreach (var stage in Stages)
         {
@@ -41,6 +45,12 @@ public sealed record StageProgress
                 running = stage;
                 runningSince = job.ProcessStartedAt ?? job.UpdatedAt;
             }
+
+            if (
+                job is { Status: JobStatus.Failed, Strikes: var failures }
+                && StageEligibility.IsOwed(job)
+            )
+                retrying = new StageFailure(stage, failures, job.Error);
 
             // Cancelled never counts, whatever the strikes say — a track put back in line by
             // hand has not given up.
@@ -60,6 +70,7 @@ public sealed record StageProgress
             RunningSince = runningSince,
             GaveUpAt = gaveUpAt,
             GaveUpStrikes = gaveUpStrikes,
+            Retrying = retrying,
         };
     }
 
@@ -79,3 +90,5 @@ public sealed record StageProgress
     /// </summary>
     private static readonly JobStage[] Stages = Enum.GetValues<JobStage>();
 }
+
+public sealed record StageFailure(JobStage Stage, int Strikes, string? Error);

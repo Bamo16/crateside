@@ -2,6 +2,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Queue;
 using Crateside.Core.Tracks;
+using Humanizer;
 
 namespace Crateside.Tests.Tracks;
 
@@ -110,6 +111,21 @@ public class TrackExpansionTests
             $"Judged, and the verdict came back {spoken} — no key worth tagging with.",
             row.Detail
         );
+    }
+
+    [Fact]
+    public void A_stage_still_retrying_says_so_and_leaves_its_error_out_of_the_text()
+    {
+        var row = Row() with
+        {
+            Retrying = new StageFailure(JobStage.Separation, 1, "cuda out of memory"),
+        };
+
+        Assert.Equal(
+            $"Separation failed and will be tried again (1 of {"strike".ToQuantity(SeparationSelector.DefaultMaxStrikes)}).",
+            row.RetryNote
+        );
+        Assert.DoesNotContain("cuda", row.Detail);
     }
 
     [Fact]

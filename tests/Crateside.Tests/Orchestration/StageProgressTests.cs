@@ -54,6 +54,42 @@ public class StageProgressTests : IDisposable
     }
 
     [Fact]
+    public void A_failure_with_strikes_left_is_reported_as_retrying_with_its_reason()
+    {
+        var jobs = Store();
+        jobs.Record(Video, JobStage.Separation, JobStatus.Failed, error: "cuda out of memory");
+
+        var progress = StageProgress.For(jobs, Video);
+
+        Assert.Equal(
+            new StageFailure(JobStage.Separation, 1, "cuda out of memory"),
+            progress.Retrying
+        );
+        Assert.Null(progress.GaveUpAt);
+    }
+
+    [Fact]
+    public void A_stage_that_has_given_up_is_not_also_retrying()
+    {
+        var jobs = Store();
+
+        for (var attempt = 0; attempt < TaggingSelector.DefaultMaxStrikes; attempt++)
+            jobs.Record(Video, JobStage.Tagging, JobStatus.Failed, error: "Ableton had the file");
+
+        Assert.Null(StageProgress.For(jobs, Video).Retrying);
+    }
+
+    [Fact]
+    public void A_failure_put_back_in_line_by_hand_is_not_retrying()
+    {
+        var jobs = Store();
+        jobs.Record(Video, JobStage.Download, JobStatus.Failed, error: "403");
+        jobs.Forgive(Video, JobStage.Download);
+
+        Assert.Null(StageProgress.For(jobs, Video).Retrying);
+    }
+
+    [Fact]
     public void A_stage_out_of_strikes_has_given_up_and_tagging_counts()
     {
         // Tagging is the stage the queue page never checked. It fails for a real reason — Ableton

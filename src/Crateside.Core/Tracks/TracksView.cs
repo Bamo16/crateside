@@ -227,6 +227,7 @@ public sealed record TracksView
                 RunningSince = progress.RunningSince,
                 GaveUpAt = progress.GaveUpAt,
                 GaveUpStrikes = progress.GaveUpStrikes,
+                Retrying = progress.Retrying,
                 Samples =
                 [
                     .. members.SelectMany(seed =>

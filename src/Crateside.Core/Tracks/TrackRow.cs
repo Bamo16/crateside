@@ -106,6 +106,8 @@ public sealed record TrackRow
     /// <summary>How many times <see cref="GaveUpAt"/> failed before it stopped trying.</summary>
     public int GaveUpStrikes { get; init; }
 
+    public StageFailure? Retrying { get; init; }
+
     /// <summary>
     /// The row exists only because the library has files for it: crateside never queued it and it
     /// is not in staging.
@@ -341,6 +343,12 @@ public sealed record TrackRow
             " ",
             new[] { Judgement, PremiumShortfall, Disagreement, Since }.OfType<string>()
         );
+
+    /// <summary>Said while a stage is owed another attempt; its error is too long to inline.</summary>
+    public string? RetryNote =>
+        Retrying is { Stage: var stage, Strikes: var strikes }
+            ? $"{stage} failed and will be tried again ({strikes} of {"strike".ToQuantity(StageEligibility.MaxStrikesFor(stage))})."
+            : null;
 
     /// <summary>Said only while the premium shortfall is still the user's to resolve.</summary>
     private string? PremiumShortfall =>

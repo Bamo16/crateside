@@ -717,6 +717,10 @@
                                 <text> Not on disk: @Missing(row). Cutting it is @Cost(row.Recipe)</text>
                             }
                         </p>
+                        @if (row.RetryNote is { } retrying)
+                        {
+                            <p class="detail" title="@row.Retrying?.Error">@retrying</p>
+                        }
 
                         <div class="actions">
                             @if (row.Folder is not null)

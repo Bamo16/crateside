@@ -483,6 +483,17 @@ public class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
+    public void A_stage_still_retrying_reaches_the_row()
+    {
+        var jobs = Jobs();
+        jobs.Record(Video, JobStage.Handoff, JobStatus.Failed, error: "file in use");
+
+        var row = Assert.Single(Compose(jobs: jobs));
+
+        Assert.Equal(new StageFailure(JobStage.Handoff, 1, "file in use"), row.Retrying);
+    }
+
+    [Fact]
     public void A_stage_that_gave_up_reaches_the_row_with_its_count()
     {
         var jobs = Jobs();
