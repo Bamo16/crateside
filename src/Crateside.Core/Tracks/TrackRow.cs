@@ -468,6 +468,9 @@ public sealed record TrackSample
     /// <summary>Whether Ableton has a key on the file.</summary>
     public bool IsKeyTagged => AbletonKey is not null;
 
+    /// <summary>Whether it was downloaded as premium audio. Null when the file does not say.</summary>
+    public bool? IsPremium { get; init; }
+
     /// <summary>Whether this sample has reached <c>Mashup Samples</c> — the finished library.</summary>
     /// <remarks>
     /// Says only which folder the file is in; warping is inferred from that, and never from an

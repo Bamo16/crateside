@@ -31,6 +31,13 @@ public sealed record StemProvenance
     /// <summary>The separation preset, e.g. <c>Vocal - Full</c>. Absent on older stems.</summary>
     public string? Preset { get; init; }
 
+    /// <summary>The YouTube format StemForge downloaded, e.g. <c>141</c>. Absent before 2026-06-01.</summary>
+    public string? FormatId { get; init; }
+
+    /// <summary>Whether the download was premium audio. Null when no format was recorded.</summary>
+    /// <remarks>StemForge's rule, which in practice only formats 141 and 774 ever meet.</remarks>
+    public bool? IsPremium => FormatId is null ? null : FormatId is "141" or "774";
+
     /// <summary>What the user said a file never cut is. Null on every stem, whose preset says it.</summary>
     public SampleType? Type { get; init; }
 
@@ -72,6 +79,7 @@ public sealed record StemProvenance
         DateOnly? separatedOn = null;
         string? sourceUrl = null;
         SampleType? type = null;
+        string? formatId = null;
 
         // BuildProvenance joins with " | "; the first part is always the tool version.
         var parts = comment.Split(" | ");
@@ -86,6 +94,8 @@ public sealed record StemProvenance
                 separatedOn = parsed;
             else if (Value(part, "source: ") is { } s)
                 sourceUrl = s;
+            else if (Value(part, "format-id: ") is { } f)
+                formatId = f;
             else if (
                 Value(part, TypePrefix) is { } t
                 && Enum.TryParse<SampleType>(t, ignoreCase: false, out var parsedType)
@@ -101,6 +111,7 @@ public sealed record StemProvenance
             SeparatedOn = separatedOn,
             SourceUrl = sourceUrl,
             Type = type,
+            FormatId = formatId,
             SourceVideoId = YouTubeUrl.TryGetVideoId(sourceUrl, out var videoId) ? videoId : null,
         };
     }

@@ -45,4 +45,30 @@ public class StemProvenanceTests
         Assert.Null(provenance.SourceUrl);
         Assert.Null(provenance.SourceVideoId);
     }
+
+    [Theory]
+    [InlineData("141", true)]
+    [InlineData("774", true)]
+    [InlineData("140", false)]
+    [InlineData("251", false)]
+    public void Only_the_formats_a_free_account_is_refused_count_as_premium(
+        string formatId,
+        bool premium
+    )
+    {
+        var provenance = StemProvenance.Parse(
+            $"stemforge/0.3.1.0 | date: 2026-09-18 | format-id: {formatId}"
+        );
+
+        Assert.Equal(formatId, provenance?.FormatId);
+        Assert.Equal(premium, provenance?.IsPremium);
+    }
+
+    [Fact]
+    public void A_file_that_recorded_no_format_says_nothing_about_premium()
+    {
+        Assert.Null(
+            StemProvenance.Parse("stemforge/0.1.0.0 | model: x | date: 2026-05-29")?.IsPremium
+        );
+    }
 }

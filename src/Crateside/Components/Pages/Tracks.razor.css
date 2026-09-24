@@ -769,6 +769,10 @@
     color: var(--text-50);
 }
 
+.kind.below-premium {
+    color: var(--amber);
+}
+
 .stem-tag,
 .stem-where {
     font-size: 12px;

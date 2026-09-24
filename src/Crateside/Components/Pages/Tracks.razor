@@ -486,6 +486,13 @@
                                                 {
                                                     <span class="kind">separation source</span>
                                                 }
+                                                @if (line.IsBelowPremium)
+                                                {
+                                                    <span class="kind below-premium"
+                                                          title="The upload offered no premium audio, so this file is the best it had.">
+                                                        below premium
+                                                    </span>
+                                                }
                                                 @if (line.Kind is StemKind.WarpGuide)
                                                 {
                                                     <span class="kind">warp guide</span>
@@ -608,7 +615,16 @@
                                 @foreach (var sample in row.Samples)
                                 {
                                     <div class="stem">
-                                        <span class="stem-label">@sample.Label</span>
+                                        <span class="stem-label">
+                                            @sample.Label
+                                            @if (sample.IsPremium is false)
+                                            {
+                                                <span class="kind below-premium"
+                                                      title="The upload offered no premium audio, so this file is the best it had.">
+                                                    below premium
+                                                </span>
+                                            }
+                                        </span>
                                         <span class="mono stem-tag @TagTone(sample)">@Tag(sample)</span>
                                         <span class="mono stem-where @(sample.IsInLibrary ? "good" : null)">
                                             @(sample.IsInLibrary ? "Mashup Samples" : "Sample Staging")

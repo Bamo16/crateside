@@ -88,6 +88,9 @@ public sealed record StagingStem
     /// </remarks>
     public string? AdoptedAs { get; init; }
 
+    /// <summary>Whether it was downloaded as premium audio. Null when the file does not say.</summary>
+    public bool? IsPremium { get; init; }
+
     /// <summary>crateside took this file in rather than making it.</summary>
     public bool IsAdopted => AdoptedAs is not null;
 

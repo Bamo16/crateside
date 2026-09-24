@@ -96,6 +96,7 @@ public sealed class ProcessedTracks
                         Preset = p.Preset,
                         Label = p.Label,
                         IsAdopted = p.IsAdopted,
+                        IsPremium = p.IsPremium,
                         SourceVideoId = videoId,
                         CreatedAt = CreationTimeOf(path),
                     }
@@ -144,6 +145,9 @@ public sealed record StemOnDisk
     /// <summary>crateside took this file into the track rather than making it (ADR 0022).</summary>
     public bool IsAdopted { get; init; }
 
+    /// <summary>Whether it was downloaded as premium audio. Null when the file does not say.</summary>
+    public bool? IsPremium { get; init; }
+
     /// <summary>The upload this file was cut from or downloaded from.</summary>
     /// <remarks>
     /// What tells a track's separation source from a source the user added, which are otherwise
@@ -175,6 +179,7 @@ public sealed record StemOnDisk
             Path = stem.Path,
             Root = System.IO.Path.GetDirectoryName(stem.Path) ?? string.Empty,
             Preset = stem.Preset,
+            IsPremium = stem.IsPremium,
             SourceVideoId = sourceVideoId,
         };
 }

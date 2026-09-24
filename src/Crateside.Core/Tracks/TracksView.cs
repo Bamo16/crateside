@@ -405,6 +405,7 @@ public sealed record TracksView
             // Reading the seed first made every file of a song report the same upload, so an
             // attached source could not be told from a stem cut alongside it.
             SourceVideoId = file.SourceVideoId ?? sourceVideoId,
+            IsPremium = file.IsPremium,
         };
     }
 

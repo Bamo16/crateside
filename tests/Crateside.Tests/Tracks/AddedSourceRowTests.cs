@@ -111,6 +111,29 @@ public class AddedSourceRowTests : IDisposable
     /// source wore a shortfall banner belonging to the source.
     /// </remarks>
     [Fact]
+    public void An_attached_source_that_arrived_below_premium_says_so_long_after_it_landed()
+    {
+        // Read from the file itself, not the acquisition record, which the janitor discards.
+        var row = Row([
+            Library("Some Track (Vocal - Full).flac", Track, "Vocal - Full"),
+            Library("Some Track (A Cappella).flac", Attached) with
+            {
+                IsPremium = false,
+            },
+        ]);
+
+        var line = new StemChoice
+        {
+            Label = "A Cappella",
+            Kind = StemKind.Source,
+            IsWanted = true,
+            Files = [.. row.Samples.Where(sample => sample.SourceVideoId == Attached)],
+        };
+
+        Assert.True(line.IsBelowPremium);
+    }
+
+    [Fact]
     public void A_poor_attached_source_does_not_park_the_track()
     {
         var row = Row(

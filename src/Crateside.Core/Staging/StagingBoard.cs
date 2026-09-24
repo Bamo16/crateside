@@ -104,6 +104,7 @@ public sealed class StagingBoard
             Path = path,
             FileName = Path.GetFileName(path),
             Preset = tags?.Provenance?.Preset,
+            IsPremium = tags?.Provenance?.IsPremium,
             AdoptedAs = tags?.Provenance is { IsAdopted: true, Label: { } adopted }
                 ? adopted
                 : null,
