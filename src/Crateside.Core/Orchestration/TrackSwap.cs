@@ -44,10 +44,9 @@ public sealed class TrackSwap(
     }
 
     /// <summary>
-    /// Tells keytag the new video is this song, records the URL, throws away the old audio, and
-    /// reopens separation.
+    /// Tells keytag the new video is this song — first, or its stems resolve to nothing — then
+    /// records the URL, throws away the old audio, and reopens separation.
     /// </summary>
-    /// <remarks>The restatement must land first, or stems cut from the new video resolve to nothing.</remarks>
     public async Task<SwapOutcome> ApplyAsync(
         string videoId,
         string url,
@@ -101,11 +100,10 @@ public sealed class TrackSwap(
         return new SwapOutcome { NewVideoId = plan.NewVideoId, Removed = removed };
     }
 
-    /// <summary>Has keytag record that the new video is this song, or says why it could not.</summary>
-    /// <remarks>
-    /// Skipped for a track with no verdict: a restatement exists to carry one across, which is
-    /// the case a premium shortfall makes (ADR 0016).
-    /// </remarks>
+    /// <summary>
+    /// Has keytag record that the new video is this song, or says why it could not; skipped with no
+    /// verdict to carry across (ADR 0016).
+    /// </summary>
     private async Task<string?> RestateAsync(
         string videoId,
         string newVideoId,

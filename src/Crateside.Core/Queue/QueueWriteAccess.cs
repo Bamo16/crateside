@@ -1,13 +1,9 @@
 namespace Crateside.Core.Queue;
 
 /// <summary>
-/// Whether crateside can still write to the playlist, and what happened when it last tried.
+/// Whether crateside can still write to the playlist, and what happened when it last tried. Only
+/// the user can renew a lapse, so it is reported until they do.
 /// </summary>
-/// <remarks>
-/// The write token lapses roughly weekly while the OAuth client is unapproved, and nothing
-/// automatic can renew it — re-consent is interactive. So a lapse is reported until the user
-/// acts on it, rather than once.
-/// </remarks>
 public sealed class QueueWriteAccess
 {
     private readonly Lock _gate = new();
@@ -80,9 +76,8 @@ public sealed class QueueWriteAccess
 
     /// <summary>
     /// Whether the user should be told now, true at most once per <paramref name="every"/> while
-    /// the lapse stands.
+    /// the lapse stands. Asking marks it told.
     /// </summary>
-    /// <remarks>Asking marks it told, so two callers do not each get a turn.</remarks>
     public bool ShouldTell(TimeSpan every)
     {
         lock (_gate)

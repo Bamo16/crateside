@@ -1,12 +1,9 @@
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
-/// The wake signal for every stage, so a change can reach the stages it concerns.
+/// The wake signal for every stage — for Separation and Verdict, the control each already waits
+/// on (ADR 0024).
 /// </summary>
-/// <remarks>
-/// Separation and Verdict are handed their own <see cref="DrainControl"/> rather than a fresh
-/// signal: a wake has to reach the object that worker is already waiting on (ADR 0024).
-/// </remarks>
 public sealed class StageSignals(DrainControl separation, VerdictControl verdict)
 {
     private readonly Dictionary<JobStage, DrainSignal> _signals = new()
@@ -28,12 +25,9 @@ public sealed class StageSignals(DrainControl separation, VerdictControl verdict
     }
 
     /// <summary>
-    /// Wakes every stage but the one that just ran, which has its own busy delay already.
+    /// Wakes every stage but the one that just ran, since the pipeline is not a line and any
+    /// stage may be next.
     /// </summary>
-    /// <remarks>
-    /// Broadcast rather than a successor map because the pipeline is not a line: a plan that keeps
-    /// the source has Download write straight into what Handoff picks up, skipping four stages.
-    /// </remarks>
     public void WakeAllBut(JobStage stage)
     {
         foreach (var (each, signal) in _signals)

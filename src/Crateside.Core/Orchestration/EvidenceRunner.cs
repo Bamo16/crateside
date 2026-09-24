@@ -1,12 +1,9 @@
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
-/// Produces the evidence for one track: runs the detectors over audio crateside already holds.
+/// Produces the evidence for one track: runs the detectors over audio crateside already holds
+/// (ADR 0019).
 /// </summary>
-/// <remarks>
-/// The download is <see cref="DownloadRunner"/>'s, and a track with no audio in its working set
-/// is not this stage's to pick up (ADR 0019).
-/// </remarks>
 public sealed class EvidenceRunner(WorkingSet workingSet, CratesidePaths paths, string uv = "uv")
 {
     public async Task<EvidenceResult> RunAsync(
@@ -27,10 +24,6 @@ public sealed class EvidenceRunner(WorkingSet workingSet, CratesidePaths paths, 
     /// Runs keytag's declared detector over the audio, writing the machine layer into the
     /// working set for a verdict run to pick up later.
     /// </summary>
-    /// <remarks>
-    /// <c>--project</c> rather than a working-directory change, so the absolute paths passed in
-    /// still resolve against crateside. Nothing here reaches past the declared name.
-    /// </remarks>
     private async Task<EvidenceResult> DetectAsync(
         WorkOrder order,
         string audioPath,

@@ -13,13 +13,9 @@ public sealed class EvidenceSelector(
     public const int DefaultMaxStrikes = 5;
 
     /// <summary>
-    /// The next track to detect: oldest-added first, skipping anything already detected, in
+    /// The next track to detect: oldest-added first, skipping anything with evidence already, in
     /// flight, or given up on.
     /// </summary>
-    /// <remarks>
-    /// Evidence already in the working set is what makes this terminate: detection records
-    /// nothing in the ledger, so a detected track is still outstanding.
-    /// </remarks>
     public bool TryPickNext(QueueView view, out QueueItem next)
     {
         next = view.Outstanding.FirstOrDefault(i =>
@@ -35,10 +31,7 @@ public sealed class EvidenceSelector(
         return next is not null;
     }
 
-    /// <remarks>
-    /// retrySucceeded is true here: the check above already confirmed the evidence is gone, and
-    /// the working set may be deleted by hand at any time.
-    /// </remarks>
+    /// <summary>Retries even a succeeded detection, since the caller has already found its evidence gone.</summary>
     private bool IsEligible(QueueItem item) =>
         StageEligibility.Allows(
             jobs,

@@ -90,12 +90,9 @@ public sealed class VerdictRunner(
     }
 
     /// <summary>
-    /// Why the agent could not be run, or null when the failure is about this track.
+    /// Why the agent could not be run, read from its prose as well as its JSON, or null when the
+    /// failure is about this track.
     /// </summary>
-    /// <remarks>
-    /// Reads the prose as well as the JSON, since a session that stops before emitting JSON still
-    /// says why in a sentence.
-    /// </remarks>
     private static string? AgentUnavailableReason(params string[] streams) =>
         streams switch
         {
@@ -113,12 +110,9 @@ public sealed class VerdictRunner(
         );
 
     /// <summary>
-    /// The work order, rendered for the session.
+    /// The work order, rendered for the session. Names the evidence path even when embedding it,
+    /// since the recorder takes it as <c>--machine</c>.
     /// </summary>
-    /// <remarks>
-    /// The evidence path is still included even though its content is embedded below, because
-    /// the recorder takes it as its <c>--machine</c> argument.
-    /// </remarks>
     internal string Prompt(WorkOrder order)
     {
         List<string> lines =

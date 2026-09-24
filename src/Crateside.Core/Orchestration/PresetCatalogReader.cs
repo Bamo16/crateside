@@ -6,10 +6,6 @@ namespace Crateside.Core.Orchestration;
 /// <summary>
 /// Asks StemForge what it can make, once per process.
 /// </summary>
-/// <remarks>
-/// The catalog changes only when audio-separator is upgraded underneath StemForge, so a restart
-/// is a fine way to pick that up.
-/// </remarks>
 public sealed class PresetCatalogReader(string stemforge = "stemforge-cli")
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
@@ -17,13 +13,9 @@ public sealed class PresetCatalogReader(string stemforge = "stemforge-cli")
     private PresetCatalog? _cached;
 
     /// <summary>
-    /// The catalog, or <see cref="PresetCatalog.Empty"/> when the separator could not be asked.
-    /// Never throws: not having StemForge on PATH is an answer, not a fault.
+    /// The catalog, or <see cref="PresetCatalog.Empty"/> — never cached, never thrown — when the
+    /// separator could not be asked.
     /// </summary>
-    /// <remarks>
-    /// Only a non-empty read is cached: empty is how both failures read, and caching one would
-    /// pin a first-run failure for the life of the process.
-    /// </remarks>
     public async Task<PresetCatalog> ReadAsync(CancellationToken cancellationToken = default)
     {
         if (_cached is { } hit)

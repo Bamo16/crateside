@@ -3,11 +3,10 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Core.Orchestration;
 
-/// <summary>Takes a track out of crateside: the user saying they do not want it (ADR 0027).</summary>
-/// <remarks>
-/// The records go before the files, or a plan that keeps its source copies it back while it is
-/// being recycled (#33). Only <c>Sample Staging</c> is reachable from here, never the library.
-/// </remarks>
+/// <summary>
+/// Takes a track out of crateside, records before files, and never reaches past
+/// <c>Sample Staging</c> (ADR 0027, #33).
+/// </summary>
 public sealed class TrackRemoval(
     QueueSettingsStore settings,
     IntakeStore intake,
@@ -18,8 +17,7 @@ public sealed class TrackRemoval(
 {
     private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
 
-    /// <summary>The staged files removing this track would recycle.</summary>
-    /// <remarks>Not an adopted sample: the user made that, and nothing can make it again.</remarks>
+    /// <summary>The staged files removing this track would recycle, never an adopted sample.</summary>
     public IReadOnlyList<StagingStem> Recycling(IReadOnlyList<string> uploads) =>
         [
             .. uploads

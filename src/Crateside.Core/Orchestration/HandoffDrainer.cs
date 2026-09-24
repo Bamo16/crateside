@@ -58,11 +58,7 @@ public sealed class HandoffDrainer(
     private static string? Cleared(int count) =>
         count is 0 ? null : $"{"superseded file".ToQuantity(count)} removed from Sample Staging";
 
-    /// <summary>Every upload the user has asked to keep, across all tracks.</summary>
-    /// <remarks>
-    /// An added source is a second upload of a song that is wanted alongside the first, which is
-    /// the one shape "superseded" was never written for.
-    /// </remarks>
+    /// <summary>Every upload the user has asked to keep, across all tracks, and so never superseded.</summary>
     private IReadOnlySet<string> Kept() =>
         settings
             .Read()
@@ -71,12 +67,9 @@ public sealed class HandoffDrainer(
             .ToHashSet(StringComparer.Ordinal);
 
     /// <summary>
-    /// What the user calls the track this file belongs to, or null when they have not said.
+    /// What the user calls the track this file belongs to — through its owner, for an added
+    /// source — or null when they have not said (ADR 0014).
     /// </summary>
-    /// <remarks>
-    /// An added source carries a video ID of its own, so it is looked up through the track that
-    /// asked for it — otherwise it sits apart from those stems in Ableton's browser (ADR 0014).
-    /// </remarks>
     private string? NameFor(string videoId) =>
         Owner(videoId) switch
         {

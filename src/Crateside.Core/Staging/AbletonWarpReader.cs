@@ -6,12 +6,8 @@ namespace Crateside.Core.Staging;
 
 /// <summary>
 /// Reads the warp section of Ableton's `.asd` sidecar, which is undocumented and described by a
-/// type schema the file carries in its own header.
+/// type schema the file carries in its own header (ADR 0002).
 /// </summary>
-/// <remarks>
-/// Read-only and never written. Presence of a sidecar says only that Ableton analysed the file
-/// (ADR 0002); <see cref="AbletonWarp.Markers"/> is what says how it was warped.
-/// </remarks>
 public static class AbletonWarpReader
 {
     private const byte ClassCode = 0x00;
@@ -153,11 +149,8 @@ public static class AbletonWarpReader
 
     /// <summary>
     /// Offsets of every fixed-width value in the instance, keyed by dotted path, up to the first
-    /// variable-length member.
+    /// variable-length member, <c>WarpMarkers</c>, which <paramref name="markers"/> reaches.
     /// </summary>
-    /// <remarks>
-    /// That member is <c>WarpMarkers</c>, reached through <paramref name="markers"/> instead.
-    /// </remarks>
     private static bool TryLayout(
         Dictionary<string, SchemaField[]?> types,
         int instance,

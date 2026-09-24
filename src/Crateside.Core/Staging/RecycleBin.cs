@@ -4,13 +4,9 @@ using System.Runtime.Versioning;
 namespace Crateside.Core.Staging;
 
 /// <summary>
-/// Deletes a sample to the recycle bin, so a removal the user did not mean can be undone.
+/// Deletes a sample to the recycle bin, never showing a dialog: one would block the drain loop
+/// this runs in.
 /// </summary>
-/// <remarks>
-/// Silent by construction: this runs inside a drain loop, where a shell dialog would block the
-/// thread rather than reach anyone. That rules out <c>Microsoft.VisualBasic</c>'s helper, whose
-/// quietest setting still shows errors.
-/// </remarks>
 public static class RecycleBin
 {
     private const uint DeleteOperation = 0x0003;
@@ -19,12 +15,9 @@ public static class RecycleBin
     private const ushort SilentAndUndoable = 0x0010 | 0x0004 | 0x0040 | 0x0400 | 0x0200;
 
     /// <summary>
-    /// Removes the file if it is there, recoverably where the platform allows.
+    /// Removes the file if it is there, recoverably where the platform allows; already gone is
+    /// success.
     /// </summary>
-    /// <remarks>
-    /// Absent is success: every caller is making the file not exist, and a second pass over a
-    /// path already gone is not a failure.
-    /// </remarks>
     public static void Remove(string path)
     {
         if (!File.Exists(path))

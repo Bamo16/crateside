@@ -60,12 +60,9 @@ public sealed class TrackRename(
         Rename(videoId, derivedName, stored: null);
 
     /// <summary>
-    /// Stores the instruction, then moves the files.
+    /// Stores the instruction, then moves the files — in that order, so a rename stopped half way
+    /// is finished by pressing again.
     /// </summary>
-    /// <remarks>
-    /// That order matters: the moves can stop half way, and the name has to survive it so pressing
-    /// again finishes the rest.
-    /// </remarks>
     private RenameOutcome Rename(string videoId, string name, string? stored)
     {
         var plan = PlanFor(videoId, name);
@@ -198,9 +195,9 @@ public sealed record RenameOutcome
     public string? Problem { get; init; }
 
     /// <summary>
-    /// The tag store or the warp markers did not follow, though the files were renamed.
+    /// The tag store or the warp markers did not follow, though the files were renamed — which
+    /// still <see cref="Succeeded"/>.
     /// </summary>
-    /// <remarks>Not a failure — <see cref="Succeeded"/> is still true.</remarks>
     public string? Note { get; init; }
 
     public bool Succeeded => Problem is null;

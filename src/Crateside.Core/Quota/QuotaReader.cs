@@ -4,12 +4,8 @@ using System.Text.Json;
 namespace Crateside.Core.Quota;
 
 /// <summary>
-/// Reads the user's five-hour Claude window from Anthropic's usage endpoint.
+/// Reads the user's five-hour Claude window from Anthropic's usage endpoint, which is undocumented.
 /// </summary>
-/// <remarks>
-/// The endpoint is undocumented, so every read is defensive and every failure is
-/// <see cref="QuotaSnapshot.Unknown"/> rather than an exception.
-/// </remarks>
 public sealed class QuotaReader(HttpClient client)
 {
     private const string UsagePath = "/api/oauth/usage";
@@ -21,9 +17,9 @@ public sealed class QuotaReader(HttpClient client)
     public string CredentialsPath { get; init; } = DefaultCredentialsPath();
 
     /// <summary>
-    /// The current window, or <see cref="QuotaSnapshot.Unknown"/> if it cannot be read.
+    /// The current window, or <see cref="QuotaSnapshot.Unknown"/> — never an exception — if it
+    /// cannot be read.
     /// </summary>
-    /// <remarks>Never throws. Every failure is the same answer: nothing to show.</remarks>
     public async Task<QuotaSnapshot> ReadAsync(CancellationToken cancellationToken = default)
     {
         if (ReadAccessToken() is not { Length: > 0 } token)

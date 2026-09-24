@@ -13,13 +13,9 @@ public sealed class SeparationSelector(
     public const int DefaultMaxStrikes = 3;
 
     /// <summary>
-    /// The next track to separate: oldest-added first, skipping anything already done, in
-    /// flight, or given up on.
+    /// The next judged track to separate, even LOW or WITHHELD: oldest-added first, skipping
+    /// anything already done, in flight, or given up on.
     /// </summary>
-    /// <remarks>
-    /// Reads <see cref="QueueView.AwaitingSeparation"/>, not <see cref="QueueView.Outstanding"/>:
-    /// separation needs a verdict's recipe and destination. LOW and WITHHELD still count as one.
-    /// </remarks>
     public bool TryPickNext(QueueView view, KeyLedger ledger, out WorkOrder order)
     {
         if (
@@ -37,10 +33,10 @@ public sealed class SeparationSelector(
         return true;
     }
 
-    /// <remarks>
-    /// <paramref name="retrySucceeded"/> is false here, unlike the other selectors: a recorded
-    /// success with no stems on disk most likely means they were deleted on purpose.
-    /// </remarks>
+    /// <summary>
+    /// Never retries a success, unlike the other selectors: stems gone after one were most likely
+    /// deleted on purpose.
+    /// </summary>
     private bool IsEligible(QueueItem item) =>
         StageEligibility.Allows(
             jobs,

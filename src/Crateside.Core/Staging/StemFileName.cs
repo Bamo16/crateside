@@ -16,12 +16,9 @@ public static partial class StemFileName
         );
 
     /// <summary>
-    /// Ableton's analysis file for a sample, which is where the warp markers live.
+    /// Ableton's analysis file for a sample, where the warp markers live — the whole name plus
+    /// <c>.asd</c>, as in <c>99th Street (Drums).flac.asd</c>.
     /// </summary>
-    /// <remarks>
-    /// Appended to the sample's <em>whole</em> name, extension included:
-    /// <c>99th Street (Drums).flac.asd</c>, not <c>99th Street (Drums).asd</c>.
-    /// </remarks>
     public static string AnalysisFor(string samplePath) => samplePath + ".asd";
 
     /// <summary>The name with its preset stripped — what the files of one song have in common.</summary>
@@ -29,12 +26,9 @@ public static partial class StemFileName
         PresetSuffix.Replace(Path.GetFileNameWithoutExtension(path), string.Empty).Trim();
 
     /// <summary>
-    /// What the name claims the preset is, or null where it claims nothing.
+    /// What the name claims the preset is, or null where it claims nothing. Only the separator's
+    /// catalog can confirm the claim.
     /// </summary>
-    /// <remarks>
-    /// A claim and not a fact: a source download called <c>Gucci Gucci (Acapella)</c> reads the
-    /// same way, and only the separator's catalog can confirm one.
-    /// </remarks>
     public static string? PresetOf(string path) =>
         PresetSuffix.Match(Path.GetFileNameWithoutExtension(path)) is { Success: true } match
             ? match.Groups["preset"].Value

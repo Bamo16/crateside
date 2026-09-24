@@ -79,12 +79,8 @@ public sealed class SeparationRunner(
     }
 
     /// <summary>
-    /// Whether the run produced what the recipe asked for, said as an error when it did not.
+    /// Whether the run produced at least what the recipe asked for, said as an error when it did not.
     /// </summary>
-    /// <remarks>
-    /// Only a shortfall counts as failure; more outputs than the recipe expected is not treated
-    /// as harm.
-    /// </remarks>
     private static string? ShortfallFrom(SeparationRecipe recipe, IReadOnlyList<string> outputs) =>
         outputs.Count < recipe.ExpectedOutputs
             ? $"the recipe asked for {"file".ToQuantity(recipe.ExpectedOutputs)} "
@@ -106,12 +102,9 @@ public sealed class SeparationRunner(
     }
 
     /// <summary>
-    /// Reads the outcome out of the run.
+    /// Reads the outcome out of the run, JSON included, since a zero exit can still carry a
+    /// per-input failure.
     /// </summary>
-    /// <remarks>
-    /// A zero exit still has to be checked: the CLI reports per-input failures inside its JSON
-    /// rather than by failing the whole process.
-    /// </remarks>
     private static string? FailureFrom(int exitCode, string stdout, string stderr)
     {
         if (exitCode != 0)

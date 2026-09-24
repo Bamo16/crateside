@@ -6,12 +6,8 @@ namespace Crateside;
 
 /// <summary>
 /// Asks StemForge what each queued track's files will be called, so the user can decide whether
-/// to rename before the GPU runs rather than after.
+/// to rename before the GPU runs. Never paused: it contends for nothing.
 /// </summary>
-/// <remarks>
-/// Not an <see cref="IStageDrainer"/> and deliberately not pausable: it contends for nothing
-/// — no GPU, no Claude quota.
-/// </remarks>
 public sealed class NameWorker(
     QueueService queue,
     NameResolver resolver,
@@ -25,9 +21,8 @@ public sealed class NameWorker(
 
     /// <summary>
     /// Uploads that would not resolve, so a removed or private video is not asked about every
-    /// tick for ever.
+    /// tick for ever. Held in memory only, so a restart retries them.
     /// </summary>
-    /// <remarks>Not persisted: a restart is a cheap place to retry a call that may have been unlucky.</remarks>
     private readonly HashSet<string> _unresolvable = new(StringComparer.Ordinal);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

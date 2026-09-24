@@ -69,12 +69,9 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
     public string FlatName => $"{FlatNames[Chromatic]} {Mode}";
 
     /// <summary>
-    /// The ledger's spelling: ASCII accidental, lowercase mode — <c>G# major</c>.
+    /// The ledger's spelling, which crateside joins on: ASCII accidental, lowercase mode —
+    /// <c>G# major</c>.
     /// </summary>
-    /// <remarks>
-    /// What keytag records and what Ableton's keywords normalize to, so it is the form crateside
-    /// joins on.
-    /// </remarks>
     public string LedgerName =>
         $"{SharpNames[Chromatic].Replace('♯', '#')} {Mode.ToString().ToLowerInvariant()}";
 
@@ -130,12 +127,8 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
         };
 
     /// <summary>
-    /// Parses a key from a name or a Camelot code.
+    /// Parses a key from any usual spelling or a Camelot code, or returns null rather than guessing.
     /// </summary>
-    /// <remarks>
-    /// Accepts the ledger's spelling, the Unicode spelling, flats, shorthand and codes. Returns
-    /// null rather than guessing.
-    /// </remarks>
     public static MusicKey? FromString(string? input)
     {
         if (

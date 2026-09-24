@@ -5,11 +5,9 @@ using System.Text.Json.Serialization;
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
-/// crateside's record of the work it has run, in <c>%APPDATA%\crateside\jobs.jsonl</c>.
+/// crateside's record of the work it has run, in <c>%APPDATA%\crateside\jobs.jsonl</c>:
+/// append-only, the latest line winning for an id.
 /// </summary>
-/// <remarks>
-/// Append-only, one JSON object per line, latest line wins for an id.
-/// </remarks>
 /// <param name="hub">
 /// Told about every recorded change, so a page can update the one row that moved.
 /// </param>
@@ -56,12 +54,8 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
     }
 
     /// <summary>
-    /// Puts a track a stage has given up on back in line.
+    /// Puts a track a stage has given up on back in line, its strikes kept on the record.
     /// </summary>
-    /// <remarks>
-    /// Records <see cref="JobStatus.Cancelled"/> rather than clearing anything: the strikes stay
-    /// on the record, but stop being a verdict on the track.
-    /// </remarks>
     public TrackJob Forgive(string videoId, JobStage stage) =>
         Record(videoId, stage, JobStatus.Cancelled, error: "put back in line by hand");
 
