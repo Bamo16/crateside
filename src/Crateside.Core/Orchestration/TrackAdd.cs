@@ -59,6 +59,27 @@ public sealed class TrackAdd(
         );
 
     /// <summary>
+    /// Queues every library upload nothing ever judged, to be judged and never cut (#47), and
+    /// returns how many. Their audio is taken as it comes: the library already uses those files.
+    /// </summary>
+    public int QueueUnjudged(IReadOnlyList<TrackRowFacts> known)
+    {
+        var unjudged = known
+            .Where(track => track is { IsLibraryOnly: true, HasVerdict: false })
+            .Select(track => track.VideoId)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        foreach (var videoId in unjudged)
+        {
+            settings.AddByUrl(videoId);
+            settings.AcceptUpload(videoId, videoId);
+        }
+
+        return unjudged.Length;
+    }
+
+    /// <summary>
     /// Records the track, having said what its audio is first so a poor upload is the user's to
     /// accept (ADR 0019).
     /// </summary>

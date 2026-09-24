@@ -44,3 +44,17 @@ when the window has read 0% for fifteen minutes, and then not again for five hou
 - If the endpoint turns out to report an idle window some other way (no `five_hour` at all, say),
   rolling will quietly never fire. The first real idle window is the test. Check the log line
   `Opened an idle window` after one.
+
+## Amendment, 2026-09-24 — the 90 can be reached after all
+
+*Consequences* above says a roll does nothing for #47's 90 library uploads, because "nothing yet
+puts them in front of the verdict stage without also queueing a re-cut". That was wrong when it was
+written. `TrackAdd` already judged a pasted library-only upload without cutting it
+(`JudgesWhatIsHere`), because the inventory satisfies the plan.
+
+What was actually missing is now built. The Library page queues every never-judged upload at once,
+and records each one's audio as accepted (#31), since the library already uses those files. The
+janitor sweeps a judge-only track's working set once it is judged, where before it only ever swept
+after a separation. Queued, the 90 are fetched and detected straight away, about 44 MB of audio
+each (the mean of the nine working sets on disk that day), and a roll judges them one per idle
+window.

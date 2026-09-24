@@ -15,6 +15,7 @@ public class WorkingSetJanitorTests : IDisposable
     );
 
     private string Staging => Path.Combine(_directory, "Sample Staging");
+    private string Library => Path.Combine(_directory, "Mashup Samples");
     private JobStore Jobs => field ??= new JobStore(Path.Combine(_directory, "jobs.jsonl"));
     private WorkingSet Set => field ??= new WorkingSet(Path.Combine(_directory, "working"));
 
@@ -26,6 +27,7 @@ public class WorkingSetJanitorTests : IDisposable
                 new CratesidePaths
                 {
                     SampleStaging = Staging,
+                    MashupSamples = Library,
                     Ledger = Path.Combine(_directory, "runs.jsonl"),
                 }
             )
@@ -113,6 +115,55 @@ public class WorkingSetJanitorTests : IDisposable
 
     [Fact]
     public void Sweeping_nothing_is_not_an_error() => Assert.Equal(0, Janitor.Sweep());
+
+    [Fact]
+    public void A_track_queued_only_to_judge_library_files_is_finished_with_once_judged()
+    {
+        GiveWorkingSet();
+        Judge();
+        WriteLibraryStem();
+
+        Assert.Equal(1, Janitor.Sweep());
+        Assert.Empty(Set.VideoIds);
+    }
+
+    [Fact]
+    public void A_judged_track_with_nothing_on_disk_keeps_its_working_set_for_separation()
+    {
+        GiveWorkingSet();
+        Judge();
+
+        Assert.Equal(0, Janitor.Sweep());
+        Assert.Single(Set.VideoIds);
+    }
+
+    private void Judge() =>
+        File.WriteAllText(
+            Path.Combine(_directory, "runs.jsonl"),
+            System.Text.Json.JsonSerializer.Serialize(
+                new
+                {
+                    timestamp = "2026-09-24T00:00:00+00:00",
+                    song = "yes - owner of a lonely heart",
+                    source_url = $"https://www.youtube.com/watch?v={VideoId}",
+                    verdict = new { key = "A minor", confidence = "HIGH" },
+                }
+            )
+        );
+
+    private void WriteLibraryStem()
+    {
+        Directory.CreateDirectory(Library);
+
+        var path = Path.Combine(Library, "Yes - Owner of a Lonely Heart (Vocal - Full).flac");
+
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), path);
+
+        using var file = TagLib.File.Create(path);
+        file.Tag.Comment =
+            $"stemforge/0.2.1.1 | preset: Vocal - Full | source: https://www.youtube.com/watch?v={VideoId}";
+        file.Save();
+    }
 
     private void WriteStem(string fileName)
     {

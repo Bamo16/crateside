@@ -3,10 +3,14 @@
 @using System.Globalization
 @using Crateside.Core.Genres
 @using Crateside.Core.Library
+@using Crateside.Core.Orchestration
+@using Crateside.Core.Tracks
 @using Humanizer
 @rendermode InteractiveServer
 @inject LibrarySummary Summary
 @inject GenreStore GenreRecords
+@inject TracksService Tracks
+@inject TrackAdd Adding
 
 <PageTitle>Library — crateside</PageTitle>
 
@@ -37,6 +41,24 @@
             @("file".ToQuantity(_distribution.FileCount)) carry a key, across
             @("key".ToQuantity(Represented)) of 24.
         </p>
+
+        @if (Unjudged.Count > 0)
+        {
+            <p class="unjudged">
+                <strong>@("upload".ToQuantity(Unjudged.Count))</strong> here
+                @(Unjudged.Count is 1 ? "was" : "were") never judged: tagged by hand before
+                crateside, so the audit cannot check their keys.
+                <button class="queue" @onclick="QueueUnjudged" disabled="@_reading">
+                    Queue them for judging
+                </button>
+                Nothing is cut. Each is fetched and detected now, about 44 MB of audio apiece that
+                stays until it is judged, which happens when judging runs or an idle window rolls.
+            </p>
+        }
+        @if (_queued is { } queued)
+        {
+            <p class="unjudged">Queued @("upload".ToQuantity(queued)) for judging.</p>
+        }
 
         @if (_distribution.PerishableCount > 0)
         {
@@ -142,6 +164,30 @@
     private KeyDistribution _distribution = null!;
     private IReadOnlyList<GenreGap> _gaps = [];
     private bool _reading;
+    private int? _queued;
+
+    private IReadOnlyList<TrackRowFacts> Unjudged =>
+        [
+            .. (Tracks.Current?.Rows ?? [])
+                .Where(row => row is { IsLibraryOnly: true, Verdict: null, IsAddedByUrl: false })
+                .Select(row => row.Facts),
+        ];
+
+    private async Task QueueUnjudged()
+    {
+        _reading = true;
+
+        try
+        {
+            _queued = Adding.QueueUnjudged(Unjudged);
+
+            await Tracks.RefreshAsync();
+        }
+        finally
+        {
+            _reading = false;
+        }
+    }
 
     private IEnumerable<KeyCount> Ordered =>
         _distribution.Counts.OrderByDescending(c => c.Files).ThenBy(c => c.Key);
