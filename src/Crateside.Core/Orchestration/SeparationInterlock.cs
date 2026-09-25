@@ -58,6 +58,13 @@ public sealed class SeparationInterlock(JobStore jobs, IProcessProbe probe)
         return job is not null;
     }
 
+    /// <summary>
+    /// Whether this track's separation process is alive right now, and so may still be writing
+    /// files; a recorded <c>Running</c> whose process is gone says nothing.
+    /// </summary>
+    public bool IsSeparating(string videoId) =>
+        jobs.TryGet(videoId, JobStage.Separation, out var job) && job.IsOpen && IsStillRunning(job);
+
     /// <summary>Records that a separation process has been launched and now owns the GPU.</summary>
     public TrackJob Claim(string videoId, int processId, DateTimeOffset processStartedAt) =>
         jobs.Record(videoId, JobStage.Separation, JobStatus.Running, processId, processStartedAt);

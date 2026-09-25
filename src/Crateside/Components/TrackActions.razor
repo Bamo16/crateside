@@ -16,7 +16,7 @@
     {
         <button class="outline" @onclick="OpenFolder">Open folder</button>
     }
-    @if (ShowDetailsLink && Row.Verdict is not null)
+    @if (ShowDetailsLink)
     {
         <a class="outline" href="@($"song/{Row.VideoId}")">Track details</a>
     }

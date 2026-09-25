@@ -107,7 +107,12 @@ public sealed class GenreWorker(
 
         foreach (var (song, artist, record) in songs)
         {
-            var genre = learned.GetValueOrDefault(artist);
+            // Never over the song's own sources: an artist's outliers name another genre (ADR 0033).
+            var fits = learned.GetValueOrDefault(artist);
+            var genre =
+                fits is not null && (record?.Suggested is null || record.Suggested == fits)
+                    ? fits
+                    : null;
 
             if (
                 record is { IsTheUsersAnswer: true }

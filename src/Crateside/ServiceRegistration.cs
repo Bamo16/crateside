@@ -198,7 +198,8 @@ public static class ServiceRegistration
 
         services.AddSingleton(sp => new HandoffSelector(
             sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<CratesidePaths>()
+            sp.GetRequiredService<CratesidePaths>(),
+            sp.GetRequiredService<SeparationInterlock>()
         ));
         services.AddSingleton(_ => DeletionLog.Default());
         services.AddSingleton(_ => ActionLog.Default());

@@ -509,6 +509,9 @@
                 if (YouTubeUrl.TryGetVideoId(_trackUrl, out var added))
                     Actions.Record(added, UserActionKind.Added, _trackUrl);
 
+                // Otherwise the stage finishes its idle wait before it looks at the new track.
+                Signals.Wake(JobStage.Download);
+
                 CancelAddTrack();
             }
 

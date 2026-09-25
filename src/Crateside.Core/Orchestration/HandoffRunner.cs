@@ -107,6 +107,7 @@ public sealed record HandoffResult
 public sealed class HandoffSelector(
     JobStore jobs,
     CratesidePaths paths,
+    SeparationInterlock interlock,
     int maxStrikes = HandoffSelector.DefaultMaxStrikes
 )
 {
@@ -148,10 +149,10 @@ public sealed class HandoffSelector(
         );
 
     /// <summary>
-    /// Whether what is on disk for this track is all there is going to be. Only a failed
-    /// separation says otherwise; a running one may never be released (ADR 0025).
+    /// Whether what is on disk for this track is all there is going to be: not while its
+    /// separation failed, or while its process is still alive and writing (ADR 0034).
     /// </summary>
     private bool SeparationOwesNothingMore(string videoId) =>
         !jobs.TryGet(videoId, JobStage.Separation, out var separation)
-        || separation is not { Status: JobStatus.Failed };
+        || separation is { Status: not JobStatus.Failed } && !interlock.IsSeparating(videoId);
 }

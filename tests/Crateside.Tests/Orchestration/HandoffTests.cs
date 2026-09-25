@@ -167,10 +167,7 @@ public class HandoffTests : IDisposable
 
         File.WriteAllText(parked, "parked");
 
-        var selector = new HandoffSelector(
-            new JobStore(Path.Combine(_directory, "jobs.jsonl")),
-            _paths
-        );
+        var selector = Selector(new JobStore(Path.Combine(_directory, "jobs.jsonl")));
 
         Assert.False(selector.TryPickNext(out _, out _));
         Assert.True(File.Exists(parked));
@@ -190,7 +187,7 @@ public class HandoffTests : IDisposable
             error: "separation process 25220 is gone without recording a result"
         );
 
-        Assert.False(new HandoffSelector(jobs, _paths).TryPickNext(out _, out _));
+        Assert.False(Selector(jobs).TryPickNext(out _, out _));
     }
 
     [Fact]
@@ -202,7 +199,7 @@ public class HandoffTests : IDisposable
 
         jobs.Record("_DiMKyZwaA0", JobStage.Separation, JobStatus.Succeeded);
 
-        Assert.True(new HandoffSelector(jobs, _paths).TryPickNext(out var videoId, out _));
+        Assert.True(Selector(jobs).TryPickNext(out var videoId, out _));
         Assert.Equal("_DiMKyZwaA0", videoId);
     }
 
@@ -213,7 +210,7 @@ public class HandoffTests : IDisposable
 
         Provenanced("Moe Shop - HARDCODED (Original).flac", "_DiMKyZwaA0");
 
-        Assert.True(new HandoffSelector(jobs, _paths).TryPickNext(out var videoId, out _));
+        Assert.True(Selector(jobs).TryPickNext(out var videoId, out _));
         Assert.Equal("_DiMKyZwaA0", videoId);
     }
 
@@ -223,11 +220,32 @@ public class HandoffTests : IDisposable
         // No provenance, so it joins to nothing.
         Stem("Something Else.flac");
 
-        var selector = new HandoffSelector(
-            new JobStore(Path.Combine(_directory, "jobs.jsonl")),
-            _paths
-        );
+        var selector = Selector(new JobStore(Path.Combine(_directory, "jobs.jsonl")));
 
         Assert.False(selector.TryPickNext(out _, out _));
     }
+
+    [Fact]
+    public void A_separation_still_running_is_not_handed_off_until_its_process_is_gone()
+    {
+        var jobs = new JobStore(Path.Combine(_directory, "jobs.jsonl"));
+        var started = new DateTimeOffset(2026, 9, 25, 22, 46, 22, TimeSpan.Zero);
+        var probe = new FakeProcessProbe { Running = { [33224] = started } };
+
+        // The vocal is finished and in the cut root; the separation is still writing the rest.
+        Provenanced("T & Sugah - TumDaDaDum (Vocal - Full).flac", "vaQClQzY2fk");
+        jobs.Record("vaQClQzY2fk", JobStage.Separation, JobStatus.Running, 33224, started);
+
+        var selector = new HandoffSelector(jobs, _paths, new SeparationInterlock(jobs, probe));
+
+        Assert.False(selector.TryPickNext(out _, out _));
+
+        probe.Running.Clear();
+
+        Assert.True(selector.TryPickNext(out var videoId, out _));
+        Assert.Equal("vaQClQzY2fk", videoId);
+    }
+
+    private HandoffSelector Selector(JobStore jobs) =>
+        new(jobs, _paths, new SeparationInterlock(jobs, new FakeProcessProbe()));
 }
