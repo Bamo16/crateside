@@ -31,6 +31,7 @@ public class StemLandingTests : IDisposable
         {
             StemsKeyIdentified = Path.Combine(_root, "identified"),
             StemsUnresolvedKey = Path.Combine(_root, "unresolved"),
+            SampleStaging = Path.Combine(_root, "staging"),
             Ledger = Path.Combine(_root, "runs.jsonl"),
         };
 
@@ -154,5 +155,98 @@ public class StemLandingTests : IDisposable
                 outputs
             )
         );
+    }
+
+    private JobStore Jobs => field ??= new JobStore(Path.Combine(_root, "jobs.jsonl"));
+
+    /// <summary>A kept source copied out before its verdict, as Darude - Sandstorm was on 2026-09-25.</summary>
+    private string ParkedSource()
+    {
+        var root = Paths.DestinationFor(StemDestination.UnresolvedKey);
+        var path = Path.Combine(root, "High Contrast, Boy Matthews - Questions.flac");
+
+        Directory.CreateDirectory(root);
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), path);
+
+        using var file = TagLib.File.Create(path);
+        file.Tag.Comment =
+            $"stemforge/0.3.1.0 | date: 2026-09-25 | source: https://www.youtube.com/watch?v={Video}";
+        file.Save();
+
+        return path;
+    }
+
+    [Fact]
+    public void A_parked_file_whose_song_has_since_been_judged_is_released()
+    {
+        var parked = ParkedSource();
+
+        File.WriteAllText(parked + ".asd", "analysis");
+
+        Assert.Equal(1, StemLanding.ReleaseParked(Paths, Ledger("HIGH"), Jobs));
+
+        var landed = Path.Combine(
+            Paths.DestinationFor(StemDestination.KeyIdentified),
+            Path.GetFileName(parked)
+        );
+
+        Assert.True(File.Exists(landed));
+        Assert.True(File.Exists(landed + ".asd"));
+        Assert.False(File.Exists(parked));
+    }
+
+    [Fact]
+    public void A_parked_file_whose_verdict_is_still_withheld_stays()
+    {
+        var parked = ParkedSource();
+
+        Assert.Equal(0, StemLanding.ReleaseParked(Paths, Ledger("WITHHELD"), Jobs));
+        Assert.True(File.Exists(parked));
+    }
+
+    [Fact]
+    public void A_separation_still_writing_its_outputs_is_left_to_land_them_itself()
+    {
+        var parked = ParkedSource();
+
+        Jobs.Record(Video, JobStage.Separation, JobStatus.Running);
+
+        Assert.Equal(0, StemLanding.ReleaseParked(Paths, Ledger("HIGH"), Jobs));
+        Assert.True(File.Exists(parked));
+    }
+
+    [Fact]
+    public void A_parked_copy_of_a_file_already_staged_is_recycled_rather_than_released()
+    {
+        // Logistics - Over and Out, 2026-09-25: released onto a staged twin, the handoff struck out.
+        var parked = ParkedSource();
+        var staged = Path.Combine(Paths.SampleStaging, Path.GetFileName(parked));
+
+        Directory.CreateDirectory(Paths.SampleStaging);
+        File.Copy(parked, staged);
+
+        Assert.Equal(1, StemLanding.ReleaseParked(Paths, Ledger("HIGH"), Jobs));
+        Assert.False(File.Exists(parked));
+        Assert.False(
+            File.Exists(
+                Path.Combine(
+                    Paths.DestinationFor(StemDestination.KeyIdentified),
+                    Path.GetFileName(parked)
+                )
+            )
+        );
+        Assert.True(File.Exists(staged));
+    }
+
+    [Fact]
+    public void A_parked_file_whose_staged_namesake_differs_stays_parked()
+    {
+        var parked = ParkedSource();
+
+        Directory.CreateDirectory(Paths.SampleStaging);
+        File.WriteAllText(Path.Combine(Paths.SampleStaging, Path.GetFileName(parked)), "other");
+
+        Assert.Equal(0, StemLanding.ReleaseParked(Paths, Ledger("HIGH"), Jobs));
+        Assert.True(File.Exists(parked));
     }
 }

@@ -15,7 +15,8 @@ public sealed class HandoffDrainer(
     JobStore jobs,
     IOptions<CratesidePaths> paths,
     QueueSettingsStore settings,
-    ResolvedNameStore names
+    ResolvedNameStore names,
+    DeletionLog? deletions = null
 ) : IStageDrainer
 {
     private readonly CratesidePaths _paths = paths.Value;
@@ -24,10 +25,12 @@ public sealed class HandoffDrainer(
 
     public Task<StageTick> DrainOnceAsync(CancellationToken cancellationToken = default)
     {
+        var ledger = KeyLedger.Read(_paths.Ledger);
+
+        StemLanding.ReleaseParked(_paths, ledger, jobs, deletions);
+
         if (!selector.TryPickNext(out var videoId, out var stems))
             return Task.FromResult(StageTick.Idle);
-
-        var ledger = KeyLedger.Read(_paths.Ledger);
 
         var subject = ledger.TryGetLatestByVideoId(videoId, out var run) ? run.Song : videoId;
 
