@@ -55,7 +55,7 @@
        score — and it reads worse the wider it gets, because the eye has to travel between
        related numbers. Tracks has song titles in it and needs the room (#20). */
     --table-partners: 50rem;
-    --table-library: 64rem;
+    --table-library: 56rem;
     --table-tracks: 92rem;
 
     /* Older names, kept as aliases. --text-dim and --muted were doing the job --text-75 and

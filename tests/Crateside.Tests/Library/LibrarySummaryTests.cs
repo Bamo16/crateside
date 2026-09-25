@@ -53,8 +53,21 @@ public class LibrarySummaryTests : IDisposable
         var distribution = Summary().Current;
 
         Assert.Equal(2, distribution.Unkeyed.Count);
-        Assert.Equal(0, distribution.KeyedCount);
-        Assert.All(distribution.Counts, c => Assert.Equal(0, c.Files));
+        Assert.Equal(0, distribution.KeyedTrackCount);
+        Assert.All(distribution.Counts, c => Assert.Equal(0, c.Tracks));
+    }
+
+    [Fact]
+    public void A_songs_samples_count_as_one_track()
+    {
+        Add("Yes - Owner of a Lonely Heart (Vocal - Full).flac");
+        Add("Yes - Owner of a Lonely Heart (Instrumental - Full).flac");
+
+        var distribution = Summary().Current;
+
+        Assert.Equal(4, distribution.FileCount);
+        Assert.Equal(3, distribution.TrackCount);
+        Assert.Equal(3, distribution.UngenredCount);
     }
 
     [Fact]

@@ -21,8 +21,8 @@
         <div>
             <h1>Library</h1>
             <p class="subtitle">
-                What is finished and filed, by key. Counted from <strong>Ableton's own
-                index</strong> — what the browser shows, not the folder's tag store.
+                What is finished and filed, by key, one count per track however many samples it
+                has. Counted from <strong>Ableton's own index</strong>, what the browser shows.
             </p>
         </div>
         <button class="refresh" @onclick="Reread" disabled="@_reading">
@@ -37,9 +37,10 @@
     else
     {
         <p class="summary">
-            <strong>@_distribution.KeyedCount</strong> of
-            @("file".ToQuantity(_distribution.FileCount)) carry a key, across
+            <strong>@_distribution.KeyedTrackCount</strong> of
+            @("track".ToQuantity(_distribution.TrackCount)) carry a key, across
             @("key".ToQuantity(Represented)) of 24.
+            @("file".ToQuantity(_distribution.FileCount)) in all.
         </p>
 
         @if (Unjudged.Count > 0)
@@ -76,21 +77,21 @@
                 <tr>
                     <th>Key</th>
                     <th>Camelot</th>
-                    <th class="bar-head">Files</th>
+                    <th class="bar-head">Tracks</th>
                     <th class="numeric">Count</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var count in Ordered)
                 {
-                    <tr class="@(count.Files is 0 ? "empty-bucket" : null)">
+                    <tr class="@(count.Tracks is 0 ? "empty-bucket" : null)">
                         <td class="key">@count.Key.Name</td>
                         <td class="camelot">@count.Key.CamelotCode</td>
                         <td class="bar-cell">
                             <span class="bar @(count.Key.Mode.ToString().ToLowerInvariant())"
                                   style="width: @Width(count)%"></span>
                         </td>
-                        <td class="numeric">@count.Files</td>
+                        <td class="numeric">@count.Tracks</td>
                     </tr>
                 }
             </tbody>
@@ -99,7 +100,7 @@
         <section class="genres">
             <h2>By genre</h2>
             <p class="subtitle">
-                <strong>@("file".ToQuantity(_distribution.UngenredCount))</strong> carry no genre
+                <strong>@("track".ToQuantity(_distribution.UngenredCount))</strong> carry no genre
                 yet. That means nobody has settled one, not that they have none: a genre is settled
                 on each track's row, and written within a few minutes.
             </p>
@@ -108,19 +109,19 @@
                 <thead>
                     <tr>
                         <th>Genre</th>
-                        <th class="bar-head">Files</th>
+                        <th class="bar-head">Tracks</th>
                         <th class="numeric">Count</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var genre in _distribution.Genres.OrderByDescending(g => g.Files))
+                    @foreach (var genre in _distribution.Genres.OrderByDescending(g => g.Tracks))
                     {
-                        <tr class="@(genre.Files is 0 ? "empty-bucket" : null)">
+                        <tr class="@(genre.Tracks is 0 ? "empty-bucket" : null)">
                             <td class="key">@genre.Genre</td>
                             <td class="bar-cell">
                                 <span class="bar" style="width: @GenreWidth(genre)%"></span>
                             </td>
-                            <td class="numeric">@genre.Files</td>
+                            <td class="numeric">@genre.Tracks</td>
                         </tr>
                     }
                 </tbody>
@@ -190,9 +191,9 @@
     }
 
     private IEnumerable<KeyCount> Ordered =>
-        _distribution.Counts.OrderByDescending(c => c.Files).ThenBy(c => c.Key);
+        _distribution.Counts.OrderByDescending(c => c.Tracks).ThenBy(c => c.Key);
 
-    private int Represented => _distribution.Counts.Count(c => c.Files > 0);
+    private int Represented => _distribution.Counts.Count(c => c.Tracks > 0);
 
     protected override void OnInitialized()
     {
@@ -211,12 +212,12 @@
     }
 
     private string GenreWidth(GenreCount genre) =>
-        (_distribution.Genres.Max(g => g.Files) is var largest and > 0
-            ? genre.Files * 100.0 / largest
+        (_distribution.Genres.Max(g => g.Tracks) is var largest and > 0
+            ? genre.Tracks * 100.0 / largest
             : 0).ToString("0.#", CultureInfo.InvariantCulture);
 
     private string Width(KeyCount count) =>
-        (_distribution.Largest is 0 ? 0 : count.Files * 100.0 / _distribution.Largest).ToString(
+        (_distribution.Largest is 0 ? 0 : count.Tracks * 100.0 / _distribution.Largest).ToString(
             "0.#",
             CultureInfo.InvariantCulture
         );

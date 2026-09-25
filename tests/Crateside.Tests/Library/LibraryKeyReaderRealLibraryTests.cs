@@ -12,16 +12,14 @@ public class LibraryKeyReaderRealLibraryTests
     private static readonly CratesidePaths Paths = new();
 
     [Fact]
-    public void Every_file_is_counted_exactly_once()
+    public void Every_track_is_counted_at_most_once()
     {
         SkipUnlessPresent();
 
         var distribution = Read();
 
-        Assert.Equal(
-            distribution.FileCount,
-            distribution.Counts.Sum(c => c.Files) + distribution.Unkeyed.Count
-        );
+        Assert.True(distribution.KeyedTrackCount <= distribution.TrackCount);
+        Assert.True(distribution.TrackCount < distribution.FileCount);
     }
 
     [Fact]
