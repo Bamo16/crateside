@@ -23,7 +23,6 @@
 @inject TrackRename Rename
 @inject TrackSwap Swap
 @inject LookalikeAnswer Lookalike
-@inject GenreStore Genres
 @inject DrainControl Separation
 @inject StageSignals Signals
 @inject QueueWriteAccess Access
@@ -341,21 +340,7 @@
                             </button>
                         </div>
                     }
-                    <div class="genre-strip">
-                        <span class="genre-label">Genre</span>
-                        @foreach (var genre in GenreVocabulary.All)
-                        {
-                            <button class="genre @GenreTone(row.Genre, genre)" disabled="@_working"
-                                    @onclick="() => SettleGenre(row, genre)">
-                                @genre
-                            </button>
-                        }
-                        <button class="genre @GenreTone(row.Genre, null)" disabled="@_working"
-                                @onclick="() => SettleGenre(row, null)">
-                            none of these
-                        </button>
-                        <span class="genre-heard">@Heard(row.Genre)</span>
-                    </div>
+                    <GenreStrip Row="row" />
                     <div class="edits">
                         <div class="name-strip @(_renaming == row.VideoId ? "editing" : null)">
                             @if (_renaming == row.VideoId)
@@ -1115,40 +1100,6 @@
     }
 
     /// <summary>Settled is filled, the suggestion still waiting on the user is dashed.</summary>
-    private static string? GenreTone(GenreRecord? record, string? genre) =>
-        record switch
-        {
-            { IsSettled: true } when record.Genre == genre => "settled",
-            { IsSettled: false, Suggested: { } suggested } when suggested == genre => "suggested",
-            _ => null,
-        };
-
-    private static string Heard(GenreRecord? record) =>
-        record switch
-        {
-            null or { LookedUpAt: null } => "not looked up yet",
-            { Heard.Count: 0 } => "the sources know nothing of it",
-            { IsSettled: true } => string.Empty,
-            _ => $"heard: {string.Join(", ", record.Heard.Take(4))}",
-        };
-
-    private async Task SettleGenre(TrackRow row, string? genre)
-    {
-        _working = true;
-        _problem = null;
-
-        try
-        {
-            Genres.Settle(row.Song, genre);
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
     private async Task SameSong(TrackRow row, LedgerRun like)
     {
         _working = true;

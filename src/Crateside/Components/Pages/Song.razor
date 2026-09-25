@@ -2,6 +2,7 @@
 @layout Crateside.Components.Layout.BareLayout
 @rendermode InteractiveServer
 @implements IDisposable
+@using Crateside.Core
 @using Crateside.Core.Ledger
 @using Crateside.Core.Tracks
 @inject EvidenceService Evidence
@@ -97,6 +98,24 @@
                 {
                     <p class="problem">@problem</p>
                 }
+
+                @if (_row is not null)
+                {
+                    var uploads = Uploads(_row);
+
+                    <section class="rail-section">
+                        <h3>@(uploads.Count is 1 ? "Upload" : "Uploads")</h3>
+                        @foreach (var (id, role) in uploads)
+                        {
+                            <UploadCard @key="id" VideoId="@id" Role="@role" />
+                        }
+                    </section>
+
+                    <section class="rail-section">
+                        <h3>Genre</h3>
+                        <GenreStrip Row="_row" />
+                    </section>
+                }
             </aside>
         </div>
     }
@@ -136,7 +155,7 @@
             new[]
             {
                 _row?.Genre?.Written ?? _row?.Genre?.Suggested,
-                _row is null ? null : "upload".ToQuantity(Uploads(_row)),
+                _row is null ? null : "upload".ToQuantity(Uploads(_row).Count),
             }.OfType<string>()
         );
 
@@ -202,8 +221,31 @@
             StateHasChanged();
         });
 
-    private static int Uploads(TrackRow row) =>
-        row.Facts.Uploads.Distinct(StringComparer.Ordinal).Count();
+    /// <summary>Every upload this track has used, the one it is cut from first, with its role.</summary>
+    private static List<(string VideoId, string Role)> Uploads(TrackRow row)
+    {
+        var cutFrom =
+            row.StatedSourceUrl is { } stated && YouTubeUrl.TryGetVideoId(stated, out var swapped)
+                ? swapped
+                : row.VideoId;
+
+        return
+        [
+            .. row
+                .Facts.Uploads.Prepend(cutFrom)
+                .Distinct(StringComparer.Ordinal)
+                .Select(id => (id, Role(row, id, cutFrom))),
+        ];
+    }
+
+    private static string Role(TrackRow row, string videoId, string cutFrom) =>
+        row.Plan.AddedSources.FirstOrDefault(source => source.VideoId == videoId) switch
+        {
+            { } added => $"added source · {added.Label}",
+            null when videoId == cutFrom => "cut from",
+            null when videoId == row.VideoId => "the playlist's upload",
+            _ => "old upload",
+        };
 
     private static string Summary(RunEvidence run) =>
         run.Sources.Count is 0

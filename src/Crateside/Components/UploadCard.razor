@@ -1,0 +1,29 @@
+<div class="upload-card">
+    @if (_playing)
+    {
+        <iframe class="player" src="@($"https://www.youtube-nocookie.com/embed/{VideoId}?autoplay=1")"
+                title="@Role" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    }
+    else
+    {
+        <button class="player still" title="Load the player. Nothing is fetched from YouTube until you press it."
+                @onclick="() => _playing = true">
+            <span class="play">▶</span>
+        </button>
+    }
+    <div class="upload-meta">
+        <span class="mono">@VideoId</span>
+        <a href="@($"https://www.youtube.com/watch?v={VideoId}")" target="_blank" rel="noopener noreferrer">YouTube ↗</a>
+    </div>
+    <span class="role">@Role</span>
+</div>
+
+@code {
+    private bool _playing;
+
+    [Parameter, EditorRequired]
+    public required string VideoId { get; set; }
+
+    [Parameter, EditorRequired]
+    public required string Role { get; set; }
+}

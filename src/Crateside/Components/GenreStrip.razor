@@ -1,0 +1,60 @@
+@using Crateside.Core.Genres
+@using Crateside.Core.Tracks
+@inject GenreStore Genres
+@inject TracksService Tracks
+
+<div class="genre-strip">
+    <span class="genre-label">Genre</span>
+    @foreach (var genre in GenreVocabulary.All)
+    {
+        <button class="genre @GenreTone(Row.Genre, genre)" disabled="@_working"
+                @onclick="() => SettleGenre(genre)">
+            @genre
+        </button>
+    }
+    <button class="genre @GenreTone(Row.Genre, null)" disabled="@_working"
+            @onclick="() => SettleGenre(null)">
+        none of these
+    </button>
+    <span class="genre-heard">@Heard(Row.Genre)</span>
+</div>
+
+@code {
+    private bool _working;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    private static string? GenreTone(GenreRecord? record, string? genre) =>
+        record switch
+        {
+            { IsSettled: true } when record.Genre == genre => "settled",
+            { IsSettled: false, Suggested: { } suggested } when suggested == genre => "suggested",
+            _ => null,
+        };
+
+    private static string Heard(GenreRecord? record) =>
+        record switch
+        {
+            null or { LookedUpAt: null } => "not looked up yet",
+            { Heard.Count: 0 } => "the sources know nothing of it",
+            { IsSettled: true } => string.Empty,
+            _ => $"heard: {string.Join(", ", record.Heard.Take(4))}",
+        };
+
+    private async Task SettleGenre(string? genre)
+    {
+        _working = true;
+
+        try
+        {
+            Genres.Settle(Row.Song, genre);
+
+            await Tracks.RefreshAsync();
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+}
