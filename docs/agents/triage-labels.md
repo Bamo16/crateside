@@ -10,6 +10,15 @@ The skills speak in terms of five canonical triage roles. This file maps those r
 | `ready-for-human`          | `ready-for-human`    | Requires human implementation            |
 | `wontfix`                  | `wontfix`            | Will not be actioned                     |
 
+In this repo `ready-for-human` means **the next step is the user's**: a decision, an answer, or
+hands-on work. An agent cannot advance it.
+
+**Built work waiting for the user to look at it gets no label.** The user checks it in the session
+that built it. If the session ends first, the check goes into the handoff for the next agent. The
+issue stays open, with a comment saying what landed and that it has not been checked in the app.
+The user then closes it, asks for more, or has it finished on the spot. Drop `needs-triage` or
+`needs-design` once the work is underway.
+
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
 
 Edit the right-hand column to match whatever vocabulary you actually use.
