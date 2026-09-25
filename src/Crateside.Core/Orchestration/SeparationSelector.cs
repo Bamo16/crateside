@@ -34,8 +34,8 @@ public sealed class SeparationSelector(
     }
 
     /// <summary>
-    /// Never retries a success, unlike the other selectors: stems gone after one were most likely
-    /// deleted on purpose.
+    /// Never retries a success unasked, unlike the other selectors: stems gone after one were most
+    /// likely deleted on purpose. A re-cut or swap since then is the asking (#50).
     /// </summary>
     private bool IsEligible(QueueItem item) =>
         StageEligibility.Allows(
@@ -44,5 +44,5 @@ public sealed class SeparationSelector(
             JobStage.Separation,
             maxStrikes,
             retrySucceeded: false
-        );
+        ) || CutRequests.OwesCut(item, jobs);
 }

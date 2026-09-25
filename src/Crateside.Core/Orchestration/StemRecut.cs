@@ -13,23 +13,11 @@ public delegate IReadOnlyList<StagingStem> ReadStagedFiles(string videoId);
 /// </summary>
 public sealed class StemRecut(
     QueueSettingsStore settings,
-    JobStore jobs,
     WorkingSet workingSet,
     ReadStagedFiles staged,
     DeletionLog? deletions = null
 )
 {
-    /// <summary>
-    /// The stages that run again — never evidence or the verdict — each recorded as
-    /// <see cref="JobStatus.Cancelled"/>, which every selector reads as eligible.
-    /// </summary>
-    internal static readonly JobStage[] Redone =
-    [
-        JobStage.Separation,
-        JobStage.Handoff,
-        JobStage.Tagging,
-    ];
-
     private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
 
     /// <summary>What changing this track's plan would do, or why it cannot be done.</summary>
@@ -108,16 +96,12 @@ public sealed class StemRecut(
 
         settings.SetPlan(videoId, wanted);
 
-        // Only the stages this cut needs: one that only drops files needs none, and one that
-        // only keeps the source is a copy, which reopening separation would leave owed for ever.
-        foreach (var stage in plan.MakesSomething ? StagesFor(plan.Recipe) : [])
-            jobs.Record(videoId, stage, JobStatus.Cancelled, error: "re-cut requested");
+        // A change that only drops files asks for nothing to be made.
+        if (plan.MakesSomething)
+            settings.RequestCut(videoId, DateTimeOffset.UtcNow);
 
         return new RecutOutcome { Removed = removed, Recipe = plan.Recipe };
     }
-
-    private static JobStage[] StagesFor(SeparationRecipe recipe) =>
-        recipe.Passes > 0 ? Redone : [JobStage.Handoff, JobStage.Tagging];
 
     /// <summary>The plan this track currently has, which says which of its files were added.</summary>
     private StemPlan Stored(string videoId) =>

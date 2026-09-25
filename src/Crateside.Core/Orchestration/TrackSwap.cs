@@ -9,7 +9,6 @@ namespace Crateside.Core.Orchestration;
 /// </summary>
 public sealed class TrackSwap(
     QueueSettingsStore settings,
-    JobStore jobs,
     WorkingSet workingSet,
     ReadStagedFiles staged,
     CratesidePaths paths,
@@ -94,8 +93,7 @@ public sealed class TrackSwap(
         // The retained download is the old upload, and separation prefers it over the URL.
         workingSet.Discard(videoId);
 
-        foreach (var stage in StemRecut.Redone)
-            jobs.Record(videoId, stage, JobStatus.Cancelled, error: "source swapped");
+        settings.RequestCut(videoId, DateTimeOffset.UtcNow);
 
         return new SwapOutcome { NewVideoId = plan.NewVideoId, Removed = removed };
     }

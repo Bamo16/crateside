@@ -58,6 +58,9 @@ public sealed record QueueItem
     /// <summary>The upload whose audio the user accepted short of premium (#31).</summary>
     public string? AcceptedUpload { get; init; }
 
+    /// <summary>When the user last asked for this track's files to be made again (#50).</summary>
+    public DateTimeOffset? CutRequestedAt { get; init; }
+
     public string WatchUrl => $"https://www.youtube.com/watch?v={VideoId}";
 }
 
@@ -105,6 +108,7 @@ public sealed record QueueView
                 StatedSourceUrl = instruction?.SourceUrl,
                 DifferentFrom = instruction?.DifferentFrom,
                 AcceptedUpload = instruction?.AcceptedUpload,
+                CutRequestedAt = instruction?.CutRequestedAt,
                 Inventory = inventories?.GetValueOrDefault(item.VideoId) ?? StemInventory.Empty,
             };
         }

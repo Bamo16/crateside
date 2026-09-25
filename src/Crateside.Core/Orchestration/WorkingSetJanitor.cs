@@ -7,10 +7,12 @@ namespace Crateside.Core.Orchestration;
 /// <summary>
 /// Throws away the working set of every track that has been <strong>imported</strong>.
 /// </summary>
+/// <param name="requestedAt">When a re-cut or swap was last asked for a track, or null (#50).</param>
 public sealed class WorkingSetJanitor(
     WorkingSet workingSet,
     JobStore jobs,
-    IOptions<CratesidePaths> paths
+    IOptions<CratesidePaths> paths,
+    Func<string, DateTimeOffset?>? requestedAt = null
 )
 {
     private readonly CratesidePaths _paths = paths.Value;
@@ -54,7 +56,14 @@ public sealed class WorkingSetJanitor(
         && job is { Status: JobStatus.Succeeded }
         && staged.StemsFor(videoId) is { Count: 0 }
         // A source a re-cut fetched is copied on the next pass; sweeping it first starts a loop.
-        && !StageEligibility.Owes(jobs, videoId, JobStage.Handoff);
+        && !StageEligibility.Owes(jobs, videoId, JobStage.Handoff)
+        && IsSettled(videoId);
+
+    private bool IsSettled(string videoId) =>
+        CutRequests.IsSettled(
+            requestedAt?.Invoke(videoId),
+            jobs.TryGet(videoId, JobStage.Handoff, out var handoff) ? handoff : null
+        );
 
     /// <summary>
     /// Judged, and never given a separation: a track queued only to judge files the library

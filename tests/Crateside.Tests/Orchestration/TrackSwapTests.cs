@@ -105,7 +105,7 @@ public class TrackSwapTests : IDisposable
             Line("2026-09-09T00:00:00+00:00", Song, "NSLYAT7sjAA")
         );
 
-        var outcome = await Swap(settings, jobs, workingSet)
+        var outcome = await Swap(settings, workingSet)
             .ApplyAsync(Video, Replacement, TestContext.Current.CancellationToken);
 
         Assert.True(outcome.Succeeded, outcome.Problem);
@@ -117,11 +117,9 @@ public class TrackSwapTests : IDisposable
         // The retained download is the old upload; separation prefers it over the URL.
         Assert.False(workingSet.TryGetSource(Video, out _));
 
-        foreach (var stage in (JobStage[])[JobStage.Separation, JobStage.Handoff, JobStage.Tagging])
-        {
-            Assert.True(jobs.TryGet(Video, stage, out var job));
-            Assert.Equal(JobStatus.Cancelled, job.Status);
-        }
+        // Asked for as a request, not written into history (#50).
+        Assert.NotNull(instruction.CutRequestedAt);
+        Assert.False(jobs.TryGet(Video, JobStage.Separation, out _));
     }
 
     [Fact]
@@ -242,14 +240,9 @@ public class TrackSwapTests : IDisposable
         Assert.Null(workingSet.AcquisitionFor("neverJudged"));
     }
 
-    private TrackSwap Swap(
-        QueueSettingsStore? settings = null,
-        JobStore? jobs = null,
-        WorkingSet? workingSet = null
-    ) =>
+    private TrackSwap Swap(QueueSettingsStore? settings = null, WorkingSet? workingSet = null) =>
         new(
             settings ?? Settings(),
-            jobs ?? Jobs(),
             workingSet ?? new WorkingSet(WorkingRoot),
             Staged(),
             new CratesidePaths { Ledger = LedgerPath, SampleStaging = StagingRoot }

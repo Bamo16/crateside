@@ -192,6 +192,20 @@ public class SeparationSelectorTests : IDisposable
     }
 
     [Fact]
+    public void A_re_cut_asked_for_after_the_last_success_puts_it_back_in_line()
+    {
+        Jobs.Record("aaaaaaaaaaa", JobStage.Separation, JobStatus.Succeeded);
+
+        var item = Item("aaaaaaaaaaa");
+
+        Assert.False(new SeparationSelector(Jobs).TryPickNext(View(item), NoLedger, out _));
+
+        var asked = item with { CutRequestedAt = DateTimeOffset.UtcNow.AddMinutes(1) };
+
+        Assert.True(new SeparationSelector(Jobs).TryPickNext(View(asked), NoLedger, out _));
+    }
+
+    [Fact]
     public void Cancelling_puts_a_track_back_in_line_rather_than_striking_it()
     {
         Jobs.Record("aaaaaaaaaaa", JobStage.Separation, JobStatus.Cancelled);

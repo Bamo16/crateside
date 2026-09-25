@@ -19,6 +19,8 @@ public class WorkingSetJanitorTests : IDisposable
     private JobStore Jobs => field ??= new JobStore(Path.Combine(_directory, "jobs.jsonl"));
     private WorkingSet Set => field ??= new WorkingSet(Path.Combine(_directory, "working"));
 
+    private DateTimeOffset? _requested;
+
     private WorkingSetJanitor Janitor =>
         field ??= new WorkingSetJanitor(
             Set,
@@ -30,7 +32,8 @@ public class WorkingSetJanitorTests : IDisposable
                     MashupSamples = Library,
                     Ledger = Path.Combine(_directory, "runs.jsonl"),
                 }
-            )
+            ),
+            _ => _requested
         );
 
     public WorkingSetJanitorTests() => Directory.CreateDirectory(Staging);
@@ -115,6 +118,17 @@ public class WorkingSetJanitorTests : IDisposable
 
     [Fact]
     public void Sweeping_nothing_is_not_an_error() => Assert.Equal(0, Janitor.Sweep());
+
+    [Fact]
+    public void A_re_cut_asked_for_since_the_separation_keeps_the_audio_it_will_cut_from()
+    {
+        GiveWorkingSet();
+        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
+        _requested = DateTimeOffset.UtcNow.AddMinutes(1);
+
+        Assert.Equal(0, Janitor.Sweep());
+        Assert.Single(Set.VideoIds);
+    }
 
     [Fact]
     public void A_track_queued_only_to_judge_library_files_is_finished_with_once_judged()

@@ -106,8 +106,26 @@ public static class ServiceRegistration
             sp.GetRequiredService<QueueRemover>(),
             sp.GetRequiredService<BumpedTrack>(),
             sp.GetRequiredService<IntakeStore>(),
-            ledger => ReopenedTracks.From(sp.GetRequiredService<JobStore>().All(), ledger),
-            ledger => ReopenedTracks.AwaitingCut(sp.GetRequiredService<JobStore>().All(), ledger),
+            ledger =>
+                ReopenedTracks
+                    .From(sp.GetRequiredService<JobStore>().All(), ledger)
+                    .Union(
+                        CutRequests.Unsettled(
+                            sp.GetRequiredService<QueueSettingsStore>().Read(),
+                            sp.GetRequiredService<JobStore>()
+                        )
+                    )
+                    .ToHashSet(StringComparer.Ordinal),
+            ledger =>
+                ReopenedTracks
+                    .AwaitingCut(sp.GetRequiredService<JobStore>().All(), ledger)
+                    .Union(
+                        CutRequests.Cutting(
+                            sp.GetRequiredService<QueueSettingsStore>().Read(),
+                            sp.GetRequiredService<JobStore>()
+                        )
+                    )
+                    .ToHashSet(StringComparer.Ordinal),
             sp.GetRequiredService<PresetCatalogReader>().ReadAsync
         ));
         return services;
@@ -257,7 +275,6 @@ public static class ServiceRegistration
 
         services.AddSingleton(sp => new StemRecut(
             sp.GetRequiredService<QueueSettingsStore>(),
-            sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<WorkingSet>(),
             StagedFiles(sp),
             sp.GetRequiredService<DeletionLog>()
@@ -275,14 +292,24 @@ public static class ServiceRegistration
 
         services.AddSingleton(sp => new TrackSwap(
             sp.GetRequiredService<QueueSettingsStore>(),
-            sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<WorkingSet>(),
             StagedFiles(sp),
             sp.GetRequiredService<CratesidePaths>(),
             deletions: sp.GetRequiredService<DeletionLog>()
         ));
 
-        services.AddSingleton<WorkingSetJanitor>();
+        services.AddSingleton(sp => new WorkingSetJanitor(
+            sp.GetRequiredService<WorkingSet>(),
+            sp.GetRequiredService<JobStore>(),
+            sp.GetRequiredService<IOptions<CratesidePaths>>(),
+            videoId =>
+                sp.GetRequiredService<QueueSettingsStore>()
+                    .Read()
+                    .Tracks.FirstOrDefault(track =>
+                        track.VideoId.Equals(videoId, StringComparison.Ordinal)
+                    )
+                    ?.CutRequestedAt
+        ));
         services.AddHostedService<JanitorWorker>();
         return services;
     }

@@ -164,6 +164,21 @@ public class DownloadSelectorTests : IDisposable
     }
 
     [Fact]
+    public void A_swap_asked_for_after_the_last_separation_fetches_the_new_upload()
+    {
+        Jobs.Record(Fresh, JobStage.Separation, JobStatus.Succeeded);
+
+        var swapped = Held(Fresh) with
+        {
+            StatedSourceUrl = "https://music.youtube.com/watch?v=NSLYAT7sjAA",
+            CutRequestedAt = DateTimeOffset.UtcNow.AddMinutes(1),
+        };
+
+        Assert.True(Selector().TryPickNext(View(swapped), out var next));
+        Assert.Equal("https://music.youtube.com/watch?v=NSLYAT7sjAA", next.Url);
+    }
+
+    [Fact]
     public void A_track_put_back_in_line_still_gets_its_audio()
     {
         Jobs.Record(Fresh, JobStage.Separation, JobStatus.Succeeded);

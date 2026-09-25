@@ -80,6 +80,10 @@ public sealed class QueueSettingsStore
     public QueueSettings SetDifferentFrom(string videoId, string song) =>
         Upsert(videoId, track => track with { DifferentFrom = song });
 
+    /// <summary>Records that the user asked for this track's files to be made again (#50).</summary>
+    public QueueSettings RequestCut(string videoId, DateTimeOffset at) =>
+        Upsert(videoId, track => track with { CutRequestedAt = at });
+
     /// <summary>Records that the user takes this upload's audio as it comes (#31).</summary>
     public QueueSettings AcceptUpload(string videoId, string upload) =>
         Upsert(videoId, track => track with { AcceptedUpload = upload });
@@ -304,6 +308,13 @@ public sealed record TrackInstruction
     [JsonPropertyName("acceptedUpload")]
     public string? AcceptedUpload { get; init; }
 
+    /// <summary>
+    /// When the user last asked for this track's files to be made again, by a re-cut or a swap —
+    /// a request, answered by the outcomes that follow it (#50).
+    /// </summary>
+    [JsonPropertyName("cutRequestedAt")]
+    public DateTimeOffset? CutRequestedAt { get; init; }
+
     /// <summary>Whether this instruction still carries anything worth storing.</summary>
     [JsonIgnore]
     public bool SaysSomething =>
@@ -312,5 +323,6 @@ public sealed record TrackInstruction
         || Name is { Length: > 0 }
         || SourceUrl is { Length: > 0 }
         || DifferentFrom is { Length: > 0 }
-        || AcceptedUpload is { Length: > 0 };
+        || AcceptedUpload is { Length: > 0 }
+        || CutRequestedAt is not null;
 }

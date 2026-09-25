@@ -86,8 +86,8 @@ public class StemRecutTests : IDisposable
         return path;
     }
 
-    private StemRecut Recut(JobStore? jobs = null, QueueSettingsStore? settings = null) =>
-        new(settings ?? Settings(), jobs ?? Jobs(), WorkingSetWithSource(), Staged());
+    private StemRecut Recut(QueueSettingsStore? settings = null) =>
+        new(settings ?? Settings(), WorkingSetWithSource(), Staged());
 
     [Fact]
     public void It_refuses_when_nothing_of_the_track_is_staged()
@@ -192,7 +192,7 @@ public class StemRecutTests : IDisposable
     {
         Stage();
 
-        var recut = new StemRecut(Settings(), Jobs(), new WorkingSet(_working), Staged());
+        var recut = new StemRecut(Settings(), new WorkingSet(_working), Staged());
 
         var plan = recut.PlanFor(Video, StemPlan.Default, Catalog);
 
@@ -265,7 +265,7 @@ public class StemRecutTests : IDisposable
         var settings = Settings();
         var wanted = new StemPlan { Presets = ["instrumental_full"] };
 
-        var outcome = Recut(settings: settings).Apply(Video, wanted, Catalog);
+        var outcome = Recut(settings).Apply(Video, wanted, Catalog);
 
         Assert.True(outcome.Succeeded);
         Assert.Equal(1, outcome.Removed);
@@ -316,41 +316,44 @@ public class StemRecutTests : IDisposable
         Assert.True(Recut().Apply(Video, StemPlan.Default, Catalog).Succeeded);
     }
 
-    [Theory]
-    [InlineData(JobStage.Separation)]
-    [InlineData(JobStage.Handoff)]
-    [InlineData(JobStage.Tagging)]
-    public void It_reopens_the_stages_that_have_to_run_again(JobStage stage)
+    [Fact]
+    public void A_re_cut_is_recorded_as_a_request_and_leaves_the_job_history_alone()
     {
         Stage();
 
         var jobs = Jobs();
+        var settings = Settings();
 
-        jobs.Record(Video, stage, JobStatus.Succeeded);
+        jobs.Record(Video, JobStage.Separation, JobStatus.Succeeded);
 
-        Recut(jobs).Apply(Video, StemPlan.Default, Catalog);
+        Recut(settings).Apply(Video, StemPlan.Default, Catalog);
 
-        Assert.True(jobs.TryGet(Video, stage, out var job));
-        Assert.Equal(JobStatus.Cancelled, job.Status);
+        Assert.True(jobs.TryGet(Video, JobStage.Separation, out var separation));
+        Assert.Equal(JobStatus.Succeeded, separation.Status);
+
+        var requested = Assert.Single(settings.Read().Tracks).CutRequestedAt;
+
+        Assert.NotNull(requested);
+        Assert.True(CutRequests.OwesCut(requested, separation));
     }
 
     [Fact]
-    public void Keeping_only_the_source_reopens_the_handoff_and_not_the_gpu()
+    public void Keeping_only_the_source_asks_for_no_GPU_and_stays_unsettled_until_a_handoff()
     {
         Stage("Vocal - Full");
         Stage("Instrumental - Full");
         Stage("Drums - htdemucs_ft");
 
-        var jobs = Jobs();
+        var settings = Settings();
 
-        jobs.Record(Video, JobStage.Separation, JobStatus.Succeeded);
+        var outcome = Recut(settings)
+            .Apply(Video, StemPlan.Default with { KeepSource = true }, Catalog);
 
-        Recut(jobs).Apply(Video, StemPlan.Default with { KeepSource = true }, Catalog);
+        Assert.Equal(0, outcome.Recipe!.Passes);
 
-        Assert.True(jobs.TryGet(Video, JobStage.Separation, out var separation));
-        Assert.Equal(JobStatus.Succeeded, separation.Status);
-        Assert.True(StageEligibility.Owes(jobs, Video, JobStage.Handoff));
-        Assert.True(StageEligibility.Owes(jobs, Video, JobStage.Tagging));
+        var requested = Assert.Single(settings.Read().Tracks).CutRequestedAt;
+
+        Assert.False(CutRequests.IsSettled(requested, handoff: null));
     }
 
     [Theory]
@@ -364,41 +367,36 @@ public class StemRecutTests : IDisposable
 
         jobs.Record(Video, stage, JobStatus.Succeeded);
 
-        Recut(jobs).Apply(Video, StemPlan.Default, Catalog);
+        Recut().Apply(Video, StemPlan.Default, Catalog);
 
         Assert.True(jobs.TryGet(Video, stage, out var job));
         Assert.Equal(JobStatus.Succeeded, job.Status);
     }
 
     [Fact]
-    public void A_change_that_only_drops_files_never_reaches_the_GPU()
+    public void A_change_that_only_drops_files_asks_for_nothing()
     {
         Stage("Vocal - Full");
         Stage("Instrumental - Full");
 
-        var jobs = Jobs();
+        var settings = Settings();
 
-        jobs.Record(Video, JobStage.Separation, JobStatus.Succeeded);
-
-        var outcome = Recut(jobs)
+        var outcome = Recut(settings)
             .Apply(Video, new StemPlan { Presets = ["instrumental_full"] }, Catalog);
 
         Assert.Equal(1, outcome.Removed);
-        Assert.True(jobs.TryGet(Video, JobStage.Separation, out var job));
-        Assert.Equal(JobStatus.Succeeded, job.Status);
+        Assert.Null(Assert.Single(settings.Read().Tracks).CutRequestedAt);
     }
 
     [Fact]
-    public void A_file_it_cannot_delete_stops_it_before_the_stages_reopen()
+    public void A_file_it_cannot_delete_stops_it_before_anything_is_asked_for()
     {
         // Nearly always a file Ableton has open.
         Stage("Instrumental - Full");
 
         var held = Stage("Vocal - Full");
-        var jobs = Jobs();
-        var recut = Recut(jobs);
-
-        jobs.Record(Video, JobStage.Separation, JobStatus.Succeeded);
+        var settings = Settings();
+        var recut = Recut(settings);
 
         using (File.Open(held, FileMode.Open, FileAccess.Read, FileShare.None))
         {
@@ -412,8 +410,7 @@ public class StemRecutTests : IDisposable
             Assert.Contains("open in Ableton", outcome.Problem);
         }
 
-        Assert.True(jobs.TryGet(Video, JobStage.Separation, out var job));
-        Assert.Equal(JobStatus.Succeeded, job.Status);
+        Assert.Empty(settings.Read().Tracks);
     }
 
     private string StageAdopted(string label)

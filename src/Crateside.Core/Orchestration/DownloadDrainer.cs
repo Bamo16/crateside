@@ -37,7 +37,7 @@ public sealed class DownloadSelector(
             .Where(item =>
                 !item.IsUnavailable
                 && !workingSet.TryGetSource(item.VideoId, out _)
-                && !IsSweptUp(item.VideoId)
+                && !IsSweptUp(item)
                 && IsEligible(item.VideoId)
             )
             .Select(item => new WantedDownload
@@ -73,10 +73,12 @@ public sealed class DownloadSelector(
                     Copy = true,
                 };
 
-        // An owed handoff is what a re-cut asking for the source leaves behind. Without one, a
-        // track finished with owes nothing unasked (ADR 0027).
+        // A track finished with owes nothing unasked (ADR 0027): only a request not yet carried
+        // through, or a handoff still owed, fetches its source again.
         if (
-            IsSweptUp(item.VideoId) && !StageEligibility.Owes(jobs, item.VideoId, JobStage.Handoff)
+            IsSweptUp(item)
+                && CutRequests.IsSettled(item, jobs)
+                && !StageEligibility.Owes(jobs, item.VideoId, JobStage.Handoff)
             || !IsEligible(item.VideoId)
         )
             return null;
@@ -130,11 +132,12 @@ public sealed class DownloadSelector(
 
     /// <summary>
     /// The audio is absent because the janitor took it after separation succeeded, not because it
-    /// was never fetched.
+    /// was never fetched — unless a re-cut or swap has asked for another separation since (#50).
     /// </summary>
-    private bool IsSweptUp(string videoId) =>
-        jobs.TryGet(videoId, JobStage.Separation, out var job)
-        && job is { Status: JobStatus.Succeeded };
+    private bool IsSweptUp(QueueItem item) =>
+        jobs.TryGet(item.VideoId, JobStage.Separation, out var job)
+        && job is { Status: JobStatus.Succeeded }
+        && !CutRequests.OwesCut(item, jobs);
 }
 
 /// <summary>One source crateside owes.</summary>
