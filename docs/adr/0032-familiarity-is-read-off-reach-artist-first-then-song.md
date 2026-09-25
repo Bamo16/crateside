@@ -31,7 +31,8 @@ They are read off Deezer's numbers where those are clear, and the user answers t
 
 - **The rule** (`FamiliarityVocabulary.FromReach`): artist ≥150k fans → Mainstream; else song rank
   ≥600k → Mainstream; else artist <20k fans and song rank <400k → Obscure; else ask the user. On
-  the 2026-09-25 ledger this settled 269 of 337 songs and asked about 68.
+  the 2026-09-25 ledger this settled 269 of 337 songs and asked about 68. That was measured with the
+  first credited artist, not the most-followed one, so the built rule may ask about slightly fewer.
 - **Clear values are written without asking.** Unlike genre, a value the numbers settle is
   written as if settled. The user's own answer always outranks it, and survives a new
   measurement.
