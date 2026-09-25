@@ -104,6 +104,13 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
         return job;
     }
 
+    /// <summary>Every recorded change to one track's jobs, oldest first, read off disk.</summary>
+    public IReadOnlyList<JobUpdate> History(string videoId) =>
+        [
+            .. ReadUpdates()
+                .Where(update => update.VideoId.Equals(videoId, StringComparison.Ordinal)),
+        ];
+
     /// <summary>Drops the in-memory projection so the next read comes off disk again.</summary>
     public void Invalidate()
     {
@@ -146,8 +153,18 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
     {
         var jobs = new Dictionary<string, TrackJob>(StringComparer.Ordinal);
 
+        foreach (var update in ReadUpdates())
+            jobs[update.Id] = Apply(jobs.GetValueOrDefault(update.Id), update);
+
+        return jobs;
+    }
+
+    private List<JobUpdate> ReadUpdates()
+    {
+        List<JobUpdate> updates = [];
+
         if (!File.Exists(_path))
-            return jobs;
+            return updates;
 
         try
         {
@@ -177,7 +194,7 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
                 }
 
                 if (update is { Id.Length: > 0 })
-                    jobs[update.Id] = Apply(jobs.GetValueOrDefault(update.Id), update);
+                    updates.Add(update);
             }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
@@ -185,7 +202,7 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
             // An unreadable store must not take the app down with it.
         }
 
-        return jobs;
+        return updates;
     }
 
     private void Append(JobUpdate update)

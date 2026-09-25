@@ -1,0 +1,107 @@
+using Humanizer;
+
+namespace Crateside.Core.Orchestration;
+
+/// <summary>
+/// One track's history as a single timeline: its stages, what crateside recycled, and what the
+/// user did, numbered by pass and with back-to-back repeats folded into one line (#59).
+/// </summary>
+public static class TrackActivity
+{
+    public const string You = "you";
+    public const string Crateside = "crateside";
+
+    public static IReadOnlyList<ActivityEntry> Build(
+        IEnumerable<JobUpdate> jobs,
+        IEnumerable<Deletion> deletions,
+        IEnumerable<UserAction> actions
+    )
+    {
+        var merged = jobs.Select(FromJob)
+            .Concat(deletions.Select(FromDeletion))
+            .Concat(actions.Select(FromAction))
+            .OrderBy(entry => entry.Entry.At)
+            // A user action and the stage it wakes share a timestamp; the action comes first.
+            .ThenBy(entry => entry.Entry.Source == You ? 0 : 1);
+
+        List<ActivityEntry> entries = [];
+        var pass = 1;
+
+        foreach (var (entry, startsPass) in merged)
+        {
+            if (startsPass && entries.Count > 0)
+                pass++;
+
+            var numbered = entry with { Pass = pass };
+
+            if (entries is [.., var last] && last with { At = numbered.At, Count = 1 } == numbered)
+                entries[^1] = last with { At = numbered.At, Count = last.Count + 1 };
+            else
+                entries.Add(numbered);
+        }
+
+        return entries;
+    }
+
+    private static (ActivityEntry Entry, bool StartsPass) FromJob(JobUpdate update) =>
+        (
+            new ActivityEntry
+            {
+                At = update.Timestamp,
+                Source = update.Stage.ToString(),
+                Message = update switch
+                {
+                    { Adopted: true } => "picked up a process still running",
+                    { Status: JobStatus.Running } => "started",
+                    { Error: { Length: > 0 } error } =>
+                        $"{update.Status.Humanize(LetterCasing.LowerCase)}: {error}",
+                    _ => update.Status.Humanize(LetterCasing.LowerCase),
+                },
+                IsProblem = update.Status is JobStatus.Failed,
+            },
+            false
+        );
+
+    private static (ActivityEntry Entry, bool StartsPass) FromDeletion(Deletion deletion) =>
+        (
+            new ActivityEntry
+            {
+                At = deletion.At,
+                Source = Crateside,
+                Message = $"recycled {deletion.FileName}: {deletion.Reason}",
+            },
+            false
+        );
+
+    private static (ActivityEntry Entry, bool StartsPass) FromAction(UserAction action) =>
+        (
+            new ActivityEntry
+            {
+                At = action.At,
+                Source = You,
+                Message = action.Detail is { Length: > 0 } detail
+                    ? $"{action.Kind.Humanize(LetterCasing.LowerCase)}: {detail}"
+                    : action.Kind.Humanize(LetterCasing.LowerCase),
+            },
+            action.PassFrom is not null
+        );
+}
+
+/// <summary>One line of a track's activity.</summary>
+public sealed record ActivityEntry
+{
+    /// <summary>When it happened, or the last time when <see cref="Count"/> folds several.</summary>
+    public required DateTimeOffset At { get; init; }
+
+    /// <summary>A stage's name, <see cref="TrackActivity.You"/>, or <see cref="TrackActivity.Crateside"/>.</summary>
+    public required string Source { get; init; }
+
+    public required string Message { get; init; }
+
+    public int Pass { get; init; } = 1;
+
+    public bool IsProblem { get; init; }
+
+    /// <summary>How many identical lines in a row this one stands for.</summary>
+    public int Count { get; init; } = 1;
+}

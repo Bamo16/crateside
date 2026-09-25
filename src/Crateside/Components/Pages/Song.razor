@@ -103,6 +103,11 @@
                         }
                     </section>
                 }
+
+                @if (_row is not null)
+                {
+                    <ActivityLog Row="_row" Header="CopyHeader(_row)" />
+                }
             </div>
 
             <aside class="rail">
@@ -288,6 +293,14 @@
             null when videoId == row.VideoId => "the playlist's upload",
             _ => "old upload",
         };
+
+    private IReadOnlyList<string> CopyHeader(TrackRow row) =>
+        [
+            row.Title,
+            $"video {row.VideoId}",
+            $"state {row.ChipLabel}",
+            $"verdict {KeyText.Spell(Key) ?? "—"} · {KeyText.Confidence(Confidence)}",
+        ];
 
     private static string Summary(RunEvidence run) =>
         run.Sources.Count is 0

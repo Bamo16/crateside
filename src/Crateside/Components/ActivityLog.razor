@@ -1,0 +1,122 @@
+@using System.Text
+@using Crateside.Core.Orchestration
+@using Crateside.Core.Tracks
+@inject JobStore Jobs
+@inject DeletionLog Deletions
+@inject ActionLog Actions
+@inject IJSRuntime Js
+
+<section class="activity">
+    <div class="activity-head">
+        <button class="toggle" @onclick="() => _open = !_open">
+            <span class="mono chevron">@(_open ? "▾" : "▸")</span>
+            <span class="title">Activity</span>
+            <span class="summary">@Summary</span>
+        </button>
+        <button class="outline" @onclick="Copy" disabled="@(_entries.Count is 0)">
+            @(_copied ? "Copied" : "Copy all")
+        </button>
+    </div>
+
+    @if (_open)
+    {
+        <div class="filters">
+            @foreach (var filter in Enum.GetValues<Filter>())
+            {
+                <button class="pill @(_filter == filter ? "on plain" : "off")" @onclick="() => _filter = filter">
+                    @filter
+                </button>
+            }
+        </div>
+
+        <div class="log mono">
+            @{
+                var pass = 0;
+            }
+            @foreach (var entry in Shown)
+            {
+                if (entry.Pass != pass)
+                {
+                    pass = entry.Pass;
+                    <div class="divider">Pass @pass</div>
+                }
+                <div class="line @(entry.IsProblem ? "problem" : null)">
+                    <span class="at">@Stamp(entry.At)</span>
+                    <span class="source @(entry.Source == TrackActivity.You ? "you" : null)">@entry.Source</span>
+                    <span class="pass">@entry.Pass</span>
+                    <span class="message">@entry.Message@(entry.Count > 1 ? $" ×{entry.Count}" : null)</span>
+                </div>
+            }
+            @if (!Shown.Any())
+            {
+                <div class="line empty">Nothing here.</div>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private IReadOnlyList<ActivityEntry> _entries = [];
+    private bool _open;
+    private bool _copied;
+    private Filter _filter = Filter.All;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    /// <summary>What the copied text opens with: the name, id, state and verdict, one per line.</summary>
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<string> Header { get; set; }
+
+    private enum Filter
+    {
+        All,
+        Problems,
+        You,
+    }
+
+    private IEnumerable<ActivityEntry> Shown =>
+        _filter switch
+        {
+            Filter.Problems => _entries.Where(entry => entry.IsProblem),
+            Filter.You => _entries.Where(entry => entry.Source == TrackActivity.You),
+            _ => _entries,
+        };
+
+    private string Summary =>
+        _entries is [.., var last]
+            ? $"{"entry".ToQuantity(_entries.Count)} across {"pass".ToQuantity(last.Pass)} · last {Stamp(last.At)}"
+            : "nothing recorded";
+
+    protected override void OnParametersSet()
+    {
+        var uploads = Row.Facts.Uploads.ToHashSet(StringComparer.Ordinal);
+
+        _entries = TrackActivity.Build(
+            Jobs.History(Row.VideoId),
+            Deletions.All().Where(deletion => deletion.VideoId is { } id && uploads.Contains(id)),
+            Actions.For(Row.VideoId)
+        );
+    }
+
+    private async Task Copy()
+    {
+        var text = new StringBuilder();
+
+        foreach (var line in Header)
+            text.AppendLine(line);
+
+        text.AppendLine($"copied {Stamp(DateTimeOffset.Now)}, {"entry".ToQuantity(_entries.Count)}");
+        text.AppendLine();
+
+        foreach (var entry in _entries)
+            text.AppendLine(
+                $"{Stamp(entry.At)}  {entry.Source, -10}  {entry.Pass, 2}  {entry.Message}{(entry.Count > 1 ? $" ×{entry.Count}" : null)}"
+            );
+
+        await Js.InvokeVoidAsync("navigator.clipboard.writeText", text.ToString());
+        _copied = true;
+    }
+
+    private static string Stamp(DateTimeOffset at) => at.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss zzz");
+}
