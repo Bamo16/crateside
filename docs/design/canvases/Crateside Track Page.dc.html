@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"><style>html{background:#0f0e0c}body{margin:0;min-height:100%;background:#0f0e0c;font-family:"IBM Plex Sans",system-ui,sans-serif;color:#ece7dc}a{color:#ece7dc}a:hover{color:#fff}.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(255,255,255,.08)}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}.dv-tid{font:600 10px "IBM Plex Mono",monospace;padding:3px 7px;background:#ece7dc;color:#0f0e0c;border-radius:4px;text-decoration:none}.dv-tname{font:600 13px/1.2 "IBM Plex Sans",sans-serif}.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}.dv-oid{font:600 10.5px "IBM Plex Mono",monospace;padding:3px 7px;background:rgba(255,255,255,.1);color:#ece7dc;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11.5px/1.3 "IBM Plex Sans",sans-serif;color:rgba(236,231,220,.6);max-width:1280px}.dv-card{background:#141310;border:1px solid rgba(255,255,255,.1);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.5);overflow:hidden;box-sizing:border-box}.dv-opt:target .dv-oid{background:#e8b45a;color:#0f0e0c}.dv-notes{max-width:780px;font:13px/1.55 "IBM Plex Sans",sans-serif;color:rgba(236,231,220,.7);margin:0 0 28px}.dv-notes b{color:#ece7dc;font-weight:600}.dv-notes p{margin:0 0 8px}@keyframes cs-ping{0%{transform:scale(.6);opacity:.9}100%{transform:scale(1.6);opacity:0}}.dv-next{margin:22px 0 0;font:12px/1.5 "IBM Plex Sans",sans-serif;color:rgba(236,231,220,.5)}</style></helmet>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Actions, stage flow, upload embed, genre, activity log</span></div>
+<div class="dv-notes">
+<p><b>Actions.</b> They're here, in a <i>Change</i> group at the top of the rail, and they're the row's own components mounted a second time: same confirms, same copy. The one exception is <i>Change what is cut</i>. Here, as on the row, the samples list <i>is</i> the picker, so its opener sits under the samples table and nowhere else.</p>
+<p><b>Stage flow.</b> This replaces the ladder, sitting directly under the band. It draws <b>one pass</b>, the current one. A pass is a run from some stage to the end: the first run, a re-cut, a source added later. Stages the pass doesn't need are drawn <i>skipped</i> (dashed), so nothing ever un-completes. Earlier passes fold into a "2 earlier passes" link that opens the log. The current step pulses, and it's the only animation on the page.</p>
+<p><b>Log.</b> It's last on the page and collapsed to one line, with <i>Copy all</i> available even while collapsed. What gets copied is plain text with a header block (name, video id, state, verdict), so it can go straight to an agent.</p>
+</div>
+<div class="dv-opts">
+
+<!-- 2a -->
+<div class="dv-opt" id="2a"><div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a><span>Done, revised: the band, then the flow, then the rail with actions, embed and genre. Samples and evidence are as in <a class="dv-oid" href="#1a">1a</a>, with the log closing the page (<a class="dv-oid" href="#2b">2b</a>).</span></div>
+<div class="dv-card" style="width:1280px">
+  <div style="display:grid;grid-template-columns:max-content 1fr;background:#1b1a15;border-bottom:1px solid rgba(255,255,255,.08)">
+    <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect><rect x="3" y="10.8" width="14" height="2.4" rx="1.2" fill="#e8b45a"></rect><rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect></svg><span style="font:600 15px/1 'IBM Plex Sans',sans-serif">crateside</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5);padding-bottom:3px">Library</span><span style="color:rgba(236,231,220,.5);padding-bottom:3px">Partners</span><span style="color:rgba(236,231,220,.5);padding-bottom:3px">Settings</span></div>
+    </div><div></div>
+  </div>
+  <div style="max-width:72rem;margin:0 auto;padding:26px 40px 36px;box-sizing:border-box">
+    <div style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);margin-bottom:10px">← Tracks</div>
+    <div style="display:flex;align-items:baseline;gap:16px">
+      <h1 style="margin:0;font:600 28px/1.15 'IBM Plex Sans',sans-serif;letter-spacing:-.01em">Neon Tide</h1>
+      <span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Future Bass · 1 upload</span>
+    </div>
+
+    <div style="margin-top:22px;display:grid;grid-template-columns:1fr 1fr 1fr 1.35fr;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px 10px 0 0">
+      <div style="padding:22px 26px;display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Key</span><span style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">G♯ min</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">tagged in Ableton on 2 of 2 samples</span></div>
+      <div style="padding:22px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Confidence</span><span style="font:500 52px/1 'IBM Plex Mono',monospace">HIGH</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">judged 11 Sep 2026</span></div>
+      <div style="padding:22px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">BPM</span><span style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">127</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">beatdetect <span style="font-family:'IBM Plex Mono',monospace">63.5</span>, half, not a conflict</span></div>
+      <div style="padding:22px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Where it is</span><span style="display:inline-flex;width:fit-content;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 10px;border-radius:999px;color:#7fcf9a;border:1px solid rgba(127,207,154,.3)">done</span><span style="font:400 13px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">In Mashup Samples since 14 Sep. Nothing left to do.</span><a href="#evidence" style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-underline-offset:3px">Why G♯ minor ↓</a></div>
+    </div>
+    <div style="background:#17160f;border:1px solid rgba(255,255,255,.08);border-top:0;border-radius:0 0 10px 10px;padding:14px 26px;display:flex;align-items:center;gap:10px">
+      <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-right:6px">Pass 2 · re-cut</span>
+      <sc-for list="{{ flowDone }}" as="s" hint-placeholder-count="6">
+        <span style="display:flex;align-items:center;gap:10px"><span style="display:flex;flex-direction:column;gap:3px;align-items:flex-start"><span style="display:inline-flex;align-items:center;gap:6px;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 10px;border-radius:999px;color:{{ s.fg }};border:1px {{ s.bs }} {{ s.bc }};background:{{ s.bg }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px">{{ s.glyph }}</span>{{ s.label }}</span><span style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5);padding-left:10px">{{ s.when }}</span></span><span style="width:18px;height:1px;background:rgba(255,255,255,.18);margin-bottom:16px;display:{{ s.arrow }}"></span></span>
+      </sc-for>
+      <span style="margin-left:auto;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);text-decoration:underline;text-underline-offset:2px">1 earlier pass ↓</span>
+    </div>
+
+    <div style="margin-top:32px;display:grid;grid-template-columns:minmax(0,1fr) 19rem;gap:44px;align-items:start">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Samples</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">Mashup Samples / Neon Tide</span></div>
+        <div style="display:grid;grid-template-columns:1fr 150px 110px 90px;gap:14px;padding:9px 12px;margin-bottom:4px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12)"><span style="font:500 13px 'IBM Plex Sans',sans-serif">Neon Tide (Vocal - Full)</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">Mashup Samples</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">G♯ min ✓</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">premium</span></div>
+        <div style="display:grid;grid-template-columns:1fr 150px 110px 90px;gap:14px;padding:9px 12px;margin-bottom:4px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12)"><span style="font:500 13px 'IBM Plex Sans',sans-serif">Neon Tide (Instrumental - Clean)</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">Mashup Samples</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">G♯ min ✓</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">premium</span></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:8px;padding:8px 12px;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);border:1px dashed rgba(255,255,255,.18);border-radius:6px"><span style="font-family:'IBM Plex Mono',monospace">+</span><span style="white-space:nowrap">Change what is cut</span><span style="margin-left:auto;font-weight:400;color:rgba(236,231,220,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">2 samples are in Mashup Samples. Move them back to Sample Staging to change this.</span></div>
+        <div style="margin-top:28px;padding:18px 0;border-top:1px solid rgba(255,255,255,.08);font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Why G♯ minor — as <a class="dv-oid" href="#1a">1a</a></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:26px">
+        <div>
+          <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-bottom:8px">Change</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <sc-for list="{{ actions }}" as="a" hint-placeholder-count="6"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:{{ a.fg }};background:transparent;border:1px solid {{ a.bc }};border-radius:6px;padding:6px 10px;cursor:pointer" style-hover="border-color:rgba(255,255,255,.4)">{{ a.label }}</button></sc-for>
+          </div>
+          <div style="margin-top:8px;font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Rename opens the name strip above the band; the others open the row's own confirms, inline, in the rail.</div>
+        </div>
+        <div>
+          <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-bottom:8px">Upload</div>
+          <div style="aspect-ratio:16/9;border-radius:6px;background:#0f0e0c;border:1px solid rgba(255,255,255,.1);display:grid;place-items:center;position:relative">
+            <span style="width:44px;height:30px;border-radius:8px;background:rgba(236,231,220,.14);display:grid;place-items:center"><svg width="12" height="14" viewBox="0 0 12 14"><path d="M0 0l12 7-12 7z" fill="#ece7dc"></path></svg></span>
+            <span style="position:absolute;left:10px;bottom:8px;font:400 11px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">3:40</span>
+          </div>
+          <div style="margin-top:8px;display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline"><span style="font:400 12.5px 'IBM Plex Mono',monospace">k2Rf9QzL1aE</span><a href="#" style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">YouTube ↗</a><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">primary · stems cut from this</span></div>
+          <div style="margin-top:6px;font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Click-to-load: a still with a play glyph, and nothing fetched from YouTube until you press it. Several uploads stack, one player at a time.</div>
+        </div>
+        <div>
+          <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-bottom:8px">Genre</div>
+          <div style="font:500 15px 'IBM Plex Sans',sans-serif">Future Bass</div>
+          <div style="margin-top:4px;font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Beatport: future bass · RYM: kawaii future bass · MusicBrainz: electronic</div>
+          <div style="margin-top:12px;padding:10px 12px;border:1px solid rgba(232,180,90,.35);border-radius:6px;display:flex;flex-direction:column;gap:8px"><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span style="color:#e8b45a">Suggested · J-Pop</span> — the way it looks when no genre is settled yet</span><span style="display:flex;gap:6px"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#0f0e0c;background:#ece7dc;border:0;border-radius:6px;padding:6px 10px">Use J-Pop</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Pick another</button></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2b log -->
+<div class="dv-opt" id="2b"><div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a><span>Activity log, the last thing on the page: collapsed (the default), then opened.</span></div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div class="dv-card" style="width:1280px;padding:18px 40px">
+  <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid rgba(255,255,255,.08)"><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.35)">›</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Activity</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)"><span style="font-family:'IBM Plex Mono',monospace">41</span> entries across 2 passes · last <span style="font-family:'IBM Plex Mono',monospace">2026-09-14 21:07</span></span><button style="margin-left:auto;font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Copy all</button></div>
+</div>
+<div class="dv-card" style="width:1280px;padding:18px 40px 24px">
+  <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid rgba(255,255,255,.08)"><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.35)">⌄</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Activity</span>
+    <span style="display:flex;gap:4px;margin-left:10px"><span style="font:500 11.5px 'IBM Plex Sans',sans-serif;padding:3px 9px;border-radius:999px;background:#ece7dc;color:#0f0e0c">All</span><span style="font:500 11.5px 'IBM Plex Sans',sans-serif;padding:3px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.1);color:rgba(236,231,220,.75)">Problems <span style="font-family:'IBM Plex Mono',monospace;color:#e07a6d">2</span></span><span style="font:500 11.5px 'IBM Plex Sans',sans-serif;padding:3px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.1);color:rgba(236,231,220,.75)">You</span></span>
+    <button style="margin-left:auto;font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Copy all 41</button></div>
+  <div style="background:#0f0e0c;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:10px 0;max-height:340px;overflow:hidden">
+    <sc-for list="{{ log }}" as="e" hint-placeholder-count="14">
+      <div style="display:grid;grid-template-columns:200px 88px 76px 1fr;gap:14px;padding:3px 14px;font:400 12px/1.55 'IBM Plex Mono',monospace;background:{{ e.bg }}"><span style="color:rgba(236,231,220,.5)">{{ e.t }}</span><span style="color:{{ e.srcColor }}">{{ e.src }}</span><span style="color:rgba(236,231,220,.5)">{{ e.pass }}</span><span style="color:{{ e.msgColor }};white-space:pre-wrap">{{ e.msg }}</span></div>
+    </sc-for>
+  </div>
+  <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:24px;font:400 12px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">
+    <span>Newest last, the way logs are read. Full local timestamps with offsets. The source column is the stage, or <i>you</i> for anything done by hand (including on the row). A pass divider is a line of its own. The box scrolls; the page never grows past ~20 lines.</span>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:rgba(236,231,220,.5);white-space:pre-wrap">copied text begins:
+# crateside · Neon Tide
+video k2Rf9QzL1aE · done · G♯ min HIGH · 127 bpm
+copied 2026-09-25 19:40 +01:00 · 41 entries
+2026-09-11 18:39:02 +01:00  download  pass 1  …</span>
+  </div>
+</div>
+</div></div>
+
+<!-- 2c flow variants -->
+<div class="dv-opt" id="2c"><div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a><span>The flow across the cases that could break it: a first run in flight, re-entry for a later source download, a parked track, a give-up, and a re-cut.</span></div>
+<div class="dv-card" style="width:1280px;padding:18px 40px 22px;display:flex;flex-direction:column;gap:6px">
+  <sc-for list="{{ flows }}" as="f" hint-placeholder-count="5">
+    <div style="display:grid;grid-template-columns:230px 1fr;gap:18px;align-items:center;padding:12px 0;border-top:1px solid rgba(255,255,255,.06)">
+      <div style="display:flex;flex-direction:column;gap:3px"><span style="font:500 13px 'IBM Plex Sans',sans-serif">{{ f.title }}</span><span style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ f.note }}</span></div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-right:4px">{{ f.pass }}</span>
+        <sc-for list="{{ f.steps }}" as="s" hint-placeholder-count="6">
+          <span style="display:flex;align-items:center;gap:10px"><span style="display:inline-flex;align-items:center;gap:6px;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 10px;border-radius:999px;color:{{ s.fg }};border:1px {{ s.bs }} {{ s.bc }};background:{{ s.bg }};opacity:{{ s.op }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;display:{{ s.glyphShow }}">{{ s.glyph }}</span><span style="display:{{ s.pulseShow }}">{{ pulse }}</span>{{ s.label }}</span><span style="width:18px;height:1px;background:rgba(255,255,255,.18);display:{{ s.arrow }}"></span></span>
+        </sc-for>
+      </div>
+    </div>
+  </sc-for>
+  <div style="padding-top:12px;border-top:1px solid rgba(255,255,255,.06);display:flex;flex-wrap:wrap;gap:8px 22px;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">
+    <span><span style="font-family:'IBM Plex Mono',monospace">✓</span> done: neutral, with the date under it</span><span style="color:#6fc7d6">● running: teal filled, pulsing</span><span style="color:#e8b45a">● your turn: amber</span><span>○ not yet: outline</span><span style="color:rgba(236,231,220,.6)">– skipped: dashed, dimmed</span><span style="color:#e07a6d">■ stopped: red, carries the reason</span>
+  </div>
+</div></div>
+
+</div>
+<p class="dv-next">Try next: "log as a table with column filters" · "flow inside the band instead of under it" · "draw several uploads with stacked embeds" · "write the #21 handoff README"</p>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">Track details — the song page, rebuilt around its conclusion (#21)</span></div>
+<div class="dv-notes">
+<p><b>Read against the repo</b> (<code>Song.razor</code>, <code>Evidence.razor(.css)</code>, <code>PageHeader</code>, <code>BrandNav</code>, <code>app.css</code>). Tokens, chip vocabulary and the <i>Bar</i> header are the built ones; nothing new is coloured.</p>
+<p><b>Shape.</b> A <b>verdict band</b> first: key, confidence and BPM set at one size in mono, with the state as the band's fourth cell, so what it is and where it is are read together. Below it, two columns: <b>samples</b> then <b>evidence</b> on the left (the things you read), and on the right a narrow rail of <b>what has run, uploads, genre, plan</b> (the things you check). The evidence is a section with its own anchor, and its content is unchanged.</p>
+<p><b>Name.</b> The page is <b>Track details</b>, the row link reads <b>Track details</b>, and the tab title is <code>{name} · crateside</code>. It isn't tied to the key, and it's the word the app already uses.</p>
+<p><b>Reading, mostly</b> <span style="color:rgba(236,231,220,.5)">(superseded by <a class="dv-oid" href="#2a">2a</a>: actions live here too)</span><b>.</b> My default: the page changes nothing except <i>answers to findings</i> (Same song / Different song, Use it anyway), because a finding is decided by reading, and this page is where the reading is. Every other change goes through one link back to the expanded row. <a class="dv-oid" href="#1a">1a</a> is Done at full fidelity; <a class="dv-oid" href="#1b">1b</a>–<a class="dv-oid" href="#1i">1i</a> are the other seven states plus the verdict's variants.</p>
+</div>
+<div class="dv-opts">
+
+<!-- 1a DONE -->
+<div class="dv-opt" id="1a"><div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a><span>Done — judged, cut, everything in the library. The common case.</span></div>
+<div class="dv-card" style="width:1280px">
+  <div style="display:grid;grid-template-columns:max-content 1fr;background:#1b1a15;border-bottom:1px solid rgba(255,255,255,.08)">
+    <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect><rect x="3" y="10.8" width="14" height="2.4" rx="1.2" fill="#e8b45a"></rect><rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect></svg><span style="font:600 15px/1 'IBM Plex Sans',sans-serif">crateside</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5);padding-bottom:3px">Library</span><span style="color:rgba(236,231,220,.5);padding-bottom:3px">Partners</span><span style="color:rgba(236,231,220,.5);padding-bottom:3px">Settings</span></div>
+    </div>
+    <div></div>
+  </div>
+
+  <div style="max-width:72rem;margin:0 auto;padding:26px 40px 44px;box-sizing:border-box">
+    <div style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);margin-bottom:10px">← Tracks</div>
+    <div style="display:flex;align-items:baseline;gap:16px">
+      <h1 style="margin:0;font:600 28px/1.15 'IBM Plex Sans',sans-serif;letter-spacing:-.01em">Neon Tide</h1>
+      <span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Future Bass · 1 upload</span>
+      <a href="#" style="margin-left:auto;font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;text-decoration:none;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:6px 11px">Open on YouTube ↗</a>
+    </div>
+
+    <div style="margin-top:22px;display:grid;grid-template-columns:1fr 1fr 1fr 1.35fr;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px">
+      <div style="padding:22px 26px;display:flex;flex-direction:column;gap:10px">
+        <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Key</span>
+        <span style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">G♯ min</span>
+        <span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">tagged in Ableton on 2 of 2 samples</span>
+      </div>
+      <div style="padding:22px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px">
+        <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Confidence</span>
+        <span style="font:500 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.02em">HIGH</span>
+        <span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">judged 11 Sep 2026</span>
+      </div>
+      <div style="padding:22px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px">
+        <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">BPM</span>
+        <span style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">127</span>
+        <span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">beatdetect <span style="font-family:'IBM Plex Mono',monospace">63.5</span> — half, not a conflict</span>
+      </div>
+      <div style="padding:22px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px">
+        <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Where it is</span>
+        <span style="display:inline-flex;width:fit-content;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 10px;border-radius:999px;color:#7fcf9a;border:1px solid rgba(127,207,154,.3)">done</span>
+        <span style="font:400 13px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">In Mashup Samples since 14 Sep. Nothing left to do.</span>
+        <a href="#evidence" style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-underline-offset:3px">Why G♯ minor ↓</a>
+      </div>
+    </div>
+
+    <div style="margin-top:36px;display:grid;grid-template-columns:minmax(0,1fr) 19rem;gap:44px;align-items:start">
+      <div>
+        <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Samples</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">Mashup Samples / Neon Tide</span></div>
+        <div style="display:grid;grid-template-columns:1fr 150px 110px 90px;gap:14px;padding:0 12px 6px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span>Sample</span><span>Where</span><span>Ableton key</span><span>Audio</span></div>
+        <div style="display:grid;grid-template-columns:1fr 150px 110px 90px;gap:14px;align-items:center;padding:9px 12px;margin-bottom:4px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12)"><span style="font:500 13px 'IBM Plex Sans',sans-serif">Neon Tide (Vocal - Full)</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">Mashup Samples</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">G♯ min ✓</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">premium</span></div>
+        <div style="display:grid;grid-template-columns:1fr 150px 110px 90px;gap:14px;align-items:center;padding:9px 12px;margin-bottom:4px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12)"><span style="font:500 13px 'IBM Plex Sans',sans-serif">Neon Tide (Instrumental - Clean)</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">Mashup Samples</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">G♯ min ✓</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">premium</span></div>
+        <div style="display:grid;grid-template-columns:1fr 150px 110px 90px;gap:14px;align-items:center;padding:9px 12px;margin-bottom:4px;border-radius:6px;border:1px dashed rgba(255,255,255,.12)"><span style="font:500 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Drums <span style="font:400 11px 'IBM Plex Mono',monospace;margin-left:6px">warp guide</span></span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">deleted</span><span></span><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);font-style:italic">warping finished</span></div>
+        <div style="margin-top:10px;padding:0 12px;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">▸ 1 sample sent to the recycle bin <span style="color:rgba(236,231,220,.5)">· Instrumental - Full, 12 Sep, replaced by Clean</span></div>
+
+        <div id="evidence" style="margin-top:40px;padding-top:26px;border-top:1px solid rgba(255,255,255,.08)">
+          <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:18px"><span style="font:600 16px 'IBM Plex Sans',sans-serif">Why G♯ minor</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">2 of 3 detectors, 2 human sources, and the cadence agree</span></div>
+          <div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px">
+            <div>
+              <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-bottom:8px">The argument</div>
+              <p style="margin:0;font:400 13.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);max-width:62ch">Essentia and KeyFinder both land on G♯ minor; CREMA prefers the relative B major by a narrow margin. The chorus resolves V–i onto G♯ twice, and the MuseScore transcription is written in five sharps with a G♯ minor final cadence. Tunebat's B major is the same relative split and is algorithmic, so it corroborates nothing.</p>
+              <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin:22px 0 6px">Human sources</div>
+              <div style="display:grid;grid-template-columns:16px 112px minmax(0,1fr);gap:10px;align-items:baseline;padding:8px 0;font:400 13px 'IBM Plex Sans',sans-serif"><span style="font-family:'IBM Plex Mono',monospace;text-align:center">✓</span><span style="font:500 10px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-align:center;padding:2px 0;border-radius:4px;color:#0f0e0c;background:#ece7dc">authoritative</span><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="text-decoration:underline;text-underline-offset:2px;color:rgba(236,231,220,.75)">musescore.com</span><span style="font-family:'IBM Plex Mono',monospace">G♯ minor</span></span></div>
+              <div style="display:grid;grid-template-columns:16px 112px minmax(0,1fr);gap:10px;align-items:baseline;padding:8px 0;border-top:1px solid rgba(255,255,255,.06);font:400 13px 'IBM Plex Sans',sans-serif"><span style="font-family:'IBM Plex Mono',monospace;text-align:center">✓</span><span style="font:500 10px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-align:center;padding:1px 0;border-radius:4px;color:#ece7dc;border:1px solid rgba(236,231,220,.6)">corroborating</span><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="text-decoration:underline;text-underline-offset:2px;color:rgba(236,231,220,.75)">hooktheory.com</span><span style="font-family:'IBM Plex Mono',monospace">G♯ minor (Aeolian)</span></span></div>
+              <div style="display:grid;grid-template-columns:16px 112px minmax(0,1fr);gap:10px;align-items:baseline;padding:8px 0;border-top:1px solid rgba(255,255,255,.06);font:400 13px 'IBM Plex Sans',sans-serif"><span style="font-family:'IBM Plex Mono',monospace;text-align:center;color:rgba(236,231,220,.6)">✗</span><span style="font:500 10px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;text-align:center;padding:1px 0;border-radius:4px;color:rgba(236,231,220,.6);border:1px dashed rgba(236,231,220,.3)">algorithmic</span><span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="text-decoration:underline;text-underline-offset:2px;color:rgba(236,231,220,.75)">tunebat.com</span><span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">B major</span><span style="font:italic 400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">relative major; an algorithmic dissent does not demote</span></span></div>
+              <div style="margin-top:8px;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">▸ What each source actually said</div>
+            </div>
+            <div>
+              <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-bottom:8px">What the detectors reported</div>
+              <div style="display:grid;grid-template-columns:90px 80px 1fr;gap:6px 14px;font:400 13px 'IBM Plex Sans',sans-serif;align-items:baseline">
+                <span style="color:rgba(236,231,220,.75)">Essentia</span><span style="font:600 13px 'IBM Plex Mono',monospace">G♯ min</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">0.842</span>
+                <span style="color:rgba(236,231,220,.75)">KeyFinder</span><span style="font:600 13px 'IBM Plex Mono',monospace">G♯ min</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">0.711</span>
+                <span style="color:rgba(236,231,220,.75)">CREMA</span><span style="font:600 13px 'IBM Plex Mono',monospace">B maj</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">runner-up G♯ min (0.968)</span>
+              </div>
+              <div style="margin-top:12px;padding:9px 12px;border:1px solid rgba(224,122,109,.45);border-radius:6px;font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span style="color:#e07a6d;font-weight:500;margin-right:6px">Relative split</span><span style="font-family:'IBM Plex Mono',monospace">Essentia × CREMA</span> landed on relative keys. Only the cadence or a human source breaks this tie.</div>
+              <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin:20px 0 6px">Tonic check</div>
+              <p style="margin:0;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">Chorus cadences resolve D♯ → G♯m at 1:04 and 2:11.</p>
+              <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin:20px 0 6px">Chord progression</div>
+              <p style="margin:0;font:400 12.5px/1.8 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">G♯m → E → B → F♯ → G♯m → E → B → D♯ <span style="color:rgba(236,231,220,.5)">(+38 more)</span></p>
+              <div style="margin-top:14px;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">▸ Key flicker · <span style="font-family:'IBM Plex Mono',monospace">14</span> events</div>
+              <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin:20px 0 6px">Tempo</div>
+              <p style="margin:0;font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span style="font:600 13px 'IBM Plex Mono',monospace;color:#ece7dc">127</span> from the agent · beatdetect <span style="font-family:'IBM Plex Mono',monospace">63.5</span></p>
+              <p style="margin:20px 0 0;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Recorded <span style="font-family:'IBM Plex Mono',monospace">2026-09-11 18:42</span> from the source track</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:28px">
+        <div>
+          <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-bottom:8px">What has run</div>
+          <div style="display:grid;grid-template-columns:16px 1fr auto;gap:7px 10px;font:400 13px 'IBM Plex Sans',sans-serif;align-items:baseline">
+            <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">✓</span><span>Downloaded</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">11 Sep</span>
+            <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">✓</span><span>Key detected</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">11 Sep</span>
+            <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">✓</span><span>Judged</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">11 Sep</span>
+            <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">✓</span><span>Separated</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">12 Sep</span>
+            <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">✓</span><span>Staged and tagged</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">12 Sep</span>
+            <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">✓</span><span>Warped, moved to the library</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">14 Sep</span>
+          </div>
+        </div>
+        <div>
+          <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-bottom:8px">Uploads</div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline"><span style="font:400 12.5px 'IBM Plex Mono',monospace">k2Rf9QzL1aE</span><a href="#" style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">YouTube ↗</a><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">primary · stems cut from this</span></div>
+        </div>
+        <div>
+          <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-bottom:8px">Genre</div>
+          <div style="font:500 15px 'IBM Plex Sans',sans-serif">Future Bass</div>
+          <div style="margin-top:4px;font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Beatport: future bass · RYM: kawaii future bass · MusicBrainz: electronic</div>
+        </div>
+        <div>
+          <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-bottom:8px">Plan</div>
+          <div style="font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">Vocal - Full, Instrumental - Clean. Source not kept.</div>
+        </div>
+        <a href="#" style="display:block;text-align:center;font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;text-decoration:none;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:8px 11px">Change this track on Tracks →</a>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 1b READY -->
+<div class="dv-opt" id="1b"><div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a><span>Ready to warp — the band's state cell turns amber, the samples are in staging, the warp guide is still on disk, and the ladder's last step is marked "you".</span></div>
+<div class="dv-card" style="width:1280px;padding:24px 40px 28px">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.35fr;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px">
+    <div style="padding:20px 26px;display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Key</span><span style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">A♭ maj</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">tagged in Ableton on 2 of 2 samples</span></div>
+    <div style="padding:20px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Confidence</span><span style="font:500 52px/1 'IBM Plex Mono',monospace">HIGH</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">judged 16 Sep 2026</span></div>
+    <div style="padding:20px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">BPM</span><span style="font:600 52px/1 'IBM Plex Mono',monospace;color:#e8b45a">122</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">beatdetect <span style="font-family:'IBM Plex Mono',monospace">121.8</span></span></div>
+    <div style="padding:20px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Where it is</span><span style="display:inline-flex;width:fit-content;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 10px;border-radius:999px;background:rgba(232,180,90,.16);color:#e8b45a;border:1px solid rgba(232,180,90,.35)">ready to warp</span><span style="font:400 13px/1.45 'IBM Plex Sans',sans-serif;color:#e8b45a">Your turn — warp, then move to Mashup Samples.</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">In Sample Staging for <span style="font-family:'IBM Plex Mono',monospace">9</span> days</span></div>
+  </div>
+  <div style="margin-top:24px;display:grid;grid-template-columns:minmax(0,1fr) 19rem;gap:44px">
+    <div>
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Samples</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">Sample Staging / Glass Harbour</span></div>
+      <div style="display:grid;grid-template-columns:1fr 150px 110px 90px;gap:14px;padding:9px 12px;margin-bottom:4px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12)"><span style="font:500 13px 'IBM Plex Sans',sans-serif">Glass Harbour (Vocal - Full)</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">Sample Staging</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">A♭ maj ✓</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">premium</span></div>
+      <div style="display:grid;grid-template-columns:1fr 150px 110px 90px;gap:14px;padding:9px 12px;margin-bottom:4px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12)"><span style="font:500 13px 'IBM Plex Sans',sans-serif">Glass Harbour (Instrumental - Full)</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">Sample Staging</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">A♭ maj ✓</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">premium</span></div>
+      <div style="display:grid;grid-template-columns:1fr 150px 110px 90px;gap:14px;padding:9px 12px;border-radius:6px;border:1px dashed rgba(255,255,255,.12);opacity:.6"><span style="font:500 13px 'IBM Plex Sans',sans-serif">Glass Harbour (Drums) <span style="font:400 11px 'IBM Plex Mono',monospace;margin-left:6px">warp guide</span></span><span style="font:400 12px 'IBM Plex Mono',monospace">Sample Staging</span><span></span><span style="font:italic 400 12px 'IBM Plex Sans',sans-serif">still here</span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:16px 1fr auto;gap:7px 10px;font:400 13px 'IBM Plex Sans',sans-serif;align-items:baseline;align-content:start">
+      <span style="grid-column:1/-1;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-bottom:2px">What has run</span>
+      <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">✓</span><span>Judged</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">16 Sep</span>
+      <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">✓</span><span>Separated, staged, tagged</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">16 Sep</span>
+      <span style="font-family:'IBM Plex Mono',monospace;color:#e8b45a">●</span><span style="color:#e8b45a">Warp, move to the library</span><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:#e8b45a">you</span>
+    </div>
+  </div>
+</div></div>
+
+<!-- 1c IN FLIGHT -->
+<div class="dv-opt" id="1c"><div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a><span>In flight — separating. The state cell carries the stage and the clock; Samples becomes "will be cut into", from the plan.</span></div>
+<div class="dv-card" style="width:1280px;padding:24px 40px 28px">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.35fr;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px">
+    <div style="padding:20px 26px;display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Key</span><span style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">G maj</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">not tagged yet — nothing on disk</span></div>
+    <div style="padding:20px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Confidence</span><span style="font:500 52px/1 'IBM Plex Mono',monospace">HIGH</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">judged 20 min ago</span></div>
+    <div style="padding:20px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">BPM</span><span style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">118</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">beatdetect <span style="font-family:'IBM Plex Mono',monospace">117.9</span></span></div>
+    <div style="padding:20px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Where it is</span><span style="display:inline-flex;align-items:center;gap:7px;width:fit-content;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 10px;border-radius:999px;background:rgba(111,199,214,.14);color:#6fc7d6;border:1px solid rgba(111,199,214,.3)"><span style="width:6px;height:6px;border-radius:50%;background:#6fc7d6"></span>separating</span><span style="font:400 13px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span style="font-family:'IBM Plex Mono',monospace">4:12</span> of about 6–7 minutes, then staging and tagging.</span><span style="height:3px;border-radius:2px;background:rgba(255,255,255,.08);overflow:hidden"><span style="display:block;width:64%;height:100%;background:#6fc7d6"></span></span></div>
+  </div>
+  <div style="margin-top:24px;display:grid;grid-template-columns:minmax(0,1fr) 19rem;gap:44px">
+    <div>
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Will be cut into</span><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">the plan · nothing on disk yet</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><span style="font:500 13px 'IBM Plex Sans',sans-serif;padding:7px 12px;border-radius:6px;border:1px solid rgba(111,199,214,.3)">Vocal - Full</span><span style="font:500 13px 'IBM Plex Sans',sans-serif;padding:7px 12px;border-radius:6px;border:1px solid rgba(111,199,214,.3)">Instrumental - Full</span><span style="font:500 13px 'IBM Plex Sans',sans-serif;padding:7px 12px;border-radius:6px;border:1px dashed rgba(111,199,214,.3);color:rgba(236,231,220,.6)">Drums · warp guide</span></div>
+    </div>
+    <div style="display:grid;grid-template-columns:16px 1fr auto;gap:7px 10px;font:400 13px 'IBM Plex Sans',sans-serif;align-items:baseline;align-content:start">
+      <span style="grid-column:1/-1;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-bottom:2px">What has run</span>
+      <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">✓</span><span>Downloaded, detected, judged</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">today</span>
+      <span style="font-family:'IBM Plex Mono',monospace;color:#6fc7d6">●</span><span style="color:#6fc7d6">Separating</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:#6fc7d6">4:12</span>
+      <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.3)">○</span><span style="color:rgba(236,231,220,.5)">Staged and tagged</span><span></span>
+      <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.3)">○</span><span style="color:rgba(236,231,220,.5)">Warp, move to the library</span><span></span>
+    </div>
+  </div>
+</div></div>
+
+<!-- 1d NEVER JUDGED -->
+<div class="dv-opt" id="1d"><div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a><span>Never judged — the band keeps its shape, with dashed empty slots that say where the answer will land. The state leads. No evidence section at all (no empty heading).</span></div>
+<div class="dv-card" style="width:1280px;padding:24px 40px 28px">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.35fr;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px">
+    <div style="padding:20px 26px;display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Key</span><span style="height:52px;border:1px dashed rgba(255,255,255,.18);border-radius:6px;display:grid;place-items:center;font:400 22px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.3)">—</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">after detection and judging</span></div>
+    <div style="padding:20px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Confidence</span><span style="height:52px;border:1px dashed rgba(255,255,255,.18);border-radius:6px;display:grid;place-items:center;font:400 22px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.3)">—</span><span></span></div>
+    <div style="padding:20px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">BPM</span><span style="height:52px;border:1px dashed rgba(255,255,255,.18);border-radius:6px;display:grid;place-items:center;font:400 22px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.3)">—</span><span></span></div>
+    <div style="padding:20px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Where it is</span><span style="display:inline-flex;width:fit-content;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 10px;border-radius:999px;color:rgba(236,231,220,.75);border:1px solid rgba(255,255,255,.14)">queued</span><span style="font:400 13px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">3rd to download. Judging follows; about 1 minute of quota.</span></div>
+  </div>
+  <p style="margin:18px 0 0;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Samples, uploads and genre render as normal once they exist; until then, the rail shows only the ladder with every step ○.</p>
+</div></div>
+
+<!-- 1e PARKED / NEEDS AN ANSWER -->
+<div class="dv-opt" id="1e"><div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a><span>Parked, or needs an answer — a finding strip sits <i>above</i> the band, because it is what the page is for right now. Answers are the only controls on the page.</span></div>
+<div class="dv-card" style="width:1280px;padding:24px 40px 28px;display:flex;flex-direction:column;gap:18px">
+  <div style="border:1px solid rgba(224,122,109,.45);border-radius:10px;padding:18px 22px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 28px;align-items:center">
+    <div style="display:flex;flex-direction:column;gap:6px"><span style="font:500 13px 'IBM Plex Sans',sans-serif;color:#e07a6d">Looks like a song already judged</span><span style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">This upload's title and length match <span style="text-decoration:underline;text-underline-offset:2px">Neon Tide</span>, judged G♯ min · 127 on 11 Sep. If it's the same song, it joins that track as another upload; if not, it's judged on its own.</span></div>
+    <div style="display:flex;gap:8px"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#0f0e0c;background:#ece7dc;border:0;border-radius:6px;padding:7px 12px">Same song</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:6px 11px">Different song</button></div>
+    <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div style="padding:10px 12px;border-radius:6px;background:rgba(255,255,255,.03);display:grid;grid-template-columns:auto 1fr auto;gap:4px 14px;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);grid-column:1/-1">This upload</span><span style="font-family:'IBM Plex Mono',monospace">Qp7vN3xR2sM</span><span>Neon Tide (Official Audio)</span><span style="font-family:'IBM Plex Mono',monospace">3:41</span></div>
+      <div style="padding:10px 12px;border-radius:6px;background:rgba(255,255,255,.03);display:grid;grid-template-columns:auto 1fr auto;gap:4px 14px;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);grid-column:1/-1">Already judged</span><span style="font-family:'IBM Plex Mono',monospace">k2Rf9QzL1aE</span><span>Neon Tide</span><span style="font-family:'IBM Plex Mono',monospace">3:40</span></div>
+    </div>
+  </div>
+  <div style="border:1px solid rgba(224,122,109,.45);border-radius:10px;padding:18px 22px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px 28px;align-items:center">
+    <div style="display:flex;flex-direction:column;gap:6px"><span style="font:500 13px 'IBM Plex Sans',sans-serif;color:#e07a6d">Parked · poor audio</span><span style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">Downloaded below premium — this upload has no premium stream. Stems cut from it will carry the loss. Use it anyway, or swap to a better upload on Tracks.</span></div>
+    <div style="display:flex;gap:8px"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:6px 11px">Use it anyway</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:6px 11px">Swap source on Tracks →</button></div>
+  </div>
+  <p style="margin:0;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">The band below keeps whatever it has: dashed slots if nothing is judged yet (poor audio parks before judging), the verdict if it exists. The state cell's chip reads <span style="color:#e07a6d">parked · poor audio</span> / <span style="color:#e07a6d">needs an answer</span> in red outline.</p>
+</div></div>
+
+<!-- 1f LIBRARY ONLY -->
+<div class="dv-opt" id="1f"><div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a><span>Library-only — files that predate crateside. The key cell shows what Ableton holds, labelled as <i>not a verdict</i>; confidence and BPM stay empty; the chip is dashed (a deliberate absence).</span></div>
+<div class="dv-card" style="width:1280px;padding:24px 40px 28px">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1.35fr;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px">
+    <div style="padding:20px 26px;display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Key · tagged in Ableton</span><span style="font:500 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em;color:rgba(236,231,220,.75)">E min</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">set by hand, never judged</span></div>
+    <div style="padding:20px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Confidence</span><span style="font:400 52px/1 'IBM Plex Mono',monospace;color:rgba(236,231,220,.3)">—</span><span></span></div>
+    <div style="padding:20px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">BPM</span><span style="font:400 52px/1 'IBM Plex Mono',monospace;color:rgba(236,231,220,.3)">—</span><span></span></div>
+    <div style="padding:20px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Where it is</span><span style="display:inline-flex;width:fit-content;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 10px;border-radius:999px;color:rgba(236,231,220,.75);border:1px dashed rgba(255,255,255,.3)">library only</span><span style="font:400 13px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">In Mashup Samples from before crateside. Nothing has been judged or cut; crateside only reads it.</span></div>
+  </div>
+  <p style="margin:18px 0 0;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Samples list as in <a class="dv-oid" href="#1a">1a</a> (Where = Mashup Samples, Audio = unknown). Rail: no ladder, no plan, uploads only if provenance exists. No evidence section.</p>
+</div></div>
+
+<!-- 1g SEVERAL UPLOADS -->
+<div class="dv-opt" id="1g"><div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a><span>Several uploads — the samples table gains a <i>From</i> column, and the rail lists every upload with its own YouTube link. The header's link stays on the primary one.</span></div>
+<div class="dv-card" style="width:1280px;padding:24px 40px 28px;display:grid;grid-template-columns:minmax(0,1fr) 19rem;gap:44px">
+  <div>
+    <div style="display:grid;grid-template-columns:1fr 150px 130px 110px 100px;gap:14px;padding:0 12px 6px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span>Sample</span><span>From</span><span>Where</span><span>Ableton key</span><span>Audio</span></div>
+    <div style="display:grid;grid-template-columns:1fr 150px 130px 110px 100px;gap:14px;padding:9px 12px;margin-bottom:4px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12)"><span style="font:500 13px 'IBM Plex Sans',sans-serif">Neon Tide (Vocal - Full)</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">primary</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">Mashup Samples</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">G♯ min ✓</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">premium</span></div>
+    <div style="display:grid;grid-template-columns:1fr 150px 130px 110px 100px;gap:14px;padding:9px 12px;margin-bottom:4px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12)"><span style="font:500 13px 'IBM Plex Sans',sans-serif">Neon Tide (Instrumental - Clean)</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">primary</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">Mashup Samples</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">G♯ min ✓</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">premium</span></div>
+    <div style="display:grid;grid-template-columns:1fr 150px 130px 110px 100px;gap:14px;padding:9px 12px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12)"><span style="font:500 13px 'IBM Plex Sans',sans-serif">Neon Tide (Official Acapella)</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">Official Acapella</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">Sample Staging</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">G♯ min ✓</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:#e07a6d">below premium</span></div>
+  </div>
+  <div>
+    <div style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);margin-bottom:8px">Uploads</div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font:400 12.5px 'IBM Plex Mono',monospace">k2Rf9QzL1aE</span><a href="#" style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">YouTube ↗</a><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">primary · stems cut from this · 2 samples</span></div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline;padding-top:10px"><span style="font:500 12.5px 'IBM Plex Sans',sans-serif">Official Acapella <span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">Qp7vN3xR2sM</span></span><a href="#" style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">YouTube ↗</a><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">added · whole upload, never separated · 1 sample</span></div>
+  </div>
+</div></div>
+
+<!-- 1h JUDGED NO EVIDENCE -->
+<div class="dv-opt" id="1h"><div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a><span>Judged, no evidence recorded — the band is unchanged; the evidence section collapses to one honest line in the same place, and the band's "Why …" link is dropped.</span></div>
+<div class="dv-card" style="width:1280px;padding:24px 40px 28px">
+  <div style="padding-top:20px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:baseline;gap:14px;max-width:760px"><span style="font:600 16px 'IBM Plex Sans',sans-serif;flex:none">Why F min</span><span style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Judged <span style="font-family:'IBM Plex Mono',monospace">2026-03-02</span>, before crateside kept evidence. The verdict stands; its reasons were not saved.</span></div>
+</div></div>
+
+<!-- 1i VARIANTS -->
+<div class="dv-opt" id="1i"><div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a><span>How the band's cells vary — mode collapsed, BPM conflict, and the two confidences that are never tagged.</span></div>
+<div class="dv-card" style="width:1280px;padding:24px 40px 28px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+  <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Key</span><span style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">D min</span><span style="font:400 12.5px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">really <span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">D Dorian</span> — tagged as D minor, since Ableton has no modes</span></div>
+  <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">BPM</span><span style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">128</span><span style="font:400 12.5px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">beatdetect <span style="font-family:'IBM Plex Mono',monospace">96.3</span> · <span style="color:#e07a6d">conflict</span> — not a half or double, so one is simply wrong</span></div>
+  <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Confidence</span><span style="font:500 52px/1 'IBM Plex Mono',monospace;color:#e07a6d">LOW</span><span style="font:400 12.5px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">key shown as <span style="font-family:'IBM Plex Mono',monospace">C min?</span> — too weak to tag, so the track parks</span></div>
+  <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:20px 22px;display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Confidence</span><span style="font:500 40px/1.3 'IBM Plex Mono',monospace;color:#e07a6d">WITHHELD</span><span style="font:400 12.5px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">key cell shows — ; the agent would not commit</span></div>
+</div></div>
+
+
+
+</div>
+<p class="dv-next">Try next: "hide the band until judged" · "put the ladder under the band instead of the rail" · "draw the genre suggestion" · "write the #21 handoff README"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const S = {
+      done:    { fg: '#ece7dc', bc: 'rgba(255,255,255,.18)', bs: 'solid', bg: 'transparent', glyph: '✓', op: 1 },
+      run:     { fg: '#6fc7d6', bc: 'rgba(111,199,214,.3)', bs: 'solid', bg: 'rgba(111,199,214,.14)', glyph: '', op: 1, pulse: true },
+      you:     { fg: '#e8b45a', bc: 'rgba(232,180,90,.35)', bs: 'solid', bg: 'rgba(232,180,90,.16)', glyph: '●', op: 1 },
+      todo:    { fg: 'rgba(236,231,220,.6)', bc: 'rgba(255,255,255,.14)', bs: 'solid', bg: 'transparent', glyph: '○', op: 1 },
+      skip:    { fg: 'rgba(236,231,220,.6)', bc: 'rgba(255,255,255,.2)', bs: 'dashed', bg: 'transparent', glyph: '–', op: .55 },
+      stop:    { fg: '#e07a6d', bc: 'rgba(224,122,109,.45)', bs: 'solid', bg: 'transparent', glyph: '■', op: 1 },
+      stopped: { fg: '#e07a6d', bc: 'rgba(224,122,109,.45)', bs: 'solid', bg: 'rgba(224,122,109,.18)', glyph: '■', op: 1 },
+    };
+    const mk = (arr) => arr.map(([label, k, when], i) => Object.assign({}, S[k], {
+      label, when: when || '', arrow: i < arr.length - 1 ? 'block' : 'none',
+      glyphShow: S[k].pulse ? 'none' : 'inline', pulseShow: S[k].pulse ? 'inline-flex' : 'none',
+    }));
+    const pulse = React.createElement('span', { style: { position: 'relative', width: 6, height: 6, display: 'inline-block' } },
+      React.createElement('span', { style: { position: 'absolute', inset: 0, borderRadius: '50%', background: '#6fc7d6' } }),
+      React.createElement('span', { style: { position: 'absolute', inset: -4, borderRadius: '50%', border: '1.5px solid #6fc7d6', animation: 'cs-ping 1.6s ease-out infinite' } }));
+    const flows = [
+      { title: 'First run, in flight', note: 'The common case. Every stage in order.', pass: 'Pass 1',
+        steps: mk([['Download', 'done'], ['Detect', 'done'], ['Judge', 'done'], ['Separate', 'run'], ['Stage & tag', 'todo'], ['Warp', 'todo']]) },
+      { title: 'Source requested later', note: 'The plan gains Source. Only download and handoff rerun; the verdict and stems stand.', pass: 'Pass 2',
+        steps: mk([['Download', 'run'], ['Detect', 'skip'], ['Judge', 'skip'], ['Separate', 'skip'], ['Stage & tag', 'todo'], ['Warp', 'todo']]) },
+      { title: 'Re-cut', note: 'Detection and judging are skipped; the existing verdict tags the new stems.', pass: 'Pass 2',
+        steps: mk([['Download', 'skip'], ['Detect', 'skip'], ['Judge', 'skip'], ['Separate', 'run'], ['Stage & tag', 'todo'], ['Warp', 'todo']]) },
+      { title: 'Parked · no key', note: 'The pass stops where it stopped. Later steps stay ○, never red.', pass: 'Pass 1',
+        steps: mk([['Download', 'done'], ['Detect', 'done'], ['Judge · LOW', 'stop'], ['Separate', 'todo'], ['Stage & tag', 'todo'], ['Warp', 'todo']]) },
+      { title: 'Gave up', note: 'Red filled after trying; the strike count is in the chip.', pass: 'Pass 1',
+        steps: mk([['Download', 'done'], ['Detect', 'done'], ['Judge', 'done'], ['Separate ×3', 'stopped'], ['Stage & tag', 'todo'], ['Warp', 'todo']]) },
+      { title: 'Ready to warp', note: 'The last step is yours, not the machine’s.', pass: 'Pass 1',
+        steps: mk([['Download', 'done'], ['Detect', 'done'], ['Judge', 'done'], ['Separate', 'done'], ['Stage & tag', 'done'], ['Warp', 'you']]) },
+    ];
+    const flowDone = mk([['Download', 'skip'], ['Detect', 'skip'], ['Judge', 'skip'], ['Separate', 'done', '12 Sep 14:02'], ['Stage & tag', 'done', '12 Sep 14:03'], ['Warp', 'done', '14 Sep 21:07']]);
+    const actions = [
+      { label: 'Rename', fg: '#ece7dc', bc: 'rgba(255,255,255,.18)' },
+      { label: 'Swap source', fg: '#ece7dc', bc: 'rgba(255,255,255,.18)' },
+      { label: 'Add an upload', fg: '#ece7dc', bc: 'rgba(255,255,255,.18)' },
+      { label: 'Change genre', fg: '#ece7dc', bc: 'rgba(255,255,255,.18)' },
+      { label: 'Open folder', fg: '#ece7dc', bc: 'rgba(255,255,255,.18)' },
+      { label: 'Remove from playlist', fg: '#ece7dc', bc: 'rgba(255,255,255,.18)' },
+    ];
+    const L = (t, src, pass, msg, kind) => ({ t, src, pass, msg,
+      srcColor: src === 'you' ? '#e8b45a' : 'rgba(236,231,220,.75)',
+      msgColor: kind === 'bad' ? '#e07a6d' : kind === 'div' ? 'rgba(236,231,220,.5)' : 'rgba(236,231,220,.75)',
+      bg: kind === 'div' ? 'rgba(255,255,255,.03)' : 'transparent' });
+    const log = [
+      L('2026-09-11 18:39:02 +01:00', 'playlist', 'pass 1', 'seen on playlist · item PLx…Q3 · position 41'),
+      L('2026-09-11 18:39:05 +01:00', 'download', 'pass 1', 'stemforge-cli download k2Rf9QzL1aE · premium 256k opus'),
+      L('2026-09-11 18:39:48 +01:00', 'detect', 'pass 1', 'essentia G#m 0.842 · keyfinder G#m 0.711 · crema B (runner-up G#m 0.968)'),
+      L('2026-09-11 18:40:11 +01:00', 'judge', 'pass 1', 'verdict G#m HIGH · bpm 127 · 3 sources · quota 0.4%'),
+      L('2026-09-11 18:47:36 +01:00', 'separate', 'pass 1', 'recipe vocal_full, instrumental_full, drums · 6m 58s'),
+      L('2026-09-11 18:47:40 +01:00', 'stage', 'pass 1', '3 files → Sample Staging/Neon Tide'),
+      L('2026-09-11 18:47:41 +01:00', 'tag', 'pass 1', 'xmp key G#m written on 2 samples'),
+      L('2026-09-12 13:55:10 +01:00', 'you', 'pass 1', 'change what is cut: −Instrumental - Full, +Instrumental - Clean'),
+      L('2026-09-12 13:55:10 +01:00', '——', 'pass 2', 're-cut · skips download, detect, judge', 'div'),
+      L('2026-09-12 13:55:11 +01:00', 'stage', 'pass 2', 'recycled Neon Tide (Instrumental - Full).wav + .asd'),
+      L('2026-09-12 13:58:40 +01:00', 'separate', 'pass 2', 'attempt 1 failed: CUDA out of memory', 'bad'),
+      L('2026-09-12 14:02:17 +01:00', 'separate', 'pass 2', 'attempt 2 · instrumental_clean · 3m 31s'),
+      L('2026-09-12 14:03:02 +01:00', 'tag', 'pass 2', 'xmp key G#m written on 1 sample'),
+      L('2026-09-14 21:07:44 +01:00', 'library', 'pass 2', '2 samples seen in Mashup Samples · drums guide gone → done'),
+    ];
+    return { flows, flowDone, actions, log, pulse };
+  }
+}
+</script>
+</body>
+</html>

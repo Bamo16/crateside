@@ -54,10 +54,10 @@
 }
 
 .source {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 16px 112px minmax(0, 1fr);
     align-items: baseline;
-    gap: 0.5rem;
+    gap: 0.6rem;
     padding: 0.4rem 0;
     border-top: 1px solid var(--line);
 }
@@ -69,49 +69,52 @@
 /* Whether the source backed the verdict, in one glyph at the head of the row. This is what
    the schema split `states` for: it used to require reading every line of prose. */
 .stance {
-    flex: none;
-    width: 1rem;
     text-align: center;
-    color: var(--muted);
+    color: var(--text-60);
 }
 
 .source.agrees .stance {
-    color: var(--ok);
-}
-
-.source.dissents .stance {
-    color: var(--warn);
+    color: var(--text);
 }
 
 /* The kind badge is the other half of the point: what a source is worth matters more than
    what it said, because a confident algorithmic claim is still not an answer. */
+/* Monochrome: green, teal and amber mean done, working and your turn, and a source is none of
+   them. Weight carries the rank instead — filled, outlined, dashed. */
 .kind {
-    flex: none;
-    min-width: 7.5rem;
     padding: 0.05rem 0.45rem;
-    border: 1px solid var(--text-dim);
+    border: 1px solid var(--text-60);
     border-radius: 4px;
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     text-align: center;
-    color: var(--text-dim);
+    color: var(--text-75);
 }
 
 .source.authoritative .kind {
-    color: var(--ok);
-    border-color: var(--ok);
+    color: var(--ink);
+    background: var(--text);
+    border-color: var(--text);
 }
 
-.source.corroborating .kind {
-    color: var(--accent);
-    border-color: var(--accent);
-}
-
-/* Deliberately warned rather than neutral: its key may never be the basis of a verdict. */
+.source.algorithmic .kind,
 .source.chordrecogniser .kind {
-    color: var(--warn);
-    border-color: var(--warn);
+    border-style: dashed;
+    color: var(--text-60);
+}
+
+.said {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.where {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
 .states,
@@ -120,6 +123,7 @@
 }
 
 .states-key {
+    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
 }
 
@@ -230,9 +234,22 @@
     line-height: 1.7;
 }
 
+.flicker-fold summary {
+    cursor: pointer;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    font-weight: 600;
+}
+
+.flicker-fold {
+    margin-top: 1.25rem;
+}
+
 .flicker {
     list-style: none;
-    margin: 0;
+    margin: 0.4rem 0 0;
     padding: 0;
     font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
     font-size: 0.82rem;
@@ -268,7 +285,7 @@
 }
 
 .beatdetect.conflict {
-    color: var(--warn);
+    color: var(--alert);
 }
 
 .provenance {

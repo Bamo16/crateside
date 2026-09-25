@@ -28,30 +28,34 @@
                     <li class="source @source.Kind.ToString().ToLowerInvariant() @source.Stance.ToString().ToLowerInvariant()">
                         <span class="stance" title="@StanceTitle(source.Stance)">@StanceMark(source.Stance)</span>
                         <span class="kind" title="@KindTitle(source.Kind)">@KindLabel(source.Kind)</span>
-                        @if (source.Link is { } link)
-                        {
-                            <a href="@link" target="_blank" rel="noopener noreferrer">@(source.Host ?? link.ToString())</a>
-                        }
-                        @if (source.Via is { Length: > 0 } via)
-                        {
-                            <span class="via">@via</span>
-                        }
-                        @if (source.StatesKey is { Length: > 0 } stated)
-                        {
-                            <span class="states-key">@stated@(source.StatesMode is { Length: > 0 } m ? $" ({m})" : null)</span>
-                        }
-                        else if (source.States is { Length: > 0 } states)
-                        {
-                            <span class="states">@states</span>
-                        }
-                        @if (source.Note is { Length: > 0 } note)
-                        {
-                            <span class="note" title="The agent's note on this source.">@note</span>
-                        }
-                        @if (source.KindDisagreesWithHost)
-                        {
-                            <span class="problem" title="@HostMismatchTitle(source)">kind ≠ host</span>
-                        }
+                        <span class="said">
+                            <span class="where">
+                                @if (source.Link is { } link)
+                                {
+                                    <a href="@link" target="_blank" rel="noopener noreferrer">@(source.Host ?? link.ToString())</a>
+                                }
+                                @if (source.Via is { Length: > 0 } via)
+                                {
+                                    <span class="via">@via</span>
+                                }
+                                @if (source.KindDisagreesWithHost)
+                                {
+                                    <span class="problem" title="@HostMismatchTitle(source)">kind ≠ host</span>
+                                }
+                            </span>
+                            @if (source.StatesKey is { Length: > 0 } stated)
+                            {
+                                <span class="states-key">@stated@(source.StatesMode is { Length: > 0 } m ? $" ({m})" : null)</span>
+                            }
+                            else if (source.States is { Length: > 0 } states)
+                            {
+                                <span class="states">@states</span>
+                            }
+                            @if (source.Note is { Length: > 0 } note)
+                            {
+                                <span class="note" title="The agent's note on this source.">@note</span>
+                            }
+                        </span>
                     </li>
                 }
             </ul>
@@ -135,13 +139,15 @@
 
         @if (!Compact && Run.KeyEvents.Count > 0)
         {
-            <h4>Key flicker</h4>
-            <ul class="flicker">
-                @foreach (var e in Run.KeyEvents)
-                {
-                    <li><span class="t">@e.Seconds.ToString("F2")s</span> @e.Key <span class="r">r=@e.R.ToString("F2")</span></li>
-                }
-            </ul>
+            <details class="flicker-fold">
+                <summary>Key flicker · @("change".ToQuantity(Run.KeyEvents.Count))</summary>
+                <ul class="flicker">
+                    @foreach (var e in Run.KeyEvents)
+                    {
+                        <li><span class="t">@e.Seconds.ToString("F2")s</span> @e.Key <span class="r">r=@e.R.ToString("F2")</span></li>
+                    }
+                </ul>
+            </details>
         }
 
         <h4>Tempo</h4>

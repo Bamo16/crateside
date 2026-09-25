@@ -1,0 +1,142 @@
+.body {
+    padding: 0 clamp(1rem, 4vw, 3rem) 3rem;
+    max-width: var(--table-tracks);
+}
+
+.back {
+    display: inline-block;
+    margin-bottom: 0.75rem;
+    color: var(--text-60);
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.back:hover,
+.why:hover {
+    color: var(--text);
+}
+
+h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.meta,
+.notice {
+    margin: 0.3rem 0 1.5rem;
+    color: var(--text-60);
+}
+
+.mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+.band {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.4fr);
+    background: var(--surface);
+    border-radius: 10px;
+}
+
+.cell {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+    min-width: 0;
+    padding: 1.1rem 1.4rem 1.2rem;
+    border-left: 1px solid var(--line-strong);
+}
+
+.cell:first-child {
+    border-left: none;
+}
+
+.label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-40);
+}
+
+.library-only .cell:first-child .label {
+    color: var(--text-75);
+}
+
+.value {
+    font-size: 52px;
+    line-height: 1.05;
+    font-weight: 600;
+}
+
+.value.conf {
+    font-weight: 500;
+}
+
+.value.empty,
+.value.conf.none {
+    color: var(--text-30);
+}
+
+.value.conf.weak,
+.sub.conflict {
+    color: var(--red);
+}
+
+.value.bpm.ready {
+    color: var(--amber);
+}
+
+.sub {
+    font-size: 13px;
+    color: var(--text-60);
+}
+
+.next {
+    font-size: 14px;
+    color: var(--text-75);
+}
+
+.why {
+    margin-top: auto;
+    font-size: 13px;
+    color: var(--text-60);
+    text-decoration: none;
+}
+
+.evidence-section {
+    margin-top: 2.5rem;
+    scroll-margin-top: 1rem;
+}
+
+.evidence-section h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.summary {
+    margin: 0.25rem 0 0;
+    color: var(--text-60);
+}
+
+@media (max-width: 60rem) {
+    .band {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cell:nth-child(3) {
+        border-left: none;
+    }
+
+    .cell:nth-child(n + 3) {
+        border-top: 1px solid var(--line-strong);
+    }
+
+    .value {
+        font-size: 36px;
+    }
+}

@@ -289,22 +289,16 @@
                     }
                 </span>
 
-                <span class="mono key @(row.Key is null ? "none" : null)">@(Spell(row.Key) ?? "—")</span>
+                <span class="mono key @(row.Key is null ? "none" : null)">@(KeyText.Spell(row.Key) ?? "—")</span>
 
-                <span class="mono conf @ConfidenceTone(row.Confidence)">@Confidence(row.Confidence)</span>
+                <span class="mono conf @KeyText.ConfidenceTone(row.Confidence)">@KeyText.Confidence(row.Confidence)</span>
 
                 <span class="mono bpm right @(row.State is TrackState.ReadyToWarp ? "ready" : null) @(row.Bpm is null ? "none" : null)">
                     @(row.Bpm is { } bpm ? bpm.ToString("N0") : "—")
                 </span>
 
                 <span>
-                    <span class="chip @ChipClass(row.ChipStyle)">
-                        @if (row.ChipHasDot)
-                        {
-                            <span class="chip-dot"></span>
-                        }
-                        @row.ChipLabel
-                    </span>
+                    <StateChip Row="row" />
                 </span>
 
                 @if (_filter is TrackFilter.InStaging)
@@ -787,7 +781,7 @@
                                     @Cost(confirm.Recipe)
                                     @if (row.Key is { } key)
                                     {
-                                        <text>Tagged @Spell(key) from the verdict already in hand, so no quota is spent. </text>
+                                        <text>Tagged @KeyText.Spell(key) from the verdict already in hand, so no quota is spent. </text>
                                     }
                                     @confirm.AudioDetail
                                     @Untouched(picker)
@@ -806,7 +800,7 @@
                                     @Cost(confirm.Recipe)
                                     @if (row.Key is { } key)
                                     {
-                                        <text>The key stays @Spell(key) — detection does not run again, so no quota is spent. </text>
+                                        <text>The key stays @KeyText.Spell(key) — detection does not run again, so no quota is spent. </text>
                                     }
                                     @(confirm.MakesSomething ? confirm.AudioDetail : null)
                                 </p>
@@ -869,7 +863,7 @@
                             }
                             @if (row.Verdict is not null)
                             {
-                                <a class="outline" href="@($"song/{row.VideoId}")">Why this key</a>
+                                <a class="outline" href="@($"song/{row.VideoId}")">Track details</a>
                             }
                             @if (row.GaveUpAt is not null)
                             {
@@ -1322,7 +1316,7 @@
     private static string Figure(TrackRow row) =>
         string.Join(
             " · ",
-            new[] { Spell(row.Key), row.Bpm?.ToString("N0") }.OfType<string>()
+            new[] { KeyText.Spell(row.Key), row.Bpm?.ToString("N0") }.OfType<string>()
         );
 
     private static string Waiting(TrackRow row) =>
@@ -1679,7 +1673,7 @@
     private static string AddNote(TrackRow row) =>
         "Another file of this song, kept whole and never separated. keytag records it as this "
         + "song so it stages beside the stems"
-        + (row.Key is { } key ? $" and takes the key, {Spell(key)}." : ", and takes the key once this track has one.")
+        + (row.Key is { } key ? $" and takes the key, {KeyText.Spell(key)}." : ", and takes the key once this track has one.")
         + " No quota, no GPU.";
 
     private void CancelAdding()
@@ -2051,9 +2045,9 @@
     private static string Tag(StemChoice line, TrackRow row) =>
         (line, row.Key) switch
         {
-            ({ AbletonKey: { } tagged }, _) => Spell(tagged) ?? tagged,
+            ({ AbletonKey: { } tagged }, _) => KeyText.Spell(tagged) ?? tagged,
             ({ IsInLibrary: true }, _) => "—",
-            ({ State: StemState.Coming }, { } key) => Spell(key) ?? key,
+            ({ State: StemState.Coming }, { } key) => KeyText.Spell(key) ?? key,
             ({ State: StemState.Kept }, _) => "untagged",
             _ => "—",
         };
@@ -2215,7 +2209,7 @@
     private static string Tag(TrackSample sample) =>
         sample switch
         {
-            { AbletonKey: { } key } => $"{Spell(key)} ✓",
+            { AbletonKey: { } key } => $"{KeyText.Spell(key)} ✓",
             { IsInLibrary: true } => "—",
             _ => "not tagged",
         };
@@ -2288,19 +2282,6 @@
             _ => "plain",
         };
 
-    private static string ChipClass(TrackChipStyle style) =>
-        style switch
-        {
-            TrackChipStyle.TealFilled => "teal-filled",
-            TrackChipStyle.TealOutline => "teal-outline",
-            TrackChipStyle.AmberFilled => "amber-filled",
-            TrackChipStyle.RedOutline => "red-outline",
-            TrackChipStyle.RedFilled => "red-filled",
-            TrackChipStyle.GreenOutline => "green-outline",
-            TrackChipStyle.DashedOutline => "dashed-outline",
-            _ => "neutral-outline",
-        };
-
     private static string NextTone(TrackRow row) =>
         row.State switch
         {
@@ -2309,21 +2290,4 @@
             _ => string.Empty,
         };
 
-    private static string Confidence(KeyConfidence confidence) =>
-        confidence is KeyConfidence.Unknown ? "—" : confidence.ToString().ToUpperInvariant();
-
-    private static string ConfidenceTone(KeyConfidence confidence) =>
-        confidence switch
-        {
-            KeyConfidence.High => "high",
-            KeyConfidence.Medium => "medium",
-            KeyConfidence.Low or KeyConfidence.Withheld => "weak",
-            _ => "none",
-        };
-
-    // The ledger spells keys in ASCII so they survive a filename. The screen is not one.
-    private static string? Spell(string? key) =>
-        key?.Replace("#", "♯", StringComparison.Ordinal)
-            .Replace(" major", " maj", StringComparison.Ordinal)
-            .Replace(" minor", " min", StringComparison.Ordinal);
 }

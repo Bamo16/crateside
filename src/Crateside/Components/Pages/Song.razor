@@ -1,43 +1,177 @@
 @page "/song/{VideoId}"
+@layout Crateside.Components.Layout.BareLayout
+@rendermode InteractiveServer
+@implements IDisposable
 @using Crateside.Core.Ledger
+@using Crateside.Core.Tracks
 @inject EvidenceService Evidence
-@inject NavigationManager Navigation
+@inject TracksService Tracks
 
-<PageTitle>@(_run?.DisplayName ?? "Song") — crateside</PageTitle>
+<PageTitle>@(Name ?? "Track details") · crateside</PageTitle>
 
-<header class="page-header">
-    <div>
-        <a class="back" href="">← Tracks</a>
-        <h1>@(_run?.DisplayName ?? "Unknown song")</h1>
-        <p class="subtitle">
-            Why this key was given, and what it was based on.
-        </p>
-    </div>
-    @if (_run is not null)
+<PageHeader Active="BrandNav.Tab.Tracks" Shape="PageHeader.Shapes.Bar" />
+
+<div class="body">
+    <a class="back" href="">← Tracks</a>
+
+    @if (_row is null && _run is null)
     {
-        <a class="watch" href="@($"https://www.youtube.com/watch?v={VideoId}")"
-           target="_blank" rel="noopener noreferrer">Open on YouTube</a>
+        <h1>Track details</h1>
+        <p class="notice">
+            @(Tracks.Current is null ? "Reading tracks…" : $"crateside has no track for {VideoId}.")
+        </p>
     }
-</header>
+    else
+    {
+        <h1>@Name</h1>
+        <p class="meta">@Meta</p>
 
-@if (_run is null)
-{
-    <div class="notice">
-        <strong>No run recorded for this video.</strong>
-        The ledger has never seen <code>@VideoId</code> — either detect-key has not run for it,
-        or the stem's provenance points at a different video than the one that was judged.
-    </div>
-}
-else
-{
-    <Evidence Run="_run" />
-}
+        <section class="band @(_row?.IsLibraryOnly is true ? "library-only" : null)">
+            <div class="cell">
+                <span class="label">@(_row?.IsLibraryOnly is true ? "Key · tagged in Ableton" : "Key")</span>
+                <span class="mono value key @(Key is null ? "empty" : null)">@(KeyText.Spell(Key) ?? "—")</span>
+                <span class="sub">@KeyNote</span>
+            </div>
+            <div class="cell">
+                <span class="label">Confidence</span>
+                <span class="mono value conf @KeyText.ConfidenceTone(Confidence)">@KeyText.Confidence(Confidence)</span>
+                <span class="sub">@(Verdict is { } judged ? $"judged {judged.Timestamp.ToLocalTime():yyyy-MM-dd}" : "never judged")</span>
+            </div>
+            <div class="cell">
+                <span class="label">BPM</span>
+                <span class="mono value bpm @(_row?.State is TrackState.ReadyToWarp ? "ready" : null) @(Bpm is null ? "empty" : null)">
+                    @(Bpm is { } bpm ? bpm.ToString("N0") : "—")
+                </span>
+                <span class="sub @(_run?.BpmConflicts is true ? "conflict" : null)">@BpmNote</span>
+            </div>
+            <div class="cell where">
+                <span class="label">Where it is</span>
+                @if (_row is not null)
+                {
+                    <StateChip Row="_row" />
+                    <span class="next">@_row.Next</span>
+                }
+                @if (HasEvidenceSection)
+                {
+                    <a class="why" href="@($"song/{VideoId}#evidence")">Why @Verdicted ↓</a>
+                }
+            </div>
+        </section>
+
+        @if (HasEvidenceSection)
+        {
+            <section id="evidence" class="evidence-section">
+                <h2>Why @Verdicted</h2>
+                @if (_run is null)
+                {
+                    <p class="summary">
+                        Judged @Verdict?.Timestamp.ToLocalTime().ToString("yyyy-MM-dd"), before crateside
+                        kept evidence. The verdict stands; its reasons were not saved.
+                    </p>
+                }
+                else
+                {
+                    <p class="summary">@Summary(_run)</p>
+                    <Evidence Run="_run" />
+                }
+            </section>
+        }
+    }
+</div>
 
 @code {
     [Parameter]
     public required string VideoId { get; set; }
 
+    private TrackRow? _row;
     private RunEvidence? _run;
 
-    protected override void OnParametersSet() => _run = Evidence.ForVideoId(VideoId);
+    private LedgerRun? Verdict => _row?.Verdict;
+
+    private string? Name => _row?.Title ?? _run?.DisplayName;
+
+    private string? Key => _row is null ? _run?.Key : _row.Key ?? LibraryKey;
+
+    private string Verdicted => KeyText.Spell(Key) ?? "this verdict";
+
+    private bool HasEvidenceSection => Verdict is not null || _run is not null;
+
+    private KeyConfidence Confidence => _row?.Confidence ?? KeyConfidence.Unknown;
+
+    private double? Bpm => _row?.Bpm ?? _run?.Bpm;
+
+    /// <summary>A library-only track has no verdict, so its key is whatever Ableton was told.</summary>
+    private string? LibraryKey =>
+        _row is { IsLibraryOnly: true } row
+            ? row.Samples.Select(sample => sample.AbletonKey).OfType<string>().FirstOrDefault()
+            : null;
+
+    private string Meta =>
+        string.Join(
+            " · ",
+            new[]
+            {
+                _row?.Genre?.Written ?? _row?.Genre?.Suggested,
+                _row is null ? null : "upload".ToQuantity(Uploads(_row)),
+            }.OfType<string>()
+        );
+
+    private string KeyNote =>
+        _row switch
+        {
+            { Verdict: { IsCollapsed: true, ModalKey: { } modal } } =>
+                $"really {modal}, tagged as {KeyText.Spell(Key)}",
+            { Samples.Count: 0 } => "no samples yet",
+            { Samples: var samples } =>
+                $"tagged in Ableton on {samples.Count(IsTaggedWithKey)} of {"sample".ToQuantity(samples.Count)}",
+            null => string.Empty,
+        };
+
+    private string BpmNote =>
+        _run switch
+        {
+            { BpmConflicts: true, BeatdetectBpm: { } rough } => $"beatdetect {rough:F1} · conflict",
+            { BeatdetectBpm: { } rough, Bpm: { } bpm } when Math.Abs(rough - bpm) < 1.5 =>
+                "beatdetect agrees",
+            { BeatdetectBpm: { } rough } => $"beatdetect {rough:F1} · half or double",
+            _ => Bpm is null ? "not measured" : "no cross-check",
+        };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Tracks.Changed += OnChanged;
+        await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
+        Read();
+    }
+
+    protected override void OnParametersSet() => Read();
+
+    public void Dispose() => Tracks.Changed -= OnChanged;
+
+    private bool IsTaggedWithKey(TrackSample sample) =>
+        Key is { } key && key.Equals(sample.AbletonKey, StringComparison.OrdinalIgnoreCase);
+
+    private void Read()
+    {
+        _row = Tracks.Current?.Rows.FirstOrDefault(row =>
+            row.VideoId.Equals(VideoId, StringComparison.Ordinal)
+        );
+        _run = Verdict is { Song: var song } ? Evidence.ForSong(song) : Evidence.ForVideoId(VideoId);
+    }
+
+    // Raised on a worker thread, never the circuit's, so the render is marshalled back.
+    private void OnChanged() =>
+        _ = InvokeAsync(() =>
+        {
+            Read();
+            StateHasChanged();
+        });
+
+    private static int Uploads(TrackRow row) =>
+        row.Facts.Uploads.Distinct(StringComparer.Ordinal).Count();
+
+    private static string Summary(RunEvidence run) =>
+        run.Sources.Count is 0
+            ? $"No human sources; {"detector".ToQuantity(run.Algorithms.Count)} and the chord check."
+            : $"{run.Sources.Count(source => source.Stance is SourceStance.Agrees)} of {"source".ToQuantity(run.Sources.Count)} agree, with {"detector".ToQuantity(run.Algorithms.Count)} alongside.";
 }
