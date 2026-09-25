@@ -58,6 +58,16 @@
                 {
                     <StateChip Row="_row" />
                     <span class="next">@_row.Next</span>
+                    @if (_row.RunningSince is { } since)
+                    {
+                        <span class="mono elapsed">
+                            @Clock.Elapsed(since)@(Expected is { } expected ? $" of about {expected.Humanize()}" : null)
+                        </span>
+                        @if (Expected is { } estimate)
+                        {
+                            <span class="progress"><span style="width: @Percent(since, estimate)%"></span></span>
+                        }
+                    }
                 }
                 @if (HasEvidenceSection)
                 {
@@ -140,6 +150,7 @@
     private TrackRow? _row;
     private RunEvidence? _run;
     private StemEditor _stems = null!;
+    private Timer? _clock;
 
     private LedgerRun? Verdict => _row?.Verdict;
 
@@ -154,6 +165,10 @@
     private KeyConfidence Confidence => _row?.Confidence ?? KeyConfidence.Unknown;
 
     private double? Bpm => _row?.Bpm ?? _run?.Bpm;
+
+    /// <summary>How long the running stage should take, where there is an estimate: only separation has one.</summary>
+    private TimeSpan? Expected =>
+        _row is { State: TrackState.Separating, Recipe.Passes: > 0 } row ? row.Recipe.Estimate : null;
 
     /// <summary>A library-only track has no verdict, so its key is whatever Ableton was told.</summary>
     private string? LibraryKey =>
@@ -201,6 +216,8 @@
         await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
         Read();
         await _stems.LoadAsync();
+
+        _clock = new Timer(_ => OnTick(), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
     }
 
     protected override void OnParametersSet() => Read();
@@ -210,7 +227,18 @@
         Tracks.Changed -= OnChanged;
         _stems.Changed -= OnStemsChanged;
         _stems.Dispose();
+        _clock?.Dispose();
     }
+
+    // Only a running stage has a clock to move.
+    private void OnTick()
+    {
+        if (_row?.RunningSince is not null)
+            _ = InvokeAsync(StateHasChanged);
+    }
+
+    private static int Percent(DateTimeOffset since, TimeSpan expected) =>
+        (int)Math.Clamp((DateTimeOffset.UtcNow - since) / expected * 100, 0, 100);
 
     private void OnStemsChanged() => _ = InvokeAsync(StateHasChanged);
 

@@ -46,7 +46,7 @@
                 <span class="subject">@(separating?.Title ?? (Separation.IsPaused ? "paused" : "idle"))</span>
                 @if (separating?.RunningSince is { } since)
                 {
-                    <span class="mono elapsed">@Elapsed(since) elapsed</span>
+                    <span class="mono elapsed">@Clock.Elapsed(since) elapsed</span>
                 }
                 <button class="outline" @onclick="ToggleSeparation">
                     @(Separation.IsPaused ? "Resume" : "Pause")
@@ -73,7 +73,7 @@
                 <span class="subject">@(judging?.Title ?? (Judging.IsPaused ? "paused" : "idle"))</span>
                 @if (judging?.RunningSince is { } judgingSince)
                 {
-                    <span class="mono elapsed">@Elapsed(judgingSince) elapsed</span>
+                    <span class="mono elapsed">@Clock.Elapsed(judgingSince) elapsed</span>
                 }
                 <button class="outline" @onclick="ToggleJudging">
                     @(Judging.IsPaused ? "Resume" : "Pause")
@@ -751,15 +751,6 @@
     private TrackRow? RowIn(TrackState state) => Rows.FirstOrDefault(row => row.State == state);
 
     private int Waiting(TrackState state) => Rows.Count(row => row.State == state);
-
-    private static string Elapsed(DateTimeOffset since)
-    {
-        var span = DateTimeOffset.UtcNow - since;
-
-        return span.TotalHours >= 1
-            ? $"{(int)span.TotalHours}:{span.Minutes:00}:{span.Seconds:00}"
-            : $"{(int)span.TotalMinutes}:{span.Seconds:00}";
-    }
 
     private static string Name(TrackFilter filter) =>
         filter switch
