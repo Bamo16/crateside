@@ -1,0 +1,66 @@
+@using Crateside.Core.Orchestration
+@using Crateside.Core.Tracks
+@inject JobStore Jobs
+@inject ActionLog Actions
+
+<div class="flow">
+    <div class="pass">
+        <span>Pass @_flow.Pass · @_flow.Reason</span>
+        @if (_flow.Pass > 1)
+        {
+            <a href="@($"song/{Row.VideoId}#activity")">@("earlier pass".ToQuantity(_flow.Pass - 1)) ↓</a>
+        }
+    </div>
+
+    <div class="steps">
+        @foreach (var (step, index) in _flow.Steps.Select((step, index) => (step, index)))
+        {
+            @if (index > 0)
+            {
+                <span class="rule"></span>
+            }
+            <div class="step">
+                <span class="chip @Class(step.State)">
+                    @Glyph(step.State) @step.Label@(step.Note is { } note ? $" · {note}" : null)
+                </span>
+                <span class="mono when">@(step.At is { } at ? at.ToLocalTime().ToString("d MMM HH:mm") : null)</span>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private StageFlow _flow = new(1, string.Empty, []);
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    protected override void OnParametersSet() =>
+        _flow = StageFlow.For(
+            Row,
+            stage => Jobs.TryGet(Row.VideoId, stage, out var job) ? job : null,
+            Actions.For(Row.VideoId)
+        );
+
+    private static string Glyph(FlowState state) =>
+        state switch
+        {
+            FlowState.Done => "✓",
+            FlowState.Running or FlowState.YourTurn => "●",
+            FlowState.Skipped => "–",
+            FlowState.Parked or FlowState.GaveUp => "■",
+            _ => "○",
+        };
+
+    private static string Class(FlowState state) =>
+        state switch
+        {
+            FlowState.Done => "done",
+            FlowState.Running => "running",
+            FlowState.YourTurn => "yours",
+            FlowState.Skipped => "skipped",
+            FlowState.Parked => "parked",
+            FlowState.GaveUp => "gave-up",
+            _ => "not-yet",
+        };
+}

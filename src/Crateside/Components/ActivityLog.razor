@@ -6,7 +6,7 @@
 @inject ActionLog Actions
 @inject IJSRuntime Js
 
-<section class="activity">
+<section id="activity" class="activity">
     <div class="activity-head">
         <button class="toggle" @onclick="() => _open = !_open">
             <span class="mono chevron">@(_open ? "▾" : "▸")</span>

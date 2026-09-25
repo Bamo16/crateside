@@ -34,7 +34,7 @@
             <TrackFindings Row="_row" />
         }
 
-        <section class="band @(_row?.IsLibraryOnly is true ? "library-only" : null)">
+        <section class="band @(_row?.IsLibraryOnly is true ? "library-only" : null) @(HasFlow ? "with-flow" : null)">
             <div class="cell">
                 <span class="label">@(_row?.IsLibraryOnly is true ? "Key · tagged in Ableton" : "Key")</span>
                 <span class="mono value key @(Key is null ? "empty" : null)">@(KeyText.Spell(Key) ?? "—")</span>
@@ -75,6 +75,11 @@
                 }
             </div>
         </section>
+
+        @if (HasFlow)
+        {
+            <StageFlowStrip Row="_row!" />
+        }
 
         <div class="columns">
             <div class="main">
@@ -164,6 +169,9 @@
     private string? Key => _row is null ? _run?.Key : _row.Key ?? LibraryKey;
 
     private string Verdicted => KeyText.Spell(Key) ?? "this verdict";
+
+    /// <summary>A library-only track never ran through crateside, so it has no stages to draw.</summary>
+    private bool HasFlow => _row is { IsLibraryOnly: false };
 
     private bool HasEvidenceSection => Verdict is not null || _run is not null;
 

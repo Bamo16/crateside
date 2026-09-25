@@ -42,6 +42,10 @@ One component, `Components/StateChip.razor`, used wherever a track's state is sh
 neutral outline · teal filled with a dot · teal outline · amber filled · red outline · red filled
 · green outline · dashed.
 
+Track details' stage flow (`StageFlowStrip`) draws its own step chips: ✓ done (neutral) ·
+● running (teal filled, pulsing, the page's only animation) · ● your turn (amber) · ○ not yet ·
+– skipped (dashed, 55% opacity) · ■ parked (red outline) or gave up (red filled).
+
 ## Shared controls
 
 Buttons (`.outline`, `.primary`, `.danger`), `.pill`, `.actions` and `.mono` are global, in
