@@ -39,14 +39,10 @@ public static class ServiceRegistration
         builder.Services.Configure<QueueOptions>(
             builder.Configuration.GetSection(QueueOptions.SectionName)
         );
-        builder.Services.Configure<DrainOptions>(
-            builder.Configuration.GetSection(DrainOptions.SectionName)
-        );
 
         builder.Services.AddSingleton(sp =>
             sp.GetRequiredService<IOptions<CratesidePaths>>().Value
         );
-        builder.Services.AddSingleton(sp => sp.GetRequiredService<IOptions<DrainOptions>>().Value);
 
         return builder;
     }
@@ -147,8 +143,10 @@ public static class ServiceRegistration
             sp.GetRequiredService<WorkingSet>(),
             sp.GetRequiredService<CratesidePaths>()
         ));
+        // Running unless the user paused it, and a pause of theirs outlives a restart.
+        services.AddSingleton(_ => new PauseStore());
         services.AddSingleton(sp => new DrainControl(
-            sp.GetRequiredService<DrainOptions>().StartPaused
+            sp.GetRequiredService<PauseStore>().Read().Separation
         ));
         services.AddSingleton<SeparationDrainer>();
 
@@ -172,8 +170,9 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<EvidenceDrainer>();
 
-        // Starts paused: launching the app should never itself be the act that spends quota.
-        services.AddSingleton(_ => new VerdictControl());
+        services.AddSingleton(sp => new VerdictControl(
+            sp.GetRequiredService<PauseStore>().Read().Judging
+        ));
         services.AddSingleton<WindowRoll>();
 
         services.AddSingleton(sp => new StageSignals(

@@ -32,6 +32,7 @@
 @inject StageSignals Signals
 @inject QueueWriteAccess Access
 @inject VerdictControl Judging
+@inject PauseStore Paused
 @inject WorkingSet Held
 @inject QuotaReader Quota
 @inject WindowRoll Roll
@@ -71,7 +72,7 @@
         <div class="cell activity">
             <div class="label-row">
                 <span class="label">Judging</span>
-                <span class="mono waiting">@Waiting(TrackState.Queued) waiting</span>
+                <span class="mono waiting">@Rows.Count(row => row.IsAwaitingJudgement) waiting</span>
             </div>
             @{
                 var judging = RowIn(TrackState.Judging);
@@ -1603,7 +1604,37 @@
     /// The track's files as lines to tick, against the plan being edited or its own.
     /// </summary>
     private StemPicker PickerFor(TrackRow row) =>
-        StemPicker.For(row, _presets, _picking == row.VideoId ? _wanted : null);
+        StemPicker.For(row, _presets, _picking == row.VideoId ? _wanted : PlanOf(row));
+
+    /// <summary>
+    /// Plans ticked here that the rows have not caught up with yet, so a tick shows at once and the
+    /// next one builds on it rather than on a plan a rescan has still to bring back.
+    /// </summary>
+    private readonly Dictionary<string, StemPlan> _ticked = new(StringComparer.Ordinal);
+
+    private StemPlan PlanOf(TrackRow row)
+    {
+        if (!_ticked.TryGetValue(row.VideoId, out var ticked))
+            return row.Plan;
+
+        if (!ticked.AsksTheSameAs(row.Plan))
+            return ticked;
+
+        _ticked.Remove(row.VideoId);
+
+        return row.Plan;
+    }
+
+    /// <summary>Rebuilds the rows without holding up the click that asked for it.</summary>
+    private void RefreshSoon() =>
+        _ = InvokeAsync(async () =>
+        {
+            try
+            {
+                await Source.RefreshAsync(_circuit.Token);
+            }
+            catch (OperationCanceledException) { }
+        });
 
     /// <summary>
     /// Opens the picker, or shuts it again. Looking is not the start of anything.
@@ -1833,19 +1864,19 @@
     /// Ticks one line: recorded at once before separation, only proposed after it, when the
     /// confirm is what spends anything.
     /// </summary>
-    private async Task Toggle(TrackRow row, StemChoice line)
+    private void Toggle(TrackRow row, StemChoice line)
     {
         if (line.IsPinned)
             return;
 
         if (row.IsCutInFlight)
         {
-            await ToggleInFlight(row, line);
+            ToggleInFlight(row, line);
 
             return;
         }
 
-        var plan = _picking == row.VideoId ? _wanted : row.Plan;
+        var plan = _picking == row.VideoId ? _wanted : PlanOf(row);
 
         var wanted = line switch
         {
@@ -1861,11 +1892,16 @@
             // Nothing has been made, so there is nothing to confirm and nothing to lose.
             Playlist.SetPlan(row.VideoId, wanted);
 
+            _ticked[row.VideoId] = wanted;
+
+            if (_picking == row.VideoId)
+                _wanted = wanted;
+
             // Producing what was just ticked is a copy or a fetch, not a wait: without this the
             // stage is part-way through a two-minute idle delay and would not look again (#48).
             Signals.Wake(JobStage.Download, JobStage.Separation);
 
-            await Source.RefreshAsync(_circuit.Token);
+            RefreshSoon();
 
             return;
         }
@@ -1885,7 +1921,7 @@
     /// Records a tick on a track already in a cut and makes nothing; an untick waits, since the
     /// separator may be writing that very file (ADR 0027).
     /// </summary>
-    private async Task ToggleInFlight(TrackRow row, StemChoice line)
+    private void ToggleInFlight(TrackRow row, StemChoice line)
     {
         _problem = null;
 
@@ -1898,19 +1934,20 @@
 
         var wanted = line switch
         {
-            { Kind: StemKind.Source } => row.Plan.TogglingSource(),
-            _ => row.Plan.Toggling(line.PresetId!),
+            { Kind: StemKind.Source } => PlanOf(row).TogglingSource(),
+            _ => PlanOf(row).Toggling(line.PresetId!),
         };
 
         Playlist.SetPlan(row.VideoId, wanted);
 
+        _ticked[row.VideoId] = wanted;
         _wanted = wanted;
         _plan = null;
 
         // A kept source is a copy the download stage makes whatever the GPU is doing.
         Signals.Wake(JobStage.Download);
 
-        await Source.RefreshAsync(_circuit.Token);
+        RefreshSoon();
     }
 
     private async Task ConfirmRecut(TrackRow row)
@@ -2198,6 +2235,8 @@
             Separation.Resume();
         else
             Separation.Pause();
+
+        Paused.RememberSeparation(Separation.IsPaused);
     }
 
     private void ToggleJudging()
@@ -2206,6 +2245,8 @@
             Judging.Resume();
         else
             Judging.Pause();
+
+        Paused.RememberJudging(Judging.IsPaused);
     }
 
     private void ToggleRoll()

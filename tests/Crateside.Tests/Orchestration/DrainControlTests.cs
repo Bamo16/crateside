@@ -10,7 +10,6 @@ public class DrainControlTests
     {
         // What happens when configuration does not load.
         Assert.True(new DrainControl().IsPaused);
-        Assert.True(new DrainOptions().StartPaused);
     }
 
     [Fact]

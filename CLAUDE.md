@@ -46,8 +46,9 @@ terminal where they can see it and stop it.
 ## The GPU is the user's to spend
 
 Separation is ~6–7 minutes of GPU per track and **more than one at a time makes the machine
-unusable**. Never start a GPU-capable process without asking. Draining starts paused; so does
-judging, which spends Claude quota (~37k tokens of session start-up per track).
+unusable**. Never start a GPU-capable process without asking. Separation and judging (which spends
+Claude quota, ~37k tokens of session start-up per track) run as soon as the app starts unless the
+user paused them, and a pause of theirs survives a restart.
 
 Detection is not in this category — it contends for nothing and runs unattended by design.
 

@@ -245,6 +245,14 @@ public sealed record TrackRow
     /// </summary>
     public string? AuditNote { get; init; }
 
+    /// <summary>
+    /// Headed for judging with nothing in its way: unjudged, and queued, downloading or detecting —
+    /// the same count whichever of those it is in.
+    /// </summary>
+    public bool IsAwaitingJudgement =>
+        this is { Verdict: null, Lookalike: null, IsLibraryOnly: false }
+        && State is TrackState.Queued or TrackState.Downloading or TrackState.Detecting;
+
     /// <summary>What the state chip reads.</summary>
     public string ChipLabel =>
         State switch
