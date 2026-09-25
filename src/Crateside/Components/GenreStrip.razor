@@ -1,7 +1,9 @@
 @using Crateside.Core.Genres
+@using Crateside.Core.Orchestration
 @using Crateside.Core.Tracks
 @inject GenreStore Genres
 @inject TracksService Tracks
+@inject ActionLog Actions
 
 <div class="genre-strip">
     <span class="genre-label">Genre</span>
@@ -49,6 +51,7 @@
         try
         {
             Genres.Settle(Row.Song, genre);
+            Actions.Record(Row.VideoId, UserActionKind.GenreSettled, genre ?? "none of these");
 
             await Tracks.RefreshAsync();
         }

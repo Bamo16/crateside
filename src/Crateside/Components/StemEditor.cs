@@ -18,7 +18,8 @@ public sealed class StemEditor(
     SampleAdoption adoption,
     StageSignals signals,
     TracksService tracks,
-    PresetCatalogReader presetReader
+    PresetCatalogReader presetReader,
+    ActionLog actions
 ) : IDisposable
 {
     public const string AdoptNote =
@@ -169,6 +170,7 @@ public sealed class StemEditor(
         {
             // Nothing has been made, so there is nothing to confirm and nothing to lose.
             playlist.SetPlan(row.VideoId, wanted);
+            actions.Record(row.VideoId, UserActionKind.PlanChanged, line.Label);
 
             _ticked[row.VideoId] = wanted;
 
@@ -200,12 +202,21 @@ public sealed class StemEditor(
     public Task ConfirmRecutAsync(TrackRow row) =>
         WorkAsync(async () =>
         {
+            var picker = PickerFor(row);
             var outcome = recut.Apply(row.VideoId, _wanted, Presets, row.Inventory);
 
             Problem = outcome.Problem;
 
             if (outcome.Succeeded)
+            {
+                actions.Record(
+                    row.VideoId,
+                    UserActionKind.Recut,
+                    $"{picker.Adding} new, {picker.Removing} removed",
+                    picker.Adding > 0 ? JobStage.Separation : null
+                );
                 CancelPicking();
+            }
 
             // A worker part-way through its two-minute idle wait would not look again.
             signals.Wake(JobStage.Download, JobStage.Separation);
@@ -218,6 +229,14 @@ public sealed class StemEditor(
         WorkAsync(async () =>
         {
             Problem = recut.Apply(row.VideoId, row.Plan, Presets, row.Inventory).Problem;
+
+            if (Problem is null)
+                actions.Record(
+                    row.VideoId,
+                    UserActionKind.ShortfallCut,
+                    Missing(row),
+                    JobStage.Separation
+                );
 
             signals.Wake(JobStage.Separation);
 
@@ -296,6 +315,12 @@ public sealed class StemEditor(
 
             if (outcome.Succeeded)
             {
+                actions.Record(
+                    row.VideoId,
+                    UserActionKind.SourceAdded,
+                    $"{AddLabel} · {AddUrl}",
+                    JobStage.Download
+                );
                 CancelPicking();
                 signals.Wake(JobStage.Download);
             }
@@ -345,7 +370,14 @@ public sealed class StemEditor(
             Problem = adoption.Apply(row.Facts, AdoptPath, AdoptType);
 
             if (Problem is null)
+            {
+                actions.Record(
+                    row.VideoId,
+                    UserActionKind.SampleAdopted,
+                    Path.GetFileName(AdoptPath)
+                );
                 CancelAdopting();
+            }
 
             await tracks.RefreshAsync(_circuit.Token);
         });

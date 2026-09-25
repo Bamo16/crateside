@@ -200,6 +200,7 @@ public static class ServiceRegistration
             sp.GetRequiredService<CratesidePaths>()
         ));
         services.AddSingleton(_ => DeletionLog.Default());
+        services.AddSingleton(_ => ActionLog.Default());
         services.AddSingleton(sp => new HandoffRunner(
             sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<DeletionLog>()

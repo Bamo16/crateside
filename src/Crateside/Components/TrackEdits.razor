@@ -6,6 +6,7 @@
 @inject TrackSwap Swap
 @inject StageSignals Signals
 @inject TracksService Tracks
+@inject ActionLog Actions
 
 <div class="edits">
     <div class="name-strip @(_renaming ? "editing" : null)">
@@ -203,13 +204,21 @@
         if (!StemFileName.IsUsable(_name))
             return;
 
-        await Renaming(() => Rename.Apply(Row.VideoId, _name));
+        var name = _name;
+
+        await Renaming(
+            () => Rename.Apply(Row.VideoId, name),
+            () => Actions.Record(Row.VideoId, UserActionKind.Renamed, name)
+        );
     }
 
     private Task RevertRename() =>
-        Renaming(() => Rename.Revert(Row.VideoId, Row.DerivedTitle ?? Row.Title));
+        Renaming(
+            () => Rename.Revert(Row.VideoId, Row.DerivedTitle ?? Row.Title),
+            () => Actions.Record(Row.VideoId, UserActionKind.RenameReverted, Row.DerivedTitle)
+        );
 
-    private async Task Renaming(Func<RenameOutcome> rename)
+    private async Task Renaming(Func<RenameOutcome> rename, Action record)
     {
         _working = true;
         _problem = null;
@@ -221,7 +230,10 @@
             _problem = outcome.Problem ?? outcome.Note;
 
             if (outcome.Succeeded)
+            {
+                record();
                 CancelRename();
+            }
 
             await Tracks.RefreshAsync(_circuit.Token);
         }
@@ -285,6 +297,7 @@
 
             if (outcome.Succeeded)
             {
+                Actions.Record(Row.VideoId, UserActionKind.Swapped, _swapUrl, JobStage.Download);
                 CancelSwap();
                 Signals.Wake(JobStage.Download, JobStage.Separation);
             }

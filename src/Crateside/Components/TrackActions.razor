@@ -9,6 +9,7 @@
 @inject StageSignals Signals
 @inject TrackRemoval Removal
 @inject TracksService Tracks
+@inject ActionLog Actions
 
 <div class="actions">
     @if (Row.Folder is not null)
@@ -113,6 +114,7 @@
     private async Task Bump()
     {
         Playlist.Bump(Row.VideoId);
+        Actions.Record(Row.VideoId, UserActionKind.Bumped);
 
         await Tracks.RefreshAsync(_circuit.Token);
     }
@@ -120,6 +122,7 @@
     private async Task ClearBump()
     {
         Playlist.ClearBump();
+        Actions.Record(Row.VideoId, UserActionKind.BumpCleared);
 
         await Tracks.RefreshAsync(_circuit.Token);
     }
@@ -134,6 +137,14 @@
                 Jobs.Forgive(Row.VideoId, stage);
                 forgiven.Add(stage);
             }
+
+        if (forgiven.Count > 0)
+            Actions.Record(
+                Row.VideoId,
+                UserActionKind.Retried,
+                string.Join(", ", forgiven),
+                forgiven.Min()
+            );
 
         // Every stage was forgivable, so waking only two left the rest to wait out the interval.
         Signals.Wake([.. forgiven]);
@@ -159,6 +170,9 @@
             );
 
             _problem = results.FirstOrDefault(result => !result.Removed)?.Reason;
+
+            if (_problem is null)
+                Actions.Record(Row.VideoId, UserActionKind.RemovedFromPlaylist);
 
             await Tracks.RefreshAsync(_circuit.Token);
         }
@@ -195,6 +209,9 @@
         {
             var outcome = Removal.Apply(Row.VideoId, Row.Facts.Uploads);
             var title = Row.Title;
+
+            if (outcome.Problem is null)
+                Actions.Record(Row.VideoId, UserActionKind.Forgotten, $"{outcome.Recycled} recycled");
 
             CancelRemove();
 

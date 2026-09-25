@@ -27,6 +27,7 @@
 @inject QuotaReader Quota
 @inject WindowRoll Roll
 @inject IServiceProvider Services
+@inject ActionLog Actions
 
 <PageTitle>Tracks</PageTitle>
 
@@ -503,7 +504,12 @@
             _trackShortfall = outcome.Shortfall;
 
             if (outcome.Succeeded)
+            {
+                if (YouTubeUrl.TryGetVideoId(_trackUrl, out var added))
+                    Actions.Record(added, UserActionKind.Added, _trackUrl);
+
                 CancelAddTrack();
+            }
 
             await Source.RefreshAsync(_circuit.Token);
         }
