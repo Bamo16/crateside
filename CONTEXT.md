@@ -92,7 +92,9 @@ against it.
 - **Genre** — what kind of music a **song** is, from a short closed list crateside owns and
   writes under a tag group of its own (`Genre|Hip Hop`). A property of the song, not the file:
   every **sample** of a song carries the same one. **Suggested** by a lookup, **settled** by the
-  user; only a settled genre is written. Not Ableton's built-in *Genres* group.
+  user, or **learned** from the user's answers for the song's primary artist
+  ([ADR 0033](docs/adr/0033-a-genre-can-be-learned-from-the-users-answers-for-an-artist.md)); only
+  a settled or learned genre is written. Not Ableton's built-in *Genres* group.
 - **Type** — the part a **sample** plays in a mashup: **Vocal** or **Instrumental**, and
   nothing else. It names a use, not the audio: a kept full mix is Instrumental. Carried in
   Ableton's own *Type* tag group, whose built-in tags (Loop, One Shot and the rest) mean

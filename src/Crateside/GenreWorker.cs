@@ -47,6 +47,8 @@ public sealed class GenreWorker(
     {
         await tracks.EnsureFreshAsync(IdleDelay, stoppingToken);
 
+        SettleFromArtists(tracks.Current?.Rows ?? []);
+
         var asked = store.Read();
 
         var unasked = (tracks.Current?.Rows ?? [])
@@ -75,5 +77,58 @@ public sealed class GenreWorker(
             logger.LogInformation("Suggested genres for {Count} songs", suggested);
 
         return IdleDelay;
+    }
+
+    /// <summary>
+    /// Settles every unanswered song whose artist the user's answers have settled, and takes back
+    /// any such genre the answers no longer support.
+    /// </summary>
+    private void SettleFromArtists(IReadOnlyList<TrackRow> rows)
+    {
+        var records = store.Read();
+        var songs = rows.Where(row => row.ArtistAndTitle is not null)
+            .DistinctBy(row => row.Song, StringComparer.OrdinalIgnoreCase)
+            .Select(row =>
+                (
+                    row.Song,
+                    Artist: ArtistCredit.Primary(row.ArtistAndTitle!.Value.Artist),
+                    Record: records.GetValueOrDefault(row.Song)
+                )
+            )
+            .ToArray();
+
+        var learned = GenreByArtist.Learn(
+            songs
+                .Where(song => song.Record is { IsTheUsersAnswer: true })
+                .Select(song => (song.Artist, song.Record!.Genre))
+        );
+
+        var changed = 0;
+
+        foreach (var (song, artist, record) in songs)
+        {
+            var genre = learned.GetValueOrDefault(artist);
+
+            if (
+                record is { IsTheUsersAnswer: true }
+                || record?.Genre == genre && record?.LearnedFrom is not null
+            )
+                continue;
+
+            if (genre is not null)
+                store.SettleFromArtist(song, genre, artist);
+            else if (record?.LearnedFrom is not null)
+                store.Unlearn(song);
+            else
+                continue;
+
+            changed++;
+        }
+
+        if (changed > 0)
+            logger.LogInformation(
+                "Settled {Count} genres from the user's answers by artist",
+                changed
+            );
     }
 }

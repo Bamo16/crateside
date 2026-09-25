@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Crateside.Core.Tracks;
 
 namespace Crateside.Core.Familiarity;
 
@@ -25,9 +26,6 @@ public sealed partial class FamiliarityLookup(HttpClient client)
     [GeneratedRegex(@"[^\p{L}\p{N}*]+")]
     private static partial Regex NotLetterOrDigit { get; }
 
-    [GeneratedRegex(@",|&|\+|／| x | feat\.? | ft\.? ", RegexOptions.IgnoreCase)]
-    private static partial Regex ArtistSeparator { get; }
-
     /// <summary>
     /// What Deezer knows, <see cref="FamiliarityReading.Unknown"/> when it does not know the song,
     /// or null when it could not be reached — which is worth asking again, where unknown is not.
@@ -41,7 +39,7 @@ public sealed partial class FamiliarityLookup(HttpClient client)
         try
         {
             using var search = await GetAsync(
-                $"https://api.deezer.com/search?q={Uri.EscapeDataString($"{FirstArtist(artist)} {Bracketed.Replace(title, string.Empty).Trim()}")}",
+                $"https://api.deezer.com/search?q={Uri.EscapeDataString($"{ArtistCredit.Primary(artist)} {Bracketed.Replace(title, string.Empty).Trim()}")}",
                 cancellationToken
             );
 
@@ -138,7 +136,7 @@ public sealed partial class FamiliarityLookup(HttpClient client)
     {
         var by = Squash(found);
 
-        return ArtistSeparator
+        return ArtistCredit
             .Split(credited)
             .Select(Squash)
             .Any(one =>
@@ -149,8 +147,6 @@ public sealed partial class FamiliarityLookup(HttpClient client)
                 )
             );
     }
-
-    private static string FirstArtist(string credited) => ArtistSeparator.Split(credited)[0].Trim();
 
     /// <summary>Lowercase letters, digits and <c>*</c> only, accents folded and <c>$</c> read as S.</summary>
     private static string Squash(string text)

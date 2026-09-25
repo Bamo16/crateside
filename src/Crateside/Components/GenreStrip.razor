@@ -33,6 +33,7 @@
         {
             null or { LookedUpAt: null } => "not looked up yet",
             { Heard.Count: 0 } => "the sources know nothing of it",
+            { LearnedFrom: { } artist } => $"from your answers for {artist}",
             { IsSettled: true } => string.Empty,
             _ => $"heard: {string.Join(", ", record.Heard.Take(4))}",
         };

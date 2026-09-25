@@ -57,8 +57,46 @@ public sealed class GenreStore
         if (genre is not null && !GenreVocabulary.IsGenre(genre))
             throw new ArgumentException($"'{genre}' is not on the genre list.", nameof(genre));
 
-        Update(song, record => record with { Genre = genre, IsSettled = true });
+        Update(song, record => record with { Genre = genre, IsSettled = true, LearnedFrom = null });
     }
+
+    /// <summary>
+    /// Settles a song the user has not answered from what their answers say about its artist; a
+    /// song they answered themselves is left alone (#61).
+    /// </summary>
+    public void SettleFromArtist(string song, string genre, string artist)
+    {
+        if (!GenreVocabulary.IsGenre(genre))
+            throw new ArgumentException($"'{genre}' is not on the genre list.", nameof(genre));
+
+        Update(
+            song,
+            record =>
+                record is { IsSettled: true, LearnedFrom: null }
+                    ? record
+                    : record with
+                    {
+                        Genre = genre,
+                        IsSettled = true,
+                        LearnedFrom = artist,
+                    }
+        );
+    }
+
+    /// <summary>Takes back a genre settled from the artist, once the user's answers stop supporting it.</summary>
+    public void Unlearn(string song) =>
+        Update(
+            song,
+            record =>
+                record.LearnedFrom is null
+                    ? record
+                    : record with
+                    {
+                        Genre = null,
+                        IsSettled = false,
+                        LearnedFrom = null,
+                    }
+        );
 
     private void Update(string song, Func<GenreRecord, GenreRecord> change)
     {
@@ -115,6 +153,17 @@ public sealed record GenreRecord
 
     [JsonPropertyName("isSettled")]
     public bool IsSettled { get; init; }
+
+    /// <summary>
+    /// The artist whose other tracks settled this one, or null when the user settled it or nobody has.
+    /// </summary>
+    [JsonPropertyName("learnedFrom")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LearnedFrom { get; init; }
+
+    /// <summary>The user answered this song themselves: the only answer that teaches anything.</summary>
+    [JsonIgnore]
+    public bool IsTheUsersAnswer => IsSettled && LearnedFrom is null;
 
     /// <summary>The first thing the sources said that maps onto the list, or null.</summary>
     [JsonPropertyName("suggested")]
