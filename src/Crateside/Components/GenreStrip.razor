@@ -5,27 +5,20 @@
 @inject TracksService Tracks
 @inject ActionLog Actions
 
-<div class="genre-strip">
-    <span class="genre-label">Genre</span>
-    @foreach (var genre in GenreVocabulary.All)
-    {
-        <button class="genre @GenreTone(Row.Genre, genre)" disabled="@_working"
-                @onclick="() => SettleGenre(genre)">
-            @genre
-        </button>
-    }
-    <button class="genre @GenreTone(Row.Genre, null)" disabled="@_working"
-            @onclick="() => SettleGenre(null)">
-        none of these
-    </button>
-    <span class="genre-heard">@Heard(Row.Genre)</span>
-</div>
+<ChoiceStrip Label="Genre" Choices="Choices" Note="@Heard(Row.Genre)" Disabled="_working"
+             OnChoose="SettleGenre" />
 
 @code {
     private bool _working;
 
     [Parameter, EditorRequired]
     public required TrackRow Row { get; set; }
+
+    private IReadOnlyList<ChoiceStrip.Choice> Choices =>
+        [
+            .. GenreVocabulary.All.Select(genre => new ChoiceStrip.Choice(genre, genre, GenreTone(Row.Genre, genre))),
+            new(null, "none of these", GenreTone(Row.Genre, null)),
+        ];
 
     private static string? GenreTone(GenreRecord? record, string? genre) =>
         record switch

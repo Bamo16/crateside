@@ -1,3 +1,9 @@
+/* Spans both panel columns, above everything: what the track is called and what it is cut from
+   are the two things every state of a track has.
+
+   Side by side rather than stacked. They are two rarely-used controls, a swap especially, and
+   stacked they took a large share of the panel for what is usually just two lines of status
+   (#19). */
 .edits {
     grid-column: 1 / -1;
     display: grid;

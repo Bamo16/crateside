@@ -1,4 +1,5 @@
 using Crateside.Core;
+using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
@@ -9,11 +10,12 @@ namespace Crateside;
 
 /// <summary>
 /// Keeps the library's keys backed against hand-applied tags (ADR 0023) and every keyed file's
-/// genre written (ADR 0030). Never paused: it contends for nothing.
+/// genre (ADR 0030) and familiarity (#52) written. Never paused: it contends for nothing.
 /// </summary>
 public sealed class BackingWorker(
     BackingRunner runner,
     GenreStore genres,
+    FamiliarityStore familiarity,
     IOptions<CratesidePaths> paths,
     ILogger<BackingWorker> logger
 ) : BackgroundService
@@ -56,13 +58,26 @@ public sealed class BackingWorker(
     {
         var ledger = KeyLedger.Read(_paths.Ledger);
         var settled = genres.Read();
+        var reach = familiarity.Read();
 
-        string? GenreOf(string videoId) =>
-            settled.GetValueOrDefault(ledger.SongFor(videoId) ?? videoId)?.Written;
+        IReadOnlyList<string> OwnedOf(string videoId)
+        {
+            var song = ledger.SongFor(videoId) ?? videoId;
 
-        var library = Report(runner.Run(_paths.MashupSamples, ledger, GenreOf), "the library");
+            return
+            [
+                .. settled.GetValueOrDefault(song)?.Written is { } genre
+                    ? [GenreVocabulary.Keyword(genre)]
+                    : Array.Empty<string>(),
+                .. reach.GetValueOrDefault(song)?.Written is { } known
+                    ? [FamiliarityVocabulary.Keyword(known)]
+                    : Array.Empty<string>(),
+            ];
+        }
+
+        var library = Report(runner.Run(_paths.MashupSamples, ledger, OwnedOf), "the library");
         var staging = Report(
-            runner.Run(_paths.SampleStaging, ledger, GenreOf, backKeys: false),
+            runner.Run(_paths.SampleStaging, ledger, OwnedOf, backKeys: false),
             "Sample Staging"
         );
 

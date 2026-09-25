@@ -145,11 +145,49 @@ public class BackingRunnerTests : IDisposable
     [Fact]
     public void Only_a_keyed_entry_takes_a_genre()
     {
-        Assert.True(BackingRunner.CanTakeAGenre(Tags("Key|G♯", "Key|Minor")));
-        Assert.False(BackingRunner.CanTakeAGenre(Tags("Type|Vocal")));
-        Assert.False(BackingRunner.CanTakeAGenre(null));
-        Assert.False(BackingRunner.CanTakeAGenre(Tags("Key|G♯", "Key|Minor", "Genre|Rap")));
+        Assert.True(BackingRunner.CanTakeOwnedTags(Tags("Key|G♯", "Key|Minor")));
+        Assert.False(BackingRunner.CanTakeOwnedTags(Tags("Type|Vocal")));
+        Assert.False(BackingRunner.CanTakeOwnedTags(null));
+        Assert.False(BackingRunner.CanTakeOwnedTags(Tags("Key|G♯", "Key|Minor", "Genre|Rap")));
     }
+
+    [Fact]
+    public void Genre_and_familiarity_each_replace_only_their_own_group()
+    {
+        var merged = Merge(
+            Tags("Key|G♯", "Key|Minor", "Genre|Pop", "Familiarity|Obscure"),
+            ["Familiarity|Mainstream"]
+        );
+
+        Assert.Equal(["Key|G♯", "Key|Minor", "Genre|Pop", "Familiarity|Mainstream"], merged);
+    }
+
+    [Fact]
+    public void A_familiarity_the_user_took_off_is_not_put_back()
+    {
+        var merged = Merge(
+            AbletonFileTags.FromKeywords(
+                File1,
+                ["Key|G♯", "Key|Minor"],
+                ["Familiarity|Mainstream"]
+            ),
+            ["Genre|Rock", "Familiarity|Mainstream"]
+        );
+
+        Assert.Equal(["Key|G♯", "Key|Minor", "Genre|Rock"], merged);
+    }
+
+    [Fact]
+    public void Both_familiarities_are_keywords_the_writer_accepts() =>
+        Assert.All(
+            Crateside.Core.Familiarity.FamiliarityVocabulary.All,
+            value =>
+                Assert.True(
+                    AbletonFolderInfoWriter.IsValidKeyword(
+                        Crateside.Core.Familiarity.FamiliarityVocabulary.Keyword(value)
+                    )
+                )
+        );
 
     [Fact]
     public void Every_genre_on_the_list_is_a_keyword_the_writer_accepts()

@@ -1,11 +1,5 @@
-/* Spans both panel columns, above everything: what the track is called and what it is cut from
-   are the two things every state of a track has.
-
-   Side by side rather than stacked. They are two rarely-used controls, a swap especially, and
-   stacked they took a large share of the panel for what is usually just two lines of status
-   (#19). */
-/* One line of small buttons, because a genre is picked once and then only glanced at. */
-.genre-strip {
+/* One line of small buttons, because a choice like a genre is picked once and then only glanced at. */
+.choice-strip {
     grid-column: 1 / -1;
     display: flex;
     flex-wrap: wrap;
@@ -14,7 +8,7 @@
     margin-bottom: 12px;
 }
 
-.genre-label {
+.choice-label {
     font-size: 11px;
     font-weight: 500;
     text-transform: uppercase;
@@ -23,7 +17,7 @@
     margin-right: 6px;
 }
 
-.genre {
+.choice {
     font: inherit;
     font-size: 12px;
     color: var(--text-75);
@@ -34,22 +28,22 @@
     cursor: pointer;
 }
 
-.genre:hover:not(:disabled) {
+.choice:hover:not(:disabled) {
     border-color: var(--text-40);
 }
 
-.genre.suggested {
+.choice.suggested {
     color: var(--amber);
     border: 1px dashed var(--amber);
 }
 
-.genre.settled {
+.choice.settled {
     color: var(--ink);
     background: var(--text);
     border-color: var(--text);
 }
 
-.genre-heard {
+.choice-note {
     margin-left: 8px;
     font-size: 12px;
     color: var(--text-50);

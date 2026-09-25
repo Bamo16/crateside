@@ -1,3 +1,4 @@
+using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
@@ -92,6 +93,16 @@ public sealed record TrackRow
 
     /// <summary>The song's genre as settled or suggested, or null when nothing has asked yet.</summary>
     public GenreRecord? Genre { get; init; }
+
+    /// <summary>How far the song reaches, measured or settled, or null when nothing has asked yet.</summary>
+    public FamiliarityRecord? Familiarity { get; init; }
+
+    /// <summary>The ledger's artist and title, else the row's own name split at its dash.</summary>
+    public (string Artist, string Title)? ArtistAndTitle =>
+        Verdict is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title }
+            ? (artist, title)
+        : Title.Split(" - ", 2) is [{ Length: > 0 } a, { Length: > 0 } t] ? (a, t)
+        : null;
 
     /// <summary>The key to tag with, or null when withheld, weak, or unknown.</summary>
     public string? Key => Verdict?.HasTaggableKey is true ? Verdict.Key : null;

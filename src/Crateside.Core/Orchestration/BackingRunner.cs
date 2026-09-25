@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Staging;
@@ -7,7 +8,7 @@ namespace Crateside.Core.Orchestration;
 
 /// <summary>
 /// Gives every unbacked file in a root the entry its verdict earns, so its key survives the next
-/// write (ADR 0023), and every keyed entry its settled genre (ADR 0030).
+/// write (ADR 0023), and every keyed entry crateside's own tags: genre (ADR 0030) and familiarity (#52).
 /// </summary>
 public sealed class BackingRunner(
     AbletonFolderInfoReader folderInfo,
@@ -24,14 +25,14 @@ public sealed class BackingRunner(
     /// Backs everything under <paramref name="root"/> not backed yet, in one write: each write
     /// reconciles the index to the store, so a second would undo the first.
     /// </summary>
-    /// <param name="genreOf">A video ID's settled genre, or null to leave its entry's genre alone.</param>
+    /// <param name="ownedOf">A video ID's keywords in crateside's own groups; a group left out is left alone.</param>
     /// <param name="backKeys">False where another stage writes the keys, which is staging.</param>
     public TagWriteOutcome Run(
         string root,
         KeyLedger ledger,
-        Func<string, string?>? genreOf = null,
+        Func<string, IReadOnlyList<string>>? ownedOf = null,
         bool backKeys = true
-    ) => writer.Apply(root, Unbacked(root, ledger, genreOf, backKeys));
+    ) => writer.Apply(root, Unbacked(root, ledger, ownedOf, backKeys));
 
     /// <summary>
     /// Every file under <paramref name="root"/> whose entry is missing a key or a genre it could
@@ -40,7 +41,7 @@ public sealed class BackingRunner(
     public IReadOnlyList<TagAssignment> Unbacked(
         string root,
         KeyLedger ledger,
-        Func<string, string?>? genreOf = null,
+        Func<string, IReadOnlyList<string>>? ownedOf = null,
         bool backKeys = true
     )
     {
@@ -67,13 +68,13 @@ public sealed class BackingRunner(
                 })
                 // Before reading any provenance, which costs a tag read per file.
                 .Where(file =>
-                    file.NeedsKey || (genreOf is not null && CanTakeAGenre(file.Existing))
+                    file.NeedsKey || (ownedOf is not null && CanTakeOwnedTags(file.Existing))
                 )
                 .Select(file => new
                 {
                     file.Path,
                     file.Existing,
-                    Keywords = KeywordsFor(ProvenanceOf(file.Path), ledger, genreOf, file.NeedsKey),
+                    Keywords = KeywordsFor(ProvenanceOf(file.Path), ledger, ownedOf, file.NeedsKey),
                 })
                 .Where(file => file.Keywords.Count > 0)
                 .Select(file => new
@@ -112,16 +113,16 @@ public sealed class BackingRunner(
         );
 
     /// <summary>
-    /// A genre goes only onto an entry that already carries a key: the tagging stage's next write
-    /// to a keyless entry would replace its bag, genre and all.
+    /// crateside's own tags go only onto an entry that already carries a key: the tagging stage's
+    /// next write to a keyless entry would replace its bag, and them with it.
     /// </summary>
-    internal static bool CanTakeAGenre(AbletonFileTags? existing) =>
+    internal static bool CanTakeOwnedTags(AbletonFileTags? existing) =>
         existing is { IsKeyTagged: true }
         && existing.Keywords.All(AbletonFolderInfoWriter.IsValidKeyword);
 
     /// <summary>
-    /// The entry's whole bag plus the key it lacks and its settled genre. The writer replaces the
-    /// whole bag, so anything left out here is destroyed.
+    /// The entry's whole bag plus the key it lacks and its own tags, each replacing the one of its
+    /// group. The writer replaces the whole bag, so anything left out here is destroyed.
     /// </summary>
     internal static IReadOnlyList<string> Merged(
         AbletonFileTags? existing,
@@ -129,19 +130,16 @@ public sealed class BackingRunner(
     )
     {
         var hidden = existing?.HiddenKeywords ?? [];
-        var genre =
-            keywords.FirstOrDefault(GenreVocabulary.IsGenreKeyword) is { } wanted
-            && !hidden.Contains(wanted, StringComparer.Ordinal)
-                ? wanted
-                : null;
+        var owned = keywords
+            .Where(keyword => IsOwned(keyword) && !hidden.Contains(keyword, StringComparer.Ordinal))
+            .ToArray();
+        var replaced = owned.Select(GroupOf).ToHashSet(StringComparer.Ordinal);
 
         IReadOnlyList<string> kept = existing is null
-            ? keywords.Where(keyword => !GenreVocabulary.IsGenreKeyword(keyword)).ToArray()
+            ? keywords.Where(keyword => !IsOwned(keyword)).ToArray()
             :
             [
-                .. existing.Keywords.Where(keyword =>
-                    genre is null || !GenreVocabulary.IsGenreKeyword(keyword)
-                ),
+                .. existing.Keywords.Where(keyword => !replaced.Contains(GroupOf(keyword))),
                 .. keywords.Where(keyword =>
                     !hidden.Contains(keyword, StringComparer.Ordinal)
                     && (
@@ -154,17 +152,22 @@ public sealed class BackingRunner(
                 ),
             ];
 
-        return genre is null ? kept : [.. kept, genre];
+        return [.. kept, .. owned];
     }
+
+    private static bool IsOwned(string keyword) =>
+        GenreVocabulary.IsGenreKeyword(keyword) || FamiliarityVocabulary.IsKeyword(keyword);
+
+    private static string GroupOf(string keyword) => keyword.Split('|')[0];
 
     /// <summary>
     /// What one file's entry should gain, from its own provenance, the verdict the ledger settled
-    /// and the genre the user settled. Empty for a file nothing can be said about.
+    /// and crateside's own tags. Empty for a file nothing can be said about.
     /// </summary>
     private static IReadOnlyList<string> KeywordsFor(
         StemProvenance? provenance,
         KeyLedger ledger,
-        Func<string, string?>? genreOf,
+        Func<string, IReadOnlyList<string>>? ownedOf,
         bool needsKey
     )
     {
@@ -176,13 +179,15 @@ public sealed class BackingRunner(
                 ? TaggingRunner.KeywordsFor(run.Key, provenance.Preset, provenance.Type)
                 : [];
 
-        // A genre with no key would make a keyless entry, which is the tagging stage's to write.
+        // An owned tag with no key would make a keyless entry, which is the tagging stage's to write.
         if (needsKey && key.Count is 0)
             return [];
 
-        return genreOf?.Invoke(videoId) is { } genre && GenreVocabulary.IsGenre(genre)
-            ? [.. key, GenreVocabulary.Keyword(genre)]
-            : key;
+        return
+        [
+            .. key,
+            .. (ownedOf?.Invoke(videoId) ?? []).Where(AbletonFolderInfoWriter.IsValidKeyword),
+        ];
     }
 
     private StemProvenance? ProvenanceOf(string path)

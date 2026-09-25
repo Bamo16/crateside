@@ -51,7 +51,7 @@ public sealed class GenreWorker(
 
         var unasked = (tracks.Current?.Rows ?? [])
             .Where(row => asked.GetValueOrDefault(row.Song) is not { LookedUpAt: not null })
-            .Select(row => (row.Song, Name: NameOf(row)))
+            .Select(row => (row.Song, Name: row.ArtistAndTitle))
             .DistinctBy(song => song.Song, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
@@ -76,11 +76,4 @@ public sealed class GenreWorker(
 
         return IdleDelay;
     }
-
-    /// <summary>The ledger's artist and title, else the row's own name split at its dash.</summary>
-    private static (string Artist, string Title)? NameOf(TrackRow row) =>
-        row.Verdict is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title }
-            ? (artist, title)
-        : row.Title.Split(" - ", 2) is [{ Length: > 0 } a, { Length: > 0 } t] ? (a, t)
-        : null;
 }

@@ -433,11 +433,9 @@ public sealed class StemEditor(
             return;
         }
 
-        var wanted = line switch
-        {
-            { Kind: StemKind.Source } => PlanOf(row).TogglingSource(),
-            _ => PlanOf(row).Toggling(line.PresetId!),
-        };
+        var wanted = line is { Kind: StemKind.Source }
+            ? PlanOf(row).TogglingSource()
+            : PlanOf(row).Toggling(line.PresetId!);
 
         playlist.SetPlan(row.VideoId, wanted);
 

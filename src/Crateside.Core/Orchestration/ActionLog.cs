@@ -127,6 +127,7 @@ public enum UserActionKind
     RenameReverted,
     Swapped,
     GenreSettled,
+    FamiliaritySettled,
     SameSong,
     DifferentSong,
     UsedAnyway,

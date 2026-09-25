@@ -80,6 +80,11 @@ against it.
   *durable* rather than what records it. Every file arrives in **Mashup Samples** unbacked, because
   a move carries the keyword in the index and writes no entry
   ([ADR 0023](docs/adr/0023-a-key-with-no-store-entry-is-not-durable.md)).
+- **Familiarity** — how likely a listener is to know a **song**: `Mainstream` or `Obscure`, under
+  a tag group of crateside's own (`Familiarity|Mainstream`). Read off the reach of the
+  most-followed credited artist, then the song's own, where those are clear; the user answers the
+  rest, and their answer always wins
+  ([ADR 0032](docs/adr/0032-familiarity-is-read-off-reach-artist-first-then-song.md)).
 - **Hidden keyword** — a keyword the user took off a file by hand, which Ableton keeps in the
   file's **tag store** entry beside the keywords it still has. It records the removal itself, not
   what was there before: a tag added and taken off a minute later is hidden too. crateside never

@@ -1,4 +1,5 @@
 using Crateside.Core;
+using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
@@ -354,6 +355,12 @@ public static class ServiceRegistration
             .SetHandlerLifetime(TimeSpan.FromMinutes(5));
         services.AddHostedService<GenreWorker>();
 
+        services.AddSingleton(_ => new FamiliarityStore());
+        services
+            .AddHttpClient<FamiliarityLookup>(client => client.Timeout = TimeSpan.FromSeconds(15))
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5));
+        services.AddHostedService<FamiliarityWorker>();
+
         services.AddSingleton(sp => new TracksService(
             async cancellationToken =>
             {
@@ -373,7 +380,8 @@ public static class ServiceRegistration
                     sp.GetRequiredService<AbletonIndexReader>()
                         .Read(sp.GetRequiredService<CratesidePaths>().MashupSamples),
                     sp.GetRequiredService<DeletionLog>().All(),
-                    sp.GetRequiredService<GenreStore>().Read()
+                    sp.GetRequiredService<GenreStore>().Read(),
+                    sp.GetRequiredService<FamiliarityStore>().Read()
                 );
 
                 return view with
