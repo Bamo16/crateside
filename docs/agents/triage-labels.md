@@ -13,3 +13,9 @@ The skills speak in terms of five canonical triage roles. This file maps those r
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
 
 Edit the right-hand column to match whatever vocabulary you actually use.
+
+## Labels outside the five roles
+
+| Label | Meaning |
+| ----- | ------- |
+| `needs-design` | Waiting on a Claude Design session. Like `ready-for-human`, but the human's part is taking the brief to that session and bringing its result back to the issue as a comment with the files attached. Build from that comment, not before it. |
