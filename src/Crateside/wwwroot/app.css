@@ -118,3 +118,114 @@ h1:focus {
 .blazor-error-boundary::after {
     content: "An error has occurred.";
 }
+
+/* Controls shared by every page and component; a page's scoped rule still wins where it sets one. */
+/* One page, one list, one row per track. The row never moves: state is a column rather than an
+   address, which is the whole argument for replacing the sections this page came from. */
+
+/* Every number, key, timestamp and count. They are read as values and compared down a column,
+   which proportional digits defeat — a BPM of 111 and one of 128 should be the same width. */
+.mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+.outline {
+    flex: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.outline:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 999px;
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
+.pill.off {
+    color: var(--text-75);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pill.on {
+    border: 1px solid transparent;
+    color: var(--ink);
+}
+
+.pill.on.amber {
+    background: var(--amber);
+}
+
+.pill.on.red {
+    background: var(--red);
+}
+
+.pill.on.teal,
+.pill.on.plain {
+    background: var(--text);
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* The evidence link is an anchor because it navigates; it is drawn as a button because it sits in
+   a row of them and nothing about it is a different kind of act. */
+a.outline {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+/* Filled, because releasing a hold is the one thing on this panel the user came to do. */
+.primary {
+    flex: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+    background: var(--text);
+    border: 0;
+    border-radius: 6px;
+    padding: 7px 12px;
+    cursor: pointer;
+}
+
+.danger {
+    flex: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--red);
+    background: rgba(224, 122, 109, 0.18);
+    border: 1px solid rgba(224, 122, 109, 0.45);
+    border-radius: 6px;
+    padding: 7px 12px;
+    cursor: pointer;
+}
+
+.danger:disabled {
+    cursor: default;
+    opacity: 0.6;
+}

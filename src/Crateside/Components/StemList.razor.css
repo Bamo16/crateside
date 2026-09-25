@@ -1,0 +1,365 @@
+.panel-head {
+    margin-bottom: 8px;
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.stem-heads,
+.stem {
+    display: grid;
+    grid-template-columns: 1fr 120px 140px 1fr;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 4px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+}
+
+/* Dashed, unfilled and dimmed, so it cannot be read as one of the samples. A warp guide is used
+   up rather than kept, and a line drawn like the others would put a file in the library that is
+   never going to be there. */
+.stem.guide {
+    background: transparent;
+    border-style: dashed;
+    opacity: 0.55;
+}
+
+/* A re-cut is destructive, so the panel shows the trade before it happens rather than a sentence
+   about it: what goes, in red and struck through, and what arrives, in the teal that means the
+   machine is about to work. */
+.pending {
+    color: var(--red);
+}
+
+.stem.going {
+    background: transparent;
+    border-color: rgba(224, 122, 109, 0.35);
+    opacity: 0.6;
+}
+
+.stem.going .stem-label,
+.stem.going .stem-tag {
+    text-decoration: line-through;
+}
+
+.stem.going.guide {
+    border-style: dashed;
+    opacity: 0.5;
+}
+
+.stem.coming {
+    background: rgba(111, 199, 214, 0.06);
+    border-color: rgba(111, 199, 214, 0.3);
+}
+
+.stem.coming.guide {
+    background: transparent;
+    border-style: dashed;
+    opacity: 0.7;
+}
+
+.stem-where.gone {
+    color: var(--red);
+}
+
+.stem-where.new {
+    color: var(--teal);
+}
+
+.stem-heads {
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 6px;
+    padding: 0 12px;
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.stem-label {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.kind {
+    margin-left: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--text-50);
+}
+
+.premium-badge {
+    margin-left: 6px;
+    padding: 1px 7px;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--amber);
+    border: 1px solid var(--amber);
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.stem-tag,
+.stem-where {
+    font-size: 12px;
+    color: var(--text-60);
+}
+
+.stem-tag.good,
+.stem-where.good {
+    color: var(--green);
+}
+
+.stem-tag.bad {
+    color: var(--red);
+}
+
+.stem-tag.dim {
+    color: var(--text-30);
+}
+
+.stem-note {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--text-50);
+}
+
+/* Shown only where a song has been cut from more than one upload. The filenames are frequently
+   identical across a swap, so the video ID is the only thing that tells two samples apart. */
+.upload {
+    font-style: normal;
+    white-space: nowrap;
+}
+
+.upload .mono {
+    margin-left: 6px;
+    font-size: 11px;
+    color: var(--text-40);
+}
+
+.upload.current {
+    color: var(--text-75);
+}
+
+.upload.superseded {
+    color: var(--warn);
+}
+
+/* The stem list is the picker. A line is either on disk or not; the tick says whether it is
+   wanted, and the two crossing is the whole control — so opening it adds a column rather than a
+   screen, and the diff a re-cut used to show on a separate state is just the same lines recoloured. */
+.stem-heads.picking,
+.stem.picking {
+    grid-template-columns: 22px 1fr 120px 140px 1fr;
+}
+
+/* Before separation there is no file to have a key or a folder, so those two columns would be a
+   row of dashes. */
+.stem-heads.planning,
+.stem.planning {
+    grid-template-columns: 22px 1fr 1fr;
+}
+
+.stem.picking {
+    cursor: pointer;
+}
+
+.stem.picking.guide,
+.stem.picking.unrecognised {
+    cursor: default;
+}
+
+/* Present but never made: readable, and plainly not one of the track's files. */
+.stem.unmade {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.08);
+    opacity: 0.6;
+}
+
+.stem.picking:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.stem.picking.unmade:hover {
+    opacity: 0.85;
+}
+
+.stem-band {
+    padding: 8px 12px 4px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-35);
+}
+
+.tick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1;
+    color: transparent;
+}
+
+.tick.on {
+    color: var(--ink);
+    background: var(--text);
+    border-color: var(--text);
+}
+
+.tick.coming {
+    color: var(--ink);
+    background: var(--teal);
+    border-color: var(--teal);
+}
+
+.tick.going {
+    border-color: rgba(224, 122, 109, 0.6);
+}
+
+/* Not a box, because it is not a choice: the guide is always made and always deleted again. */
+.tick.pinned {
+    color: var(--text-50);
+    border: 0;
+}
+
+.stem-where.dim {
+    color: var(--text-30);
+}
+
+/* Dashed and quiet: an invitation rather than an action, sitting where the list ends. */
+.opener {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 12px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+    color: var(--text-75);
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.opener:hover:not(:disabled) {
+    color: var(--text);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.opener.closer {
+    background: rgba(255, 255, 255, 0.05);
+    border-style: solid;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.opener-hint {
+    margin-left: auto;
+    overflow: hidden;
+    font-weight: 400;
+    color: var(--text-50);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Sits where the line it is about to create will be, and says what it is next to the boxes
+   rather than in the far column, so the two read as one thing. */
+.add-source {
+    margin-bottom: 4px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+}
+
+.add-fields {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 16px;
+}
+
+.add-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.add-fields label span {
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.add-fields input,
+.add-fields select {
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 8px 11px;
+    outline: none;
+}
+
+.add-fields input:focus,
+.add-fields select:focus {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.add-fields input::placeholder {
+    color: var(--text-35);
+}
+
+.add-type {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.add-type-label {
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.add-title {
+    font-size: 12px;
+    color: var(--text-60);
+}
+
+.add-note {
+    margin: 10px 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-75);
+}
+
+.add-note.bad {
+    color: var(--red);
+}

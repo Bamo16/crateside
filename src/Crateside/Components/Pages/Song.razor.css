@@ -29,11 +29,6 @@ h1 {
     color: var(--text-60);
 }
 
-.mono {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-}
-
 .band {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.4fr);
@@ -107,6 +102,25 @@ h1 {
     text-decoration: none;
 }
 
+.columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 19rem;
+    gap: 44px;
+    margin-top: 2rem;
+}
+
+.rail {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.problem {
+    margin: 0;
+    font-size: 12px;
+    color: var(--red);
+}
+
 .evidence-section {
     margin-top: 2.5rem;
     scroll-margin-top: 1rem;
@@ -124,6 +138,10 @@ h1 {
 }
 
 @media (max-width: 60rem) {
+    .columns {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
     .band {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }

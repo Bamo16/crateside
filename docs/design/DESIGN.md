@@ -42,6 +42,15 @@ One component, `Components/StateChip.razor`, used wherever a track's state is sh
 neutral outline · teal filled with a dot · teal outline · amber filled · red outline · red filled
 · green outline · dashed.
 
+## Shared controls
+
+Buttons (`.outline`, `.primary`, `.danger`), `.pill`, `.actions` and `.mono` are global, in
+`app.css`, so a component mounted on two pages looks the same on both. A page's scoped rule still
+wins where it sets one; Settings does, for its buttons.
+
+The sample list and picker are `StemList` and `StemConfirm`, both driven by one `StemEditor`, and
+are mounted by the Tracks row and by Track details.
+
 ## Page headers
 
 `PageHeader` has three shapes, a closed set: **Bar**, **Flush**, **Shade**. A new page picks one.

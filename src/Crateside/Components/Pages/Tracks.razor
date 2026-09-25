@@ -18,12 +18,8 @@
 @inject TracksService Source
 @inject QueueService Playlist
 @inject JobStore Jobs
-@inject StemRecut Recut
-@inject SourceAdd Sources
-@inject SampleAdoption Adoption
 @inject TrackRemoval Removal
 @inject TrackAdd Adding
-@inject PresetCatalogReader Presets
 @inject TrackRename Rename
 @inject TrackSwap Swap
 @inject LookalikeAnswer Lookalike
@@ -36,6 +32,7 @@
 @inject WorkingSet Held
 @inject QuotaReader Quota
 @inject WindowRoll Roll
+@inject IServiceProvider Services
 
 <PageTitle>Tracks</PageTitle>
 
@@ -474,350 +471,17 @@
                         </div>
                     </div>
 
-                    @{
-                        var picker = PickerFor(row);
-                        var picking = _picking == row.VideoId;
-                        var ticking = row.CanChangePlan || picking;
-                    }
-
-                    @if (ticking || row.Samples.Count > 0 || row.HasWarpGuide)
-                    {
-                        <div class="stems">
-                            <div class="panel-head">
-                                @(row.CanChangePlan ? "Will be cut into" : StemsHeading(row))@if (picking && !picker.IsAdditive)
-                                {
-                                    <span class="pending"> · re-cut pending</span>
-                                }
-                            </div>
-
-                            @if (ticking)
-                            {
-                                <div class="stem-heads picking @(row.CanChangePlan ? "planning" : null)">
-                                    <span></span>
-                                    <span>Sample</span>
-                                    @if (!row.CanChangePlan)
-                                    {
-                                        <span>Ableton key</span>
-                                        <span>Where it is</span>
-                                    }
-                                    <span></span>
-                                </div>
-
-                                @foreach (var band in picker.Bands)
-                                {
-                                    <div class="stem-band">@band.Label</div>
-
-                                    @foreach (var line in band.Lines)
-                                    {
-                                        <div class="stem picking @(row.CanChangePlan ? "planning" : null) @LineTone(line)"
-                                             title="@(line.Kind is StemKind.Preset ? line.Description : null)"
-                                             @onclick="() => Toggle(row, line)">
-                                            <span class="tick @TickTone(line)">@TickMark(line)</span>
-
-                                            <span class="stem-label">
-                                                @line.Label
-                                                @if (line.AddedSource is not null)
-                                                {
-                                                    <span class="kind">added by you</span>
-                                                }
-                                                else if (line.Kind is StemKind.Source)
-                                                {
-                                                    <span class="kind">separation source</span>
-                                                }
-                                                @if (line.IsNotPremium)
-                                                {
-                                                    <span class="premium-badge" title="The upload offered no premium audio, so this file is the best it had.">not premium</span>
-                                                }
-                                                @if (line.Kind is StemKind.WarpGuide)
-                                                {
-                                                    <span class="kind">warp guide</span>
-                                                }
-                                            </span>
-
-                                            @if (!row.CanChangePlan)
-                                            {
-                                                <span class="mono stem-tag @(line.AbletonKey is null ? "dim" : null)">
-                                                    @Tag(line, row)
-                                                </span>
-                                                <span class="mono stem-where @WhereTone(line)">@Where(line, picker)</span>
-                                            }
-
-                                            <span class="stem-note">@Note(line, row)</span>
-                                        </div>
-                                    }
-
-                                    @if (band.Label == "Sources")
-                                    {
-                                        @if (_adding == row.VideoId)
-                                        {
-                                            <div class="add-source">
-                                                <div class="add-fields">
-                                                    <label>
-                                                        <span>Where it is</span>
-                                                        <input class="mono" placeholder="YouTube URL or video ID"
-                                                               value="@_addUrl"
-                                                               @oninput="e => OnAdd(row, url: e.Value?.ToString())" />
-                                                    </label>
-                                                    <label>
-                                                        <span>What it is</span>
-                                                        <input placeholder="Official Instrumental"
-                                                               value="@_addLabel"
-                                                               @oninput="e => OnAdd(row, label: e.Value?.ToString())" />
-                                                    </label>
-                                                </div>
-
-                                                <div class="add-type">
-                                                    <span class="add-type-label">Plays as</span>
-                                                    @foreach (var type in Enum.GetValues<SampleType>())
-                                                    {
-                                                        <button class="pill @(_addType == type ? "on plain" : "off")"
-                                                                @onclick="() => ChooseType(row, type)" disabled="@_working">
-                                                            @type
-                                                        </button>
-                                                    }
-                                                    <span class="add-title">@TitleNote</span>
-                                                </div>
-
-                                                <p class="add-note @(_addPlan?.Refusal is null && _shortfall is null ? null : "bad")">
-                                                    @if (_shortfall is { } poor)
-                                                    {
-                                                        <text>
-                                                            This upload offers no premium format.
-                                                            The best it has is @poor.Quality, and
-                                                            that is what would land in your library.
-                                                        </text>
-                                                    }
-                                                    else
-                                                    {
-                                                        @(_addPlan?.Refusal ?? AddNote(row))
-                                                    }
-                                                </p>
-
-                                                <div class="actions">
-                                                    @if (_shortfall is not null)
-                                                    {
-                                                        <button class="danger" disabled="@_working"
-                                                                @onclick="() => ConfirmAdd(row, anyway: true)">
-                                                            @(_working ? "Adding…" : "Add it anyway")
-                                                        </button>
-                                                    }
-                                                    else
-                                                    {
-                                                        <button class="primary" disabled="@(_working || _addPlan?.IsPossible is not true)"
-                                                                @onclick="() => ConfirmAdd(row)">
-                                                            @(_working ? "Checking…" : "Add source")
-                                                        </button>
-                                                    }
-                                                    <button class="outline" @onclick="CancelAdding" disabled="@_working">
-                                                        Cancel
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        }
-                                        else if (_adopting == row.VideoId)
-                                        {
-                                            <div class="add-source">
-                                                <div class="add-fields">
-                                                    <label>
-                                                        <span>The file</span>
-                                                        <select value="@_adoptPath"
-                                                                @onchange="e => OnAdopt(row, e.Value?.ToString())">
-                                                            <option value="">Choose a file nothing has placed…</option>
-                                                            @foreach (var candidate in _adoptCandidates)
-                                                            {
-                                                                <option value="@candidate">@Path.GetFileName(candidate)</option>
-                                                            }
-                                                        </select>
-                                                    </label>
-                                                    <label>
-                                                        <span>What the track calls it</span>
-                                                        <input value="@(_adoptPlan?.Label ?? string.Empty)" readonly
-                                                               placeholder="read from the brackets in its name" />
-                                                    </label>
-                                                </div>
-
-                                                <div class="add-type">
-                                                    <span class="add-type-label">Plays as</span>
-                                                    @foreach (var type in Enum.GetValues<SampleType>())
-                                                    {
-                                                        <button class="pill @(_adoptType == type ? "on plain" : "off")"
-                                                                @onclick="() => ChooseAdoptType(row, type)" disabled="@_working">
-                                                            @type
-                                                        </button>
-                                                    }
-                                                </div>
-
-                                                <p class="add-note @(_adoptPlan?.Refusal is null ? null : "bad")">
-                                                    @(_adoptPlan?.Refusal ?? AdoptNote)
-                                                </p>
-
-                                                <div class="actions">
-                                                    <button class="primary" disabled="@(_working || _adoptPlan?.IsPossible is not true)"
-                                                            @onclick="() => ConfirmAdopt(row)">
-                                                        Adopt it
-                                                    </button>
-                                                    <button class="outline" @onclick="CancelAdopting" disabled="@_working">
-                                                        Cancel
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <button class="opener" @onclick="() => StartAdding(row)" disabled="@_working">
-                                                <span class="mono">+</span>
-                                                <span>Add a source</span>
-                                                <span class="opener-hint">
-                                                    another file of this song · kept whole, never separated
-                                                </span>
-                                            </button>
-                                            <button class="opener" @onclick="() => StartAdopting(row)" disabled="@_working">
-                                                <span class="mono">+</span>
-                                                <span>Adopt a file</span>
-                                                <span class="opener-hint">
-                                                    one you made by hand · taken in where it is
-                                                </span>
-                                            </button>
-                                        }
-                                    }
-                                }
-
-                                @if (picking)
-                                {
-                                    <button class="opener closer" @onclick="() => TogglePicking(row)" disabled="@_working">
-                                        <span class="mono">−</span>
-                                        <span>Close</span>
-                                        <span class="opener-hint">
-                                            @(picker.ChangesAnything ? "nothing is changed until you confirm" : null)
-                                        </span>
-                                    </button>
-                                }
-                            }
-                            else
-                            {
-                                <div class="stem-heads">
-                                    <span>Sample</span>
-                                    <span>Ableton key</span>
-                                    <span>Where it is</span>
-                                    <span></span>
-                                </div>
-
-                                @foreach (var sample in row.Samples)
-                                {
-                                    <div class="stem">
-                                        <span class="stem-label">
-                                            @sample.Label
-                                            @if (sample.IsPremium is false)
-                                            {
-                                                <span class="premium-badge" title="The upload offered no premium audio, so this file is the best it had.">not premium</span>
-                                            }
-                                        </span>
-                                        <span class="mono stem-tag @TagTone(sample)">@Tag(sample)</span>
-                                        <span class="mono stem-where @(sample.IsInLibrary ? "good" : null)">
-                                            @(sample.IsInLibrary ? "Mashup Samples" : "Sample Staging")
-                                        </span>
-                                        <span class="stem-note">
-                                            @if (row.HasSeveralUploads)
-                                            {
-                                                var added = row.IsAddedSource(sample.SourceVideoId);
-                                                var current = sample.SourceVideoId == row.VideoId;
-
-                                                <span class="upload @(added ? "added" : current ? "current" : "superseded")">
-                                                    @(added ? "added source" : current ? "new upload" : "old upload")
-                                                    <span class="mono">@sample.SourceVideoId</span>
-                                                </span>
-                                            }
-                                        </span>
-                                    </div>
-                                }
-
-                                @if (row.HasWarpGuide)
-                                {
-                                    <div class="stem guide">
-                                        <span class="stem-label">
-                                            Drums <span class="kind">warp guide</span>
-                                        </span>
-                                        <span class="mono stem-tag dim">—</span>
-                                        <span class="mono stem-where">Sample Staging</span>
-                                        <span class="stem-note">
-                                            for placing markers; deleted after warping
-                                        </span>
-                                    </div>
-                                }
-
-                                <button class="opener" @onclick="() => TogglePicking(row)" disabled="@_working">
-                                    <span class="mono">+</span>
-                                    <span>Change what is cut</span>
-                                    <span class="opener-hint">@OpenerHint(picker)</span>
-                                </button>
-                            }
-                        </div>
-                    }
+                    <StemList Editor="_stems" Row="row" />
 
                     <div class="side">
-                        @if (picking && _plan is { } confirm)
+                        @if (_stems.IsConfirming(row))
                         {
-                            @if (picker.IsCutInFlight)
+                            @if (_stems.PickerFor(row).IsCutInFlight)
                             {
                                 <p class="what-next @NextTone(row)">@row.Next</p>
-
-                                <p class="detail">
-                                    crateside is cutting this track. A tick is kept straight away;
-                                    anything this cut does not make shows as missing once it lands,
-                                    and dropping a file waits until then.
-                                </p>
-                            }
-                            else if (confirm.Refusal is { } refusal)
-                            {
-                                <p class="warning">@refusal</p>
-                            }
-                            else if (picker.IsAdditive)
-                            {
-                                <p class="adding">
-                                    @("more file".ToQuantity(picker.Adding)). Nothing removed.
-                                </p>
-
-                                <p class="detail">
-                                    @Cost(confirm.Recipe)
-                                    @if (row.Key is { } key)
-                                    {
-                                        <text>Tagged @KeyText.Spell(key) from the verdict already in hand, so no quota is spent. </text>
-                                    }
-                                    @confirm.AudioDetail
-                                    @Untouched(picker)
-                                </p>
-                            }
-                            else
-                            {
-                                <p class="warning">
-                                    Removes @("file".ToQuantity(picker.Removing)) from Sample Staging.
-                                    @Balance(picker)
-                                </p>
-
-                                <p class="detail">
-                                    Anything you have done to @(picker.Removing is 1 ? "it" : "them")
-                                    in Ableton is lost.
-                                    @Cost(confirm.Recipe)
-                                    @if (row.Key is { } key)
-                                    {
-                                        <text>The key stays @KeyText.Spell(key) — detection does not run again, so no quota is spent. </text>
-                                    }
-                                    @(confirm.MakesSomething ? confirm.AudioDetail : null)
-                                </p>
                             }
 
-                            <div class="actions">
-                                @if (confirm.IsPossible && picker.ChangesAnything && !picker.IsCutInFlight)
-                                {
-                                    <button class="@(picker.IsAdditive ? "primary" : "danger")"
-                                            @onclick="() => ConfirmRecut(row)" disabled="@_working">
-                                        @(_working ? "Cutting…" : CutLabel(picker))
-                                    </button>
-                                }
-                                <button class="outline" @onclick="CancelPicking" disabled="@_working">
-                                    Keep as is
-                                </button>
-                            </div>
+                            <StemConfirm Editor="_stems" Row="row" />
                         }
                         else
                         {
@@ -826,11 +490,11 @@
                             @row.Detail
                             @if (row.CanChangePlan)
                             {
-                                <text> @Cost(row.Recipe) Changes apply now — nothing has been made yet.</text>
+                                <text> @StemEditor.Cost(row.Recipe) Changes apply now — nothing has been made yet.</text>
                             }
                             @if (row.State is TrackState.Short)
                             {
-                                <text> Not on disk: @Missing(row). Cutting it is @Cost(row.Recipe)</text>
+                                <text> Not on disk: @_stems.Missing(row). Cutting it is @StemEditor.Cost(row.Recipe)</text>
                             }
                         </p>
                         @if (row.RetryNote is { } retrying)
@@ -871,8 +535,8 @@
                             }
                             @if (row.State is TrackState.Short)
                             {
-                                <button class="primary" @onclick="() => CutShortfall(row)" disabled="@_working">
-                                    @(_working ? "Cutting…" : "Cut what is missing")
+                                <button class="primary" @onclick="() => _stems.CutShortfallAsync(row)" disabled="@(_working || _stems.Working)">
+                                    @(_stems.Working ? "Cutting…" : "Cut what is missing")
                                 </button>
                             }
                             @if (Playlist.BumpedVideoId == row.VideoId)
@@ -904,7 +568,7 @@
                         </div>
                         }
 
-                        @if (_problem is { } problem)
+                        @if ((_problem ?? _stems.Problem) is { } problem)
                         {
                             <p class="problem">@problem</p>
                         }
@@ -961,10 +625,6 @@
 
     private const int RecycledShown = 5;
 
-    private const string AdoptNote =
-        "crateside writes this file's provenance once, where it is, and the track keeps it. "
-        + "Nothing can make it again, so dropping it from the plan later deletes it.";
-
     private static readonly TimeSpan ToastLife = TimeSpan.FromSeconds(20);
 
     /// <summary>
@@ -989,13 +649,6 @@
     private System.Threading.Timer? _clock;
     private bool _syncing;
     private bool _working;
-
-    /// <summary>The row whose picker is open, or null when none is.</summary>
-    private string? _picking;
-
-    /// <summary>The plan being ticked, which is not recorded until the confirm.</summary>
-    private StemPlan _wanted = StemPlan.Default;
-
 
     /// <summary>The add-a-track form, which is the second way into the work lists (ADR 0010).</summary>
     private bool _addingTrack;
@@ -1136,42 +789,6 @@
 
         await InvokeAsync(StateHasChanged);
     }
-    /// <summary>The row whose add-a-source form is open, or null when none is.</summary>
-    private string? _adding;
-
-    private string _addUrl = string.Empty;
-    private string _addLabel = string.Empty;
-    private AddPlan? _addPlan;
-
-    private SampleType? _addType;
-
-    /// <summary>The row whose adopt-a-file form is open, or null when none is.</summary>
-    private string? _adopting;
-
-    private IReadOnlyList<string> _adoptCandidates = [];
-    private string? _adoptPath;
-    private SampleType? _adoptType;
-    private AdoptPlan? _adoptPlan;
-
-    /// <summary>The user picked the type, so the title no longer gets a say.</summary>
-    private bool _addTypeChosen;
-
-    /// <summary>The label crateside last filled in, which it may replace; one the user typed it may not.</summary>
-    private string? _addLabelOffered;
-
-    /// <summary>The video whose title was last asked for.</summary>
-    private string? _titleOf;
-
-    private string? _addTitle;
-    private bool _readingTitle;
-
-    /// <summary>What the upload offers, once it has been asked and found wanting.</summary>
-    private ProbedSource? _shortfall;
-
-    private RecutPlan? _plan;
-
-    /// <summary>What the separator can make. Read once; empty when it could not be asked.</summary>
-    private PresetCatalog _presets = PresetCatalog.Empty;
 
     private string? _renaming;
     private string _name = string.Empty;
@@ -1187,6 +804,8 @@
     private string _swapUrl = string.Empty;
     private SwapPlan? _swapPlan;
 
+    private StemEditor _stems = null!;
+
     private IReadOnlyList<TrackRow> Rows => _view?.Rows ?? [];
 
     /// <summary>Everything answering the search, before the filter narrows it.</summary>
@@ -1196,6 +815,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _stems = ActivatorUtilities.CreateInstance<StemEditor>(Services);
+        _stems.Changed += OnStemsChanged;
+        _stems.Opened += OnPickerOpened;
+
         Source.Changed += OnChanged;
         Source.ReadyToWarp += OnReadyToWarp;
         Separation.Changed += OnChanged;
@@ -1206,7 +829,7 @@
 
         _view = Source.Current;
         _quota = await Quota.ReadAsync();
-        _presets = await Presets.ReadAsync(_circuit.Token);
+        await _stems.LoadAsync();
 
         _clock = new System.Threading.Timer(_ => Redraw(), null, Tick, Tick);
     }
@@ -1268,6 +891,9 @@
         Roll.Changed -= OnChanged;
 
         _clock?.Dispose();
+        _stems.Changed -= OnStemsChanged;
+        _stems.Opened -= OnPickerOpened;
+        _stems.Dispose();
 
         _circuit.Cancel();
         _circuit.Dispose();
@@ -1323,6 +949,14 @@
         $"{"sample".ToQuantity(row.Samples.Count(sample => !sample.IsInLibrary))} in Sample Staging, key-tagged.";
 
     // Raised on a worker thread, never the circuit's, so the render is marshalled back.
+    private void OnStemsChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void OnPickerOpened()
+    {
+        CancelRename();
+        CancelSwap();
+    }
+
     private void OnChanged()
     {
         _view = Source.Current;
@@ -1334,7 +968,7 @@
         _expanded = _expanded == row.VideoId ? null : row.VideoId;
         _problem = null;
 
-        CancelPicking();
+        _stems.Reset();
         CancelRename();
     }
 
@@ -1594,534 +1228,6 @@
             _ => "the video ID",
         };
 
-    /// <summary>
-    /// The track's files as lines to tick, against the plan being edited or its own.
-    /// </summary>
-    private StemPicker PickerFor(TrackRow row) =>
-        StemPicker.For(row, _presets, _picking == row.VideoId ? _wanted : PlanOf(row));
-
-    /// <summary>
-    /// Plans ticked here that the rows have not caught up with yet, so a tick shows at once and the
-    /// next one builds on it rather than on a plan a rescan has still to bring back.
-    /// </summary>
-    private readonly Dictionary<string, StemPlan> _ticked = new(StringComparer.Ordinal);
-
-    private StemPlan PlanOf(TrackRow row)
-    {
-        if (!_ticked.TryGetValue(row.VideoId, out var ticked))
-            return row.Plan;
-
-        if (!ticked.AsksTheSameAs(row.Plan))
-            return ticked;
-
-        _ticked.Remove(row.VideoId);
-
-        return row.Plan;
-    }
-
-    /// <summary>Rebuilds the rows without holding up the click that asked for it.</summary>
-    private void RefreshSoon() =>
-        _ = InvokeAsync(async () =>
-        {
-            try
-            {
-                await Source.RefreshAsync(_circuit.Token);
-            }
-            catch (OperationCanceledException) { }
-        });
-
-    /// <summary>
-    /// Opens the picker, or shuts it again. Looking is not the start of anything.
-    /// </summary>
-    private void TogglePicking(TrackRow row)
-    {
-        _problem = null;
-
-        if (_picking == row.VideoId)
-        {
-            CancelPicking();
-            return;
-        }
-
-        _picking = row.VideoId;
-        _wanted = row.Plan;
-        _plan = null;
-
-        CancelRename();
-        CancelSwap();
-    }
-
-    private void CancelPicking()
-    {
-        _picking = null;
-        _wanted = StemPlan.Default;
-        _plan = null;
-
-        CancelAdding();
-    }
-
-    private void StartAdding(TrackRow row)
-    {
-        CancelAdding();
-        CancelAdopting();
-
-        _problem = null;
-        _adding = row.VideoId;
-    }
-
-    /// <summary>What an added source is, said where the boxes to describe one are.</summary>
-    private static string AddNote(TrackRow row) =>
-        "Another file of this song, kept whole and never separated. keytag records it as this "
-        + "song so it stages beside the stems"
-        + (row.Key is { } key ? $" and takes the key, {KeyText.Spell(key)}." : ", and takes the key once this track has one.")
-        + " No quota, no GPU.";
-
-    private void CancelAdding()
-    {
-        _adding = null;
-        _addUrl = string.Empty;
-        _addLabel = string.Empty;
-        _addPlan = null;
-        _shortfall = null;
-        _addType = null;
-        _addTypeChosen = false;
-        _addLabelOffered = null;
-        _titleOf = null;
-        _addTitle = null;
-        _readingTitle = false;
-    }
-
-    private void StartAdopting(TrackRow row)
-    {
-        CancelAdding();
-        CancelAdopting();
-
-        _problem = null;
-        _adopting = row.VideoId;
-        _adoptCandidates = Adoption.Candidates();
-    }
-
-    private void CancelAdopting()
-    {
-        _adopting = null;
-        _adoptCandidates = [];
-        _adoptPath = null;
-        _adoptType = null;
-        _adoptPlan = null;
-    }
-
-    private void OnAdopt(TrackRow row, string? path)
-    {
-        _adoptPath = path is { Length: > 0 } ? path : null;
-        _adoptType = SampleTypes.InferredFrom(StemFileName.PresetOf(_adoptPath ?? string.Empty));
-        _adoptPlan = Adoption.PlanFor(row.Facts, _adoptPath, _adoptType);
-    }
-
-    private void ChooseAdoptType(TrackRow row, SampleType type)
-    {
-        _adoptType = type;
-        _adoptPlan = Adoption.PlanFor(row.Facts, _adoptPath, _adoptType);
-    }
-
-    private async Task ConfirmAdopt(TrackRow row)
-    {
-        _working = true;
-
-        try
-        {
-            _problem = Adoption.Apply(row.Facts, _adoptPath, _adoptType);
-
-            if (_problem is null)
-                CancelAdopting();
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
-    /// <summary>Re-reads what adding would do on every keystroke, so the refusal arrives early.</summary>
-    private void OnAdd(TrackRow row, string? url = null, string? label = null)
-    {
-        _addUrl = url ?? _addUrl;
-        _addLabel = label ?? _addLabel;
-        _shortfall = null;
-
-        if (YouTubeUrl.TryGetVideoId(_addUrl, out var videoId) && videoId != _titleOf)
-            _ = ReadTitleAsync(row, videoId);
-
-        Replan(row);
-    }
-
-    private void ChooseType(TrackRow row, SampleType type)
-    {
-        _addTypeChosen = true;
-        Offer(type);
-        Replan(row);
-    }
-
-    /// <summary>Suggests a type from what the upload is called, until the user has picked one.</summary>
-    private async Task ReadTitleAsync(TrackRow row, string videoId)
-    {
-        _titleOf = videoId;
-        _addTitle = null;
-        _readingTitle = true;
-
-        if (!_addTypeChosen)
-            _addType = null;
-
-        string? title;
-
-        try
-        {
-            title = await Sources.TitleOfAsync(videoId, _circuit.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
-
-        // The URL moved on while this was being asked.
-        if (_titleOf != videoId || _adding != row.VideoId)
-            return;
-
-        _readingTitle = false;
-        _addTitle = title;
-
-        if (!_addTypeChosen && SampleTypes.InferredFrom(title) is { } inferred)
-            Offer(inferred);
-
-        Replan(row);
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private void Offer(SampleType type)
-    {
-        _addType = type;
-
-        if (_addLabel.Length > 0 && _addLabel != _addLabelOffered)
-            return;
-
-        _addLabel = SampleTypes.LabelFor(type);
-        _addLabelOffered = _addLabel;
-    }
-
-    private void Replan(TrackRow row) =>
-        _addPlan = Sources.PlanFor(row.Facts, _addUrl, _addLabel, _addType);
-
-    private string? TitleNote =>
-        _readingTitle ? "Reading the upload's title…"
-        : _addTitle is not { } title ? null
-        : _addTypeChosen || _addType is null ? $"“{title}”"
-        : $"“{title}”, so {_addType} is suggested";
-
-    /// <summary>
-    /// Adds the source, or comes back with what the upload actually offers before anything is
-    /// fetched (ADR 0019).
-    /// </summary>
-    private async Task ConfirmAdd(TrackRow row, bool anyway = false)
-    {
-        _working = true;
-        _problem = null;
-
-        try
-        {
-            var outcome = await Sources.ApplyAsync(
-                row.Facts,
-                _addUrl,
-                _addLabel,
-                _addType,
-                anyway,
-                _circuit.Token
-            );
-
-            _problem = outcome.Problem;
-            _shortfall = outcome.Shortfall;
-
-            if (outcome.Succeeded)
-            {
-                CancelPicking();
-                Signals.Wake(JobStage.Download);
-            }
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
-    /// <summary>
-    /// Ticks one line: recorded at once before separation, only proposed after it, when the
-    /// confirm is what spends anything.
-    /// </summary>
-    private void Toggle(TrackRow row, StemChoice line)
-    {
-        if (line.IsPinned)
-            return;
-
-        if (row.IsCutInFlight)
-        {
-            ToggleInFlight(row, line);
-
-            return;
-        }
-
-        var plan = _picking == row.VideoId ? _wanted : PlanOf(row);
-
-        var wanted = line switch
-        {
-            // Unticking an added source drops it from the plan; there is nothing to re-fetch,
-            // so it is never ticked back on from here.
-            { AddedSource: { } added } => plan.Dropping(added.Label),
-            { Kind: StemKind.Source } => plan.TogglingSource(),
-            _ => plan.Toggling(line.PresetId!),
-        };
-
-        if (row.CanChangePlan)
-        {
-            // Nothing has been made, so there is nothing to confirm and nothing to lose.
-            Playlist.SetPlan(row.VideoId, wanted);
-
-            _ticked[row.VideoId] = wanted;
-
-            if (_picking == row.VideoId)
-                _wanted = wanted;
-
-            // Producing what was just ticked is a copy or a fetch, not a wait: without this the
-            // stage is part-way through a two-minute idle delay and would not look again (#48).
-            Signals.Wake(JobStage.Download, JobStage.Separation);
-
-            RefreshSoon();
-
-            return;
-        }
-
-        _wanted = wanted;
-
-        // Only once a tick has actually moved: until then there is nothing to confirm and the
-        // side column has no business offering to.
-        // A short track has something to confirm even when the plan is unchanged: making up the
-        // shortfall is a re-cut of its own (#38).
-        _plan =
-            wanted.AsksTheSameAs(row.Plan) && !row.IsShort ? null
-            : Recut.PlanFor(row.VideoId, wanted, _presets, row.Inventory);
-    }
-
-    /// <summary>
-    /// Records a tick on a track already in a cut and makes nothing; an untick waits, since the
-    /// separator may be writing that very file (ADR 0027).
-    /// </summary>
-    private void ToggleInFlight(TrackRow row, StemChoice line)
-    {
-        _problem = null;
-
-        if (line.IsWanted)
-        {
-            _problem = "crateside is cutting this track. You can drop files once it has finished.";
-
-            return;
-        }
-
-        var wanted = line switch
-        {
-            { Kind: StemKind.Source } => PlanOf(row).TogglingSource(),
-            _ => PlanOf(row).Toggling(line.PresetId!),
-        };
-
-        Playlist.SetPlan(row.VideoId, wanted);
-
-        _ticked[row.VideoId] = wanted;
-        _wanted = wanted;
-        _plan = null;
-
-        // A kept source is a copy the download stage makes whatever the GPU is doing.
-        Signals.Wake(JobStage.Download);
-
-        RefreshSoon();
-    }
-
-    private async Task ConfirmRecut(TrackRow row)
-    {
-        _working = true;
-        _problem = null;
-
-        try
-        {
-            var outcome = Recut.Apply(row.VideoId, _wanted, _presets, row.Inventory);
-
-            _problem = outcome.Problem;
-
-            if (outcome.Succeeded)
-                CancelPicking();
-
-            // A worker part-way through its two-minute idle wait would not look again.
-            Signals.Wake(JobStage.Download, JobStage.Separation);
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
-    /// <summary>Makes what the plan already asks for and disk lacks, leaving the plan as it is.</summary>
-    private async Task CutShortfall(TrackRow row)
-    {
-        _working = true;
-        _problem = null;
-
-        try
-        {
-            _problem = Recut.Apply(row.VideoId, row.Plan, _presets, row.Inventory).Problem;
-
-            Signals.Wake(JobStage.Separation);
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
-    private string Missing(TrackRow row) =>
-        string.Join(
-            ", ",
-            row.Shortfall.Presets.Select(id => _presets.ById(id)?.DisplayName ?? id)
-        );
-
-    /// <summary>What the opener says it would let you reach, without opening it.</summary>
-    private static string OpenerHint(StemPicker picker)
-    {
-        var unmade = picker.Lines.Count(line =>
-            line is { State: StemState.NotMade, Kind: StemKind.Preset }
-        );
-
-        return unmade is 0
-            ? "the source track"
-            : $"{"more preset".ToQuantity(unmade)}, the source track";
-    }
-
-    /// <summary>The mark in a line's first cell: a tick, an empty box, or a pinned dot.</summary>
-    private static string TickMark(StemChoice line) =>
-        line switch
-        {
-            { Kind: StemKind.WarpGuide } => "●",
-            { Kind: StemKind.Unrecognised } => "✓",
-            { IsWanted: true } => "✓",
-            _ => string.Empty,
-        };
-
-    private static string? TickTone(StemChoice line) =>
-        line switch
-        {
-            { IsPinned: true } => "pinned",
-            { State: StemState.Coming } => "coming",
-            { State: StemState.Going } => "going",
-            { IsWanted: true } => "on",
-            _ => null,
-        };
-
-    private static string? LineTone(StemChoice line) =>
-        line switch
-        {
-            { Kind: StemKind.WarpGuide } => "guide",
-            { Kind: StemKind.Unrecognised } => "unrecognised",
-            { State: StemState.Coming } => "coming",
-            { State: StemState.Going } => "going",
-            { State: StemState.NotMade } => "unmade",
-            _ => null,
-        };
-
-    /// <summary>
-    /// The key cell: what Ableton holds, or what the file would be tagged with. A library file
-    /// with no key reads <c>—</c>, since nobody asked (ADR 0003).
-    /// </summary>
-    private static string Tag(StemChoice line, TrackRow row) =>
-        (line, row.Key) switch
-        {
-            ({ AbletonKey: { } tagged }, _) => KeyText.Spell(tagged) ?? tagged,
-            ({ IsInLibrary: true }, _) => "—",
-            ({ State: StemState.Coming }, { } key) => KeyText.Spell(key) ?? key,
-            ({ State: StemState.Kept }, _) => "untagged",
-            _ => "—",
-        };
-
-    /// <summary>
-    /// A coming line in flight says only "coming", since nothing records whether the running cut
-    /// has it.
-    /// </summary>
-    private static string Where(StemChoice line, StemPicker picker) =>
-        line switch
-        {
-            { State: StemState.Coming } => picker.IsCutInFlight ? "coming" : "new",
-            { State: StemState.Going } => "removed",
-            { State: StemState.NotMade, Kind: StemKind.Source } => "not kept",
-            { State: StemState.NotMade } => "not made",
-            { IsInLibrary: true } => "Mashup Samples",
-            _ => "Sample Staging",
-        };
-
-    private static string? WhereTone(StemChoice line) =>
-        line switch
-        {
-            { State: StemState.Coming } => "new",
-            { State: StemState.Going } => "gone",
-            { State: StemState.NotMade } => "dim",
-            { IsInLibrary: true } => "good",
-            _ => null,
-        };
-
-    private static string? Note(StemChoice line, TrackRow row) =>
-        line switch
-        {
-            { State: StemState.Going } => "deleted from Sample Staging, with its .asd",
-            { Kind: StemKind.WarpGuide, IsOnDisk: true } => "already cut — no new guide is made",
-            { Kind: StemKind.WarpGuide, IsWanted: true } => "cut alongside the new files",
-            { Kind: StemKind.WarpGuide } => "nothing is being made, so no guide is needed",
-            { IsInLibrary: true, State: StemState.Kept } => "in Mashup Samples — not crateside's to remove",
-            { Kind: StemKind.Unrecognised } => line.Description,
-            { State: StemState.Kept } when row.HasSeveralUploads => string.Join(
-                " · ",
-                line.Uploads
-            ),
-            { State: StemState.Kept } => "kept",
-            // A preset's description is nine lines of wrapped text across the panel; it reads
-            // on hover instead, where it is wanted only once.
-            { Kind: StemKind.Preset } => null,
-            _ => line.Description,
-        };
-
-    /// <summary>What the button does, named by what it costs.</summary>
-    private static string CutLabel(StemPicker picker) =>
-        picker switch
-        {
-            { IsAdditive: true } => $"Cut {"more file".ToQuantity(picker.Adding)}",
-            { Adding: 0 } => $"Remove {"file".ToQuantity(picker.Removing)}",
-            _ => $"Cut {picker.Adding} · remove {picker.Removing}",
-        };
-
-    /// <summary>How many of the ticked lines survive untouched.</summary>
-    private static string Balance(StemPicker picker) =>
-        $"{picker.Adding} new, {picker.Keeping} kept.";
-
-    private static string Untouched(StemPicker picker) =>
-        picker.Keeping is 0
-            ? string.Empty
-            : $"The {"file".ToQuantity(picker.Keeping)} already in Sample Staging "
-                + $"{(picker.Keeping is 1 ? "is" : "are")} untouched.";
-
-    /// <summary>What the GPU is being asked for, or nothing where it is not being asked.</summary>
-    private static string Cost(SeparationRecipe recipe) =>
-        recipe.Passes is 0
-            ? string.Empty
-            : $"{"pass".ToQuantity(recipe.Passes)} on the GPU, about {recipe.Estimate.Humanize()}.";
-
     private void OpenFolder(TrackRow row)
     {
         if (row.Folder is not { } folder)
@@ -2198,30 +1304,6 @@
             _problem = e.Message;
         }
     }
-
-    private static string StemsHeading(TrackRow row) =>
-        row.Folder is { } folder
-            ? $"Stems · {Path.GetFileName(folder)} / {row.Title}"
-            : $"Stems · {row.Title}";
-
-    // The key Ableton holds, never the verdict's — on a row where they disagree, the verdict
-    // with a tick beside it would say the opposite of what is true.
-    private static string Tag(TrackSample sample) =>
-        sample switch
-        {
-            { AbletonKey: { } key } => $"{KeyText.Spell(key)} ✓",
-            { IsInLibrary: true } => "—",
-            _ => "not tagged",
-        };
-
-    // Dim, not red: nothing read this file's tag, so "not tagged" would be a claim (ADR 0003).
-    private static string TagTone(TrackSample sample) =>
-        sample switch
-        {
-            { IsKeyTagged: true } => "good",
-            { IsInLibrary: true } => "dim",
-            _ => "bad",
-        };
 
     private void ToggleSeparation()
     {

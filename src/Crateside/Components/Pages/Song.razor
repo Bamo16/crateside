@@ -6,6 +6,7 @@
 @using Crateside.Core.Tracks
 @inject EvidenceService Evidence
 @inject TracksService Tracks
+@inject IServiceProvider Services
 
 <PageTitle>@(Name ?? "Track details") · crateside</PageTitle>
 
@@ -58,24 +59,46 @@
             </div>
         </section>
 
-        @if (HasEvidenceSection)
-        {
-            <section id="evidence" class="evidence-section">
-                <h2>Why @Verdicted</h2>
-                @if (_run is null)
+        <div class="columns">
+            <div class="main">
+                @if (_row is not null)
                 {
-                    <p class="summary">
-                        Judged @Verdict?.Timestamp.ToLocalTime().ToString("yyyy-MM-dd"), before crateside
-                        kept evidence. The verdict stands; its reasons were not saved.
-                    </p>
+                    <section class="samples">
+                        <StemList Editor="_stems" Row="_row" />
+                    </section>
                 }
-                else
+
+                @if (HasEvidenceSection)
                 {
-                    <p class="summary">@Summary(_run)</p>
-                    <Evidence Run="_run" />
+                    <section id="evidence" class="evidence-section">
+                        <h2>Why @Verdicted</h2>
+                        @if (_run is null)
+                        {
+                            <p class="summary">
+                                Judged @Verdict?.Timestamp.ToLocalTime().ToString("yyyy-MM-dd"), before crateside
+                                kept evidence. The verdict stands; its reasons were not saved.
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="summary">@Summary(_run)</p>
+                            <Evidence Run="_run" />
+                        }
+                    </section>
                 }
-            </section>
-        }
+            </div>
+
+            <aside class="rail">
+                @if (_row is not null && _stems.IsConfirming(_row))
+                {
+                    <StemConfirm Editor="_stems" Row="_row" />
+                }
+                @if (_stems.Problem is { } problem)
+                {
+                    <p class="problem">@problem</p>
+                }
+            </aside>
+        </div>
     }
 </div>
 
@@ -85,6 +108,7 @@
 
     private TrackRow? _row;
     private RunEvidence? _run;
+    private StemEditor _stems = null!;
 
     private LedgerRun? Verdict => _row?.Verdict;
 
@@ -139,14 +163,25 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _stems = ActivatorUtilities.CreateInstance<StemEditor>(Services);
+        _stems.Changed += OnStemsChanged;
         Tracks.Changed += OnChanged;
+
         await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
         Read();
+        await _stems.LoadAsync();
     }
 
     protected override void OnParametersSet() => Read();
 
-    public void Dispose() => Tracks.Changed -= OnChanged;
+    public void Dispose()
+    {
+        Tracks.Changed -= OnChanged;
+        _stems.Changed -= OnStemsChanged;
+        _stems.Dispose();
+    }
+
+    private void OnStemsChanged() => _ = InvokeAsync(StateHasChanged);
 
     private bool IsTaggedWithKey(TrackSample sample) =>
         Key is { } key && key.Equals(sample.AbletonKey, StringComparison.OrdinalIgnoreCase);

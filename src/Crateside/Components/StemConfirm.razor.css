@@ -1,0 +1,20 @@
+/* Teal rather than red: the machine is about to work and nothing is being lost. */
+.adding {
+    margin: 0;
+    font-size: 13px;
+    color: var(--teal);
+}
+
+.detail {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-75);
+}
+
+/* The consequence, said once and in the colour that means it. */
+.warning {
+    margin: 0;
+    font-size: 13px;
+    color: var(--red);
+}
