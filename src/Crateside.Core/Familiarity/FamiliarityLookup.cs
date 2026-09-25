@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -9,6 +11,9 @@ namespace Crateside.Core.Familiarity;
 /// </summary>
 public sealed partial class FamiliarityLookup(HttpClient client)
 {
+    /// <summary>Raised whenever matching changes, so songs an older lookup missed are asked again.</summary>
+    public const int Version = 2;
+
     private const int QuotaExceeded = 4;
 
     /// <summary>Deezer allows 50 requests in 5 seconds; this stays well under it.</summary>
@@ -17,8 +22,11 @@ public sealed partial class FamiliarityLookup(HttpClient client)
     [GeneratedRegex(@"\s*[\(\[][^\)\]]*[\)\]]")]
     private static partial Regex Bracketed { get; }
 
-    [GeneratedRegex(@"[^\p{L}\p{N}]+")]
-    private static partial Regex NotWord { get; }
+    [GeneratedRegex(@"[^\p{L}\p{N}*]+")]
+    private static partial Regex NotLetterOrDigit { get; }
+
+    [GeneratedRegex(@",|&|\+|／| x | feat\.? | ft\.? ", RegexOptions.IgnoreCase)]
+    private static partial Regex ArtistSeparator { get; }
 
     /// <summary>
     /// What Deezer knows, <see cref="FamiliarityReading.Unknown"/> when it does not know the song,
@@ -33,7 +41,7 @@ public sealed partial class FamiliarityLookup(HttpClient client)
         try
         {
             using var search = await GetAsync(
-                $"https://api.deezer.com/search?q={Uri.EscapeDataString($"{artist} {Plain(title)}")}",
+                $"https://api.deezer.com/search?q={Uri.EscapeDataString($"{FirstArtist(artist)} {Bracketed.Replace(title, string.Empty).Trim()}")}",
                 cancellationToken
             );
 
@@ -86,27 +94,75 @@ public sealed partial class FamiliarityLookup(HttpClient client)
         }
     }
 
-    /// <summary>The first hit whose title is the song's and whose artist shares a word with it.</summary>
-    private static (long Id, int Rank)? Match(JsonElement search, string artist, string title)
+    /// <summary>
+    /// The most popular hit that is this song by one of its artists, so the original outranks a
+    /// live cut or a remaster of it.
+    /// </summary>
+    private static (long Id, int Rank)? Match(JsonElement search, string artist, string title) =>
+        search.TryGetProperty("data", out var hits)
+            ? hits.EnumerateArray()
+                .Where(hit =>
+                    hit.TryGetProperty("title", out var found)
+                    && SameTitle(found.GetString() ?? string.Empty, title)
+                    && hit.GetProperty("artist").GetProperty("name").GetString() is { } by
+                    && ByOneOf(artist, by)
+                )
+                .Select(hit =>
+                    ((long Id, int Rank)?)
+                        (hit.GetProperty("id").GetInt64(), hit.GetProperty("rank").GetInt32())
+                )
+                .MaxBy(hit => hit!.Value.Rank)
+            : null;
+
+    /// <summary>
+    /// The same title once both are squashed to letters and digits, one a prefix of the other, and
+    /// with Deezer's censoring asterisks standing for any letter.
+    /// </summary>
+    internal static bool SameTitle(string found, string wanted)
     {
-        if (!search.TryGetProperty("data", out var hits))
-            return null;
+        var (f, w) = (Squash(found), Squash(wanted));
 
-        var wanted = Plain(title);
+        if (f.Length is 0 || w.Length is 0)
+            return false;
 
-        foreach (var hit in hits.EnumerateArray())
-        {
-            if (
-                hit.TryGetProperty("title", out var found)
-                && Plain(found.GetString() ?? string.Empty) is var candidate
-                && (candidate == wanted || candidate.Contains(wanted, StringComparison.Ordinal))
-                && hit.GetProperty("artist").GetProperty("name").GetString() is { } by
-                && SharesAWord(artist, by)
-            )
-                return (hit.GetProperty("id").GetInt64(), hit.GetProperty("rank").GetInt32());
-        }
+        if (!f.Contains('*'))
+            return f.StartsWith(w, StringComparison.Ordinal)
+                || w.StartsWith(f, StringComparison.Ordinal);
 
-        return null;
+        return w.Length >= f.Length
+            && f.Zip(w).All(pair => pair.First is '*' || pair.First == pair.Second);
+    }
+
+    /// <summary>Whether Deezer's artist is one of those credited, however either spells them.</summary>
+    internal static bool ByOneOf(string credited, string found)
+    {
+        var by = Squash(found);
+
+        return ArtistSeparator
+            .Split(credited)
+            .Select(Squash)
+            .Any(one =>
+                one.Length > 0
+                && (
+                    by.Contains(one, StringComparison.Ordinal)
+                    || one.Contains(by, StringComparison.Ordinal)
+                )
+            );
+    }
+
+    private static string FirstArtist(string credited) => ArtistSeparator.Split(credited)[0].Trim();
+
+    /// <summary>Lowercase letters, digits and <c>*</c> only, accents folded and <c>$</c> read as S.</summary>
+    private static string Squash(string text)
+    {
+        var folded = Bracketed
+            .Replace(text, string.Empty)
+            .Replace('$', 's')
+            .Normalize(NormalizationForm.FormD)
+            .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) is not UnicodeCategory.NonSpacingMark)
+            .ToArray();
+
+        return NotLetterOrDigit.Replace(new string(folded), string.Empty).ToLowerInvariant();
     }
 
     private static IEnumerable<long> Contributors(JsonElement track) =>
@@ -142,15 +198,4 @@ public sealed partial class FamiliarityLookup(HttpClient client)
 
         return null;
     }
-
-    /// <summary>Lowercase words only, with any bracketed part such as (feat. …) dropped.</summary>
-    private static string Plain(string text) =>
-        NotWord.Replace(Bracketed.Replace(text, string.Empty), " ").Trim().ToLowerInvariant();
-
-    private static bool SharesAWord(string asked, string found) =>
-        Plain(asked)
-            .Split(' ')
-            .Where(word => word.Length > 1)
-            .Intersect(Plain(found).Split(' '))
-            .Any();
 }

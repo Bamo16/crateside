@@ -43,7 +43,8 @@ public class FamiliarityStoreTests : IDisposable
         new FamiliarityStore(StorePath).Measure(
             "song",
             new FamiliarityReading("Moe Shop", 17_522, 167_703),
-            DateTimeOffset.UtcNow
+            DateTimeOffset.UtcNow,
+            FamiliarityLookup.Version
         );
 
         var record = new FamiliarityStore(StorePath).Read()["song"];
@@ -61,7 +62,8 @@ public class FamiliarityStoreTests : IDisposable
         store.Measure(
             "song",
             new FamiliarityReading("Moe Shop", 17_522, 167_703),
-            DateTimeOffset.UtcNow
+            DateTimeOffset.UtcNow,
+            FamiliarityLookup.Version
         );
 
         Assert.Equal("Mainstream", new FamiliarityStore(StorePath).Read()["song"].Written);
@@ -75,10 +77,28 @@ public class FamiliarityStoreTests : IDisposable
         store.Measure(
             "song",
             new FamiliarityReading("Creepy Nuts", 48_382, 300_000),
-            DateTimeOffset.UtcNow
+            DateTimeOffset.UtcNow,
+            FamiliarityLookup.Version
         );
 
         Assert.Null(store.Read()["song"].Written);
+    }
+
+    [Fact]
+    public void A_song_an_older_lookup_missed_is_owed_another_but_one_it_found_is_not()
+    {
+        var store = new FamiliarityStore(StorePath);
+
+        store.Measure("missed", FamiliarityReading.Unknown, DateTimeOffset.UtcNow, version: 1);
+        store.Measure(
+            "found",
+            new FamiliarityReading("A", 1, 1),
+            DateTimeOffset.UtcNow,
+            version: 1
+        );
+
+        Assert.True(store.Read()["missed"].IsOwedALookup);
+        Assert.False(store.Read()["found"].IsOwedALookup);
     }
 
     [Fact]
@@ -90,6 +110,30 @@ public class FamiliarityStoreTests : IDisposable
 
 public class FamiliarityLookupTests
 {
+    [Theory]
+    [InlineData("Party In The USA", "Party in the U.S.A.")]
+    [InlineData("Ni**as in Paris", "Niggas in Paris")]
+    [InlineData("All The Things She Said (Radio Version)", "All the Things She Said")]
+    [InlineData("Ante Up Remix", "Ante Up (Robbin Hoodz Theory)")]
+    public void Titles_match_however_deezer_spells_or_censors_them(string found, string wanted) =>
+        Assert.True(FamiliarityLookup.SameTitle(found, wanted));
+
+    [Fact]
+    public void A_different_song_is_not_the_same_title() =>
+        Assert.False(FamiliarityLookup.SameTitle("Party In the CIA", "Party in the U.S.A."));
+
+    [Theory]
+    [InlineData("kesha", "Ke$ha")]
+    [InlineData("jay-z, kanye west", "JAŸ-Z")]
+    [InlineData("t.a.t.u.", "t.A.T.u.")]
+    [InlineData("san-z, hoyo-mix", "Sān-Z")]
+    public void Artists_match_however_deezer_spells_them(string credited, string found) =>
+        Assert.True(FamiliarityLookup.ByOneOf(credited, found));
+
+    [Fact]
+    public void A_cover_by_someone_else_is_not_by_one_of_the_artists() =>
+        Assert.False(FamiliarityLookup.ByOneOf("Bananarama", "Ace of Base"));
+
     private sealed class Deezer(Dictionary<string, string> answers) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(

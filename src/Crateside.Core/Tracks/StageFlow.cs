@@ -5,7 +5,7 @@ namespace Crateside.Core.Tracks;
 
 /// <summary>
 /// A track's current pass as the chips Track details draws under its band: one per stage, from
-/// download to warp, with the time each finished (#21).
+/// download to warp (#21).
 /// </summary>
 public sealed record StageFlow(int Pass, string Reason, IReadOnlyList<FlowStep> Steps)
 {
@@ -67,7 +67,7 @@ public sealed record StageFlow(int Pass, string Reason, IReadOnlyList<FlowStep> 
             return new(label, FlowState.Skipped, Note: "nothing to separate");
 
         if (row.RunningStage is { } running && stages.Contains(running))
-            return new(label, FlowState.Running, row.RunningSince);
+            return new(label, FlowState.Running);
 
         if (row.GaveUpAt is { } gaveUp && stages.Contains(gaveUp))
             return new(label, FlowState.GaveUp, Note: $"gave up ×{row.GaveUpStrikes}");
@@ -76,7 +76,7 @@ public sealed record StageFlow(int Pass, string Reason, IReadOnlyList<FlowStep> 
             return new(label, FlowState.Parked, Note: "parked");
 
         return jobs.Count == stages.Length && jobs.All(j => j.Status is JobStatus.Succeeded)
-            ? new(label, FlowState.Done, jobs.Max(j => j.UpdatedAt))
+            ? new(label, FlowState.Done)
             : new(label, FlowState.NotYet);
     }
 
@@ -97,12 +97,7 @@ public sealed record StageFlow(int Pass, string Reason, IReadOnlyList<FlowStep> 
         };
 }
 
-public sealed record FlowStep(
-    string Label,
-    FlowState State,
-    DateTimeOffset? At = null,
-    string? Note = null
-);
+public sealed record FlowStep(string Label, FlowState State, string? Note = null);
 
 public enum FlowState
 {

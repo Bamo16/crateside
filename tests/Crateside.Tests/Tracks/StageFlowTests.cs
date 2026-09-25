@@ -42,7 +42,6 @@ public class StageFlowTests
             [FlowState.Done, FlowState.Done, FlowState.Done],
             flow.Steps.Take(3).Select(step => step.State)
         );
-        Assert.Equal(Start.AddMinutes((int)JobStage.Verdict), flow.Steps[2].At);
         Assert.Equal(FlowState.NotYet, flow.Steps[4].State);
     }
 
@@ -77,7 +76,7 @@ public class StageFlowTests
     }
 
     [Fact]
-    public void The_running_stage_shows_as_running_since_it_started()
+    public void The_running_stage_shows_as_running()
     {
         var running = StageFlow.For(
             Row with
@@ -90,7 +89,6 @@ public class StageFlowTests
         );
 
         Assert.Equal(FlowState.Running, running.Steps[3].State);
-        Assert.Equal(Start, running.Steps[3].At);
     }
 
     [Fact]

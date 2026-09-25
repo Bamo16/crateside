@@ -19,12 +19,9 @@
             {
                 <span class="rule"></span>
             }
-            <div class="step">
-                <span class="chip @Class(step.State)">
-                    @Glyph(step.State) @step.Label@(step.Note is { } note ? $" · {note}" : null)
-                </span>
-                <span class="mono when">@(step.At is { } at ? at.ToLocalTime().ToString("d MMM HH:mm") : null)</span>
-            </div>
+            <span class="chip @Class(step.State)">
+                @Glyph(step.State) @step.Label@(step.Note is { } note ? $" · {note}" : null)
+            </span>
         }
     </div>
 </div>

@@ -3,17 +3,18 @@
 
    Side by side rather than stacked. They are two rarely-used controls, a swap especially, and
    stacked they took a large share of the panel for what is usually just two lines of status
-   (#19). */
+   (#19). Stacked where there is no room for two, as in Track details' rail. */
 .edits {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
     gap: 0 32px;
     margin-bottom: 6px;
 }
 
 .name-strip {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
     gap: 12px;
     padding-bottom: 12px;
@@ -26,7 +27,7 @@
 .name-strip.editing {
     grid-column: 1 / -1;
     display: grid;
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
     align-items: start;
     gap: 32px;
 }

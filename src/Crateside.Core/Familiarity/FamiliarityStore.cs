@@ -40,7 +40,7 @@ public sealed class FamiliarityStore
     }
 
     /// <summary>Records what Deezer said, leaving anything the user settled alone.</summary>
-    public void Measure(string song, FamiliarityReading reading, DateTimeOffset at) =>
+    public void Measure(string song, FamiliarityReading reading, DateTimeOffset at, int version) =>
         Update(
             song,
             record =>
@@ -50,6 +50,7 @@ public sealed class FamiliarityStore
                     ArtistFans = reading.ArtistFans,
                     SongRank = reading.SongRank,
                     LookedUpAt = at,
+                    LookupVersion = version,
                 }
         );
 
@@ -120,6 +121,16 @@ public sealed record FamiliarityRecord
 
     /// <summary>When Deezer was last asked, or null when it never has been.</summary>
     public DateTimeOffset? LookedUpAt { get; init; }
+
+    /// <summary>Which <see cref="FamiliarityLookup.Version"/> asked; zero for the first.</summary>
+    public int LookupVersion { get; init; }
+
+    /// <summary>
+    /// Worth asking again: never asked, or not found by a lookup older than the current one.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsOwedALookup =>
+        LookedUpAt is null || (SongRank is null && LookupVersion < FamiliarityLookup.Version);
 
     /// <summary>The user's answer, or null when they have not given one.</summary>
     public string? Settled { get; init; }

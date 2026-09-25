@@ -29,21 +29,13 @@
 .steps {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
-    row-gap: 0.5rem;
-}
-
-.step {
-    display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 0.25rem;
+    row-gap: 0.5rem;
 }
 
 .rule {
     width: 14px;
     height: 1px;
-    margin-top: 12px;
     background: var(--line-strong);
 }
 
@@ -56,12 +48,14 @@
     white-space: nowrap;
 }
 
+/* Every stage in its state's colour; the one happening now is the only filled chip, and bold. */
 .chip.done {
-    color: var(--text-75);
-    border-color: rgba(255, 255, 255, 0.14);
+    color: var(--green);
+    border-color: rgba(127, 207, 154, 0.3);
 }
 
 .chip.running {
+    font-weight: 600;
     color: var(--teal);
     background: rgba(111, 199, 214, 0.14);
     border-color: rgba(111, 199, 214, 0.3);
@@ -69,6 +63,7 @@
 }
 
 .chip.yours {
+    font-weight: 600;
     color: var(--amber);
     background: rgba(232, 180, 90, 0.16);
     border-color: rgba(232, 180, 90, 0.35);
@@ -92,15 +87,10 @@
 }
 
 .chip.gave-up {
+    font-weight: 600;
     color: var(--red);
     background: rgba(224, 122, 109, 0.18);
     border-color: rgba(224, 122, 109, 0.45);
-}
-
-.when {
-    font-size: 11px;
-    color: var(--text-40);
-    min-height: 1em;
 }
 
 @keyframes pulse {

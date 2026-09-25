@@ -42,9 +42,11 @@ One component, `Components/StateChip.razor`, used wherever a track's state is sh
 neutral outline · teal filled with a dot · teal outline · amber filled · red outline · red filled
 · green outline · dashed.
 
-Track details' stage flow (`StageFlowStrip`) draws its own step chips: ✓ done (neutral) ·
-● running (teal filled, pulsing, the page's only animation) · ● your turn (amber) · ○ not yet ·
-– skipped (dashed, 55% opacity) · ■ parked (red outline) or gave up (red filled).
+Track details' stage flow (`StageFlowStrip`) draws its own step chips: ✓ done (green outline) ·
+● running (teal filled, bold, pulsing, the page's only animation) · ● your turn (amber filled,
+bold) · ○ not yet (neutral) · – skipped (dashed, 55% opacity) · ■ parked (red outline) or gave up
+(red filled, bold). The current stage is the only filled chip. No timestamps: the Activity log
+carries them.
 
 ## Shared controls
 

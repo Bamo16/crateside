@@ -50,7 +50,7 @@ public sealed class FamiliarityWorker(
         var asked = store.Read();
 
         var unasked = (tracks.Current?.Rows ?? [])
-            .Where(row => asked.GetValueOrDefault(row.Song) is not { LookedUpAt: not null })
+            .Where(row => asked.GetValueOrDefault(row.Song) is null or { IsOwedALookup: true })
             .Select(row => (row.Song, Name: row.ArtistAndTitle))
             .DistinctBy(song => song.Song, StringComparer.OrdinalIgnoreCase)
             .ToArray();
@@ -67,7 +67,7 @@ public sealed class FamiliarityWorker(
             if (await lookup.ReadAsync(artist, title, stoppingToken) is not { } reading)
                 return AfterFailure;
 
-            store.Measure(song, reading, DateTimeOffset.UtcNow);
+            store.Measure(song, reading, DateTimeOffset.UtcNow, FamiliarityLookup.Version);
             measured++;
         }
 
