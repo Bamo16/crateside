@@ -1,0 +1,220 @@
+@using System.Diagnostics
+@using Crateside.Core.Orchestration
+@using Crateside.Core.Queue
+@using Crateside.Core.Staging
+@using Crateside.Core.Tracks
+@implements IDisposable
+@inject QueueService Playlist
+@inject JobStore Jobs
+@inject StageSignals Signals
+@inject TrackRemoval Removal
+@inject TracksService Tracks
+
+<div class="actions">
+    @if (Row.Folder is not null)
+    {
+        <button class="outline" @onclick="OpenFolder">Open folder</button>
+    }
+    @if (ShowDetailsLink && Row.Verdict is not null)
+    {
+        <a class="outline" href="@($"song/{Row.VideoId}")">Track details</a>
+    }
+    @if (Row.GaveUpAt is not null)
+    {
+        <button class="outline" @onclick="Retry">Retry</button>
+    }
+    @if (Row.State is TrackState.Short)
+    {
+        <button class="primary" @onclick="() => Editor.CutShortfallAsync(Row)" disabled="@(_working || Editor.Working)">
+            @(Editor.Working ? "Cutting…" : "Cut what is missing")
+        </button>
+    }
+    @if (Playlist.BumpedVideoId == Row.VideoId)
+    {
+        <button class="primary" @onclick="ClearBump">Stop working this first</button>
+    }
+    else if (Row.State is TrackState.Queued or TrackState.JudgedInLine)
+    {
+        <button class="outline" @onclick="Bump">Work this first</button>
+    }
+    @if (Row.PlaylistItemId is { } playlistItemId && Playlist.IsAuthorized)
+    {
+        <button class="outline" @onclick="() => Remove(playlistItemId)">
+            Remove from playlist
+        </button>
+    }
+    else if (Row.CanForget && _removing)
+    {
+        <span class="confirm">@RemovalQuestion()</span>
+        <button class="danger" @onclick="ConfirmRemove" disabled="@_working">
+            Remove
+        </button>
+        <button class="outline" @onclick="CancelRemove" disabled="@_working">Keep</button>
+    }
+    else if (Row.CanForget)
+    {
+        <button class="outline" @onclick="StartRemove">Remove</button>
+    }
+</div>
+
+@if (_problem is { } problem)
+{
+    <p class="problem">@problem</p>
+}
+
+@code {
+    private readonly CancellationTokenSource _circuit = new();
+
+    private bool _working;
+    private string? _problem;
+
+    private bool _removing;
+    private IReadOnlyList<StagingStem> _recycling = [];
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    [Parameter, EditorRequired]
+    public required StemEditor Editor { get; set; }
+
+    /// <summary>Off on Track details itself, where the link would lead back to the same page.</summary>
+    [Parameter]
+    public bool ShowDetailsLink { get; set; } = true;
+
+    /// <summary>Said once the track is gone, since no row or page is left to say it.</summary>
+    [Parameter]
+    public EventCallback<(string Title, string Note)> Removed { get; set; }
+
+    public void Dispose()
+    {
+        _circuit.Cancel();
+        _circuit.Dispose();
+    }
+
+    private void OpenFolder()
+    {
+        if (Row.Folder is not { } folder)
+            return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true });
+        }
+        catch (Exception e)
+        {
+            _problem = $"Could not open {folder}: {e.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Waiting is the only time this means anything: once a stage has the track, the work lists
+    /// have already been read.
+    /// </summary>
+    private async Task Bump()
+    {
+        Playlist.Bump(Row.VideoId);
+
+        await Tracks.RefreshAsync(_circuit.Token);
+    }
+
+    private async Task ClearBump()
+    {
+        Playlist.ClearBump();
+
+        await Tracks.RefreshAsync(_circuit.Token);
+    }
+
+    private async Task Retry()
+    {
+        List<JobStage> forgiven = [];
+
+        foreach (var stage in Enum.GetValues<JobStage>())
+            if (Jobs.TryGet(Row.VideoId, stage, out var job) && job is { Status: JobStatus.Failed })
+            {
+                Jobs.Forgive(Row.VideoId, stage);
+                forgiven.Add(stage);
+            }
+
+        // Every stage was forgivable, so waking only two left the rest to wait out the interval.
+        Signals.Wake([.. forgiven]);
+
+        await Tracks.RefreshAsync(_circuit.Token);
+    }
+
+    private async Task Remove(string playlistItemId)
+    {
+        _problem = null;
+
+        try
+        {
+            var results = await Playlist.RemoveAsync(
+                [
+                    new QueueItem
+                    {
+                        PlaylistItemId = playlistItemId,
+                        VideoId = Row.VideoId,
+                        Title = Row.Title,
+                    },
+                ]
+            );
+
+            _problem = results.FirstOrDefault(result => !result.Removed)?.Reason;
+
+            await Tracks.RefreshAsync(_circuit.Token);
+        }
+        catch (QueueUnavailableException e)
+        {
+            _problem = e.Message;
+        }
+    }
+
+    private void StartRemove()
+    {
+        _problem = null;
+        _removing = true;
+        _recycling = Removal.Recycling(Row.Facts.Uploads);
+    }
+
+    private void CancelRemove()
+    {
+        _removing = false;
+        _recycling = [];
+    }
+
+    private string RemovalQuestion() =>
+        _recycling.Count is 0
+            ? "Drop crateside's record of this track? No file is touched."
+            : $"Drop crateside's record and recycle {"staged file".ToQuantity(_recycling.Count)}? "
+                + "Nothing in Mashup Samples is touched.";
+
+    private async Task ConfirmRemove()
+    {
+        _working = true;
+
+        try
+        {
+            var outcome = Removal.Apply(Row.VideoId, Row.Facts.Uploads);
+            var title = Row.Title;
+
+            CancelRemove();
+
+            await Tracks.RefreshAsync(_circuit.Token);
+            await Removed.InvokeAsync(
+                (
+                    title,
+                    outcome.Problem
+                        ?? (
+                            outcome.Recycled is 0
+                                ? "No file was touched."
+                                : $"{"staged file".ToQuantity(outcome.Recycled)} recycled."
+                        )
+                )
+            );
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _working = false;
+        }
+    }
+}

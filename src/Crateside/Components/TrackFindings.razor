@@ -1,0 +1,110 @@
+@using Crateside.Core
+@using Crateside.Core.Ledger
+@using Crateside.Core.Orchestration
+@using Crateside.Core.Queue
+@using Crateside.Core.Tracks
+@implements IDisposable
+@inject LookalikeAnswer Lookalike
+@inject QueueService Playlist
+@inject WorkingSet Held
+@inject VerdictControl Judging
+@inject TracksService Tracks
+
+@if (Row.Lookalike is { } like)
+{
+    <div class="finding">
+        <div class="finding-said">
+            <strong>This looks like @like.DisplayName, which is already judged.</strong>
+            Judging waits until you say whether it is the same song. The same
+            song carries its key and files across, and nothing is judged or cut again.
+        </div>
+
+        <div class="finding-actions">
+            <button class="outline" @onclick="() => SameSong(like)" disabled="@_working">
+                Same song
+            </button>
+            <button class="outline" @onclick="() => DifferentSong(like)" disabled="@_working">
+                Different song
+            </button>
+        </div>
+    </div>
+}
+@if (Row.ParkedFor is ParkReason.PremiumShortfall)
+{
+    <div class="finding">
+        <div class="finding-said">
+            <strong>The download did not get premium audio.</strong>
+            @Row.Acquisition?.Advisory
+        </div>
+
+        <button class="outline" @onclick="UseAnyway" disabled="@_working">
+            Use it anyway
+        </button>
+    </div>
+}
+@if (_problem is { } problem)
+{
+    <p class="problem">@problem</p>
+}
+
+@code {
+    private readonly CancellationTokenSource _circuit = new();
+
+    private bool _working;
+    private string? _problem;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    public void Dispose()
+    {
+        _circuit.Cancel();
+        _circuit.Dispose();
+    }
+
+    private Task SameSong(LedgerRun like) =>
+        Working(async () => _problem = await Lookalike.SameSongAsync(Row.VideoId, like, _circuit.Token));
+
+    private Task DifferentSong(LedgerRun like) =>
+        Working(() =>
+        {
+            Lookalike.DifferentSong(Row.VideoId, like);
+            Judging.Wake();
+
+            return Task.CompletedTask;
+        });
+
+    /// <summary>Accepts this download's audio, so the track goes on to the verdict.</summary>
+    private Task UseAnyway() =>
+        Working(() =>
+        {
+            if (YouTubeUrl.TryGetVideoId(Row.StatedSourceUrl ?? Row.VideoId, out var upload))
+                Playlist.AcceptUpload(Row.VideoId, upload);
+
+            if (!Held.AcceptAcquisition(Row.VideoId))
+                _problem =
+                    "There is no downloaded audio for this track any more. It will be fetched again, and taken as it comes.";
+
+            // Judging is paused by default, so this only puts the track back in line for it.
+            Judging.Wake();
+
+            return Task.CompletedTask;
+        });
+
+    private async Task Working(Func<Task> act)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            await act();
+            await Tracks.RefreshAsync(_circuit.Token);
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _working = false;
+        }
+    }
+}

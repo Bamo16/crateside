@@ -1,0 +1,315 @@
+@using Crateside.Core.Orchestration
+@using Crateside.Core.Staging
+@using Crateside.Core.Tracks
+@implements IDisposable
+@inject TrackRename Rename
+@inject TrackSwap Swap
+@inject StageSignals Signals
+@inject TracksService Tracks
+
+<div class="edits">
+    <div class="name-strip @(_renaming ? "editing" : null)">
+        @if (_renaming)
+        {
+            <div class="name-edit">
+                <input class="name-input" @ref="_nameBox" value="@_name"
+                       @oninput="e => _name = e.Value?.ToString() ?? string.Empty"
+                       @onkeydown="OnRenameKey" />
+                <p class="name-note">
+                    Derived <strong>@(Row.DerivedTitle ?? Row.Title)</strong> · from @From(Row.NameSource).
+                    Your name wins over the ledger, the staging board and the playlist.
+                </p>
+            </div>
+
+            <div class="name-side">
+                <p class="detail">@Row.RenameDetail</p>
+
+                <div class="actions">
+                    <button class="primary" disabled="@(_working || !StemFileName.IsUsable(_name))"
+                            @onclick="ConfirmRename">
+                        Rename · @Row.RenameScope
+                    </button>
+                    <button class="outline" @onclick="CancelRename" disabled="@_working">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <span class="name-from">
+                @if (Row.DerivedTitle is { } derived)
+                {
+                    <text>renamed by you · was <strong>@derived</strong></text>
+                }
+                else
+                {
+                    <text>named from @From(Row.NameSource)</text>
+                }
+            </span>
+
+            @if (Row.CanRename)
+            {
+                <button class="outline" @onclick="StartRename" disabled="@_working">
+                    Rename
+                </button>
+                @if (Row.IsRenamed)
+                {
+                    <button class="outline" @onclick="RevertRename" disabled="@_working">
+                        Revert
+                    </button>
+                }
+            }
+            else
+            {
+                <span class="name-from">· rename it in Ableton</span>
+            }
+        }
+    </div>
+
+    <div class="name-strip @(_swapping ? "editing" : null)">
+        @if (_swapping)
+        {
+            <div class="name-edit">
+                <input class="name-input" @ref="_swapBox" value="@_swapUrl" placeholder="https://www.youtube.com/watch?v=…"
+                       @oninput="OnSwapUrl"
+                       @onkeydown="OnSwapKey" />
+                <p class="name-note">
+                    A better upload of the same song. The playlist entry stays as it is.
+                </p>
+            </div>
+
+            <div class="name-side">
+                <p class="detail">
+                    @(_swapPlan?.Refusal ?? _swapPlan?.Detail ?? SwapPlan.DetailFor(Row.Verdict is not null))
+                    @if (Row.SamplesLeftInLibrary > 0)
+                    {
+                        <text>
+                            @("sample".ToQuantity(Row.SamplesLeftInLibrary)) of the old upload are in
+                            Mashup Samples; crateside never writes there, so remove them yourself.
+                        </text>
+                    }
+                </p>
+
+                <div class="actions">
+                    <button class="danger" disabled="@(_working || _swapPlan?.IsPossible is not true)"
+                            @onclick="ConfirmSwap">
+                        @(_working ? "Swapping…" : SwapScope(_swapPlan))
+                    </button>
+                    <button class="outline" @onclick="CancelSwap" disabled="@_working">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <span class="name-from">
+                @if (Row.IsSourceSwapped)
+                {
+                    <text>source swapped · cut from <strong>@Row.StatedSourceUrl</strong></text>
+                }
+                else
+                {
+                    <text>cut from the playlist entry's own video</text>
+                }
+            </span>
+
+            <button class="outline" @onclick="StartSwap" disabled="@_working">
+                Swap source
+            </button>
+        }
+    </div>
+
+    @if (_problem is { } problem)
+    {
+        <p class="problem">@problem</p>
+    }
+</div>
+
+@code {
+    private readonly CancellationTokenSource _circuit = new();
+
+    private bool _working;
+    private string? _problem;
+
+    private bool _renaming;
+    private string _name = string.Empty;
+    private ElementReference _nameBox;
+    private bool _focusName;
+
+    private bool _swapping;
+    private string _swapUrl = string.Empty;
+    private SwapPlan? _swapPlan;
+    private ElementReference _swapBox;
+    private bool _focusSwap;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    /// <summary>Closes both boxes, as when the picker opens beside them.</summary>
+    public void Close()
+    {
+        CancelRename();
+        CancelSwap();
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _circuit.Cancel();
+        _circuit.Dispose();
+    }
+
+    /// <summary>
+    /// A box that has just opened takes the cursor — after the render, since an element cannot be
+    /// focused before it exists.
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusName)
+        {
+            _focusName = false;
+
+            await _nameBox.FocusAsync();
+        }
+
+        if (_focusSwap)
+        {
+            _focusSwap = false;
+
+            await _swapBox.FocusAsync();
+        }
+    }
+
+    /// <summary>Opens the rename box and closes the swap box, which shares the row (#19).</summary>
+    private void StartRename()
+    {
+        _problem = null;
+        CancelSwap();
+        _renaming = true;
+        _name = Row.Title;
+        _focusName = true;
+    }
+
+    private void CancelRename()
+    {
+        _renaming = false;
+        _name = string.Empty;
+    }
+
+    private async Task ConfirmRename()
+    {
+        if (!StemFileName.IsUsable(_name))
+            return;
+
+        await Renaming(() => Rename.Apply(Row.VideoId, _name));
+    }
+
+    private Task RevertRename() =>
+        Renaming(() => Rename.Revert(Row.VideoId, Row.DerivedTitle ?? Row.Title));
+
+    private async Task Renaming(Func<RenameOutcome> rename)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            var outcome = rename();
+
+            _problem = outcome.Problem ?? outcome.Note;
+
+            if (outcome.Succeeded)
+                CancelRename();
+
+            await Tracks.RefreshAsync(_circuit.Token);
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task OnRenameKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter")
+            await ConfirmRename();
+        else if (e.Key is "Escape")
+            CancelRename();
+    }
+
+    private void StartSwap()
+    {
+        _problem = null;
+        CancelRename();
+        _swapping = true;
+        _swapUrl = string.Empty;
+        _swapPlan = null;
+        _focusSwap = true;
+    }
+
+    private void CancelSwap()
+    {
+        _swapping = false;
+        _swapUrl = string.Empty;
+        _swapPlan = null;
+    }
+
+    /// <summary>Re-plans as the URL is typed, so the button says what it would do.</summary>
+    private void OnSwapUrl(ChangeEventArgs e)
+    {
+        _swapUrl = e.Value?.ToString() ?? string.Empty;
+        _swapPlan = _swapUrl.Length is 0 ? null : Swap.PlanFor(Row.VideoId, _swapUrl);
+    }
+
+    private async Task OnSwapKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter")
+            await ConfirmSwap();
+        else if (e.Key is "Escape")
+            CancelSwap();
+    }
+
+    private async Task ConfirmSwap()
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            var outcome = await Swap.ApplyAsync(Row.VideoId, _swapUrl, _circuit.Token);
+
+            _problem = outcome.Problem;
+
+            if (outcome.Succeeded)
+            {
+                CancelSwap();
+                Signals.Wake(JobStage.Download, JobStage.Separation);
+            }
+
+            await Tracks.RefreshAsync(_circuit.Token);
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private static string SwapScope(SwapPlan? plan) =>
+        plan?.Removing is { Count: > 0 } removing
+            ? $"Swap source · remove {"file".ToQuantity(removing.Count)}"
+            : "Swap source";
+
+    private static string From(TrackNameSource source) =>
+        source switch
+        {
+            TrackNameSource.Files => "the file names",
+            TrackNameSource.Ledger => "the ledger",
+            TrackNameSource.Resolved => "what StemForge will call it",
+            TrackNameSource.Playlist => "the playlist title",
+            _ => "the video ID",
+        };
+}

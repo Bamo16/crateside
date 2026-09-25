@@ -18,17 +18,12 @@
 @inject TracksService Source
 @inject QueueService Playlist
 @inject JobStore Jobs
-@inject TrackRemoval Removal
 @inject TrackAdd Adding
-@inject TrackRename Rename
-@inject TrackSwap Swap
-@inject LookalikeAnswer Lookalike
 @inject DrainControl Separation
 @inject StageSignals Signals
 @inject QueueWriteAccess Access
 @inject VerdictControl Judging
 @inject PauseStore Paused
-@inject WorkingSet Held
 @inject QuotaReader Quota
 @inject WindowRoll Roll
 @inject IServiceProvider Services
@@ -308,153 +303,9 @@
             @if (open)
             {
                 <div class="panel">
-                    @if (row.Lookalike is { } like)
-                    {
-                        <div class="finding">
-                            <div class="finding-said">
-                                <strong>This looks like @like.DisplayName, which is already judged.</strong>
-                                Judging waits until you say whether it is the same song. The same
-                                song carries its key and files across, and nothing is judged or cut again.
-                            </div>
-
-                            <div class="finding-actions">
-                                <button class="outline" @onclick="() => SameSong(row, like)" disabled="@_working">
-                                    Same song
-                                </button>
-                                <button class="outline" @onclick="() => DifferentSong(row, like)" disabled="@_working">
-                                    Different song
-                                </button>
-                            </div>
-                        </div>
-                    }
-                    @if (row.ParkedFor is ParkReason.PremiumShortfall)
-                    {
-                        <div class="finding">
-                            <div class="finding-said">
-                                <strong>The download did not get premium audio.</strong>
-                                @row.Acquisition?.Advisory
-                            </div>
-
-                            <button class="outline" @onclick="() => UseAnyway(row)" disabled="@_working">
-                                Use it anyway
-                            </button>
-                        </div>
-                    }
+                    <TrackFindings Row="row" />
                     <GenreStrip Row="row" />
-                    <div class="edits">
-                        <div class="name-strip @(_renaming == row.VideoId ? "editing" : null)">
-                            @if (_renaming == row.VideoId)
-                            {
-                                <div class="name-edit">
-                                    <input class="name-input" @ref="_nameBox" value="@_name"
-                                           @oninput="e => _name = e.Value?.ToString() ?? string.Empty"
-                                           @onkeydown="e => OnRenameKey(e, row)" />
-                                    <p class="name-note">
-                                        Derived <strong>@Derived(row)</strong> · from @From(row.NameSource).
-                                        Your name wins over the ledger, the staging board and the playlist.
-                                    </p>
-                                </div>
-
-                                <div class="name-side">
-                                    <p class="detail">@row.RenameDetail</p>
-
-                                    <div class="actions">
-                                        <button class="primary" disabled="@(_working || !StemFileName.IsUsable(_name))"
-                                                @onclick="() => ConfirmRename(row)">
-                                            Rename · @row.RenameScope
-                                        </button>
-                                        <button class="outline" @onclick="CancelRename" disabled="@_working">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            }
-                            else
-                            {
-                                <span class="name-from">
-                                    @if (row.DerivedTitle is { } derived)
-                                    {
-                                        <text>renamed by you · was <strong>@derived</strong></text>
-                                    }
-                                    else
-                                    {
-                                        <text>named from @From(row.NameSource)</text>
-                                    }
-                                </span>
-
-                                @if (row.CanRename)
-                                {
-                                    <button class="outline" @onclick="() => StartRename(row)" disabled="@_working">
-                                        Rename
-                                    </button>
-                                    @if (row.IsRenamed)
-                                    {
-                                        <button class="outline" @onclick="() => RevertRename(row)" disabled="@_working">
-                                            Revert
-                                        </button>
-                                    }
-                                }
-                                else
-                                {
-                                    <span class="name-from">· rename it in Ableton</span>
-                                }
-                            }
-                        </div>
-
-                        <div class="name-strip @(_swapping == row.VideoId ? "editing" : null)">
-                            @if (_swapping == row.VideoId)
-                            {
-                                <div class="name-edit">
-                                    <input class="name-input" @ref="_swapBox" value="@_swapUrl" placeholder="https://www.youtube.com/watch?v=…"
-                                           @oninput="e => OnSwapUrl(row, e)"
-                                           @onkeydown="e => OnSwapKey(e, row)" />
-                                    <p class="name-note">
-                                        A better upload of the same song. The playlist entry stays as it is.
-                                    </p>
-                                </div>
-
-                                <div class="name-side">
-                                    <p class="detail">
-                                        @(_swapPlan?.Refusal ?? _swapPlan?.Detail ?? SwapPlan.DetailFor(row.Verdict is not null))
-                                        @if (row.SamplesLeftInLibrary > 0)
-                                        {
-                                            <text>
-                                                @("sample".ToQuantity(row.SamplesLeftInLibrary)) of the old upload are in
-                                                Mashup Samples; crateside never writes there, so remove them yourself.
-                                            </text>
-                                        }
-                                    </p>
-
-                                    <div class="actions">
-                                        <button class="danger" disabled="@(_working || _swapPlan?.IsPossible is not true)"
-                                                @onclick="() => ConfirmSwap(row)">
-                                            @(_working ? "Swapping…" : SwapScope(_swapPlan))
-                                        </button>
-                                        <button class="outline" @onclick="CancelSwap" disabled="@_working">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            }
-                            else
-                            {
-                                <span class="name-from">
-                                    @if (row.IsSourceSwapped)
-                                    {
-                                        <text>source swapped · cut from <strong>@row.StatedSourceUrl</strong></text>
-                                    }
-                                    else
-                                    {
-                                        <text>cut from the playlist entry's own video</text>
-                                    }
-                                </span>
-
-                                <button class="outline" @onclick="() => StartSwap(row)" disabled="@_working">
-                                    Swap source
-                                </button>
-                            }
-                        </div>
-                    </div>
+                    <TrackEdits @ref="_edits" Row="row" />
 
                     <StemList Editor="_stems" Row="row" />
 
@@ -505,52 +356,7 @@
                             </div>
                         }
 
-                        <div class="actions">
-                            @if (row.Folder is not null)
-                            {
-                                <button class="outline" @onclick="() => OpenFolder(row)">Open folder</button>
-                            }
-                            @if (row.Verdict is not null)
-                            {
-                                <a class="outline" href="@($"song/{row.VideoId}")">Track details</a>
-                            }
-                            @if (row.GaveUpAt is not null)
-                            {
-                                <button class="outline" @onclick="() => Retry(row)">Retry</button>
-                            }
-                            @if (row.State is TrackState.Short)
-                            {
-                                <button class="primary" @onclick="() => _stems.CutShortfallAsync(row)" disabled="@(_working || _stems.Working)">
-                                    @(_stems.Working ? "Cutting…" : "Cut what is missing")
-                                </button>
-                            }
-                            @if (Playlist.BumpedVideoId == row.VideoId)
-                            {
-                                <button class="primary" @onclick="ClearBump">Stop working this first</button>
-                            }
-                            else if (row.State is TrackState.Queued or TrackState.JudgedInLine)
-                            {
-                                <button class="outline" @onclick="() => Bump(row)">Work this first</button>
-                            }
-                            @if (row.PlaylistItemId is { } playlistItemId && Playlist.IsAuthorized)
-                            {
-                                <button class="outline" @onclick="() => Remove(row, playlistItemId)">
-                                    Remove from playlist
-                                </button>
-                            }
-                            else if (row.CanForget && _removing == row.VideoId)
-                            {
-                                <span class="confirm">@RemovalQuestion()</span>
-                                <button class="danger" @onclick="() => ConfirmRemove(row)" disabled="@_working">
-                                    Remove
-                                </button>
-                                <button class="outline" @onclick="CancelRemove" disabled="@_working">Keep</button>
-                            }
-                            else if (row.CanForget)
-                            {
-                                <button class="outline" @onclick="() => StartRemove(row)">Remove</button>
-                            }
-                        </div>
+                        <TrackActions Row="row" Editor="_stems" Removed="OnRemoved" />
                         }
 
                         @if ((_problem ?? _stems.Problem) is { } problem)
@@ -707,89 +513,14 @@
         }
     }
 
-    /// <summary>Drops crateside's own record of a pasted track. Nothing on disk is touched.</summary>
-    /// <summary>The row asking to be removed, held until the user confirms.</summary>
-    private string? _removing;
-
-    private IReadOnlyList<StagingStem> _recycling = [];
-
     /// <summary>The last track removed, said once because its row is no longer there to say it.</summary>
     private (string Title, string Note)? _removed;
 
-    private void StartRemove(TrackRow row)
-    {
-        _problem = null;
-        _removing = row.VideoId;
-        _recycling = Removal.Recycling(row.Facts.Uploads);
-    }
-
-    private void CancelRemove()
-    {
-        _removing = null;
-        _recycling = [];
-    }
-
-    private string RemovalQuestion() =>
-        _recycling.Count is 0
-            ? "Drop crateside's record of this track? No file is touched."
-            : $"Drop crateside's record and recycle {"staged file".ToQuantity(_recycling.Count)}? "
-                + "Nothing in Mashup Samples is touched.";
-
-    private async Task ConfirmRemove(TrackRow row)
-    {
-        _working = true;
-
-        try
-        {
-            var outcome = Removal.Apply(row.VideoId, row.Facts.Uploads);
-
-            _removed = (
-                row.Title,
-                outcome.Problem
-                    ?? (
-                        outcome.Recycled is 0
-                            ? "No file was touched."
-                            : $"{"staged file".ToQuantity(outcome.Recycled)} recycled."
-                    )
-            );
-            CancelRemove();
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-
-        try
-        {
-            await Task.Delay(ToastLife, _circuit.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
-
-        _removed = null;
-
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private string? _renaming;
-    private string _name = string.Empty;
-
-    private ElementReference _nameBox;
-    private ElementReference _swapBox;
-    private bool _focusName;
-    private bool _focusSwap;
     private bool _focusTrack;
     private ElementReference _trackBox;
 
-    private string? _swapping;
-    private string _swapUrl = string.Empty;
-    private SwapPlan? _swapPlan;
-
     private StemEditor _stems = null!;
+    private TrackEdits? _edits;
 
     private IReadOnlyList<TrackRow> Rows => _view?.Rows ?? [];
 
@@ -936,10 +667,28 @@
     // Raised on a worker thread, never the circuit's, so the render is marshalled back.
     private void OnStemsChanged() => _ = InvokeAsync(StateHasChanged);
 
-    private void OnPickerOpened()
+    private void OnPickerOpened() => _edits?.Close();
+
+    private void OnRemoved((string Title, string Note) removed)
     {
-        CancelRename();
-        CancelSwap();
+        _removed = removed;
+        _ = ForgetRemovedLater();
+    }
+
+    private async Task ForgetRemovedLater()
+    {
+        try
+        {
+            await Task.Delay(ToastLife, _circuit.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        _removed = null;
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private void OnChanged()
@@ -954,7 +703,7 @@
         _problem = null;
 
         _stems.Reset();
-        CancelRename();
+        _edits?.Close();
     }
 
     /// <summary>
@@ -963,296 +712,11 @@
     /// </summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_focusName)
-        {
-            _focusName = false;
-
-            await _nameBox.FocusAsync();
-        }
-
-        if (_focusSwap)
-        {
-            _focusSwap = false;
-
-            await _swapBox.FocusAsync();
-        }
-
         if (_focusTrack)
         {
             _focusTrack = false;
 
             await _trackBox.FocusAsync();
-        }
-    }
-
-    /// <summary>Opens the rename box and closes the swap box, which shares the row (#19).</summary>
-    private void StartRename(TrackRow row)
-    {
-        _problem = null;
-        CancelSwap();
-        _renaming = row.VideoId;
-        _name = row.Title;
-        _focusName = true;
-    }
-
-    private void CancelRename()
-    {
-        _renaming = null;
-        _name = string.Empty;
-    }
-
-    private async Task ConfirmRename(TrackRow row)
-    {
-        if (!StemFileName.IsUsable(_name))
-            return;
-
-        await Renaming(() => Rename.Apply(row.VideoId, _name));
-    }
-
-    private async Task RevertRename(TrackRow row) =>
-        await Renaming(() => Rename.Revert(row.VideoId, row.DerivedTitle ?? row.Title));
-
-    private async Task Renaming(Func<RenameOutcome> rename)
-    {
-        _working = true;
-        _problem = null;
-
-        try
-        {
-            var outcome = rename();
-
-            _problem = outcome.Problem ?? outcome.Note;
-
-            if (outcome.Succeeded)
-                CancelRename();
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
-    private async Task OnRenameKey(KeyboardEventArgs e, TrackRow row)
-    {
-        if (e.Key is "Enter")
-            await ConfirmRename(row);
-        else if (e.Key is "Escape")
-            CancelRename();
-    }
-
-    private void StartSwap(TrackRow row)
-    {
-        _problem = null;
-        CancelRename();
-        _swapping = row.VideoId;
-        _swapUrl = string.Empty;
-        _swapPlan = null;
-        _focusSwap = true;
-    }
-
-    private void CancelSwap()
-    {
-        _swapping = null;
-        _swapUrl = string.Empty;
-        _swapPlan = null;
-    }
-
-    /// <summary>Re-plans as the URL is typed, so the button says what it would do.</summary>
-    private void OnSwapUrl(TrackRow row, ChangeEventArgs e)
-    {
-        _swapUrl = e.Value?.ToString() ?? string.Empty;
-        _swapPlan = _swapUrl.Length is 0 ? null : Swap.PlanFor(row.VideoId, _swapUrl);
-    }
-
-    private async Task OnSwapKey(KeyboardEventArgs e, TrackRow row)
-    {
-        if (e.Key is "Enter")
-            await ConfirmSwap(row);
-        else if (e.Key is "Escape")
-            CancelSwap();
-    }
-
-    private async Task ConfirmSwap(TrackRow row)
-    {
-        _working = true;
-        _problem = null;
-
-        try
-        {
-            var outcome = await Swap.ApplyAsync(row.VideoId, _swapUrl, _circuit.Token);
-
-            _problem = outcome.Problem;
-
-            if (outcome.Succeeded)
-            {
-                CancelSwap();
-                Signals.Wake(JobStage.Download, JobStage.Separation);
-            }
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
-    /// <summary>Settled is filled, the suggestion still waiting on the user is dashed.</summary>
-    private async Task SameSong(TrackRow row, LedgerRun like)
-    {
-        _working = true;
-        _problem = null;
-
-        try
-        {
-            _problem = await Lookalike.SameSongAsync(row.VideoId, like, _circuit.Token);
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
-    private async Task DifferentSong(TrackRow row, LedgerRun like)
-    {
-        _working = true;
-        _problem = null;
-
-        try
-        {
-            Lookalike.DifferentSong(row.VideoId, like);
-            Judging.Wake();
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
-    /// <summary>Accepts this download's audio, so the track goes on to the verdict.</summary>
-    private async Task UseAnyway(TrackRow row)
-    {
-        _working = true;
-        _problem = null;
-
-        try
-        {
-            if (
-                YouTubeUrl.TryGetVideoId(row.StatedSourceUrl ?? row.VideoId, out var upload)
-            )
-                Playlist.AcceptUpload(row.VideoId, upload);
-
-            if (!Held.AcceptAcquisition(row.VideoId))
-                _problem = "There is no downloaded audio for this track any more. It will be fetched again, and taken as it comes.";
-
-            // Judging is paused by default, so this only puts the track back in line for it.
-            Judging.Wake();
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
-    private static string SwapScope(SwapPlan? plan) =>
-        plan?.Removing is { Count: > 0 } removing
-            ? $"Swap source · remove {"file".ToQuantity(removing.Count)}"
-            : "Swap source";
-
-    private static string Derived(TrackRow row) => row.DerivedTitle ?? row.Title;
-
-    private static string From(TrackNameSource source) =>
-        source switch
-        {
-            TrackNameSource.Files => "the file names",
-            TrackNameSource.Ledger => "the ledger",
-            TrackNameSource.Resolved => "what StemForge will call it",
-            TrackNameSource.Playlist => "the playlist title",
-            _ => "the video ID",
-        };
-
-    private void OpenFolder(TrackRow row)
-    {
-        if (row.Folder is not { } folder)
-            return;
-
-        try
-        {
-            Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true });
-        }
-        catch (Exception e)
-        {
-            _problem = $"Could not open {folder}: {e.Message}";
-        }
-    }
-
-    /// <summary>
-    /// Waiting is the only time this means anything: once a stage has the track, the work lists
-    /// have already been read.
-    /// </summary>
-    private async Task Bump(TrackRow row)
-    {
-        Playlist.Bump(row.VideoId);
-
-        await Source.RefreshAsync(_circuit.Token);
-    }
-
-    private async Task ClearBump()
-    {
-        Playlist.ClearBump();
-
-        await Source.RefreshAsync(_circuit.Token);
-    }
-
-    private async Task Retry(TrackRow row)
-    {
-        List<JobStage> forgiven = [];
-
-        foreach (var stage in Enum.GetValues<JobStage>())
-            if (Jobs.TryGet(row.VideoId, stage, out var job) && job is { Status: JobStatus.Failed })
-            {
-                Jobs.Forgive(row.VideoId, stage);
-                forgiven.Add(stage);
-            }
-
-        // Every stage was forgivable, so waking only two left the rest to wait out the interval.
-        Signals.Wake([.. forgiven]);
-
-        await Source.RefreshAsync();
-    }
-
-    private async Task Remove(TrackRow row, string playlistItemId)
-    {
-        _problem = null;
-
-        try
-        {
-            var results = await Playlist.RemoveAsync(
-                [
-                    new QueueItem
-                    {
-                        PlaylistItemId = playlistItemId,
-                        VideoId = row.VideoId,
-                        Title = row.Title,
-                    },
-                ]
-            );
-
-            _problem = results.FirstOrDefault(result => !result.Removed)?.Reason;
-
-            await Source.RefreshAsync();
-        }
-        catch (QueueUnavailableException e)
-        {
-            _problem = e.Message;
         }
     }
 

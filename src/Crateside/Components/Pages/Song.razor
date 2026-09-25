@@ -8,6 +8,7 @@
 @inject EvidenceService Evidence
 @inject TracksService Tracks
 @inject IServiceProvider Services
+@inject NavigationManager Navigation
 
 <PageTitle>@(Name ?? "Track details") · crateside</PageTitle>
 
@@ -27,6 +28,11 @@
     {
         <h1>@Name</h1>
         <p class="meta">@Meta</p>
+
+        @if (_row is not null)
+        {
+            <TrackFindings Row="_row" />
+        }
 
         <section class="band @(_row?.IsLibraryOnly is true ? "library-only" : null)">
             <div class="cell">
@@ -102,6 +108,12 @@
                 @if (_row is not null)
                 {
                     var uploads = Uploads(_row);
+
+                    <section class="rail-section">
+                        <h3>Change</h3>
+                        <TrackActions Row="_row" Editor="_stems" ShowDetailsLink="false" Removed="OnRemoved" />
+                        <TrackEdits Row="_row" />
+                    </section>
 
                     <section class="rail-section">
                         <h3>@(uploads.Count is 1 ? "Upload" : "Uploads")</h3>
@@ -201,6 +213,8 @@
     }
 
     private void OnStemsChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void OnRemoved((string Title, string Note) removed) => Navigation.NavigateTo(string.Empty);
 
     private bool IsTaggedWithKey(TrackSample sample) =>
         Key is { } key && key.Equals(sample.AbletonKey, StringComparison.OrdinalIgnoreCase);

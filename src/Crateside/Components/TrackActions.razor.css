@@ -1,0 +1,10 @@
+.actions .confirm {
+    font-size: 12px;
+    color: var(--text-75);
+}
+
+.problem {
+    margin: 0;
+    font-size: 12px;
+    color: var(--red);
+}
