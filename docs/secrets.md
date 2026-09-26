@@ -5,7 +5,7 @@ crateside holds two secrets, and they are worth very different amounts.
 | secret | what it can do | where it lives |
 |---|---|---|
 | **YouTube API key** | Read a public/unlisted playlist. Cannot write. Quota-capped, revocable, restrictable to the YouTube Data API. | user-secrets |
-| **OAuth refresh token** *(not built yet)* | **Delete items from the user's playlist.** | DPAPI-encrypted at rest — see below |
+| **OAuth refresh token** | **Delete items from the user's playlist.** | DPAPI-encrypted at rest — see below |
 
 **Nothing secret is ever committed.** `.gitignore` covers `token.json`, `*.token.json`,
 `client_secret*.json`, `appsettings.Secrets.json` and `appsettings.*.Local.json`, but the
@@ -19,7 +19,10 @@ From the repo root:
 dotnet user-secrets set "Queue:ApiKey" "<your key>" --project src\Crateside\Crateside.csproj
 ```
 
-**The playlist ID is not a secret and does not go here** — set it on the Queue page. It is
+The section is still called `Queue` though the classes that read it are `Playlist…`: renaming it
+would strand every key already set.
+
+**The playlist ID is not a secret and does not go here** — set it on the Settings page. It is
 saved to `%APPDATA%\crateside\queue.json`, which also keeps it out of the working tree, but
 for tidiness rather than secrecy. The key is the only thing user-secrets holds.
 
@@ -67,7 +70,7 @@ hand, and it is the credential that can actually delete things. It is encrypted 
 
 A token this key ring cannot decrypt — rotated keys, a file copied from another machine —
 reads as **absent** rather than throwing. The cost is one more consent prompt, which is a
-state the Queue already handles; a crash is not. There are tests for that, and for the fact
+state crateside already handles (Settings offers *Grant access* again); a crash is not. There are tests for that, and for the fact
 that nothing recognisable appears in the file on disk.
 
 **Know what that does and does not buy.** DPAPI `CurrentUser` means the ciphertext is useless

@@ -79,6 +79,11 @@ Same rule as keytag ([its ADR 0005](../keytag/docs/adr/0005-instructions-carry-n
 - **This file** holds current instruction, plus at most a one-line pointer to an ADR.
 - **`docs/agents/`** holds how an agent should use this repo — where issues live, the triage
   label vocabulary, the domain doc layout. Not domain content itself.
+- **`docs/*.md`** holds how-to and reference for a human (setup, secrets, the manual workflow),
+  kept current and edited in place. A decision found in one moves to an ADR.
+- **`docs/notes/`** holds research and observations, named by date and frozen like an ADR, but
+  deciding nothing. A note that settles something is cited by the ADR that does the deciding.
+- **`docs/design/`** holds the Claude Design round trip: see `docs/agents/design.md`.
 - **Code** holds what the code cannot say itself. See below.
 
 ## Comments are the exception, not the default

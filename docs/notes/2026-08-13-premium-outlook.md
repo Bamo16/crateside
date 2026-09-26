@@ -1,5 +1,7 @@
 # Spotting a non-premium queue item from the YouTube API
 
+*Note, 2026-08-13, frozen: the measurement behind [ADR 0016](../adr/0016-the-download-reports-its-own-quality-and-parking-gained-a-reason.md). Names are as they were then; "the Queue view" has since become the Tracks view.*
+
 **Question.** Can crateside warn, from API metadata alone, that a queued URL will not yield a
 YouTube Premium download — without shelling out to yt-dlp with cookies?
 

@@ -1,17 +1,9 @@
 # Fonts
 
-crateside uses **IBM Plex Sans** for text and **IBM Plex Mono** for every number, key, timestamp
-and count — those are read as values and compared down a column, which proportional digits defeat.
-
-Both are **self-hosted**, in `src/Crateside/wwwroot/fonts/`, declared by
-`src/Crateside/wwwroot/fonts.css`. Self-hosted rather than linked from Google Fonts because the
-bench is a local tool that should not need the internet to render correctly, and because a
-third-party request on every page load buys nothing here.
-
-**Latin and latin-ext only.** Google serves six subsets; the other four are Cyrillic, Greek and
-Vietnamese. Twelve files, about 309 KB. Note that IBM Plex has no CJK coverage at all, so a track
-like `電音部, Moe Shop - Eat Sleep Dance` falls back to the system font for its Japanese — that is
-expected and not worth solving, since the fallback renders it correctly.
+IBM Plex Sans and IBM Plex Mono, self-hosted in `src/Crateside/wwwroot/fonts/` and declared by
+`src/Crateside/wwwroot/fonts.css`. Which faces, subsets and weights, and why, is
+[ADR 0036](adr/0036-fonts-are-self-hosted-plex-latin-subsets-only.md). This file is how to rebuild
+them.
 
 ## Regenerating
 
@@ -46,26 +38,3 @@ Set-Content -Path "src\Crateside\wwwroot\fonts.css" -Value (($out -join "`n`n") 
 PowerShell's default agent it returns TTF, which is several times the size for no benefit. Put the
 header comment back on `fonts.css` afterwards — the script above writes only the `@font-face`
 blocks.
-
-## The sharp and flat signs fall back, on purpose
-
-Keys are spelled with **♯** (U+266F) and **♭** (U+266D), matching Ableton's own tag vocabulary.
-Neither codepoint is in the `latin` or `latin-ext` subsets, so the browser renders those two glyphs
-from a system font rather than from Plex Mono.
-
-IBM Plex Mono **does** contain them — Google will describe a two-glyph subset if asked with
-`&text=♯♭` — but the `fonts.gstatic.com/l/font?kit=…` URL it hands back returns **400** when
-fetched outside the browser request that produced it, with or without a browser user agent. The
-remaining way to get them is the full face from the `@ibm/plex` package, which is about 100 KB per
-weight for two characters.
-
-Left as a fallback because the cost is smaller than it first looks: the Key column is left-aligned
-text, so a glyph of a slightly different width shifts nothing. Tabular alignment only matters in
-the BPM column, which is digits, and those come from the subsets that are loaded. If the mismatch
-ever looks wrong on screen, the fix is the full face rather than another attempt at the subsetter.
-
-## Weights
-
-400, 500 and 600, for both families. The design uses no others: 600 for the brand and for BPM,
-500 for row text and labels, 400 for prose. Adding a weight means adding four files, so it is
-worth being deliberate about.

@@ -1,5 +1,7 @@
 # The ledger as an interface, not a log
 
+*Note, 2026-08-14, frozen. Names are as they were then; "the board" is the staging board, which has since become the Tracks view.*
+
 **Status:** observations, not decisions. Input for a future revision of the `detect-key`
 skill and of `runs.jsonl`'s schema.
 

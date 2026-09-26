@@ -109,7 +109,7 @@ hot reload, which is the worse trade.
 
 **9. No quota prediction.** There is no supported way to read remaining Claude
 allowance; an undocumented OAuth endpoint exists but is the same class of dependency
-`docs/premium-outlook.md` already rejected for the YouTube Music counterpart link.
+`docs/notes/2026-08-13-premium-outlook.md` already rejected for the YouTube Music counterpart link.
 Instead, verdict runs are **idempotent, resumable and cheap to fail**: "judge the next
 N unjudged tracks", failing fast when quota is exhausted and resuming later. This
 converts an unanswerable prediction problem into a retry problem. Failures are
