@@ -42,15 +42,22 @@ against it.
 
 - **Import** — finishing a song: warping it, tagging it, saving its default clip, and
   moving it into **Mashup Samples**. The steps can happen in any order, but the move is
-  kept last, so **presence in Mashup Samples is what says a song is imported**. Nothing
-  on disk records "warped" and nothing needs to: the move covers the whole sequence,
-  because a sample sitting there unwarped or mistagged is a mistake rather than a state
-  the workflow produces. Described step by step in
+  kept last, so **presence in Mashup Samples is what says a song is imported**: a sample
+  sitting there unwarped or mistagged is a mistake rather than a state the workflow
+  produces. **Warp markers do not say a warp is done.** Ableton's *Warp* button places one
+  marker at the start of the clip at the arrangement's tempo, which is right only in the
+  rare case where bar 1 begins exactly there, and a hard warp (tempo changes, say) can sit
+  half done in staging with many markers. The **default clip** is saved only once the warp
+  is good, so it is the last step before the move. Described step by step in
   [the manual workflow](docs/the-manual-workflow.md).
-- **Default clip** — the saved start position of a sample, trimmed to the bar where its
-  first verse begins, so that dragging it out of the library lands it there. What makes
-  an arbitrary vocal and an arbitrary instrumental line up on the first try. The audio
-  before that point is not removed; only the drag-in position moves.
+- **Default clip** — the range of a sample Ableton pulls in when it is dragged out of the
+  library: from where its **first verse** begins to the end of the clip. What makes an
+  arbitrary vocal and an arbitrary instrumental line up at the verse on the first try;
+  whether the choruses then line up depends on the verses' lengths, and is the mashup's
+  problem to solve. A track with no vocals starts where a verse would sound right, and one
+  with a structure too odd for that starts at beat 1 of bar 1. The audio before the start
+  is not removed; only the drag-in range changes. Saved after the warp is good and before
+  the move, so it is the one step that says the user finished warping.
 - **Warp marker** — one point where a sample's audio is pinned to Ableton's grid: a
   position in the audio paired with a position in beats. A sample carries an ordered list
   of them in its **sidecar**, and a **tempo** is the slope between two consecutive
@@ -231,6 +238,22 @@ the two run types below are named after which of them they produce.
   verdict worth tagging with; the way out is a better verdict) and **premium
   shortfall** (stopped before the verdict; the way out is a better upload or the
   user's say-so).
+- **Finding** — something crateside noticed that stops a track until the user answers
+  it, shown above the track's samples: a **lookalike**, or a **premium shortfall**. A
+  **parked** track is waiting on one.
+- **Lookalike** — a track whose name looks like a song the ledger has already judged,
+  shown as *same song?*. Judging waits for the answer: the same song carries its key and
+  files across and nothing is judged or cut again; a different song is judged as usual,
+  and the question is not asked again for that pair (#41).
+- **Gave up** — a **stage** failed too often to try again: five times for a download or
+  an evidence run, three for the rest. A download YouTube will never serve (unavailable,
+  private, removed, blocked) gives up at the first failure, and says why (#63). Nothing
+  automatic moves the track after that; *Retry* puts it back in line.
+- **Work this first** — the one track the user wants worked next. Download, detection,
+  judging and separation take it before anything else they are due to pick, and asking
+  for another replaces it. Held in
+  memory, so a restart forgets it (ADR 0015). The one way a **library backfill** track is
+  judged outside an **idle window**.
 - **Draining** — working the **work lists** down continuously, one track at a time,
   for as long as there is anything outstanding. The normal state of the system rather than
   an action someone takes: what limits separation is that two at once are ruinous,
