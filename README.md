@@ -1,8 +1,9 @@
-<!-- LOGO: full lockup (mark + wordmark), ~320px wide, dark background. Asset TBD — the
-     branding is still being drawn. Uncomment the line below once docs/brand/ exists; as it
-     stands it renders as a broken image.
-<p align="center"><img src="docs/brand/crateside-lockup.svg" alt="crateside" width="320"></p>
--->
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="src/Crateside/wwwroot/brand/lockup.svg" width="320" height="54">
+    <img src="src/Crateside/wwwroot/brand/mark-tile.svg" alt="crateside" width="72" height="72">
+  </picture>
+</p>
 
 # crateside
 

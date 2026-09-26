@@ -7,6 +7,20 @@ Everything else in this folder is frozen history from the Claude Design sessions
 (open a `.dc.html` in a browser with `support.js` beside it), `handoffs/`, `briefs/` and
 `brand/`. [ARCHIVE.md](ARCHIVE.md) indexes them.
 
+## Brand
+
+Option 1a from handoff 04, interim: the **mark** (three crate slats edge-on, the middle one pulled
+forward in brand amber `#e8b45a`) and the word `crateside`, always lowercase. The live assets are
+`src/Crateside/wwwroot/brand/`, the one folder a brand swap changes; `docs/design/brand/` is the
+frozen copy the Design session delivered.
+
+- **Header**: `BrandNav` shows the 18px mark beside the word (15px/600), and the pair links to Tracks.
+  The word stays HTML text, never the lockup, so it is selectable and on-token.
+- **Browser tab**: `favicon.svg`, a 32px PNG fallback, the 180px apple-touch icon, and
+  `theme-color` `#1b1a15`. Titles read `{page} · crateside`.
+- **README**: the lockup on a dark GitHub theme, and `mark-tile.svg` on a light one (below).
+- The mark's amber is brand amber, not *your turn*, and is never recoloured by page or state.
+
 ## Palette
 
 Defined once in `src/Crateside/wwwroot/app.css`. One warm dark palette:
@@ -132,6 +146,13 @@ One width cap per table shape: `--table-partners` 50rem, `--table-library` 56rem
 ## Differs from the design
 
 Where the build departs from a canvas, by page. Clear an entry once a later design supersedes it.
+
+### README (handoff 04)
+
+- **The lockup shows only on a dark GitHub theme.** Its ink is `#ece7dc` on transparent, which
+  vanishes on white, and the brand rules allow no other colours. On a light theme the README shows
+  `mark-tile.svg` (the mark on its own dark tile) above the text heading instead. A lockup for
+  light backgrounds would be a Design question.
 
 ### Tracks row and Track details (handoff 06, #62)
 
