@@ -363,3 +363,15 @@
 .add-note.bad {
     color: var(--red);
 }
+
+/* Holds the column a track with nothing cut would leave empty, so the side stack is not alone. */
+.no-samples {
+    margin: 0;
+    padding: 28px;
+    font-size: 13px;
+    line-height: 1.5;
+    text-align: center;
+    color: var(--text-50);
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+}
