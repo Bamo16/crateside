@@ -59,8 +59,8 @@ public sealed class TrackAdd(
         );
 
     /// <summary>
-    /// Queues every library upload nothing ever judged, to be judged and never cut (#47), and
-    /// returns how many. Their audio is taken as it comes: the library already uses those files.
+    /// Queues every library upload nothing ever judged, to be judged one per idle window and never
+    /// cut (#47, ADR 0035). Their audio is taken as it comes: the library already uses those files.
     /// </summary>
     public int QueueUnjudged(IReadOnlyList<TrackRowFacts> known)
     {
@@ -74,6 +74,7 @@ public sealed class TrackAdd(
         {
             settings.AddByUrl(videoId);
             settings.AcceptUpload(videoId, videoId);
+            settings.MarkBackfill(videoId);
         }
 
         return unjudged.Length;

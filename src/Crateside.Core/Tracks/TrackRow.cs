@@ -147,6 +147,9 @@ public sealed record TrackRow
     /// <summary>The user pasted this track in rather than adding it to the playlist (ADR 0010).</summary>
     public bool IsAddedByUrl { get; init; }
 
+    /// <summary>Queued from the Library to be judged one per idle Claude window (ADR 0035).</summary>
+    public bool IsBackfill { get; init; }
+
     /// <summary>Whether Remove can take this track out of crateside (ADR 0027).</summary>
     public bool CanForget =>
         this is { PlaylistItemId: null, RunningStage: null }
@@ -264,7 +267,7 @@ public sealed record TrackRow
     /// the same count whichever of those it is in.
     /// </summary>
     public bool IsAwaitingJudgement =>
-        this is { Verdict: null, Lookalike: null, IsLibraryOnly: false }
+        this is { Verdict: null, Lookalike: null, IsLibraryOnly: false, IsBackfill: false }
         && State is TrackState.Queued or TrackState.Downloading or TrackState.Detecting;
 
     /// <summary>What the state chip reads.</summary>
@@ -320,6 +323,9 @@ public sealed record TrackRow
         {
             TrackState.Queued when Lookalike is { } like =>
                 $"is this {like.DisplayName}? judging waits for your answer",
+            TrackState.Queued when IsBackfill => "waiting for an idle Claude window",
+            TrackState.Downloading or TrackState.Detecting when IsBackfill =>
+                "then judged in an idle Claude window",
             TrackState.Downloading => "then judging",
             TrackState.Detecting => "then judging",
             TrackState.Judging => "verdict in about a minute",

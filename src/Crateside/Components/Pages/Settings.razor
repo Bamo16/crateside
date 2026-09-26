@@ -2,10 +2,18 @@
 @layout Crateside.Components.Layout.BareLayout
 @rendermode InteractiveServer
 
+@implements IDisposable
+
+@using Crateside.Core.Orchestration
 @using Crateside.Core.Queue
+@using Crateside.Core.Quota
+@using Crateside.Core.Tracks
 @using Humanizer
 
 @inject QueueService Playlist
+@inject TracksService Tracks
+@inject WindowRoll Roll
+@inject PauseStore Remembered
 
 <PageTitle>Settings</PageTitle>
 
@@ -59,6 +67,41 @@
                 the whole list is one quota unit against a daily ten thousand — 288 a day at five
                 minutes, 48 at thirty.
             </p>
+        </section>
+
+        <section>
+            <h2>Library backfill</h2>
+            <p class="detail">
+                Library tracks tagged by hand before crateside have no verdict. Library's
+                <em>Queue them for judging</em> hands them here, and they are judged one at a time:
+                one track whenever the Claude window has sat at 0% for fifteen minutes, then nothing
+                for five hours. Judging's own pause does not hold them back, and nothing else is
+                judged this way. <em>Work this first</em> on one of them judges it straight away.
+            </p>
+
+            <div class="field">
+                <label>
+                    <input type="checkbox" checked="@Roll.IsEnabled" @onchange="ToggleBackfill" />
+                    Judge the library backfill, one track per idle Claude window
+                </label>
+            </div>
+
+            <ul class="counts">
+                <li><span class="mono">@Backfill(row => row is { Verdict: null, GaveUpAt: null })</span> waiting</li>
+                <li><span class="mono">@Backfill(row => row is { Verdict: not null })</span> judged</li>
+                @if (Backfill(row => row is { Verdict: null, GaveUpAt: not null }) is > 0 and var stuck)
+                {
+                    <li class="attention">
+                        <span class="mono">@stuck</span> gave up, so they cannot be judged from
+                        their uploads; see each row
+                    </li>
+                }
+                <li class="@(NotQueued > 0 ? "attention" : null)">
+                    <span class="mono">@NotQueued</span> unjudged in the library and not queued
+                </li>
+            </ul>
+
+            <p class="detail">@NextWindow</p>
         </section>
 
         @if (!Playlist.HasCredential)
@@ -224,8 +267,48 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     private bool HasPendingChange =>
         PlaylistReference.TryParse(_playlist, out var parsed) && parsed != Playlist.PlaylistId;
 
+    private IReadOnlyList<TrackRow> Rows => Tracks.Current?.Rows ?? [];
+
+    private int NotQueued => Rows.Count(row => row is { IsLibraryOnly: true, Verdict: null, IsAddedByUrl: false });
+
+    private string NextWindow =>
+        (Roll.IsEnabled, Roll.RolledAt) switch
+        {
+            (false, _) => "Off, so the backfill waits.",
+            (true, { } rolled) when DateTimeOffset.UtcNow - rolled < WindowRoll.Window =>
+                $"Last judged one at {rolled.ToLocalTime():h:mm tt}; the next goes after {(rolled + WindowRoll.Window).ToLocalTime():h:mm tt}, once a window sits idle.",
+            _ => "The next goes as soon as a window sits at 0% for fifteen minutes.",
+        };
+
+    private int Backfill(Func<TrackRow, bool> matches) =>
+        Rows.Count(row => row.IsBackfill && matches(row));
+
+    public void Dispose()
+    {
+        Tracks.Changed -= OnChanged;
+        Roll.Changed -= OnChanged;
+    }
+
+    // Raised on a worker thread, never the circuit's, so the render is marshalled back.
+    private void OnChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void ToggleBackfill(ChangeEventArgs e)
+    {
+        if (e.Value is true)
+            Roll.Enable();
+        else
+            Roll.Disable();
+
+        Remembered.RememberBackfill(Roll.IsEnabled);
+    }
+
     protected override async Task OnInitializedAsync()
     {
+        Tracks.Changed += OnChanged;
+        Roll.Changed += OnChanged;
+
+        await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
+
         _playlist = Playlist.PlaylistId ?? string.Empty;
         _refresh = Playlist.RefreshMinutes;
         _consume = Playlist.ConsumeOnArrival;

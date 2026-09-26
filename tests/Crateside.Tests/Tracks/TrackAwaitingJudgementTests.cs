@@ -44,4 +44,13 @@ public class TrackAwaitingJudgementTests
     [Fact]
     public void A_parked_track_is_not_waiting() =>
         Assert.False((Row() with { ParkedFor = ParkReason.PremiumShortfall }).IsAwaitingJudgement);
+
+    [Fact]
+    public void The_library_backfill_waits_for_an_idle_window_not_the_judging_stage()
+    {
+        var row = Row() with { IsBackfill = true };
+
+        Assert.False(row.IsAwaitingJudgement);
+        Assert.Equal("waiting for an idle Claude window", row.Next);
+    }
 }

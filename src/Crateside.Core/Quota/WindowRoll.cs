@@ -1,10 +1,10 @@
 namespace Crateside.Core.Quota;
 
 /// <summary>
-/// Whether to open an idle five-hour window with one verdict, so the windows keep rolling (#46).
-/// Off until the user turns it on, and a window that cannot be read is never idle.
+/// Whether an idle five-hour window should judge one library backfill track (ADR 0029, ADR 0035).
+/// A window that cannot be read is never idle.
 /// </summary>
-public sealed class WindowRoll
+public sealed class WindowRoll(bool enabled = false)
 {
     /// <summary>How long a window must read 0% before it counts as idle rather than just turned over.</summary>
     public static readonly TimeSpan IdleFor = TimeSpan.FromMinutes(15);
@@ -14,7 +14,7 @@ public sealed class WindowRoll
 
     private readonly Lock _gate = new();
 
-    private bool _enabled;
+    private bool _enabled = enabled;
     private DateTimeOffset? _idleSince;
     private DateTimeOffset? _rolledAt;
 

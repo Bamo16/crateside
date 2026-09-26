@@ -47,6 +47,17 @@ public class PauseStoreTests : IDisposable
     }
 
     [Fact]
+    public void Judging_the_backfill_in_idle_windows_survives_a_restart_without_pausing_anything()
+    {
+        new PauseStore(StorePath).RememberBackfill(on: true);
+
+        var restarted = new PauseStore(StorePath).Read();
+
+        Assert.True(restarted.Backfill);
+        Assert.False(restarted.Judging);
+    }
+
+    [Fact]
     public void An_unreadable_file_reads_as_nothing_paused()
     {
         Directory.CreateDirectory(_directory);

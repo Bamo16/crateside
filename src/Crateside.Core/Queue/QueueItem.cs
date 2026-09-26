@@ -61,6 +61,9 @@ public sealed record QueueItem
     /// <summary>When the user last asked for this track's files to be made again (#50).</summary>
     public DateTimeOffset? CutRequestedAt { get; init; }
 
+    /// <summary>Judged only in an idle Claude window, unless the user asks for it first (ADR 0035).</summary>
+    public bool IsBackfill { get; init; }
+
     public string WatchUrl => $"https://www.youtube.com/watch?v={VideoId}";
 }
 
@@ -109,6 +112,7 @@ public sealed record QueueView
                 DifferentFrom = instruction?.DifferentFrom,
                 AcceptedUpload = instruction?.AcceptedUpload,
                 CutRequestedAt = instruction?.CutRequestedAt,
+                IsBackfill = instruction?.Backfill is true,
                 Inventory = inventories?.GetValueOrDefault(item.VideoId) ?? StemInventory.Empty,
             };
         }
@@ -166,6 +170,7 @@ public sealed record QueueView
             ? this
             : this with
             {
+                Bumped = videoId,
                 Outstanding = First(Outstanding, videoId),
                 AwaitingSeparation = First(AwaitingSeparation, videoId),
             };
@@ -217,6 +222,9 @@ public sealed record QueueView
     /// their place in <see cref="AwaitingSeparation"/>.
     /// </summary>
     public IReadOnlyList<QueueItem> Reopened { get; init; } = [];
+
+    /// <summary>The track the user asked to be worked first, or null.</summary>
+    public string? Bumped { get; init; }
 
     /// <summary>
     /// Every item the read produced, once each — what a stage that works any track reads, since a

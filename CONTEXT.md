@@ -227,6 +227,14 @@ the two run types below are named after which of them they produce.
   **Independent moments, but not independent order:** separation reads facts that
   only a verdict run records, so a track becomes ready for it by having been
   judged rather than by the clock coming round.
+- **Library backfill** — library tracks tagged by hand before crateside, queued
+  from the Library page to be judged and never cut. Marked when queued, so a track
+  stays backfill after its download makes it stop being library-only. Judged only in
+  an **idle window**, never by the ordinary verdict stage, unless the user asks for
+  one first ([ADR 0035](docs/adr/0035-the-library-backfill-is-judged-only-in-idle-windows.md)).
+- **Idle window** — a five-hour Claude window that has read 0% for fifteen minutes.
+  One verdict spends it, then none for five hours
+  ([ADR 0029](docs/adr/0029-an-idle-window-is-opened-by-one-verdict.md)).
 
 ## Flagged ambiguities
 

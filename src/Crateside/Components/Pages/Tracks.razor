@@ -25,7 +25,6 @@
 @inject VerdictControl Judging
 @inject PauseStore Paused
 @inject QuotaReader Quota
-@inject WindowRoll Roll
 @inject IServiceProvider Services
 @inject ActionLog Actions
 
@@ -99,10 +98,6 @@
             <div class="quota-figure">
                 <span class="mono percent">@(_quota.Utilization is { } used ? $"{used:N0}%" : "—")</span>
                 <span class="of">of this 5-hour window</span>
-                <button class="outline roll @(Roll.IsEnabled ? "on" : null)" @onclick="ToggleRoll"
-                        title="While judging is paused, judge one track whenever a window has sat idle, so the windows keep rolling.">
-                    @(Roll.IsEnabled ? "Rolling idle windows" : "Roll idle windows")
-                </button>
             </div>
             <div class="bar">
                 <div class="fill" style="width: @($"{Math.Clamp(_quota.Utilization ?? 0, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
@@ -495,7 +490,6 @@
         Source.ReadyToWarp += OnReadyToWarp;
         Separation.Changed += OnChanged;
         Judging.Changed += OnChanged;
-        Roll.Changed += OnChanged;
 
         await Source.EnsureFreshAsync(TimeSpan.FromSeconds(30));
 
@@ -560,7 +554,6 @@
         Source.ReadyToWarp -= OnReadyToWarp;
         Separation.Changed -= OnChanged;
         Judging.Changed -= OnChanged;
-        Roll.Changed -= OnChanged;
 
         _clock?.Dispose();
         _stems.Changed -= OnStemsChanged;
@@ -690,14 +683,6 @@
             Judging.Pause();
 
         Paused.RememberJudging(Judging.IsPaused);
-    }
-
-    private void ToggleRoll()
-    {
-        if (Roll.IsEnabled)
-            Roll.Disable();
-        else
-            Roll.Enable();
     }
 
     private TrackRow? RowIn(TrackState state) => Rows.FirstOrDefault(row => row.State == state);

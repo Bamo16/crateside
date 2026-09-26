@@ -4,12 +4,11 @@ using Crateside.Core.Quota;
 namespace Crateside;
 
 /// <summary>
-/// Judges one track when the five-hour window has sat idle, while judging itself is paused, so
-/// the windows keep rolling (#46).
+/// Judges one library backfill track when the five-hour window has sat idle, whether or not
+/// judging is paused (ADR 0035).
 /// </summary>
 public sealed class WindowRollWorker(
     WindowRoll roll,
-    VerdictControl judging,
     VerdictDrainer drainer,
     IServiceProvider services,
     ILogger<WindowRollWorker> logger
@@ -40,8 +39,7 @@ public sealed class WindowRollWorker(
 
     private async Task TickAsync(CancellationToken stoppingToken)
     {
-        // A resumed stage is already judging whatever there is; a roll would only add to it.
-        if (!roll.IsEnabled || !judging.IsPaused)
+        if (!roll.IsEnabled)
             return;
 
         var now = DateTimeOffset.UtcNow;
@@ -52,7 +50,7 @@ public sealed class WindowRollWorker(
         if (!roll.ShouldRoll(await quota.ReadAsync(stoppingToken), now))
             return;
 
-        var tick = await drainer.DrainOnceAsync(evenIfPaused: true, stoppingToken);
+        var tick = await drainer.JudgeBackfillAsync(stoppingToken);
 
         if (tick.Outcome is not StageOutcome.Ran)
             return;

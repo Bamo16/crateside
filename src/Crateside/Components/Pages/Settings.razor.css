@@ -162,3 +162,26 @@ select:focus {
     flex-wrap: wrap;
     gap: 8px;
 }
+
+.counts {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 13px;
+    color: var(--text-75);
+}
+
+.counts .mono {
+    display: inline-block;
+    min-width: 3ch;
+    color: var(--text);
+    text-align: right;
+}
+
+.counts .attention,
+.counts .attention .mono {
+    color: var(--red);
+}

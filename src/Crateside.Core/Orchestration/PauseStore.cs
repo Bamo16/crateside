@@ -41,6 +41,8 @@ public sealed class PauseStore(string? path = null)
 
     public void RememberJudging(bool paused) => Save(Read() with { Judging = paused });
 
+    public void RememberBackfill(bool on) => Save(Read() with { Backfill = on });
+
     private void Save(PausedStages stages)
     {
         lock (_gate)
@@ -60,4 +62,7 @@ public sealed record PausedStages
     public bool Separation { get; init; }
 
     public bool Judging { get; init; }
+
+    /// <summary>Not a pause: whether idle windows judge the library backfill (ADR 0035).</summary>
+    public bool Backfill { get; init; }
 }

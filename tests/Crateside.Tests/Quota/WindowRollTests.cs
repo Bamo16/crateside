@@ -10,14 +10,7 @@ public class WindowRollTests
 
     private static readonly QuotaSnapshot InUse = new() { Utilization = 3 };
 
-    private static WindowRoll Enabled()
-    {
-        var roll = new WindowRoll();
-
-        roll.Enable();
-
-        return roll;
-    }
+    private static WindowRoll Enabled() => new(enabled: true);
 
     [Fact]
     public void It_starts_off()

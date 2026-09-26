@@ -22,25 +22,15 @@ public sealed class VerdictDrainer(
     public JobStage Stage => JobStage.Verdict;
 
     /// <summary>Judges the next detected-but-unjudged track, if there is one.</summary>
-    public Task<StageTick> DrainOnceAsync(CancellationToken cancellationToken = default) =>
-        DrainOnceAsync(evenIfPaused: false, cancellationToken);
-
-    /// <summary>
-    /// The same, optionally past the pause: how a window roll judges one track without resuming
-    /// the stage (#46).
-    /// </summary>
-    public async Task<StageTick> DrainOnceAsync(
-        bool evenIfPaused,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<StageTick> DrainOnceAsync(CancellationToken cancellationToken = default)
     {
         await _oneAtATime.WaitAsync(cancellationToken);
 
         try
         {
-            return control.IsPaused && !evenIfPaused
+            return control.IsPaused
                 ? StageTick.Paused
-                : await JudgeNextAsync(cancellationToken);
+                : await JudgeNextAsync(backfill: false, cancellationToken);
         }
         finally
         {
@@ -48,7 +38,24 @@ public sealed class VerdictDrainer(
         }
     }
 
-    private async Task<StageTick> JudgeNextAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Judges one library backfill track, paused or not: what an idle window spends (ADR 0035).
+    /// </summary>
+    public async Task<StageTick> JudgeBackfillAsync(CancellationToken cancellationToken = default)
+    {
+        await _oneAtATime.WaitAsync(cancellationToken);
+
+        try
+        {
+            return await JudgeNextAsync(backfill: true, cancellationToken);
+        }
+        finally
+        {
+            _oneAtATime.Release();
+        }
+    }
+
+    private async Task<StageTick> JudgeNextAsync(bool backfill, CancellationToken cancellationToken)
     {
         QueueView view;
 
@@ -64,7 +71,11 @@ public sealed class VerdictDrainer(
         // Read once and used for both the choice and the order, so the two cannot disagree.
         var ledger = KeyLedger.Read(_paths.Ledger);
 
-        if (!selector.TryPickNext(view, ledger, out var item))
+        var picked = backfill
+            ? selector.TryPickBackfill(view, ledger, out var item)
+            : selector.TryPickNext(view, ledger, out item);
+
+        if (!picked)
             return StageTick.Idle;
 
         var order = WorkOrder.Compose(item, ledger);

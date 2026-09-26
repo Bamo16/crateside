@@ -174,7 +174,9 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new VerdictControl(
             sp.GetRequiredService<PauseStore>().Read().Judging
         ));
-        services.AddSingleton<WindowRoll>();
+        services.AddSingleton(sp => new WindowRoll(
+            sp.GetRequiredService<PauseStore>().Read().Backfill
+        ));
 
         services.AddSingleton(sp => new StageSignals(
             sp.GetRequiredService<DrainControl>(),

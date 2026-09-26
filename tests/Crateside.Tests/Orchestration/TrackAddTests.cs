@@ -78,6 +78,18 @@ public class TrackAddTests : IDisposable
         Assert.NotNull(Add().PlanFor(added, [row]).Refusal);
     }
 
+    [Fact]
+    public void Queueing_the_unjudged_library_marks_each_as_backfill()
+    {
+        var add = Add(out var settings);
+
+        Assert.Equal(1, add.QueueUnjudged([Row(isLibraryOnly: true, hasVerdict: false)]));
+
+        var track = Assert.Single(settings.Read().Tracks);
+        Assert.True(track.Backfill);
+        Assert.True(track.AddedByUrl);
+    }
+
     private static TrackRowFacts Row(bool isLibraryOnly, bool hasVerdict) =>
         new()
         {
@@ -88,17 +100,21 @@ public class TrackAddTests : IDisposable
             HasVerdict = hasVerdict,
         };
 
-    private TrackAdd Add()
+    private TrackAdd Add() => Add(out _);
+
+    private TrackAdd Add(out QueueSettingsStore settings)
     {
         Directory.CreateDirectory(_scratch);
 
         var paths = new CratesidePaths { Ledger = Path.Combine(_scratch, "runs.jsonl") };
 
+        settings = new QueueSettingsStore(
+            Options.Create(new QueueOptions()),
+            Path.Combine(_scratch, "queue.json")
+        );
+
         return new TrackAdd(
-            new QueueSettingsStore(
-                Options.Create(new QueueOptions()),
-                Path.Combine(_scratch, "queue.json")
-            ),
+            settings,
             paths,
             new SourceProbe(),
             new ResolvedNameStore(Path.Combine(_scratch, "names.json"))

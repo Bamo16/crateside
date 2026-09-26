@@ -122,16 +122,6 @@
     color: var(--text-60);
 }
 
-.roll {
-    margin-left: auto;
-    color: var(--text-60);
-}
-
-.roll.on {
-    color: var(--teal);
-    border-color: var(--teal);
-}
-
 .fill {
     height: 100%;
     background: var(--text);

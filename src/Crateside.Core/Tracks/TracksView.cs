@@ -276,6 +276,7 @@ public sealed record TracksView
                 StagedSince = StagedSinceOf(files, finishedRoot),
                 IsLibraryOnly = members.All(seed => seed.IsLibraryOnly),
                 IsAddedByUrl = instruction?.AddedByUrl is true,
+                IsBackfill = instruction?.Backfill is true,
                 Inventory = StemInventory.Of(files, catalog),
             };
         }

@@ -315,4 +315,65 @@ public class VerdictSelectorTests : IDisposable
         Assert.Equal(SeparationSelector.DefaultMaxStrikes, VerdictSelector.DefaultMaxStrikes);
         Assert.True(VerdictSelector.DefaultMaxStrikes < EvidenceSelector.DefaultMaxStrikes);
     }
+
+    [Fact]
+    public void The_library_backfill_is_left_to_the_idle_window()
+    {
+        GiveEvidence("aaaaaaaaaaa");
+        GiveEvidence("bbbbbbbbbbb");
+
+        new VerdictSelector(Jobs, Set).TryPickNext(
+            View(Item("aaaaaaaaaaa") with { IsBackfill = true }, Item("bbbbbbbbbbb")),
+            NoLedger,
+            out var next
+        );
+
+        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+    }
+
+    [Fact]
+    public void A_backfill_track_the_user_asked_for_first_is_judged_now()
+    {
+        GiveEvidence("aaaaaaaaaaa");
+
+        var picked = new VerdictSelector(Jobs, Set).TryPickNext(
+            View(Item("aaaaaaaaaaa") with { IsBackfill = true }) with
+            {
+                Bumped = "aaaaaaaaaaa",
+            },
+            NoLedger,
+            out _
+        );
+
+        Assert.True(picked);
+    }
+
+    [Fact]
+    public void An_idle_window_judges_only_the_backfill()
+    {
+        GiveEvidence("aaaaaaaaaaa");
+        GiveEvidence("bbbbbbbbbbb");
+
+        new VerdictSelector(Jobs, Set).TryPickBackfill(
+            View(Item("aaaaaaaaaaa"), Item("bbbbbbbbbbb") with { IsBackfill = true }),
+            NoLedger,
+            out var next
+        );
+
+        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+    }
+
+    [Fact]
+    public void An_idle_window_with_no_backfill_waiting_judges_nothing()
+    {
+        GiveEvidence("aaaaaaaaaaa");
+
+        Assert.False(
+            new VerdictSelector(Jobs, Set).TryPickBackfill(
+                View(Item("aaaaaaaaaaa")),
+                NoLedger,
+                out _
+            )
+        );
+    }
 }

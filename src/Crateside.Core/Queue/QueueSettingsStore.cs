@@ -92,6 +92,10 @@ public sealed class QueueSettingsStore
     public QueueSettings AddByUrl(string videoId) =>
         Upsert(videoId, track => track with { AddedByUrl = true });
 
+    /// <summary>Leaves the track's verdict to an idle Claude window rather than the judging stage (ADR 0035).</summary>
+    public QueueSettings MarkBackfill(string videoId) =>
+        Upsert(videoId, track => track with { Backfill = true });
+
     /// <summary>Drops crateside's own record of a track, which is what removing one means.</summary>
     public QueueSettings Forget(string videoId) =>
         Upsert(videoId, _ => new TrackInstruction { VideoId = videoId });
@@ -315,10 +319,16 @@ public sealed record TrackInstruction
     [JsonPropertyName("cutRequestedAt")]
     public DateTimeOffset? CutRequestedAt { get; init; }
 
+    /// <summary>Queued from the Library to be judged, one per idle Claude window (ADR 0035).</summary>
+    [JsonPropertyName("backfill")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool Backfill { get; init; }
+
     /// <summary>Whether this instruction still carries anything worth storing.</summary>
     [JsonIgnore]
     public bool SaysSomething =>
         AddedByUrl
+        || Backfill
         || Plan is not null
         || Name is { Length: > 0 }
         || SourceUrl is { Length: > 0 }

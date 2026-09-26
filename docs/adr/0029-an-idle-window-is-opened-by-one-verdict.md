@@ -58,3 +58,9 @@ janitor sweeps a judge-only track's working set once it is judged, where before 
 after a separation. Queued, the 90 are fetched and detected straight away, about 44 MB of audio
 each (the mean of the nine working sets on disk that day), and a roll judges them one per idle
 window.
+
+## Amendment, 2026-09-25 — the backfill only, paused or not
+
+What a roll judges and when it may run are replaced by [ADR 0035](0035-the-library-backfill-is-judged-only-in-idle-windows.md):
+an idle window judges only the library backfill, whether judging is paused or not, and the toggle
+moved to Settings.
