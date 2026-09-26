@@ -1,6 +1,7 @@
 using Crateside.Core;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Queue;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Crateside.Tests.Orchestration;
 
@@ -9,6 +10,13 @@ public class DownloadSelectorTests : IDisposable
     private const string Finished = "RzQRxV2XqFU";
     private const string Fresh = "x3U22KHsrqE";
     private const string Attached = "QC0BBgOdspo";
+
+    private const string Unavailable =
+        "ERROR: [youtube] x3U22KHsrqE: Video unavailable. This video is not available";
+
+    private readonly FakeTimeProvider _time = new(
+        new DateTimeOffset(2026, 9, 25, 12, 0, 0, TimeSpan.Zero)
+    );
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
@@ -26,7 +34,7 @@ public class DownloadSelectorTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private JobStore Jobs => field ??= new JobStore(Path.Combine(_directory, "jobs.jsonl"));
+    private JobStore Jobs => field ??= new JobStore(Path.Combine(_directory, "jobs.jsonl"), _time);
     private WorkingSet Set => field ??= new WorkingSet(Path.Combine(_directory, "working"));
 
     private CratesidePaths Paths =>
@@ -36,7 +44,7 @@ public class DownloadSelectorTests : IDisposable
             StemsUnresolvedKey = Path.Combine(_directory, "unresolved"),
         };
 
-    private DownloadSelector Selector() => new(Jobs, Set, Paths);
+    private DownloadSelector Selector() => new(Jobs, Set, Paths, time: _time);
 
     private static readonly AddedSource Source = new() { VideoId = Attached, Label = "A Cappella" };
 
@@ -186,6 +194,41 @@ public class DownloadSelectorTests : IDisposable
 
         Assert.True(Selector().TryPickNext(View(Held(Fresh)), out var next));
         Assert.Equal(Fresh, next.VideoId);
+    }
+
+    [Fact]
+    public void An_upload_youtube_will_never_serve_is_not_tried_again()
+    {
+        Jobs.Record(Fresh, JobStage.Download, JobStatus.Failed, error: Unavailable);
+        _time.Advance(TimeSpan.FromDays(1));
+
+        Assert.False(Selector().TryPickNext(View(Held(Fresh)), out _));
+    }
+
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(2, 5)]
+    [InlineData(3, 30)]
+    [InlineData(4, 120)]
+    public void A_failed_download_waits_longer_after_each_strike(int strikes, int minutes)
+    {
+        for (var strike = 0; strike < strikes; strike++)
+            Jobs.Record(Fresh, JobStage.Download, JobStatus.Failed, error: "HTTP Error 503");
+
+        _time.Advance(TimeSpan.FromMinutes(minutes) - TimeSpan.FromSeconds(1));
+        Assert.False(Selector().TryPickNext(View(Held(Fresh)), out _));
+
+        _time.Advance(TimeSpan.FromSeconds(1));
+        Assert.True(Selector().TryPickNext(View(Held(Fresh)), out _));
+    }
+
+    [Fact]
+    public void A_download_put_back_in_line_by_hand_does_not_wait()
+    {
+        Jobs.Record(Fresh, JobStage.Download, JobStatus.Failed, error: Unavailable);
+        Jobs.Forgive(Fresh, JobStage.Download);
+
+        Assert.True(Selector().TryPickNext(View(Held(Fresh)), out _));
     }
 
     [Fact]

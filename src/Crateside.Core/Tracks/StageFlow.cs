@@ -70,7 +70,11 @@ public sealed record StageFlow(int Pass, string Reason, IReadOnlyList<FlowStep> 
             return new(label, FlowState.Running);
 
         if (row.GaveUpAt is { } gaveUp && stages.Contains(gaveUp))
-            return new(label, FlowState.GaveUp, Note: $"gave up ×{row.GaveUpStrikes}");
+            return new(
+                label,
+                FlowState.GaveUp,
+                Note: row.GaveUpFor ?? $"gave up ×{row.GaveUpStrikes}"
+            );
 
         if (Parked(row) is { } parkedAt && stages.Contains(parkedAt))
             return new(label, FlowState.Parked, Note: "parked");

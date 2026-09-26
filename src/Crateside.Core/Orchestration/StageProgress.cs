@@ -15,6 +15,9 @@ public sealed record StageProgress
 
     public int GaveUpStrikes { get; init; }
 
+    /// <summary>Why no retry can help, where that is known; null when the strikes simply ran out.</summary>
+    public string? GaveUpFor { get; init; }
+
     /// <summary>A stage whose latest attempt failed with strikes left, so it is owed another.</summary>
     public StageFailure? Retrying { get; init; }
 
@@ -32,6 +35,7 @@ public sealed record StageProgress
         DateTimeOffset? runningSince = null;
         JobStage? gaveUpAt = null;
         var gaveUpStrikes = 0;
+        string? gaveUpFor = null;
         StageFailure? retrying = null;
 
         foreach (var stage in Stages)
@@ -53,13 +57,11 @@ public sealed record StageProgress
 
             // Cancelled never counts, whatever the strikes say — a track put back in line by
             // hand has not given up.
-            if (
-                job is { Status: JobStatus.Failed, Strikes: var strikes }
-                && strikes >= StageEligibility.MaxStrikesFor(stage)
-            )
+            if (StageEligibility.HasGivenUp(job))
             {
                 gaveUpAt = stage;
-                gaveUpStrikes = strikes;
+                gaveUpStrikes = job.Strikes;
+                gaveUpFor = StageEligibility.IsPermanent(job, out var why) ? why : null;
             }
         }
 
@@ -69,6 +71,7 @@ public sealed record StageProgress
             RunningSince = runningSince,
             GaveUpAt = gaveUpAt,
             GaveUpStrikes = gaveUpStrikes,
+            GaveUpFor = gaveUpFor,
             Retrying = retrying,
         };
     }

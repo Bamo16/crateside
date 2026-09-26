@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
@@ -27,9 +29,23 @@ public static class StageEligibility
         job.Status switch
         {
             JobStatus.Cancelled or JobStatus.Queued or JobStatus.Running => true,
-            JobStatus.Failed => job.Strikes < MaxStrikesFor(job.Stage),
+            JobStatus.Failed => !HasGivenUp(job),
             _ => false,
         };
+
+    /// <summary>Failed for the last time: out of strikes, or failed in a way no retry can fix.</summary>
+    public static bool HasGivenUp(TrackJob job) =>
+        job is { Status: JobStatus.Failed }
+        && (job.Strikes >= MaxStrikesFor(job.Stage) || IsPermanent(job, out _));
+
+    /// <summary>Only a download can fail for good: YouTube will not serve that upload (#63).</summary>
+    public static bool IsPermanent(TrackJob job, [NotNullWhen(true)] out string? reason)
+    {
+        reason = null;
+
+        return job is { Status: JobStatus.Failed, Stage: JobStage.Download }
+            && DownloadFailure.IsPermanent(job.Error, out reason);
+    }
 
     public static bool Owes(JobStore jobs, string videoId, JobStage stage) =>
         jobs.TryGet(videoId, stage, out var job) && IsOwed(job);
@@ -54,6 +70,6 @@ public static class StageEligibility
             JobStatus.Queued or JobStatus.Running => false,
             // Cancelling is the user's call, not the track's fault, so it is simply next again.
             JobStatus.Cancelled => true,
-            _ => job.Strikes < maxStrikes,
+            _ => job.Strikes < maxStrikes && !IsPermanent(job, out _),
         };
 }

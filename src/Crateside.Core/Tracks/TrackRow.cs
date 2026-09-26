@@ -127,6 +127,9 @@ public sealed record TrackRow
     /// <summary>How many times <see cref="GaveUpAt"/> failed before it stopped trying.</summary>
     public int GaveUpStrikes { get; init; }
 
+    /// <summary>Why no retry can help, such as <c>upload unavailable</c>; null when the strikes simply ran out.</summary>
+    public string? GaveUpFor { get; init; }
+
     public StageFailure? Retrying { get; init; }
 
     /// <summary>Samples of this song crateside sent to the recycle bin, most recent first.</summary>
@@ -282,8 +285,9 @@ public sealed record TrackRow
             TrackState.Parked => ParkedFor is ParkReason.PremiumShortfall
                 ? "parked · poor audio"
                 : "parked · no key",
-            TrackState.GaveUp =>
-                $"gave up · {GaveUpAt?.ToString().ToLowerInvariant()} ×{GaveUpStrikes}",
+            TrackState.GaveUp => GaveUpFor is { } why
+                ? $"gave up · {why}"
+                : $"gave up · {GaveUpAt?.ToString().ToLowerInvariant()} ×{GaveUpStrikes}",
             TrackState.Done => "done",
             _ => string.Empty,
         };
@@ -340,7 +344,7 @@ public sealed record TrackRow
     public string Detail =>
         string.Join(
             " ",
-            new[] { Judgement, PremiumShortfall, Disagreement, Since }.OfType<string>()
+            new[] { Judgement, Unfetchable, PremiumShortfall, Disagreement, Since }.OfType<string>()
         );
 
     /// <summary>Said while a stage is owed another attempt; its error is too long to inline.</summary>
@@ -367,6 +371,16 @@ public sealed record TrackRow
     /// </summary>
     private string? Disagreement =>
         AuditNote is null ? null : "Ableton's key on these files is not the current verdict.";
+
+    private string? Unfetchable =>
+        GaveUpFor is { } why
+            ? $"YouTube will not serve this upload ({why}), so retrying will not help."
+                + (
+                    IsLibraryOnly
+                        ? " It cannot be judged from this upload."
+                        : " Swap source can point it at another upload."
+                )
+            : null;
 
     private string? Since => StagedSince is { } staged ? $"Staged {staged.Humanize()}." : null;
 

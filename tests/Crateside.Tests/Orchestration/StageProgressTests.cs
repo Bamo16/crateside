@@ -97,6 +97,24 @@ public class StageProgressTests : IDisposable
     }
 
     [Fact]
+    public void An_upload_youtube_will_never_serve_gives_up_at_once_saying_why()
+    {
+        var jobs = Store();
+        jobs.Record(
+            Video,
+            JobStage.Download,
+            JobStatus.Failed,
+            error: "ERROR: [youtube] aaaaaaaaaaa: Video unavailable. This video is not available"
+        );
+
+        var progress = StageProgress.For(jobs, Video);
+
+        Assert.Equal(JobStage.Download, progress.GaveUpAt);
+        Assert.Equal("upload unavailable", progress.GaveUpFor);
+        Assert.Null(progress.Retrying);
+    }
+
+    [Fact]
     public void Evidence_is_allowed_more_tries_than_the_rest()
     {
         var jobs = Store();

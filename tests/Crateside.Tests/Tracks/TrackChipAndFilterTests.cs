@@ -98,6 +98,21 @@ public class TrackChipAndFilterTests
     }
 
     [Fact]
+    public void An_upload_that_can_never_be_fetched_says_why_instead_of_counting()
+    {
+        var row = Base with
+        {
+            GaveUpAt = JobStage.Download,
+            GaveUpStrikes = 1,
+            GaveUpFor = "upload unavailable",
+            IsLibraryOnly = true,
+        };
+
+        Assert.Equal("gave up · upload unavailable", row.ChipLabel);
+        Assert.Contains("It cannot be judged from this upload.", row.Detail);
+    }
+
+    [Fact]
     public void Only_work_happening_this_second_carries_a_dot()
     {
         Assert.True(Row(TrackState.Separating).ChipHasDot);

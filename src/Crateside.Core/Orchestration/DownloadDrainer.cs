@@ -13,10 +13,13 @@ public sealed class DownloadSelector(
     JobStore jobs,
     WorkingSet workingSet,
     CratesidePaths paths,
-    int maxStrikes = DownloadSelector.DefaultMaxStrikes
+    int maxStrikes = DownloadSelector.DefaultMaxStrikes,
+    TimeProvider? time = null
 )
 {
     public const int DefaultMaxStrikes = 5;
+
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
 
     /// <summary>Picks audio last, since its list refills from the playlist and would starve the others.</summary>
     public bool TryPickNext(QueueView view, out WantedDownload next)
@@ -126,9 +129,25 @@ public sealed class DownloadSelector(
             .SelectMany(root => Directory.EnumerateFiles(root, pattern))
             .Any();
 
+    /// <summary>How long a failed download waits before it is tried again, after this many strikes.</summary>
+    public static TimeSpan Backoff(int strikes) =>
+        strikes switch
+        {
+            <= 1 => TimeSpan.FromMinutes(1),
+            2 => TimeSpan.FromMinutes(5),
+            3 => TimeSpan.FromMinutes(30),
+            _ => TimeSpan.FromHours(2),
+        };
+
     /// <summary>Retries even a succeeded download, since every caller has already found its file gone.</summary>
     private bool IsEligible(string videoId) =>
-        StageEligibility.Allows(jobs, videoId, JobStage.Download, maxStrikes, retrySucceeded: true);
+        StageEligibility.Allows(jobs, videoId, JobStage.Download, maxStrikes, retrySucceeded: true)
+        && !IsWaitingOut(videoId);
+
+    private bool IsWaitingOut(string videoId) =>
+        jobs.TryGet(videoId, JobStage.Download, out var job)
+        && job is { Status: JobStatus.Failed, Strikes: var strikes }
+        && _time.GetUtcNow() < job.UpdatedAt + Backoff(strikes);
 
     /// <summary>
     /// The audio is absent because the janitor took it after separation succeeded, not because it

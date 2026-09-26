@@ -253,6 +253,7 @@ public sealed record TracksView
                     ) ?? [],
                 GaveUpAt = progress.GaveUpAt,
                 GaveUpStrikes = progress.GaveUpStrikes,
+                GaveUpFor = progress.GaveUpFor,
                 Retrying = progress.Retrying,
                 Samples =
                 [
