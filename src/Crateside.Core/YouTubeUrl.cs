@@ -50,7 +50,7 @@ public static partial class YouTubeUrl
 
     [GeneratedRegex(
         @"^(?:(?:(?:https?:\/\/)?(?:(?:www|music|m)\.)?)?(?:youtube\.com|youtu\.be)(?:\S*?(?:\?v=|\/)))?(?<VideoId>[0-9A-Za-z_-]{11})(?:[&?].*)?$",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled
+        RegexOptions.IgnoreCase
     )]
     private static partial Regex VideoIdPattern { get; }
 }

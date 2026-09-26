@@ -133,7 +133,7 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
     {
         if (
             string.IsNullOrWhiteSpace(input)
-            || KeyPattern().Match(input.Trim()) is not { Success: true, Groups: var groups }
+            || KeyPattern.Match(input.Trim()) is not { Success: true, Groups: var groups }
         )
         {
             return null;
@@ -206,7 +206,7 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
             )
         $
         ",
-        RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnorePatternWhitespace
+        RegexOptions.ExplicitCapture | RegexOptions.IgnorePatternWhitespace
     )]
-    private static partial Regex KeyPattern();
+    private static partial Regex KeyPattern { get; }
 }
