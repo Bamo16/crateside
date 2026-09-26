@@ -291,6 +291,7 @@ public sealed record TrackRow
             TrackState.Staging => "staging",
             TrackState.Tagging => "tagging",
             TrackState.ReadyToWarp => "ready to warp",
+            TrackState.ReadyToMove => "ready to move",
             TrackState.Short => $"short · {"file".ToQuantity(Shortfall.Presets.Count)} missing",
             TrackState.Parked => ParkedFor is ParkReason.PremiumShortfall
                 ? "parked · poor audio"
@@ -313,7 +314,7 @@ public sealed record TrackRow
             or TrackState.Staging
             or TrackState.Tagging => TrackChipStyle.TealFilled,
             TrackState.JudgedInLine => TrackChipStyle.TealOutline,
-            TrackState.ReadyToWarp => TrackChipStyle.AmberFilled,
+            TrackState.ReadyToWarp or TrackState.ReadyToMove => TrackChipStyle.AmberFilled,
             TrackState.Parked or TrackState.Short => TrackChipStyle.RedOutline,
             TrackState.Queued when Lookalike is not null => TrackChipStyle.RedOutline,
             TrackState.GaveUp => TrackChipStyle.RedFilled,
@@ -340,7 +341,12 @@ public sealed record TrackRow
             TrackState.Separating => "then staging",
             TrackState.Staging => "moving stems into Sample Staging",
             TrackState.Tagging => "writing Ableton key tags",
-            TrackState.ReadyToWarp => "your turn — warp, then move to Mashup Samples",
+            TrackState.ReadyToWarp => Warped is 0
+                ? "your turn — warp, then move to Mashup Samples"
+                : $"your turn — {Warped} of {Staged} warped, then move to Mashup Samples",
+            TrackState.ReadyToMove => HasWarpGuide
+                ? "warped — delete the warp guide, then move to Mashup Samples"
+                : "warped — move to Mashup Samples",
             TrackState.Parked => ParkedFor is ParkReason.PremiumShortfall
                 ? "check for a better upload, or use this one anyway"
                 : "needs a better verdict — nothing automatic will move it",
@@ -426,11 +432,18 @@ public sealed record TrackRow
         Samples switch
         {
             // A moved sample counts as tagged too — crateside never re-tags in Mashup Samples.
-            { Count: > 0 } when Samples.All(s => s.IsInLibrary || s.IsKeyTagged) =>
-                TrackState.ReadyToWarp,
-            { Count: > 0 } => TrackState.Tagging,
+            { Count: > 0 } when !Samples.All(s => s.IsInLibrary || s.IsKeyTagged) =>
+                TrackState.Tagging,
+            { Count: > 0 } when Samples.All(s => s.IsInLibrary || s.HasDefaultClip) =>
+                TrackState.ReadyToMove,
+            { Count: > 0 } => TrackState.ReadyToWarp,
             _ => TrackState.Queued,
         };
+
+    private int Staged => Samples.Count(sample => !sample.IsInLibrary);
+
+    private int Warped =>
+        Samples.Count(sample => sample is { IsInLibrary: false, HasDefaultClip: true });
 
     private string InLine =>
         Recipe.Passes is 0 ? "copying the source — no GPU needed"
@@ -489,11 +502,14 @@ public sealed record TrackSample
     /// <summary>Whether it was downloaded as premium audio. Null when the file does not say.</summary>
     public bool? IsPremium { get; init; }
 
-    /// <summary>
-    /// Whether this sample has reached <c>Mashup Samples</c>; warping is inferred from that, never
-    /// from an <c>.asd</c> sidecar (ADR 0002).
-    /// </summary>
+    /// <summary>Whether this sample has reached <c>Mashup Samples</c>, which is what says it is done.</summary>
     public bool IsInLibrary { get; init; }
+
+    /// <summary>
+    /// Its default clip is saved, which only a finished warp gets. Read for staged samples only
+    /// (ADR 0037).
+    /// </summary>
+    public bool HasDefaultClip { get; init; }
 
     /// <summary>
     /// The upload this file was cut from. A song that has been source-swapped holds samples from

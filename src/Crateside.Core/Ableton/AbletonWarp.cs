@@ -6,7 +6,8 @@ public sealed record AbletonWarp(
     WarpMode Mode,
     int TimeSignatureNumerator,
     int TimeSignatureDenominator,
-    IReadOnlyList<WarpMarker> Markers
+    IReadOnlyList<WarpMarker> Markers,
+    DefaultClip? DefaultClip = null
 )
 {
     /// <summary>The tempo of the segment <paramref name="seconds"/> falls in.</summary>
@@ -29,6 +30,12 @@ public sealed record AbletonWarp(
         return span > 0 ? (to.Beat - from.Beat) / span * 60 : null;
     }
 }
+
+/// <summary>
+/// The range Ableton pulls in when the sample is dragged out, in beats; null until the user
+/// presses <em>Save Default Clip</em>, which is also what writes the markers.
+/// </summary>
+public sealed record DefaultClip(double Start, double End);
 
 /// <summary>A point pinning the audio to the grid; a tempo exists only between two of them.</summary>
 /// <param name="Seconds">Position in the audio file.</param>

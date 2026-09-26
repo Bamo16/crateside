@@ -96,6 +96,7 @@ public sealed record StageFlow(int Pass, string Reason, IReadOnlyList<FlowStep> 
         row.State switch
         {
             TrackState.ReadyToWarp => new("Warp", FlowState.YourTurn),
+            TrackState.ReadyToMove => new("Warp", FlowState.Done, Note: "ready to move"),
             TrackState.Done => new("Warp", FlowState.Done),
             _ => new("Warp", FlowState.NotYet),
         };

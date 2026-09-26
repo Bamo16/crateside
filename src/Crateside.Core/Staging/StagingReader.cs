@@ -105,6 +105,9 @@ public sealed class StagingReader
                 : null,
             AbletonKey = abletonKey,
             HasPartialKey = abletonTags?.HasPartialKey ?? false,
+            HasDefaultClip =
+                AbletonWarpReader.TryRead($"{path}.asd", out var warp)
+                && warp is { DefaultClip: not null },
             KeyDisagreesWithVerdict =
                 abletonKey is not null
                 && verdict?.Key is { } verdictKey

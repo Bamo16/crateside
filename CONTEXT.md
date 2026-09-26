@@ -77,7 +77,9 @@ against it.
   ([ADR 0002](docs/adr/0002-there-is-no-warped-signal.md)); its **warp markers** are what
   describe the warp. Ableton writes the markers, and the **default clip**, only when *Save
   Default Clip* is pressed, so a sidecar with markers is a finished warp and one without is
-  unwarped or still in progress ([note](docs/notes/2026-09-26-what-the-sidecar-records.md)).
+  unwarped or still in progress ([ADR 0037](docs/adr/0037-a-saved-default-clip-is-a-finished-warp.md)).
+- **Ready to move** — a track whose staged samples all have their default clip saved: warped, with
+  only the move to **Mashup Samples** left.
 
 ## Tags
 

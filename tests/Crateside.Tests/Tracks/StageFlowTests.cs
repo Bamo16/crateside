@@ -107,4 +107,31 @@ public class StageFlowTests
         Assert.Equal(FlowState.GaveUp, flow.Steps[4].State);
         Assert.Equal("gave up ×3", flow.Steps[4].Note);
     }
+
+    [Theory]
+    [InlineData(false, FlowState.YourTurn, null)]
+    [InlineData(true, FlowState.Done, "ready to move")]
+    public void The_warp_step_is_done_once_every_staged_sample_has_its_default_clip(
+        bool saved,
+        FlowState expected,
+        string? note
+    )
+    {
+        var row = Row with
+        {
+            Samples =
+            [
+                new TrackSample
+                {
+                    Label = "Vocal - Full",
+                    AbletonKey = "C minor",
+                    HasDefaultClip = saved,
+                },
+            ],
+        };
+
+        var warp = StageFlow.For(row, Succeeded(), []).Steps[^1];
+
+        Assert.Equal(new FlowStep("Warp", expected, note), warp);
+    }
 }

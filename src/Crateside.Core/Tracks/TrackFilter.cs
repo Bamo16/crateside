@@ -47,7 +47,7 @@ public static class TrackFilters
         filter switch
         {
             TrackFilter.Unfinished => row.State is not TrackState.Done,
-            TrackFilter.InStaging => row.State is TrackState.ReadyToWarp,
+            TrackFilter.InStaging => row.State is TrackState.ReadyToWarp or TrackState.ReadyToMove,
             TrackFilter.InFlight => row.State
                 is TrackState.Queued
                     or TrackState.Downloading

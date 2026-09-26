@@ -35,6 +35,11 @@ public enum TrackState
     ReadyToWarp,
 
     /// <summary>
+    /// Every staged sample has its default clip saved, so warping is finished and the move is next.
+    /// </summary>
+    ReadyToMove,
+
+    /// <summary>
     /// Every sample has reached <c>Mashup Samples</c>: warped, tagged, and in the finished library.
     /// </summary>
     Done,

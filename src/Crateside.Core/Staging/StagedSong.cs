@@ -98,6 +98,9 @@ public sealed record StagedFile
 
     public bool IsKeyTagged => AbletonKey is not null;
 
+    /// <summary>Its sidecar holds a saved default clip, so the warp is finished (ADR 0037).</summary>
+    public bool HasDefaultClip { get; init; }
+
     /// <summary>
     /// True when Ableton's key and the ledger's current verdict are both present and differ.
     /// </summary>

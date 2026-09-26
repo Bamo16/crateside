@@ -24,6 +24,18 @@ public class TrackOrderTests
             {
                 Samples = [new TrackSample { Label = "Vocal - Full", AbletonKey = "C minor" }],
             },
+            TrackState.ReadyToMove => Base(title) with
+            {
+                Samples =
+                [
+                    new TrackSample
+                    {
+                        Label = "Vocal - Full",
+                        AbletonKey = "C minor",
+                        HasDefaultClip = true,
+                    },
+                ],
+            },
             TrackState.Done => Base(title) with
             {
                 Samples = [new TrackSample { Label = "Vocal - Full", IsInLibrary = true }],
@@ -46,6 +58,19 @@ public class TrackOrderTests
                 Row("warp", TrackState.ReadyToWarp),
                 Row("working", TrackState.Separating),
                 Row("parked", TrackState.Parked)
+            )
+        );
+    }
+
+    [Fact]
+    public void Ready_to_move_sits_with_the_warping_by_name()
+    {
+        Assert.Equal(
+            ["apple", "banana", "cherry"],
+            Ordered(
+                Row("cherry", TrackState.ReadyToWarp),
+                Row("apple", TrackState.ReadyToMove),
+                Row("banana", TrackState.ReadyToWarp)
             )
         );
     }

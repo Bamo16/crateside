@@ -17,12 +17,18 @@ public class TrackStateResolutionTests
             Title = "Track one",
         };
 
-    private static TrackSample Sample(string label, bool tagged = true, bool moved = false) =>
+    private static TrackSample Sample(
+        string label,
+        bool tagged = true,
+        bool moved = false,
+        bool warped = false
+    ) =>
         new()
         {
             Label = label,
             AbletonKey = tagged ? "C minor" : null,
             IsInLibrary = moved,
+            HasDefaultClip = warped,
         };
 
     [Fact]
@@ -63,6 +69,70 @@ public class TrackStateResolutionTests
 
         Assert.Equal(TrackState.ReadyToWarp, row.State);
         Assert.Equal("your turn — warp, then move to Mashup Samples", row.Next);
+    }
+
+    [Fact]
+    public void A_track_whose_staged_samples_all_have_a_saved_default_clip_is_ready_to_move()
+    {
+        var row = Row() with
+        {
+            Samples =
+            [
+                Sample("Vocal - Full", warped: true),
+                Sample("Instrumental - Full", warped: true),
+            ],
+        };
+
+        Assert.Equal(TrackState.ReadyToMove, row.State);
+        Assert.Equal("warped — move to Mashup Samples", row.Next);
+    }
+
+    [Fact]
+    public void Ready_to_move_with_the_warp_guide_still_there_says_to_delete_it()
+    {
+        var row = Row() with
+        {
+            Samples = [Sample("Vocal - Full", warped: true)],
+            HasWarpGuide = true,
+        };
+
+        Assert.Equal(TrackState.ReadyToMove, row.State);
+        Assert.Equal("warped — delete the warp guide, then move to Mashup Samples", row.Next);
+    }
+
+    [Fact]
+    public void A_sample_already_moved_does_not_hold_back_ready_to_move()
+    {
+        var row = Row() with
+        {
+            Samples =
+            [
+                Sample("Vocal - Full", moved: true),
+                Sample("Instrumental - Full", warped: true),
+            ],
+        };
+
+        Assert.Equal(TrackState.ReadyToMove, row.State);
+    }
+
+    [Fact]
+    public void A_track_part_way_through_warping_says_how_far()
+    {
+        var row = Row() with
+        {
+            Samples = [Sample("Vocal - Full", warped: true), Sample("Instrumental - Full")],
+        };
+
+        Assert.Equal(TrackState.ReadyToWarp, row.State);
+        Assert.Equal("your turn — 1 of 2 warped, then move to Mashup Samples", row.Next);
+    }
+
+    [Fact]
+    public void A_saved_default_clip_does_not_skip_tagging()
+    {
+        var row = Row() with { Samples = [Sample("Vocal - Full", tagged: false, warped: true)] };
+
+        Assert.Equal(TrackState.Tagging, row.State);
     }
 
     [Fact]

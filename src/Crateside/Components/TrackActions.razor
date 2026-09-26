@@ -196,7 +196,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
     private static string NextTone(TrackRow row) =>
         row.State switch
         {
-            TrackState.ReadyToWarp => "amber",
+            TrackState.ReadyToWarp or TrackState.ReadyToMove => "amber",
             TrackState.Parked or TrackState.GaveUp or TrackState.Short => "attention",
             _ => string.Empty,
         };

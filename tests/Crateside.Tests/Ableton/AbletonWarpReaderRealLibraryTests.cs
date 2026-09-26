@@ -20,6 +20,30 @@ public class AbletonWarpReaderRealLibraryTests
     }
 
     [Fact]
+    public void A_saved_default_clip_and_warp_markers_come_together()
+    {
+        var disagreeing = Sidecars()
+            .Select(file => (File: Path.GetFileName(file), Warp: Read(file)))
+            .Where(s => s.Warp.DefaultClip is null == s.Warp.Markers.Count > 0)
+            .Select(s => s.File)
+            .ToList();
+
+        Assert.Empty(disagreeing);
+    }
+
+    [Fact]
+    public void A_saved_default_clip_ends_after_it_starts()
+    {
+        var backwards = Sidecars()
+            .Select(file => (File: Path.GetFileName(file), Warp: Read(file)))
+            .Where(s => s is { Warp.DefaultClip: { } clip } && clip.End <= clip.Start)
+            .Select(s => s.File)
+            .ToList();
+
+        Assert.Empty(backwards);
+    }
+
+    [Fact]
     public void Markers_advance_in_both_seconds_and_beats()
     {
         var outOfOrder = Sidecars()

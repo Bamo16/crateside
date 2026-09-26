@@ -6,3 +6,5 @@
 *.png binary
 *.ico binary
 *.zip binary
+*.asd binary
+*.flac binary

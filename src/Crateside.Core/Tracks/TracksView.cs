@@ -317,7 +317,7 @@ public sealed record TracksView
             or { AuditNote: not null }
             or { Lookalike: not null }
             or { AwaitingRename: > 0 } => 0,
-            { State: TrackState.ReadyToWarp } => 2,
+            { State: TrackState.ReadyToWarp or TrackState.ReadyToMove } => 2,
             { State: TrackState.Done } => 3,
             _ => 1,
         };
@@ -392,6 +392,7 @@ public sealed record TracksView
                 Sample(StemOnDisk.Of(sample), catalog, sourceVideoId) with
                 {
                     AbletonKey = sample.AbletonKey,
+                    HasDefaultClip = sample.HasDefaultClip,
                 }
             )
                 ?? [],

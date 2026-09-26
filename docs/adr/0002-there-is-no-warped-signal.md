@@ -1,6 +1,6 @@
 # 0002 — there is no reliable "warped" signal, so the board does not claim one
 
-- Status: Accepted
+- Status: Accepted; the decision superseded by [ADR 0037](0037-a-saved-default-clip-is-a-finished-warp.md) on 2026-09-26
 - Date: 2026-08-12 (recorded 2026-08-14, distilled from the first-build handoff)
 
 ## Context

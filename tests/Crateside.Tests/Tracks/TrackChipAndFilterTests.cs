@@ -22,6 +22,18 @@ public class TrackChipAndFilterTests
             {
                 Samples = [new TrackSample { Label = "Vocal - Full", AbletonKey = "C minor" }],
             },
+            TrackState.ReadyToMove => Base with
+            {
+                Samples =
+                [
+                    new TrackSample
+                    {
+                        Label = "Vocal - Full",
+                        AbletonKey = "C minor",
+                        HasDefaultClip = true,
+                    },
+                ],
+            },
             TrackState.Parked => Base with { ParkedFor = ParkReason.NoKey },
             TrackState.GaveUp => Base with { GaveUpAt = JobStage.Separation, GaveUpStrikes = 3 },
             TrackState.Done => Base with
@@ -75,6 +87,7 @@ public class TrackChipAndFilterTests
     [InlineData(TrackState.Staging, "staging", TrackChipStyle.TealFilled)]
     [InlineData(TrackState.Tagging, "tagging", TrackChipStyle.TealFilled)]
     [InlineData(TrackState.ReadyToWarp, "ready to warp", TrackChipStyle.AmberFilled)]
+    [InlineData(TrackState.ReadyToMove, "ready to move", TrackChipStyle.AmberFilled)]
     [InlineData(TrackState.Parked, "parked · no key", TrackChipStyle.RedOutline)]
     [InlineData(TrackState.Done, "done", TrackChipStyle.GreenOutline)]
     public void The_chip_says_what_the_copy_table_says(
@@ -128,6 +141,7 @@ public class TrackChipAndFilterTests
     [InlineData(TrackState.JudgedInLine, TrackFilter.InFlight)]
     [InlineData(TrackState.Tagging, TrackFilter.InFlight)]
     [InlineData(TrackState.ReadyToWarp, TrackFilter.InStaging)]
+    [InlineData(TrackState.ReadyToMove, TrackFilter.InStaging)]
     [InlineData(TrackState.Parked, TrackFilter.NeedsAttention)]
     [InlineData(TrackState.GaveUp, TrackFilter.NeedsAttention)]
     public void Every_unfinished_state_lands_in_exactly_one_named_view(

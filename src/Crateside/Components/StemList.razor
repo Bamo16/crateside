@@ -116,7 +116,7 @@
                     </span>
                     <span class="mono stem-tag @TagTone(sample)">@Tag(sample)</span>
                     <span class="mono stem-where @(sample.IsInLibrary ? "good" : null)">
-                        @(sample.IsInLibrary ? "Mashup Samples" : "Sample Staging")
+                        @Where(sample)
                     </span>
                     <span class="stem-note">
                         @if (Row.HasSeveralUploads)
@@ -282,6 +282,14 @@ else
         row.Folder is { } folder
             ? $"Stems · {Path.GetFileName(folder)} / {row.Title}"
             : $"Stems · {row.Title}";
+
+    private static string Where(TrackSample sample) =>
+        sample switch
+        {
+            { IsInLibrary: true } => "Mashup Samples",
+            { HasDefaultClip: true } => "Sample Staging · warped",
+            _ => "Sample Staging",
+        };
 
     // The key Ableton holds, never the verdict's — on a row where they disagree, the verdict
     // with a tick beside it would say the opposite of what is true.
