@@ -12,11 +12,23 @@ Open any `.dc.html` in a browser. They need `support.js` beside them. Each is a 
 | file | turns | status |
 |---|---|---|
 | `Crateside Unified Page.dc.html` | 1 · Tracks page · 2 · re-cut and rename · 3 · stem selection, uploads, add track (#22) | 1–2 built, with divergences recorded in the recut brief. 3: check against code. |
-| `Crateside Track Page.dc.html` | 1 · Track details, all states · 2 · actions, stage flow, embed, genre, activity log (#21) | **new**, not built. Turn 2 supersedes turn 1 where they differ. |
+| `Crateside Track Page.dc.html` | 1 · Track details, all states · 2 · actions, stage flow, embed, genre, activity log (#21) | Built (#21), with differences in `DESIGN.md`. Turn 2 supersedes turn 1 where they differ; the rail's actions and tags are superseded by the Actions Layout canvas. |
+| `Crateside Actions Layout.dc.html` | 1 · where a track's actions live, row and Track details (1a–1g, #62) | Built (#62), with differences in `DESIGN.md`. Handoff 06. |
 | `Crateside Brand.dc.html` | 1 · five marks · 2 · fifteen more | **1a chosen** (interim). The rest are kept in case the brand is revisited. |
 
 ### `handoffs/`: what was sent to the implementing agent each time
 The written spec for each canvas turn, in the order it was sent. The later ones assume the earlier ones are built.
+
+| handoff | canvas | issue |
+|---|---|---|
+| `01-tracks-page.md` | Unified Page, turn 1 | |
+| `02-recut-and-rename.md` | Unified Page, turn 2 | |
+| `03-stem-selection-issue-22.md` | Unified Page, turn 3 | #22 |
+| `04-brand.md` | Brand | |
+| `05-song-page-issue-21.md` | Track Page | #21 |
+| `06-actions-layout.md` | Actions Layout | #62 |
+| `06b-workflow-fixes.md` | none: a review of this workflow | |
+| `06c-link-delivery.md` | none: results delivered by link | |
 
 ### `brand/`: the 1a assets
 `mark.svg` (header), `favicon.svg` plus PNG fallbacks (browser tab), `lockup.svg` (README), `mark-tile.svg` (app icon). Usage rules are in `handoffs/04-brand.md`.

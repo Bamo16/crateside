@@ -57,6 +57,32 @@ wins where it sets one; Settings does, for its buttons.
 The sample list and picker are `StemList` and `StemConfirm`, both driven by one `StemEditor`, and
 are mounted by the Tracks row and by Track details.
 
+## Side stack
+
+The Tracks row's right column (340px) and Track details' rail (19rem) are one component,
+`SideStack`, so the order cannot drift between them (handoff 06):
+
+**Confirm** (`StemConfirm`, only while a tick has moved) → **Go** (Open folder · Track details) →
+**Next** (the row's sentence, then Retry / Cut what is missing / Work this first) → **Tags** (genre,
+familiarity) → **Name** → **Uploads** (rail only) → a stronger rule → **Start over** (Source, then
+Remove). A group with nothing to show is not drawn. Findings stay full width above it.
+
+- **Status + action.** A label line (label left, one or two buttons right), then the value, then
+  the status as prose. A button never sits inside a sentence.
+- **Tags.** Settled is one line with **Change**; unsettled, or Change pressed, shows every chip, and a
+  pick folds it again. Not looked up yet is one quiet line with no button. Familiarity counts a
+  derived value as settled, since it is what gets written.
+- **Destructive.** Set apart by position and the stronger rule, not colour. Buttons stay `.outline`
+  until the confirm step, which is `.danger`. Remove's confirm opens below its button.
+- **Editors.** Rename and swap replace their group's body; the label turns amber and the groups
+  below dim (45%) and go `inert`. The whole stack does the same under StemConfirm.
+- **Parameters.** `TrackActions Part="Go|Queue|Remove"` with `ShowDetailsLink` and
+  `ShowNextSentence`; `TrackEdits Part="Name|Source"`, sharing one `TrackEditing` so only one editor
+  is open across both mounts. `SideStack OnTrackDetails` sets both flags and `Uploads` draws that
+  group.
+- The stack's vocabulary (`.group`, `.label-line`, `.stack-label`, `.stack-value`,
+  `.stack-status`) is styled once, in `SideStack.razor.css` through `::deep`.
+
 ## Page headers
 
 `PageHeader` has three shapes, a closed set: **Bar**, **Flush**, **Shade**. A new page picks one.
@@ -78,13 +104,16 @@ One width cap per table shape: `--table-partners` 50rem, `--table-library` 56rem
 
 Where the build departs from a canvas, by page. Clear an entry once a later design supersedes it.
 
+### Tracks row and Track details (handoff 06, #62)
+
+- **StemList's acts are unchanged**: *Change what is cut* is still the full-width dashed opener
+  under the list, and *Add a source* / *Adopt a file* still appear only inside the picker. The
+  canvas puts all three on a "Samples" label line.
+- **Next keeps its colours**: the sentence is amber when ready to warp and full white when
+  stopped, as before, where the canvas draws it in plain prose.
+
 ### Track details (handoff 05, #21)
 
-- **Rename and swap sit in the rail under Change**, stacked, not in a strip above the band. Brief 06
-  (#62) is redesigning where actions live.
-- **Genre in the rail is the row's full strip** (every genre as a button), not the amber suggestion
-  box with *Use {genre}* / *Pick another*. A **Familiarity** strip sits under it (#52), which the
-  canvas predates.
 - **Upload players show no still.** A still would be fetched from YouTube, so the box stays blank
   until pressed.
 - **Stage chips are all coloured by state** (done green, running teal, your turn amber, stopped red),

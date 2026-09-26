@@ -1,83 +1,30 @@
-/* Spans both panel columns, above everything: what the track is called and what it is cut from
-   are the two things every state of a track has.
-
-   Side by side rather than stacked. They are two rarely-used controls, a swap especially, and
-   stacked they took a large share of the panel for what is usually just two lines of status
-   (#19). Stacked where there is no room for two, as in Track details' rail. */
-.edits {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
-    gap: 0 32px;
-    margin-bottom: 6px;
-}
-
-.name-strip {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 12px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-/* The one being edited takes the whole row and the other keeps its place below, so the box has
-   room without the panel growing by a second one. Only ever one at a time — opening either
-   closes the other. */
-.name-strip.editing {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
-    align-items: start;
-    gap: 32px;
-}
-
-/* Left-aligned and not pushed to the far edge: the offer belongs beside the name it is about,
-   which is in the column directly above it. */
-.name-from {
-    font-size: 12px;
-    color: var(--text-50);
-}
-
-.name-from strong {
-    font-weight: 500;
-    color: var(--text-75);
-}
-
-.name-input {
+.edit-input {
     width: 100%;
+    box-sizing: border-box;
     font: inherit;
-    font-size: 15px;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--raised);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    padding: 7px 10px;
+}
+
+.edit-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-60);
+}
+
+.edit-note strong {
     font-weight: 500;
     color: var(--text);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 6px;
-    padding: 8px 12px;
 }
 
-.name-note {
-    margin: 6px 0 0;
-    font-size: 12px;
-    color: var(--text-50);
-}
-
-.name-side {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.detail {
-    margin: 0;
-    font-size: 12.5px;
-    line-height: 1.5;
+.url {
     color: var(--text-75);
-}
-
-.actions .confirm {
-    font-size: 12px;
-    color: var(--text-75);
+    overflow-wrap: anywhere;
 }
 
 .problem {

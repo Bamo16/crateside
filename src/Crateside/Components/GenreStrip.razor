@@ -5,8 +5,8 @@
 @inject TracksService Tracks
 @inject ActionLog Actions
 
-<ChoiceStrip Label="Genre" Choices="Choices" Note="@Heard(Row.Genre)" Disabled="_working"
-             OnChoose="SettleGenre" />
+<ChoiceStrip Label="Genre" Choices="Choices" Value="@Settled(Row.Genre)" Quiet="IsQuiet(Row.Genre)"
+             Note="@Heard(Row.Genre)" Disabled="_working" OnChoose="SettleGenre" />
 
 @code {
     private bool _working;
@@ -27,6 +27,12 @@
             { IsSettled: false, Suggested: { } suggested } when suggested == genre => "suggested",
             _ => null,
         };
+
+    private static string? Settled(GenreRecord? record) =>
+        record is { IsSettled: true } ? record.Genre ?? "none of these" : null;
+
+    private static bool IsQuiet(GenreRecord? record) =>
+        record is null or { IsSettled: false, LookedUpAt: null };
 
     private static string Heard(GenreRecord? record) =>
         record switch

@@ -5,8 +5,9 @@
 @inject TracksService Tracks
 @inject ActionLog Actions
 
-<ChoiceStrip Label="Familiarity" Choices="Choices" Note="@Note(Row.Familiarity)" Disabled="_working"
-             OnChoose="Settle" />
+<ChoiceStrip Label="Familiarity" Choices="Choices" Value="@Row.Familiarity?.Written"
+             Quiet="Row.Familiarity is null or { Written: null, LookedUpAt: null }"
+             Note="@Note(Row.Familiarity)" Disabled="_working" OnChoose="Settle" />
 
 @code {
     private bool _working;

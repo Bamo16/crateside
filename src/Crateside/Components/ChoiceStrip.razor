@@ -1,20 +1,57 @@
-<div class="choice-strip">
-    <span class="choice-label">@Label</span>
-    @foreach (var choice in Choices)
+@if (Quiet)
+{
+    <div class="tag-line">
+        <span class="tag-label">@Label</span>
+        <span class="tag-value quiet">@Note</span>
+    </div>
+}
+else if (Value is { } value && !_changing)
+{
+    <div class="tag-line">
+        <span class="tag-label">@Label</span>
+        <span class="tag-value">@value</span>
+        <button class="outline" disabled="@Disabled" @onclick="() => _changing = true">Change</button>
+    </div>
+    @if (Note is { Length: > 0 } note)
     {
-        <button class="choice @choice.Tone" disabled="@Disabled" @onclick="() => OnChoose.InvokeAsync(choice.Value)">
-            @choice.Text
-        </button>
+        <span class="tag-detail">@note</span>
     }
-    <span class="choice-note">@Note</span>
-</div>
+}
+else
+{
+    <div class="choice-strip">
+        <span class="tag-label">@Label</span>
+        <div class="choices">
+            @foreach (var choice in Choices)
+            {
+                <button class="choice @choice.Tone" disabled="@Disabled" @onclick="() => Choose(choice.Value)">
+                    @choice.Text
+                </button>
+            }
+        </div>
+        @if (Note is { Length: > 0 } note)
+        {
+            <span class="choice-note">@note</span>
+        }
+    </div>
+}
 
 @code {
+    private bool _changing;
+
     [Parameter, EditorRequired]
     public required string Label { get; set; }
 
     [Parameter, EditorRequired]
     public required IReadOnlyList<Choice> Choices { get; set; }
+
+    /// <summary>The settled answer, which folds the strip to one line; null while it is still open.</summary>
+    [Parameter]
+    public string? Value { get; set; }
+
+    /// <summary>Nothing to choose from yet, so the strip is one line saying so, with no button.</summary>
+    [Parameter]
+    public bool Quiet { get; set; }
 
     [Parameter]
     public string? Note { get; set; }
@@ -24,6 +61,13 @@
 
     [Parameter]
     public EventCallback<string?> OnChoose { get; set; }
+
+    private async Task Choose(string? value)
+    {
+        _changing = false;
+
+        await OnChoose.InvokeAsync(value);
+    }
 
     /// <param name="Tone"><c>settled</c> (filled), <c>suggested</c> (dashed amber), or null.</param>
     public sealed record Choice(string? Value, string Text, string? Tone);

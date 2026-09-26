@@ -1,0 +1,106 @@
+@using Crateside.Core.Queue
+@using Crateside.Core.Tracks
+@implements IDisposable
+@inject QueueService Playlist
+
+@{
+    var confirming = Editor.IsConfirming(Row);
+    var renaming = _editing.Open is TrackEdit.Rename;
+    var swapping = _editing.Open is TrackEdit.Swap;
+    var hasSource = TrackEdits.HasSource(Row);
+    var hasRemove = TrackActions.HasRemove(Row, Playlist);
+}
+
+<div class="stack">
+    @if (confirming)
+    {
+        <div class="confirm-slot">
+            <StemConfirm Editor="Editor" Row="Row" />
+        </div>
+    }
+    @if (Editor.Problem is { } problem)
+    {
+        <p class="problem">@problem</p>
+    }
+
+    <div class="stack-body @(confirming ? "dimmed" : null)" inert="@confirming">
+        <TrackActions Part="TrackActions.Parts.Go" Row="Row" Editor="Editor" ShowDetailsLink="!OnTrackDetails" />
+        <TrackActions Part="TrackActions.Parts.Queue" Row="Row" Editor="Editor" ShowNextSentence="!OnTrackDetails" />
+
+        <div class="group tags">
+            <GenreStrip Row="Row" />
+            <FamiliarityStrip Row="Row" />
+        </div>
+
+        <TrackEdits Part="TrackEdits.Parts.Name" Row="Row" Editing="_editing" />
+
+        <div class="below-name @(renaming ? "dimmed" : null)" inert="@renaming">
+            @if (Uploads is { Count: > 0 } uploads)
+            {
+                <div class="group">
+                    <span class="stack-label">@(uploads.Count is 1 ? "Upload" : "Uploads")</span>
+                    @foreach (var (id, role) in uploads)
+                    {
+                        <UploadCard @key="id" VideoId="@id" Role="@role" />
+                    }
+                </div>
+            }
+
+            @if (hasSource || hasRemove)
+            {
+                <div class="start-over">
+                    <span class="stack-label faint">Start over</span>
+                    <TrackEdits Part="TrackEdits.Parts.Source" Row="Row" Editing="_editing" />
+                    <div class="@(swapping ? "dimmed" : null)" inert="@swapping">
+                        <TrackActions Part="TrackActions.Parts.Remove" Row="Row" Editor="Editor" Removed="Removed" />
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly TrackEditing _editing = new();
+    private string? _editingFor;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    [Parameter, EditorRequired]
+    public required StemEditor Editor { get; set; }
+
+    /// <summary>Track details, where the page itself is the details link and the stage flow says what is next.</summary>
+    [Parameter]
+    public bool OnTrackDetails { get; set; }
+
+    /// <summary>Every upload the track has used, with its role; drawn only where it is given.</summary>
+    [Parameter]
+    public IReadOnlyList<(string VideoId, string Role)>? Uploads { get; set; }
+
+    [Parameter]
+    public EventCallback<(string Title, string Note)> Removed { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _editing.Changed += OnEditing;
+        Editor.Opened += _editing.Close;
+    }
+
+    // Track details moves to another track without remounting, and an open box would follow it.
+    protected override void OnParametersSet()
+    {
+        if (_editingFor != Row.VideoId)
+            _editing.Close();
+
+        _editingFor = Row.VideoId;
+    }
+
+    public void Dispose()
+    {
+        _editing.Changed -= OnEditing;
+        Editor.Opened -= _editing.Close;
+    }
+
+    private void OnEditing() => _ = InvokeAsync(StateHasChanged);
+}

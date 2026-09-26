@@ -116,40 +116,10 @@
             </div>
 
             <aside class="rail">
-                @if (_row is not null && _stems.IsConfirming(_row))
-                {
-                    <StemConfirm Editor="_stems" Row="_row" />
-                }
-                @if (_stems.Problem is { } problem)
-                {
-                    <p class="problem">@problem</p>
-                }
-
                 @if (_row is not null)
                 {
-                    var uploads = Uploads(_row);
-
-                    <section class="rail-section">
-                        <h3>Change</h3>
-                        <TrackActions Row="_row" Editor="_stems" ShowDetailsLink="false" Removed="OnRemoved" />
-                        <TrackEdits Row="_row" />
-                    </section>
-
-                    <section class="rail-section">
-                        <h3>@(uploads.Count is 1 ? "Upload" : "Uploads")</h3>
-                        @foreach (var (id, role) in uploads)
-                        {
-                            <UploadCard @key="id" VideoId="@id" Role="@role" />
-                        }
-                    </section>
-
-                    <section class="rail-section">
-                        <GenreStrip Row="_row" />
-                    </section>
-
-                    <section class="rail-section">
-                        <FamiliarityStrip Row="_row" />
-                    </section>
+                    <SideStack Row="_row" Editor="_stems" OnTrackDetails="true" Uploads="Uploads(_row)"
+                               Removed="OnRemoved" />
                 }
             </aside>
         </div>

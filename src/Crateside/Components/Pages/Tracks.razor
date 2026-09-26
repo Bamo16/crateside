@@ -303,65 +303,15 @@
 
             @if (open)
             {
-                <div class="panel">
+                <div class="panel" @key="row.VideoId">
                     <TrackFindings Row="row" />
-                    <GenreStrip Row="row" />
-                    <FamiliarityStrip Row="row" />
-                    <TrackEdits @ref="_edits" Row="row" />
 
                     <StemList Editor="_stems" Row="row" />
 
                     <div class="side">
-                        @if (_stems.IsConfirming(row))
-                        {
-                            @if (_stems.PickerFor(row).IsCutInFlight)
-                            {
-                                <p class="what-next @NextTone(row)">@row.Next</p>
-                            }
+                        <SideStack Row="row" Editor="_stems" Removed="OnRemoved" />
 
-                            <StemConfirm Editor="_stems" Row="row" />
-                        }
-                        else
-                        {
-                        <p class="what-next @NextTone(row)">@row.Next</p>
-                        <p class="detail">
-                            @row.Detail
-                            @if (row.CanChangePlan)
-                            {
-                                <text> @StemEditor.Cost(row.Recipe) Changes apply now — nothing has been made yet.</text>
-                            }
-                            @if (row.State is TrackState.Short)
-                            {
-                                <text> Not on disk: @_stems.Missing(row). Cutting it is @StemEditor.Cost(row.Recipe)</text>
-                            }
-                        </p>
-                        @if (row.RetryNote is { } retrying)
-                        {
-                            <p class="detail" title="@row.Retrying?.Error">@retrying</p>
-                        }
-                        @if (row.Deletions.Count > 0)
-                        {
-                            <div class="recycled">
-                                <span class="recycled-head">Sent to the Recycle Bin by crateside</span>
-                                @foreach (var deletion in row.Deletions.Take(RecycledShown))
-                                {
-                                    <span class="recycled-line">
-                                        <span class="mono">@deletion.At.ToLocalTime().ToString("d MMM")</span>
-                                        @deletion.FileName
-                                        <span class="recycled-why">@deletion.Reason</span>
-                                    </span>
-                                }
-                                @if (row.Deletions.Count > RecycledShown)
-                                {
-                                    <span class="recycled-why">and @("earlier file".ToQuantity(row.Deletions.Count - RecycledShown))</span>
-                                }
-                            </div>
-                        }
-
-                        <TrackActions Row="row" Editor="_stems" Removed="OnRemoved" />
-                        }
-
-                        @if ((_problem ?? _stems.Problem) is { } problem)
+                        @if (_problem is { } problem)
                         {
                             <p class="problem">@problem</p>
                         }
@@ -415,8 +365,6 @@
     private TracksView? _view;
     private TrackFilter _filter = TrackFilter.Unfinished;
     private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
-
-    private const int RecycledShown = 5;
 
     private static readonly TimeSpan ToastLife = TimeSpan.FromSeconds(20);
 
@@ -530,7 +478,6 @@
     private ElementReference _trackBox;
 
     private StemEditor _stems = null!;
-    private TrackEdits? _edits;
 
     private IReadOnlyList<TrackRow> Rows => _view?.Rows ?? [];
 
@@ -543,7 +490,6 @@
     {
         _stems = ActivatorUtilities.CreateInstance<StemEditor>(Services);
         _stems.Changed += OnStemsChanged;
-        _stems.Opened += OnPickerOpened;
 
         Source.Changed += OnChanged;
         Source.ReadyToWarp += OnReadyToWarp;
@@ -618,7 +564,6 @@
 
         _clock?.Dispose();
         _stems.Changed -= OnStemsChanged;
-        _stems.Opened -= OnPickerOpened;
         _stems.Dispose();
 
         _circuit.Cancel();
@@ -677,8 +622,6 @@
     // Raised on a worker thread, never the circuit's, so the render is marshalled back.
     private void OnStemsChanged() => _ = InvokeAsync(StateHasChanged);
 
-    private void OnPickerOpened() => _edits?.Close();
-
     private void OnRemoved((string Title, string Note) removed)
     {
         _removed = removed;
@@ -713,7 +656,6 @@
         _problem = null;
 
         _stems.Reset();
-        _edits?.Close();
     }
 
     /// <summary>
@@ -778,14 +720,6 @@
             TrackFilter.InFlight => "teal",
             TrackFilter.NeedsAttention => "red",
             _ => "plain",
-        };
-
-    private static string NextTone(TrackRow row) =>
-        row.State switch
-        {
-            TrackState.ReadyToWarp => "amber",
-            TrackState.Parked or TrackState.GaveUp or TrackState.Short => "attention",
-            _ => string.Empty,
         };
 
 }

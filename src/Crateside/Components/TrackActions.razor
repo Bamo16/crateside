@@ -11,59 +11,136 @@
 @inject TracksService Tracks
 @inject ActionLog Actions
 
-<div class="actions">
-    @if (Row.Folder is not null)
-    {
-        <button class="outline" @onclick="OpenFolder">Open folder</button>
-    }
-    @if (ShowDetailsLink)
-    {
-        <a class="outline" href="@($"song/{Row.VideoId}")">Track details</a>
-    }
-    @if (Row.GaveUpAt is not null)
-    {
-        <button class="outline" @onclick="Retry">Retry</button>
-    }
-    @if (Row.State is TrackState.Short)
-    {
-        <button class="primary" @onclick="() => Editor.CutShortfallAsync(Row)" disabled="@(_working || Editor.Working)">
-            @(Editor.Working ? "Cutting…" : "Cut what is missing")
-        </button>
-    }
-    @if (Playlist.BumpedVideoId == Row.VideoId)
-    {
-        <button class="primary" @onclick="ClearBump">Stop working this first</button>
-    }
-    else if (Row.State is TrackState.Queued or TrackState.JudgedInLine)
-    {
-        <button class="outline" @onclick="Bump">Work this first</button>
-    }
-    @if (Row.PlaylistItemId is { } playlistItemId && Playlist.IsAuthorized)
-    {
-        <button class="outline" @onclick="() => Remove(playlistItemId)">
-            Remove from playlist
-        </button>
-    }
-    else if (Row.CanForget && _removing)
-    {
-        <span class="confirm">@RemovalQuestion()</span>
-        <button class="danger" @onclick="ConfirmRemove" disabled="@_working">
-            Remove
-        </button>
-        <button class="outline" @onclick="CancelRemove" disabled="@_working">Keep</button>
-    }
-    else if (Row.CanForget)
-    {
-        <button class="outline" @onclick="StartRemove">Remove</button>
-    }
-</div>
-
-@if (_problem is { } problem)
+@if (Part is Parts.Go && (Row.Folder is not null || ShowDetailsLink))
 {
-    <p class="problem">@problem</p>
+    <div class="group">
+        <div class="actions">
+            @if (Row.Folder is not null)
+            {
+                <button class="outline" @onclick="OpenFolder">Open folder</button>
+            }
+            @if (ShowDetailsLink)
+            {
+                <a class="outline" href="@($"song/{Row.VideoId}")">Track details</a>
+            }
+        </div>
+        @if (_problem is { } problem)
+        {
+            <p class="problem">@problem</p>
+        }
+    </div>
+}
+else if (Part is Parts.Queue && (ShowNextSentence || HasQueueButtons))
+{
+    <div class="group">
+        <span class="stack-label">Next</span>
+
+        @if (ShowNextSentence)
+        {
+            <p class="what-next @NextTone(Row)">@Row.Next</p>
+            <p class="detail">
+                @Row.Detail
+                @if (Row.CanChangePlan)
+                {
+                    <text> @StemEditor.Cost(Row.Recipe) Changes apply now — nothing has been made yet.</text>
+                }
+                @if (Row.State is TrackState.Short)
+                {
+                    <text> Not on disk: @Editor.Missing(Row). Cutting it is @StemEditor.Cost(Row.Recipe)</text>
+                }
+            </p>
+            @if (Row.RetryNote is { } retrying)
+            {
+                <p class="detail" title="@Row.Retrying?.Error">@retrying</p>
+            }
+            @if (Row.Deletions.Count > 0)
+            {
+                <div class="recycled">
+                    <span class="recycled-head">Sent to the Recycle Bin by crateside</span>
+                    @foreach (var deletion in Row.Deletions.Take(RecycledShown))
+                    {
+                        <span class="recycled-line">
+                            <span class="mono">@deletion.At.ToLocalTime().ToString("d MMM")</span>
+                            @deletion.FileName
+                            <span class="recycled-why">@deletion.Reason</span>
+                        </span>
+                    }
+                    @if (Row.Deletions.Count > RecycledShown)
+                    {
+                        <span class="recycled-why">and @("earlier file".ToQuantity(Row.Deletions.Count - RecycledShown))</span>
+                    }
+                </div>
+            }
+        }
+
+        @if (HasQueueButtons)
+        {
+            <div class="actions">
+                @if (Row.GaveUpAt is not null)
+                {
+                    <button class="outline" @onclick="Retry">Retry</button>
+                }
+                @if (Row.State is TrackState.Short)
+                {
+                    <button class="primary" @onclick="() => Editor.CutShortfallAsync(Row)" disabled="@(_working || Editor.Working)">
+                        @(Editor.Working ? "Cutting…" : "Cut what is missing")
+                    </button>
+                }
+                @if (IsBumped)
+                {
+                    <button class="primary" @onclick="ClearBump">Stop working this first</button>
+                }
+                else if (CanBump)
+                {
+                    <button class="outline" @onclick="Bump">Work this first</button>
+                }
+            </div>
+        }
+        @if (_problem is { } problem)
+        {
+            <p class="problem">@problem</p>
+        }
+    </div>
+}
+else if (Part is Parts.Remove && HasRemove(Row, Playlist))
+{
+    <div class="stack-part">
+        <div class="label-line">
+            <span class="stack-label">Track</span>
+            @if (Row.PlaylistItemId is { } playlistItemId && Playlist.IsAuthorized)
+            {
+                <button class="outline" @onclick="() => Remove(playlistItemId)">
+                    Remove from playlist
+                </button>
+            }
+            else
+            {
+                <button class="outline" @onclick="ToggleRemove" disabled="@_working">Remove</button>
+            }
+        </div>
+
+        @if (_removing)
+        {
+            <div class="confirm-box">
+                <p class="detail">@RemovalQuestion()</p>
+                <div class="actions">
+                    <button class="danger" @onclick="ConfirmRemove" disabled="@_working">
+                        Remove
+                    </button>
+                    <button class="outline" @onclick="CancelRemove" disabled="@_working">Keep</button>
+                </div>
+            </div>
+        }
+        @if (_problem is { } problem)
+        {
+            <p class="problem">@problem</p>
+        }
+    </div>
 }
 
 @code {
+    private const int RecycledShown = 5;
+
     private readonly CancellationTokenSource _circuit = new();
 
     private bool _working;
@@ -78,19 +155,48 @@
     [Parameter, EditorRequired]
     public required StemEditor Editor { get; set; }
 
+    [Parameter, EditorRequired]
+    public required Parts Part { get; set; }
+
     /// <summary>Off on Track details itself, where the link would lead back to the same page.</summary>
     [Parameter]
     public bool ShowDetailsLink { get; set; } = true;
 
+    /// <summary>Off on Track details, where the stage flow says what happens next.</summary>
+    [Parameter]
+    public bool ShowNextSentence { get; set; } = true;
+
     /// <summary>Said once the track is gone, since no row or page is left to say it.</summary>
     [Parameter]
     public EventCallback<(string Title, string Note)> Removed { get; set; }
+
+    private bool IsBumped => Playlist.BumpedVideoId == Row.VideoId;
+
+    /// <summary>
+    /// Waiting is the only time this means anything: once a stage has the track, the work lists
+    /// have already been read.
+    /// </summary>
+    private bool CanBump => Row.State is TrackState.Queued or TrackState.JudgedInLine;
+
+    private bool HasQueueButtons =>
+        Row is { GaveUpAt: not null } or { State: TrackState.Short } || IsBumped || CanBump;
+
+    public static bool HasRemove(TrackRow row, QueueService playlist) =>
+        row is { PlaylistItemId: not null } && playlist.IsAuthorized || row.CanForget;
 
     public void Dispose()
     {
         _circuit.Cancel();
         _circuit.Dispose();
     }
+
+    private static string NextTone(TrackRow row) =>
+        row.State switch
+        {
+            TrackState.ReadyToWarp => "amber",
+            TrackState.Parked or TrackState.GaveUp or TrackState.Short => "attention",
+            _ => string.Empty,
+        };
 
     private void OpenFolder()
     {
@@ -107,10 +213,6 @@
         }
     }
 
-    /// <summary>
-    /// Waiting is the only time this means anything: once a stage has the track, the work lists
-    /// have already been read.
-    /// </summary>
     private async Task Bump()
     {
         Playlist.Bump(Row.VideoId);
@@ -182,8 +284,14 @@
         }
     }
 
-    private void StartRemove()
+    private void ToggleRemove()
     {
+        if (_removing)
+        {
+            CancelRemove();
+            return;
+        }
+
         _problem = null;
         _removing = true;
         _recycling = Removal.Recycling(Row.Facts.Uploads);
@@ -233,5 +341,12 @@
         {
             _working = false;
         }
+    }
+
+    public enum Parts
+    {
+        Go,
+        Queue,
+        Remove,
     }
 }
