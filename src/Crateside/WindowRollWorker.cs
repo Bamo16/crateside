@@ -30,9 +30,9 @@ public sealed class WindowRollWorker(
             {
                 break;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                logger.LogWarning(e, "Window roll check failed; trying again later");
+                logger.LogWarning(ex, "Window roll check failed; trying again later");
             }
 
             await Task.Delay(CheckEvery, stoppingToken);

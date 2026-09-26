@@ -29,8 +29,8 @@ public sealed class PauseStore(string? path = null)
                     ? JsonSerializer.Deserialize<PausedStages>(File.ReadAllText(_path)) ?? new()
                     : new();
             }
-            catch (Exception e)
-                when (e is IOException or JsonException or UnauthorizedAccessException)
+            catch (Exception ex)
+                when (ex is IOException or JsonException or UnauthorizedAccessException)
             {
                 return new();
             }
@@ -55,7 +55,7 @@ public sealed class PauseStore(string? path = null)
                 Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
                 File.WriteAllText(_path, JsonSerializer.Serialize(stages, SerializerOptions));
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
     }
 }

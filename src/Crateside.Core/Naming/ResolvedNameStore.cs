@@ -44,7 +44,7 @@ public sealed class ResolvedNameStore
                 Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
                 File.WriteAllText(_path, JsonSerializer.Serialize(names, SerializerOptions));
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 // The name is still in memory, and re-resolving costs one metadata fetch.
             }
@@ -62,7 +62,7 @@ public sealed class ResolvedNameStore
                 ) ?? []
                 : [];
         }
-        catch (Exception e) when (e is IOException or JsonException)
+        catch (Exception ex) when (ex is IOException or JsonException)
         {
             return [];
         }

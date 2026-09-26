@@ -23,17 +23,17 @@ public sealed class EvidenceDrainer(
     public JobStage Stage => JobStage.Evidence;
 
     /// <summary>Detects the next undetected track, if there is one.</summary>
-    public async Task<StageTick> DrainOnceAsync(CancellationToken cancellationToken = default)
+    public async Task<StageTick> DrainOnceAsync(CancellationToken ct = default)
     {
         QueueView view;
 
         try
         {
-            view = await queue.ReadAsync(cancellationToken);
+            view = await queue.ReadAsync(ct);
         }
-        catch (QueueUnavailableException e)
+        catch (QueueUnavailableException ex)
         {
-            return StageTick.Unavailable(e.Message);
+            return StageTick.Unavailable(ex.Message);
         }
 
         if (!selector.TryPickNext(view, out var item))
@@ -45,7 +45,7 @@ public sealed class EvidenceDrainer(
         // absent, distinguishing an interrupted attempt from one never made.
         jobs.Record(item.VideoId, JobStage.Evidence, JobStatus.Running);
 
-        var result = await runner.RunAsync(order, cancellationToken);
+        var result = await runner.RunAsync(order, ct);
 
         jobs.Record(
             item.VideoId,

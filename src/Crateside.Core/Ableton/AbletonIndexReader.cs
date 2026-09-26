@@ -66,8 +66,8 @@ public sealed class AbletonIndexReader(IOptions<CratesidePaths> paths)
                 ? new AbletonFolderInfo(rootFolder, TagsUnder(connection, place))
                 : AbletonFolderInfo.Empty(rootFolder);
         }
-        catch (Exception e)
-            when (e is SqliteException or IOException or UnauthorizedAccessException)
+        catch (Exception ex)
+            when (ex is SqliteException or IOException or UnauthorizedAccessException)
         {
             return AbletonFolderInfo.Empty(rootFolder);
         }

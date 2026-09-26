@@ -89,7 +89,7 @@ public sealed class TrackRename(
                 if (!TryMoveAnalysis(stem.Path, to))
                     markersLost.Add(Path.GetFileName(to));
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 MoveTags(done);
 
@@ -128,7 +128,7 @@ public sealed class TrackRename(
 
             return true;
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             return false;
         }

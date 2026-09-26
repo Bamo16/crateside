@@ -13,10 +13,7 @@ public sealed class SourceProbe(string stemforge = "stemforge-cli")
     /// What the upload is and what it would arrive as. Never throws: a private, removed or
     /// unavailable video is an answer.
     /// </summary>
-    public async Task<ProbedSource> ReadAsync(
-        string url,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<ProbedSource> ReadAsync(string url, CancellationToken ct = default)
     {
         ProcessOutcome outcome;
 
@@ -26,12 +23,12 @@ public sealed class SourceProbe(string stemforge = "stemforge-cli")
                 stemforge,
                 ["download", url, "--list-formats", "--json"],
                 workingDirectory: null,
-                cancellationToken
+                ct
             );
         }
-        catch (Exception e) when (e is IOException or System.ComponentModel.Win32Exception)
+        catch (Exception ex) when (ex is IOException or System.ComponentModel.Win32Exception)
         {
-            return ProbedSource.Unreadable($"could not run {stemforge}: {e.Message}");
+            return ProbedSource.Unreadable($"could not run {stemforge}: {ex.Message}");
         }
 
         // A non-zero exit means some or all inputs failed, which the JSON itself describes.

@@ -35,10 +35,7 @@ public sealed class VerdictRunner(
     ];
 
     /// <summary>Judges one track, and reports what the ledger says afterwards.</summary>
-    public async Task<VerdictResult> RunAsync(
-        WorkOrder order,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<VerdictResult> RunAsync(WorkOrder order, CancellationToken ct = default)
     {
         if (!workingSet.HasEvidence(order.VideoId))
             return VerdictResult.Failed("no evidence to judge");
@@ -70,7 +67,7 @@ public sealed class VerdictRunner(
             // The skill resolves relative to where the session opens, and runs uv from the
             // repo root.
             paths.KeytagRepo,
-            cancellationToken
+            ct
         );
 
         // The ledger decides success, not the exit code: a session that dies halfway leaves

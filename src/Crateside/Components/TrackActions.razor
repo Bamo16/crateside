@@ -210,9 +210,9 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
         {
             Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true });
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            _problem = $"Could not open {folder}: {e.Message}";
+            _problem = $"Could not open {folder}: {ex.Message}";
         }
     }
 
@@ -281,9 +281,9 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
 
             await Tracks.RefreshAsync(_circuit.Token);
         }
-        catch (QueueUnavailableException e)
+        catch (QueueUnavailableException ex)
         {
-            _problem = e.Message;
+            _problem = ex.Message;
         }
     }
 

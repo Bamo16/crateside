@@ -51,7 +51,7 @@ public sealed class TrackRemoval(
 
                 recycled++;
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 return new TrackRemovalOutcome
                 {

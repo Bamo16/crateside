@@ -17,19 +17,19 @@ public sealed class PresetCatalogReader(string stemforge = "stemforge-cli")
     /// The catalog, or <see cref="PresetCatalog.Empty"/> — never cached, never thrown — when the
     /// separator could not be asked.
     /// </summary>
-    public async Task<PresetCatalog> ReadAsync(CancellationToken cancellationToken = default)
+    public async Task<PresetCatalog> ReadAsync(CancellationToken ct = default)
     {
         if (_cached is { } hit)
             return hit;
 
-        await _gate.WaitAsync(cancellationToken);
+        await _gate.WaitAsync(ct);
 
         try
         {
             if (_cached is { } waited)
                 return waited;
 
-            var read = await RunAsync(cancellationToken);
+            var read = await RunAsync(ct);
 
             if (!read.IsEmpty)
                 _cached = read;
@@ -42,7 +42,7 @@ public sealed class PresetCatalogReader(string stemforge = "stemforge-cli")
         }
     }
 
-    private async Task<PresetCatalog> RunAsync(CancellationToken cancellationToken)
+    private async Task<PresetCatalog> RunAsync(CancellationToken ct)
     {
         ProcessOutcome outcome;
 
@@ -52,10 +52,10 @@ public sealed class PresetCatalogReader(string stemforge = "stemforge-cli")
                 stemforge,
                 ["presets", "--json"],
                 workingDirectory: null,
-                cancellationToken
+                ct
             );
         }
-        catch (Exception e) when (e is IOException or System.ComponentModel.Win32Exception)
+        catch (Exception ex) when (ex is IOException or System.ComponentModel.Win32Exception)
         {
             return PresetCatalog.Empty;
         }

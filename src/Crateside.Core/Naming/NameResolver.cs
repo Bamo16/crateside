@@ -14,10 +14,7 @@ public sealed class NameResolver(string stemforge = "stemforge-cli")
     /// What the files will be called, or null when the upload could not be resolved. Never
     /// throws: a private, removed or unavailable video is an answer, not a fault.
     /// </summary>
-    public async Task<ResolvedName?> ResolveAsync(
-        string sourceUrl,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<ResolvedName?> ResolveAsync(string sourceUrl, CancellationToken ct = default)
     {
         ProcessOutcome outcome;
 
@@ -27,10 +24,10 @@ public sealed class NameResolver(string stemforge = "stemforge-cli")
                 stemforge,
                 ["download", sourceUrl, "--list-formats", "--json"],
                 workingDirectory: null,
-                cancellationToken
+                ct
             );
         }
-        catch (Exception e) when (e is IOException or System.ComponentModel.Win32Exception)
+        catch (Exception ex) when (ex is IOException or System.ComponentModel.Win32Exception)
         {
             return null;
         }

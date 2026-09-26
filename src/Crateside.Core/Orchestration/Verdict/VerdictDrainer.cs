@@ -25,15 +25,13 @@ public sealed class VerdictDrainer(
     public JobStage Stage => JobStage.Verdict;
 
     /// <summary>Judges the next detected-but-unjudged track, if there is one.</summary>
-    public async Task<StageTick> DrainOnceAsync(CancellationToken cancellationToken = default)
+    public async Task<StageTick> DrainOnceAsync(CancellationToken ct = default)
     {
-        await _oneAtATime.WaitAsync(cancellationToken);
+        await _oneAtATime.WaitAsync(ct);
 
         try
         {
-            return control.IsPaused
-                ? StageTick.Paused
-                : await JudgeNextAsync(backfill: false, cancellationToken);
+            return control.IsPaused ? StageTick.Paused : await JudgeNextAsync(backfill: false, ct);
         }
         finally
         {
@@ -44,13 +42,13 @@ public sealed class VerdictDrainer(
     /// <summary>
     /// Judges one library backfill track, paused or not: what an idle window spends (ADR 0035).
     /// </summary>
-    public async Task<StageTick> JudgeBackfillAsync(CancellationToken cancellationToken = default)
+    public async Task<StageTick> JudgeBackfillAsync(CancellationToken ct = default)
     {
-        await _oneAtATime.WaitAsync(cancellationToken);
+        await _oneAtATime.WaitAsync(ct);
 
         try
         {
-            return await JudgeNextAsync(backfill: true, cancellationToken);
+            return await JudgeNextAsync(backfill: true, ct);
         }
         finally
         {
@@ -58,17 +56,17 @@ public sealed class VerdictDrainer(
         }
     }
 
-    private async Task<StageTick> JudgeNextAsync(bool backfill, CancellationToken cancellationToken)
+    private async Task<StageTick> JudgeNextAsync(bool backfill, CancellationToken ct)
     {
         QueueView view;
 
         try
         {
-            view = await queue.ReadAsync(cancellationToken);
+            view = await queue.ReadAsync(ct);
         }
-        catch (QueueUnavailableException e)
+        catch (QueueUnavailableException ex)
         {
-            return StageTick.Unavailable(e.Message);
+            return StageTick.Unavailable(ex.Message);
         }
 
         // Read once and used for both the choice and the order, so the two cannot disagree.
@@ -88,7 +86,7 @@ public sealed class VerdictDrainer(
 
         try
         {
-            var result = await runner.RunAsync(order, cancellationToken);
+            var result = await runner.RunAsync(order, ct);
 
             // Cancelled, not Failed: a session that never ran is not this track's fault, and
             // Cancelled carries no strike. Then paused, since a further attempt would return

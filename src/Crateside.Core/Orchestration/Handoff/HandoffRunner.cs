@@ -42,10 +42,10 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
 
             return HandoffResult.Succeeded(moves.Count, cleared);
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // Staging lives on an external drive Ableton may hold files open on.
-            return HandoffResult.Failed(e.Message);
+            return HandoffResult.Failed(ex.Message);
         }
     }
 
@@ -66,7 +66,7 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
                 _deletions.Recycle(path, "superseded by the new upload");
                 cleared++;
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
 
         return cleared;

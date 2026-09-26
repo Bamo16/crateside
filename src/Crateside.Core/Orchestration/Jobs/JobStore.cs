@@ -198,7 +198,7 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
                     updates.Add(update);
             }
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // An unreadable store must not take the app down with it.
         }

@@ -227,7 +227,8 @@ public sealed class IntakeStore
                 )
                 : null;
         }
-        catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
+        catch (Exception ex)
+            when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
             return null;
         }
@@ -242,7 +243,7 @@ public sealed class IntakeStore
             Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
             File.WriteAllText(_path, JsonSerializer.Serialize(records, SerializerOptions));
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // Kept in memory rather than failing the scan, but nothing may be consumed on the
             // strength of it: see IsDurable.

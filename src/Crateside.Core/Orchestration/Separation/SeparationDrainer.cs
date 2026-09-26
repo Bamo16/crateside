@@ -22,7 +22,7 @@ public sealed class SeparationDrainer(
     private readonly CratesidePaths _paths = paths.Value;
 
     /// <summary>Separates the next outstanding track, if there is one and nothing is in the way.</summary>
-    public async Task<DrainTick> DrainOnceAsync(CancellationToken cancellationToken = default)
+    public async Task<DrainTick> DrainOnceAsync(CancellationToken ct = default)
     {
         if (control.IsPaused)
             return DrainTick.Paused;
@@ -31,11 +31,11 @@ public sealed class SeparationDrainer(
 
         try
         {
-            view = await queue.ReadAsync(cancellationToken);
+            view = await queue.ReadAsync(ct);
         }
-        catch (QueueUnavailableException e)
+        catch (QueueUnavailableException ex)
         {
-            return DrainTick.Unavailable(e.Message);
+            return DrainTick.Unavailable(ex.Message);
         }
 
         if (!selector.TryPickNext(view, KeyLedger.Read(_paths.Ledger), out var order))
@@ -45,7 +45,7 @@ public sealed class SeparationDrainer(
 
         try
         {
-            var result = await runner.RunAsync(order, cancellationToken);
+            var result = await runner.RunAsync(order, ct);
 
             if (result.Outcome is SeparationOutcome.Succeeded)
                 StemLanding.Reconcile(
@@ -170,7 +170,7 @@ public static class StemLanding
                         overwrite: true
                     );
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 // Left parked rather than lost, which is where it would have stayed anyway.
             }

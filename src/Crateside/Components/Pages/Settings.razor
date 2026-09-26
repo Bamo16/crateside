@@ -356,9 +356,9 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         {
             await Playlist.ConsentAsync();
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            _error = $"Consent did not complete: {e.Message}";
+            _error = $"Consent did not complete: {ex.Message}";
         }
         finally
         {
@@ -388,9 +388,9 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
             await Load();
         }
-        catch (QueueUnavailableException e)
+        catch (QueueUnavailableException ex)
         {
-            _error = e.Message;
+            _error = ex.Message;
         }
         finally
         {
@@ -413,10 +413,10 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             if (Playlist.IsAuthorized)
                 _channel = await Playlist.GetAuthorizedChannelAsync();
         }
-        catch (QueueUnavailableException e)
+        catch (QueueUnavailableException ex)
         {
             _processed = null;
-            _error = e.Message;
+            _error = ex.Message;
         }
     }
 }

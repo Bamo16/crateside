@@ -216,7 +216,8 @@ public sealed class QueueSettingsStore
                 )
                 : null;
         }
-        catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
+        catch (Exception ex)
+            when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
             return null;
         }

@@ -52,7 +52,7 @@ public sealed class TrackSwap(
     public async Task<SwapOutcome> ApplyAsync(
         string videoId,
         string url,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         var ledger = KeyLedger.Read(paths.Ledger);
@@ -61,10 +61,7 @@ public sealed class TrackSwap(
         if (plan.Refusal is { } refusal)
             return new SwapOutcome { Problem = refusal };
 
-        if (
-            await RestateAsync(videoId, plan.NewVideoId!, plan.Url!, ledger, cancellationToken) is
-            { } failure
-        )
+        if (await RestateAsync(videoId, plan.NewVideoId!, plan.Url!, ledger, ct) is { } failure)
             return new SwapOutcome { Problem = failure };
 
         settings.SetSourceUrl(videoId, plan.Url);
@@ -80,7 +77,7 @@ public sealed class TrackSwap(
 
                 removed++;
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 return new SwapOutcome
                 {
@@ -110,7 +107,7 @@ public sealed class TrackSwap(
         string newVideoId,
         string url,
         KeyLedger ledger,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         if (!ledger.TryGetLatestByVideoId(videoId, out var current))
@@ -136,7 +133,7 @@ public sealed class TrackSwap(
                 url,
             ],
             workingDirectory: null,
-            cancellationToken
+            ct
         );
 
         return outcome.Succeeded

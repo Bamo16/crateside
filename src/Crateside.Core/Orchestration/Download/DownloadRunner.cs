@@ -18,7 +18,7 @@ public sealed class DownloadRunner(string stemforge = "stemforge-cli")
         string url,
         string into,
         string format = "flac",
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         ProcessOutcome outcome;
@@ -29,12 +29,12 @@ public sealed class DownloadRunner(string stemforge = "stemforge-cli")
                 stemforge,
                 ["download", url, "--json", "--format", format, "--output", into],
                 workingDirectory: null,
-                cancellationToken
+                ct
             );
         }
-        catch (Exception e) when (e is IOException or System.ComponentModel.Win32Exception)
+        catch (Exception ex) when (ex is IOException or System.ComponentModel.Win32Exception)
         {
-            return DownloadResult.Failed($"could not run {stemforge}: {e.Message}");
+            return DownloadResult.Failed($"could not run {stemforge}: {ex.Message}");
         }
 
         if (!outcome.Succeeded)

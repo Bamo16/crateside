@@ -23,17 +23,17 @@ public sealed class DownloadDrainer(
 
     public JobStage Stage => JobStage.Download;
 
-    public async Task<StageTick> DrainOnceAsync(CancellationToken cancellationToken = default)
+    public async Task<StageTick> DrainOnceAsync(CancellationToken ct = default)
     {
         QueueView view;
 
         try
         {
-            view = await queue.ReadAsync(cancellationToken);
+            view = await queue.ReadAsync(ct);
         }
-        catch (QueueUnavailableException e)
+        catch (QueueUnavailableException ex)
         {
-            return StageTick.Unavailable(e.Message);
+            return StageTick.Unavailable(ex.Message);
         }
 
         if (!selector.TryPickNext(view, out var wanted))
@@ -48,7 +48,7 @@ public sealed class DownloadDrainer(
 
         var error = wanted.Copy
             ? Copied(wanted.VideoId, destination)
-            : await FetchedAsync(wanted, order, destination, cancellationToken);
+            : await FetchedAsync(wanted, order, destination, ct);
 
         jobs.Record(
             wanted.VideoId,
@@ -64,14 +64,14 @@ public sealed class DownloadDrainer(
         WantedDownload wanted,
         WorkOrder order,
         string destination,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         var result = await runner.RunAsync(
             wanted.Url,
             wanted.Into ?? destination,
             order.Recipe.Format,
-            cancellationToken
+            ct
         );
 
         return result.IsSuccess ? Placed(wanted, result) : result.Error;
@@ -92,9 +92,9 @@ public sealed class DownloadDrainer(
 
             return null;
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return $"the source could not be copied: {e.Message}";
+            return $"the source could not be copied: {ex.Message}";
         }
     }
 
@@ -126,7 +126,7 @@ public sealed class DownloadDrainer(
         {
             File.Delete(suffixed);
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
 
         return $"downloaded, but could not be marked {type}: {untyped}";
     }
@@ -163,9 +163,9 @@ public sealed class DownloadDrainer(
 
             return true;
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            problem = $"downloaded, but could not be named ({label}): {e.Message}";
+            problem = $"downloaded, but could not be named ({label}): {ex.Message}";
 
             return false;
         }

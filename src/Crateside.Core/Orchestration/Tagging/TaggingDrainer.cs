@@ -19,7 +19,7 @@ public sealed class TaggingDrainer(
 
     public JobStage Stage => JobStage.Tagging;
 
-    public Task<StageTick> DrainOnceAsync(CancellationToken cancellationToken = default)
+    public Task<StageTick> DrainOnceAsync(CancellationToken ct = default)
     {
         var ledger = KeyLedger.Read(_paths.Ledger);
 

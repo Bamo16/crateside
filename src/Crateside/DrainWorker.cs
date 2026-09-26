@@ -37,9 +37,9 @@ public sealed class DrainWorker(
             {
                 break;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                logger.LogError(e, "Drain tick failed");
+                logger.LogError(ex, "Drain tick failed");
             }
 
             try

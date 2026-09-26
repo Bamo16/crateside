@@ -68,9 +68,9 @@ public static class StemAdoption
             );
             file.Save();
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            problem = $"The file could not be written: {e.Message}";
+            problem = $"The file could not be written: {ex.Message}";
             return false;
         }
 

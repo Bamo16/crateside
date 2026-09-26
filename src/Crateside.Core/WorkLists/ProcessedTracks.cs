@@ -55,7 +55,7 @@ public sealed class ProcessedTracks
 
             return created.Year > 1601 ? new DateTimeOffset(created, TimeSpan.Zero) : null;
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             return null;
         }

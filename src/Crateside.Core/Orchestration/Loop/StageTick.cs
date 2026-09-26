@@ -7,7 +7,7 @@ public interface IStageDrainer
 {
     JobStage Stage { get; }
 
-    Task<StageTick> DrainOnceAsync(CancellationToken cancellationToken = default);
+    Task<StageTick> DrainOnceAsync(CancellationToken ct = default);
 }
 
 /// <summary>What one pass of a stage did. Separation reports <see cref="DrainTick"/> instead.</summary>

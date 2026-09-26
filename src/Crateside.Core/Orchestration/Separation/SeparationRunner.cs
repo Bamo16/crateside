@@ -19,10 +19,7 @@ public sealed class SeparationRunner(
     /// Separates one track, start to finish; refuses rather than queues if the GPU is already
     /// busy.
     /// </summary>
-    public async Task<SeparationResult> RunAsync(
-        WorkOrder order,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<SeparationResult> RunAsync(WorkOrder order, CancellationToken ct = default)
     {
         var retained = workingSet.TryGetSource(order.VideoId, out var path) ? path : null;
 
@@ -41,13 +38,13 @@ public sealed class SeparationRunner(
             // Both reads start before either is awaited: draining stdout first would block if
             // stderr's buffer fills, wedging the child that holds the GPU for six minutes. Only
             // --json keeping stderr quiet makes this safe today, not a guarantee.
-            var stdoutRead = process.StandardOutput.ReadToEndAsync(cancellationToken);
-            var stderrRead = process.StandardError.ReadToEndAsync(cancellationToken);
+            var stdoutRead = process.StandardOutput.ReadToEndAsync(ct);
+            var stderrRead = process.StandardError.ReadToEndAsync(ct);
 
             var stdout = await stdoutRead;
             var stderr = await stderrRead;
 
-            await process.WaitForExitAsync(cancellationToken);
+            await process.WaitForExitAsync(ct);
 
             var error = FailureFrom(process.ExitCode, stdout, stderr);
             IReadOnlyList<string> outputs = [];
@@ -93,7 +90,7 @@ public sealed class SeparationRunner(
         {
             return process.StartTime;
         }
-        catch (Exception e) when (e is InvalidOperationException or SystemException)
+        catch (Exception ex) when (ex is InvalidOperationException or SystemException)
         {
             // A process that exited immediately may refuse to report a start time; the
             // interlock treats an unverifiable PID as ours anyway.
@@ -156,7 +153,7 @@ public sealed class SeparationRunner(
             if (!process.HasExited)
                 process.Kill(entireProcessTree: true);
         }
-        catch (Exception e) when (e is InvalidOperationException or SystemException)
+        catch (Exception ex) when (ex is InvalidOperationException or SystemException)
         {
             // It exited on its own between the check and the kill. Nothing to do.
         }

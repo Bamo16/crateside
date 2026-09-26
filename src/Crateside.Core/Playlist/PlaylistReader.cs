@@ -30,7 +30,7 @@ public sealed class PlaylistReader(IOptions<PlaylistOptions> options) : IDisposa
     /// </exception>
     public async Task<IReadOnlyList<QueueItem>> ListAsync(
         string playlistId,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         if (!HasCredential)
@@ -59,21 +59,21 @@ public sealed class PlaylistReader(IOptions<PlaylistOptions> options) : IDisposa
                 request.MaxResults = MaxPageSize;
                 request.PageToken = pageToken;
 
-                var response = await request.ExecuteAsync(cancellationToken);
+                var response = await request.ExecuteAsync(ct);
 
                 items.AddRange(response.Items.Select(ToQueueItem).OfType<QueueItem>());
 
                 pageToken = response.NextPageToken;
             } while (pageToken is not null);
         }
-        catch (GoogleApiException e)
+        catch (GoogleApiException ex)
         {
             throw new QueueUnavailableException(
-                e.HttpStatusCode == System.Net.HttpStatusCode.NotFound
+                ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound
                     ? "The playlist was not found. If it has been made private, an API key can "
                         + "no longer read it and an OAuth credential is required."
-                    : $"YouTube refused the request: {e.Error?.Message ?? e.Message}",
-                e
+                    : $"YouTube refused the request: {ex.Error?.Message ?? ex.Message}",
+                ex
             );
         }
 

@@ -8,10 +8,7 @@ namespace Crateside.Core.Orchestration.Evidence;
 /// </summary>
 public sealed class EvidenceRunner(WorkingSet workingSet, CratesidePaths paths, string uv = "uv")
 {
-    public async Task<EvidenceResult> RunAsync(
-        WorkOrder order,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<EvidenceResult> RunAsync(WorkOrder order, CancellationToken ct = default)
     {
         if (workingSet.HasEvidence(order.VideoId))
             return EvidenceResult.Succeeded(workingSet.EvidencePathFor(order.VideoId));
@@ -19,7 +16,7 @@ public sealed class EvidenceRunner(WorkingSet workingSet, CratesidePaths paths, 
         if (!workingSet.TryGetSource(order.VideoId, out var audio))
             return EvidenceResult.Failed("no audio in the working set to detect over");
 
-        return await DetectAsync(order, audio, cancellationToken);
+        return await DetectAsync(order, audio, ct);
     }
 
     /// <summary>
@@ -29,7 +26,7 @@ public sealed class EvidenceRunner(WorkingSet workingSet, CratesidePaths paths, 
     private async Task<EvidenceResult> DetectAsync(
         WorkOrder order,
         string audioPath,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         var evidencePath = workingSet.EvidencePathFor(order.VideoId);
@@ -46,7 +43,7 @@ public sealed class EvidenceRunner(WorkingSet workingSet, CratesidePaths paths, 
                 evidencePath,
             ],
             workingDirectory: null,
-            cancellationToken
+            ct
         );
 
         if (!outcome.Succeeded)

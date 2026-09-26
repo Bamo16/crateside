@@ -18,7 +18,7 @@ public sealed class LookalikeAnswer(
     public async Task<string?> SameSongAsync(
         string videoId,
         LedgerRun song,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         if (song.SourceVideoId is not { } judged)
@@ -37,7 +37,7 @@ public sealed class LookalikeAnswer(
                 $"https://music.youtube.com/watch?v={videoId}",
             ],
             workingDirectory: null,
-            cancellationToken
+            ct
         );
 
         return outcome.Succeeded

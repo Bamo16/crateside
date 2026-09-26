@@ -32,9 +32,9 @@ public sealed class GenreWorker(
             {
                 break;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                logger.LogWarning(e, "Suggesting genres failed; trying again later");
+                logger.LogWarning(ex, "Suggesting genres failed; trying again later");
 
                 delay = AfterFailure;
             }

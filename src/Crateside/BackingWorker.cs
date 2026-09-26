@@ -43,9 +43,9 @@ public sealed class BackingWorker(
             {
                 break;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                logger.LogWarning(e, "Backing the library failed; trying again later");
+                logger.LogWarning(ex, "Backing the library failed; trying again later");
 
                 delay = AfterFailure;
             }

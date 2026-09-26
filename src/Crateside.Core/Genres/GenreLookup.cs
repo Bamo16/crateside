@@ -20,13 +20,13 @@ public sealed class GenreLookup(HttpClient client)
     public async Task<IReadOnlyList<string>?> HearAsync(
         string artist,
         string title,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         try
         {
-            var (recording, byArtist) = await MusicBrainzAsync(artist, title, cancellationToken);
-            var storefront = await ITunesAsync(artist, title, cancellationToken);
+            var (recording, byArtist) = await MusicBrainzAsync(artist, title, ct);
+            var storefront = await ITunesAsync(artist, title, ct);
 
             return
             [
@@ -36,9 +36,9 @@ public sealed class GenreLookup(HttpClient client)
                     .Distinct(StringComparer.OrdinalIgnoreCase),
             ];
         }
-        catch (Exception e)
-            when (e is HttpRequestException or TaskCanceledException or JsonException
-                && !cancellationToken.IsCancellationRequested
+        catch (Exception ex)
+            when (ex is HttpRequestException or TaskCanceledException or JsonException
+                && !ct.IsCancellationRequested
             )
         {
             return null;
@@ -48,7 +48,7 @@ public sealed class GenreLookup(HttpClient client)
     private async Task<(
         IReadOnlyList<string> Recording,
         IReadOnlyList<string> Artist
-    )> MusicBrainzAsync(string artist, string title, CancellationToken cancellationToken)
+    )> MusicBrainzAsync(string artist, string title, CancellationToken ct)
     {
         var query = Uri.EscapeDataString(
             $"recording:\"{Quoted(title)}\" AND artist:\"{Quoted(artist)}\""
@@ -56,7 +56,7 @@ public sealed class GenreLookup(HttpClient client)
 
         using var search = await GetAsync(
             $"https://musicbrainz.org/ws/2/recording?query={query}&limit=1&fmt=json",
-            cancellationToken
+            ct
         );
 
         if (
@@ -67,11 +67,11 @@ public sealed class GenreLookup(HttpClient client)
 
         var hit = recordings[0];
 
-        await Task.Delay(MusicBrainzPace, cancellationToken);
+        await Task.Delay(MusicBrainzPace, ct);
 
         using var recording = await GetAsync(
             $"https://musicbrainz.org/ws/2/recording/{hit.GetProperty("id").GetString()}?inc=genres+artist-credits&fmt=json",
-            cancellationToken
+            ct
         );
 
         IReadOnlyList<string> byArtist = [];
@@ -81,31 +81,27 @@ public sealed class GenreLookup(HttpClient client)
             && credits.GetArrayLength() > 0
         )
         {
-            await Task.Delay(MusicBrainzPace, cancellationToken);
+            await Task.Delay(MusicBrainzPace, ct);
 
             using var credited = await GetAsync(
                 $"https://musicbrainz.org/ws/2/artist/{credits[0].GetProperty("artist").GetProperty("id").GetString()}?inc=genres&fmt=json",
-                cancellationToken
+                ct
             );
 
             byArtist = Genres(credited.RootElement, take: 5);
         }
 
-        await Task.Delay(MusicBrainzPace, cancellationToken);
+        await Task.Delay(MusicBrainzPace, ct);
 
         return (Genres(recording.RootElement, take: 5), byArtist);
     }
 
     /// <summary>The storefront's genre, when its first hit is by the same artist; else null.</summary>
-    private async Task<string?> ITunesAsync(
-        string artist,
-        string title,
-        CancellationToken cancellationToken
-    )
+    private async Task<string?> ITunesAsync(string artist, string title, CancellationToken ct)
     {
         using var found = await GetAsync(
             $"https://itunes.apple.com/search?term={Uri.EscapeDataString($"{artist} {title}")}&entity=song&limit=1",
-            cancellationToken
+            ct
         );
 
         return
@@ -119,19 +115,19 @@ public sealed class GenreLookup(HttpClient client)
             : null;
     }
 
-    private async Task<JsonDocument> GetAsync(string url, CancellationToken cancellationToken)
+    private async Task<JsonDocument> GetAsync(string url, CancellationToken ct)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
 
         request.Headers.UserAgent.ParseAdd(UserAgent);
 
-        using var response = await client.SendAsync(request, cancellationToken);
+        using var response = await client.SendAsync(request, ct);
 
         response.EnsureSuccessStatusCode();
 
         return await JsonDocument.ParseAsync(
-            await response.Content.ReadAsStreamAsync(cancellationToken),
-            cancellationToken: cancellationToken
+            await response.Content.ReadAsStreamAsync(ct),
+            cancellationToken: ct
         );
     }
 

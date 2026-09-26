@@ -159,7 +159,7 @@ public class QuotaReaderTests : IDisposable
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
-            CancellationToken cancellationToken
+            CancellationToken ct
         )
         {
             Sent = request;

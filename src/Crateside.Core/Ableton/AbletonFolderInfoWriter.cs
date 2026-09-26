@@ -105,9 +105,9 @@ public sealed class AbletonFolderInfoWriter
                 ? TagWriteOutcome.Written(assignments.Count)
                 : TagWriteOutcome.Stale("the tag store changed while it was being updated");
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return TagWriteOutcome.Stale(e.Message);
+            return TagWriteOutcome.Stale(ex.Message);
         }
     }
 
@@ -155,9 +155,9 @@ public sealed class AbletonFolderInfoWriter
                 ? TagWriteOutcome.Written(moved)
                 : TagWriteOutcome.Stale("the tag store changed while it was being updated");
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return TagWriteOutcome.Stale(e.Message);
+            return TagWriteOutcome.Stale(ex.Message);
         }
     }
 
@@ -190,7 +190,7 @@ public sealed class AbletonFolderInfoWriter
 
             return XDocument.Load(stream);
         }
-        catch (Exception e) when (e is IOException or System.Xml.XmlException)
+        catch (Exception ex) when (ex is IOException or System.Xml.XmlException)
         {
             return null;
         }

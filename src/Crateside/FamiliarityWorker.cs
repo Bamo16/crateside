@@ -32,9 +32,9 @@ public sealed class FamiliarityWorker(
             {
                 break;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                logger.LogWarning(e, "Measuring familiarity failed; trying again later");
+                logger.LogWarning(ex, "Measuring familiarity failed; trying again later");
 
                 delay = AfterFailure;
             }

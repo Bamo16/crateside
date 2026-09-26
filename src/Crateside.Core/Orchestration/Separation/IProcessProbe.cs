@@ -35,8 +35,8 @@ public sealed class SystemProcessProbe : IProcessProbe
         }
         // No such process is the ordinary answer, not a fault. Access-denied means the id
         // belongs to something we do not own — which is equally "not our separation".
-        catch (Exception e)
-            when (e is ArgumentException or InvalidOperationException or SystemException)
+        catch (Exception ex)
+            when (ex is ArgumentException or InvalidOperationException or SystemException)
         {
             return false;
         }

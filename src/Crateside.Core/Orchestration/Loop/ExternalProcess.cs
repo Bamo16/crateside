@@ -12,7 +12,7 @@ public static class ExternalProcess
         string executable,
         IEnumerable<string> arguments,
         string? workingDirectory = null,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         var info = new ProcessStartInfo(executable, arguments)
@@ -31,12 +31,12 @@ public static class ExternalProcess
             ?? throw new InvalidOperationException($"could not start {executable}");
 
         // Read both streams before waiting: a full pipe with nobody draining it blocks forever.
-        var stdout = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var stderr = process.StandardError.ReadToEndAsync(cancellationToken);
+        var stdout = process.StandardOutput.ReadToEndAsync(ct);
+        var stderr = process.StandardError.ReadToEndAsync(ct);
 
         try
         {
-            await process.WaitForExitAsync(cancellationToken);
+            await process.WaitForExitAsync(ct);
         }
         catch (OperationCanceledException)
         {
@@ -71,7 +71,7 @@ public static class ExternalProcess
             if (!process.HasExited)
                 process.Kill(entireProcessTree: true);
         }
-        catch (Exception e) when (e is InvalidOperationException or SystemException)
+        catch (Exception ex) when (ex is InvalidOperationException or SystemException)
         {
             // It exited on its own between the check and the kill. Nothing to do.
         }

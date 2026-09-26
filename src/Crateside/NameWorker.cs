@@ -39,9 +39,9 @@ public sealed class NameWorker(
             {
                 break;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                logger.LogWarning(e, "Resolving names failed; trying again later");
+                logger.LogWarning(ex, "Resolving names failed; trying again later");
 
                 delay = AfterFailure;
             }

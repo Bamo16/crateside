@@ -78,7 +78,7 @@ public sealed class ActionLog(string path, TimeProvider? time = null)
                 catch (JsonException) { }
             }
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
 
         return actions;
     }
@@ -100,7 +100,7 @@ public sealed class ActionLog(string path, TimeProvider? time = null)
             }
         }
         // Losing the record costs a line of history, not the action it describes.
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 }
 

@@ -76,7 +76,7 @@ public sealed class WorkingSet(string? root = null)
             )
                 evidence = File.ReadAllText(EvidencePathFor(videoId));
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
 
         return evidence is not null;
     }
@@ -99,7 +99,8 @@ public sealed class WorkingSet(string? root = null)
                 )
                 : null;
         }
-        catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
+        catch (Exception ex)
+            when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
             return null;
         }
@@ -128,7 +129,7 @@ public sealed class WorkingSet(string? root = null)
                 JsonSerializer.Serialize(acquisition, SerializerOptions)
             );
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // Losing this costs a finding, not the download it describes.
         }
@@ -181,7 +182,7 @@ public sealed class WorkingSet(string? root = null)
             if (Directory.Exists(DirectoryFor(videoId)))
                 Directory.Delete(DirectoryFor(videoId), recursive: true);
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // A file still open somewhere; harmless, and retried next pass.
         }
@@ -195,7 +196,7 @@ public sealed class WorkingSet(string? root = null)
         {
             return new FileInfo(path).Length;
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             return 0;
         }

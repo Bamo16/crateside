@@ -33,14 +33,14 @@ public sealed partial class FamiliarityLookup(HttpClient client)
     public async Task<FamiliarityReading?> ReadAsync(
         string artist,
         string title,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         try
         {
             using var search = await GetAsync(
                 $"https://api.deezer.com/search?q={Uri.EscapeDataString($"{ArtistCredit.Primary(artist)} {Bracketed.Replace(title, string.Empty).Trim()}")}",
-                cancellationToken
+                ct
             );
 
             if (search is null)
@@ -49,12 +49,9 @@ public sealed partial class FamiliarityLookup(HttpClient client)
             if (Match(search.RootElement, artist, title) is not { } track)
                 return FamiliarityReading.Unknown;
 
-            await Task.Delay(Pace, cancellationToken);
+            await Task.Delay(Pace, ct);
 
-            using var detail = await GetAsync(
-                $"https://api.deezer.com/track/{track.Id}",
-                cancellationToken
-            );
+            using var detail = await GetAsync($"https://api.deezer.com/track/{track.Id}", ct);
 
             if (detail is null)
                 return null;
@@ -63,11 +60,11 @@ public sealed partial class FamiliarityLookup(HttpClient client)
 
             foreach (var contributor in Contributors(detail.RootElement))
             {
-                await Task.Delay(Pace, cancellationToken);
+                await Task.Delay(Pace, ct);
 
                 using var credited = await GetAsync(
                     $"https://api.deezer.com/artist/{contributor}",
-                    cancellationToken
+                    ct
                 );
 
                 if (credited is null)
@@ -83,9 +80,9 @@ public sealed partial class FamiliarityLookup(HttpClient client)
 
             return new FamiliarityReading(loudest?.Name, loudest?.Fans, track.Rank);
         }
-        catch (Exception e)
-            when (e is HttpRequestException or TaskCanceledException or JsonException
-                && !cancellationToken.IsCancellationRequested
+        catch (Exception ex)
+            when (ex is HttpRequestException or TaskCanceledException or JsonException
+                && !ct.IsCancellationRequested
             )
         {
             return null;
@@ -171,15 +168,15 @@ public sealed partial class FamiliarityLookup(HttpClient client)
     /// The body, or null when Deezer's rate limit refused it. Any other error body comes back as
     /// it is and reads as knowing nothing.
     /// </summary>
-    private async Task<JsonDocument?> GetAsync(string url, CancellationToken cancellationToken)
+    private async Task<JsonDocument?> GetAsync(string url, CancellationToken ct)
     {
-        using var response = await client.GetAsync(url, cancellationToken);
+        using var response = await client.GetAsync(url, ct);
 
         response.EnsureSuccessStatusCode();
 
         var document = await JsonDocument.ParseAsync(
-            await response.Content.ReadAsStreamAsync(cancellationToken),
-            cancellationToken: cancellationToken
+            await response.Content.ReadAsStreamAsync(ct),
+            cancellationToken: ct
         );
 
         if (

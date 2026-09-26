@@ -34,7 +34,7 @@ public static class AbletonWarpReader
         {
             return TryParse(File.ReadAllBytes(asdPath), out warp);
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             warp = null;
 

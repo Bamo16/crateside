@@ -85,7 +85,7 @@ public sealed class StemRecut(
 
                 removed++;
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 return new RecutOutcome
                 {

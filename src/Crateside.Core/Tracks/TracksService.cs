@@ -3,7 +3,7 @@ using Crateside.Core.Orchestration.Loop;
 namespace Crateside.Core.Tracks;
 
 /// <summary>Produces a fresh <see cref="TracksView"/>. The expensive part, behind a name.</summary>
-public delegate Task<TracksView> ReadTracks(CancellationToken cancellationToken);
+public delegate Task<TracksView> ReadTracks(CancellationToken ct);
 
 /// <summary>Holds the composed rows, and decides when they are worth rebuilding.</summary>
 public sealed class TracksService : IDisposable
@@ -67,10 +67,10 @@ public sealed class TracksService : IDisposable
     public DateTimeOffset? LastReadAt { get; private set; }
 
     /// <summary>Rebuilds if the rows are older than <paramref name="maxAge"/>.</summary>
-    public Task EnsureFreshAsync(TimeSpan maxAge, CancellationToken cancellationToken = default) =>
+    public Task EnsureFreshAsync(TimeSpan maxAge, CancellationToken ct = default) =>
         Current is not null && LastReadAt is { } read && _time.GetUtcNow() - read < maxAge
             ? Task.CompletedTask
-            : RefreshAsync(cancellationToken);
+            : RefreshAsync(ct);
 
     /// <summary>Why the last rebuild failed, or null if it did not.</summary>
     public string? LastError { get; private set; }
@@ -83,20 +83,20 @@ public sealed class TracksService : IDisposable
     }
 
     /// <summary>Rebuilds now, whatever the timer was going to do.</summary>
-    public async Task RefreshAsync(CancellationToken cancellationToken = default)
+    public async Task RefreshAsync(CancellationToken ct = default)
     {
         try
         {
-            Current = await _read(cancellationToken);
+            Current = await _read(ct);
             LastError = null;
         }
         catch (OperationCanceledException)
         {
             return;
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            LastError = e.Message;
+            LastError = ex.Message;
         }
 
         // Stamped on failure too.

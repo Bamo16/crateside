@@ -78,7 +78,7 @@ public sealed class SourceAdd(
         string? label,
         SampleType? type,
         bool anyway = false,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         var plan = PlanFor(track, url, label, type, KeyLedger.Read(paths.Ledger));
@@ -87,7 +87,7 @@ public sealed class SourceAdd(
             return new AddOutcome { Problem = refusal };
 
         var source = plan.Source!;
-        var probed = await probe.ReadAsync(source.WatchUrl, cancellationToken);
+        var probed = await probe.ReadAsync(source.WatchUrl, ct);
 
         if (!probed.IsReadable)
             return new AddOutcome { Problem = probed.Problem };
@@ -97,7 +97,7 @@ public sealed class SourceAdd(
         if (probed.FallsShort && !anyway)
             return new AddOutcome { Shortfall = probed };
 
-        if (await RestateAsync(track.VideoId, source.VideoId, cancellationToken) is { } failure)
+        if (await RestateAsync(track.VideoId, source.VideoId, ct) is { } failure)
             return new AddOutcome { Problem = failure };
 
         settings.SetPlan(track.VideoId, track.Plan.Adding(source));
@@ -106,14 +106,9 @@ public sealed class SourceAdd(
     }
 
     /// <summary>What the upload is called, for suggesting what kind of file it is.</summary>
-    public async Task<string?> TitleOfAsync(string? url, CancellationToken cancellationToken) =>
+    public async Task<string?> TitleOfAsync(string? url, CancellationToken ct) =>
         YouTubeUrl.TryGetVideoId(url, out var videoId)
-            ? (
-                await probe.ReadAsync(
-                    $"https://music.youtube.com/watch?v={videoId}",
-                    cancellationToken
-                )
-            ).Title
+            ? (await probe.ReadAsync($"https://music.youtube.com/watch?v={videoId}", ct)).Title
             : null;
 
     /// <summary>The song keytag already has this video under, when it is not this track's.</summary>
@@ -123,11 +118,7 @@ public sealed class SourceAdd(
             ? known
             : null;
 
-    private async Task<string?> RestateAsync(
-        string videoId,
-        string added,
-        CancellationToken cancellationToken
-    )
+    private async Task<string?> RestateAsync(string videoId, string added, CancellationToken ct)
     {
         var outcome = await ExternalProcess.RunAsync(
             uv,
@@ -142,7 +133,7 @@ public sealed class SourceAdd(
                 $"https://music.youtube.com/watch?v={added}",
             ],
             workingDirectory: null,
-            cancellationToken
+            ct
         );
 
         return outcome.Succeeded

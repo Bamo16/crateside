@@ -16,13 +16,13 @@ public sealed class PlaylistRemover(PlaylistAuthorizer authorizer)
     /// </summary>
     public async Task<IReadOnlyList<RemovalResult>> RemoveAsync(
         IReadOnlyList<QueueItem> items,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         if (items.Count == 0)
             return [];
 
-        if (await authorizer.GetCredentialAsync(cancellationToken) is not { } credential)
+        if (await authorizer.GetCredentialAsync(ct) is not { } credential)
             throw new QueueUnavailableException(
                 "Not authorized to modify the playlist. Grant access and try again."
             );
@@ -39,9 +39,9 @@ public sealed class PlaylistRemover(PlaylistAuthorizer authorizer)
 
         foreach (var item in items)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            ct.ThrowIfCancellationRequested();
 
-            results.Add(await RemoveOneAsync(service, item, cancellationToken));
+            results.Add(await RemoveOneAsync(service, item, ct));
         }
 
         return results;
@@ -50,7 +50,7 @@ public sealed class PlaylistRemover(PlaylistAuthorizer authorizer)
     private static async Task<RemovalResult> RemoveOneAsync(
         YouTubeService service,
         QueueItem item,
-        CancellationToken cancellationToken
+        CancellationToken ct
     )
     {
         // A track crateside is working that the playlist no longer holds has nothing to remove.
@@ -65,7 +65,7 @@ public sealed class PlaylistRemover(PlaylistAuthorizer authorizer)
 
         try
         {
-            await service.PlaylistItems.Delete(id).ExecuteAsync(cancellationToken);
+            await service.PlaylistItems.Delete(id).ExecuteAsync(ct);
 
             return new RemovalResult
             {
@@ -74,7 +74,7 @@ public sealed class PlaylistRemover(PlaylistAuthorizer authorizer)
                 Removed = true,
             };
         }
-        catch (GoogleApiException e) when (e.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
         {
             // Already gone. Idempotent by design.
             return new RemovalResult
@@ -84,15 +84,15 @@ public sealed class PlaylistRemover(PlaylistAuthorizer authorizer)
                 Removed = true,
             };
         }
-        catch (GoogleApiException e)
+        catch (GoogleApiException ex)
         {
             return new RemovalResult
             {
                 PlaylistItemId = id,
                 Title = item.Title,
                 Removed = false,
-                Reason = Describe(e),
-                CanSucceedLater = CanSucceedLater(e),
+                Reason = Describe(ex),
+                CanSucceedLater = CanSucceedLater(ex),
             };
         }
     }

@@ -34,9 +34,9 @@ public sealed class StageWorker(
             {
                 break;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                logger.LogError(e, "{Stage} tick failed", drainer.Stage);
+                logger.LogError(ex, "{Stage} tick failed", drainer.Stage);
             }
 
             try

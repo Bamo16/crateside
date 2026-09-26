@@ -378,9 +378,9 @@ public static class ServiceRegistration
         services.AddHostedService<FamiliarityWorker>();
 
         services.AddSingleton(sp => new TracksService(
-            async cancellationToken =>
+            async ct =>
             {
-                var scan = await sp.GetRequiredService<QueueService>().ScanAsync(cancellationToken);
+                var scan = await sp.GetRequiredService<QueueService>().ScanAsync(ct);
 
                 var view = TracksView.Compose(
                     scan.View,
@@ -393,7 +393,7 @@ public static class ServiceRegistration
                     scan.Instructions,
                     sp.GetRequiredService<ResolvedNameStore>().Read(),
                     sp.GetRequiredService<WorkingSet>().Acquisitions(),
-                    await sp.GetRequiredService<PresetCatalogReader>().ReadAsync(cancellationToken),
+                    await sp.GetRequiredService<PresetCatalogReader>().ReadAsync(ct),
                     sp.GetRequiredService<AbletonIndexReader>()
                         .Read(sp.GetRequiredService<CratesidePaths>().MashupSamples),
                     sp.GetRequiredService<DeletionLog>().All(),

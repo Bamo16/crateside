@@ -78,7 +78,7 @@ public sealed class DeletionLog(string path, TimeProvider? time = null)
                 catch (JsonException) { }
             }
         }
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
 
         return deletions;
     }
@@ -100,7 +100,7 @@ public sealed class DeletionLog(string path, TimeProvider? time = null)
             }
         }
         // Losing the record costs a notice, not the deletion it describes.
-        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 }
 

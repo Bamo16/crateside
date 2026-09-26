@@ -81,7 +81,7 @@ public sealed class FamiliarityStore
                     JsonSerializer.Serialize(records.Values.OrderBy(r => r.Song), SerializerOptions)
                 );
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
     }
 
@@ -98,7 +98,8 @@ public sealed class FamiliarityStore
                 ).ToDictionary(r => r.Song, StringComparer.OrdinalIgnoreCase)
                 : new(StringComparer.OrdinalIgnoreCase);
         }
-        catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
+        catch (Exception ex)
+            when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
             return new(StringComparer.OrdinalIgnoreCase);
         }

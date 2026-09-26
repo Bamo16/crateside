@@ -24,8 +24,6 @@ public class DrainSignal
 
     /// <summary>Waits out the worker's idle delay, returning early when woken.</summary>
     /// <returns>True when woken, false when the delay simply elapsed.</returns>
-    public Task<bool> WaitForWorkAsync(
-        TimeSpan delay,
-        CancellationToken cancellationToken = default
-    ) => _wake.WaitAsync(delay, cancellationToken);
+    public Task<bool> WaitForWorkAsync(TimeSpan delay, CancellationToken ct = default) =>
+        _wake.WaitAsync(delay, ct);
 }

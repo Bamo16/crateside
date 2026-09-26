@@ -20,7 +20,7 @@ public sealed class QuotaReader(HttpClient client)
     /// The current window, or <see cref="QuotaSnapshot.Unknown"/> — never an exception — if it
     /// cannot be read.
     /// </summary>
-    public async Task<QuotaSnapshot> ReadAsync(CancellationToken cancellationToken = default)
+    public async Task<QuotaSnapshot> ReadAsync(CancellationToken ct = default)
     {
         if (ReadAccessToken() is not { Length: > 0 } token)
             return QuotaSnapshot.Unknown;
@@ -32,15 +32,15 @@ public sealed class QuotaReader(HttpClient client)
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             request.Headers.Add("anthropic-beta", BetaHeader);
 
-            using var response = await client.SendAsync(request, cancellationToken);
+            using var response = await client.SendAsync(request, ct);
 
             if (!response.IsSuccessStatusCode)
                 return QuotaSnapshot.Unknown;
 
-            return Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+            return Parse(await response.Content.ReadAsStringAsync(ct));
         }
-        catch (Exception e)
-            when (e is HttpRequestException or TaskCanceledException or JsonException)
+        catch (Exception ex)
+            when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
             return QuotaSnapshot.Unknown;
         }
@@ -136,7 +136,8 @@ public sealed class QuotaReader(HttpClient client)
                 ? token.GetString()
                 : null;
         }
-        catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
+        catch (Exception ex)
+            when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
             return null;
         }

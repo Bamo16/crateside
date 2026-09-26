@@ -38,9 +38,7 @@ public sealed class PlaylistAuthorizer(
     /// The stored credential, refreshed if needed, or null when there is none or it cannot be.
     /// Never prompts: that is <see cref="ConsentAsync"/>.
     /// </summary>
-    public async Task<UserCredential?> GetCredentialAsync(
-        CancellationToken cancellationToken = default
-    )
+    public async Task<UserCredential?> GetCredentialAsync(CancellationToken ct = default)
     {
         if (!IsConfigured || !HasStoredToken)
             return null;
@@ -56,24 +54,24 @@ public sealed class PlaylistAuthorizer(
                 }
             );
 
-            if (await flow.LoadTokenAsync(UserKey, cancellationToken) is not { } token)
+            if (await flow.LoadTokenAsync(UserKey, ct) is not { } token)
                 return null;
 
             var credential = new UserCredential(flow, UserKey, token);
 
             if (credential.Token.IsStale)
-                await credential.RefreshTokenAsync(cancellationToken);
+                await credential.RefreshTokenAsync(ct);
 
             access.Works();
 
             return credential;
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
             // A revoked or expired refresh token throws here. It still reads as "no credential"
             // to every caller — but it is not the same as never having consented, and collapsing
             // the two is what made the lapse silent (#34).
-            access.Lapsed(e.Message);
+            access.Lapsed(ex.Message);
 
             return null;
         }
@@ -83,14 +81,14 @@ public sealed class PlaylistAuthorizer(
     /// Runs the interactive consent flow, opening a browser. Only ever called from an explicit
     /// user action.
     /// </summary>
-    public Task<UserCredential> ConsentAsync(CancellationToken cancellationToken = default) =>
+    public Task<UserCredential> ConsentAsync(CancellationToken ct = default) =>
         !IsConfigured
             ? throw new QueueUnavailableException("No OAuth client is configured.")
             : GoogleWebAuthorizationBroker.AuthorizeAsync(
                 ClientSecrets,
                 Scopes,
                 UserKey,
-                cancellationToken,
+                ct,
                 tokenStore
             );
 
@@ -101,11 +99,9 @@ public sealed class PlaylistAuthorizer(
     /// The YouTube channel the stored token belongs to, or null if unknown — the wrong one fails
     /// deletes as a bare 403. Costs 1 quota unit.
     /// </summary>
-    public async Task<string?> GetAuthorizedChannelAsync(
-        CancellationToken cancellationToken = default
-    )
+    public async Task<string?> GetAuthorizedChannelAsync(CancellationToken ct = default)
     {
-        if (await GetCredentialAsync(cancellationToken) is not { } credential)
+        if (await GetCredentialAsync(ct) is not { } credential)
             return null;
 
         try
@@ -121,7 +117,7 @@ public sealed class PlaylistAuthorizer(
             var request = service.Channels.List("snippet");
             request.Mine = true;
 
-            var response = await request.ExecuteAsync(cancellationToken);
+            var response = await request.ExecuteAsync(ct);
 
             return response.Items?.FirstOrDefault()?.Snippet?.Title;
         }

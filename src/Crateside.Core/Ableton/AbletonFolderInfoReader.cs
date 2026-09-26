@@ -43,8 +43,8 @@ public sealed class AbletonFolderInfoReader
 
             return new AbletonFolderInfo(rootFolder, entries);
         }
-        catch (Exception e)
-            when (e is IOException or UnauthorizedAccessException or System.Xml.XmlException)
+        catch (Exception ex)
+            when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException)
         {
             return AbletonFolderInfo.Empty(rootFolder);
         }

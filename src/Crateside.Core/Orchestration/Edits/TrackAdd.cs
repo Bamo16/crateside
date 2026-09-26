@@ -90,7 +90,7 @@ public sealed class TrackAdd(
         string? url,
         IReadOnlyList<TrackRowFacts> known,
         bool anyway = false,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
         var plan = PlanFor(url, known, KeyLedger.Read(paths.Ledger));
@@ -98,10 +98,7 @@ public sealed class TrackAdd(
         if (plan.Refusal is { } refusal)
             return new AddTrackOutcome { Problem = refusal };
 
-        var probed = await probe.ReadAsync(
-            $"https://music.youtube.com/watch?v={plan.VideoId}",
-            cancellationToken
-        );
+        var probed = await probe.ReadAsync($"https://music.youtube.com/watch?v={plan.VideoId}", ct);
 
         if (!probed.IsReadable)
             return new AddTrackOutcome { Problem = probed.Problem };

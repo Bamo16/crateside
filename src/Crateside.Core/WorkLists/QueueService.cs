@@ -14,7 +14,7 @@ public delegate IReadOnlySet<string> ReadReopenedTracks(KeyLedger ledger);
 /// <summary>
 /// What the separator can make, and what it calls each one.
 /// </summary>
-public delegate Task<PresetCatalog> ReadPresetCatalog(CancellationToken cancellationToken);
+public delegate Task<PresetCatalog> ReadPresetCatalog(CancellationToken ct);
 
 public sealed class QueueService(
     IOptions<CratesidePaths> paths,
@@ -57,12 +57,11 @@ public sealed class QueueService(
     public bool IsAuthorized => authorizer.IsConfigured && authorizer.HasStoredToken;
 
     /// <summary>Runs the interactive consent flow. Only from an explicit user action.</summary>
-    public Task ConsentAsync(CancellationToken cancellationToken = default) =>
-        authorizer.ConsentAsync(cancellationToken);
+    public Task ConsentAsync(CancellationToken ct = default) => authorizer.ConsentAsync(ct);
 
     /// <summary>Which channel the stored consent belongs to, or null if unknown.</summary>
-    public Task<string?> GetAuthorizedChannelAsync(CancellationToken cancellationToken = default) =>
-        authorizer.GetAuthorizedChannelAsync(cancellationToken);
+    public Task<string?> GetAuthorizedChannelAsync(CancellationToken ct = default) =>
+        authorizer.GetAuthorizedChannelAsync(ct);
 
     public Task SignOutAsync() => authorizer.SignOutAsync();
 
@@ -146,9 +145,9 @@ public sealed class QueueService(
     /// <summary>
     /// The playlist, from the API or from the last read; readers arriving together share one call.
     /// </summary>
-    private async Task<IReadOnlyList<QueueItem>> ItemsAsync(CancellationToken cancellationToken)
+    private async Task<IReadOnlyList<QueueItem>> ItemsAsync(CancellationToken ct)
     {
-        await _readGate.WaitAsync(cancellationToken);
+        await _readGate.WaitAsync(ct);
 
         try
         {
@@ -161,22 +160,22 @@ public sealed class QueueService(
                 // whether the playlist adds new videos to the top.
                 _cachedItems =
                 [
-                    .. (
-                        await reader.ListAsync(PlaylistId ?? string.Empty, cancellationToken)
-                    ).OrderBy(item => item.AddedAt ?? DateTimeOffset.MaxValue),
+                    .. (await reader.ListAsync(PlaylistId ?? string.Empty, ct)).OrderBy(item =>
+                        item.AddedAt ?? DateTimeOffset.MaxValue
+                    ),
                 ];
                 _cachedAt = DateTimeOffset.UtcNow;
                 PlaylistProblem = null;
 
                 return _cachedItems;
             }
-            catch (QueueUnavailableException e)
+            catch (QueueUnavailableException ex)
             {
                 // A playlist that cannot be read means no new arrivals, not no queue (ADR 0021).
                 // Everything already taken on is on disk, in the ledger and in the intake, and
                 // none of it needs the network — so failing the scan here stopped crateside
                 // working on tracks it had fully recorded. A spent daily quota did exactly that.
-                PlaylistProblem = e.Message;
+                PlaylistProblem = ex.Message;
 
                 return _cachedItems ?? [];
             }
@@ -191,12 +190,12 @@ public sealed class QueueService(
     /// Reads the queue and keeps everything the read produced. The most expensive thing in the
     /// app — it opens every audio file under three roots — so it must not run per event.
     /// </summary>
-    public async Task<QueueScan> ScanAsync(CancellationToken cancellationToken = default)
+    public async Task<QueueScan> ScanAsync(CancellationToken ct = default)
     {
-        var held = Pasted(await ItemsAsync(cancellationToken));
+        var held = Pasted(await ItemsAsync(ct));
         var items = TakenOn(held);
 
-        await ConsumeAsync(held, cancellationToken);
+        await ConsumeAsync(held, ct);
 
         // Both staging and Mashup Samples count — a track that moved out is still processed.
         var ledger = KeyLedger.Read(_paths.Ledger);
@@ -210,7 +209,7 @@ public sealed class QueueService(
             .Read()
             .Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal);
 
-        var catalog = presets is null ? PresetCatalog.Empty : await presets(cancellationToken);
+        var catalog = presets is null ? PresetCatalog.Empty : await presets(ct);
 
         return new QueueScan
         {
@@ -282,10 +281,7 @@ public sealed class QueueService(
     /// Gives back the entries crateside has recorded, so the playlist stops holding what it has
     /// already delivered (ADR 0021).
     /// </summary>
-    private async Task ConsumeAsync(
-        IReadOnlyList<QueueItem> held,
-        CancellationToken cancellationToken
-    )
+    private async Task ConsumeAsync(IReadOnlyList<QueueItem> held, CancellationToken ct)
     {
         // Not "recorded by this scan": a track recorded before the setting was turned on would
         // then never be new again, and the playlist would never empty at all.
@@ -322,7 +318,7 @@ public sealed class QueueService(
 
         try
         {
-            var results = await RemoveAsync(entries, cancellationToken);
+            var results = await RemoveAsync(entries, ct);
             var videoIdOf = entries.ToDictionary(
                 item => item.PlaylistItemId!,
                 item => item.VideoId,
@@ -425,20 +421,20 @@ public sealed class QueueService(
     /// <summary>
     /// The queue sorted into work lists — the conclusion of a <see cref="ScanAsync"/>.
     /// </summary>
-    public async Task<QueueView> ReadAsync(CancellationToken cancellationToken = default) =>
-        (await ScanAsync(cancellationToken)).View;
+    public async Task<QueueView> ReadAsync(CancellationToken ct = default) =>
+        (await ScanAsync(ct)).View;
 
     /// <summary>
     /// Removes every fully-processed item from the playlist, re-testing first so a stale page
     /// cannot delete something that has since stopped qualifying.
     /// </summary>
     public async Task<IReadOnlyList<RemovalResult>> RemoveProcessedAsync(
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
-        var view = await ReadAsync(cancellationToken);
+        var view = await ReadAsync(ct);
 
-        return await RemoveAsync(view.FullyProcessed, cancellationToken);
+        return await RemoveAsync(view.FullyProcessed, ct);
     }
 
     /// <summary>
@@ -447,10 +443,10 @@ public sealed class QueueService(
     /// </summary>
     public async Task<IReadOnlyList<RemovalResult>> RemoveAsync(
         IReadOnlyList<QueueItem> items,
-        CancellationToken cancellationToken = default
+        CancellationToken ct = default
     )
     {
-        var results = await remover.RemoveAsync(items, cancellationToken);
+        var results = await remover.RemoveAsync(items, ct);
 
         // The playlist just changed underneath the cache, so holding the old one would show
         // removed tracks as still queued — and a drain loop would pick one.

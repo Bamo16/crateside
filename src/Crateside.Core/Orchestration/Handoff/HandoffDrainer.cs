@@ -26,7 +26,7 @@ public sealed class HandoffDrainer(
 
     public JobStage Stage => JobStage.Handoff;
 
-    public Task<StageTick> DrainOnceAsync(CancellationToken cancellationToken = default)
+    public Task<StageTick> DrainOnceAsync(CancellationToken ct = default)
     {
         var ledger = KeyLedger.Read(_paths.Ledger);
 
