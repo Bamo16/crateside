@@ -19,6 +19,9 @@ public enum TrackFilter
     /// <summary>Stopped, parked, or carrying a finding.</summary>
     NeedsAttention,
 
+    /// <summary>A genre with no answer, or a familiarity the numbers leave to the user (#65).</summary>
+    TagsToAnswer,
+
     /// <summary>
     /// Every row there is, the finished library included. Answers "do I have this track in any
     /// shape or form", which is a search question.
@@ -61,6 +64,7 @@ public static class TrackFilters
                 || row.AuditNote is not null
                 || row.Lookalike is not null
                 || row.AwaitingRename > 0,
+            TrackFilter.TagsToAnswer => row.HasTagsToAnswer,
             TrackFilter.All => true,
             _ => false,
         };

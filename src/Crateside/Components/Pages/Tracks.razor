@@ -109,7 +109,7 @@
         @foreach (var filter in Enum.GetValues<TrackFilter>())
         {
             <button class="pill @(filter == _filter ? "on " + Tone(filter) : "off")"
-                    @onclick="() => _filter = filter">
+                    @onclick="() => ShowFilter(filter)">
                 @Name(filter)
                 <span class="mono count @Tone(filter)">@Rows.Count(filter)</span>
             </button>
@@ -192,18 +192,31 @@
         </div>
     }
 
-    <div class="heads @(_filter is TrackFilter.InStaging ? "roomy" : null)">
-        <span></span>
-        <span>Song</span>
-        <span>Key</span>
-        <span>Confidence</span>
-        <span class="right">BPM</span>
-        <span>State</span>
-        @if (_filter is TrackFilter.InStaging)
-        {
-            <span>Since</span>
-        }
-    </div>
+    @if (_filter is TrackFilter.TagsToAnswer)
+    {
+        <div class="heads tags">
+            <span></span>
+            <span>Song</span>
+            <span>Genre</span>
+            <span>Familiarity</span>
+        </div>
+    }
+    else
+    {
+        <div class="heads @(_filter is TrackFilter.InStaging ? "roomy" : null)">
+            <span></span>
+            <span>Song</span>
+            <span>Key</span>
+            <span>Confidence</span>
+            <span class="right">BPM</span>
+            <span>Genre</span>
+            <span>State</span>
+            @if (_filter is TrackFilter.InStaging)
+            {
+                <span>Since</span>
+            }
+        </div>
+    }
 
     @if (_view is { PlaylistProblem: { } stale })
     {
@@ -233,7 +246,7 @@
                 Nothing matching <strong>@_search</strong> in @Name(_filter). Found in
                 @foreach (var filter in elsewhere)
                 {
-                    <button class="jump" @onclick="() => _filter = filter">
+                    <button class="jump" @onclick="() => ShowFilter(filter)">
                         @Name(filter)
                         <span class="mono">@Found.Count(filter)</span>
                     </button>
@@ -251,6 +264,28 @@
         {
             var open = _expanded == row.VideoId;
 
+            @if (_filter is TrackFilter.TagsToAnswer)
+            {
+                <div id="@Anchor(row)" class="row tags @(open ? "open" : null) @(row.HasTagsToAnswer ? null : "answered")"
+                     @onclick="() => Expand(row)">
+                    <span class="chevron mono">@(open ? "⌄" : "›")</span>
+
+                    <span class="song-cell">
+                        <span class="song">@row.Title</span>
+                        <span class="tag-note">@TagNote(row)</span>
+                    </span>
+
+                    <span class="tag-cell" @onclick:stopPropagation="true">
+                        <GenreStrip Row="row" Shape="GenreStrip.Shapes.Chips" />
+                    </span>
+
+                    <span class="tag-cell" @onclick:stopPropagation="true">
+                        <FamiliarityStrip Row="row" Inline="true" />
+                    </span>
+                </div>
+            }
+            else
+            {
             <div id="@Anchor(row)"
                  class="row @(_filter is TrackFilter.InStaging ? "roomy" : null) @(open ? "open" : null)"
                  @onclick="() => Expand(row)">
@@ -284,6 +319,10 @@
                     @(row.Bpm is { } bpm ? bpm.ToString("N0") : "—")
                 </span>
 
+                <span class="genre-cell">
+                    <GenreStrip Row="row" Shape="GenreStrip.Shapes.Cell" />
+                </span>
+
                 <span>
                     <StateChip Row="row" />
                 </span>
@@ -295,16 +334,17 @@
                     </span>
                 }
             </div>
+            }
 
             @if (open)
             {
-                <div class="panel" @key="row.VideoId">
+                <div class="panel @(SideStack.IsFolded(_stems, row) ? "folded" : null)" @key="row.VideoId">
                     <TrackFindings Row="row" />
 
-                    <StemList Editor="_stems" Row="row" />
+                    <StemList Editor="_stems" Row="row" FormsBeside="true" />
 
                     <div class="side">
-                        <SideStack Row="row" Editor="_stems" Removed="OnRemoved" />
+                        <SideStack Row="row" Editor="_stems" Columns="2" FoldWhilePicking="true" Removed="OnRemoved" />
 
                         @if (_problem is { } problem)
                         {
@@ -479,7 +519,38 @@
     /// <summary>Everything answering the search, before the filter narrows it.</summary>
     private IEnumerable<TrackRow> Found => Rows.Where(row => row.Matches(_search));
 
-    private IEnumerable<TrackRow> Shown => Found.Where(row => row.Matches(_filter));
+    /// <summary>
+    /// Rows the Tags to answer view has shown, kept in place once answered so nothing moves under
+    /// the cursor until the view is left.
+    /// </summary>
+    private readonly HashSet<string> _held = new(StringComparer.Ordinal);
+
+    private IEnumerable<TrackRow> Shown =>
+        _filter is TrackFilter.TagsToAnswer ? Answering() : Found.Where(row => row.Matches(_filter));
+
+    private IEnumerable<TrackRow> Answering()
+    {
+        foreach (var row in Found.Where(row => row.HasTagsToAnswer))
+            _held.Add(row.VideoId);
+
+        return Found.Where(row => _held.Contains(row.VideoId));
+    }
+
+    private void ShowFilter(TrackFilter filter)
+    {
+        _filter = filter;
+        _held.Clear();
+    }
+
+    private static string TagNote(TrackRow row) =>
+        string.Join(
+            " · ",
+            new[]
+            {
+                row.Genre is { IsSettled: false } ? GenreStrip.Heard(row.Genre) : null,
+                row.Familiarity is { Written: null, LookedUpAt: not null } ? "your call on familiarity" : null,
+            }.OfType<string>()
+        );
 
     protected override async Task OnInitializedAsync()
     {
@@ -695,6 +766,7 @@
             TrackFilter.InStaging => "In staging",
             TrackFilter.InFlight => "In flight",
             TrackFilter.NeedsAttention => "Needs attention",
+            TrackFilter.TagsToAnswer => "Tags to answer",
             _ => filter.ToString(),
         };
 

@@ -2,9 +2,45 @@
 
 .stack,
 .stack-body,
+.stack-col,
 .below-name {
     display: flex;
     flex-direction: column;
+}
+
+/* Wrapped once, keeping handoff 06's order: Go, Next and Tags, then Name and Start over. */
+@media (min-width: 1200px) {
+    .stack-body.two {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 28px;
+        align-items: start;
+    }
+
+    .stack-body.two > .stack-col > ::deep .group:first-child {
+        padding-top: 0;
+        border-top: none;
+    }
+}
+
+.stack.folded {
+    gap: 12px;
+}
+
+.stack.folded .confirm-slot {
+    margin-bottom: 0;
+}
+
+.fold-note {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-50);
+}
+
+.fold-note.after {
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
 }
 
 .confirm-slot {
@@ -29,7 +65,7 @@
     border-top: 1px solid var(--line);
 }
 
-.stack-body > ::deep .group:first-child {
+.stack-body > .stack-col:first-child > ::deep .group:first-child {
     padding-top: 0;
     border-top: none;
 }

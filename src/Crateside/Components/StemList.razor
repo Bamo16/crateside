@@ -13,206 +13,80 @@
 @if (ticking || Row.Samples.Count > 0 || Row.HasWarpGuide)
 {
     <div class="stems">
-        <div class="panel-head">
-            @(Row.CanChangePlan ? "Will be cut into" : StemsHeading(Row))@if (picking && !picker.IsAdditive)
-            {
-                <span class="pending"> · re-cut pending</span>
-            }
-        </div>
-
         @if (ticking)
         {
-            <div class="stem-heads picking @(Row.CanChangePlan ? "planning" : null)">
-                <span></span>
-                <span>Sample</span>
-                @if (!Row.CanChangePlan)
+            <div class="panel-head">
+                @if (Row.CanChangePlan)
                 {
-                    <span>Ableton key</span>
-                    <span>Where it is</span>
+                    <text>Will be cut into</text>
+                    <span class="head-note">changes apply now · nothing has been made yet</span>
                 }
-                <span></span>
+                else
+                {
+                    <span class="changing">Changing what is cut</span>
+                    @if (!picker.IsAdditive && picker.ChangesAnything)
+                    {
+                        <span class="pending"> · re-cut pending</span>
+                    }
+                }
             </div>
 
-            @foreach (var band in picker.Bands)
-            {
-                <div class="stem-band">@band.Label</div>
-
-                @foreach (var line in band.Lines)
+            <div class="bands">
+                @foreach (var band in picker.Bands)
                 {
-                    <div class="stem picking @(Row.CanChangePlan ? "planning" : null) @LineTone(line)"
-                         title="@(line.Kind is StemKind.Preset ? line.Description : null)"
-                         @onclick="() => Editor.Toggle(Row, line)">
-                        <span class="tick @TickTone(line)">@TickMark(line)</span>
+                    <div class="band">
+                        <div class="stem-band">@band.Label</div>
 
-                        <span class="stem-label">
-                            @line.Label
-                            @if (line.AddedSource is not null)
-                            {
-                                <span class="kind">added by you</span>
-                            }
-                            else if (line.Kind is StemKind.Source)
-                            {
-                                <span class="kind">separation source</span>
-                            }
-                            @if (line.IsNotPremium)
-                            {
-                                <span class="premium-badge" title="The upload offered no premium audio, so this file is the best it had.">not premium</span>
-                            }
-                            @if (line.Kind is StemKind.WarpGuide)
-                            {
-                                <span class="kind">warp guide</span>
-                            }
-                        </span>
-
-                        @if (!Row.CanChangePlan)
+                        @foreach (var line in band.Lines)
                         {
-                            <span class="mono stem-tag @(line.AbletonKey is null ? "dim" : null)">
-                                @Tag(line, Row)
-                            </span>
-                            <span class="mono stem-where @WhereTone(line)">@Where(line, picker)</span>
+                            <div class="pick @LineTone(line) @(Row.CanChangePlan ? "planning" : null)"
+                                 title="@Hover(line, Row)"
+                                 @onclick="() => Editor.Toggle(Row, line)">
+                                <span class="tick @TickTone(line)">@TickMark(line)</span>
+                                <span class="pick-label">
+                                    @PickLabel(line)
+                                    @if (line.IsNotPremium)
+                                    {
+                                        <span class="premium-badge" title="The upload offered no premium audio, so this file is the best it had.">not premium</span>
+                                    }
+                                </span>
+                                @if (!Row.CanChangePlan)
+                                {
+                                    <span class="mono pick-state @StateTone(line)">@StateWord(line, picker)</span>
+                                }
+                            </div>
                         }
 
-                        <span class="stem-note">@Note(line, Row)</span>
+                        @if (band.Label == "Sources")
+                        {
+                            @if (!FormsBeside && SourceForms.IsOpen(Editor, Row))
+                            {
+                                <SourceForms Editor="Editor" Row="Row" />
+                            }
+                            else
+                            {
+                                var adding = Editor.Adding == Row.VideoId;
+                                var adopting = Editor.Adopting == Row.VideoId;
+
+                                <button class="opener compact @(adding ? "open" : adopting ? "dimmed" : null)"
+                                        @onclick="() => Editor.StartAdding(Row)" disabled="@Editor.Working"
+                                        title="another file of this song · kept whole, never separated">
+                                    <span class="mono">+</span>
+                                    <span>@(adding ? "Adding a source →" : "Add a source")</span>
+                                </button>
+                                <button class="opener compact @(adopting ? "open" : adding ? "dimmed" : null)"
+                                        @onclick="() => Editor.StartAdopting(Row)" disabled="@Editor.Working"
+                                        title="one you made by hand · taken in where it is">
+                                    <span class="mono">+</span>
+                                    <span>@(adopting ? "Adopting a file →" : "Adopt a file")</span>
+                                </button>
+                            }
+                        }
                     </div>
                 }
+            </div>
 
-                @if (band.Label == "Sources")
-                {
-                    @if (Editor.Adding == Row.VideoId)
-                    {
-                        <div class="add-source">
-                            <div class="add-fields">
-                                <label>
-                                    <span>Where it is</span>
-                                    <input class="mono" placeholder="YouTube URL or video ID"
-                                           value="@Editor.AddUrl"
-                                           @oninput="e => Editor.OnAdd(Row, url: e.Value?.ToString())" />
-                                </label>
-                                <label>
-                                    <span>What it is</span>
-                                    <input placeholder="Official Instrumental"
-                                           value="@Editor.AddLabel"
-                                           @oninput="e => Editor.OnAdd(Row, label: e.Value?.ToString())" />
-                                </label>
-                            </div>
-
-                            <div class="add-type">
-                                <span class="add-type-label">Plays as</span>
-                                @foreach (var type in Enum.GetValues<SampleType>())
-                                {
-                                    <button class="pill @(Editor.AddType == type ? "on plain" : "off")"
-                                            @onclick="() => Editor.ChooseType(Row, type)" disabled="@Editor.Working">
-                                        @type
-                                    </button>
-                                }
-                                <span class="add-title">@Editor.TitleNote</span>
-                            </div>
-
-                            <p class="add-note @(Editor.AddPlan?.Refusal is null && Editor.Shortfall is null ? null : "bad")">
-                                @if (Editor.Shortfall is { } poor)
-                                {
-                                    <text>
-                                        This upload offers no premium format.
-                                        The best it has is @poor.Quality, and
-                                        that is what would land in your library.
-                                    </text>
-                                }
-                                else
-                                {
-                                    @(Editor.AddPlan?.Refusal ?? StemEditor.AddNote(Row))
-                                }
-                            </p>
-
-                            <div class="actions">
-                                @if (Editor.Shortfall is not null)
-                                {
-                                    <button class="danger" disabled="@Editor.Working"
-                                            @onclick="() => Editor.ConfirmAddAsync(Row, anyway: true)">
-                                        @(Editor.Working ? "Adding…" : "Add it anyway")
-                                    </button>
-                                }
-                                else
-                                {
-                                    <button class="primary" disabled="@(Editor.Working || Editor.AddPlan?.IsPossible is not true)"
-                                            @onclick="() => Editor.ConfirmAddAsync(Row)">
-                                        @(Editor.Working ? "Checking…" : "Add source")
-                                    </button>
-                                }
-                                <button class="outline" @onclick="Editor.CancelAdding" disabled="@Editor.Working">
-                                    Cancel
-                                </button>
-                            </div>
-                        </div>
-                    }
-                    else if (Editor.Adopting == Row.VideoId)
-                    {
-                        <div class="add-source">
-                            <div class="add-fields">
-                                <label>
-                                    <span>The file</span>
-                                    <select value="@Editor.AdoptPath"
-                                            @onchange="e => Editor.OnAdopt(Row, e.Value?.ToString())">
-                                        <option value="">Choose a file nothing has placed…</option>
-                                        @foreach (var candidate in Editor.AdoptCandidates)
-                                        {
-                                            <option value="@candidate">@Path.GetFileName(candidate)</option>
-                                        }
-                                    </select>
-                                </label>
-                                <label>
-                                    <span>What the track calls it</span>
-                                    <input value="@(Editor.AdoptPlan?.Label ?? string.Empty)" readonly
-                                           placeholder="read from the brackets in its name" />
-                                </label>
-                            </div>
-
-                            <div class="add-type">
-                                <span class="add-type-label">Plays as</span>
-                                @foreach (var type in Enum.GetValues<SampleType>())
-                                {
-                                    <button class="pill @(Editor.AdoptType == type ? "on plain" : "off")"
-                                            @onclick="() => Editor.ChooseAdoptType(Row, type)" disabled="@Editor.Working">
-                                        @type
-                                    </button>
-                                }
-                            </div>
-
-                            <p class="add-note @(Editor.AdoptPlan?.Refusal is null ? null : "bad")">
-                                @(Editor.AdoptPlan?.Refusal ?? StemEditor.AdoptNote)
-                            </p>
-
-                            <div class="actions">
-                                <button class="primary" disabled="@(Editor.Working || Editor.AdoptPlan?.IsPossible is not true)"
-                                        @onclick="() => Editor.ConfirmAdoptAsync(Row)">
-                                    Adopt it
-                                </button>
-                                <button class="outline" @onclick="Editor.CancelAdopting" disabled="@Editor.Working">
-                                    Cancel
-                                </button>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <button class="opener" @onclick="() => Editor.StartAdding(Row)" disabled="@Editor.Working">
-                            <span class="mono">+</span>
-                            <span>Add a source</span>
-                            <span class="opener-hint">
-                                another file of this song · kept whole, never separated
-                            </span>
-                        </button>
-                        <button class="opener" @onclick="() => Editor.StartAdopting(Row)" disabled="@Editor.Working">
-                            <span class="mono">+</span>
-                            <span>Adopt a file</span>
-                            <span class="opener-hint">
-                                one you made by hand · taken in where it is
-                            </span>
-                        </button>
-                    }
-                }
-            }
-
-            @if (picking)
+            @if (picking && !FormsBeside)
             {
                 <button class="opener closer" @onclick="() => Editor.TogglePicking(Row)" disabled="@Editor.Working">
                     <span class="mono">−</span>
@@ -298,6 +172,51 @@ else
     [Parameter, EditorRequired]
     public required TrackRow Row { get; set; }
 
+    /// <summary>The row draws the add and adopt forms and Close in its side column, so the list does not.</summary>
+    [Parameter]
+    public bool FormsBeside { get; set; }
+
+    private static string PickLabel(StemChoice line) =>
+        line switch
+        {
+            { AddedSource: { } added } => added.Label,
+            { Kind: StemKind.Source } => "Source",
+            _ => line.Label,
+        };
+
+    /// <summary>A preset's description and a line's note, which the compact line has no room for.</summary>
+    private static string? Hover(StemChoice line, TrackRow row) =>
+        string.Join(
+            " · ",
+            new[] { line.Kind is StemKind.Preset ? line.Description : null, Note(line, row) }.Where(
+                text => text is { Length: > 0 }
+            )
+        ) is { Length: > 0 } hover
+            ? hover
+            : null;
+
+    /// <summary>A coming line in flight says only "coming", since nothing records whether the running cut has it.</summary>
+    private static string StateWord(StemChoice line, StemPicker picker) =>
+        line switch
+        {
+            { State: StemState.Coming } => picker.IsCutInFlight ? "coming" : "new",
+            { State: StemState.Going } => "removed",
+            { State: StemState.NotMade, Kind: StemKind.Source } => "not kept",
+            { State: StemState.NotMade } => "not made",
+            { IsInLibrary: true } => "Library",
+            _ => "Staging",
+        };
+
+    private static string? StateTone(StemChoice line) =>
+        line switch
+        {
+            { State: StemState.Coming } => "new",
+            { State: StemState.Going } => "gone",
+            { State: StemState.NotMade } => "dim",
+            { IsInLibrary: true } => "good",
+            _ => null,
+        };
+
     /// <summary>What the opener says it would let you reach, without opening it.</summary>
     private static string OpenerHint(StemPicker picker)
     {
@@ -338,45 +257,6 @@ else
             { State: StemState.Coming } => "coming",
             { State: StemState.Going } => "going",
             { State: StemState.NotMade } => "unmade",
-            _ => null,
-        };
-
-    /// <summary>
-    /// The key cell: what Ableton holds, or what the file would be tagged with. A library file
-    /// with no key reads <c>—</c>, since nobody asked (ADR 0003).
-    /// </summary>
-    private static string Tag(StemChoice line, TrackRow row) =>
-        (line, row.Key) switch
-        {
-            ({ AbletonKey: { } tagged }, _) => KeyText.Spell(tagged) ?? tagged,
-            ({ IsInLibrary: true }, _) => "—",
-            ({ State: StemState.Coming }, { } key) => KeyText.Spell(key) ?? key,
-            ({ State: StemState.Kept }, _) => "untagged",
-            _ => "—",
-        };
-
-    /// <summary>
-    /// A coming line in flight says only "coming", since nothing records whether the running cut
-    /// has it.
-    /// </summary>
-    private static string Where(StemChoice line, StemPicker picker) =>
-        line switch
-        {
-            { State: StemState.Coming } => picker.IsCutInFlight ? "coming" : "new",
-            { State: StemState.Going } => "removed",
-            { State: StemState.NotMade, Kind: StemKind.Source } => "not kept",
-            { State: StemState.NotMade } => "not made",
-            { IsInLibrary: true } => "Mashup Samples",
-            _ => "Sample Staging",
-        };
-
-    private static string? WhereTone(StemChoice line) =>
-        line switch
-        {
-            { State: StemState.Coming } => "new",
-            { State: StemState.Going } => "gone",
-            { State: StemState.NotMade } => "dim",
-            { IsInLibrary: true } => "good",
             _ => null,
         };
 

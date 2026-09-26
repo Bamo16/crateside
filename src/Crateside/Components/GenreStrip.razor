@@ -5,14 +5,38 @@
 @inject TracksService Tracks
 @inject ActionLog Actions
 
-<ChoiceStrip Label="Genre" Choices="Choices" Value="@Settled(Row.Genre)" Quiet="IsQuiet(Row.Genre)"
-             Note="@Heard(Row.Genre)" Disabled="_working" OnChoose="SettleGenre" />
+@if (Shape is Shapes.Cell)
+{
+    @switch (Row.Genre)
+    {
+        case { IsSettled: true } settled:
+            <span class="cell-value">@Settled(settled)</span>
+            break;
+        case { LookedUpAt: not null, Suggested: { } suggested }:
+            <button class="cell-chip" title="@($"Use {suggested}. {Heard(Row.Genre)}")" disabled="@_working"
+                    @onclick="() => SettleGenre(suggested)" @onclick:stopPropagation="true">
+                @suggested
+            </button>
+            break;
+        case { LookedUpAt: not null }:
+            <span class="cell-chip choose" title="No suggestion: open the row to choose">choose</span>
+            break;
+    }
+}
+else
+{
+    <ChoiceStrip Label="Genre" Choices="Choices" Value="@Settled(Row.Genre)" Quiet="IsQuiet(Row.Genre)"
+                 Note="@Heard(Row.Genre)" Disabled="_working" OnChoose="SettleGenre" Inline="Shape is Shapes.Chips" />
+}
 
 @code {
     private bool _working;
 
     [Parameter, EditorRequired]
     public required TrackRow Row { get; set; }
+
+    [Parameter]
+    public Shapes Shape { get; set; }
 
     private IReadOnlyList<ChoiceStrip.Choice> Choices =>
         [
@@ -34,7 +58,7 @@
     private static bool IsQuiet(GenreRecord? record) =>
         record is null or { IsSettled: false, LookedUpAt: null };
 
-    private static string Heard(GenreRecord? record) =>
+    public static string Heard(GenreRecord? record) =>
         record switch
         {
             null or { LookedUpAt: null } => "not looked up yet",
@@ -59,5 +83,13 @@
         {
             _working = false;
         }
+    }
+
+    /// <summary>The stack's strip, chips alone for the Tags to answer view, or the collapsed row's cell (#65).</summary>
+    public enum Shapes
+    {
+        Strip,
+        Chips,
+        Cell,
     }
 }

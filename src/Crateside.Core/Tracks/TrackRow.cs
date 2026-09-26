@@ -97,6 +97,11 @@ public sealed record TrackRow
     /// <summary>How far the song reaches, measured or settled, or null when nothing has asked yet.</summary>
     public FamiliarityRecord? Familiarity { get; init; }
 
+    public bool HasTagsToAnswer =>
+        this
+            is { Genre: { IsSettled: false, LookedUpAt: not null } }
+                or { Familiarity: { Written: null, LookedUpAt: not null } };
+
     /// <summary>The ledger's artist and title, else the row's own name split at its dash.</summary>
     public (string Artist, string Title)? ArtistAndTitle =>
         Verdict is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title }

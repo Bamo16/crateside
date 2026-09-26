@@ -11,54 +11,96 @@
     var hasRemove = TrackActions.HasRemove(Row, Playlist);
 }
 
-<div class="stack">
-    @if (confirming)
-    {
-        <div class="confirm-slot">
-            <StemConfirm Editor="Editor" Row="Row" />
-        </div>
-    }
-    @if (Editor.Problem is { } problem)
-    {
-        <p class="problem">@problem</p>
-    }
+@if (FoldWhilePicking && IsFolded(Editor, Row))
+{
+    var formOpen = SourceForms.IsOpen(Editor, Row);
 
-    <div class="stack-body @(confirming ? "dimmed" : null)" inert="@confirming">
-        <TrackActions Part="TrackActions.Parts.Go" Row="Row" Editor="Editor" ShowDetailsLink="!OnTrackDetails" />
-        <TrackActions Part="TrackActions.Parts.Queue" Row="Row" Editor="Editor" ShowNextSentence="!OnTrackDetails" />
+    <div class="stack folded">
+        @if (confirming)
+        {
+            <div class="confirm-slot">
+                <StemConfirm Editor="Editor" Row="Row" />
+            </div>
+        }
+        @if (formOpen)
+        {
+            <SourceForms Editor="Editor" Row="Row" Stacked="true" />
+        }
+        @if (Editor.Problem is { } problem)
+        {
+            <p class="problem">@problem</p>
+        }
 
-        <div class="group tags">
-            <GenreStrip Row="Row" />
-            <FamiliarityStrip Row="Row" />
-        </div>
+        @if (confirming || formOpen)
+        {
+            <p class="fold-note after">The rest of this row is back once you confirm or cancel.</p>
+        }
+        else
+        {
+            <p class="fold-note">Tick what should exist. Nothing changes until you confirm.</p>
+            <div class="actions">
+                <button class="outline" @onclick="() => Editor.TogglePicking(Row)" disabled="@Editor.Working">
+                    Close
+                </button>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="stack">
+        @if (confirming)
+        {
+            <div class="confirm-slot">
+                <StemConfirm Editor="Editor" Row="Row" />
+            </div>
+        }
+        @if (Editor.Problem is { } problem)
+        {
+            <p class="problem">@problem</p>
+        }
 
-        <TrackEdits Part="TrackEdits.Parts.Name" Row="Row" Editing="_editing" />
+        <div class="stack-body @(Columns is 2 ? "two" : null) @(confirming ? "dimmed" : null)" inert="@confirming">
+            <div class="stack-col">
+                <TrackActions Part="TrackActions.Parts.Go" Row="Row" Editor="Editor" ShowDetailsLink="!OnTrackDetails" />
+                <TrackActions Part="TrackActions.Parts.Queue" Row="Row" Editor="Editor" ShowNextSentence="!OnTrackDetails" />
 
-        <div class="below-name @(renaming ? "dimmed" : null)" inert="@renaming">
-            @if (Uploads is { Count: > 0 } uploads)
-            {
-                <div class="group">
-                    <span class="stack-label">@(uploads.Count is 1 ? "Upload" : "Uploads")</span>
-                    @foreach (var (id, role) in uploads)
+                <div class="group tags">
+                    <GenreStrip Row="Row" />
+                    <FamiliarityStrip Row="Row" />
+                </div>
+            </div>
+
+            <div class="stack-col">
+                <TrackEdits Part="TrackEdits.Parts.Name" Row="Row" Editing="_editing" />
+
+                <div class="below-name @(renaming ? "dimmed" : null)" inert="@renaming">
+                    @if (Uploads is { Count: > 0 } uploads)
                     {
-                        <UploadCard @key="id" VideoId="@id" Role="@role" />
+                        <div class="group">
+                            <span class="stack-label">@(uploads.Count is 1 ? "Upload" : "Uploads")</span>
+                            @foreach (var (id, role) in uploads)
+                            {
+                                <UploadCard @key="id" VideoId="@id" Role="@role" />
+                            }
+                        </div>
+                    }
+
+                    @if (hasSource || hasRemove)
+                    {
+                        <div class="start-over">
+                            <span class="stack-label faint">Start over</span>
+                            <TrackEdits Part="TrackEdits.Parts.Source" Row="Row" Editing="_editing" />
+                            <div class="@(swapping ? "dimmed" : null)" inert="@swapping">
+                                <TrackActions Part="TrackActions.Parts.Remove" Row="Row" Editor="Editor" Removed="Removed" />
+                            </div>
+                        </div>
                     }
                 </div>
-            }
-
-            @if (hasSource || hasRemove)
-            {
-                <div class="start-over">
-                    <span class="stack-label faint">Start over</span>
-                    <TrackEdits Part="TrackEdits.Parts.Source" Row="Row" Editing="_editing" />
-                    <div class="@(swapping ? "dimmed" : null)" inert="@swapping">
-                        <TrackActions Part="TrackActions.Parts.Remove" Row="Row" Editor="Editor" Removed="Removed" />
-                    </div>
-                </div>
-            }
+            </div>
         </div>
     </div>
-</div>
+}
 
 @code {
     private readonly TrackEditing _editing = new();
@@ -80,6 +122,17 @@
 
     [Parameter]
     public EventCallback<(string Title, string Note)> Removed { get; set; }
+
+    /// <summary>2 in the row, which is wide enough to wrap the stack once; 1 in Track details' rail.</summary>
+    [Parameter]
+    public int Columns { get; set; } = 1;
+
+    /// <summary>In the row, picking after separation or an open source form takes the whole side column.</summary>
+    [Parameter]
+    public bool FoldWhilePicking { get; set; }
+
+    public static bool IsFolded(StemEditor editor, TrackRow row) =>
+        editor.IsPicking(row) && !row.CanChangePlan || SourceForms.IsOpen(editor, row);
 
     protected override void OnInitialized()
     {

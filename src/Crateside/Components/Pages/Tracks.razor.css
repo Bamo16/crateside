@@ -271,7 +271,7 @@
 .heads,
 .row {
     display: grid;
-    grid-template-columns: 24px 1fr 90px 100px 80px 190px;
+    grid-template-columns: 24px 1fr 90px 100px 80px 150px 190px;
     gap: 14px;
     align-items: center;
     max-width: var(--table-tracks);
@@ -282,7 +282,7 @@
    the one thing worth saying about a state a track rests in for weeks. */
 .heads.roomy,
 .row.roomy {
-    grid-template-columns: 24px 1fr 90px 100px 80px 190px 1fr;
+    grid-template-columns: 24px 1fr 90px 100px 80px 150px 190px 1fr;
 }
 
 .heads {
@@ -299,6 +299,44 @@
     height: 46px;
     border-top: 1px solid var(--line);
     cursor: pointer;
+}
+
+.genre-cell {
+    min-width: 0;
+}
+
+/* Tags to answer: every chip in reach, so a song is one click (#65). */
+.heads.tags,
+.row.tags {
+    grid-template-columns: 24px minmax(0, 300px) minmax(0, 1fr) 220px;
+}
+
+.row.tags {
+    height: auto;
+    min-height: 46px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.row.tags.answered {
+    opacity: 0.45;
+}
+
+.song-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.tag-note {
+    font-size: 12px;
+    color: var(--text-50);
+}
+
+.tag-cell {
+    min-width: 0;
+    cursor: default;
 }
 
 /* The warping view is the one the user lives in, so it gets room. */
@@ -431,10 +469,17 @@
    drifting off toward the window edge. */
 .panel {
     display: grid;
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: minmax(0, 1fr) 340px;
     gap: 32px;
     max-width: var(--table-tracks);
     padding: 6px 22px 20px 60px;
+}
+
+/* Wide enough for the side stack's two columns, except while picking folds it (handoff 07). */
+@media (min-width: 1200px) {
+    .panel:not(.folded) {
+        grid-template-columns: minmax(0, 1fr) 680px;
+    }
 }
 
 /* Pinned, since the sample list draws nothing for a track with no samples yet. */

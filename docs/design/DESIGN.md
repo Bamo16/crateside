@@ -82,6 +82,35 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
   group.
 - The stack's vocabulary (`.group`, `.label-line`, `.stack-label`, `.stack-value`,
   `.stack-status`) is styled once, in `SideStack.razor.css` through `::deep`.
+- **Two columns in the row** (handoff 07): the row's side is 680px and the stack wraps once, Go ·
+  Next · Tags on the left, Name · Start over on the right. Below a 1200px viewport it falls back
+  to 340px and one column. `SideStack Columns="2"`; the rail passes 1.
+- **Folded while picking** in the row: after separation, or with a source form open, the side is
+  340px and holds only StemConfirm and the add/adopt form (`SourceForms`), or a sentence and
+  Close when nothing is ticked. `SideStack FoldWhilePicking`; the rail keeps the dimmed stack.
+
+## Sample list
+
+- **Closed**: one boxed line per sample (Sample · Ableton key · Where it is, and a note only where
+  there is one), then the dashed *Change what is cut* opener. No samples yet is a dashed
+  placeholder.
+- **Picking**: bands side by side (`auto-fit, minmax(220px, 1fr)`). A line is tick · name (wraps,
+  never truncated) · one state word in mono: *Staging*, *Library* (green), *new* (teal), *removed*
+  (red, struck), *not made*. A preset's description is on hover. Before separation a line is tick
+  and name only.
+- *Add a source* and *Adopt a file* are compact dashed lines in the Sources band. In the row the
+  form opens in the side column and its opener turns amber (*Adding a source →*); on Track details
+  it opens inline in the band. `StemList FormsBeside` in the row.
+
+## Tracks table
+
+- A **Genre** column between BPM and State (150px). A suggestion is an amber dashed chip that
+  settles it in one click; a settled genre is plain text; no suggestion is a *choose* chip that
+  opens the row. `GenreStrip Shape="Cell"`.
+- A **Tags to answer** filter: songs with an unanswered genre, or a familiarity the numbers leave
+  to the user. Its rows show Song (with the genre note under it), every genre chip, and
+  Mainstream / Obscure (`GenreStrip Shape="Chips"`, `FamiliarityStrip Inline`). An answered row
+  stays in place at 45% until the view is left.
 
 ## Page headers
 
@@ -106,9 +135,6 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 
 ### Tracks row and Track details (handoff 06, #62)
 
-- **StemList's acts are unchanged**: *Change what is cut* is still the full-width dashed opener
-  under the list, and *Add a source* / *Adopt a file* still appear only inside the picker. The
-  canvas puts all three on a "Samples" label line.
 - **Next keeps its colours**: the sentence is amber when ready to warp and full white when
   stopped, as before, where the canvas draws it in plain prose.
 

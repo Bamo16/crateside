@@ -1,3 +1,5 @@
+using Crateside.Core.Familiarity;
+using Crateside.Core.Genres;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Tracks;
 
@@ -193,4 +195,53 @@ public class TrackChipAndFilterTests
         Assert.Equal(2, rows.Count(TrackFilter.InStaging));
         Assert.Equal(1, rows.Count(TrackFilter.InFlight));
     }
+
+    private static readonly DateTimeOffset LookedUp = new(2026, 9, 25, 0, 0, 0, TimeSpan.Zero);
+
+    private static TrackRow Tagged(GenreRecord? genre, FamiliarityRecord? familiarity) =>
+        Base with
+        {
+            Genre = genre,
+            Familiarity = familiarity,
+        };
+
+    private static GenreRecord Genre(bool settled) =>
+        new()
+        {
+            Song = "rob dougan - furious angels",
+            Genre = settled ? "Electronic" : null,
+            IsSettled = settled,
+            Suggested = "Electronic",
+            LookedUpAt = LookedUp,
+        };
+
+    private static FamiliarityRecord Familiarity(long? fans) =>
+        new()
+        {
+            Song = "rob dougan - furious angels",
+            ArtistFans = fans,
+            LookedUpAt = LookedUp,
+        };
+
+    [Fact]
+    public void An_unanswered_genre_is_a_tag_to_answer() =>
+        Assert.True(
+            Tagged(Genre(settled: false), Familiarity(1_000_000)).Matches(TrackFilter.TagsToAnswer)
+        );
+
+    [Fact]
+    public void A_familiarity_the_numbers_leave_to_the_user_is_a_tag_to_answer() =>
+        Assert.True(
+            Tagged(Genre(settled: true), Familiarity(fans: null)).Matches(TrackFilter.TagsToAnswer)
+        );
+
+    [Fact]
+    public void A_settled_genre_and_a_derived_familiarity_leave_nothing_to_answer() =>
+        Assert.False(
+            Tagged(Genre(settled: true), Familiarity(1_000_000)).Matches(TrackFilter.TagsToAnswer)
+        );
+
+    [Fact]
+    public void A_song_nothing_has_looked_up_has_nothing_to_answer_yet() =>
+        Assert.False(Tagged(genre: null, familiarity: null).Matches(TrackFilter.TagsToAnswer));
 }
