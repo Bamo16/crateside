@@ -9,13 +9,13 @@ namespace Crateside.Core.Orchestration.Loop;
 public static class ExternalProcess
 {
     public static async Task<ProcessOutcome> RunAsync(
-        string executable,
+        string fileName,
         IEnumerable<string> arguments,
         string? workingDirectory = null,
         CancellationToken ct = default
     )
     {
-        var info = new ProcessStartInfo(executable, arguments)
+        var info = new ProcessStartInfo(fileName, arguments)
         {
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -28,7 +28,7 @@ public static class ExternalProcess
 
         using var process =
             Process.Start(info)
-            ?? throw new InvalidOperationException($"could not start {executable}");
+            ?? throw new InvalidOperationException($"could not start {fileName}");
 
         // Read both streams before waiting: a full pipe with nobody draining it blocks forever.
         var stdout = process.StandardOutput.ReadToEndAsync(ct);

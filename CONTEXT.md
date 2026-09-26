@@ -9,6 +9,15 @@ processed**, **Sample Staging**, **Mashup Samples** — are defined once in
 `keytag`'s `CONTEXT.md` and are not repeated here. This file covers what is
 specific to crateside: pairing, importing, tags, the views, and running the workflow.
 
+## Places
+
+- **Staging** — shorthand for **Sample Staging**: where samples wait to be warped.
+- **The library** — shorthand for **Mashup Samples**: where a sample goes once it is
+  **imported**. Ableton draws no such line: both folders sit in its *User Library* and it
+  treats them alike. The distinction is crateside's, made by which folder a sample is in.
+  "The library" in crateside never means Ableton's whole User Library. A more formal name is
+  still open ([#66](https://github.com/Bamo16/crateside/issues/66)).
+
 ## Pairing
 
 The domain of "what else can I play over this?". A **source key** is the key of

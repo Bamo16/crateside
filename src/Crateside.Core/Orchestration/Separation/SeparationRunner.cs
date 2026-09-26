@@ -12,7 +12,7 @@ public sealed class SeparationRunner(
     SeparationInterlock interlock,
     WorkingSet workingSet,
     CratesidePaths paths,
-    string executable = "stemforge-cli"
+    string fileName = "stemforge-cli"
 )
 {
     /// <summary>
@@ -161,7 +161,7 @@ public sealed class SeparationRunner(
 
     private Process Start(WorkOrder order, string? retained)
     {
-        var info = new ProcessStartInfo(executable)
+        var info = new ProcessStartInfo(fileName)
         {
             RedirectStandardOutput = true,
             RedirectStandardError = true,
@@ -194,7 +194,7 @@ public sealed class SeparationRunner(
         info.ArgumentList.Add("--json");
 
         return Process.Start(info)
-            ?? throw new InvalidOperationException($"could not start {executable}");
+            ?? throw new InvalidOperationException($"could not start {fileName}");
     }
 }
 
