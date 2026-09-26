@@ -3,6 +3,9 @@
 *Note, 2026-09-26, frozen. Measured with the user in Ableton, and across the real library. For
 [#67](https://github.com/Bamo16/crateside/issues/67).*
 
+*Corrected by [the sidecar, field by field](2026-09-26-the-sidecar-field-by-field.md): the marker
+list ends with a 2-byte terminator, so step 4 turned `LoopOn` off; `LaunchQuantisation` stayed 0.*
+
 ## The experiment
 
 One stem, `Becky Hill, Chase & Status - Disconnect (Instrumental - Full).flac`, in Sample Staging.
