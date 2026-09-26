@@ -20,14 +20,21 @@ So the brief goes out through the repo, and the result comes back through the us
 
 ## Back: the result
 
-The user posts the Design session's output **as a comment on the issue, with a zip attached**.
-The comment is only a pointer (the brief number, "zip attached", and which handoff to build from).
-**The handoff file in the zip is the one full copy.** Fetch the attachment with the `gh` token,
-since attachment URLs need auth:
+The result is a zip, and **the handoff file in it is the one full copy**. It arrives in one of
+three ways (handoff 06c):
 
-```
-curl -sL -H "Authorization: token $(gh auth token)" -o design.zip "<attachment url>"
-```
+1. **A link the user pastes** (preferred). The Design session publishes the zip at a short-lived
+   public URL: about an hour, and only a few fetches. Fetch it at once, with no auth:
+   `curl -sL -o design.zip "<url>"`. If it has expired, ask the user for a fresh one; the Design
+   session can re-issue it.
+2. **A download** in the user's Downloads folder, named `crateside-design-NN*`. Take the newest
+   match for the brief's number; a `-vN` suffix beats none.
+3. **A comment on the issue with the zip attached.** The comment is only a pointer (the brief
+   number, "zip attached", and which handoff to build from). Attachment URLs need auth:
+   `curl -sL -H "Authorization: token $(gh auth token)" -o design.zip "<attachment url>"`.
+
+If the result did not come through the issue, say on the issue that it arrived and what was
+committed, so the issue still records the round trip.
 
 Unzip it in the scratchpad, not the repo. Up to brief 05 the zip was **the whole design
 archive**. From brief 06 on it holds **only what changed**: the new handoff, any new or updated

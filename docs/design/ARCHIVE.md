@@ -39,3 +39,6 @@ From brief 05 on, a handoff takes its brief's number: `briefs/NN-<topic>.md` →
 Handoffs 01–04 predate the briefs folder and keep their numbers, which do not line up with the
 briefs. The folder has no briefs 03 or 04 (#22's brief was pasted in chat). Handoff 05 was back-filled from the
 Design session's comment on #21.
+
+Handoffs outside the brief sequence take a letter after the brief they follow: `06b-workflow-fixes.md`
+(the Design session's review of this workflow) and `06c-link-delivery.md` (results delivered by link).
