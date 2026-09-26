@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif}a{color:#ece7dc}a:hover{color:#fff}button{cursor:pointer}</style>
+</helmet>
+
+<section style="padding:56px;display:flex;flex-direction:column;gap:48px;width:1472px">
+  <header style="display:flex;flex-direction:column;gap:8px;max-width:900px">
+    <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Brief 07 · issue #65 · built against c9c5e4b</div>
+    <h1 style="margin:0;font:600 28px 'IBM Plex Sans',sans-serif">Spend the row's width, not its height</h1>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">At 92rem the samples column is about 1100px wide, and its lines are mostly empty space. In the row, the side stack becomes two columns, so it is about as tall as a short list. While picking, the stack folds away (it is inert then anyway) and the presets lay out in bands side by side, so the open picker is about as tall as the closed list. Expanding or opening a row moves the rows below by a similar amount in every state. No cap and no inner scroll.</p>
+  </header>
+
+  <div id="1a" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1a</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Closed · 2 samples</span></div>
+    <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 90px 100px 80px 190px;gap:0;align-items:center;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">▾</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">1991 - If Only</span><span style="font:400 13px 'IBM Plex Mono',monospace">G♯ min</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">MEDIUM</span><span style="font:400 13px 'IBM Plex Mono',monospace;color:#e8b45a">116</span><span><span style="font:500 12px 'IBM Plex Sans',sans-serif;color:#e8b45a;border:1px solid rgba(232,180,90,.5);border-radius:999px;padding:3px 10px">ready to warp</span></span></div>
+      <div style="background:#1b1a15;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr) 680px;gap:32px;align-items:start">
+        <div style="display:flex;flex-direction:column">
+          <div style="margin-bottom:8px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Stems · Sample Staging / 1991 - If Only</div>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px 130px;gap:14px;padding:0 12px;margin-bottom:6px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span>Sample</span><span>Ableton key</span><span>Where it is</span></div>
+          <sc-for list="{{ closed2 }}" as="s" hint-placeholder-count="2"><div style="display:grid;grid-template-columns:minmax(0,1fr) 110px 130px;gap:14px;align-items:center;margin-bottom:4px;padding:8px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12);border-radius:6px"><span style="font:500 13px 'IBM Plex Sans',sans-serif">{{ s.label }}</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:#7fcf9a">{{ s.key }}</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:{{ s.whereFg }}">{{ s.where }}</span></div></sc-for>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px;padding:8px 12px;border:1px dashed rgba(255,255,255,.18);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span style="font-family:'IBM Plex Mono',monospace">+</span><span>Change what is cut</span><span style="margin-left:auto;font-weight:400;color:rgba(236,231,220,.5)">6 more presets, the source track</span></div>
+        </div>
+        <dc-import name="Crateside Row Stack" hint-size="680px,300px"></dc-import>
+      </div>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:900px;text-wrap:pretty">The stack's two columns: <strong style="color:#ece7dc;font-weight:500">Go · Next · Tags</strong> on the left, <strong style="color:#ece7dc;font-weight:500">Name · rule · Start over</strong> on the right. The order is unchanged, it just wraps once. The sample line's fourth column (the note) keeps its place and appears only when there is a note, as today. Here the columns are drawn at their content width, so the list reads as a table rather than a stretched bar.</p>
+  </div>
+
+  <div id="1b" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1b</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Closed · 5 samples</span></div>
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr) 680px;gap:32px;align-items:start">
+      <div style="display:flex;flex-direction:column">
+        <div style="margin-bottom:8px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Stems · Sample Staging / 1991 - If Only</div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 110px 130px;gap:14px;padding:0 12px;margin-bottom:6px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span>Sample</span><span>Ableton key</span><span>Where it is</span></div>
+        <sc-for list="{{ closed5 }}" as="s" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:minmax(0,1fr) 110px 130px;gap:14px;align-items:center;margin-bottom:4px;padding:8px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12);border-radius:6px"><span style="font:500 13px 'IBM Plex Sans',sans-serif">{{ s.label }}</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:#7fcf9a">{{ s.key }}</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:{{ s.whereFg }}">{{ s.where }}</span></div></sc-for>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:8px;padding:8px 12px;border:1px dashed rgba(255,255,255,.18);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span style="font-family:'IBM Plex Mono',monospace">+</span><span>Change what is cut</span><span style="margin-left:auto;font-weight:400;color:rgba(236,231,220,.5)">4 more presets</span></div>
+      </div>
+      <dc-import name="Crateside Row Stack" hint-size="680px,300px"></dc-import>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:900px;text-wrap:pretty">With five samples the list is now the taller column, by about one line. Both cases end within a line or two of each other.</p>
+  </div>
+
+  <div id="1c" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1c</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Picking before separation · no confirm, stack stays</span></div>
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr) 680px;gap:32px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Will be cut into</span><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">changes apply now · nothing has been made yet</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 14px;align-items:start">
+          <sc-for list="{{ bandsPlan }}" as="b" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:4px"><div style="padding:4px 2px;font:500 10.5px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.35)">{{ b.label }}</div><sc-for list="{{ b.lines }}" as="l" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 10px;background:{{ l.bg }};border:1px {{ l.bs }} {{ l.bc }};border-radius:6px;opacity:{{ l.o }}"><span style="width:14px;height:14px;box-sizing:border-box;border-radius:3px;border:1px solid {{ l.tbc }};background:{{ l.tbg }};color:#0f0e0c;font:600 10px/12px 'IBM Plex Mono',monospace;text-align:center">{{ l.tick }}</span><span style="font:500 13px/1.35 'IBM Plex Sans',sans-serif;min-width:0;text-wrap:pretty;text-decoration:{{ l.td }}">{{ l.label }}</span><span style="font:400 11.5px 'IBM Plex Mono',monospace;color:{{ l.wfg }}">{{ l.where }}</span></div></sc-for></div></sc-for>
+        </div>
+      </div>
+      <dc-import name="Crateside Row Stack" has-folder="{{ false }}" next-amber="{{ false }}" next-line="in line to be separated" next-detail="Nothing is cut until separation reaches it." can-rename="{{ true }}" name-status="named from the playlist title" hint-size="680px,300px"></dc-import>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:900px;text-wrap:pretty">Before separation the list is always open and ticks apply at once, so the stack stays live and keeps its two columns. The bands wrap in a grid (<span style="font-family:'IBM Plex Mono',monospace">auto-fit, minmax(220px, 1fr)</span>); a long preset name wraps to a second line rather than truncating. A planning line is a tick and a label, as built. Preset names follow the catalog. Those shown are illustrative, taken from the test catalogs.</p>
+  </div>
+
+  <div id="1d" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1d</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Picking after separation · confirm open · stack folded</span></div>
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:32px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#e8b45a">Changing what is cut</span><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#e07a6d">· re-cut pending</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 14px;align-items:start">
+          <sc-for list="{{ bandsPick }}" as="b" hint-placeholder-count="4"><div style="display:flex;flex-direction:column;gap:4px"><div style="padding:4px 2px;font:500 10.5px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.35)">{{ b.label }}</div><sc-for list="{{ b.lines }}" as="l" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 10px;background:{{ l.bg }};border:1px {{ l.bs }} {{ l.bc }};border-radius:6px;opacity:{{ l.o }}"><span style="width:14px;height:14px;box-sizing:border-box;border-radius:3px;border:1px solid {{ l.tbc }};background:{{ l.tbg }};color:{{ l.tfg }};font:600 10px/12px 'IBM Plex Mono',monospace;text-align:center">{{ l.tick }}</span><span style="font:500 13px/1.35 'IBM Plex Sans',sans-serif;min-width:0;text-wrap:pretty;text-decoration:{{ l.td }}">{{ l.label }}</span><span style="font:400 11.5px 'IBM Plex Mono',monospace;color:{{ l.wfg }}">{{ l.where }}</span></div></sc-for><sc-if value="{{ b.openers }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px dashed rgba(255,255,255,.18);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span style="font-family:'IBM Plex Mono',monospace">+</span>Add a source</div><div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px dashed rgba(255,255,255,.18);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span style="font-family:'IBM Plex Mono',monospace">+</span>Adopt a file</div></sc-if></div></sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid rgba(232,180,90,.45);border-radius:8px">
+          <div style="font:500 13px 'IBM Plex Sans',sans-serif">Cut <span style="font-family:'IBM Plex Mono',monospace">1</span> more · remove <span style="font-family:'IBM Plex Mono',monospace">1</span></div>
+          <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);text-wrap:pretty">Instrumental - Clean is cut from the stored audio. source is deleted from Sample Staging, with its .asd. Vocal - Full is in Mashup Samples and is not crateside's to remove.</div>
+          <div style="display:flex;gap:8px"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#0f0e0c;background:#ece7dc;border:0;border-radius:6px;padding:7px 12px">Confirm</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Cancel</button></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)"><span style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">The rest of this row is back once you confirm or cancel.</span></div>
+      </div>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:900px;text-wrap:pretty">While picking after separation, the stack is inert, so it folds: its right side shrinks to one column (340px) holding only StemConfirm, and the bands take the width it frees. A picking line is <strong style="color:#ece7dc;font-weight:500">tick · preset name · one state word</strong> (Staging, Library, new, removed, not made), with the colours as built. The key column and the long notes are dropped while picking: the key is on the row's header, and the confirm says what goes and what is made. A preset's description stays on hover. No Close line: Cancel closes. With no tick moved, the confirm box is replaced by one sentence and a <strong style="color:#ece7dc;font-weight:500">Close</strong> button (1e).</p>
+  </div>
+
+  <div id="1e" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1e</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Picking · Add a source open</span></div>
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:32px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#e8b45a">Changing what is cut</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 14px;align-items:start">
+          <sc-for list="{{ bandsAdd }}" as="b" hint-placeholder-count="4"><div style="display:flex;flex-direction:column;gap:4px"><div style="padding:4px 2px;font:500 10.5px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.35)">{{ b.label }}</div><sc-for list="{{ b.lines }}" as="l" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:16px minmax(0,1fr) auto;gap:10px;align-items:center;padding:7px 10px;background:{{ l.bg }};border:1px {{ l.bs }} {{ l.bc }};border-radius:6px;opacity:{{ l.o }}"><span style="width:14px;height:14px;box-sizing:border-box;border-radius:3px;border:1px solid {{ l.tbc }};background:{{ l.tbg }};color:{{ l.tfg }};font:600 10px/12px 'IBM Plex Mono',monospace;text-align:center">{{ l.tick }}</span><span style="font:500 13px/1.35 'IBM Plex Sans',sans-serif;min-width:0;text-wrap:pretty;text-decoration:{{ l.td }}">{{ l.label }}</span><span style="font:400 11.5px 'IBM Plex Mono',monospace;color:{{ l.wfg }}">{{ l.where }}</span></div></sc-for><sc-if value="{{ b.adding }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(232,180,90,.45);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif;color:#e8b45a"><span style="font-family:'IBM Plex Mono',monospace">+</span>Adding a source →</div><div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px dashed rgba(255,255,255,.18);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);opacity:.45"><span style="font-family:'IBM Plex Mono',monospace">+</span>Adopt a file</div></sc-if></div></sc-for>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;padding:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.18);border-radius:8px">
+        <label style="display:flex;flex-direction:column;gap:4px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Where it is</span><span style="font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.35);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.4);border-radius:6px;padding:8px 11px">YouTube URL or video ID</span></label>
+        <label style="display:flex;flex-direction:column;gap:4px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">What it is</span><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.35);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:8px 11px">Official Instrumental</span></label>
+        <div style="display:flex;align-items:center;gap:8px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Plays as</span><span style="font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:6px 12px">Vocal</span><span style="font:500 12px 'IBM Plex Sans',sans-serif;color:#0f0e0c;background:#ece7dc;border-radius:999px;padding:6px 12px">Instrumental</span></div>
+        <p style="margin:0;font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty">Another file of this song, kept whole and never separated. keytag records it as this song so it stages beside the stems and takes the key, G♯ minor. No quota, no GPU.</p>
+        <div style="display:flex;gap:8px"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#0f0e0c;background:#ece7dc;border:0;border-radius:6px;padding:7px 12px;opacity:.6">Add source</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Cancel</button></div>
+      </div>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:900px;text-wrap:pretty">The add and adopt forms take the right column, where a confirm goes, instead of pushing the Sources band down. Their fields stack at 340px. The opener that opened a form stays in its band, marked amber ("Adding a source →"), and the other opener dims. If a tick has also moved, StemConfirm sits above the form in the same column. Adopt a file works the same way, with the file select and the read-only label.</p>
+  </div>
+
+  <div id="1f" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1f</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">No samples yet</span></div>
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr) 680px;gap:32px;align-items:start">
+      <div style="display:flex;flex-direction:column">
+        <div style="margin-bottom:8px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Stems · Pendulum - Watercolour</div>
+        <p style="margin:0;padding:28px;font:400 13px/1.5 'IBM Plex Sans',sans-serif;text-align:center;color:rgba(236,231,220,.5);border:1px dashed rgba(255,255,255,.14);border-radius:8px">No samples yet · what happens next is beside this</p>
+      </div>
+      <dc-import name="Crateside Row Stack" has-folder="{{ false }}" next-amber="{{ false }}" next-line="parked · the download did not get premium audio" next-detail="The finding above says what it needs from you." tags-unknown="{{ true }}" can-rename="{{ true }}" title="Pendulum - Watercolour" name-status="named from the playlist title" hint-size="680px,260px"></dc-import>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:900px;text-wrap:pretty">Unchanged apart from the two-column stack, which is what keeps this row short. The finding stays full width above the grid (not drawn here).</p>
+  </div>
+
+  <div id="1g" style="display:flex;flex-direction:column;gap:12px;max-width:900px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1g</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Track details</span></div>
+    <div style="background:#1b1a15;border-radius:10px;padding:18px 20px;font:400 13px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty">The rail stays <strong style="color:#ece7dc;font-weight:500">one column, not folded</strong>. The left column is long (samples, evidence, activity), so the rail is never the taller side, and there is no row below it to push. The picker takes the same band grid there, since StemList carries it in both places. At about 1100px the bands sit four across. StemConfirm stays at the top of the rail, with the rest dimmed, as built. Only the row passes <span style="font-family:'IBM Plex Mono',monospace">Columns="2"</span> and <span style="font-family:'IBM Plex Mono',monospace">FoldWhilePicking</span>.</div>
+  </div>
+
+  <div style="height:1px;background:rgba(255,255,255,.14)"></div>
+
+  <div id="2a" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">2a</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Collapsed row · a Genre column, accept in one click</span></div>
+    <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:24px minmax(0,1fr) 90px 100px 80px 150px 190px;align-items:center;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,.08);font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span></span><span>Song</span><span>Key</span><span>Confidence</span><span>BPM</span><span>Genre</span><span>State</span></div>
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:24px minmax(0,1fr) 90px 100px 80px 150px 190px;align-items:center;padding:11px 20px;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">▸</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">{{ r.song }}</span><span style="font:400 13px 'IBM Plex Mono',monospace">{{ r.key }}</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">{{ r.conf }}</span><span style="font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">{{ r.bpm }}</span><span style="display:flex"><span style="font:{{ r.gw }} 12px 'IBM Plex Sans',sans-serif;color:{{ r.gfg }};border:1px {{ r.gbs }} {{ r.gbc }};border-radius:999px;padding:{{ r.gpad }}">{{ r.genre }}</span></span><span><span style="font:500 12px 'IBM Plex Sans',sans-serif;color:{{ r.sfg }};border:1px solid {{ r.sbc }};border-radius:999px;padding:3px 10px">{{ r.state }}</span></span></div></sc-for>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:900px;text-wrap:pretty">One new column, <strong style="color:#ece7dc;font-weight:500">Genre</strong> (150px, before State). A suggestion is the amber dashed chip already used in the stack. <strong style="color:#ece7dc;font-weight:500">Click it to accept</strong>. The click does not expand the row, and the chip becomes plain text in place. Settled or learned from the artist: plain text, <span style="font-family:'IBM Plex Mono',monospace">--text-60</span>. No answer and no suggestion: an amber dashed <em>choose</em> chip, which opens the row at Tags. Not looked up: empty. The table cap stays <span style="font-family:'IBM Plex Mono',monospace">--table-tracks</span>; Song gives up the 150px.</p>
+  </div>
+
+  <div id="2b" style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">2b</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Filter · Tags to answer</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{ filters }}" as="f" hint-placeholder-count="6"><span style="font:500 12px 'IBM Plex Sans',sans-serif;color:{{ f.fg }};background:{{ f.bg }};border:1px solid {{ f.bc }};border-radius:999px;padding:6px 12px">{{ f.t }}</span></sc-for></div>
+    <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+      <div style="display:grid;grid-template-columns:24px minmax(0,300px) minmax(0,1fr) 220px;gap:0 16px;align-items:center;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,.08);font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span></span><span>Song</span><span>Genre</span><span>Familiarity</span></div>
+      <sc-for list="{{ triage }}" as="r" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:24px minmax(0,300px) minmax(0,1fr) 220px;gap:0 16px;align-items:center;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,.06);opacity:{{ r.o }}"><span style="font:400 11px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">▸</span><div style="display:flex;flex-direction:column;gap:2px;min-width:0"><span style="font:500 14px 'IBM Plex Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.song }}</span><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.note }}</span></div><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ r.g }}" as="c" hint-placeholder-count="8"><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:{{ c.fg }};background:{{ c.bg }};border:1px {{ c.bs }} {{ c.bc }};border-radius:999px;padding:3px 10px">{{ c.t }}</span></sc-for></div><div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ r.f }}" as="c" hint-placeholder-count="2"><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:{{ c.fg }};background:{{ c.bg }};border:1px {{ c.bs }} {{ c.bc }};border-radius:999px;padding:3px 10px">{{ c.t }}</span></sc-for></div></div></sc-for>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:900px;text-wrap:pretty">A sixth filter, <strong style="color:#ece7dc;font-weight:500">Tags to answer</strong>: every named song with a genre unanswered or a familiarity asking. In this view the row's columns change: Key, Confidence, BPM and State give way to <strong style="color:#ece7dc;font-weight:500">every genre chip</strong> and the <strong style="color:#ece7dc;font-weight:500">Mainstream / Obscure</strong> pair. It is the same ChoiceStrip, laid inline. One click on any chip settles that tag, so a wrong suggestion costs one click too. The note under the song says what the sources said (<em>heard: …</em>, <em>your call</em>). An answered row <strong style="color:#ece7dc;font-weight:500">stays in place</strong> (fully settled rows at 45%) until you leave or refresh the view, so the list never moves under the cursor. A column with nothing to ask shows its settled value as plain text. Familiarity is <strong style="color:#ece7dc;font-weight:500">not</strong> in the ordinary collapsed row: 115 songs have no suggestion to accept, and a derived value is already settled.</p>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const lib = { whereFg: '#7fcf9a', where: 'Mashup Samples' }, stg = { whereFg: 'rgba(236,231,220,.6)', where: 'Sample Staging' };
+    const s = (label, w) => ({ label, key: 'G♯ min ✓', ...w });
+    const L = (label, st) => {
+      const base = { label, bg: 'rgba(255,255,255,.03)', bs: 'solid', bc: 'rgba(255,255,255,.12)', o: 1, tbc: '#ece7dc', tbg: '#ece7dc', tfg: '#0f0e0c', tick: '✓', td: 'none', where: '', wfg: 'rgba(236,231,220,.6)' };
+      return {
+        on: base,
+        off: { ...base, bg: 'transparent', bc: 'rgba(255,255,255,.08)', o: .6, tbc: 'rgba(255,255,255,.3)', tbg: 'transparent', tick: '' },
+        staging: { ...base, where: 'Staging' },
+        library: { ...base, where: 'Library', wfg: '#7fcf9a' },
+        unmade: { ...base, bg: 'transparent', bc: 'rgba(255,255,255,.08)', o: .6, tbc: 'rgba(255,255,255,.3)', tbg: 'transparent', tick: '', where: 'not made', wfg: 'rgba(236,231,220,.3)' },
+        coming: { ...base, bg: 'rgba(111,199,214,.06)', bc: 'rgba(111,199,214,.3)', tbc: '#6fc7d6', tbg: '#6fc7d6', where: 'new', wfg: '#6fc7d6' },
+        going: { ...base, bg: 'transparent', bc: 'rgba(224,122,109,.35)', o: .6, tbc: 'rgba(224,122,109,.6)', tbg: 'transparent', tick: '', td: 'line-through', where: 'removed', wfg: '#e07a6d' },
+        guide: { ...base, bg: 'transparent', bs: 'dashed', o: .7, tbc: 'transparent', tbg: 'transparent', tfg: 'rgba(236,231,220,.5)', tick: '●', where: 'with the cut', wfg: 'rgba(236,231,220,.5)' },
+        guideOff: { ...base, bg: 'transparent', bs: 'dashed', o: .55, tbc: 'transparent', tbg: 'transparent', tfg: 'rgba(236,231,220,.5)', tick: '●', where: '', wfg: 'rgba(236,231,220,.5)' },
+      }[st];
+    };
+    const I = ['Instrumental - Full', 'Instrumental - Clean', 'Instrumental - Balanced', 'Instrumental - Low Resource'];
+    const V = ['Vocal - Full', 'Vocal - Clean', 'Vocal - Balanced', 'Vocal - RVC'];
+    const bandsPlan = [
+      { label: 'Instrumental', lines: [L(I[0], 'on'), L(I[1], 'off'), L(I[2], 'off'), L(I[3], 'off')] },
+      { label: 'Vocal', lines: [L(V[0], 'on'), L(V[1], 'off'), L(V[2], 'off'), L(V[3], 'off')] },
+      { label: 'Karaoke', lines: [L('Karaoke', 'off')] },
+      { label: 'Sources', lines: [L('Source', 'off')] },
+      { label: 'Warp guide', lines: [L('Drums', 'guide')] },
+    ];
+    const pickBands = (adding) => [
+      { label: 'Instrumental', lines: [L(I[0], 'library'), L(I[1], adding ? 'unmade' : 'coming'), L(I[2], 'unmade'), L(I[3], 'unmade')] },
+      { label: 'Vocal', lines: [L(V[0], 'library'), L(V[1], 'unmade'), L(V[2], 'unmade'), L(V[3], 'unmade')] },
+      { label: 'Karaoke · Warp guide', lines: [L('Karaoke', 'unmade'), L('Drums', adding ? 'guideOff' : 'guide')] },
+      { label: 'Sources', lines: [L('Source', adding ? 'staging' : 'going')], openers: !adding, adding },
+    ];
+    const G = ['Drum & Bass', 'Future Bass', 'Hip Hop', 'J-Pop', 'K-Pop', 'Pop', 'Rock', 'none of these'];
+    const chip = (t, tone) => tone === 'sug' ? { t, fg: '#e8b45a', bg: 'transparent', bs: 'dashed', bc: '#e8b45a' }
+      : tone === 'set' ? { t, fg: '#0f0e0c', bg: '#ece7dc', bs: 'solid', bc: '#ece7dc' }
+      : { t, fg: 'rgba(236,231,220,.75)', bg: 'transparent', bs: 'solid', bc: 'rgba(255,255,255,.12)' };
+    const plain = t => [{ t, fg: 'rgba(236,231,220,.6)', bg: 'transparent', bs: 'solid', bc: 'transparent' }];
+    const gset = (sug, set) => G.map(g => chip(g, g === set ? 'set' : g === sug ? 'sug' : null));
+    const fam = (set) => ['Mainstream', 'Obscure'].map(x => chip(x, x === set ? 'set' : null));
+    const gcell = (genre, kind) => kind === 'sug' ? { genre, gfg: '#e8b45a', gbs: 'dashed', gbc: '#e8b45a', gw: 400, gpad: '3px 10px' }
+      : kind === 'choose' ? { genre, gfg: '#e8b45a', gbs: 'dashed', gbc: 'rgba(232,180,90,.6)', gw: 400, gpad: '3px 10px' }
+      : { genre, gfg: 'rgba(236,231,220,.6)', gbs: 'solid', gbc: 'transparent', gw: 400, gpad: '3px 0' };
+    const st = (state, tone) => ({ state, sfg: tone === 'amber' ? '#e8b45a' : tone === 'teal' ? '#6fc7d6' : tone === 'green' ? '#7fcf9a' : 'rgba(236,231,220,.75)', sbc: tone === 'amber' ? 'rgba(232,180,90,.5)' : tone === 'teal' ? 'rgba(111,199,214,.3)' : tone === 'green' ? 'rgba(127,207,154,.3)' : 'rgba(255,255,255,.18)' });
+    return {
+      closed2: [s('Instrumental - Full', lib), s('Vocal - Full', lib)],
+      closed5: [s('source', stg), s('Instrumental - Full', lib), s('Instrumental - Clean', stg), s('Vocal - Full', lib), s('Vocal - Clean', stg)],
+      bandsPlan, bandsPick: pickBands(false), bandsAdd: pickBands(true),
+      rows: [
+        { song: '1991 - If Only', key: 'G♯ min', conf: 'MEDIUM', bpm: '116', ...gcell('Drum & Bass'), ...st('ready to warp', 'amber') },
+        { song: 'Kendrick Lamar - HUMBLE.', key: 'F min', conf: 'HIGH', bpm: '150', ...gcell('Hip Hop', 'sug'), ...st('in library', 'green') },
+        { song: 'Moe Shop - HARDCODED', key: 'C min', conf: 'HIGH', bpm: '120', ...gcell('Future Bass', 'sug'), ...st('in library', 'green') },
+        { song: 'Rob Dougan - Clubbed to Death', key: 'D min', conf: 'MEDIUM', bpm: '98', ...gcell('choose', 'choose'), ...st('in library', 'green') },
+        { song: 'Starjunk 95 - 99th Street', key: '—', conf: '—', bpm: '—', ...gcell(''), ...st('separating', 'teal') },
+      ],
+      filters: [
+        { t: 'Unfinished', fg: 'rgba(236,231,220,.75)', bg: 'transparent', bc: 'rgba(255,255,255,.1)' },
+        { t: 'In staging', fg: 'rgba(236,231,220,.75)', bg: 'transparent', bc: 'rgba(255,255,255,.1)' },
+        { t: 'In flight', fg: 'rgba(236,231,220,.75)', bg: 'transparent', bc: 'rgba(255,255,255,.1)' },
+        { t: 'Needs attention', fg: 'rgba(236,231,220,.75)', bg: 'transparent', bc: 'rgba(255,255,255,.1)' },
+        { t: 'Tags to answer', fg: '#0f0e0c', bg: '#ece7dc', bc: 'transparent' },
+        { t: 'All', fg: 'rgba(236,231,220,.75)', bg: 'transparent', bc: 'rgba(255,255,255,.1)' },
+      ],
+      triage: [
+        { song: 'Kendrick Lamar - HUMBLE.', note: 'heard: hip hop, rap, west coast', g: gset('Hip Hop'), f: plain('Mainstream'), o: 1 },
+        { song: 'Moe Shop - HARDCODED', note: 'heard: future funk, electronic · your call on familiarity', g: gset('Future Bass'), f: fam(), o: 1 },
+        { song: 'Rob Dougan - Clubbed to Death', note: 'the sources know nothing of it · your call', g: gset(), f: fam(), o: 1 },
+        { song: 'Yes - Owner of a Lonely Heart', note: 'answered just now', g: gset(null, 'Rock'), f: plain('Mainstream'), o: .45 },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
