@@ -1,5 +1,6 @@
 using Crateside.Core;
 using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Jobs;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration;

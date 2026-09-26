@@ -1,4 +1,4 @@
-using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Jobs;
 
 namespace Crateside.Tests.Orchestration;
 

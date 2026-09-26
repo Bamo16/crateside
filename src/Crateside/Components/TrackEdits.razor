@@ -1,5 +1,7 @@
-@using Crateside.Core.Orchestration
-@using Crateside.Core.Staging
+@using Crateside.Core.Orchestration.Edits
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Orchestration.Loop
+@using Crateside.Core.Samples
 @using Crateside.Core.Tracks
 @implements IDisposable
 @inject TrackRename Rename
@@ -21,7 +23,7 @@
                    @onkeydown="OnRenameKey" />
             <p class="edit-note">
                 Derived <strong>@(Row.DerivedTitle ?? Row.Title)</strong> · from @From(Row.NameSource).
-                Your name wins over the ledger, the staging board and the playlist.
+                Your name wins over the ledger, the file names and the playlist.
             </p>
             <p class="stack-status">@Row.RenameDetail</p>
             <div class="actions">

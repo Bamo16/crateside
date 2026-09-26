@@ -2,6 +2,8 @@ using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Download;
+using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Queue;
 using Humanizer;
 

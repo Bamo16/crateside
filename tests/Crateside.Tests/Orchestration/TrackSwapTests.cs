@@ -2,6 +2,9 @@ using System.Text.Json;
 using Crateside.Core;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Download;
+using Crateside.Core.Orchestration.Edits;
+using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Queue;
 using Crateside.Core.Staging;
 using Microsoft.Extensions.Options;
@@ -258,7 +261,7 @@ public class TrackSwapTests : IDisposable
             [
                 .. Directory
                     .EnumerateFiles(StagingRoot, "*.flac")
-                    .Select(path => new StagingStem
+                    .Select(path => new StagedFile
                     {
                         Path = path,
                         FileName = Path.GetFileName(path),

@@ -1,4 +1,7 @@
 using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Edits;
+using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Queue;
 using Crateside.Core.Staging;
 using Microsoft.Extensions.Options;
@@ -61,7 +64,7 @@ public class StemRecutTests : IDisposable
         return set;
     }
 
-    private readonly List<StagingStem> _staged = [];
+    private readonly List<StagedFile> _staged = [];
 
     private ReadStagedFiles Staged() => _ => _staged;
 
@@ -75,7 +78,7 @@ public class StemRecutTests : IDisposable
 
         File.WriteAllText(path, "stem");
         _staged.Add(
-            new StagingStem
+            new StagedFile
             {
                 Path = path,
                 FileName = name,
@@ -420,7 +423,7 @@ public class StemRecutTests : IDisposable
 
         File.WriteAllText(path, "mix");
         _staged.Add(
-            new StagingStem
+            new StagedFile
             {
                 Path = path,
                 FileName = name,

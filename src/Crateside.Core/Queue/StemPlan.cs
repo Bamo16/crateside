@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Crateside.Core.Staging;
+using Crateside.Core.Samples;
 
 namespace Crateside.Core.Queue;
 

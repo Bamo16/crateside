@@ -1,9 +1,13 @@
+using Crateside.Core.Ableton;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Naming;
-using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Download;
+using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Queue;
+using Crateside.Core.Samples;
 using Crateside.Core.Staging;
 
 namespace Crateside.Core.Tracks;
@@ -32,7 +36,7 @@ public sealed record TracksView
     /// Joins everything known about the playlist into one row per track.
     /// </summary>
     /// <param name="staging">
-    /// The staging board, which carries per-file tag state that no other source has.
+    /// What is in Sample Staging, which carries per-file tag state that no other source has.
     /// </param>
     /// <param name="instructions">
     /// The user's standing instructions, by video ID; they outlive the playlist entry.
@@ -46,7 +50,7 @@ public sealed record TracksView
     public static TracksView Compose(
         QueueView view,
         KeyLedger ledger,
-        IReadOnlyList<StagingSong> staging,
+        IReadOnlyList<StagedSong> staging,
         IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>> onDisk,
         string finishedRoot,
         JobStore jobs,
@@ -152,7 +156,7 @@ public sealed record TracksView
 
             var songs = members
                 .Select(seed => staged.GetValueOrDefault(seed.VideoId))
-                .OfType<StagingSong>()
+                .OfType<StagedSong>()
                 .ToArray();
 
             var files = members
@@ -344,7 +348,7 @@ public sealed record TracksView
     /// Ableton shows.
     /// </summary>
     private static string? NameFromFiles(
-        IReadOnlyList<StagingSong> staged,
+        IReadOnlyList<StagedSong> staged,
         IReadOnlyList<StemOnDisk> onDisk
     ) =>
         (
@@ -364,7 +368,7 @@ public sealed record TracksView
     /// Staged files a rename has not reached — measured against a stated name only, never a
     /// derived one, which routinely differs from what StemForge wrote.
     /// </summary>
-    private static int AwaitingRenameIn(StagingSong? staged, string? stated) =>
+    private static int AwaitingRenameIn(StagedSong? staged, string? stated) =>
         staged is null || !StemFileName.IsUsable(stated)
             ? 0
             : staged.Stems.Count(stem =>
@@ -375,7 +379,7 @@ public sealed record TracksView
 
     /// <summary>A track's kept files, from wherever they currently are.</summary>
     private static IReadOnlyList<TrackSample> SamplesOf(
-        StagingSong? staged,
+        StagedSong? staged,
         IReadOnlyList<StemOnDisk> onDisk,
         string finishedRoot,
         string sourceVideoId,
@@ -393,7 +397,7 @@ public sealed record TracksView
             .. onDisk
                 .Where(file =>
                     file.Root.Equals(finishedRoot, StringComparison.OrdinalIgnoreCase)
-                    && !StagingStem.IsWarpGuidePreset(file.Preset)
+                    && !StagedFile.IsWarpGuidePreset(file.Preset)
                 )
                 .Select(file =>
                     Sample(file, catalog, sourceVideoId) with
@@ -405,7 +409,7 @@ public sealed record TracksView
         ];
 
     /// <summary>
-    /// What Ableton has tagged a library file with, which the staging board cannot say.
+    /// What Ableton has tagged a library file with, which Sample Staging cannot say.
     /// </summary>
     private static string? KeyIn(AbletonFolderInfo? tags, string path) =>
         tags?.TryGet(path, out var tagged) is true ? tagged.Key : null;
@@ -436,7 +440,7 @@ public sealed record TracksView
     /// they have got to.
     /// </summary>
     private static string? FolderOf(
-        IReadOnlyList<StagingSong> staged,
+        IReadOnlyList<StagedSong> staged,
         IReadOnlyList<StemOnDisk> onDisk
     ) =>
         (

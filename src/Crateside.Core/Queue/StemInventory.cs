@@ -1,3 +1,4 @@
+using Crateside.Core.Samples;
 using Crateside.Core.Staging;
 
 namespace Crateside.Core.Queue;
@@ -136,7 +137,7 @@ public sealed record ClassifiedStem
             // Before the catalog is consulted: an adopted sample carries a label of the user's
             // choosing, which nothing can be asked to make again (ADR 0022).
             { IsAdopted: true } => new() { File = file, Kind = StemKind.Adopted },
-            { Preset: { } guide } when StagingStem.IsWarpGuidePreset(guide) => new()
+            { Preset: { } guide } when StagedFile.IsWarpGuidePreset(guide) => new()
             {
                 File = file,
                 Kind = StemKind.WarpGuide,

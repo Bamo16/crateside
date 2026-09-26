@@ -1,5 +1,8 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Download;
+using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Tagging;
 using Crateside.Core.Queue;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
@@ -65,7 +68,7 @@ public class TracksViewCompositionTests : IDisposable
         return KeyLedger.Read(path);
     }
 
-    private static StagingSong Staged(params StagingStem[] stems) =>
+    private static StagedSong Staged(params StagedFile[] stems) =>
         new()
         {
             SourceVideoId = Video,
@@ -73,7 +76,7 @@ public class TracksViewCompositionTests : IDisposable
             Stems = stems,
         };
 
-    private static StagingStem Stem(string preset, bool tagged = false) =>
+    private static StagedFile Stem(string preset, bool tagged = false) =>
         new()
         {
             Path = Path.Combine(StagingRoot, $"track ({preset}).flac"),
@@ -132,7 +135,7 @@ public class TracksViewCompositionTests : IDisposable
     private IReadOnlyList<TrackRow> Compose(
         QueueView? view = null,
         KeyLedger? ledger = null,
-        IReadOnlyList<StagingSong>? staging = null,
+        IReadOnlyList<StagedSong>? staging = null,
         IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>>? onDisk = null,
         JobStore? jobs = null,
         IReadOnlyDictionary<string, Acquisition>? acquisitions = null,

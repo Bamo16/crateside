@@ -1,5 +1,7 @@
 @using System.Diagnostics
-@using Crateside.Core.Orchestration
+@using Crateside.Core.Orchestration.Edits
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Orchestration.Loop
 @using Crateside.Core.Queue
 @using Crateside.Core.Staging
 @using Crateside.Core.Tracks
@@ -147,7 +149,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
     private string? _problem;
 
     private bool _removing;
-    private IReadOnlyList<StagingStem> _recycling = [];
+    private IReadOnlyList<StagedFile> _recycling = [];
 
     [Parameter, EditorRequired]
     public required TrackRow Row { get; set; }

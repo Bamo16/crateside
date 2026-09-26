@@ -1,5 +1,5 @@
 using Crateside.Core.Ledger;
-using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Queue;
 using Crateside.Core.Staging;
 
@@ -56,7 +56,7 @@ public class PresetCatalogRealDataTests
             .Scan(KeyLedger.Read(LedgerPath), [StagingRoot, MashupRoot])
             .StemsByVideoId.SelectMany(entry => entry.Value)
             .Select(file => file.Preset)
-            .Where(preset => preset is not null && !StagingStem.IsWarpGuidePreset(preset))
+            .Where(preset => preset is not null && !StagedFile.IsWarpGuidePreset(preset))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Where(preset => !catalog.TryGetId(preset, out _))
             .ToArray();

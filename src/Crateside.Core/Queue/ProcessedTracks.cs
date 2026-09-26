@@ -1,4 +1,5 @@
 using Crateside.Core.Ledger;
+using Crateside.Core.Samples;
 using Crateside.Core.Staging;
 
 namespace Crateside.Core.Queue;
@@ -75,7 +76,7 @@ public sealed class ProcessedTracks
         {
             foreach (var path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
             {
-                if (!StagingBoard.IsStemFile(path))
+                if (!SampleFiles.IsAudio(path))
                     continue;
 
                 if (StemTagReader.Read(path)?.Provenance is not { SourceVideoId: { } videoId } p)
@@ -156,7 +157,7 @@ public sealed record StemOnDisk
     /// A staged file as the scanner would have found it, so one classifier answers for both
     /// readers.
     /// </summary>
-    public static StemOnDisk Of(StagingStem stem, string? sourceVideoId = null) =>
+    public static StemOnDisk Of(StagedFile stem, string? sourceVideoId = null) =>
         new()
         {
             Path = stem.Path,

@@ -1,4 +1,4 @@
-using Crateside.Core.Staging;
+using Crateside.Core.Samples;
 
 namespace Crateside.Tests.Staging;
 
@@ -10,7 +10,7 @@ public class StemFileNameRealLibraryTests
     private static bool Available => RealLibrary.HasStems(StagingRoot);
 
     private static IEnumerable<string> Staged() =>
-        Directory.EnumerateFiles(StagingRoot).Where(StagingBoard.IsStemFile);
+        Directory.EnumerateFiles(StagingRoot).Where(SampleFiles.IsAudio);
 
     /// <summary>
     /// A prefix, not equality: the name says <c>(Drums)</c> where the tag says <c>Drums - htdemucs_ft</c>.

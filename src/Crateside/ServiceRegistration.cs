@@ -1,10 +1,20 @@
 using Crateside.Core;
+using Crateside.Core.Ableton;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Download;
+using Crateside.Core.Orchestration.Edits;
+using Crateside.Core.Orchestration.Evidence;
+using Crateside.Core.Orchestration.Handoff;
+using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Loop;
+using Crateside.Core.Orchestration.Separation;
+using Crateside.Core.Orchestration.Tagging;
+using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Queue;
 using Crateside.Core.Quota;
 using Crateside.Core.Staging;
@@ -55,8 +65,7 @@ public static class ServiceRegistration
         services.AddSingleton<AbletonIndexReader>();
         services.AddSingleton<LibraryKeyReader>();
         services.AddSingleton<LibrarySummary>();
-        services.AddSingleton<StagingBoard>();
-        services.AddSingleton<StagingBoardService>();
+        services.AddSingleton<StagingReader>();
         services.AddSingleton<YouTubeQueueReader>();
         services.AddSingleton<EvidenceService>();
         services.AddSingleton<QueueSettingsStore>();
@@ -334,8 +343,8 @@ public static class ServiceRegistration
     private static ReadStagedFiles StagedFiles(IServiceProvider services) =>
         videoId =>
             services
-                .GetRequiredService<StagingBoardService>()
-                .Read()
+                .GetRequiredService<StagingReader>()
+                .Read(services.GetRequiredService<CratesidePaths>())
                 .FirstOrDefault(song => song.SourceVideoId == videoId)
                 ?.Stems
             ?? [];
@@ -375,7 +384,8 @@ public static class ServiceRegistration
                 var view = TracksView.Compose(
                     scan.View,
                     scan.Ledger,
-                    sp.GetRequiredService<StagingBoardService>().Read(),
+                    sp.GetRequiredService<StagingReader>()
+                        .Read(sp.GetRequiredService<CratesidePaths>()),
                     scan.Processed.StemsByVideoId,
                     sp.GetRequiredService<CratesidePaths>().MashupSamples,
                     sp.GetRequiredService<JobStore>(),

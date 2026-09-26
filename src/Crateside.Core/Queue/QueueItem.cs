@@ -1,3 +1,5 @@
+using Crateside.Core.Orchestration;
+
 namespace Crateside.Core.Queue;
 
 /// <summary>One entry in the Queue playlist.</summary>

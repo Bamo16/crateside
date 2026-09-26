@@ -1,6 +1,7 @@
 using Crateside.Core;
 using Crateside.Core.Ledger;
-using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Handoff;
+using Crateside.Core.Samples;
 
 namespace Crateside.Tests.Orchestration;
 
@@ -118,7 +119,7 @@ public class HandoffSupersedeTests : IDisposable
     }
 
     private static bool StemTagsSay(string path, string videoId) =>
-        Crateside.Core.Staging.StemTagReader.Read(path)?.Provenance?.SourceVideoId is { } id
+        Crateside.Core.Samples.StemTagReader.Read(path)?.Provenance?.SourceVideoId is { } id
         && id.Equals(videoId, StringComparison.Ordinal);
 
     [Fact]

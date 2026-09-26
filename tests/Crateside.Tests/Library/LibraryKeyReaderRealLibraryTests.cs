@@ -1,7 +1,8 @@
 using Crateside.Core;
+using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
-using Crateside.Core.Staging;
+using Crateside.Core.Samples;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Library;
@@ -40,7 +41,7 @@ public class LibraryKeyReaderRealLibraryTests
 
         var conflicts = Directory
             .EnumerateFiles(Paths.MashupSamples, "*", SearchOption.AllDirectories)
-            .Where(StagingBoard.IsStemFile)
+            .Where(SampleFiles.IsAudio)
             .Select(file =>
                 (
                     File: Path.GetFileName(file),

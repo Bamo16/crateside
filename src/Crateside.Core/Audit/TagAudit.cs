@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
+using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
-using Crateside.Core.Staging;
+using Crateside.Core.Samples;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Audit;
@@ -57,7 +58,7 @@ public static class TagAudit
                 var path in Directory.EnumerateFiles(root.Path, "*", SearchOption.AllDirectories)
             )
             {
-                if (!StagingBoard.IsStemFile(path))
+                if (!SampleFiles.IsAudio(path))
                     continue;
 
                 if (

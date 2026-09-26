@@ -1,5 +1,5 @@
-using Crateside.Core.Orchestration;
-using Crateside.Core.Staging;
+using Crateside.Core.Orchestration.Tagging;
+using Crateside.Core.Samples;
 
 namespace Crateside.Tests.Orchestration;
 

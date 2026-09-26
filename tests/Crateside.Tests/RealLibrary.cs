@@ -1,4 +1,4 @@
-using Crateside.Core.Staging;
+using Crateside.Core.Samples;
 
 namespace Crateside.Tests;
 
@@ -12,5 +12,5 @@ internal static class RealLibrary
         Directory.Exists(root)
         && Directory
             .EnumerateFiles(root, "*", SearchOption.AllDirectories)
-            .Any(StagingBoard.IsStemFile);
+            .Any(SampleFiles.IsAudio);
 }

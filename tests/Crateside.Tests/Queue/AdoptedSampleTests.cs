@@ -1,5 +1,5 @@
 using Crateside.Core.Queue;
-using Crateside.Core.Staging;
+using Crateside.Core.Samples;
 
 namespace Crateside.Tests.Queue;
 

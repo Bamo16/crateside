@@ -1,7 +1,8 @@
+using Crateside.Core.Ableton;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Pairing;
-using Crateside.Core.Staging;
+using Crateside.Core.Samples;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Library;
@@ -38,7 +39,7 @@ public sealed class LibraryKeyReader(
         foreach (
             var file in Directory
                 .EnumerateFiles(root, "*", SearchOption.AllDirectories)
-                .Where(StagingBoard.IsStemFile)
+                .Where(SampleFiles.IsAudio)
         )
         {
             files++;

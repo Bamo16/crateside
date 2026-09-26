@@ -1,5 +1,7 @@
 using Crateside.Core;
 using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Download;
+using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Queue;
 using Microsoft.Extensions.Time.Testing;
 

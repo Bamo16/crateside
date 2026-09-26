@@ -1,5 +1,5 @@
 using Crateside.Core;
-using Crateside.Core.Staging;
+using Crateside.Core.Ableton;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Staging;

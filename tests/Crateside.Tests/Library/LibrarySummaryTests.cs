@@ -1,6 +1,6 @@
 using Crateside.Core;
+using Crateside.Core.Ableton;
 using Crateside.Core.Library;
-using Crateside.Core.Staging;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Library;

@@ -118,10 +118,11 @@ against it.
 
 ## Views
 
-- **Staging board** — the live answer to "what is in front of me right now?": every
-  track in **Sample Staging**, its key and BPM, and how far through the
-  human-limited steps each of its stems is. Entirely derived — it holds no state of
-  its own and nothing on it is marked done by hand.
+- **Tracks view** — every track crateside knows, whatever its state, as one list
+  narrowed by filters. Its default, *Unfinished*, answers "what is in front of me
+  right now?": what is in **Sample Staging**, plus the tracks still in flight or
+  stopped. Entirely derived — it holds no state of its own and nothing on it is
+  marked done by hand.
 - **Partners** — the interactive answer to "what else can I use with this?".
   Returns **keys** to filter for, never files, because Ableton Live Lite admits no
   extensions and the filtering therefore happens in Ableton's own browser.

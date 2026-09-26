@@ -1,5 +1,6 @@
 using Crateside.Core;
-using Crateside.Core.Orchestration;
+using Crateside.Core.Ableton;
+using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Queue;
 using Crateside.Core.Staging;
 using Microsoft.Extensions.Options;
@@ -20,7 +21,7 @@ public class TrackRenameTests : IDisposable
     private readonly CratesidePaths _paths;
     private readonly AbletonFolderInfoWriter _writer = new();
     private readonly AbletonFolderInfoReader _reader = new();
-    private readonly List<StagingStem> _staged = [];
+    private readonly List<StagedFile> _staged = [];
 
     public TrackRenameTests()
     {
@@ -48,7 +49,7 @@ public class TrackRenameTests : IDisposable
         var path = Path.Combine(_paths.SampleStaging, name);
 
         File.WriteAllText(path, "stem");
-        _staged.Add(new StagingStem { Path = path, FileName = name });
+        _staged.Add(new StagedFile { Path = path, FileName = name });
 
         return path;
     }
@@ -235,7 +236,7 @@ public class TrackRenameTests : IDisposable
 
         _staged.Clear();
         _staged.Add(
-            new StagingStem
+            new StagedFile
             {
                 Path = Staged("Starjunk 95 - 99th Street (Vocal - Full).flac"),
                 FileName = "Starjunk 95 - 99th Street (Vocal - Full).flac",

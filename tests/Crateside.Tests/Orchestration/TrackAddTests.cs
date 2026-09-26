@@ -1,7 +1,9 @@
 using Crateside.Core;
 using Crateside.Core.Naming;
-using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Download;
+using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Queue;
+using Crateside.Core.Tracks;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration;

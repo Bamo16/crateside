@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Crateside.Core.Ledger;
-using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Queue;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
@@ -153,7 +153,7 @@ public class SwappedSourceTests : IDisposable
             )
             .Rows;
 
-    private static StagingSong Staged() =>
+    private static StagedSong Staged() =>
         new()
         {
             SourceVideoId = Replacement,
@@ -166,7 +166,7 @@ public class SwappedSourceTests : IDisposable
             ],
         };
 
-    private static StagingStem StagedStem(string preset) =>
+    private static StagedFile StagedStem(string preset) =>
         new()
         {
             Path = Path.Combine(StagingRoot, $"Southern Hospitality ({preset}).flac"),
