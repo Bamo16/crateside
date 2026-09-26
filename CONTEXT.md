@@ -7,7 +7,7 @@ Terms shared with the detection tool — **Track**, **Stem**, **Sample**, **Warp
 guide**, **Song identity**, **Verdict**, **Source video ID**, **Queue**, **Fully
 processed**, **Sample Staging**, **Mashup Samples** — are defined once in
 `keytag`'s `CONTEXT.md` and are not repeated here. This file covers what is
-specific to crateside: the mashup-pairing vocabulary, and the views.
+specific to crateside: pairing, importing, tags, the views, and running the workflow.
 
 ## Pairing
 
@@ -46,7 +46,7 @@ against it.
   on disk records "warped" and nothing needs to: the move covers the whole sequence,
   because a sample sitting there unwarped or mistagged is a mistake rather than a state
   the workflow produces. Described step by step in
-  [the manual workflow](../docs/the-manual-workflow.md).
+  [the manual workflow](docs/the-manual-workflow.md).
 - **Default clip** — the saved start position of a sample, trimmed to the bar where its
   first verse begins, so that dragging it out of the library lands it there. What makes
   an arbitrary vocal and an arbitrary instrumental line up on the first try. The audio
@@ -126,8 +126,12 @@ against it.
 - **Partners** — the interactive answer to "what else can I use with this?".
   Returns **keys** to filter for, never files, because Ableton Live Lite admits no
   extensions and the filtering therefore happens in Ableton's own browser.
-- **Queue view** — the **Queue** as work: what is in the playlist, what is already
-  **fully processed**, and what is new.
+- **Track details** — one track on a page of its own: its key and BPM, where it is in
+  the **stages**, its samples, the evidence behind its verdict, and what has happened to
+  it. It offers the same actions as the track's row in the Tracks view.
+- **Library** — what is finished and filed in **Mashup Samples**, counted by key and
+  genre, one count per song however many samples it has, read from the **index**. It is
+  also where the library's never-judged tracks are queued as the **library backfill**.
 
 ## Orchestration
 
@@ -139,6 +143,9 @@ the two run types below are named after which of them they produce.
   where its stems belong, what quality to ask for. The thing that replaces a
   hand-written prompt. A work order says what should happen to a track next; it is
   not a record that anything did.
+- **Work lists** — crateside's own lists of tracks to work, read as what each **stage**
+  still owes. A track gets on them from the **Queue** (the playlist), by URL, or from the
+  Library as **library backfill**, so the Queue is one way in rather than the whole of it.
 - **Source** — a whole file of a track's audio, as against a **stem** cut out of
   one. crateside's own download is a source; so is an official instrumental found
   later, or a local file. A track has as many as the user gives it, and each is a
@@ -178,12 +185,16 @@ the two run types below are named after which of them they produce.
   ([ADR 0027](docs/adr/0027-a-shortfall-is-stated-and-never-acted-on.md)). Changing
   a **stem plan** is *not* a re-cut — it states a want and makes nothing.
 - **Recipe** — the part of a work order that says what to make: which stems, in
-  what form. A **stem plan** rendered for the separator, plus the **warp guide**,
-  which is always asked for and is never part of the plan. A recipe is crateside's
-  alone and is not recorded anywhere keytag reads.
-- **Evidence run** — the stage that produces the **evidence** for a track:
-  acquiring the audio and running the detectors. Deterministic, needs no judgement,
-  and contends for nothing scarce.
+  what form. A **stem plan** rendered for the separator, plus a **warp guide** when new
+  presets are cut and the track has none yet (or a first cut that only keeps the source).
+  The guide is never part of the plan. A recipe is crateside's alone and is not recorded
+  anywhere keytag reads.
+- **Download** — the stage that fetches a source: the audio a track is cut from, a
+  kept source, or an added one. Contends for nothing scarce
+  ([ADR 0019](docs/adr/0019-a-track-has-many-sources-and-one-of-them-is-the-separation-source.md)).
+- **Evidence run** — the stage that produces the **evidence** for a track: running
+  the detectors over the audio the download acquired. Deterministic, needs no
+  judgement, and contends for nothing scarce.
 - **Verdict run** — the stage that turns evidence into a **verdict**. The only
   stage that requires an agent, because weighing evidence and going to look for
   human corroboration is the only part of the workflow that genuinely needs one.
@@ -194,37 +205,44 @@ the two run types below are named after which of them they produce.
   **fully processed**. Only stems with a key the user could tag with are handed
   over; the rest stay where separation put them, because staging is where tagging
   happens and there is nothing to tag them with.
+- **Tagging** — the stage that writes a track's settled key onto its files in **Sample
+  Staging** as Ableton tags. Contends for nothing scarce, though it shares the **tag
+  store** with a running Ableton.
 - **Working set** — everything crateside is holding about one track while that
   track is in flight: the source audio it acquired, the evidence it produced
   from it, and the **acquisition**. Discarded when the track is **imported**, because
   that is the point at which there is nothing further to do with the track and
-  therefore nothing further to do with what was gathered about it. Crateside's own
+  therefore nothing further to do with what was gathered about it. A track queued only
+  to be judged is never imported by crateside, so its working set goes once it is
+  judged. Crateside's own
   scratch, never a record of anything — losing it costs a re-run, never a fact.
 - **Acquisition** — how the download crateside is holding turned out, as
   `stemforge-cli` reported it: which premium outcome it met, and whether the user
   has accepted it. Kept in the working set so it dies with the audio it describes —
   a swap re-downloads, and the answer is measured again rather than inherited.
 - **Premium shortfall** — a download that did not get YouTube Premium audio.
-  StemForge names five ways that happens; only the two that are properties of the
-  *upload* park a track, because the other two are true of every download at once
-  and no per-track action would fix them (ADR 0016).
+  StemForge names five ways that happens. Only the two that are properties of the
+  *upload* park a track. The two about the account are true of every download at once,
+  so no per-track action would fix them, and the fifth is a format chosen on purpose,
+  which crateside never does (ADR 0016).
 - **Parked** — crateside stopped and it is the user's turn. Not a failure and not a
   standing instruction: a finding, which the user *resolves* rather than clears.
   Two reasons, at opposite ends of the pipeline — **no key** (separated, with no
   verdict worth tagging with; the way out is a better verdict) and **premium
   shortfall** (stopped before the verdict; the way out is a better upload or the
   user's say-so).
-- **Draining** — working the queue down continuously, one track at a time, for as
-  long as there is anything outstanding. The normal state of the system rather than
+- **Draining** — working the **work lists** down continuously, one track at a time,
+  for as long as there is anything outstanding. The normal state of the system rather than
   an action someone takes: what limits separation is that two at once are ruinous,
   not that one costs the user their machine, so there is nothing to pick a moment
-  for. **Pausing** is the occasional exception, and deliberately carries no stated
-  reason: whether to leave the GPU alone right now is the user's call to make, and
-  a written-down justification would only be a guess at one.
-- **Stage** — one of evidence run, verdict run, separation, or handoff. Stages are
-  named separately because each contends for a *different* scarce resource —
-  nothing, Claude quota, the GPU, and nothing again — and so each wants its own
-  moment to run.
+  for. **Pausing** is the occasional exception, for separation or judging, and
+  deliberately carries no stated reason: whether to leave the GPU or the Claude quota
+  alone right now is the user's call to make, and a written-down justification would
+  only be a guess at one. A pause survives a restart.
+- **Stage** — one of download, evidence run, verdict run, separation, handoff, or
+  tagging. Stages are named separately because they contend for different resources —
+  only the verdict run spends Claude quota and only separation the GPU; the rest
+  contend for nothing scarce — and so each wants its own moment to run.
   **Independent moments, but not independent order:** separation reads facts that
   only a verdict run records, so a track becomes ready for it by having been
   judged rather than by the clock coming round.
