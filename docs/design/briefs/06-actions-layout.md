@@ -1,5 +1,7 @@
 # crateside: where a track's actions live (row and Track details)
 
+Issue: #62
+
 For the Claude Design session that drew the Tracks page, the brand and Track details. This brief
 covers **one component set shown in two places**. The implementing agent ports your design to
 Blazor afterwards, so send layouts and states, not code.

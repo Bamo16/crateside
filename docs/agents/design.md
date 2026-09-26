@@ -10,8 +10,9 @@ So the brief goes out through the repo, and the result comes back through the us
 
 ## Out: the brief
 
-1. Write the brief to `docs/design/briefs/NN-<topic>.md`, numbered after the last one, and
-   **commit and push it**. That is how the Design session reads it.
+1. Write the brief to `docs/design/briefs/NN-<topic>.md`, numbered after the last one, with
+   `Issue: #NN` as the first line under its title, and **commit and push it**. That is how the
+   Design session reads it, and it cannot see issues, so the brief has to name its own.
 2. Point it at what already exists: `docs/design/DESIGN.md` (the rules as built) and the canvases
    in `docs/design/canvases/`.
 3. Track the work on an issue labelled `needs-design`, linking the brief. Do not build before the
@@ -20,15 +21,18 @@ So the brief goes out through the repo, and the result comes back through the us
 ## Back: the result
 
 The user posts the Design session's output **as a comment on the issue, with a zip attached**.
-Fetch the attachment with the `gh` token, since attachment URLs need auth:
+The comment is only a pointer (the brief number, "zip attached", and which handoff to build from).
+**The handoff file in the zip is the one full copy.** Fetch the attachment with the `gh` token,
+since attachment URLs need auth:
 
 ```
 curl -sL -H "Authorization: token $(gh auth token)" -o design.zip "<attachment url>"
 ```
 
-Unzip it in the scratchpad, not the repo. The zip has so far been **the whole design archive**:
-`canvases/`, `handoffs/`, `brand/`, `briefs/` and a `README.md`. So it overlaps what is already
-committed.
+Unzip it in the scratchpad, not the repo. Up to brief 05 the zip was **the whole design
+archive**. From brief 06 on it holds **only what changed**: the new handoff, any new or updated
+canvas, `support.js` if it changed, and a `README.md` saying where each file goes. Follow that
+README, and keep the hash compare below as a guard.
 
 ## What to commit from it
 
@@ -37,7 +41,7 @@ committed.
 | from the zip | goes to | rule |
 |---|---|---|
 | a canvas that is new or has new turns | `docs/design/canvases/` (replace the file) | canvases accumulate turns, so the newest file supersedes |
-| a new handoff | `docs/design/handoffs/NN-<topic>.md` | new file; never edit an old one |
+| a new handoff | `docs/design/handoffs/NN-<topic>.md` | named after its brief (`briefs/06-x.md` → `handoffs/06-x.md`); never edit an old one |
 | `README.md` | merge its index into `docs/design/ARCHIVE.md` | the zip calls it README; the repo calls it ARCHIVE |
 | `brand/`, `briefs/`, `support.js` | only if changed | the briefs originate here, so theirs are copies |
 
@@ -49,5 +53,7 @@ only what the round trip actually changed.
 Update `docs/design/DESIGN.md` in the same commit as any change to tokens, chips, header shapes,
 table caps or shared controls. It is what the next Design session starts from.
 
-Where the build departs from the design, say so on the issue, as #21's "differs from the design"
-comment did, so the next brief starts from what is actually on screen.
+Where the build departs from the design, **record it under "Differs from the design" in
+`DESIGN.md`**, by page, as well as on the issue. The Design session can only read the repo, so the
+note on the issue alone would leave the next brief starting from a canvas the screen no longer
+matches. Clear an entry once a later design supersedes it.

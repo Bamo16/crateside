@@ -1,7 +1,7 @@
 # crateside design rules
 
 What is built, for the next design session to start from. **Update this file in the same commit
-as any change to tokens, chips, header shapes or table caps.** The code wins where the two differ.
+as any change to tokens, chips, header shapes, table caps or shared controls.** The code wins where the two differ.
 
 Everything else in this folder is frozen history from the Claude Design sessions: `canvases/`
 (open a `.dc.html` in a browser with `support.js` beside it), `handoffs/`, `briefs/` and
@@ -73,3 +73,20 @@ are mounted by the Tracks row and by Track details.
 
 One width cap per table shape: `--table-partners` 50rem, `--table-library` 56rem,
 `--table-tracks` 92rem. Track details uses `--table-tracks`.
+
+## Differs from the design
+
+Where the build departs from a canvas, by page. Clear an entry once a later design supersedes it.
+
+### Track details (handoff 05, #21)
+
+- **Rename and swap sit in the rail under Change**, stacked, not in a strip above the band. Brief 06
+  (#62) is redesigning where actions live.
+- **Genre in the rail is the row's full strip** (every genre as a button), not the amber suggestion
+  box with *Use {genre}* / *Pick another*. A **Familiarity** strip sits under it (#52), which the
+  canvas predates.
+- **Upload players show no still.** A still would be fetched from YouTube, so the box stays blank
+  until pressed.
+- **Stage chips are all coloured by state** (done green, running teal, your turn amber, stopped red),
+  with the current stage the only filled, bold chip. **No timestamps** under them: the Activity log
+  carries times. The user asked for both on 2026-09-25.

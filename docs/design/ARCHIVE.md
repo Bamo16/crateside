@@ -32,3 +32,10 @@ The live definition is `src/Crateside/wwwroot/app.css`. The rules the canvases f
 - State chips: neutral outline · teal filled with a dot · teal outline · amber filled · red outline · red filled · green outline · dashed.
 - Three page-header shapes (Bar, Flush, Shade), and a closed set of them.
 - One width cap per table shape (`--table-*`).
+
+## Numbering (added 2026-09-25)
+
+From brief 05 on, a handoff takes its brief's number: `briefs/NN-<topic>.md` → `handoffs/NN-<topic>.md`.
+Handoffs 01–04 predate the briefs folder and keep their numbers, which do not line up with the
+briefs. The folder has no briefs 03 or 04 (#22's brief was pasted in chat). Handoff 05 was back-filled from the
+Design session's comment on #21.

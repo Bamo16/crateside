@@ -1,5 +1,7 @@
 # crateside: song page design brief (issue #21)
 
+Issue: #21
+
 For the Claude Design session already working on crateside's visual language. This is a brief for
 one page. An implementing agent will port your design to Blazor afterwards, so give it layouts and
 states rather than code.
