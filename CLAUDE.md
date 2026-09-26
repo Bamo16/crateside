@@ -122,3 +122,8 @@ The five canonical names, unchanged. See `docs/agents/triage-labels.md`.
 
 Single-context — `CONTEXT.md` and `docs/adr/` at the root, with shared vocabulary in keytag's
 `CONTEXT.md`. See `docs/agents/domain.md`.
+
+### Design
+
+Page design goes to a Claude Design session, which reads the repo but cannot write to it or see
+issues. Briefs out and results back: see `docs/agents/design.md`.
