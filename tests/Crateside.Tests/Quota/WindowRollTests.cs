@@ -92,6 +92,18 @@ public class WindowRollTests
     }
 
     [Fact]
+    public void A_roll_from_before_a_restart_still_holds_its_window()
+    {
+        var roll = new WindowRoll(enabled: true, rolledAt: Start);
+        var idleFrom = Start + TimeSpan.FromHours(1);
+
+        roll.ShouldRoll(Idle, idleFrom);
+
+        Assert.False(roll.ShouldRoll(Idle, idleFrom + WindowRoll.IdleFor));
+        Assert.True(roll.ShouldRoll(Idle, Start + WindowRoll.Window));
+    }
+
+    [Fact]
     public void Turning_it_off_forgets_the_idle_clock()
     {
         var roll = Enabled();

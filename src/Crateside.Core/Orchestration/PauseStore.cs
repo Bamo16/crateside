@@ -43,6 +43,9 @@ public sealed class PauseStore(string? path = null)
 
     public void RememberBackfill(bool on) => Save(Read() with { Backfill = on });
 
+    public void RememberBackfillJudged(DateTimeOffset at) =>
+        Save(Read() with { BackfillJudgedAt = at });
+
     private void Save(PausedStages stages)
     {
         lock (_gate)
@@ -65,4 +68,7 @@ public sealed record PausedStages
 
     /// <summary>Not a pause: whether idle windows judge the library backfill (ADR 0035).</summary>
     public bool Backfill { get; init; }
+
+    /// <summary>When an idle window last judged a backfill track, so a restart keeps the five hours.</summary>
+    public DateTimeOffset? BackfillJudgedAt { get; init; }
 }

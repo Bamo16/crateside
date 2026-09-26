@@ -52,3 +52,10 @@ stage, whether judging is paused or running.**
   `The_index_and_the_ledger_never_disagree_about_a_key` fails until the user settles it.
 - The last roll's time is still held in memory only, so a restart forgets it, and a second roll
   can come sooner than five hours after the first. Unchanged from ADR 0029.
+
+## Amendment, 2026-09-26 — the last roll survives a restart
+
+The last bullet above no longer holds. When an idle window judges a backfill track, the time is
+kept in `paused.json` (`BackfillJudgedAt`) and read back at start, so a restart keeps the five
+hours. Done unasked, overnight, because restarts are frequent and each one could otherwise spend a
+second verdict early.

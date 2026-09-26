@@ -58,6 +58,16 @@ public class PauseStoreTests : IDisposable
     }
 
     [Fact]
+    public void When_an_idle_window_last_judged_survives_a_restart()
+    {
+        var at = new DateTimeOffset(2026, 9, 26, 4, 0, 0, TimeSpan.Zero);
+
+        new PauseStore(StorePath).RememberBackfillJudged(at);
+
+        Assert.Equal(at, new PauseStore(StorePath).Read().BackfillJudgedAt);
+    }
+
+    [Fact]
     public void An_unreadable_file_reads_as_nothing_paused()
     {
         Directory.CreateDirectory(_directory);

@@ -9,6 +9,7 @@ namespace Crateside;
 /// </summary>
 public sealed class WindowRollWorker(
     WindowRoll roll,
+    PauseStore remembered,
     VerdictDrainer drainer,
     IServiceProvider services,
     ILogger<WindowRollWorker> logger
@@ -56,6 +57,7 @@ public sealed class WindowRollWorker(
             return;
 
         roll.MarkRolled(now);
+        remembered.RememberBackfillJudged(now);
 
         logger.LogInformation(
             "Opened an idle window by judging {Subject}: {Outcome}",
