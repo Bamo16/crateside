@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.Plans;
 
 /// <summary>
 /// What the separator can make and what it calls each one, read from StemForge: <c>vocal_full</c>

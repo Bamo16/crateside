@@ -1,7 +1,7 @@
 using Crateside.Core.Ableton;
-using Crateside.Core.Queue;
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
+using Crateside.Core.WorkLists;
 using Humanizer;
 
 namespace Crateside.Core.Orchestration.Edits;

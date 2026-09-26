@@ -1,5 +1,6 @@
 using System.Net;
-using Crateside.Core.Queue;
+using Crateside.Core.Playlist;
+using Crateside.Core.WorkLists;
 using Google;
 using Google.Apis.Requests;
 
@@ -95,7 +96,7 @@ public class RemovalFailureTests : IDisposable
             },
         };
 
-        Assert.Equal(canSucceedLater, QueueRemover.CanSucceedLater(error));
+        Assert.Equal(canSucceedLater, PlaylistRemover.CanSucceedLater(error));
     }
 
     private IntakeStore Store() => new(Path.Combine(_directory, "intake.json"));

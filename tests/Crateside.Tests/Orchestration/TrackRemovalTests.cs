@@ -1,7 +1,9 @@
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Edits;
-using Crateside.Core.Queue;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
 using Crateside.Core.Staging;
+using Crateside.Core.WorkLists;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration;
@@ -110,7 +112,7 @@ public class TrackRemovalTests : IDisposable
         new(settings, intake ?? Intake(), new WorkingSet(_working), _ => _staged);
 
     private QueueSettingsStore Settings() =>
-        new(Options.Create(new QueueOptions()), Path.Combine(_root, "queue.json"));
+        new(Options.Create(new PlaylistOptions()), Path.Combine(_root, "queue.json"));
 
     private IntakeStore Intake() => new(Path.Combine(_root, "intake.json"));
 

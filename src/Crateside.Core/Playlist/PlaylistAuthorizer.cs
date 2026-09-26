@@ -4,16 +4,16 @@ using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 using Microsoft.Extensions.Options;
 
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.Playlist;
 
 /// <summary>
 /// Holds the OAuth credential that authorizes playlist deletions. A lapsed token is an ordinary
 /// state: it expires about weekly for an unapproved app.
 /// </summary>
-public sealed class QueueAuthorizer(
-    IOptions<QueueOptions> options,
+public sealed class PlaylistAuthorizer(
+    IOptions<PlaylistOptions> options,
     ProtectedTokenStore tokenStore,
-    QueueWriteAccess access
+    PlaylistWriteAccess access
 )
 {
     /// <summary>The narrowest scope that permits <c>playlistItems.delete</c>.</summary>
@@ -21,7 +21,7 @@ public sealed class QueueAuthorizer(
 
     private const string UserKey = "crateside";
 
-    private readonly QueueOptions _options = options.Value;
+    private readonly PlaylistOptions _options = options.Value;
 
     /// <summary>Whether an OAuth client is configured at all.</summary>
     public bool IsConfigured =>
@@ -32,7 +32,7 @@ public sealed class QueueAuthorizer(
     public bool HasStoredToken => tokenStore.HasStoredToken;
 
     /// <summary>Whether writing still works, and what happened when it last did not.</summary>
-    public QueueWriteAccess WriteAccess => access;
+    public PlaylistWriteAccess WriteAccess => access;
 
     /// <summary>
     /// The stored credential, refreshed if needed, or null when there is none or it cannot be.

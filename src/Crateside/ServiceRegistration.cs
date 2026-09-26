@@ -15,10 +15,11 @@ using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Orchestration.Tagging;
 using Crateside.Core.Orchestration.Verdict;
-using Crateside.Core.Queue;
+using Crateside.Core.Playlist;
 using Crateside.Core.Quota;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
+using Crateside.Core.WorkLists;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 
@@ -47,8 +48,8 @@ public static class ServiceRegistration
         builder.Services.Configure<CratesidePaths>(
             builder.Configuration.GetSection(CratesidePaths.SectionName)
         );
-        builder.Services.Configure<QueueOptions>(
-            builder.Configuration.GetSection(QueueOptions.SectionName)
+        builder.Services.Configure<PlaylistOptions>(
+            builder.Configuration.GetSection(PlaylistOptions.SectionName)
         );
 
         builder.Services.AddSingleton(sp =>
@@ -66,7 +67,7 @@ public static class ServiceRegistration
         services.AddSingleton<LibraryKeyReader>();
         services.AddSingleton<LibrarySummary>();
         services.AddSingleton<StagingReader>();
-        services.AddSingleton<YouTubeQueueReader>();
+        services.AddSingleton<PlaylistReader>();
         services.AddSingleton<EvidenceService>();
         services.AddSingleton<QueueSettingsStore>();
         return services;
@@ -94,9 +95,9 @@ public static class ServiceRegistration
             dataProtection.ProtectKeysWithDpapi();
 
         services.AddSingleton<ProtectedTokenStore>();
-        services.AddSingleton<QueueWriteAccess>();
-        services.AddSingleton<QueueAuthorizer>();
-        services.AddSingleton<QueueRemover>();
+        services.AddSingleton<PlaylistWriteAccess>();
+        services.AddSingleton<PlaylistAuthorizer>();
+        services.AddSingleton<PlaylistRemover>();
         services.AddSingleton<IntakeStore>();
         services.AddSingleton<BumpedTrack>();
         services.AddSingleton(_ => new PresetCatalogReader());
@@ -107,9 +108,9 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new QueueService(
             sp.GetRequiredService<IOptions<CratesidePaths>>(),
             sp.GetRequiredService<QueueSettingsStore>(),
-            sp.GetRequiredService<YouTubeQueueReader>(),
-            sp.GetRequiredService<QueueAuthorizer>(),
-            sp.GetRequiredService<QueueRemover>(),
+            sp.GetRequiredService<PlaylistReader>(),
+            sp.GetRequiredService<PlaylistAuthorizer>(),
+            sp.GetRequiredService<PlaylistRemover>(),
             sp.GetRequiredService<BumpedTrack>(),
             sp.GetRequiredService<IntakeStore>(),
             ledger =>

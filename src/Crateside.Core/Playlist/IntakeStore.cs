@@ -1,7 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Crateside.Core.WorkLists;
 
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.Playlist;
 
 /// <summary>
 /// What crateside keeps in <c>%APPDATA%\crateside\intake.json</c> about a playlist entry, so it

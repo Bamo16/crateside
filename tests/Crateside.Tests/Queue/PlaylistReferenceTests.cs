@@ -1,4 +1,4 @@
-using Crateside.Core.Queue;
+using Crateside.Core.Playlist;
 
 namespace Crateside.Tests.Queue;
 

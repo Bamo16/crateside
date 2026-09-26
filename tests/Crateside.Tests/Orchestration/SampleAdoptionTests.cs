@@ -1,8 +1,10 @@
 using Crateside.Core;
 using Crateside.Core.Orchestration.Edits;
-using Crateside.Core.Queue;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
 using Crateside.Core.Samples;
 using Crateside.Core.Tracks;
+using Crateside.Core.WorkLists;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration;
@@ -31,7 +33,7 @@ public class SampleAdoptionTests : IDisposable
         Directory.CreateDirectory(_paths.MashupSamples);
 
         _settings = new QueueSettingsStore(
-            Options.Create(new QueueOptions()),
+            Options.Create(new PlaylistOptions()),
             Path.Combine(_root, "queue.json")
         );
     }

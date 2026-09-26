@@ -1,4 +1,4 @@
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.WorkLists;
 
 /// <summary>
 /// The one track the user wants worked next, if they have said so — held in memory only

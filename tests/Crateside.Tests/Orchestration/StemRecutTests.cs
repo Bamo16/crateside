@@ -2,8 +2,10 @@ using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
-using Crateside.Core.Queue;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
 using Crateside.Core.Staging;
+using Crateside.Core.WorkLists;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration;
@@ -51,7 +53,7 @@ public class StemRecutTests : IDisposable
     private JobStore Jobs() => new(Path.Combine(_root, "jobs.jsonl"));
 
     private QueueSettingsStore Settings() =>
-        new(Options.Create(new QueueOptions()), Path.Combine(_root, "settings.json"));
+        new(Options.Create(new PlaylistOptions()), Path.Combine(_root, "settings.json"));
 
     /// <summary>A working set holding source audio for the track, as one still in staging has.</summary>
     private WorkingSet WorkingSetWithSource()

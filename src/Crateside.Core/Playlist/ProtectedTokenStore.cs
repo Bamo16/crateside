@@ -3,7 +3,7 @@ using Google.Apis.Json;
 using Google.Apis.Util.Store;
 using Microsoft.AspNetCore.DataProtection;
 
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.Playlist;
 
 /// <summary>
 /// Google's token store, encrypted at rest with Windows DPAPI — no defence against anything

@@ -2,8 +2,10 @@ using Crateside.Core;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Edits;
-using Crateside.Core.Queue;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
 using Crateside.Core.Tracks;
+using Crateside.Core.WorkLists;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration;
@@ -111,7 +113,7 @@ public class TrackAddTests : IDisposable
         var paths = new CratesidePaths { Ledger = Path.Combine(_scratch, "runs.jsonl") };
 
         settings = new QueueSettingsStore(
-            Options.Create(new QueueOptions()),
+            Options.Create(new PlaylistOptions()),
             Path.Combine(_scratch, "queue.json")
         );
 

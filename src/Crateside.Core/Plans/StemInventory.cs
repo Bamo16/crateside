@@ -1,7 +1,8 @@
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
+using Crateside.Core.WorkLists;
 
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.Plans;
 
 /// <summary>
 /// What a track already has, read off disk on every read and said in the vocabulary the plan

@@ -5,8 +5,9 @@ using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Orchestration.Jobs;
-using Crateside.Core.Queue;
+using Crateside.Core.Playlist;
 using Crateside.Core.Staging;
+using Crateside.Core.WorkLists;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration;
@@ -252,7 +253,7 @@ public class TrackSwapTests : IDisposable
         );
 
     private QueueSettingsStore Settings() =>
-        new(Options.Create(new QueueOptions()), Path.Combine(_root, "settings.json"));
+        new(Options.Create(new PlaylistOptions()), Path.Combine(_root, "settings.json"));
 
     private JobStore Jobs() => new(Path.Combine(_root, "jobs.jsonl"));
 

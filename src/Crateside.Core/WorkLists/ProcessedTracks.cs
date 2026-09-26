@@ -2,7 +2,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
 
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.WorkLists;
 
 /// <summary>
 /// Which source video IDs are fully processed: a ledger verdict and a stem carrying that

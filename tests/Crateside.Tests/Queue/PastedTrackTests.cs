@@ -1,4 +1,6 @@
-using Crateside.Core.Queue;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
+using Crateside.Core.WorkLists;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Queue;
@@ -25,7 +27,7 @@ public class PastedTrackTests : IDisposable
     }
 
     private QueueSettingsStore Store() =>
-        new(Options.Create(new QueueOptions()), Path.Combine(_directory, "queue.json"));
+        new(Options.Create(new PlaylistOptions()), Path.Combine(_directory, "queue.json"));
 
     [Fact]
     public void A_pasted_track_is_worth_storing_on_its_own()

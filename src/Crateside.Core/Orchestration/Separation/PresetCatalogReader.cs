@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Crateside.Core.Orchestration.Loop;
-using Crateside.Core.Queue;
+using Crateside.Core.Plans;
 
 namespace Crateside.Core.Orchestration.Separation;
 

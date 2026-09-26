@@ -13,9 +13,10 @@
 @using Crateside.Core.Orchestration.Jobs
 @using Crateside.Core.Orchestration.Loop
 @using Crateside.Core.Orchestration.Verdict
-@using Crateside.Core.Queue
+@using Crateside.Core.Playlist
 @using Crateside.Core.Quota
 @using Crateside.Core.Tracks
+@using Crateside.Core.WorkLists
 @using Humanizer
 
 @inject TracksService Source
@@ -24,7 +25,7 @@
 @inject TrackAdd Adding
 @inject DrainControl Separation
 @inject StageSignals Signals
-@inject QueueWriteAccess Access
+@inject PlaylistWriteAccess Access
 @inject VerdictControl Judging
 @inject PauseStore Paused
 @inject QuotaReader Quota

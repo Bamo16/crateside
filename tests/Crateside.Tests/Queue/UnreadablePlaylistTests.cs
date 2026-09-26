@@ -1,5 +1,6 @@
 using Crateside.Core;
-using Crateside.Core.Queue;
+using Crateside.Core.Playlist;
+using Crateside.Core.WorkLists;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 
@@ -31,14 +32,14 @@ public class UnreadablePlaylistTests : IDisposable
     /// <summary>A service whose reader has no credential, so every read refuses.</summary>
     private QueueService Unreadable(IntakeStore intake)
     {
-        var options = Options.Create(new QueueOptions());
-        var authorizer = new QueueAuthorizer(
+        var options = Options.Create(new PlaylistOptions());
+        var authorizer = new PlaylistAuthorizer(
             options,
             new ProtectedTokenStore(
                 DataProtectionProvider.Create("crateside-tests"),
                 PathIn("tokens")
             ),
-            new QueueWriteAccess()
+            new PlaylistWriteAccess()
         );
 
         return new QueueService(
@@ -53,9 +54,9 @@ public class UnreadablePlaylistTests : IDisposable
                 }
             ),
             new QueueSettingsStore(options, PathIn("queue.json")),
-            new YouTubeQueueReader(options),
+            new PlaylistReader(options),
             authorizer,
-            new QueueRemover(authorizer),
+            new PlaylistRemover(authorizer),
             new BumpedTrack(),
             intake
         );

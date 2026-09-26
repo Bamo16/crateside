@@ -1,5 +1,5 @@
 using Crateside.Core.Orchestration.Download;
-using Crateside.Core.Queue;
+using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.Orchestration;
 

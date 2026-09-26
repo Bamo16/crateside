@@ -1,4 +1,4 @@
-using Crateside.Core.Queue;
+using Crateside.Core.Plans;
 using Humanizer;
 
 namespace Crateside.Core.Tracks;

@@ -1,8 +1,9 @@
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Orchestration.Edits;
-using Crateside.Core.Queue;
+using Crateside.Core.Playlist;
 using Crateside.Core.Staging;
+using Crateside.Core.WorkLists;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration;
@@ -39,7 +40,7 @@ public class TrackRenameTests : IDisposable
     }
 
     private QueueSettingsStore Settings() =>
-        new(Options.Create(new QueueOptions()), Path.Combine(_root, "settings.json"));
+        new(Options.Create(new PlaylistOptions()), Path.Combine(_root, "settings.json"));
 
     private TrackRename Renamer(QueueSettingsStore? settings = null) =>
         new(settings ?? Settings(), _ => _staged, _writer, _paths);

@@ -1,4 +1,6 @@
-using Crateside.Core.Queue;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
+using Crateside.Core.WorkLists;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Queue;
@@ -23,7 +25,7 @@ public class QueueSettingsStoreTests : IDisposable
     }
 
     private QueueSettingsStore Store(string? configuredPlaylistId = null) =>
-        new(Options.Create(new QueueOptions { PlaylistId = configuredPlaylistId }), _path);
+        new(Options.Create(new PlaylistOptions { PlaylistId = configuredPlaylistId }), _path);
 
     [Fact]
     public void Falls_back_to_configuration_before_anything_is_saved()

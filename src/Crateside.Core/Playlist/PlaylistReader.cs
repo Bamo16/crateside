@@ -1,20 +1,21 @@
+using Crateside.Core.WorkLists;
 using Google;
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 using Google.Apis.YouTube.v3.Data;
 using Microsoft.Extensions.Options;
 
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.Playlist;
 
 /// <summary>
 /// Reads the Queue playlist over the YouTube Data API. An API key silently stops working if the
 /// playlist goes private; OAuth does not.
 /// </summary>
-public sealed class YouTubeQueueReader(IOptions<QueueOptions> options) : IDisposable
+public sealed class PlaylistReader(IOptions<PlaylistOptions> options) : IDisposable
 {
     private const int MaxPageSize = 50;
 
-    private readonly QueueOptions _options = options.Value;
+    private readonly PlaylistOptions _options = options.Value;
     private YouTubeService? _service;
 
     /// <summary>Whether a credential is available. The playlist ID is passed per call.</summary>

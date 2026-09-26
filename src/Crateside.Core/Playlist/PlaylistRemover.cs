@@ -1,13 +1,14 @@
+using Crateside.Core.WorkLists;
 using Google;
 using Google.Apis.Services;
 using Google.Apis.YouTube.v3;
 
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.Playlist;
 
 /// <summary>
 /// Deletes items from the Queue playlist, at 50 quota units each against the default 10,000 a day.
 /// </summary>
-public sealed class QueueRemover(QueueAuthorizer authorizer)
+public sealed class PlaylistRemover(PlaylistAuthorizer authorizer)
 {
     /// <summary>
     /// Removes the given items independently, with a per-item account; one already gone reports

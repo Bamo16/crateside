@@ -1,4 +1,4 @@
-using Crateside.Core.Queue;
+using Crateside.Core.Playlist;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace Crateside.Tests.Queue;

@@ -1,10 +1,10 @@
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.Playlist;
 
 /// <summary>
 /// Whether crateside can still write to the playlist, and what happened when it last tried. Only
 /// the user can renew a lapse, so it is reported until they do.
 /// </summary>
-public sealed class QueueWriteAccess
+public sealed class PlaylistWriteAccess
 {
     private readonly Lock _gate = new();
 

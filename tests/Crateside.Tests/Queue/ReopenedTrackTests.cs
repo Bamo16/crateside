@@ -1,4 +1,4 @@
-using Crateside.Core.Queue;
+using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.Queue;
 

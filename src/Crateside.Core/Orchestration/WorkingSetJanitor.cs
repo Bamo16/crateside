@@ -1,6 +1,6 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
-using Crateside.Core.Queue;
+using Crateside.Core.WorkLists;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Orchestration;

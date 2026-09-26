@@ -1,6 +1,8 @@
 using Crateside.Core.Orchestration;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
 
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.WorkLists;
 
 /// <summary>One entry in the Queue playlist.</summary>
 public sealed record QueueItem

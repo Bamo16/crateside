@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using Crateside.Core.Samples;
 
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.Plans;
 
 /// <summary>
 /// Which files the user wants made for one track: the separator presets to run, and whether the

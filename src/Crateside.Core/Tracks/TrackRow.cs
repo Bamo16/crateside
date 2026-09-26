@@ -4,7 +4,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Jobs;
-using Crateside.Core.Queue;
+using Crateside.Core.Plans;
 using Humanizer;
 
 namespace Crateside.Core.Tracks;

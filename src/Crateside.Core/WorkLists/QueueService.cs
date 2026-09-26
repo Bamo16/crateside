@@ -1,7 +1,9 @@
 using Crateside.Core.Ledger;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
 using Microsoft.Extensions.Options;
 
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.WorkLists;
 
 /// <summary>
 /// Video IDs crateside has separation to redo for, whatever the playlist says, decided per song
@@ -17,9 +19,9 @@ public delegate Task<PresetCatalog> ReadPresetCatalog(CancellationToken cancella
 public sealed class QueueService(
     IOptions<CratesidePaths> paths,
     QueueSettingsStore settings,
-    YouTubeQueueReader reader,
-    QueueAuthorizer authorizer,
-    QueueRemover remover,
+    PlaylistReader reader,
+    PlaylistAuthorizer authorizer,
+    PlaylistRemover remover,
     BumpedTrack bumped,
     IntakeStore intake,
     ReadReopenedTracks? reopened = null,

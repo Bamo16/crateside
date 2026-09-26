@@ -1,4 +1,4 @@
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.Playlist;
 
 /// <summary>
 /// Whether a queued video is likely to yield a YouTube Premium audio format when downloaded.

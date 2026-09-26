@@ -1,8 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
 using Microsoft.Extensions.Options;
 
-namespace Crateside.Core.Queue;
+namespace Crateside.Core.WorkLists;
 
 /// <summary>
 /// The Queue settings the user can change from the UI, kept in <c>%APPDATA%\crateside\queue.json</c>.
@@ -17,7 +19,7 @@ public sealed class QueueSettingsStore
     };
 
     private readonly string _path;
-    private readonly QueueOptions _fallback;
+    private readonly PlaylistOptions _fallback;
     private readonly Lock _gate = new();
 
     private QueueSettings? _cached;
@@ -25,7 +27,7 @@ public sealed class QueueSettingsStore
     /// <summary>When the file was last written as of <see cref="_cached"/>, or null for no file.</summary>
     private DateTime? _cachedStamp;
 
-    public QueueSettingsStore(IOptions<QueueOptions> fallback, string? path = null)
+    public QueueSettingsStore(IOptions<PlaylistOptions> fallback, string? path = null)
     {
         _fallback = fallback.Value;
         _path =
@@ -251,88 +253,4 @@ public sealed record QueueSettings
     /// <summary>How long the rows may go unrebuilt. Zero means never.</summary>
     public TimeSpan RefreshInterval =>
         TimeSpan.FromMinutes(RefreshMinutes ?? DefaultRefreshMinutes);
-}
-
-/// <summary>
-/// A standing instruction about how crateside should work one track, keyed by video ID because an
-/// undetected track has no song to key on.
-/// </summary>
-public sealed record TrackInstruction
-{
-    [JsonPropertyName("videoId")]
-    public required string VideoId { get; init; }
-
-    /// <summary>
-    /// Which files the user wants made for this track. Null means they have not said, which is
-    /// <see cref="StemPlan.Default"/> and is not the same as having chosen it.
-    /// </summary>
-    [JsonPropertyName("plan")]
-    public StemPlan? Plan { get; init; }
-
-    /// <summary>
-    /// The pre-<see cref="StemPlan"/> fact, read so an existing <c>queue.json</c> converts itself
-    /// and never written back.
-    /// </summary>
-    [JsonPropertyName("instrumentalRelease")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public bool WasInstrumentalRelease { get; init; }
-
-    /// <summary>
-    /// What the user calls this track, which beats every derived name — a name, not a filename.
-    /// Null when they have not said.
-    /// </summary>
-    [JsonPropertyName("name")]
-    public string? Name { get; init; }
-
-    /// <summary>
-    /// The upload to fetch instead of the playlist entry's own video. Null when it still is the
-    /// source.
-    /// </summary>
-    [JsonPropertyName("sourceUrl")]
-    public string? SourceUrl { get; init; }
-
-    /// <summary>
-    /// crateside was told to work this track by something other than the playlist (ADR 0010).
-    /// </summary>
-    [JsonPropertyName("addedByUrl")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public bool AddedByUrl { get; init; }
-
-    /// <summary>
-    /// A song the ledger knows that the user said this track is not, though its name looks like
-    /// it (#41).
-    /// </summary>
-    [JsonPropertyName("differentFrom")]
-    public string? DifferentFrom { get; init; }
-
-    /// <summary>
-    /// The upload whose short-of-premium audio the user said to use anyway, kept here because the
-    /// working set holding the download does not last (#31).
-    /// </summary>
-    [JsonPropertyName("acceptedUpload")]
-    public string? AcceptedUpload { get; init; }
-
-    /// <summary>
-    /// When the user last asked for this track's files to be made again, by a re-cut or a swap —
-    /// a request, answered by the outcomes that follow it (#50).
-    /// </summary>
-    [JsonPropertyName("cutRequestedAt")]
-    public DateTimeOffset? CutRequestedAt { get; init; }
-
-    /// <summary>Queued from the Library to be judged, one per idle Claude window (ADR 0035).</summary>
-    [JsonPropertyName("backfill")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public bool Backfill { get; init; }
-
-    /// <summary>Whether this instruction still carries anything worth storing.</summary>
-    [JsonIgnore]
-    public bool SaysSomething =>
-        AddedByUrl
-        || Backfill
-        || Plan is not null
-        || Name is { Length: > 0 }
-        || SourceUrl is { Length: > 0 }
-        || DifferentFrom is { Length: > 0 }
-        || AcceptedUpload is { Length: > 0 }
-        || CutRequestedAt is not null;
 }

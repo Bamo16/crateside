@@ -2,7 +2,7 @@ using Crateside.Core;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Verdict;
-using Crateside.Core.Queue;
+using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.Orchestration;
 
