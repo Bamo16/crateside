@@ -66,7 +66,9 @@ against it.
 - **Sidecar** — the `.asd` Ableton writes beside a sample. Its *presence* means only that
   Ableton analysed the file and says nothing about warping
   ([ADR 0002](docs/adr/0002-there-is-no-warped-signal.md)); its **warp markers** are what
-  describe the warp.
+  describe the warp. Ableton writes the markers, and the **default clip**, only when *Save
+  Default Clip* is pressed, so a sidecar with markers is a finished warp and one without is
+  unwarped or still in progress ([note](docs/notes/2026-09-26-what-the-sidecar-records.md)).
 
 ## Tags
 
