@@ -17,6 +17,7 @@ Open any `.dc.html` in a browser. They need `support.js` beside them. Each is a 
 | `Crateside Row Proportions.dc.html` | 1 · the expanded row's two columns (1a–1g) · 2 · genre from the collapsed row (2a–2b, #65) | Handoff 07. Mounts `Crateside Row Stack.dc.html`, so keep the two together. |
 | `Crateside Row Stack.dc.html` | the side stack as a reusable piece, mounted by Row Proportions | Handoff 07. |
 | `Crateside Counts Page.dc.html` | 1a · the Library page as **Counts**, whole page · 1b · a detector band opened | Handoff 08 (#68, #60, #56). |
+| `Crateside Tools Page.dc.html` | 1a · Partners inside **Tools** · 1b–1d · Re-Pitch · 2a · Re-Pitch inside Partners' table (not recommended) | Handoff 09 (#57, #58). Backburner. |
 | `Crateside Brand.dc.html` | 1 · five marks · 2 · fifteen more | **1a chosen** (interim). The rest are kept in case the brand is revisited. |
 
 ### `handoffs/`: what was sent to the implementing agent each time
@@ -34,6 +35,7 @@ The written spec for each canvas turn, in the order it was sent. The later ones 
 | `06c-link-delivery.md` | none: results delivered by link | |
 | `07-row-proportions.md` | Row Proportions, Row Stack | #65 |
 | `08-library-as-reports.md` | Counts Page | #68, #60, #56 |
+| `09-mashup-tools.md` | Tools Page | #57, #58 |
 
 ### `brand/`: the 1a assets
 `mark.svg` (header), `favicon.svg` plus PNG fallbacks (browser tab), `lockup.svg` (README), `mark-tile.svg` (app icon). Usage rules are in `handoffs/04-brand.md`.
