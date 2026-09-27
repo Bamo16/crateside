@@ -47,3 +47,12 @@ which set is open. Two signals were measured on 2026-09-27:
 - A set that cannot be rewritten is named after the rename, to be relinked by hand; its backup
   holds it as it was.
 - Two sets with the same name in different projects both count as open when one is.
+
+## Checked, 2026-09-27
+
+Live with the user, on *Chris Lake, Skrillex – La Noche* and a set made for the test, *Rename
+Test*. With the set open, the rename was refused and named it. With it closed, both stems were
+renamed with their sidecars and tag entries (keywords intact), all four references in the set were
+relinked, and its backup was kept. Reopened in Ableton, the set found the sample; Ableton redrew
+the waveform as if loading it anew, but left both sidecars as they were (same size and time, warp
+intact).
