@@ -66,7 +66,7 @@ carries them.
 
 Buttons (`.outline`, `.primary`, `.danger`), `.pill`, `.actions` and `.mono` are global, in
 `app.css`, so a component mounted on two pages looks the same on both. A page's scoped rule still
-wins where it sets one; Settings does, for its buttons.
+wins where it sets one.
 
 The sample list and picker are `StemList` and `StemConfirm`, both driven by one `StemEditor`, and
 are mounted by the Tracks row and by Track details.
@@ -126,6 +126,18 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
   Mainstream / Obscure (`GenreStrip Shape="Chips"`, `FamiliarityStrip Inline`). An answered row
   stays in place at 45% until the view is left.
 
+## Settings
+
+Handoff 10. Every setting is one **row**: name (14px/500) and a one-line gist (`--text-60`) in a
+260px left column; the control, then a one-line status (12.5px, `--text-60`) on the right; a
+`--line` rule under it. Sections are 16px/600 `h3`s, 40px apart, in a 944px body.
+
+- **Choices are `.pill` chips**, the chosen one `.pill.on.plain`. A click saves at once.
+- **One sentence per status.** Arithmetic is a number ("288 of 10,000 quota units a day").
+- **Folders are read-only**: name, the path in mono, and Open (or *Show in folder* for a file).
+  They come from `CratesidePaths`.
+- Rows that need a playlist are drawn disabled until one is saved.
+
 ## Page headers
 
 `PageHeader` has three shapes, a closed set: **Bar**, **Flush**, **Shade**. A new page picks one.
@@ -166,3 +178,12 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **Stage chips are all coloured by state** (done green, running teal, your turn amber, stopped red),
   with the current stage the only filled, bold chip. **No timestamps** under them: the Activity log
   carries times. The user asked for both on 2026-09-25.
+
+### Settings (handoff 10, #74)
+
+- **No Separation or Judging rows.** Their pause controls already live in the Tracks header.
+- **Folders also lists Ableton projects**, which postdates the design (ADR 0040).
+- **Library and Partners keep their names** until Counts and Tools are confirmed; the backfill
+  link says *queue them on Library*.
+- **Emptying as tracks are taken on** is disabled until removal access is granted, with a status
+  saying so. The canvas only drew the authorized state.

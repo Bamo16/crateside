@@ -1,39 +1,71 @@
 .body {
     display: flex;
     flex-direction: column;
-    gap: 34px;
-    max-width: 720px;
-    padding: 28px 22px;
+    gap: 40px;
+    max-width: 944px;
+    padding: 28px 48px 48px;
 }
 
 section {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
 }
 
-h2 {
-    margin: 0;
-    font-size: 11px;
+h3 {
+    margin: 0 0 6px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 24px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.row.folder {
+    grid-template-columns: 260px minmax(0, 1fr) auto;
+    align-items: center;
+    padding: 12px 0;
+}
+
+.name {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 14px;
     font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-50);
 }
 
-.detail {
-    margin: 0;
-    max-width: 60ch;
+.gist,
+.status {
     font-size: 12.5px;
+    font-weight: 400;
     line-height: 1.5;
-    color: var(--text-75);
+    color: var(--text-60);
+}
+
+.control {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+}
+
+.control > .field,
+.control > .access,
+.control > .line,
+.control > .confirm,
+.control > .left {
+    align-self: stretch;
 }
 
 .field {
     display: flex;
     gap: 8px;
-    width: 100%;
 }
 
 input {
@@ -53,60 +85,85 @@ input:focus {
     border-color: rgba(255, 255, 255, 0.4);
 }
 
-.outline,
-.primary,
-.danger {
-    flex: none;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 500;
-    border-radius: 6px;
-    padding: 7px 12px;
-    cursor: pointer;
+.pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 
-.outline {
-    color: var(--text);
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.outline:hover:not(:disabled) {
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-.primary {
-    color: var(--ink);
-    background: var(--text);
-    border: 0;
-}
-
-/* Red only on the press that actually deletes, and only behind the confirm step. */
-.danger {
-    color: var(--red);
-    background: transparent;
-    border: 1px solid rgba(224, 122, 109, 0.45);
-}
-
-button:disabled {
-    color: var(--text-40);
+.pill:disabled {
     cursor: default;
+    opacity: 0.4;
 }
 
-.primary:disabled {
-    background: var(--text-30);
-    color: var(--ink);
+.value {
+    color: var(--text);
 }
 
-.actions {
+.access {
+    display: grid;
+    grid-template-columns: 80px minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.caps {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-40);
+}
+
+.state {
+    font-size: 13.5px;
+}
+
+.state strong {
+    font-weight: 500;
+}
+
+.state-block {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.setup summary {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
+    padding: 7px 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-75);
+    cursor: pointer;
+    list-style: none;
+}
+
+.setup summary::before {
+    content: "▸";
+    font-family: var(--font-mono);
+}
+
+.setup[open] summary::before {
+    content: "▾";
+}
+
+.setup .aside {
+    margin-left: auto;
+    font-weight: 400;
+    color: var(--text-50);
+}
+
+.setup pre {
+    margin-top: 6px;
 }
 
 pre {
-    width: 100%;
     margin: 0;
     overflow-x: auto;
     font-size: 12px;
@@ -120,68 +177,68 @@ code {
     font-family: var(--font-mono);
 }
 
-.out {
-    font-size: 12px;
+a {
     color: var(--text-75);
     text-underline-offset: 2px;
 }
 
-.problem {
-    margin: 0;
-    font-size: 12px;
-    color: var(--red);
-}
-
-select {
-    font: inherit;
-    font-size: 13px;
-    color: var(--text);
-    background: var(--bg);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 6px;
-    padding: 7px 10px;
-}
-
-select:focus {
-    outline: none;
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-.left-behind {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin: 0 0 12px;
-    padding: 0;
-    list-style: none;
-}
-
-.left-behind li {
-    display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
 .counts {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    flex-wrap: wrap;
+    gap: 4px 18px;
     font-size: 13px;
     color: var(--text-75);
 }
 
-.counts .mono {
-    display: inline-block;
-    min-width: 3ch;
-    color: var(--text);
-    text-align: right;
+.line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }
 
-.counts .attention,
-.counts .attention .mono {
+.confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-75);
+}
+
+.left {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.left:last-child {
+    border-bottom: 0;
+}
+
+.left .title {
+    font-size: 13.5px;
+    font-weight: 500;
+}
+
+.path {
+    font-size: 12.5px;
+    color: var(--text-75);
+    overflow-wrap: anywhere;
+}
+
+.note {
+    padding-top: 8px;
+}
+
+.problem,
+.name .problem {
     color: var(--red);
 }
