@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Crateside.Core.Orchestration.Download;
 
 namespace Crateside.Core.Orchestration;
@@ -18,13 +17,6 @@ public sealed class WorkingSet(string? root = null)
 
     /// <summary>The largest evidence file worth carrying rather than pointing at.</summary>
     private const long MaxInlineBytes = 32 * 1024;
-
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Converters = { new JsonStringEnumConverter() },
-    };
 
     private readonly string _root =
         root
@@ -93,9 +85,9 @@ public sealed class WorkingSet(string? root = null)
         try
         {
             return File.Exists(AcquisitionPathFor(videoId))
-                ? JsonSerializer.Deserialize<Acquisition>(
+                ? JsonSerializer.Deserialize(
                     File.ReadAllText(AcquisitionPathFor(videoId)),
-                    SerializerOptions
+                    WorkingSetJsonContext.Default.Acquisition
                 )
                 : null;
         }
@@ -126,7 +118,7 @@ public sealed class WorkingSet(string? root = null)
 
             File.WriteAllText(
                 AcquisitionPathFor(videoId),
-                JsonSerializer.Serialize(acquisition, SerializerOptions)
+                JsonSerializer.Serialize(acquisition, WorkingSetJsonContext.Default.Acquisition)
             );
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)

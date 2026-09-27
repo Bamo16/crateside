@@ -8,11 +8,6 @@ namespace Crateside.Core.Orchestration.Loop;
 /// </summary>
 public sealed class PauseStore(string? path = null)
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-    };
-
     private readonly string _path =
         path ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "paused.json");
 
@@ -26,7 +21,10 @@ public sealed class PauseStore(string? path = null)
             try
             {
                 return File.Exists(_path)
-                    ? JsonSerializer.Deserialize<PausedStages>(File.ReadAllText(_path)) ?? new()
+                    ? JsonSerializer.Deserialize(
+                        File.ReadAllText(_path),
+                        PauseJsonContext.Default.PausedStages
+                    ) ?? new()
                     : new();
             }
             catch (Exception ex)
@@ -53,7 +51,10 @@ public sealed class PauseStore(string? path = null)
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-                File.WriteAllText(_path, JsonSerializer.Serialize(stages, SerializerOptions));
+                File.WriteAllText(
+                    _path,
+                    JsonSerializer.Serialize(stages, PauseJsonContext.Default.PausedStages)
+                );
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }

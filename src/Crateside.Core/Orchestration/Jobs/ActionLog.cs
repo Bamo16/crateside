@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Crateside.Core.Orchestration.Jobs;
 
@@ -9,14 +8,6 @@ namespace Crateside.Core.Orchestration.Jobs;
 /// </summary>
 public sealed class ActionLog(string path, TimeProvider? time = null)
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new(
-        JsonSerializerDefaults.Web
-    )
-    {
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        Converters = { new JsonStringEnumConverter() },
-    };
-
     private readonly TimeProvider _time = time ?? TimeProvider.System;
     private readonly Lock _gate = new();
 
@@ -70,7 +61,7 @@ public sealed class ActionLog(string path, TimeProvider? time = null)
                 try
                 {
                     if (
-                        JsonSerializer.Deserialize<UserAction>(line, SerializerOptions) is
+                        JsonSerializer.Deserialize(line, JobsJsonContext.Default.UserAction) is
                         { } action
                     )
                         actions.Add(action);
@@ -95,7 +86,8 @@ public sealed class ActionLog(string path, TimeProvider? time = null)
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 File.AppendAllText(
                     path,
-                    JsonSerializer.Serialize(action, SerializerOptions) + Environment.NewLine
+                    JsonSerializer.Serialize(action, JobsJsonContext.Default.UserAction)
+                        + Environment.NewLine
                 );
             }
         }

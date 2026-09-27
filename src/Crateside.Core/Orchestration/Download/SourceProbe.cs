@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Core.Orchestration.Download;
@@ -57,7 +56,10 @@ public sealed class SourceProbe(string stemforge = "stemforge-cli")
 
         try
         {
-            return JsonSerializer.Deserialize<List<ProbeOutput>>(stdout[start..]);
+            return JsonSerializer.Deserialize(
+                stdout[start..],
+                StemForgeJsonContext.Default.ListProbeOutput
+            );
         }
         catch (JsonException)
         {
@@ -96,40 +98,29 @@ public sealed record ProbedSource
 /// <summary>One format an upload offers.</summary>
 public sealed record AudioFormat
 {
-    [JsonPropertyName("codec")]
     public string? Codec { get; init; }
 
-    [JsonPropertyName("bitrateKbps")]
     public double BitrateKbps { get; init; }
 
-    [JsonPropertyName("isPremium")]
     public bool IsPremium { get; init; }
 
-    [JsonPropertyName("isAutoSelected")]
     public bool IsAutoSelected { get; init; }
 }
 
 /// <summary>One element of <c>download --list-formats --json</c>.</summary>
 internal sealed record ProbeOutput
 {
-    [JsonPropertyName("succeeded")]
     public bool Succeeded { get; init; }
 
-    [JsonPropertyName("title")]
     public string? Title { get; init; }
 
-    [JsonPropertyName("displayTitle")]
     public string? DisplayTitle { get; init; }
 
-    [JsonPropertyName("baseName")]
     public string? BaseName { get; init; }
 
-    [JsonPropertyName("premiumShortfall")]
     public bool? PremiumShortfall { get; init; }
 
-    [JsonPropertyName("formats")]
     public IReadOnlyList<AudioFormat>? Formats { get; init; }
 
-    [JsonPropertyName("error")]
     public string? Error { get; init; }
 }

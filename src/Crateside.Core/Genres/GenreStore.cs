@@ -9,12 +9,6 @@ namespace Crateside.Core.Genres;
 /// </summary>
 public sealed class GenreStore
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
-
     private readonly string _path;
     private readonly Lock _gate = new();
 
@@ -113,7 +107,10 @@ public sealed class GenreStore
                 Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
                 File.WriteAllText(
                     _path,
-                    JsonSerializer.Serialize(records.Values.OrderBy(r => r.Song), SerializerOptions)
+                    JsonSerializer.Serialize(
+                        records.Values.OrderBy(r => r.Song).ToList(),
+                        GenreJsonContext.Default.ListGenreRecord
+                    )
                 );
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
@@ -126,9 +123,9 @@ public sealed class GenreStore
         {
             return File.Exists(_path)
                 ? (
-                    JsonSerializer.Deserialize<List<GenreRecord>>(
+                    JsonSerializer.Deserialize(
                         File.ReadAllText(_path),
-                        SerializerOptions
+                        GenreJsonContext.Default.ListGenreRecord
                     ) ?? []
                 ).ToDictionary(r => r.Song, StringComparer.OrdinalIgnoreCase)
                 : new(StringComparer.OrdinalIgnoreCase);
@@ -145,20 +142,16 @@ public sealed class GenreStore
 public sealed record GenreRecord
 {
     /// <summary>The ledger's song identity, or the upload's video ID for a song it never judged.</summary>
-    [JsonPropertyName("song")]
     public required string Song { get; init; }
 
     /// <summary>What the user settled on, or null — which, once settled, means none of the list.</summary>
-    [JsonPropertyName("genre")]
     public string? Genre { get; init; }
 
-    [JsonPropertyName("isSettled")]
     public bool IsSettled { get; init; }
 
     /// <summary>
     /// The artist whose other tracks settled this one, or null when the user settled it or nobody has.
     /// </summary>
-    [JsonPropertyName("learnedFrom")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? LearnedFrom { get; init; }
 
@@ -167,15 +160,12 @@ public sealed record GenreRecord
     public bool IsTheUsersAnswer => IsSettled && LearnedFrom is null;
 
     /// <summary>The first thing the sources said that maps onto the list, or null.</summary>
-    [JsonPropertyName("suggested")]
     public string? Suggested { get; init; }
 
     /// <summary>Everything the sources said, verbatim, whether it maps onto the list or not.</summary>
-    [JsonPropertyName("heard")]
     public IReadOnlyList<string> Heard { get; init; } = [];
 
     /// <summary>When the sources were last asked, or null when they never have been.</summary>
-    [JsonPropertyName("lookedUpAt")]
     public DateTimeOffset? LookedUpAt { get; init; }
 
     /// <summary>The genre to write: only ever a settled one.</summary>

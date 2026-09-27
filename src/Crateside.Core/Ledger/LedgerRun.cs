@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace Crateside.Core.Ledger;
 
 /// <summary>
@@ -118,42 +116,31 @@ public enum KeyConfidence
 // Only the fields crateside reads. The `machine` block is deliberately not deserialized.
 internal sealed record LedgerRunDto
 {
-    [JsonPropertyName("timestamp")]
     public DateTimeOffset? Timestamp { get; init; }
 
-    [JsonPropertyName("song")]
     public string? Song { get; init; }
 
-    [JsonPropertyName("artist")]
     public string? Artist { get; init; }
 
-    [JsonPropertyName("title")]
     public string? Title { get; init; }
 
-    [JsonPropertyName("source_url")]
     public string? SourceUrl { get; init; }
 
-    [JsonPropertyName("verdict")]
     public VerdictDto? Verdict { get; init; }
 
-    [JsonPropertyName("bpm")]
     public BpmDto? Bpm { get; init; }
 
     internal sealed record VerdictDto
     {
-        [JsonPropertyName("key")]
         public string? Key { get; init; }
 
-        [JsonPropertyName("mode")]
         public string? Mode { get; init; }
 
-        [JsonPropertyName("confidence")]
         public string? Confidence { get; init; }
     }
 
     internal sealed record BpmDto
     {
-        [JsonPropertyName("value")]
         public double? Value { get; init; }
     }
 }

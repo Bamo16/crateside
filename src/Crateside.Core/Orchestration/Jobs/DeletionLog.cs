@@ -9,10 +9,6 @@ namespace Crateside.Core.Orchestration.Jobs;
 /// </summary>
 public sealed class DeletionLog(string path, TimeProvider? time = null)
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new(
-        JsonSerializerDefaults.Web
-    );
-
     private readonly TimeProvider _time = time ?? TimeProvider.System;
     private readonly Lock _gate = new();
 
@@ -70,7 +66,7 @@ public sealed class DeletionLog(string path, TimeProvider? time = null)
                 try
                 {
                     if (
-                        JsonSerializer.Deserialize<Deletion>(line, SerializerOptions) is
+                        JsonSerializer.Deserialize(line, JobsJsonContext.Default.Deletion) is
                         { } deletion
                     )
                         deletions.Add(deletion);
@@ -95,7 +91,8 @@ public sealed class DeletionLog(string path, TimeProvider? time = null)
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
                 File.AppendAllText(
                     path,
-                    JsonSerializer.Serialize(deletion, SerializerOptions) + Environment.NewLine
+                    JsonSerializer.Serialize(deletion, JobsJsonContext.Default.Deletion)
+                        + Environment.NewLine
                 );
             }
         }

@@ -76,7 +76,10 @@ public sealed class PresetCatalogReader(string stemforge = "stemforge-cli")
         try
         {
             return
-                JsonSerializer.Deserialize<List<SeparatorPreset>>(stdout[start..])
+                JsonSerializer.Deserialize(
+                    stdout[start..],
+                    StemForgeJsonContext.Default.ListSeparatorPreset
+                )
                     is { Count: > 0 } presets
                 ? new PresetCatalog { Presets = presets }
                 : PresetCatalog.Empty;

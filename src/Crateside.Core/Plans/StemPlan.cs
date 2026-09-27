@@ -23,19 +23,15 @@ public sealed record StemPlan
     /// The separator presets to run, one file each. crateside's own names, not the separator's
     /// display names — <c>vocal_full</c>, never <c>Vocal - Full</c>.
     /// </summary>
-    [JsonPropertyName("presets")]
     public required IReadOnlyList<string> Presets { get; init; }
 
     /// <summary>Whether the separation source is itself one of the track's samples.</summary>
-    [JsonPropertyName("keepSource")]
     public bool KeepSource { get; init; }
 
     /// <summary>Whole files of this song the user attached, which nothing separates (ADR 0019).</summary>
-    [JsonPropertyName("addedSources")]
     public IReadOnlyList<AddedSource> AddedSources { get; init; } = [];
 
     /// <summary>Files of this song the user made and gave to crateside (ADR 0022).</summary>
-    [JsonPropertyName("adoptedSamples")]
     public IReadOnlyList<AdoptedSample> AdoptedSamples { get; init; } = [];
 
     /// <summary>
@@ -132,25 +128,21 @@ public sealed record StemPlan
 public sealed record AdoptedSample
 {
     /// <summary>What the user calls it, which is also the file's parenthesised suffix.</summary>
-    [JsonPropertyName("label")]
     public required string Label { get; init; }
 }
 
 /// <summary>A whole file of this song the user attached: downloaded, staged, tagged, never cut.</summary>
 public sealed record AddedSource
 {
-    [JsonPropertyName("videoId")]
     public required string VideoId { get; init; }
 
     /// <summary>
     /// What the user called it, which becomes the file's parenthesised suffix — unique per track,
     /// since it tells two added sources apart on disk (ADR 0019).
     /// </summary>
-    [JsonPropertyName("label")]
     public required string Label { get; init; }
 
     /// <summary>Null only on a source added before the user was asked (ADR 0028).</summary>
-    [JsonPropertyName("type")]
     public SampleType? Type { get; init; }
 
     [JsonIgnore]

@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json.Serialization;
 
 namespace Crateside.Core.Plans;
 
@@ -42,21 +41,17 @@ public sealed record PresetCatalog
 public sealed record SeparatorPreset
 {
     /// <summary>What the plan and the command line call it: <c>vocal_full</c>.</summary>
-    [JsonPropertyName("id")]
     public required string Id { get; init; }
 
     /// <summary>
     /// What the separator calls it: <c>Vocal - Full</c>. What ends up in the filename, in the
     /// file's provenance, and in Ableton — so it is the only name the user is ever shown.
     /// </summary>
-    [JsonPropertyName("displayName")]
     public required string DisplayName { get; init; }
 
     /// <summary>The separator's grouping, plural as it says it: <c>Vocals</c>, <c>Instrumentals</c>.</summary>
-    [JsonPropertyName("category")]
     public required string Category { get; init; }
 
     /// <summary>What the preset is for, in the separator's own words.</summary>
-    [JsonPropertyName("description")]
     public string? Description { get; init; }
 }

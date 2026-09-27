@@ -9,13 +9,6 @@ namespace Crateside.Core.Familiarity;
 /// </summary>
 public sealed class FamiliarityStore
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     private readonly string _path;
     private readonly Lock _gate = new();
 
@@ -78,7 +71,10 @@ public sealed class FamiliarityStore
                 Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
                 File.WriteAllText(
                     _path,
-                    JsonSerializer.Serialize(records.Values.OrderBy(r => r.Song), SerializerOptions)
+                    JsonSerializer.Serialize(
+                        records.Values.OrderBy(r => r.Song).ToList(),
+                        FamiliarityJsonContext.Default.ListFamiliarityRecord
+                    )
                 );
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
@@ -91,9 +87,9 @@ public sealed class FamiliarityStore
         {
             return File.Exists(_path)
                 ? (
-                    JsonSerializer.Deserialize<List<FamiliarityRecord>>(
+                    JsonSerializer.Deserialize(
                         File.ReadAllText(_path),
-                        SerializerOptions
+                        FamiliarityJsonContext.Default.ListFamiliarityRecord
                     ) ?? []
                 ).ToDictionary(r => r.Song, StringComparer.OrdinalIgnoreCase)
                 : new(StringComparer.OrdinalIgnoreCase);

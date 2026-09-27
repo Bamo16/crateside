@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace Crateside.Core.Ledger;
@@ -10,11 +9,6 @@ namespace Crateside.Core.Ledger;
 /// </summary>
 public sealed record RunEvidence
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-    };
-
     public required DateTimeOffset Timestamp { get; init; }
     public required string Song { get; init; }
 
@@ -126,7 +120,10 @@ public sealed record RunEvidence
 
             try
             {
-                dto = JsonSerializer.Deserialize<RunEvidenceDto>(line, SerializerOptions);
+                dto = JsonSerializer.Deserialize(
+                    line,
+                    RunEvidenceJsonContext.Default.RunEvidenceDto
+                );
             }
             catch (JsonException)
             {
@@ -461,190 +458,140 @@ public sealed record KeyEvent
 // Only what the view shows. Deserialized per song on demand, never for the whole ledger.
 internal sealed record RunEvidenceDto
 {
-    [JsonPropertyName("timestamp")]
     public DateTimeOffset? Timestamp { get; init; }
 
-    [JsonPropertyName("song")]
     public string? Song { get; init; }
 
     /// <summary>
     /// Set on a restatement, naming the run it copies. Its presence is what marks a line as
     /// carrying no evidence of its own (keytag ADR 0008).
     /// </summary>
-    [JsonPropertyName("restates")]
     public string? Restates { get; init; }
 
-    [JsonPropertyName("artist")]
     public string? Artist { get; init; }
 
-    [JsonPropertyName("title")]
     public string? Title { get; init; }
 
-    [JsonPropertyName("verdict")]
     public VerdictDto? Verdict { get; init; }
 
-    [JsonPropertyName("tonic_check")]
     public string? TonicCheck { get; init; }
 
-    [JsonPropertyName("reasoning")]
     public string? Reasoning { get; init; }
 
-    [JsonPropertyName("input_kind")]
     public string? InputKind { get; init; }
 
-    [JsonPropertyName("sources")]
     public IReadOnlyList<SourceDto>? Sources { get; init; }
 
-    [JsonPropertyName("bpm")]
     public BpmDto? Bpm { get; init; }
 
-    [JsonPropertyName("machine")]
     public MachineDto? Machine { get; init; }
 
     internal sealed record VerdictDto
     {
-        [JsonPropertyName("key")]
         public string? Key { get; init; }
 
-        [JsonPropertyName("mode")]
         public string? Mode { get; init; }
     }
 
     internal sealed record SourceDto
     {
-        [JsonPropertyName("url")]
         public string? Url { get; init; }
 
-        [JsonPropertyName("via")]
         public string? Via { get; init; }
 
-        [JsonPropertyName("states")]
         public string? States { get; init; }
 
-        [JsonPropertyName("states_key")]
         public string? StatesKey { get; init; }
 
-        [JsonPropertyName("states_mode")]
         public string? StatesMode { get; init; }
 
-        [JsonPropertyName("kind")]
         public string? Kind { get; init; }
 
-        [JsonPropertyName("note")]
         public string? Note { get; init; }
     }
 
     internal sealed record BpmDto
     {
-        [JsonPropertyName("value")]
         public double? Value { get; init; }
 
-        [JsonPropertyName("source")]
         public string? Source { get; init; }
 
-        [JsonPropertyName("beatdetect")]
         public double? Beatdetect { get; init; }
     }
 }
 
 internal sealed record MachineDto
 {
-    [JsonPropertyName("algorithms")]
     public AlgorithmsDto? Algorithms { get; init; }
 
-    [JsonPropertyName("pairwise_agreement")]
     public IReadOnlyList<PairDto>? PairwiseAgreement { get; init; }
 
-    [JsonPropertyName("chords")]
     public IReadOnlyList<string>? Chords { get; init; }
 
-    [JsonPropertyName("key_events")]
     public IReadOnlyList<KeyEventDto>? KeyEvents { get; init; }
 
     internal sealed record PairDto
     {
-        [JsonPropertyName("pair")]
         public string? Pair { get; init; }
 
-        [JsonPropertyName("status")]
         public string? Status { get; init; }
 
-        [JsonPropertyName("recommended")]
         public string? Recommended { get; init; }
 
-        [JsonPropertyName("note")]
         public string? Note { get; init; }
     }
 
     internal sealed record KeyEventDto
     {
-        [JsonPropertyName("t")]
         public double T { get; init; }
 
-        [JsonPropertyName("key")]
         public string? Key { get; init; }
 
-        [JsonPropertyName("r")]
         public double R { get; init; }
     }
 }
 
 internal sealed record AlgorithmsDto
 {
-    [JsonPropertyName("librosa_ks")]
     public SimpleDto? LibrosaKs { get; init; }
 
-    [JsonPropertyName("crema")]
     public CremaDto? Crema { get; init; }
 
-    [JsonPropertyName("ffmpeg_keydetect")]
     public FfmpegDto? FfmpegKeydetect { get; init; }
 
     internal sealed record SimpleDto
     {
-        [JsonPropertyName("key")]
         public string? Key { get; init; }
 
-        [JsonPropertyName("confidence")]
         public double? Confidence { get; init; }
 
-        [JsonPropertyName("error")]
         public string? Error { get; init; }
     }
 
     internal sealed record CremaDto
     {
-        [JsonPropertyName("key")]
         public string? Key { get; init; }
 
-        [JsonPropertyName("runner_up")]
         public RunnerUpDto? RunnerUp { get; init; }
 
-        [JsonPropertyName("error")]
         public string? Error { get; init; }
 
         internal sealed record RunnerUpDto
         {
-            [JsonPropertyName("key")]
             public string? Key { get; init; }
 
-            [JsonPropertyName("ratio")]
             public double? Ratio { get; init; }
         }
     }
 
     internal sealed record FfmpegDto
     {
-        [JsonPropertyName("key")]
         public string? Key { get; init; }
 
-        [JsonPropertyName("r")]
         public double? R { get; init; }
 
-        [JsonPropertyName("r_flag")]
         public string? RFlag { get; init; }
 
-        [JsonPropertyName("error")]
         public string? Error { get; init; }
     }
 }

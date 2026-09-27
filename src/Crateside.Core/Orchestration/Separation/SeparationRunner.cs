@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Humanizer;
 
 namespace Crateside.Core.Orchestration.Separation;
@@ -138,7 +137,10 @@ public sealed class SeparationRunner(
 
         try
         {
-            return JsonSerializer.Deserialize<List<SeparationOutput>>(stdout[start..]);
+            return JsonSerializer.Deserialize(
+                stdout[start..],
+                StemForgeJsonContext.Default.ListSeparationOutput
+            );
         }
         catch (JsonException)
         {
@@ -230,12 +232,9 @@ public enum SeparationOutcome
 /// <summary>One element of <c>stemforge-cli</c>'s <c>--json</c> array.</summary>
 internal sealed record SeparationOutput
 {
-    [JsonPropertyName("succeeded")]
     public bool Succeeded { get; init; }
 
-    [JsonPropertyName("error")]
     public string? Error { get; init; }
 
-    [JsonPropertyName("outputFiles")]
     public IReadOnlyList<string>? OutputFiles { get; init; }
 }

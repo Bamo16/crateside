@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Crateside.Core.WorkLists;
 
 namespace Crateside.Core.Playlist;
@@ -10,12 +9,6 @@ namespace Crateside.Core.Playlist;
 /// </summary>
 public sealed class IntakeStore
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
-
     private readonly string _path;
     private readonly Lock _gate = new();
 
@@ -221,9 +214,9 @@ public sealed class IntakeStore
         try
         {
             return File.Exists(_path)
-                ? JsonSerializer.Deserialize<List<IntakeRecord>>(
+                ? JsonSerializer.Deserialize(
                     File.ReadAllText(_path),
-                    SerializerOptions
+                    IntakeJsonContext.Default.IReadOnlyListIntakeRecord
                 )
                 : null;
         }
@@ -241,7 +234,13 @@ public sealed class IntakeStore
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-            File.WriteAllText(_path, JsonSerializer.Serialize(records, SerializerOptions));
+            File.WriteAllText(
+                _path,
+                JsonSerializer.Serialize(
+                    records,
+                    IntakeJsonContext.Default.IReadOnlyListIntakeRecord
+                )
+            );
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -255,39 +254,30 @@ public sealed class IntakeStore
 /// <summary>One track crateside has taken on, and what the playlist said about it.</summary>
 public sealed record IntakeRecord
 {
-    [JsonPropertyName("videoId")]
     public required string VideoId { get; init; }
 
-    [JsonPropertyName("title")]
     public required string Title { get; init; }
 
-    [JsonPropertyName("addedAt")]
     public DateTimeOffset? AddedAt { get; init; }
 
-    [JsonPropertyName("premiumOutlook")]
     public PremiumOutlook PremiumOutlook { get; init; }
 
-    [JsonPropertyName("isUnavailable")]
     public bool IsUnavailable { get; init; }
 
     /// <summary>
     /// When the playlist entry was offered back, whether or not the removal worked, or null while
     /// it never has been.
     /// </summary>
-    [JsonPropertyName("removalAttemptedAt")]
     public DateTimeOffset? RemovalAttemptedAt { get; init; }
 
     /// <summary>Why the removal failed, or null when it did not (#34).</summary>
-    [JsonPropertyName("removalFailure")]
     public RemovalFailure? RemovalFailure { get; init; }
 }
 
 /// <summary>Why a playlist entry was left behind, kept because nothing retries it on its own.</summary>
 public sealed record RemovalFailure
 {
-    [JsonPropertyName("reason")]
     public required string Reason { get; init; }
 
-    [JsonPropertyName("canSucceedLater")]
     public bool CanSucceedLater { get; init; }
 }

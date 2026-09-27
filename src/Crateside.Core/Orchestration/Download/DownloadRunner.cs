@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Core.Orchestration.Download;
@@ -72,7 +71,10 @@ public sealed class DownloadRunner(string stemforge = "stemforge-cli")
 
         try
         {
-            return JsonSerializer.Deserialize<List<DownloadOutput>>(stdout[start..]);
+            return JsonSerializer.Deserialize(
+                stdout[start..],
+                StemForgeJsonContext.Default.ListDownloadOutput
+            );
         }
         catch (JsonException)
         {
@@ -108,18 +110,13 @@ public sealed record DownloadResult
 /// <summary>One element of <c>stemforge-cli download</c>'s <c>--json</c> array.</summary>
 internal sealed record DownloadOutput
 {
-    [JsonPropertyName("succeeded")]
     public bool Succeeded { get; init; }
 
-    [JsonPropertyName("path")]
     public string? Path { get; init; }
 
-    [JsonPropertyName("error")]
     public string? Error { get; init; }
 
-    [JsonPropertyName("isPremium")]
     public bool? IsPremium { get; init; }
 
-    [JsonPropertyName("premiumStatus")]
     public string? PremiumStatus { get; init; }
 }

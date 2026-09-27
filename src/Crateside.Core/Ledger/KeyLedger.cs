@@ -71,7 +71,7 @@ public sealed class KeyLedger
 
             try
             {
-                dto = JsonSerializer.Deserialize<LedgerRunDto>(line);
+                dto = JsonSerializer.Deserialize(line, KeyLedgerJsonContext.Default.LedgerRunDto);
             }
             catch (JsonException)
             {

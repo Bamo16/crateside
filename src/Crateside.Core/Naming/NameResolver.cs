@@ -1,5 +1,5 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Core.Naming;
@@ -54,7 +54,10 @@ public sealed class NameResolver(string stemforge = "stemforge-cli")
 
         try
         {
-            return JsonSerializer.Deserialize<List<FormatListOutput>>(stdout[start..]);
+            return JsonSerializer.Deserialize(
+                stdout[start..],
+                StemForgeJsonContext.Default.ListFormatListOutput
+            );
         }
         catch (JsonException)
         {
@@ -78,15 +81,11 @@ public sealed record ResolvedName
 /// <summary>One element of <c>download --list-formats --json</c>.</summary>
 internal sealed record FormatListOutput
 {
-    [JsonPropertyName("succeeded")]
     public bool Succeeded { get; init; }
 
-    [JsonPropertyName("displayTitle")]
     public string? DisplayTitle { get; init; }
 
-    [JsonPropertyName("baseName")]
     public string? BaseName { get; init; }
 
-    [JsonPropertyName("error")]
     public string? Error { get; init; }
 }

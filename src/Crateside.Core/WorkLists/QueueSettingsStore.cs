@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
 using Microsoft.Extensions.Options;
@@ -12,12 +11,6 @@ namespace Crateside.Core.WorkLists;
 /// </summary>
 public sealed class QueueSettingsStore
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
-
     private readonly string _path;
     private readonly PlaylistOptions _fallback;
     private readonly Lock _gate = new();
@@ -151,7 +144,10 @@ public sealed class QueueSettingsStore
             var settings = change(Current());
 
             Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-            File.WriteAllText(_path, JsonSerializer.Serialize(settings, SerializerOptions));
+            File.WriteAllText(
+                _path,
+                JsonSerializer.Serialize(settings, QueueSettingsJsonContext.Default.QueueSettings)
+            );
 
             _cachedStamp = StampOf(_path);
 
@@ -210,9 +206,9 @@ public sealed class QueueSettingsStore
         try
         {
             return File.Exists(_path)
-                ? JsonSerializer.Deserialize<QueueSettings>(
+                ? JsonSerializer.Deserialize(
                     File.ReadAllText(_path),
-                    SerializerOptions
+                    QueueSettingsJsonContext.Default.QueueSettings
                 )
                 : null;
         }
@@ -230,25 +226,21 @@ public sealed record QueueSettings
     /// <summary>What <see cref="RefreshMinutes"/> means when nobody has said.</summary>
     public const int DefaultRefreshMinutes = 5;
 
-    [JsonPropertyName("playlistId")]
     public string? PlaylistId { get; init; }
 
     /// <summary>
     /// How often to rebuild the rows unprompted, in minutes; zero is never. Stage workers read
     /// the queue on their own loop regardless.
     /// </summary>
-    [JsonPropertyName("refreshMinutes")]
     public int? RefreshMinutes { get; init; }
 
     /// <summary>
     /// Whether an entry leaves the playlist once recorded; turning it on removes every known entry
     /// on the next scan, for good (ADR 0021).
     /// </summary>
-    [JsonPropertyName("consumeOnArrival")]
     public bool ConsumeOnArrival { get; init; }
 
     /// <summary>Standing instructions about how to work particular tracks.</summary>
-    [JsonPropertyName("tracks")]
     public IReadOnlyList<TrackInstruction> Tracks { get; init; } = [];
 
     /// <summary>How long the rows may go unrebuilt. Zero means never.</summary>

@@ -8,12 +8,6 @@ namespace Crateside.Core.Naming;
 /// </summary>
 public sealed class ResolvedNameStore
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
-
     private readonly string _path;
     private readonly Lock _gate = new();
 
@@ -42,7 +36,13 @@ public sealed class ResolvedNameStore
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-                File.WriteAllText(_path, JsonSerializer.Serialize(names, SerializerOptions));
+                File.WriteAllText(
+                    _path,
+                    JsonSerializer.Serialize(
+                        names,
+                        NamingJsonContext.Default.DictionaryStringResolvedName
+                    )
+                );
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
@@ -56,9 +56,9 @@ public sealed class ResolvedNameStore
         try
         {
             return File.Exists(_path)
-                ? JsonSerializer.Deserialize<Dictionary<string, ResolvedName>>(
+                ? JsonSerializer.Deserialize(
                     File.ReadAllText(_path),
-                    SerializerOptions
+                    NamingJsonContext.Default.DictionaryStringResolvedName
                 ) ?? []
                 : [];
         }

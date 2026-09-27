@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Core.Orchestration.Jobs;
@@ -14,13 +13,6 @@ namespace Crateside.Core.Orchestration.Jobs;
 /// </param>
 public sealed class JobStore(string? path = null, TimeProvider? time = null, StageHub? hub = null)
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        Converters = { new JsonStringEnumConverter() },
-    };
-
     private readonly string _path = path ?? DefaultPath();
     private readonly TimeProvider _time = time ?? TimeProvider.System;
     private readonly Lock _gate = new();
@@ -187,7 +179,7 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
 
                 try
                 {
-                    update = JsonSerializer.Deserialize<JobUpdate>(line, SerializerOptions);
+                    update = JsonSerializer.Deserialize(line, JobsJsonContext.Default.JobUpdate);
                 }
                 catch (JsonException)
                 {
@@ -212,7 +204,8 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
 
         File.AppendAllText(
             _path,
-            JsonSerializer.Serialize(update, SerializerOptions) + Environment.NewLine
+            JsonSerializer.Serialize(update, JobsJsonContext.Default.JobUpdate)
+                + Environment.NewLine
         );
     }
 }
