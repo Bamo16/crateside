@@ -70,3 +70,12 @@ The figures the decision left to the build, measured on the library that day:
   out changes the answer on 5 of 844 sidecars, each time from a silent stretch passing for the
   tempo (*Group X – Jonny Poopoopants* read 131.9 against a song around 170).
 - The sample rate comes from the audio file, since the sidecar does not record it.
+
+## Amended, 2026-09-27: the octave is the user's call, not ground truth
+
+The user, on the warp's accuracy: very accurate, except that **half or double is subjective**. Which
+of two tempos an octave apart is "the" BPM is a choice they would not always defend, and a drum and
+bass track with a half-time section is neither one nor the other. So a warp settles the tempo up to
+its octave: a detector reading ×½ or ×2 is ambiguous, not wrong. Readings at ×2/3, ×3/4 or
+anything else are still errors against the warp. Counts keeps half or double as its own band for
+this reason ([ADR 0041](0041-crateside-measures-bpm-detectors-against-the-warps.md)).
