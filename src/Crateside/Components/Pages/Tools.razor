@@ -1,0 +1,10 @@
+@page "/tools"
+@layout Crateside.Components.Layout.BareLayout
+
+@inject ToolsMemory Memory
+@inject NavigationManager Navigation
+
+@code {
+    protected override void OnInitialized() =>
+        Navigation.NavigateTo(ToolsFrame.Href(Memory.LastTool, Memory.Key), replace: true);
+}

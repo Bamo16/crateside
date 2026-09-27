@@ -10,6 +10,7 @@ builder.Services.AddCratesideReaders();
 builder.Services.AddCratesideQueue();
 builder.Services.AddCratesideOrchestration();
 builder.Services.AddCratesideTracks();
+builder.Services.AddSingleton<ToolsMemory>();
 
 var app = builder.Build();
 

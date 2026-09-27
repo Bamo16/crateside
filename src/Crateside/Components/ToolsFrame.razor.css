@@ -1,0 +1,151 @@
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 0 48px 40px;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.subtitle {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--text-75);
+}
+
+/* Bigger and plainer than the header's amber-underlined tabs, so the two levels read apart. */
+.tools {
+    display: flex;
+    gap: 24px;
+    border-bottom: 1px solid var(--line-strong);
+}
+
+.tools a {
+    padding: 8px 0;
+    margin-bottom: -1px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-60);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+}
+
+.tools a:hover {
+    color: var(--text);
+}
+
+.tools a.current {
+    color: var(--text);
+    border-bottom-color: var(--text);
+}
+
+.tool {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.tool ::deep .lead {
+    margin: 0;
+    max-width: 72ch;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text-75);
+}
+
+.tool ::deep .lead strong {
+    font-weight: 500;
+    color: var(--text);
+}
+
+.tool ::deep .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 24px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+
+.tool ::deep .controls label,
+.tool ::deep .controls .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-50);
+}
+
+.tool ::deep .controls em {
+    font-style: normal;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text);
+}
+
+.tool ::deep .controls .optional {
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-40);
+}
+
+.tool ::deep .controls select,
+.tool ::deep .controls input[type="text"] {
+    padding: 6px 10px;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: normal;
+    text-transform: none;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+}
+
+.tool ::deep .controls select {
+    min-width: 14rem;
+}
+
+.tool ::deep .controls input:focus,
+.tool ::deep .controls select:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.tool ::deep .controls input[type="range"] {
+    width: 14rem;
+    accent-color: var(--teal);
+}
+
+.tool ::deep .hint {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-50);
+}
+
+.tool ::deep table th {
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-50);
+    border-bottom: 1px solid var(--line);
+}
+
+.tool ::deep table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--line);
+}

@@ -1,0 +1,227 @@
+@page "/tools/repitch"
+@layout Crateside.Components.Layout.BareLayout
+@using System.Globalization
+@using Crateside.Core.Library
+@using Crateside.Core.Pairing
+@rendermode InteractiveServer
+
+@inject ToolsMemory Memory
+@inject LibrarySummary Library
+@inject IJSRuntime Js
+
+<PageTitle>Re-Pitch · crateside</PageTitle>
+
+<ToolsFrame Active="ToolsFrame.Tool.RePitch" Key="Key">
+    <p class="lead">
+        For nightcore and daycore in Ableton's <strong>Re-Pitch</strong> warp mode, where speed and
+        pitch move together. Gives the <strong>arrangement BPM</strong> to type in for each shift, and
+        the key it lands on.
+    </p>
+
+    <div class="controls">
+        <label>
+            <span>Track BPM</span>
+            <input type="text" class="bpm mono @(IsUnreadable ? "unreadable" : null)" placeholder="e.g. 128"
+                   @bind="_bpmText" @bind:event="oninput" />
+        </label>
+
+        <label>
+            <span>Track key <span class="optional">optional</span></span>
+            <select @bind="_keyName" @bind:after="RememberKey">
+                <option value="">No key</option>
+                @foreach (var key in MusicKey.AllKeys.OrderBy(k => k.Mode).ThenBy(k => k.CirclePos))
+                {
+                    <option value="@key.LedgerName">@key.Name — @key.CamelotCode</option>
+                }
+            </select>
+        </label>
+
+        <label>
+            <span>Max shift <em>±@("semitone".ToQuantity(_maxShift))</em></span>
+            <input type="range" min="1" max="@Core.Pairing.RePitch.MaxShift" step="1"
+                   @bind="_maxShift" @bind:event="oninput" />
+        </label>
+
+        <div class="field from-track">
+            <span>Or from a track</span>
+            <div class="search-wrap">
+                <input type="text" class="search @(string.IsNullOrEmpty(_search) ? "empty" : null)"
+                       placeholder="⌕ Search warped tracks"
+                       @bind="_search" @bind:event="oninput" @bind:after="Search"
+                       @onkeydown="Navigate" />
+
+                @if (_matches.Count > 0)
+                {
+                    <ul class="matches">
+                        @for (var i = 0; i < _matches.Count; i++)
+                        {
+                            var song = _matches[i];
+
+                            <li class="@(i == _highlight ? "highlight" : null)" @onmousedown="() => Pick(song)">
+                                <span class="song">@song.Name</span>
+                                <span class="mono">@song.Tempo!.Bpm.ToString("0.00", CultureInfo.InvariantCulture)</span>
+                                <span class="mono quiet">@song.Key?.CamelotCode</span>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (Bpm is null)
+    {
+        <p class="hint">Type a BPM, or pick a warped track.</p>
+    }
+
+    <table class="repitch">
+        <thead>
+            <tr>
+                <th class="numeric shift-col">Shift</th>
+                <th class="numeric bpm-col">Arrangement BPM</th>
+                <th class="lands-col">Lands on</th>
+                <th>Camelot</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (var shift = _maxShift; shift >= -_maxShift; shift--)
+            {
+                var n = shift;
+                var lands = Key?.Transposed(n);
+
+                <tr class="@(n is 0 ? "reference" : null)">
+                    <td class="numeric shift mono">@MashupPartner.FormatShift(n)</td>
+                    <td class="numeric">
+                        @if (Bpm is { } bpm)
+                        {
+                            var figure = Core.Pairing.RePitch.ArrangementBpm(bpm, n).ToString("0.00", CultureInfo.InvariantCulture);
+
+                            <button class="copy mono @(_copied == n ? "done" : null)" title="Copy" @onclick="() => Copy(n, figure)">
+                                @(_copied == n ? "copied" : figure)
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="dash">—</span>
+                        }
+                    </td>
+                    <td class="@(lands is null ? "dash" : null)">@(lands?.Name ?? "—")</td>
+                    <td class="mono camelot @(lands is null ? "dash" : null)">@(lands?.CamelotCode ?? "—")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (Bpm is not null)
+    {
+        <p class="hint">Click a BPM to copy it. It reads <span class="mono">copied</span> for a moment.</p>
+    }
+</ToolsFrame>
+
+@code {
+    private const int MatchesShown = 8;
+
+    private static readonly TimeSpan CopiedFor = TimeSpan.FromSeconds(1.5);
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "key")]
+    public string? KeyFromQuery { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "bpm")]
+    public string? BpmFromQuery { get; set; }
+
+    private string _bpmText = string.Empty;
+    private string _keyName = string.Empty;
+    private int _maxShift = Core.Pairing.RePitch.DefaultMaxShift;
+    private string _search = string.Empty;
+    private IReadOnlyList<LibrarySong> _matches = [];
+    private int _highlight;
+    private int? _copied;
+
+    private double? Bpm => Core.Pairing.RePitch.TryParseBpm(_bpmText, out var bpm) ? bpm : null;
+
+    private bool IsUnreadable => !string.IsNullOrWhiteSpace(_bpmText) && Bpm is null;
+
+    private MusicKey? Key => MusicKey.FromString(_keyName);
+
+    protected override void OnInitialized() => Memory.LastTool = ToolsFrame.Tool.RePitch;
+
+    protected override void OnParametersSet()
+    {
+        if ((MusicKey.FromString(KeyFromQuery) ?? Memory.Key) is { } key)
+            _keyName = key.LedgerName;
+
+        if (BpmFromQuery is { Length: > 0 } bpm)
+            _bpmText = bpm;
+    }
+
+    private void RememberKey()
+    {
+        if (Key is { } key)
+            Memory.Key = key;
+    }
+
+    private void Search()
+    {
+        _highlight = 0;
+        _matches = string.IsNullOrWhiteSpace(_search)
+            ? []
+            :
+            [
+                .. Library
+                    .Current.Songs.Where(song => song.Tempo is not null)
+                    .Where(song => song.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase))
+                    .Take(MatchesShown),
+            ];
+    }
+
+    private void Navigate(KeyboardEventArgs e)
+    {
+        if (_matches.Count is 0)
+            return;
+
+        switch (e.Key)
+        {
+            case "ArrowDown":
+                _highlight = (_highlight + 1) % _matches.Count;
+                break;
+            case "ArrowUp":
+                _highlight = (_highlight - 1 + _matches.Count) % _matches.Count;
+                break;
+            case "Enter":
+                Pick(_matches[_highlight]);
+                break;
+            case "Escape":
+                _matches = [];
+                break;
+        }
+    }
+
+    // An unsteady warp's BPM is already its median (ADR 0038).
+    private void Pick(LibrarySong song)
+    {
+        _bpmText = song.Tempo!.Bpm.ToString("0.00", CultureInfo.InvariantCulture);
+        _search = song.Name;
+        _matches = [];
+
+        if (song.Key is { } key)
+        {
+            _keyName = key.LedgerName;
+            Memory.Key = key;
+        }
+    }
+
+    private async Task Copy(int shift, string figure)
+    {
+        await Js.InvokeVoidAsync("navigator.clipboard.writeText", figure);
+
+        _copied = shift;
+        StateHasChanged();
+
+        await Task.Delay(CopiedFor);
+
+        if (_copied == shift)
+            _copied = null;
+    }
+}

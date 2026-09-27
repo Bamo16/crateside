@@ -170,6 +170,12 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
         return null;
     }
 
+    /// <summary>The key <paramref name="semitones"/> away in the same mode, up or down.</summary>
+    public MusicKey Transposed(int semitones) =>
+        AllKeys.Single(key =>
+            key.Mode == Mode && key.Chromatic == ((Chromatic + semitones) % 12 + 12) % 12
+        );
+
     public bool Equals(MusicKey? other) =>
         other is not null && Chromatic == other.Chromatic && Mode == other.Mode;
 

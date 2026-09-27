@@ -1,22 +1,19 @@
+@page "/tools/partners"
 @page "/partners"
 @layout Crateside.Components.Layout.BareLayout
 @using Crateside.Core.Pairing
 @rendermode InteractiveServer
 
+@inject ToolsMemory Memory
+@inject NavigationManager Navigation
+
 <PageTitle>Partners · crateside</PageTitle>
 
-<PageHeader Active="BrandNav.Tab.Partners" Shape="PageHeader.Shapes.Bar" />
-
-<div class="body">
-    <header class="page-header">
-        <div>
-            <h1>Partners</h1>
-            <p class="subtitle">
-                What else can I use with this? Returns <strong>keys to filter for</strong> in
-                Ableton's browser — never files.
-            </p>
-        </div>
-    </header>
+<ToolsFrame Active="ToolsFrame.Tool.Partners" Key="_source">
+    <p class="lead">
+        What else can I use with this? Returns <strong>keys to filter for</strong> in Ableton's
+        browser — never files.
+    </p>
 
     <div class="controls">
         <label>
@@ -38,11 +35,11 @@
 
     @if (_source is null)
     {
-        <p class="empty">Pick a key.</p>
+        <p class="hint">Pick a key.</p>
     }
     else
     {
-        <p class="summary">
+        <p class="hint">
             @_partners.Count of 24 keys reachable within @("semitone".ToQuantity(_maxShift))
             of <strong>@_source.Name</strong>.
         </p>
@@ -75,7 +72,7 @@
             </tbody>
         </table>
     }
-</div>
+</ToolsFrame>
 
 @code {
     [Parameter]
@@ -87,10 +84,18 @@
     private MusicKey? _source;
     private IReadOnlyList<MashupPartner> _partners = [];
 
+    protected override void OnInitialized()
+    {
+        if (Navigation.ToBaseRelativePath(Navigation.Uri).StartsWith("partners", StringComparison.OrdinalIgnoreCase))
+            Navigation.NavigateTo(ToolsFrame.Href(ToolsFrame.Tool.Partners, MusicKey.FromString(KeyFromQuery)), replace: true);
+
+        Memory.LastTool = ToolsFrame.Tool.Partners;
+    }
+
     protected override void OnParametersSet()
     {
-        if (MusicKey.FromString(KeyFromQuery) is { } fromQuery)
-            _sourceKeyName = fromQuery.LedgerName;
+        if ((MusicKey.FromString(KeyFromQuery) ?? Memory.Key) is { } key)
+            _sourceKeyName = key.LedgerName;
 
         Recalculate();
     }
@@ -99,5 +104,8 @@
     {
         _source = MusicKey.FromString(_sourceKeyName);
         _partners = _source is null ? [] : Core.Pairing.Partners.For(_source, _maxShift);
+
+        if (_source is not null)
+            Memory.Key = _source;
     }
 }

@@ -141,6 +141,21 @@ warps, files with no key.
 - **A tempo bin's bar is split**: the bin total at 35% teal, and from the left a solid segment for
   songs on a tempo that 10 or more share.
 
+## Tools
+
+Handoff 09. Small mashup helpers, one per sub-tab: **Partners · Re-Pitch**, each at its own route
+(`/tools/partners`, `/tools/repitch`); `/tools` opens the last one used and `/partners` redirects.
+The frame is `ToolsFrame`.
+
+- **Sub-tabs** are 14px/500 `--text-60`, the current one `--text` with a 2px `--text` underline on
+  the row's `--line-strong` rule, so they read apart from the header's 12px amber-underlined tabs.
+- **A tool** is a lead sentence, the `.controls` box, a hint line, then its table. A new tool is one
+  more sub-tab and route with the same anatomy.
+- **The key is shared**: the one picked in a tool is the other's default until a restart, and both
+  take `?key=`; Re-Pitch also takes `?bpm=`.
+- **Re-Pitch is the one place BPMs show two decimals.** A BPM there copies on click.
+- `--table-partners` stays the cap for tool tables; Re-Pitch's is 680px.
+
 ## Settings
 
 Handoff 10. Every setting is one **row**: name (14px/500) and a one-line gist (`--text-60`) in a
@@ -162,7 +177,7 @@ Handoff 10. Every setting is one **row**: name (14px/500) and a one-line gist (`
 | Tracks | Shade |
 | Track details | Bar, Tracks tab active |
 | Counts | Bar |
-| Partners | Bar |
+| Tools | Bar |
 | Settings | Flush |
 
 ## Table caps
@@ -208,3 +223,8 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   band is *Triplet or dotted* with its wider rule, as the handoff allows.
 - **The familiarity index count** is the values with songs (2 when both are used), as the canvas
   shows it.
+
+### Tools (handoff 09, #57, #58)
+
+- ***Or from a track* searches the library's warped songs** (Counts' songs), not tracks still in
+  staging.
