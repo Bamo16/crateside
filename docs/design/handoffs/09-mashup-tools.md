@@ -15,8 +15,8 @@ BPMs are illustrative; the Re-Pitch ladders are computed.
 - Page title block: **Tools**, subtitle "Small helpers for building a mashup, used on the spot."
 - **Sub-tabs** under the title, one per tool: **Partners · Re-Pitch**. Plain text 14px/500,
   `--text-60`; the current one `--text` with a 2px `--text` underline sitting on the row's 1px
-  `--line-strong` bottom rule. Gap 24px. This is deliberately unlike the header's filled tab so the
-  two levels read apart.
+  `--line-strong` bottom rule. Gap 24px. The header's tabs are 12px with an amber underline, so
+  the two levels read apart by size and colour.
 - Each tool has its own route and `PageTitle`:
   `/tools/partners` (`Partners · crateside`), `/tools/repitch` (`Re-Pitch · crateside`).
   `/tools` goes to the last tool used (default Partners). Keep `/partners?key=` working as a

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif}a{color:#ece7dc;text-decoration:underline;text-underline-offset:3px}a:hover{color:#fff}button{cursor:pointer;font-family:inherit}</style>
+</helmet>
+
+<section style="padding:56px;display:flex;flex-direction:column;gap:48px;width:2256px;box-sizing:border-box;min-height:100vh;background:#0c0b09">
+  <header style="display:flex;flex-direction:column;gap:8px;max-width:960px">
+    <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Settings pass · no brief · built against e6c3802</div>
+    <h1 style="margin:0;font:600 28px 'IBM Plex Sans',sans-serif">Settings: one row per setting, the control beside its name</h1>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">Today the page reads as an essay with controls tucked between paragraphs, and <em>Removing from the playlist</em> mixes a switch, an account, a destructive action and a failure list in one run of prose. Here each setting is a row: name and a one-line gist on the left, the control on the right, and a status line under the control. The long explanations shrink to one sentence each; the arithmetic becomes a number. Checkboxes and the interval select become a row of the existing <span style="font-family:'IBM Plex Mono',monospace">.pill</span> chips (<span style="font-family:'IBM Plex Mono',monospace">.pill.off</span>, the chosen one <span style="font-family:'IBM Plex Mono',monospace">.pill.on.plain</span>), so a choice is one click and visible at a glance. Items marked <span style="font:500 11px 'IBM Plex Sans',sans-serif;border:1px dashed rgba(255,255,255,.3);border-radius:999px;padding:1px 7px;color:rgba(236,231,220,.75)">new</span> are new settings, accepted.</p>
+  </header>
+
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+
+    <div id="1a" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1a</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Everyday state · set up, authorized</span></div>
+      <div style="width:1040px;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+        <div style="display:flex;flex-direction:column;gap:14px;padding:18px 22px;background:#1b1a15;border-bottom:1px solid rgba(255,255,255,.08)"><div style="display:flex;align-items:center;gap:8px;font:600 15px 'IBM Plex Sans',sans-serif;letter-spacing:.02em"><svg width="18" height="18" viewBox="0 0 24 24" style="display:block"><rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect><rect x="3" y="10.8" width="14" height="2.4" rx="1.2" fill="#e8b45a"></rect><rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect></svg>crateside</div><nav style="display:flex;gap:14px"><span style="padding-bottom:3px;border-bottom:2px solid transparent;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Tracks</span><span style="padding-bottom:3px;border-bottom:2px solid transparent;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Counts</span><span style="padding-bottom:3px;border-bottom:2px solid transparent;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Tools</span><span style="padding-bottom:3px;border-bottom:2px solid #e8b45a;font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc">Settings</span></nav></div>
+
+        <div style="padding:28px 48px 48px;display:flex;flex-direction:column;gap:40px;max-width:944px">
+
+          <div style="display:flex;flex-direction:column">
+            <h3 style="margin:0 0 6px;font:600 16px 'IBM Plex Sans',sans-serif">Playlist</h3>
+            <div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="font:500 14px 'IBM Plex Sans',sans-serif">Playlist</span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">The queue crateside works from. Its URL or ID.</span></div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;gap:8px"><span style="flex:1;padding:7px 10px;background:#141310;border:1px solid rgba(255,255,255,.14);border-radius:6px;font:400 13px 'IBM Plex Mono',monospace;background:#0f0e0c">PLr4kW9x2Qm0-Tt8yVbN3sLpC7dFhJ1aZe</span><button style="padding:7px 12px;background:#ece7dc;color:#0f0e0c;border:0;border-radius:6px;opacity:.4;font:500 12px 'IBM Plex Sans',sans-serif">Save</button></div>
+                <span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)"><a href="#1a" style="color:rgba(236,231,220,.75)">Open on YouTube</a></span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="font:500 14px 'IBM Plex Sans',sans-serif">Look for new tracks</span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">How often Tracks checks the playlist and Sample Staging. Nothing tells crateside when either changes.</span></div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ intervals }}" as="i" hint-placeholder-count="6"><span style="padding:6px 12px;border-radius:999px;font:500 12px 'IBM Plex Sans',sans-serif;border:1px solid {{ i.bd }};background:{{ i.bg }};color:{{ i.fg }}">{{ i.label }}</span></sc-for>
+                </div>
+                <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)"><span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">288</span> of <span style="font-family:'IBM Plex Mono',monospace">10,000</span> quota units a day. The stages still read the queue every two minutes on their own.</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="font:500 14px 'IBM Plex Sans',sans-serif">YouTube access</span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Reading uses the API key. Removing needs your consent.</span></div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:grid;grid-template-columns:80px minmax(0,1fr) auto;gap:12px;align-items:center"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Read</span><span style="font:400 13.5px 'IBM Plex Sans',sans-serif">API key set</span><span></span></div>
+                <div style="display:grid;grid-template-columns:80px minmax(0,1fr) auto;gap:12px;align-items:center"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Remove</span><span style="font:400 13.5px 'IBM Plex Sans',sans-serif">Authorized as <strong style="font-weight:500">Ryan</strong></span><button style="padding:5px 10px;background:transparent;color:#ece7dc;border:1px solid rgba(255,255,255,.18);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif">Forget access</button></div>
+                <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Removal only works if that channel owns the playlist. The token lapses about weekly; reading keeps working.</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column">
+            <h3 style="margin:0 0 6px;font:600 16px 'IBM Plex Sans',sans-serif">Work</h3>
+            <sc-for list="{{ pauses }}" as="p" hint-placeholder-count="2"><div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="display:flex;align-items:center;gap:8px;font:500 14px 'IBM Plex Sans',sans-serif">{{ p.name }}<span style="font:500 11px 'IBM Plex Sans',sans-serif;border:1px dashed rgba(255,255,255,.3);border-radius:999px;padding:1px 7px;color:rgba(236,231,220,.75)">new</span></span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ p.gist }}</span></div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
+                <div style="display:flex;flex-wrap:wrap;gap:6px"><span style="padding:6px 12px;border-radius:999px;font:500 12px 'IBM Plex Sans',sans-serif;border:1px solid {{ p.onBd }};background:{{ p.onBg }};color:{{ p.onFg }}">Running</span><span style="padding:6px 12px;border-radius:999px;font:500 12px 'IBM Plex Sans',sans-serif;border:1px solid {{ p.offBd }};background:{{ p.offBg }};color:{{ p.offFg }}">Paused</span></div>
+                <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ p.status }}</span>
+              </div>
+            </div></sc-for>
+            <div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="font:500 14px 'IBM Plex Sans',sans-serif">Library backfill</span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Judges hand-tagged library tracks, one per idle Claude window (0% for 15 minutes), then 5 hours off.</span></div>
+              <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-start">
+                <div style="display:flex;flex-wrap:wrap;gap:6px"><span style="padding:6px 12px;border-radius:999px;font:500 12px 'IBM Plex Sans',sans-serif;border:1px solid transparent;background:#ece7dc;color:#0f0e0c">On</span><span style="padding:6px 12px;border-radius:999px;font:500 12px 'IBM Plex Sans',sans-serif;border:1px solid rgba(255,255,255,.1);color:rgba(236,231,220,.75)">Off</span></div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px 18px;font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span><span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">12</span> waiting</span><span><span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">31</span> judged</span><span style="color:#e07a6d"><span style="font-family:'IBM Plex Mono',monospace">2</span> gave up, see each row</span><span><span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">14</span> not queued · <a href="#1a" style="color:rgba(236,231,220,.75)">queue them on Counts</a></span></div>
+                <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Last judged one at <span style="font-family:'IBM Plex Mono',monospace">3:12 PM</span>; the next goes after <span style="font-family:'IBM Plex Mono',monospace">8:12 PM</span>, once a window sits idle.</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column">
+            <h3 style="margin:0 0 6px;font:600 16px 'IBM Plex Sans',sans-serif">Emptying the playlist</h3>
+            <div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="font:500 14px 'IBM Plex Sans',sans-serif">As tracks are taken on</span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">An entry is a message: once crateside has recorded it, it can go.</span></div>
+              <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
+                <div style="display:flex;flex-wrap:wrap;gap:6px"><span style="padding:6px 12px;border-radius:999px;font:500 12px 'IBM Plex Sans',sans-serif;border:1px solid rgba(255,255,255,.1);color:rgba(236,231,220,.75)">On</span><span style="padding:6px 12px;border-radius:999px;font:500 12px 'IBM Plex Sans',sans-serif;border:1px solid transparent;background:#ece7dc;color:#0f0e0c">Off</span></div>
+                <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Turning it on removes every recorded entry on the next scan, not only new ones. <span style="font-family:'IBM Plex Mono',monospace">50</span> quota units each, tried once, and not undoable from here.</span>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="display:flex;flex-direction:column;gap:3px"><span style="font:500 14px 'IBM Plex Sans',sans-serif">Processed tracks</span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">A one-off clear-out of entries with a verdict and stems on disk.</span></div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font:400 13.5px 'IBM Plex Sans',sans-serif"><span style="font-family:'IBM Plex Mono',monospace">23</span> in the playlist are done</span><button style="padding:5px 10px;background:transparent;color:#ece7dc;border:1px solid rgba(255,255,255,.18);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif">Remove processed tracks</button></div>
+                <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Their stems stay exactly where they are.</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column">
+            <h3 style="margin:0 0 6px;display:flex;align-items:center;gap:8px;font:600 16px 'IBM Plex Sans',sans-serif">Folders<span style="font:500 11px 'IBM Plex Sans',sans-serif;border:1px dashed rgba(255,255,255,.3);border-radius:999px;padding:1px 7px;color:rgba(236,231,220,.75)">new</span></h3>
+            <sc-for list="{{ folders }}" as="f" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:260px minmax(0,1fr) auto;gap:24px;align-items:center;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)"><div style="display:flex;flex-direction:column;gap:3px"><span style="font:500 14px 'IBM Plex Sans',sans-serif">{{ f.name }}</span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ f.gist }}</span></div><span style="font:400 12.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.75);overflow-wrap:anywhere">{{ f.path }}</span><button style="padding:5px 10px;background:transparent;color:#ece7dc;border:1px solid rgba(255,255,255,.18);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif">{{ f.action }}</button></div></sc-for>
+            <span style="padding-top:8px;font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Read-only. Set in <span style="font-family:'IBM Plex Mono',monospace">appsettings.json</span>; crateside never writes there.</span>
+          </div>
+        </div>
+      </div>
+      <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:1040px;text-wrap:pretty">Order: where work comes from (Playlist), whether it runs (Work), cleaning up after it (Emptying), then where it lands (Folders). <strong style="color:#ece7dc;font-weight:500">Pause separation / judging</strong>: crateside already remembers both pauses across restarts (<span style="font-family:'IBM Plex Mono',monospace">paused.json</span>), but I found nothing on any page that sets them. <strong style="color:#ece7dc;font-weight:500">Folders</strong>: today the three paths are visible only in appsettings.json; seeing them, with Open, is handy when a count looks wrong. The playlist ID, channel and times are illustrative.</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:40px">
+      <div id="1b" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1b</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">First run · no key, no playlist</span></div>
+        <div style="width:1040px;box-sizing:border-box;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:24px 48px 32px;display:flex;flex-direction:column;max-width:1040px">
+          <h3 style="margin:0 0 6px;font:600 16px 'IBM Plex Sans',sans-serif">Playlist</h3>
+          <div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;flex-direction:column;gap:3px"><span style="font:500 14px 'IBM Plex Sans',sans-serif">Playlist</span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">The queue crateside works from. Its URL or ID.</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;gap:8px"><span style="flex:1;padding:7px 10px;border:1px solid rgba(255,255,255,.14);border-radius:6px;font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.35);background:#0f0e0c">Playlist ID, or the playlist URL</span><button style="padding:7px 12px;background:#ece7dc;color:#0f0e0c;border:0;border-radius:6px;opacity:.4;font:500 12px 'IBM Plex Sans',sans-serif">Save</button></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;flex-direction:column;gap:3px"><span style="font:500 14px 'IBM Plex Sans',sans-serif">YouTube access</span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Reading uses the API key. Removing needs your consent.</span></div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:grid;grid-template-columns:80px minmax(0,1fr);gap:12px;align-items:baseline"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Read</span><div style="display:flex;flex-direction:column;gap:6px;min-width:0"><span style="font:400 13.5px 'IBM Plex Sans',sans-serif;color:#e07a6d">No API key</span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Set one from the repo root, then restart. Read-only, YouTube Data API only (<span style="font-family:'IBM Plex Mono',monospace">docs/secrets.md</span>).</span><pre style="margin:0;padding:10px 12px;background:#0f0e0c;border:1px solid rgba(255,255,255,.08);border-radius:6px;font:400 12px 'IBM Plex Mono',monospace;overflow-x:auto">dotnet user-secrets set "Queue:ApiKey" "&lt;key&gt;" --project src\Crateside\Crateside.csproj</pre></div></div>
+              <div style="display:grid;grid-template-columns:80px minmax(0,1fr);gap:12px;align-items:baseline"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Remove</span><div style="display:flex;flex-direction:column;gap:6px"><span style="font:400 13.5px 'IBM Plex Sans',sans-serif">Not set up</span><div style="display:flex;align-items:center;gap:10px;padding:7px 12px;border:1px dashed rgba(255,255,255,.18);border-radius:6px;font:500 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)"><span style="font-family:'IBM Plex Mono',monospace">▸</span>How to set up removal<span style="margin-left:auto;font-weight:400;color:rgba(236,231,220,.5)">a Desktop app OAuth client, two secrets</span></div></div></div>
+            </div>
+          </div>
+          <p style="margin:12px 0 0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">The API key section folds into the access row instead of being its own section. Reading is what everything depends on, so a missing key is red (<em>needs attention</em>). Removal is optional, so its setup stays folded. Once the client exists, the row shows <strong style="color:#ece7dc;font-weight:500">Grant access to remove items</strong> (<span style="font-family:'IBM Plex Mono',monospace">.primary</span>), then <em>Waiting for consent…</em>. Rows that need a playlist (interval, emptying) are drawn but disabled until one is saved.</p>
+        </div>
+      </div>
+
+      <div id="1c" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1c</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Removing · confirm open, some left behind</span></div>
+        <div style="width:1040px;box-sizing:border-box;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:24px 48px 32px;display:flex;flex-direction:column">
+          <h3 style="margin:0 0 6px;font:600 16px 'IBM Plex Sans',sans-serif">Emptying the playlist</h3>
+          <div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;flex-direction:column;gap:3px"><span style="font:500 14px 'IBM Plex Sans',sans-serif">Processed tracks</span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">A one-off clear-out of entries with a verdict and stems on disk.</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="font:400 13.5px 'IBM Plex Sans',sans-serif"><span style="font-family:'IBM Plex Mono',monospace">23</span> in the playlist are done</span><button style="padding:5px 10px;background:transparent;color:#ece7dc;border:1px solid rgba(255,255,255,.18);opacity:.4;border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif">Remove processed tracks</button></div>
+              <div style="display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:8px">
+                <span style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">Remove <span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">23</span> entries? <span style="font-family:'IBM Plex Mono',monospace">1,150</span> quota units. Re-checked at the moment of removal, not from this page.</span>
+                <div style="display:flex;gap:8px"><button style="padding:7px 12px;background:rgba(224,122,109,.18);color:#e07a6d;border:1px solid rgba(224,122,109,.45);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif">Yes, remove them</button><button style="padding:5px 10px;background:transparent;color:#ece7dc;border:1px solid rgba(255,255,255,.18);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif">Cancel</button></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;flex-direction:column;gap:3px"><span style="font:500 14px 'IBM Plex Sans',sans-serif;color:#e07a6d">Left in the playlist</span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Removals that failed. Each is tried once, so these stay until retried.</span></div>
+            <div style="display:flex;flex-direction:column">
+              <sc-for list="{{ left }}" as="l" hint-placeholder-count="3"><div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)"><div style="display:flex;flex-direction:column;gap:1px;min-width:0"><span style="font:500 13.5px 'IBM Plex Sans',sans-serif">{{ l.title }}</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ l.reason }}</span></div><sc-if value="{{ l.retry }}" hint-placeholder-val="{{ true }}"><button style="padding:5px 10px;background:transparent;color:#ece7dc;border:1px solid rgba(255,255,255,.18);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif">Try again</button></sc-if></div></sc-for>
+            </div>
+          </div>
+          <p style="margin:12px 0 0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">The confirm opens below its button, as Remove does in the side stack, and states the cost in units. Only the confirm press is <span style="font-family:'IBM Plex Mono',monospace">.danger</span>. Failures get their own row, drawn only when there are any, and the name is red because they need attention. After a run the status line under the button reads "Removed 21 of 23."</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const on = { bg: '#ece7dc', fg: '#0f0e0c', bd: 'transparent' }, off = { bg: 'transparent', fg: 'rgba(236,231,220,.75)', bd: 'rgba(255,255,255,.1)' };
+    const intervals = ['Never', '1 min', '5 min', '15 min', '30 min', '1 hour'].map((label, i) => ({ label, ...(i === 2 ? on : off) }));
+    const pauses = [
+      { name: 'Separation', gist: 'Cutting stems. Nothing new starts while paused.', paused: false, status: 'Running. Kept across restarts.' },
+      { name: 'Judging', gist: 'Checking keys with Claude. The library backfill runs either way.', paused: true, status: 'Paused since 2:40 PM. Kept across restarts.' },
+    ].map(p => ({ ...p, onBg: p.paused ? off.bg : on.bg, onBd: p.paused ? off.bd : on.bd, offBd: p.paused ? on.bd : off.bd, onFg: p.paused ? off.fg : on.fg, offBg: p.paused ? on.bg : off.bg, offFg: p.paused ? on.fg : off.fg }));
+    const folders = [
+      { name: 'Sample Staging', gist: 'Where new stems land.', path: 'P:\\RYAN\\Ableton\\Sample Staging', action: 'Open' },
+      { name: 'Mashup Samples', gist: 'The library that Counts counts.', path: 'P:\\RYAN\\Ableton\\Mashup Samples', action: 'Open' },
+      { name: 'keytag ledger', gist: 'Detector runs, for keys and BPM.', path: 'V:\\Repos\\keytag\\results\\runs.jsonl', action: 'Show in folder' },
+    ];
+    const left = [
+      { title: 'Snail\u2019s House - Pixel Galaxy', reason: 'Quota spent for today. Resets at midnight Pacific.', retry: true },
+      { title: 'PSYQUI - Hype feat. Such', reason: 'The playlist belongs to another channel.', retry: false },
+    ];
+    return { intervals, pauses, folders, left };
+  }
+}
+</script>
+</body>
+</html>
