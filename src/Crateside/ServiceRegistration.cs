@@ -67,6 +67,7 @@ public static class ServiceRegistration
         services.AddSingleton<LibraryKeyReader>();
         services.AddSingleton<LibrarySummary>();
         services.AddSingleton<StagingReader>();
+        services.AddSingleton<WarpTempoReader>();
         services.AddSingleton<PlaylistReader>();
         services.AddSingleton<EvidenceService>();
         services.AddSingleton<QueueSettingsStore>();
@@ -398,7 +399,8 @@ public static class ServiceRegistration
                         .Read(sp.GetRequiredService<CratesidePaths>().MashupSamples),
                     sp.GetRequiredService<DeletionLog>().All(),
                     sp.GetRequiredService<GenreStore>().Read(),
-                    sp.GetRequiredService<FamiliarityStore>().Read()
+                    sp.GetRequiredService<FamiliarityStore>().Read(),
+                    sp.GetRequiredService<WarpTempoReader>().Read
                 );
 
                 return view with

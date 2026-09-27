@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Crateside.Core.Ableton;
@@ -16,15 +17,16 @@ public static class AbletonWarpReader
     private const byte Int32Code = 0x11;
     private const byte FloatCode = 0x12;
     private const byte DoubleCode = 0x17;
+    private const byte ByteArrayCode = 0x31;
+    private const byte HalfArrayCode = 0x32;
+    private const byte Int32ArrayCode = 0x35;
+    private const byte FloatArrayCode = 0x40;
 
     private const int HeadCountOffset = 2;
     private const int HeadTableOffset = 6;
     private const int HeadTrailerLength = 20;
     private const int ChunkPreambleLength = 9;
 
-    private const int MarkerRecordLength = 32;
-    private const int MarkerIdAllocatorLength = 4;
-    private const int ListEndLength = 2;
     private const int MaxTypeCount = 256;
 
     private const string IsWarpedPath = "IsWarped.Value";
@@ -36,10 +38,15 @@ public static class AbletonWarpReader
     private const string SampleOffsetPath = "SampleOffset.Value";
     private const string OutMarkerPath = "OutMarker.Value";
     private const string LoopOnPath = "LoopOn.Value";
+    private const string MarkersPath = "WarpMarkers";
+    private const string OverviewBinPath = "OverView.SamplesPerBinLog2";
+    private const string OverviewChannelsPath = "OverView.ChannelCount";
+    private const string OverviewFinestPath = "OverView.OverViewLevels[0].InterleavedBinData";
+    private const string SampleDataClass = "SampleData";
+    private const string RemoteableArrayClass = "RemoteableArray";
 
     private static readonly byte[] ChunkMagic = [0xAB, 0x1E, 0x56, 0x78];
     private static readonly byte[] SampleDataTag = [0x00, 0x0A, .. "SampleData"u8];
-    private static readonly byte[] WarpMarkerTag = [0x00, 0x0A, .. "WarpMarker"u8];
 
     public static bool TryRead(string asdPath, [NotNullWhen(true)] out AbletonWarp? warp)
     {
@@ -62,7 +69,14 @@ public static class AbletonWarpReader
         if (
             !TryReadSchema(asd, out var types, out var sampleData, out var instance)
             || !TryReadSavedFlag(asd, sampleData, out var saved)
-            || !TryLayout(asd, types, instance, out var leaves, out var markers)
+        )
+            return false;
+
+        var layout = Walk(asd, types, instance);
+        var leaves = layout.Values;
+
+        if (
+            ReadMarkers(asd, layout) is not { } markers
             || !TryBool(asd, leaves, IsWarpedPath, out var isWarped)
             || !TryInt32(asd, leaves, ModePath, out var mode)
             || !TryFloat(asd, leaves, NumeratorPath, out var numerator)
@@ -87,7 +101,8 @@ public static class AbletonWarpReader
                 // With Loop on, the loop fields hold the loop, not the clip's start and end.
                 (true, true) => new DefaultClip(loopStart + sampleOffset, outMarker),
                 (true, false) => new DefaultClip(loopStart, loopEnd),
-            }
+            },
+            ReadOverview(asd, layout)
         );
 
         return true;
@@ -201,106 +216,228 @@ public static class AbletonWarpReader
     }
 
     /// <summary>
-    /// Offsets of every fixed-width value in the instance, keyed by dotted path, through the warp
-    /// markers and on to the first member whose width the schema cannot give.
+    /// Walks the instance field by field and records where each value is, keyed by dotted path with
+    /// list and array elements indexed. Stops at the first value it cannot read, keeping what it has.
     /// </summary>
-    private static bool TryLayout(
+    private static Layout Walk(
         ReadOnlySpan<byte> asd,
         Dictionary<string, SchemaField[]?> types,
-        int instance,
-        [NotNullWhen(true)] out Dictionary<string, int>? leaves,
-        [NotNullWhen(true)] out List<WarpMarker>? markers
+        int instance
     )
     {
-        leaves = [];
-        markers = null;
+        var layout = new Layout();
 
-        if (!types.TryGetValue("SampleData", out var fields) || fields is null)
-            return false;
+        if (!types.TryGetValue(SampleDataClass, out var fields) || fields is null)
+            return layout;
 
-        var offset = instance;
+        var p = instance;
 
         foreach (var field in fields)
-        {
-            if (
-                field.Class is { } name
-                && types.TryGetValue(name, out var nested)
-                && nested is null
-            )
-            {
-                if (markers is not null)
-                    break;
+            if (!TryWalk(asd, types, field, field.Name, ref p, layout))
+                break;
 
-                offset += MarkerIdAllocatorLength;
-                markers = ReadMarkers(asd, offset);
-                offset += markers.Count * MarkerRecordLength;
-
-                // A list ends with an empty class name.
-                if (
-                    offset + ListEndLength > asd.Length
-                    || asd.Slice(offset, ListEndLength) is not [0, 0]
-                )
-                    return false;
-
-                offset += ListEndLength;
-
-                continue;
-            }
-
-            if (!TryAppend(types, field, field.Name, ref offset, leaves))
-                return markers is not null;
-        }
-
-        return markers is not null;
+        return layout;
     }
 
-    private static bool TryAppend(
+    private static bool TryWalk(
+        ReadOnlySpan<byte> asd,
         Dictionary<string, SchemaField[]?> types,
         SchemaField field,
         string path,
-        ref int offset,
-        Dictionary<string, int> leaves
+        ref int p,
+        Layout layout
     )
     {
         if (field.Class is not { } name)
+            return TryWalkValue(asd, field.Code, path, ref p, layout);
+
+        if (!types.TryGetValue(name, out var nested))
+            return false;
+
+        if (nested is null)
+            return name is RemoteableArrayClass
+                ? TryWalkArray(asd, types, path, ref p, layout)
+                : TryWalkList(asd, types, path, ref p, layout);
+
+        return TryWalkElement(asd, types, nested, path, ref p, layout);
+    }
+
+    private static bool TryWalkValue(
+        ReadOnlySpan<byte> asd,
+        byte code,
+        string path,
+        ref int p,
+        Layout layout
+    )
+    {
+        if (SizeOf(code) is { } size)
         {
-            if (SizeOf(field.Code) is not { } size)
+            if (p + size > asd.Length)
                 return false;
 
-            leaves[path] = offset;
-            offset += size;
+            layout.Values[path] = p;
+            p += size;
 
             return true;
         }
 
-        if (!types.TryGetValue(name, out var nested) || nested is null)
+        if (
+            ElementSizeOf(code) is not { } element
+            || !TryReadInt32(asd, ref p, out var count)
+            || count < 0
+            || p + (long)count * element > asd.Length
+        )
             return false;
 
-        foreach (var inner in nested)
-            if (!TryAppend(types, inner, $"{path}.{inner.Name}", ref offset, leaves))
+        layout.Arrays[path] = (p, count);
+        p += count * element;
+
+        return true;
+    }
+
+    /// <summary>A next id, then each element's class name, id and fields, then an empty name.</summary>
+    private static bool TryWalkList(
+        ReadOnlySpan<byte> asd,
+        Dictionary<string, SchemaField[]?> types,
+        string path,
+        ref int p,
+        Layout layout
+    )
+    {
+        if (!TryReadInt32(asd, ref p, out _))
+            return false;
+
+        for (var i = 0; ; i++)
+        {
+            if (!TryReadClassName(asd, ref p, out var element))
+                return false;
+
+            if (element.Length is 0)
+            {
+                layout.Counts[path] = i;
+
+                return true;
+            }
+
+            if (
+                !types.TryGetValue(element, out var fields)
+                || fields is null
+                || !TryReadInt32(asd, ref p, out _)
+                || !TryWalkElement(asd, types, fields, $"{path}[{i}]", ref p, layout)
+            )
+                return false;
+        }
+    }
+
+    /// <summary>A count, the element class name once, then the elements packed.</summary>
+    private static bool TryWalkArray(
+        ReadOnlySpan<byte> asd,
+        Dictionary<string, SchemaField[]?> types,
+        string path,
+        ref int p,
+        Layout layout
+    )
+    {
+        if (
+            !TryReadInt32(asd, ref p, out var count)
+            || count < 0
+            || !TryReadClassName(asd, ref p, out var element)
+            || !types.TryGetValue(element, out var fields)
+            || fields is null
+        )
+            return false;
+
+        layout.Counts[path] = count;
+
+        // Packed fixed-width elements are stepped over whole; nothing reads them one by one.
+        if (fields.All(field => field.Class is null && SizeOf(field.Code) is not null))
+        {
+            var size = fields.Sum(field => SizeOf(field.Code)!.Value);
+
+            if (p + (long)count * size > asd.Length)
+                return false;
+
+            layout.Arrays[path] = (p, count);
+            p += count * size;
+
+            return true;
+        }
+
+        for (var i = 0; i < count; i++)
+            if (!TryWalkElement(asd, types, fields, $"{path}[{i}]", ref p, layout))
                 return false;
 
         return true;
     }
 
-    private static List<WarpMarker> ReadMarkers(ReadOnlySpan<byte> asd, int at)
+    private static bool TryWalkElement(
+        ReadOnlySpan<byte> asd,
+        Dictionary<string, SchemaField[]?> types,
+        SchemaField[] fields,
+        string path,
+        ref int p,
+        Layout layout
+    )
     {
+        foreach (var field in fields)
+            if (!TryWalk(asd, types, field, $"{path}.{field.Name}", ref p, layout))
+                return false;
+
+        return true;
+    }
+
+    private static List<WarpMarker>? ReadMarkers(ReadOnlySpan<byte> asd, Layout layout)
+    {
+        if (!layout.Counts.TryGetValue(MarkersPath, out var count))
+            return null;
+
         List<WarpMarker> markers = [];
 
-        for (var p = at; p + MarkerRecordLength <= asd.Length; p += MarkerRecordLength)
+        for (var i = 0; i < count; i++)
         {
-            if (!asd.Slice(p, WarpMarkerTag.Length).SequenceEqual(WarpMarkerTag))
-                break;
+            if (
+                !TryDouble(asd, layout.Values, $"{MarkersPath}[{i}].SecTime", out var seconds)
+                || !TryDouble(asd, layout.Values, $"{MarkersPath}[{i}].BeatTime", out var beat)
+            )
+                return null;
 
-            markers.Add(
-                new WarpMarker(
-                    BinaryPrimitives.ReadDoubleLittleEndian(asd[(p + 16)..]),
-                    BinaryPrimitives.ReadDoubleLittleEndian(asd[(p + 24)..])
-                )
-            );
+            markers.Add(new WarpMarker(seconds, beat));
         }
 
         return markers;
+    }
+
+    /// <summary>The finest overview level's peaks, or null when the walk did not reach it.</summary>
+    private static SampleOverview? ReadOverview(ReadOnlySpan<byte> asd, Layout layout)
+    {
+        if (
+            !TryInt32(asd, layout.Values, OverviewBinPath, out var log2)
+            || !TryInt32(asd, layout.Values, OverviewChannelsPath, out var channels)
+            || !layout.Arrays.TryGetValue(OverviewFinestPath, out var finest)
+            || log2 is < 0 or > 30
+            || channels < 1
+        )
+            return null;
+
+        // Each bin holds a minimum and a maximum per channel, as half-precision floats. Without the
+        // sign bit, a half's bits order the same way as its magnitude.
+        var perBin = 2 * channels;
+        var peaks = new float[finest.Count / perBin];
+        var values = MemoryMarshal.Cast<byte, ushort>(
+            asd.Slice(finest.Offset, peaks.Length * perBin * sizeof(ushort))
+        );
+
+        for (var bin = 0; bin < peaks.Length; bin++)
+        {
+            ushort loudest = 0;
+
+            foreach (var bits in values.Slice(bin * perBin, perBin))
+                loudest = Math.Max(loudest, (ushort)(bits & 0x7FFF));
+
+            peaks[bin] = (float)BitConverter.UInt16BitsToHalf(loudest);
+        }
+
+        return new SampleOverview(1 << log2, peaks);
     }
 
     private static bool TryBool(
@@ -330,6 +467,16 @@ public static class AbletonWarpReader
         string path,
         out double value
     ) => TryRead(asd, leaves, path, BinaryPrimitives.ReadDoubleLittleEndian, out value);
+
+    private static int? ElementSizeOf(byte code) =>
+        code switch
+        {
+            ByteArrayCode => sizeof(byte),
+            HalfArrayCode => sizeof(short),
+            Int32ArrayCode => sizeof(int),
+            FloatArrayCode => sizeof(float),
+            _ => null,
+        };
 
     private static int? SizeOf(byte code) =>
         code switch
@@ -427,4 +574,11 @@ public static class AbletonWarpReader
     }
 
     private readonly record struct SchemaField(string Name, byte Code, string? Class);
+
+    private sealed class Layout
+    {
+        public Dictionary<string, int> Values { get; } = [];
+        public Dictionary<string, (int Offset, int Count)> Arrays { get; } = [];
+        public Dictionary<string, int> Counts { get; } = [];
+    }
 }

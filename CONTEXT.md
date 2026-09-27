@@ -72,6 +72,10 @@ against it.
   of them in its **sidecar**, and a **tempo** is the slope between two consecutive
   markers — no tempo is recorded as such
   ([ADR 0020](docs/adr/0020-the-sidecar-is-parseable-and-a-warp-marker-is-a-second-and-a-beat.md)).
+- **Warped BPM** — the tempo a finished warp holds: the stable tempo covering the most bars of
+  the default clip, or the median bar where no tempo holds for eight
+  ([ADR 0038](docs/adr/0038-a-warps-bpm-is-the-stable-tempo-that-holds-longest.md)). Shown in
+  place of keytag's estimate once a track is warped.
 - **Sidecar** — the `.asd` Ableton writes beside a sample. Its *presence* means only that
   Ableton analysed the file and says nothing about warping
   ([ADR 0002](docs/adr/0002-there-is-no-warped-signal.md)); its **warp markers** are what

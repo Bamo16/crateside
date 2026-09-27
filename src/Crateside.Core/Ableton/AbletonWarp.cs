@@ -7,9 +7,30 @@ public sealed record AbletonWarp(
     int TimeSignatureNumerator,
     int TimeSignatureDenominator,
     IReadOnlyList<WarpMarker> Markers,
-    DefaultClip? DefaultClip = null
+    DefaultClip? DefaultClip = null,
+    SampleOverview? Overview = null
 )
 {
+    /// <summary>
+    /// Where <paramref name="beat"/> falls in the audio, extending the first and last segments past
+    /// the markers. Null with fewer than two markers.
+    /// </summary>
+    public double? SecondsAt(double beat)
+    {
+        if (Markers is not { Count: > 1 })
+            return null;
+
+        var i = 1;
+
+        while (i < Markers.Count - 1 && beat > Markers[i].Beat)
+            i++;
+
+        var (from, to) = (Markers[i - 1], Markers[i]);
+
+        return from.Seconds
+            + (beat - from.Beat) * (to.Seconds - from.Seconds) / (to.Beat - from.Beat);
+    }
+
     /// <summary>The tempo of the segment <paramref name="seconds"/> falls in.</summary>
     public double? TempoAt(double seconds)
     {
@@ -36,6 +57,26 @@ public sealed record AbletonWarp(
 /// presses <em>Save Default Clip</em>, which is also what writes the markers.
 /// </summary>
 public sealed record DefaultClip(double Start, double End);
+
+/// <summary>
+/// The loudest sample in each bin of the waveform Ableton draws, at its finest level; enough to
+/// tell silence from sound.
+/// </summary>
+public sealed record SampleOverview(int SamplesPerBin, IReadOnlyList<float> Peaks)
+{
+    /// <summary>The loudest sample between two sample positions, 0 where the overview ends.</summary>
+    public float PeakBetween(long fromSample, long toSample)
+    {
+        var first = Math.Max(fromSample / SamplesPerBin, 0);
+        var last = Math.Min((toSample - 1) / SamplesPerBin, Peaks.Count - 1);
+        var peak = 0f;
+
+        for (var bin = (int)first; bin <= last; bin++)
+            peak = Math.Max(peak, Peaks[bin]);
+
+        return peak;
+    }
+}
 
 /// <summary>A point pinning the audio to the grid; a tempo exists only between two of them.</summary>
 /// <param name="Seconds">Position in the audio file.</param>

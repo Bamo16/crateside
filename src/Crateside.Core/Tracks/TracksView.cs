@@ -62,7 +62,8 @@ public sealed record TracksView
         AbletonFolderInfo? libraryTags = null,
         IReadOnlyList<Deletion>? deletions = null,
         IReadOnlyDictionary<string, GenreRecord>? genres = null,
-        IReadOnlyDictionary<string, FamiliarityRecord>? familiarity = null
+        IReadOnlyDictionary<string, FamiliarityRecord>? familiarity = null,
+        Func<string, WarpTempo?>? tempoOf = null
     )
     {
         var resolved = resolvedNames ?? new Dictionary<string, ResolvedName>();
@@ -269,7 +270,8 @@ public sealed record TracksView
                             finishedRoot,
                             seed.VideoId,
                             catalog,
-                            libraryTags
+                            libraryTags,
+                            tempoOf
                         )
                     ),
                 ],
@@ -385,7 +387,8 @@ public sealed record TracksView
         string finishedRoot,
         string sourceVideoId,
         PresetCatalog catalog,
-        AbletonFolderInfo? libraryTags
+        AbletonFolderInfo? libraryTags,
+        Func<string, WarpTempo?>? tempoOf
     ) =>
         [
             .. staged?.Samples.Select(sample =>
@@ -393,6 +396,7 @@ public sealed record TracksView
                 {
                     AbletonKey = sample.AbletonKey,
                     HasDefaultClip = sample.HasDefaultClip,
+                    Tempo = sample.HasDefaultClip ? tempoOf?.Invoke(sample.Path) : null,
                 }
             )
                 ?? [],
@@ -406,6 +410,7 @@ public sealed record TracksView
                     {
                         IsInLibrary = true,
                         AbletonKey = KeyIn(libraryTags, file.Path),
+                        Tempo = tempoOf?.Invoke(file.Path),
                     }
                 ),
         ];

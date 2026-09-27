@@ -44,6 +44,17 @@ public class AbletonWarpReaderRealLibraryTests
     }
 
     [Fact]
+    public void Every_sidecar_in_the_library_reaches_its_overview()
+    {
+        var without = Sidecars()
+            .Where(file => Read(file).Overview is not { Peaks.Count: > 0 })
+            .Select(Path.GetFileName)
+            .ToList();
+
+        Assert.Empty(without);
+    }
+
+    [Fact]
     public void Markers_advance_in_both_seconds_and_beats()
     {
         var outOfOrder = Sidecars()

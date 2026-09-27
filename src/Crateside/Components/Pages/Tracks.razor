@@ -319,7 +319,7 @@
 
                 <span class="mono conf @KeyText.ConfidenceTone(row.Confidence)">@KeyText.Confidence(row.Confidence)</span>
 
-                <span class="mono bpm right @(row.State is TrackState.ReadyToWarp ? "ready" : null) @(row.Bpm is null ? "none" : null)">
+                <span class="mono bpm right @(row.State is TrackState.ReadyToWarp ? "ready" : null) @(row.Bpm is null ? "none" : null)" title="@row.BpmNote">
                     @(row.Bpm is { } bpm ? bpm.ToString("N0") : "—")
                 </span>
 

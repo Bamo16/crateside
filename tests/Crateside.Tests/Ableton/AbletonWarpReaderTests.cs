@@ -33,6 +33,27 @@ public class AbletonWarpReaderTests
         Assert.Equal(new DefaultClip(0, 5), Read("sidecar-loop-on.asd").DefaultClip);
     }
 
+    [Fact]
+    public void The_overview_holds_a_peak_for_every_128_samples()
+    {
+        // The DBraun sidecar is 181,675 samples long, whole to the end of the file.
+        var overview = Read("sidecar-loop-on.asd").Overview;
+
+        Assert.NotNull(overview);
+        Assert.Equal(128, overview.SamplesPerBin);
+        Assert.Equal(1420, overview.Peaks.Count);
+        Assert.InRange(overview.Peaks.Max(), 0.1f, 1.5f);
+    }
+
+    [Fact]
+    public void A_sidecar_cut_short_before_its_overview_still_reads_without_one()
+    {
+        var warp = Read("sidecar-default-clip-saved.asd");
+
+        Assert.Null(warp.Overview);
+        Assert.NotNull(warp.DefaultClip);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(100)]

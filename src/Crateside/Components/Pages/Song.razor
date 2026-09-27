@@ -184,7 +184,8 @@
         };
 
     private string BpmNote =>
-        _run switch
+        _row is { Tempo: not null, BpmNote: { } warped } ? warped
+        : _run switch
         {
             { BpmConflicts: true, BeatdetectBpm: { } rough } => $"beatdetect {rough:F1} · conflict",
             { BeatdetectBpm: { } rough, Bpm: { } bpm } when Math.Abs(rough - bpm) < 1.5 =>

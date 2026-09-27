@@ -1,3 +1,4 @@
+using Crateside.Core.Ableton;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
@@ -117,10 +118,32 @@ public sealed record TrackRow
     public KeyConfidence Confidence => Verdict?.Confidence ?? KeyConfidence.Unknown;
 
     /// <summary>
-    /// The warp starting point — set even when <see cref="Key"/> is null, since a verdict too
-    /// weak to tag with still measured a tempo.
+    /// The finished warp's tempo, else keytag's estimate as a starting point for warping, which a
+    /// verdict too weak to tag with still measured (ADR 0038).
     /// </summary>
-    public double? Bpm => Verdict?.Bpm;
+    public double? Bpm => Tempo?.Bpm ?? Verdict?.Bpm;
+
+    /// <summary>Where <see cref="Bpm"/> came from, and whether the tempo holds.</summary>
+    public string? BpmNote =>
+        Tempo switch
+        {
+            null => Verdict?.Bpm is null ? null : "keytag's estimate",
+            { Shape: TempoShape.Unsteady, Low: var low, High: var high } =>
+                $"from your warp: unsteady, {low:N0}–{high:N0}",
+            { Shape: TempoShape.SteadyWithChanges } =>
+                "from your warp: the tempo changes in places",
+            _ => "from your warp",
+        };
+
+    /// <summary>The tempo of a finished warp, the instrumental's where there is one.</summary>
+    public WarpTempo? Tempo =>
+        Samples
+            .Where(sample => sample.Tempo is not null)
+            .OrderByDescending(sample =>
+                sample.Label.StartsWith("Instrumental", StringComparison.OrdinalIgnoreCase)
+            )
+            .Select(sample => sample.Tempo)
+            .FirstOrDefault();
 
     /// <summary>The stage crateside currently believes is working this track, if any.</summary>
     public JobStage? RunningStage { get; init; }
@@ -510,6 +533,9 @@ public sealed record TrackSample
     /// (ADR 0037).
     /// </summary>
     public bool HasDefaultClip { get; init; }
+
+    /// <summary>The tempo its warp holds, once its default clip is saved (ADR 0038).</summary>
+    public WarpTempo? Tempo { get; init; }
 
     /// <summary>
     /// The upload this file was cut from. A song that has been source-swapped holds samples from

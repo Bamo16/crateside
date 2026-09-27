@@ -57,3 +57,16 @@ Measured across the 844 saved library sidecars on 2026-09-26:
   it.
 - A tempo .01–.02 off a whole number in a modern recording is, in the user's view, the whole
   number. Rounding for display covers it, and crateside does not act on it.
+
+## Built, 2026-09-26
+
+The figures the decision left to the build, measured on the library that day:
+
+- **Tolerance: 3 ms.** At 2 ms, *Ready Steady Go*'s ten markers (all within 2.0 ms of one line)
+  split into two runs. At 5 ms, *Hall & Oates – Rich Girl*, a live band, gains a spurious 9-bar run.
+- **A run's tempo is the median of its bars,** not the slope of the fitted line. The fit let two
+  wobbly intro bars pull *T & Sugah – TumDaDaDum* to 174.03, where every other bar is 174.000.
+- **Silence is a bar whose loudest sample is under −50 dBFS** in the waveform overview. Leaving it
+  out changes the answer on 5 of 844 sidecars, each time from a silent stretch passing for the
+  tempo (*Group X – Jonny Poopoopants* read 131.9 against a song around 170).
+- The sample rate comes from the audio file, since the sidecar does not record it.
