@@ -97,15 +97,17 @@ public sealed record RunEvidence
         && Math.Abs(bpm - rough) > 1
         && Math.Abs(Math.Log2(rough / bpm) - Math.Round(Math.Log2(rough / bpm))) > OctaveTolerance;
 
-    /// <summary>
-    /// The latest recorded run for a song identity, or null when the ledger has never seen it.
-    /// </summary>
-    public static RunEvidence? ReadLatestFor(string ledgerPath, string song)
-    {
-        if (!File.Exists(ledgerPath))
-            return null;
+    /// <summary>The latest recorded run for a song identity, or null when the ledger has never seen it.</summary>
+    public static RunEvidence? ReadLatestFor(string ledgerPath, string song) =>
+        ReadLatest(ledgerPath).GetValueOrDefault(song);
 
-        RunEvidence? latest = null;
+    /// <summary>The latest recorded run for every song identity in the ledger, in one pass.</summary>
+    public static IReadOnlyDictionary<string, RunEvidence> ReadLatest(string ledgerPath)
+    {
+        var latest = new Dictionary<string, RunEvidence>(StringComparer.OrdinalIgnoreCase);
+
+        if (!File.Exists(ledgerPath))
+            return latest;
 
         using var stream = new FileStream(
             ledgerPath,
@@ -131,23 +133,17 @@ public sealed record RunEvidence
                 continue;
             }
 
-            if (
-                dto?.Song is not { } found
-                || !found.Equals(song, StringComparison.OrdinalIgnoreCase)
-            )
-                continue;
-
             // A restatement carries the verdict forward under a new source URL and no evidence at
             // all (keytag ADR 0008), so taking the latest *line* would empty this view the first
             // time a track's source was swapped.
-            if (dto.Restates is not null)
+            if (dto is not { Song: { } song, Restates: null })
                 continue;
 
             // Append-only, so a later line supersedes an earlier one for the same identity.
             var evidence = FromDto(dto);
 
-            if (latest is null || evidence.Timestamp >= latest.Timestamp)
-                latest = evidence;
+            if (!latest.TryGetValue(song, out var held) || evidence.Timestamp >= held.Timestamp)
+                latest[song] = evidence;
         }
 
         return latest;

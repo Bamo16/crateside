@@ -109,7 +109,23 @@ public class HandoffSupersedeTests : IDisposable
 
         var ledger = KeyLedger.Read(paths.Ledger);
 
-        foreach (var videoId in ledger.Runs.Select(run => run.SourceVideoId).OfType<string>())
+        // Only a song with an upload in staging can have a file there superseded.
+        var stagedSongs = Directory
+            .EnumerateFiles(paths.SampleStaging)
+            .Where(SampleFiles.IsAudio)
+            .Select(path => StemTagReader.Read(path)?.SourceVideoId)
+            .OfType<string>()
+            .Select(ledger.SongFor)
+            .OfType<string>()
+            .ToHashSet(StringComparer.Ordinal);
+
+        var videoIds = ledger
+            .Runs.Select(run => run.SourceVideoId)
+            .OfType<string>()
+            .Distinct(StringComparer.Ordinal)
+            .Where(id => ledger.SongFor(id) is { } song && stagedSongs.Contains(song));
+
+        foreach (var videoId in videoIds)
         {
             Assert.DoesNotContain(
                 SupersededStems.In(paths.SampleStaging, videoId, ledger),

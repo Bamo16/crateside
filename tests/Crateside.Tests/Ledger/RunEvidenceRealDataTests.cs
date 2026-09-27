@@ -9,19 +9,11 @@ public class RunEvidenceRealDataTests
 
     private static bool Available => File.Exists(LedgerPath);
 
-    private static IReadOnlyList<RunEvidence> All()
-    {
-        var ledger = KeyLedger.Read(LedgerPath);
+    private static readonly Lazy<IReadOnlyList<RunEvidence>> Evidence = new(() =>
+        [.. RunEvidence.ReadLatest(LedgerPath).Values]
+    );
 
-        return
-        [
-            .. ledger
-                .Runs.Select(r => r.Song)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Select(song => RunEvidence.ReadLatestFor(LedgerPath, song))
-                .OfType<RunEvidence>(),
-        ];
-    }
+    private static IReadOnlyList<RunEvidence> All() => Evidence.Value;
 
     [Fact]
     public void Every_song_on_the_board_can_be_expanded()
@@ -29,10 +21,11 @@ public class RunEvidenceRealDataTests
         Assert.SkipUnless(Available, "The keytag ledger must be present.");
 
         var ledger = KeyLedger.Read(LedgerPath);
+        var latest = RunEvidence.ReadLatest(LedgerPath);
 
         Assert.All(
             ledger.Runs.Select(r => r.Song).Distinct(StringComparer.OrdinalIgnoreCase),
-            song => Assert.NotNull(RunEvidence.ReadLatestFor(LedgerPath, song))
+            song => Assert.True(latest.ContainsKey(song), song)
         );
     }
 
