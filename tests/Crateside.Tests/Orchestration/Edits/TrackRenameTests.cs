@@ -23,12 +23,19 @@ public class TrackRenameTests : IDisposable
     private readonly AbletonFolderInfoWriter _writer = new();
     private readonly AbletonFolderInfoReader _reader = new();
     private readonly List<StagedFile> _staged = [];
+    private readonly List<string> _library = [];
+    private readonly List<IReadOnlyCollection<string>> _setLookups = [];
 
     public TrackRenameTests()
     {
-        _paths = new CratesidePaths { SampleStaging = Path.Combine(_root, "Sample Staging") };
+        _paths = new CratesidePaths
+        {
+            SampleStaging = Path.Combine(_root, "Sample Staging"),
+            MashupSamples = Path.Combine(_root, "Mashup Samples"),
+        };
 
         Directory.CreateDirectory(_paths.SampleStaging);
+        Directory.CreateDirectory(_paths.MashupSamples);
     }
 
     public void Dispose()
@@ -42,8 +49,33 @@ public class TrackRenameTests : IDisposable
     private QueueSettingsStore Settings() =>
         new(Options.Create(new PlaylistOptions()), Path.Combine(_root, "settings.json"));
 
-    private TrackRename Renamer(QueueSettingsStore? settings = null) =>
-        new(settings ?? Settings(), _ => _staged, _writer, _paths);
+    private TrackRename Renamer(
+        QueueSettingsStore? settings = null,
+        IReadOnlyList<string>? sets = null
+    ) =>
+        new(
+            settings ?? Settings(),
+            _ => _staged,
+            _writer,
+            _paths,
+            _ => _library,
+            samples =>
+            {
+                _setLookups.Add(samples);
+
+                return sets ?? [];
+            }
+        );
+
+    private string InLibrary(string name)
+    {
+        var path = Path.Combine(_paths.MashupSamples, name);
+
+        File.WriteAllText(path, "stem");
+        _library.Add(path);
+
+        return path;
+    }
 
     private string Stage(string name)
     {
@@ -124,6 +156,73 @@ public class TrackRenameTests : IDisposable
         Assert.Equal("Starjunk 95 - 99th Street (Vocal - Full).flac", entry.RelativePath);
         Assert.Equal("A minor", entry.Key);
         Assert.Equal("Vocal", entry.Type);
+    }
+
+    [Fact]
+    public void A_file_in_Mashup_Samples_is_renamed_with_its_markers_and_its_tags()
+    {
+        var sample = InLibrary("99th Street (Vocal - Full).flac");
+        File.WriteAllText($"{sample}.asd", "markers");
+
+        _writer.Apply(
+            _paths.MashupSamples,
+            [
+                new TagAssignment
+                {
+                    RelativePath = "99th Street (Vocal - Full).flac",
+                    Keywords = ["Key|A", "Key|Minor"],
+                },
+            ]
+        );
+
+        var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
+
+        var renamed = Path.Combine(
+            _paths.MashupSamples,
+            "Starjunk 95 - 99th Street (Vocal - Full).flac"
+        );
+        Assert.True(outcome.Succeeded);
+        Assert.True(File.Exists(renamed));
+        Assert.Equal("markers", File.ReadAllText($"{renamed}.asd"));
+
+        var entry = Assert.Single(_reader.Read(_paths.MashupSamples).Entries);
+        Assert.Equal("Starjunk 95 - 99th Street (Vocal - Full).flac", entry.RelativePath);
+        Assert.Equal("A minor", entry.Key);
+    }
+
+    [Fact]
+    public void Staged_and_library_files_are_renamed_together()
+    {
+        Stage("99th Street (Instrumental - Full).flac");
+        InLibrary("99th Street (Vocal - Full).flac");
+
+        Assert.Equal(2, Renamer().Apply(Video, "Starjunk 95 - 99th Street").Renamed);
+    }
+
+    [Fact]
+    public void The_plan_names_the_sets_that_use_the_files_before_anything_moves()
+    {
+        var sample = InLibrary("99th Street (Vocal - Full).flac");
+
+        var plan = Renamer(sets: ["Mashup One"]).PlanFor(Video, "Starjunk 95 - 99th Street");
+
+        Assert.Equal(["Mashup One"], plan.Sets);
+        Assert.Equal([sample], Assert.Single(_setLookups));
+        Assert.True(File.Exists(sample));
+    }
+
+    [Fact]
+    public void A_name_already_in_Mashup_Samples_is_refused()
+    {
+        InLibrary("99th Street (Vocal - Full).flac");
+        File.WriteAllText(
+            Path.Combine(_paths.MashupSamples, "Taken (Vocal - Full).flac"),
+            "theirs"
+        );
+
+        var outcome = Renamer().Apply(Video, "Taken");
+
+        Assert.Contains("already in Mashup Samples", outcome.Problem);
     }
 
     [Fact]
@@ -261,7 +360,7 @@ public class TrackRenameTests : IDisposable
         var plan = Renamer().PlanFor(Video, "Starjunk 95 - 99th Street");
 
         Assert.True(plan.IsPossible);
-        Assert.Equal(["99th Street (Drums).flac"], plan.Renaming.Select(stem => stem.FileName));
+        Assert.Equal(["99th Street (Drums).flac"], plan.Renaming.Select(Path.GetFileName));
     }
 
     [Theory]

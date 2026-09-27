@@ -26,8 +26,19 @@
                 Your name wins over the ledger, the file names and the playlist.
             </p>
             <p class="stack-status">@Row.RenameDetail</p>
+            @if (_sets is null)
+            {
+                <p class="stack-status">Checking your Ableton sets for these files…</p>
+            }
+            else if (_sets.Count > 0)
+            {
+                <p class="problem">
+                    Used by @("set".ToQuantity(_sets.Count)): <strong>@string.Join(", ", _sets)</strong>.
+                    They will show these files as missing until you relink them in Ableton.
+                </p>
+            }
             <div class="actions">
-                <button class="primary" disabled="@(_working || !StemFileName.IsUsable(_draft))"
+                <button class="primary" disabled="@(_working || _sets is null || !StemFileName.IsUsable(_draft))"
                         @onclick="ConfirmRename">
                     Rename · @Row.RenameScope
                 </button>
@@ -40,20 +51,17 @@
         {
             <div class="label-line">
                 <span class="stack-label">Name</span>
-                @if (Row.CanRename)
-                {
-                    <span class="label-actions">
-                        @if (Row.IsRenamed)
-                        {
-                            <button class="outline" @onclick="RevertRename" disabled="@_working">
-                                Revert
-                            </button>
-                        }
-                        <button class="outline" @onclick="StartRename" disabled="@_working">
-                            Rename
+                <span class="label-actions">
+                    @if (Row.IsRenamed)
+                    {
+                        <button class="outline" @onclick="RevertRename" disabled="@_working">
+                            Revert
                         </button>
-                    </span>
-                }
+                    }
+                    <button class="outline" @onclick="() => StartRename(Row.Title)" disabled="@_working">
+                        Rename
+                    </button>
+                </span>
             </div>
             <span class="stack-value">@Row.Title</span>
             <span class="stack-status">
@@ -64,10 +72,6 @@
                 else
                 {
                     <text>named from @From(Row.NameSource)</text>
-                }
-                @if (!Row.CanRename)
-                {
-                    <text> · a sample is in the library, so rename it in Ableton</text>
                 }
             </span>
         }
@@ -144,6 +148,9 @@ else if (Part is Parts.Source && HasSource(Row))
     private string? _problem;
 
     private string _draft = string.Empty;
+
+    // The sets using this track's files; null until checked, which the confirm waits for.
+    private IReadOnlyList<string>? _sets;
     private SwapPlan? _swapPlan;
     private ElementReference _box;
     private bool _focus;
@@ -181,12 +188,26 @@ else if (Part is Parts.Source && HasSource(Row))
         await _box.FocusAsync();
     }
 
-    private void StartRename()
+    private void StartRename(string draft)
     {
         _problem = null;
-        _draft = Row.Title;
+        _draft = draft;
         _focus = true;
+        _sets = null;
         Editing.Start(TrackEdit.Rename);
+
+        var videoId = Row.VideoId;
+
+        _ = Task.Run(() => Rename.SetsUsing(videoId))
+            .ContinueWith(
+                found =>
+                    InvokeAsync(() =>
+                    {
+                        _sets = found.IsCompletedSuccessfully ? found.Result : [];
+                        StateHasChanged();
+                    }),
+                TaskScheduler.Default
+            );
     }
 
     private async Task ConfirmRename()
@@ -196,13 +217,31 @@ else if (Part is Parts.Source && HasSource(Row))
 
         var name = _draft;
 
+        if (Row.DerivedTitle is { } derived && name == derived)
+        {
+            await Reverting();
+
+            return;
+        }
+
         await Renaming(
             () => Rename.Apply(Row.VideoId, name),
             () => Actions.Record(Row.VideoId, UserActionKind.Renamed, name)
         );
     }
 
-    private Task RevertRename() =>
+    // A library file's sets have to be warned about first, so the revert goes through the editor.
+    private Task RevertRename()
+    {
+        if (!Row.Samples.Any(sample => sample.IsInLibrary))
+            return Reverting();
+
+        StartRename(Row.DerivedTitle ?? Row.Title);
+
+        return Task.CompletedTask;
+    }
+
+    private Task Reverting() =>
         Renaming(
             () => Rename.Revert(Row.VideoId, Row.DerivedTitle ?? Row.Title),
             () => Actions.Record(Row.VideoId, UserActionKind.RenameReverted, Row.DerivedTitle)

@@ -17,6 +17,7 @@ using Crateside.Core.Orchestration.Tagging;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Playlist;
 using Crateside.Core.Quota;
+using Crateside.Core.Samples;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
 using Crateside.Core.WorkLists;
@@ -301,7 +302,14 @@ public static class ServiceRegistration
             sp.GetRequiredService<QueueSettingsStore>(),
             StagedFiles(sp),
             sp.GetRequiredService<AbletonFolderInfoWriter>(),
-            sp.GetRequiredService<CratesidePaths>()
+            sp.GetRequiredService<CratesidePaths>(),
+            videoId =>
+                StemTagReader.FilesCutFrom(
+                    sp.GetRequiredService<CratesidePaths>().MashupSamples,
+                    videoId
+                ),
+            samples =>
+                AbletonSets.Using(sp.GetRequiredService<CratesidePaths>().AbletonProjects, samples)
         ));
         services.AddSingleton(sp => new LookalikeAnswer(
             sp.GetRequiredService<QueueSettingsStore>(),

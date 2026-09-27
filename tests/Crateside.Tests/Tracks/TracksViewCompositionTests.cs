@@ -700,10 +700,8 @@ public class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
-    public void A_track_with_a_file_in_the_library_can_no_longer_be_renamed()
+    public void A_file_in_the_library_is_part_of_what_a_rename_touches()
     {
-        Assert.True(Assert.Single(Compose()).CanRename);
-
         var partly = Assert.Single(
             Compose(
                 View([]),
@@ -715,7 +713,8 @@ public class TracksViewCompositionTests : IDisposable
             )
         );
 
-        Assert.False(partly.CanRename);
+        Assert.Equal("2 files + folder info", partly.RenameScope);
+        Assert.Contains("Sample Staging and Mashup Samples", partly.RenameDetail);
     }
 
     [Fact]

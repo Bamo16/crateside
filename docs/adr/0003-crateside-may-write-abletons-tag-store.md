@@ -1,6 +1,6 @@
 # 0003 — crateside may write Ableton's tag store
 
-- Status: Accepted
+- Status: Accepted; the library rule narrowed by [ADR 0039](0039-crateside-renames-in-the-library-and-warns-about-sets.md) on 2026-09-27 (renames may write it)
 - Date: 2026-08-14
 - Supersedes the first decision of keytag ADR 0001 ("do not write the Ableton XMP"),
   on measurement. That ADR's other decisions stand.

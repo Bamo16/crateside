@@ -62,22 +62,29 @@ public sealed record TrackRow
     /// </summary>
     public int AwaitingRename { get; init; }
 
-    /// <summary>A single file already in <c>Mashup Samples</c> locks the whole row (ADR 0003).</summary>
-    public bool CanRename => !Samples.Any(sample => sample.IsInLibrary);
-
     /// <summary>What renaming would touch, for the button that offers it.</summary>
     public string RenameScope =>
-        StagedFileCount is 0 ? "at staging" : $"{"file".ToQuantity(StagedFileCount)} + folder info";
+        FileCount is 0 ? "at staging" : $"{"file".ToQuantity(FileCount)} + folder info";
 
     /// <summary>The sentence beside the button, saying what <see cref="RenameScope"/> means.</summary>
     public string RenameDetail =>
-        StagedFileCount is 0
+        FileCount is 0
             ? "Nothing of this track is in Sample Staging yet, so the name is recorded now and the stems are made with it."
-            : "Renames the files in Sample Staging and their entry in Ableton's tag store, so the tags follow the name.";
+            : $"Renames the files in {Folders} and their entries in Ableton's tag store, so the tags follow the name.";
 
-    /// <summary>This track's files still in <c>Sample Staging</c>, warp guide included.</summary>
-    private int StagedFileCount =>
-        Samples.Count(sample => !sample.IsInLibrary) + (HasWarpGuide ? 1 : 0);
+    /// <summary>This track's files on disk, warp guide included.</summary>
+    private int FileCount => Samples.Count + (HasWarpGuide ? 1 : 0);
+
+    private string Folders =>
+        (
+            Samples.Any(sample => !sample.IsInLibrary) || HasWarpGuide,
+            Samples.Any(sample => sample.IsInLibrary)
+        ) switch
+        {
+            (true, true) => "Sample Staging and Mashup Samples",
+            (false, true) => "Mashup Samples",
+            _ => "Sample Staging",
+        };
 
     /// <summary>The current verdict, or null when the ledger has never seen this track.</summary>
     public LedgerRun? Verdict { get; init; }

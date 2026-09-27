@@ -6,14 +6,23 @@ using Humanizer;
 
 namespace Crateside.Core.Orchestration.Edits;
 
+/// <summary>A track's files in <c>Mashup Samples</c>, by the upload they were cut from.</summary>
+public delegate IReadOnlyList<string> ReadLibraryFiles(string videoId);
+
+/// <summary>The names of the user's Ableton sets that use any of these samples by path.</summary>
+public delegate IReadOnlyList<string> FindSetsUsing(IReadOnlyCollection<string> samples);
+
 /// <summary>
-/// Puts the user's own name on a track, and on the files it has in <c>Sample Staging</c>.
+/// Puts the user's own name on a track, and on its files in <c>Sample Staging</c> and
+/// <c>Mashup Samples</c> (ADR 0039).
 /// </summary>
 public sealed class TrackRename(
     QueueSettingsStore settings,
     ReadStagedFiles staged,
     AbletonFolderInfoWriter writer,
-    CratesidePaths paths
+    CratesidePaths paths,
+    ReadLibraryFiles? library = null,
+    FindSetsUsing? sets = null
 )
 {
     /// <summary>What renaming this track to <paramref name="name"/> would do, or why it cannot.</summary>
@@ -24,9 +33,9 @@ public sealed class TrackRename(
         if (!StemFileName.IsUsable(wanted))
             return Impossible(wanted, @"A name cannot be blank or contain \ / : * ? "" < > |.");
 
-        var moves = staged(videoId)
-            .Select(stem => new { Stem = stem, To = StemFileName.Renamed(stem.Path, wanted) })
-            .Where(move => !PathsMatch(move.Stem.Path, move.To))
+        var moves = Files(videoId)
+            .Select(file => new Move(file.Path, StemFileName.Renamed(file.Path, wanted), file.Root))
+            .Where(move => !PathsMatch(move.From, move.To))
             .ToArray();
 
         // The analysis file counts — overwriting one would replace somebody's warp markers.
@@ -38,7 +47,7 @@ public sealed class TrackRename(
         )
             return Impossible(
                 wanted,
-                $"{Path.GetFileName(clash.To)} is already in Sample Staging."
+                $"{Path.GetFileName(clash.To)} is already in {Path.GetFileName(clash.Root)}."
             );
 
         if (
@@ -49,8 +58,21 @@ public sealed class TrackRename(
                 "Two of these files would end up with the same name. They have no presets to tell them apart."
             );
 
-        return new RenamePlan { Name = wanted, Renaming = [.. moves.Select(move => move.Stem)] };
+        return new RenamePlan
+        {
+            Name = wanted,
+            Renaming = [.. moves.Select(move => move.From)],
+            Sets = moves.Length is 0
+                ? []
+                : sets?.Invoke([.. moves.Select(move => move.From)]) ?? [],
+        };
     }
+
+    /// <summary>The user's sets that use any of this track's files, whatever the new name.</summary>
+    public IReadOnlyList<string> SetsUsing(string videoId) =>
+        Files(videoId).Select(file => file.Path).ToArray() is { Length: > 0 } files
+            ? sets?.Invoke(files) ?? []
+            : [];
 
     /// <summary>Records the name and puts it on whatever files the track already has.</summary>
     public RenameOutcome Apply(string videoId, string name) => Rename(videoId, name, stored: name);
@@ -74,20 +96,20 @@ public sealed class TrackRename(
 
         settings.SetName(videoId, stored);
 
-        List<TagRename> done = [];
+        List<Move> done = [];
         List<string> markersLost = [];
 
-        foreach (var stem in plan.Renaming)
+        foreach (var from in plan.Renaming)
         {
-            var to = StemFileName.Renamed(stem.Path, plan.Name);
+            var move = new Move(from, StemFileName.Renamed(from, plan.Name), RootOf(from));
 
             try
             {
-                File.Move(stem.Path, to);
-                done.Add(Entry(stem.Path, to));
+                File.Move(move.From, move.To);
+                done.Add(move);
 
-                if (!TryMoveAnalysis(stem.Path, to))
-                    markersLost.Add(Path.GetFileName(to));
+                if (!TryMoveAnalysis(move.From, move.To))
+                    markersLost.Add(Path.GetFileName(move.To));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
@@ -98,7 +120,7 @@ public sealed class TrackRename(
                     Name = plan.Name,
                     Renamed = done.Count,
                     Problem =
-                        $"{stem.FileName} could not be renamed — it is probably open in Ableton. "
+                        $"{Path.GetFileName(from)} could not be renamed — it is probably open in Ableton. "
                         + "Close it and try again.",
                 };
             }
@@ -147,16 +169,36 @@ public sealed class TrackRename(
                 + $"{"file".ToQuantity(markersLost.Count)}.",
         };
 
-    /// <summary>Carries the Ableton keywords across to the new names.</summary>
-    private string? MoveTags(IReadOnlyList<TagRename> done) =>
-        done.Count is 0 ? null : writer.Rename(paths.SampleStaging, done).Error;
+    /// <summary>Carries the Ableton keywords across to the new names, in each folder's store.</summary>
+    private string? MoveTags(IReadOnlyList<Move> done) =>
+        done.GroupBy(move => move.Root, StringComparer.OrdinalIgnoreCase)
+            .Select(folder =>
+                writer
+                    .Rename(
+                        folder.Key,
+                        [
+                            .. folder.Select(move => new TagRename
+                            {
+                                From = Path.GetRelativePath(folder.Key, move.From),
+                                To = Path.GetRelativePath(folder.Key, move.To),
+                            }),
+                        ]
+                    )
+                    .Error
+            )
+            .OfType<string>()
+            .FirstOrDefault();
 
-    private TagRename Entry(string from, string to) =>
-        new()
-        {
-            From = Path.GetRelativePath(paths.SampleStaging, from),
-            To = Path.GetRelativePath(paths.SampleStaging, to),
-        };
+    private IEnumerable<(string Path, string Root)> Files(string videoId) =>
+        [
+            .. staged(videoId).Select(stem => (stem.Path, paths.SampleStaging)),
+            .. (library?.Invoke(videoId) ?? []).Select(path => (path, paths.MashupSamples)),
+        ];
+
+    private string RootOf(string path) =>
+        path.StartsWith(paths.MashupSamples, StringComparison.OrdinalIgnoreCase)
+            ? paths.MashupSamples
+            : paths.SampleStaging;
 
     private static RenamePlan Impossible(string name, string refusal) =>
         new()
@@ -168,6 +210,8 @@ public sealed class TrackRename(
 
     private static bool PathsMatch(string left, string right) =>
         left.Equals(right, StringComparison.OrdinalIgnoreCase);
+
+    private sealed record Move(string From, string To, string Root);
 }
 
 /// <summary>What a rename would do. Read before it happens, to say so on screen.</summary>
@@ -176,8 +220,14 @@ public sealed record RenamePlan
     /// <summary>The name as it would be stored — trimmed, and what the files would be called.</summary>
     public required string Name { get; init; }
 
-    /// <summary>The staged files that would change name. Empty when the track has none yet.</summary>
-    public required IReadOnlyList<StagedFile> Renaming { get; init; }
+    /// <summary>The files that would change name. Empty when the track has none yet.</summary>
+    public required IReadOnlyList<string> Renaming { get; init; }
+
+    /// <summary>
+    /// The user's Ableton sets that use those files by path, and will show them missing until
+    /// relinked (ADR 0039).
+    /// </summary>
+    public IReadOnlyList<string> Sets { get; init; } = [];
 
     /// <summary>Why this cannot happen, or null when it can.</summary>
     public string? Refusal { get; init; }

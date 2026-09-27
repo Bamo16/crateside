@@ -5,6 +5,18 @@ namespace Crateside.Core.Samples;
 /// </summary>
 public static class StemTagReader
 {
+    /// <summary>The audio files under <paramref name="root"/> whose tags name this upload.</summary>
+    public static IReadOnlyList<string> FilesCutFrom(string root, string videoId) =>
+        Directory.Exists(root)
+            ?
+            [
+                .. Directory
+                    .EnumerateFiles(root, "*", SearchOption.AllDirectories)
+                    .Where(SampleFiles.IsAudio)
+                    .Where(path => Read(path)?.Provenance?.SourceVideoId == videoId),
+            ]
+            : [];
+
     /// <summary>
     /// Reads the tags crateside needs from a stem file. Returns null if the file is
     /// unreadable or its format is unsupported.
