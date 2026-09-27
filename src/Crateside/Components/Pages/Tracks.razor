@@ -403,6 +403,10 @@
 @code {
     private TracksView? _view;
     private TrackFilter _filter = TrackFilter.Unfinished;
+
+    /// <summary>A filter to open on, by name, as Counts links to Tags to answer.</summary>
+    [SupplyParameterFromQuery(Name = "filter")]
+    public string? OpenOn { get; set; }
     private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
 
     private static readonly TimeSpan ToastLife = TimeSpan.FromSeconds(20);
@@ -565,6 +569,9 @@
         Source.ReadyToWarp += OnReadyToWarp;
         Separation.Changed += OnChanged;
         Judging.Changed += OnChanged;
+
+        if (Enum.TryParse<TrackFilter>(OpenOn, ignoreCase: true, out var filter))
+            _filter = filter;
 
         await Source.EnsureFreshAsync(TimeSpan.FromSeconds(30));
 

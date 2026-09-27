@@ -82,7 +82,8 @@ public class LibraryKeyReaderRealLibraryTests
         return new LibraryKeyReader(
             paths,
             new AbletonIndexReader(paths),
-            new AbletonFolderInfoReader()
+            new AbletonFolderInfoReader(),
+            new WarpTempoReader()
         ).Read();
     }
 

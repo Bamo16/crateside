@@ -80,7 +80,8 @@ public class LibrarySummaryTests : IDisposable
         var distribution = new LibraryKeyReader(
             paths,
             new AbletonIndexReader(paths),
-            new AbletonFolderInfoReader()
+            new AbletonFolderInfoReader(),
+            new WarpTempoReader()
         ).Read();
 
         Assert.Equal(0, distribution.FileCount);
@@ -95,7 +96,8 @@ public class LibrarySummaryTests : IDisposable
             new LibraryKeyReader(
                 paths,
                 new AbletonIndexReader(paths),
-                new AbletonFolderInfoReader()
+                new AbletonFolderInfoReader(),
+                new WarpTempoReader()
             )
         );
     }

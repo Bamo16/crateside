@@ -1,0 +1,611 @@
+.body {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 0 48px 48px;
+}
+
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    max-width: 1112px;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.subtitle {
+    margin: 4px 0 0;
+    max-width: 64ch;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--text-75);
+}
+
+.refresh {
+    flex: none;
+    padding: 7px 14px;
+    background: var(--raised);
+    color: var(--text);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.refresh:disabled {
+    color: var(--text-50);
+    cursor: default;
+}
+
+.empty {
+    margin: 32px 0;
+    color: var(--text-60);
+}
+
+/* The one action on the page, out of the report flow. */
+.band {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 1112px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+}
+
+.band-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.band-label {
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-40);
+}
+
+.band-value {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.band-status {
+    margin: 0;
+    max-width: 80ch;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-60);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 168px minmax(0, var(--table-library));
+    gap: 48px;
+    align-items: start;
+}
+
+.index {
+    position: sticky;
+    top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 4px;
+}
+
+.index-head {
+    padding: 0 10px 8px;
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-40);
+}
+
+.index a {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-60);
+    text-decoration: none;
+}
+
+.index a:hover,
+.index a.in-view {
+    background: var(--surface);
+    color: var(--text);
+}
+
+.index .count {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-40);
+}
+
+.panels {
+    display: flex;
+    flex-direction: column;
+    gap: 44px;
+    min-width: 0;
+}
+
+section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    scroll-margin-top: 24px;
+}
+
+h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+h4 {
+    margin: 18px 0 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.lead {
+    margin: 0;
+    max-width: 72ch;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--text-75);
+}
+
+.lead a {
+    color: var(--text);
+    text-underline-offset: 3px;
+}
+
+.footnote {
+    margin: 0;
+    max-width: 80ch;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-60);
+}
+
+.fold {
+    margin: 0;
+    padding: 0 12px;
+    font-size: 12.5px;
+    color: var(--text-50);
+}
+
+.link {
+    padding: 0;
+    font: inherit;
+    color: var(--text);
+    background: none;
+    border: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.distribution {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.distribution th {
+    padding: 6px 12px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-50);
+    border-bottom: 1px solid var(--line-strong);
+}
+
+.distribution td {
+    padding: 5px 12px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--line);
+}
+
+.name-col {
+    width: 110px;
+}
+
+.wide-name-col {
+    width: 190px;
+}
+
+.camelot-col {
+    width: 80px;
+}
+
+.count-col {
+    width: 64px;
+}
+
+.peaks-col {
+    width: 280px;
+}
+
+.artist-col {
+    width: 170px;
+}
+
+.keys-col {
+    width: 150px;
+}
+
+.bpm-col {
+    width: 96px;
+}
+
+.distribution td.mono,
+.camelot,
+.peaks,
+.quiet {
+    font-size: 13px;
+}
+
+.camelot {
+    color: var(--text-50);
+}
+
+.peaks {
+    font-size: 12.5px;
+    color: var(--text-75);
+    white-space: pre;
+}
+
+.quiet {
+    color: var(--text-60);
+}
+
+.distribution td.quiet {
+    font-size: 12.5px;
+}
+
+.artist {
+    max-width: 170px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* `.distribution th` also sets text-align, and an element selector beats a bare class. */
+.numeric,
+.distribution th.numeric {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+/* The key table tells minor from major by colour, the one bar table that does; new ones are
+   teal only. */
+.bar {
+    display: block;
+    height: 12px;
+    min-width: 1px;
+    border-radius: 2px;
+    background: var(--teal);
+}
+
+.bar.major {
+    background: var(--amber);
+}
+
+/* A tempo bin: the whole bin faint, the songs on a shared tempo solid from the left. */
+.bar.split {
+    display: flex;
+    overflow: hidden;
+    background: rgba(111, 199, 214, 0.35);
+}
+
+.bar .peak {
+    display: block;
+    height: 12px;
+    background: var(--teal);
+}
+
+.empty-bucket td {
+    color: var(--text-50);
+}
+
+.empty-bucket .bar {
+    background: var(--line-strong);
+}
+
+.shapes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 24px;
+    margin: 0;
+    padding: 4px 12px;
+    font-size: 13px;
+    color: var(--text-60);
+}
+
+.value {
+    color: var(--text);
+}
+
+.gaps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-75);
+}
+
+.gaps li {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 12px;
+    border-bottom: 1px solid var(--line);
+}
+
+.detectors {
+    display: flex;
+    flex-direction: column;
+}
+
+.det-row {
+    display: grid;
+    grid-template-columns: 190px minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+}
+
+.det-row > span {
+    padding: 6px 12px;
+}
+
+.det-head {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-50);
+    border-bottom-color: var(--line-strong);
+}
+
+.finding {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.band-name {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.band-title {
+    font-size: 14px;
+}
+
+.finding .band-title {
+    font-weight: 600;
+}
+
+.rule {
+    font-size: 11.5px;
+    color: var(--text-50);
+}
+
+.det-cell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 40px;
+    gap: 10px;
+    align-items: center;
+}
+
+.det-cell .count {
+    padding: 0;
+    font-size: 13px;
+    text-align: right;
+    color: var(--text);
+    background: none;
+    border: 0;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.det-cell .count:hover:not(:disabled),
+.det-cell .count.open {
+    text-decoration: underline;
+}
+
+.det-cell .count.open {
+    font-weight: 500;
+}
+
+.det-cell .count:disabled {
+    color: var(--text-50);
+    cursor: default;
+}
+
+.band-songs {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 8px 0 8px 190px;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+}
+
+.band-songs .fold {
+    padding: 0;
+}
+
+.song-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 70px 70px 70px;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 13.5px;
+    border-bottom: 1px solid var(--line);
+}
+
+.song-head {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-50);
+    border-bottom-color: var(--line-strong);
+}
+
+.song-head .numeric {
+    font-family: inherit;
+    font-size: 12px;
+}
+
+.misses {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 6px;
+}
+
+.misses-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 12.5px;
+}
+
+.misses-head .quiet {
+    color: var(--text-50);
+}
+
+.strip-row {
+    display: grid;
+    grid-template-columns: 190px minmax(0, 1fr);
+    align-items: end;
+}
+
+.strip-name {
+    padding: 0 12px 4px;
+    font-size: 13px;
+    color: var(--text-75);
+}
+
+.strip {
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 64px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.strip span {
+    flex: 1;
+    background: var(--teal);
+    border-radius: 1px 1px 0 0;
+}
+
+.ticks {
+    position: relative;
+    height: 30px;
+}
+
+.tick {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 11.5px;
+    color: var(--text-50);
+    transform: translateX(-50%);
+}
+
+.tick.strong {
+    color: var(--text);
+}
+
+.tick-mark {
+    width: 1px;
+    height: 5px;
+    background: var(--text-30);
+}
+
+.opener summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-75);
+    cursor: pointer;
+    list-style: none;
+}
+
+.opener summary::before {
+    content: "▸";
+    font-family: var(--font-mono);
+}
+
+.opener[open] summary::before {
+    content: "▾";
+}
+
+.opener .aside {
+    margin-left: auto;
+    font-weight: 400;
+    color: var(--text-50);
+}
+
+.unkeyed {
+    margin: 10px 0 0;
+    padding-left: 18px;
+    color: var(--text-75);
+}
+
+.unkeyed li {
+    padding: 2px 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+@media (max-width: 1100px) {
+    .grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 24px;
+    }
+
+    .index {
+        position: static;
+        flex-flow: row wrap;
+        gap: 4px;
+    }
+
+    .index-head {
+        display: none;
+    }
+}

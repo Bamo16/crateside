@@ -126,6 +126,21 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
   Mainstream / Obscure (`GenreStrip Shape="Chips"`, `FamiliarityStrip Inline`). An answered row
   stays in place at 45% until the view is left.
 
+## Counts
+
+Handoff 08. One long page of bar tables, one count per song, under a sticky index (168px) that
+marks the panel in view; below a 1100px viewport the index is a wrapping row and the grid one
+column. Panel order: By key, By tempo, By genre, By familiarity, By artist, Detectors against the
+warps, files with no key.
+
+- **The action band** above the grid is the page's one place for an action (*Never judged*).
+  Everything below it is a report.
+- **Top N · all.** Key shows 8 rows and artists 12, then an *all* link that unfolds in place.
+- **Bar tables are teal.** The key table's minor (teal) and major (amber) bars are a known
+  exception it already was; a new bar table is teal only.
+- **A tempo bin's bar is split**: the bin total at 35% teal, and from the left a solid segment for
+  songs on a tempo that 10 or more share.
+
 ## Settings
 
 Handoff 10. Every setting is one **row**: name (14px/500) and a one-line gist (`--text-60`) in a
@@ -146,7 +161,7 @@ Handoff 10. Every setting is one **row**: name (14px/500) and a one-line gist (`
 |---|---|
 | Tracks | Shade |
 | Track details | Bar, Tracks tab active |
-| Library | Bar |
+| Counts | Bar |
 | Partners | Bar |
 | Settings | Flush |
 
@@ -183,7 +198,13 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 
 - **No Separation or Judging rows.** Their pause controls already live in the Tracks header.
 - **Folders also lists Ableton projects**, which postdates the design (ADR 0040).
-- **Library and Partners keep their names** until Counts and Tools are confirmed; the backfill
-  link says *queue them on Library*.
 - **Emptying as tracks are taken on** is disabled until removal access is granted, with a status
   saying so. The canvas only drew the authorized state.
+
+### Counts (handoff 08, #68, #60, #56)
+
+- **The detector figures differ from the canvas**, which drew illustrative middle bands. Measured
+  on 351 songs (2026-09-27), some detectors read fast as well as slow (×4/3, ×3/2), so the fourth
+  band is *Triplet or dotted* with its wider rule, as the handoff allows.
+- **The familiarity index count** is the values with songs (2 when both are used), as the canvas
+  shows it.

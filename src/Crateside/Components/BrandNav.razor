@@ -5,7 +5,7 @@
     </a>
     <nav>
         <a class="tab @(Active is Tab.Tracks ? "active" : null)" href="">Tracks</a>
-        <a class="tab @(Active is Tab.Library ? "active" : null)" href="library">Library</a>
+        <a class="tab @(Active is Tab.Counts ? "active" : null)" href="counts">Counts</a>
         <a class="tab @(Active is Tab.Partners ? "active" : null)" href="partners">Partners</a>
         <a class="tab @(Active is Tab.Settings ? "active" : null)" href="settings">Settings</a>
     </nav>
@@ -15,7 +15,7 @@
     public enum Tab
     {
         Tracks,
-        Library,
+        Counts,
         Partners,
         Settings,
     }

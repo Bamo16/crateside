@@ -3,18 +3,20 @@ using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Pairing;
 using Crateside.Core.Samples;
+using Crateside.Core.Tracks;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Library;
 
 /// <summary>
-/// How many tracks in the finished library carry each key and genre, counted from Ableton's
-/// index (ADR 0013): a song's samples and sources count once between them.
+/// The finished library one song at a time, keys and genres from Ableton's index (ADR 0013): a
+/// song's samples and sources count once between them.
 /// </summary>
 public sealed class LibraryKeyReader(
     IOptions<CratesidePaths> paths,
     AbletonIndexReader index,
-    AbletonFolderInfoReader folderInfo
+    AbletonFolderInfoReader folderInfo,
+    WarpTempoReader tempos
 )
 {
     private readonly CratesidePaths _paths = paths.Value;
@@ -29,7 +31,7 @@ public sealed class LibraryKeyReader(
         var tags = index.Read(root);
         var backed = folderInfo.Read(root);
         var ledger = KeyLedger.Read(_paths.Ledger);
-        var tracks = new Dictionary<string, List<AbletonFileTags?>>(
+        var tracks = new Dictionary<string, List<(string File, AbletonFileTags? Tags)>>(
             StringComparer.OrdinalIgnoreCase
         );
         var unkeyed = new List<string>();
@@ -51,7 +53,7 @@ public sealed class LibraryKeyReader(
             if (!tracks.TryGetValue(track, out var samples))
                 tracks[track] = samples = [];
 
-            samples.Add(applied);
+            samples.Add((file, applied));
 
             if (MusicKey.FromString(applied?.Key) is null)
                 unkeyed.Add(Path.GetRelativePath(root, file));
@@ -59,8 +61,10 @@ public sealed class LibraryKeyReader(
                 perishable++;
         }
 
-        var keys = tracks.Values.Select(samples => MostCommon(samples, s => s?.Key)).ToArray();
-        var genres = tracks.Values.Select(samples => MostCommon(samples, s => s?.Genre)).ToArray();
+        var songs = tracks
+            .Select(pair => Song(pair.Key, pair.Value, ledger))
+            .OrderBy(song => song.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         return new KeyDistribution
         {
@@ -69,20 +73,51 @@ public sealed class LibraryKeyReader(
             [
                 .. MusicKey.AllKeys.Select(k => new KeyCount(
                     k,
-                    keys.Count(key => k.Equals(MusicKey.FromString(key)))
+                    songs.Count(song => k.Equals(song.Key))
                 )),
             ],
             Genres =
             [
                 .. GenreVocabulary.All.Select(g => new GenreCount(
                     g,
-                    genres.Count(genre => genre == g)
+                    songs.Count(song => song.Genre == g)
                 )),
             ],
             FileCount = files,
             TrackCount = tracks.Count,
             Unkeyed = [.. unkeyed.Order(StringComparer.OrdinalIgnoreCase)],
             PerishableCount = perishable,
+            Songs = songs,
+        };
+    }
+
+    private LibrarySong Song(
+        string track,
+        List<(string File, AbletonFileTags? Tags)> samples,
+        KeyLedger ledger
+    )
+    {
+        var run = ledger.TryGetLatestBySong(track, out var found) ? found : null;
+        var name = run is { Artist.Length: > 0, Title.Length: > 0 }
+            ? run.DisplayName
+            : StemFileName.WithoutPreset(samples[0].File);
+
+        return new LibrarySong
+        {
+            Song = track,
+            Name = name,
+            Artist = name.Split(" - ", 2) is [{ Length: > 0 } credited, _]
+                ? ArtistCredit.Primary(credited)
+                : null,
+            Key = MusicKey.FromString(MostCommon(samples, s => s.Tags?.Key)),
+            Genre = MostCommon(samples, s => s.Tags?.Genre),
+            Tempo = samples
+                .OrderByDescending(s =>
+                    s.File.Contains("(Instrumental", StringComparison.OrdinalIgnoreCase)
+                )
+                .Select(s => tempos.Read(s.File))
+                .FirstOrDefault(tempo => tempo is not null),
+            Run = run,
         };
     }
 
@@ -96,8 +131,8 @@ public sealed class LibraryKeyReader(
             : $"name:{StemFileName.WithoutPreset(file)}";
 
     private static string? MostCommon(
-        IEnumerable<AbletonFileTags?> samples,
-        Func<AbletonFileTags?, string?> value
+        IEnumerable<(string File, AbletonFileTags? Tags)> samples,
+        Func<(string File, AbletonFileTags? Tags), string?> value
     ) =>
         samples
             .Select(value)
@@ -134,6 +169,8 @@ public sealed record KeyDistribution
     /// (ADR 0023).
     /// </summary>
     public int PerishableCount { get; init; }
+
+    public IReadOnlyList<LibrarySong> Songs { get; init; } = [];
 
     public int KeyedTrackCount => Counts.Sum(c => c.Tracks);
 

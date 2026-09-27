@@ -60,6 +60,9 @@ public sealed record LedgerRun
     /// <summary>The warp starting point, not a tagged value. Rough by design.</summary>
     public double? Bpm { get; init; }
 
+    /// <summary>ffmpeg <c>beatdetect</c>'s own figure, before keytag chose <see cref="Bpm"/>.</summary>
+    public double? BeatdetectBpm { get; init; }
+
     /// <summary>
     /// Whether this run produced a key the user would actually tag with. A LOW verdict may
     /// carry candidates, but only HIGH and MEDIUM count as an answer.
@@ -86,6 +89,7 @@ public sealed record LedgerRun
             Mode = dto.Verdict?.Mode,
             Confidence = ParseConfidence(dto.Verdict?.Confidence),
             Bpm = dto.Bpm?.Value,
+            BeatdetectBpm = dto.Bpm?.Beatdetect,
         };
     }
 
@@ -142,5 +146,7 @@ internal sealed record LedgerRunDto
     internal sealed record BpmDto
     {
         public double? Value { get; init; }
+
+        public double? Beatdetect { get; init; }
     }
 }

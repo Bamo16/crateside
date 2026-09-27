@@ -1,0 +1,26 @@
+using Crateside.Core.Ableton;
+using Crateside.Core.Ledger;
+using Crateside.Core.Pairing;
+
+namespace Crateside.Core.Library;
+
+/// <summary>One finished song in the library, however many samples it has.</summary>
+public sealed record LibrarySong
+{
+    /// <summary>The ledger's song identity, else the upload, else <c>name:</c> and the file's name.</summary>
+    public required string Song { get; init; }
+
+    public required string Name { get; init; }
+
+    /// <summary>The first credited artist (ADR 0033), or null when the name credits nobody.</summary>
+    public string? Artist { get; init; }
+
+    public MusicKey? Key { get; init; }
+
+    public string? Genre { get; init; }
+
+    /// <summary>The finished warp's tempo, the instrumental's where there is one (ADR 0038).</summary>
+    public WarpTempo? Tempo { get; init; }
+
+    public LedgerRun? Run { get; init; }
+}
