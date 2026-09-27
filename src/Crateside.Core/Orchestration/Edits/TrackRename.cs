@@ -9,12 +9,9 @@ namespace Crateside.Core.Orchestration.Edits;
 /// <summary>A track's files in <c>Mashup Samples</c>, by the upload they were cut from.</summary>
 public delegate IReadOnlyList<string> ReadLibraryFiles(string videoId);
 
-/// <summary>The names of the user's Ableton sets that use any of these samples by path.</summary>
-public delegate IReadOnlyList<string> FindSetsUsing(IReadOnlyCollection<string> samples);
-
 /// <summary>
-/// Puts the user's own name on a track, and on its files in <c>Sample Staging</c> and
-/// <c>Mashup Samples</c> (ADR 0039).
+/// Puts the user's own name on a track, on its files in <c>Sample Staging</c> and
+/// <c>Mashup Samples</c>, and in the sets that use them (ADR 0039, ADR 0040).
 /// </summary>
 public sealed class TrackRename(
     QueueSettingsStore settings,
@@ -22,7 +19,7 @@ public sealed class TrackRename(
     AbletonFolderInfoWriter writer,
     CratesidePaths paths,
     ReadLibraryFiles? library = null,
-    FindSetsUsing? sets = null
+    ISetLinks? sets = null
 )
 {
     /// <summary>What renaming this track to <paramref name="name"/> would do, or why it cannot.</summary>
@@ -58,21 +55,23 @@ public sealed class TrackRename(
                 "Two of these files would end up with the same name. They have no presets to tell them apart."
             );
 
+        var check = Check([.. moves.Select(move => move.From)]);
+
         return new RenamePlan
         {
             Name = wanted,
-            Renaming = [.. moves.Select(move => move.From)],
-            Sets = moves.Length is 0
-                ? []
-                : sets?.Invoke([.. moves.Select(move => move.From)]) ?? [],
+            Renaming = check.Refusal is null ? [.. moves.Select(move => move.From)] : [],
+            Sets = check.Sets,
+            Refusal = check.Refusal,
         };
     }
 
-    /// <summary>The user's sets that use any of this track's files, whatever the new name.</summary>
-    public IReadOnlyList<string> SetsUsing(string videoId) =>
-        Files(videoId).Select(file => file.Path).ToArray() is { Length: > 0 } files
-            ? sets?.Invoke(files) ?? []
-            : [];
+    /// <summary>
+    /// The user's sets that use any of this track's files, whatever the new name, and why the
+    /// rename must wait if one of them is open.
+    /// </summary>
+    public SetCheck SetsUsing(string videoId) =>
+        Check([.. Files(videoId).Select(file => file.Path)]);
 
     /// <summary>Records the name and puts it on whatever files the track already has.</summary>
     public RenameOutcome Apply(string videoId, string name) => Rename(videoId, name, stored: name);
@@ -126,11 +125,40 @@ public sealed class TrackRename(
             }
         }
 
+        var relink = done.Count is 0
+            ? null
+            : sets?.Relink([.. done.Select(move => new SampleMove(move.From, move.To))]);
+
         return new RenameOutcome
         {
             Name = plan.Name,
             Renamed = done.Count,
-            Note = Note(MoveTags(done), markersLost),
+            Note = Note(MoveTags(done), markersLost, relink?.Failed ?? []),
+        };
+    }
+
+    private SetCheck Check(IReadOnlyCollection<string> files)
+    {
+        if (files.Count is 0 || sets is null)
+            return new SetCheck([], null);
+
+        var found = sets.Using(files);
+
+        if (found.Count is 0)
+            return new SetCheck(found, null);
+
+        return sets.ReadOpenSet() switch
+        {
+            { Set: { } open } when found.Contains(open, StringComparer.OrdinalIgnoreCase) => new(
+                found,
+                $"{open} is open in Ableton and uses these files. Open another set, then rename."
+            ),
+            { IsRunning: true, Set: null } => new(
+                found,
+                "Ableton is running, but its window does not say which set is open. "
+                    + "Open a set or close Ableton, then rename."
+            ),
+            _ => new(found, null),
         };
     }
 
@@ -157,17 +185,29 @@ public sealed class TrackRename(
     }
 
     /// <summary>What did not follow the files, or null when everything did.</summary>
-    private static string? Note(string? tags, IReadOnlyList<string> markersLost) =>
-        (tags, markersLost) switch
-        {
-            (null, { Count: 0 }) => null,
-            (null, _) =>
-                $"Ableton's warp markers did not follow {"file".ToQuantity(markersLost.Count)}; "
-                    + "they will be analysed again.",
-            ({ } problem, { Count: 0 }) => problem,
-            _ => $"{tags} Warp markers were also left behind for "
-                + $"{"file".ToQuantity(markersLost.Count)}.",
-        };
+    private static string? Note(
+        string? tags,
+        IReadOnlyList<string> markersLost,
+        IReadOnlyList<string> setsLeft
+    ) =>
+        string.Join(
+            " ",
+            new[]
+            {
+                tags,
+                markersLost.Count is 0
+                    ? null
+                    : $"Ableton's warp markers did not follow {"file".ToQuantity(markersLost.Count)}; "
+                        + "they will be analysed again.",
+                setsLeft.Count is 0
+                    ? null
+                    : $"{string.Join(", ", setsLeft)} could not be updated; relink "
+                        + $"{(setsLeft.Count is 1 ? "it" : "them")} in Ableton.",
+            }.OfType<string>()
+        )
+            is { Length: > 0 } note
+            ? note
+            : null;
 
     /// <summary>Carries the Ableton keywords across to the new names, in each folder's store.</summary>
     private string? MoveTags(IReadOnlyList<Move> done) =>
@@ -214,6 +254,9 @@ public sealed class TrackRename(
     private sealed record Move(string From, string To, string Root);
 }
 
+/// <summary>The sets a rename would update, and why it must wait, or null when it need not.</summary>
+public sealed record SetCheck(IReadOnlyList<string> Sets, string? Refusal);
+
 /// <summary>What a rename would do. Read before it happens, to say so on screen.</summary>
 public sealed record RenamePlan
 {
@@ -223,10 +266,7 @@ public sealed record RenamePlan
     /// <summary>The files that would change name. Empty when the track has none yet.</summary>
     public required IReadOnlyList<string> Renaming { get; init; }
 
-    /// <summary>
-    /// The user's Ableton sets that use those files by path, and will show them missing until
-    /// relinked (ADR 0039).
-    /// </summary>
+    /// <summary>The user's Ableton sets that use those files by path, to be relinked (ADR 0040).</summary>
     public IReadOnlyList<string> Sets { get; init; } = [];
 
     /// <summary>Why this cannot happen, or null when it can.</summary>

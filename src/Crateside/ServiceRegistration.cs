@@ -69,6 +69,10 @@ public static class ServiceRegistration
         services.AddSingleton<LibrarySummary>();
         services.AddSingleton<StagingReader>();
         services.AddSingleton<WarpTempoReader>();
+        services.AddSingleton<ISetLinks>(sp => new AbletonSetLinks(
+            sp.GetRequiredService<CratesidePaths>(),
+            TimeProvider.System
+        ));
         services.AddSingleton<PlaylistReader>();
         services.AddSingleton<EvidenceService>();
         services.AddSingleton<QueueSettingsStore>();
@@ -308,8 +312,7 @@ public static class ServiceRegistration
                     sp.GetRequiredService<CratesidePaths>().MashupSamples,
                     videoId
                 ),
-            samples =>
-                AbletonSets.Using(sp.GetRequiredService<CratesidePaths>().AbletonProjects, samples)
+            sp.GetRequiredService<ISetLinks>()
         ));
         services.AddSingleton(sp => new LookalikeAnswer(
             sp.GetRequiredService<QueueSettingsStore>(),

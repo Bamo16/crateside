@@ -24,7 +24,7 @@ public class TrackRenameTests : IDisposable
     private readonly AbletonFolderInfoReader _reader = new();
     private readonly List<StagedFile> _staged = [];
     private readonly List<string> _library = [];
-    private readonly List<IReadOnlyCollection<string>> _setLookups = [];
+    private readonly FakeSets _sets = new();
 
     public TrackRenameTests()
     {
@@ -49,23 +49,8 @@ public class TrackRenameTests : IDisposable
     private QueueSettingsStore Settings() =>
         new(Options.Create(new PlaylistOptions()), Path.Combine(_root, "settings.json"));
 
-    private TrackRename Renamer(
-        QueueSettingsStore? settings = null,
-        IReadOnlyList<string>? sets = null
-    ) =>
-        new(
-            settings ?? Settings(),
-            _ => _staged,
-            _writer,
-            _paths,
-            _ => _library,
-            samples =>
-            {
-                _setLookups.Add(samples);
-
-                return sets ?? [];
-            }
-        );
+    private TrackRename Renamer(QueueSettingsStore? settings = null) =>
+        new(settings ?? Settings(), _ => _staged, _writer, _paths, _ => _library, _sets);
 
     private string InLibrary(string name)
     {
@@ -203,12 +188,89 @@ public class TrackRenameTests : IDisposable
     public void The_plan_names_the_sets_that_use_the_files_before_anything_moves()
     {
         var sample = InLibrary("99th Street (Vocal - Full).flac");
+        _sets.Users = ["Mashup One"];
 
-        var plan = Renamer(sets: ["Mashup One"]).PlanFor(Video, "Starjunk 95 - 99th Street");
+        var plan = Renamer().PlanFor(Video, "Starjunk 95 - 99th Street");
 
         Assert.Equal(["Mashup One"], plan.Sets);
-        Assert.Equal([sample], Assert.Single(_setLookups));
+        Assert.Equal([sample], Assert.Single(_sets.Lookups));
         Assert.True(File.Exists(sample));
+    }
+
+    [Fact]
+    public void The_sets_are_relinked_to_the_new_names()
+    {
+        var sample = InLibrary("99th Street (Vocal - Full).flac");
+        _sets.Users = ["Mashup One"];
+
+        var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
+
+        Assert.Null(outcome.Note);
+        Assert.Equal(
+            new SampleMove(
+                sample,
+                Path.Combine(_paths.MashupSamples, "Starjunk 95 - 99th Street (Vocal - Full).flac")
+            ),
+            Assert.Single(Assert.Single(_sets.Relinks))
+        );
+    }
+
+    [Fact]
+    public void A_set_open_in_Ableton_that_uses_the_files_stops_the_rename()
+    {
+        var sample = InLibrary("99th Street (Vocal - Full).flac");
+        _sets.Users = ["Mashup One"];
+        _sets.Open = new OpenSet(IsRunning: true, "Mashup One");
+
+        var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
+
+        Assert.Contains("Mashup One is open in Ableton", outcome.Problem);
+        Assert.True(File.Exists(sample));
+        Assert.Empty(_sets.Relinks);
+    }
+
+    [Fact]
+    public void A_set_open_in_Ableton_that_does_not_use_the_files_is_no_obstacle()
+    {
+        InLibrary("99th Street (Vocal - Full).flac");
+        _sets.Users = ["Mashup One"];
+        _sets.Open = new OpenSet(IsRunning: true, "Something Else");
+
+        Assert.True(Renamer().Apply(Video, "Starjunk 95 - 99th Street").Succeeded);
+    }
+
+    [Fact]
+    public void Ableton_running_without_saying_which_set_is_open_stops_the_rename()
+    {
+        InLibrary("99th Street (Vocal - Full).flac");
+        _sets.Users = ["Mashup One"];
+        _sets.Open = OpenSet.Unknown;
+
+        var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
+
+        Assert.Contains("does not say which set is open", outcome.Problem);
+    }
+
+    [Fact]
+    public void A_file_no_set_uses_renames_whatever_Ableton_shows()
+    {
+        InLibrary("99th Street (Vocal - Full).flac");
+        _sets.Open = OpenSet.Unknown;
+
+        Assert.True(Renamer().Apply(Video, "Starjunk 95 - 99th Street").Succeeded);
+    }
+
+    [Fact]
+    public void A_set_that_could_not_be_relinked_is_named_in_the_note()
+    {
+        InLibrary("99th Street (Vocal - Full).flac");
+        _sets.Users = ["Mashup One"];
+        _sets.Failing = ["Mashup One"];
+
+        var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
+
+        Assert.True(outcome.Succeeded);
+        Assert.Equal("Mashup One could not be updated; relink it in Ableton.", outcome.Note);
     }
 
     [Fact]
@@ -430,5 +492,30 @@ public class TrackRenameTests : IDisposable
         Assert.Equal("Starjunk 95 - 99th Street", StoredName(settings));
         Assert.True(File.Exists(Staged("Starjunk 95 - 99th Street (Vocal - Full).flac")));
         Assert.True(File.Exists(Staged("99th Street (Drums).flac")));
+    }
+}
+
+internal sealed class FakeSets : ISetLinks
+{
+    public IReadOnlyList<string> Users { get; set; } = [];
+    public OpenSet Open { get; set; } = OpenSet.NotRunning;
+    public IReadOnlyList<string> Failing { get; set; } = [];
+    public List<IReadOnlyCollection<string>> Lookups { get; } = [];
+    public List<IReadOnlyList<SampleMove>> Relinks { get; } = [];
+
+    public IReadOnlyList<string> Using(IReadOnlyCollection<string> samples)
+    {
+        Lookups.Add(samples);
+
+        return Users;
+    }
+
+    public OpenSet ReadOpenSet() => Open;
+
+    public SetRelink Relink(IReadOnlyList<SampleMove> moves)
+    {
+        Relinks.Add(moves);
+
+        return new SetRelink([.. Users.Except(Failing)], Failing);
     }
 }

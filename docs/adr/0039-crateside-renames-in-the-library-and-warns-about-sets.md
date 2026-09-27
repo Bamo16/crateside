@@ -1,6 +1,6 @@
 # 0039 — crateside renames in the library, and warns about the sets that use a file
 
-- Status: Accepted
+- Status: Accepted; "the sets are not changed" superseded by [ADR 0040](0040-a-rename-relinks-the-sets-that-use-the-file.md) the same day
 - Date: 2026-09-27
 - Narrows [ADR 0003](0003-crateside-may-write-abletons-tag-store.md)'s "`Sample Staging` only.
   Never `Mashup Samples`": a rename may write the library's tag store. Tagging stays staging-only.

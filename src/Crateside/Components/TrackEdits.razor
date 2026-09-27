@@ -30,15 +30,20 @@
             {
                 <p class="stack-status">Checking your Ableton sets for these files…</p>
             }
-            else if (_sets.Count > 0)
+            else if (_sets.Refusal is { } refusal)
             {
-                <p class="problem">
-                    Used by @("set".ToQuantity(_sets.Count)): <strong>@string.Join(", ", _sets)</strong>.
-                    They will show these files as missing until you relink them in Ableton.
+                <p class="problem">@refusal</p>
+            }
+            else if (_sets.Sets.Count > 0)
+            {
+                <p class="stack-status">
+                    Also updates the @("set".ToQuantity(_sets.Sets.Count)) using these files:
+                    <strong>@string.Join(", ", _sets.Sets)</strong>. Each is copied to its project's
+                    Backup folder first.
                 </p>
             }
             <div class="actions">
-                <button class="primary" disabled="@(_working || _sets is null || !StemFileName.IsUsable(_draft))"
+                <button class="primary" disabled="@(_working || _sets is not { Refusal: null } || !StemFileName.IsUsable(_draft))"
                         @onclick="ConfirmRename">
                     Rename · @Row.RenameScope
                 </button>
@@ -150,7 +155,7 @@ else if (Part is Parts.Source && HasSource(Row))
     private string _draft = string.Empty;
 
     // The sets using this track's files; null until checked, which the confirm waits for.
-    private IReadOnlyList<string>? _sets;
+    private SetCheck? _sets;
     private SwapPlan? _swapPlan;
     private ElementReference _box;
     private bool _focus;
@@ -203,7 +208,9 @@ else if (Part is Parts.Source && HasSource(Row))
                 found =>
                     InvokeAsync(() =>
                     {
-                        _sets = found.IsCompletedSuccessfully ? found.Result : [];
+                        _sets = found.IsCompletedSuccessfully
+                            ? found.Result
+                            : new SetCheck([], "Your Ableton sets could not be checked.");
                         StateHasChanged();
                     }),
                 TaskScheduler.Default
