@@ -45,6 +45,41 @@ public class WarpTempoReaderTests : IDisposable
     }
 
     [Fact]
+    public void A_saved_tempo_is_kept_across_a_restart_while_its_sidecar_is_unchanged()
+    {
+        var audio = Sample("sidecar-default-clip-saved.asd");
+        var kept = Path.Combine(_root, "tempos.json");
+        var before = new WarpTempoReader(kept);
+
+        var tempo = before.Read(audio);
+        before.Save();
+
+        // Same length and time, different bytes: only a kept tempo can still answer.
+        var sidecar = new FileInfo($"{audio}.asd");
+        var written = sidecar.LastWriteTimeUtc;
+        File.WriteAllBytes(sidecar.FullName, new byte[sidecar.Length]);
+        File.SetLastWriteTimeUtc(sidecar.FullName, written);
+
+        Assert.Equivalent(tempo, new WarpTempoReader(kept).Read(audio), strict: true);
+        Assert.Null(new WarpTempoReader().Read(audio));
+    }
+
+    [Fact]
+    public void A_kept_tempo_is_read_again_once_its_sidecar_changes()
+    {
+        var audio = Sample("sidecar-default-clip-saved.asd");
+        var kept = Path.Combine(_root, "tempos.json");
+        var before = new WarpTempoReader(kept);
+
+        before.Read(audio);
+        before.Save();
+
+        File.Copy(Fixture("sidecar-analysed.asd"), $"{audio}.asd", overwrite: true);
+
+        Assert.Null(new WarpTempoReader(kept).Read(audio));
+    }
+
+    [Fact]
     public void A_sample_with_no_sidecar_has_no_tempo()
     {
         var audio = Path.Combine(_root, "bare.flac");

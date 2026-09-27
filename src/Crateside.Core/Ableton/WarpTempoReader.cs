@@ -1,16 +1,25 @@
 using System.Collections.Concurrent;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Crateside.Core.Ableton;
 
 /// <summary>
 /// A sample's warped tempo, read from its sidecar once and again only when the sidecar changes:
-/// reading every sidecar in the library is about 400 MB (ADR 0038).
+/// reading every sidecar in the library is about 400 MB (ADR 0038). Kept across restarts when given a path.
 /// </summary>
-public sealed class WarpTempoReader
+public sealed class WarpTempoReader(string? path = null)
 {
-    private readonly ConcurrentDictionary<string, Entry> _read = new(
+    // Bump when WarpTempo.Of changes what it computes, or a kept tempo outlives the rule that made it.
+    private const int Version = 1;
+
+    private readonly string? _path = path;
+    private readonly ConcurrentDictionary<string, TempoEntry> _read = new(
+        Load(path),
         StringComparer.OrdinalIgnoreCase
     );
+    private readonly Lock _saving = new();
+    private volatile bool _changed;
 
     /// <summary>Null when the sample has no sidecar, no saved default clip, or cannot be read.</summary>
     public WarpTempo? Read(string audioPath)
@@ -18,7 +27,7 @@ public sealed class WarpTempoReader
         if (new FileInfo($"{audioPath}.asd") is not { Exists: true } sidecar)
             return null;
 
-        var stamp = (sidecar.Length, sidecar.LastWriteTimeUtc);
+        var stamp = new TempoStamp(sidecar.Length, sidecar.LastWriteTimeUtc);
 
         if (_read.TryGetValue(sidecar.FullName, out var entry) && entry.Stamp == stamp)
             return entry.Tempo;
@@ -29,9 +38,67 @@ public sealed class WarpTempoReader
                 ? WarpTempo.Of(warp, rate)
                 : null;
 
-        _read[sidecar.FullName] = new Entry(stamp, tempo);
+        _read[sidecar.FullName] = new TempoEntry(stamp, tempo);
+        _changed = true;
 
         return tempo;
+    }
+
+    /// <summary>Writes what was read since the last save, leaving out sidecars that are gone.</summary>
+    public void Save()
+    {
+        if (_path is null || !_changed)
+            return;
+
+        lock (_saving)
+        {
+            _changed = false;
+
+            var kept = new TempoFile(
+                Version,
+                _read
+                    .Where(pair => File.Exists(pair.Key))
+                    .ToDictionary(pair => pair.Key, pair => pair.Value)
+            );
+
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+
+                var temporary = $"{_path}.tmp";
+                File.WriteAllText(
+                    temporary,
+                    JsonSerializer.Serialize(kept, WarpTempoJsonContext.Default.TempoFile)
+                );
+                File.Move(temporary, _path, overwrite: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _changed = true;
+            }
+        }
+    }
+
+    private static Dictionary<string, TempoEntry> Load(string? path)
+    {
+        try
+        {
+            return
+                path is not null
+                && File.Exists(path)
+                && JsonSerializer.Deserialize(
+                    File.ReadAllText(path),
+                    WarpTempoJsonContext.Default.TempoFile
+                )
+                    is { Version: Version, Entries: { } entries }
+                ? entries
+                : [];
+        }
+        catch (Exception ex)
+            when (ex is IOException or JsonException or UnauthorizedAccessException)
+        {
+            return [];
+        }
     }
 
     private static int? SampleRateOf(string audioPath)
@@ -47,6 +114,18 @@ public sealed class WarpTempoReader
             return null;
         }
     }
-
-    private sealed record Entry((long Length, DateTime Written) Stamp, WarpTempo? Tempo);
 }
+
+internal sealed record TempoStamp(long Length, DateTime Written);
+
+internal sealed record TempoEntry(TempoStamp Stamp, WarpTempo? Tempo);
+
+internal sealed record TempoFile(int Version, Dictionary<string, TempoEntry> Entries);
+
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    UseStringEnumConverter = true
+)]
+[JsonSerializable(typeof(TempoFile))]
+internal sealed partial class WarpTempoJsonContext : JsonSerializerContext { }

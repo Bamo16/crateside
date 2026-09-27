@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
@@ -9,6 +10,10 @@ namespace Crateside.Core.Ableton;
 public static partial class AbletonSets
 {
     private const string BackupFolder = "Backup";
+
+    private static readonly ConcurrentDictionary<string, Referenced> Cache = new(
+        StringComparer.OrdinalIgnoreCase
+    );
 
     [GeneratedRegex("""<Path Value="(?<Path>[^"]*)""")]
     private static partial Regex FilePath { get; }
@@ -96,7 +101,7 @@ public static partial class AbletonSets
             .. Directory
                 .EnumerateFiles(projectsRoot, "*.als", SearchOption.AllDirectories)
                 .Where(set => !IsBackup(projectsRoot, set))
-                .Where(set => PathsIn(set).Any(wanted.Contains)),
+                .Where(set => PathsIn(set).Overlaps(wanted)),
         ];
     }
 
@@ -165,12 +170,29 @@ public static partial class AbletonSets
         File.Move(temporary, set, overwrite: true);
     }
 
-    private static IEnumerable<string> PathsIn(string set) =>
-        Read(set) is { } xml
-            ? FilePath
-                .Matches(xml)
-                .Select(match => Normalize(WebUtility.HtmlDecode(match.Groups["Path"].Value)))
-            : [];
+    /// <summary>Every sample path a set references, read again only when the set's stamp moves.</summary>
+    private static IReadOnlySet<string> PathsIn(string set)
+    {
+        if (new FileInfo(set) is not { Exists: true } file)
+            return new HashSet<string>();
+
+        var stamp = (file.Length, file.LastWriteTimeUtc);
+
+        if (Cache.TryGetValue(set, out var held) && held.Stamp == stamp)
+            return held.Paths;
+
+        if (Read(set) is not { } xml)
+            return new HashSet<string>();
+
+        var paths = FilePath
+            .Matches(xml)
+            .Select(match => Normalize(WebUtility.HtmlDecode(match.Groups["Path"].Value)))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        Cache[set] = new Referenced(stamp, paths);
+
+        return paths;
+    }
 
     private static bool IsBackup(string root, string set) =>
         Path.GetRelativePath(root, set)
@@ -181,6 +203,8 @@ public static partial class AbletonSets
     private static string Escape(string value) => value.Replace("&", "&amp;");
 
     private static string Normalize(string path) => path.Replace('\\', '/');
+
+    private sealed record Referenced((long Length, DateTime Written) Stamp, HashSet<string> Paths);
 }
 
 /// <summary>A sample renamed on disk, from and to its full path.</summary>

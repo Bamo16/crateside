@@ -68,7 +68,9 @@ public static class ServiceRegistration
         services.AddSingleton<LibraryKeyReader>();
         services.AddSingleton<LibrarySummary>();
         services.AddSingleton<StagingReader>();
-        services.AddSingleton<WarpTempoReader>();
+        services.AddSingleton(_ => new WarpTempoReader(
+            Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "tempos.json")
+        ));
         services.AddSingleton<ISetLinks>(sp => new AbletonSetLinks(
             sp.GetRequiredService<CratesidePaths>(),
             TimeProvider.System
@@ -413,6 +415,8 @@ public static class ServiceRegistration
                     sp.GetRequiredService<FamiliarityStore>().Read(),
                     sp.GetRequiredService<WarpTempoReader>().Read
                 );
+
+                sp.GetRequiredService<WarpTempoReader>().Save();
 
                 return view with
                 {
