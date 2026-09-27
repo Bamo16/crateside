@@ -1,0 +1,74 @@
+# beatdetect on drum stems, against the warps
+
+*Note, 2026-09-27, frozen. For [#68](https://github.com/Bamo16/crateside/issues/68) and Fil. Measured
+on this machine with the **pre-rework** `beatdetect` (ffmpeg `8.1.2-NoMercy-MediaServer`: one BPM,
+no confidence). Fil's rework of 2026-09-06 is not in this build.*
+
+## What was run
+
+23 steady-tempo warped library songs, picked across beatdetect's bands on the full mix (9
+triplet/dotted, 4 half or double, 4 wrong, 2 close, 4 exact). The library keeps no full mixes, so
+each drum stem was cut from the song's **Instrumental** stem (`stemforge-cli separate
+--extract-drums`, model `htdemucs_ft`), a copy in scratch. beatdetect ran as keytag runs it: a
+90 s window from 30 s in, and the whole file. *Full mix* is the ledger's figure.
+
+**Drums-only separation took 85â€“211 s, median 107 s** (mean 122 s) per song.
+
+## Results
+
+The octave is the user's call (ADR 0038, amended): *Â½ or Ã—2* is ambiguous, not wrong.
+
+| song | warped | full mix | drums, window | drums, whole | instrumental, window |
+|---|---|---|---|---|---|
+| Rob Zombie - Superbeast | 154.00 | 102.32 triplet/dotted | 153.78 exact | 102.32 triplet/dotted | 102.32 triplet/dotted |
+| NXONE'S FAVOURITE, Nakedleisure - NOT A DREAM | 167.00 | 110.31 triplet/dotted | 83.31 ½ or ×2 | 110.31 triplet/dotted | 110.31 triplet/dotted |
+| Porter Robinson - Language | 128.00 | 84.68 triplet/dotted | 96.79 triplet/dotted | 169.31 triplet/dotted | 84.68 triplet/dotted |
+| Will Atkinson, GURLI - Calling For You | 142.00 | 93.77 triplet/dotted | 93.77 triplet/dotted | 90.83 wrong | 94.44 triplet/dotted |
+| Creepy Nuts - Bling-Bang-Bang-Born | 157.00 | 103.66 triplet/dotted | 156.19 close | 156.19 close | 156.19 close |
+| WALK THE MOON - Anna Sun | 140.00 | 92.70 triplet/dotted | 92.70 triplet/dotted | 99.40 wrong | 92.70 triplet/dotted |
+| aespa - Spicy | 115.00 | 152.98 triplet/dotted | 114.59 exact | 114.59 exact | 114.59 exact |
+| T.I. - What You Know | 147.00 | 97.24 triplet/dotted | 109.40 triplet/dotted | 109.92 triplet/dotted | 109.40 triplet/dotted |
+| Lil Wayne, Static Major - Lollipop | 148.00 | 110.53 triplet/dotted | 110.53 triplet/dotted | 111.13 triplet/dotted | 110.53 triplet/dotted |
+| Andromedik, Lauren L'aimant - Air | 174.00 | 87.22 ½ or ×2 | 87.22 ½ or ×2 | 87.22 ½ or ×2 | 86.17 ½ or ×2 |
+| Sub Focus, bbyclose - On & On | 174.00 | 86.52 ½ or ×2 | 86.52 ½ or ×2 | 99.40 wrong | 86.52 ½ or ×2 |
+| Taylor Swift - Shake It Off | 160.00 | 80.00 ½ or ×2 | 80.00 ½ or ×2 | 80.00 ½ or ×2 | 80.00 ½ or ×2 |
+| Yaeji - For Granted | 185.01 | 92.03 ½ or ×2 | 92.03 ½ or ×2 | 120.10 wrong | 92.03 ½ or ×2 |
+| Groove Armada - At the River | 136.00 | 86.82 wrong | 89.97 triplet/dotted | 135.44 close | 86.82 wrong |
+| Sarah Cothran - As the World Caves In | 124.00 | 99.40 wrong | 99.40 wrong | 99.40 wrong | 124.11 exact |
+| Awich - Queendom | 105.00 | 91.90 wrong | 91.90 wrong | 137.84 wrong | 99.40 wrong |
+| Delta Heavy - White Flag | 87.00 | 92.38 wrong | 99.40 wrong | 86.52 exact | 115.29 triplet/dotted |
+| Ludacris - How Low | 144.00 | 143.36 close | 143.36 close | 143.36 close | 143.36 close |
+| Iggy Azalea, Charli XCX - Fancy | 95.00 | 94.44 close | 94.44 close | 94.44 close | 94.44 close |
+| DMX - Where The Hood At | 93.00 | 92.83 exact | 92.83 exact | 92.83 exact | 92.83 exact |
+| Usher, Lil Jon, Ludacris - Yeah! | 105.00 | 104.86 exact | 104.86 exact | 104.86 exact | 104.86 exact |
+| Belinda Carlisle - Heaven Is A Place On Earth | 122.89 | 122.51 exact | 122.51 exact | 122.51 exact | 122.51 exact |
+| Dr. Dre, Eminem - Forgot About Dre | 133.88 | 133.73 exact | 133.73 exact | 117.83 wrong | 133.73 exact |
+
+| reading | exact | close | Â½ or Ã—2 | triplet/dotted | wrong |
+|---|---|---|---|---|---|
+| full mix | 4 | 2 | 4 | 9 | 4 |
+| drums, window | 6 | 3 | 5 | 6 | 3 |
+| drums, whole | 5 | 4 | 2 | 5 | 7 |
+| instrumental, window | 6 | 3 | 4 | 8 | 2 |
+
+## Observations
+
+- **A drum stem fixed 3 of the 9 triplet/dotted misses** in the window (*Superbeast*,
+  *Bling-Bang-Bang-Born*, *Spicy*). The instrumental alone fixed 2 of those, so removing vocals does
+  some of the work. Six stayed at Ã—2/3 or Ã—3/4.
+- **Window against whole file disagrees often**, in both directions: *Superbeast* is exact only in
+  the window, *At the River* and *White Flag* only on the whole file.
+- **Leading and trailing silence matters sometimes.** Trimming it (`silenceremove`, âˆ’50 dB) turned
+  *Superbeast*'s whole-file 102.32 into 153.78 (warped 154) and left three others unchanged.
+- **The build reports from a coarse grid**: 414 ledger readings hold 162 distinct values, about
+  0.8 BPM apart near 128.
+- **Its full-mix readings never exceed 163.11** in the ledger, and bottom out at 80.00 (ten times).
+  Drum and bass at 170â€“179 (53 library songs) can only come back folded. A drum stem once read
+  169.31, so it is a strong bias, not a hard cap.
+
+## Not done
+
+- **DrumSep** (kick, snare, hi-hat) on these stems: scripted with StemForge's new `--model`/`--keep`,
+  held back when the user needed the GPU.
+- **The reworked filter**: no Windows build is published. Re-scoring these stems with it is CPU
+  only, once there is one.
