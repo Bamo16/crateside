@@ -55,4 +55,4 @@ Test*. With the set open, the rename was refused and named it. With it closed, b
 renamed with their sidecars and tag entries (keywords intact), all four references in the set were
 relinked, and its backup was kept. Reopened in Ableton, the set found the sample; Ableton redrew
 the waveform as if loading it anew, but left both sidecars as they were (same size and time, warp
-intact).
+intact). That redraw is common on warped files, trigger unknown, and not a sign of trouble (owned).
