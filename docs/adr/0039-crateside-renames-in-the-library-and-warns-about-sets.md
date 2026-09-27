@@ -36,8 +36,9 @@ Nothing of crateside's or keytag's own depends on the name: a track is its video
 ## Consequences
 
 - **A set using a renamed file shows it as missing** until the user relinks it in Ableton.
-- **Concurrent writes to a tag store are no longer moot.** ADR 0003 could leave them untested
-  because the user never tags in staging; the user does tag in the library. The exposure is the
-  moment of a rename, while Ableton writes the same store. **Untested:** the first library rename
-  is to be checked in Ableton for its tags.
+- **Concurrent writes to the library's tag store are possible, and unlikely.** ADR 0003 could
+  leave them untested because the user avoids tagging in staging, keeping any hand tag for the
+  library. Since crateside tags, the user rarely hand-tags anything (owned, 2026-09-27). The
+  exposure is a rename landing while Ableton writes the same store. **Untested:** the first
+  library rename is to be checked in Ableton for its tags.
 - Looking up the sets reads every set on each rename, about a second for 33 sets.
