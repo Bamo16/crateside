@@ -15,9 +15,7 @@ public sealed class WarpTempoReader
     /// <summary>Null when the sample has no sidecar, no saved default clip, or cannot be read.</summary>
     public WarpTempo? Read(string audioPath)
     {
-        var sidecar = new FileInfo($"{audioPath}.asd");
-
-        if (!sidecar.Exists)
+        if (new FileInfo($"{audioPath}.asd") is not { Exists: true } sidecar)
             return null;
 
         var stamp = (sidecar.Length, sidecar.LastWriteTimeUtc);
@@ -42,7 +40,7 @@ public sealed class WarpTempoReader
         {
             using var file = TagLib.File.Create(audioPath);
 
-            return file.Properties.AudioSampleRate is > 0 and var rate ? rate : null;
+            return file is { Properties.AudioSampleRate: > 0 and var rate } ? rate : null;
         }
         catch (Exception)
         {
