@@ -22,6 +22,10 @@ public sealed class TrackRename(
     ISetLinks? sets = null
 )
 {
+    /// <summary>What follows the open set's name when it stops a rename.</summary>
+    public const string OpenSetRefusal =
+        "is open in Ableton and uses these files. Open another set, then rename.";
+
     /// <summary>What renaming this track to <paramref name="name"/> would do, or why it cannot.</summary>
     public RenamePlan PlanFor(string videoId, string? name)
     {
@@ -151,7 +155,8 @@ public sealed class TrackRename(
         {
             { Set: { } open } when found.Contains(open, StringComparer.OrdinalIgnoreCase) => new(
                 found,
-                $"{open} is open in Ableton and uses these files. Open another set, then rename."
+                $"{open} {OpenSetRefusal}",
+                open
             ),
             { IsRunning: true, Set: null } => new(
                 found,
@@ -255,7 +260,8 @@ public sealed class TrackRename(
 }
 
 /// <summary>The sets a rename would update, and why it must wait, or null when it need not.</summary>
-public sealed record SetCheck(IReadOnlyList<string> Sets, string? Refusal);
+/// <param name="Blocking">The open set that uses the files, when that is why.</param>
+public sealed record SetCheck(IReadOnlyList<string> Sets, string? Refusal, string? Blocking = null);
 
 /// <summary>What a rename would do. Read before it happens, to say so on screen.</summary>
 public sealed record RenamePlan

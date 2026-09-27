@@ -30,6 +30,10 @@
             {
                 <p class="stack-status">Checking your Ableton sets for these files…</p>
             }
+            else if (_sets.Blocking is { } open)
+            {
+                <p class="problem"><strong>@open</strong> @TrackRename.OpenSetRefusal</p>
+            }
             else if (_sets.Refusal is { } refusal)
             {
                 <p class="problem">@refusal</p>

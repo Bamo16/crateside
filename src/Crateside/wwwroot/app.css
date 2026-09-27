@@ -229,3 +229,9 @@ a.outline {
     cursor: default;
     opacity: 0.6;
 }
+
+.primary:disabled,
+.outline:disabled {
+    cursor: default;
+    opacity: 0.4;
+}
