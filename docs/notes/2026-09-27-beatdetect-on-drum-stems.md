@@ -106,7 +106,35 @@ kick, snare and hi-hat, with `results.tsv` and `drumsep.tsv` beside them (their 
 point at the session scratch they were made in). The full-mix comparison is beside it in `2026-09-27 full mix vs instrumental`. The scripts are in
 `BPM Corpus\scripts`.
 
+## The reworked filter (added the same evening)
+
+Built from `FiLL/ffmpeg-beatdetect` at `3f1b218` (2026-09-06 rework) with his `dev.sh` in Docker,
+`TARGET=windows`, into `V:\Reposfmpeg-beatdetect\outfmpeg.exe`. Default options
+(`tempo_prior=none`). Every stem above plus each song's library instrumental re-scored the same way;
+`rescore-3f1b218.tsv` beside the stems has every reading, old and new.
+
+| input | build | exact | close | ½ or ×2 | triplet/dotted | wrong |
+|---|---|---|---|---|---|---|
+| instrumental, whole | old | 8 | 3 | 3 | 7 | 2 |
+| instrumental, whole | new | 14 | 0 | 6 | 2 | 1 |
+| drums, window | old | 6 | 3 | 5 | 6 | 3 |
+| drums, window | new | 14 | 0 | 4 | 2 | 3 |
+| drums, whole | old | 5 | 4 | 2 | 5 | 7 |
+| drums, whole | new | 16 | 0 | 4 | 1 | 2 |
+| kick, whole | new | 5 | 0 | 9 | 1 | 8 |
+| snare, whole | new | 0 | 0 | 22 | 0 | 1 |
+| hi-hat, whole | new | 12 | 0 | 7 | 1 | 3 |
+
+- **The triplet and dotted misses are mostly gone**: 7 → 2 on the instrumental, 5 → 1 on the drums.
+- **The whole drum stem is the best input**: 16 of 23 exact, 20 of 23 up to the octave.
+- **No reading is merely close any more**: the new build reports the tempo precisely (154.00 where
+  the old one said 153.78), so the ~0.8 BPM grid is gone.
+- **Parts alone are worse than the whole kit.** The snare reads half-time on 22 of 23, as a backbeat
+  on 2 and 4 would; the kick is wrong on 8.
+- **Confidence is low throughout but not useless**: median 0.11 on triplet/dotted or wrong readings,
+  about 0.24 on exact and octave ones. It flags real misses; it cannot pick the octave.
+
 ## Not done
 
-- **The reworked filter**: no Windows build is published. Re-scoring these stems with it is CPU
-  only, once there is one.
+- Full mixes with the new build: the library keeps none, so the instrumental stands in for them.
+- Checking the new build's `beat_offset_ms` against the warps' first marker.
