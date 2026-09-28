@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Crateside.Core.Orchestration.Jobs;
 using Humanizer;
 
 namespace Crateside.Core.Orchestration.Separation;
@@ -30,48 +31,38 @@ public sealed class SeparationRunner(
         // The check above and this claim must stay adjacent, and only this method may call
         // Start — there is a gap between them since claiming needs the process to exist,
         // harmless only because one worker drives this loop.
-        interlock.Claim(order.VideoId, process.Id, StartTimeOf(process));
+        interlock.Claim(
+            order.VideoId,
+            process.Id,
+            StartTimeOf(process),
+            new SeparationPromise(order.Recipe.ExpectedOutputs, order.Destination)
+        );
 
-        try
+        // Both reads start before either is awaited: draining stdout first would block if
+        // stderr's buffer fills, wedging the child that holds the GPU for six minutes. Only
+        // --json keeping stderr quiet makes this safe today, not a guarantee.
+        var stdoutRead = process.StandardOutput.ReadToEndAsync(ct);
+        var stderrRead = process.StandardError.ReadToEndAsync(ct);
+
+        // ct fires on shutdown: the separation keeps running and its job stays open, for the next
+        // start to adopt or settle off disk (ADR 0042).
+        var stdout = await stdoutRead;
+        var stderr = await stderrRead;
+
+        await process.WaitForExitAsync(ct);
+
+        var error = FailureFrom(process.ExitCode, stdout, stderr);
+        IReadOnlyList<string> outputs = [];
+
+        if (error is null)
         {
-            // Both reads start before either is awaited: draining stdout first would block if
-            // stderr's buffer fills, wedging the child that holds the GPU for six minutes. Only
-            // --json keeping stderr quiet makes this safe today, not a guarantee.
-            var stdoutRead = process.StandardOutput.ReadToEndAsync(ct);
-            var stderrRead = process.StandardError.ReadToEndAsync(ct);
-
-            var stdout = await stdoutRead;
-            var stderr = await stderrRead;
-
-            await process.WaitForExitAsync(ct);
-
-            var error = FailureFrom(process.ExitCode, stdout, stderr);
-            IReadOnlyList<string> outputs = [];
-
-            if (error is null)
-            {
-                outputs = OutputFilesFrom(stdout);
-                error = ShortfallFrom(order.Recipe, outputs);
-            }
-
-            interlock.Release(order.VideoId, error);
-
-            return error is null
-                ? SeparationResult.Succeeded(outputs)
-                : SeparationResult.Failed(error);
+            outputs = OutputFilesFrom(stdout);
+            error = ShortfallFrom(order.Recipe, outputs);
         }
-        catch (OperationCanceledException)
-        {
-            // This token fires on shutdown, not pause — pausing only stops the next track being
-            // picked up; an in-flight separation is not reachable from the control and runs to
-            // completion. Quitting cleanly discards the work here, while a crash keeps it
-            // running (Windows does not kill the child), and the interlock adopts it on the
-            // next start.
-            Stop(process);
-            interlock.Release(order.VideoId, "cancelled");
 
-            throw;
-        }
+        interlock.Release(order.VideoId, error);
+
+        return error is null ? SeparationResult.Succeeded(outputs) : SeparationResult.Failed(error);
     }
 
     /// <summary>
@@ -145,19 +136,6 @@ public sealed class SeparationRunner(
         catch (JsonException)
         {
             return null;
-        }
-    }
-
-    private static void Stop(Process process)
-    {
-        try
-        {
-            if (!process.HasExited)
-                process.Kill(entireProcessTree: true);
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or SystemException)
-        {
-            // It exited on its own between the check and the kill. Nothing to do.
         }
     }
 

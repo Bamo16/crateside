@@ -11,7 +11,6 @@ namespace Crateside;
 /// </summary>
 public sealed class DrainWorker(
     SeparationDrainer drainer,
-    SeparationInterlock interlock,
     DrainControl control,
     StageSignals signals,
     ILogger<DrainWorker> logger
@@ -55,11 +54,18 @@ public sealed class DrainWorker(
 
     /// <summary>
     /// Squares the job store against reality before anything launches, since a previous run's
-    /// <c>stemforge-cli</c> may still be alive.
+    /// <c>stemforge-cli</c> may still be alive, or may have finished while crateside was down.
     /// </summary>
     private void Reconcile()
     {
-        var reconciliation = interlock.Reconcile();
+        if (JobObject.KillsChildrenOnExit())
+            logger.LogWarning(
+                "crateside is running inside a job that kills its children when it exits, as "
+                    + "under dotnet run: a restart will end any separation in progress. Start it "
+                    + "with the run task."
+            );
+
+        var reconciliation = drainer.Reconcile();
 
         foreach (var job in reconciliation.Adopted)
             logger.LogInformation(
@@ -68,16 +74,34 @@ public sealed class DrainWorker(
                 job.ProcessId
             );
 
+        LogSettled(reconciliation);
+    }
+
+    private void LogSettled(SeparationReconciliation reconciliation)
+    {
+        foreach (var settled in reconciliation.Finished)
+            logger.LogInformation(
+                "Separation of {VideoId} finished while nobody was watching ({Count} stems)",
+                settled.Job.VideoId,
+                settled.OutputFiles.Count
+            );
+
         foreach (var job in reconciliation.Abandoned)
             logger.LogWarning(
-                "Separation of {VideoId} did not survive: {Error}",
+                "Separation of {VideoId} did not finish: {Error}",
                 job.VideoId,
                 job.Error
             );
+
+        if (reconciliation.Finished.Count > 0)
+            signals.WakeAllBut(JobStage.Separation);
     }
 
     private async Task<TimeSpan> TickAsync(CancellationToken stoppingToken)
     {
+        // An adopted separation reports nothing when it ends; this is how it gets noticed.
+        LogSettled(drainer.SettleEnded());
+
         var tick = await drainer.DrainOnceAsync(stoppingToken);
 
         switch (tick)

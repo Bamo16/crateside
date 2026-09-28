@@ -42,6 +42,12 @@ public sealed record TrackJob
     /// </summary>
     public DateTimeOffset? AdoptedAt { get; init; }
 
+    /// <summary>
+    /// What a running separation was launched to write, so its result can be read off disk when
+    /// nobody is left to read its output.
+    /// </summary>
+    public SeparationPromise? Promise { get; init; }
+
     /// <summary>Whether crateside currently believes work is in flight for this job.</summary>
     public bool IsOpen => Status is JobStatus.Queued or JobStatus.Running;
 }
@@ -91,3 +97,6 @@ public enum JobStatus
     /// <summary>Stopped on purpose. Not a strike — the user's call is not the track's fault.</summary>
     Cancelled,
 }
+
+/// <summary>What a separation was launched to produce: how many files, and where.</summary>
+public sealed record SeparationPromise(int ExpectedOutputs, StemDestination Destination);

@@ -1,13 +1,19 @@
 using System.Diagnostics.CodeAnalysis;
 using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Samples;
+using Humanizer;
 
 namespace Crateside.Core.Orchestration.Separation;
 
 /// <summary>
 /// Keeps separation single-flight across restarts, adopting a <c>stemforge-cli</c> that outlived
-/// one rather than killing it.
+/// one and reading its result off disk once it ends (ADR 0042).
 /// </summary>
-public sealed class SeparationInterlock(JobStore jobs, IProcessProbe probe)
+public sealed class SeparationInterlock(
+    JobStore jobs,
+    IProcessProbe probe,
+    CratesidePaths? paths = null
+)
 {
     /// <summary>
     /// Squares the recorded jobs against what is actually running. Call this on startup, before
@@ -16,39 +22,65 @@ public sealed class SeparationInterlock(JobStore jobs, IProcessProbe probe)
     public SeparationReconciliation Reconcile()
     {
         List<TrackJob> adopted = [];
-        List<TrackJob> abandoned = [];
+        List<TrackJob> unlaunched = [];
 
-        foreach (var job in jobs.Open(JobStage.Separation))
-        {
-            if (IsStillRunning(job))
-            {
-                adopted.Add(
-                    jobs.Record(
-                        job.VideoId,
-                        JobStage.Separation,
-                        JobStatus.Running,
-                        job.ProcessId,
-                        job.ProcessStartedAt,
-                        adopted: true
-                    )
-                );
-                continue;
-            }
-
-            // Gone with no result recorded — the machine rebooted, or the process was killed.
-            abandoned.Add(
+        foreach (var job in jobs.Open(JobStage.Separation).Where(job => job.ProcessId is null))
+            unlaunched.Add(
                 jobs.Record(
                     job.VideoId,
                     JobStage.Separation,
                     JobStatus.Failed,
-                    error: job.ProcessId is { } pid
-                        ? $"separation process {pid} is gone without recording a result"
-                        : "separation was interrupted before it started"
+                    error: "separation was interrupted before it started"
                 )
             );
+
+        foreach (var job in jobs.Open(JobStage.Separation).Where(IsStillRunning))
+            adopted.Add(
+                jobs.Record(
+                    job.VideoId,
+                    JobStage.Separation,
+                    JobStatus.Running,
+                    job.ProcessId,
+                    job.ProcessStartedAt,
+                    adopted: true
+                )
+            );
+
+        var settled = SettleEnded();
+
+        return settled with
+        {
+            Adopted = adopted,
+            Abandoned = [.. unlaunched, .. settled.Abandoned],
+        };
+    }
+
+    /// <summary>
+    /// Records how every launched separation whose process has ended turned out, reading what it
+    /// wrote off disk, since nobody was left to read its output.
+    /// </summary>
+    public SeparationReconciliation SettleEnded()
+    {
+        List<SettledSeparation> finished = [];
+        List<TrackJob> abandoned = [];
+
+        foreach (
+            var job in jobs.Open(JobStage.Separation)
+                .Where(job => job.ProcessId is not null && !IsStillRunning(job))
+        )
+        {
+            if (Settle(job) is { } settled)
+                finished.Add(settled);
+            else if (jobs.TryGet(job.VideoId, JobStage.Separation, out var failed))
+                abandoned.Add(failed);
         }
 
-        return new SeparationReconciliation { Adopted = adopted, Abandoned = abandoned };
+        return new SeparationReconciliation
+        {
+            Adopted = [],
+            Finished = finished,
+            Abandoned = abandoned,
+        };
     }
 
     /// <summary>The separation happening right now, if there is one — the gate every launch must pass through.</summary>
@@ -67,8 +99,20 @@ public sealed class SeparationInterlock(JobStore jobs, IProcessProbe probe)
         jobs.TryGet(videoId, JobStage.Separation, out var job) && job.IsOpen && IsStillRunning(job);
 
     /// <summary>Records that a separation process has been launched and now owns the GPU.</summary>
-    public TrackJob Claim(string videoId, int processId, DateTimeOffset processStartedAt) =>
-        jobs.Record(videoId, JobStage.Separation, JobStatus.Running, processId, processStartedAt);
+    public TrackJob Claim(
+        string videoId,
+        int processId,
+        DateTimeOffset processStartedAt,
+        SeparationPromise? promise = null
+    ) =>
+        jobs.Record(
+            videoId,
+            JobStage.Separation,
+            JobStatus.Running,
+            processId,
+            processStartedAt,
+            promise: promise
+        );
 
     /// <summary>Records how a separation ended, freeing the GPU for the next one.</summary>
     public TrackJob Release(string videoId, string? error = null) =>
@@ -78,6 +122,51 @@ public sealed class SeparationInterlock(JobStore jobs, IProcessProbe probe)
             error is null ? JobStatus.Succeeded : JobStatus.Failed,
             error: error
         );
+
+    /// <summary>The separation, recorded as succeeded, or null once it is recorded as failed.</summary>
+    private SettledSeparation? Settle(TrackJob job)
+    {
+        if (job is not { ProcessId: { } processId, Promise: { } promise } || paths is null)
+        {
+            // Launched before crateside recorded what a run promised.
+            jobs.Record(
+                job.VideoId,
+                JobStage.Separation,
+                JobStatus.Failed,
+                error: $"separation process {job.ProcessId} is gone without recording a result"
+            );
+
+            return null;
+        }
+
+        var outputs = WrittenSince(job, paths.DestinationFor(promise.Destination));
+
+        if (outputs.Count < promise.ExpectedOutputs)
+        {
+            jobs.Record(
+                job.VideoId,
+                JobStage.Separation,
+                JobStatus.Failed,
+                error: $"separation process {processId} ended having written "
+                    + $"{"file".ToQuantity(outputs.Count)} of the {promise.ExpectedOutputs} it was launched for"
+            );
+
+            return null;
+        }
+
+        return new SettledSeparation(Release(job.VideoId), promise, outputs);
+    }
+
+    private static IReadOnlyList<string> WrittenSince(TrackJob job, string directory) =>
+        [
+            .. StemTagReader
+                .FilesCutFrom(directory, job.VideoId)
+                // A stem from an earlier run of the same track is not this run's output.
+                .Where(file =>
+                    job.ProcessStartedAt is not { } started
+                    || File.GetLastWriteTimeUtc(file) >= started.UtcDateTime.AddSeconds(-1)
+                ),
+        ];
 
     private bool IsStillRunning(TrackJob job)
     {
@@ -98,14 +187,24 @@ public sealed class SeparationInterlock(JobStore jobs, IProcessProbe probe)
     }
 }
 
-/// <summary>What startup found: which separations were still going, and which had died.</summary>
+/// <summary>What a reconciliation found: which separations were still going, and how the rest ended.</summary>
 public sealed record SeparationReconciliation
 {
     /// <summary>Still running, and now being watched again by this crateside.</summary>
     public required IReadOnlyList<TrackJob> Adopted { get; init; }
 
-    /// <summary>Recorded as running but gone; marked failed and eligible to be retried.</summary>
+    /// <summary>Ended with everything it was launched for on disk; recorded as succeeded.</summary>
+    public required IReadOnlyList<SettledSeparation> Finished { get; init; }
+
+    /// <summary>Ended short, or with no record of what it was for; marked failed and eligible to be retried.</summary>
     public required IReadOnlyList<TrackJob> Abandoned { get; init; }
 
-    public bool FoundAnything => Adopted.Count > 0 || Abandoned.Count > 0;
+    public bool FoundAnything => Adopted.Count > 0 || Finished.Count > 0 || Abandoned.Count > 0;
 }
+
+/// <summary>A separation that ended while nobody was reading its output, and the stems it wrote.</summary>
+public sealed record SettledSeparation(
+    TrackJob Job,
+    SeparationPromise Promise,
+    IReadOnlyList<string> OutputFiles
+);

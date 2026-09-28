@@ -160,7 +160,7 @@ public class SeparationRunnerTests : IDisposable
     }
 
     [Fact]
-    public async Task Cancelling_stops_the_process_and_frees_the_gpu()
+    public async Task Shutting_down_leaves_the_separation_running_and_its_job_open()
     {
         var script = Path.Combine(_directory, "slow-stemforge.cmd");
 
@@ -182,8 +182,18 @@ public class SeparationRunnerTests : IDisposable
         );
 
         Assert.True(Jobs.TryGet(VideoId, JobStage.Separation, out var job));
-        Assert.Equal(JobStatus.Failed, job.Status);
-        Assert.Equal("cancelled", job.Error);
+        using var process = System.Diagnostics.Process.GetProcessById(job.ProcessId!.Value);
+
+        try
+        {
+            Assert.Equal(JobStatus.Running, job.Status);
+            Assert.False(process.HasExited);
+            Assert.Equal(new SeparationPromise(3, StemDestination.UnresolvedKey), job.Promise);
+        }
+        finally
+        {
+            process.Kill(entireProcessTree: true);
+        }
     }
 
     /// <summary>A stand-in that writes its own argument list out for inspection.</summary>

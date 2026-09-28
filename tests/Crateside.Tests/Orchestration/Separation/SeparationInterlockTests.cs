@@ -1,3 +1,5 @@
+using Crateside.Core;
+using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
 
@@ -27,8 +29,38 @@ public class SeparationInterlockTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    private static readonly SeparationPromise ThreeStems = new(3, StemDestination.UnresolvedKey);
+
+    private CratesidePaths Paths =>
+        field ??= new CratesidePaths
+        {
+            StemsKeyIdentified = Path.Combine(Path.GetDirectoryName(_path)!, "Key Identified"),
+            StemsUnresolvedKey = Path.Combine(Path.GetDirectoryName(_path)!, "Unresolved Key"),
+        };
+
     // A fresh pair each time, so every test goes through the file the way a restart does.
-    private SeparationInterlock Interlock() => new(new JobStore(_path), _probe);
+    private SeparationInterlock Interlock() => new(new JobStore(_path), _probe, Paths);
+
+    /// <summary>A stem on disk as stemforge-cli writes one, tagged with the upload it came from.</summary>
+    private string Stem(string name, string videoId = VideoId, DateTimeOffset? written = null)
+    {
+        Directory.CreateDirectory(Paths.StemsUnresolvedKey);
+
+        var path = Path.Combine(Paths.StemsUnresolvedKey, name);
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), path);
+
+        using (var file = TagLib.File.Create(path))
+        {
+            file.Tag.Comment =
+                "stemforge/0.3.1 | preset: Vocal - Full | date: 2026-09-28 | "
+                + $"source: https://www.youtube.com/watch?v={videoId}";
+            file.Save();
+        }
+
+        File.SetLastWriteTimeUtc(path, (written ?? Launched.AddMinutes(5)).UtcDateTime);
+
+        return path;
+    }
 
     [Fact]
     public void Nothing_is_live_before_anything_has_run()
@@ -163,6 +195,81 @@ public class SeparationInterlockTests : IDisposable
 
         interlock.Claim(VideoId, processId: 4243, Launched);
         Assert.Equal(JobStatus.Succeeded, interlock.Release(VideoId).Status);
+    }
+
+    [Fact]
+    public void A_separation_that_finished_while_crateside_was_down_is_recorded_as_succeeded()
+    {
+        Interlock().Claim(VideoId, processId: 4242, Launched, ThreeStems);
+        string[] stems =
+        [
+            Stem("Song (Vocal - Full).flac"),
+            Stem("Song (Instrumental - Full).flac"),
+            Stem("Song (Drums).flac"),
+        ];
+
+        // Restarted after the process ended on its own.
+        var reconciliation = Interlock().Reconcile();
+
+        var finished = Assert.Single(reconciliation.Finished);
+        Assert.Equal(JobStatus.Succeeded, finished.Job.Status);
+        Assert.Equal(stems.Order(), finished.OutputFiles.Order());
+        Assert.Empty(reconciliation.Abandoned);
+    }
+
+    [Fact]
+    public void A_separation_that_ended_short_is_abandoned_with_what_it_wrote()
+    {
+        Interlock().Claim(VideoId, processId: 4242, Launched, ThreeStems);
+        Stem("Song (Vocal - Full).flac");
+
+        var abandoned = Assert.Single(Interlock().Reconcile().Abandoned);
+
+        Assert.Equal(JobStatus.Failed, abandoned.Status);
+        Assert.Contains("1 file of the 3", abandoned.Error);
+    }
+
+    [Fact]
+    public void Stems_from_an_earlier_run_of_the_track_do_not_count()
+    {
+        Interlock().Claim(VideoId, processId: 4242, Launched, ThreeStems);
+        Stem("Song (Vocal - Full).flac", written: Launched.AddDays(-3));
+        Stem("Song (Instrumental - Full).flac", written: Launched.AddDays(-3));
+        Stem("Song (Drums).flac");
+
+        Assert.Single(Interlock().Reconcile().Abandoned);
+    }
+
+    [Fact]
+    public void Another_tracks_stems_do_not_count()
+    {
+        Interlock().Claim(VideoId, processId: 4242, Launched, ThreeStems);
+        Stem("Other (Vocal - Full).flac", videoId: "otherVideo0");
+        Stem("Other (Instrumental - Full).flac", videoId: "otherVideo0");
+        Stem("Other (Drums).flac", videoId: "otherVideo0");
+
+        Assert.Single(Interlock().Reconcile().Abandoned);
+    }
+
+    [Fact]
+    public void An_adopted_run_keeps_its_promise_and_is_settled_when_it_ends()
+    {
+        Interlock().Claim(VideoId, processId: 4242, Launched, ThreeStems);
+        _probe.Running[4242] = Launched;
+        Interlock().Reconcile();
+
+        Assert.True(new JobStore(_path).TryGet(VideoId, JobStage.Separation, out var adopted));
+        Assert.Equal(ThreeStems, adopted.Promise);
+        Assert.Empty(Interlock().SettleEnded().Finished);
+
+        Stem("Song (Vocal - Full).flac");
+        Stem("Song (Instrumental - Full).flac");
+        Stem("Song (Drums).flac");
+        _probe.Running.Remove(4242);
+
+        var finished = Assert.Single(Interlock().SettleEnded().Finished);
+        Assert.Equal(JobStatus.Succeeded, finished.Job.Status);
+        Assert.False(Interlock().TryGetLive(out _));
     }
 
     [Fact]

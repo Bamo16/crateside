@@ -63,7 +63,8 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
         int? processId = null,
         DateTimeOffset? processStartedAt = null,
         string? error = null,
-        bool adopted = false
+        bool adopted = false,
+        SeparationPromise? promise = null
     )
     {
         var update = new JobUpdate
@@ -77,6 +78,8 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
             ProcessStartedAt = processStartedAt,
             Error = error,
             Adopted = adopted ? true : null,
+            ExpectedOutputs = promise?.ExpectedOutputs,
+            Destination = promise?.Destination,
         };
 
         TrackJob job;
@@ -138,6 +141,16 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
             },
             Strikes = (previous?.Strikes ?? 0) + (update.Status is JobStatus.Failed ? 1 : 0),
             AdoptedAt = update.Adopted is true ? update.Timestamp : null,
+            Promise = update switch
+            {
+                { ExpectedOutputs: { } expected, Destination: { } destination } => new(
+                    expected,
+                    destination
+                ),
+                // Carried while the job is open, so an adoption line keeps what the launch promised.
+                { Status: JobStatus.Queued or JobStatus.Running } => previous?.Promise,
+                _ => null,
+            },
         };
 
     private Dictionary<string, TrackJob> Projection() => _cached ??= ReadFile();
@@ -227,4 +240,9 @@ public sealed record JobUpdate
 
     /// <summary>True on the line a restarted crateside wrote on finding the process still alive.</summary>
     public bool? Adopted { get; init; }
+
+    /// <summary>How many files the launched separation should write; on its launch line only.</summary>
+    public int? ExpectedOutputs { get; init; }
+
+    public StemDestination? Destination { get; init; }
 }

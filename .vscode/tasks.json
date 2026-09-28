@@ -24,9 +24,19 @@
         {
             "label": "run",
             "detail": "Run the board on localhost:5027. The way to exercise the pipeline — one clean process that will not restart under a download or a separation.",
+            // The built exe rather than `dotnet run`, which holds the app in a job that kills
+            // stemforge-cli when crateside exits (ADR 0042). What `dotnet run` would run, from
+            // where, with the launch profile's environment.
             "type": "process",
-            "command": "dotnet",
-            "args": ["run", "--project", "${workspaceFolder}/src/Crateside/Crateside.csproj"],
+            "command": "${workspaceFolder}/src/Crateside/bin/Debug/net10.0/Crateside.exe",
+            "options": {
+                "cwd": "${workspaceFolder}/src/Crateside",
+                "env": {
+                    "ASPNETCORE_ENVIRONMENT": "Development",
+                    "ASPNETCORE_URLS": "http://localhost:5027"
+                }
+            },
+            "dependsOn": "build",
             "presentation": {
                 "reveal": "always",
                 "panel": "shared",

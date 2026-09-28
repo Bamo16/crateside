@@ -15,11 +15,21 @@ public sealed class SeparationDrainer(
     QueueService queue,
     SeparationRunner runner,
     SeparationSelector selector,
+    SeparationInterlock interlock,
     DrainControl control,
     IOptions<CratesidePaths> paths
 )
 {
     private readonly CratesidePaths _paths = paths.Value;
+
+    /// <summary>
+    /// Squares the job store against what is running on startup, landing any separation that
+    /// finished while crateside was down.
+    /// </summary>
+    public SeparationReconciliation Reconcile() => Landed(interlock.Reconcile());
+
+    /// <summary>Records and lands every separation whose process has ended since the last look.</summary>
+    public SeparationReconciliation SettleEnded() => Landed(interlock.SettleEnded());
 
     /// <summary>Separates the next outstanding track, if there is one and nothing is in the way.</summary>
     public async Task<DrainTick> DrainOnceAsync(CancellationToken ct = default)
@@ -62,6 +72,20 @@ public sealed class SeparationDrainer(
             control.Report(null);
         }
     }
+
+    private SeparationReconciliation Landed(SeparationReconciliation reconciliation)
+    {
+        foreach (var settled in reconciliation.Finished)
+            StemLanding.Reconcile(
+                _paths,
+                KeyLedger.Read(_paths.Ledger),
+                settled.Job.VideoId,
+                settled.Promise.Destination,
+                settled.OutputFiles
+            );
+
+        return reconciliation;
+    }
 }
 
 /// <summary>Where a finished run's stems belong, once it is finished.</summary>
@@ -76,11 +100,20 @@ public static class StemLanding
         KeyLedger ledger,
         WorkOrder order,
         IReadOnlyList<string> outputs
+    ) => Reconcile(paths, ledger, order.VideoId, order.Destination, outputs);
+
+    /// <inheritdoc cref="Reconcile(CratesidePaths, KeyLedger, WorkOrder, IReadOnlyList{string})"/>
+    public static IReadOnlyList<string> Reconcile(
+        CratesidePaths paths,
+        KeyLedger ledger,
+        string videoId,
+        StemDestination destination,
+        IReadOnlyList<string> outputs
     )
     {
         if (
-            order.Destination is not StemDestination.UnresolvedKey
-            || !ledger.TryGetLatestByVideoId(order.VideoId, out var run)
+            destination is not StemDestination.UnresolvedKey
+            || !ledger.TryGetLatestByVideoId(videoId, out var run)
             || !run.HasTaggableKey
         )
             return [];
