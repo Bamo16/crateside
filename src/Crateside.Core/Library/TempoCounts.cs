@@ -7,8 +7,8 @@ public sealed record TempoCounts(
     IReadOnlyList<TempoBin> Bins,
     int Warped,
     int Steady,
-    int SteadyWithChanges,
-    int Unsteady
+    int MostlySteady,
+    int Drifting
 )
 {
     /// <summary>How many songs must share a tempo for it to be called out in its bin.</summary>
@@ -29,8 +29,8 @@ public sealed record TempoCounts(
             Binned(bpms),
             tempos.Count,
             tempos.Count(tempo => tempo.Shape is TempoShape.Steady),
-            tempos.Count(tempo => tempo.Shape is TempoShape.SteadyWithChanges),
-            tempos.Count(tempo => tempo.Shape is TempoShape.Unsteady)
+            tempos.Count(tempo => tempo.Shape is TempoShape.MostlySteady),
+            tempos.Count(tempo => tempo.Shape is TempoShape.Drifting)
         );
     }
 

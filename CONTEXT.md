@@ -89,9 +89,12 @@ against it.
   straight grid every time while the average tempo holds.
 - **Tempo change** — an intended change: a ritardando, an accelerando, or a section at a new
   tempo. Rare; the user warps these by hand and wants no automation for them.
-- **Warp class** — *Steady*, *Steady with changes* or *Unsteady*: what crateside reads
-  mechanically from a warp's markers bar by bar (ADR 0038). They approximate the musical terms
-  above without matching them; see **Flagged ambiguities**.
+- **Warp class** — *Steady*, *Mostly steady* or *Drifting*: what crateside reads mechanically
+  from a warp's markers bar by bar (ADR 0038). *Steady*: one tempo across the clip. *Mostly
+  steady*: a main tempo, plus a drifting stretch or a **tempo change**. *Drifting*: no eight bars
+  hold one tempo, which is nearly always a **drifting** track, but a long accelerando would land
+  there too. A **looped** track is *Drifting* by its markers, while a detector reading its average
+  finds it steady.
 - **Marker error** — how far a user's warp marker sits from the true beat: most within
   5–10 ms, a few up to ~25 ms, by the user's estimate.
 - **Alignment error** — how far a detector's beat grid lands from a reference beat grid, in ms;
@@ -325,12 +328,7 @@ the two run types below are named after which of them they produce.
   shift is involved. **Resolution: prefer "relationship" as the term**, and say
   what each actually is rather than bucketing it. Retiring `Modulation` is a
   behaviour change from the cmdlet and should be a deliberate one.
-- **"Unsteady", "Steady with changes", "stable tempo"** — the **warp class** names, on the
-  Counts page and in code, are mechanical, and the musical terms do not map onto them:
-  *Unsteady* (no 8 bars at one tempo) is mostly **drifting** tracks, but would also catch a long
-  accelerando; *Steady with changes* mixes drifting stretches with real **tempo changes**; and a
-  **looped** track is *Unsteady* by its markers while a detector, reading its average, finds it
-  steady. ADR 0038's "stable tempo" means a run of
-  8+ bars at one tempo, not the opposite of drifting. **Resolution: in prose, use steady,
-  drifting and tempo change**; the class names stay until a rename changes them everywhere at
-  once.
+- **"Stable tempo"** — ADR 0038's word for a run of 8+ bars at one tempo, not the opposite of
+  **drifting**. The warp classes it named *Steady with changes* and *Unsteady* were renamed
+  *Mostly steady* and *Drifting* on 2026-09-28; notes and design handoffs before then use the old
+  names.

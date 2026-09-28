@@ -55,10 +55,10 @@ public sealed record WarpTempo(
 
         return stable switch
         {
-            [] => new(Median(audible), TempoShape.Unsteady, audible.Min(), audible.Max(), []),
+            [] => new(Median(audible), TempoShape.Drifting, audible.Min(), audible.Max(), []),
             [var main, ..] => new(
                 main.Bpm,
-                runs.Count is 1 ? TempoShape.Steady : TempoShape.SteadyWithChanges,
+                runs.Count is 1 ? TempoShape.Steady : TempoShape.MostlySteady,
                 audible.Min(),
                 audible.Max(),
                 stable
@@ -163,9 +163,9 @@ public enum TempoShape
     /// <summary>One tempo across the whole default clip.</summary>
     Steady,
 
-    /// <summary>A main tempo, and a ramp, an unsteady stretch or another stable tempo besides.</summary>
-    SteadyWithChanges,
+    /// <summary>A main tempo, and a ramp, a drifting stretch or another stable tempo besides.</summary>
+    MostlySteady,
 
-    /// <summary>No tempo holds for eight audible bars: a live drummer, say.</summary>
-    Unsteady,
+    /// <summary>No tempo holds for eight audible bars: nearly always a drifting track.</summary>
+    Drifting,
 }

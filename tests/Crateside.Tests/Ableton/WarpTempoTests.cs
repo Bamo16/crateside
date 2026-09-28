@@ -21,18 +21,18 @@ public class WarpTempoTests
     {
         var tempo = Of(Warp(1, (90, 180), (24, 132), (80, 180)));
 
-        Assert.Equal(TempoShape.SteadyWithChanges, tempo.Shape);
+        Assert.Equal(TempoShape.MostlySteady, tempo.Shape);
         Assert.Equal(180, tempo.Bpm, 6);
         Assert.Equal([180, 132], tempo.Stable.Select(stable => Math.Round(stable.Bpm, 3)));
         Assert.Equal(24, tempo.Stable[1].Bars);
     }
 
     [Fact]
-    public void Without_a_run_of_eight_bars_the_warp_is_unsteady_and_keeps_its_range()
+    public void Without_a_run_of_eight_bars_the_warp_is_drifting_and_keeps_its_range()
     {
         var tempo = Of(Warp(1, Alternating(90, 94, 40)));
 
-        Assert.Equal(TempoShape.Unsteady, tempo.Shape);
+        Assert.Equal(TempoShape.Drifting, tempo.Shape);
         Assert.Equal(92, tempo.Bpm, 6);
         Assert.Equal((90, 94), (Math.Round(tempo.Low, 6), Math.Round(tempo.High, 6)));
     }
@@ -45,7 +45,7 @@ public class WarpTempoTests
 
         var tempo = Of(Warp(1, segments) with { Overview = Silent(from: silentFrom) });
 
-        Assert.Equal(TempoShape.Unsteady, tempo.Shape);
+        Assert.Equal(TempoShape.Drifting, tempo.Shape);
         Assert.Equal(170, tempo.Bpm, 6);
     }
 

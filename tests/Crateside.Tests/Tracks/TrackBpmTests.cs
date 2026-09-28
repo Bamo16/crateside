@@ -45,12 +45,12 @@ public class TrackBpmTests
         Assert.Equal("keytag's estimate", Row(Sample("Vocal - Full")).BpmNote);
         Assert.Equal("from your warp", Row(Sample("Vocal - Full", 174)).BpmNote);
         Assert.Equal(
-            "from your warp: unsteady, 91–94",
+            "from your warp: drifting, 91–94",
             Row(
                 new TrackSample
                 {
                     Label = "Instrumental - Full",
-                    Tempo = new WarpTempo(92.1, TempoShape.Unsteady, 90.8, 93.5, []),
+                    Tempo = new WarpTempo(92.1, TempoShape.Drifting, 90.8, 93.5, []),
                 }
             ).BpmNote
         );

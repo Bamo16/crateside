@@ -223,6 +223,9 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   band is *Triplet or dotted* with its wider rule, as the handoff allows.
 - **The familiarity index count** is the values with songs (2 when both are used), as the canvas
   shows it.
+- **The shape line reads "Steady · Mostly steady · Drifting"**, not the handoff's "Steady ·
+  Steady with changes · Unsteady": the names were renamed with the tempo vocabulary on 2026-09-28
+  (ADR 0038, amended). The track row's BPM tooltip says *drifting* and *mostly steady* likewise.
 
 ### Tools (handoff 09, #57, #58)
 

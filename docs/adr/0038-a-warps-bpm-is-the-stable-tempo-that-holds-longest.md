@@ -79,3 +79,11 @@ bass track with a half-time section is neither one nor the other. So a warp sett
 its octave: a detector reading ×½ or ×2 is ambiguous, not wrong. Readings at ×2/3, ×3/4 or
 anything else are still errors against the warp. Counts keeps half or double as its own band for
 this reason ([ADR 0041](0041-crateside-measures-bpm-detectors-against-the-warps.md)).
+
+## Amended, 2026-09-28: the shapes are renamed
+
+The user settled the tempo vocabulary (`CONTEXT.md`): a track written at one tempo and played
+without a click is **drifting**, and an intended change is a **tempo change**. The shapes above now
+read *steady*, **mostly steady** (was *steady with changes*) and **drifting** (was *unsteady*), in
+code (`TempoShape`), on the Counts page and in the BPM tooltip. The rules that assign them are
+unchanged. `WarpTempoReader.Version` went to 2, since the tempo cache stores the names.

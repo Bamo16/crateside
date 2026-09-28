@@ -135,10 +135,10 @@ public sealed record TrackRow
         Tempo switch
         {
             null => Verdict?.Bpm is null ? null : "keytag's estimate",
-            { Shape: TempoShape.Unsteady, Low: var low, High: var high } =>
-                $"from your warp: unsteady, {low:N0}–{high:N0}",
-            { Shape: TempoShape.SteadyWithChanges } =>
-                "from your warp: the tempo changes in places",
+            { Shape: TempoShape.Drifting, Low: var low, High: var high } =>
+                $"from your warp: drifting, {low:N0}–{high:N0}",
+            { Shape: TempoShape.MostlySteady } =>
+                "from your warp: mostly steady, changing in places",
             _ => "from your warp",
         };
 

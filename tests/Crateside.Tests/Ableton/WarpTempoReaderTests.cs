@@ -110,14 +110,10 @@ public class WarpTempoRealLibraryTests
     [Theory]
     [InlineData(
         "ReeK, Asatsumei, L4hee - Deity Mode (Instrumental - Full)",
-        TempoShape.SteadyWithChanges,
+        TempoShape.MostlySteady,
         180.00
     )]
-    [InlineData(
-        "T & Sugah - TumDaDaDum (Instrumental - Full)",
-        TempoShape.SteadyWithChanges,
-        174.00
-    )]
+    [InlineData("T & Sugah - TumDaDaDum (Instrumental - Full)", TempoShape.MostlySteady, 174.00)]
     [InlineData(
         "Paul Oakenfold, Asher D - Ready Steady Go (Extended Mix) (Instrumental - Full)",
         TempoShape.Steady,
@@ -125,7 +121,7 @@ public class WarpTempoRealLibraryTests
     )]
     [InlineData(
         "Cypress Hill - Hits from the Bong (Instrumental - Full)",
-        TempoShape.Unsteady,
+        TempoShape.Drifting,
         92.1
     )]
     [InlineData(
@@ -159,7 +155,7 @@ public class WarpTempoRealLibraryTests
     [Fact]
     public void A_silent_stretch_does_not_pass_for_the_tempo()
     {
-        // Without silence left out, a silent stretch at 131.9 outlasts the song's own unsteady 170.
+        // Without silence left out, a silent stretch at 131.9 outlasts the song's own drifting 170.
         var tempo = Read(
             "Group X - Arabian Rap Sensations - Jonny Poopoopants (Instrumental - Full)"
         );
