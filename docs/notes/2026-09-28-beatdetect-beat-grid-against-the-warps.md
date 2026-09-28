@@ -71,8 +71,11 @@ those. Every row is in `offsets.tsv`, kick, snare and hi-hat included.
   within 7 ms on 19, and never on the half-beat. The summed kit peaks near the half-beat on 3 songs
   (*Shake It Off*, *Queendom*, *Forgot About Dre*), the kick alone on 6, the hi-hat on 8.
 - **beatdetect finds the beat on 17 of the 20 drum stems whose tempo it gets.** The three it misses by
-  about half a beat: *Spicy*, where it follows the kick (kick +259 ms, grid +258); *Anna Sun*, on the
-  off-beat where the hats are; *Fancy*, read at a quarter of the tempo.
+  about half a beat: *Spicy*, where it follows the kick (kick +259 ms, grid +258); *Anna Sun*; and
+  *Fancy*, read at half tempo. **All three are on the beat in the window** (drums: +1, −4 and −27 ms).
+  By the user's ear, *Spicy*'s beat is unconventional, *Fancy*'s sparse, and *Anna Sun* has long
+  stretches with no drums or only an off-beat snare: consistent with those sections pulling a
+  whole-file fit onto the off-beat, not checked section by section.
 - **Its beats land late, by about one hop.** Median +12.4 ms on the drum stem and +11.9 on the
   instrumental, against a default hop of 12 ms. Only 4 of 17 are within 10 ms. That the bias is the
   same on both inputs and about one hop suggests the onset-latency correction in `frame_to_ms`
