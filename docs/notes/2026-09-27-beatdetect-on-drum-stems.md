@@ -86,11 +86,25 @@ Each drum stem split with `MDX23C-DrumSep-aufr33-jarredou` (StemForge's new `--m
 - **The hi-hat alone misreads at a triplet or dotted multiple most (9), the snare least (3–4).**
   Consistent with subdivisions pulling the pre-rework filter to ×2/3 and ×3/4, not proof of it.
 
+## Drums from the full mix against drums from the instrumental
+
+Two warped songs whose full mix was still in a crateside working set, both ×2/3 misses on the full
+mix. Drums cut from each source, scored the same way:
+
+| song | warped | drums from full mix (window / whole) | drums from instrumental (window / whole) |
+|---|---|---|---|
+| Mitsukiyo - Unwelcome School | 180 | 89.62 / 89.62 | 89.62 / 89.62 |
+| 1991 - If Only | 174 | 115.79 / 130.45 | 115.79 / 130.45 |
+
+Identical to the hundredth. Two songs is a hint, not a finding, but the drum model appears to pull
+the same drums from either source, so the source is unlikely to change beatdetect's answer.
+
 ## Where the files are
 
 `%USERPROFILE%\Music\Stems\BPM Corpus\2026-09-27 drum stems\<song>\`: the drum stem and its
 kick, snare and hi-hat, with `results.tsv` and `drumsep.tsv` beside them (their `drums_file` paths
-point at the session scratch they were made in). The scripts are in `BPM Corpus\scripts`.
+point at the session scratch they were made in). The full-mix comparison is beside it in `2026-09-27 full mix vs instrumental`. The scripts are in
+`BPM Corpus\scripts`.
 
 ## Not done
 
