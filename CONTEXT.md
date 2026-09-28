@@ -76,6 +76,26 @@ against it.
   the default clip, or the median bar where no tempo holds for eight
   ([ADR 0038](docs/adr/0038-a-warps-bpm-is-the-stable-tempo-that-holds-longest.md)). Shown in
   place of keytag's estimate once a track is warped.
+- **Tempo** — beats per minute of the beat the user warps to; the number is the **BPM**. A
+  reading at half or double is the same tempo at **the other octave**, and the octave is the
+  user's call, not an error.
+- **Single-marker warp** — a warp whose one user marker, on a hit at its right place on the
+  grid, fixes every beat, because the track holds one tempo. The sidecar stores it as two
+  markers (Ableton adds one 1/32 beat on).
+- **Steady** — a track at one constant tempo throughout: programmed, or played to a click.
+- **Drifting** — a track written at one tempo but performed without a click, so its timing
+  moves with the performance. Two kinds so far: **wandering**, where the average tempo moves
+  over the song, and **looped**, where a human-played loop repeats and the same hits land off a
+  straight grid every time while the average tempo holds.
+- **Tempo change** — an intended change: a ritardando, an accelerando, or a section at a new
+  tempo. Rare; the user warps these by hand and wants no automation for them.
+- **Warp class** — *Steady*, *Steady with changes* or *Unsteady*: what crateside reads
+  mechanically from a warp's markers bar by bar (ADR 0038). They approximate the musical terms
+  above without matching them; see **Flagged ambiguities**.
+- **Marker error** — how far a user's warp marker sits from the true beat: most within
+  5–10 ms, a few up to ~25 ms, by the user's estimate.
+- **Alignment error** — how far a detector's beat grid lands from a reference beat grid, in ms;
+  positive is late. An **off-beat lock** is a grid about half a beat off, on the "and".
 - **Sidecar** — the `.asd` Ableton writes beside a sample. Its *presence* means only that
   Ableton analysed the file and says nothing about warping
   ([ADR 0002](docs/adr/0002-there-is-no-warped-signal.md)); its **warp markers** are what
@@ -305,3 +325,12 @@ the two run types below are named after which of them they produce.
   shift is involved. **Resolution: prefer "relationship" as the term**, and say
   what each actually is rather than bucketing it. Retiring `Modulation` is a
   behaviour change from the cmdlet and should be a deliberate one.
+- **"Unsteady", "Steady with changes", "stable tempo"** — the **warp class** names, on the
+  Counts page and in code, are mechanical, and the musical terms do not map onto them:
+  *Unsteady* (no 8 bars at one tempo) is mostly **drifting** tracks, but would also catch a long
+  accelerando; *Steady with changes* mixes drifting stretches with real **tempo changes**; and a
+  **looped** track is *Unsteady* by its markers while a detector, reading its average, finds it
+  steady. ADR 0038's "stable tempo" means a run of
+  8+ bars at one tempo, not the opposite of drifting. **Resolution: in prose, use steady,
+  drifting and tempo change**; the class names stay until a rename changes them everywhere at
+  once.
