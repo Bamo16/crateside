@@ -13,7 +13,7 @@ public sealed record KeyDetectorCounts(
     /// <summary>The detectors in the ledger's own names, in the order the panel shows them.</summary>
     public static readonly IReadOnlyList<(string Ledger, string Shown, string Who)> Names =
     [
-        ("ffmpeg keydetect", "keydetect", "Fil's ffmpeg filter"),
+        ("ffmpeg keydetect", "keydetect", "FiLL's ffmpeg filter"),
         ("CREMA", "crema", "python"),
         ("librosa (K-S)", "librosa", "python"),
     ];
