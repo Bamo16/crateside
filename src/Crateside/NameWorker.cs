@@ -78,6 +78,8 @@ public sealed class NameWorker(
         if (unresolved.Length is 0)
             return IdleDelay;
 
+        var named = 0;
+
         // Sequential on purpose: each is a network call, and there is nothing waiting on the
         // answer. Resolving the whole backlog at once would be a burst for no gain.
         foreach (var item in unresolved)
@@ -96,6 +98,7 @@ public sealed class NameWorker(
             }
 
             store.Save(item.VideoId, resolved);
+            named++;
 
             logger.LogInformation(
                 "{VideoId} will be called {Name}",
@@ -103,6 +106,10 @@ public sealed class NameWorker(
                 resolved.DisplayTitle
             );
         }
+
+        // The rows carry the name, and the genre and familiarity lookups wait for it.
+        if (named > 0)
+            await tracks.RefreshAsync(stoppingToken);
 
         return IdleDelay;
     }

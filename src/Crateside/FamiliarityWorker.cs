@@ -91,7 +91,10 @@ public sealed class FamiliarityWorker(
         }
 
         if (measured > 0)
+        {
             logger.LogInformation("Measured familiarity for {Count} songs", measured);
+            await tracks.RefreshAsync(stoppingToken);
+        }
 
         return IdleDelay;
     }

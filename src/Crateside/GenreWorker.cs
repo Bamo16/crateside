@@ -89,7 +89,10 @@ public sealed class GenreWorker(
         }
 
         if (suggested > 0)
+        {
             logger.LogInformation("Suggested genres for {Count} songs", suggested);
+            await tracks.RefreshAsync(stoppingToken);
+        }
 
         return IdleDelay;
     }
