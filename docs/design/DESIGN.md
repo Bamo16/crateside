@@ -128,6 +128,8 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
   stays in place at 45% until the view is left.
 - A **Tempo drifts** filter (#75): tracks not warped yet whose tempo beatdetect reads drifting. The
   row carries a *tempo drifts* flag beside its title.
+- A **name pending** neutral flag beside a title StemForge has not given yet: the row shows the
+  upload's name (the uploader before a title that names no artist) until it does.
 
 ## Dashboard
 

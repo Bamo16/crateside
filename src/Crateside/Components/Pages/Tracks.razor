@@ -312,6 +312,10 @@
                     {
                         <span class="flag neutral">added by URL</span>
                     }
+                    @if (row.NameSource is TrackNameSource.Playlist)
+                    {
+                        <span class="flag neutral" title="StemForge has not named this track yet, so the name will change. Rename once it has.">name pending</span>
+                    }
                     @if (row.TempoDrifts)
                     {
                         <span class="flag" title="beatdetect reads the tempo changing across the instrumental: expect a hard warp">tempo drifts</span>
