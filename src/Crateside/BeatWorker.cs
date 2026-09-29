@@ -1,4 +1,5 @@
 using Crateside.Core;
+using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
 using Crateside.Core.Tracks;
 using Humanizer;
@@ -12,6 +13,7 @@ namespace Crateside;
 public sealed class BeatWorker(
     BeatReader reader,
     CratesidePaths paths,
+    AbletonFolderInfoReader folderInfo,
     TracksService tracks,
     ILogger<BeatWorker> logger
 ) : BackgroundService
@@ -79,7 +81,7 @@ public sealed class BeatWorker(
 
         string[] unread =
         [
-            .. BeatReader.Instrumentals(paths).Where(file => reader.Read(file) is null),
+            .. BeatReader.Instrumentals(paths, folderInfo).Where(file => reader.Read(file) is null),
         ];
 
         reader.Begin(unread.Length);

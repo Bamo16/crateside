@@ -104,9 +104,7 @@ public sealed class LibraryKeyReader(
             ? run.DisplayName
             : StemFileName.WithoutPreset(samples[0].File);
 
-        var instrumentals = samples
-            .Where(s => s.File.Contains("(Instrumental", StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        var instrumentals = samples.Where(s => BeatReader.IsInstrumental(s.File, s.Tags)).ToList();
 
         return new LibrarySong
         {

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using Crateside.Core.Ableton;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Samples;
 
@@ -143,9 +144,21 @@ public sealed partial class BeatReader(string? path = null, string fileName = "f
     }
 
     /// <summary>The instrumentals to read, staging's before the library's.</summary>
-    public static IEnumerable<string> Instrumentals(CratesidePaths paths) =>
-        Instrumentals(paths.SampleStaging, SearchOption.TopDirectoryOnly)
-            .Concat(Instrumentals(paths.MashupSamples, SearchOption.AllDirectories));
+    public static IEnumerable<string> Instrumentals(
+        CratesidePaths paths,
+        AbletonFolderInfoReader folderInfo
+    ) =>
+        Instrumentals(paths.SampleStaging, SearchOption.TopDirectoryOnly, folderInfo)
+            .Concat(Instrumentals(paths.MashupSamples, SearchOption.AllDirectories, folderInfo));
+
+    /// <summary>
+    /// Ableton's Type says so, which a kept source used as the instrumental carries too; an untagged
+    /// file, fresh in staging, by its name.
+    /// </summary>
+    public static bool IsInstrumental(string file, AbletonFileTags? tags) =>
+        tags?.Type is { } type
+            ? type.Equals("Instrumental", StringComparison.OrdinalIgnoreCase)
+            : Path.GetFileName(file).Contains("(Instrumental", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>The last value the filter reported for each figure, from its printed metadata.</summary>
     internal static Detected Parse(string printed)
@@ -218,16 +231,24 @@ public sealed partial class BeatReader(string? path = null, string fileName = "f
         }
     }
 
-    private static IEnumerable<string> Instrumentals(string root, SearchOption depth) =>
-        Directory.Exists(root)
-            ? Directory
-                .EnumerateFiles(root, "*", depth)
-                .Where(file =>
-                    SampleFiles.IsAudio(file)
-                    && Path.GetFileName(file)
-                        .Contains("(Instrumental", StringComparison.OrdinalIgnoreCase)
-                )
-            : [];
+    private static IEnumerable<string> Instrumentals(
+        string root,
+        SearchOption depth,
+        AbletonFolderInfoReader folderInfo
+    )
+    {
+        if (!Directory.Exists(root))
+            return [];
+
+        var tags = folderInfo.Read(root);
+
+        return Directory
+            .EnumerateFiles(root, "*", depth)
+            .Where(file =>
+                SampleFiles.IsAudio(file)
+                && IsInstrumental(file, tags.TryGet(file, out var found) ? found : null)
+            );
+    }
 
     private FileInfo? Located() =>
         Path.IsPathRooted(fileName)

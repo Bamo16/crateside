@@ -98,6 +98,47 @@ public class BeatReadingTests
     public void Only_full_windows_are_read(double seconds, int[] starts) =>
         Assert.Equal(starts, BeatReader.WindowStarts(seconds));
 
+    [Theory]
+    [InlineData("Darude - Sandstorm (Radio Edit).flac", "Instrumental", true)]
+    [InlineData("Adele - Hello (Instrumental - Full).flac", "Instrumental", true)]
+    [InlineData("Adele - Hello (Instrumental - Full).flac", "Vocal", false)]
+    [InlineData("Adele - Hello (Instrumental - Full).flac", null, true)]
+    [InlineData("Adele - Hello (Drums).flac", null, false)]
+    public void Ableton_s_type_decides_and_the_name_only_when_there_is_no_type(
+        string file,
+        string? type,
+        bool instrumental
+    ) =>
+        Assert.Equal(
+            instrumental,
+            BeatReader.IsInstrumental(
+                file,
+                type is null
+                    ? null
+                    : new AbletonFileTags
+                    {
+                        RelativePath = file,
+                        Keywords = [],
+                        Type = type,
+                    }
+            )
+        );
+
+    [Fact]
+    public void A_kept_source_used_as_the_instrumental_is_read_too()
+    {
+        var paths = new CratesidePaths();
+        Assert.SkipUnless(
+            Directory.Exists(paths.MashupSamples),
+            $"{paths.MashupSamples} not present."
+        );
+
+        Assert.Contains(
+            BeatReader.Instrumentals(paths, new AbletonFolderInfoReader()),
+            file => Path.GetFileName(file) == "Darude - Sandstorm (Radio Edit).flac"
+        );
+    }
+
     [Fact]
     public void The_drift_flag_is_counted_against_each_warp_shape()
     {
