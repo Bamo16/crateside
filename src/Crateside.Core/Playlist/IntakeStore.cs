@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Crateside.Core.WorkLists;
 
 namespace Crateside.Core.Playlist;
@@ -215,23 +214,8 @@ public sealed class IntakeStore
             IsUnavailable = record.IsUnavailable,
         };
 
-    private IReadOnlyList<IntakeRecord>? TryReadFile()
-    {
-        try
-        {
-            return File.Exists(_path)
-                ? JsonSerializer.Deserialize(
-                    File.ReadAllText(_path),
-                    IntakeJsonContext.Default.IReadOnlyListIntakeRecord
-                )
-                : null;
-        }
-        catch (Exception ex)
-            when (ex is IOException or JsonException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
+    private IReadOnlyList<IntakeRecord>? TryReadFile() =>
+        IntakeJsonContext.Default.IReadOnlyListIntakeRecord.ReadFileOrDefault(_path);
 
     private void Write(IReadOnlyList<IntakeRecord> records)
     {
@@ -239,14 +223,7 @@ public sealed class IntakeStore
 
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-            File.WriteAllText(
-                _path,
-                JsonSerializer.Serialize(
-                    records,
-                    IntakeJsonContext.Default.IReadOnlyListIntakeRecord
-                )
-            );
+            IntakeJsonContext.Default.IReadOnlyListIntakeRecord.WriteFile(_path, records);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

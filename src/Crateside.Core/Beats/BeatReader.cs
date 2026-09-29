@@ -127,14 +127,7 @@ public sealed partial class BeatReader(string? path = null, string fileName = "f
 
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-
-                var temporary = $"{_path}.tmp";
-                File.WriteAllText(
-                    temporary,
-                    JsonSerializer.Serialize(kept, BeatJsonContext.Default.BeatFile)
-                );
-                File.Move(temporary, _path, overwrite: true);
+                BeatJsonContext.Default.BeatFile.WriteFile(_path, kept);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
@@ -279,27 +272,12 @@ public sealed partial class BeatReader(string? path = null, string fileName = "f
         }
     }
 
-    private static Dictionary<string, BeatEntry> Load(string? path)
-    {
-        try
-        {
-            return
-                path is not null
-                && File.Exists(path)
-                && JsonSerializer.Deserialize(
-                    File.ReadAllText(path),
-                    BeatJsonContext.Default.BeatFile
-                )
-                    is { Version: Version, Entries: { } entries }
-                ? entries
-                : [];
-        }
-        catch (Exception ex)
-            when (ex is IOException or JsonException or UnauthorizedAccessException)
-        {
-            return [];
-        }
-    }
+    private static Dictionary<string, BeatEntry> Load(string? path) =>
+        path is not null
+        && BeatJsonContext.Default.BeatFile.ReadFileOrDefault(path)
+            is { Version: Version, Entries: { } entries }
+            ? entries
+            : [];
 }
 
 /// <summary>Which ffmpeg read a file: its version, and the executable's size and time to tell rebuilds apart.</summary>

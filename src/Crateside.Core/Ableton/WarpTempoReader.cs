@@ -63,14 +63,7 @@ public sealed class WarpTempoReader(string? path = null)
 
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-
-                var temporary = $"{_path}.tmp";
-                File.WriteAllText(
-                    temporary,
-                    JsonSerializer.Serialize(kept, WarpTempoJsonContext.Default.TempoFile)
-                );
-                File.Move(temporary, _path, overwrite: true);
+                WarpTempoJsonContext.Default.TempoFile.WriteFile(_path, kept);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
@@ -79,27 +72,12 @@ public sealed class WarpTempoReader(string? path = null)
         }
     }
 
-    private static Dictionary<string, TempoEntry> Load(string? path)
-    {
-        try
-        {
-            return
-                path is not null
-                && File.Exists(path)
-                && JsonSerializer.Deserialize(
-                    File.ReadAllText(path),
-                    WarpTempoJsonContext.Default.TempoFile
-                )
-                    is { Version: Version, Entries: { } entries }
-                ? entries
-                : [];
-        }
-        catch (Exception ex)
-            when (ex is IOException or JsonException or UnauthorizedAccessException)
-        {
-            return [];
-        }
-    }
+    private static Dictionary<string, TempoEntry> Load(string? path) =>
+        path is not null
+        && WarpTempoJsonContext.Default.TempoFile.ReadFileOrDefault(path)
+            is { Version: Version, Entries: { } entries }
+            ? entries
+            : [];
 
     private static int? SampleRateOf(string audioPath)
     {

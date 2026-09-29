@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace Crateside.Core.Orchestration.Loop;
 
 /// <summary>
@@ -17,22 +15,7 @@ public sealed class PauseStore(string? path = null)
     public PausedStages Read()
     {
         lock (_gate)
-        {
-            try
-            {
-                return File.Exists(_path)
-                    ? JsonSerializer.Deserialize(
-                        File.ReadAllText(_path),
-                        PauseJsonContext.Default.PausedStages
-                    ) ?? new()
-                    : new();
-            }
-            catch (Exception ex)
-                when (ex is IOException or JsonException or UnauthorizedAccessException)
-            {
-                return new();
-            }
-        }
+            return PauseJsonContext.Default.PausedStages.ReadFileOrDefault(_path) ?? new();
     }
 
     public void RememberSeparation(bool paused) => Save(Read() with { Separation = paused });
@@ -50,11 +33,7 @@ public sealed class PauseStore(string? path = null)
         {
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-                File.WriteAllText(
-                    _path,
-                    JsonSerializer.Serialize(stages, PauseJsonContext.Default.PausedStages)
-                );
+                PauseJsonContext.Default.PausedStages.WriteFile(_path, stages);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }

@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace Crateside.Core.Naming;
 
 /// <summary>
@@ -35,14 +33,7 @@ public sealed class ResolvedNameStore
 
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-                File.WriteAllText(
-                    _path,
-                    JsonSerializer.Serialize(
-                        names,
-                        NamingJsonContext.Default.DictionaryStringResolvedName
-                    )
-                );
+                NamingJsonContext.Default.DictionaryStringResolvedName.WriteFile(_path, names);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
@@ -51,20 +42,6 @@ public sealed class ResolvedNameStore
         }
     }
 
-    private Dictionary<string, ResolvedName> TryReadFile()
-    {
-        try
-        {
-            return File.Exists(_path)
-                ? JsonSerializer.Deserialize(
-                    File.ReadAllText(_path),
-                    NamingJsonContext.Default.DictionaryStringResolvedName
-                ) ?? []
-                : [];
-        }
-        catch (Exception ex) when (ex is IOException or JsonException)
-        {
-            return [];
-        }
-    }
+    private Dictionary<string, ResolvedName> TryReadFile() =>
+        NamingJsonContext.Default.DictionaryStringResolvedName.ReadFileOrDefault(_path) ?? [];
 }

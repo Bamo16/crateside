@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Crateside.Core.Familiarity;
@@ -68,38 +67,19 @@ public sealed class FamiliarityStore
 
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-                File.WriteAllText(
+                FamiliarityJsonContext.Default.ListFamiliarityRecord.WriteFile(
                     _path,
-                    JsonSerializer.Serialize(
-                        records.Values.OrderBy(r => r.Song).ToList(),
-                        FamiliarityJsonContext.Default.ListFamiliarityRecord
-                    )
+                    [.. records.Values.OrderBy(r => r.Song)]
                 );
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
     }
 
-    private Dictionary<string, FamiliarityRecord> TryReadFile()
-    {
-        try
-        {
-            return File.Exists(_path)
-                ? (
-                    JsonSerializer.Deserialize(
-                        File.ReadAllText(_path),
-                        FamiliarityJsonContext.Default.ListFamiliarityRecord
-                    ) ?? []
-                ).ToDictionary(r => r.Song, StringComparer.OrdinalIgnoreCase)
-                : new(StringComparer.OrdinalIgnoreCase);
-        }
-        catch (Exception ex)
-            when (ex is IOException or JsonException or UnauthorizedAccessException)
-        {
-            return new(StringComparer.OrdinalIgnoreCase);
-        }
-    }
+    private Dictionary<string, FamiliarityRecord> TryReadFile() =>
+        (
+            FamiliarityJsonContext.Default.ListFamiliarityRecord.ReadFileOrDefault(_path) ?? []
+        ).ToDictionary(r => r.Song, StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>One song's familiarity: measured, settled, or both.</summary>

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
 using Microsoft.Extensions.Options;
@@ -143,11 +142,7 @@ public sealed class QueueSettingsStore
         {
             var settings = change(Current());
 
-            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-            File.WriteAllText(
-                _path,
-                JsonSerializer.Serialize(settings, QueueSettingsJsonContext.Default.QueueSettings)
-            );
+            QueueSettingsJsonContext.Default.QueueSettings.WriteFile(_path, settings);
 
             _cachedStamp = StampOf(_path);
 
@@ -201,23 +196,8 @@ public sealed class QueueSettingsStore
                 WasInstrumentalRelease = false,
             };
 
-    private QueueSettings? TryReadFile()
-    {
-        try
-        {
-            return File.Exists(_path)
-                ? JsonSerializer.Deserialize(
-                    File.ReadAllText(_path),
-                    QueueSettingsJsonContext.Default.QueueSettings
-                )
-                : null;
-        }
-        catch (Exception ex)
-            when (ex is IOException or JsonException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
+    private QueueSettings? TryReadFile() =>
+        QueueSettingsJsonContext.Default.QueueSettings.ReadFileOrDefault(_path);
 }
 
 /// <summary>User-editable Queue settings. Contains no secrets.</summary>

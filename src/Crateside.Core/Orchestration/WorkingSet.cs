@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Crateside.Core.Orchestration.Download;
 
 namespace Crateside.Core.Orchestration;
@@ -80,23 +79,8 @@ public sealed class WorkingSet(string? root = null)
     /// <summary>
     /// How this track's retained download went, or null — no finding — when nothing recorded it.
     /// </summary>
-    public Acquisition? AcquisitionFor(string videoId)
-    {
-        try
-        {
-            return File.Exists(AcquisitionPathFor(videoId))
-                ? JsonSerializer.Deserialize(
-                    File.ReadAllText(AcquisitionPathFor(videoId)),
-                    WorkingSetJsonContext.Default.Acquisition
-                )
-                : null;
-        }
-        catch (Exception ex)
-            when (ex is IOException or JsonException or UnauthorizedAccessException)
-        {
-            return null;
-        }
-    }
+    public Acquisition? AcquisitionFor(string videoId) =>
+        WorkingSetJsonContext.Default.Acquisition.ReadFileOrDefault(AcquisitionPathFor(videoId));
 
     /// <summary>Every recorded acquisition, by video ID — what the rows are drawn from.</summary>
     public IReadOnlyDictionary<string, Acquisition> Acquisitions() =>
@@ -114,11 +98,9 @@ public sealed class WorkingSet(string? root = null)
     {
         try
         {
-            Prepare(videoId);
-
-            File.WriteAllText(
+            WorkingSetJsonContext.Default.Acquisition.WriteFile(
                 AcquisitionPathFor(videoId),
-                JsonSerializer.Serialize(acquisition, WorkingSetJsonContext.Default.Acquisition)
+                acquisition
             );
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
