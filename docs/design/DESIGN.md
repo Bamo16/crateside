@@ -137,6 +137,15 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
   row carries a *tempo drifts* flag beside its title.
 - A **name pending** neutral flag beside a title StemForge has not given yet: the row shows the
   upload's name (the uploader before a title that names no artist) until it does.
+- **Opening and closing a row keeps your place** (handoff 13): what you clicked stays still on
+  screen, the row's header, or the top of its file list for anything inside the panel. The panel's
+  height eases over 220ms (`grid-template-rows` 0fr ↔ 1fr, `cubic-bezier(.33,1,.68,1)`), with no
+  motion under reduced motion. An opened panel scrolls into view only as far as its bottom plus
+  16px, never taking the header above 8px; a close is held by a spacer after the list that only
+  shrinks as you scroll up, and a filter or search resets it. `Tracks.razor.js`.
+- **The expanded panel has no heading**: the file list starts with its column heads. *Re-cut
+  pending* leads the side column's note while picking, and before separation the *changes apply
+  now* hint ends the `.detail` line. Track details keeps its heading (`StemList Headed`).
 
 ## Dashboard
 
@@ -238,6 +247,15 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   vanishes on white, and the brand rules allow no other colours. On a light theme the README shows
   `mark-tile.svg` (the mark on its own dark tile) above the text heading instead. A lockup for
   light backgrounds would be a Design question.
+
+### Tracks row (handoff 13, #85)
+
+- **The picker swaps in rather than morphs.** The canvas turns the file list into the picker, the
+  kept lines sliding into their bands under column heads that stay. The build still replaces the
+  list with the picker's bands, at once, with no heads; the place-keeping holds the list's top
+  still instead of the heads. Only the row's panel animates.
+- **One row is open at a time**, as before; the canvas allows several. Opening a row while another
+  above it closes still keeps the clicked header still.
 
 ### Tracks row and Track details (handoff 06, #62)
 

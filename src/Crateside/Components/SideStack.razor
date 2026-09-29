@@ -37,7 +37,13 @@
         }
         else
         {
-            <p class="fold-note">Tick what should exist. Nothing changes until you confirm.</p>
+            <p class="fold-note">
+                @if (Editor.PickerFor(Row) is { IsAdditive: false, ChangesAnything: true })
+                {
+                    <span class="pending">Re-cut pending. </span>
+                }
+                Tick what should exist. Nothing changes until you confirm.
+            </p>
             <div class="actions">
                 <button class="outline" @onclick="() => Editor.TogglePicking(Row)" disabled="@Editor.Working">
                     Close

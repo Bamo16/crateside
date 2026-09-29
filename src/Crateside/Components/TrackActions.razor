@@ -45,7 +45,7 @@ else if (Part is Parts.Queue && (ShowNextSentence || HasQueueButtons))
                 @Row.Detail
                 @if (Row.CanChangePlan)
                 {
-                    @($" {StemEditor.Cost(Row.Recipe)}")
+                    @($" {StemEditor.Cost(Row.Recipe)} Changes to what is cut apply now: nothing has been made yet.")
                 }
                 @if (Row.State is TrackState.Short)
                 {

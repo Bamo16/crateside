@@ -11,7 +11,7 @@
 @if (ticking || Row.Samples.Count > 0 || Row.HasWarpGuide)
 {
     <div class="stems">
-        @if (ticking)
+        @if (ticking && Headed)
         {
             <div class="panel-head">
                 @if (Row.CanChangePlan)
@@ -28,6 +28,10 @@
                     }
                 }
             </div>
+        }
+
+        @if (ticking)
+        {
 
             <div class="bands">
                 @foreach (var band in picker.Bands)
@@ -158,7 +162,10 @@
 else
 {
     <div class="stems">
-        <div class="panel-head">@StemsHeading(Row)</div>
+        @if (Headed)
+        {
+            <div class="panel-head">@StemsHeading(Row)</div>
+        }
         <p class="no-samples">No samples yet · what happens next is beside this</p>
     </div>
 }
@@ -173,6 +180,10 @@ else
     /// <summary>The row draws the add and adopt forms and Close in its side column, so the list does not.</summary>
     [Parameter]
     public bool FormsBeside { get; set; }
+
+    /// <summary>The Tracks row leaves the heading out: its header already names the track (handoff 13).</summary>
+    [Parameter]
+    public bool Headed { get; set; } = true;
 
     private static string PickLabel(StemChoice line) =>
         line switch

@@ -452,6 +452,59 @@
    above it rather than as another row. */
 /* Capped with the rows, so the panel's right-hand column stays under the row's own instead of
    drifting off toward the window edge. */
+/* Opening and closing a row (handoff 13): the height eases between 0fr and 1fr, and the panel
+   clips only while it moves, so nothing inside it is cut off once it has opened. */
+.reveal {
+    display: grid;
+    grid-template-rows: 1fr;
+    animation: reveal-open 220ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.reveal > .panel {
+    min-height: 0;
+    animation: clip 220ms;
+}
+
+.reveal.closing {
+    grid-template-rows: 0fr;
+    pointer-events: none;
+    animation: reveal-close 220ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.reveal.closing > .panel {
+    overflow: hidden;
+}
+
+@keyframes reveal-open {
+    from {
+        grid-template-rows: 0fr;
+    }
+}
+
+@keyframes reveal-close {
+    from {
+        grid-template-rows: 1fr;
+    }
+}
+
+@keyframes clip {
+    from,
+    to {
+        overflow: hidden;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal,
+    .reveal > .panel {
+        animation: none;
+    }
+
+    .reveal.closing {
+        display: none;
+    }
+}
+
 .panel {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 340px;
