@@ -6,8 +6,10 @@ namespace Crateside.Core.Pairing;
 /// </summary>
 public static class Partners
 {
-    /// <summary>The widest shift the model expresses, since shifts normalize to ±6.</summary>
-    public const int MaxPossibleShift = 6;
+    /// <summary>Every key has a partner within this many semitones, whatever the source.</summary>
+    public const int WidestShift = 2;
+
+    public const int DefaultMaxShift = 1;
 
     /// <summary>
     /// Every partner for <paramref name="source"/>, ordered by absolute shift first, then score.
@@ -16,7 +18,7 @@ public static class Partners
     /// Narrows the results to partners reachable within this many semitones. Defaults to all
     /// 24 keys.
     /// </param>
-    public static IReadOnlyList<MashupPartner> For(MusicKey source, int maxShift = MaxPossibleShift)
+    public static IReadOnlyList<MashupPartner> For(MusicKey source, int maxShift = WidestShift)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(maxShift);
 

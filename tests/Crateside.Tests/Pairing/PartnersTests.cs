@@ -14,6 +14,19 @@ public class PartnersTests
     }
 
     [Fact]
+    public void The_widest_shift_is_the_least_that_reaches_every_key_from_every_key()
+    {
+        Assert.All(
+            MusicKey.AllKeys,
+            key => Assert.Equal(24, Partners.For(key, Partners.WidestShift).Count)
+        );
+        Assert.All(
+            MusicKey.AllKeys,
+            key => Assert.NotEqual(24, Partners.For(key, Partners.WidestShift - 1).Count)
+        );
+    }
+
+    [Fact]
     public void The_reproduced_d_sharp_major_ordering()
     {
         var unshifted = Partners.For(Key("D# major"), maxShift: 0);

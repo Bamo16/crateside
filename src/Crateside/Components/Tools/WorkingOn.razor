@@ -29,7 +29,7 @@
     {
         <div class="search-wrap">
             <input type="text" class="search" placeholder="⌕ Search warped tracks" @ref="_box"
-                   @bind="_search" @bind:event="oninput" @bind:after="Search" @onkeydown="Navigate" />
+                   @bind="_search" @bind:event="oninput" @bind:after="Search" @onkeydown="Navigate" @onblur="Cancel" />
 
             @if (_matches.Count > 0)
             {
@@ -158,10 +158,16 @@
                 await Pick(_matches[_highlight]);
                 break;
             case "Escape":
-                _matches = [];
-                _searching = false;
+                Cancel();
                 break;
         }
+    }
+
+    /// <summary>Closes the search, back to the track already picked if there is one.</summary>
+    private void Cancel()
+    {
+        _matches = [];
+        _searching = false;
     }
 
     private async Task Pick(LibrarySong song)

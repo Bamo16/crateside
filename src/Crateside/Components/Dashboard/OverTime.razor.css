@@ -115,7 +115,7 @@
 
 .log-line {
     display: grid;
-    grid-template-columns: 52px 150px minmax(0, 1fr);
+    grid-template-columns: 64px 150px minmax(0, 1fr);
     gap: 12px;
     align-items: baseline;
     padding: 6px 0;
@@ -124,6 +124,7 @@
 
 .at {
     font-size: 12.5px;
+    white-space: nowrap;
     color: var(--text-50);
 }
 

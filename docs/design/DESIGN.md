@@ -176,8 +176,8 @@ or `?key=&bpm=`, plus `&shift=` and `&rel=1`), so a reload or a pasted link rest
 reopens where it was left until a restart.
 
 - **The selected track** is a clickable card (song, key · Camelot, whole-number warped BPM, genre ·
-  familiarity · Track details). Clicking it turns it into the search, open and focused; Esc puts
-  it back. Under it, key and BPM by hand; **editing either drops the track** and keeps what was
+  familiarity · Track details). Clicking it turns it into the search, open and focused; Esc or clicking
+  away puts it back. Under it, key and BPM by hand; **editing either drops the track** and keeps what was
   typed.
 - **Re-Pitch rows are selectable**: the chosen shift is 600 weight on `rgba(255,255,255,.08)` with
   a 1px inset `--text-35` ring and a *→ Partners* tag. **This is the house style for a chosen row
@@ -294,3 +294,5 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   the canvas's simple model named the rows "a fifth up" and so on. The handoff asked for the built
   calculation.
 - **The track is picked from warped library songs**, as the Re-Pitch search already did.
+- **Partners' max shift is ±0 to ±2, default ±1.** Every key is within two semitones of a partner
+  from any source, so a wider slider only repeated the full list (user, 2026-09-29).

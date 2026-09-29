@@ -43,8 +43,8 @@
         </div>
 
         <label class="slider">
-            <span>Max shift <em>@("semitone".ToQuantity(Max))</em></span>
-            <input type="range" min="0" max="@Core.Pairing.Partners.MaxPossibleShift" step="1"
+            <span>Max shift <em>±@("semitone".ToQuantity(Max))</em></span>
+            <input type="range" min="0" max="@Core.Pairing.Partners.WidestShift" step="1"
                    value="@Max" @oninput="e => OnMax.InvokeAsync(int.Parse((string)e.Value!, CultureInfo.InvariantCulture))" />
         </label>
 
@@ -88,7 +88,7 @@
     public required IReadOnlyList<MashupPartner> Partners { get; set; }
 
     [Parameter]
-    public int Max { get; set; } = Core.Pairing.Partners.MaxPossibleShift;
+    public int Max { get; set; } = Core.Pairing.Partners.DefaultMaxShift;
 
     [Parameter]
     public EventCallback<int> OnMax { get; set; }
