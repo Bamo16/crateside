@@ -11,7 +11,7 @@ Open any `.dc.html` in a browser. They need `support.js` beside them. Each is a 
 
 | file | turns | status |
 |---|---|---|
-| `Crateside Unified Page.dc.html` | 1 · Tracks page · 2 · re-cut and rename · 3 · stem selection, uploads, add track (#22) | 1–2 built, with divergences recorded in the recut brief. 3: check against code. |
+| `Crateside Unified Page.dc.html` | 1 · Tracks page · 2 · re-cut and rename · 3 · stem selection, uploads, add track (#22) · 4 · opening and closing rows, keeping your place (4a, #85) | 1–2 built, with divergences recorded in the recut brief. 3: check against code. 4: handoff 13; it removes the panel heading that 3a/3b still draw. |
 | `Crateside Track Page.dc.html` | 1 · Track details, all states · 2 · actions, stage flow, embed, genre, activity log (#21) | Built (#21), with differences in `DESIGN.md`. Turn 2 supersedes turn 1 where they differ; the rail's actions and tags are superseded by the Actions Layout canvas. |
 | `Crateside Actions Layout.dc.html` | 1 · where a track's actions live, row and Track details (1a–1g, #62) | Built (#62), with differences in `DESIGN.md`. Handoff 06. |
 | `Crateside Row Proportions.dc.html` | 1 · the expanded row's two columns (1a–1g) · 2 · genre from the collapsed row (2a–2b, #65) | Handoff 07. Mounts `Crateside Row Stack.dc.html`, so keep the two together. |
@@ -40,6 +40,7 @@ The written spec for each canvas turn, in the order it was sent. The later ones 
 | `10-settings.md` | Settings Page | #74 |
 | `11-dashboard.md` | Dashboard | #78 |
 | `12-tools-together.md` | Tools Together | #79 |
+| `13-row-motion.md` | Unified Page, turn 4 | #85 |
 
 ### `brand/`: the 1a assets
 `mark.svg` (header), `favicon.svg` plus PNG fallbacks (browser tab), `lockup.svg` (README), `mark-tile.svg` (app icon). Usage rules are in `handoffs/04-brand.md`.
@@ -60,7 +61,7 @@ The live definition is `src/Crateside/wwwroot/app.css`. The rules the canvases f
 
 From brief 05 on, a handoff takes its brief's number: `briefs/NN-<topic>.md` → `handoffs/NN-<topic>.md`.
 Handoffs 01–04 predate the briefs folder and keep their numbers, which do not line up with the
-briefs. The folder has no briefs 03 or 04 (#22's brief was pasted in chat). Handoff 05 was back-filled from the
+briefs. The folder has no briefs 03 or 04 (#22's brief was pasted in chat), and no brief 13 (given to the Design session directly). Handoff 05 was back-filled from the
 Design session's comment on #21.
 
 Handoffs outside the brief sequence take a letter after the brief they follow: `06b-workflow-fixes.md`

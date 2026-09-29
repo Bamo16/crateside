@@ -9,6 +9,94 @@
 <x-dc>
 <helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"><style>html{background:#0f0e0c}body{margin:0;min-height:100%;background:#0f0e0c;font-family:"IBM Plex Sans",system-ui,sans-serif;color:#ece7dc}a{color:#e8b45a}a:hover{color:#f3cd86}.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(255,255,255,.08);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}.dv-tid{font:600 10px "IBM Plex Mono",monospace;padding:3px 7px;background:#ece7dc;color:#0f0e0c;border-radius:4px;text-decoration:none}.dv-tname{font:600 13px/1.2 "IBM Plex Sans",sans-serif;color:#ece7dc}.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}.dv-oid{font:600 10.5px "IBM Plex Mono",monospace;padding:3px 7px;background:rgba(255,255,255,.1);color:#ece7dc;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11.5px/1.3 "IBM Plex Sans",sans-serif;color:rgba(236,231,220,.6)}.dv-card{max-width:100%;background:#17160f;border:1px solid rgba(255,255,255,.1);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.5);overflow:hidden}.dv-opt:target .dv-oid{background:#e8b45a;color:#0f0e0c}.dv-next{margin:22px 0 0;font:12px/1.5 "IBM Plex Sans",sans-serif;color:rgba(236,231,220,.5)}.dv-notes{max-width:760px;font:13px/1.55 "IBM Plex Sans",sans-serif;color:rgba(236,231,220,.7);margin:0 0 28px}.dv-notes b{color:#ece7dc;font-weight:600}.dv-notes p{margin:0 0 8px}@keyframes cs-pulse{0%,100%{opacity:1}50%{opacity:.35}}@keyframes cs-slide{from{transform:translateX(-40%)}to{transform:translateX(140%)}}</style></helmet>
 
+<section class="dv-turn" id="t4">
+<div class="dv-thd"><a class="dv-tid" href="#t4">4</a><span class="dv-tname">Opening and closing rows · keeping your place</span></div>
+<div class="dv-notes">
+<p><b>One rule.</b> What you clicked stays where it is on screen. The page can grow or shrink around it, but the row header you clicked (or the column headers, when opening the picker) never moves under your cursor.</p>
+<p><b>Motion.</b> Height animates over 220ms with ease-out <code>cubic-bezier(.33,1,.68,1)</code> (drawn with <code>grid-template-rows: 0fr → 1fr</code>). New lines fade in with a 30% delay; when closing, they fade out straight away. With reduced motion, the change is instant but the place-keeping rules still apply.</p>
+<p><b>Opening.</b> The page scrolls only if the panel would end below the screen, just enough to show its bottom plus 16px. It never scrolls further than the clicked header minus 8px from the top. A panel taller than the screen is shown from its header down.</p>
+<p><b>Closing.</b> A spacer at the bottom of the page takes up the height the panel gave back, so the page can't pull the scroll position back. The spacer shrinks as you scroll up and never grows when you scroll down. Set <code>overflow-anchor: none</code> on the scroller so the browser's own scroll anchoring doesn't fight this.</p>
+<p><b>Picker.</b> A correction to what I said in chat: the opener becomes the list, and kept lines move into their bands, so the fixed point is the column headers row, not the opener. The same reveal and spacer rules apply.</p>
+<p><b>Panel heading removed.</b> <i>FILES · SAMPLE STAGING / {name}</i> is gone. It used the same style as the column headers right below it, and every part of it is said elsewhere: the row header gives the name and the Where column gives Sample Staging. The column headers now start the panel. Turn 3 still shows the old heading.</p>
+</div>
+<div class="dv-opts">
+<div class="dv-opt" id="4a"><div class="dv-olabel"><a class="dv-oid" href="#4a">4a</a>Working demo. The frame is a 560px-tall screen, scrolled to the bottom. Open and close the last row, open its picker, then switch to "Today" to compare.</div>
+<div style="display:flex;align-items:center;gap:8px">
+  <div style="display:flex;gap:2px;padding:2px;border:1px solid rgba(255,255,255,.14);border-radius:999px">
+    <button onClick="{{ setProposed }}" style="font:500 12px 'IBM Plex Sans',sans-serif;padding:5px 12px;border-radius:999px;border:0;cursor:pointer;background:{{ proposedBg }};color:{{ proposedFg }}">Proposed</button>
+    <button onClick="{{ setToday }}" style="font:500 12px 'IBM Plex Sans',sans-serif;padding:5px 12px;border-radius:999px;border:0;cursor:pointer;background:{{ todayBg }};color:{{ todayFg }}">Today</button>
+  </div>
+  <button onClick="{{ jumpBottom }}" style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px;cursor:pointer">Close all · scroll to bottom</button>
+  <span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ modeHint }}</span>
+</div>
+<div class="dv-card" style="width:1280px;background:#141310">
+  <div ref="{{ vpRef }}" onScroll="{{ onVpScroll }}" style="position:relative;height:560px;overflow-y:auto;overflow-anchor:none">
+    <div ref="{{ listRef }}">
+      <sc-for list="{{ t4rows }}" as="r" hint-placeholder-count="9">
+        <div data-t4row="{{ r.i }}" style="border-bottom:1px solid rgba(255,255,255,.06)">
+          <div data-t4head="{{ r.i }}" onClick="{{ r.toggle }}" style="display:grid;grid-template-columns:24px 1fr 90px 100px 80px 190px;gap:14px;align-items:center;padding:0 22px;height:46px;cursor:pointer;background:{{ r.headBg }}" style-hover="background:rgba(255,255,255,.035)">
+            <span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.35)">{{ r.chev }}</span>
+            <span style="font:500 14px 'IBM Plex Sans',sans-serif">{{ r.name }}</span>
+            <span style="font:500 13px 'IBM Plex Mono',monospace">{{ r.key }}</span>
+            <span style="font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6);letter-spacing:.04em">{{ r.conf }}</span>
+            <span style="font:600 14px 'IBM Plex Mono',monospace;text-align:right;color:#e8b45a">{{ r.bpm }}</span>
+            <span style="display:inline-flex;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 10px;border-radius:999px;width:fit-content;background:rgba(232,180,90,.16);color:#e8b45a;border:1px solid rgba(232,180,90,.35)">ready to warp</span>
+          </div>
+          <div style="display:grid;grid-template-rows:{{ r.bodyRows }};transition:{{ r.bodyTrans }}">
+            <div style="overflow:hidden;min-height:0">
+              <div style="padding:6px 22px 20px 60px;display:grid;grid-template-columns:1fr 340px;gap:32px">
+                <div>
+                  <div data-t4files="{{ r.i }}" style="display:grid;grid-template-columns:22px 1fr 120px 140px 1fr;gap:14px;padding:0 12px 6px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span></span><span>Sample</span><span>Ableton key</span><span>Where it is</span><span></span></div>
+                  <sc-for list="{{ r.lines }}" as="l" hint-placeholder-count="3">
+                    <div style="display:grid;grid-template-rows:{{ l.rows }};transition:{{ l.trans }}">
+                      <div style="overflow:hidden;min-height:0">
+                        <sc-if value="{{ l.isBand }}" hint-placeholder-val="{{ false }}">
+                          <div style="font:500 10.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.35);padding:8px 12px 4px;opacity:{{ l.op }};transition:{{ l.opTrans }}">{{ l.label }}</div>
+                        </sc-if>
+                        <sc-if value="{{ l.isLine }}" hint-placeholder-val="{{ true }}">
+                          <div style="display:grid;grid-template-columns:22px 1fr 120px 140px 1fr;gap:14px;align-items:center;padding:8px 12px;margin-bottom:4px;border-radius:6px;background:{{ l.bg }};border:1px {{ l.borderStyle }} {{ l.border }};opacity:{{ l.op }};transition:{{ l.opTrans }}">
+                            <span style="display:flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:3px;box-sizing:border-box;font:600 10px 'IBM Plex Mono',monospace;background:{{ l.tickBg }};border:{{ l.tickBorder }};color:{{ l.tickInk }};opacity:{{ l.tickOp }};transition:{{ l.opTrans }}">{{ l.tick }}</span>
+                            <span style="font:500 13px 'IBM Plex Sans',sans-serif">{{ l.label }}</span>
+                            <span style="font:400 12px 'IBM Plex Mono',monospace;color:{{ l.keyColor }}">{{ l.key }}</span>
+                            <span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">{{ l.where }}</span>
+                            <span style="font:400 12px 'IBM Plex Sans',sans-serif;font-style:italic;color:rgba(236,231,220,.5)">{{ l.note }}</span>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <div style="display:grid;grid-template-rows:{{ r.openerRows }};transition:{{ r.bodyTrans }}">
+                    <div style="overflow:hidden;min-height:0">
+                      <button onClick="{{ r.pickToggle }}" style="display:flex;align-items:center;gap:10px;width:100%;margin-top:8px;padding:8px 12px;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);background:transparent;border:1px dashed rgba(255,255,255,.18);border-radius:6px;cursor:pointer;text-align:left" style-hover="border-color:rgba(255,255,255,.4);color:#ece7dc"><span style="font-family:'IBM Plex Mono',monospace;flex:none">+</span><span style="flex:none;white-space:nowrap">Change what is cut</span><span style="margin-left:auto;font-weight:400;color:rgba(236,231,220,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0">3 more presets, the source track, other uploads</span></button>
+                    </div>
+                  </div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px;padding-top:22px">
+                  <sc-if value="{{ r.reading }}" hint-placeholder-val="{{ true }}">
+                    <div style="font:400 13px 'IBM Plex Sans',sans-serif;color:#e8b45a">Your turn — warp, then move to Mashup Samples.</div>
+                    <div style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">Judged {{ r.key }}, high confidence. Staged {{ r.since }}.</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:6px 11px;cursor:pointer">Open folder</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:6px 11px;cursor:pointer">Why this key</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:6px 11px;cursor:pointer">Bump to top</button></div>
+                  </sc-if>
+                  <sc-if value="{{ r.picking }}" hint-placeholder-val="{{ false }}">
+                    <div style="font:400 13px 'IBM Plex Sans',sans-serif;color:#ece7dc">Tick what you want on disk.</div>
+                    <div style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Nothing changed yet. This demo only opens and closes the list; ticking and confirming are drawn in <a href="#3a">3a</a>.</div>
+                    <div style="display:flex;gap:8px"><button onClick="{{ r.pickToggle }}" style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:6px 11px;cursor:pointer">Cancel</button></div>
+                  </sc-if>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div ref="{{ spacerRef }}" style="height:0"></div>
+  </div>
+</div>
+</div>
+</div>
+<p class="dv-next">Try next: "animate the chevron too" · "keep only one row open at a time" · "draw it for the Dashboard's collapsible sections"</p>
+</section>
+
 <section class="dv-turn" id="t3">
 <div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Stem selection · additional sources · getting tracks in (#22)</span></div>
 <div class="dv-notes">
@@ -730,7 +818,106 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script>
 class Component extends DCLogic {
-  renderVals() {
+  state = { t4mode: 'proposed', t4open: {}, t4pick: {} };
+  vpRef = React.createRef(); listRef = React.createRef(); spacerRef = React.createRef();
+  spacerH = 0;
+  componentDidMount() { setTimeout(() => this.t4Bottom(), 300); }
+  t4Dur() { return this.state.t4mode === 'today' || window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 220; }
+  t4SetSpacer(h) { this.spacerH = h; if (this.spacerRef.current) this.spacerRef.current.style.height = h + 'px'; }
+  t4Bottom() { const v = this.vpRef.current; this.t4SetSpacer(0); if (v) v.scrollTop = v.scrollHeight; }
+  t4OnScroll = () => {
+    const v = this.vpRef.current, l = this.listRef.current;
+    if (!v || !l || !this.spacerH || this.t4busy) return;
+    const need = Math.max(0, v.scrollTop + v.clientHeight - l.offsetHeight);
+    if (need < this.spacerH) this.t4SetSpacer(need);
+  };
+  // anchorSel: element that must not move; growing: reveal panel bottom; shrinking: hold scroll with spacer
+  t4Run(i, anchorSel, growing) {
+    const v = this.vpRef.current, l = this.listRef.current;
+    if (!v || !l || this.state.t4mode === 'today') return;
+    const row = v.querySelector(`[data-t4row="${i}"]`), anchor = v.querySelector(anchorSel);
+    const s0 = v.scrollTop, H = v.clientHeight, start = performance.now(), dur = this.t4Dur() + 80;
+    this.t4busy = true;
+    const step = now => {
+      if (growing) {
+        const bottom = row.offsetTop + row.offsetHeight;
+        const want = Math.min(bottom - H + 16, anchor.offsetTop - 8);
+        if (want > v.scrollTop) v.scrollTop = want;
+      } else {
+        const need = Math.max(0, s0 + H - l.offsetHeight);
+        if (need > this.spacerH) this.t4SetSpacer(need);
+        v.scrollTop = s0;
+      }
+      if (now - start < dur) requestAnimationFrame(step); else this.t4busy = false;
+    };
+    requestAnimationFrame(step);
+  }
+  t4Toggle(i) {
+    const open = !this.state.t4open[i];
+    this.setState(s => ({ t4open: { ...s.t4open, [i]: open }, t4pick: open ? s.t4pick : { ...s.t4pick, [i]: false } }),
+      () => this.t4Run(i, `[data-t4head="${i}"]`, open));
+  }
+  t4PickToggle(i) {
+    const pick = !this.state.t4pick[i];
+    this.setState(s => ({ t4pick: { ...s.t4pick, [i]: pick } }), () => this.t4Run(i, `[data-t4files="${i}"]`, pick));
+  }
+  t4Vals() {
+    const { t4mode, t4open, t4pick } = this.state;
+    const d = this.t4Dur(), ease = 'cubic-bezier(.33,1,.68,1)';
+    const T = [
+      ['Wavelength', 'F♯ maj', 123, '3 weeks ago'], ['Blue Hour', 'E♭ maj', 116, '2 weeks ago'], ['Rooftop Sirens', 'C min', 132, '2 weeks ago'],
+      ['Velvet Static', 'B min', 124, '12 days ago'], ['Halfway Home', 'C min', 121, '11 days ago'], ['Northern Lights (Club Edit)', 'D maj', 128, '10 days ago'],
+      ['Glass Harbour', 'A♭ maj', 122, '9 days ago'], ['Salt & Static', 'D min', 128, '6 days ago'], ['Low Orbit', 'B♭ min', 126, '5 days ago'],
+      ['Copper Wire', 'E min', 130, '4 days ago'], ['Paper Lanterns', 'G maj', 118, '3 days ago'], ['Ocean Floor', 'G min', 120, '2 days ago'],
+      ['Midnight Runner (Extended Mix)', 'F min', 124, 'yesterday'], ['Ember Trails', 'A min', 125, 'this morning'], ['Neon Tide', 'C♯ min', 127, 'just now'],
+    ];
+    const INV = [
+      ['band', 'VOCAL'], ['disk', 'Vocal - Full'], ['more', 'Vocal - Clean'], ['more', 'Vocal - Balanced'],
+      ['band', 'INSTRUMENTAL'], ['disk', 'Instrumental - Full'], ['more', 'Instrumental - Clean'], ['more', 'Instrumental - Balanced'],
+      ['band', 'WHOLE TRACK'], ['more', 'Source'], ['guide', 'Drums'],
+    ];
+    const t4rows = T.map(([name, key, bpm, since], i) => {
+      const open = !!t4open[i], pick = open && !!t4pick[i];
+      const lines = INV.map(([k, label]) => {
+        const extra = k === 'band' || k === 'more', show = !extra || pick;
+        const disk = k === 'disk' || k === 'guide';
+        return {
+          isBand: k === 'band', isLine: k !== 'band',
+          label: k === 'band' ? label : `${name} (${label})${k === 'guide' ? '  · warp guide' : ''}`,
+          rows: show ? '1fr' : '0fr', trans: `grid-template-rows ${d}ms ${ease}`,
+          op: show ? (k === 'more' ? .6 : k === 'guide' ? .55 : 1) : 0,
+          opTrans: `opacity ${show ? Math.round(d * .7) : Math.round(d * .5)}ms ease-out ${show ? Math.round(d * .3) : 0}ms`,
+          bg: k === 'disk' ? 'rgba(255,255,255,.03)' : 'transparent',
+          border: k === 'disk' ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.08)', borderStyle: k === 'guide' ? 'dashed' : 'solid',
+          tick: k === 'disk' ? '✓' : k === 'guide' ? '●' : '',
+          tickBg: k === 'disk' ? '#ece7dc' : 'transparent', tickInk: k === 'disk' ? '#141310' : 'rgba(236,231,220,.5)',
+          tickBorder: k === 'more' ? '1px solid rgba(255,255,255,.3)' : '0', tickOp: pick ? 1 : 0,
+          key: disk ? `${key} ✓` : '—', keyColor: disk ? '#7fcf9a' : 'rgba(236,231,220,.3)',
+          where: disk ? 'Sample Staging' : 'not made',
+          note: k === 'guide' ? 'delete after warping' : pick && k === 'disk' ? 'kept' : '',
+        };
+      });
+      return {
+        i, name, key, bpm, since, conf: 'HIGH', chev: open ? '⌄' : '›',
+        headBg: open ? 'rgba(255,255,255,.025)' : 'transparent',
+        bodyRows: open ? '1fr' : '0fr', bodyTrans: `grid-template-rows ${d}ms ${ease}`,
+        openerRows: pick ? '0fr' : '1fr', lines, reading: !pick, picking: pick,
+        toggle: () => this.t4Toggle(i), pickToggle: () => this.t4PickToggle(i),
+      };
+    });
+    const on = t4mode === 'proposed';
+    return {
+      t4rows, vpRef: this.vpRef, listRef: this.listRef, spacerRef: this.spacerRef, onVpScroll: this.t4OnScroll,
+      proposedBg: on ? '#ece7dc' : 'transparent', proposedFg: on ? '#141310' : 'rgba(236,231,220,.7)',
+      todayBg: on ? 'transparent' : '#ece7dc', todayFg: on ? 'rgba(236,231,220,.7)' : '#141310',
+      modeHint: on ? '220ms ease-out · clicked header stays put · bottom spacer on close' : 'no motion · no place-keeping · the page jumps when the last row closes',
+      setProposed: () => this.setState({ t4mode: 'proposed' }),
+      setToday: () => { this.t4SetSpacer(0); this.setState({ t4mode: 'today' }); },
+      jumpBottom: () => this.setState({ t4open: {}, t4pick: {} }, () => setTimeout(() => this.t4Bottom(), this.t4Dur() + 40)),
+    };
+  }
+  renderVals() { return { ...this.baseVals(), ...this.t4Vals() }; }
+  baseVals() {
     const dim = 'rgba(236,231,220,.3)', mid = 'rgba(236,231,220,.6)', fg = '#ece7dc';
     const teal = '#6fc7d6', amber = '#e8b45a', red = '#e07a6d', green = '#7fcf9a';
     const chips = {
