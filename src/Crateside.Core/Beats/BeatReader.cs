@@ -175,11 +175,9 @@ public sealed partial class BeatReader(string? path = null, string fileName = "f
     /// <summary>Every full window's start; a file shorter than one window is read once from the top.</summary>
     internal static IEnumerable<int> WindowStarts(double seconds)
     {
-        for (
-            var start = 0;
-            start < Math.Max((int)seconds - WindowSeconds + 1, 1);
-            start += WindowSeconds
-        )
+        var max = Math.Max((int)seconds - WindowSeconds + 1, 1);
+
+        for (var start = 0; start < max; start += WindowSeconds)
             yield return start;
     }
 

@@ -53,7 +53,9 @@ const FoldKey = "crateside.dashboard.folded";
 // Which sections the user folded, kept per browser. Storage can be missing or blocked.
 export function folded() {
     try {
-        return JSON.parse(localStorage.getItem(FoldKey) ?? "[]");
+        const kept = JSON.parse(localStorage.getItem(FoldKey) ?? "[]");
+
+        return Array.isArray(kept) ? kept.filter((id) => typeof id === "string") : [];
     } catch {
         return [];
     }

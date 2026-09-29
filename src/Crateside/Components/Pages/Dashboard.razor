@@ -727,7 +727,8 @@
             _folded.Add(id);
 
         if (_module is not null)
-            await _module.InvokeVoidAsync("remember", _folded.ToArray());
+            // Cast, or the array is spread across the params and only its first id arrives.
+            await _module.InvokeVoidAsync("remember", (object)_folded.ToArray());
     }
 
     private void OnChanged()
