@@ -27,25 +27,22 @@
         <p class="subtitle">Small helpers for building a mashup, used on the spot, all working from one track.</p>
     </header>
 
-    <div class="columns @(_rePitchOpen ? null : "repitch-folded")">
+    <div class="columns">
         <div class="col working-col">
             <WorkingOn Track="_track" Songs="Warped" Familiarity="TrackFamiliarity" DetailsHref="DetailsHref"
                        KeyName="@_keyName" BpmText="@_bpmText"
                        OnPick="Pick" OnKey="TypeKey" OnBpm="TypeBpm" />
         </div>
 
-        @if (_rePitchOpen)
-        {
-            <div class="col repitch-col">
+        <div class="col tools-col">
+            @if (_rePitchOpen)
+            {
                 <RePitchTool Key="Own" Bpm="Bpm" IsTrack="_track is not null"
                              Shift="_shift" OnShift="ChooseShift"
                              Max="_rePitchMax" OnMax="max => Change(() => { _rePitchMax = max; _shift = Math.Clamp(_shift, -max, max); })"
                              OnToggle="ToggleRePitch" />
-            </div>
-        }
-
-        <div class="col partners-col">
-            @if (!_rePitchOpen)
+            }
+            else
             {
                 <button class="folded-tool" @onclick="ToggleRePitch">
                     <span class="mono chevron">▸</span>
@@ -94,6 +91,8 @@
 </div>
 
 @code {
+    private const string RePitchCookie = "crateside.tools.repitch";
+
     private LibrarySong? _track;
     private string _keyName = string.Empty;
     private string _bpmText = string.Empty;
@@ -104,6 +103,13 @@
     private int _partnersMax = Core.Pairing.Partners.DefaultMaxShift;
     private IReadOnlyList<MashupPartner> _partners = [];
     private IJSObjectReference? _module;
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    /// <summary>Whether Re-Pitch is folded, read from the cookie while prerendering, so the first paint is already right.</summary>
+    [PersistentState]
+    public bool? RePitchFolded { get; set; }
 
     [SupplyParameterFromQuery(Name = "track")]
     public string? TrackFromQuery { get; set; }
@@ -142,6 +148,9 @@
 
     protected override void OnInitialized()
     {
+        RePitchFolded ??= HttpContext?.Request.Cookies[RePitchCookie] is "folded";
+        _rePitchOpen = RePitchFolded is not true;
+
         if (TrackFromQuery is null && KeyFromQuery is null && BpmFromQuery is null && Memory.Query is { Length: > 0 } last)
         {
             Navigation.NavigateTo($"tools{last}", replace: true);
@@ -168,12 +177,6 @@
             return;
 
         _module = await Js.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/Tools.razor.js");
-
-        if (await _module.InvokeAsync<bool>("rePitchOpen") is var open && open != _rePitchOpen)
-        {
-            _rePitchOpen = open;
-            StateHasChanged();
-        }
     }
 
     public async ValueTask DisposeAsync()
@@ -228,7 +231,7 @@
         _rePitchOpen = !_rePitchOpen;
 
         if (_module is not null)
-            await _module.InvokeVoidAsync("rememberRePitch", _rePitchOpen);
+            await _module.InvokeVoidAsync("remember", RePitchCookie, _rePitchOpen ? "open" : "folded");
     }
 
     /// <summary>Applies a change, recomputes the partners, and puts the state in the address.</summary>

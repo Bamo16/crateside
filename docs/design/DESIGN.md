@@ -183,7 +183,8 @@ reopens where it was left until a restart.
   a 1px inset `--text-35` ring and a *→ Partners* tag. **This is the house style for a chosen row
   in a tool table.** Clicking it again returns to 0. The BPM cell copies instead of selecting.
 - **Folded, Re-Pitch** is a dashed summary line above Partners, and its shift stays in force. The
-  fold is remembered per browser; the default is open at 1100px and wider.
+  fold is remembered per browser, in a cookie so the first paint is already folded; the default
+  is open.
 - **Partners' basis box** says which key it works from and why, with two pills (the key, its
   relative) and *Back to {key}* while a shift is in force. The table splits into *Mixes as is*
   and *A shift away*, each sorted by score; a relationship carries a second line saying what it
@@ -294,5 +295,8 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   the canvas's simple model named the rows "a fifth up" and so on. The handoff asked for the built
   calculation.
 - **The track is picked from warped library songs**, as the Re-Pitch search already did.
+- **Re-Pitch sits above Partners, in one column**, not in a column of its own between *Working on*
+  and Partners: folding it shifted Partners and the wheel sideways (user, 2026-09-29). It keeps
+  its 540px width.
 - **Partners' max shift is ±0 to ±2, default ±1.** Every key is within two semitones of a partner
   from any source, so a wider slider only repeated the full list (user, 2026-09-29).
