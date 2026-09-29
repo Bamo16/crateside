@@ -14,7 +14,8 @@ forward in brand amber `#e8b45a`) and the word `crateside`, always lowercase. Th
 `src/Crateside/wwwroot/brand/`, the one folder a brand swap changes; `docs/design/brand/` is the
 frozen copy the Design session delivered.
 
-- **Header**: `BrandNav` shows the 18px mark beside the word (15px/600), and the pair links to Tracks.
+- **Header**: `BrandNav` shows the 18px mark beside the word (15px/600), and the pair links to the
+  Dashboard.
   The word stays HTML text, never the lockup, so it is selectable and on-token.
 - **Browser tab**: `favicon.svg`, a 32px PNG fallback, the 180px apple-touch icon, and
   `theme-color` `#1b1a15`. Titles read `{page} · crateside`.
@@ -125,21 +126,37 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
   to the user. Its rows show Song (with the genre note under it), every genre chip, and
   Mainstream / Obscure (`GenreStrip Shape="Chips"`, `FamiliarityStrip Inline`). An answered row
   stays in place at 45% until the view is left.
+- A **Tempo drifts** filter (#75): tracks not warped yet whose tempo beatdetect reads drifting. The
+  row carries a *tempo drifts* flag beside its title.
 
-## Counts
+## Dashboard
 
-Handoff 08. One long page of bar tables, one count per song, under a sticky index (168px) that
-marks the panel in view; below a 1100px viewport the index is a wrapping row and the grid one
-column. Panel order: By key, By tempo, By genre, By familiarity, By artist, Detectors against the
-warps, files with no key.
+Handoff 11, superseding Counts (handoff 08). The landing page and first tab (**Dashboard · Tracks ·
+Tools · Settings**), at `/` and `/dashboard`; Tracks moved to `/tracks`. No width cap on the body.
 
-- **The action band** above the grid is the page's one place for an action (*Never judged*).
-  Everything below it is a report.
-- **Top N · all.** Key shows 8 rows and artists 12, then an *all* link that unfolds in place.
+- **Four sections, fixed order**: *Your turn*, *Working now*, *Over time*, *The library*. Not
+  customizable. Each head (▾/▸, `h3`, a quiet gist) folds its section, and the fold is remembered
+  per browser. **A folded section shows one summary line** in its place, so the page still says
+  what is going on with everything folded; *The library* folds to its head, which carries its totals.
+- **The index** (sticky, 168px) lists the four sections, then the library's panels indented 22px.
+  *Your turn*'s count is amber when non-zero. Below 1100px it is a wrapping row.
+- **Tiles**: an amber count is a link to the filter it counts (or the Settings row). A zero goes
+  monochrome and says *none right now*; the tile stays, so the grid never shifts.
+- **Working now** is five cards: Separation (with Pause), Judging (with Pause), Quotas (monochrome
+  bars: neither working nor your turn), Background readers, Library backfill. Live, as the Tracks
+  header is.
+- **Over time**: tracks finished by ISO week (the current week dashed, "so far"), stages run, and
+  the latest eight stage events.
+- **The library grid** is three columns at ≥ 2000px, two below, one below 1400px. Key detectors
+  and BPM detectors span two wherever there are two. Order: Key detectors, By key, By tempo, BPM
+  detectors, By genre (with *What the sources called the rest* behind a dashed opener), By
+  familiarity (with No key under it), By artist.
+- **The action band** (*Never judged*) sits at the top of *The library*.
+- **Top N · all.** Key shows 8 rows, artists 12, the all-three-wrong list 6.
 - **Bar tables are teal.** The key table's minor (teal) and major (amber) bars are a known
-  exception it already was; a new bar table is teal only.
-- **A tempo bin's bar is split**: the bin total at 35% teal, and from the left a solid segment for
-  songs on a tempo that 10 or more share.
+  exception; a new bar table is teal only.
+- **Split bars** (tempo bins, key detectors): the solid part is the strict count, teal 35% the
+  looser one.
 
 ## Tools
 
@@ -176,7 +193,7 @@ Handoff 10. Every setting is one **row**: name (14px/500) and a one-line gist (`
 |---|---|
 | Tracks | Shade |
 | Track details | Bar, Tracks tab active |
-| Counts | Bar |
+| Dashboard | Bar |
 | Tools | Bar |
 | Settings | Flush |
 
@@ -216,16 +233,22 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **Emptying as tracks are taken on** is disabled until removal access is granted, with a status
   saying so. The canvas only drew the authorized state.
 
-### Counts (handoff 08, #68, #60, #56)
+### Dashboard (handoff 11, #78)
 
-- **The detector figures differ from the canvas**, which drew illustrative middle bands. Measured
-  on 351 songs (2026-09-27), some detectors read fast as well as slow (×4/3, ×3/2), so the fourth
-  band is *Triplet or dotted* with its wider rule, as the handoff allows.
-- **The familiarity index count** is the values with songs (2 when both are used), as the canvas
-  shows it.
-- **The shape line reads "Steady · Mostly steady · Drifting"**, not the handoff's "Steady ·
-  Steady with changes · Unsteady": the names were renamed with the tempo vocabulary on 2026-09-28
-  (ADR 0038, amended). The track row's BPM tooltip says *drifting* and *mostly steady* likewise.
+- **Tracks finished counts each track once**, in the week it was first tagged. The canvas drew the
+  brief's figures, which counted tagging lines, so a re-tag counted twice (W37 read 199; it is 79).
+- **The YouTube quota is an estimate**: units a day at the refresh interval, as Settings says it.
+  Nothing counts the units actually spent, so there is no "today" and no reset time.
+- **Judging has no progress bar**: it has no time estimate to measure against. Its card shows
+  the elapsed time and the waiting count.
+- **No "The whole log →" link.** The activity log is per track, on Track details; there is no
+  page-wide log to open.
+- **Key-detector figures are live**, read from the ledger on load and Re-read, so they move as
+  verdicts arrive (406 HIGH or MEDIUM songs on 2026-09-28, against the brief's 397). A verdict
+  recorded by hand carries no detectors, so its song uses the latest run that has them.
+- **The BPM detector figures differ from the canvas** (from handoff 08): some detectors read fast
+  as well as slow, so the fourth band is *Triplet or dotted* with its wider rule.
+- **The shape line reads "Steady · Mostly steady · Drifting"** (handoff 08 drew the older names).
 
 ### Tools (handoff 09, #57, #58)
 

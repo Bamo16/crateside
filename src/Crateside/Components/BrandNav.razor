@@ -4,8 +4,8 @@
         crateside
     </a>
     <nav>
-        <a class="tab @(Active is Tab.Tracks ? "active" : null)" href="">Tracks</a>
-        <a class="tab @(Active is Tab.Counts ? "active" : null)" href="counts">Counts</a>
+        <a class="tab @(Active is Tab.Dashboard ? "active" : null)" href="">Dashboard</a>
+        <a class="tab @(Active is Tab.Tracks ? "active" : null)" href="tracks">Tracks</a>
         <a class="tab @(Active is Tab.Tools ? "active" : null)" href="tools">Tools</a>
         <a class="tab @(Active is Tab.Settings ? "active" : null)" href="settings">Settings</a>
     </nav>
@@ -14,8 +14,8 @@
 @code {
     public enum Tab
     {
+        Dashboard,
         Tracks,
-        Counts,
         Tools,
         Settings,
     }

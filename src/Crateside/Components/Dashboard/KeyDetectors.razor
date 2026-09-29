@@ -1,0 +1,233 @@
+@using System.Text
+@using Crateside.Core.Ledger
+@using Crateside.Core.Library
+@inject IJSRuntime Js
+
+<section id="p-kdet" class="kdet">
+    <div class="head">
+        <div class="title">
+            <h3>Key detectors</h3>
+            <span class="gist">against Claude's verdict, latest run per song</span>
+        </div>
+        <div class="pills">
+            <button class="pill @(_highOnly ? "off" : "on plain")" @onclick="() => Pick(false)">
+                HIGH or MEDIUM <span class="mono">@Both.Songs</span>
+            </button>
+            <button class="pill @(_highOnly ? "on plain" : "off")" @onclick="() => Pick(true)">
+                HIGH only <span class="mono">@High.Songs</span>
+            </button>
+        </div>
+    </div>
+
+    @if (Shown.Detectors is [var lead, ..] && Shown.Songs > 0)
+    {
+        <p class="lead">
+            @if (_highOnly)
+            {
+                <text>On the <span class="mono">@Shown.Songs</span> HIGH verdicts, @lead.Name is right on <span class="mono">@Percent(lead.Count(KeyMiss.Right))</span>.</text>
+            }
+            else
+            {
+                <text>
+                    On <span class="mono">@Shown.Songs</span> HIGH or MEDIUM verdicts, @lead.Name is right on
+                    <span class="mono">@Percent(lead.Count(KeyMiss.Right))</span>, and right or a near miss (a fifth
+                    or the relative key) on <span class="mono">@Percent(lead.RightOrClose)</span>. The pale part of a
+                    bar is those near misses, which still pair fine for a mashup.
+                </text>
+            }
+        </p>
+    }
+
+    <div class="tables">
+        <div>
+            <table class="accuracy">
+                <thead>
+                    <tr>
+                        <th>Detector</th>
+                        <th>@(_highOnly ? "Right" : "Right · solid")</th>
+                        <th class="numeric">Right</th>
+                        <th class="numeric">Close</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var tally in Shown.Detectors)
+                    {
+                        <tr>
+                            <td>
+                                <span class="mono name">@tally.Name</span>
+                                <span class="who">@tally.Who</span>
+                            </td>
+                            <td class="bar-cell">
+                                <span class="split" style="width: @Width(_highOnly ? tally.Count(KeyMiss.Right) : tally.RightOrClose)">
+                                    <span style="width: @Width(tally.Count(KeyMiss.Right), _highOnly ? tally.Count(KeyMiss.Right) : tally.RightOrClose)"></span>
+                                </span>
+                            </td>
+                            <td class="numeric mono strong">@Percent(tally.Count(KeyMiss.Right))</td>
+                            <td class="numeric mono quiet">@(_highOnly ? "—" : Percent(tally.RightOrClose))</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <span class="foot">
+                @(_highOnly
+                    ? "Near misses are measured on HIGH or MEDIUM only."
+                    : "Close is right, a fifth, or the relative key.")
+            </span>
+        </div>
+
+        <div>
+            <table class="misses">
+                <thead>
+                    <tr>
+                        <th>A miss is the verdict's</th>
+                        @foreach (var tally in Both.Detectors)
+                        {
+                            <th class="numeric">@tally.Name</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @MissLine("Fifth, up or down", Counts(KeyMiss.Fifth))
+                    @MissLine("Relative major or minor", Counts(KeyMiss.Relative))
+                    @MissLine("Close", Counts(KeyMiss.Fifth, KeyMiss.Relative), subtotal: true)
+                    @MissLine("Parallel major or minor", Counts(KeyMiss.Parallel))
+                    @MissLine("Anything else", Counts(KeyMiss.Other))
+                    @MissLine("No reading", Counts(KeyMiss.NoReading))
+                    @MissLine("All misses", Both.Detectors.Select(tally => tally.Misses).ToArray(), subtotal: true)
+                </tbody>
+            </table>
+            <span class="foot">
+                Measured on HIGH or MEDIUM verdicts, as the ledger stands. Parallel is not counted as close.
+            </span>
+        </div>
+    </div>
+
+    <div class="wrong">
+        <div class="wrong-line">
+            <div class="wrong-text">
+                <span class="wrong-title"><span class="mono">@Shown.AllWrong.Count</span> songs all three detectors got wrong</span>
+                <span class="wrong-gist">Only the verdict has the key. Test cases for keydetect's corpus.</span>
+            </div>
+            <div class="actions">
+                <button class="outline" @onclick="ToggleList" disabled="@(Shown.AllWrong.Count is 0)">
+                    @(_listOpen ? "Hide the songs" : "Show the songs")
+                </button>
+                <button class="outline" @onclick="Copy" disabled="@(Shown.AllWrong.Count is 0)">
+                    @(_copied ? "Copied" : "Copy as text")
+                </button>
+            </div>
+        </div>
+
+        @if (_listOpen)
+        {
+            <table class="wrong-list">
+                <thead>
+                    <tr>
+                        <th>Song</th>
+                        <th>Verdict</th>
+                        <th>Conf.</th>
+                        @foreach (var tally in Shown.Detectors)
+                        {
+                            <th>@tally.Name</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var song in _allShown ? Shown.AllWrong : Shown.AllWrong.Take(RowsShown))
+                    {
+                        <tr>
+                            <td>@song.Song</td>
+                            <td class="mono verdict">@song.Verdict.Name</td>
+                            <td class="mono quiet">@Confidence(song.Confidence)</td>
+                            @foreach (var read in song.Reads)
+                            {
+                                <td class="mono quiet">@(read?.Name ?? "no reading")</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            @if (!_allShown && Shown.AllWrong.Count > RowsShown)
+            {
+                <p class="more">
+                    @(Shown.AllWrong.Count - RowsShown) more ·
+                    <button class="link" @onclick="() => _allShown = true">show all</button>
+                </p>
+            }
+        }
+    </div>
+</section>
+
+@code {
+    private const int RowsShown = 6;
+
+    private bool _highOnly;
+    private bool _listOpen;
+    private bool _allShown;
+    private bool _copied;
+
+    [Parameter, EditorRequired]
+    public required KeyDetectorCounts Both { get; set; }
+
+    [Parameter, EditorRequired]
+    public required KeyDetectorCounts High { get; set; }
+
+    private KeyDetectorCounts Shown => _highOnly ? High : Both;
+
+    private void Pick(bool highOnly)
+    {
+        _highOnly = highOnly;
+        _allShown = false;
+        _copied = false;
+    }
+
+    private void ToggleList()
+    {
+        _listOpen = !_listOpen;
+        _allShown = false;
+    }
+
+    private static RenderFragment MissLine(string name, int[] counts, bool subtotal = false) =>
+        @<tr class="@(subtotal ? "subtotal" : null)">
+            <td>@name</td>
+            @foreach (var count in counts)
+            {
+                <td class="numeric mono">@count</td>
+            }
+        </tr>;
+
+    private int[] Counts(params KeyMiss[] misses) =>
+        [.. Both.Detectors.Select(tally => misses.Sum(tally.Count))];
+
+    private string Percent(int count) =>
+        Shown.Songs is 0 ? "—" : $"{count * 100.0 / Shown.Songs:0} %";
+
+    private string Width(int count) => Width(count, Shown.Songs);
+
+    private static string Width(int part, int whole) =>
+        $"{(whole is 0 ? 0 : part * 100.0 / whole).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}%";
+
+    private static string Confidence(KeyConfidence confidence) => confidence.ToString().ToUpperInvariant();
+
+    private async Task Copy()
+    {
+        var text = new StringBuilder()
+            .AppendLine(string.Join('\t', ["song", "verdict", "confidence", .. Shown.Detectors.Select(tally => tally.Name)]));
+
+        foreach (var song in Shown.AllWrong)
+            text.AppendLine(
+                string.Join(
+                    '\t',
+                    [song.Song, song.Verdict.Name, Confidence(song.Confidence), .. song.Reads.Select(read => read?.Name ?? "no reading")]
+                )
+            );
+
+        await Js.InvokeVoidAsync("navigator.clipboard.writeText", text.ToString());
+
+        _copied = true;
+        StateHasChanged();
+
+        await Task.Delay(TimeSpan.FromSeconds(2));
+        _copied = false;
+    }
+}

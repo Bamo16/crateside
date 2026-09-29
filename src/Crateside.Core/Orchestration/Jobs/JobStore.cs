@@ -107,6 +107,9 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
                 .Where(update => update.VideoId.Equals(videoId, StringComparison.Ordinal)),
         ];
 
+    /// <summary>Every recorded change to every job, oldest first, read off disk.</summary>
+    public IReadOnlyList<JobUpdate> Updates() => ReadUpdates();
+
     /// <summary>Drops the in-memory projection so the next read comes off disk again.</summary>
     public void Invalidate()
     {

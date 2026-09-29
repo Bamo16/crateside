@@ -56,6 +56,8 @@ public sealed class BeatWorker(BeatReader reader, CratesidePaths paths, ILogger<
             .. BeatReader.Instrumentals(paths).Where(file => reader.Read(file) is null),
         ];
 
+        reader.Begin(unread.Length);
+
         if (unread.Length is 0)
             return IdleDelay;
 

@@ -1,19 +1,22 @@
 .body {
+    padding: 0 48px 56px;
+}
+
+.main {
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    padding: 0 48px 48px;
+    gap: 40px;
+    min-width: 0;
 }
 
-.page-header {
+.title-row {
     display: flex;
-    align-items: flex-start;
+    align-items: flex-end;
     justify-content: space-between;
     gap: 24px;
-    max-width: 1112px;
 }
 
-.page-header h1 {
+.title-row h2 {
     margin: 0;
     font-size: 24px;
     font-weight: 600;
@@ -22,28 +25,30 @@
 
 .subtitle {
     margin: 4px 0 0;
-    max-width: 64ch;
+    max-width: 80ch;
     font-size: 14px;
     line-height: 1.55;
     color: var(--text-75);
 }
 
-.refresh {
+.read-at {
     flex: none;
-    padding: 7px 14px;
-    background: var(--raised);
-    color: var(--text);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 6px;
-    font: inherit;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--text-50);
 }
 
-.refresh:disabled {
+.read-at .link:disabled {
     color: var(--text-50);
+    text-decoration: none;
     cursor: default;
+}
+
+.amber {
+    color: var(--amber);
+}
+
+.teal {
+    color: var(--teal);
 }
 
 .empty {
@@ -93,7 +98,7 @@
 
 .grid {
     display: grid;
-    grid-template-columns: 168px minmax(0, var(--table-library));
+    grid-template-columns: 168px minmax(0, 1fr);
     gap: 48px;
     align-items: start;
 }
@@ -138,6 +143,77 @@
     font-size: 12px;
     font-weight: 400;
     color: var(--text-40);
+}
+
+.index .count.amber {
+    color: var(--amber);
+}
+
+.index a.panel {
+    padding-left: 22px;
+    font-size: 12.5px;
+    font-weight: 400;
+}
+
+/* The library's panels, three across on a wide window. The two detector panels take two. */
+.library {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-flow: dense;
+    gap: 40px 48px;
+    align-items: start;
+    padding-top: 22px;
+    border-top: 1px solid var(--line-strong);
+}
+
+.library > ::deep .kdet,
+.library > .wide {
+    grid-column: span 2;
+}
+
+.bpm-pair {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 40px;
+    align-items: start;
+}
+
+.bpm-pair .strip-row {
+    grid-template-columns: 110px minmax(0, 1fr);
+}
+
+.sub-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.peaks {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 0;
+}
+
+@media (max-width: 2000px) {
+    .library {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1400px) {
+    .library {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .library > ::deep .kdet,
+    .library > .wide {
+        grid-column: auto;
+    }
+
+    .bpm-pair {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 .panels {

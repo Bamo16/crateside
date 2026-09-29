@@ -10,12 +10,23 @@ public sealed class LibrarySummary(LibraryKeyReader reader)
 
     private KeyDistribution? _current;
 
+    /// <summary>When the distribution held was read.</summary>
+    public DateTimeOffset ReadAt { get; private set; }
+
     public KeyDistribution Current
     {
         get
         {
             lock (_gate)
-                return _current ??= reader.Read();
+            {
+                if (_current is null)
+                {
+                    _current = reader.Read();
+                    ReadAt = DateTimeOffset.Now;
+                }
+
+                return _current;
+            }
         }
     }
 
@@ -24,6 +35,10 @@ public sealed class LibrarySummary(LibraryKeyReader reader)
         var read = reader.Read();
 
         lock (_gate)
+        {
+            ReadAt = DateTimeOffset.Now;
+
             return _current = read;
+        }
     }
 }

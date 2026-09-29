@@ -1,0 +1,16 @@
+<div class="tiles">
+    @foreach (var tile in Tiles)
+    {
+        <a class="tile @(tile.Count is 0 ? "zero" : null)" href="@tile.Href">
+            <span class="mono count">@tile.Count</span>
+            <span class="label">@tile.Label</span>
+            <span class="gist">@(tile.Count is 0 ? "none right now" : tile.Gist)</span>
+            <span class="target">@tile.Target →</span>
+        </a>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<TurnTile> Tiles { get; set; }
+}

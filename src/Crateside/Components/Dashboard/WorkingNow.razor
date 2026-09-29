@@ -1,0 +1,229 @@
+@using Crateside.Core.Beats
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Orchestration.Loop
+@using Crateside.Core.Orchestration.Verdict
+@using Crateside.Core.Quota
+@using Crateside.Core.Tracks
+@using Crateside.Core.WorkLists
+@inject DrainControl Separation
+@inject VerdictControl Judging
+@inject PauseStore Paused
+@inject WindowRoll Roll
+@inject BeatReader Beats
+@inject QueueSettingsStore Settings
+
+<div class="cards">
+    <div class="card">
+        <div class="label-line">
+            <span class="caps">Separation · GPU</span>
+            <button class="outline" @onclick="ToggleSeparation">@(Separation.IsPaused ? "Resume" : "Pause")</button>
+        </div>
+        @if (Separating is { } row)
+        {
+            <div class="subject">
+                <StateChip Row="row" />
+                <a href="@SongHref(row)">@row.Title</a>
+            </div>
+            @if (row.RunningSince is { } since)
+            {
+                <span class="bar @(Separation.IsPaused ? "paused" : null)">
+                    <span style="width: @Percent(DateTimeOffset.UtcNow - since, row.Recipe.Estimate)"></span>
+                </span>
+                <span class="status">
+                    <span class="mono value">@Clock.Elapsed(since)</span> of about
+                    @Minutes(row.Recipe.Estimate) · @SeparationWaiting
+                </span>
+            }
+        }
+        else
+        {
+            @if (Separation.IsPaused)
+            {
+                <div class="subject"><span class="paused-chip">Paused</span></div>
+            }
+            <span class="status">Nothing to separate. @SeparationWaiting</span>
+        }
+    </div>
+
+    <div class="card">
+        <div class="label-line">
+            <span class="caps">Judging · Claude</span>
+            <button class="outline" @onclick="ToggleJudging">@(Judging.IsPaused ? "Resume" : "Pause")</button>
+        </div>
+        @if (JudgingRow is { } judged)
+        {
+            <div class="subject">
+                <StateChip Row="judged" />
+                <a href="@SongHref(judged)">@judged.Title</a>
+            </div>
+            <span class="status">
+                @if (judged.RunningSince is { } judgingSince)
+                {
+                    <span class="mono value">@Clock.Elapsed(judgingSince)</span>
+                    <text> elapsed · </text>
+                }
+                <span class="mono value">@JudgingWaiting</span> waiting
+            </span>
+        }
+        else
+        {
+            @if (Judging.IsPaused)
+            {
+                <div class="subject"><span class="paused-chip">Paused</span></div>
+            }
+            <span class="status">Nothing to judge. <span class="mono value">@JudgingWaiting</span> waiting</span>
+        }
+    </div>
+
+    <div class="card">
+        <span class="caps padded">Quotas</span>
+        <div class="meter">
+            <div class="meter-line">
+                <span>Claude, 5-hour window</span>
+                <span class="mono">@(Quota.Utilization is { } used ? $"{used:N0} %" : "—")</span>
+            </div>
+            <span class="bar quiet"><span style="width: @Percent(Quota.Utilization ?? 0, 100)"></span></span>
+            @if (Quota.ResetsAt is { } resets)
+            {
+                <span class="note">resets at <span class="mono">@resets.ToLocalTime().ToString("HH:mm")</span></span>
+            }
+        </div>
+        <div class="meter">
+            <div class="meter-line">
+                <span>YouTube, a day</span>
+                <span class="mono">@(YouTubeUnits is { } units ? $"about {units:N0} of 10,000" : "only when asked")</span>
+            </div>
+            <span class="bar quiet"><span style="width: @Percent(YouTubeUnits ?? 0, 10_000)"></span></span>
+            <span class="note">estimated from the refresh interval</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <span class="caps padded">Background readers · unattended</span>
+        <div class="meter">
+            <div class="meter-line">
+                <span>beatdetect, instrumentals</span>
+                @if (Beats.Progress is { Of: > 0 } progress && progress.Read < progress.Of)
+                {
+                    <span class="mono">@progress.Read of @progress.Of</span>
+                }
+                else
+                {
+                    <span class="idle">idle</span>
+                }
+            </div>
+            @if (Beats.Progress is { Of: > 0 } pass && pass.Read < pass.Of)
+            {
+                <span class="bar"><span style="width: @Percent(pass.Read, pass.Of)"></span></span>
+            }
+        </div>
+        <div class="meter-line">
+            <span>Genre lookups</span>
+            @Waiting(GenresWaiting)
+        </div>
+        <div class="meter-line">
+            <span>Familiarity lookups</span>
+            @Waiting(FamiliarityWaiting)
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="label-line padded">
+            <span class="caps">Library backfill</span>
+            <a class="quiet-link" href="settings">Settings →</a>
+        </div>
+        <span class="headline">@Backfill</span>
+        <div class="figures">
+            <span><span class="mono figure">@Rows.Count(row => row is { IsBackfill: true, Verdict: null, GaveUpAt: null })</span><span class="note">waiting</span></span>
+            <span><span class="mono figure">@Rows.Count(row => row is { IsBackfill: true, Verdict: not null })</span><span class="note">judged</span></span>
+            <span><span class="mono figure">@Rows.Count(row => row is { IsBackfill: true, Verdict: null, GaveUpAt: not null })</span><span class="note">gave up</span></span>
+        </div>
+    </div>
+</div>
+
+@code {
+    private const int MinutesPerDay = 1440;
+
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<TrackRow> Rows { get; set; }
+
+    [Parameter, EditorRequired]
+    public required QuotaSnapshot Quota { get; set; }
+
+    private TrackRow? Separating => Rows.FirstOrDefault(row => row.State is TrackState.Separating);
+
+    private TrackRow? JudgingRow => Rows.FirstOrDefault(row => row.State is TrackState.Judging);
+
+    private int JudgingWaiting => Rows.Count(row => row.IsAwaitingJudgement);
+
+    private string SeparationWaiting
+    {
+        get
+        {
+            var waiting = Rows.Where(row => row.State is TrackState.JudgedInLine).ToList();
+            var gpu = waiting
+                .Where(row => row.Recipe.Passes > 0)
+                .Aggregate(TimeSpan.Zero, (total, row) => total + row.Recipe.Estimate);
+
+            return waiting.Count is 0 ? "none waiting" : $"{waiting.Count} waiting, about {Minutes(gpu)}";
+        }
+    }
+
+    /// <summary>What the lookup workers still owe, by the same rules they use to pick.</summary>
+    private int GenresWaiting =>
+        Rows.Where(row => row is { Genre: not { LookedUpAt: not null }, ArtistAndTitle: not null })
+            .DistinctBy(row => row.Song, StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+    private int FamiliarityWaiting =>
+        Rows.Where(row => row is { Familiarity: null or { IsOwedALookup: true }, ArtistAndTitle: not null })
+            .DistinctBy(row => row.Song, StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+    private int? YouTubeUnits =>
+        Settings.Read().RefreshInterval is { TotalMinutes: > 0 } every ? (int)(MinutesPerDay / every.TotalMinutes) : null;
+
+    private string Backfill =>
+        (Roll.IsEnabled, Roll.RolledAt) switch
+        {
+            (false, _) => "Off",
+            (true, { } rolled) when DateTimeOffset.UtcNow - rolled < WindowRoll.Window =>
+                $"On · next in {Minutes(rolled + WindowRoll.Window - DateTimeOffset.UtcNow)}",
+            _ => "On · next once a window sits idle",
+        };
+
+    private static RenderFragment Waiting(int count) =>
+        count is 0
+            ? @<span class="idle">idle</span>
+            : @<span class="mono waiting">@count waiting</span>;
+
+    private static string SongHref(TrackRow row) => $"song/{Uri.EscapeDataString(row.VideoId)}";
+
+    private static string Minutes(TimeSpan span) =>
+        span.TotalMinutes < 90 ? $"{Math.Max(1, (int)Math.Round(span.TotalMinutes))} min" : $"{span.TotalHours:0.#} h";
+
+    private static string Percent(TimeSpan part, TimeSpan whole) => Percent(part.TotalSeconds, whole.TotalSeconds);
+
+    private static string Percent(double part, double whole) =>
+        $"{Math.Clamp(whole is 0 ? 0 : part * 100 / whole, 0, 100).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}%";
+
+    private void ToggleSeparation()
+    {
+        if (Separation.IsPaused)
+            Separation.Resume();
+        else
+            Separation.Pause();
+
+        Paused.RememberSeparation(Separation.IsPaused);
+    }
+
+    private void ToggleJudging()
+    {
+        if (Judging.IsPaused)
+            Judging.Resume();
+        else
+            Judging.Pause();
+
+        Paused.RememberJudging(Judging.IsPaused);
+    }
+}

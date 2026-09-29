@@ -28,6 +28,8 @@ public sealed partial class BeatReader(string? path = null, string fileName = "f
     private readonly Lock _saving = new();
     private volatile bool _changed;
     private volatile FfmpegBuild? _build;
+    private int _toRead;
+    private int _readSoFar;
 
     [GeneratedRegex(@"lavfi\.beatdetect\.(?<Key>\w+)=(?<Value>[0-9.]+)")]
     private static partial Regex MetadataLine { get; }
@@ -37,6 +39,16 @@ public sealed partial class BeatReader(string? path = null, string fileName = "f
 
     /// <summary>The build readings are current for, or null until <see cref="RefreshBuildAsync"/> finds one.</summary>
     public FfmpegBuild? Build => _build;
+
+    /// <summary>How far the current pass has got, as instrumentals read of those that had no reading.</summary>
+    public (int Read, int Of) Progress => (_readSoFar, _toRead);
+
+    /// <summary>Starts counting a pass over this many instrumentals.</summary>
+    public void Begin(int unread)
+    {
+        _toRead = unread;
+        _readSoFar = 0;
+    }
 
     /// <summary>The kept reading, or null when the file changed since or was read by another build.</summary>
     public BeatReading? Read(string audioPath) =>
@@ -90,6 +102,7 @@ public sealed partial class BeatReader(string? path = null, string fileName = "f
 
         _read[file.FullName] = new BeatEntry(stamp, _build, reading);
         _changed = true;
+        Interlocked.Increment(ref _readSoFar);
 
         return reading;
     }

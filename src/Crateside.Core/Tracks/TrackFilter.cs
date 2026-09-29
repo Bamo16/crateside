@@ -22,6 +22,9 @@ public enum TrackFilter
     /// <summary>A genre with no answer, or a familiarity the numbers leave to the user (#65).</summary>
     TagsToAnswer,
 
+    /// <summary>Not warped yet, and beatdetect reads the tempo drifting: expect a hard warp (#75).</summary>
+    TempoDrifts,
+
     /// <summary>
     /// Every row there is, the finished library included. Answers "do I have this track in any
     /// shape or form", which is a search question.
@@ -65,6 +68,7 @@ public static class TrackFilters
                 || row.Lookalike is not null
                 || row.AwaitingRename > 0,
             TrackFilter.TagsToAnswer => row.HasTagsToAnswer,
+            TrackFilter.TempoDrifts => row.TempoDrifts,
             TrackFilter.All => true,
             _ => false,
         };

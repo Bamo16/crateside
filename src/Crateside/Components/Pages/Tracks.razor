@@ -1,4 +1,3 @@
-@page "/"
 @page "/tracks"
 @layout Crateside.Components.Layout.BareLayout
 @rendermode InteractiveServer
@@ -394,7 +393,7 @@
                     <span class="mono toast-figure">@Figure(toast)</span>
                     <span class="toast-foot">
                         @Waiting(toast)
-                        <a class="show" href="@($"#{Anchor(toast)}")" @onclick="() => Show(toast)">
+                        <a class="show" href="@($"tracks#{Anchor(toast)}")" @onclick="() => Show(toast)">
                             Show row
                         </a>
                     </span>
@@ -782,6 +781,7 @@
             TrackFilter.InFlight => "In flight",
             TrackFilter.NeedsAttention => "Needs attention",
             TrackFilter.TagsToAnswer => "Tags to answer",
+            TrackFilter.TempoDrifts => "Tempo drifts",
             _ => filter.ToString(),
         };
 
