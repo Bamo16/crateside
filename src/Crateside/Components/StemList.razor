@@ -10,7 +10,7 @@
 
 @if (ticking || Row.Samples.Count > 0 || Row.HasWarpGuide)
 {
-    <div class="stems">
+    <div class="stems @(ticking ? "ticking" : null)">
         @if (ticking && Headed)
         {
             <div class="panel-head">
@@ -30,131 +30,142 @@
             </div>
         }
 
-        @if (ticking)
+        <div class="stem-heads">
+            <span></span>
+            <span>Sample</span>
+            <span>Ableton key</span>
+            <span>Where it is</span>
+            <span></span>
+        </div>
+
+        @* One list in both states: the lines on disk stay put, and the rest grow in around them (handoff 13b). *@
+        @foreach (var band in Grouped(picker, Row))
         {
+            <div class="grow @(ticking ? "shown" : null)" @key="band.Label">
+                <div class="grow-inner">
+                    <div class="stem-band">@band.Label</div>
+                </div>
+            </div>
 
-            <div class="bands">
-                @foreach (var band in picker.Bands)
-                {
-                    <div class="band">
-                        <div class="stem-band">@band.Label</div>
+            @foreach (var line in band.Lines)
+            {
+                var file = line.Files.FirstOrDefault();
+                var tickable = ticking && line is { IsPinned: false };
 
-                        @foreach (var line in band.Lines)
-                        {
-                            <div class="pick @LineTone(line) @(Row.CanChangePlan ? "planning" : null)"
-                                 title="@Hover(line, Row)"
-                                 @onclick="() => Editor.Toggle(Row, line)">
-                                <span class="tick @TickTone(line)">@TickMark(line)</span>
-                                <span class="pick-label">
-                                    @PickLabel(line)
-                                    @if (line.IsNotPremium)
-                                    {
-                                        <span class="premium-badge" title="The upload offered no premium audio, so this file is the best it had.">not premium</span>
-                                    }
-                                </span>
-                                @if (!Row.CanChangePlan)
+                <div class="grow @(ticking || line.IsOnDisk ? "shown" : null)" @key="KeyOf(line)">
+                    <div class="grow-inner">
+                        <div class="stem @(ticking ? LineTone(line) : line.Kind is StemKind.WarpGuide ? "guide" : null) @(tickable ? "tickable" : null)"
+                             title="@(ticking ? Hover(line, Row) : null)"
+                             @onclick="() => Pick(line, tickable)">
+                            <span class="tick @TickTone(line)">@TickMark(line)</span>
+                            <span class="stem-label">
+                                @PickLabel(line)
+                                @if (line.Kind is StemKind.WarpGuide)
                                 {
-                                    <span class="mono pick-state @StateTone(line)">@StateWord(line, picker)</span>
+                                    <span class="kind">warp guide</span>
                                 }
-                            </div>
-                        }
-
-                        @if (band.Label == "Sources")
-                        {
-                            @if (!FormsBeside && SourceForms.IsOpen(Editor, Row))
+                                @if (line.IsNotPremium)
+                                {
+                                    <span class="premium-badge" title="The upload offered no premium audio, so this file is the best it had.">not premium</span>
+                                }
+                            </span>
+                            @if (file is not null && line.Kind is not StemKind.WarpGuide)
                             {
-                                <SourceForms Editor="Editor" Row="Row" />
+                                <span class="mono stem-tag @TagTone(file)">@Tag(file)</span>
                             }
                             else
                             {
-                                var adding = Editor.Adding == Row.VideoId;
-                                var adopting = Editor.Adopting == Row.VideoId;
+                                <span class="mono stem-tag dim">—</span>
+                            }
+                            @if (ticking && line.State is not StemState.Kept)
+                            {
+                                <span class="mono stem-where @StateTone(line)">@StateWord(line, picker)</span>
+                            }
+                            else
+                            {
+                                <span class="mono stem-where @(line.IsInLibrary ? "good" : null)">@(file is null ? "—" : Where(file))</span>
+                            }
+                            <span class="stem-note">
+                                @if (ticking)
+                                {
+                                    @Note(line, Row)
+                                }
+                                else if (line.Kind is StemKind.WarpGuide)
+                                {
+                                    <text>for placing markers; deleted after warping</text>
+                                }
+                                else if (file is not null)
+                                {
+                                    @Upload(file)
+                                }
+                            </span>
+                        </div>
 
+                        @foreach (var extra in line.Files.Skip(1))
+                        {
+                            <div class="stem extra">
+                                <span class="tick"></span>
+                                <span class="stem-label"></span>
+                                <span class="mono stem-tag @TagTone(extra)">@Tag(extra)</span>
+                                <span class="mono stem-where @(extra.IsInLibrary ? "good" : null)">@Where(extra)</span>
+                                <span class="stem-note">@Upload(extra)</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (band.TakesSources)
+            {
+                <div class="grow @(ticking ? "shown" : null)" @key="OpenersKey">
+                    <div class="grow-inner">
+                        @if (!FormsBeside && SourceForms.IsOpen(Editor, Row))
+                        {
+                            <SourceForms Editor="Editor" Row="Row" />
+                        }
+                        else
+                        {
+                            var adding = Editor.Adding == Row.VideoId;
+                            var adopting = Editor.Adopting == Row.VideoId;
+
+                            <div class="source-openers">
                                 <button class="opener compact @(adding ? "open" : adopting ? "dimmed" : null)"
-                                        @onclick="() => Editor.StartAdding(Row)" disabled="@Editor.Working"
+                                        @onclick="() => Editor.StartAdding(Row)" disabled="@(!ticking || Editor.Working)"
                                         title="another file of this song · kept whole, never separated">
                                     <span class="mono">+</span>
                                     <span>@(adding ? "Adding a source →" : "Add a source")</span>
                                 </button>
                                 <button class="opener compact @(adopting ? "open" : adding ? "dimmed" : null)"
-                                        @onclick="() => Editor.StartAdopting(Row)" disabled="@Editor.Working"
+                                        @onclick="() => Editor.StartAdopting(Row)" disabled="@(!ticking || Editor.Working)"
                                         title="one you made by hand · taken in where it is">
                                     <span class="mono">+</span>
                                     <span>@(adopting ? "Adopting a file →" : "Adopt a file")</span>
                                 </button>
-                            }
+                            </div>
                         }
                     </div>
-                }
-            </div>
-
-            @if (picking && !FormsBeside)
-            {
-                <button class="opener closer" @onclick="() => Editor.TogglePicking(Row)" disabled="@Editor.Working">
-                    <span class="mono">−</span>
-                    <span>Close</span>
-                    <span class="opener-hint">
-                        @(picker.ChangesAnything ? "nothing is changed until you confirm" : null)
-                    </span>
-                </button>
+                </div>
             }
         }
-        else
-        {
-            <div class="stem-heads">
-                <span>Sample</span>
-                <span>Ableton key</span>
-                <span>Where it is</span>
-                <span></span>
+
+        <div class="grow @(ticking ? null : "shown")" @key="OpenerKey">
+            <div class="grow-inner">
+                <button class="opener" @onclick="() => Editor.TogglePicking(Row)" disabled="@(ticking || Editor.Working)">
+                    <span class="mono">+</span>
+                    <span>Change what is cut</span>
+                    <span class="opener-hint">@OpenerHint(picker)</span>
+                </button>
             </div>
+        </div>
 
-            @foreach (var sample in Row.Samples)
-            {
-                <div class="stem">
-                    <span class="stem-label">
-                        @sample.Label
-                        @if (sample.IsPremium is false)
-                        {
-                            <span class="premium-badge" title="The upload offered no premium audio, so this file is the best it had.">not premium</span>
-                        }
-                    </span>
-                    <span class="mono stem-tag @TagTone(sample)">@Tag(sample)</span>
-                    <span class="mono stem-where @(sample.IsInLibrary ? "good" : null)">
-                        @Where(sample)
-                    </span>
-                    <span class="stem-note">
-                        @if (Row.HasSeveralUploads)
-                        {
-                            var added = Row.IsAddedSource(sample.SourceVideoId);
-                            var current = sample.SourceVideoId == Row.VideoId;
-
-                            <span class="upload @(added ? "added" : current ? "current" : "superseded")">
-                                @(added ? "added source" : current ? "new upload" : "old upload")
-                                <span class="mono">@sample.SourceVideoId</span>
-                            </span>
-                        }
-                    </span>
-                </div>
-            }
-
-            @if (Row.HasWarpGuide)
-            {
-                <div class="stem guide">
-                    <span class="stem-label">
-                        Drums <span class="kind">warp guide</span>
-                    </span>
-                    <span class="mono stem-tag dim">—</span>
-                    <span class="mono stem-where">Sample Staging</span>
-                    <span class="stem-note">
-                        for placing markers; deleted after warping
-                    </span>
-                </div>
-            }
-
-            <button class="opener" @onclick="() => Editor.TogglePicking(Row)" disabled="@Editor.Working">
-                <span class="mono">+</span>
-                <span>Change what is cut</span>
-                <span class="opener-hint">@OpenerHint(picker)</span>
+        @if (picking && !FormsBeside)
+        {
+            <button class="opener closer" @onclick="() => Editor.TogglePicking(Row)" disabled="@Editor.Working">
+                <span class="mono">−</span>
+                <span>Close</span>
+                <span class="opener-hint">
+                    @(picker.ChangesAnything ? "nothing is changed until you confirm" : null)
+                </span>
             </button>
         }
     </div>
@@ -320,4 +331,70 @@ else
             { IsInLibrary: true } => "dim",
             _ => "bad",
         };
+
+    private const string OpenersKey = "sources:openers";
+    private const string OpenerKey = "opener";
+
+    private void Pick(StemChoice line, bool tickable)
+    {
+        if (tickable)
+            Editor.Toggle(Row, line);
+    }
+
+    /// <summary>The picker's lines in the list's order: Vocal, Instrumental, the whole track, other sources, then the rest.</summary>
+    private static IReadOnlyList<ListBand> Grouped(StemPicker picker, TrackRow row)
+    {
+        var lines = picker.Lines.ToList();
+        var claimed = lines.SelectMany(line => line.Files).ToHashSet();
+
+        // A file no line claims (the preset list failed to load, say) is still drawn, never hidden.
+        var unclaimed = row
+            .Samples.Where(sample => !claimed.Contains(sample))
+            .Select(sample => new StemChoice
+            {
+                Label = sample.Label,
+                Kind = StemKind.Unrecognised,
+                IsWanted = true,
+                Files = [sample],
+            });
+
+        List<ListBand> bands =
+        [
+            .. picker
+                .Bands.Where(band => band.Lines.Any(line => line.Kind is StemKind.Preset))
+                .OrderBy(band => band.Label.Equals("Vocal", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+                .Select(band => new ListBand(band.Label, band.Lines)),
+            new(
+                "Whole track",
+                [
+                    .. lines.Where(line => line is { Kind: StemKind.Source, AddedSource: null }),
+                    .. lines.Where(line => line.Kind is StemKind.WarpGuide),
+                ]
+            ),
+            new("Other sources", [.. lines.Where(line => line.AddedSource is not null)], TakesSources: true),
+            new("No longer offered", [.. lines.Where(line => line.Kind is StemKind.Unrecognised), .. unclaimed]),
+        ];
+
+        return [.. bands.Where(band => band.Lines.Count > 0 || band.TakesSources)];
+    }
+
+    private static string KeyOf(StemChoice line) =>
+        line.PresetId ?? line.AddedSource?.VideoId ?? $"{line.Kind}:{line.Label}";
+
+    /// <summary>Which upload a file came from, said only where the song has been cut from more than one.</summary>
+    private RenderFragment? Upload(TrackSample sample)
+    {
+        if (!Row.HasSeveralUploads)
+            return null;
+
+        var added = Row.IsAddedSource(sample.SourceVideoId);
+        var current = sample.SourceVideoId == Row.VideoId;
+
+        return @<span class="upload @(added ? "added" : current ? "current" : "superseded")">
+            @(added ? "added source" : current ? "new upload" : "old upload")
+            <span class="mono">@sample.SourceVideoId</span>
+        </span>;
+    }
+
+    private sealed record ListBand(string Label, IReadOnlyList<StemChoice> Lines, bool TakesSources = false);
 }

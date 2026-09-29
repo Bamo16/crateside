@@ -513,9 +513,9 @@
     padding: 6px 22px 20px 60px;
 }
 
-/* Wide enough for the side stack's two columns, except while picking folds it (handoff 07). */
+/* Wide enough for the side stack's two columns (handoff 07), picking included (handoff 13b). */
 @media (min-width: 1200px) {
-    .panel:not(.folded) {
+    .panel {
         grid-template-columns: minmax(0, 1fr) 680px;
     }
 }

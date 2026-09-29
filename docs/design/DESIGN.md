@@ -146,6 +146,14 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
 - **The expanded panel has no heading**: the file list starts with its column heads. *Re-cut
   pending* leads the side column's note while picking, and before separation the *changes apply
   now* hint ends the `.detail` line. Track details keeps its heading (`StemList Headed`).
+- **The picker is the same list** (handoff 13b): one column of `.stem` lines under the same
+  column heads, in bands Vocal · Instrumental · Whole track · Other sources (then *No longer
+  offered*). Lines on disk stay the same elements and only move down; band labels, unmade
+  presets and the Add a source / Adopt a file openers grow in (0fr ↔ 1fr, 220ms, fading in after
+  66ms), and the *Change what is cut* opener grows out. The tick column is always there, empty
+  until picking. The side column stays: while picking, only its action block and Next are swapped
+  for the lead sentence, the change summary and Confirm / Cancel. The picker's anchor is the
+  column heads.
 
 ## Dashboard
 
@@ -248,12 +256,10 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   `mark-tile.svg` (the mark on its own dark tile) above the text heading instead. A lockup for
   light backgrounds would be a Design question.
 
-### Tracks row (handoff 13, #85)
+### Tracks row (handoffs 13, 13b, #85)
 
-- **The picker swaps in rather than morphs.** The canvas turns the file list into the picker, the
-  kept lines sliding into their bands under column heads that stay. The build still replaces the
-  list with the picker's bands, at once, with no heads; the place-keeping holds the list's top
-  still instead of the heads. Only the row's panel animates.
+- **A song cut from more than one upload shows one line per preset**, with the other upload's
+  file as a dashed line under it, where the closed list used to give each file its own line.
 - **One row is open at a time**, as before; the canvas allows several. Opening a row while another
   above it closes still keeps the clicked header still.
 

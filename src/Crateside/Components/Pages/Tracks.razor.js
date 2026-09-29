@@ -1,5 +1,5 @@
-// What was clicked stays where it is while a row or the picker opens or closes (handoff 13): a row's
-// header when the row was clicked, the top of its file list when something inside the panel was.
+// What was clicked stays where it is while a row or the picker opens or closes (handoffs 13, 13b): a
+// row's header when the row was clicked, the file list's column heads when something inside it was.
 const Motion = 220;
 const Settle = 80;
 const Patience = 1000;
@@ -35,7 +35,7 @@ export function keepPlace(spacer) {
 
         return header
             ? { anchor: () => document.getElementById(id), panel: panelOf }
-            : { anchor: () => panelOf()?.querySelector(".stems"), panel: panelOf };
+            : { anchor: () => panelOf()?.querySelector(".stem-heads, .stems"), panel: panelOf };
     };
 
     const onClick = (event) => {

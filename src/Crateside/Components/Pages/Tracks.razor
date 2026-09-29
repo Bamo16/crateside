@@ -352,13 +352,13 @@
             @if (open || _closing.Contains(row.VideoId))
             {
                 <div class="reveal @(open ? null : "closing")" @key="row.VideoId">
-                    <div class="panel @(SideStack.IsFolded(_stems, row) ? "folded" : null)">
+                    <div class="panel">
                         <TrackFindings Row="row" />
 
                         <StemList Editor="_stems" Row="row" FormsBeside="true" Headed="false" />
 
                         <div class="side">
-                            <SideStack Row="row" Editor="_stems" Columns="2" FoldWhilePicking="true" Removed="OnRemoved" />
+                            <SideStack Row="row" Editor="_stems" Columns="2" PicksBeside="true" Removed="OnRemoved" />
 
                             @if (_problem is { } problem)
                             {

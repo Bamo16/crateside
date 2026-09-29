@@ -10,7 +10,7 @@
 .stem-heads,
 .stem {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 110px 130px auto;
+    grid-template-columns: 22px minmax(0, 1fr) 120px 140px minmax(0, 1fr);
     gap: 14px;
     align-items: center;
     margin-bottom: 4px;
@@ -91,7 +91,6 @@
     color: var(--text-30);
 }
 
-.stem-heads span:empty,
 .stem-note:empty {
     display: none;
 }
@@ -123,104 +122,112 @@
     color: var(--warn);
 }
 
-/* Side by side, so the open picker spends the row's width rather than its height. */
-.bands {
+/* One list whether picking or not (handoff 13b): a line that is not on disk, a band label and the
+   openers grow in and out with the row's own ease, and fade in after the height has started. */
+.grow {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 10px 14px;
-    align-items: start;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 220ms cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-.band {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+.grow.shown {
+    grid-template-rows: 1fr;
 }
 
-.pick {
-    display: grid;
-    grid-template-columns: 16px minmax(0, 1fr) auto;
-    gap: 10px;
-    align-items: center;
-    padding: 7px 10px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 6px;
+.grow-inner {
+    min-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 110ms ease-out;
+}
+
+.grow.shown > .grow-inner {
+    opacity: 1;
+    transition: opacity 154ms ease-out 66ms;
+}
+
+/* Present in both states, so the sample column never moves sideways; empty until picking. */
+.stems:not(.ticking) .tick {
+    opacity: 0;
+    transition: opacity 110ms ease-out;
+}
+
+.stems.ticking .tick {
+    transition: opacity 154ms ease-out 66ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .grow,
+    .grow-inner,
+    .grow.shown > .grow-inner,
+    .stems .tick {
+        transition: none;
+    }
+}
+
+.stem.tickable {
     cursor: pointer;
 }
 
-.pick.planning {
-    grid-template-columns: 16px minmax(0, 1fr);
-}
-
-.pick:hover {
+.stem.tickable:hover {
     border-color: rgba(255, 255, 255, 0.3);
 }
 
-.pick.guide,
-.pick.unrecognised {
+.stem.unrecognised {
     cursor: default;
 }
 
-.pick.guide {
-    background: transparent;
-    border-style: dashed;
-    opacity: 0.55;
-}
-
-.pick.unmade {
+.stem.unmade {
     background: transparent;
     border-color: rgba(255, 255, 255, 0.08);
     opacity: 0.6;
 }
 
-.pick.unmade:hover {
+.stem.unmade:hover {
     opacity: 0.85;
 }
 
-.pick.coming {
+.stem.coming {
     background: rgba(111, 199, 214, 0.06);
     border-color: rgba(111, 199, 214, 0.3);
 }
 
-.pick.going {
+.stem.going {
     background: transparent;
     border-color: rgba(224, 122, 109, 0.35);
     opacity: 0.6;
 }
 
-.pick.going .pick-label {
+.stem.going .stem-label {
     text-decoration: line-through;
 }
 
-/* Wraps rather than truncates: the name is the only thing telling presets apart. */
-.pick-label {
-    min-width: 0;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.35;
-    text-wrap: pretty;
+/* A second upload's file under the same preset: its own key and place, but not a line to tick. */
+.stem.extra {
+    background: transparent;
+    border-style: dashed;
 }
 
-.pick-state {
-    font-size: 11.5px;
-    color: var(--text-60);
-}
-
-.pick-state.good {
-    color: var(--green);
-}
-
-.pick-state.new {
+.stem-where.new {
     color: var(--teal);
 }
 
-.pick-state.gone {
+.stem-where.gone {
     color: var(--red);
 }
 
-.pick-state.dim {
+.stem-where.dim {
     color: var(--text-30);
+}
+
+.source-openers {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 4px;
+}
+
+.source-openers .opener {
+    width: auto;
 }
 
 .head-note {
@@ -237,7 +244,7 @@
 }
 
 .stem-band {
-    padding: 4px 2px;
+    padding: 8px 12px 4px;
     font-family: var(--font-mono);
     font-size: 10.5px;
     font-weight: 500;

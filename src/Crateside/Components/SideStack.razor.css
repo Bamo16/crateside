@@ -23,28 +23,22 @@
     }
 }
 
-.stack.folded {
-    gap: 12px;
+/* Picking swaps the action block for its own lead, summary and buttons, in the same spot. */
+.picking {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
-.stack.folded .confirm-slot {
-    margin-bottom: 0;
-}
-
-.fold-note {
+.picking .lead {
     margin: 0;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.5;
-    color: var(--text-50);
+    color: var(--text);
 }
 
 .pending {
     color: var(--red);
-}
-
-.fold-note.after {
-    padding-top: 12px;
-    border-top: 1px solid var(--line);
 }
 
 .confirm-slot {
