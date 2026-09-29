@@ -113,10 +113,14 @@ public sealed record TrackRow
             is { Genre: { IsSettled: false, LookedUpAt: not null } }
                 or { Familiarity: { Written: null, LookedUpAt: not null } };
 
-    /// <summary>The ledger's artist and title, else the row's own name split at its dash.</summary>
+    /// <summary>
+    /// The ledger's artist and title, else the row's own name split at its dash. Null while the row
+    /// has only the upload's title, whose artist is a guess.
+    /// </summary>
     public (string Artist, string Title)? ArtistAndTitle =>
         Verdict is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title }
             ? (artist, title)
+        : NameSource is TrackNameSource.Playlist or TrackNameSource.VideoId ? null
         : Title.Split(" - ", 2) is [{ Length: > 0 } a, { Length: > 0 } t] ? (a, t)
         : null;
 

@@ -18,6 +18,25 @@ public sealed class FamiliarityWorker(
 
     private static readonly TimeSpan AfterFailure = TimeSpan.FromMinutes(30);
 
+    private readonly NewWork _newWork = new(
+        tracks,
+        rows =>
+            rows.Where(row =>
+                    row
+                        is {
+                            Familiarity: null or { IsOwedALookup: true },
+                            ArtistAndTitle: not null
+                        }
+                )
+                .Select(row => row.Song)
+    );
+
+    public override void Dispose()
+    {
+        _newWork.Dispose();
+        base.Dispose();
+    }
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -39,7 +58,7 @@ public sealed class FamiliarityWorker(
                 delay = AfterFailure;
             }
 
-            await Task.Delay(delay, stoppingToken);
+            await _newWork.WaitAsync(delay, stoppingToken);
         }
     }
 

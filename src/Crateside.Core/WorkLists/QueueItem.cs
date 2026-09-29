@@ -21,6 +21,15 @@ public sealed record QueueItem
     public string? ChannelTitle { get; init; }
 
     /// <summary>
+    /// What a row is called until StemForge names it: the uploader before a title that does not
+    /// name an artist, as YouTube Music's <c>Artist - Topic</c> uploads do not.
+    /// </summary>
+    public string StandInTitle =>
+        ChannelTitle is { Length: > 0 } channel && !Title.Contains(" - ", StringComparison.Ordinal)
+            ? $"{(channel.EndsWith(" - Topic", StringComparison.Ordinal) ? channel[..^8] : channel)} - {Title}"
+            : Title;
+
+    /// <summary>
     /// When the item was added — the queue order, since <see cref="Position"/> can mean opposite
     /// things across playlists.
     /// </summary>

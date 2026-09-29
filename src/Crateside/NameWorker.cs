@@ -1,5 +1,6 @@
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
+using Crateside.Core.Tracks;
 using Crateside.Core.WorkLists;
 
 namespace Crateside;
@@ -12,6 +13,7 @@ public sealed class NameWorker(
     QueueService queue,
     NameResolver resolver,
     ResolvedNameStore store,
+    TracksService tracks,
     ILogger<NameWorker> logger
 ) : BackgroundService
 {
@@ -24,6 +26,18 @@ public sealed class NameWorker(
     /// tick for ever. Held in memory only, so a restart retries them.
     /// </summary>
     private readonly HashSet<string> _unresolvable = new(StringComparer.Ordinal);
+
+    private readonly NewWork _newWork = new(
+        tracks,
+        rows =>
+            rows.Where(row => row.NameSource is TrackNameSource.Playlist).Select(row => row.VideoId)
+    );
+
+    public override void Dispose()
+    {
+        _newWork.Dispose();
+        base.Dispose();
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -46,7 +60,7 @@ public sealed class NameWorker(
                 delay = AfterFailure;
             }
 
-            await Task.Delay(delay, stoppingToken);
+            await _newWork.WaitAsync(delay, stoppingToken);
         }
     }
 

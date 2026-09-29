@@ -1,5 +1,6 @@
 using Crateside.Core;
 using Crateside.Core.Beats;
+using Crateside.Core.Tracks;
 using Humanizer;
 
 namespace Crateside;
@@ -8,14 +9,39 @@ namespace Crateside;
 /// Reads <c>beatdetect</c> on every instrumental without a current reading, staging before the
 /// library. Never paused: it runs on the CPU and contends for nothing, like detection (#75, #76).
 /// </summary>
-public sealed class BeatWorker(BeatReader reader, CratesidePaths paths, ILogger<BeatWorker> logger)
-    : BackgroundService
+public sealed class BeatWorker(
+    BeatReader reader,
+    CratesidePaths paths,
+    TracksService tracks,
+    ILogger<BeatWorker> logger
+) : BackgroundService
 {
     private const int AtOnce = 3;
 
     private static readonly TimeSpan IdleDelay = TimeSpan.FromMinutes(10);
 
     private static readonly TimeSpan AfterFailure = TimeSpan.FromMinutes(30);
+
+    private readonly NewWork _newWork = new(
+        tracks,
+        rows =>
+            rows.Where(row =>
+                    row.Samples.Any(sample =>
+                        sample is { IsInLibrary: false, Beats: null }
+                        && sample.Label.StartsWith(
+                            "Instrumental",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                )
+                .Select(row => row.VideoId)
+    );
+
+    public override void Dispose()
+    {
+        _newWork.Dispose();
+        base.Dispose();
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -38,7 +64,7 @@ public sealed class BeatWorker(BeatReader reader, CratesidePaths paths, ILogger<
                 delay = AfterFailure;
             }
 
-            await Task.Delay(delay, stoppingToken);
+            await _newWork.WaitAsync(delay, stoppingToken);
         }
     }
 

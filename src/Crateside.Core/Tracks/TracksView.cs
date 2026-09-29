@@ -103,7 +103,7 @@ public sealed record TracksView
         // one upload contributes several, and they are folded into one row below (ADR 0014).
         List<RowSeed> seeds =
         [
-            .. view.Items.Select(item => new RowSeed(item.VideoId, item.Title, item)),
+            .. view.Items.Select(item => new RowSeed(item.VideoId, item.StandInTitle, item)),
             .. staging
                 .Where(song => song.SourceVideoId is { } id && !queued.Contains(id))
                 .Select(song => new RowSeed(song.SourceVideoId!, song.DisplayName)),
@@ -114,7 +114,7 @@ public sealed record TracksView
                 .Reopened.Where(item =>
                     !queued.Contains(item.VideoId) && !staged.ContainsKey(item.VideoId)
                 )
-                .Select(item => new RowSeed(item.VideoId, item.Title, item)),
+                .Select(item => new RowSeed(item.VideoId, item.StandInTitle, item)),
             // Everything else the library has: tracks judged before crateside existed, or
             // finished long enough ago that the playlist entry is gone.
             .. onDisk

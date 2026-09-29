@@ -58,6 +58,7 @@ public sealed class IntakeStore
                 {
                     VideoId = item.VideoId,
                     Title = item.Title,
+                    ChannelTitle = item.ChannelTitle,
                     AddedAt = item.AddedAt,
                     PremiumOutlook = item.PremiumOutlook,
                     IsUnavailable = item.IsUnavailable,
@@ -208,6 +209,7 @@ public sealed class IntakeStore
         {
             VideoId = record.VideoId,
             Title = record.Title,
+            ChannelTitle = record.ChannelTitle,
             AddedAt = record.AddedAt,
             PremiumOutlook = record.PremiumOutlook,
             IsUnavailable = record.IsUnavailable,
@@ -261,6 +263,9 @@ public sealed record IntakeRecord
     public required string VideoId { get; init; }
 
     public required string Title { get; init; }
+
+    /// <summary>The uploading channel, kept once the playlist entry is gone. Null on older records.</summary>
+    public string? ChannelTitle { get; init; }
 
     public DateTimeOffset? AddedAt { get; init; }
 
