@@ -1,11 +1,9 @@
 @page "/tools/partners"
-@page "/partners"
 @layout Crateside.Components.Layout.BareLayout
 @using Crateside.Core.Pairing
 @rendermode InteractiveServer
 
 @inject ToolsMemory Memory
-@inject NavigationManager Navigation
 
 <PageTitle>Partners · crateside</PageTitle>
 
@@ -86,9 +84,6 @@
 
     protected override void OnInitialized()
     {
-        if (Navigation.ToBaseRelativePath(Navigation.Uri).StartsWith("partners", StringComparison.OrdinalIgnoreCase))
-            Navigation.NavigateTo(ToolsFrame.Href(ToolsFrame.Tool.Partners, MusicKey.FromString(KeyFromQuery)), replace: true);
-
         Memory.LastTool = ToolsFrame.Tool.Partners;
     }
 

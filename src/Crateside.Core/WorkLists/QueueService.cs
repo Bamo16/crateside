@@ -195,6 +195,13 @@ public sealed class QueueService(
         var held = Pasted(await ItemsAsync(ct));
         var items = TakenOn(held);
 
+        if (PlaylistProblem is null)
+            intake.ForgetRemovalFailures(
+                LeftInPlaylist
+                    .Select(record => record.VideoId)
+                    .Except(held.Select(item => item.VideoId), StringComparer.Ordinal)
+            );
+
         await ConsumeAsync(held, ct);
 
         // Both staging and Mashup Samples count — a track that moved out is still processed.

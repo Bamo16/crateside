@@ -112,6 +112,10 @@ public sealed class IntakeStore
             record => record with { RemovalFailure = byVideoId[record.VideoId] }
         );
 
+    /// <summary>Forgets why these entries were left, once they are gone from the playlist however they went.</summary>
+    public void ForgetRemovalFailures(IEnumerable<string> videoIds) =>
+        Update(videoIds, record => record with { RemovalFailure = null });
+
     // A cleared attempt takes its failure with it: the entry is back in line, not still failed.
     private void SetRemovalAttempted(IEnumerable<string> videoIds, DateTimeOffset? at) =>
         Update(

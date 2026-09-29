@@ -73,6 +73,32 @@ public class RemovalFailureTests : IDisposable
         Assert.Null(record.RemovalFailure);
     }
 
+    [Fact]
+    public void An_entry_gone_from_the_playlist_is_no_longer_left_but_is_not_offered_again()
+    {
+        var store = Store();
+
+        store.Record([Item(Track)]);
+        store.MarkRemovalAttempted([Track], DateTimeOffset.UtcNow);
+        store.RecordRemovalFailures(
+            new Dictionary<string, RemovalFailure>
+            {
+                [Track] = new()
+                {
+                    Reason = "SERVICE_UNAVAILABLE: The operation was aborted.",
+                    CanSucceedLater = true,
+                },
+            }
+        );
+
+        store.ForgetRemovalFailures([Track]);
+
+        var record = Assert.Single(Store().Read());
+
+        Assert.Null(record.RemovalFailure);
+        Assert.NotNull(record.RemovalAttemptedAt);
+    }
+
     [Theory]
     [InlineData(HttpStatusCode.Forbidden, "forbidden", false)]
     [InlineData(HttpStatusCode.Forbidden, "playlistItemsNotAccessible", false)]
