@@ -176,6 +176,14 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
             key.Mode == Mode && key.Chromatic == ((Chromatic + semitones) % 12 + 12) % 12
         );
 
+    /// <summary>The same notes in the other mode: same circle position, other letter.</summary>
+    public MusicKey Relative =>
+        AllKeys.Single(key => key.Mode != Mode && key.CirclePos == CirclePos);
+
+    /// <summary>The note alone, as the Camelot wheel labels it: majors flat, minors sharp with an m.</summary>
+    public string ShortName =>
+        Mode is Mode.Major ? FlatNames[Chromatic] : $"{SharpNames[Chromatic]}m";
+
     public bool Equals(MusicKey? other) =>
         other is not null && Chromatic == other.Chromatic && Mode == other.Mode;
 

@@ -1,0 +1,152 @@
+@using System.Globalization
+@using Crateside.Core.Pairing
+
+<section class="tool partners-tool">
+    <div class="title">
+        <h3>Partners</h3>
+        <span class="gist">keys to filter for in Ableton's browser, never files</span>
+    </div>
+
+    @if (Working is null || Own is null)
+    {
+        <div class="no-key">Pick a track, or a key, on the left.</div>
+    }
+    else
+    {
+        <div class="basis-row">
+            <div class="basis">
+                <div class="basis-line">
+                    <span class="caps">Working from</span>
+                    <span class="working">@Working.Name</span>
+                    <span class="mono camelot">@Working.CamelotCode</span>
+                    <span class="pills">
+                        <button class="pill @(Relative ? "off" : "on plain")" @onclick="() => OnRelative.InvokeAsync(false)">
+                            @Shifted!.Name
+                        </button>
+                        <button class="pill @(Relative ? "on plain" : "off")" @onclick="() => OnRelative.InvokeAsync(true)">
+                            @Shifted!.Relative.Name · relative
+                        </button>
+                    </span>
+                </div>
+                <div class="reason">
+                    @Reason
+                    @if (Shift is not 0)
+                    {
+                        <button class="outline small" @onclick="() => OnBack.InvokeAsync()">Back to @Own.Name</button>
+                    }
+                </div>
+            </div>
+
+            <div class="wheel-inline">
+                @Wheel
+            </div>
+        </div>
+
+        <label class="slider">
+            <span>Max shift <em>@("semitone".ToQuantity(Max))</em></span>
+            <input type="range" min="0" max="@Core.Pairing.Partners.MaxPossibleShift" step="1"
+                   value="@Max" @oninput="e => OnMax.InvokeAsync(int.Parse((string)e.Value!, CultureInfo.InvariantCulture))" />
+        </label>
+
+        <table class="partners">
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Camelot</th>
+                    <th class="numeric">Shift</th>
+                    <th>Alt</th>
+                    <th>Relationship</th>
+                    <th class="numeric">Score</th>
+                </tr>
+            </thead>
+            <tbody>
+                @Group("Mixes as is", Partners.Where(partner => partner.Shift is 0))
+                @Group($"A shift away · pitch the sample by Shift to land in {Working.Name}", Partners.Where(partner => partner.Shift is not 0))
+            </tbody>
+        </table>
+    }
+</section>
+
+@code {
+    /// <summary>The track's own key, or the one typed, before any shift.</summary>
+    [Parameter]
+    public MusicKey? Own { get; set; }
+
+    [Parameter]
+    public int Shift { get; set; }
+
+    [Parameter]
+    public bool Relative { get; set; }
+
+    [Parameter]
+    public MusicKey? Working { get; set; }
+
+    [Parameter]
+    public bool IsTrack { get; set; }
+
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<MashupPartner> Partners { get; set; }
+
+    [Parameter]
+    public int Max { get; set; } = Core.Pairing.Partners.MaxPossibleShift;
+
+    [Parameter]
+    public EventCallback<int> OnMax { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnRelative { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    /// <summary>The wheel, drawn beside the basis box when the page is too narrow for its own column.</summary>
+    [Parameter]
+    public RenderFragment? Wheel { get; set; }
+
+    private MusicKey? Shifted => Own?.Transposed(Shift);
+
+    private string Whose => IsTrack ? "the track's" : "the typed";
+
+    private string Reason =>
+        (Shift, Relative) switch
+        {
+            (0, false) => IsTrack ? "The track's own key." : "The key you typed.",
+            (0, true) => $"The relative of {Whose} {Own!.Name}.",
+            (var n, false) => $"Re-Pitch {MashupPartner.FormatShift(n)} from {Whose} {Own!.Name}.",
+            (var n, true) =>
+                $"The relative of {Shifted!.Name}, which is Re-Pitch {MashupPartner.FormatShift(n)} from {Whose} {Own!.Name}.",
+        };
+
+    private static RenderFragment Group(string heading, IEnumerable<MashupPartner> partners) =>
+        @<text>
+            @if (partners.OrderBy(partner => partner.Score).ToList() is { Count: > 0 } rows)
+            {
+                <tr class="group"><td colspan="6" class="caps">@heading</td></tr>
+                @foreach (var partner in rows)
+                {
+                    <tr class="@(partner.Score is 0 ? "same" : null) @(partner.Shift is not 0 ? "shifted" : null)">
+                        <td class="key">@partner.Key.Name</td>
+                        <td class="mono camelot">@partner.CamelotCode</td>
+                        <td class="numeric mono shift">@MashupPartner.FormatShift(partner.Shift)</td>
+                        <td class="mono alts">@partner.AltShiftsDisplay</td>
+                        <td>
+                            <span class="relationship">@partner.Relationship.ToDisplayString()</span>
+                            <span class="meaning">@Meaning(partner.Relationship)</span>
+                        </td>
+                        <td class="numeric mono muted">@partner.Score.ToString("0.#", CultureInfo.InvariantCulture)</td>
+                    </tr>
+                }
+            }
+        </text>;
+
+    private static string Meaning(Relationship relationship) =>
+        relationship switch
+        {
+            Relationship.PerfectMatch => "the key itself",
+            Relationship.Relative => "the same notes, the other mode",
+            Relationship.EnergyRise => "one step clockwise: a fifth up",
+            Relationship.Relaxed => "one step anticlockwise: a fifth down",
+            Relationship.MoodShift => "one step round and the other mode",
+            _ => "further round the wheel",
+        };
+}

@@ -1,10 +1,272 @@
 @page "/tools"
 @layout Crateside.Components.Layout.BareLayout
+@rendermode InteractiveServer
+@implements IAsyncDisposable
 
+@using System.Globalization
+@using Crateside.Components.Tools
+@using Crateside.Core.Familiarity
+@using Crateside.Core.Library
+@using Crateside.Core.Pairing
+@using Crateside.Core.Tracks
+
+@inject LibrarySummary Library
+@inject FamiliarityStore FamiliarityRecords
+@inject TracksService Tracks
 @inject ToolsMemory Memory
 @inject NavigationManager Navigation
+@inject IJSRuntime Js
+
+<PageTitle>Tools · crateside</PageTitle>
+
+<PageHeader Active="BrandNav.Tab.Tools" Shape="PageHeader.Shapes.Bar" />
+
+<div class="body">
+    <header class="page-header">
+        <h1>Tools</h1>
+        <p class="subtitle">Small helpers for building a mashup, used on the spot, all working from one track.</p>
+    </header>
+
+    <div class="columns @(_rePitchOpen ? null : "repitch-folded")">
+        <div class="col working-col">
+            <WorkingOn Track="_track" Songs="Warped" Familiarity="TrackFamiliarity" DetailsHref="DetailsHref"
+                       KeyName="@_keyName" BpmText="@_bpmText"
+                       OnPick="Pick" OnKey="TypeKey" OnBpm="TypeBpm" />
+        </div>
+
+        @if (_rePitchOpen)
+        {
+            <div class="col repitch-col">
+                <RePitchTool Key="Own" Bpm="Bpm" IsTrack="_track is not null"
+                             Shift="_shift" OnShift="ChooseShift"
+                             Max="_rePitchMax" OnMax="max => Change(() => { _rePitchMax = max; _shift = Math.Clamp(_shift, -max, max); })"
+                             OnToggle="ToggleRePitch" />
+            </div>
+        }
+
+        <div class="col partners-col">
+            @if (!_rePitchOpen)
+            {
+                <button class="folded-tool" @onclick="ToggleRePitch">
+                    <span class="mono chevron">▸</span>
+                    <strong>Re-Pitch</strong>
+                    @if (_shift is not 0 && Own is { } own)
+                    {
+                        <span>
+                            <span class="mono">@MashupPartner.FormatShift(_shift)</span>
+                            @if (Bpm is { } bpm)
+                            {
+                                <text> · </text><span class="mono">@Core.Pairing.RePitch.ArrangementBpm(bpm, _shift).ToString("0.00", CultureInfo.InvariantCulture)</span><text> BPM</text>
+                            }
+                            · @own.Transposed(_shift).Name, sent to Partners
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="quiet">no shift chosen</span>
+                    }
+                </button>
+            }
+
+            <PartnersTool Own="Own" Shift="_shift" Relative="_relative" Working="Working" IsTrack="_track is not null"
+                          Partners="_partners" Max="_partnersMax"
+                          OnMax="max => Change(() => _partnersMax = max)"
+                          OnRelative="relative => Change(() => _relative = relative)"
+                          OnBack="() => Change(() => _shift = 0)">
+                <Wheel>
+                    <CamelotWheel Working="Working" Own="Own" Partners="_partners" />
+                </Wheel>
+            </PartnersTool>
+        </div>
+
+        <div class="col wheel-col">
+            <span class="caps">Camelot wheel</span>
+            <CamelotWheel Working="Working" Own="Own" Partners="_partners" />
+            <div class="legend">
+                <span><i class="swatch working"></i>working from</span>
+                <span><i class="swatch near"></i>mixes as is</span>
+                <span><i class="swatch far"></i>a shift away</span>
+                <span><i class="swatch own"></i>where you started</span>
+                <span class="note">Outer ring major (B), inner ring minor (A). A neighbour on the wheel is a fifth; straight in or out is the relative.</span>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
-    protected override void OnInitialized() =>
-        Navigation.NavigateTo(ToolsFrame.Href(Memory.LastTool, Memory.Key), replace: true);
+    private LibrarySong? _track;
+    private string _keyName = string.Empty;
+    private string _bpmText = string.Empty;
+    private int _shift;
+    private bool _relative;
+    private bool _rePitchOpen = true;
+    private int _rePitchMax = Core.Pairing.RePitch.DefaultMaxShift;
+    private int _partnersMax = Core.Pairing.Partners.MaxPossibleShift;
+    private IReadOnlyList<MashupPartner> _partners = [];
+    private IJSObjectReference? _module;
+
+    [SupplyParameterFromQuery(Name = "track")]
+    public string? TrackFromQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "key")]
+    public string? KeyFromQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "bpm")]
+    public string? BpmFromQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "shift")]
+    public int? ShiftFromQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "rel")]
+    public int? RelativeFromQuery { get; set; }
+
+    private IReadOnlyList<LibrarySong> Warped =>
+        [.. Library.Current.Songs.Where(song => song.Tempo is not null)];
+
+    /// <summary>The key before any shift: the track's, or the one typed.</summary>
+    private MusicKey? Own => MusicKey.FromString(_keyName);
+
+    private double? Bpm => Core.Pairing.RePitch.TryParseBpm(_bpmText, out var bpm) ? bpm : null;
+
+    private MusicKey? Working => Own?.Transposed(_shift) is { } shifted ? (_relative ? shifted.Relative : shifted) : null;
+
+    private string? TrackFamiliarity =>
+        _track is null ? null : FamiliarityRecords.Read().GetValueOrDefault(_track.Song)?.Written;
+
+    private string? DetailsHref =>
+        _track is null
+            ? null
+            : Tracks.Current?.Rows.FirstOrDefault(row => row.Song.Equals(_track.Song, StringComparison.OrdinalIgnoreCase)) is { } row
+                ? $"song/{Uri.EscapeDataString(row.VideoId)}"
+                : null;
+
+    protected override void OnInitialized()
+    {
+        if (TrackFromQuery is null && KeyFromQuery is null && BpmFromQuery is null && Memory.Query is { Length: > 0 } last)
+        {
+            Navigation.NavigateTo($"tools{last}", replace: true);
+            return;
+        }
+
+        if (TrackFromQuery is { } id && Warped.FirstOrDefault(song => song.Song.Equals(id, StringComparison.OrdinalIgnoreCase)) is { } track)
+            Select(track);
+        else
+        {
+            _keyName = MusicKey.FromString(KeyFromQuery)?.LedgerName ?? string.Empty;
+            _bpmText = BpmFromQuery ?? string.Empty;
+        }
+
+        _shift = Math.Clamp(ShiftFromQuery ?? 0, -Core.Pairing.RePitch.MaxShift, Core.Pairing.RePitch.MaxShift);
+        _rePitchMax = Math.Max(_rePitchMax, Math.Abs(_shift));
+        _relative = RelativeFromQuery is 1;
+        Recalculate();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        _module = await Js.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/Tools.razor.js");
+
+        if (await _module.InvokeAsync<bool>("rePitchOpen") is var open && open != _rePitchOpen)
+        {
+            _rePitchOpen = open;
+            StateHasChanged();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module is not null)
+                await _module.DisposeAsync();
+        }
+        // The circuit is already gone when the tab is closed.
+        catch (JSDisconnectedException) { }
+    }
+
+    private void Select(LibrarySong track)
+    {
+        _track = track;
+        _keyName = track.Key?.LedgerName ?? string.Empty;
+        _bpmText = track.Tempo?.Bpm.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+    }
+
+    private Task Pick(LibrarySong track) =>
+        Change(() =>
+        {
+            Select(track);
+            _shift = 0;
+            _relative = false;
+        });
+
+    private Task TypeKey(string key) =>
+        Change(() =>
+        {
+            _track = null;
+            _keyName = key;
+        });
+
+    private Task TypeBpm(string bpm) =>
+        Change(() =>
+        {
+            _track = null;
+            _bpmText = bpm;
+        });
+
+    private Task ChooseShift(int shift) =>
+        Change(() =>
+        {
+            _shift = shift;
+            _relative = false;
+        });
+
+    private async Task ToggleRePitch()
+    {
+        _rePitchOpen = !_rePitchOpen;
+
+        if (_module is not null)
+            await _module.InvokeVoidAsync("rememberRePitch", _rePitchOpen);
+    }
+
+    /// <summary>Applies a change, recomputes the partners, and puts the state in the address.</summary>
+    private async Task Change(Action change)
+    {
+        change();
+        Recalculate();
+
+        Memory.Query = Query();
+
+        if (_module is not null)
+            await _module.InvokeVoidAsync("replace", $"tools{Memory.Query}");
+    }
+
+    private void Recalculate() =>
+        _partners = Working is { } working ? Core.Pairing.Partners.For(working, _partnersMax) : [];
+
+    private string Query()
+    {
+        var parts = new List<string>();
+
+        if (_track is not null)
+            parts.Add($"track={Uri.EscapeDataString(_track.Song)}");
+        else
+        {
+            if (_keyName.Length > 0)
+                parts.Add($"key={Uri.EscapeDataString(_keyName)}");
+
+            if (_bpmText.Trim().Length > 0)
+                parts.Add($"bpm={Uri.EscapeDataString(_bpmText.Trim())}");
+        }
+
+        if (_shift is not 0)
+            parts.Add($"shift={_shift}");
+
+        if (_relative)
+            parts.Add("rel=1");
+
+        return parts.Count is 0 ? string.Empty : $"?{string.Join('&', parts)}";
+    }
 }

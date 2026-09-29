@@ -1,0 +1,149 @@
+@using System.Globalization
+@using Crateside.Core.Pairing
+@inject IJSRuntime Js
+
+<section class="tool repitch-tool">
+    <button class="head" @onclick="() => OnToggle.InvokeAsync()">
+        <span class="mono chevron">▾</span>
+        <h3>Re-Pitch</h3>
+        <span class="gist">speed and pitch together</span>
+    </button>
+
+    <p class="lead">
+        For nightcore and daycore in Ableton's <strong>Re-Pitch</strong> warp mode. Gives the
+        <strong>arrangement BPM</strong> for each shift and the key it lands on. Pick a row and
+        Partners works from that key.
+    </p>
+
+    <label class="slider">
+        <span>Max shift <em>±@("semitone".ToQuantity(Max))</em></span>
+        <input type="range" min="1" max="@Core.Pairing.RePitch.MaxShift" step="1"
+               value="@Max" @oninput="e => OnMax.InvokeAsync(int.Parse((string)e.Value!, CultureInfo.InvariantCulture))" />
+    </label>
+
+    <table class="repitch">
+        <thead>
+            <tr>
+                <th class="numeric">Shift</th>
+                <th class="numeric">Arr. BPM</th>
+                <th>Lands on</th>
+                <th>Camelot</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (var shift = Max; shift >= -Max; shift--)
+            {
+                var n = shift;
+                var lands = Key?.Transposed(n);
+
+                <tr class="@Row(n)" @onclick="() => Choose(n)">
+                    <td class="numeric mono shift">@MashupPartner.FormatShift(n)</td>
+                    <td class="numeric">
+                        @if (Bpm is { } bpm)
+                        {
+                            var figure = Core.Pairing.RePitch.ArrangementBpm(bpm, n).ToString("0.00", CultureInfo.InvariantCulture);
+
+                            <button class="copy mono @(_copied == n ? "done" : null)" title="Copy"
+                                    @onclick="() => Copy(n, figure)" @onclick:stopPropagation="true">
+                                @(_copied == n ? "copied" : figure)
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="dash">—</span>
+                        }
+                    </td>
+                    <td class="@(lands is null ? "dash" : null)">
+                        @(lands?.Name ?? "—")
+                        @if (n is 0 && lands is not null)
+                        {
+                            <span class="tag">@(IsTrack ? "the track" : "as typed")</span>
+                        }
+                        else if (n == Shift && n is not 0)
+                        {
+                            <span class="tag">→ Partners</span>
+                        }
+                    </td>
+                    <td class="mono camelot @(lands is null ? "dash" : null)">@(lands?.CamelotCode ?? "—")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p class="hint">
+        @if (Key is not null && Bpm is null)
+        {
+            <text>No BPM yet: the keys fill, the BPMs wait.</text>
+        }
+        else if (Bpm is not null)
+        {
+            <text>Click a BPM to copy it; click a row to send its key to Partners.</text>
+        }
+        else
+        {
+            <text>Pick a track, or type a key and BPM.</text>
+        }
+    </p>
+</section>
+
+@code {
+    private static readonly TimeSpan CopiedFor = TimeSpan.FromSeconds(1.5);
+
+    private int? _copied;
+
+    [Parameter]
+    public MusicKey? Key { get; set; }
+
+    [Parameter]
+    public double? Bpm { get; set; }
+
+    [Parameter]
+    public bool IsTrack { get; set; }
+
+    [Parameter]
+    public int Shift { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnShift { get; set; }
+
+    [Parameter]
+    public int Max { get; set; } = Core.Pairing.RePitch.DefaultMaxShift;
+
+    [Parameter]
+    public EventCallback<int> OnMax { get; set; }
+
+    [Parameter]
+    public EventCallback OnToggle { get; set; }
+
+    private string? Row(int shift) =>
+        string.Join(
+            ' ',
+            new[]
+            {
+                shift is 0 ? "reference" : null,
+                Key is not null ? "selectable" : null,
+                shift == Shift && shift is not 0 ? "chosen" : null,
+            }.OfType<string>()
+        );
+
+    private async Task Choose(int shift)
+    {
+        if (Key is null)
+            return;
+
+        await OnShift.InvokeAsync(shift == Shift ? 0 : shift);
+    }
+
+    private async Task Copy(int shift, string figure)
+    {
+        await Js.InvokeVoidAsync("navigator.clipboard.writeText", figure);
+
+        _copied = shift;
+        StateHasChanged();
+
+        await Task.Delay(CopiedFor);
+
+        if (_copied == shift)
+            _copied = null;
+    }
+}

@@ -126,4 +126,18 @@ public class MusicKeyTests
             MusicKey.FromString("Eb minor")?.GetHashCode()
         );
     }
+
+    [Theory]
+    [InlineData("A# minor", "C# major")]
+    [InlineData("C major", "A minor")]
+    [InlineData("B minor", "D major")]
+    public void The_relative_is_the_same_notes_in_the_other_mode(string key, string relative) =>
+        Assert.Equal(MusicKey.FromString(relative), MusicKey.FromString(key)!.Relative);
+
+    [Theory]
+    [InlineData("A# minor", "A♯m")]
+    [InlineData("C# major", "D♭")]
+    [InlineData("B major", "B")]
+    public void The_wheel_names_majors_flat_and_minors_sharp(string key, string shortName) =>
+        Assert.Equal(shortName, MusicKey.FromString(key)!.ShortName);
 }

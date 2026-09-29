@@ -160,18 +160,33 @@ Tools · Settings**), at `/` and `/dashboard`; Tracks moved to `/tracks`. No wid
 
 ## Tools
 
-Handoff 09. Small mashup helpers, one per sub-tab: **Partners · Re-Pitch**, each at its own route
-(`/tools/partners`, `/tools/repitch`); `/tools` opens the last one used and `/partners` redirects.
-The frame is `ToolsFrame`.
+Handoff 12, superseding handoff 09's sub-tabs. **One page at `/tools`, no sub-tabs**, in columns
+left to right as the user works: *Working on* (340px), **Re-Pitch** (540px, foldable), **Partners**
+(up to 860px; never folds), the **Camelot wheel** (340px). The state lives in the query (`?track=`
+or `?key=&bpm=`, plus `&shift=` and `&rel=1`), so a reload or a pasted link restores it, and the tab
+reopens where it was left until a restart.
 
-- **Sub-tabs** are 14px/500 `--text-60`, the current one `--text` with a 2px `--text` underline on
-  the row's `--line-strong` rule, so they read apart from the header's 12px amber-underlined tabs.
-- **A tool** is a lead sentence, the `.controls` box, a hint line, then its table. A new tool is one
-  more sub-tab and route with the same anatomy.
-- **The key is shared**: the one picked in a tool is the other's default until a restart, and both
-  take `?key=`; Re-Pitch also takes `?bpm=`.
+- **The selected track** is a clickable card (song, key · Camelot, whole-number warped BPM, genre ·
+  familiarity · Track details). Clicking it turns it into the search, open and focused; Esc puts
+  it back. Under it, key and BPM by hand; **editing either drops the track** and keeps what was
+  typed.
+- **Re-Pitch rows are selectable**: the chosen shift is 600 weight on `rgba(255,255,255,.08)` with
+  a 1px inset `--text-35` ring and a *→ Partners* tag. **This is the house style for a chosen row
+  in a tool table.** Clicking it again returns to 0. The BPM cell copies instead of selecting.
+- **Folded, Re-Pitch** is a dashed summary line above Partners, and its shift stays in force. The
+  fold is remembered per browser; the default is open at 1100px and wider.
+- **Partners' basis box** says which key it works from and why, with two pills (the key, its
+  relative) and *Back to {key}* while a shift is in force. The table splits into *Mixes as is*
+  and *A shift away*, each sorted by score; a relationship carries a second line saying what it
+  means.
+- **The wheel** is monochrome: working-from filled `--text`, mixes-as-is at 22%, a shift away
+  dashed, and the track's own key ringed when a shift or the relative is in force. Read-only.
+- **Breakpoints**: four columns at ≥ 2200px; below, the wheel sits beside the basis box inside
+  Partners; below 1700px *Working on* runs across the top; below 1100px one column with the wheel
+  last.
+- **A third tool** joins as a foldable column with Re-Pitch's anatomy: left of Partners if it
+  changes the key or BPM Partners works from, right of the wheel if not.
 - **Re-Pitch is the one place BPMs show two decimals.** A BPM there copies on click.
-- `--table-partners` stays the cap for tool tables; Re-Pitch's is 680px.
 
 ## Settings
 
@@ -200,7 +215,8 @@ Handoff 10. Every setting is one **row**: name (14px/500) and a one-line gist (`
 ## Table caps
 
 One width cap per table shape: `--table-partners` 50rem, `--table-library` 56rem,
-`--table-tracks` 92rem. Track details uses `--table-tracks`.
+`--table-tracks` 92rem. Track details uses `--table-tracks`. The Tools columns cap themselves:
+Re-Pitch 540px, Partners 860px.
 
 ## Differs from the design
 
@@ -250,7 +266,12 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   as well as slow, so the fourth band is *Triplet or dotted* with its wider rule.
 - **The shape line reads "Steady · Mostly steady · Drifting"** (handoff 08 drew the older names).
 
-### Tools (handoff 09, #57, #58)
+### Tools (handoff 12, #79)
 
-- ***Or from a track* searches the library's warped songs** (Counts' songs), not tracks still in
-  staging.
+- **No redirects from `/tools/partners`, `/tools/repitch` or `/partners`.** The user asked for no
+  aliases that nothing uses (2026-09-28), and nothing links to them.
+- **Partners keeps the built model's relationship names** (*Perfect Match*, *Relative (Epic)*,
+  *Energy Rise*, *Relaxed*, *Mood Shift*, *Modulation*), with the meaning line under each, where
+  the canvas's simple model named the rows "a fifth up" and so on. The handoff asked for the built
+  calculation.
+- **The track is picked from warped library songs**, as the Re-Pitch search already did.

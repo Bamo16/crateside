@@ -1,0 +1,175 @@
+@using System.Globalization
+@using Crateside.Core.Library
+@using Crateside.Core.Pairing
+
+<div class="working-on">
+    <span class="caps">Working on</span>
+
+    @if (Track is { } track && !_searching)
+    {
+        <div class="card" role="button" tabindex="0" @onclick="StartSearch" @onkeydown="OnCardKey">
+            <div class="card-head">
+                <span class="song">@track.Name</span>
+                <span class="change">Change ▾</span>
+            </div>
+            <span class="mono facts">
+                @(track.Key is { } key ? $"{key.Name} · {key.CamelotCode}" : "no key")
+                · @(track.Tempo is { } tempo ? $"{tempo.Bpm:N0} BPM, warped" : "not warped")
+            </span>
+            <span class="meta">
+                @string.Join(" · ", new[] { track.Genre, Familiarity }.OfType<string>())
+                @if (DetailsHref is { } href)
+                {
+                    @(track.Genre is null && Familiarity is null ? null : " · ")<a href="@href" @onclick:stopPropagation="true">Track details</a>
+                }
+            </span>
+        </div>
+    }
+    else
+    {
+        <div class="search-wrap">
+            <input type="text" class="search" placeholder="⌕ Search warped tracks" @ref="_box"
+                   @bind="_search" @bind:event="oninput" @bind:after="Search" @onkeydown="Navigate" />
+
+            @if (_matches.Count > 0)
+            {
+                <ul class="matches">
+                    @for (var i = 0; i < _matches.Count; i++)
+                    {
+                        var song = _matches[i];
+
+                        <li class="@(i == _highlight ? "highlight" : null)" @onmousedown="() => Pick(song)">
+                            <span class="song">@song.Name</span>
+                            <span class="mono">@song.Tempo!.Bpm.ToString("0.00", CultureInfo.InvariantCulture)</span>
+                            <span class="mono quiet">@song.Key?.CamelotCode</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+
+    <div class="by-hand">
+        <span class="caps">@(Track is null ? "Or by hand" : "From the track")</span>
+        <label>
+            <span>Key</span>
+            <select value="@KeyName" @onchange="e => OnKey.InvokeAsync(e.Value as string ?? string.Empty)">
+                <option value="">No key</option>
+                @foreach (var key in MusicKey.AllKeys.OrderBy(k => k.Mode).ThenBy(k => k.CirclePos))
+                {
+                    <option value="@key.LedgerName">@key.Name — @key.CamelotCode</option>
+                }
+            </select>
+        </label>
+        <label>
+            <span>BPM</span>
+            <input type="text" class="bpm mono @(IsUnreadable ? "unreadable" : null)" placeholder="e.g. 128"
+                   value="@BpmText" @oninput="e => OnBpm.InvokeAsync(e.Value as string ?? string.Empty)" />
+        </label>
+        <span class="hint">
+            @(Track is null ? "Or pick a warped track above." : "Editing either lets go of the track and keeps what you typed.")
+        </span>
+    </div>
+</div>
+
+@code {
+    private const int MatchesShown = 8;
+
+    private string _search = string.Empty;
+    private IReadOnlyList<LibrarySong> _matches = [];
+    private int _highlight;
+    private bool _searching;
+    private bool _focus;
+    private ElementReference _box;
+
+    [Parameter]
+    public LibrarySong? Track { get; set; }
+
+    /// <summary>Warped songs to pick from.</summary>
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<LibrarySong> Songs { get; set; }
+
+    [Parameter]
+    public string? Familiarity { get; set; }
+
+    [Parameter]
+    public string? DetailsHref { get; set; }
+
+    [Parameter]
+    public string KeyName { get; set; } = string.Empty;
+
+    [Parameter]
+    public string BpmText { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<LibrarySong> OnPick { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnKey { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnBpm { get; set; }
+
+    private bool IsUnreadable => !string.IsNullOrWhiteSpace(BpmText) && !Core.Pairing.RePitch.TryParseBpm(BpmText, out _);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focus)
+            return;
+
+        _focus = false;
+        await _box.FocusAsync();
+    }
+
+    private void StartSearch()
+    {
+        _searching = true;
+        _focus = true;
+        _search = string.Empty;
+        _matches = [.. Songs.Take(MatchesShown)];
+        _highlight = 0;
+    }
+
+    private void OnCardKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ")
+            StartSearch();
+    }
+
+    private void Search()
+    {
+        _highlight = 0;
+        _matches = string.IsNullOrWhiteSpace(_search)
+            ? []
+            : [.. Songs.Where(song => song.Name.Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase)).Take(MatchesShown)];
+    }
+
+    private async Task Navigate(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowDown" when _matches.Count > 0:
+                _highlight = (_highlight + 1) % _matches.Count;
+                break;
+            case "ArrowUp" when _matches.Count > 0:
+                _highlight = (_highlight - 1 + _matches.Count) % _matches.Count;
+                break;
+            case "Enter" when _matches.Count > 0:
+                await Pick(_matches[_highlight]);
+                break;
+            case "Escape":
+                _matches = [];
+                _searching = false;
+                break;
+        }
+    }
+
+    private async Task Pick(LibrarySong song)
+    {
+        _search = string.Empty;
+        _matches = [];
+        _searching = false;
+
+        await OnPick.InvokeAsync(song);
+    }
+}

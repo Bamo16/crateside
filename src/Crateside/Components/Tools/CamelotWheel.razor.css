@@ -1,0 +1,52 @@
+.wheel {
+    display: block;
+    flex: none;
+}
+
+path {
+    fill: var(--surface);
+    stroke: var(--line-strong);
+    stroke-width: 1;
+}
+
+path.near {
+    fill: rgba(236, 231, 220, 0.22);
+}
+
+path.far {
+    stroke: var(--text-60);
+    stroke-dasharray: 3 3;
+}
+
+path.working {
+    fill: var(--text);
+}
+
+path.own {
+    stroke: var(--text);
+    stroke-width: 2;
+    stroke-dasharray: none;
+}
+
+text {
+    text-anchor: middle;
+    fill: var(--text-40);
+}
+
+text.near,
+text.far,
+text.own {
+    fill: var(--text);
+}
+
+text.working {
+    fill: var(--ink);
+}
+
+.code {
+    font: 500 11px var(--font-mono);
+}
+
+.name {
+    font: 400 10px var(--font-sans);
+}
