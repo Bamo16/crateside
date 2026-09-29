@@ -38,6 +38,8 @@ The written spec for each canvas turn, in the order it was sent. The later ones 
 | `08-library-as-reports.md` | Counts Page | #68, #60, #56 |
 | `09-mashup-tools.md` | Tools Page | #57, #58 |
 | `10-settings.md` | Settings Page | #74 |
+| `11-dashboard.md` | Dashboard | #78 |
+| `12-tools-together.md` | Tools Together | #79 |
 
 ### `brand/`: the 1a assets
 `mark.svg` (header), `favicon.svg` plus PNG fallbacks (browser tab), `lockup.svg` (README), `mark-tile.svg` (app icon). Usage rules are in `handoffs/04-brand.md`.
