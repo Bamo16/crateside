@@ -1,5 +1,3 @@
-using Crateside.Core.Ledger;
-
 namespace Crateside.Core.Library;
 
 /// <summary>How close each detector's BPM comes to the warped one, song by song (handoff 08).</summary>
@@ -27,14 +25,15 @@ public sealed class DetectorBands
 
     public static DetectorBands From(IEnumerable<LibrarySong> songs)
     {
-        var compared = songs.Where(song => song is { Tempo: not null, Run: not null }).ToList();
+        var compared = songs.Where(song => song.Tempo is not null).ToList();
 
         return new DetectorBands(
-            compared.Count(song => song.Run is { Bpm: not null } or { BeatdetectBpm: not null }),
+            compared.Count(song => song is { Run.Bpm: not null } or { Beats.Bpm: not null }),
             new()
             {
-                [Detector.Keytag] = Reads(compared, run => run.Bpm),
-                [Detector.Beatdetect] = Reads(compared, run => run.BeatdetectBpm),
+                [Detector.Keytag] = Reads(compared, song => song.Run?.Bpm),
+                // crateside's own reading with the ffmpeg on PATH, not the ledger's (#76).
+                [Detector.Beatdetect] = Reads(compared, song => song.Beats?.Bpm),
             }
         );
     }
@@ -82,12 +81,12 @@ public sealed class DetectorBands
 
     private static List<DetectorRead> Reads(
         List<LibrarySong> songs,
-        Func<LedgerRun, double?> read
+        Func<LibrarySong, double?> read
     ) =>
         [
             .. songs
-                .Where(song => read(song.Run!) is > 0)
-                .Select(song => new DetectorRead(song, song.Tempo!.Bpm, read(song.Run!)!.Value)),
+                .Where(song => read(song) is > 0)
+                .Select(song => new DetectorRead(song, song.Tempo!.Bpm, read(song)!.Value)),
         ];
 }
 

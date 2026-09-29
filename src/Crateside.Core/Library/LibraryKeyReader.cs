@@ -1,4 +1,5 @@
 using Crateside.Core.Ableton;
+using Crateside.Core.Beats;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Pairing;
@@ -16,7 +17,8 @@ public sealed class LibraryKeyReader(
     IOptions<CratesidePaths> paths,
     AbletonIndexReader index,
     AbletonFolderInfoReader folderInfo,
-    WarpTempoReader tempos
+    WarpTempoReader tempos,
+    BeatReader? beats = null
 )
 {
     private readonly CratesidePaths _paths = paths.Value;
@@ -102,6 +104,10 @@ public sealed class LibraryKeyReader(
             ? run.DisplayName
             : StemFileName.WithoutPreset(samples[0].File);
 
+        var instrumentals = samples
+            .Where(s => s.File.Contains("(Instrumental", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
         return new LibrarySong
         {
             Song = track,
@@ -112,11 +118,12 @@ public sealed class LibraryKeyReader(
             Key = MusicKey.FromString(MostCommon(samples, s => s.Tags?.Key)),
             Genre = MostCommon(samples, s => s.Tags?.Genre),
             Tempo = samples
-                .OrderByDescending(s =>
-                    s.File.Contains("(Instrumental", StringComparison.OrdinalIgnoreCase)
-                )
+                .OrderByDescending(s => instrumentals.Contains(s))
                 .Select(s => tempos.Read(s.File))
                 .FirstOrDefault(tempo => tempo is not null),
+            Beats = instrumentals
+                .Select(s => beats?.Read(s.File))
+                .FirstOrDefault(reading => reading is not null),
             Run = run,
         };
     }

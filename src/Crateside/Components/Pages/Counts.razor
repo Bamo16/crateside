@@ -7,6 +7,7 @@
 
 @using System.Globalization
 @using System.Text
+@using Crateside.Core.Beats
 @using Crateside.Core.Familiarity
 @using Crateside.Core.Genres
 @using Crateside.Core.Library
@@ -18,6 +19,7 @@
 @inject GenreStore GenreRecords
 @inject FamiliarityStore FamiliarityRecords
 @inject TracksService Tracks
+@inject BeatReader Beats
 @inject TrackAdd Adding
 @inject IJSRuntime Js
 
@@ -191,6 +193,17 @@
                             <span>Mostly steady <span class="mono value">@_tempo.MostlySteady</span></span>
                             <span>Drifting <span class="mono value">@_tempo.Drifting</span>, counted at their median</span>
                         </p>
+
+                        @if (_drift.Any(count => count.Judged > 0))
+                        {
+                            <p class="shapes">
+                                <span>beatdetect flags as drifting</span>
+                                @foreach (var count in _drift)
+                                {
+                                    <span>@count.Shape.Humanize() <span class="mono value">@count.Flagged</span> of <span class="mono">@count.Judged</span></span>
+                                }
+                            </p>
+                        }
                     </section>
                 }
 
@@ -312,6 +325,7 @@
                         <p class="lead">
                             How often each detector's BPM matches the one set by ear, on the
                             <span class="mono">@_detectors.Songs</span> songs that have both.
+                            beatdetect is read by crateside on each instrumental@(Beats.Build is { } build ? $" with ffmpeg {build.Version}" : null).
                         </p>
 
                         <div class="detectors">
@@ -472,6 +486,7 @@
     private TempoCounts _tempo = null!;
     private ArtistCounts _artists = null!;
     private DetectorBands _detectors = null!;
+    private IReadOnlyList<DriftCount> _drift = [];
     private Dictionary<Detector, int[]> _strips = [];
     private IReadOnlyList<(string? Value, int Songs)> _familiarity = [];
 
@@ -550,6 +565,7 @@
         _tempo = TempoCounts.From(distribution.Songs);
         _artists = ArtistCounts.From(distribution.Songs);
         _detectors = DetectorBands.From(distribution.Songs);
+        _drift = DriftCount.From(distribution.Songs);
 
         var strips = Detectors.ToDictionary(detector => detector, Strip);
         var tallest = strips.Values.SelectMany(bins => bins).DefaultIfEmpty().Max();

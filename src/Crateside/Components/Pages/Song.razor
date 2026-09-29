@@ -185,6 +185,7 @@
 
     private string BpmNote =>
         _row is { Tempo: not null, BpmNote: { } warped } ? warped
+        : _row is { TempoDrifts: true } ? "beatdetect: the tempo drifts, expect a hard warp"
         : _run switch
         {
             { BpmConflicts: true, BeatdetectBpm: { } rough } => $"beatdetect {rough:F1} · conflict",

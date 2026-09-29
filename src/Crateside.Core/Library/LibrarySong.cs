@@ -1,4 +1,5 @@
 using Crateside.Core.Ableton;
+using Crateside.Core.Beats;
 using Crateside.Core.Ledger;
 using Crateside.Core.Pairing;
 
@@ -21,6 +22,9 @@ public sealed record LibrarySong
 
     /// <summary>The finished warp's tempo, the instrumental's where there is one (ADR 0038).</summary>
     public WarpTempo? Tempo { get; init; }
+
+    /// <summary>beatdetect's reading of the instrumental, once crateside has read it (#76).</summary>
+    public BeatReading? Beats { get; init; }
 
     public LedgerRun? Run { get; init; }
 }

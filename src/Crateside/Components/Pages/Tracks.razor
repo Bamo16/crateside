@@ -313,6 +313,10 @@
                     {
                         <span class="flag neutral">added by URL</span>
                     }
+                    @if (row.TempoDrifts)
+                    {
+                        <span class="flag" title="beatdetect reads the tempo changing across the instrumental: expect a hard warp">tempo drifts</span>
+                    }
                 </span>
 
                 <span class="mono key @(row.Key is null ? "none" : null)">@(KeyText.Spell(row.Key) ?? "—")</span>

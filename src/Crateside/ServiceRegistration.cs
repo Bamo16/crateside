@@ -1,5 +1,6 @@
 using Crateside.Core;
 using Crateside.Core.Ableton;
+using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
@@ -70,6 +71,9 @@ public static class ServiceRegistration
         services.AddSingleton<StagingReader>();
         services.AddSingleton(_ => new WarpTempoReader(
             Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "tempos.json")
+        ));
+        services.AddSingleton(_ => new BeatReader(
+            Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "beats.json")
         ));
         services.AddSingleton<ISetLinks>(sp => new AbletonSetLinks(
             sp.GetRequiredService<CratesidePaths>(),
@@ -261,6 +265,9 @@ public static class ServiceRegistration
         // collected by an ordinary hand-applied tag (ADR 0023).
         services.AddHostedService<BackingWorker>();
 
+        // Unattended too: beatdetect runs on the CPU and contends for nothing (#75, #76).
+        services.AddHostedService<BeatWorker>();
+
         services.AddHostedService<DrainWorker>();
 
         // AddSingleton<IHostedService> rather than AddHostedService: the latter routes through
@@ -413,7 +420,8 @@ public static class ServiceRegistration
                     sp.GetRequiredService<DeletionLog>().All(),
                     sp.GetRequiredService<GenreStore>().Read(),
                     sp.GetRequiredService<FamiliarityStore>().Read(),
-                    sp.GetRequiredService<WarpTempoReader>().Read
+                    sp.GetRequiredService<WarpTempoReader>().Read,
+                    sp.GetRequiredService<BeatReader>().Read
                 );
 
                 sp.GetRequiredService<WarpTempoReader>().Save();

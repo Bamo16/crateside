@@ -1,4 +1,5 @@
 using Crateside.Core.Ableton;
+using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
@@ -63,7 +64,8 @@ public sealed record TracksView
         IReadOnlyList<Deletion>? deletions = null,
         IReadOnlyDictionary<string, GenreRecord>? genres = null,
         IReadOnlyDictionary<string, FamiliarityRecord>? familiarity = null,
-        Func<string, WarpTempo?>? tempoOf = null
+        Func<string, WarpTempo?>? tempoOf = null,
+        Func<string, BeatReading?>? beatsOf = null
     )
     {
         var resolved = resolvedNames ?? new Dictionary<string, ResolvedName>();
@@ -271,7 +273,8 @@ public sealed record TracksView
                             seed.VideoId,
                             catalog,
                             libraryTags,
-                            tempoOf
+                            tempoOf,
+                            beatsOf
                         )
                     ),
                 ],
@@ -388,7 +391,8 @@ public sealed record TracksView
         string sourceVideoId,
         PresetCatalog catalog,
         AbletonFolderInfo? libraryTags,
-        Func<string, WarpTempo?>? tempoOf
+        Func<string, WarpTempo?>? tempoOf,
+        Func<string, BeatReading?>? beatsOf
     ) =>
         [
             .. staged?.Samples.Select(sample =>
@@ -397,6 +401,7 @@ public sealed record TracksView
                     AbletonKey = sample.AbletonKey,
                     HasDefaultClip = sample.HasDefaultClip,
                     Tempo = sample.HasDefaultClip ? tempoOf?.Invoke(sample.Path) : null,
+                    Beats = beatsOf?.Invoke(sample.Path),
                 }
             )
                 ?? [],
@@ -411,6 +416,7 @@ public sealed record TracksView
                         IsInLibrary = true,
                         AbletonKey = KeyIn(libraryTags, file.Path),
                         Tempo = tempoOf?.Invoke(file.Path),
+                        Beats = beatsOf?.Invoke(file.Path),
                     }
                 ),
         ];

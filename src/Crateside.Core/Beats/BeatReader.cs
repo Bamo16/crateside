@@ -1,0 +1,292 @@
+using System.Collections.Concurrent;
+using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+using Crateside.Core.Orchestration.Loop;
+using Crateside.Core.Samples;
+
+namespace Crateside.Core.Beats;
+
+/// <summary>
+/// Runs <c>beatdetect</c> on an instrumental and keeps the reading until the file or the ffmpeg
+/// build changes (#76). Kept across restarts when given a path.
+/// </summary>
+public sealed partial class BeatReader(string? path = null, string fileName = "ffmpeg")
+{
+    // Bump when MeasureAsync changes what it runs, or a kept reading outlives the method that made it.
+    private const int Version = 1;
+    private const int WindowSeconds = 30;
+
+    private static readonly TimeSpan RunLimit = TimeSpan.FromMinutes(10);
+
+    private readonly string? _path = path;
+    private readonly ConcurrentDictionary<string, BeatEntry> _read = new(
+        Load(path),
+        StringComparer.OrdinalIgnoreCase
+    );
+    private readonly Lock _saving = new();
+    private volatile bool _changed;
+    private volatile FfmpegBuild? _build;
+
+    [GeneratedRegex(@"lavfi\.beatdetect\.(?<Key>\w+)=(?<Value>[0-9.]+)")]
+    private static partial Regex MetadataLine { get; }
+
+    [GeneratedRegex(@"^ffmpeg version (?<Version>\S+)")]
+    private static partial Regex VersionLine { get; }
+
+    /// <summary>The build readings are current for, or null until <see cref="RefreshBuildAsync"/> finds one.</summary>
+    public FfmpegBuild? Build => _build;
+
+    /// <summary>The kept reading, or null when the file changed since or was read by another build.</summary>
+    public BeatReading? Read(string audioPath) =>
+        new FileInfo(audioPath) is { Exists: true } file
+        && _read.TryGetValue(file.FullName, out var entry)
+        && entry.Stamp == BeatStamp.Of(file)
+        && (_build is null || entry.Build == _build)
+            ? entry.Reading
+            : null;
+
+    /// <summary>Asks ffmpeg which build it is; null when it cannot be run.</summary>
+    public async Task<FfmpegBuild?> RefreshBuildAsync(CancellationToken ct)
+    {
+        var outcome = await ExternalProcess.RunAsync(fileName, ["-version"], ct: ct);
+
+        return _build =
+            outcome.Succeeded
+            && VersionLine.Match(outcome.StandardOutput) is { Success: true } line
+            && Located() is { Exists: true } executable
+                ? new FfmpegBuild(
+                    line.Groups["Version"].Value,
+                    executable.Length,
+                    executable.LastWriteTimeUtc
+                )
+                : null;
+    }
+
+    /// <summary>Reads the whole file, then each full 30 s of it; a file ffmpeg cannot read keeps an empty reading.</summary>
+    public async Task<BeatReading> MeasureAsync(string audioPath, CancellationToken ct)
+    {
+        var file = new FileInfo(audioPath);
+        var stamp = BeatStamp.Of(file);
+        var whole = await DetectAsync(file.FullName, null, ct);
+        var windows = new List<double>();
+
+        foreach (var start in WindowStarts(SecondsOf(file.FullName)))
+        {
+            if (
+                await DetectAsync(file.FullName, start, ct) is
+                { BeatIntervalMs: > 0 and var interval }
+            )
+                windows.Add(60_000 / interval);
+        }
+
+        var reading = new BeatReading
+        {
+            Bpm = whole.Bpm,
+            Confidence = whole.Confidence,
+            Windows = windows,
+        };
+
+        _read[file.FullName] = new BeatEntry(stamp, _build, reading);
+        _changed = true;
+
+        return reading;
+    }
+
+    /// <summary>Writes what was read since the last save, leaving out files that are gone.</summary>
+    public void Save()
+    {
+        if (_path is null || !_changed)
+            return;
+
+        lock (_saving)
+        {
+            _changed = false;
+
+            var kept = new BeatFile(
+                Version,
+                _read
+                    .Where(pair => File.Exists(pair.Key))
+                    .ToDictionary(pair => pair.Key, pair => pair.Value)
+            );
+
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+
+                var temporary = $"{_path}.tmp";
+                File.WriteAllText(
+                    temporary,
+                    JsonSerializer.Serialize(kept, BeatJsonContext.Default.BeatFile)
+                );
+                File.Move(temporary, _path, overwrite: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _changed = true;
+            }
+        }
+    }
+
+    /// <summary>The instrumentals to read, staging's before the library's.</summary>
+    public static IEnumerable<string> Instrumentals(CratesidePaths paths) =>
+        Instrumentals(paths.SampleStaging, SearchOption.TopDirectoryOnly)
+            .Concat(Instrumentals(paths.MashupSamples, SearchOption.AllDirectories));
+
+    /// <summary>The last value the filter reported for each figure, from its printed metadata.</summary>
+    internal static Detected Parse(string printed)
+    {
+        var last = new Dictionary<string, double>(StringComparer.Ordinal);
+
+        foreach (Match line in MetadataLine.Matches(printed))
+        {
+            if (
+                double.TryParse(
+                    line.Groups["Value"].Value,
+                    NumberStyles.Float,
+                    CultureInfo.InvariantCulture,
+                    out var value
+                )
+            )
+                last[line.Groups["Key"].Value] = value;
+        }
+
+        return new Detected(
+            last.TryGetValue("bpm", out var bpm) && bpm > 0 ? bpm : null,
+            last.TryGetValue("confidence", out var confidence) ? confidence : null,
+            last.TryGetValue("beat_interval_ms", out var interval) ? interval : null
+        );
+    }
+
+    /// <summary>Every full window's start; a file shorter than one window is read once from the top.</summary>
+    internal static IEnumerable<int> WindowStarts(double seconds)
+    {
+        for (
+            var start = 0;
+            start < Math.Max((int)seconds - WindowSeconds + 1, 1);
+            start += WindowSeconds
+        )
+            yield return start;
+    }
+
+    private async Task<Detected> DetectAsync(string audioPath, int? start, CancellationToken ct)
+    {
+        using var limit = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        limit.CancelAfter(RunLimit);
+
+        string[] window = start is { } seconds
+            ? ["-ss", seconds.ToString(CultureInfo.InvariantCulture), "-t", $"{WindowSeconds}"]
+            : [];
+
+        try
+        {
+            var outcome = await ExternalProcess.RunAsync(
+                fileName,
+                [
+                    "-hide_banner",
+                    "-nostats",
+                    .. window,
+                    "-i",
+                    audioPath,
+                    "-vn",
+                    "-af",
+                    "beatdetect,ametadata=mode=print:file=-",
+                    "-f",
+                    "null",
+                    "-",
+                ],
+                ct: limit.Token
+            );
+
+            return Parse(outcome.StandardOutput);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            return new Detected(null, null, null);
+        }
+    }
+
+    private static IEnumerable<string> Instrumentals(string root, SearchOption depth) =>
+        Directory.Exists(root)
+            ? Directory
+                .EnumerateFiles(root, "*", depth)
+                .Where(file =>
+                    SampleFiles.IsAudio(file)
+                    && Path.GetFileName(file)
+                        .Contains("(Instrumental", StringComparison.OrdinalIgnoreCase)
+                )
+            : [];
+
+    private FileInfo? Located() =>
+        Path.IsPathRooted(fileName)
+            ? new FileInfo(fileName)
+            : (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
+                .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+                .Select(folder => new FileInfo(
+                    Path.Combine(
+                        folder,
+                        OperatingSystem.IsWindows() && !Path.HasExtension(fileName)
+                            ? $"{fileName}.exe"
+                            : fileName
+                    )
+                ))
+                .FirstOrDefault(candidate => candidate.Exists);
+
+    private static double SecondsOf(string audioPath)
+    {
+        try
+        {
+            using var file = TagLib.File.Create(audioPath);
+
+            return file.Properties.Duration.TotalSeconds;
+        }
+        catch (Exception)
+        {
+            return 0;
+        }
+    }
+
+    private static Dictionary<string, BeatEntry> Load(string? path)
+    {
+        try
+        {
+            return
+                path is not null
+                && File.Exists(path)
+                && JsonSerializer.Deserialize(
+                    File.ReadAllText(path),
+                    BeatJsonContext.Default.BeatFile
+                )
+                    is { Version: Version, Entries: { } entries }
+                ? entries
+                : [];
+        }
+        catch (Exception ex)
+            when (ex is IOException or JsonException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+    }
+}
+
+/// <summary>Which ffmpeg read a file: its version, and the executable's size and time to tell rebuilds apart.</summary>
+public sealed record FfmpegBuild(string Version, long Length, DateTime Written);
+
+internal readonly record struct Detected(double? Bpm, double? Confidence, double? BeatIntervalMs);
+
+internal sealed record BeatStamp(long Length, DateTime Written)
+{
+    public static BeatStamp Of(FileInfo file) => new(file.Length, file.LastWriteTimeUtc);
+}
+
+internal sealed record BeatEntry(BeatStamp Stamp, FfmpegBuild? Build, BeatReading Reading);
+
+internal sealed record BeatFile(int Version, Dictionary<string, BeatEntry> Entries);
+
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+)]
+[JsonSerializable(typeof(BeatFile))]
+internal sealed partial class BeatJsonContext : JsonSerializerContext { }

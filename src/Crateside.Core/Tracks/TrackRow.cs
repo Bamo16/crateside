@@ -1,4 +1,5 @@
 using Crateside.Core.Ableton;
+using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
@@ -134,6 +135,9 @@ public sealed record TrackRow
     public string? BpmNote =>
         Tempo switch
         {
+            null when TempoDrifts => Verdict?.Bpm is null
+                ? "the tempo drifts: expect a hard warp"
+                : "keytag's estimate · the tempo drifts: expect a hard warp",
             null => Verdict?.Bpm is null ? null : "keytag's estimate",
             { Shape: TempoShape.Drifting, Low: var low, High: var high } =>
                 $"from your warp: drifting, {low:N0}–{high:N0}",
@@ -151,6 +155,13 @@ public sealed record TrackRow
             )
             .Select(sample => sample.Tempo)
             .FirstOrDefault();
+
+    /// <summary>beatdetect's reading of the instrumental, once the worker has read it.</summary>
+    public BeatReading? Beats =>
+        Samples.Select(sample => sample.Beats).FirstOrDefault(reading => reading is not null);
+
+    /// <summary>Not warped yet, and beatdetect reads the tempo drifting (#75).</summary>
+    public bool TempoDrifts => this is { Tempo: null, Beats.Drifts: true };
 
     /// <summary>The stage crateside currently believes is working this track, if any.</summary>
     public JobStage? RunningStage { get; init; }
@@ -543,6 +554,9 @@ public sealed record TrackSample
 
     /// <summary>The tempo its warp holds, once its default clip is saved (ADR 0038).</summary>
     public WarpTempo? Tempo { get; init; }
+
+    /// <summary>beatdetect's reading, kept for instrumentals only.</summary>
+    public BeatReading? Beats { get; init; }
 
     /// <summary>
     /// The upload this file was cut from. A song that has been source-swapped holds samples from
