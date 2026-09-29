@@ -243,23 +243,8 @@
 
 .status {
     margin-left: 16px;
-    font: inherit;
     font-size: 12px;
     color: var(--text-40);
-    background: transparent;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
-}
-
-.status:hover:not(:disabled) {
-    color: var(--text-75);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-}
-
-.status:disabled {
-    cursor: default;
 }
 
 /* ── the list ──────────────────────────────────────────────────────────────────────────────── */

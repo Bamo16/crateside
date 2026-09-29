@@ -83,10 +83,14 @@
                 <span class="mono">@(Quota.Utilization is { } used ? $"{used:N0} %" : "—")</span>
             </div>
             <span class="bar quiet"><span style="width: @Percent(Quota.Utilization ?? 0, 100)"></span></span>
-            @if (Quota.ResetsAt is { } resets)
-            {
-                <span class="note">resets at <span class="mono">@resets.ToLocalTime().ToString("HH:mm")</span></span>
-            }
+            <span class="note">
+                @if (Quota.ResetsAt is { } resets)
+                {
+                    <text>resets at <span class="mono">@resets.ToLocalTime().ToString("t")</span> · </text>
+                }
+                checked @Clock.Ago(QuotaReadAt)
+                <RefreshButton Title="Check the Claude quota now" Busy="QuotaReading" OnClick="OnRefreshQuota" />
+            </span>
         </div>
         <div class="meter">
             <div class="meter-line">
@@ -110,7 +114,7 @@
         </div>
         <div class="meter">
             <div class="meter-line">
-                <span>beatdetect, instrumentals</span>
+                <span>BPM detection</span>
                 @if (Beats.Progress is { Of: > 0 } progress && progress.Read < progress.Of)
                 {
                     <span class="mono">@progress.Read of @progress.Of</span>
@@ -157,6 +161,15 @@
 
     [Parameter, EditorRequired]
     public required QuotaSnapshot Quota { get; set; }
+
+    [Parameter]
+    public DateTimeOffset QuotaReadAt { get; set; }
+
+    [Parameter]
+    public bool QuotaReading { get; set; }
+
+    [Parameter]
+    public EventCallback OnRefreshQuota { get; set; }
 
     private TrackRow? Separating => Rows.FirstOrDefault(row => row.State is TrackState.Separating);
 

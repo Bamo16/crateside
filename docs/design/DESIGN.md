@@ -69,6 +69,13 @@ Buttons (`.outline`, `.primary`, `.danger`), `.pill`, `.actions` and `.mono` are
 `app.css`, so a component mounted on two pages looks the same on both. A page's scoped rule still
 wins where it sets one.
 
+**Refresh** is `RefreshButton`: a 13px ↻ icon, `--text-50`, after the "checked … ago" text it
+refreshes. While its refresh runs it turns teal and spins (no spin under reduced motion). Every
+"check now" or "re-read" is one of these, never a text link (user, 2026-09-29).
+
+**Times of day follow the machine's locale** (`"t"`, or its pattern beside an ISO date), so 12-hour
+with AM/PM here. Never a hard-coded `HH:mm`.
+
 The sample list and picker are `StemList` and `StemConfirm`, both driven by one `StemEditor`, and
 are mounted by the Tracks row and by Track details.
 
@@ -260,9 +267,15 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **Judging has no progress bar**: it has no time estimate to measure against. Its card shows
   the elapsed time and the waiting count.
 - **Background work** (the canvas's *Background readers*) also shows the download and key-detection
-  stages, the track each is on or *idle*: they had no place on the canvas (user, 2026-09-29).
-- **The title row also checks the playlist**: *Playlist checked … ago · Check now*, as Tracks has,
-  and it wakes the download stage so a new entry starts at once.
+  stages, the track each is on or *idle*: they had no place on the canvas (user, 2026-09-29). The
+  beatdetect row reads *BPM detection*, beside *Key detection*.
+- **The fold is kept in a cookie**, not local storage, so the server renders the page already
+  folded and there is no flash of open sections on reload.
+- **The title row also checks the playlist**: *Playlist checked … ago* and a refresh button, as
+  Tracks has, and it wakes the download stage so a new entry starts at once. The library counts'
+  *Re-read* is a refresh button too.
+- **The Claude quota has its own refresh**, under its bar: *resets at … · checked … ago* ↻. It is
+  also re-read once a minute.
 - **No "The whole log →" link.** The activity log is per track, on Track details; there is no
   page-wide log to open.
 - **Key-detector figures are live**, read from the ledger on load and Re-read, so they move as

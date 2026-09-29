@@ -128,9 +128,10 @@
         <button class="pill off" @onclick="ToggleAddTrack" disabled="@_working">
             + Add track
         </button>
-        <button class="status" @onclick="Resync" disabled="@_syncing">
-            @(_syncing ? "checking the playlist…" : Synced)
-        </button>
+        <span class="status">
+            playlist @Synced
+            <RefreshButton Title="Check the playlist now" Busy="_syncing" OnClick="Resync" />
+        </span>
     </div>
 
     @if (_addingTrack)
@@ -635,10 +636,7 @@
         }
     }
 
-    private string Synced =>
-        _view?.ReadAt is not { } read ? "playlist not read yet"
-        : DateTimeOffset.UtcNow - read is { TotalMinutes: < 1 } ? "playlist synced just now"
-        : $"playlist synced {(DateTimeOffset.UtcNow - read).Humanize(minUnit: TimeUnit.Minute)} ago";
+    private string Synced => _view?.ReadAt is { } read ? $"checked {Clock.Ago(read)}" : "not read yet";
 
     public void Dispose()
     {

@@ -67,12 +67,12 @@
                 </div>
                 <span class="read-at">
                     <span>
-                        @Synced ·
-                        <button class="link" @onclick="Resync" disabled="@_syncing">@(_syncing ? "checking…" : "Check now")</button>
+                        Playlist @Synced
+                        <RefreshButton Title="Check the playlist now" Busy="_syncing" OnClick="Resync" />
                     </span>
                     <span>
-                        Library counts read <span class="mono">@Summary.ReadAt.ToLocalTime().ToString("HH:mm")</span> ·
-                        <button class="link" @onclick="Reread" disabled="@_reading">@(_reading ? "reading…" : "Re-read")</button>
+                        Library counts read <span class="mono">@Summary.ReadAt.ToLocalTime().ToString("t")</span>
+                        <RefreshButton Title="Re-read the library counts" Busy="_reading" OnClick="Reread" />
                     </span>
                 </span>
             </header>
@@ -85,7 +85,7 @@
                         @for (var i = 0; i < waiting.Count; i++)
                         {
                             var tile = waiting[i];
-                            @(i > 0 ? " · " : null)<span class="mono amber">@tile.Count</span> @tile.Short
+                            <text>@(i > 0 ? " · " : null)<span class="mono amber">@tile.Count</span> @tile.Short</text>
                         }
                     }
                     else
@@ -103,13 +103,13 @@
                 <Summary>
                     @if (_rows.FirstOrDefault(row => row.State is TrackState.Separating) is { } separating)
                     {
-                        <span class="teal">Separating</span> @separating.Title
+                        <text><span class="teal">Separating</span> @separating.Title</text>
                     }
                     else
                     {
                         <text>Separation @(Separation.IsPaused ? "paused" : "idle")</text>
                     }
-                    <text>, </text><span class="mono">@_rows.Count(row => row.State is TrackState.JudgedInLine)</span> waiting ·
+                    , <span class="mono">@_rows.Count(row => row.State is TrackState.JudgedInLine)</span> waiting ·
                     Judging @JudgingState, <span class="mono">@_rows.Count(row => row.IsAwaitingJudgement)</span> waiting ·
                     Claude <span class="mono">@(_quota.Utilization is { } used ? $"{used:N0} %" : "—")</span>
                     @if (Beats.Progress is { Of: > 0 } progress && progress.Read < progress.Of)
@@ -118,7 +118,7 @@
                     }
                 </Summary>
                 <ChildContent>
-                    <WorkingNow Rows="_rows" Quota="_quota" />
+                    <WorkingNow Rows="_rows" Quota="_quota" QuotaReadAt="_quotaReadAt" QuotaReading="_quotaReading" OnRefreshQuota="RefreshQuota" />
                 </ChildContent>
             </DashSection>
 
@@ -129,8 +129,7 @@
                     <span class="mono value">@LastWeek</span> last week
                     @if (_history.Latest is [var last, ..])
                     {
-                        <text> · last event </text><span class="mono">@last.Timestamp.ToLocalTime().ToString("HH:mm")</span>
-                        <text> @JobHistory.Describe(last) @NameOf(last.VideoId)</text>
+                        <text> · last event <span class="mono">@last.Timestamp.ToLocalTime().ToString("t")</span> @JobHistory.Describe(last) @NameOf(last.VideoId)</text>
                     }
                 </Summary>
                 <ChildContent>
@@ -558,6 +557,7 @@
     private const string WorkId = "d-work";
     private const string TimeId = "d-time";
     private const string LibraryId = "d-lib";
+    private const string FoldCookie = "crateside.dashboard.folded";
     private const int KeysShown = 8;
     private const int ArtistsShown = 12;
     private const int SongsShown = 8;
@@ -565,6 +565,8 @@
     private const int StripHeight = 64;
     private const double StripLow = 0.4;
     private const double StripHigh = 2.2;
+
+    private static readonly string[] Sections = [TurnId, WorkId, TimeId, LibraryId];
 
     private static readonly Detector[] Detectors = [Detector.Keytag, Detector.Beatdetect];
 
@@ -599,6 +601,7 @@
     private JobHistory _history = JobHistory.From([], DateTimeOffset.Now);
     private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
     private DateTimeOffset _quotaReadAt;
+    private bool _quotaReading;
     private readonly HashSet<string> _folded = new(StringComparer.Ordinal);
     private System.Threading.Timer? _clock;
     private readonly CancellationTokenSource _circuit = new();
@@ -615,6 +618,13 @@
     private ElementReference _index;
     private IJSObjectReference? _module;
     private IJSObjectReference? _watch;
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    /// <summary>The folded sections, read from the cookie while prerendering, so the first paint is already folded.</summary>
+    [PersistentState]
+    public string[]? Folded { get; set; }
 
     private IReadOnlyList<TrackRowFacts> Unjudged =>
         [
@@ -663,6 +673,9 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Folded ??= HttpContext?.Request.Cookies[FoldCookie]?.Split('|') ?? [];
+        _folded.UnionWith(Folded.Intersect(Sections));
+
         Tracks.Changed += OnChanged;
         Separation.Changed += OnChanged;
         Judging.Changed += OnChanged;
@@ -685,12 +698,6 @@
 
         _module = await Js.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/Dashboard.razor.js");
         _watch = await _module.InvokeAsync<IJSObjectReference>("watch", _index);
-
-        if (await _module.InvokeAsync<string[]>("folded") is { Length: > 0 } folded)
-        {
-            _folded.UnionWith(folded);
-            StateHasChanged();
-        }
     }
 
     public async ValueTask DisposeAsync()
@@ -727,8 +734,7 @@
             _folded.Add(id);
 
         if (_module is not null)
-            // Cast, or the array is spread across the params and only its first id arrives.
-            await _module.InvokeVoidAsync("remember", (object)_folded.ToArray());
+            await _module.InvokeVoidAsync("remember", FoldCookie, string.Join('|', _folded));
     }
 
     private void OnChanged()
@@ -770,10 +776,22 @@
         });
     }
 
-    private string Synced =>
-        Tracks.Current?.ReadAt is not { } read ? "Playlist not read yet"
-        : DateTimeOffset.UtcNow - read is { TotalMinutes: < 1 } ? "Playlist checked just now"
-        : $"Playlist checked {(DateTimeOffset.UtcNow - read).Humanize(minUnit: TimeUnit.Minute)} ago";
+    private string Synced => Tracks.Current?.ReadAt is { } read ? $"checked {Clock.Ago(read)}" : "not read yet";
+
+    private async Task RefreshQuota()
+    {
+        _quotaReading = true;
+
+        try
+        {
+            _quota = await Quota.ReadAsync(_circuit.Token);
+            _quotaReadAt = DateTimeOffset.UtcNow;
+        }
+        finally
+        {
+            _quotaReading = false;
+        }
+    }
 
     /// <summary>Reads the playlist now, and wakes the download stage so a new entry starts at once.</summary>
     private async Task Resync()

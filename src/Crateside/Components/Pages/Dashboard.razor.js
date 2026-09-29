@@ -48,23 +48,7 @@ export function watch(index) {
     };
 }
 
-const FoldKey = "crateside.dashboard.folded";
-
-// Which sections the user folded, kept per browser. Storage can be missing or blocked.
-export function folded() {
-    try {
-        const kept = JSON.parse(localStorage.getItem(FoldKey) ?? "[]");
-
-        return Array.isArray(kept) ? kept.filter((id) => typeof id === "string") : [];
-    } catch {
-        return [];
-    }
-}
-
-export function remember(ids) {
-    try {
-        localStorage.setItem(FoldKey, JSON.stringify(ids));
-    } catch {
-        // Nothing to do: the fold still holds for this visit.
-    }
+// A cookie rather than local storage, so the server renders the page already folded.
+export function remember(name, ids) {
+    document.cookie = `${name}=${ids}; path=/; max-age=31536000; samesite=lax`;
 }

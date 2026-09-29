@@ -64,7 +64,7 @@
             @foreach (var update in History.Latest)
             {
                 <div class="log-line">
-                    <span class="mono at">@update.Timestamp.ToLocalTime().ToString("HH:mm")</span>
+                    <span class="mono at">@update.Timestamp.ToLocalTime().ToString("t")</span>
                     <span class="what">@JobHistory.Describe(update)</span>
                     <span class="song">@NameOf(update.VideoId)</span>
                 </div>

@@ -1,3 +1,4 @@
+@using System.Globalization
 @using Crateside.Core.Ledger
 
 <div class="evidence">
@@ -178,7 +179,7 @@
         </p>
 
         <p class="provenance muted">
-            Recorded @Run.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+            Recorded @Run.Timestamp.ToLocalTime().ToString($"yyyy-MM-dd {CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern}")
             @if (Run.InputKind is { Length: > 0 } kind)
             {
                 <text> from the @kind.Replace('_', ' ')</text>

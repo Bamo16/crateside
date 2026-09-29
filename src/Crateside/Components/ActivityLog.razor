@@ -1,3 +1,4 @@
+@using System.Globalization
 @using System.Text
 @using Crateside.Core.Orchestration.Jobs
 @using Crateside.Core.Tracks
@@ -118,5 +119,6 @@
         _copied = true;
     }
 
-    private static string Stamp(DateTimeOffset at) => at.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss zzz");
+    private static string Stamp(DateTimeOffset at) =>
+        at.ToLocalTime().ToString($"yyyy-MM-dd {CultureInfo.CurrentCulture.DateTimeFormat.LongTimePattern} zzz");
 }

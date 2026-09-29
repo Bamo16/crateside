@@ -41,12 +41,6 @@
     color: var(--text-50);
 }
 
-.read-at .link:disabled {
-    color: var(--text-50);
-    text-decoration: none;
-    cursor: default;
-}
-
 .amber {
     color: var(--amber);
 }
