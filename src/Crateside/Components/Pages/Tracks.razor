@@ -621,6 +621,9 @@
             Playlist.Invalidate();
 
             await Source.RefreshAsync(_circuit.Token);
+
+            // Otherwise a new entry waits out the download stage's idle interval.
+            Signals.Wake(JobStage.Download);
         }
         finally
         {

@@ -35,6 +35,7 @@
 @inject VerdictControl Judging
 @inject WindowRoll Roll
 @inject QuotaReader Quota
+@inject StageSignals Signals
 @inject CratesidePaths Paths
 @inject IJSRuntime Js
 
@@ -65,8 +66,14 @@
                     </p>
                 </div>
                 <span class="read-at">
-                    Library counts read <span class="mono">@Summary.ReadAt.ToLocalTime().ToString("HH:mm")</span> ·
-                    <button class="link" @onclick="Reread" disabled="@_reading">@(_reading ? "reading…" : "Re-read")</button>
+                    <span>
+                        @Synced ·
+                        <button class="link" @onclick="Resync" disabled="@_syncing">@(_syncing ? "checking…" : "Check now")</button>
+                    </span>
+                    <span>
+                        Library counts read <span class="mono">@Summary.ReadAt.ToLocalTime().ToString("HH:mm")</span> ·
+                        <button class="link" @onclick="Reread" disabled="@_reading">@(_reading ? "reading…" : "Re-read")</button>
+                    </span>
                 </span>
             </header>
 
@@ -597,6 +604,7 @@
     private readonly CancellationTokenSource _circuit = new();
 
     private bool _reading;
+    private bool _syncing;
     private int? _queued;
     private bool _allKeys;
     private bool _allArtists;
@@ -759,6 +767,29 @@
 
             StateHasChanged();
         });
+    }
+
+    private string Synced =>
+        Tracks.Current?.ReadAt is not { } read ? "Playlist not read yet"
+        : DateTimeOffset.UtcNow - read is { TotalMinutes: < 1 } ? "Playlist checked just now"
+        : $"Playlist checked {(DateTimeOffset.UtcNow - read).Humanize(minUnit: TimeUnit.Minute)} ago";
+
+    /// <summary>Reads the playlist now, and wakes the download stage so a new entry starts at once.</summary>
+    private async Task Resync()
+    {
+        _syncing = true;
+
+        try
+        {
+            Playlist.Invalidate();
+            await Tracks.RefreshAsync(_circuit.Token);
+            Signals.Wake(JobStage.Download);
+            Follow();
+        }
+        finally
+        {
+            _syncing = false;
+        }
     }
 
     private string NameOf(string videoId) =>

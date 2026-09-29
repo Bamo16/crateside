@@ -99,7 +99,15 @@
     </div>
 
     <div class="card">
-        <span class="caps padded">Background readers · unattended</span>
+        <span class="caps padded">Background work · unattended</span>
+        <div class="meter-line">
+            <span>Download</span>
+            @Current(TrackState.Downloading)
+        </div>
+        <div class="meter-line">
+            <span>Key detection</span>
+            @Current(TrackState.Detecting)
+        </div>
         <div class="meter">
             <div class="meter-line">
                 <span>beatdetect, instrumentals</span>
@@ -191,6 +199,12 @@
                 $"On · next in {Minutes(rolled + WindowRoll.Window - DateTimeOffset.UtcNow)}",
             _ => "On · next once a window sits idle",
         };
+
+    /// <summary>The track a stage is working on, or idle.</summary>
+    private RenderFragment Current(TrackState state) =>
+        Rows.FirstOrDefault(row => row.State == state) is { } row
+            ? @<a class="working" href="@SongHref(row)">@row.Title</a>
+            : @<span class="idle">idle</span>;
 
     private static RenderFragment Waiting(int count) =>
         count is 0

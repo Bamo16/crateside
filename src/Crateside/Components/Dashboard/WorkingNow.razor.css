@@ -126,6 +126,19 @@
     color: var(--text-50);
 }
 
+.working {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--teal);
+    text-decoration: none;
+}
+
+.working:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 .waiting {
     color: var(--text-75);
 }

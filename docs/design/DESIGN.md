@@ -257,6 +257,10 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   Nothing counts the units actually spent, so there is no "today" and no reset time.
 - **Judging has no progress bar**: it has no time estimate to measure against. Its card shows
   the elapsed time and the waiting count.
+- **Background work** (the canvas's *Background readers*) also shows the download and key-detection
+  stages, the track each is on or *idle*: they had no place on the canvas (user, 2026-09-29).
+- **The title row also checks the playlist**: *Playlist checked … ago · Check now*, as Tracks has,
+  and it wakes the download stage so a new entry starts at once.
 - **No "The whole log →" link.** The activity log is per track, on Track details; there is no
   page-wide log to open.
 - **Key-detector figures are live**, read from the ledger on load and Re-read, so they move as
