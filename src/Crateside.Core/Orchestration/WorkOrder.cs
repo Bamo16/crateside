@@ -133,12 +133,16 @@ public sealed record SeparationRecipe
             // A guide is for warping new samples by eye, so new presets get one. A re-downloaded
             // source does not: it is the same audio as the stems already warped, whose markers
             // ADR 0020 copies verbatim. With no sample on disk to copy from it is the guide or
-            // nothing, which is what an instrumental release needs (#30).
+            // nothing, which is what an instrumental release needs (#30), staged or not (#55).
             ExtractDrums =
                 !inventory.HasWarpGuide
                 && (
                     shortfall.Presets.Count > 0
                     || (shortfall.KeepSource && inventory is { Presets.Count: 0, HasSource: false })
+                    || (
+                        plan is { Presets.Count: 0, KeepSource: true }
+                        && inventory is { Presets.Count: 0, IsFinished: false }
+                    )
                 ),
             KeepSource = shortfall.KeepSource,
         };

@@ -232,7 +232,7 @@ public sealed class QueueService(
                 Reopened(items, ledger),
                 bumped.VideoId,
                 awaitingCut?.Invoke(ledger),
-                InventoriesBySong(processed, ledger, catalog)
+                InventoriesBySong(processed, ledger, catalog, _paths.MashupSamples)
             ),
             Ledger = ledger,
             Processed = processed,
@@ -366,7 +366,8 @@ public sealed class QueueService(
     internal static IReadOnlyDictionary<string, StemInventory> InventoriesBySong(
         ProcessedTracks processed,
         Ledger.KeyLedger ledger,
-        PresetCatalog catalog
+        PresetCatalog catalog,
+        string? finishedRoot = null
     )
     {
         string Song(string videoId) => ledger.SongFor(videoId) ?? videoId;
@@ -375,7 +376,8 @@ public sealed class QueueService(
             .StemsByVideoId.GroupBy(entry => Song(entry.Key), StringComparer.Ordinal)
             .ToDictionary(
                 song => song.Key,
-                song => StemInventory.Of(song.SelectMany(entry => entry.Value), catalog),
+                song =>
+                    StemInventory.Of(song.SelectMany(entry => entry.Value), catalog, finishedRoot),
                 StringComparer.Ordinal
             );
 

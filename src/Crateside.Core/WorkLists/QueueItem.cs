@@ -142,6 +142,14 @@ public sealed record QueueView
                     )
                     && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory).Passes > 0
                 ),
+                // A kept source staged before its guide was cut owes only the guide (#55). Nothing
+                // else re-enters this way: a missing stem is stated, never re-cut (ADR 0027).
+                .. described.Where(i =>
+                    fullyProcessed.Contains(i.VideoId)
+                    && !separatedWithoutKey.Contains(i.VideoId)
+                    && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory)
+                        is { Presets.Count: 0, ExtractDrums: true }
+                ),
                 // Filtered, not appended bare: a reopened track owing only a handoff or a tagging
                 // needs no GPU, and one whose stems are parked for want of a key must not be in
                 // the line at the same time as it is parked (#32).

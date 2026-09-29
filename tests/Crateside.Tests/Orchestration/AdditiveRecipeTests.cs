@@ -73,11 +73,12 @@ public class AdditiveRecipeTests
             [
                 new StemOnDisk
                 {
-                    Path = @"P:\RYAN\Ableton\Sample Staging\Chris Rinox - Burst Mode.flac",
-                    Root = @"P:\RYAN\Ableton\Sample Staging",
+                    Path = @"P:\RYAN\Ableton\Mashup Samples\Chris Rinox - Burst Mode.flac",
+                    Root = @"P:\RYAN\Ableton\Mashup Samples",
                 },
             ],
-            Catalog
+            Catalog,
+            @"P:\RYAN\Ableton\Mashup Samples"
         );
 
         var recipe = SeparationRecipe.For(new StemPlan { Presets = [], KeepSource = true }, kept);

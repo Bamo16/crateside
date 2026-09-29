@@ -31,6 +31,9 @@ public sealed record StemInventory
     /// <summary>The source track is on disk as a sample in its own right.</summary>
     public bool HasSource => Files.Any(file => file.Kind is StemKind.Source);
 
+    /// <summary>A file of the track has reached the library, so its warping is done.</summary>
+    public bool IsFinished { get; init; }
+
     /// <summary>A warp guide is on disk, so a re-cut need not make another (ADR 0018).</summary>
     public bool HasWarpGuide => Files.Any(file => file.Kind is StemKind.WarpGuide);
 
@@ -107,12 +110,25 @@ public sealed record StemInventory
             : !wanted.KeepSource;
 
     /// <summary>Reads a track's files back as presets, a source, and a guide.</summary>
-    public static StemInventory Of(IEnumerable<StemOnDisk> files, PresetCatalog catalog) =>
-        new()
+    public static StemInventory Of(
+        IEnumerable<StemOnDisk> files,
+        PresetCatalog catalog,
+        string? finishedRoot = null
+    )
+    {
+        var classified = files.Select(file => ClassifiedStem.Of(file, catalog)).ToList();
+
+        return new()
         {
-            Files = [.. files.Select(file => ClassifiedStem.Of(file, catalog))],
+            Files = classified,
             IsClassified = !catalog.IsEmpty,
+            IsFinished =
+                finishedRoot is not null
+                && classified.Any(file =>
+                    file.File.Root.Equals(finishedRoot, StringComparison.OrdinalIgnoreCase)
+                ),
         };
+    }
 }
 
 /// <summary>One of a track's files, and what it is to the plan.</summary>

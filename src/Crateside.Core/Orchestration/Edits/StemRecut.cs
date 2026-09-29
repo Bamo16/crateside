@@ -44,6 +44,7 @@ public sealed class StemRecut(
         var everywhere = new StemInventory
         {
             Files = [.. stagedInventory.Files, .. (known ?? StemInventory.Empty).Files],
+            IsFinished = known?.IsFinished is true,
         };
 
         var recipe = SeparationRecipe.For(wanted, everywhere);
