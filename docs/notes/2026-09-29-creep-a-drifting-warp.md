@@ -23,7 +23,9 @@ Samples. The vocal and the drum stem carry the same markers.
 - Complex mode, 4/4, **172 markers**, beat 0 at 1.103 s to beat 348.03 at 226.691 s: **92.57 BPM
   overall**.
 - 162 of the 171 segments are two beats long. The rest: 1 beat (3), 3 (1), 4 (3), 6 (1, at
-  80.2–84.1 s), and one of 1/32 of a beat, 21 ms after the last crash (cause unknown).
+  80.2–84.1 s), and the 1/32-beat handle Ableton adds after the last marker (`CONTEXT.md`), which puts the
+  tempo past the final crash at 90.26 BPM. Across the library, 922 of 932 warped `.asd` files end in
+  that handle; the other 10 (five songs, vocal and instrumental) end in an irregular gap.
 - Segment tempo: min 89.10, p10 90.53, **median 92.24**, p90 95.27, max 100.46 BPM.
 - By 30-second window of the warp:
 
@@ -43,10 +45,22 @@ Samples. The vocal and the drum stem carry the same markers.
 The instrumental, read with the `9.0-NoMercy-MediaServer` ffmpeg on 2026-09-29: **91.78 BPM,
 confidence 0.124**, windows 93.99 · 92.96 · 91.79 · 91.47 · 180.99 · 186.77 · 191.46.
 
-The first four windows follow the warp's slowdown over the first two minutes closely (94.8 → 92.7
-→ 91.9 → 91.4 in the warp). The last three read at double time. Which part of the track each
-window covers wasn't checked, so whether the doubling lines up with the ride-cymbal section is
-not known.
+The windows are cut from 0 s in 30 s steps (`BeatReader`), and the warp's beat 0 is at 1.1 s, so
+they line up with the warp's windows above. Taking the other octave as the same tempo:
+
+| window | warp | beatdetect | as the warp's octave | off by |
+|---|---|---|---|---|
+| 0–30 s | 94.76 | 93.99 | 93.99 | −0.8 % |
+| 30–60 s | 92.69 | 92.96 | 92.96 | +0.3 % |
+| 60–90 s | 91.87 | 91.79 | 91.79 | −0.1 % |
+| 90–120 s | 91.42 | 91.47 | 91.47 | +0.1 % |
+| 120–150 s | 91.48 | 180.99 | 90.50 | −1.1 % |
+| 150–180 s | 93.57 | 186.77 | 93.39 | −0.2 % |
+| 180–210 s | 92.86 | 191.46 | 95.73 | +3.1 % |
+
+Every window follows the warp's wandering at one octave or the other. The one real miss is
+180–210 s, where the marker pattern changes (1- and 4-beat segments at 181.8–187.7 s), which is
+probably the ride-cymbal section (hypothesis: the section's times were not taken down).
 
 ## Files
 
