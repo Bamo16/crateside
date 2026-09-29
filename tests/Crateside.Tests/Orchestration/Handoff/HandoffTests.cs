@@ -228,26 +228,24 @@ public class HandoffTests : IDisposable
     }
 
     [Fact]
-    public void A_separation_still_running_is_not_handed_off_until_its_process_is_gone()
+    public void A_separation_is_not_handed_off_until_it_is_settled_even_once_its_process_is_gone()
     {
         var jobs = new JobStore(Path.Combine(_directory, "jobs.jsonl"));
         var started = new DateTimeOffset(2026, 9, 25, 22, 46, 22, TimeSpan.Zero);
-        var probe = new FakeProcessProbe { Running = { [33224] = started } };
 
-        // The vocal is finished and in the cut root; the separation is still writing the rest.
+        // The process has ended, but nothing has yet counted what it wrote (Creep, 2026-09-29).
         Provenanced("T & Sugah - TumDaDaDum (Vocal - Full).flac", "vaQClQzY2fk");
         jobs.Record("vaQClQzY2fk", JobStage.Separation, JobStatus.Running, 33224, started);
 
-        var selector = new HandoffSelector(jobs, _paths, new SeparationInterlock(jobs, probe));
+        var selector = Selector(jobs);
 
         Assert.False(selector.TryPickNext(out _, out _));
 
-        probe.Running.Clear();
+        jobs.Record("vaQClQzY2fk", JobStage.Separation, JobStatus.Succeeded);
 
         Assert.True(selector.TryPickNext(out var videoId, out _));
         Assert.Equal("vaQClQzY2fk", videoId);
     }
 
-    private HandoffSelector Selector(JobStore jobs) =>
-        new(jobs, _paths, new SeparationInterlock(jobs, new FakeProcessProbe()));
+    private HandoffSelector Selector(JobStore jobs) => new(jobs, _paths);
 }

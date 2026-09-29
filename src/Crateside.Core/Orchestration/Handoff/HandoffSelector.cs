@@ -1,5 +1,4 @@
 using Crateside.Core.Orchestration.Jobs;
-using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Samples;
 
 namespace Crateside.Core.Orchestration.Handoff;
@@ -10,7 +9,6 @@ namespace Crateside.Core.Orchestration.Handoff;
 public sealed class HandoffSelector(
     JobStore jobs,
     CratesidePaths paths,
-    SeparationInterlock interlock,
     int maxStrikes = HandoffSelector.DefaultMaxStrikes
 )
 {
@@ -53,9 +51,9 @@ public sealed class HandoffSelector(
 
     /// <summary>
     /// Whether what is on disk for this track is all there is going to be: not while its
-    /// separation failed, or while its process is still alive and writing (ADR 0034).
+    /// separation failed, or until it is settled, which an ended process is not yet (ADR 0042).
     /// </summary>
     private bool SeparationOwesNothingMore(string videoId) =>
         !jobs.TryGet(videoId, JobStage.Separation, out var separation)
-        || separation is { Status: not JobStatus.Failed } && !interlock.IsSeparating(videoId);
+        || separation is { IsOpen: false, Status: not JobStatus.Failed };
 }

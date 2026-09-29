@@ -50,3 +50,15 @@ The user chose to fix adoption rather than delete it (2026-09-28).
   stemforge-cli included, is untested.
 - Running the app under `dotnet run` still works, but a restart ends the separation, and the
   startup warning says so.
+
+## Amended 2026-09-29: the handoff waits for the settle
+
+The first adopted run seen live (*Radiohead – Creep*) finished, and within the same second the
+handoff moved its stems to staging, before the next drain tick counted them. The count found 0 of
+3 in the destination and recorded `Failed`, although the stems had arrived.
+
+The handoff waited only while the process was alive (ADR 0034), because a `Running` record whose
+process had gone used to stay open for ever. Since this ADR, the settle closes such a record within
+one drain tick, paused or not. So **the handoff now waits until the separation is settled**, not
+only until its process is gone: an open separation, live or not, holds its stems where they are.
+
