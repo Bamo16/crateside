@@ -41,6 +41,7 @@ The written spec for each canvas turn, in the order it was sent. The later ones 
 | `11-dashboard.md` | Dashboard | #78 |
 | `12-tools-together.md` | Tools Together | #79 |
 | `13-row-motion.md` | Unified Page, turn 4 | #85 |
+| `13b-picker-layout-fix.md` | Unified Page, turn 4 (corrects the build of 03 and 13) | #85 |
 
 ### `brand/`: the 1a assets
 `mark.svg` (header), `favicon.svg` plus PNG fallbacks (browser tab), `lockup.svg` (README), `mark-tile.svg` (app icon). Usage rules are in `handoffs/04-brand.md`.
