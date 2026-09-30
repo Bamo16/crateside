@@ -16,6 +16,9 @@ public sealed record BeatReading
 
     public double? Confidence { get; init; }
 
+    /// <summary>The filter's own drift figure, as a percentage; null from a build without it, or where it could not tell.</summary>
+    public double? TempoSpread { get; init; }
+
     /// <summary>Each consecutive full 30 s window's tempo, from its beat interval.</summary>
     public IReadOnlyList<double> Windows { get; init; } = [];
 

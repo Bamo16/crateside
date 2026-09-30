@@ -13,10 +13,14 @@ namespace Crateside.Core.Beats;
 /// Runs <c>beatdetect</c> on an instrumental and keeps the reading until the file or the ffmpeg
 /// build changes (#76). Kept across restarts when given a path.
 /// </summary>
-public sealed partial class BeatReader(string? path = null, string fileName = "ffmpeg")
+public sealed partial class BeatReader(
+    string? path = null,
+    string fileName = "ffmpeg",
+    string filter = "beatdetect"
+)
 {
     // Bump when MeasureAsync changes what it runs, or a kept reading outlives the method that made it.
-    private const int Version = 1;
+    private const int Version = 2;
     private const int WindowSeconds = 30;
 
     private static readonly TimeSpan RunLimit = TimeSpan.FromMinutes(10);
@@ -98,6 +102,7 @@ public sealed partial class BeatReader(string? path = null, string fileName = "f
         {
             Bpm = whole.Bpm,
             Confidence = whole.Confidence,
+            TempoSpread = whole.TempoSpread,
             Windows = windows,
         };
 
@@ -174,7 +179,8 @@ public sealed partial class BeatReader(string? path = null, string fileName = "f
         return new Detected(
             last.TryGetValue("bpm", out var bpm) && bpm > 0 ? bpm : null,
             last.TryGetValue("confidence", out var confidence) ? confidence : null,
-            last.TryGetValue("beat_interval_ms", out var interval) ? interval : null
+            last.TryGetValue("beat_interval_ms", out var interval) ? interval : null,
+            last.TryGetValue("tempo_spread", out var spread) ? spread : null
         );
     }
 
@@ -208,7 +214,7 @@ public sealed partial class BeatReader(string? path = null, string fileName = "f
                     audioPath,
                     "-vn",
                     "-af",
-                    "beatdetect,ametadata=mode=print:file=-",
+                    $"{filter},ametadata=mode=print:file=-",
                     "-f",
                     "null",
                     "-",
@@ -220,7 +226,7 @@ public sealed partial class BeatReader(string? path = null, string fileName = "f
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
-            return new Detected(null, null, null);
+            return new Detected(null, null, null, null);
         }
     }
 
@@ -283,7 +289,12 @@ public sealed partial class BeatReader(string? path = null, string fileName = "f
 /// <summary>Which ffmpeg read a file: its version, and the executable's size and time to tell rebuilds apart.</summary>
 public sealed record FfmpegBuild(string Version, long Length, DateTime Written);
 
-internal readonly record struct Detected(double? Bpm, double? Confidence, double? BeatIntervalMs);
+internal readonly record struct Detected(
+    double? Bpm,
+    double? Confidence,
+    double? BeatIntervalMs,
+    double? TempoSpread
+);
 
 internal sealed record BeatStamp(long Length, DateTime Written)
 {

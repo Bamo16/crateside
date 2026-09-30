@@ -84,7 +84,27 @@ public class BeatReadingTests
             """
         );
 
-        Assert.Equal(new Detected(173.99, 0.144, 344.86), detected);
+        Assert.Equal(new Detected(173.99, 0.144, 344.86, null), detected);
+    }
+
+    [Fact]
+    public void The_final_frame_of_a_1_1_build_carries_its_spread_at_full_precision()
+    {
+        var detected = BeatReader.Parse(
+            """
+            frame:2569 pts:10522624 pts_time:238.608254
+            lavfi.beatdetect.bpm=183.24584
+            lavfi.beatdetect.confidence=0.126
+            lavfi.beatdetect.beat_interval_ms=327.4290
+            lavfi.beatdetect.beat_offset_ms=26.06
+            lavfi.beatdetect.tempo_spread=2.234
+            lavfi.beatdetect.candidate0=184.224:0.148:234.6
+            lavfi.beatdetect.final=1
+            lavfi.beatdetect.version=1.1.0
+            """
+        );
+
+        Assert.Equal(new Detected(183.24584, 0.126, 327.4290, 2.234), detected);
     }
 
     [Fact]

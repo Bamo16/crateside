@@ -74,7 +74,10 @@ public sealed class BeatWorker(
     {
         if (await reader.RefreshBuildAsync(stoppingToken) is null)
         {
-            logger.LogWarning("ffmpeg on PATH did not say which build it is; beatdetect waits");
+            logger.LogWarning(
+                "{Ffmpeg} did not say which build it is; beatdetect waits",
+                paths.BeatdetectFfmpeg
+            );
 
             return AfterFailure;
         }
