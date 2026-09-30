@@ -3,8 +3,8 @@ using Microsoft.Data.Sqlite;
 namespace AbletonSampleData;
 
 /// <summary>
-/// Reads Live's own file index, the SQLite database behind the browser, as the same
-/// <see cref="FolderInfo"/> the folder XMP yields. Read-only: it is Live's store.
+/// Reads Live's file index, the SQLite database behind the browser, as a <see cref="FolderInfo"/>
+/// holding every file under a folder Live watches, at any depth. Read-only.
 /// </summary>
 public sealed class FileIndexReader(string indexFolder)
 {
@@ -55,26 +55,26 @@ public sealed class FileIndexReader(string indexFolder)
         );
 
     /// <summary>
-    /// Reads what the index holds for <paramref name="rootFolder"/>. Never throws — an absent
+    /// Reads what the index holds for <paramref name="folder"/>. Never throws — an absent
     /// database, or a folder Ableton has never been shown, both read as empty.
     /// </summary>
-    public FolderInfo Read(string rootFolder)
+    public FolderInfo Read(string folder)
     {
         try
         {
             if (FindDatabase() is not { } database)
-                return FolderInfo.Empty(rootFolder);
+                return FolderInfo.Empty(folder);
 
             using var connection = Open(database);
 
-            return PlaceFor(connection, rootFolder) is { } place
-                ? new FolderInfo(rootFolder, TagsUnder(connection, place))
-                : FolderInfo.Empty(rootFolder);
+            return PlaceFor(connection, folder) is { } place
+                ? new FolderInfo(folder, TagsUnder(connection, place))
+                : FolderInfo.Empty(folder);
         }
         catch (Exception ex)
             when (ex is SqliteException or IOException or UnauthorizedAccessException)
         {
-            return FolderInfo.Empty(rootFolder);
+            return FolderInfo.Empty(folder);
         }
     }
 
@@ -104,7 +104,7 @@ public sealed class FileIndexReader(string indexFolder)
         return connection;
     }
 
-    private static long? PlaceFor(SqliteConnection connection, string rootFolder)
+    private static long? PlaceFor(SqliteConnection connection, string folder)
     {
         using var command = connection.CreateCommand();
         command.CommandText = PlacePathsSql;
@@ -113,7 +113,7 @@ public sealed class FileIndexReader(string indexFolder)
 
         while (reader.Read())
         {
-            if (SamePath(reader.GetString(1), rootFolder))
+            if (SamePath(reader.GetString(1), folder))
                 return reader.GetInt64(0);
         }
 

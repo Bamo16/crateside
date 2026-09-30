@@ -5,7 +5,7 @@ using System.Xml.Linq;
 namespace AbletonSampleData;
 
 /// <summary>
-/// Writes keywords into a root's <c>Ableton Folder Info\&lt;uuid&gt;.xmp</c>, alongside whatever
+/// Writes keywords into a folder's <c>Ableton Folder Info\&lt;uuid&gt;.xmp</c>, alongside whatever
 /// Live has put there.
 /// </summary>
 public sealed class FolderInfoWriter
@@ -57,10 +57,10 @@ public sealed class FolderInfoWriter
     };
 
     /// <summary>
-    /// Applies keywords to files under <paramref name="rootFolder"/>, leaving every other entry
+    /// Applies keywords to files under <paramref name="folder"/>, leaving every other entry
     /// and its position alone, or nothing at all unless every keyword is well-formed.
     /// </summary>
-    public TagWriteOutcome Apply(string rootFolder, IReadOnlyList<TagAssignment> assignments)
+    public TagWriteOutcome Apply(string folder, IReadOnlyList<TagAssignment> assignments)
     {
         if (assignments.Count is 0)
             return TagWriteOutcome.Written(0);
@@ -70,8 +70,8 @@ public sealed class FolderInfoWriter
         )
             return TagWriteOutcome.Rejected($"'{bad}' is not a Category|Value keyword");
 
-        var directory = Path.Combine(rootFolder, FolderInfoFile.Directory);
-        var path = ExistingXmp(rootFolder);
+        var directory = Path.Combine(folder, FolderInfoFile.Directory);
+        var path = ExistingXmp(folder);
 
         try
         {
@@ -90,7 +90,11 @@ public sealed class FolderInfoWriter
 
             Stamp(document);
 
-            return Replace(path ?? Path.Combine(directory, NewName()), document, stamp)
+            return Replace(
+                path ?? Path.Combine(directory, FolderInfoFile.StoreName),
+                document,
+                stamp
+            )
                 ? TagWriteOutcome.Written(assignments.Count)
                 : TagWriteOutcome.Stale("the tag store changed while it was being updated");
         }
@@ -103,12 +107,12 @@ public sealed class FolderInfoWriter
     /// <summary>
     /// Points existing entries at new file names, keeping their keywords and their position.
     /// </summary>
-    public TagWriteOutcome Rename(string rootFolder, IReadOnlyList<TagRename> renames)
+    public TagWriteOutcome Rename(string folder, IReadOnlyList<TagRename> renames)
     {
         if (renames.Count is 0)
             return TagWriteOutcome.Written(0);
 
-        var path = ExistingXmp(rootFolder);
+        var path = ExistingXmp(folder);
 
         // No store yet is not a failure — nothing carries the old names to rename.
         if (path is null)
@@ -274,11 +278,8 @@ public sealed class FolderInfoWriter
             description.Add(new XElement(Xmp + "MetadataDate", now));
     }
 
-    /// <summary>Resolved from the root through the reader's own rule, so both find the same file.</summary>
-    private static string? ExistingXmp(string rootFolder) => FolderInfoFile.In(rootFolder);
-
-    /// <summary>The name for a store that does not exist yet — a fresh UUID is a new identity.</summary>
-    private static string NewName() => $"{Guid.NewGuid()}.xmp";
+    /// <summary>Resolved through the reader's own rule, so both find the same file.</summary>
+    private static string? ExistingXmp(string folder) => FolderInfoFile.In(folder);
 
     private static XDocument NewDocument() =>
         new(
@@ -313,7 +314,7 @@ public sealed record TagAssignment
     public required IReadOnlyList<string> Keywords { get; init; }
 }
 
-/// <summary>One entry's move to a new name, both relative to the root folder.</summary>
+/// <summary>One entry's move to a new name, both relative to the folder.</summary>
 public sealed record TagRename
 {
     public required string From { get; init; }

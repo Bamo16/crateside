@@ -36,6 +36,7 @@ public class FolderInfoWriterTests : IDisposable
         var outcome = _writer.Apply(_root, [Assign("a.flac", "Key|A", "Key|Minor")]);
 
         Assert.True(outcome.IsSuccess);
+        Assert.Equal("dc66a3fa-0fe1-5352-91cf-3ec237e9ee90.xmp", Path.GetFileName(XmpPath));
         Assert.True(_reader.Read(_root).TryGet("a.flac", out var tags));
         Assert.Equal(["Key|A", "Key|Minor"], tags.Keywords);
     }

@@ -3,7 +3,8 @@ using System.Xml.Linq;
 namespace AbletonSampleData;
 
 /// <summary>
-/// Reads the <c>Ableton Folder Info\&lt;uuid&gt;.xmp</c> keyword index for a root folder.
+/// Reads a folder's <c>Ableton Folder Info\&lt;uuid&gt;.xmp</c>, which holds the keywords of the files
+/// directly in it; each subfolder has its own.
 /// </summary>
 public sealed class FolderInfoReader
 {
@@ -11,15 +12,15 @@ public sealed class FolderInfoReader
     private static readonly XNamespace AblFr = "https://ns.ableton.com/xmp/fs-resources/1.0/";
 
     /// <summary>
-    /// Reads the index for <paramref name="rootFolder"/>. Never throws — returns an empty
+    /// Reads the index for <paramref name="folder"/>. Never throws — returns an empty
     /// index when the folder has no XMP yet, the file is mid-write, or it is malformed.
     /// </summary>
-    public FolderInfo Read(string rootFolder)
+    public FolderInfo Read(string folder)
     {
-        var xmpPath = FindXmp(rootFolder);
+        var xmpPath = FindXmp(folder);
 
         if (xmpPath is null)
-            return FolderInfo.Empty(rootFolder);
+            return FolderInfo.Empty(folder);
 
         try
         {
@@ -39,16 +40,16 @@ public sealed class FolderInfoReader
                 .OfType<FileTags>()
                 .ToArray();
 
-            return new FolderInfo(rootFolder, entries);
+            return new FolderInfo(folder, entries);
         }
         catch (Exception ex)
             when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException)
         {
-            return FolderInfo.Empty(rootFolder);
+            return FolderInfo.Empty(folder);
         }
     }
 
-    private static string? FindXmp(string rootFolder) => FolderInfoFile.In(rootFolder);
+    private static string? FindXmp(string folder) => FolderInfoFile.In(folder);
 
     private static FileTags? ParseEntry(XElement item)
     {
