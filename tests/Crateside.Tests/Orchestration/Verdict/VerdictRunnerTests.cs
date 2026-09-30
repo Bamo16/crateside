@@ -11,6 +11,7 @@ namespace Crateside.Tests.Orchestration.Verdict;
 public class VerdictRunnerTests : IDisposable
 {
     private const string VideoId = "dQw4w9WgXcQ";
+    private const string SwappedTo = "-cuAnMUSN50";
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
@@ -32,7 +33,7 @@ public class VerdictRunnerTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static WorkOrder Order(bool instrumentalRelease = false) =>
+    private static WorkOrder Order(bool instrumentalRelease = false, string? statedSource = null) =>
         WorkOrder.Compose(
             new QueueItem
             {
@@ -40,6 +41,7 @@ public class VerdictRunnerTests : IDisposable
                 VideoId = VideoId,
                 Title = "Yes - Owner of a Lonely Heart",
                 Plan = instrumentalRelease ? StemPlan.InstrumentalRelease : StemPlan.Default,
+                StatedSourceUrl = statedSource,
             },
             KeyLedger.Read("does-not-exist")
         );
@@ -50,21 +52,41 @@ public class VerdictRunnerTests : IDisposable
         File.WriteAllText(Set.EvidencePathFor(VideoId), evidence);
     }
 
-    private void RecordVerdict() =>
-        File.WriteAllText(
-            LedgerPath,
-            JsonSerializer.Serialize(
-                new
-                {
-                    timestamp = "2026-08-17T00:00:00+00:00",
-                    song = "yes - owner of a lonely heart",
-                    artist = "Yes",
-                    title = "Owner of a Lonely Heart",
-                    source_url = $"https://music.youtube.com/watch?v={VideoId}",
-                    verdict = new { key = "A minor", confidence = "HIGH" },
-                }
-            )
+    private void RecordVerdict(string videoId = VideoId) =>
+        File.WriteAllText(LedgerPath, LedgerLine(videoId) + "\n");
+
+    private static string LedgerLine(string videoId) =>
+        JsonSerializer.Serialize(
+            new
+            {
+                timestamp = "2026-08-17T00:00:00+00:00",
+                song = "yes - owner of a lonely heart",
+                artist = "Yes",
+                title = "Owner of a Lonely Heart",
+                source_url = $"https://music.youtube.com/watch?v={videoId}",
+                verdict = new { key = "A minor", confidence = "HIGH" },
+            }
         );
+
+    /// <summary>A stand-in for <c>uv run keytag-restate</c>: notes its arguments and appends the row's line.</summary>
+    private string FakeUv()
+    {
+        var restated = Path.Combine(_directory, "restated.jsonl");
+        var script = Path.Combine(_directory, "fake-uv.cmd");
+
+        File.WriteAllText(restated, LedgerLine(VideoId) + "\n");
+        File.WriteAllText(
+            script,
+            $"""
+            @echo off
+            echo %* > "{Path.Combine(_directory, "uv-args.txt")}"
+            type "{restated}" >> "{LedgerPath}"
+            exit /b 0
+            """
+        );
+
+        return script;
+    }
 
     /// <summary>A stand-in for the agent that records a verdict, or does not, and exits.</summary>
     private VerdictRunner Runner(
@@ -136,6 +158,35 @@ public class VerdictRunnerTests : IDisposable
 
         Assert.False(result.IsSuccess);
         Assert.Contains("quota exhausted", result.Error);
+    }
+
+    [Fact]
+    public async Task A_source_swapped_before_its_verdict_is_linked_to_the_row()
+    {
+        GiveEvidence();
+        RecordVerdict(SwappedTo);
+        File.WriteAllText(
+            Path.Combine(_directory, "fake-claude.cmd"),
+            "@echo off\r\nexit /b 0\r\n"
+        );
+        var runner = new VerdictRunner(
+            Set,
+            Paths,
+            Path.Combine(_directory, "fake-claude.cmd"),
+            FakeUv()
+        );
+
+        var result = await runner.RunAsync(
+            Order(statedSource: $"https://music.youtube.com/watch?v={SwappedTo}"),
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.True(result.IsSuccess);
+        Assert.True(KeyLedger.Read(LedgerPath).HasRunFor(VideoId));
+        Assert.Contains(
+            $"--from={SwappedTo}",
+            File.ReadAllText(Path.Combine(_directory, "uv-args.txt"))
+        );
     }
 
     [Fact]

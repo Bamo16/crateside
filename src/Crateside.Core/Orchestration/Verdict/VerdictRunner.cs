@@ -9,7 +9,8 @@ namespace Crateside.Core.Orchestration.Verdict;
 public sealed class VerdictRunner(
     WorkingSet workingSet,
     CratesidePaths paths,
-    string executable = "claude"
+    string executable = "claude",
+    string uv = "uv"
 )
 {
     /// <summary>Tools the session may use, scoped to what the skill needs.</summary>
@@ -72,7 +73,9 @@ public sealed class VerdictRunner(
 
         // The ledger decides success, not the exit code: a session that dies halfway leaves
         // nothing and is simply picked up again.
-        if (KeyLedger.Read(paths.Ledger).HasRunFor(order.VideoId))
+        var ledger = KeyLedger.Read(paths.Ledger);
+
+        if (ledger.HasRunFor(order.VideoId) || await LinkSwappedSourceAsync(order, ledger, ct))
             return VerdictResult.Succeeded();
 
         // A session that never ran says nothing about the track, so it must not cost a strike.
@@ -86,6 +89,28 @@ public sealed class VerdictRunner(
                     ?? $"claude exited with {outcome.ExitCode}"
         );
     }
+
+    /// <summary>
+    /// A source swapped before its verdict is recorded under the stated upload, so the row's own
+    /// ID is linked to that song, as the swap does for a judged track (#88).
+    /// </summary>
+    private async Task<bool> LinkSwappedSourceAsync(
+        WorkOrder order,
+        KeyLedger ledger,
+        CancellationToken ct
+    ) =>
+        YouTubeUrl.TryGetVideoId(order.SourceUrl, out var source)
+        && !source.Equals(order.VideoId, StringComparison.Ordinal)
+        && ledger.HasRunFor(source)
+        && await KeytagRestate.RunAsync(
+            uv,
+            paths.KeytagRepo,
+            source,
+            $"https://music.youtube.com/watch?v={order.VideoId}",
+            ct
+        )
+            is null
+        && KeyLedger.Read(paths.Ledger).HasRunFor(order.VideoId);
 
     /// <summary>
     /// Why the agent could not be run, read from its prose as well as its JSON, or null when the

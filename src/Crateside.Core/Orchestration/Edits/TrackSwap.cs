@@ -120,26 +120,7 @@ public sealed class TrackSwap(
         )
             return null;
 
-        var outcome = await ExternalProcess.RunAsync(
-            uv,
-            [
-                "run",
-                "--project",
-                paths.KeytagRepo,
-                "keytag-restate",
-                "--from",
-                videoId,
-                "--to",
-                url,
-            ],
-            workingDirectory: null,
-            ct
-        );
-
-        return outcome.Succeeded
-            ? null
-            : ExternalProcess.Describe(outcome.StandardError, outcome.StandardOutput)
-                ?? $"keytag-restate exited with {outcome.ExitCode}";
+        return await KeytagRestate.RunAsync(uv, paths.KeytagRepo, videoId, url, ct);
     }
 
     private static SwapPlan Impossible(string refusal) =>
