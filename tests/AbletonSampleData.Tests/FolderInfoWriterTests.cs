@@ -1,21 +1,20 @@
 using System.Text;
 using System.Xml.Linq;
-using Crateside.Core.Ableton;
 
-namespace Crateside.Tests.Ableton;
+namespace AbletonSampleData.Tests;
 
-public class AbletonFolderInfoWriterTests : IDisposable
+public class FolderInfoWriterTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
-        "crateside-tests",
+        "AbletonSampleData.Tests",
         Guid.NewGuid().ToString("n")
     );
 
-    private readonly AbletonFolderInfoWriter _writer = new();
-    private readonly AbletonFolderInfoReader _reader = new();
+    private readonly FolderInfoWriter _writer = new();
+    private readonly FolderInfoReader _reader = new();
 
-    public AbletonFolderInfoWriterTests() => Directory.CreateDirectory(_root);
+    public FolderInfoWriterTests() => Directory.CreateDirectory(_root);
 
     public void Dispose()
     {
@@ -34,12 +33,11 @@ public class AbletonFolderInfoWriterTests : IDisposable
     [Fact]
     public void A_store_is_created_where_there_is_none()
     {
-        // ADR 0003 finding 6.
         var outcome = _writer.Apply(_root, [Assign("a.flac", "Key|A", "Key|Minor")]);
 
         Assert.True(outcome.IsSuccess);
         Assert.True(_reader.Read(_root).TryGet("a.flac", out var tags));
-        Assert.Equal("A minor", tags.Key);
+        Assert.Equal(["Key|A", "Key|Minor"], tags.Keywords);
     }
 
     [Fact]
@@ -56,7 +54,7 @@ public class AbletonFolderInfoWriterTests : IDisposable
     }
 
     [Fact]
-    public void Entries_crateside_did_not_create_survive_with_their_order()
+    public void Entries_the_write_did_not_name_survive_with_their_order()
     {
         _writer.Apply(
             _root,
@@ -77,14 +75,13 @@ public class AbletonFolderInfoWriterTests : IDisposable
         );
 
         Assert.True(info.TryGet("second.flac", out var second));
-        Assert.Equal("F major", second.Key);
-        Assert.Equal("Vocal", second.Type);
+        Assert.Equal(["Key|F", "Key|Major", "Type|Vocal"], second.Keywords);
     }
 
     [Fact]
-    public void A_keyword_Ableton_does_not_already_know_is_refused()
+    public void A_key_Live_does_not_spell_that_way_is_refused()
     {
-        // ADR 0003 finding 8: Ableton would register a second, permanent "F#".
+        // Live would register a second, permanent "F#".
         var outcome = _writer.Apply(_root, [Assign("a.flac", "Key|F#", "Key|Major")]);
 
         Assert.False(outcome.IsSuccess);
@@ -115,7 +112,7 @@ public class AbletonFolderInfoWriterTests : IDisposable
         var before = File.ReadAllBytes(path);
         var stale = File.GetLastWriteTimeUtc(path).AddSeconds(-30);
 
-        var replaced = AbletonFolderInfoWriter.Replace(
+        var replaced = FolderInfoWriter.Replace(
             path,
             XDocument.Parse("<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" />"),
             stale
@@ -124,9 +121,7 @@ public class AbletonFolderInfoWriterTests : IDisposable
         Assert.False(replaced);
         Assert.Equal(before, File.ReadAllBytes(path));
 
-        Assert.Empty(
-            Directory.EnumerateFiles(Path.Combine(_root, "Ableton Folder Info"), "*.crateside-tmp")
-        );
+        Assert.Empty(Directory.EnumerateFiles(Path.Combine(_root, "Ableton Folder Info"), "*.tmp"));
     }
 
     [Fact]
@@ -137,7 +132,7 @@ public class AbletonFolderInfoWriterTests : IDisposable
         var path = XmpPath;
 
         Assert.True(
-            AbletonFolderInfoWriter.Replace(
+            FolderInfoWriter.Replace(
                 path,
                 XDocument.Parse("<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" />"),
                 File.GetLastWriteTimeUtc(path)
@@ -146,19 +141,30 @@ public class AbletonFolderInfoWriterTests : IDisposable
     }
 
     [Fact]
-    public void Every_tonic_Ableton_knows_is_accepted_and_nothing_else_is()
+    public void Every_tonic_Live_knows_is_accepted_and_nothing_else_is()
     {
         // Taken from the 451 key keywords across the real roots: sharps as U+266F, no flats.
-        Assert.Equal(12, AbletonFolderInfoWriter.Tonics.Count);
+        Assert.Equal(12, FolderInfoWriter.Tonics.Count);
 
         Assert.All(
-            AbletonFolderInfoWriter.Tonics,
-            t => Assert.True(AbletonFolderInfoWriter.IsValidKeyword($"Key|{t}"))
+            FolderInfoWriter.Tonics,
+            t => Assert.True(FolderInfoWriter.IsWellFormed($"Key|{t}"))
         );
 
-        Assert.False(AbletonFolderInfoWriter.IsValidKeyword("Key|Bb"));
-        Assert.False(AbletonFolderInfoWriter.IsValidKeyword("Key|A♭"));
-        Assert.False(AbletonFolderInfoWriter.IsValidKeyword("Key|C#"));
-        Assert.False(AbletonFolderInfoWriter.IsValidKeyword("Mood|Dark"));
+        Assert.False(FolderInfoWriter.IsWellFormed("Key|Bb"));
+        Assert.False(FolderInfoWriter.IsWellFormed("Key|A♭"));
+        Assert.False(FolderInfoWriter.IsWellFormed("Key|C#"));
+    }
+
+    [Theory]
+    [InlineData("Mood|Dark", true)]
+    [InlineData("Mood", false)]
+    [InlineData("Mood|", false)]
+    [InlineData("|Dark", false)]
+    [InlineData("Mood|Dark|Red", false)]
+    [InlineData(" Mood|Dark", false)]
+    public void Any_other_keyword_needs_only_a_category_and_a_value(string keyword, bool accepted)
+    {
+        Assert.Equal(accepted, FolderInfoWriter.IsWellFormed(keyword));
     }
 }

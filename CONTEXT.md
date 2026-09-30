@@ -69,7 +69,7 @@ against it.
   the move, so it is the one step that says the user finished warping.
 - **Warp marker** — one point where a sample's audio is pinned to Ableton's grid: a
   position in the audio paired with a position in beats. A sample carries an ordered list
-  of them in its **sidecar**, and a **tempo** is the slope between two consecutive
+  of them in its **analysis file**, and a **tempo** is the slope between two consecutive
   markers — no tempo is recorded as such
   ([ADR 0020](docs/adr/0020-the-sidecar-is-parseable-and-a-warp-marker-is-a-second-and-a-beat.md)).
 - **Warped BPM** — the tempo a finished warp holds: the stable tempo covering the most bars of
@@ -80,7 +80,7 @@ against it.
   reading at half or double is the same tempo at **the other octave**, and the octave is the
   user's call, not an error.
 - **Single-marker warp** — a warp whose one user marker, on a hit at its right place on the
-  grid, fixes every beat, because the track holds one tempo. The sidecar stores it as two
+  grid, fixes every beat, because the track holds one tempo. The analysis file stores it as two
   markers (Ableton adds one 1/32 beat on).
 - **Steady** — a track at one constant tempo throughout: programmed, or played to a click.
 - **Drifting** — a track written at one tempo but performed without a click, so its timing
@@ -99,11 +99,12 @@ against it.
   5–10 ms, a few up to ~25 ms, by the user's estimate.
 - **Alignment error** — how far a detector's beat grid lands from a reference beat grid, in ms;
   positive is late. An **off-beat lock** is a grid about half a beat off, on the "and".
-- **Sidecar** — the `.asd` Ableton writes beside a sample. Its *presence* means only that
+- **Analysis file** — the `.asd` Ableton writes beside a sample; informally the **sidecar**,
+  and `AnalysisFile` in code. Its *presence* means only that
   Ableton analysed the file and says nothing about warping
   ([ADR 0002](docs/adr/0002-there-is-no-warped-signal.md)); its **warp markers** are what
   describe the warp. Ableton writes the markers, and the **default clip**, only when *Save
-  Default Clip* is pressed, so a sidecar with markers is a finished warp and one without is
+  Default Clip* is pressed, so an analysis file with markers is a finished warp and one without is
   unwarped or still in progress ([ADR 0037](docs/adr/0037-a-saved-default-clip-is-a-finished-warp.md)).
 - **Ready to move** — a track whose staged samples all have their default clip saved: warped, with
   only the move to **Mashup Samples** left.

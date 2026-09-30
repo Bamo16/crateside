@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Handoff;
@@ -13,7 +14,7 @@ public class BackingRunnerRealLibraryTests
     private static bool Available => Directory.Exists(LibraryRoot) && File.Exists(LedgerPath);
 
     private static IReadOnlyList<TagAssignment> Unbacked() =>
-        new BackingRunner(new AbletonFolderInfoReader(), new AbletonFolderInfoWriter()).Unbacked(
+        new BackingRunner(new FolderInfoReader(), new FolderInfoWriter()).Unbacked(
             LibraryRoot,
             KeyLedger.Read(LedgerPath)
         );
@@ -23,7 +24,7 @@ public class BackingRunnerRealLibraryTests
     {
         Assert.SkipUnless(Available, "The library and the ledger must be present.");
 
-        var backed = new AbletonFolderInfoReader().Read(LibraryRoot);
+        var backed = new FolderInfoReader().Read(LibraryRoot);
 
         // Having a key is the test, not having an entry.
         Assert.DoesNotContain(
@@ -39,7 +40,7 @@ public class BackingRunnerRealLibraryTests
     {
         Assert.SkipUnless(Available, "The library and the ledger must be present.");
 
-        var backed = new AbletonFolderInfoReader().Read(LibraryRoot);
+        var backed = new FolderInfoReader().Read(LibraryRoot);
 
         Assert.All(
             Unbacked(),
@@ -62,7 +63,7 @@ public class BackingRunnerRealLibraryTests
             Unbacked().SelectMany(a => a.Keywords),
             keyword =>
                 Assert.True(
-                    AbletonFolderInfoWriter.IsValidKeyword(keyword),
+                    CratesideKeywords.IsKnown(keyword),
                     $"'{keyword}' would be refused, taking the whole pass with it."
                 )
         );

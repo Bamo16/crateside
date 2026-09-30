@@ -4,13 +4,13 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Crateside.Core.Ableton;
+namespace AbletonSampleData;
 
 /// <summary>
-/// Reads the head and warp section of Ableton's `.asd` sidecar, which is undocumented and described
-/// by a type schema the file carries (ADR 0020; the fields are in docs/notes, 2026-09-26).
+/// Reads the head and warp section of an analysis file, which is undocumented and described by a
+/// type schema the file carries.
 /// </summary>
-public static class AbletonWarpReader
+internal static class AnalysisFileParser
 {
     private const byte ClassCode = 0x00;
     private const byte BoolCode = 0x10;
@@ -48,21 +48,10 @@ public static class AbletonWarpReader
     private static readonly byte[] ChunkMagic = [0xAB, 0x1E, 0x56, 0x78];
     private static readonly byte[] SampleDataTag = [0x00, 0x0A, .. "SampleData"u8];
 
-    public static bool TryRead(string asdPath, [NotNullWhen(true)] out AbletonWarp? warp)
-    {
-        try
-        {
-            return TryParse(File.ReadAllBytes(asdPath), out warp);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            warp = null;
-
-            return false;
-        }
-    }
-
-    public static bool TryParse(ReadOnlySpan<byte> asd, [NotNullWhen(true)] out AbletonWarp? warp)
+    internal static bool TryParse(
+        ReadOnlySpan<byte> asd,
+        [NotNullWhen(true)] out AnalysisFile? warp
+    )
     {
         warp = null;
 
@@ -89,7 +78,7 @@ public static class AbletonWarpReader
         )
             return false;
 
-        warp = new AbletonWarp(
+        warp = new AnalysisFile(
             isWarped,
             (WarpMode)mode,
             (int)numerator,

@@ -1,9 +1,7 @@
-using Crateside.Core.Ableton;
-
-namespace Crateside.Tests.Ableton;
+namespace AbletonSampleData.Tests;
 
 /// <summary>The XMP contract, asserted against both real roots.</summary>
-public class AbletonFolderInfoRealLibraryTests
+public class FolderInfoRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
     private const string MashupRoot = @"P:\RYAN\Ableton\Mashup Samples";
@@ -16,7 +14,7 @@ public class AbletonFolderInfoRealLibraryTests
     {
         Assert.SkipUnless(Directory.Exists(root), $"{root} not present on this machine.");
 
-        var info = new AbletonFolderInfoReader().Read(root);
+        var info = new FolderInfoReader().Read(root);
 
         Assert.NotEmpty(info.Entries);
         Assert.All(info.Entries, e => Assert.NotEmpty(e.RelativePath));
@@ -32,7 +30,7 @@ public class AbletonFolderInfoRealLibraryTests
         );
 
         // The two roots' stores have different UUIDs; the reader keys on the containing root.
-        var reader = new AbletonFolderInfoReader();
+        var reader = new FolderInfoReader();
         var staging = reader.Read(StagingRoot);
         var mashup = reader.Read(MashupRoot);
 
@@ -50,40 +48,5 @@ public class AbletonFolderInfoRealLibraryTests
             Assert.False(staging.TryGet(Path.Combine(MashupRoot, shared), out _));
             Assert.False(mashup.TryGet(Path.Combine(StagingRoot, shared), out _));
         }
-    }
-
-    [Fact]
-    public void Keys_recombine_into_one_of_the_24_ledger_spellings()
-    {
-        Assert.SkipUnless(Directory.Exists(MashupRoot), $"{MashupRoot} not present.");
-
-        string[] tonics = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
-        var valid = tonics
-            .SelectMany(t => new[] { $"{t} major", $"{t} minor" })
-            .ToHashSet(StringComparer.Ordinal);
-
-        var keys = new AbletonFolderInfoReader()
-            .Read(MashupRoot)
-            .Entries.Where(e => e.IsKeyTagged)
-            .Select(e => e.Key!)
-            .ToArray();
-
-        Assert.NotEmpty(keys);
-        Assert.All(keys, k => Assert.Contains(k, valid));
-    }
-
-    [Fact]
-    public void Half_tagged_files_are_reported_as_partial_not_as_keyed()
-    {
-        Assert.SkipUnless(Directory.Exists(MashupRoot), $"{MashupRoot} not present.");
-
-        // Asserts the shape, not the count: the user may fix them at any time.
-        var partial = new AbletonFolderInfoReader()
-            .Read(MashupRoot)
-            .Entries.Where(e => e.HasPartialKey)
-            .ToArray();
-
-        Assert.All(partial, e => Assert.Null(e.Key));
-        Assert.All(partial, e => Assert.False(e.IsKeyTagged));
     }
 }

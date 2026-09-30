@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using AbletonSampleData;
 using Crateside.Core.Ableton;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Samples;
@@ -144,7 +145,7 @@ public sealed partial class BeatReader(
     /// <summary>The instrumentals to read, staging's before the library's.</summary>
     public static IEnumerable<string> Instrumentals(
         CratesidePaths paths,
-        AbletonFolderInfoReader folderInfo
+        FolderInfoReader folderInfo
     ) =>
         Instrumentals(paths.SampleStaging, SearchOption.TopDirectoryOnly, folderInfo)
             .Concat(Instrumentals(paths.MashupSamples, SearchOption.AllDirectories, folderInfo));
@@ -153,7 +154,7 @@ public sealed partial class BeatReader(
     /// Ableton's Type says so, which a kept source used as the instrumental carries too; an untagged
     /// file, fresh in staging, by its name.
     /// </summary>
-    public static bool IsInstrumental(string file, AbletonFileTags? tags) =>
+    public static bool IsInstrumental(string file, FileTags? tags) =>
         tags?.Type is { } type
             ? type.Equals("Instrumental", StringComparison.OrdinalIgnoreCase)
             : Path.GetFileName(file).Contains("(Instrumental", StringComparison.OrdinalIgnoreCase);
@@ -233,7 +234,7 @@ public sealed partial class BeatReader(
     private static IEnumerable<string> Instrumentals(
         string root,
         SearchOption depth,
-        AbletonFolderInfoReader folderInfo
+        FolderInfoReader folderInfo
     )
     {
         if (!Directory.Exists(root))

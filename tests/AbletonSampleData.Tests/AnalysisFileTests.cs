@@ -1,8 +1,6 @@
-using Crateside.Core.Ableton;
+namespace AbletonSampleData.Tests;
 
-namespace Crateside.Tests.Ableton;
-
-public class AbletonWarpTests
+public class AnalysisFileTests
 {
     [Theory]
     [InlineData(0)]
@@ -47,6 +45,6 @@ public class AbletonWarpTests
         Assert.Null(Warp(new WarpMarker(4, 0), new WarpMarker(4, 8)).TempoAt(4));
     }
 
-    private static AbletonWarp Warp(params WarpMarker[] markers) =>
+    private static AnalysisFile Warp(params WarpMarker[] markers) =>
         new(true, WarpMode.Complex, 4, 4, markers);
 }

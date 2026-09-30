@@ -1,13 +1,12 @@
 using Microsoft.Data.Sqlite;
-using Microsoft.Extensions.Options;
 
-namespace Crateside.Core.Ableton;
+namespace AbletonSampleData;
 
 /// <summary>
-/// Reads Ableton's own file index — the SQLite database behind the browser — as the same
-/// <see cref="AbletonFolderInfo"/> the folder XMP yields. Read-only: it is Ableton's store.
+/// Reads Live's own file index, the SQLite database behind the browser, as the same
+/// <see cref="FolderInfo"/> the folder XMP yields. Read-only: it is Live's store.
 /// </summary>
-public sealed class AbletonIndexReader(IOptions<CratesidePaths> paths)
+public sealed class FileIndexReader(string indexFolder)
 {
     private const string DatabasePattern = "Live-files-*.db";
 
@@ -47,29 +46,35 @@ public sealed class AbletonIndexReader(IOptions<CratesidePaths> paths)
 
     private static readonly long UserKeyword = FourCc("UKey");
 
-    private readonly CratesidePaths _paths = paths.Value;
+    /// <summary>Where Live keeps its index unless told otherwise.</summary>
+    public static string DefaultFolder { get; } =
+        Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Ableton",
+            "Live Database"
+        );
 
     /// <summary>
     /// Reads what the index holds for <paramref name="rootFolder"/>. Never throws — an absent
     /// database, or a folder Ableton has never been shown, both read as empty.
     /// </summary>
-    public AbletonFolderInfo Read(string rootFolder)
+    public FolderInfo Read(string rootFolder)
     {
         try
         {
             if (FindDatabase() is not { } database)
-                return AbletonFolderInfo.Empty(rootFolder);
+                return FolderInfo.Empty(rootFolder);
 
             using var connection = Open(database);
 
             return PlaceFor(connection, rootFolder) is { } place
-                ? new AbletonFolderInfo(rootFolder, TagsUnder(connection, place))
-                : AbletonFolderInfo.Empty(rootFolder);
+                ? new FolderInfo(rootFolder, TagsUnder(connection, place))
+                : FolderInfo.Empty(rootFolder);
         }
         catch (Exception ex)
             when (ex is SqliteException or IOException or UnauthorizedAccessException)
         {
-            return AbletonFolderInfo.Empty(rootFolder);
+            return FolderInfo.Empty(rootFolder);
         }
     }
 
@@ -78,10 +83,8 @@ public sealed class AbletonIndexReader(IOptions<CratesidePaths> paths)
     /// since a stale schema version may sit beside it.
     /// </summary>
     private string? FindDatabase() =>
-        Directory.Exists(_paths.AbletonIndex)
-            ? Directory
-                .EnumerateFiles(_paths.AbletonIndex, DatabasePattern)
-                .MaxBy(File.GetLastWriteTimeUtc)
+        Directory.Exists(indexFolder)
+            ? Directory.EnumerateFiles(indexFolder, DatabasePattern).MaxBy(File.GetLastWriteTimeUtc)
             : null;
 
     /// <summary>Unpooled, since a pooled connection holds Ableton's file open after closing.</summary>
@@ -124,7 +127,7 @@ public sealed class AbletonIndexReader(IOptions<CratesidePaths> paths)
             StringComparison.OrdinalIgnoreCase
         );
 
-    private static IReadOnlyList<AbletonFileTags> TagsUnder(SqliteConnection connection, long place)
+    private static IReadOnlyList<FileTags> TagsUnder(SqliteConnection connection, long place)
     {
         using var command = connection.CreateCommand();
         command.CommandText = TagsSql;
@@ -141,7 +144,11 @@ public sealed class AbletonIndexReader(IOptions<CratesidePaths> paths)
         return
         [
             .. rows.GroupBy(r => r.Path, StringComparer.Ordinal)
-                .Select(g => AbletonFileTags.FromKeywords(g.Key, [.. g.Select(r => r.Value)])),
+                .Select(g => new FileTags
+                {
+                    RelativePath = g.Key,
+                    Keywords = [.. g.Select(r => r.Value)],
+                }),
         ];
     }
 

@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core.Ableton;
 using Crateside.Core.Audit;
 using Crateside.Core.Ledger;
@@ -9,9 +10,9 @@ namespace Crateside.Core.Orchestration.Tagging;
 /// Applies the key the ledger settled, as Ableton tags, to one track's files in
 /// <c>Sample Staging</c>. Only files with no key applied are touched.
 /// </summary>
-public sealed class TaggingRunner(CratesidePaths paths, AbletonFolderInfoWriter? writer = null)
+public sealed class TaggingRunner(CratesidePaths paths, FolderInfoWriter? writer = null)
 {
-    private readonly AbletonFolderInfoWriter _writer = writer ?? new AbletonFolderInfoWriter();
+    private readonly FolderInfoWriter _writer = writer ?? new FolderInfoWriter();
 
     /// <summary>Tags every untagged file belonging to one track.</summary>
     public TagWriteOutcome Run(IReadOnlyList<TaggedStem> stems)
@@ -34,7 +35,7 @@ public sealed class TaggingRunner(CratesidePaths paths, AbletonFolderInfoWriter?
 
         return assignments.Count is 0
             ? TagWriteOutcome.Rejected("nothing about these files could be turned into tags")
-            : _writer.Apply(paths.SampleStaging, assignments);
+            : CratesideKeywords.Apply(_writer, paths.SampleStaging, assignments);
     }
 
     /// <summary>
@@ -86,6 +87,6 @@ public sealed class TaggingRunner(CratesidePaths paths, AbletonFolderInfoWriter?
         tonic = rawTonic.Replace('#', '♯');
         mode = char.ToUpperInvariant(rawMode[0]) + rawMode[1..].ToLowerInvariant();
 
-        return AbletonFolderInfoWriter.Tonics.Contains(tonic) && mode is "Major" or "Minor";
+        return FolderInfoWriter.Tonics.Contains(tonic) && mode is "Major" or "Minor";
     }
 }

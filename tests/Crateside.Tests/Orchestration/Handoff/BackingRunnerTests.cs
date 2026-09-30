@@ -1,6 +1,8 @@
+using AbletonSampleData;
 using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Handoff;
+using Crateside.Tests.Ableton;
 
 namespace Crateside.Tests.Orchestration.Handoff;
 
@@ -74,17 +76,14 @@ public class BackingRunnerTests : IDisposable
     {
         Assert.All(
             Merge(Tags("Type|Vocal"), ["Key|G♯", "Key|Minor"]),
-            keyword => Assert.True(AbletonFolderInfoWriter.IsValidKeyword(keyword))
+            keyword => Assert.True(CratesideKeywords.IsKnown(keyword))
         );
     }
 
     [Fact]
     public void A_root_that_is_not_there_yields_nothing()
     {
-        var runner = new BackingRunner(
-            new AbletonFolderInfoReader(),
-            new AbletonFolderInfoWriter()
-        );
+        var runner = new BackingRunner(new FolderInfoReader(), new FolderInfoWriter());
 
         Assert.Empty(runner.Unbacked(Path.Combine(_root, "gone"), KeyLedger.Read("no-such-file")));
     }
@@ -94,7 +93,7 @@ public class BackingRunnerTests : IDisposable
     {
         // Shaped after Porter Robinson - Language, where Key|Major was taken off and Key|Minor set.
         var merged = Merge(
-            AbletonFileTags.FromKeywords(File1, ["Type|Vocal"], ["Key|Major"]),
+            TestTags.Of(File1, ["Type|Vocal"], ["Key|Major"]),
             ["Key|F♯", "Key|Major", "Type|Instrumental"]
         );
 
@@ -106,7 +105,7 @@ public class BackingRunnerTests : IDisposable
     public void A_type_the_user_took_off_is_not_put_back_either()
     {
         var merged = Merge(
-            AbletonFileTags.FromKeywords(File1, [], ["Type|Instrumental"]),
+            TestTags.Of(File1, [], ["Type|Instrumental"]),
             ["Key|G♯", "Key|Minor", "Type|Instrumental"]
         );
 
@@ -135,7 +134,7 @@ public class BackingRunnerTests : IDisposable
     public void A_genre_the_user_took_off_is_not_put_back()
     {
         var merged = Merge(
-            AbletonFileTags.FromKeywords(File1, ["Key|G♯", "Key|Minor"], ["Genre|Rock"]),
+            TestTags.Of(File1, ["Key|G♯", "Key|Minor"], ["Genre|Rock"]),
             ["Genre|Rock"]
         );
 
@@ -166,11 +165,7 @@ public class BackingRunnerTests : IDisposable
     public void A_familiarity_the_user_took_off_is_not_put_back()
     {
         var merged = Merge(
-            AbletonFileTags.FromKeywords(
-                File1,
-                ["Key|G♯", "Key|Minor"],
-                ["Familiarity|Mainstream"]
-            ),
+            TestTags.Of(File1, ["Key|G♯", "Key|Minor"], ["Familiarity|Mainstream"]),
             ["Genre|Rock", "Familiarity|Mainstream"]
         );
 
@@ -183,7 +178,7 @@ public class BackingRunnerTests : IDisposable
             Crateside.Core.Familiarity.FamiliarityVocabulary.All,
             value =>
                 Assert.True(
-                    AbletonFolderInfoWriter.IsValidKeyword(
+                    CratesideKeywords.IsKnown(
                         Crateside.Core.Familiarity.FamiliarityVocabulary.Keyword(value)
                     )
                 )
@@ -196,20 +191,17 @@ public class BackingRunnerTests : IDisposable
             Crateside.Core.Genres.GenreVocabulary.All,
             genre =>
                 Assert.True(
-                    AbletonFolderInfoWriter.IsValidKeyword(
-                        Crateside.Core.Genres.GenreVocabulary.Keyword(genre)
-                    )
+                    CratesideKeywords.IsKnown(Crateside.Core.Genres.GenreVocabulary.Keyword(genre))
                 )
         );
     }
 
-    private static AbletonFileTags Tags(params string[] keywords) =>
-        AbletonFileTags.FromKeywords(File1, keywords);
+    private static FileTags Tags(params string[] keywords) => TestTags.Of(File1, keywords);
 
-    private static bool Needs(AbletonFileTags existing) => BackingRunner.NeedsAKey(existing);
+    private static bool Needs(FileTags existing) => BackingRunner.NeedsAKey(existing);
 
     private static IReadOnlyList<string> Merge(
-        AbletonFileTags? existing,
+        FileTags? existing,
         IReadOnlyList<string> keywords
     ) => BackingRunner.Merged(existing, keywords);
 }

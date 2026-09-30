@@ -1,8 +1,8 @@
+using AbletonSampleData;
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Audit;
 using Crateside.Core.Ledger;
-using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Audit;
 
@@ -28,7 +28,7 @@ public class TagAuditRealLibraryTests
         TagAudit.Run(
             KeyLedger.Read(LedgerPath),
             [AuditRoot.Written(StagingRoot), AuditRoot.Mirrored(LibraryRoot)],
-            TagAudit.Using(new AbletonIndexReader(Options.Create(Paths)))
+            TagAudit.Using(new FileIndexReader(Paths.AbletonIndex))
         );
 
     [Fact]
@@ -50,8 +50,8 @@ public class TagAuditRealLibraryTests
         Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
 
         // A file reported untagged must carry no key in either store (ADR 0011).
-        var xmp = new AbletonFolderInfoReader();
-        var index = new AbletonIndexReader(Options.Create(Paths));
+        var xmp = new FolderInfoReader();
+        var index = new FileIndexReader(Paths.AbletonIndex);
 
         foreach (var stem in Report().Untagged)
         {
@@ -72,8 +72,8 @@ public class TagAuditRealLibraryTests
         Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
 
         // A file keyed in the XMP and not the index would mean ADR 0013 is wrong.
-        var index = new AbletonIndexReader(Options.Create(Paths)).Read(LibraryRoot);
-        var xmp = new AbletonFolderInfoReader().Read(LibraryRoot);
+        var index = new FileIndexReader(Paths.AbletonIndex).Read(LibraryRoot);
+        var xmp = new FolderInfoReader().Read(LibraryRoot);
 
         var xmpOnly = xmp
             .Entries.Where(e => e.IsKeyTagged)

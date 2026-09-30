@@ -1,19 +1,15 @@
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
-using Crateside.Core.Familiarity;
-using Crateside.Core.Genres;
 
-namespace Crateside.Core.Ableton;
+namespace AbletonSampleData;
 
 /// <summary>
 /// Writes keywords into a root's <c>Ableton Folder Info\&lt;uuid&gt;.xmp</c>, alongside whatever
-/// Ableton has put there.
+/// Live has put there.
 /// </summary>
-public sealed class AbletonFolderInfoWriter
+public sealed class FolderInfoWriter
 {
-    private const string FolderInfoDirectory = "Ableton Folder Info";
-
     private static readonly XNamespace X = "adobe:ns:meta/";
     private static readonly XNamespace Rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
     private static readonly XNamespace AblFr = "https://ns.ableton.com/xmp/fs-resources/1.0/";
@@ -21,8 +17,8 @@ public sealed class AbletonFolderInfoWriter
     private static readonly XNamespace Xmp = "http://ns.adobe.com/xap/1.0/";
 
     /// <summary>
-    /// Ableton's built-in tonics — sharps only, spelled with U+266F. An ASCII '#' silently makes a
-    /// separate user tag that has to be removed by hand.
+    /// Live's built-in <c>Key|</c> tonics: sharps only, spelled with U+266F. An ASCII '#' silently
+    /// makes a separate user tag that has to be removed by hand.
     /// </summary>
     public static readonly IReadOnlySet<string> Tonics = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -40,17 +36,11 @@ public sealed class AbletonFolderInfoWriter
         "B",
     };
 
-    private static readonly IReadOnlySet<string> Modes = new HashSet<string>(StringComparer.Ordinal)
+    /// <summary>Live's built-in <c>Key|</c> modes.</summary>
+    public static readonly IReadOnlySet<string> Modes = new HashSet<string>(StringComparer.Ordinal)
     {
         "Major",
         "Minor",
-    };
-
-    private static readonly IReadOnlySet<string> Types = new HashSet<string>(StringComparer.Ordinal)
-    {
-        "Vocal",
-        "Instrumental",
-        "Loop",
     };
 
     /// <summary>
@@ -68,7 +58,7 @@ public sealed class AbletonFolderInfoWriter
 
     /// <summary>
     /// Applies keywords to files under <paramref name="rootFolder"/>, leaving every other entry
-    /// and its position alone — or nothing at all unless every keyword is valid.
+    /// and its position alone, or nothing at all unless every keyword is well-formed.
     /// </summary>
     public TagWriteOutcome Apply(string rootFolder, IReadOnlyList<TagAssignment> assignments)
     {
@@ -76,12 +66,11 @@ public sealed class AbletonFolderInfoWriter
             return TagWriteOutcome.Written(0);
 
         if (
-            assignments.SelectMany(a => a.Keywords).FirstOrDefault(k => !IsValidKeyword(k)) is
-            { } bad
+            assignments.SelectMany(a => a.Keywords).FirstOrDefault(k => !IsWellFormed(k)) is { } bad
         )
-            return TagWriteOutcome.Rejected($"'{bad}' is not a keyword Ableton already knows");
+            return TagWriteOutcome.Rejected($"'{bad}' is not a Category|Value keyword");
 
-        var directory = Path.Combine(rootFolder, FolderInfoDirectory);
+        var directory = Path.Combine(rootFolder, FolderInfoFile.Directory);
         var path = ExistingXmp(rootFolder);
 
         try
@@ -162,15 +151,15 @@ public sealed class AbletonFolderInfoWriter
     }
 
     /// <summary>
-    /// Whether a keyword is one Ableton already has, rather than one this write would invent.
+    /// Whether a keyword has Live's shape, <c>Category|Value</c>; a <c>Key|</c> value must also be
+    /// one of Live's own, since any other spelling makes a second tag.
     /// </summary>
-    public static bool IsValidKeyword(string keyword) =>
+    public static bool IsWellFormed(string keyword) =>
         keyword.Split('|') switch
         {
             ["Key", var value] => Tonics.Contains(value) || Modes.Contains(value),
-            ["Type", var value] => Types.Contains(value),
-            [GenreVocabulary.Group, var value] => GenreVocabulary.IsGenre(value),
-            [FamiliarityVocabulary.Group, var value] => FamiliarityVocabulary.IsValue(value),
+            [{ Length: > 0 } category, { Length: > 0 } value] => category.Trim() == category
+                && value.Trim() == value,
             _ => false,
         };
 
@@ -203,7 +192,7 @@ public sealed class AbletonFolderInfoWriter
     internal static bool Replace(string path, XDocument document, DateTime? stamp)
     {
         // Beside the target: a replace across volumes is not atomic.
-        var temporary = path + ".crateside-tmp";
+        var temporary = $"{path}.tmp";
 
         using (var buffer = new MemoryStream())
         {
@@ -285,8 +274,8 @@ public sealed class AbletonFolderInfoWriter
             description.Add(new XElement(Xmp + "MetadataDate", now));
     }
 
-    /// <summary>Resolved from the root through the reader's own rule, so both find the same file (#40).</summary>
-    private static string? ExistingXmp(string rootFolder) => AbletonFolderInfoFile.In(rootFolder);
+    /// <summary>Resolved from the root through the reader's own rule, so both find the same file.</summary>
+    private static string? ExistingXmp(string rootFolder) => FolderInfoFile.In(rootFolder);
 
     /// <summary>The name for a store that does not exist yet — a fresh UUID is a new identity.</summary>
     private static string NewName() => $"{Guid.NewGuid()}.xmp";

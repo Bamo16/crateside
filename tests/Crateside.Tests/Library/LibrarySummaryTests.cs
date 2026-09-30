@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Library;
@@ -79,8 +80,8 @@ public class LibrarySummaryTests : IDisposable
 
         var distribution = new LibraryKeyReader(
             paths,
-            new AbletonIndexReader(paths),
-            new AbletonFolderInfoReader(),
+            new FileIndexReader(paths.Value.AbletonIndex),
+            new FolderInfoReader(),
             new WarpTempoReader()
         ).Read();
 
@@ -95,8 +96,8 @@ public class LibrarySummaryTests : IDisposable
         return new LibrarySummary(
             new LibraryKeyReader(
                 paths,
-                new AbletonIndexReader(paths),
-                new AbletonFolderInfoReader(),
+                new FileIndexReader(paths.Value.AbletonIndex),
+                new FolderInfoReader(),
                 new WarpTempoReader()
             )
         );

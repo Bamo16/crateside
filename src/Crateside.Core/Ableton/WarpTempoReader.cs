@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AbletonSampleData;
 
 namespace Crateside.Core.Ableton;
 
@@ -33,7 +34,7 @@ public sealed class WarpTempoReader(string? path = null)
             return entry.Tempo;
 
         var tempo =
-            AbletonWarpReader.TryRead(sidecar.FullName, out var warp)
+            AnalysisFile.TryRead(sidecar.FullName, out var warp)
             && SampleRateOf(audioPath) is { } rate
                 ? WarpTempo.Of(warp, rate)
                 : null;

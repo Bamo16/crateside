@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core;
 using Crateside.Core.Ableton;
 
@@ -170,9 +171,7 @@ public class WarpTempoRealLibraryTests
 
         var missing = Directory
             .EnumerateFiles(Paths.MashupSamples, "*.asd", SearchOption.AllDirectories)
-            .Where(asd =>
-                AbletonWarpReader.TryRead(asd, out var warp) && warp.DefaultClip is not null
-            )
+            .Where(asd => AnalysisFile.TryRead(asd, out var warp) && warp.DefaultClip is not null)
             .Where(asd => Reader.Read(asd[..^4]) is null)
             .Select(Path.GetFileName)
             .ToList();

@@ -1,12 +1,10 @@
-using Crateside.Core.Ableton;
-
-namespace Crateside.Tests.Ableton;
+namespace AbletonSampleData.Tests;
 
 /// <summary>
 /// One stem's sidecar before and after <em>Save Default Clip</em>, cut short after the warp
 /// section, and a Live 12 sidecar with Loop on from DBraun/AbletonParsing.
 /// </summary>
-public class AbletonWarpReaderTests
+public class AnalysisFileParserTests
 {
     [Fact]
     public void An_analysed_sidecar_has_no_default_clip_and_no_markers()
@@ -62,7 +60,7 @@ public class AbletonWarpReaderTests
     {
         var asd = File.ReadAllBytes(Fixture("sidecar-default-clip-saved.asd"));
 
-        Assert.False(AbletonWarpReader.TryParse(asd.AsSpan(0, length), out _));
+        Assert.False(AnalysisFile.TryParse(asd.AsSpan(0, length), out _));
     }
 
     [Fact]
@@ -71,12 +69,12 @@ public class AbletonWarpReaderTests
         var asd = File.ReadAllBytes(Fixture("sidecar-default-clip-saved.asd"));
         asd[2]++;
 
-        Assert.False(AbletonWarpReader.TryParse(asd, out _));
+        Assert.False(AnalysisFile.TryParse(asd, out _));
     }
 
-    private static AbletonWarp Read(string name)
+    private static AnalysisFile Read(string name)
     {
-        Assert.True(AbletonWarpReader.TryRead(Fixture(name), out var warp), name);
+        Assert.True(AnalysisFile.TryRead(Fixture(name), out var warp), name);
 
         return warp;
     }

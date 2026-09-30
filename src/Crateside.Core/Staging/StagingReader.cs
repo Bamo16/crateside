@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Samples;
@@ -10,10 +11,10 @@ namespace Crateside.Core.Staging;
 /// </summary>
 public sealed class StagingReader
 {
-    private readonly AbletonFolderInfoReader _folderInfoReader;
+    private readonly FolderInfoReader _folderInfoReader;
 
-    public StagingReader(AbletonFolderInfoReader? folderInfoReader = null) =>
-        _folderInfoReader = folderInfoReader ?? new AbletonFolderInfoReader();
+    public StagingReader(FolderInfoReader? folderInfoReader = null) =>
+        _folderInfoReader = folderInfoReader ?? new FolderInfoReader();
 
     /// <summary>
     /// Reads the staging folder and rolls its stems up into songs, newest-looking first.
@@ -59,7 +60,7 @@ public sealed class StagingReader
     private static StagedSong BuildSong(
         string groupKey,
         IReadOnlyList<(string Path, StemTags? Tags)> group,
-        AbletonFolderInfo folderInfo,
+        FolderInfo folderInfo,
         KeyLedger ledger
     )
     {
@@ -86,7 +87,7 @@ public sealed class StagingReader
     private static StagedFile BuildStem(
         string path,
         StemTags? tags,
-        AbletonFolderInfo folderInfo,
+        FolderInfo folderInfo,
         LedgerRun? verdict
     )
     {
@@ -106,7 +107,7 @@ public sealed class StagingReader
             AbletonKey = abletonKey,
             HasPartialKey = abletonTags?.HasPartialKey ?? false,
             HasDefaultClip =
-                AbletonWarpReader.TryRead($"{path}.asd", out var warp)
+                AnalysisFile.TryRead($"{path}.asd", out var warp)
                 && warp is { DefaultClip: not null },
             KeyDisagreesWithVerdict =
                 abletonKey is not null

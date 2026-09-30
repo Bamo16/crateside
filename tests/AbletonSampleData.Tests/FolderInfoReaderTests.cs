@@ -1,12 +1,10 @@
-using Crateside.Core.Ableton;
+namespace AbletonSampleData.Tests;
 
-namespace Crateside.Tests.Ableton;
-
-public class AbletonFolderInfoReaderTests : IDisposable
+public class FolderInfoReaderTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
-        "crateside-tests",
+        "AbletonSampleData.Tests",
         Guid.NewGuid().ToString("n")
     );
 
@@ -18,7 +16,7 @@ public class AbletonFolderInfoReaderTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private AbletonFolderInfo ReadXmp(string itemsXml)
+    private FolderInfo ReadXmp(string itemsXml)
     {
         var folderInfo = Path.Combine(_root, "Ableton Folder Info");
         Directory.CreateDirectory(folderInfo);
@@ -45,7 +43,7 @@ public class AbletonFolderInfoReaderTests : IDisposable
             """
         );
 
-        return new AbletonFolderInfoReader().Read(_root);
+        return new FolderInfoReader().Read(_root);
     }
 
     private static string Entry(string filePath, params string[] keywords) =>
@@ -61,7 +59,7 @@ public class AbletonFolderInfoReaderTests : IDisposable
             """;
 
     [Fact]
-    public void Recombines_the_two_key_keywords_into_the_ledger_spelling()
+    public void Reads_each_entrys_keywords_as_live_wrote_them()
     {
         var info = ReadXmp(
             Entry(
@@ -75,43 +73,8 @@ public class AbletonFolderInfoReaderTests : IDisposable
         Assert.True(
             info.TryGet("Jackson 5 - I Want You Back (Instrumental - Full).flac", out var tags)
         );
-        Assert.Equal("G# major", tags.Key); // Unicode ♯ normalized, mode lowercased
-        Assert.Equal("Instrumental", tags.Type);
-        Assert.True(tags.IsKeyTagged);
-        Assert.False(tags.HasPartialKey);
-    }
-
-    [Fact]
-    public void A_tonic_with_no_mode_is_not_a_key()
-    {
-        // Real data: two Fedde Le Grand stems carry Key|D and no Major/Minor keyword.
-        var info = ReadXmp(
-            Entry(
-                "Fedde Le Grand - Put Your Hands Up For Detroit.flac",
-                "Key|D",
-                "Type|Instrumental"
-            )
-        );
-
-        Assert.True(
-            info.TryGet("Fedde Le Grand - Put Your Hands Up For Detroit.flac", out var tags)
-        );
-        Assert.Null(tags.Key);
-        Assert.False(tags.IsKeyTagged);
-        Assert.True(tags.HasPartialKey);
-    }
-
-    [Fact]
-    public void An_entry_with_keywords_but_no_key_is_not_key_tagged()
-    {
-        // "Tagged" means "has a Key| keyword", not "has an entry" — an entry exists for any
-        // file with any keyword at all.
-        var info = ReadXmp(Entry("Loop.flac", "Type|Loop"));
-
-        Assert.True(info.TryGet("Loop.flac", out var tags));
-        Assert.Null(tags.Key);
-        Assert.False(tags.HasPartialKey);
-        Assert.Equal("Loop", tags.Type);
+        Assert.Equal(["Key|G♯", "Key|Major", "Type|Instrumental"], tags.Keywords);
+        Assert.Empty(tags.HiddenKeywords);
     }
 
     [Fact]
@@ -127,7 +90,7 @@ public class AbletonFolderInfoReaderTests : IDisposable
                 out var tags
             )
         );
-        Assert.Equal("C minor", tags.Key);
+        Assert.Equal(["Key|C", "Key|Minor"], tags.Keywords);
     }
 
     [Fact]
@@ -143,7 +106,7 @@ public class AbletonFolderInfoReaderTests : IDisposable
     {
         Directory.CreateDirectory(_root);
 
-        var info = new AbletonFolderInfoReader().Read(_root);
+        var info = new FolderInfoReader().Read(_root);
 
         Assert.Empty(info.Entries);
         Assert.False(info.TryGet("anything.flac", out _));
@@ -156,7 +119,7 @@ public class AbletonFolderInfoReaderTests : IDisposable
         Directory.CreateDirectory(folderInfo);
         File.WriteAllText(Path.Combine(folderInfo, "half-written.xmp"), "<x:xmpmeta><rdf:RDF");
 
-        Assert.Empty(new AbletonFolderInfoReader().Read(_root).Entries);
+        Assert.Empty(new FolderInfoReader().Read(_root).Entries);
     }
 
     [Fact]
@@ -172,6 +135,6 @@ public class AbletonFolderInfoReaderTests : IDisposable
             FileShare.ReadWrite
         );
 
-        Assert.Single(new AbletonFolderInfoReader().Read(_root).Entries);
+        Assert.Single(new FolderInfoReader().Read(_root).Entries);
     }
 }

@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
@@ -37,7 +38,7 @@ public class LibraryKeyReaderRealLibraryTests
         SkipUnlessPresent();
 
         var ledger = KeyLedger.Read(Paths.Ledger);
-        var tags = new AbletonIndexReader(Options.Create(Paths)).Read(Paths.MashupSamples);
+        var tags = new FileIndexReader(Paths.AbletonIndex).Read(Paths.MashupSamples);
 
         var conflicts = Directory
             .EnumerateFiles(Paths.MashupSamples, "*", SearchOption.AllDirectories)
@@ -65,7 +66,7 @@ public class LibraryKeyReaderRealLibraryTests
         );
     }
 
-    private static string? Applied(AbletonFolderInfo tags, string file) =>
+    private static string? Applied(FolderInfo tags, string file) =>
         tags.TryGet(file, out var applied) && applied.IsKeyTagged ? applied.Key : null;
 
     private static string? Verdict(KeyLedger ledger, string file) =>
@@ -81,8 +82,8 @@ public class LibraryKeyReaderRealLibraryTests
 
         return new LibraryKeyReader(
             paths,
-            new AbletonIndexReader(paths),
-            new AbletonFolderInfoReader(),
+            new FileIndexReader(paths.Value.AbletonIndex),
+            new FolderInfoReader(),
             new WarpTempoReader()
         ).Read();
     }

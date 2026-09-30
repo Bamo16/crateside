@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Orchestration.Edits;
@@ -20,8 +21,8 @@ public class TrackRenameTests : IDisposable
     );
 
     private readonly CratesidePaths _paths;
-    private readonly AbletonFolderInfoWriter _writer = new();
-    private readonly AbletonFolderInfoReader _reader = new();
+    private readonly FolderInfoWriter _writer = new();
+    private readonly FolderInfoReader _reader = new();
     private readonly List<StagedFile> _staged = [];
     private readonly List<string> _library = [];
     private readonly FakeSets _sets = new();

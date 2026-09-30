@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
@@ -64,8 +65,10 @@ public static class ServiceRegistration
     /// <summary>Stateless readers over files crateside does not own; safe to share.</summary>
     public static IServiceCollection AddCratesideReaders(this IServiceCollection services)
     {
-        services.AddSingleton<AbletonFolderInfoReader>();
-        services.AddSingleton<AbletonIndexReader>();
+        services.AddSingleton<FolderInfoReader>();
+        services.AddSingleton(sp => new FileIndexReader(
+            sp.GetRequiredService<IOptions<CratesidePaths>>().Value.AbletonIndex
+        ));
         services.AddSingleton<LibraryKeyReader>();
         services.AddSingleton<LibrarySummary>();
         services.AddSingleton<StagingReader>();
@@ -238,20 +241,20 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<HandoffDrainer>();
 
-        services.AddSingleton<AbletonFolderInfoWriter>();
+        services.AddSingleton<FolderInfoWriter>();
         services.AddSingleton(sp => new TaggingSelector(
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<CratesidePaths>()
         ));
         services.AddSingleton(sp => new TaggingRunner(
             sp.GetRequiredService<CratesidePaths>(),
-            sp.GetRequiredService<AbletonFolderInfoWriter>()
+            sp.GetRequiredService<FolderInfoWriter>()
         ));
         services.AddSingleton<TaggingDrainer>();
 
         services.AddSingleton(sp => new BackingRunner(
-            sp.GetRequiredService<AbletonFolderInfoReader>(),
-            sp.GetRequiredService<AbletonFolderInfoWriter>()
+            sp.GetRequiredService<FolderInfoReader>(),
+            sp.GetRequiredService<FolderInfoWriter>()
         ));
 
         // Factories for the same reason as the rest: the container will not apply the trailing
@@ -316,7 +319,7 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new TrackRename(
             sp.GetRequiredService<QueueSettingsStore>(),
             StagedFiles(sp),
-            sp.GetRequiredService<AbletonFolderInfoWriter>(),
+            sp.GetRequiredService<FolderInfoWriter>(),
             sp.GetRequiredService<CratesidePaths>(),
             videoId =>
                 StemTagReader.FilesCutFrom(
@@ -417,7 +420,7 @@ public static class ServiceRegistration
                     sp.GetRequiredService<ResolvedNameStore>().Read(),
                     sp.GetRequiredService<WorkingSet>().Acquisitions(),
                     await sp.GetRequiredService<PresetCatalogReader>().ReadAsync(ct),
-                    sp.GetRequiredService<AbletonIndexReader>()
+                    sp.GetRequiredService<FileIndexReader>()
                         .Read(sp.GetRequiredService<CratesidePaths>().MashupSamples),
                     sp.GetRequiredService<DeletionLog>().All(),
                     sp.GetRequiredService<GenreStore>().Read(),

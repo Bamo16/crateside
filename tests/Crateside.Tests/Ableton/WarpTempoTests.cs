@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core.Ableton;
 
 namespace Crateside.Tests.Ableton;
@@ -91,11 +92,11 @@ public class WarpTempoTests
         Assert.Equal(expected, overview.PeakBetween(from, to));
     }
 
-    private static WarpTempo Of(AbletonWarp warp) =>
+    private static WarpTempo Of(AnalysisFile warp) =>
         WarpTempo.Of(warp, SampleRate) ?? throw new InvalidOperationException("no tempo");
 
     /// <summary>Markers at each change of tempo, and a default clip from bar <paramref name="startBar"/> to the end.</summary>
-    private static AbletonWarp Warp(int startBar, params (int Bars, double Bpm)[] segments)
+    private static AnalysisFile Warp(int startBar, params (int Bars, double Bpm)[] segments)
     {
         List<WarpMarker> markers = [new(0, 0)];
         double seconds = 0,
@@ -111,7 +112,7 @@ public class WarpTempoTests
         var last = segments[^1].Bpm;
         markers.Add(new(seconds + 60 / last / 32, beat + 1.0 / 32));
 
-        return new AbletonWarp(
+        return new AnalysisFile(
             true,
             WarpMode.Complex,
             4,

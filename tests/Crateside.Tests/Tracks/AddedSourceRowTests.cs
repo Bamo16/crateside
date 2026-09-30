@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Download;
@@ -5,6 +6,7 @@ using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Plans;
 using Crateside.Core.Tracks;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ableton;
 
 namespace Crateside.Tests.Tracks;
 
@@ -70,7 +72,7 @@ public class AddedSourceRowTests : IDisposable
     private TrackRow Row(
         IReadOnlyList<StemOnDisk> files,
         IReadOnlyDictionary<string, Acquisition>? acquisitions = null,
-        AbletonFolderInfo? libraryTags = null
+        FolderInfo? libraryTags = null
     )
     {
         var instruction = new TrackInstruction { VideoId = Track, Plan = Plan };
@@ -163,9 +165,9 @@ public class AddedSourceRowTests : IDisposable
     [Fact]
     public void A_library_samples_key_is_read_from_abletons_index()
     {
-        var tags = new AbletonFolderInfo(
+        var tags = new FolderInfo(
             FinishedRoot,
-            [AbletonFileTags.FromKeywords("Some Track (Vocal - Full).flac", ["Key|F", "Key|Minor"])]
+            [TestTags.Of("Some Track (Vocal - Full).flac", ["Key|F", "Key|Minor"])]
         );
 
         var sample = Row(
@@ -224,7 +226,7 @@ public class AddedSourceRowTests : IDisposable
     {
         var sample = Row(
             [Library("Some Track (Vocal - Full).flac", Track, "Vocal - Full")],
-            libraryTags: AbletonFolderInfo.Empty(FinishedRoot)
+            libraryTags: FolderInfo.Empty(FinishedRoot)
         )
             .Samples.Single();
 

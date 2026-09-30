@@ -1,8 +1,10 @@
 using System.Globalization;
+using AbletonSampleData;
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
 using Crateside.Core.Library;
+using Crateside.Tests.Ableton;
 
 namespace Crateside.Tests.Beats;
 
@@ -133,14 +135,7 @@ public class BeatReadingTests
             instrumental,
             BeatReader.IsInstrumental(
                 file,
-                type is null
-                    ? null
-                    : new AbletonFileTags
-                    {
-                        RelativePath = file,
-                        Keywords = [],
-                        Type = type,
-                    }
+                type is null ? null : TestTags.Of(file, [$"Type|{type}"])
             )
         );
 
@@ -154,7 +149,7 @@ public class BeatReadingTests
         );
 
         Assert.Contains(
-            BeatReader.Instrumentals(paths, new AbletonFolderInfoReader()),
+            BeatReader.Instrumentals(paths, new FolderInfoReader()),
             file => Path.GetFileName(file) == "Darude - Sandstorm (Radio Edit).flac"
         );
     }

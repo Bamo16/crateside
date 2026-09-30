@@ -1,3 +1,5 @@
+using AbletonSampleData;
+
 namespace Crateside.Core.Ableton;
 
 /// <summary>The tempo a finished warp holds, read bar by bar across its default clip (ADR 0038).</summary>
@@ -21,7 +23,7 @@ public sealed record WarpTempo(
     /// <summary>−50 dBFS.</summary>
     private const float SilencePeak = 0.00316f;
 
-    public static WarpTempo? Of(AbletonWarp warp, int sampleRate)
+    public static WarpTempo? Of(AnalysisFile warp, int sampleRate)
     {
         if (warp is not { DefaultClip: { } clip, Markers.Count: > 1 })
             return null;

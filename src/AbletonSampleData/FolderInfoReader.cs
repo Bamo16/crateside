@@ -1,14 +1,12 @@
 using System.Xml.Linq;
 
-namespace Crateside.Core.Ableton;
+namespace AbletonSampleData;
 
 /// <summary>
 /// Reads the <c>Ableton Folder Info\&lt;uuid&gt;.xmp</c> keyword index for a root folder.
 /// </summary>
-public sealed class AbletonFolderInfoReader
+public sealed class FolderInfoReader
 {
-    private const string FolderInfoDirectory = "Ableton Folder Info";
-
     private static readonly XNamespace Rdf = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
     private static readonly XNamespace AblFr = "https://ns.ableton.com/xmp/fs-resources/1.0/";
 
@@ -16,12 +14,12 @@ public sealed class AbletonFolderInfoReader
     /// Reads the index for <paramref name="rootFolder"/>. Never throws — returns an empty
     /// index when the folder has no XMP yet, the file is mid-write, or it is malformed.
     /// </summary>
-    public AbletonFolderInfo Read(string rootFolder)
+    public FolderInfo Read(string rootFolder)
     {
         var xmpPath = FindXmp(rootFolder);
 
         if (xmpPath is null)
-            return AbletonFolderInfo.Empty(rootFolder);
+            return FolderInfo.Empty(rootFolder);
 
         try
         {
@@ -38,30 +36,31 @@ public sealed class AbletonFolderInfoReader
                 .Descendants(AblFr + "items")
                 .Descendants(Rdf + "li")
                 .Select(ParseEntry)
-                .OfType<AbletonFileTags>()
+                .OfType<FileTags>()
                 .ToArray();
 
-            return new AbletonFolderInfo(rootFolder, entries);
+            return new FolderInfo(rootFolder, entries);
         }
         catch (Exception ex)
             when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException)
         {
-            return AbletonFolderInfo.Empty(rootFolder);
+            return FolderInfo.Empty(rootFolder);
         }
     }
 
-    private static string? FindXmp(string rootFolder) => AbletonFolderInfoFile.In(rootFolder);
+    private static string? FindXmp(string rootFolder) => FolderInfoFile.In(rootFolder);
 
-    private static AbletonFileTags? ParseEntry(XElement item)
+    private static FileTags? ParseEntry(XElement item)
     {
         if (item.Element(AblFr + "filePath")?.Value is not { Length: > 0 } filePath)
             return null;
 
-        return AbletonFileTags.FromKeywords(
-            filePath,
-            Values(item, "keywords"),
-            Values(item, "hideKeywords")
-        );
+        return new FileTags
+        {
+            RelativePath = filePath,
+            Keywords = Values(item, "keywords"),
+            HiddenKeywords = Values(item, "hideKeywords"),
+        };
     }
 
     private static string[] Values(XElement item, string element) =>

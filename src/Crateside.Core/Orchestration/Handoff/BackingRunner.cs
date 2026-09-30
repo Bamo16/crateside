@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using AbletonSampleData;
 using Crateside.Core.Ableton;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
@@ -12,10 +13,7 @@ namespace Crateside.Core.Orchestration.Handoff;
 /// Gives every unbacked file in a root the entry its verdict earns, so its key survives the next
 /// write (ADR 0023), and every keyed entry crateside's own tags: genre (ADR 0030) and familiarity (#52).
 /// </summary>
-public sealed class BackingRunner(
-    AbletonFolderInfoReader folderInfo,
-    AbletonFolderInfoWriter writer
-)
+public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter writer)
 {
     /// <summary>Each file's provenance as last read, keyed by path and good while its write time holds.</summary>
     private readonly ConcurrentDictionary<
@@ -34,7 +32,7 @@ public sealed class BackingRunner(
         KeyLedger ledger,
         Func<string, IReadOnlyList<string>>? ownedOf = null,
         bool backKeys = true
-    ) => writer.Apply(root, Unbacked(root, ledger, ownedOf, backKeys));
+    ) => CratesideKeywords.Apply(writer, root, Unbacked(root, ledger, ownedOf, backKeys));
 
     /// <summary>
     /// Every file under <paramref name="root"/> whose entry is missing a key or a genre it could
@@ -105,31 +103,27 @@ public sealed class BackingRunner(
     /// Whether this file's entry is missing a key that writing one would supply. Half a key is
     /// the audit's to report, not this to complete.
     /// </summary>
-    internal static bool NeedsAKey(AbletonFileTags? existing) =>
+    internal static bool NeedsAKey(FileTags? existing) =>
         existing is null
         || (
             existing is { Key: null, HasPartialKey: false }
             // A keyword the writer does not know would be refused, taking the whole pass with it,
             // and dropping it to get the write through would lose what the user put there.
-            && existing.Keywords.All(AbletonFolderInfoWriter.IsValidKeyword)
+            && existing.Keywords.All(CratesideKeywords.IsKnown)
         );
 
     /// <summary>
     /// crateside's own tags go only onto an entry that already carries a key: the tagging stage's
     /// next write to a keyless entry would replace its bag, and them with it.
     /// </summary>
-    internal static bool CanTakeOwnedTags(AbletonFileTags? existing) =>
-        existing is { IsKeyTagged: true }
-        && existing.Keywords.All(AbletonFolderInfoWriter.IsValidKeyword);
+    internal static bool CanTakeOwnedTags(FileTags? existing) =>
+        existing is { IsKeyTagged: true } && existing.Keywords.All(CratesideKeywords.IsKnown);
 
     /// <summary>
     /// The entry's whole bag plus the key it lacks and its own tags, each replacing the one of its
     /// group. The writer replaces the whole bag, so anything left out here is destroyed.
     /// </summary>
-    internal static IReadOnlyList<string> Merged(
-        AbletonFileTags? existing,
-        IReadOnlyList<string> keywords
-    )
+    internal static IReadOnlyList<string> Merged(FileTags? existing, IReadOnlyList<string> keywords)
     {
         var hidden = existing?.HiddenKeywords ?? [];
         var owned = keywords
@@ -185,11 +179,7 @@ public sealed class BackingRunner(
         if (needsKey && key.Count is 0)
             return [];
 
-        return
-        [
-            .. key,
-            .. (ownedOf?.Invoke(videoId) ?? []).Where(AbletonFolderInfoWriter.IsValidKeyword),
-        ];
+        return [.. key, .. (ownedOf?.Invoke(videoId) ?? []).Where(CratesideKeywords.IsKnown)];
     }
 
     private StemProvenance? ProvenanceOf(string path)

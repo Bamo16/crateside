@@ -1,10 +1,10 @@
-namespace Crateside.Core.Ableton;
+namespace AbletonSampleData;
 
 /// <summary>
 /// Finds the tag store file for a root folder, so the reader and the writer agree on which of
-/// several it is (#40).
+/// several it is.
 /// </summary>
-internal static class AbletonFolderInfoFile
+internal static class FolderInfoFile
 {
     internal const string Directory = "Ableton Folder Info";
 

@@ -1,20 +1,15 @@
-using Crateside.Core;
-using Crateside.Core.Ableton;
-
-namespace Crateside.Tests.Ableton;
+namespace AbletonSampleData.Tests;
 
 /// <summary>The reader against every <c>.asd</c> the real library holds.</summary>
-public class AbletonWarpReaderRealLibraryTests
+public class AnalysisFileRealLibraryTests
 {
-    private static readonly CratesidePaths Paths = new();
-
     private static readonly Lazy<IReadOnlyList<Sidecar>> Library = new(() =>
         [
             .. Directory
-                .EnumerateFiles(Paths.MashupSamples, "*.asd", SearchOption.AllDirectories)
+                .EnumerateFiles(RealLibrary.MashupRoot, "*.asd", SearchOption.AllDirectories)
                 .Select(file => new Sidecar(
                     Path.GetFileName(file),
-                    AbletonWarpReader.TryRead(file, out var warp) ? warp : null
+                    AnalysisFile.TryRead(file, out var warp) ? warp : null
                 )),
         ]
     );
@@ -105,18 +100,18 @@ public class AbletonWarpReaderRealLibraryTests
     private static IReadOnlyList<Sidecar> Sidecars()
     {
         Assert.SkipUnless(
-            Directory.Exists(Paths.MashupSamples),
-            $"{Paths.MashupSamples} not present on this machine."
+            Directory.Exists(RealLibrary.MashupRoot),
+            $"{RealLibrary.MashupRoot} not present on this machine."
         );
 
         return Library.Value;
     }
 
-    private static IEnumerable<(string File, AbletonWarp Warp)> Warps() =>
+    private static IEnumerable<(string File, AnalysisFile Warp)> Warps() =>
         Sidecars()
             .Select(s =>
                 (s.File, s.Warp ?? throw new InvalidOperationException($"{s.File} did not parse."))
             );
 
-    private sealed record Sidecar(string File, AbletonWarp? Warp);
+    private sealed record Sidecar(string File, AnalysisFile? Warp);
 }

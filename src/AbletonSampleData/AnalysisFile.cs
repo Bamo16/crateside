@@ -1,7 +1,9 @@
-namespace Crateside.Core.Ableton;
+using System.Diagnostics.CodeAnalysis;
 
-/// <summary>What the `.asd` sidecar records about how Ableton warps a sample.</summary>
-public sealed record AbletonWarp(
+namespace AbletonSampleData;
+
+/// <summary>What an analysis file, the <c>.asd</c> beside a sample, records about how Live warps it.</summary>
+public sealed record AnalysisFile(
     bool IsWarped,
     WarpMode Mode,
     int TimeSignatureNumerator,
@@ -11,6 +13,26 @@ public sealed record AbletonWarp(
     SampleOverview? Overview = null
 )
 {
+    /// <summary>Reads the analysis file at <paramref name="path"/>; false when it is unreadable or unrecognised.</summary>
+    public static bool TryRead(string path, [NotNullWhen(true)] out AnalysisFile? analysis)
+    {
+        try
+        {
+            return TryParse(File.ReadAllBytes(path), out analysis);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            analysis = null;
+
+            return false;
+        }
+    }
+
+    public static bool TryParse(
+        ReadOnlySpan<byte> asd,
+        [NotNullWhen(true)] out AnalysisFile? analysis
+    ) => AnalysisFileParser.TryParse(asd, out analysis);
+
     /// <summary>
     /// Where <paramref name="beat"/> falls in the audio, extending the first and last segments past
     /// the markers. Null with fewer than two markers.

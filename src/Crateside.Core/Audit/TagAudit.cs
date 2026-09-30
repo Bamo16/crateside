@@ -1,13 +1,13 @@
 using System.Text.RegularExpressions;
+using AbletonSampleData;
 using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Samples;
-using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Audit;
 
 /// <summary>Reads the tag state an audit of <paramref name="root"/> should be based on.</summary>
-public delegate AbletonFolderInfo ReadTagState(AuditRoot root);
+public delegate FolderInfo ReadTagState(AuditRoot root);
 
 /// <summary>
 /// Reads every stem's applied Ableton tags and hands them to <see cref="TagAuditReport"/>,
@@ -29,18 +29,15 @@ public static class TagAudit
     /// Reads the store this root's tags live in — its XMP where whole, else Ableton's index at the
     /// default location; <see cref="Using"/> takes configured paths (ADR 0017).
     /// </summary>
-    public static AbletonFolderInfo FromEitherStore(AuditRoot root) =>
-        Using(new AbletonIndexReader(Options.Create(new CratesidePaths())))(root);
+    public static FolderInfo FromEitherStore(AuditRoot root) =>
+        Using(new FileIndexReader(new CratesidePaths().AbletonIndex))(root);
 
     /// <summary>The same rule, against readers the caller already has.</summary>
-    public static ReadTagState Using(
-        AbletonIndexReader index,
-        AbletonFolderInfoReader? folderInfo = null
-    ) =>
+    public static ReadTagState Using(FileIndexReader index, FolderInfoReader? folderInfo = null) =>
         root =>
             root.ReadsTheIndex
                 ? index.Read(root.Path)
-                : (folderInfo ?? new AbletonFolderInfoReader()).Read(root.Path);
+                : (folderInfo ?? new FolderInfoReader()).Read(root.Path);
 
     private static List<TaggedStem> Scan(
         KeyLedger ledger,

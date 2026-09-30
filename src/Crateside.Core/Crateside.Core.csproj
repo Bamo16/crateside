@@ -12,4 +12,8 @@
         <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.11" />
         <PackageReference Include="TagLibSharp" Version="2.3.0" />
     </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\AbletonSampleData\AbletonSampleData.csproj" />
+    </ItemGroup>
 </Project>

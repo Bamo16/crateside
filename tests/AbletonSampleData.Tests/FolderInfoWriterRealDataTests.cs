@@ -1,19 +1,17 @@
 using System.Xml.Linq;
-using Crateside.Core;
-using Crateside.Core.Ableton;
 
-namespace Crateside.Tests.Ableton;
+namespace AbletonSampleData.Tests;
 
 /// <summary>The writer against the tag store Ableton actually wrote, only ever on a copy.</summary>
-public class AbletonFolderInfoWriterRealDataTests : IDisposable
+public class FolderInfoWriterRealDataTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
-        "crateside-tests",
+        "AbletonSampleData.Tests",
         Guid.NewGuid().ToString("n")
     );
 
-    public AbletonFolderInfoWriterRealDataTests() => Directory.CreateDirectory(_root);
+    public FolderInfoWriterRealDataTests() => Directory.CreateDirectory(_root);
 
     public void Dispose()
     {
@@ -25,11 +23,7 @@ public class AbletonFolderInfoWriterRealDataTests : IDisposable
 
     private string? CopyRealStore()
     {
-        var source = new[]
-        {
-            new CratesidePaths().SampleStaging,
-            new CratesidePaths().MashupSamples,
-        }
+        var source = new[] { RealLibrary.StagingRoot, RealLibrary.MashupRoot }
             .Select(r => Path.Combine(r, "Ableton Folder Info"))
             .Where(Directory.Exists)
             .SelectMany(d => Directory.EnumerateFiles(d, "*.xmp"))
@@ -50,7 +44,7 @@ public class AbletonFolderInfoWriterRealDataTests : IDisposable
 
     /// <summary>
     /// Not byte-for-byte: <c>XmlWriter</c> cannot match how Ableton wraps namespace declarations,
-    /// and ADR 0003 findings 4 and 5 show that is enough.
+    /// and Live reads the result.
     /// </summary>
     [Fact]
     public void Writing_Abletons_own_file_back_preserves_it()
@@ -58,10 +52,10 @@ public class AbletonFolderInfoWriterRealDataTests : IDisposable
         var path = CopyRealStore();
         Assert.SkipWhen(path is null, "no Ableton tag store on this machine");
 
-        var reader = new AbletonFolderInfoReader();
+        var reader = new FolderInfoReader();
         var before = reader.Read(_root).Entries;
 
-        AbletonFolderInfoWriter.Replace(
+        FolderInfoWriter.Replace(
             path!,
             XDocument.Parse(File.ReadAllText(path!)),
             File.GetLastWriteTimeUtc(path!)
@@ -80,26 +74,5 @@ public class AbletonFolderInfoWriterRealDataTests : IDisposable
         Assert.StartsWith("<x:xmpmeta", System.Text.Encoding.UTF8.GetString(bytes));
         Assert.DoesNotContain((byte)'\r', bytes);
         Assert.Equal((byte)'\n', bytes[^1]);
-    }
-
-    [Fact]
-    public void Every_keyword_already_in_the_library_is_one_the_writer_would_accept()
-    {
-        // The validator is a closed set derived from this library, so it must accept all of it.
-        var reader = new AbletonFolderInfoReader();
-        var paths = new CratesidePaths();
-
-        var keywords = new[] { paths.SampleStaging, paths.MashupSamples }
-            .Where(Directory.Exists)
-            .SelectMany(r => reader.Read(r).Entries)
-            .SelectMany(e => e.Keywords)
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-
-        Assert.SkipWhen(keywords.Count is 0, "no tagged stems on this machine");
-
-        var refused = keywords.Where(k => !AbletonFolderInfoWriter.IsValidKeyword(k)).ToList();
-
-        Assert.True(refused.Count is 0, $"the writer would refuse: {string.Join(", ", refused)}");
     }
 }

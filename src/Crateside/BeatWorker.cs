@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
@@ -13,7 +14,7 @@ namespace Crateside;
 public sealed class BeatWorker(
     BeatReader reader,
     CratesidePaths paths,
-    AbletonFolderInfoReader folderInfo,
+    FolderInfoReader folderInfo,
     TracksService tracks,
     ILogger<BeatWorker> logger
 ) : BackgroundService

@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
@@ -60,7 +61,7 @@ public sealed record TracksView
         IReadOnlyDictionary<string, ResolvedName>? resolvedNames = null,
         IReadOnlyDictionary<string, Acquisition>? acquisitions = null,
         PresetCatalog? presets = null,
-        AbletonFolderInfo? libraryTags = null,
+        FolderInfo? libraryTags = null,
         IReadOnlyList<Deletion>? deletions = null,
         IReadOnlyDictionary<string, GenreRecord>? genres = null,
         IReadOnlyDictionary<string, FamiliarityRecord>? familiarity = null,
@@ -390,7 +391,7 @@ public sealed record TracksView
         string finishedRoot,
         string sourceVideoId,
         PresetCatalog catalog,
-        AbletonFolderInfo? libraryTags,
+        FolderInfo? libraryTags,
         Func<string, WarpTempo?>? tempoOf,
         Func<string, BeatReading?>? beatsOf
     ) =>
@@ -424,7 +425,7 @@ public sealed record TracksView
     /// <summary>
     /// What Ableton has tagged a library file with, which Sample Staging cannot say.
     /// </summary>
-    private static string? KeyIn(AbletonFolderInfo? tags, string path) =>
+    private static string? KeyIn(FolderInfo? tags, string path) =>
         tags?.TryGet(path, out var tagged) is true ? tagged.Key : null;
 
     /// <summary>

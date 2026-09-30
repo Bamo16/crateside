@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
 using Crateside.Core.Genres;
@@ -15,8 +16,8 @@ namespace Crateside.Core.Library;
 /// </summary>
 public sealed class LibraryKeyReader(
     IOptions<CratesidePaths> paths,
-    AbletonIndexReader index,
-    AbletonFolderInfoReader folderInfo,
+    FileIndexReader index,
+    FolderInfoReader folderInfo,
     WarpTempoReader tempos,
     BeatReader? beats = null
 )
@@ -33,7 +34,7 @@ public sealed class LibraryKeyReader(
         var tags = index.Read(root);
         var backed = folderInfo.Read(root);
         var ledger = KeyLedger.Read(_paths.Ledger);
-        var tracks = new Dictionary<string, List<(string File, AbletonFileTags? Tags)>>(
+        var tracks = new Dictionary<string, List<(string File, FileTags? Tags)>>(
             StringComparer.OrdinalIgnoreCase
         );
         var unkeyed = new List<string>();
@@ -95,7 +96,7 @@ public sealed class LibraryKeyReader(
 
     private LibrarySong Song(
         string track,
-        List<(string File, AbletonFileTags? Tags)> samples,
+        List<(string File, FileTags? Tags)> samples,
         KeyLedger ledger
     )
     {
@@ -136,8 +137,8 @@ public sealed class LibraryKeyReader(
             : $"name:{StemFileName.WithoutPreset(file)}";
 
     private static string? MostCommon(
-        IEnumerable<(string File, AbletonFileTags? Tags)> samples,
-        Func<(string File, AbletonFileTags? Tags), string?> value
+        IEnumerable<(string File, FileTags? Tags)> samples,
+        Func<(string File, FileTags? Tags), string?> value
     ) =>
         samples
             .Select(value)

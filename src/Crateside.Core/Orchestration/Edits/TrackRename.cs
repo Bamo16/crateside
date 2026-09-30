@@ -1,3 +1,4 @@
+using AbletonSampleData;
 using Crateside.Core.Ableton;
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
@@ -16,7 +17,7 @@ public delegate IReadOnlyList<string> ReadLibraryFiles(string videoId);
 public sealed class TrackRename(
     QueueSettingsStore settings,
     ReadStagedFiles staged,
-    AbletonFolderInfoWriter writer,
+    FolderInfoWriter writer,
     CratesidePaths paths,
     ReadLibraryFiles? library = null,
     ISetLinks? sets = null
