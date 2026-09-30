@@ -17,6 +17,13 @@ keytag ledger, this machine's working sets — and skip when those are absent. T
 things fixtures could not, repeatedly. Prefer a real-data test over a mock when the question is
 "what is actually true on this machine".
 
+## The AbletonSampleData library
+
+`AbletonSampleData/` is a library headed for its own public repo and NuGet package (#82). It
+references nothing in crateside and builds with its own `Directory.Build.props`. Keep it that way:
+crateside's interpretation of Live's data (key spelling, genre, the keyword whitelist) stays in
+`src/Crateside.Core/Ableton/`. Its README and `docs/` are written for strangers.
+
 ## Do not run the app while editing it
 
 **Never start `watch` (or leave it running) during a series of edits.** It is not autostarted,

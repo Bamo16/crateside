@@ -14,6 +14,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\AbletonSampleData\AbletonSampleData.csproj" />
+        <ProjectReference Include="..\..\AbletonSampleData\src\AbletonSampleData\AbletonSampleData.csproj" />
     </ItemGroup>
 </Project>

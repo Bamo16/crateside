@@ -1,11 +1,11 @@
 <Solution>
     <Folder Name="/src/">
-        <Project Path="src/AbletonSampleData/AbletonSampleData.csproj" />
+        <Project Path="AbletonSampleData/src/AbletonSampleData/AbletonSampleData.csproj" />
         <Project Path="src/Crateside.Core/Crateside.Core.csproj" />
         <Project Path="src/Crateside/Crateside.csproj" />
     </Folder>
     <Folder Name="/tests/">
-        <Project Path="tests/AbletonSampleData.Tests/AbletonSampleData.Tests.csproj" />
+        <Project Path="AbletonSampleData/tests/AbletonSampleData.Tests/AbletonSampleData.Tests.csproj" />
         <Project Path="tests/Crateside.Tests/Crateside.Tests.csproj" />
     </Folder>
 </Solution>
