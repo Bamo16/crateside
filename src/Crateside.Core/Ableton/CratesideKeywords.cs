@@ -7,7 +7,7 @@ namespace Crateside.Core.Ableton;
 /// <summary>The keywords crateside will write: Live's own key and type, and the groups it settles itself.</summary>
 public static class CratesideKeywords
 {
-    private static readonly IReadOnlySet<string> Types = new HashSet<string>(StringComparer.Ordinal)
+    private static readonly HashSet<string> Types = new(StringComparer.Ordinal)
     {
         "Vocal",
         "Instrumental",
@@ -32,6 +32,6 @@ public static class CratesideKeywords
         IReadOnlyList<TagAssignment> assignments
     ) =>
         assignments.SelectMany(a => a.Keywords).FirstOrDefault(k => !IsKnown(k)) is { } bad
-            ? TagWriteOutcome.Rejected($"'{bad}' is not a keyword Ableton already knows")
+            ? new TagWriteOutcome.Rejected($"'{bad}' is not a keyword Ableton already knows")
             : writer.Apply(rootFolder, assignments);
 }

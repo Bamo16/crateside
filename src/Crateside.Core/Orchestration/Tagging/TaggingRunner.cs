@@ -34,7 +34,7 @@ public sealed class TaggingRunner(CratesidePaths paths, FolderInfoWriter? writer
         ];
 
         return assignments.Count is 0
-            ? TagWriteOutcome.Rejected("nothing about these files could be turned into tags")
+            ? new TagWriteOutcome.Rejected("nothing about these files could be turned into tags")
             : CratesideKeywords.Apply(_writer, paths.SampleStaging, assignments);
     }
 

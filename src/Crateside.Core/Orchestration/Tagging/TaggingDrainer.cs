@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using AbletonSampleData;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
@@ -33,18 +35,16 @@ public sealed class TaggingDrainer(
         var outcome = runner.Run(stems);
 
         // A stale write carries no strike, the same as a spent quota.
-        jobs.Record(
-            videoId,
-            JobStage.Tagging,
-            outcome switch
-            {
-                { IsSuccess: true } => JobStatus.Succeeded,
-                { IsStale: true } => JobStatus.Cancelled,
-                _ => JobStatus.Failed,
-            },
-            error: outcome.Error
-        );
+        var (status, error) = outcome switch
+        {
+            TagWriteOutcome.Written => (JobStatus.Succeeded, (string?)null),
+            TagWriteOutcome.Stale(var stale) => (JobStatus.Cancelled, stale),
+            TagWriteOutcome.Rejected(var rejected) => (JobStatus.Failed, rejected),
+            _ => throw new UnreachableException(),
+        };
 
-        return Task.FromResult(StageTick.Ran(subject, outcome.IsSuccess, outcome.Error));
+        jobs.Record(videoId, JobStage.Tagging, status, error: error);
+
+        return Task.FromResult(StageTick.Ran(subject, outcome is TagWriteOutcome.Written, error));
     }
 }

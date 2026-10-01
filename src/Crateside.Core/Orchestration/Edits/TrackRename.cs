@@ -193,7 +193,7 @@ public sealed class TrackRename(
     /// <summary>What did not follow the files, or null when everything did.</summary>
     private static string? Note(
         string? tags,
-        IReadOnlyList<string> markersLost,
+        List<string> markersLost,
         IReadOnlyList<string> setsLeft
     ) =>
         string.Join(
@@ -219,18 +219,21 @@ public sealed class TrackRename(
     private string? MoveTags(IReadOnlyList<Move> done) =>
         done.GroupBy(move => move.Root, StringComparer.OrdinalIgnoreCase)
             .Select(folder =>
-                writer
-                    .Rename(
-                        folder.Key,
-                        [
-                            .. folder.Select(move => new TagRename
-                            {
-                                From = Path.GetRelativePath(folder.Key, move.From),
-                                To = Path.GetRelativePath(folder.Key, move.To),
-                            }),
-                        ]
-                    )
-                    .Error
+                writer.Rename(
+                    folder.Key,
+                    [
+                        .. folder.Select(move => new TagRename
+                        {
+                            From = Path.GetRelativePath(folder.Key, move.From),
+                            To = Path.GetRelativePath(folder.Key, move.To),
+                        }),
+                    ]
+                ) switch
+                {
+                    TagWriteOutcome.Stale(var error) => error,
+                    TagWriteOutcome.Rejected(var error) => error,
+                    _ => null,
+                }
             )
             .OfType<string>()
             .FirstOrDefault();

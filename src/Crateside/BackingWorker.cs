@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AbletonSampleData;
 using Crateside.Core;
 using Crateside.Core.Ableton;
@@ -34,8 +35,7 @@ public sealed class BackingWorker(
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var delay = IdleDelay;
-
+            TimeSpan delay;
             try
             {
                 delay = Tick();
@@ -89,27 +89,30 @@ public sealed class BackingWorker(
     {
         switch (outcome)
         {
-            case { IsSuccess: true, Applied: 0 }:
+            case TagWriteOutcome.Written(0):
                 return IdleDelay;
 
-            case { IsSuccess: true } written:
+            case TagWriteOutcome.Written(var applied):
                 logger.LogInformation(
                     "Backed {Applied} entries in {Root} against the tag store",
-                    written.Applied,
+                    applied,
                     root
                 );
 
                 return IdleDelay;
 
-            case { IsStale: true }:
+            case TagWriteOutcome.Stale:
                 logger.LogInformation("The tag store moved while backing {Root}; retrying", root);
 
                 return AfterStale;
 
-            default:
-                logger.LogWarning("Could not back {Root}: {Error}", root, outcome.Error);
+            case TagWriteOutcome.Rejected(var error):
+                logger.LogWarning("Could not back {Root}: {Error}", root, error);
 
                 return AfterFailure;
+
+            default:
+                throw new UnreachableException();
         }
     }
 }
