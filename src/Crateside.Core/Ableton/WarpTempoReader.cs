@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using AbletonSampleData;
+using AbleKit.Analysis;
 
 namespace Crateside.Core.Ableton;
 

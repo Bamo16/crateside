@@ -1,4 +1,4 @@
-using AbletonSampleData;
+using AbleKit.Tags;
 using Crateside.Core.Ableton;
 using Crateside.Core.Audit;
 using Crateside.Core.Ledger;
@@ -87,6 +87,6 @@ public sealed class TaggingRunner(CratesidePaths paths, FolderInfoWriter? writer
         tonic = rawTonic.Replace('#', '♯');
         mode = char.ToUpperInvariant(rawMode[0]) + rawMode[1..].ToLowerInvariant();
 
-        return FolderInfoWriter.Tonics.Contains(tonic) && mode is "Major" or "Minor";
+        return KeyTags.Tonics.Contains(tonic) && mode is "Major" or "Minor";
     }
 }
