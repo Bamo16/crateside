@@ -17,11 +17,12 @@ keytag ledger, this machine's working sets — and skip when those are absent. T
 things fixtures could not, repeatedly. Prefer a real-data test over a mock when the question is
 "what is actually true on this machine".
 
-## The AbletonSampleData library
+## The AbleKit library
 
-Reading Ableton's files is its own repo, `Bamo16/AbletonSampleData`, checked out beside this one at
-`V:\Repos\AbletonSampleData` and project-referenced from `Crateside.Core` until it is on NuGet
-(#82). Library changes are committed there, on `main`, with its own CI. Crateside's interpretation
+Reading Ableton's files is its own repo, `Bamo16/AbleKit` (formerly AbletonSampleData), checked out
+beside this one at `V:\Repos\AbletonSampleData` and project-referenced from `Crateside.Core` until it
+is on NuGet (#82). The local folder is due to become `V:\Repos\AbleKit`; the references in
+`Crateside.slnx` and `Crateside.Core.csproj` move with it. Library changes are committed there, on `main`, with its own CI. Crateside's interpretation
 of Live's data (key spelling, genre, the keyword whitelist) stays in `src/Crateside.Core/Ableton/`.
 Nothing goes public with the user's surname on it: see memory `keep-real-name-off-public-work`.
 
