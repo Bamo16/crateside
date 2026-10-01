@@ -17,8 +17,7 @@ public static class CratesideKeywords
     public static bool IsKnown(string keyword) =>
         keyword.Split('|') switch
         {
-            ["Key", var value] => KeyTags.Tonics.Contains(value)
-                || KeyTags.Modes.Contains(value),
+            ["Key", var value] => KeyTags.Tonics.Contains(value) || KeyTags.Modes.Contains(value),
             ["Type", var value] => Types.Contains(value),
             [GenreVocabulary.Group, var value] => GenreVocabulary.IsGenre(value),
             [FamiliarityVocabulary.Group, var value] => FamiliarityVocabulary.IsValue(value),
