@@ -2,7 +2,7 @@ using Crateside.Core.Playlist;
 
 namespace Crateside.Tests.Playlist;
 
-public class QueueWriteAccessTests
+public sealed class QueueWriteAccessTests
 {
     [Fact]
     public void Nothing_is_said_while_writing_works()

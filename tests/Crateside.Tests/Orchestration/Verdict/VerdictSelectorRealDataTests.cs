@@ -8,7 +8,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Orchestration.Verdict;
 
 /// <summary>The verdict selector against this machine's real working set, job store and ledger.</summary>
-public class VerdictSelectorRealDataTests
+public sealed class VerdictSelectorRealDataTests
 {
     private static readonly WorkingSet Set = new();
     private static readonly JobStore Jobs = new();

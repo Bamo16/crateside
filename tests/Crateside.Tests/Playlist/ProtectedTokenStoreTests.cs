@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.DataProtection;
 namespace Crateside.Tests.Playlist;
 
 /// <summary>The refresh token on disk must not be readable, and failing to decrypt must not be fatal.</summary>
-public class ProtectedTokenStoreTests : IDisposable
+public sealed class ProtectedTokenStoreTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),

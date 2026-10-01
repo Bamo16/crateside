@@ -2,7 +2,7 @@ using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Tests.Orchestration.Loop;
 
-public class PauseStoreTests : IDisposable
+public sealed class PauseStoreTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),

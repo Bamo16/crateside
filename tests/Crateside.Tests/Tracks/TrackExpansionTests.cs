@@ -9,7 +9,7 @@ using Humanizer;
 namespace Crateside.Tests.Tracks;
 
 /// <summary>What the expanded row shows: the plan while there is still a plan, and the sentence beside it.</summary>
-public class TrackExpansionTests
+public sealed class TrackExpansionTests
 {
     private static TrackRow Row() =>
         new()

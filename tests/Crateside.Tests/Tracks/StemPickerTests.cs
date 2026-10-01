@@ -4,7 +4,7 @@ using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Tracks;
 
-public class StemPickerTests
+public sealed class StemPickerTests
 {
     private static readonly PresetCatalog Catalog = PresetCatalogReader.Parse(
         """
@@ -302,7 +302,7 @@ public class StemPickerTests
 }
 
 /// <summary>Ticking one line, which is the only edit the picker makes.</summary>
-public class StemPlanTogglingTests
+public sealed class StemPlanTogglingTests
 {
     [Fact]
     public void Ticking_a_preset_adds_it_and_ticking_it_again_takes_it_away()

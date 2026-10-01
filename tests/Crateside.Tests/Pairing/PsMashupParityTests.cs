@@ -8,13 +8,13 @@ namespace Crateside.Tests.Pairing;
 /// The port checked against the real output of <c>Get-MashupPartner -MaxShift 6</c>, the cmdlet
 /// it was ported from, for every one of the 24 keys.
 /// </summary>
-public class PsMashupParityTests
+public sealed class PsMashupParityTests
 {
-    private static readonly IReadOnlyList<FixtureKey> Fixture = LoadFixture();
+    private static readonly List<FixtureKey> Fixture = LoadFixture();
 
     public static TheoryData<string> SourceKeys => [.. Fixture.Select(f => f.Source)];
 
-    private static IReadOnlyList<FixtureKey> LoadFixture()
+    private static List<FixtureKey> LoadFixture()
     {
         var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "psmashup-partners.json");
 

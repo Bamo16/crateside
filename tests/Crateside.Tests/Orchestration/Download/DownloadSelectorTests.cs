@@ -8,7 +8,7 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace Crateside.Tests.Orchestration.Download;
 
-public class DownloadSelectorTests : IDisposable
+public sealed class DownloadSelectorTests : IDisposable
 {
     private const string Finished = "RzQRxV2XqFU";
     private const string Fresh = "x3U22KHsrqE";

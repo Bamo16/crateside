@@ -10,7 +10,7 @@ using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.Orchestration.Verdict;
 
-public class VerdictSelectorTests : IDisposable
+public sealed class VerdictSelectorTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),

@@ -3,7 +3,7 @@ using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Tracks;
 
-public class StageFlowTests
+public sealed class StageFlowTests
 {
     private static readonly DateTimeOffset Start = new(2026, 9, 25, 12, 0, 0, TimeSpan.Zero);
 

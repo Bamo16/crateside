@@ -5,7 +5,7 @@ using Crateside.Core.Orchestration.Separation;
 
 namespace Crateside.Tests.Orchestration.Separation;
 
-public class SeparationInterlockTests : IDisposable
+public sealed class SeparationInterlockTests : IDisposable
 {
     private const string VideoId = "dQw4w9WgXcQ";
     private static readonly DateTimeOffset Launched = new(2026, 8, 13, 22, 0, 0, TimeSpan.Zero);

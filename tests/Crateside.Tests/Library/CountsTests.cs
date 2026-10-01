@@ -4,7 +4,7 @@ using Crateside.Core.Pairing;
 
 namespace Crateside.Tests.Library;
 
-public class CountsTests
+public sealed class CountsTests
 {
     [Theory]
     [InlineData(128, 128.4, TempoBand.Exact)]

@@ -6,7 +6,7 @@ using Crateside.Core.Quota;
 namespace Crateside.Tests.Quota;
 
 /// <summary>Reading an undocumented meter: every failure has to end as unknown, not a throw.</summary>
-public class QuotaReaderTests : IDisposable
+public sealed class QuotaReaderTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),

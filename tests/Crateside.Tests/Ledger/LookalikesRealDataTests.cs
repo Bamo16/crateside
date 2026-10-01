@@ -2,7 +2,7 @@ using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Ledger;
 
-public class LookalikesRealDataTests
+public sealed class LookalikesRealDataTests
 {
     private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
 

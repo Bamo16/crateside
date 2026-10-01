@@ -6,7 +6,7 @@ using Crateside.Core.Orchestration.Handoff;
 namespace Crateside.Tests.Orchestration.Handoff;
 
 /// <summary>What a backing pass would do to the user's actual library, without writing to it.</summary>
-public class BackingRunnerRealLibraryTests
+public sealed class BackingRunnerRealLibraryTests
 {
     private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";
     private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";

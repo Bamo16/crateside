@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Edits;
 
-public class TrackSwapTests : IDisposable
+public sealed class TrackSwapTests : IDisposable
 {
     private const string Video = "dQw4w9WgXcQ";
     private const string Replacement = "https://www.youtube.com/watch?v=NSLYAT7sjAA";

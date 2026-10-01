@@ -3,7 +3,7 @@ using Crateside.Core.Staging;
 namespace Crateside.Tests.Staging;
 
 /// <summary>Completeness is asked of samples, not of files (ADR 0004).</summary>
-public class StagedSongCompletenessTests
+public sealed class StagedSongCompletenessTests
 {
     private static StagedFile Stem(string? preset, bool tagged = false) =>
         new()

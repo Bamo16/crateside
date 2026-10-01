@@ -6,7 +6,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Plans;
 
 /// <summary>Telling an added source from a separation source on disk (ADR 0019).</summary>
-public class AddedSourceTests
+public sealed class AddedSourceTests
 {
     private const string Staging = @"P:\RYAN\Ableton\Sample Staging";
     private const string Track = "aaaaaaaaaaa";

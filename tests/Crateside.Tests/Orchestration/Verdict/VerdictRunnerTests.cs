@@ -8,7 +8,7 @@ using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.Orchestration.Verdict;
 
-public class VerdictRunnerTests : IDisposable
+public sealed class VerdictRunnerTests : IDisposable
 {
     private const string VideoId = "dQw4w9WgXcQ";
     private const string SwappedTo = "-cuAnMUSN50";

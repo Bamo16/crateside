@@ -4,7 +4,7 @@ using Crateside.Core.Samples;
 namespace Crateside.Tests.Orchestration.Tagging;
 
 /// <summary>Which <c>Type</c> a file is tagged with: the part it plays in a mashup.</summary>
-public class TaggingRunnerTypeTests
+public sealed class TaggingRunnerTypeTests
 {
     private static string? TypeKeyword(string? preset, SampleType? type) =>
         TaggingRunner

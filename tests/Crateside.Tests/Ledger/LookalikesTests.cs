@@ -4,7 +4,7 @@ using Crateside.Core.Ledger;
 namespace Crateside.Tests.Ledger;
 
 /// <summary>The two measured cases of #41, and the near-misses that must not match.</summary>
-public class LookalikesTests : IDisposable
+public sealed class LookalikesTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),

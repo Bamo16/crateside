@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 namespace Crateside;
 
 /// <summary>Whether crateside runs inside a Windows job that takes its child processes down with it.</summary>
-internal static class JobObject
+internal static partial class JobObject
 {
     private const int BasicLimitInformation = 2;
     private const uint KillOnJobClose = 0x2000;
@@ -25,20 +25,20 @@ internal static class JobObject
         )
         && (limits.LimitFlags & KillOnJobClose) != 0;
 
-    [DllImport("kernel32.dll")]
-    private static extern IntPtr GetCurrentProcess();
+    [LibraryImport("kernel32.dll")]
+    private static partial IntPtr GetCurrentProcess();
 
-    [DllImport("kernel32.dll", SetLastError = true)]
+    [LibraryImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool IsProcessInJob(
+    private static partial bool IsProcessInJob(
         IntPtr process,
         IntPtr job,
         [MarshalAs(UnmanagedType.Bool)] out bool result
     );
 
-    [DllImport("kernel32.dll", SetLastError = true)]
+    [LibraryImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool QueryInformationJobObject(
+    private static partial bool QueryInformationJobObject(
         IntPtr job,
         int infoClass,
         out BasicLimits info,

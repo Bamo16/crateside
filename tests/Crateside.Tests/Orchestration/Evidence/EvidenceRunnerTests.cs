@@ -7,7 +7,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Orchestration.Evidence;
 
 /// <summary>Running the detectors over audio crateside already holds (ADR 0019).</summary>
-public class EvidenceRunnerTests : IDisposable
+public sealed class EvidenceRunnerTests : IDisposable
 {
     private const string VideoId = "dQw4w9WgXcQ";
 

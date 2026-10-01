@@ -5,7 +5,7 @@ using Crateside.Core.Samples;
 namespace Crateside.Tests.Ledger;
 
 /// <summary>A stem on disk joins to a ledger verdict, against the real ledger and library.</summary>
-public class KeyLedgerRealDataTests
+public sealed class KeyLedgerRealDataTests
 {
     private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";

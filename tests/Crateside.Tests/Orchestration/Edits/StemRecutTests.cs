@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Tests.Orchestration.Edits;
 
 /// <summary>Changing which files a track has, without judging it again.</summary>
-public class StemRecutTests : IDisposable
+public sealed class StemRecutTests : IDisposable
 {
     private const string Video = "aaaaaaaaaaa";
 
@@ -470,7 +470,7 @@ public class StemRecutTests : IDisposable
 /// <summary>
 /// How long the GPU will be busy, which is the number the confirmation has to quote.
 /// </summary>
-public class SeparationEstimateTests
+public sealed class SeparationEstimateTests
 {
     [Fact]
     public void The_estimate_matches_the_two_separations_anyone_timed()

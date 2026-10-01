@@ -2,7 +2,7 @@ using Crateside.Core.Orchestration.Download;
 
 namespace Crateside.Tests.Orchestration.Download;
 
-public class DownloadFailureTests
+public sealed class DownloadFailureTests
 {
     [Theory]
     // Seen on oFf86LTzUsk, 2026-09-25.

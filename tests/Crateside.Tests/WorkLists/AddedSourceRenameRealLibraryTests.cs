@@ -5,7 +5,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.WorkLists;
 
 /// <summary>An added source renamed and moved to the library is still recognised as fetched.</summary>
-public class AddedSourceRenameRealLibraryTests
+public sealed class AddedSourceRenameRealLibraryTests
 {
     private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";
     private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";

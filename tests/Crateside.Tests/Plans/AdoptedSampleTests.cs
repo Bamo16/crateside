@@ -5,7 +5,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Plans;
 
 /// <summary>An adopted sample: how it is recognised, and what a re-cut may do to it.</summary>
-public class AdoptedSampleTests
+public sealed class AdoptedSampleTests
 {
     private const string VideoId = "aaaaaaaaaaa";
     private const string Label = "Instrumental - Mix";

@@ -5,7 +5,7 @@ using Crateside.Core.Ableton;
 
 namespace Crateside.Tests.Ableton;
 
-public class AbletonSetsTests : IDisposable
+public sealed class AbletonSetsTests : IDisposable
 {
     private const string Library = "P:/RYAN/Ableton/Mashup Samples";
 
@@ -188,7 +188,7 @@ public class AbletonSetsTests : IDisposable
 }
 
 /// <summary>The lookup against this machine's own sets.</summary>
-public class AbletonSetsRealLibraryTests
+public sealed class AbletonSetsRealLibraryTests
 {
     private static readonly CratesidePaths Paths = new();
 
@@ -207,7 +207,7 @@ public class AbletonSetsRealLibraryTests
 }
 
 /// <summary>Relinking copies of this machine's own sets.</summary>
-public class AbletonSetsRelinkRealDataTests : IDisposable
+public sealed class AbletonSetsRelinkRealDataTests : IDisposable
 {
     private static readonly CratesidePaths Paths = new();
 

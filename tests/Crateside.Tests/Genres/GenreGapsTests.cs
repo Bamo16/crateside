@@ -2,7 +2,7 @@ using Crateside.Core.Genres;
 
 namespace Crateside.Tests.Genres;
 
-public class GenreGapsTests
+public sealed class GenreGapsTests
 {
     private static readonly DateTimeOffset At = new(2026, 9, 24, 12, 0, 0, TimeSpan.Zero);
 

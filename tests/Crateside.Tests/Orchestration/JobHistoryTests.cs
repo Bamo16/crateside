@@ -2,7 +2,7 @@ using Crateside.Core.Orchestration.Jobs;
 
 namespace Crateside.Tests.Orchestration;
 
-public class JobHistoryTests
+public sealed class JobHistoryTests
 {
     private static readonly DateTimeOffset Now = new(2026, 9, 29, 12, 0, 0, TimeSpan.Zero);
 

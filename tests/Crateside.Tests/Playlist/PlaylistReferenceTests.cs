@@ -2,7 +2,7 @@ using Crateside.Core.Playlist;
 
 namespace Crateside.Tests.Playlist;
 
-public class PlaylistReferenceTests
+public sealed class PlaylistReferenceTests
 {
     [Theory]
     [InlineData("PLrAXtmRdnEQy6nuLMHjMZOz59Oq8B9Ck1", "PLrAXtmRdnEQy6nuLMHjMZOz59Oq8B9Ck1")]

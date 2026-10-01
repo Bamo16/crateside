@@ -5,7 +5,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.WorkLists;
 
 /// <summary>A measurement of what a Queue refresh costs, not an assertion about correctness.</summary>
-public class ProcessedTracksCostTests
+public sealed class ProcessedTracksCostTests
 {
     private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";

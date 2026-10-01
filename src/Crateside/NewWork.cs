@@ -49,8 +49,12 @@ public sealed class NewWork : IDisposable
 
         lock (_gate)
         {
-            // Any() would stop at the first new key and leave the rest to wake it again.
-            if (_pending(rows).Count(_seen.Add) > 0)
+            var added = false;
+
+            foreach (var key in _pending(rows))
+                added |= _seen.Add(key);
+
+            if (added)
                 _wake.TrySetResult();
         }
     }

@@ -5,7 +5,7 @@ using Crateside.Core.Tracks;
 namespace Crateside.Tests.Tracks;
 
 /// <summary>Which BPM a row shows: a finished warp's over keytag's estimate (ADR 0038).</summary>
-public class TrackBpmTests
+public sealed class TrackBpmTests
 {
     private static readonly LedgerRun Verdict = new()
     {

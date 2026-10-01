@@ -180,7 +180,7 @@ public static class StemLanding
             .SequenceEqual(System.Security.Cryptography.SHA256.HashData(b));
     }
 
-    private static IReadOnlyList<string> Moved(CratesidePaths paths, IEnumerable<string> files)
+    private static List<string> Moved(CratesidePaths paths, IEnumerable<string> files)
     {
         var destination = paths.DestinationFor(StemDestination.KeyIdentified);
         List<string> moved = [];

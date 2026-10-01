@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Tests.Orchestration.Edits;
 
 /// <summary>Remove has to be able to finish (#33, ADR 0027).</summary>
-public class TrackRemovalTests : IDisposable
+public sealed class TrackRemovalTests : IDisposable
 {
     private const string Video = "OwGuSPXPyX4";
 

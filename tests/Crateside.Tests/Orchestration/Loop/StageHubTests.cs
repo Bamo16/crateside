@@ -4,7 +4,7 @@ using Crateside.Core.Orchestration.Loop;
 namespace Crateside.Tests.Orchestration.Loop;
 
 /// <summary>The one place a stage says something happened.</summary>
-public class StageHubTests : IDisposable
+public sealed class StageHubTests : IDisposable
 {
     private const string Video = "aaaaaaaaaaa";
 

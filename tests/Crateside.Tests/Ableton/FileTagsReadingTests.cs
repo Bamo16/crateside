@@ -4,7 +4,7 @@ using Crateside.Core.Ableton;
 
 namespace Crateside.Tests.Ableton;
 
-public class FileTagsReadingTests
+public sealed class FileTagsReadingTests
 {
     private static readonly CratesidePaths Paths = new();
 

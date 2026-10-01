@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration;
 
-public class WorkingSetJanitorTests : IDisposable
+public sealed class WorkingSetJanitorTests : IDisposable
 {
     private const string VideoId = "dQw4w9WgXcQ";
 

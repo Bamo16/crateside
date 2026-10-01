@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Tests.WorkLists;
 
 /// <summary>A playlist that cannot be read means no new arrivals, not no queue (ADR 0021).</summary>
-public class UnreadablePlaylistTests : IDisposable
+public sealed class UnreadablePlaylistTests : IDisposable
 {
     private const string Known = "RzQRxV2XqFU";
 

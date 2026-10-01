@@ -7,7 +7,7 @@ using Crateside.Tests.Ableton;
 namespace Crateside.Tests.Orchestration.Handoff;
 
 /// <summary>What a backing pass writes over an entry that already exists.</summary>
-public class BackingRunnerTests : IDisposable
+public sealed class BackingRunnerTests : IDisposable
 {
     private const string File1 = "Lil Wayne - A Milli (A Cappella).flac";
 

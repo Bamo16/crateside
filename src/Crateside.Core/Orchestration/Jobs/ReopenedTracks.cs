@@ -30,7 +30,7 @@ public static class ReopenedTracks
     public static IReadOnlySet<string> AwaitingCut(IEnumerable<TrackJob> jobs, KeyLedger ledger) =>
         Owing(jobs, ledger, [JobStage.Separation]);
 
-    private static IReadOnlySet<string> Owing(
+    private static HashSet<string> Owing(
         IEnumerable<TrackJob> jobs,
         KeyLedger ledger,
         JobStage[] stages

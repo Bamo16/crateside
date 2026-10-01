@@ -3,7 +3,7 @@ using Crateside.Core.Samples;
 namespace Crateside.Tests.Samples;
 
 /// <summary>The naming rule against the real staging folder, where titles have parentheses too.</summary>
-public class StemFileNameRealLibraryTests
+public sealed class StemFileNameRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
 

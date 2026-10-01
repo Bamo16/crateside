@@ -4,7 +4,7 @@ using Crateside.Core.Ledger;
 namespace Crateside.Tests.Audit;
 
 /// <summary>The readings the audit takes of a stem list, tested without a disk.</summary>
-public class TagAuditReportTests
+public sealed class TagAuditReportTests
 {
     [Fact]
     public void An_absent_key_against_a_taggable_verdict_is_untagged()

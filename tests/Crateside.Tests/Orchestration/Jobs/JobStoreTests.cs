@@ -3,7 +3,7 @@ using Microsoft.Extensions.Time.Testing;
 
 namespace Crateside.Tests.Orchestration.Jobs;
 
-public class JobStoreTests : IDisposable
+public sealed class JobStoreTests : IDisposable
 {
     private const string VideoId = "dQw4w9WgXcQ";
 

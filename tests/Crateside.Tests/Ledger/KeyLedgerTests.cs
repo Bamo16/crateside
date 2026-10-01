@@ -3,7 +3,7 @@ using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Ledger;
 
-public class KeyLedgerTests : IDisposable
+public sealed class KeyLedgerTests : IDisposable
 {
     private readonly string _path = Path.Combine(
         Path.GetTempPath(),

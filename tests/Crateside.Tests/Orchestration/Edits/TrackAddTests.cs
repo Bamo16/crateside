@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Edits;
 
-public class TrackAddTests : IDisposable
+public sealed class TrackAddTests : IDisposable
 {
     private const string Upload = "wpf8JgkOrnQ";
 

@@ -5,7 +5,7 @@ using Crateside.Core.Orchestration.Tagging;
 namespace Crateside.Tests.Orchestration.Jobs;
 
 /// <summary>What the job store says about one track, reduced to what a row needs.</summary>
-public class StageProgressTests : IDisposable
+public sealed class StageProgressTests : IDisposable
 {
     private const string Video = "aaaaaaaaaaa";
 

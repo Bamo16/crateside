@@ -2,7 +2,7 @@ using Crateside.Core.Orchestration.Jobs;
 
 namespace Crateside.Tests.Orchestration.Jobs;
 
-public class ActionLogTests : IDisposable
+public sealed class ActionLogTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),

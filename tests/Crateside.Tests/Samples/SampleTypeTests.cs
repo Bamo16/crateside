@@ -2,7 +2,7 @@ using Crateside.Core.Samples;
 
 namespace Crateside.Tests.Samples;
 
-public class SampleTypeTests
+public sealed class SampleTypeTests
 {
     [Theory]
     [InlineData("Kreayshawn - Gucci Gucci (Acapella)")]

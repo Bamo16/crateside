@@ -6,7 +6,7 @@ using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.Orchestration.Evidence;
 
-public class EvidenceSelectorTests : IDisposable
+public sealed class EvidenceSelectorTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),

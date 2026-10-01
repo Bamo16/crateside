@@ -3,7 +3,7 @@ using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Genres;
 
-public class GenreByArtistTests : IDisposable
+public sealed class GenreByArtistTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),

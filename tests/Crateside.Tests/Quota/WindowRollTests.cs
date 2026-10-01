@@ -2,7 +2,7 @@ using Crateside.Core.Quota;
 
 namespace Crateside.Tests.Quota;
 
-public class WindowRollTests
+public sealed class WindowRollTests
 {
     private static readonly DateTimeOffset Start = new(2026, 9, 24, 12, 0, 0, TimeSpan.Zero);
 

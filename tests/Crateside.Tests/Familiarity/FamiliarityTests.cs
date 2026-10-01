@@ -4,7 +4,7 @@ using Crateside.Core.Familiarity;
 
 namespace Crateside.Tests.Familiarity;
 
-public class FamiliarityVocabularyTests
+public sealed class FamiliarityVocabularyTests
 {
     [Theory]
     // The user's own examples, measured on #52.
@@ -19,7 +19,7 @@ public class FamiliarityVocabularyTests
         Assert.Equal(expected, FamiliarityVocabulary.FromReach(fans, rank));
 }
 
-public class FamiliarityStoreTests : IDisposable
+public sealed class FamiliarityStoreTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -108,7 +108,7 @@ public class FamiliarityStoreTests : IDisposable
         );
 }
 
-public class FamiliarityLookupTests
+public sealed class FamiliarityLookupTests
 {
     [Theory]
     [InlineData("Party In The USA", "Party in the U.S.A.")]

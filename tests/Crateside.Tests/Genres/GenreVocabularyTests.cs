@@ -3,7 +3,7 @@ using Crateside.Core.Genres;
 namespace Crateside.Tests.Genres;
 
 /// <summary>Labels taken from the 2026-09-24 survey of iTunes, Deezer and MusicBrainz (#4).</summary>
-public class GenreVocabularyTests
+public sealed class GenreVocabularyTests
 {
     [Theory]
     [InlineData("drum and bass", "Drum & Bass")]

@@ -5,7 +5,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.WorkLists;
 
 /// <summary>The inventory lookup run against the user's actual library and ledger.</summary>
-public class InventoryRealLibraryTests
+public sealed class InventoryRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
     private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";

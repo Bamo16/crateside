@@ -6,7 +6,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Tracks;
 
 /// <summary>A track whose plan asks for files not on disk says so (ADR 0027).</summary>
-public class ShortTrackTests
+public sealed class ShortTrackTests
 {
     private static readonly PresetCatalog Catalog = PresetCatalogReader.Parse(
         """

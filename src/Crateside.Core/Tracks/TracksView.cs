@@ -354,12 +354,9 @@ public sealed record TracksView
     /// The most common name among this track's files with the preset stripped, which is what
     /// Ableton shows.
     /// </summary>
-    private static string? NameFromFiles(
-        IReadOnlyList<StagedSong> staged,
-        IReadOnlyList<StemOnDisk> onDisk
-    ) =>
+    private static string? NameFromFiles(StagedSong[] staged, IReadOnlyList<StemOnDisk> onDisk) =>
         (
-            staged.Count > 0
+            staged.Length > 0
                 ? staged.SelectMany(song => song.Stems).Select(stem => stem.Path)
                 : onDisk.Select(file => file.Path)
         )

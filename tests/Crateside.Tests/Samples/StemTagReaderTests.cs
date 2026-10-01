@@ -2,7 +2,7 @@ using Crateside.Core.Samples;
 
 namespace Crateside.Tests.Samples;
 
-public class StemTagReaderTests : IDisposable
+public sealed class StemTagReaderTests : IDisposable
 {
     private readonly string _path = Path.Combine(
         Path.GetTempPath(),

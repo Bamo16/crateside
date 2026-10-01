@@ -4,7 +4,7 @@ using Crateside.Core.Orchestration.Verdict;
 
 namespace Crateside.Tests.Orchestration.Loop;
 
-public class DrainControlTests
+public sealed class DrainControlTests
 {
     [Fact]
     public void The_safe_default_is_paused()

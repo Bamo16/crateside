@@ -4,7 +4,7 @@ using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.Plans;
 
-public class StemInventoryTests
+public sealed class StemInventoryTests
 {
     private const string Staging = @"P:\RYAN\Ableton\Sample Staging";
 

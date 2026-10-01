@@ -3,7 +3,7 @@ using Crateside.Core.Orchestration.Jobs;
 namespace Crateside.Tests.Orchestration.Jobs;
 
 /// <summary>A re-cut or swap is a request, answered by the outcomes after it (#50).</summary>
-public class CutRequestsTests
+public sealed class CutRequestsTests
 {
     private static readonly DateTimeOffset Asked = new(2026, 9, 24, 12, 0, 0, TimeSpan.Zero);
 

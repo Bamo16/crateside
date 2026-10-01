@@ -8,24 +8,17 @@ namespace Crateside.Core.WorkLists;
 /// The Queue settings the user can change from the UI, kept in <c>%APPDATA%\crateside\queue.json</c>.
 /// The API key is never here: it lives in user-secrets.
 /// </summary>
-public sealed class QueueSettingsStore
+public sealed class QueueSettingsStore(IOptions<PlaylistOptions> fallback, string? path = null)
 {
-    private readonly string _path;
-    private readonly PlaylistOptions _fallback;
+    private readonly string _path =
+        path ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "queue.json");
+    private readonly PlaylistOptions _fallback = fallback.Value;
     private readonly Lock _gate = new();
 
     private QueueSettings? _cached;
 
     /// <summary>When the file was last written as of <see cref="_cached"/>, or null for no file.</summary>
     private DateTime? _cachedStamp;
-
-    public QueueSettingsStore(IOptions<PlaylistOptions> fallback, string? path = null)
-    {
-        _fallback = fallback.Value;
-        _path =
-            path
-            ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "queue.json");
-    }
 
     /// <summary>
     /// What the user saved, falling back to configuration for a first run. Never throws: an

@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Tests.Library;
 
 /// <summary>The key distribution over the real <c>Mashup Samples</c>.</summary>
-public class LibraryKeyReaderRealLibraryTests
+public sealed class LibraryKeyReaderRealLibraryTests
 {
     private static readonly CratesidePaths Paths = new();
 

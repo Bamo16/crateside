@@ -6,7 +6,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Orchestration;
 
 /// <summary>What a cut asks for once the track already has files.</summary>
-public class AdditiveRecipeTests
+public sealed class AdditiveRecipeTests
 {
     private static readonly PresetCatalog Catalog = PresetCatalogReader.Parse(
         """

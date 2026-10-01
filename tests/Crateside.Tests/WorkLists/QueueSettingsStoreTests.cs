@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.WorkLists;
 
-public class QueueSettingsStoreTests : IDisposable
+public sealed class QueueSettingsStoreTests : IDisposable
 {
     private readonly string _path = Path.Combine(
         Path.GetTempPath(),

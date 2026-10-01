@@ -3,7 +3,7 @@ using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Ledger;
 
-public class RunEvidenceRealDataTests
+public sealed class RunEvidenceRealDataTests
 {
     private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
 

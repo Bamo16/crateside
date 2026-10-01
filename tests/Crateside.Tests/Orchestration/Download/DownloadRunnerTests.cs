@@ -3,7 +3,7 @@ using Crateside.Core.Orchestration.Download;
 namespace Crateside.Tests.Orchestration.Download;
 
 /// <summary>Driven against real child processes rather than mocks.</summary>
-public class DownloadRunnerTests : IDisposable
+public sealed class DownloadRunnerTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),

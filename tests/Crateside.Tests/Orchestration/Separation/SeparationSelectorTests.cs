@@ -7,7 +7,7 @@ using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.Orchestration.Separation;
 
-public class SeparationSelectorTests : IDisposable
+public sealed class SeparationSelectorTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),

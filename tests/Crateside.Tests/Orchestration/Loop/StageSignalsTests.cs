@@ -4,7 +4,7 @@ using Crateside.Core.Orchestration.Verdict;
 
 namespace Crateside.Tests.Orchestration.Loop;
 
-public class StageSignalsTests
+public sealed class StageSignalsTests
 {
     private static readonly TimeSpan LongEnoughToBlock = TimeSpan.FromSeconds(30);
 

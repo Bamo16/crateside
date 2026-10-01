@@ -23,7 +23,7 @@ public sealed class SourceAdd(
     public AddPlan PlanFor(TrackRowFacts track, string? url, string? label, SampleType? type) =>
         PlanFor(track, url, label, type, KeyLedger.Read(paths.Ledger));
 
-    private AddPlan PlanFor(
+    private static AddPlan PlanFor(
         TrackRowFacts track,
         string? url,
         string? label,

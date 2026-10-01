@@ -5,7 +5,7 @@ using Crateside.Core.Pairing;
 
 namespace Crateside.Tests.Library;
 
-public class KeyDetectorCountsTests
+public sealed class KeyDetectorCountsTests
 {
     private const string Ledger = @"V:\Repos\keytag\results\runs.jsonl";
 

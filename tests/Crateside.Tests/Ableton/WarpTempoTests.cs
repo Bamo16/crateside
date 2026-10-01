@@ -4,7 +4,7 @@ using Crateside.Core.Ableton;
 namespace Crateside.Tests.Ableton;
 
 /// <summary>ADR 0038's rule on warps built from stretches of bars at a tempo.</summary>
-public class WarpTempoTests
+public sealed class WarpTempoTests
 {
     private const int SampleRate = 44100;
 

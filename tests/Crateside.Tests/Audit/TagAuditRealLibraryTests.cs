@@ -7,7 +7,7 @@ using Crateside.Core.Ledger;
 namespace Crateside.Tests.Audit;
 
 /// <summary>The audit run against the user's actual library.</summary>
-public class TagAuditRealLibraryTests
+public sealed class TagAuditRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
     private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";
@@ -169,7 +169,7 @@ public class TagAuditRealLibraryTests
                 .. report.PartialKeys,
                 .. report.Inconsistencies.SelectMany(s => s.Stems),
             ],
-            (TaggedStem stem) => Assert.True(File.Exists(stem.Path), stem.Path)
+            stem => Assert.True(File.Exists(stem.Path), stem.Path)
         );
     }
 }

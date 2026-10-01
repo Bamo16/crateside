@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Edits;
 
-public class SampleAdoptionTests : IDisposable
+public sealed class SampleAdoptionTests : IDisposable
 {
     private const string Track = "aaaaaaaaaaa";
 

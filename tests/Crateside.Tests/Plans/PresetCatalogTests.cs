@@ -2,7 +2,7 @@ using Crateside.Core.Orchestration.Separation;
 
 namespace Crateside.Tests.Plans;
 
-public class PresetCatalogTests
+public sealed class PresetCatalogTests
 {
     private const string TwoPresets = """
         [

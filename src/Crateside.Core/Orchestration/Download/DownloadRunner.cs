@@ -62,7 +62,7 @@ public sealed class DownloadRunner(string stemforge = "stemforge-cli")
         };
     }
 
-    private static IReadOnlyList<DownloadOutput>? Parse(string stdout)
+    private static List<DownloadOutput>? Parse(string stdout)
     {
         var start = stdout.IndexOf('[');
 

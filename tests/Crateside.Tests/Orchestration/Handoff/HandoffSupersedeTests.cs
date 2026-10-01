@@ -6,7 +6,7 @@ using Crateside.Core.Samples;
 namespace Crateside.Tests.Orchestration.Handoff;
 
 /// <summary>Handing off a swapped track's replacement over the version it replaces (ADR 0014).</summary>
-public class HandoffSupersedeTests : IDisposable
+public sealed class HandoffSupersedeTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),

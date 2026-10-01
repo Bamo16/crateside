@@ -3,7 +3,7 @@ using Crateside.Core.Orchestration.Download;
 namespace Crateside.Tests.Orchestration.Download;
 
 /// <summary>Which download outcomes stop a track, and which are simply recorded (ADR 0016).</summary>
-public class AcquisitionTests
+public sealed class AcquisitionTests
 {
     private static Acquisition Got(PremiumStatus status) => new() { PremiumStatus = status };
 

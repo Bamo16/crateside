@@ -7,7 +7,7 @@ namespace Crateside.Tests.Orchestration.Handoff;
 /// Which of a song's staged files a handoff may clear out of the way — never an added source
 /// (ADR 0019).
 /// </summary>
-public class SupersededStemsTests : IDisposable
+public sealed class SupersededStemsTests : IDisposable
 {
     private const string Song = "chris brown, lil' wayne, busta rhymes - look at me now";
     private const string Cut = "x2_zcyJp2mE";

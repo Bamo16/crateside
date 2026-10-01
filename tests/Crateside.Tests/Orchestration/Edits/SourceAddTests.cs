@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Edits;
 
-public class SourceAddTests : IDisposable
+public sealed class SourceAddTests : IDisposable
 {
     private static readonly TrackRowFacts Track = new()
     {

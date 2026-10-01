@@ -8,7 +8,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Orchestration.Separation;
 
 /// <summary>Driven against a real child process rather than a mocked one.</summary>
-public class SeparationRunnerTests : IDisposable
+public sealed class SeparationRunnerTests : IDisposable
 {
     private const string VideoId = "dQw4w9WgXcQ";
 

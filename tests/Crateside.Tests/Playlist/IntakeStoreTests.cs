@@ -6,7 +6,7 @@ namespace Crateside.Tests.Playlist;
 /// <summary>
 /// What crateside keeps so it never has to ask the playlist again (ADR 0021).
 /// </summary>
-public class IntakeStoreTests : IDisposable
+public sealed class IntakeStoreTests : IDisposable
 {
     private const string Track = "aaaaaaaaaaa";
     private const string Other = "bbbbbbbbbbb";

@@ -3,7 +3,7 @@ using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.WorkLists;
 
-public class PremiumOutlookReaderTests
+public sealed class PremiumOutlookReaderTests
 {
     // The tail of a real auto-generated art track description (Cornelius, Wsk3rBhYqoc).
     private const string ArtTrackDescription = """
@@ -40,7 +40,7 @@ public class PremiumOutlookReaderTests
         Assert.Equal(PremiumOutlook.Unknown, PremiumOutlookReader.FromDescription(description));
 }
 
-public class QueueBatchTests
+public sealed class QueueBatchTests
 {
     private static QueueItem Item(string id, int daysAgo) =>
         new()

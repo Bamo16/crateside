@@ -4,17 +4,13 @@ namespace Crateside.Core.Naming;
 /// The names StemForge has already been asked for, kept in <c>%APPDATA%\crateside\names.json</c>
 /// apart from the user's own (ADR 0014).
 /// </summary>
-public sealed class ResolvedNameStore
+public sealed class ResolvedNameStore(string? path = null)
 {
-    private readonly string _path;
+    private readonly string _path =
+        path ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "names.json");
     private readonly Lock _gate = new();
 
     private Dictionary<string, ResolvedName>? _cached;
-
-    public ResolvedNameStore(string? path = null) =>
-        _path =
-            path
-            ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "names.json");
 
     /// <summary>Never throws — an unreadable or corrupt file reads as nothing resolved yet.</summary>
     public IReadOnlyDictionary<string, ResolvedName> Read()

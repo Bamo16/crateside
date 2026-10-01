@@ -9,12 +9,10 @@ namespace Crateside.Core.Staging;
 /// Reads what is in Sample Staging, by song, from disk on every call. Reads the XMP, which is ahead
 /// of Ableton's index where crateside writes (ADR 0017).
 /// </summary>
-public sealed class StagingReader
+public sealed class StagingReader(FolderInfoReader? folderInfoReader = null)
 {
-    private readonly FolderInfoReader _folderInfoReader;
-
-    public StagingReader(FolderInfoReader? folderInfoReader = null) =>
-        _folderInfoReader = folderInfoReader ?? new FolderInfoReader();
+    private readonly FolderInfoReader _folderInfoReader =
+        folderInfoReader ?? new FolderInfoReader();
 
     /// <summary>
     /// Reads the staging folder and rolls its stems up into songs, newest-looking first.

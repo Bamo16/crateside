@@ -3,7 +3,7 @@ using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Ledger;
 
-public class RunEvidenceTests : IDisposable
+public sealed class RunEvidenceTests : IDisposable
 {
     private const string Song = "a - b";
 

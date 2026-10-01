@@ -11,7 +11,7 @@ using Crateside.Tests.Ableton;
 namespace Crateside.Tests.Tracks;
 
 /// <summary>How a track wearing an attached source draws.</summary>
-public class AddedSourceRowTests : IDisposable
+public sealed class AddedSourceRowTests : IDisposable
 {
     private const string Track = "aaaaaaaaaaa";
     private const string Attached = "bbbbbbbbbbb";

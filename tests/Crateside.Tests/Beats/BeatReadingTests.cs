@@ -8,7 +8,7 @@ using Crateside.Tests.Ableton;
 
 namespace Crateside.Tests.Beats;
 
-public class BeatReadingTests
+public sealed class BeatReadingTests
 {
     private static readonly string Corpus = Environment.SpecialFolder.UserProfile.GetFolderPath(
         "Music",

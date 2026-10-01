@@ -3,7 +3,7 @@ using Crateside.Core.Samples;
 namespace Crateside.Tests.Samples;
 
 /// <summary>Where a stem's name ends and its preset begins.</summary>
-public class StemFileNameTests
+public sealed class StemFileNameTests
 {
     private static readonly string Folder = Path.Combine("P:", "Sample Staging");
 

@@ -45,7 +45,7 @@ public sealed class NameResolver(string stemforge = "stemforge-cli")
             : null;
     }
 
-    private static IReadOnlyList<FormatListOutput>? Parse(string stdout)
+    private static List<FormatListOutput>? Parse(string stdout)
     {
         var start = stdout.IndexOf('[');
 

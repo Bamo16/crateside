@@ -2,7 +2,7 @@ using Crateside.Core;
 
 namespace Crateside.Tests;
 
-public class YouTubeUrlTests
+public sealed class YouTubeUrlTests
 {
     [Theory]
     [InlineData("https://www.youtube.com/watch?v=vfBJjufAG1E")]

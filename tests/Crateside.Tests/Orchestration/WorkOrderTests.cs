@@ -7,7 +7,7 @@ using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.Orchestration;
 
-public class WorkOrderTests : IDisposable
+public sealed class WorkOrderTests : IDisposable
 {
     private const string VideoId = "dQw4w9WgXcQ";
 

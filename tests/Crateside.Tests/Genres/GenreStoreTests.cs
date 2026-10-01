@@ -2,7 +2,7 @@ using Crateside.Core.Genres;
 
 namespace Crateside.Tests.Genres;
 
-public class GenreStoreTests : IDisposable
+public sealed class GenreStoreTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),

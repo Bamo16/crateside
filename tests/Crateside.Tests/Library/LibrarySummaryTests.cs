@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Tests.Library;
 
 /// <summary>The cache in front of the reader, exercised against a real folder.</summary>
-public class LibrarySummaryTests : IDisposable
+public sealed class LibrarySummaryTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),

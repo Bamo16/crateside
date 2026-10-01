@@ -20,7 +20,11 @@ public sealed class TrackAdd(
     public AddTrackPlan PlanFor(string? url, IReadOnlyList<TrackRowFacts> known) =>
         PlanFor(url, known, KeyLedger.Read(paths.Ledger));
 
-    private AddTrackPlan PlanFor(string? url, IReadOnlyList<TrackRowFacts> known, KeyLedger ledger)
+    private static AddTrackPlan PlanFor(
+        string? url,
+        IReadOnlyList<TrackRowFacts> known,
+        KeyLedger ledger
+    )
     {
         YouTubeUrl.TryGetVideoId(url, out var videoId);
 

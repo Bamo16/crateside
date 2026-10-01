@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Tests.Orchestration.Edits;
 
 /// <summary>Giving a track a name of the user's own, and putting it on the files.</summary>
-public class TrackRenameTests : IDisposable
+public sealed class TrackRenameTests : IDisposable
 {
     private const string Video = "aaaaaaaaaaa";
 
@@ -75,7 +75,7 @@ public class TrackRenameTests : IDisposable
 
     private string Staged(string name) => Path.Combine(_paths.SampleStaging, name);
 
-    private string? StoredName(QueueSettingsStore settings) =>
+    private static string? StoredName(QueueSettingsStore settings) =>
         settings.Read().Tracks.FirstOrDefault(track => track.VideoId == Video)?.Name;
 
     [Fact]

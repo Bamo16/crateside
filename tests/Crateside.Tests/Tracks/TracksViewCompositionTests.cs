@@ -14,7 +14,7 @@ namespace Crateside.Tests.Tracks;
 /// The join that turns a playlist, a ledger, what is on disk and what crateside has run into one
 /// row per track.
 /// </summary>
-public class TracksViewCompositionTests : IDisposable
+public sealed class TracksViewCompositionTests : IDisposable
 {
     private const string Video = "aaaaaaaaaaa";
     private const string FinishedRoot = @"P:\RYAN\Ableton\Mashup Samples";

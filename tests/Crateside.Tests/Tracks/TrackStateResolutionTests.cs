@@ -5,7 +5,7 @@ using Crateside.Core.Tracks;
 namespace Crateside.Tests.Tracks;
 
 /// <summary>Which state a track is in, and the sentence that says what happens next.</summary>
-public class TrackStateResolutionTests
+public sealed class TrackStateResolutionTests
 {
     private const string Video = "aaaaaaaaaaa";
 

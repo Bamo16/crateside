@@ -9,7 +9,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Orchestration;
 
 /// <summary>Detection and judging cannot be bought twice, whatever puts a track in front of them.</summary>
-public class QuotaGuardTests : IDisposable
+public sealed class QuotaGuardTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),

@@ -3,7 +3,7 @@ using Crateside.Core.Naming;
 namespace Crateside.Tests.Naming;
 
 /// <summary>The names StemForge resolves, and the store that keeps them between runs.</summary>
-public class ResolvedNameTests : IDisposable
+public sealed class ResolvedNameTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),

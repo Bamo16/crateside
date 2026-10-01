@@ -50,8 +50,7 @@ public sealed class BeatWorker(
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var delay = IdleDelay;
-
+            TimeSpan delay;
             try
             {
                 delay = await TickAsync(stoppingToken);

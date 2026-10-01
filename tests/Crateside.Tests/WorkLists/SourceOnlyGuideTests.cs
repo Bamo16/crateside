@@ -6,7 +6,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.WorkLists;
 
 /// <summary>A track that keeps only its source still gets a drums warp guide once it is staged (#55).</summary>
-public class SourceOnlyGuideTests
+public sealed class SourceOnlyGuideTests
 {
     private const string Track = "aaaaaaaaaaa";
     private const string Staging = @"P:\RYAN\Ableton\Sample Staging";

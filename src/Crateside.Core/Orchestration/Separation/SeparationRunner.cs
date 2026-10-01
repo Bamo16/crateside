@@ -118,7 +118,7 @@ public sealed class SeparationRunner(
     private static IReadOnlyList<string> OutputFilesFrom(string stdout) =>
         [.. Parse(stdout)?.SelectMany(r => r.OutputFiles ?? []) ?? []];
 
-    private static IReadOnlyList<SeparationOutput>? Parse(string stdout)
+    private static List<SeparationOutput>? Parse(string stdout)
     {
         // The CLI prints a JSON array; anything it logged before it is not ours to interpret.
         var start = stdout.IndexOf('[');

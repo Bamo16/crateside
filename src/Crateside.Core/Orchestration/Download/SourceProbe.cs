@@ -47,7 +47,7 @@ public sealed class SourceProbe(string stemforge = "stemforge-cli")
         };
     }
 
-    private static IReadOnlyList<ProbeOutput>? Parse(string stdout)
+    private static List<ProbeOutput>? Parse(string stdout)
     {
         var start = stdout.IndexOf('[');
 

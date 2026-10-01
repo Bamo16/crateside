@@ -5,7 +5,7 @@ using Crateside.Core.Tracks;
 namespace Crateside.Tests.Tracks;
 
 /// <summary>The judging cell's "waiting" count, which should not move as tracks download and detect.</summary>
-public class TrackAwaitingJudgementTests
+public sealed class TrackAwaitingJudgementTests
 {
     private static readonly LedgerRun Judged = new()
     {

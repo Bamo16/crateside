@@ -7,7 +7,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Orchestration.Verdict;
 
 /// <summary>The composed prompt's size against this machine's real evidence.</summary>
-public class VerdictRunnerRealDataTests
+public sealed class VerdictRunnerRealDataTests
 {
     /// <summary>A tool call's round trip: the measured per-turn floor, in tokens.</summary>
     private const int RoundTripTokens = 13_000;

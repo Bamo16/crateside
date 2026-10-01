@@ -2,7 +2,7 @@ using Crateside.Core.Orchestration.Jobs;
 
 namespace Crateside.Tests.Orchestration.Jobs;
 
-public class TrackActivityTests
+public sealed class TrackActivityTests
 {
     private static readonly DateTimeOffset Start = new(2026, 9, 25, 12, 0, 0, TimeSpan.Zero);
 

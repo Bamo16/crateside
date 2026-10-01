@@ -4,7 +4,7 @@ using Crateside.Core.Tracks;
 namespace Crateside.Tests.Tracks;
 
 /// <summary>What counts as a match, and where to point when there is none here.</summary>
-public class TrackSearchTests
+public sealed class TrackSearchTests
 {
     private static readonly TrackRow Staged = new()
     {

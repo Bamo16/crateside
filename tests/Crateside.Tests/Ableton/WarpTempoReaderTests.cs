@@ -4,7 +4,7 @@ using Crateside.Core.Ableton;
 
 namespace Crateside.Tests.Ableton;
 
-public class WarpTempoReaderTests : IDisposable
+public sealed class WarpTempoReaderTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -103,7 +103,7 @@ public class WarpTempoReaderTests : IDisposable
 }
 
 /// <summary>ADR 0038's rule against warps the user knows, in the real library.</summary>
-public class WarpTempoRealLibraryTests
+public sealed class WarpTempoRealLibraryTests
 {
     private static readonly CratesidePaths Paths = new();
     private static readonly WarpTempoReader Reader = new();

@@ -3,7 +3,7 @@ using Crateside.Core.Samples;
 namespace Crateside.Tests.Samples;
 
 /// <summary>Writing an added source's type into the provenance it already carries (ADR 0028).</summary>
-public class SampleTypingTests : IDisposable
+public sealed class SampleTypingTests : IDisposable
 {
     private const string Downloaded =
         "stemforge/0.3.1.0 | date: 2026-09-18 | source: https://www.youtube.com/watch?v=C_DIhh3sWO0";

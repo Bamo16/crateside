@@ -4,7 +4,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Orchestration.Download;
 
 /// <summary>An acceptance outlives the working set, and covers only the upload it was given for (#31).</summary>
-public class DownloadAcceptanceTests
+public sealed class DownloadAcceptanceTests
 {
     private const string Track = "Dbhzw8xyc7A";
     private const string Better = "9Zo8jqTqju0";

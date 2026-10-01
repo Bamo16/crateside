@@ -65,7 +65,7 @@ public sealed class HandoffDrainer(
         count is 0 ? null : $"{"superseded file".ToQuantity(count)} removed from Sample Staging";
 
     /// <summary>Every upload the user has asked to keep, across all tracks, and so never superseded.</summary>
-    private IReadOnlySet<string> Kept() =>
+    private HashSet<string> Kept() =>
         settings
             .Read()
             .Tracks.SelectMany(track => track.Plan?.AddedSources ?? [])

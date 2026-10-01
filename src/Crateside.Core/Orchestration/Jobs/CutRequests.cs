@@ -50,7 +50,7 @@ public static class CutRequests
             track => !IsSettled(track.CutRequestedAt, Latest(jobs, track.VideoId, JobStage.Handoff))
         );
 
-    private static IReadOnlySet<string> Where(
+    private static HashSet<string> Where(
         QueueSettings settings,
         Func<TrackInstruction, bool> owing
     ) =>

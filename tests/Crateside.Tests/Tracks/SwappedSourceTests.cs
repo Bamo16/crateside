@@ -8,7 +8,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Tracks;
 
 /// <summary>One song cut from two uploads (ADR 0014).</summary>
-public class SwappedSourceTests : IDisposable
+public sealed class SwappedSourceTests : IDisposable
 {
     private const string Original = "AhtkGlO7O8c";
     private const string Replacement = "39Z_YiOmHeA";

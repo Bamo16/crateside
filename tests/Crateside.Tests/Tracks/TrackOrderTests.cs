@@ -5,7 +5,7 @@ using Crateside.Core.Tracks;
 namespace Crateside.Tests.Tracks;
 
 /// <summary>The default order, and what it refuses to reorder.</summary>
-public class TrackOrderTests
+public sealed class TrackOrderTests
 {
     private static TrackRow Row(string title, TrackState state = TrackState.Queued) =>
         state switch

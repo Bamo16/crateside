@@ -2,7 +2,7 @@ using Crateside.Core.Pairing;
 
 namespace Crateside.Tests.Pairing;
 
-public class PartnersTests
+public sealed class PartnersTests
 {
     private static MusicKey Key(string name) =>
         MusicKey.FromString(name) ?? throw new ArgumentException($"'{name}' is not a key.");
@@ -89,7 +89,7 @@ public class PartnersTests
         Assert.Throws<ArgumentOutOfRangeException>(() => Partners.For(Key("C major"), -1));
 }
 
-public class MusicKeyTests
+public sealed class MusicKeyTests
 {
     [Theory]
     [InlineData("G# major", "G♯ Major")]

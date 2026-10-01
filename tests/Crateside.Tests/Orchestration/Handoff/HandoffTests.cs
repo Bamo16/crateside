@@ -5,7 +5,7 @@ using Crateside.Core.Orchestration.Separation;
 
 namespace Crateside.Tests.Orchestration.Handoff;
 
-public class HandoffTests : IDisposable
+public sealed class HandoffTests : IDisposable
 {
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),

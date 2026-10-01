@@ -3,7 +3,7 @@ using Crateside.Core.Samples;
 namespace Crateside.Tests.Samples;
 
 /// <summary>Removing a sample recoverably.</summary>
-public class RecycleBinTests : IDisposable
+public sealed class RecycleBinTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),

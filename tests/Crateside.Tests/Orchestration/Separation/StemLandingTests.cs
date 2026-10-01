@@ -8,7 +8,7 @@ using Crateside.Core.Orchestration.Separation;
 namespace Crateside.Tests.Orchestration.Separation;
 
 /// <summary>Where a run's stems belong once it has finished, which is not always where it was sent.</summary>
-public class StemLandingTests : IDisposable
+public sealed class StemLandingTests : IDisposable
 {
     private const string Video = "adjcmOELKIM";
 

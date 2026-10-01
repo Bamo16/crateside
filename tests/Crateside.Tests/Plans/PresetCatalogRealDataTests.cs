@@ -7,7 +7,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Plans;
 
 /// <summary>Asks the real separator, and joins its answer against the real library.</summary>
-public class PresetCatalogRealDataTests
+public sealed class PresetCatalogRealDataTests
 {
     private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";

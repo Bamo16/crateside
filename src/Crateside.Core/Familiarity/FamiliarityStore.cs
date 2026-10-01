@@ -6,20 +6,14 @@ namespace Crateside.Core.Familiarity;
 /// Each song's reach as Deezer measured it and the familiarity the user settled, kept in
 /// <c>%APPDATA%\crateside\familiarity.json</c> by song identity, as genre is (#52).
 /// </summary>
-public sealed class FamiliarityStore
+public sealed class FamiliarityStore(string? path = null)
 {
-    private readonly string _path;
+    private readonly string _path =
+        path
+        ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "familiarity.json");
     private readonly Lock _gate = new();
 
     private Dictionary<string, FamiliarityRecord>? _cached;
-
-    public FamiliarityStore(string? path = null) =>
-        _path =
-            path
-            ?? Environment.SpecialFolder.ApplicationData.GetFolderPath(
-                "crateside",
-                "familiarity.json"
-            );
 
     /// <summary>Every record, by song identity. Never throws: an unreadable file reads as empty.</summary>
     public IReadOnlyDictionary<string, FamiliarityRecord> Read()

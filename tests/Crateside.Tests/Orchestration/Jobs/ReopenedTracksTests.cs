@@ -5,7 +5,7 @@ using Crateside.Core.Orchestration.Separation;
 namespace Crateside.Tests.Orchestration.Jobs;
 
 /// <summary>What counts as work a track is still owed.</summary>
-public class ReopenedTracksTests
+public sealed class ReopenedTracksTests
 {
     private const string VideoId = "_DiMKyZwaA0";
 

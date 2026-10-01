@@ -6,17 +6,13 @@ namespace Crateside.Core.Genres;
 /// Each song's genre as the user settled it and as the sources suggested it, kept in
 /// <c>%APPDATA%\crateside\genres.json</c> by song identity, as the ledger keeps its key (ADR 0030).
 /// </summary>
-public sealed class GenreStore
+public sealed class GenreStore(string? path = null)
 {
-    private readonly string _path;
+    private readonly string _path =
+        path ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "genres.json");
     private readonly Lock _gate = new();
 
     private Dictionary<string, GenreRecord>? _cached;
-
-    public GenreStore(string? path = null) =>
-        _path =
-            path
-            ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "genres.json");
 
     /// <summary>Every record, by song identity. Never throws: an unreadable file reads as empty.</summary>
     public IReadOnlyDictionary<string, GenreRecord> Read()

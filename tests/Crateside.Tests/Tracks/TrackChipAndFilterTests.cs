@@ -6,7 +6,7 @@ using Crateside.Core.Tracks;
 namespace Crateside.Tests.Tracks;
 
 /// <summary>The chip and <c>Next</c> copy, asserted together, and the filters.</summary>
-public class TrackChipAndFilterTests
+public sealed class TrackChipAndFilterTests
 {
     private static TrackRow Row(TrackState state) =>
         state switch

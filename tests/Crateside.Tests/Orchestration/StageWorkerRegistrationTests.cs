@@ -4,7 +4,7 @@ using Microsoft.Extensions.Hosting;
 namespace Crateside.Tests.Orchestration;
 
 /// <summary>How many hosted services survive when two of them share an implementation type.</summary>
-public class StageWorkerRegistrationTests
+public sealed class StageWorkerRegistrationTests
 {
     private sealed class Worker(string name) : BackgroundService
     {

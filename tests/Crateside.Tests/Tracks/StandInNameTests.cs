@@ -4,7 +4,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.Tracks;
 
 /// <summary>What a row is called before StemForge names it, and what a lookup may take from that.</summary>
-public class StandInNameTests
+public sealed class StandInNameTests
 {
     [Theory]
     [InlineData("Creep", "Radiohead - Topic", "Radiohead - Creep")]

@@ -2,7 +2,7 @@ using Crateside.Core.Samples;
 
 namespace Crateside.Tests.Samples;
 
-public class StemProvenanceTests
+public sealed class StemProvenanceTests
 {
     // The exact comment read off "Alan Gomez - Mission 15 (Vocal - Full).flac".
     private const string RealComment =

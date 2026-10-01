@@ -171,10 +171,10 @@ public static partial class AbletonSets
     }
 
     /// <summary>Every sample path a set references, read again only when the set's stamp moves.</summary>
-    private static IReadOnlySet<string> PathsIn(string set)
+    private static HashSet<string> PathsIn(string set)
     {
         if (new FileInfo(set) is not { Exists: true } file)
-            return new HashSet<string>();
+            return [];
 
         var stamp = (file.Length, file.LastWriteTimeUtc);
 
@@ -182,7 +182,7 @@ public static partial class AbletonSets
             return held.Paths;
 
         if (Read(set) is not { } xml)
-            return new HashSet<string>();
+            return [];
 
         var paths = FilePath
             .Matches(xml)

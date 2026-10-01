@@ -2,7 +2,7 @@ using Crateside.Core.Pairing;
 
 namespace Crateside.Tests.Pairing;
 
-public class RePitchTests
+public sealed class RePitchTests
 {
     [Theory]
     [InlineData(2, 143.68)]

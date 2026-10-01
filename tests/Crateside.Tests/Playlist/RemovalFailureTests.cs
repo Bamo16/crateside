@@ -7,7 +7,7 @@ using Google.Apis.Requests;
 namespace Crateside.Tests.Playlist;
 
 /// <summary>A playlist entry crateside could not remove says so, and whether a retry could help (#34).</summary>
-public class RemovalFailureTests : IDisposable
+public sealed class RemovalFailureTests : IDisposable
 {
     private const string Track = "2E33rkabbF4";
     private const string Other = "p3NZn0mA_XI";

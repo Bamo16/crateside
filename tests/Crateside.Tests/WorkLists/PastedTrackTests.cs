@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Tests.WorkLists;
 
 /// <summary>crateside's own record of a track the playlist does not hold (ADR 0010).</summary>
-public class PastedTrackTests : IDisposable
+public sealed class PastedTrackTests : IDisposable
 {
     private const string Pasted = "aaaaaaaaaaa";
 

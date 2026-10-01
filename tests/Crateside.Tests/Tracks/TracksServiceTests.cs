@@ -6,7 +6,7 @@ using Microsoft.Extensions.Time.Testing;
 namespace Crateside.Tests.Tracks;
 
 /// <summary>The cache in front of the most expensive thing the app does.</summary>
-public class TracksServiceTests
+public sealed class TracksServiceTests
 {
     private static TracksView Empty => new() { Rows = [] };
 

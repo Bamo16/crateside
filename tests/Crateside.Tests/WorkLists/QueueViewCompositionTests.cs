@@ -5,7 +5,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.WorkLists;
 
 /// <summary>The sorting of a playlist into the work lists each stage reads.</summary>
-public class QueueViewCompositionTests
+public sealed class QueueViewCompositionTests
 {
     private const string Judged = "aaaaaaaaaaa";
     private const string Unjudged = "bbbbbbbbbbb";

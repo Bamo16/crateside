@@ -4,7 +4,7 @@ using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.WorkLists;
 
-public class ProcessedTracksTests : IDisposable
+public sealed class ProcessedTracksTests : IDisposable
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
 

@@ -3,7 +3,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.WorkLists;
 
 /// <summary>Putting one track at the front of the work lists (ADR 0015).</summary>
-public class BumpedTrackTests
+public sealed class BumpedTrackTests
 {
     private const string First = "aaaaaaaaaaa";
     private const string Second = "bbbbbbbbbbb";

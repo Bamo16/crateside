@@ -5,7 +5,7 @@ using Microsoft.Extensions.Time.Testing;
 namespace Crateside.Tests.Tracks;
 
 /// <summary>The one interruption the page makes: a track has become the user's to finish.</summary>
-public class ReadyToWarpAnnouncementTests
+public sealed class ReadyToWarpAnnouncementTests
 {
     private static TrackRow Ready(string videoId) =>
         new()

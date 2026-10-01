@@ -3,7 +3,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.WorkLists;
 
 /// <summary>Work for a track the playlist no longer holds: GPU, never quota.</summary>
-public class ReopenedTrackTests
+public sealed class ReopenedTrackTests
 {
     private const string Queued = "aaaaaaaaaaa";
     private const string Reopened = "bbbbbbbbbbb";

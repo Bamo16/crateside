@@ -3,7 +3,7 @@ using Crateside.Core.Orchestration.Download;
 
 namespace Crateside.Tests.Orchestration;
 
-public class WorkingSetTests : IDisposable
+public sealed class WorkingSetTests : IDisposable
 {
     private const string VideoId = "dQw4w9WgXcQ";
 
