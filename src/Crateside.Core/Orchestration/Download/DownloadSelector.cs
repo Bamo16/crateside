@@ -20,7 +20,7 @@ public sealed class DownloadSelector(
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 
     /// <summary>Picks audio last, since its list refills from the playlist and would starve the others.</summary>
-    public bool TryPickNext(QueueView view, out WantedDownload next)
+    public bool TryPickNext(WorkListsView view, out WantedDownload next)
     {
         next = Kept(view) ?? Added(view) ?? Audio(view)!;
 
@@ -31,7 +31,7 @@ public sealed class DownloadSelector(
     /// A track with no audio held for it yet, from both work lists: a re-cut track has a verdict
     /// and an empty working set.
     /// </summary>
-    private WantedDownload? Audio(QueueView view) =>
+    private WantedDownload? Audio(WorkListsView view) =>
         view
             .Outstanding.Concat(view.AwaitingSeparation)
             .DistinctBy(item => item.VideoId, StringComparer.Ordinal)
@@ -54,14 +54,14 @@ public sealed class DownloadSelector(
     /// A track whose plan keeps its separation source and has no copy made: copied from the audio
     /// held, or the audio fetched first when it is not (ADR 0019).
     /// </summary>
-    private WantedDownload? Kept(QueueView view) =>
+    private WantedDownload? Kept(WorkListsView view) =>
         view
             .Everything.Where(item => item is { Plan.KeepSource: true, Inventory.HasSource: false })
             .Select(KeptSource)
             .OfType<WantedDownload>()
             .FirstOrDefault();
 
-    private WantedDownload? KeptSource(QueueItem item)
+    private WantedDownload? KeptSource(WorkItem item)
     {
         if (workingSet.TryGetSource(item.VideoId, out var held))
             return AwaitingHandoff(Path.GetFileName(held))
@@ -98,7 +98,7 @@ public sealed class DownloadSelector(
     /// A source the user attached that is not on disk, from every work list: one can be added
     /// even to a finished track.
     /// </summary>
-    private WantedDownload? Added(QueueView view) =>
+    private WantedDownload? Added(WorkListsView view) =>
         view
             .Everything.SelectMany(item =>
                 item.Plan.AddedSources.Where(added =>
@@ -151,7 +151,7 @@ public sealed class DownloadSelector(
     /// The audio is absent because the janitor took it after separation succeeded, not because it
     /// was never fetched — unless a re-cut or swap has asked for another separation since (#50).
     /// </summary>
-    private bool IsSweptUp(QueueItem item) =>
+    private bool IsSweptUp(WorkItem item) =>
         jobs.TryGet(item.VideoId, JobStage.Separation, out var job)
         && job is { Status: JobStatus.Succeeded }
         && !CutRequests.OwesCut(item, jobs);
@@ -166,7 +166,7 @@ public sealed record WantedDownload
     public required string Url { get; init; }
 
     /// <summary>The track this belongs to, for what the drainer reports.</summary>
-    public required QueueItem Track { get; init; }
+    public required WorkItem Track { get; init; }
 
     /// <summary>Where the file lands. Null for an added source, which goes by destination.</summary>
     public string? Into { get; init; }

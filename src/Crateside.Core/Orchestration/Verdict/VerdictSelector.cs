@@ -21,7 +21,7 @@ public sealed class VerdictSelector(
     /// has judged, undetected, in flight, given up on, parked, or looking like a judged song.
     /// The library backfill waits for an idle window unless the user asked for it (ADR 0035).
     /// </summary>
-    public bool TryPickNext(QueueView view, KeyLedger ledger, out QueueItem next)
+    public bool TryPickNext(WorkListsView view, KeyLedger ledger, out WorkItem next)
     {
         next = view.Outstanding.FirstOrDefault(i =>
             (!i.IsBackfill || i.VideoId == view.Bumped) && IsJudgeable(i, ledger)
@@ -31,14 +31,14 @@ public sealed class VerdictSelector(
     }
 
     /// <summary>The next library backfill track, for an idle window to judge; never anything else.</summary>
-    public bool TryPickBackfill(QueueView view, KeyLedger ledger, out QueueItem next)
+    public bool TryPickBackfill(WorkListsView view, KeyLedger ledger, out WorkItem next)
     {
         next = view.Outstanding.FirstOrDefault(i => i.IsBackfill && IsJudgeable(i, ledger))!;
 
         return next is not null;
     }
 
-    private bool IsJudgeable(QueueItem i, KeyLedger ledger) =>
+    private bool IsJudgeable(WorkItem i, KeyLedger ledger) =>
         !i.IsUnavailable
         && workingSet.HasEvidence(i.VideoId)
         && !ledger.HasRunFor(i.VideoId)
@@ -61,7 +61,7 @@ public sealed class VerdictSelector(
     /// — a question to answer before any quota is spent on it (#41).
     /// </summary>
     public static LedgerRun? LookalikeOf(
-        QueueItem item,
+        WorkItem item,
         KeyLedger ledger,
         Func<string, string?>? resolvedName
     ) =>

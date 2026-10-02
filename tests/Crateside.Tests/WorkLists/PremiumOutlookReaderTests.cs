@@ -42,7 +42,7 @@ public sealed class PremiumOutlookReaderTests
 
 public sealed class QueueBatchTests
 {
-    private static QueueItem Item(string id, int daysAgo) =>
+    private static WorkItem Item(string id, int daysAgo) =>
         new()
         {
             PlaylistItemId = id,
@@ -51,7 +51,7 @@ public sealed class QueueBatchTests
             AddedAt = new DateTimeOffset(2026, 8, 13, 0, 0, 0, TimeSpan.Zero).AddDays(-daysAgo),
         };
 
-    private static QueueView ViewOf(params QueueItem[] outstanding) =>
+    private static WorkListsView ViewOf(params WorkItem[] outstanding) =>
         new()
         {
             Items = outstanding,

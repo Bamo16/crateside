@@ -62,7 +62,7 @@ public sealed class TrackRemovalTests : IDisposable
     public void Both_records_go_so_the_next_scan_does_not_put_the_track_back()
     {
         var intake = Intake();
-        intake.Record([new QueueItem { VideoId = Video, Title = "Clubbed to Death" }]);
+        intake.Record([new WorkItem { VideoId = Video, Title = "Clubbed to Death" }]);
 
         Removal(Settings(), intake).Apply(Video, [Video]);
 

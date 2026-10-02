@@ -83,7 +83,7 @@ public sealed class PlaylistAuthorizer(
     /// </summary>
     public Task<UserCredential> ConsentAsync(CancellationToken ct = default) =>
         !IsConfigured
-            ? throw new QueueUnavailableException("No OAuth client is configured.")
+            ? throw new PlaylistUnavailableException("No OAuth client is configured.")
             : GoogleWebAuthorizationBroker.AuthorizeAsync(
                 ClientSecrets,
                 Scopes,

@@ -11,7 +11,7 @@ namespace Crateside.Core.Orchestration.Verdict;
 /// Works the queue down one judgment at a time, for as long as anything detected is unjudged.
 /// </summary>
 public sealed class VerdictDrainer(
-    QueueService queue,
+    WorkListService queue,
     VerdictRunner runner,
     VerdictSelector selector,
     JobStore jobs,
@@ -58,13 +58,13 @@ public sealed class VerdictDrainer(
 
     private async Task<StageTick> JudgeNextAsync(bool backfill, CancellationToken ct)
     {
-        QueueView view;
+        WorkListsView view;
 
         try
         {
             view = await queue.ReadAsync(ct);
         }
-        catch (QueueUnavailableException ex)
+        catch (PlaylistUnavailableException ex)
         {
             return StageTick.Unavailable(ex.Message);
         }

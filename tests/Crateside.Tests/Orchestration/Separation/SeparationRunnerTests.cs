@@ -44,7 +44,7 @@ public sealed class SeparationRunnerTests : IDisposable
 
     private static WorkOrder InstrumentalOrder() =>
         WorkOrder.Compose(
-            new QueueItem
+            new WorkItem
             {
                 PlaylistItemId = "PLI1",
                 VideoId = VideoId,
@@ -56,7 +56,7 @@ public sealed class SeparationRunnerTests : IDisposable
 
     private static WorkOrder Order() =>
         WorkOrder.Compose(
-            new QueueItem
+            new WorkItem
             {
                 PlaylistItemId = "PLI1",
                 VideoId = VideoId,

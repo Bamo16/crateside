@@ -5,7 +5,7 @@ using Crateside.Core.Playlist;
 namespace Crateside.Core.WorkLists;
 
 /// <summary>One entry in the Queue playlist.</summary>
-public sealed record QueueItem
+public sealed record WorkItem
 {
     /// <summary>
     /// The playlist item's own ID, which deletion targets and one video can have two of. Null once
@@ -81,9 +81,9 @@ public sealed record QueueItem
 }
 
 /// <summary>The Queue as work: what is in the playlist, what is done, what is new.</summary>
-public sealed record QueueView
+public sealed record WorkListsView
 {
-    public required IReadOnlyList<QueueItem> Items { get; init; }
+    public required IReadOnlyList<WorkItem> Items { get; init; }
 
     /// <summary>
     /// Sorts the playlist into the work lists each stage reads.
@@ -97,13 +97,13 @@ public sealed record QueueView
     /// <param name="awaitingCut">
     /// Video IDs whose separation is owed with their files left where they are.
     /// </param>
-    public static QueueView Compose(
-        IReadOnlyList<QueueItem> items,
+    public static WorkListsView Compose(
+        IReadOnlyList<WorkItem> items,
         IReadOnlySet<string> fullyProcessed,
         IReadOnlySet<string> verdictWithoutStems,
         IReadOnlySet<string> separatedWithoutKey,
         IReadOnlyDictionary<string, TrackInstruction> instructions,
-        IReadOnlyList<QueueItem>? reopened = null,
+        IReadOnlyList<WorkItem>? reopened = null,
         string? bumped = null,
         IReadOnlySet<string>? awaitingCut = null,
         IReadOnlyDictionary<string, StemInventory>? inventories = null
@@ -114,7 +114,7 @@ public sealed record QueueView
 
         // Reopened tracks are described here too. Doing it where they are built instead meant a
         // second list of instruction fields, and the source-URL override was missing from it.
-        QueueItem Described(QueueItem item)
+        WorkItem Described(WorkItem item)
         {
             var instruction = instructions.GetValueOrDefault(item.VideoId);
 
@@ -130,7 +130,7 @@ public sealed record QueueView
             };
         }
 
-        return new QueueView
+        return new WorkListsView
         {
             Items = described,
             FullyProcessed = [.. described.Where(i => fullyProcessed.Contains(i.VideoId))],
@@ -186,7 +186,7 @@ public sealed record QueueView
     /// The two lists a stage picks from, with the bumped track first and every other item where
     /// it was (ADR 0015).
     /// </summary>
-    private QueueView WithBumpedFirst(string? bumped) =>
+    private WorkListsView WithBumpedFirst(string? bumped) =>
         bumped is not { Length: > 0 } videoId
             ? this
             : this with
@@ -196,25 +196,25 @@ public sealed record QueueView
                 AwaitingSeparation = First(AwaitingSeparation, videoId),
             };
 
-    private static IReadOnlyList<QueueItem> First(IReadOnlyList<QueueItem> items, string videoId) =>
+    private static IReadOnlyList<WorkItem> First(IReadOnlyList<WorkItem> items, string videoId) =>
         items.FirstOrDefault(i => i.VideoId.Equals(videoId, StringComparison.Ordinal))
             is not { } bumped
             ? items
             : [bumped, .. items.Where(i => !ReferenceEquals(i, bumped))];
 
     /// <summary>Items whose video is fully processed — the ones deletion would remove.</summary>
-    public required IReadOnlyList<QueueItem> FullyProcessed { get; init; }
+    public required IReadOnlyList<WorkItem> FullyProcessed { get; init; }
 
     /// <summary>
     /// Items with no verdict yet: the actual work list, oldest-added first.
     /// </summary>
-    public required IReadOnlyList<QueueItem> Outstanding { get; init; }
+    public required IReadOnlyList<WorkItem> Outstanding { get; init; }
 
     /// <summary>
     /// The next <paramref name="size"/> items to work, plus anything pinned — on top of the size,
     /// never instead.
     /// </summary>
-    public IReadOnlyList<QueueItem> NextBatch(int size, ISet<string>? pinned = null)
+    public IReadOnlyList<WorkItem> NextBatch(int size, ISet<string>? pinned = null)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(size);
 
@@ -236,13 +236,13 @@ public sealed record QueueView
     /// <summary>
     /// Items with a verdict and no stems on disk: the separation work list, oldest-added first.
     /// </summary>
-    public required IReadOnlyList<QueueItem> AwaitingSeparation { get; init; }
+    public required IReadOnlyList<WorkItem> AwaitingSeparation { get; init; }
 
     /// <summary>
     /// Tracks the playlist no longer holds that still owe some stage — which keeps their rows, not
     /// their place in <see cref="AwaitingSeparation"/>.
     /// </summary>
-    public IReadOnlyList<QueueItem> Reopened { get; init; } = [];
+    public IReadOnlyList<WorkItem> Reopened { get; init; } = [];
 
     /// <summary>The track the user asked to be worked first, or null.</summary>
     public string? Bumped { get; init; }
@@ -251,7 +251,7 @@ public sealed record QueueView
     /// Every item the read produced, once each — what a stage that works any track reads, since a
     /// source can be added even to a finished one (ADR 0019).
     /// </summary>
-    public IEnumerable<QueueItem> Everything =>
+    public IEnumerable<WorkItem> Everything =>
         Items
             .Concat(AwaitingSeparation)
             .Concat(Reopened)
@@ -262,5 +262,5 @@ public sealed record QueueView
     /// Separated already, and parked for want of a key worth tagging with. Nothing automatic moves
     /// these on.
     /// </summary>
-    public required IReadOnlyList<QueueItem> AwaitingKey { get; init; }
+    public required IReadOnlyList<WorkItem> AwaitingKey { get; init; }
 }

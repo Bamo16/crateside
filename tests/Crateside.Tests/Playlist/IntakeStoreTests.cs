@@ -29,7 +29,7 @@ public sealed class IntakeStoreTests : IDisposable
 
     private IntakeStore Store() => new(Path.Combine(_directory, "intake.json"));
 
-    private static QueueItem Item(string videoId, string title = "Some Track") =>
+    private static WorkItem Item(string videoId, string title = "Some Track") =>
         new()
         {
             PlaylistItemId = $"PLI-{videoId}",
@@ -179,7 +179,7 @@ public sealed class IntakeStoreTests : IDisposable
     public async Task Scans_claiming_at_once_never_both_offer_the_same_entry()
     {
         var store = Store();
-        QueueItem[] held = [Item(Track), Item(Other)];
+        WorkItem[] held = [Item(Track), Item(Other)];
         store.Record(held);
 
         var claims = await Task.WhenAll(

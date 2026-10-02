@@ -17,7 +17,7 @@ namespace Crateside.Core.Tracks;
 
 /// <summary>
 /// The playlist as tracks: one row each, whatever state they are in — the work lists of
-/// <see cref="QueueView"/> put back together by track identity.
+/// <see cref="WorkListsView"/> put back together by track identity.
 /// </summary>
 public sealed record TracksView
 {
@@ -51,7 +51,7 @@ public sealed record TracksView
     /// How each retained download turned out, by video ID — what a row is parked over.
     /// </param>
     public static TracksView Compose(
-        QueueView view,
+        WorkListsView view,
         KeyLedger ledger,
         IReadOnlyList<StagedSong> staging,
         IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>> onDisk,
@@ -299,7 +299,7 @@ public sealed record TracksView
     private sealed record RowSeed(
         string VideoId,
         string FallbackName,
-        QueueItem? Item = null,
+        WorkItem? Item = null,
         bool IsLibraryOnly = false
     );
 
@@ -483,6 +483,6 @@ public sealed record TracksView
             ? earliest
             : null;
 
-    private static HashSet<string> VideoIdsOf(IEnumerable<QueueItem> items) =>
+    private static HashSet<string> VideoIdsOf(IEnumerable<WorkItem> items) =>
         items.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
 }

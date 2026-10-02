@@ -34,7 +34,7 @@ public sealed class EvidenceSelectorTests : IDisposable
     private void GiveAudio(string videoId) =>
         File.WriteAllText(Path.Combine(Set.Prepare(videoId), "track.flac"), "audio");
 
-    private static QueueItem Item(string videoId, bool unavailable = false) =>
+    private static WorkItem Item(string videoId, bool unavailable = false) =>
         new()
         {
             PlaylistItemId = $"PLI-{videoId}",
@@ -44,12 +44,12 @@ public sealed class EvidenceSelectorTests : IDisposable
         };
 
     /// <summary>Every item arrives with audio held for it.</summary>
-    private QueueView View(params QueueItem[] outstanding)
+    private WorkListsView View(params WorkItem[] outstanding)
     {
         foreach (var item in outstanding)
             GiveAudio(item.VideoId);
 
-        return new QueueView
+        return new WorkListsView
         {
             Items = outstanding,
             Outstanding = outstanding,

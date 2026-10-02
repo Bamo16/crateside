@@ -14,7 +14,7 @@ public sealed class VerdictSelectorRealDataTests
     private static readonly JobStore Jobs = new();
     private static readonly CratesidePaths Paths = new();
 
-    private static QueueItem Item(string videoId) =>
+    private static WorkItem Item(string videoId) =>
         new()
         {
             PlaylistItemId = $"PLI-{videoId}",
@@ -47,7 +47,7 @@ public sealed class VerdictSelectorRealDataTests
             var stopped = Set.AcquisitionFor(videoId)?.Stops is true;
 
             var picked = new VerdictSelector(Jobs, Set).TryPickNext(
-                QueueView.Compose(
+                WorkListsView.Compose(
                     [Item(videoId)],
                     new HashSet<string>(),
                     new HashSet<string>(),

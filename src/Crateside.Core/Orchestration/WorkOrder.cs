@@ -29,7 +29,7 @@ public sealed record WorkOrder
     /// <summary>
     /// Decides what should happen to a queued track.
     /// </summary>
-    public static WorkOrder Compose(QueueItem item, KeyLedger ledger) =>
+    public static WorkOrder Compose(WorkItem item, KeyLedger ledger) =>
         new()
         {
             VideoId = item.VideoId,

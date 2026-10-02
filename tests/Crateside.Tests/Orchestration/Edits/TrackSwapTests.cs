@@ -156,10 +156,10 @@ public sealed class TrackSwapTests : IDisposable
 
         await Swap(settings).ApplyAsync(Video, Replacement, TestContext.Current.CancellationToken);
 
-        var item = QueueView
+        var item = WorkListsView
             .Compose(
                 [
-                    new QueueItem
+                    new WorkItem
                     {
                         PlaylistItemId = "PLI1",
                         VideoId = Video,
@@ -202,9 +202,9 @@ public sealed class TrackSwapTests : IDisposable
 
         await Swap(settings).ApplyAsync(Video, Replacement, TestContext.Current.CancellationToken);
 
-        var reopened = new QueueItem { VideoId = Video, Title = "Rob Dougan - Furious Angels" };
+        var reopened = new WorkItem { VideoId = Video, Title = "Rob Dougan - Furious Angels" };
 
-        var item = QueueView
+        var item = WorkListsView
             .Compose(
                 [],
                 new HashSet<string>(),

@@ -102,10 +102,10 @@ public sealed class QuotaGuardTests : IDisposable
         return KeyLedger.Read(path);
     }
 
-    private static QueueItem Item(string videoId) =>
+    private static WorkItem Item(string videoId) =>
         new() { VideoId = videoId, Title = $"Track {videoId}" };
 
-    private static QueueView View(params QueueItem[] outstanding) =>
+    private static WorkListsView View(params WorkItem[] outstanding) =>
         new()
         {
             Items = outstanding,

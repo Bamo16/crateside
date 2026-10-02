@@ -15,7 +15,7 @@ public sealed class DownloadAcceptanceTests
             VideoId = Track,
             Url = url,
             Label = label,
-            Track = new QueueItem
+            Track = new WorkItem
             {
                 VideoId = Track,
                 Title = "Track",

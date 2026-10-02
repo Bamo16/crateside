@@ -51,7 +51,7 @@ public sealed class DownloadSelectorTests : IDisposable
 
     private static readonly AddedSource Source = new() { VideoId = Attached, Label = "A Cappella" };
 
-    private static QueueItem Absent(string videoId, StemPlan plan) =>
+    private static WorkItem Absent(string videoId, StemPlan plan) =>
         new()
         {
             VideoId = videoId,
@@ -59,7 +59,7 @@ public sealed class DownloadSelectorTests : IDisposable
             Plan = plan,
         };
 
-    private static QueueItem Held(string videoId, StemPlan? plan = null) =>
+    private static WorkItem Held(string videoId, StemPlan? plan = null) =>
         new()
         {
             PlaylistItemId = $"PLI-{videoId}",
@@ -73,7 +73,7 @@ public sealed class DownloadSelectorTests : IDisposable
 
     private static StemPlan KeepingTheSource => new() { Presets = [], KeepSource = true };
 
-    private static QueueView FinishedWith(StemPlan plan) =>
+    private static WorkListsView FinishedWith(StemPlan plan) =>
         new()
         {
             Items = [Absent(Finished, plan)],
@@ -83,7 +83,7 @@ public sealed class DownloadSelectorTests : IDisposable
             AwaitingSeparation = [],
         };
 
-    private static QueueView View(params QueueItem[] items) =>
+    private static WorkListsView View(params WorkItem[] items) =>
         new()
         {
             Items = items,

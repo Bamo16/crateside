@@ -123,11 +123,11 @@ public sealed class FiledArrivalTests : IDisposable
         Assert.Null(Where(Item(NewSong, "entry-3", "Fox Stevenson - Glue Gun")));
     }
 
-    private string? Where(QueueItem arrival)
+    private string? Where(WorkItem arrival)
     {
         var ledger = Ledger();
 
-        return QueueService.FiledWhere(
+        return WorkListService.FiledWhere(
             arrival,
             ProcessedTracks.Scan(ledger, [Staging, Mashup]),
             ledger,
@@ -170,7 +170,7 @@ public sealed class FiledArrivalTests : IDisposable
 
     private IntakeStore Store() => new(Path.Combine(_directory, "intake.json"));
 
-    private static QueueItem Item(string videoId, string entry, string title = "Some Song") =>
+    private static WorkItem Item(string videoId, string entry, string title = "Some Song") =>
         new()
         {
             VideoId = videoId,

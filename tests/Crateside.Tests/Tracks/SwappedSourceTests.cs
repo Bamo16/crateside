@@ -137,7 +137,7 @@ public sealed class SwappedSourceTests : IDisposable
     private IReadOnlyList<TrackRow> Compose() =>
         TracksView
             .Compose(
-                QueueView.Compose(
+                WorkListsView.Compose(
                     [],
                     new HashSet<string>(),
                     new HashSet<string>(),

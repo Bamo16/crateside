@@ -21,7 +21,7 @@ public sealed class InventoryRealLibraryTests
 
         var ledger = KeyLedger.Read(LedgerPath);
         var processed = ProcessedTracks.Scan(ledger, [StagingRoot, LibraryRoot]);
-        var inventories = QueueService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
+        var inventories = WorkListService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
 
         string Song(string videoId) => ledger.SongFor(videoId) ?? videoId;
 
@@ -46,7 +46,7 @@ public sealed class InventoryRealLibraryTests
 
         var ledger = KeyLedger.Read(LedgerPath);
         var processed = ProcessedTracks.Scan(ledger, [StagingRoot, LibraryRoot]);
-        var inventories = QueueService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
+        var inventories = WorkListService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
 
         var withoutFilesOfTheirOwn = inventories
             .Keys.Where(videoId => !processed.StemsByVideoId.ContainsKey(videoId))

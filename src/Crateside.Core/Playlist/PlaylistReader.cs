@@ -24,20 +24,20 @@ public sealed class PlaylistReader(IOptions<PlaylistOptions> options) : IDisposa
     /// <summary>
     /// Lists every item in the playlist, following pagination to the end.
     /// </summary>
-    /// <exception cref="QueueUnavailableException">
+    /// <exception cref="PlaylistUnavailableException">
     /// Thrown rather than returning empty: a private playlist read with an API key comes back as
     /// <em>not found</em>, and an unreadable queue must never render as an empty one.
     /// </exception>
-    public async Task<IReadOnlyList<QueueItem>> ListAsync(
+    public async Task<IReadOnlyList<WorkItem>> ListAsync(
         string playlistId,
         CancellationToken ct = default
     )
     {
         if (!HasCredential)
-            throw new QueueUnavailableException("No API key is configured.");
+            throw new PlaylistUnavailableException("No API key is configured.");
 
         if (PlaylistReference.Problem(playlistId) is { } problem)
-            throw new QueueUnavailableException(problem);
+            throw new PlaylistUnavailableException(problem);
 
         var service = _service ??= new YouTubeService(
             new BaseClientService.Initializer
@@ -47,7 +47,7 @@ public sealed class PlaylistReader(IOptions<PlaylistOptions> options) : IDisposa
             }
         );
 
-        var items = new List<QueueItem>();
+        var items = new List<WorkItem>();
         string? pageToken = null;
 
         try
@@ -61,14 +61,14 @@ public sealed class PlaylistReader(IOptions<PlaylistOptions> options) : IDisposa
 
                 var response = await request.ExecuteAsync(ct);
 
-                items.AddRange(response.Items.Select(ToQueueItem).OfType<QueueItem>());
+                items.AddRange(response.Items.Select(ToQueueItem).OfType<WorkItem>());
 
                 pageToken = response.NextPageToken;
             } while (pageToken is not null);
         }
         catch (GoogleApiException ex)
         {
-            throw new QueueUnavailableException(
+            throw new PlaylistUnavailableException(
                 ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound
                     ? "The playlist was not found. If it has been made private, an API key can "
                         + "no longer read it and an OAuth credential is required."
@@ -80,7 +80,7 @@ public sealed class PlaylistReader(IOptions<PlaylistOptions> options) : IDisposa
         return items;
     }
 
-    private static QueueItem? ToQueueItem(PlaylistItem item)
+    private static WorkItem? ToQueueItem(PlaylistItem item)
     {
         if (item.Snippet?.ResourceId?.VideoId is not { Length: > 0 } videoId)
             return null;
@@ -91,7 +91,7 @@ public sealed class PlaylistReader(IOptions<PlaylistOptions> options) : IDisposa
             privacy is "private" or "privacyStatusUnspecified"
             || item.Snippet.Title is "Private video" or "Deleted video";
 
-        return new QueueItem
+        return new WorkItem
         {
             PlaylistItemId = item.Id,
             VideoId = videoId,
@@ -108,5 +108,5 @@ public sealed class PlaylistReader(IOptions<PlaylistOptions> options) : IDisposa
 }
 
 /// <summary>The Queue could not be read. Distinct from the Queue being empty.</summary>
-public sealed class QueueUnavailableException(string message, Exception? inner = null)
+public sealed class PlaylistUnavailableException(string message, Exception? inner = null)
     : Exception(message, inner);

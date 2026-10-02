@@ -10,7 +10,7 @@ namespace Crateside;
 /// to rename before the GPU runs. Never paused: it contends for nothing.
 /// </summary>
 public sealed class NameWorker(
-    QueueService queue,
+    WorkListService queue,
     NameResolver resolver,
     ResolvedNameStore store,
     TracksService tracks,

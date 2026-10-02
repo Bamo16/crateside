@@ -17,7 +17,7 @@ public delegate IReadOnlySet<string> ReadReopenedTracks(KeyLedger ledger);
 /// </summary>
 public delegate Task<PresetCatalog> ReadPresetCatalog(CancellationToken ct);
 
-public sealed class QueueService(
+public sealed class WorkListService(
     IOptions<CratesidePaths> paths,
     QueueSettingsStore settings,
     PlaylistReader reader,
@@ -37,7 +37,7 @@ public sealed class QueueService(
     private readonly CratesidePaths _paths = paths.Value;
     private readonly SemaphoreSlim _readGate = new(1, 1);
 
-    private IReadOnlyList<QueueItem>? _cachedItems;
+    private IReadOnlyList<WorkItem>? _cachedItems;
     private DateTimeOffset _cachedAt;
 
     /// <summary>
@@ -147,7 +147,7 @@ public sealed class QueueService(
     /// <summary>
     /// The playlist, from the API or from the last read; readers arriving together share one call.
     /// </summary>
-    private async Task<IReadOnlyList<QueueItem>> ItemsAsync(CancellationToken ct)
+    private async Task<IReadOnlyList<WorkItem>> ItemsAsync(CancellationToken ct)
     {
         await _readGate.WaitAsync(ct);
 
@@ -171,7 +171,7 @@ public sealed class QueueService(
 
                 return _cachedItems;
             }
-            catch (QueueUnavailableException ex)
+            catch (PlaylistUnavailableException ex)
             {
                 // A playlist that cannot be read means no new arrivals, not no queue (ADR 0021).
                 // Everything already taken on is on disk, in the ledger and in the intake, and
@@ -224,7 +224,7 @@ public sealed class QueueService(
 
         return new QueueScan
         {
-            View = QueueView.Compose(
+            View = WorkListsView.Compose(
                 items,
                 processed.FullyProcessed,
                 processed.VerdictWithoutStems,
@@ -247,7 +247,7 @@ public sealed class QueueService(
     }
 
     /// <summary>The playlist, plus the tracks the user pasted in (ADR 0010).</summary>
-    private IReadOnlyList<QueueItem> Pasted(IReadOnlyList<QueueItem> playlist)
+    private IReadOnlyList<WorkItem> Pasted(IReadOnlyList<WorkItem> playlist)
     {
         var held = playlist.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
 
@@ -257,7 +257,7 @@ public sealed class QueueService(
             .. settings
                 .Read()
                 .Tracks.Where(track => track.AddedByUrl && !held.Contains(track.VideoId))
-                .Select(track => new QueueItem { VideoId = track.VideoId, Title = track.VideoId }),
+                .Select(track => new WorkItem { VideoId = track.VideoId, Title = track.VideoId }),
         ];
     }
 
@@ -265,8 +265,8 @@ public sealed class QueueService(
     /// Everything crateside has taken on: what the playlist holds now, plus what it held once
     /// (ADR 0021).
     /// </summary>
-    private (IReadOnlyList<QueueItem> Items, IReadOnlyList<QueueItem> Arrivals) TakenOn(
-        IReadOnlyList<QueueItem> held
+    private (IReadOnlyList<WorkItem> Items, IReadOnlyList<WorkItem> Arrivals) TakenOn(
+        IReadOnlyList<WorkItem> held
     )
     {
         var owed = Owed().ToHashSet(StringComparer.Ordinal);
@@ -286,7 +286,7 @@ public sealed class QueueService(
     /// show that the add worked (#84).
     /// </summary>
     private void NoteFiledArrivals(
-        IReadOnlyList<QueueItem> arrivals,
+        IReadOnlyList<WorkItem> arrivals,
         ProcessedTracks processed,
         KeyLedger ledger
     )
@@ -304,7 +304,7 @@ public sealed class QueueService(
     /// none. A song known only by a lookalike name is said to look like one.
     /// </summary>
     internal static string? FiledWhere(
-        QueueItem arrival,
+        WorkItem arrival,
         ProcessedTracks processed,
         KeyLedger ledger,
         string finishedRoot
@@ -362,7 +362,7 @@ public sealed class QueueService(
     /// Gives back the entries crateside has recorded, so the playlist stops holding what it has
     /// already delivered (ADR 0021).
     /// </summary>
-    private async Task ConsumeAsync(IReadOnlyList<QueueItem> held, CancellationToken ct)
+    private async Task ConsumeAsync(IReadOnlyList<WorkItem> held, CancellationToken ct)
     {
         // Not "recorded by this scan": a track recorded before the setting was turned on would
         // then never be new again, and the playlist would never empty at all.
@@ -413,7 +413,7 @@ public sealed class QueueService(
                     )
             );
         }
-        catch (QueueUnavailableException)
+        catch (PlaylistUnavailableException)
         {
             // Consent has lapsed, so no delete was attempted and no quota was spent. Swallowed
             // rather than thrown: the playlist read itself worked, and failing the scan here
@@ -459,12 +459,9 @@ public sealed class QueueService(
 
     /// <summary>
     /// Judged tracks with separation to redo that the playlist no longer holds — so they reach
-    /// <see cref="QueueView.AwaitingSeparation"/>, never <see cref="QueueView.Outstanding"/>.
+    /// <see cref="WorkListsView.AwaitingSeparation"/>, never <see cref="WorkListsView.Outstanding"/>.
     /// </summary>
-    private IReadOnlyList<QueueItem> Reopened(
-        IReadOnlyList<QueueItem> items,
-        Ledger.KeyLedger ledger
-    )
+    private IReadOnlyList<WorkItem> Reopened(IReadOnlyList<WorkItem> items, Ledger.KeyLedger ledger)
     {
         if (reopened?.Invoke(ledger) is not { Count: > 0 } videoIds)
             return [];
@@ -472,7 +469,7 @@ public sealed class QueueService(
         var queued = items.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
         var held = intake.Read().Select(record => record.VideoId).ToHashSet(StringComparer.Ordinal);
 
-        // Bare, with no instruction fields copied on: QueueView.Compose describes these the same
+        // Bare, with no instruction fields copied on: WorkListsView.Compose describes these the same
         // way it describes playlist items.
         return
         [
@@ -483,17 +480,17 @@ public sealed class QueueService(
                 .Where(videoId => held.Count is 0 || held.Contains(videoId))
                 .Select(videoId =>
                     ledger.TryGetLatestByVideoId(videoId, out var run)
-                        ? new QueueItem { VideoId = videoId, Title = run.DisplayName }
+                        ? new WorkItem { VideoId = videoId, Title = run.DisplayName }
                         : null
                 )
-                .OfType<QueueItem>(),
+                .OfType<WorkItem>(),
         ];
     }
 
     /// <summary>
     /// The queue sorted into work lists — the conclusion of a <see cref="ScanAsync"/>.
     /// </summary>
-    public async Task<QueueView> ReadAsync(CancellationToken ct = default) =>
+    public async Task<WorkListsView> ReadAsync(CancellationToken ct = default) =>
         (await ScanAsync(ct)).View;
 
     /// <summary>
@@ -514,7 +511,7 @@ public sealed class QueueService(
     /// claim.
     /// </summary>
     public async Task<IReadOnlyList<RemovalResult>> RemoveAsync(
-        IReadOnlyList<QueueItem> items,
+        IReadOnlyList<WorkItem> items,
         CancellationToken ct = default
     )
     {
@@ -533,7 +530,7 @@ public sealed class QueueService(
 /// </summary>
 public sealed record QueueScan
 {
-    public required QueueView View { get; init; }
+    public required WorkListsView View { get; init; }
 
     /// <summary>Why the playlist could not be read, or null when it could.</summary>
     public string? PlaylistProblem { get; init; }

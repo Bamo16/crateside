@@ -30,10 +30,10 @@ public static class CutRequests
         requestedAt is not { } asked
         || handoff is { Status: JobStatus.Succeeded, UpdatedAt: var at } && at >= asked;
 
-    public static bool OwesCut(QueueItem item, JobStore jobs) =>
+    public static bool OwesCut(WorkItem item, JobStore jobs) =>
         OwesCut(item.CutRequestedAt, Latest(jobs, item.VideoId, JobStage.Separation));
 
-    public static bool IsSettled(QueueItem item, JobStore jobs) =>
+    public static bool IsSettled(WorkItem item, JobStore jobs) =>
         IsSettled(item.CutRequestedAt, Latest(jobs, item.VideoId, JobStage.Handoff));
 
     /// <summary>Video IDs whose request still owes a separation.</summary>

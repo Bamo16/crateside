@@ -17,7 +17,7 @@ public sealed class SeparationSelector(
     /// The next judged track to separate, even LOW or WITHHELD: oldest-added first, skipping
     /// anything already done, in flight, or given up on.
     /// </summary>
-    public bool TryPickNext(QueueView view, KeyLedger ledger, out WorkOrder order)
+    public bool TryPickNext(WorkListsView view, KeyLedger ledger, out WorkOrder order)
     {
         if (
             view.AwaitingSeparation.FirstOrDefault(i => !i.IsUnavailable && IsEligible(i))
@@ -38,7 +38,7 @@ public sealed class SeparationSelector(
     /// Never retries a success unasked, unlike the other selectors: stems gone after one were most
     /// likely deleted on purpose. A re-cut or swap since then is the asking (#50).
     /// </summary>
-    private bool IsEligible(QueueItem item) =>
+    private bool IsEligible(WorkItem item) =>
         StageEligibility.Allows(
             jobs,
             item.VideoId,

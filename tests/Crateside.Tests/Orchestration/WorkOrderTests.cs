@@ -28,7 +28,7 @@ public sealed class WorkOrderTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static QueueItem Item(
+    private static WorkItem Item(
         PremiumOutlook outlook = PremiumOutlook.Unknown,
         bool instrumentalRelease = false
     ) =>

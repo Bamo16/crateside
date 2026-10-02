@@ -76,8 +76,8 @@ public sealed class AddedSourceRowTests : IDisposable
     )
     {
         var instruction = new TrackInstruction { VideoId = Track, Plan = Plan };
-        var view = QueueView.Compose(
-            [new QueueItem { VideoId = Track, Title = "Some Track" }],
+        var view = WorkListsView.Compose(
+            [new WorkItem { VideoId = Track, Title = "Some Track" }],
             new HashSet<string>(),
             new HashSet<string>(),
             new HashSet<string>(),

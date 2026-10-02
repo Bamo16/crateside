@@ -17,7 +17,7 @@ public sealed class EvidenceSelector(
     /// The next track to detect: oldest-added first, skipping anything with evidence already, in
     /// flight, or given up on.
     /// </summary>
-    public bool TryPickNext(QueueView view, out QueueItem next)
+    public bool TryPickNext(WorkListsView view, out WorkItem next)
     {
         next = view.Outstanding.FirstOrDefault(i =>
             !i.IsUnavailable
@@ -33,7 +33,7 @@ public sealed class EvidenceSelector(
     }
 
     /// <summary>Retries even a succeeded detection, since the caller has already found its evidence gone.</summary>
-    private bool IsEligible(QueueItem item) =>
+    private bool IsEligible(WorkItem item) =>
         StageEligibility.Allows(
             jobs,
             item.VideoId,

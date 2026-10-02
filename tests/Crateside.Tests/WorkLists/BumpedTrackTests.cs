@@ -64,7 +64,7 @@ public sealed class BumpedTrackTests
     [Fact]
     public void The_separation_list_is_bumped_too()
     {
-        var view = QueueView.Compose(
+        var view = WorkListsView.Compose(
             [Item(First), Item(Second), Item(Third)],
             new HashSet<string>(),
             new HashSet<string> { First, Second, Third },
@@ -76,8 +76,8 @@ public sealed class BumpedTrackTests
         Assert.Equal([Third, First, Second], Ids(view.AwaitingSeparation));
     }
 
-    private static QueueView Compose(string? bumped = null) =>
-        QueueView.Compose(
+    private static WorkListsView Compose(string? bumped = null) =>
+        WorkListsView.Compose(
             [Item(First), Item(Second), Item(Third)],
             new HashSet<string>(),
             new HashSet<string>(),
@@ -86,7 +86,7 @@ public sealed class BumpedTrackTests
             bumped: bumped
         );
 
-    private static QueueItem Item(string videoId) =>
+    private static WorkItem Item(string videoId) =>
         new()
         {
             VideoId = videoId,
@@ -94,6 +94,6 @@ public sealed class BumpedTrackTests
             Title = videoId,
         };
 
-    private static IReadOnlyList<string> Ids(IEnumerable<QueueItem> items) =>
+    private static IReadOnlyList<string> Ids(IEnumerable<WorkItem> items) =>
         [.. items.Select(item => item.VideoId)];
 }

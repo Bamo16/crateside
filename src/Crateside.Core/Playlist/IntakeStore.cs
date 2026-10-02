@@ -42,7 +42,7 @@ public sealed class IntakeStore(string? path = null)
     /// Remembers every track it has not seen before, and returns the ones it added. Existing
     /// records are never refreshed.
     /// </summary>
-    public IReadOnlyList<IntakeRecord> Record(IEnumerable<QueueItem> items)
+    public IReadOnlyList<IntakeRecord> Record(IEnumerable<WorkItem> items)
     {
         lock (_gate)
         {
@@ -74,7 +74,7 @@ public sealed class IntakeStore(string? path = null)
     /// removed that the user has added again (#84). Records the first and puts the second back in
     /// line to be removed.
     /// </summary>
-    public IReadOnlyList<QueueItem> Arrive(IReadOnlyList<QueueItem> held)
+    public IReadOnlyList<WorkItem> Arrive(IReadOnlyList<WorkItem> held)
     {
         lock (_gate)
         {
@@ -148,10 +148,7 @@ public sealed class IntakeStore(string? path = null)
     /// Marks and returns the held entries never offered back, in one step, so scans running at
     /// once never offer the same entry. Call it before the removal, never after.
     /// </summary>
-    public IReadOnlyList<QueueItem> ClaimForRemoval(
-        IReadOnlyList<QueueItem> held,
-        DateTimeOffset at
-    )
+    public IReadOnlyList<WorkItem> ClaimForRemoval(IReadOnlyList<WorkItem> held, DateTimeOffset at)
     {
         lock (_gate)
         {
@@ -160,7 +157,7 @@ public sealed class IntakeStore(string? path = null)
                 .Select(record => record.VideoId)
                 .ToHashSet(StringComparer.Ordinal);
 
-            List<QueueItem> claimed =
+            List<WorkItem> claimed =
             [
                 .. held.Where(item =>
                     item.PlaylistItemId is not null && offerable.Contains(item.VideoId)
@@ -266,8 +263,8 @@ public sealed class IntakeStore(string? path = null)
     /// Everything crateside has taken on: what the playlist holds now, which wins because removal
     /// needs its live entry, then what it held once.
     /// </summary>
-    public static IReadOnlyList<QueueItem> Merge(
-        IReadOnlyList<QueueItem> held,
+    public static IReadOnlyList<WorkItem> Merge(
+        IReadOnlyList<WorkItem> held,
         IEnumerable<IntakeRecord> recorded
     )
     {
@@ -286,7 +283,7 @@ public sealed class IntakeStore(string? path = null)
     /// <summary>
     /// The record read back as the queue item it stands in for, with no playlist entry to delete.
     /// </summary>
-    public static QueueItem AsQueueItem(IntakeRecord record) =>
+    public static WorkItem AsQueueItem(IntakeRecord record) =>
         new()
         {
             VideoId = record.VideoId,

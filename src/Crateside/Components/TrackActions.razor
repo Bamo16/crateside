@@ -7,7 +7,7 @@
 @using Crateside.Core.Tracks
 @using Crateside.Core.WorkLists
 @implements IDisposable
-@inject QueueService Playlist
+@inject WorkListService Playlist
 @inject JobStore Jobs
 @inject StageSignals Signals
 @inject TrackRemoval Removal
@@ -184,7 +184,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
     private bool HasQueueButtons =>
         Row is { GaveUpAt: not null } or { State: TrackState.Short } || IsBumped || CanBump;
 
-    public static bool HasRemove(TrackRow row, QueueService playlist) =>
+    public static bool HasRemove(TrackRow row, WorkListService playlist) =>
         row is { PlaylistItemId: not null } && playlist.IsAuthorized || row.CanForget;
 
     public void Dispose()
@@ -265,7 +265,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
         {
             var results = await Playlist.RemoveAsync(
                 [
-                    new QueueItem
+                    new WorkItem
                     {
                         PlaylistItemId = playlistItemId,
                         VideoId = Row.VideoId,
@@ -281,7 +281,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
 
             await Tracks.RefreshAsync(_circuit.Token);
         }
-        catch (QueueUnavailableException ex)
+        catch (PlaylistUnavailableException ex)
         {
             _problem = ex.Message;
         }

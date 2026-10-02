@@ -18,7 +18,7 @@ namespace Crateside.Components;
 /// them, so the row and Track details cannot drift apart (#21).
 /// </summary>
 public sealed class StemEditor(
-    QueueService playlist,
+    WorkListService playlist,
     StemRecut recut,
     SourceAdd sources,
     SampleAdoption adoption,

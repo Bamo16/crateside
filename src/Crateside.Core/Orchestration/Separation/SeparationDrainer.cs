@@ -12,7 +12,7 @@ namespace Crateside.Core.Orchestration.Separation;
 /// Works the queue down, one track at a time, for as long as there is anything outstanding.
 /// </summary>
 public sealed class SeparationDrainer(
-    QueueService queue,
+    WorkListService queue,
     SeparationRunner runner,
     SeparationSelector selector,
     SeparationInterlock interlock,
@@ -37,13 +37,13 @@ public sealed class SeparationDrainer(
         if (control.IsPaused)
             return DrainTick.Paused;
 
-        QueueView view;
+        WorkListsView view;
 
         try
         {
             view = await queue.ReadAsync(ct);
         }
-        catch (QueueUnavailableException ex)
+        catch (PlaylistUnavailableException ex)
         {
             return DrainTick.Unavailable(ex.Message);
         }

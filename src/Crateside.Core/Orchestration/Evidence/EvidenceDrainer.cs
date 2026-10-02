@@ -11,7 +11,7 @@ namespace Crateside.Core.Orchestration.Evidence;
 /// Works the queue down one detection at a time, for as long as anything is undetected.
 /// </summary>
 public sealed class EvidenceDrainer(
-    QueueService queue,
+    WorkListService queue,
     EvidenceRunner runner,
     EvidenceSelector selector,
     JobStore jobs,
@@ -25,13 +25,13 @@ public sealed class EvidenceDrainer(
     /// <summary>Detects the next undetected track, if there is one.</summary>
     public async Task<StageTick> DrainOnceAsync(CancellationToken ct = default)
     {
-        QueueView view;
+        WorkListsView view;
 
         try
         {
             view = await queue.ReadAsync(ct);
         }
-        catch (QueueUnavailableException ex)
+        catch (PlaylistUnavailableException ex)
         {
             return StageTick.Unavailable(ex.Message);
         }

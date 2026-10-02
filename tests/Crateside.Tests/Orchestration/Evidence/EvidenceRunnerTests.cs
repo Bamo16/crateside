@@ -32,7 +32,7 @@ public sealed class EvidenceRunnerTests : IDisposable
 
     private static WorkOrder Order() =>
         WorkOrder.Compose(
-            new QueueItem
+            new WorkItem
             {
                 PlaylistItemId = "PLI1",
                 VideoId = VideoId,

@@ -35,7 +35,7 @@ public sealed class VerdictRunnerTests : IDisposable
 
     private static WorkOrder Order(bool instrumentalRelease = false, string? statedSource = null) =>
         WorkOrder.Compose(
-            new QueueItem
+            new WorkItem
             {
                 PlaylistItemId = "PLI1",
                 VideoId = VideoId,

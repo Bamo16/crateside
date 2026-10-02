@@ -28,7 +28,7 @@ public sealed class SeparationSelectorTests : IDisposable
     private static readonly KeyLedger NoLedger = KeyLedger.Read("does-not-exist");
 
     /// <summary>A queue whose separation work list is these tracks: judged, no stems, not held.</summary>
-    private static QueueView View(params QueueItem[] awaitingSeparation) =>
+    private static WorkListsView View(params WorkItem[] awaitingSeparation) =>
         new()
         {
             Items = awaitingSeparation,
@@ -61,7 +61,7 @@ public sealed class SeparationSelectorTests : IDisposable
             }
         );
 
-    private static QueueItem Item(string videoId, bool unavailable = false) =>
+    private static WorkItem Item(string videoId, bool unavailable = false) =>
         new()
         {
             PlaylistItemId = $"PLI-{videoId}",
@@ -82,7 +82,7 @@ public sealed class SeparationSelectorTests : IDisposable
         // The guard is structural: an unjudged track never reaches the work list.
         var unjudged = Item("aaaaaaaaaaa");
 
-        var view = new QueueView
+        var view = new WorkListsView
         {
             Items = [unjudged],
             Outstanding = [unjudged],

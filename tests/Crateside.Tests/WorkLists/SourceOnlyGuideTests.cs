@@ -80,9 +80,9 @@ public sealed class SourceOnlyGuideTests
         Assert.Empty(Compose(Files(Staging, [null]), plan).AwaitingSeparation);
     }
 
-    private static QueueView Compose(StemInventory inventory, StemPlan plan) =>
-        QueueView.Compose(
-            [new QueueItem { VideoId = Track, Title = "Track" }],
+    private static WorkListsView Compose(StemInventory inventory, StemPlan plan) =>
+        WorkListsView.Compose(
+            [new WorkItem { VideoId = Track, Title = "Track" }],
             new HashSet<string> { Track },
             new HashSet<string>(),
             new HashSet<string>(),

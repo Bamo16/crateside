@@ -111,7 +111,7 @@ public sealed class TracksViewCompositionTests : IDisposable
             CreatedAt = created,
         };
 
-    private static QueueItem Item(string videoId = Video) =>
+    private static WorkItem Item(string videoId = Video) =>
         new()
         {
             PlaylistItemId = $"PLI-{videoId}",
@@ -119,13 +119,13 @@ public sealed class TracksViewCompositionTests : IDisposable
             Title = "Rob Dougan - Furious Angels",
         };
 
-    private static QueueView View(
-        IReadOnlyList<QueueItem>? items = null,
+    private static WorkListsView View(
+        IReadOnlyList<WorkItem>? items = null,
         IReadOnlySet<string>? verdictWithoutStems = null,
         IReadOnlySet<string>? separatedWithoutKey = null,
         params TrackInstruction[] instructions
     ) =>
-        QueueView.Compose(
+        WorkListsView.Compose(
             items ?? [Item()],
             new HashSet<string>(),
             verdictWithoutStems ?? new HashSet<string>(),
@@ -134,7 +134,7 @@ public sealed class TracksViewCompositionTests : IDisposable
         );
 
     private IReadOnlyList<TrackRow> Compose(
-        QueueView? view = null,
+        WorkListsView? view = null,
         KeyLedger? ledger = null,
         IReadOnlyList<StagedSong>? staging = null,
         IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>>? onDisk = null,

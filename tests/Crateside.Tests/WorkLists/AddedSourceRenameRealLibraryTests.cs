@@ -20,7 +20,7 @@ public sealed class AddedSourceRenameRealLibraryTests
         var ledger = KeyLedger.Read(LedgerPath);
 
         var processed = ProcessedTracks.Scan(ledger, [LibraryRoot]);
-        var inventories = QueueService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
+        var inventories = WorkListService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
 
         var held = inventories
             .Values.Distinct()

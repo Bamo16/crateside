@@ -18,7 +18,7 @@ public sealed class VerdictRunnerRealDataTests
 
     private static WorkOrder Order(string videoId) =>
         WorkOrder.Compose(
-            new QueueItem
+            new WorkItem
             {
                 PlaylistItemId = $"PLI-{videoId}",
                 VideoId = videoId,

@@ -8,7 +8,7 @@ public sealed class ReopenedTrackTests
     private const string Queued = "aaaaaaaaaaa";
     private const string Reopened = "bbbbbbbbbbb";
 
-    private static QueueItem Item(string videoId) =>
+    private static WorkItem Item(string videoId) =>
         new()
         {
             PlaylistItemId = $"PLI-{videoId}",
@@ -16,11 +16,11 @@ public sealed class ReopenedTrackTests
             Title = "In the playlist",
         };
 
-    private static QueueItem Off(string videoId) =>
+    private static WorkItem Off(string videoId) =>
         new() { VideoId = videoId, Title = "Long since removed" };
 
-    private static QueueView Compose(params QueueItem[] reopened) =>
-        QueueView.Compose(
+    private static WorkListsView Compose(params WorkItem[] reopened) =>
+        WorkListsView.Compose(
             [Item(Queued)],
             fullyProcessed: new HashSet<string>(),
             // Both have a verdict and no stems, which is what a re-cut leaves behind.
@@ -72,7 +72,7 @@ public sealed class ReopenedTrackTests
     public void One_owing_only_a_handoff_keeps_its_row_without_joining_the_gpu_line()
     {
         // Separation succeeded and it owes only a handoff (#32).
-        var view = QueueView.Compose(
+        var view = WorkListsView.Compose(
             [Item(Queued)],
             fullyProcessed: new HashSet<string>(),
             verdictWithoutStems: new HashSet<string> { Queued, Reopened },
@@ -92,7 +92,7 @@ public sealed class ReopenedTrackTests
     [Fact]
     public void One_parked_for_want_of_a_key_is_not_in_the_gpu_line_either()
     {
-        var view = QueueView.Compose(
+        var view = WorkListsView.Compose(
             [Item(Queued)],
             fullyProcessed: new HashSet<string>(),
             verdictWithoutStems: new HashSet<string> { Queued },

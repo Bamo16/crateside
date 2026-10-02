@@ -127,7 +127,7 @@ public static class ServiceRegistration
         // Both trailing delegates and the catalog are passed by hand: the container resolves the
         // two ReadReopenedTracks parameters to the same registration, and they mean different
         // sets.
-        services.AddSingleton(sp => new QueueService(
+        services.AddSingleton(sp => new WorkListService(
             sp.GetRequiredService<IOptions<CratesidePaths>>(),
             sp.GetRequiredService<QueueSettingsStore>(),
             sp.GetRequiredService<PlaylistReader>(),
@@ -428,7 +428,7 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new TracksService(
             async ct =>
             {
-                var scan = await sp.GetRequiredService<QueueService>().ScanAsync(ct);
+                var scan = await sp.GetRequiredService<WorkListService>().ScanAsync(ct);
 
                 var view = TracksView.Compose(
                     scan.View,

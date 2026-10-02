@@ -5,13 +5,13 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Tests.WorkLists;
 
 /// <summary>The sorting of a playlist into the work lists each stage reads.</summary>
-public sealed class QueueViewCompositionTests
+public sealed class WorkListsViewCompositionTests
 {
     private const string Judged = "aaaaaaaaaaa";
     private const string Unjudged = "bbbbbbbbbbb";
     private const string Done = "ccccccccccc";
 
-    private static QueueItem Item(string videoId) =>
+    private static WorkItem Item(string videoId) =>
         new()
         {
             PlaylistItemId = $"PLI-{videoId}",
@@ -19,14 +19,14 @@ public sealed class QueueViewCompositionTests
             Title = $"Track {videoId}",
         };
 
-    private static QueueView Compose(
-        IReadOnlyList<QueueItem> items,
+    private static WorkListsView Compose(
+        IReadOnlyList<WorkItem> items,
         IReadOnlySet<string>? fullyProcessed = null,
         IReadOnlySet<string>? verdictWithoutStems = null,
         IReadOnlySet<string>? separatedWithoutKey = null,
         params TrackInstruction[] instructions
     ) =>
-        QueueView.Compose(
+        WorkListsView.Compose(
             items,
             fullyProcessed ?? new HashSet<string>(),
             verdictWithoutStems ?? new HashSet<string>(),
@@ -149,7 +149,7 @@ public sealed class QueueViewCompositionTests
     public void A_track_the_playlist_still_holds_reaches_separation_when_a_cut_is_owed()
     {
         // An additive re-cut: its stems are still on disk, so it is not in verdictWithoutStems.
-        var view = QueueView.Compose(
+        var view = WorkListsView.Compose(
             [Item(Judged)],
             fullyProcessed: new HashSet<string> { Judged },
             verdictWithoutStems: new HashSet<string>(),
@@ -164,7 +164,7 @@ public sealed class QueueViewCompositionTests
     [Fact]
     public void A_cut_owed_for_a_track_parked_for_want_of_a_key_is_still_refused()
     {
-        var view = QueueView.Compose(
+        var view = WorkListsView.Compose(
             [Item(Judged)],
             fullyProcessed: new HashSet<string>(),
             verdictWithoutStems: new HashSet<string> { Judged },
@@ -193,7 +193,7 @@ public sealed class QueueViewCompositionTests
             )
         );
 
-        var view = QueueView.Compose(
+        var view = WorkListsView.Compose(
             [Item(Judged)],
             fullyProcessed: new HashSet<string>(),
             verdictWithoutStems: new HashSet<string> { Judged },

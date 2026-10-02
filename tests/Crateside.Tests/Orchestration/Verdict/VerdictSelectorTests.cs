@@ -62,7 +62,7 @@ public sealed class VerdictSelectorTests : IDisposable
         return KeyLedger.Read(path);
     }
 
-    private static QueueItem Item(string videoId, bool unavailable = false) =>
+    private static WorkItem Item(string videoId, bool unavailable = false) =>
         new()
         {
             PlaylistItemId = $"PLI-{videoId}",
@@ -71,7 +71,7 @@ public sealed class VerdictSelectorTests : IDisposable
             IsUnavailable = unavailable,
         };
 
-    private static QueueView View(params QueueItem[] outstanding) =>
+    private static WorkListsView View(params WorkItem[] outstanding) =>
         new()
         {
             Items = outstanding,

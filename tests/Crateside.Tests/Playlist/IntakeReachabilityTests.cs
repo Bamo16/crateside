@@ -27,7 +27,7 @@ public sealed class IntakeReachabilityTests : IDisposable
 
     private IntakeStore Store() => new(Path.Combine(_directory, "intake.json"));
 
-    private static QueueItem Entry(string videoId, string title, int addedDay = 1) =>
+    private static WorkItem Entry(string videoId, string title, int addedDay = 1) =>
         new()
         {
             PlaylistItemId = $"PLI-{videoId}",

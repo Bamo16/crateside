@@ -30,7 +30,7 @@ public sealed class UnreadablePlaylistTests : IDisposable
     private string PathIn(string name) => Path.Combine(_directory, name);
 
     /// <summary>A service whose reader has no credential, so every read refuses.</summary>
-    private QueueService Unreadable(IntakeStore intake)
+    private WorkListService Unreadable(IntakeStore intake)
     {
         var options = Options.Create(new PlaylistOptions());
         var authorizer = new PlaylistAuthorizer(
@@ -42,7 +42,7 @@ public sealed class UnreadablePlaylistTests : IDisposable
             new PlaylistWriteAccess()
         );
 
-        return new QueueService(
+        return new WorkListService(
             Options.Create(
                 new CratesidePaths
                 {
@@ -68,7 +68,7 @@ public sealed class UnreadablePlaylistTests : IDisposable
         var intake = new IntakeStore(PathIn("intake.json"));
 
         intake.Record([
-            new QueueItem
+            new WorkItem
             {
                 PlaylistItemId = "PLI-known",
                 VideoId = Known,

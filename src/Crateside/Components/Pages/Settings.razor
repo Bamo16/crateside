@@ -13,7 +13,7 @@
 @using Crateside.Core.WorkLists
 @using Humanizer
 
-@inject QueueService Playlist
+@inject WorkListService Playlist
 @inject TracksService Tracks
 @inject WindowRoll Roll
 @inject PauseStore Remembered
@@ -530,7 +530,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
             await Load();
         }
-        catch (QueueUnavailableException ex)
+        catch (PlaylistUnavailableException ex)
         {
             _removeProblem = ex.Message;
         }
@@ -553,7 +553,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             if (Playlist.IsAuthorized)
                 _channel = await Playlist.GetAuthorizedChannelAsync();
         }
-        catch (QueueUnavailableException ex)
+        catch (PlaylistUnavailableException ex)
         {
             _processed = null;
             _removeProblem = ex.Message;

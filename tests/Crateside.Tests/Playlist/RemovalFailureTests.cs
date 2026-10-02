@@ -128,7 +128,7 @@ public sealed class RemovalFailureTests : IDisposable
 
     private IntakeStore Store() => new(Path.Combine(_directory, "intake.json"));
 
-    private static QueueItem Item(string videoId) =>
+    private static WorkItem Item(string videoId) =>
         new()
         {
             VideoId = videoId,

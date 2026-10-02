@@ -11,7 +11,7 @@ namespace Crateside.Core.Orchestration.Download;
 
 /// <summary>Fetches one source at a time, for as long as any is owed.</summary>
 public sealed class DownloadDrainer(
-    QueueService queue,
+    WorkListService queue,
     DownloadRunner runner,
     DownloadSelector selector,
     JobStore jobs,
@@ -25,13 +25,13 @@ public sealed class DownloadDrainer(
 
     public async Task<StageTick> DrainOnceAsync(CancellationToken ct = default)
     {
-        QueueView view;
+        WorkListsView view;
 
         try
         {
             view = await queue.ReadAsync(ct);
         }
-        catch (QueueUnavailableException ex)
+        catch (PlaylistUnavailableException ex)
         {
             return StageTick.Unavailable(ex.Message);
         }

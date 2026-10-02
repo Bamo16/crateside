@@ -15,7 +15,7 @@ public sealed class PlaylistRemover(PlaylistAuthorizer authorizer)
     /// as removed, so a retry is safe.
     /// </summary>
     public async Task<IReadOnlyList<RemovalResult>> RemoveAsync(
-        IReadOnlyList<QueueItem> items,
+        IReadOnlyList<WorkItem> items,
         CancellationToken ct = default
     )
     {
@@ -23,7 +23,7 @@ public sealed class PlaylistRemover(PlaylistAuthorizer authorizer)
             return [];
 
         if (await authorizer.GetCredentialAsync(ct) is not { } credential)
-            throw new QueueUnavailableException(
+            throw new PlaylistUnavailableException(
                 "Not authorized to modify the playlist. Grant access and try again."
             );
 
@@ -49,7 +49,7 @@ public sealed class PlaylistRemover(PlaylistAuthorizer authorizer)
 
     private static async Task<RemovalResult> RemoveOneAsync(
         YouTubeService service,
-        QueueItem item,
+        WorkItem item,
         CancellationToken ct
     )
     {

@@ -22,7 +22,7 @@ public sealed class StandInNameTests
     ) =>
         Assert.Equal(
             expected,
-            new QueueItem
+            new WorkItem
             {
                 VideoId = "zFYEYRcjK2g",
                 Title = title,
