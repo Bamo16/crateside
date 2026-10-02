@@ -145,6 +145,46 @@ public sealed class IntakeStore(string? path = null)
         );
 
     /// <summary>
+    /// Marks and returns the held entries never offered back, in one step, so scans running at
+    /// once never offer the same entry. Call it before the removal, never after.
+    /// </summary>
+    public IReadOnlyList<QueueItem> ClaimForRemoval(
+        IReadOnlyList<QueueItem> held,
+        DateTimeOffset at
+    )
+    {
+        lock (_gate)
+        {
+            var offerable = Read()
+                .Where(record => record.RemovalAttemptedAt is null)
+                .Select(record => record.VideoId)
+                .ToHashSet(StringComparer.Ordinal);
+
+            List<QueueItem> claimed =
+            [
+                .. held.Where(item =>
+                    item.PlaylistItemId is not null && offerable.Contains(item.VideoId)
+                ),
+            ];
+
+            if (claimed.Count is not 0)
+                MarkRemovalAttempted(
+                    claimed.Select(item => item.VideoId),
+                    at,
+                    claimed
+                        .DistinctBy(item => item.VideoId)
+                        .ToDictionary(
+                            item => item.VideoId,
+                            item => item.PlaylistItemId!,
+                            StringComparer.Ordinal
+                        )
+                );
+
+            return claimed;
+        }
+    }
+
+    /// <summary>
     /// Puts these entries back in line to be offered — only for a removal that never reached the
     /// API and so spent no quota (#34).
     /// </summary>

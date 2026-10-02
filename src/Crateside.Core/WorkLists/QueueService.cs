@@ -376,36 +376,15 @@ public sealed class QueueService(
         )
             return;
 
-        var offerable = intake
-            .Read()
-            .Where(record => record.RemovalAttemptedAt is null)
-            .Select(record => record.VideoId)
-            .ToHashSet(StringComparer.Ordinal);
-
-        var entries = held.Where(item =>
-                item.PlaylistItemId is not null && offerable.Contains(item.VideoId)
-            )
-            .ToList();
+        // Marked first, and regardless of what the removal reports. A delete costs fifty quota
+        // units against a daily ten thousand, so a failure retried on every scan spends the day
+        // rather than reporting a fault — which is what it did.
+        var entries = intake.ClaimForRemoval(held, DateTimeOffset.UtcNow);
 
         if (entries.Count is 0)
             return;
 
-        // Marked first, and regardless of what the removal reports. A delete costs fifty quota
-        // units against a daily ten thousand, so a failure retried on every scan spends the day
-        // rather than reporting a fault — which is what it did.
         var offered = entries.Select(item => item.VideoId).ToList();
-
-        intake.MarkRemovalAttempted(
-            offered,
-            DateTimeOffset.UtcNow,
-            entries
-                .DistinctBy(item => item.VideoId)
-                .ToDictionary(
-                    item => item.VideoId,
-                    item => item.PlaylistItemId!,
-                    StringComparer.Ordinal
-                )
-        );
 
         try
         {

@@ -176,6 +176,25 @@ public sealed class IntakeStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task Scans_claiming_at_once_never_both_offer_the_same_entry()
+    {
+        var store = Store();
+        QueueItem[] held = [Item(Track), Item(Other)];
+        store.Record(held);
+
+        var claims = await Task.WhenAll(
+            Enumerable
+                .Range(0, 8)
+                .Select(_ => Task.Run(() => store.ClaimForRemoval(held, DateTimeOffset.UtcNow)))
+        );
+
+        Assert.Equal(
+            [Track, Other],
+            claims.SelectMany(claim => claim).Select(item => item.VideoId).Order()
+        );
+    }
+
+    [Fact]
     public void The_mark_survives_a_restart()
     {
         var store = Store();

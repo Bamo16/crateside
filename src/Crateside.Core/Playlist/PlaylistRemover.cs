@@ -105,7 +105,9 @@ public sealed class PlaylistRemover(PlaylistAuthorizer authorizer)
         || e.Error?.Errors?.FirstOrDefault()?.Reason
             is "quotaExceeded"
                 or "rateLimitExceeded"
-                or "backendError";
+                or "backendError"
+                // "The operation was aborted": two changes to the playlist collided.
+                or "SERVICE_UNAVAILABLE";
 
     /// <summary>
     /// Turns a Google API failure into something diagnosable. Every interesting way a delete

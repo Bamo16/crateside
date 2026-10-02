@@ -106,6 +106,7 @@ public sealed class RemovalFailureTests : IDisposable
     [InlineData(HttpStatusCode.Forbidden, "quotaExceeded", true)]
     [InlineData(HttpStatusCode.TooManyRequests, "rateLimitExceeded", true)]
     [InlineData(HttpStatusCode.ServiceUnavailable, null, true)]
+    [InlineData(HttpStatusCode.Conflict, "SERVICE_UNAVAILABLE", true)]
     public void Only_a_failure_of_the_moment_is_worth_another_try(
         HttpStatusCode status,
         string? reason,
