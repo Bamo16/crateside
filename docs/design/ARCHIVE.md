@@ -19,6 +19,7 @@ Open any `.dc.html` in a browser. They need `support.js` beside them. Each is a 
 | `Crateside Counts Page.dc.html` | 1a · the Library page as **Counts**, whole page · 1b · a detector band opened | Handoff 08 (#68, #60, #56). |
 | `Crateside Tools Page.dc.html` | 1a · Partners inside **Tools** · 1b–1d · Re-Pitch · 2a · Re-Pitch inside Partners' table (not recommended) | Handoff 09 (#57, #58). |
 | `Crateside Settings Page.dc.html` | 1a · Settings, everyday · 1b · first run · 1c · removal confirm and failures | Handoff 10 (#74). |
+| `Crateside BPM Display.dc.html` | 1 · how each tempo state reads, everywhere a BPM shows (1a–1f) · 2 · how much a drifting tempo drifts: range, spread, tempo strip (2a–2c) | Handoff 13 (#92). |
 | `Crateside Brand.dc.html` | 1 · five marks · 2 · fifteen more | **1a chosen** (interim). The rest are kept in case the brand is revisited. |
 
 ### `handoffs/`: what was sent to the implementing agent each time
@@ -40,6 +41,7 @@ The written spec for each canvas turn, in the order it was sent. The later ones 
 | `10-settings.md` | Settings Page | #74 |
 | `11-dashboard.md` | Dashboard | #78 |
 | `12-tools-together.md` | Tools Together | #79 |
+| `13-bpm-display.md` | BPM Display | #92 |
 | `13-row-motion.md` | Unified Page, turn 4 | #85 |
 | `13b-picker-layout-fix.md` | Unified Page, turn 4 (corrects the build of 03 and 13) | #85 |
 
@@ -62,7 +64,7 @@ The live definition is `src/Crateside/wwwroot/app.css`. The rules the canvases f
 
 From brief 05 on, a handoff takes its brief's number: `briefs/NN-<topic>.md` → `handoffs/NN-<topic>.md`.
 Handoffs 01–04 predate the briefs folder and keep their numbers, which do not line up with the
-briefs. The folder has no briefs 03 or 04 (#22's brief was pasted in chat), and no brief 13 (given to the Design session directly). Handoff 05 was back-filled from the
+briefs. The folder has no briefs 03 or 04 (#22's brief was pasted in chat), and no brief for the row-motion work (given to the Design session directly), whose handoffs `13-row-motion.md` and `13b-picker-layout-fix.md` took brief 13's number by mistake; `13-bpm-display.md` is the handoff for brief 13. Handoff 05 was back-filled from the
 Design session's comment on #21.
 
 Handoffs outside the brief sequence take a letter after the brief they follow: `06b-workflow-fixes.md`
