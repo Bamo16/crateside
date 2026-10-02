@@ -23,9 +23,21 @@ public sealed record WarpTempo(
     /// <summary>−50 dBFS.</summary>
     private const float SilencePeak = 0.00316f;
 
-    public static WarpTempo? Of(AnalysisFile warp, int sampleRate)
+    /// <summary>The tempo of a saved warp; null when the default clip was never saved.</summary>
+    public static WarpTempo? Of(AnalysisFile analysis, int sampleRate) =>
+        analysis.DefaultClip is { } clip
+            ? Of(clip, analysis.Warp, analysis.Audio.Overview, sampleRate)
+            : null;
+
+    /// <summary>The tempo across <paramref name="clip"/>; bars <paramref name="overview"/> shows silent are set aside.</summary>
+    public static WarpTempo? Of(
+        DefaultClip clip,
+        Warp warp,
+        SampleOverview? overview,
+        int sampleRate
+    )
     {
-        if (warp is not { DefaultClip: { } clip, Markers.Count: > 1 })
+        if (warp is not { Markers.Count: > 1 })
             return null;
 
         var first = Math.Floor(clip.Start / BeatsPerBar) * BeatsPerBar;
@@ -42,7 +54,7 @@ public sealed record WarpTempo(
             .Zip(lines.Skip(1))
             .Select(pair => new Bar(
                 BeatsPerBar * 60 / (pair.Second.Seconds - pair.First.Seconds),
-                IsSilent(warp.Overview, pair.First.Seconds, pair.Second.Seconds, sampleRate)
+                IsSilent(overview, pair.First.Seconds, pair.Second.Seconds, sampleRate)
             ))
             .ToArray();
 

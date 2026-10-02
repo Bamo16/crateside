@@ -25,22 +25,22 @@ public sealed class WarpTempoReaderTests : IDisposable
     [Fact]
     public void A_saved_default_clip_gives_the_warped_tempo()
     {
-        var audio = Sample("sidecar-default-clip-saved.asd");
+        var audio = Sample("sidecar-clicks.asd");
 
-        Assert.Equal(175.0007, new WarpTempoReader().Read(audio)!.Bpm, 4);
+        Assert.Equal(120, new WarpTempoReader().Read(audio)!.Bpm, 4);
     }
 
     [Fact]
     public void A_sidecar_read_once_is_not_read_again_until_it_changes()
     {
-        var audio = Sample("sidecar-default-clip-saved.asd");
+        var audio = Sample("sidecar-clicks.asd");
         var reader = new WarpTempoReader();
 
         var first = reader.Read(audio);
 
         Assert.Same(first, reader.Read(audio));
 
-        File.Copy(Fixture("sidecar-analysed.asd"), $"{audio}.asd", overwrite: true);
+        File.Copy(Fixture("sidecar-clicks-unsaved.asd"), $"{audio}.asd", overwrite: true);
 
         Assert.Null(reader.Read(audio));
     }
@@ -48,7 +48,7 @@ public sealed class WarpTempoReaderTests : IDisposable
     [Fact]
     public void A_saved_tempo_is_kept_across_a_restart_while_its_sidecar_is_unchanged()
     {
-        var audio = Sample("sidecar-default-clip-saved.asd");
+        var audio = Sample("sidecar-clicks.asd");
         var kept = Path.Combine(_root, "tempos.json");
         var before = new WarpTempoReader(kept);
 
@@ -68,14 +68,14 @@ public sealed class WarpTempoReaderTests : IDisposable
     [Fact]
     public void A_kept_tempo_is_read_again_once_its_sidecar_changes()
     {
-        var audio = Sample("sidecar-default-clip-saved.asd");
+        var audio = Sample("sidecar-clicks.asd");
         var kept = Path.Combine(_root, "tempos.json");
         var before = new WarpTempoReader(kept);
 
         before.Read(audio);
         before.Save();
 
-        File.Copy(Fixture("sidecar-analysed.asd"), $"{audio}.asd", overwrite: true);
+        File.Copy(Fixture("sidecar-clicks-unsaved.asd"), $"{audio}.asd", overwrite: true);
 
         Assert.Null(new WarpTempoReader(kept).Read(audio));
     }

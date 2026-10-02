@@ -73,30 +73,23 @@ public sealed class WarpTempoTests
     [Fact]
     public void A_warp_with_no_saved_default_clip_has_no_tempo()
     {
-        Assert.Null(WarpTempo.Of(Warp(1, (100, 120)) with { DefaultClip = null }, SampleRate));
+        var saved = Warp(1, (100, 120));
+        var unsaved = new AnalysisFile
+        {
+            Warp = saved.Warp,
+            Audio = new AudioAnalysis { Overview = Overview([0.5f]), HeadTable = [] },
+            IsDefaultClipSaved = false,
+        };
+
+        Assert.Null(WarpTempo.Of(unsaved, SampleRate));
     }
 
-    [Theory]
-    [InlineData(0, 256, 0.5f)]
-    [InlineData(256, 512, 0.25f)]
-    [InlineData(384, 10_000, 0f)]
-    [InlineData(10_000, 20_000, 0f)]
-    public void An_overview_reads_the_loudest_bin_and_nothing_past_its_end(
-        long from,
-        long to,
-        float expected
-    )
-    {
-        var overview = new SampleOverview(128, [0.5f, 0.1f, 0.25f]);
-
-        Assert.Equal(expected, overview.PeakBetween(from, to));
-    }
-
-    private static WarpTempo Of(AnalysisFile warp) =>
-        WarpTempo.Of(warp, SampleRate) ?? throw new InvalidOperationException("no tempo");
+    private static WarpTempo Of(Saved saved) =>
+        WarpTempo.Of(saved.Clip, saved.Warp, saved.Overview, SampleRate)
+        ?? throw new InvalidOperationException("no tempo");
 
     /// <summary>Markers at each change of tempo, and a default clip from bar <paramref name="startBar"/> to the end.</summary>
-    private static AnalysisFile Warp(int startBar, params (int Bars, double Bpm)[] segments)
+    private static Saved Warp(int startBar, params (int Bars, double Bpm)[] segments)
     {
         List<WarpMarker> markers = [new(0, 0)];
         double seconds = 0,
@@ -112,14 +105,7 @@ public sealed class WarpTempoTests
         var last = segments[^1].Bpm;
         markers.Add(new(seconds + 60 / last / 32, beat + 1.0 / 32));
 
-        return new AnalysisFile(
-            true,
-            WarpMode.Complex,
-            4,
-            4,
-            markers,
-            new DefaultClip((startBar - 1) * 4, beat)
-        );
+        return new Saved(new DefaultClip((startBar - 1) * 4, beat), new Warp { Markers = markers });
     }
 
     private static (int Bars, double Bpm)[] Alternating(double low, double high, int bars) =>
@@ -133,9 +119,20 @@ public sealed class WarpTempoTests
         const int perBin = 128;
         var silentBin = (int)(from * SampleRate / perBin);
 
-        return new SampleOverview(
-            perBin,
-            [.. Enumerable.Range(0, silentBin + 100_000).Select(bin => bin < silentBin ? 0.5f : 0f)]
-        );
+        return Overview([
+            .. Enumerable.Range(0, silentBin + 100_000).Select(bin => bin < silentBin ? 0.5f : 0f),
+        ]);
     }
+
+    /// <summary>A mono overview of 128-frame bins, each peaking at the value given.</summary>
+    private static SampleOverview Overview(float[] peaks) =>
+        new()
+        {
+            Levels = [peaks.SelectMany(peak => new[] { (Half)0, (Half)peak }).ToArray()],
+            SamplesPerBinLog2 = 7,
+            ChannelCount = 1,
+        };
+
+    /// <summary>What a tempo is read from: a saved clip, its warp, and perhaps an overview.</summary>
+    private sealed record Saved(DefaultClip Clip, Warp Warp, SampleOverview? Overview = null);
 }
