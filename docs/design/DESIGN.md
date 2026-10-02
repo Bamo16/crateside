@@ -71,13 +71,13 @@ fails if a page formats one itself. Summaries go through `Bin` and `Range` and c
   not read yet`.
 - **Three source phrases only**: `from your warp`, `crateside's reading`, `keytag's estimate`; as a
   label, `Your warp`, `crateside's reading`, `keytag's estimate`.
-- **Drifting**: the range is the slowest and fastest 30 s window, rounded outward (`127–129`, never
+- **Drifting**: the range is the slowest and fastest window, rounded outward (`127–129`, never
   hundredths); the spread is that range over the figure shown, as a whole percent, `<1%` under one.
-  A warp's windows are measured from its markers like the reading's, so marker noise averages out.
+  A warp's windows are four audible bars, read from its bar lines; a reading's are its 30 s windows.
 - **Track details**: the verdict band's BPM cell is the 52px headline with its weight and the note
   under it. A drifting tempo adds the **tempo strip** under the note: 44px, one `--text-75` tick per
-  30 s window placed between the rounded range, a dashed `--text-35` line at the figure shown,
-  range labels left and times below (mono 10.5, `--text-40`), a tick's title `2:30–3:00 · ~112`.
+  window, placed by its time and between the rounded range, a dashed `--text-35` line at the figure shown,
+  range labels left and times below (mono 10.5, `--text-40`), a tick's title `2:30–2:38 · ~112`.
 - **The evidence panel's Tempo block**: the headline at 20px and its note, then a ruled line per
   other source: label, figure (mono 13, `--text-75`, decimal-padded in 64px) and how it relates
   (*agrees*, *half of it*, *double it*, *two-thirds of it*, *three-quarters of it*, *not warped
@@ -327,14 +327,16 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 
 - **Two more relations in the evidence panel**: *four-thirds of it* and *one and a half times it*.
   The handoff's list left them out, which would have made a known relation red.
-- **The tempo strip ends at the last full 30 s window**, not the track's length, which crateside
-  does not keep beside the tempo.
+- **The tempo strip ends at the end of the last window**, not the track's length, which crateside
+  does not keep beside the tempo. A warp's ticks are four bars wide, not 30 s.
 - **A part that changes tempo is always *one part***, never *the intro* or *the outro*; the warp's
   reading does not yet say where the change is.
-- **A warp's drift range is measured over 30 s windows** (the handoff's third option). On the 38
-  drifting instrumental warps, bar-by-bar ranges reached 51% (*Jump*, a bar read at 69) and 37%
-  (*Hate To Say I Told You So*); the windows give 8% and 3%. *Rapper's Delight* reads 110–113 · 2%,
-  *Hits from the Bong* 92–93 · <1%.
+- **A warp's drift range is measured over windows of four audible bars**, a variant of the
+  handoff's first option. Markers inside a bar do not change its length, so a cluster of them in a
+  fill cannot spike a window; a downbeat marker 25 ms off moves four bars' tempo about 0.3%, against
+  1.3% for one bar. *Rapper's Delight* reads 110–113 · 2%, *Hits from the Bong* 91–93 · <1%. Real
+  slowdowns stay in: *Jump* 100–135 (one bar at 3:02 reads 69), *Hate To Say I Told You So* 94–141
+  (its last four bars slow down).
 
 ### Settings (handoff 10, #74)
 

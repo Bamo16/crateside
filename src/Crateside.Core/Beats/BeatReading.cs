@@ -8,6 +8,8 @@ public sealed record BeatReading
     /// <summary>The windows' spread, in percent, at which the tempo reads as drifting (#75).</summary>
     public const double DriftsAt = 0.1;
 
+    public const int WindowSeconds = 30;
+
     private const double SameTempoClass = 0.06;
     private const int MinWindows = 3;
 

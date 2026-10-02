@@ -60,14 +60,11 @@ public sealed record TrackTempo
                 Warp: { Shape: TempoShape.MostlySteady, Stable.Count: 1 }
             };
 
-    /// <summary>Each full 30 s window's tempo by position, in the octave of <see cref="Value"/>; a reading's off-tempo windows are left out.</summary>
-    public IReadOnlyList<(int Index, double Bpm)> Windows =>
+    /// <summary>The source's windows in the octave of <see cref="Value"/>: a warp's four bars, a reading's 30 s, less its off-tempo ones.</summary>
+    public IReadOnlyList<TempoWindow> Windows =>
         this switch
         {
-            { Source: TempoSource.Warp, Warp.Windows: var windows } =>
-            [
-                .. windows.Select((bpm, index) => (index, bpm)),
-            ],
+            { Source: TempoSource.Warp, Warp.Windows: var windows } => windows,
             { Source: TempoSource.Reading, Reading.Windows: var windows } => Folded(
                 BeatReading.Steady(windows)
             ),
@@ -166,9 +163,7 @@ public sealed record TrackTempo
     private static double Grid(double bpm) =>
         Math.Round(bpm * 2, MidpointRounding.AwayFromZero) / 2;
 
-    private IReadOnlyList<(int Index, double Bpm)> Folded(
-        IReadOnlyList<(int Index, double Bpm)> windows
-    )
+    private TempoWindow[] Folded(IReadOnlyList<(int Index, double Bpm)> windows)
     {
         if (windows.Count is 0)
             return [];
@@ -176,7 +171,14 @@ public sealed record TrackTempo
         var median = windows.Select(window => window.Bpm).Order().ElementAt(windows.Count / 2);
         var octave = Math.Pow(2, Math.Round(Math.Log2(Value / median)));
 
-        return [.. windows.Select(window => (window.Index, window.Bpm * octave))];
+        return
+        [
+            .. windows.Select(window => new TempoWindow(
+                window.Index * BeatReading.WindowSeconds,
+                (window.Index + 1) * BeatReading.WindowSeconds,
+                window.Bpm * octave
+            )),
+        ];
     }
 }
 

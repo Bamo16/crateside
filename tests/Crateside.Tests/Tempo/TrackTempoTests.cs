@@ -103,7 +103,7 @@ public sealed class TrackTempoTests
     {
         var warp = new WarpTempo(129.9, TempoShape.Drifting, 69.5, 136.5, [])
         {
-            Windows = [121.2, 128.4, 131.9],
+            Windows = Timed(121.2, 128.4, 131.9),
         };
 
         Assert.Equal((121.2, 131.9), TrackTempo.Of(warp, null, null)!.Range);
@@ -132,4 +132,8 @@ public sealed class TrackTempoTests
     /// <summary>A reading steady enough not to drift, but not good to the hundredth.</summary>
     private static BeatReading Loose(double bpm) =>
         new() { Bpm = bpm, Windows = [bpm, bpm + 0.03, bpm + 0.06, bpm + 0.09] };
+
+    /// <summary>Warp windows of about eight seconds each, one per tempo given.</summary>
+    private static TempoWindow[] Timed(params double[] bpms) =>
+        [.. bpms.Select((bpm, index) => new TempoWindow(index * 8, (index + 1) * 8, bpm))];
 }

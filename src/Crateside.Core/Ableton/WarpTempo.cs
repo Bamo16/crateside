@@ -19,7 +19,7 @@ public sealed record WarpTempo(
     private const int MinStableBars = 8;
     private const double FitTolerance = 0.003;
     private const double SameTempo = 0.05;
-    private const double WindowSeconds = 30;
+    private const int BarsPerWindow = 4;
 
     /// <summary>−50 dBFS.</summary>
     private const float SilencePeak = 0.00316f;
@@ -27,8 +27,8 @@ public sealed record WarpTempo(
     /// <summary>The bars <see cref="StableTempo.Bars"/> counts against, so a main tempo's share of the track.</summary>
     public int AudibleBars { get; init; }
 
-    /// <summary>Each full 30 s window's tempo, measured like crateside's reading so the two compare.</summary>
-    public IReadOnlyList<double> Windows { get; init; } = [];
+    /// <summary>Each audible run of four bars and its tempo, where a drifting warp's range is read.</summary>
+    public IReadOnlyList<TempoWindow> Windows { get; init; } = [];
 
     /// <summary>The tempo of a saved warp; null when the default clip was never saved.</summary>
     public static WarpTempo? Of(AnalysisFile analysis, int sampleRate) =>
@@ -89,39 +89,35 @@ public sealed record WarpTempo(
         return tempo with
         {
             AudibleBars = audible.Length,
-            Windows = WindowsOf(
-                warp,
-                warp.SecondsAt(clip.Start)!.Value,
-                warp.SecondsAt(clip.End)!.Value
-            ),
+            Windows = WindowsOf(lines, overview, sampleRate),
         };
     }
 
-    /// <summary>The tempo of each full 30 s from the clip's start, as the beats it spans: marker noise averages out at that length.</summary>
-    private static double[] WindowsOf(Warp warp, double from, double to) =>
+    /// <summary>
+    /// The tempo of each audible run of four bars, from its bar lines: a downbeat marker 25 ms off
+    /// moves four bars' tempo about 0.3%, where one bar's would move 1.3%.
+    /// </summary>
+    private static TempoWindow[] WindowsOf(
+        (double Beat, double Seconds)[] lines,
+        SampleOverview? overview,
+        int sampleRate
+    ) =>
         [
             .. Enumerable
-                .Range(0, (int)Math.Max(0, (to - from) / WindowSeconds))
-                .Select(i => from + i * WindowSeconds)
-                .Select(start =>
-                    (BeatAt(warp, start + WindowSeconds) - BeatAt(warp, start)) * 60 / WindowSeconds
-                ),
+                .Range(0, (lines.Length - 1) / BarsPerWindow)
+                .Select(i =>
+                    (
+                        From: lines[i * BarsPerWindow].Seconds,
+                        To: lines[(i + 1) * BarsPerWindow].Seconds
+                    )
+                )
+                .Where(window => !IsSilent(overview, window.From, window.To, sampleRate))
+                .Select(window => new TempoWindow(
+                    window.From,
+                    window.To,
+                    BarsPerWindow * BeatsPerBar * 60 / (window.To - window.From)
+                )),
         ];
-
-    /// <summary>The inverse of <see cref="Warp.SecondsAt"/>, extending the first and last segments.</summary>
-    private static double BeatAt(Warp warp, double seconds)
-    {
-        var markers = warp.Markers;
-        var i = 1;
-
-        while (i < markers.Count - 1 && seconds > markers[i].Seconds)
-            i++;
-
-        var (from, to) = (markers[i - 1], markers[i]);
-
-        return from.Beat
-            + (seconds - from.Seconds) * (to.Beat - from.Beat) / (to.Seconds - from.Seconds);
-    }
 
     private static bool IsSilent(
         SampleOverview? overview,
@@ -211,6 +207,9 @@ public sealed record WarpTempo(
 
     private readonly record struct Bar(double Bpm, bool IsSilent);
 }
+
+/// <summary>A stretch of the audio and its tempo; times in seconds from the file's start.</summary>
+public readonly record struct TempoWindow(double Start, double End, double Bpm);
 
 /// <summary>One stable tempo in a warp and how many audible bars hold it.</summary>
 public readonly record struct StableTempo(double Bpm, int Bars);

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Crateside.Core.Ableton;
 using Crateside.Core.Library;
 using Humanizer;
 
@@ -11,7 +12,6 @@ public static class TempoFormat
     private const string FromReading = "crateside's reading";
     private const string FromEstimate = "keytag's estimate";
     private const double RelatedWithin = 2;
-    private const int WindowSeconds = 30;
 
     private static readonly (double Multiple, string Words)[] Relations =
     [
@@ -52,11 +52,16 @@ public static class TempoFormat
             var all => Span(all.Min(tempo => tempo.Value), all.Max(tempo => tempo.Value)),
         };
 
-    /// <summary>How a window of the tempo strip reads on hover: <c>2:30–3:00 · ~112</c>.</summary>
-    public static string Window(int index, double bpm) =>
-        $"{Clock(index * WindowSeconds)}–{Clock((index + 1) * WindowSeconds)} · ~{Whole(bpm)}";
+    /// <summary>How a window of the tempo strip reads on hover: <c>2:30–2:38 · ~112</c>.</summary>
+    public static string Window(TempoWindow window) =>
+        $"{Clock(window.Start)}–{Clock(window.End)} · ~{Whole(window.Bpm)}";
 
-    public static string Clock(int seconds) => $"{seconds / 60}:{seconds % 60:00}";
+    public static string Clock(double seconds)
+    {
+        var whole = (int)Math.Round(seconds, MidpointRounding.AwayFromZero);
+
+        return $"{whole / 60}:{whole % 60:00}";
+    }
 
     /// <summary>A whole number for the edge of a strip or a range, rounded <paramref name="up"/> or down.</summary>
     public static int Edge(double bpm, bool up) => (int)(up ? Math.Ceiling(bpm) : Math.Floor(bpm));

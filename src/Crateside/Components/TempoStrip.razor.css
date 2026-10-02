@@ -29,16 +29,9 @@
     border-top: 1px dashed var(--text-35);
 }
 
-.slots {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    gap: 2px;
-}
-
 .slot {
-    position: relative;
-    flex: 1;
+    position: absolute;
+    top: 0;
     height: 100%;
 }
 
@@ -48,8 +41,8 @@
 
 .tick {
     position: absolute;
-    left: 15%;
-    right: 15%;
+    left: 1px;
+    right: 1px;
     height: 3px;
     margin-top: -1.5px;
     border-radius: 1.5px;

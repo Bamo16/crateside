@@ -84,6 +84,28 @@ public sealed class WarpTempoTests
         Assert.Null(WarpTempo.Of(unsaved, SampleRate));
     }
 
+    [Fact]
+    public void Windows_are_four_bars_from_the_bar_lines()
+    {
+        var tempo = Of(Warp(1, (8, 120), (8, 124)));
+
+        Assert.Equal(
+            [120, 120, 124, 124],
+            tempo.Windows.Select(window => Math.Round(window.Bpm, 6))
+        );
+        Assert.Equal((8, 16), (tempo.Windows[1].Start, tempo.Windows[1].End));
+    }
+
+    [Fact]
+    public void A_silent_stretch_has_no_window()
+    {
+        var segments = new[] { (16, 120.0), (16, 120.0) };
+
+        var tempo = Of(Warp(1, segments) with { Overview = Silent(Seconds(segments) / 2) });
+
+        Assert.Equal([0, 8, 16, 24], tempo.Windows.Select(window => Math.Round(window.Start, 6)));
+    }
+
     private static WarpTempo Of(Saved saved) =>
         WarpTempo.Of(saved.Clip, saved.Warp, saved.Overview, SampleRate)
         ?? throw new InvalidOperationException("no tempo");

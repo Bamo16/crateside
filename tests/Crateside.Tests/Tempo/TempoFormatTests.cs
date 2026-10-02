@@ -60,7 +60,7 @@ public sealed class TempoFormatTests
     {
         var warp = new WarpTempo(111.3, TempoShape.Drifting, 107.9, 113.7, [])
         {
-            Windows = [110.2, 111.0, 112.4],
+            Windows = Timed(110.2, 111.0, 112.4),
         };
         var shown = TempoFormat.Format(TrackTempo.Of(warp, null, null)!);
 
@@ -90,7 +90,7 @@ public sealed class TempoFormatTests
     {
         var warp = new WarpTempo(92.2, TempoShape.Drifting, 90.8, 93.5, [])
         {
-            Windows = [92.1, 92.4, 92.3],
+            Windows = Timed(92.1, 92.4, 92.3),
         };
 
         Assert.Equal(
@@ -152,7 +152,7 @@ public sealed class TempoFormatTests
 
     [Fact]
     public void A_strip_tick_gives_its_window_and_a_whole_approximate_tempo() =>
-        Assert.Equal("2:30–3:00 · ~112", TempoFormat.Window(5, 111.6));
+        Assert.Equal("2:30–2:38 · ~112", TempoFormat.Window(new TempoWindow(150, 157.6, 111.6)));
 
     [Fact]
     public void The_evidence_panel_puts_each_other_sources_relation_into_words()
@@ -198,7 +198,7 @@ public sealed class TempoFormatTests
     {
         var warp = new WarpTempo(111.3, TempoShape.Drifting, 107.9, 113.7, [])
         {
-            Windows = [110.2, 112.4],
+            Windows = Timed(110.2, 112.4),
         };
         var shown = TempoFormat.Format(TrackTempo.Of(warp, null, null)!.Shifted(-1));
 
@@ -233,4 +233,8 @@ public sealed class TempoFormatTests
 
     private static BeatReading Tight(double bpm) =>
         new() { Bpm = bpm, Windows = [bpm, bpm, bpm, bpm] };
+
+    /// <summary>Warp windows of about eight seconds each, one per tempo given.</summary>
+    private static TempoWindow[] Timed(params double[] bpms) =>
+        [.. bpms.Select((bpm, index) => new TempoWindow(index * 8, (index + 1) * 8, bpm))];
 }

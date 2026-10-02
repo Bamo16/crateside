@@ -22,7 +22,6 @@ public sealed partial class BeatReader(
 {
     // Bump when MeasureAsync changes what it runs, or a kept reading outlives the method that made it.
     private const int Version = 2;
-    private const int WindowSeconds = 30;
 
     private static readonly TimeSpan RunLimit = TimeSpan.FromMinutes(10);
 
@@ -198,9 +197,9 @@ public sealed partial class BeatReader(
     /// <summary>Every full window's start; a file shorter than one window is read once from the top.</summary>
     internal static IEnumerable<int> WindowStarts(double seconds)
     {
-        var max = Math.Max((int)seconds - WindowSeconds + 1, 1);
+        var max = Math.Max((int)seconds - BeatReading.WindowSeconds + 1, 1);
 
-        for (var start = 0; start < max; start += WindowSeconds)
+        for (var start = 0; start < max; start += BeatReading.WindowSeconds)
             yield return start;
     }
 
@@ -210,7 +209,13 @@ public sealed partial class BeatReader(
         limit.CancelAfter(RunLimit);
 
         string[] window = start is { } seconds
-            ? ["-ss", seconds.ToString(CultureInfo.InvariantCulture), "-t", $"{WindowSeconds}"]
+            ?
+            [
+                "-ss",
+                seconds.ToString(CultureInfo.InvariantCulture),
+                "-t",
+                $"{BeatReading.WindowSeconds}",
+            ]
             : [];
 
         try
