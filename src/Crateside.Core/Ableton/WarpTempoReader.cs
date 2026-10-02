@@ -8,7 +8,7 @@ namespace Crateside.Core.Ableton;
 /// A sample's warped tempo, read from its sidecar once and again only when the sidecar changes:
 /// reading every sidecar in the library is about 400 MB (ADR 0038). Kept across restarts when given a path.
 /// </summary>
-/// <param name="isStarter">Whether a sample's sidecar is a starter warp crateside wrote, whose tempo is keytag's guess (#77).</param>
+/// <param name="isStarter">Whether a sample's sidecar is a starter warp crateside wrote, whose tempo is crateside's own reading, not the user's (#77).</param>
 public sealed class WarpTempoReader(string? path = null, Func<string, bool>? isStarter = null)
 {
     // Bump when WarpTempo.Of changes what it computes, or a kept tempo outlives the rule that made it.
