@@ -11,15 +11,23 @@
                 <span class="song">@track.Name</span>
                 <span class="change">Change ▾</span>
             </div>
-            <span class="mono facts">
-                @(track.Key is { } key ? $"{key.Name} · {key.CamelotCode}" : "no key")
+            <span class="facts">
+                <span class="mono key">@(track.Key is { } key ? key.Name : "no key")</span>
+                @if (track.Key is { } camelot)
+                {
+                    <span class="mono camelot">@camelot.CamelotCode</span>
+                }
+            </span>
+            <span class="facts">
                 @if (Shown is { } shown)
                 {
-                    <text> · </text><span class="figure @(shown.IsApproximate ? "approx" : null)">@shown.Text</span><text> BPM · @shown.Brief</text>
+                    <span class="mono figure @(shown.IsApproximate ? "approx" : null)">@shown.Text</span>
+                    <span class="mono unit">BPM</span>
+                    <span class="tempo-note">@shown.Brief</span>
                 }
                 else
                 {
-                    <text> · not warped</text>
+                    <span class="tempo-note">not warped</span>
                 }
             </span>
             <span class="meta">

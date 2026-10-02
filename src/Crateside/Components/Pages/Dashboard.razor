@@ -9,6 +9,7 @@
 @using System.Text
 @using Crateside.Components.Dashboard
 @using Crateside.Core
+@using Crateside.Core.Ableton
 @using Crateside.Core.Beats
 @using Crateside.Core.Familiarity
 @using Crateside.Core.Genres
@@ -283,12 +284,14 @@
 
                                     @if (_drift.Any(count => count.Judged > 0))
                                     {
-                                        <p class="shapes">
-                                            <span>beatdetect flags as drifting</span>
-                                            @foreach (var count in _drift)
-                                            {
-                                                <span>@count.Shape.Humanize() <span class="mono value">@count.Flagged</span> of <span class="mono">@count.Judged</span></span>
-                                            }
+                                        <p class="lead drift-check">
+                                            The <em>tempo drifts</em> warning, checked against your warps: it caught
+                                            <span class="mono">@Drift(TempoShape.Drifting).Flagged</span> of
+                                            <span class="mono">@Drift(TempoShape.Drifting).Judged</span> drifting before you warped them,
+                                            and warned wrongly on <span class="mono">@Drift(TempoShape.Steady).Flagged</span> of
+                                            <span class="mono">@Drift(TempoShape.Steady).Judged</span> steady and
+                                            <span class="mono">@Drift(TempoShape.MostlySteady).Flagged</span> of
+                                            <span class="mono">@Drift(TempoShape.MostlySteady).Judged</span> mostly steady.
                                         </p>
                                     }
                                 </section>
@@ -869,6 +872,8 @@
             _reading = false;
         }
     }
+
+    private DriftCount Drift(TempoShape shape) => _drift.First(count => count.Shape == shape);
 
     private void Toggle(Detector detector, TempoBand band)
     {

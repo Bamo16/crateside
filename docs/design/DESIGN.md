@@ -329,6 +329,9 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   The handoff's list left them out, which would have made a known relation red.
 - **The tempo strip ends at the end of the last window**, not the track's length, which crateside
   does not keep beside the tempo. A warp's ticks are four bars wide, not 30 s.
+- **The *Working on* card puts key · Camelot and the tempo on lines of their own**, the figure and key
+  at full ink and the note in Sans, instead of one mono string that wrapped mid-phrase (user,
+  2026-10-02).
 - **A part that changes tempo is always *one part***, never *the intro* or *the outro*; the warp's
   reading does not yet say where the change is.
 - **A warp's drift range is measured over windows of four audible bars**, a variant of the

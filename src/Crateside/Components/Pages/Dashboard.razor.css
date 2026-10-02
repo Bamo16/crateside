@@ -683,3 +683,9 @@ h4 {
         display: none;
     }
 }
+
+.drift-check {
+    padding: 4px 12px;
+    font-size: 13px;
+    color: var(--text-60);
+}

@@ -1,4 +1,5 @@
 .strip {
+    align-self: stretch;
     display: grid;
     grid-template-columns: 28px minmax(0, 1fr);
     gap: 8px;

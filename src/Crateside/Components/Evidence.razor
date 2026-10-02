@@ -157,13 +157,13 @@
             var shown = TempoFormat.Format(tempo);
             <p class="tempo">
                 <strong class="mono @(shown.IsApproximate ? "approx" : null) @(shown.IsEstimate ? "estimate" : null)">@shown.Text</strong>
-                <span class="note">@shown.Note</span>
+                <span class="tempo-note">@shown.Note</span>
             </p>
-            <ul class="sources">
+            <ul class="tempo-sources">
                 @foreach (var line in TempoFormat.Others(tempo))
                 {
                     <li>
-                        <span class="source">@line.Label</span>
+                        <span class="label">@line.Label</span>
                         <span class="mono figure @(line.Figure?.IsApproximate is true ? "approx" : null)">@(line.Figure?.Text ?? "—")<span class="pad">@(line.Figure?.Padding ?? ".00")</span></span>
                         <span class="comment @(line.IsConflict ? "conflict" : null)">@line.Comment</span>
                     </li>
