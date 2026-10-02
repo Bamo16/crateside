@@ -1,8 +1,9 @@
 using Crateside.Core.Ableton;
+using Crateside.Core.Tempo;
 
 namespace Crateside.Core.Library;
 
-/// <summary>The library by warped BPM in bins of ten, ordered by tempo (handoff 08).</summary>
+/// <summary>The library by headline BPM in bins of ten, ordered by tempo (handoff 08, ADR 0049).</summary>
 public sealed record TempoCounts(
     IReadOnlyList<TempoBin> Bins,
     int Warped,
@@ -22,8 +23,13 @@ public sealed record TempoCounts(
 
     public static TempoCounts From(IEnumerable<LibrarySong> songs)
     {
-        var tempos = songs.Select(song => song.Tempo).OfType<WarpTempo>().ToList();
-        var bpms = tempos.Select(tempo => Whole(tempo.Bpm)).ToList();
+        var listed = songs.ToList();
+        var tempos = listed.Select(song => song.Tempo).OfType<WarpTempo>().ToList();
+        var bpms = listed
+            .Select(song => song.Bpm)
+            .OfType<TrackTempo>()
+            .Select(tempo => Whole(tempo.Value))
+            .ToList();
 
         return new TempoCounts(
             Binned(bpms),
@@ -91,7 +97,7 @@ public sealed record TempoCounts(
 
 public sealed record TempoBin(int Low, int High, int Songs, IReadOnlyList<TempoPeak> Peaks)
 {
-    public string Label => $"{Low}–{High}";
+    public string Label => TempoFormat.Bin(Low, High);
 
     /// <summary>Songs on a tempo that <see cref="TempoCounts.SharedBy"/> or more share.</summary>
     public int PeakSongs => Peaks.Sum(peak => peak.Songs);

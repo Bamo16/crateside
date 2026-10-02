@@ -235,7 +235,7 @@
                                 <section id="p-tempo">
                                     <h3>By tempo</h3>
                                     <p class="lead">
-                                        The BPM from each warp, set by ear.
+                                        Each song's headline BPM: the warp where there is one. Bins and peaks are whole numbers.
                                         @if (_tempo.Warped == _distribution.TrackCount)
                                         {
                                             <text>All <span class="mono">@_tempo.Warped</span> songs are warped.</text>
@@ -268,7 +268,7 @@
                                                     </td>
                                                     <td class="numeric">@bin.Songs</td>
                                                     <td class="peaks mono">
-                                                        @string.Join("  ", bin.Peaks.Select(peak => $"{peak.Bpm} ×{peak.Songs}"))
+                                                        @string.Join("  ", bin.Peaks.Select(peak => TempoFormat.Peak(peak.Bpm, peak.Songs)))
                                                     </td>
                                                 </tr>
                                             }
@@ -360,8 +360,8 @@
                                                     {
                                                         <div class="song-row">
                                                             <span>@read.Song.Name</span>
-                                                            <span class="numeric">@TempoCounts.Whole(read.Warped)</span>
-                                                            <span class="numeric">@TempoCounts.Whole(read.Read)</span>
+                                                            <TempoFigure Tempo="read.Warped" />
+                                                            <TempoFigure Tempo="read.Read" />
                                                             <span class="numeric quiet">@read.Ratio.ToString("0.00", CultureInfo.InvariantCulture)</span>
                                                         </div>
                                                     }
@@ -884,7 +884,7 @@
 
         foreach (var read in reads)
             text.AppendLine(
-                $"{read.Song.Name} · {TempoCounts.Whole(read.Warped)} · {TempoCounts.Whole(read.Read)} · {read.Ratio.ToString("0.00", CultureInfo.InvariantCulture)}"
+                $"{read.Song.Name} · {TempoFormat.Format(read.Warped).Text} · {TempoFormat.Format(read.Read).Text} · {read.Ratio.ToString("0.00", CultureInfo.InvariantCulture)}"
             );
 
         await Js.InvokeVoidAsync("navigator.clipboard.writeText", text.ToString());

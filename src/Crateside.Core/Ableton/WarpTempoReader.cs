@@ -12,7 +12,7 @@ namespace Crateside.Core.Ableton;
 public sealed class WarpTempoReader(string? path = null, Func<string, bool>? isStarter = null)
 {
     // Bump when WarpTempo.Of changes what it computes, or a kept tempo outlives the rule that made it.
-    private const int Version = 2;
+    private const int Version = 3;
 
     private readonly string? _path = path;
     private readonly ConcurrentDictionary<string, TempoEntry> _read = new(

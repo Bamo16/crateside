@@ -356,7 +356,7 @@ public sealed class TracksViewCompositionTests : IDisposable
 
         Assert.Equal("C minor", row.Key);
         Assert.Equal(KeyConfidence.High, row.Confidence);
-        Assert.Equal(128, row.Bpm);
+        Assert.Equal(128, row.Bpm?.Value);
     }
 
     [Fact]
@@ -366,7 +366,7 @@ public sealed class TracksViewCompositionTests : IDisposable
 
         Assert.Null(row.Key);
         Assert.Equal(KeyConfidence.Low, row.Confidence);
-        Assert.Equal(128, row.Bpm);
+        Assert.Equal(128, row.Bpm?.Value);
     }
 
     [Fact]

@@ -256,7 +256,7 @@
 .heads,
 .row {
     display: grid;
-    grid-template-columns: 24px 1fr 90px 100px 80px 150px 190px;
+    grid-template-columns: 24px 1fr 90px 100px 84px 150px 190px;
     gap: 14px;
     align-items: center;
     max-width: var(--table-tracks);
@@ -267,7 +267,7 @@
    the one thing worth saying about a state a track rests in for weeks. */
 .heads.roomy,
 .row.roomy {
-    grid-template-columns: 24px 1fr 90px 100px 80px 150px 190px 1fr;
+    grid-template-columns: 24px 1fr 90px 100px 84px 150px 190px 1fr;
 }
 
 .heads {
@@ -420,6 +420,20 @@
 
 .bpm.ready {
     color: var(--amber);
+}
+
+/* An approximate figure is marked twice, tilde and weight, so either survives on an amber row. */
+.bpm.approx {
+    font-weight: 400;
+}
+
+.bpm.estimate {
+    color: var(--text-50);
+}
+
+/* A whole figure carries an invisible .00, so every figure aligns on its decimal point. */
+.bpm .pad {
+    visibility: hidden;
 }
 
 .right {

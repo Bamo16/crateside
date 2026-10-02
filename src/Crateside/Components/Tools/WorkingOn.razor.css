@@ -161,6 +161,25 @@ select:focus {
     font-family: var(--font-mono);
 }
 
+.bpm-field {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+/* A drifting track's figure is approximate; the tilde stays outside what can be typed over. */
+.tilde {
+    color: var(--text-50);
+}
+
+.facts .figure {
+    font-weight: 600;
+}
+
+.facts .figure.approx {
+    font-weight: 400;
+}
+
 /* An unreadable BPM needs attention, and says so by colour alone. */
 .bpm.unreadable {
     border-color: var(--red);

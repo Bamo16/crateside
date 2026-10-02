@@ -49,7 +49,40 @@ filled for authoritative, outlined for corroborating, dashed for algorithmic and
 
 ## Type
 
-IBM Plex Sans for text. IBM Plex Mono for every number, key, timestamp and count.
+IBM Plex Sans for text. IBM Plex Mono for every number, key, timestamp and count. A tilde and
+weight 400 mark an approximate figure, and nothing else.
+
+## Tempo
+
+Handoff 13, ADR 0049. Every BPM is a tempo and **one formatter writes it** (`TempoFormat`); a test
+fails if a page formats one itself. Summaries go through `Bin` and `Range` and carry no marks.
+
+- **Two marks, used together.** Vouched: the bare figure at 600 (headline) or 500 (secondary), two
+  decimals with `.00` dropped (`128`, `128.02`, `119.50`), never one. Approximate: `~` and weight 400,
+  always a whole number. keytag's estimate is approximate and also `--text-50`. No tempo: `—` at
+  `--text-30`.
+- **States.** Vouched: any warp that holds, or a reading whose windows agree within 0.02%.
+  Approximate: a reading that agrees less tightly. Drifting: `~` the median. Mostly steady and
+  changing: the main tempo, vouched. keytag's estimate: only with no warp and no reading.
+- **The note**, also the tooltip wherever a figure stands without one: shape first, then source,
+  joined by ` · `. `drifts 110–112 · 2% · from your warp`, `steady for 91% · one part changes tempo ·
+  from your warp`, `changes tempo · 24 bars at 132 · from your warp`, `crateside's reading · steady
+  to the hundredth`, `crateside's reading · steady, but not to the hundredth`, `keytag's estimate ·
+  not read yet`.
+- **Three source phrases only**: `from your warp`, `crateside's reading`, `keytag's estimate`; as a
+  label, `Your warp`, `crateside's reading`, `keytag's estimate`.
+- **Drifting**: the range is the slowest and fastest 30 s window, rounded outward (`127–129`, never
+  hundredths); the spread is that range over the figure shown, as a whole percent, `<1%` under one.
+  A warp's windows are measured from its markers like the reading's, so marker noise averages out.
+- **Track details**: the verdict band's BPM cell is the 52px headline with its weight and the note
+  under it. A drifting tempo adds the **tempo strip** under the note: 44px, one `--text-75` tick per
+  30 s window placed between the rounded range, a dashed `--text-35` line at the figure shown,
+  range labels left and times below (mono 10.5, `--text-40`), a tick's title `2:30–3:00 · ~112`.
+- **The evidence panel's Tempo block**: the headline at 20px and its note, then a ruled line per
+  other source: label, figure (mono 13, `--text-75`, decimal-padded in 64px) and how it relates
+  (*agrees*, *half of it*, *double it*, *two-thirds of it*, *three-quarters of it*, *not warped
+  yet*, *not read yet*). Figures that fit no relation say *conflict* in `--red`; a known relation
+  is never red.
 
 ## State chips
 
@@ -133,8 +166,13 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
   to the user. Its rows show Song (with the genre note under it), every genre chip, and
   Mainstream / Obscure (`GenreStrip Shape="Chips"`, `FamiliarityStrip Inline`). An answered row
   stays in place at 45% until the view is left.
-- A **Tempo drifts** filter (#75): tracks not warped yet whose tempo beatdetect reads drifting. The
-  row carries a *tempo drifts* flag beside its title.
+- A **Tempo drifts** filter (#75): tracks not warped yet whose tempo beatdetect reads drifting.
+- **The BPM column is 84px, aligned on the decimal point**: right-aligned, and a whole figure
+  carries an invisible `.00`, so the tilde hangs to the left. 600/14px (16px roomy), 400 when
+  approximate; amber on a ready-to-warp row, approximate figures included. The cell's title is
+  the tempo's note.
+- **Tempo flags** beside the title, neutral, after *name pending*: *drifts N%* on any drifting
+  tempo, warped or not (the spread in mono), *part changes tempo*, *changes tempo*.
 - A **name pending** neutral flag beside a title StemForge has not given yet: the row shows the
   upload's name (the uploader before a title that names no artist) until it does.
 - **Opening and closing a row keeps your place** (handoff 13): what you clicked stays still on
@@ -183,6 +221,9 @@ Tools · Settings**), at `/` and `/dashboard`; Tracks moved to `/tracks`. No wid
   exception; a new bar table is teal only.
 - **Split bars** (tempo bins, key detectors): the solid part is the strict count, teal 35% the
   looser one.
+- **Tempo summaries are whole with no marks**: bins and peaks (a peak counts songs whose headline
+  rounds to it), and *By artist*'s range, rounded outward. The BPM detectors drill-down is one
+  track per row, so its figures carry their marks, decimal-padded; Copy keeps the tilde.
 
 ## Tools
 
@@ -192,7 +233,8 @@ left to right as the user works: *Working on* (340px), **Re-Pitch** (540px, fold
 or `?key=&bpm=`, plus `&shift=` and `&rel=1`), so a reload or a pasted link restores it, and the tab
 reopens where it was left until a restart.
 
-- **The selected track** is a clickable card (song, key · Camelot, whole-number warped BPM, genre ·
+- **The selected track** is a clickable card (song, key · Camelot, the formatted BPM with its weight
+  and its short note, genre ·
   familiarity · Track details). Clicking it turns it into the search, open and focused; Esc or clicking
   away puts it back. Under it, key and BPM by hand; **editing either drops the track** and keeps what was
   typed.
@@ -213,7 +255,12 @@ reopens where it was left until a restart.
   last.
 - **A third tool** joins as a foldable column with Re-Pitch's anatomy: left of Partners if it
   changes the key or BPM Partners works from, right of the wheel if not.
-- **Re-Pitch is the one place BPMs show two decimals.** A BPM there copies on click.
+- **Re-Pitch figures use the tempo formatter**: a shift of a vouched tempo is vouched, a drifting
+  track's are `~` whole numbers. A BPM copies on click; **the clipboard gets the figure without the
+  tilde**, and the row says what was copied (and that it's approximate, for a drifting track).
+- **A drifting track's BPM field** holds the whole figure, with `~` as a fixed prefix outside the
+  editable text, and the hint says every figure is approximate. Typing drops the track; a typed
+  figure counts as vouched.
 
 ## Settings
 
@@ -275,6 +322,19 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **Stage chips are all coloured by state** (done green, running teal, your turn amber, stopped red),
   with the current stage the only filled, bold chip. **No timestamps** under them: the Activity log
   carries times. The user asked for both on 2026-09-25.
+
+### Tempo (handoff 13, #92)
+
+- **Two more relations in the evidence panel**: *four-thirds of it* and *one and a half times it*.
+  The handoff's list left them out, which would have made a known relation red.
+- **The tempo strip ends at the last full 30 s window**, not the track's length, which crateside
+  does not keep beside the tempo.
+- **A part that changes tempo is always *one part***, never *the intro* or *the outro*; the warp's
+  reading does not yet say where the change is.
+- **A warp's drift range is measured over 30 s windows** (the handoff's third option). On the 38
+  drifting instrumental warps, bar-by-bar ranges reached 51% (*Jump*, a bar read at 69) and 37%
+  (*Hate To Say I Told You So*); the windows give 8% and 3%. *Rapper's Delight* reads 110–113 · 2%,
+  *Hits from the Bong* 92–93 · <1%.
 
 ### Settings (handoff 10, #74)
 

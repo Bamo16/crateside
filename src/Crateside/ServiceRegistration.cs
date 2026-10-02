@@ -21,6 +21,7 @@ using Crateside.Core.Playlist;
 using Crateside.Core.Quota;
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
+using Crateside.Core.Tempo;
 using Crateside.Core.Tracks;
 using Crateside.Core.Warps;
 using Crateside.Core.WorkLists;
@@ -295,7 +296,7 @@ public static class ServiceRegistration
             sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SidecarWriter>(),
             sp.GetRequiredService<IOptions<WarpOptions>>().Value,
-            path => sp.GetRequiredService<BeatReader>().Read(path)?.SteadyBpm
+            path => TrackTempo.StarterBpm(sp.GetRequiredService<BeatReader>().Read(path))
         ));
         services.AddSingleton(sp => new HandoffSidecars(
             sp.GetRequiredService<CratesidePaths>(),

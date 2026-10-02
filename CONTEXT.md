@@ -79,6 +79,15 @@ against it.
 - **Tempo** — beats per minute of the beat the user warps to; the number is the **BPM**. A
   reading at half or double is the same tempo at **the other octave**, and the octave is the
   user's call, not an error.
+- **Headline tempo** — the one BPM shown for a track everywhere: the **warped BPM** where there is
+  one, else crateside's reading, else keytag's estimate
+  ([ADR 0049](docs/adr/0049-a-bpm-shows-only-the-precision-crateside-can-vouch-for.md)).
+- **Vouched** — a BPM known to the hundredth: any warp that holds, or a reading whose 30 s windows
+  agree within 0.02%. Written bare (`128`, `119.50`); anything else is **approximate** and
+  written `~128`.
+- **Nominal tempo** — the figure a track was made at when the evidence says so, else the figure as
+  measured. A warp exactly on a whole or half number is that number; otherwise a tight reading
+  within 0.003 of one snaps to it. The raw warp and reading are never overwritten.
 - **Single-marker warp** — a warp whose one user marker, on a hit at its right place on the
   grid, fixes every beat, because the track holds one tempo. The analysis file stores it as two
   markers (Ableton adds one 1/32 beat on).

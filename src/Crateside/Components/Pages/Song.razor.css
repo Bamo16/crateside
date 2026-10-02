@@ -80,13 +80,20 @@ h1 {
     color: var(--text-30);
 }
 
-.value.conf.weak,
-.sub.conflict {
+.value.conf.weak {
     color: var(--red);
 }
 
 .value.bpm.ready {
     color: var(--amber);
+}
+
+.value.bpm.approx {
+    font-weight: 400;
+}
+
+.value.bpm.estimate {
+    color: var(--text-50);
 }
 
 .sub {

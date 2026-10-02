@@ -19,9 +19,16 @@ public sealed record WarpTempo(
     private const int MinStableBars = 8;
     private const double FitTolerance = 0.003;
     private const double SameTempo = 0.05;
+    private const double WindowSeconds = 30;
 
     /// <summary>−50 dBFS.</summary>
     private const float SilencePeak = 0.00316f;
+
+    /// <summary>The bars <see cref="StableTempo.Bars"/> counts against, so a main tempo's share of the track.</summary>
+    public int AudibleBars { get; init; }
+
+    /// <summary>Each full 30 s window's tempo, measured like crateside's reading so the two compare.</summary>
+    public IReadOnlyList<double> Windows { get; init; } = [];
 
     /// <summary>The tempo of a saved warp; null when the default clip was never saved.</summary>
     public static WarpTempo? Of(AnalysisFile analysis, int sampleRate) =>
@@ -67,7 +74,7 @@ public sealed record WarpTempo(
             .OrderByDescending(tempo => tempo.Bars)
             .ToList();
 
-        return stable switch
+        WarpTempo tempo = stable switch
         {
             [] => new(Median(audible), TempoShape.Drifting, audible.Min(), audible.Max(), []),
             [var main, ..] => new(
@@ -78,6 +85,42 @@ public sealed record WarpTempo(
                 stable
             ),
         };
+
+        return tempo with
+        {
+            AudibleBars = audible.Length,
+            Windows = WindowsOf(
+                warp,
+                warp.SecondsAt(clip.Start)!.Value,
+                warp.SecondsAt(clip.End)!.Value
+            ),
+        };
+    }
+
+    /// <summary>The tempo of each full 30 s from the clip's start, as the beats it spans: marker noise averages out at that length.</summary>
+    private static double[] WindowsOf(Warp warp, double from, double to) =>
+        [
+            .. Enumerable
+                .Range(0, (int)Math.Max(0, (to - from) / WindowSeconds))
+                .Select(i => from + i * WindowSeconds)
+                .Select(start =>
+                    (BeatAt(warp, start + WindowSeconds) - BeatAt(warp, start)) * 60 / WindowSeconds
+                ),
+        ];
+
+    /// <summary>The inverse of <see cref="Warp.SecondsAt"/>, extending the first and last segments.</summary>
+    private static double BeatAt(Warp warp, double seconds)
+    {
+        var markers = warp.Markers;
+        var i = 1;
+
+        while (i < markers.Count - 1 && seconds > markers[i].Seconds)
+            i++;
+
+        var (from, to) = (markers[i - 1], markers[i]);
+
+        return from.Beat
+            + (seconds - from.Seconds) * (to.Beat - from.Beat) / (to.Seconds - from.Seconds);
     }
 
     private static bool IsSilent(

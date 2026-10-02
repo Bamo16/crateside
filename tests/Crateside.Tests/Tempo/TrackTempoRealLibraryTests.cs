@@ -1,0 +1,50 @@
+using Crateside.Core;
+using Crateside.Core.Ableton;
+using Crateside.Core.Beats;
+using Crateside.Core.Tempo;
+
+namespace Crateside.Tests.Tempo;
+
+/// <summary>ADR 0049's consequences on the user's own warps and crateside's readings of them.</summary>
+public sealed class TrackTempoRealLibraryTests
+{
+    private static readonly CratesidePaths Paths = new();
+    private static readonly WarpTempoReader Warps = new();
+    private static readonly BeatReader Readings = new(
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "beats.json")
+    );
+
+    [Theory]
+    [InlineData("Lil Jon - Get Low", 101)]
+    [InlineData("Snail's House - Flash Drive", 160)]
+    [InlineData("Aiobahn - non-reflection (feat. 牧野由依)", 180)]
+    [InlineData("Princess Superstar - Perfect", 119.5)]
+    public void A_snapped_warp_shows_the_grid_tempo_the_reading_sits_on(
+        string name,
+        double nominal
+    ) => Assert.Equal(nominal, Tempo(name).Value);
+
+    [Theory]
+    [InlineData("Too $hort - Blow the Whistle", 100)]
+    [InlineData("White Shadow - If You Like It", 128)]
+    public void A_typed_warp_keeps_the_number_the_user_typed(string name, double typed) =>
+        Assert.Equal(typed, Tempo(name).Value);
+
+    [Theory]
+    [InlineData("Paul Oakenfold, Asher D - Ready Steady Go (Extended Mix)", "128.02")]
+    [InlineData("50 Cent - In Da Club", "90.01")]
+    public void A_real_tempo_off_the_grid_shows_its_hundredths(string name, string text) =>
+        Assert.Equal(text, TempoFormat.Format(Tempo(name)).Text);
+
+    private static TrackTempo Tempo(string name)
+    {
+        var audio = Path.Combine(Paths.MashupSamples, $"{name} (Instrumental - Full).flac");
+        Assert.SkipUnless(File.Exists(audio), $"{name} is not in the library on this machine.");
+
+        var warp = Warps.Read(audio);
+        var reading = Readings.Read(audio);
+        Assert.SkipWhen(warp is null || reading is null, $"{name} has no warp or no kept reading.");
+
+        return TrackTempo.Of(warp, reading, null)!;
+    }
+}

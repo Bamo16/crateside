@@ -29,20 +29,34 @@ public sealed record BeatReading
     [JsonIgnore]
     public bool Drifts => Drift >= DriftsAt;
 
-    /// <summary>The whole file's tempo when it holds steady, which a single warp marker can stand for (#77).</summary>
-    [JsonIgnore]
-    public double? SteadyBpm => this is { Bpm: > 0 and var bpm, Drifts: false } ? bpm : null;
-
     /// <summary>Null under three windows in one tempo and octave; octave-flipped reads are not exact multiples.</summary>
     public static double? Spread(IReadOnlyList<double> windows)
     {
-        if (windows.Count < MinWindows)
+        if (Steady(windows) is not { Count: >= MinWindows } kept)
             return null;
+
+        double[] sorted = [.. kept.Select(window => window.Bpm).Order()];
+
+        return (Percentile(sorted, 0.75) - Percentile(sorted, 0.25))
+            / Percentile(sorted, 0.5)
+            * 100;
+    }
+
+    /// <summary>The windows in the majority tempo and octave, by position; empty under three windows.</summary>
+    public static IReadOnlyList<(int Index, double Bpm)> Steady(IReadOnlyList<double> windows)
+    {
+        if (windows.Count < MinWindows)
+            return [];
 
         var median = Percentile([.. windows.Order()], 0.5);
         var folded = windows
-            .Select(bpm =>
-                (Bpm: bpm, Folded: bpm * Math.Pow(2, -Math.Round(Math.Log2(bpm / median))))
+            .Select(
+                (bpm, index) =>
+                    (
+                        Index: index,
+                        Bpm: bpm,
+                        Folded: bpm * Math.Pow(2, -Math.Round(Math.Log2(bpm / median)))
+                    )
             )
             .ToArray();
         var reference = Percentile([.. folded.Select(window => window.Folded).Order()], 0.5);
@@ -50,12 +64,16 @@ public sealed record BeatReading
         var inClass = folded
             .Where(window => Math.Abs(window.Folded - reference) / reference <= SameTempoClass)
             .Select(window =>
-                (window.Bpm, Octave: (int)Math.Round(Math.Log2(window.Bpm / reference)))
+                (
+                    window.Index,
+                    window.Bpm,
+                    Octave: (int)Math.Round(Math.Log2(window.Bpm / reference))
+                )
             )
             .ToArray();
 
         if (inClass.Length is 0)
-            return null;
+            return [];
 
         var majority = inClass
             .GroupBy(window => window.Octave)
@@ -64,17 +82,12 @@ public sealed record BeatReading
             .First()
             .Key;
 
-        double[] kept =
+        return
         [
             .. inClass
                 .Where(window => window.Octave == majority)
-                .Select(window => window.Bpm)
-                .Order(),
+                .Select(window => (window.Index, window.Bpm)),
         ];
-
-        return kept.Length < MinWindows
-            ? null
-            : (Percentile(kept, 0.75) - Percentile(kept, 0.25)) / Percentile(kept, 0.5) * 100;
     }
 
     /// <summary>Linear between the closest ranks, as numpy's default.</summary>

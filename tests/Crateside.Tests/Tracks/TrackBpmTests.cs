@@ -1,10 +1,12 @@
 using Crateside.Core.Ableton;
+using Crateside.Core.Beats;
 using Crateside.Core.Ledger;
+using Crateside.Core.Tempo;
 using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Tracks;
 
-/// <summary>Which BPM a row shows: a finished warp's over keytag's estimate (ADR 0038).</summary>
+/// <summary>Which BPM a row shows: a finished warp's, else crateside's reading, else keytag's estimate (ADR 0049).</summary>
 public sealed class TrackBpmTests
 {
     private static readonly LedgerRun Verdict = new()
@@ -15,12 +17,27 @@ public sealed class TrackBpmTests
     };
 
     [Fact]
-    public void A_row_with_no_warp_shows_the_verdicts_estimate()
+    public void A_row_with_no_warp_and_no_reading_shows_the_verdicts_estimate()
     {
         var row = Row(Sample("Vocal - Full"));
 
-        Assert.Equal(87, row.Bpm);
+        Assert.Equal((TempoSource.Estimate, 87.0), (row.Bpm?.Source, row.Bpm?.Value));
         Assert.Null(row.Tempo);
+    }
+
+    [Fact]
+    public void A_reading_outranks_the_verdicts_estimate()
+    {
+        var row = Row(
+            Sample("Vocal - Full"),
+            new TrackSample
+            {
+                Label = "Instrumental - Full",
+                Beats = new BeatReading { Bpm = 174.02, Windows = [174.02, 174.02, 174.03] },
+            }
+        );
+
+        Assert.Equal((TempoSource.Reading, 174.02), (row.Bpm?.Source, row.Bpm?.Value));
     }
 
     [Fact]
@@ -28,7 +45,7 @@ public sealed class TrackBpmTests
     {
         var row = Row(Sample("Vocal - Full", 174.0007));
 
-        Assert.Equal(174.0007, row.Bpm);
+        Assert.Equal((TempoSource.Warp, 174.0007), (row.Bpm?.Source, row.Bpm?.Measured));
     }
 
     [Fact]
@@ -36,24 +53,7 @@ public sealed class TrackBpmTests
     {
         var row = Row(Sample("Vocal - Full", 86.5), Sample("Instrumental - Full", 173.9));
 
-        Assert.Equal(173.9, row.Bpm);
-    }
-
-    [Fact]
-    public void The_note_says_where_the_bpm_came_from_and_whether_it_holds()
-    {
-        Assert.Equal("keytag's estimate", Row(Sample("Vocal - Full")).BpmNote);
-        Assert.Equal("from your warp", Row(Sample("Vocal - Full", 174)).BpmNote);
-        Assert.Equal(
-            "from your warp: drifting, 91–94",
-            Row(
-                new TrackSample
-                {
-                    Label = "Instrumental - Full",
-                    Tempo = new WarpTempo(92.1, TempoShape.Drifting, 90.8, 93.5, []),
-                }
-            ).BpmNote
-        );
+        Assert.Equal(173.9, row.Bpm?.Value);
     }
 
     private static TrackRow Row(params TrackSample[] samples) =>

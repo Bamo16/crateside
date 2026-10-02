@@ -116,6 +116,14 @@ th.numeric {
     color: var(--text-75);
 }
 
+.copy.approx {
+    font-weight: 400;
+}
+
+.copy .pad {
+    visibility: hidden;
+}
+
 .copy:hover {
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -154,6 +162,12 @@ th.numeric {
     font-size: 11.5px;
     font-weight: 500;
     color: var(--text-50);
+}
+
+.copied-note {
+    margin-left: 8px;
+    font-size: 12px;
+    color: var(--text-60);
 }
 
 .dash {

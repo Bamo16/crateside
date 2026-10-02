@@ -3,7 +3,6 @@
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 
-@using System.Globalization
 @using Crateside.Components.Tools
 @using Crateside.Core.Familiarity
 @using Crateside.Core.Library
@@ -37,7 +36,7 @@
         <div class="col tools-col">
             @if (_rePitchOpen)
             {
-                <RePitchTool Key="Own" Bpm="Bpm" IsTrack="_track is not null"
+                <RePitchTool Key="Own" Tempo="Tempo" IsTrack="_track is not null"
                              Shift="_shift" OnShift="ChooseShift"
                              Max="_rePitchMax" OnMax="max => Change(() => { _rePitchMax = max; _shift = Math.Clamp(_shift, -max, max); })"
                              OnToggle="ToggleRePitch" />
@@ -51,9 +50,9 @@
                     {
                         <span>
                             <span class="mono">@MashupPartner.FormatShift(_shift)</span>
-                            @if (Bpm is { } bpm)
+                            @if (Tempo is { } tempo)
                             {
-                                <text> · </text><span class="mono">@Core.Pairing.RePitch.ArrangementBpm(bpm, _shift).ToString("0.00", CultureInfo.InvariantCulture)</span><text> BPM</text>
+                                <text> · </text><span class="mono">@TempoFormat.Format(tempo.Shifted(_shift)).Text</span><text> BPM</text>
                             }
                             · @own.Transposed(_shift).Name, sent to Partners
                         </span>
@@ -132,7 +131,10 @@
     /// <summary>The key before any shift: the track's, or the one typed.</summary>
     private MusicKey? Own => MusicKey.FromString(_keyName);
 
-    private double? Bpm => Core.Pairing.RePitch.TryParseBpm(_bpmText, out var bpm) ? bpm : null;
+    /// <summary>The track's tempo while one is picked, else the figure typed, which counts as vouched.</summary>
+    private TrackTempo? Tempo =>
+        _track?.Bpm
+        ?? (Core.Pairing.RePitch.TryParseBpm(_bpmText, out var typed) ? TrackTempo.Typed(typed.Value) : null);
 
     private MusicKey? Working => Own?.Transposed(_shift) is { } shifted ? (_relative ? shifted.Relative : shifted) : null;
 
@@ -194,7 +196,7 @@
     {
         _track = track;
         _keyName = track.Key?.LedgerName ?? string.Empty;
-        _bpmText = track.Tempo?.Bpm.ToString("0.00", CultureInfo.InvariantCulture) ?? string.Empty;
+        _bpmText = track.Bpm is { } tempo ? TempoFormat.Format(tempo).Figure : string.Empty;
     }
 
     private Task Pick(LibrarySong track) =>

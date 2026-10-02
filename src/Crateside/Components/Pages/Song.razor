@@ -47,10 +47,12 @@
             </div>
             <div class="cell">
                 <span class="label">BPM</span>
-                <span class="mono value bpm @(_row?.State is TrackState.ReadyToWarp ? "ready" : null) @(Bpm is null ? "empty" : null)">
-                    @(Bpm is { } bpm ? bpm.ToString("N0") : "—")
-                </span>
-                <span class="sub @(_run?.BpmConflicts is true ? "conflict" : null)">@BpmNote</span>
+                <span class="mono value bpm @(_row?.State is TrackState.ReadyToWarp ? "ready" : null) @(Bpm is null ? "empty" : null) @(Bpm?.IsApproximate is true ? "approx" : null) @(Bpm?.IsEstimate is true ? "estimate" : null)">@(Bpm?.Text ?? "—")</span>
+                <span class="sub">@(Bpm?.Note ?? "not measured")</span>
+                @if (Tempo is { Drifts: true } drifting)
+                {
+                    <TempoStrip Tempo="drifting" />
+                }
             </div>
             <div class="cell where">
                 <span class="label">Where it is</span>
@@ -104,7 +106,7 @@
                         else
                         {
                             <p class="summary">@Summary(_run)</p>
-                            <Evidence Run="_run" />
+                            <Evidence Run="_run" Tempo="Tempo" />
                         }
                     </section>
                 }
@@ -150,7 +152,9 @@
 
     private KeyConfidence Confidence => _row?.Confidence ?? KeyConfidence.Unknown;
 
-    private double? Bpm => _row?.Bpm ?? _run?.Bpm;
+    private TrackTempo? Tempo => _row is null ? TrackTempo.Of(null, null, _run?.Bpm) : _row.Bpm;
+
+    private FormattedTempo? Bpm => Tempo is { } tempo ? TempoFormat.Format(tempo) : null;
 
     /// <summary>How long the running stage should take, where there is an estimate: only separation has one.</summary>
     private TimeSpan? Expected =>
@@ -181,18 +185,6 @@
             { Samples: var samples } =>
                 $"tagged in Ableton on {samples.Count(IsTaggedWithKey)} of {"sample".ToQuantity(samples.Count)}",
             null => string.Empty,
-        };
-
-    private string BpmNote =>
-        _row is { Tempo: not null, BpmNote: { } warped } ? warped
-        : _row is { TempoDrifts: true } ? "beatdetect: the tempo drifts, expect a hard warp"
-        : _run switch
-        {
-            { BpmConflicts: true, BeatdetectBpm: { } rough } => $"beatdetect {rough:F1} · conflict",
-            { BeatdetectBpm: { } rough, Bpm: { } bpm } when Math.Abs(rough - bpm) < 1.5 =>
-                "beatdetect agrees",
-            { BeatdetectBpm: { } rough } => $"beatdetect {rough:F1} · half or double",
-            _ => Bpm is null ? "not measured" : "no cross-check",
         };
 
     protected override async Task OnInitializedAsync()

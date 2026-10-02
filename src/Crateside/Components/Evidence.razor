@@ -152,31 +152,28 @@
         }
 
         <h4>Tempo</h4>
-        <p class="tempo">
-            @if (Run.Bpm is { } bpm)
-            {
-                <strong>@Math.Round(bpm)</strong>
-                <span class="muted">from @(Run.BpmSource ?? "unknown")</span>
-            }
-            else
-            {
-                <span class="muted">No recommendation recorded.</span>
-            }
-            @if (Run.BeatdetectBpm is { } rough)
-            {
-                <span class="beatdetect @(Run.BpmConflicts ? "conflict" : null)"
-                      title="The runner's own estimate, kept as a cross-check. Frequently wrong, especially by a factor of two.">
-                    beatdetect @rough.ToString("F1")
-                </span>
-            }
-            @if (Run.BpmConflicts)
-            {
-                <span class="problem"
-                      title="Not a clean half or double, so this is not just a tempo-octave choice — one of the two is simply wrong.">
-                    conflict
-                </span>
-            }
-        </p>
+        @if (Tempo is { } tempo)
+        {
+            var shown = TempoFormat.Format(tempo);
+            <p class="tempo">
+                <strong class="mono @(shown.IsApproximate ? "approx" : null) @(shown.IsEstimate ? "estimate" : null)">@shown.Text</strong>
+                <span class="note">@shown.Note</span>
+            </p>
+            <ul class="sources">
+                @foreach (var line in TempoFormat.Others(tempo))
+                {
+                    <li>
+                        <span class="source">@line.Label</span>
+                        <span class="mono figure @(line.Figure?.IsApproximate is true ? "approx" : null)">@(line.Figure?.Text ?? "—")<span class="pad">@(line.Figure?.Padding ?? ".00")</span></span>
+                        <span class="comment @(line.IsConflict ? "conflict" : null)">@line.Comment</span>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="tempo"><span class="muted">Not measured.</span></p>
+        }
 
         <p class="provenance muted">
             Recorded @Run.Timestamp.ToLocalTime().ToString($"yyyy-MM-dd {CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern}")
@@ -197,6 +194,10 @@
     /// <summary>Trims to what answers "why this key" at a glance.</summary>
     [Parameter]
     public bool Compact { get; set; }
+
+    /// <summary>The song's headline tempo; the panel lists its other sources under it.</summary>
+    [Parameter]
+    public TrackTempo? Tempo { get; set; }
 
     private static string StanceMark(SourceStance stance) =>
         stance switch

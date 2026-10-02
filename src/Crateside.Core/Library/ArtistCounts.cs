@@ -1,4 +1,5 @@
 using Crateside.Core.Pairing;
+using Crateside.Core.Tempo;
 
 namespace Crateside.Core.Library;
 
@@ -32,12 +33,6 @@ public sealed record ArtistCounts(IReadOnlyList<ArtistCount> Artists, int AllArt
 
     private static ArtistCount Count(IGrouping<string, LibrarySong> songs)
     {
-        var bpms = songs
-            .Select(song => song.Tempo?.Bpm)
-            .OfType<double>()
-            .Select(TempoCounts.Whole)
-            .ToList();
-
         return new ArtistCount(
             songs.GroupBy(song => song.Artist!).MaxBy(spelling => spelling.Count())!.Key,
             songs.Count(),
@@ -51,25 +46,15 @@ public sealed record ArtistCounts(IReadOnlyList<ArtistCount> Artists, int AllArt
                     .Take(KeysShown)
                     .Select(key => key.Key.CamelotCode),
             ],
-            bpms.Count is 0 ? null : bpms.Min(),
-            bpms.Count is 0 ? null : bpms.Max()
+            TempoFormat.Range(songs.Select(song => song.Bpm).OfType<TrackTempo>())
         );
     }
 }
 
+/// <param name="BpmRange">Slowest to fastest headline tempo, rounded outward; null when none has one.</param>
 public sealed record ArtistCount(
     string Artist,
     int Songs,
     IReadOnlyList<string> Keys,
-    int? SlowestBpm,
-    int? FastestBpm
-)
-{
-    public string? BpmRange =>
-        (SlowestBpm, FastestBpm) switch
-        {
-            ({ } slowest, { } fastest) when slowest == fastest => $"{slowest}",
-            ({ } slowest, { } fastest) => $"{slowest}–{fastest}",
-            _ => null,
-        };
-}
+    string? BpmRange
+);

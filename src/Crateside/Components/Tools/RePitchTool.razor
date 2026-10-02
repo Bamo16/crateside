@@ -39,14 +39,12 @@
                 <tr class="@Row(n)" @onclick="() => Choose(n)">
                     <td class="numeric mono shift">@MashupPartner.FormatShift(n)</td>
                     <td class="numeric">
-                        @if (Bpm is { } bpm)
+                        @if (Tempo is { } tempo)
                         {
-                            var figure = Core.Pairing.RePitch.ArrangementBpm(bpm, n).ToString("0.00", CultureInfo.InvariantCulture);
+                            var shown = TempoFormat.Format(tempo.Shifted(n));
 
-                            <button class="copy mono @(_copied == n ? "done" : null)" title="Copy"
-                                    @onclick="() => Copy(n, figure)" @onclick:stopPropagation="true">
-                                @(_copied == n ? "copied" : figure)
-                            </button>
+                            <button class="copy mono @(_copied == n ? "done" : null) @(shown.IsApproximate ? "approx" : null)" title="Copy @shown.Figure"
+                                    @onclick="() => Copy(n, shown)" @onclick:stopPropagation="true">@shown.Text<span class="pad">@shown.Padding</span></button>
                         }
                         else
                         {
@@ -55,7 +53,11 @@
                     </td>
                     <td class="@(lands is null ? "dash" : null)">
                         @(lands?.Name ?? "—")
-                        @if (n is 0 && lands is not null)
+                        @if (_copied == n && _copiedNote is { } note)
+                        {
+                            <span class="copied-note">@note</span>
+                        }
+                        else if (n is 0 && lands is not null)
                         {
                             <span class="tag">@(IsTrack ? "the track" : "as typed")</span>
                         }
@@ -71,11 +73,11 @@
     </table>
 
     <p class="hint">
-        @if (Key is not null && Bpm is null)
+        @if (Key is not null && Tempo is null)
         {
             <text>No BPM yet: the keys fill, the BPMs wait.</text>
         }
-        else if (Bpm is not null)
+        else if (Tempo is not null)
         {
             <text>Click a BPM to copy it; click a row to send its key to Partners.</text>
         }
@@ -90,12 +92,14 @@
     private static readonly TimeSpan CopiedFor = TimeSpan.FromSeconds(1.5);
 
     private int? _copied;
+    private string? _copiedNote;
 
     [Parameter]
     public MusicKey? Key { get; set; }
 
+    /// <summary>The track's tempo, or the one typed; each shift is written as it would be.</summary>
     [Parameter]
-    public double? Bpm { get; set; }
+    public TrackTempo? Tempo { get; set; }
 
     [Parameter]
     public bool IsTrack { get; set; }
@@ -134,11 +138,12 @@
         await OnShift.InvokeAsync(shift == Shift ? 0 : shift);
     }
 
-    private async Task Copy(int shift, string figure)
+    private async Task Copy(int shift, FormattedTempo shown)
     {
-        await Js.InvokeVoidAsync("navigator.clipboard.writeText", figure);
+        await Js.InvokeVoidAsync("navigator.clipboard.writeText", shown.Figure);
 
         _copied = shift;
+        _copiedNote = shown.Copied;
         StateHasChanged();
 
         await Task.Delay(CopiedFor);

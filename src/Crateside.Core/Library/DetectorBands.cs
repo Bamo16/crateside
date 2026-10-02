@@ -1,3 +1,5 @@
+using Crateside.Core.Tempo;
+
 namespace Crateside.Core.Library;
 
 /// <summary>How close each detector's BPM comes to the warped one, song by song (handoff 08).</summary>
@@ -31,9 +33,15 @@ public sealed class DetectorBands
             compared.Count(song => song is { Run.Bpm: not null } or { Beats.Bpm: not null }),
             new()
             {
-                [Detector.Keytag] = Reads(compared, song => song.Run?.Bpm),
+                [Detector.Keytag] = Reads(
+                    compared,
+                    song => TrackTempo.Of(null, null, song.Run?.Bpm)
+                ),
                 // crateside's own reading with the ffmpeg on PATH, not the ledger's (#76).
-                [Detector.Beatdetect] = Reads(compared, song => song.Beats?.Bpm),
+                [Detector.Beatdetect] = Reads(
+                    compared,
+                    song => TrackTempo.Of(null, song.Beats, null)
+                ),
             }
         );
     }
@@ -81,20 +89,22 @@ public sealed class DetectorBands
 
     private static List<DetectorRead> Reads(
         List<LibrarySong> songs,
-        Func<LibrarySong, double?> read
+        Func<LibrarySong, TrackTempo?> read
     ) =>
         [
             .. songs
-                .Where(song => read(song) is > 0)
-                .Select(song => new DetectorRead(song, song.Tempo!.Bpm, read(song)!.Value)),
+                .Select(song => (Song: song, Warped: song.Bpm, Read: read(song)))
+                .Where(pair => pair is { Warped: not null, Read: not null })
+                .Select(pair => new DetectorRead(pair.Song, pair.Warped!, pair.Read!)),
         ];
 }
 
-public sealed record DetectorRead(LibrarySong Song, double Warped, double Read)
+/// <summary>One song's warped tempo beside a detector's; the band and ratio compare their raw figures.</summary>
+public sealed record DetectorRead(LibrarySong Song, TrackTempo Warped, TrackTempo Read)
 {
-    public double Ratio => Read / Warped;
+    public double Ratio => Read.Measured / Warped.Measured;
 
-    public TempoBand Band => DetectorBands.BandOf(Warped, Read);
+    public TempoBand Band => DetectorBands.BandOf(Warped.Measured, Read.Measured);
 }
 
 public enum Detector

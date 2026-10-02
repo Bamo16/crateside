@@ -1,4 +1,5 @@
 using Crateside.Core.Beats;
+using Crateside.Core.Tempo;
 
 namespace Crateside.Core.Warps;
 
@@ -70,7 +71,7 @@ public sealed class HandoffSidecars(
         return prepared.TryGetValue(from, out var sidecar) ? writer.Commit(sidecar, to) : null;
     }
 
-    /// <summary>The tempo of the batch's instrumental when it holds steady; a drifting one gets no starter.</summary>
+    /// <summary>The nominal tempo of the batch's instrumental when it holds steady; a drifting one gets no starter.</summary>
     private async Task<double?> SteadyBpmAsync(List<SiblingFile> cuts, CancellationToken ct)
     {
         if (WarpSiblings.TempoSources(cuts).FirstOrDefault() is not { } instrumental)
@@ -82,6 +83,6 @@ public sealed class HandoffSidecars(
         var reading =
             beats.Read(instrumental.Path) ?? await beats.MeasureAsync(instrumental.Path, ct);
 
-        return reading.SteadyBpm;
+        return TrackTempo.StarterBpm(reading);
     }
 }

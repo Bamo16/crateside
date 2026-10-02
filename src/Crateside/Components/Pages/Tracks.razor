@@ -268,6 +268,7 @@
         @foreach (var row in Shown)
         {
             var open = _expanded == row.VideoId;
+            var bpm = row.Bpm is { } tempo ? TempoFormat.Format(tempo) : null;
 
             @if (_filter is TrackFilter.TagsToAnswer)
             {
@@ -318,9 +319,10 @@
                     {
                         <span class="flag neutral" title="StemForge has not named this track yet, so the name will change. Rename once it has.">name pending</span>
                     }
-                    @if (row.TempoDrifts)
+                    @if (bpm?.Flag is { } flag)
                     {
-                        <span class="flag" title="beatdetect reads the tempo changing across the instrumental: expect a hard warp">tempo drifts</span>
+                        <span class="flag neutral" title="@bpm.Note">@flag.Words@if (flag.Spread is { } spread)
+                        {<text> </text><span class="mono">@spread</span>}</span>
                     }
                 </span>
 
@@ -328,9 +330,7 @@
 
                 <span class="mono conf @KeyText.ConfidenceTone(row.Confidence)">@KeyText.Confidence(row.Confidence)</span>
 
-                <span class="mono bpm right @(row.State is TrackState.ReadyToWarp ? "ready" : null) @(row.Bpm is null ? "none" : null)" title="@row.BpmNote">
-                    @(row.Bpm is { } bpm ? bpm.ToString("N0") : "—")
-                </span>
+                <span class="mono bpm right @(row.State is TrackState.ReadyToWarp ? "ready" : null) @(bpm is null ? "none" : null) @(bpm?.IsApproximate is true ? "approx" : null) @(bpm?.IsEstimate is true ? "estimate" : null)" title="@bpm?.Note">@(bpm?.Text ?? "—")<span class="pad">@bpm?.Padding</span></span>
 
                 <span class="genre-cell">
                     <GenreStrip Row="row" Shape="GenreStrip.Shapes.Cell" />
@@ -789,7 +789,7 @@
     private static string Figure(TrackRow row) =>
         string.Join(
             " · ",
-            new[] { KeyText.Spell(row.Key), row.Bpm?.ToString("N0") }.OfType<string>()
+            new[] { KeyText.Spell(row.Key), row.Bpm is { } tempo ? TempoFormat.Format(tempo).Text : null }.OfType<string>()
         );
 
     private static string Waiting(TrackRow row) =>

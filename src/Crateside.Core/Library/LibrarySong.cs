@@ -2,6 +2,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
 using Crateside.Core.Ledger;
 using Crateside.Core.Pairing;
+using Crateside.Core.Tempo;
 
 namespace Crateside.Core.Library;
 
@@ -27,4 +28,7 @@ public sealed record LibrarySong
     public BeatReading? Beats { get; init; }
 
     public LedgerRun? Run { get; init; }
+
+    /// <summary>The headline tempo: the warp where there is one (ADR 0049).</summary>
+    public TrackTempo? Bpm => TrackTempo.Of(Tempo, Beats, Run?.Bpm);
 }

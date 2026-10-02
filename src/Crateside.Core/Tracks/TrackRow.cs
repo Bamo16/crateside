@@ -7,6 +7,7 @@ using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Plans;
+using Crateside.Core.Tempo;
 using Humanizer;
 
 namespace Crateside.Core.Tracks;
@@ -129,26 +130,8 @@ public sealed record TrackRow
 
     public KeyConfidence Confidence => Verdict?.Confidence ?? KeyConfidence.Unknown;
 
-    /// <summary>
-    /// The finished warp's tempo, else keytag's estimate as a starting point for warping, which a
-    /// verdict too weak to tag with still measured (ADR 0038).
-    /// </summary>
-    public double? Bpm => Tempo?.Bpm ?? Verdict?.Bpm;
-
-    /// <summary>Where <see cref="Bpm"/> came from, and whether the tempo holds.</summary>
-    public string? BpmNote =>
-        Tempo switch
-        {
-            null when TempoDrifts => Verdict?.Bpm is null
-                ? "the tempo drifts: expect a hard warp"
-                : "keytag's estimate · the tempo drifts: expect a hard warp",
-            null => Verdict?.Bpm is null ? null : "keytag's estimate",
-            { Shape: TempoShape.Drifting, Low: var low, High: var high } =>
-                $"from your warp: drifting, {low:N0}–{high:N0}",
-            { Shape: TempoShape.MostlySteady } =>
-                "from your warp: mostly steady, changing in places",
-            _ => "from your warp",
-        };
+    /// <summary>The headline tempo: the finished warp's, else crateside's reading, else keytag's estimate (ADR 0049).</summary>
+    public TrackTempo? Bpm => TrackTempo.Of(Tempo, Beats, Verdict?.Bpm);
 
     /// <summary>The tempo of a finished warp, the instrumental's where there is one.</summary>
     public WarpTempo? Tempo =>

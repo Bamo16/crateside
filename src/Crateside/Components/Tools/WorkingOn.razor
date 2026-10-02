@@ -1,4 +1,3 @@
-@using System.Globalization
 @using Crateside.Core.Library
 @using Crateside.Core.Pairing
 
@@ -14,7 +13,14 @@
             </div>
             <span class="mono facts">
                 @(track.Key is { } key ? $"{key.Name} · {key.CamelotCode}" : "no key")
-                · @(track.Tempo is { } tempo ? $"{tempo.Bpm:N0} BPM, warped" : "not warped")
+                @if (Shown is { } shown)
+                {
+                    <text> · </text><span class="figure @(shown.IsApproximate ? "approx" : null)">@shown.Text</span><text> BPM · @shown.Brief</text>
+                }
+                else
+                {
+                    <text> · not warped</text>
+                }
             </span>
             <span class="meta">
                 @string.Join(" · ", new[] { track.Genre, Familiarity }.OfType<string>())
@@ -40,7 +46,10 @@
 
                         <li class="@(i == _highlight ? "highlight" : null)" @onmousedown="() => Pick(song)">
                             <span class="song">@song.Name</span>
-                            <span class="mono">@song.Tempo!.Bpm.ToString("0.00", CultureInfo.InvariantCulture)</span>
+                            @if (song.Bpm is { } tempo)
+                            {
+                                <TempoFigure Tempo="tempo" />
+                            }
                             <span class="mono quiet">@song.Key?.CamelotCode</span>
                         </li>
                     }
@@ -63,11 +72,19 @@
         </label>
         <label>
             <span>BPM</span>
-            <input type="text" class="bpm mono @(IsUnreadable ? "unreadable" : null)" placeholder="e.g. 128"
-                   value="@BpmText" @oninput="e => OnBpm.InvokeAsync(e.Value as string ?? string.Empty)" />
+            <span class="bpm-field">
+                @if (Shown is { IsApproximate: true })
+                {
+                    <span class="tilde mono">~</span>
+                }
+                <input type="text" class="bpm mono @(IsUnreadable ? "unreadable" : null)" placeholder="e.g. 128"
+                       value="@BpmText" @oninput="e => OnBpm.InvokeAsync(e.Value as string ?? string.Empty)" />
+            </span>
         </label>
         <span class="hint">
-            @(Track is null ? "Or pick a warped track above." : "Editing either lets go of the track and keeps what you typed.")
+            @(Track is null ? "Or pick a warped track above."
+              : Shown is { IsApproximate: true } ? "The tempo drifts, so every figure here is approximate. Typing in the field drops the track."
+              : "Editing either lets go of the track and keeps what you typed.")
         </span>
     </div>
 </div>
@@ -109,6 +126,8 @@
 
     [Parameter]
     public EventCallback<string> OnBpm { get; set; }
+
+    private FormattedTempo? Shown => Track?.Bpm is { } tempo ? TempoFormat.Format(tempo) : null;
 
     private bool IsUnreadable => !string.IsNullOrWhiteSpace(BpmText) && !Core.Pairing.RePitch.TryParseBpm(BpmText, out _);
 

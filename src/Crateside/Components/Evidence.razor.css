@@ -272,20 +272,69 @@
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.6rem;
+    gap: 10px;
 }
 
 .tempo strong {
-    font-size: 1.1rem;
+    font-size: 20px;
+    font-weight: 600;
 }
 
-.beatdetect {
-    color: var(--text-dim);
-    font-size: 0.85rem;
+.tempo strong.approx {
+    font-weight: 400;
 }
 
-.beatdetect.conflict {
-    color: var(--alert);
+.tempo strong.estimate {
+    color: var(--text-50);
+}
+
+.tempo .note {
+    font-size: 12.5px;
+    color: var(--text-60);
+}
+
+.sources {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--line);
+}
+
+.sources li {
+    display: grid;
+    grid-template-columns: 150px 64px minmax(0, 1fr);
+    gap: 12px;
+    align-items: baseline;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 12.5px;
+}
+
+.sources .source {
+    color: var(--text-60);
+}
+
+.sources .figure {
+    text-align: right;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-75);
+}
+
+.sources .figure.approx {
+    font-weight: 400;
+}
+
+.sources .pad {
+    visibility: hidden;
+}
+
+.sources .comment {
+    color: var(--text-50);
+}
+
+.sources .comment.conflict {
+    color: var(--red);
 }
 
 .provenance {
