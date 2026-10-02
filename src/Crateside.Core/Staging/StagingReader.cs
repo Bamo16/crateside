@@ -14,6 +14,7 @@ public sealed class StagingReader(FolderInfoReader? folderInfoReader = null)
 {
     private readonly FolderInfoReader _folderInfoReader =
         folderInfoReader ?? new FolderInfoReader();
+    private readonly AnalysisFileReader _analysisReader = new();
 
     /// <summary>
     /// Reads the staging folder and rolls its stems up into songs, newest-looking first.
@@ -56,7 +57,7 @@ public sealed class StagingReader(FolderInfoReader? folderInfoReader = null)
         ];
     }
 
-    private static StagedSong BuildSong(
+    private StagedSong BuildSong(
         string groupKey,
         IReadOnlyList<(string Path, StemTags? Tags)> group,
         FolderInfo folderInfo,
@@ -83,7 +84,7 @@ public sealed class StagingReader(FolderInfoReader? folderInfoReader = null)
         };
     }
 
-    private static StagedFile BuildStem(
+    private StagedFile BuildStem(
         string path,
         StemTags? tags,
         FolderInfo folderInfo,
@@ -106,8 +107,8 @@ public sealed class StagingReader(FolderInfoReader? folderInfoReader = null)
             AbletonKey = abletonKey,
             HasPartialKey = abletonTags?.HasPartialKey ?? false,
             HasDefaultClip =
-                AnalysisFile.TryRead($"{path}.asd", out var warp)
-                && warp is { DefaultClip: not null },
+                _analysisReader.Read($"{path}.asd")
+                    is AnalysisReadOutcome.Read { Analysis.DefaultClip: not null },
             KeyDisagreesWithVerdict =
                 abletonKey is not null
                 && verdict?.Key is { } verdictKey

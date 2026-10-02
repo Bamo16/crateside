@@ -15,6 +15,7 @@ public sealed class WarpTempoReader(string? path = null)
     private const int Version = 2;
 
     private readonly string? _path = path;
+    private readonly AnalysisFileReader _analysisReader = new();
     private readonly ConcurrentDictionary<string, TempoEntry> _read = new(
         Load(path),
         StringComparer.OrdinalIgnoreCase
@@ -34,9 +35,9 @@ public sealed class WarpTempoReader(string? path = null)
             return entry.Tempo;
 
         var tempo =
-            AnalysisFile.TryRead(sidecar.FullName, out var warp)
+            _analysisReader.Read(sidecar.FullName) is AnalysisReadOutcome.Read read
             && SampleRateOf(audioPath) is { } rate
-                ? WarpTempo.Of(warp, rate)
+                ? WarpTempo.Of(read.Analysis, rate)
                 : null;
 
         _read[sidecar.FullName] = new TempoEntry(stamp, tempo);

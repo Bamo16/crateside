@@ -171,7 +171,10 @@ public sealed class WarpTempoRealLibraryTests
 
         var missing = Directory
             .EnumerateFiles(Paths.MashupSamples, "*.asd", SearchOption.AllDirectories)
-            .Where(asd => AnalysisFile.TryRead(asd, out var warp) && warp.DefaultClip is not null)
+            .Where(asd =>
+                new AnalysisFileReader().Read(asd)
+                    is AnalysisReadOutcome.Read { Analysis.DefaultClip: not null }
+            )
             .Where(asd => Reader.Read(asd[..^4]) is null)
             .Select(Path.GetFileName)
             .ToList();
