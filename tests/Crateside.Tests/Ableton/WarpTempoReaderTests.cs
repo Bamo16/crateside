@@ -31,6 +31,14 @@ public sealed class WarpTempoReaderTests : IDisposable
     }
 
     [Fact]
+    public void A_starter_warp_gives_no_tempo_since_it_is_only_keytags_guess()
+    {
+        var audio = Sample("sidecar-clicks.asd");
+
+        Assert.Null(new WarpTempoReader(isStarter: path => path == audio).Read(audio));
+    }
+
+    [Fact]
     public void A_sidecar_read_once_is_not_read_again_until_it_changes()
     {
         var audio = Sample("sidecar-clicks.asd");

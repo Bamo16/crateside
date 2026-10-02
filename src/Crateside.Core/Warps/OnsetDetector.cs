@@ -13,6 +13,9 @@ public sealed class OnsetDetector(OnsetSettings? settings = null) : ITransientDe
 
     private readonly OnsetSettings _settings = settings ?? new OnsetSettings();
 
+    /// <summary>Raise it whenever a change moves what the detector finds.</summary>
+    public string Version => "onsets 1";
+
     public IReadOnlyList<Transient> Detect(DecodedAudio audio)
     {
         var s = _settings;

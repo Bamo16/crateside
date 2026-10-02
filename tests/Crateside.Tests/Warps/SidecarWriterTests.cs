@@ -3,7 +3,7 @@ using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Warps;
 
-public sealed class WarpBorrowerTests : IDisposable
+public sealed class SidecarWriterTests : IDisposable
 {
     private const int Frames = 44_100;
 
@@ -19,9 +19,11 @@ public sealed class WarpBorrowerTests : IDisposable
         Guid.NewGuid().ToString("n")
     );
 
-    private readonly BorrowedWarps _borrowed = new();
+    private readonly WrittenWarps _written = new();
 
-    public WarpBorrowerTests() => Directory.CreateDirectory(_root);
+    private readonly TransientOrigins _origins = new();
+
+    public SidecarWriterTests() => Directory.CreateDirectory(_root);
 
     private string Target => Path.Combine(_root, "Song (Vocal - Full).flac");
 
@@ -41,14 +43,14 @@ public sealed class WarpBorrowerTests : IDisposable
         var outcome = await Borrower(level: 0.75f)
             .BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);
 
-        Assert.Equal(new WarpBorrowOutcome.Written(Sibling, null), outcome);
+        Assert.Equal(new WarpOutcome.Written(Sibling, null), outcome);
 
         var written = AnalysisFile.Read($"{Target}.asd");
 
         Assert.True(written.IsDefaultClipSaved);
         Assert.Equal(Markers, written.Warp.Markers);
         Assert.Equal(0.75f, written.Audio.Overview.PeakBetween(0, Frames), 2);
-        Assert.Equal(Sibling, _borrowed.BorrowedFrom(Target));
+        Assert.Equal(Sibling, _written.BorrowedFrom(Target));
     }
 
     [Fact]
@@ -69,7 +71,7 @@ public sealed class WarpBorrowerTests : IDisposable
         var outcome = await Borrower()
             .BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);
 
-        Assert.IsType<WarpBorrowOutcome.AlreadyWarped>(outcome);
+        Assert.IsType<WarpOutcome.AlreadyWarped>(outcome);
         Assert.Equal(
             before,
             await File.ReadAllBytesAsync($"{Target}.asd", TestContext.Current.CancellationToken)
@@ -86,7 +88,7 @@ public sealed class WarpBorrowerTests : IDisposable
         var outcome = await Borrower()
             .BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);
 
-        Assert.IsType<WarpBorrowOutcome.Written>(outcome);
+        Assert.IsType<WarpOutcome.Written>(outcome);
         Assert.True(AnalysisFile.Read($"{Target}.asd").IsDefaultClipSaved);
     }
 
@@ -99,7 +101,7 @@ public sealed class WarpBorrowerTests : IDisposable
         var outcome = await Borrower()
             .BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);
 
-        Assert.IsType<WarpBorrowOutcome.NoWarpedSibling>(outcome);
+        Assert.IsType<WarpOutcome.NoWarpedSibling>(outcome);
         Assert.False(File.Exists($"{Target}.asd"));
     }
 
@@ -112,7 +114,7 @@ public sealed class WarpBorrowerTests : IDisposable
         var outcome = await Borrower(frames: Frames - 645)
             .BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);
 
-        Assert.Equal(new WarpBorrowOutcome.LengthsDiffer(Sibling, Frames, Frames - 645), outcome);
+        Assert.Equal(new WarpOutcome.LengthsDiffer(Sibling, Frames, Frames - 645), outcome);
         Assert.False(File.Exists($"{Target}.asd"));
     }
 
@@ -134,13 +136,13 @@ public sealed class WarpBorrowerTests : IDisposable
 
         Assert.Equal(
             [Sibling, other],
-            Assert.IsType<WarpBorrowOutcome.SiblingsDisagree>(outcome).Siblings
+            Assert.IsType<WarpOutcome.SiblingsDisagree>(outcome).Siblings
         );
         Assert.False(File.Exists($"{Target}.asd"));
     }
 
     [Fact]
-    public async Task Once_Live_saves_over_a_borrowed_warp_it_is_the_users()
+    public async Task Once_Live_saves_over_a_written_warp_it_is_the_users()
     {
         Audio(Target);
         Analysis(saved: true).Write($"{Sibling}.asd");
@@ -149,7 +151,7 @@ public sealed class WarpBorrowerTests : IDisposable
         Analysis(saved: true).Write($"{Target}.asd");
         File.SetLastWriteTimeUtc($"{Target}.asd", DateTime.UtcNow.AddMinutes(1));
 
-        Assert.Null(_borrowed.BorrowedFrom(Target));
+        Assert.Null(_written.BorrowedFrom(Target));
     }
 
     [Fact]
@@ -167,7 +169,7 @@ public sealed class WarpBorrowerTests : IDisposable
         var outcome = await Borrower()
             .BorrowAsync(Target, [Sibling], [earlier], TestContext.Current.CancellationToken);
 
-        Assert.Equal(earlier, Assert.IsType<WarpBorrowOutcome.Written>(outcome).From);
+        Assert.Equal(earlier, Assert.IsType<WarpOutcome.Written>(outcome).From);
         Assert.Equal(shifted, AnalysisFile.Read($"{Target}.asd").Warp.Markers);
     }
 
@@ -183,7 +185,7 @@ public sealed class WarpBorrowerTests : IDisposable
         var outcome = await Borrower()
             .BorrowAsync(Target, [Sibling], [earlier], TestContext.Current.CancellationToken);
 
-        Assert.Equal(Sibling, Assert.IsType<WarpBorrowOutcome.Written>(outcome).From);
+        Assert.Equal(Sibling, Assert.IsType<WarpOutcome.Written>(outcome).From);
         Assert.Equal(Markers, AnalysisFile.Read($"{Target}.asd").Warp.Markers);
     }
 
@@ -197,7 +199,7 @@ public sealed class WarpBorrowerTests : IDisposable
         var outcome = await Borrower()
             .BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);
 
-        Assert.Equal(new WarpBorrowOutcome.Written(Sibling, Target), outcome);
+        Assert.Equal(new WarpOutcome.Written(Sibling, Target), outcome);
         Assert.Equal(LiveFound, AnalysisFile.Read($"{Target}.asd").Audio.Transients);
     }
 
@@ -213,7 +215,7 @@ public sealed class WarpBorrowerTests : IDisposable
         var outcome = await Borrower()
             .BorrowAsync(Target, [Sibling], [earlier], TestContext.Current.CancellationToken);
 
-        Assert.Equal(new WarpBorrowOutcome.Written(earlier, earlier), outcome);
+        Assert.Equal(new WarpOutcome.Written(earlier, earlier), outcome);
         Assert.Equal(LiveFound, AnalysisFile.Read($"{Target}.asd").Audio.Transients);
     }
 
@@ -230,29 +232,104 @@ public sealed class WarpBorrowerTests : IDisposable
         var outcome = await Borrower()
             .BorrowAsync(Target, [Sibling], [earlier], TestContext.Current.CancellationToken);
 
-        Assert.Equal(new WarpBorrowOutcome.Written(Sibling, null), outcome);
+        Assert.Equal(new WarpOutcome.Written(Sibling, null), outcome);
         Assert.Equal(Detected, AnalysisFile.Read($"{Target}.asd").Audio.Transients);
     }
 
     [Fact]
-    public async Task A_sidecar_crateside_wrote_lends_no_transients_since_they_are_not_Lives()
+    public async Task Transients_crateside_wrote_are_never_taken_for_Lives_even_once_the_warp_is_the_users()
     {
         var earlier = Path.Combine(_root, "Song (Vocal - Lead).flac");
         Audio(Target);
         Audio(earlier);
         Analysis(saved: true).Write($"{Sibling}.asd");
         Analysis(saved: true, transients: LiveFound).Write($"{earlier}.asd");
-        _borrowed.Record(earlier, Sibling);
+        _origins.RecordDetected(LiveFound, earlier, "fixed 1");
 
         var outcome = await Borrower()
             .BorrowAsync(Target, [Sibling], [earlier], TestContext.Current.CancellationToken);
 
-        Assert.Equal(new WarpBorrowOutcome.Written(Sibling, null), outcome);
+        Assert.Equal(new WarpOutcome.Written(earlier, null), outcome);
         Assert.Equal(Detected, AnalysisFile.Read($"{Target}.asd").Audio.Transients);
     }
 
-    private WarpBorrower Borrower(float level = 0.5f, int frames = Frames) =>
-        new(new FixedDecoder(Samples(level, frames)), new FixedDetector(), _borrowed);
+    [Fact]
+    public async Task A_stem_nothing_is_warped_on_gets_one_marker_at_the_start_at_the_judged_tempo()
+    {
+        Audio(Target);
+
+        var outcome = await Borrower()
+            .StartAsync(Target, [], 120, TestContext.Current.CancellationToken);
+
+        Assert.Equal(new WarpOutcome.Started(120, null), outcome);
+
+        var written = AnalysisFile.Read($"{Target}.asd");
+
+        Assert.True(written.IsDefaultClipSaved);
+        Assert.Equal([new(0, 0), new(0.015625, 0.03125)], written.Warp.Markers);
+        Assert.Equal(new DefaultClip(0, 2), written.DefaultClip);
+        Assert.Equal(WarpMode.Complex, written.Warp.Mode);
+        Assert.True(_written.IsStarter(Target));
+    }
+
+    [Fact]
+    public async Task The_transients_a_starter_carries_are_recorded_with_the_detector_that_found_them()
+    {
+        Audio(Target);
+
+        await Borrower().StartAsync(Target, [], 120, TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            new TransientOrigin("Song (Vocal - Full).flac", "fixed 1", null),
+            _origins.Of(AnalysisFile.Read($"{Target}.asd").Audio.Transients, Target)
+        );
+    }
+
+    [Fact]
+    public async Task A_starter_warp_never_lends()
+    {
+        Audio(Target);
+        Audio(Sibling);
+        await Borrower().StartAsync(Sibling, [], 120, TestContext.Current.CancellationToken);
+
+        var outcome = await Borrower()
+            .BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);
+
+        Assert.IsType<WarpOutcome.NoWarpedSibling>(outcome);
+    }
+
+    [Fact]
+    public async Task A_lent_warp_replaces_a_starter()
+    {
+        Audio(Target);
+        await Borrower().StartAsync(Target, [], 120, TestContext.Current.CancellationToken);
+        Analysis(saved: true).Write($"{Sibling}.asd");
+
+        var outcome = await Borrower()
+            .BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);
+
+        Assert.IsType<WarpOutcome.Written>(outcome);
+        Assert.Equal(Markers, AnalysisFile.Read($"{Target}.asd").Warp.Markers);
+        Assert.False(_written.IsStarter(Target));
+    }
+
+    [Fact]
+    public async Task Once_Live_saves_over_a_starter_it_is_the_users_warp()
+    {
+        Audio(Target);
+        await Borrower().StartAsync(Target, [], 120, TestContext.Current.CancellationToken);
+
+        Analysis(saved: true).Write($"{Target}.asd");
+        File.SetLastWriteTimeUtc($"{Target}.asd", DateTime.UtcNow.AddMinutes(1));
+
+        Assert.False(_written.IsStarter(Target));
+        Assert.IsType<WarpOutcome.AlreadyWarped>(
+            await Borrower().StartAsync(Target, [], 90, TestContext.Current.CancellationToken)
+        );
+    }
+
+    private SidecarWriter Borrower(float level = 0.5f, int frames = Frames) =>
+        new(new FixedDecoder(Samples(level, frames)), new FixedDetector(), _written, _origins);
 
     private static void Audio(string path) => File.WriteAllBytes(path, [1, 2, 3]);
 
@@ -285,6 +362,8 @@ public sealed class WarpBorrowerTests : IDisposable
 
     private sealed class FixedDetector : ITransientDetector
     {
+        public string Version => "fixed 1";
+
         public IReadOnlyList<Transient> Detect(DecodedAudio audio) => Detected;
     }
 

@@ -28,10 +28,7 @@ public sealed class WarpLendingTests : IDisposable
         Directory.CreateDirectory(_paths.SampleStaging);
         Directory.CreateDirectory(_paths.MashupSamples);
 
-        _lending = new WarpLending(
-            _paths,
-            new WarpBorrower(new SilenceDecoder(), new NoTransients(), new BorrowedWarps())
-        );
+        _lending = Lending(new WarpOptions { LendAutomatically = true });
     }
 
     public void Dispose()
@@ -53,7 +50,7 @@ public sealed class WarpLendingTests : IDisposable
         var loans = await _lending.LendAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(
-            new WarpLoan(recut, new WarpBorrowOutcome.Written(finished, null)),
+            new WarpLoan(recut, new WarpOutcome.Written(finished, null)),
             Assert.Single(loans)
         );
         Assert.True(AnalysisFile.Read($"{recut}.asd").IsDefaultClipSaved);
@@ -78,7 +75,7 @@ public sealed class WarpLendingTests : IDisposable
         var loans = await _lending.LendAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(
-            new WarpLoan(recut, new WarpBorrowOutcome.Written(finished, finished)),
+            new WarpLoan(recut, new WarpOutcome.Written(finished, finished)),
             Assert.Single(loans)
         );
         Assert.Equal(live, AnalysisFile.Read($"{recut}.asd").Audio.Transients);
@@ -97,12 +94,12 @@ public sealed class WarpLendingTests : IDisposable
 
         var before = await _lending.LendAsync(TestContext.Current.CancellationToken);
 
-        Assert.DoesNotContain(before, loan => loan.Outcome is WarpBorrowOutcome.Written);
+        Assert.DoesNotContain(before, loan => loan.Outcome is WarpOutcome.Written);
 
         Saved(instrumental);
 
         var written = (await _lending.LendAsync(TestContext.Current.CancellationToken))
-            .Where(loan => loan.Outcome is WarpBorrowOutcome.Written)
+            .Where(loan => loan.Outcome is WarpOutcome.Written)
             .Select(loan => loan.Target)
             .Order(StringComparer.Ordinal);
 
@@ -112,12 +109,77 @@ public sealed class WarpLendingTests : IDisposable
     [Fact]
     public async Task A_stem_is_not_tried_again_until_its_files_or_its_siblings_change()
     {
-        Stem(_paths.SampleStaging, "Song (Instrumental - Full).flac", "Instrumental - Full");
+        Saved(Stem(_paths.MashupSamples, "Song (Instrumental - Full).flac", "Instrumental - Full"));
         Stem(_paths.SampleStaging, "Song (Vocal - Full).flac", "Vocal - Full");
 
         Assert.NotEmpty(await _lending.LendAsync(TestContext.Current.CancellationToken));
         Assert.Empty(await _lending.LendAsync(TestContext.Current.CancellationToken));
     }
+
+    [Fact]
+    public async Task Stems_of_an_upload_nothing_is_warped_on_get_starter_warps_at_the_judged_tempo()
+    {
+        var vocal = Stem(_paths.SampleStaging, "Song (Vocal - Full).flac", "Vocal - Full");
+        var instrumental = Stem(
+            _paths.SampleStaging,
+            "Song (Instrumental - Full).flac",
+            "Instrumental - Full"
+        );
+
+        var loans = await Lending(new WarpOptions { WriteStarterWarps = true }, bpm: 128)
+            .LendAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            [instrumental, vocal],
+            loans
+                .Where(loan => loan.Outcome is WarpOutcome.Started(128, _))
+                .Select(loan => loan.Target)
+                .Order(StringComparer.Ordinal)
+        );
+    }
+
+    [Fact]
+    public async Task Without_a_judged_tempo_no_starter_is_written()
+    {
+        var vocal = Stem(_paths.SampleStaging, "Song (Vocal - Full).flac", "Vocal - Full");
+
+        Assert.Empty(
+            await Lending(new WarpOptions { WriteStarterWarps = true })
+                .LendAsync(TestContext.Current.CancellationToken)
+        );
+        Assert.False(File.Exists($"{vocal}.asd"));
+    }
+
+    [Fact]
+    public async Task With_lending_off_a_finished_sibling_still_holds_back_a_starter()
+    {
+        var finished = Stem(
+            _paths.MashupSamples,
+            "Song (Instrumental - Full).flac",
+            "Instrumental - Full"
+        );
+        Saved(finished);
+        var recut = Stem(_paths.SampleStaging, "Song (Vocal - Clean).flac", "Vocal - Clean");
+
+        Assert.Empty(
+            await Lending(new WarpOptions { WriteStarterWarps = true }, bpm: 128)
+                .LendAsync(TestContext.Current.CancellationToken)
+        );
+        Assert.False(File.Exists($"{recut}.asd"));
+    }
+
+    private WarpLending Lending(WarpOptions options, double? bpm = null) =>
+        new(
+            _paths,
+            new SidecarWriter(
+                new SilenceDecoder(),
+                new NoTransients(),
+                new WrittenWarps(),
+                new TransientOrigins()
+            ),
+            options,
+            _ => bpm
+        );
 
     private static string Stem(string root, string name, string preset)
     {

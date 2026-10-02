@@ -2,9 +2,16 @@ namespace Crateside.Core.Warps;
 
 /// <summary>
 /// Gives every staged stem without a finished warp the warp its siblings agree on, whether the
-/// stem just landed or the user just saved a sibling (#54, ADR 0043).
+/// stem just landed or the user just saved a sibling (#54, ADR 0043), or a starter warp at the
+/// judged BPM when nothing of its upload is warped (#77, ADR 0047).
 /// </summary>
-public sealed class WarpLending(CratesidePaths paths, WarpBorrower borrower)
+/// <param name="judgedBpm">keytag's BPM for an upload, or null before it is judged.</param>
+public sealed class WarpLending(
+    CratesidePaths paths,
+    SidecarWriter writer,
+    WarpOptions options,
+    Func<string, double?>? judgedBpm = null
+)
 {
     private readonly Dictionary<string, string> _tried = new(StringComparer.OrdinalIgnoreCase);
 
@@ -20,37 +27,57 @@ public sealed class WarpLending(CratesidePaths paths, WarpBorrower borrower)
 
             var authorities = siblings.AuthoritiesFor(target);
             var sameKind = siblings.SameKindAs(target);
-
-            if (authorities is [] && sameKind is [])
-                continue;
-
             IReadOnlyList<string> lenders =
             [
                 .. authorities.Union(sameKind, StringComparer.OrdinalIgnoreCase),
             ];
-            var signature = Signature(target.Path, lenders);
+            var bpm = options.WriteStarterWarps ? judgedBpm?.Invoke(target.SourceVideoId) : null;
+            var signature = Signature(target.Path, lenders, bpm);
 
             if (_tried.TryGetValue(target.Path, out var tried) && tried == signature)
                 continue;
 
-            var outcome = await borrower.BorrowAsync(target.Path, authorities, sameKind, ct);
+            var outcome = await OutcomeAsync(target.Path, authorities, sameKind, bpm, ct);
 
             // A failure is a locked or half-written file, so it is tried again next time.
-            if (outcome is WarpBorrowOutcome.Failed)
+            if (outcome is WarpOutcome.Failed)
                 _tried.Remove(target.Path);
             else
-                _tried[target.Path] = Signature(target.Path, lenders);
+                _tried[target.Path] = Signature(target.Path, lenders, bpm);
 
-            loans.Add(new WarpLoan(target.Path, outcome));
+            if (outcome is not null)
+                loans.Add(new WarpLoan(target.Path, outcome));
         }
 
         return loans;
     }
 
-    private static string Signature(string target, IReadOnlyList<string> lenders) =>
+    /// <summary>A lent warp when a sibling holds one, else a starter; null when what applies is switched off.</summary>
+    private async Task<WarpOutcome?> OutcomeAsync(
+        string target,
+        IReadOnlyList<string> authorities,
+        IReadOnlyList<string> sameKind,
+        double? bpm,
+        CancellationToken ct
+    )
+    {
+        if (writer.HasWarpToLend(authorities, sameKind))
+            return options.LendAutomatically
+                ? await writer.BorrowAsync(target, authorities, sameKind, ct)
+                : null;
+
+        return bpm is { } tempo ? await writer.StartAsync(target, sameKind, tempo, ct) : null;
+    }
+
+    private static string Signature(string target, IReadOnlyList<string> lenders, double? bpm) =>
         string.Join(
             '|',
-            [Stamp(target), Stamp($"{target}.asd"), .. lenders.Select(path => Stamp($"{path}.asd"))]
+            [
+                Stamp(target),
+                Stamp($"{target}.asd"),
+                .. lenders.Select(path => Stamp($"{path}.asd")),
+                $"{bpm}",
+            ]
         );
 
     private static string Stamp(string path) =>
@@ -59,7 +86,7 @@ public sealed class WarpLending(CratesidePaths paths, WarpBorrower borrower)
             : "-";
 }
 
-public sealed record WarpLoan(string Target, WarpBorrowOutcome Outcome);
+public sealed record WarpLoan(string Target, WarpOutcome Outcome);
 
 /// <summary>The <c>Warps</c> section of appsettings.</summary>
 public sealed class WarpOptions
@@ -71,4 +98,10 @@ public sealed class WarpOptions
     /// user has checked a borrowed warp in Live (ADR 0044).
     /// </summary>
     public bool LendAutomatically { get; set; }
+
+    /// <summary>
+    /// Whether staged stems of an upload nothing is warped on get a starter warp at keytag's BPM.
+    /// Off until the user has checked a borrowed warp in Live (ADR 0047).
+    /// </summary>
+    public bool WriteStarterWarps { get; set; }
 }

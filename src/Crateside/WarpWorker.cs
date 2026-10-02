@@ -4,8 +4,9 @@ using Microsoft.Extensions.Options;
 namespace Crateside;
 
 /// <summary>
-/// Lends staged stems their siblings' finished warps once a minute. Decoding runs on the CPU and
-/// contends for nothing, so this runs unattended like detection (ADR 0043).
+/// Lends staged stems their siblings' finished warps, or writes starter warps, once a minute.
+/// Decoding runs on the CPU and contends for nothing, so this runs unattended like detection
+/// (ADR 0043, ADR 0047).
 /// </summary>
 public sealed class WarpWorker(
     WarpLending lending,
@@ -17,7 +18,7 @@ public sealed class WarpWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (!options.Value.LendAutomatically)
+        if (options.Value is { LendAutomatically: false, WriteStarterWarps: false })
             return;
 
         while (!stoppingToken.IsCancellationRequested)
@@ -53,19 +54,27 @@ public sealed class WarpWorker(
 
         switch (loan.Outcome)
         {
-            case WarpBorrowOutcome.Written(var from, var transientsFrom):
+            case WarpOutcome.Written(var from, var transientsFrom):
                 logger.LogInformation(
                     "Warped {Target} with the warp of {From}, transients {Transients}",
                     target,
                     Path.GetFileName(from),
-                    transientsFrom is null
-                        ? "detected by crateside"
-                        : $"from Live's analysis of {Path.GetFileName(transientsFrom)}"
+                    Transients(transientsFrom)
                 );
 
                 break;
 
-            case WarpBorrowOutcome.SiblingsDisagree(var siblings):
+            case WarpOutcome.Started(var bpm, var transientsFrom):
+                logger.LogInformation(
+                    "Gave {Target} a starter warp at {Bpm} BPM, transients {Transients}",
+                    target,
+                    bpm,
+                    Transients(transientsFrom)
+                );
+
+                break;
+
+            case WarpOutcome.SiblingsDisagree(var siblings):
                 logger.LogWarning(
                     "Not warping {Target}: the stems it could take a warp from hold different ones ({Siblings})",
                     target,
@@ -74,7 +83,7 @@ public sealed class WarpWorker(
 
                 break;
 
-            case WarpBorrowOutcome.LengthsDiffer(var sibling, var siblingFrames, var targetFrames):
+            case WarpOutcome.LengthsDiffer(var sibling, var siblingFrames, var targetFrames):
                 logger.LogWarning(
                     "Not warping {Target}: {TargetFrames} frames long, but {Sibling} is {SiblingFrames}",
                     target,
@@ -85,10 +94,15 @@ public sealed class WarpWorker(
 
                 break;
 
-            case WarpBorrowOutcome.Failed(var error):
+            case WarpOutcome.Failed(var error):
                 logger.LogWarning("Could not warp {Target}: {Error}", target, error);
 
                 break;
         }
     }
+
+    private static string Transients(string? from) =>
+        from is null
+            ? "detected by crateside"
+            : $"from Live's analysis of {Path.GetFileName(from)}";
 }

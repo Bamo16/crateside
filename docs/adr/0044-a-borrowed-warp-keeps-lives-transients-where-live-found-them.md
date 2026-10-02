@@ -1,6 +1,6 @@
 # 0044 — a borrowed warp keeps Live's transients where Live found them
 
-- Status: Accepted
+- Status: Accepted; amended by [ADR 0047](0047-a-starter-warp-and-where-transients-came-from.md), which tells crateside's transients from Live's by fingerprint
 - Date: 2026-10-02
 - Amends [ADR 0043](0043-a-borrowed-warp-is-finished-and-says-where-it-came-from.md). Builds
   [#54](https://github.com/Bamo16/crateside/issues/54).

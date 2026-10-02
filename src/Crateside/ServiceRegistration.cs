@@ -76,8 +76,9 @@ public static class ServiceRegistration
         services.AddSingleton<LibraryKeyReader>();
         services.AddSingleton<LibrarySummary>();
         services.AddSingleton<StagingReader>();
-        services.AddSingleton(_ => new WarpTempoReader(
-            Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "tempos.json")
+        services.AddSingleton(sp => new WarpTempoReader(
+            Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "tempos.json"),
+            sp.GetRequiredService<WrittenWarps>().IsStarter
         ));
         // hpss matched an AI drum stem on the instrumental, measured 2026-09-30 (#83).
         services.AddSingleton(sp => new BeatReader(
@@ -281,14 +282,26 @@ public static class ServiceRegistration
         // Unattended too: beatdetect runs on the CPU and contends for nothing (#75, #76).
         services.AddHostedService<BeatWorker>();
 
-        // Unattended for the same reason: lending a warp decodes on the CPU (ADR 0043).
-        services.AddSingleton(_ => new BorrowedWarps(BorrowedWarps.DefaultPath));
-        services.AddSingleton(sp => new WarpBorrower(
+        // Unattended for the same reason: writing a sidecar decodes on the CPU (ADR 0043, 0047).
+        services.AddSingleton(_ => new WrittenWarps(WrittenWarps.DefaultPath));
+        services.AddSingleton(_ => new TransientOrigins(TransientOrigins.DefaultPath));
+        services.AddSingleton(sp => new SidecarWriter(
             new FfmpegAudioDecoder(),
             new OnsetDetector(),
-            sp.GetRequiredService<BorrowedWarps>()
+            sp.GetRequiredService<WrittenWarps>(),
+            sp.GetRequiredService<TransientOrigins>()
         ));
-        services.AddSingleton<WarpLending>();
+        services.AddSingleton(sp => new WarpLending(
+            sp.GetRequiredService<CratesidePaths>(),
+            sp.GetRequiredService<SidecarWriter>(),
+            sp.GetRequiredService<IOptions<WarpOptions>>().Value,
+            videoId =>
+                KeyLedger
+                    .Read(sp.GetRequiredService<CratesidePaths>().Ledger)
+                    .TryGetLatestByVideoId(videoId, out var run)
+                    ? run.Bpm
+                    : null
+        ));
         services.AddHostedService<WarpWorker>();
 
         // Unattended too: keeping a filed track's warp guide is a file move (ADR 0046).
@@ -454,7 +467,7 @@ public static class ServiceRegistration
                     sp.GetRequiredService<FamiliarityStore>().Read(),
                     sp.GetRequiredService<WarpTempoReader>().Read,
                     sp.GetRequiredService<BeatReader>().Read,
-                    sp.GetRequiredService<BorrowedWarps>().BorrowedFrom
+                    sp.GetRequiredService<WrittenWarps>().Of
                 );
 
                 sp.GetRequiredService<WarpTempoReader>().Save();

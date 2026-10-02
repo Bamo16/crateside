@@ -11,6 +11,7 @@ using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Plans;
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
+using Crateside.Core.Warps;
 using Crateside.Core.WorkLists;
 
 namespace Crateside.Core.Tracks;
@@ -67,7 +68,7 @@ public sealed record TracksView
         IReadOnlyDictionary<string, FamiliarityRecord>? familiarity = null,
         Func<string, WarpTempo?>? tempoOf = null,
         Func<string, BeatReading?>? beatsOf = null,
-        Func<string, string?>? borrowedFrom = null
+        Func<string, WrittenWarp?>? writtenWarp = null
     )
     {
         var resolved = resolvedNames ?? new Dictionary<string, ResolvedName>();
@@ -277,7 +278,7 @@ public sealed record TracksView
                             libraryTags,
                             tempoOf,
                             beatsOf,
-                            borrowedFrom
+                            writtenWarp
                         )
                     ),
                 ],
@@ -393,21 +394,30 @@ public sealed record TracksView
         FolderInfo? libraryTags,
         Func<string, WarpTempo?>? tempoOf,
         Func<string, BeatReading?>? beatsOf,
-        Func<string, string?>? borrowedFrom
+        Func<string, WrittenWarp?>? writtenWarp
     ) =>
         [
-            .. staged?.Samples.Select(sample =>
-                Sample(StemOnDisk.Of(sample), catalog, sourceVideoId) with
-                {
-                    AbletonKey = sample.AbletonKey,
-                    HasDefaultClip = sample.HasDefaultClip,
-                    Tempo = sample.HasDefaultClip ? tempoOf?.Invoke(sample.Path) : null,
-                    WarpBorrowedFrom = sample.HasDefaultClip
-                        ? borrowedFrom?.Invoke(sample.Path)
-                        : null,
-                    Beats = beatsOf?.Invoke(sample.Path),
-                }
-            )
+            .. staged
+                ?.Samples.Select(sample =>
+                    (
+                        sample,
+                        written: sample.HasDefaultClip ? writtenWarp?.Invoke(sample.Path) : null
+                    )
+                )
+                .Select(staged =>
+                    Sample(StemOnDisk.Of(staged.sample), catalog, sourceVideoId) with
+                    {
+                        AbletonKey = staged.sample.AbletonKey,
+                        // A starter warp is crateside's guess at the tempo, not a warp (#77).
+                        HasDefaultClip =
+                            staged is { sample.HasDefaultClip: true, written.IsStarter: not true },
+                        Tempo = staged.sample.HasDefaultClip
+                            ? tempoOf?.Invoke(staged.sample.Path)
+                            : null,
+                        WarpBorrowedFrom = staged.written?.From,
+                        Beats = beatsOf?.Invoke(staged.sample.Path),
+                    }
+                )
                 ?? [],
             .. onDisk
                 .Where(file =>
