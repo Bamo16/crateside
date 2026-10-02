@@ -35,9 +35,10 @@ public static class TagAudit
     /// <summary>The same rule, against readers the caller already has.</summary>
     public static ReadTagState Using(FileIndexReader index, FolderInfoReader? folderInfo = null) =>
         root =>
-            root.ReadsTheIndex
-                ? index.Read(root.Path)
-                : (folderInfo ?? new FolderInfoReader()).Read(root.Path);
+            AbletonReads.TagsOrEmpty(
+                root.ReadsTheIndex ? index.Read : (folderInfo ?? new FolderInfoReader()).Read,
+                root.Path
+            );
 
     private static List<TaggedStem> Scan(
         KeyLedger ledger,

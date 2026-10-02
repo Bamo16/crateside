@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using AbleKit.Analysis;
 
 namespace Crateside.Core.Ableton;
 
@@ -15,7 +14,6 @@ public sealed class WarpTempoReader(string? path = null)
     private const int Version = 2;
 
     private readonly string? _path = path;
-    private readonly AnalysisFileReader _analysisReader = new();
     private readonly ConcurrentDictionary<string, TempoEntry> _read = new(
         Load(path),
         StringComparer.OrdinalIgnoreCase
@@ -35,9 +33,9 @@ public sealed class WarpTempoReader(string? path = null)
             return entry.Tempo;
 
         var tempo =
-            _analysisReader.Read(sidecar.FullName) is AnalysisReadOutcome.Read read
+            AbletonReads.TryReadAnalysis(sidecar.FullName, out var analysis)
             && SampleRateOf(audioPath) is { } rate
-                ? WarpTempo.Of(read.Analysis, rate)
+                ? WarpTempo.Of(analysis, rate)
                 : null;
 
         _read[sidecar.FullName] = new TempoEntry(stamp, tempo);

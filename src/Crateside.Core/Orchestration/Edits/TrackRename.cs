@@ -220,15 +220,17 @@ public sealed class TrackRename(
     private string? MoveTags(IReadOnlyList<Move> done) =>
         done.GroupBy(move => move.Root, StringComparer.OrdinalIgnoreCase)
             .Select(folder =>
-                writer.Rename(
-                    folder.Key,
-                    [
-                        .. folder.Select(move => new TagRename
-                        {
-                            From = Path.GetRelativePath(folder.Key, move.From),
-                            To = Path.GetRelativePath(folder.Key, move.To),
-                        }),
-                    ]
+                TagWriteOutcome.Of(() =>
+                    writer.Rename(
+                        folder.Key,
+                        [
+                            .. folder.Select(move => new TagRename
+                            {
+                                From = Path.GetRelativePath(folder.Key, move.From),
+                                To = Path.GetRelativePath(folder.Key, move.To),
+                            }),
+                        ]
+                    )
                 ) switch
                 {
                     TagWriteOutcome.Stale(var error) => error,

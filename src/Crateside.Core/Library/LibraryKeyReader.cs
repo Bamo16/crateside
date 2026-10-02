@@ -31,8 +31,8 @@ public sealed class LibraryKeyReader(
         if (!Directory.Exists(root))
             return KeyDistribution.Empty(root);
 
-        var tags = index.Read(root);
-        var backed = folderInfo.Read(root);
+        var tags = AbletonReads.TagsOrEmpty(index.Read, root);
+        var backed = AbletonReads.TagsOrEmpty(folderInfo.Read, root);
         var ledger = KeyLedger.Read(_paths.Ledger);
         var tracks = new Dictionary<string, List<(string File, FileTags? Tags)>>(
             StringComparer.OrdinalIgnoreCase

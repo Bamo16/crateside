@@ -240,7 +240,7 @@ public sealed partial class BeatReader(
         if (!Directory.Exists(root))
             return [];
 
-        var tags = folderInfo.Read(root);
+        var tags = AbletonReads.TagsOrEmpty(folderInfo.Read, root);
 
         return Directory
             .EnumerateFiles(root, "*", depth)

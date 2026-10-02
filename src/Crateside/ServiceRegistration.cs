@@ -420,8 +420,10 @@ public static class ServiceRegistration
                     sp.GetRequiredService<ResolvedNameStore>().Read(),
                     sp.GetRequiredService<WorkingSet>().Acquisitions(),
                     await sp.GetRequiredService<PresetCatalogReader>().ReadAsync(ct),
-                    sp.GetRequiredService<FileIndexReader>()
-                        .Read(sp.GetRequiredService<CratesidePaths>().MashupSamples),
+                    AbletonReads.TagsOrEmpty(
+                        sp.GetRequiredService<FileIndexReader>().Read,
+                        sp.GetRequiredService<CratesidePaths>().MashupSamples
+                    ),
                     sp.GetRequiredService<DeletionLog>().All(),
                     sp.GetRequiredService<GenreStore>().Read(),
                     sp.GetRequiredService<FamiliarityStore>().Read(),

@@ -32,7 +32,22 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
         KeyLedger ledger,
         Func<string, IReadOnlyList<string>>? ownedOf = null,
         bool backKeys = true
-    ) => CratesideKeywords.Apply(writer, root, Unbacked(root, ledger, ownedOf, backKeys));
+    )
+    {
+        IReadOnlyList<TagAssignment> unbacked;
+
+        try
+        {
+            unbacked = Unbacked(root, ledger, ownedOf, backKeys);
+        }
+        // A store Live is writing reads as nothing backed; wait for it rather than back everything.
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return new TagWriteOutcome.Stale(ex.Message);
+        }
+
+        return CratesideKeywords.Apply(writer, root, unbacked);
+    }
 
     /// <summary>
     /// Every file under <paramref name="root"/> whose entry is missing a key or a genre it could
