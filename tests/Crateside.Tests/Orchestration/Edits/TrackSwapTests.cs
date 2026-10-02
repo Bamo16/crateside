@@ -115,7 +115,7 @@ public sealed class TrackSwapTests : IDisposable
         Assert.True(outcome.Succeeded, outcome.Problem);
         Assert.Equal(1, outcome.Removed);
 
-        var instruction = Assert.Single(settings.Read().Tracks);
+        var instruction = Assert.Single(settings.Read());
         Assert.Equal("https://music.youtube.com/watch?v=NSLYAT7sjAA", instruction.SourceUrl);
 
         // The retained download is the old upload; separation prefers it over the URL.
@@ -169,7 +169,7 @@ public sealed class TrackSwapTests : IDisposable
                 new HashSet<string>(),
                 new HashSet<string>(),
                 new HashSet<string>(),
-                settings.Read().Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal)
+                settings.Read().ToDictionary(t => t.VideoId, StringComparer.Ordinal)
             )
             .Items.Single();
 
@@ -210,7 +210,7 @@ public sealed class TrackSwapTests : IDisposable
                 new HashSet<string>(),
                 new HashSet<string>(),
                 new HashSet<string>(),
-                settings.Read().Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal),
+                settings.Read().ToDictionary(t => t.VideoId, StringComparer.Ordinal),
                 [reopened]
             )
             .AwaitingSeparation.Single();
@@ -238,13 +238,13 @@ public sealed class TrackSwapTests : IDisposable
 
         Assert.True(outcome.Succeeded, outcome.Problem);
 
-        var instruction = Assert.Single(settings.Read().Tracks);
+        var instruction = Assert.Single(settings.Read());
         Assert.Equal("https://music.youtube.com/watch?v=NSLYAT7sjAA", instruction.SourceUrl);
 
         Assert.Null(workingSet.AcquisitionFor("neverJudged"));
     }
 
-    private TrackSwap Swap(QueueSettingsStore? settings = null, WorkingSet? workingSet = null) =>
+    private TrackSwap Swap(TrackInstructionStore? settings = null, WorkingSet? workingSet = null) =>
         new(
             settings ?? Settings(),
             workingSet ?? new WorkingSet(WorkingRoot),
@@ -252,8 +252,13 @@ public sealed class TrackSwapTests : IDisposable
             new CratesidePaths { Ledger = LedgerPath, SampleStaging = StagingRoot }
         );
 
-    private QueueSettingsStore Settings() =>
-        new(Options.Create(new PlaylistOptions()), Path.Combine(_root, "settings.json"));
+    private TrackInstructionStore Settings() =>
+        new(
+            new QueueFile(
+                Options.Create(new PlaylistOptions()),
+                Path.Combine(_root, "settings.json")
+            )
+        );
 
     private JobStore Jobs() => new(Path.Combine(_root, "jobs.jsonl"));
 

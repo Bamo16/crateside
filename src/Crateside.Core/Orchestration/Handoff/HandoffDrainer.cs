@@ -17,7 +17,7 @@ public sealed class HandoffDrainer(
     HandoffSelector selector,
     JobStore jobs,
     IOptions<CratesidePaths> paths,
-    QueueSettingsStore settings,
+    TrackInstructionStore instructions,
     ResolvedNameStore names,
     DeletionLog? deletions = null
 ) : IStageDrainer
@@ -66,9 +66,9 @@ public sealed class HandoffDrainer(
 
     /// <summary>Every upload the user has asked to keep, across all tracks, and so never superseded.</summary>
     private HashSet<string> Kept() =>
-        settings
+        instructions
             .Read()
-            .Tracks.SelectMany(track => track.Plan?.AddedSources ?? [])
+            .SelectMany(track => track.Plan?.AddedSources ?? [])
             .Select(source => source.VideoId)
             .ToHashSet(StringComparer.Ordinal);
 
@@ -87,9 +87,9 @@ public sealed class HandoffDrainer(
         };
 
     private TrackInstruction? Owner(string videoId) =>
-        settings
+        instructions
             .Read()
-            .Tracks.FirstOrDefault(track =>
+            .FirstOrDefault(track =>
                 track.VideoId.Equals(videoId, StringComparison.Ordinal)
                 || track.Plan?.AddedSources.Any(source =>
                     source.VideoId.Equals(videoId, StringComparison.Ordinal)

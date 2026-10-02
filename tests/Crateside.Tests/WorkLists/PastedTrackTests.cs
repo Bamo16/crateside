@@ -26,8 +26,13 @@ public sealed class PastedTrackTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private QueueSettingsStore Store() =>
-        new(Options.Create(new PlaylistOptions()), Path.Combine(_directory, "queue.json"));
+    private TrackInstructionStore Store() =>
+        new(
+            new QueueFile(
+                Options.Create(new PlaylistOptions()),
+                Path.Combine(_directory, "queue.json")
+            )
+        );
 
     [Fact]
     public void A_pasted_track_is_worth_storing_on_its_own()
@@ -36,7 +41,7 @@ public sealed class PastedTrackTests : IDisposable
 
         store.AddByUrl(Pasted);
 
-        var instruction = Assert.Single(store.Read().Tracks);
+        var instruction = Assert.Single(store.Read());
 
         Assert.True(instruction.AddedByUrl);
         Assert.Null(instruction.Plan);
@@ -50,7 +55,7 @@ public sealed class PastedTrackTests : IDisposable
         store.AddByUrl(Pasted);
         store.Forget(Pasted);
 
-        Assert.Empty(store.Read().Tracks);
+        Assert.Empty(store.Read());
     }
 
     [Fact]
@@ -62,7 +67,7 @@ public sealed class PastedTrackTests : IDisposable
         store.SetPlan(Pasted, StemPlan.InstrumentalRelease);
         store.Forget(Pasted);
 
-        Assert.Empty(store.Read().Tracks);
+        Assert.Empty(store.Read());
     }
 
     [Fact]
@@ -70,7 +75,7 @@ public sealed class PastedTrackTests : IDisposable
     {
         Store().AddByUrl(Pasted);
 
-        Assert.True(Assert.Single(Store().Read().Tracks).AddedByUrl);
+        Assert.True(Assert.Single(Store().Read()).AddedByUrl);
     }
 
     [Fact]

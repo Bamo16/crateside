@@ -6,5 +6,5 @@ namespace Crateside.Core.WorkLists;
     WriteIndented = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
 )]
-[JsonSerializable(typeof(QueueSettings))]
-internal sealed partial class QueueSettingsJsonContext : JsonSerializerContext { }
+[JsonSerializable(typeof(QueueDocument))]
+internal sealed partial class QueueFileJsonContext : JsonSerializerContext { }

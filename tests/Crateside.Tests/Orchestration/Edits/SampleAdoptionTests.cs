@@ -19,7 +19,7 @@ public sealed class SampleAdoptionTests : IDisposable
         Guid.NewGuid().ToString("n")
     );
 
-    private readonly QueueSettingsStore _settings;
+    private readonly TrackInstructionStore _settings;
     private readonly CratesidePaths _paths;
 
     public SampleAdoptionTests()
@@ -32,9 +32,8 @@ public sealed class SampleAdoptionTests : IDisposable
         Directory.CreateDirectory(_paths.SampleStaging);
         Directory.CreateDirectory(_paths.MashupSamples);
 
-        _settings = new QueueSettingsStore(
-            Options.Create(new PlaylistOptions()),
-            Path.Combine(_root, "queue.json")
+        _settings = new TrackInstructionStore(
+            new QueueFile(Options.Create(new PlaylistOptions()), Path.Combine(_root, "queue.json"))
         );
     }
 
@@ -93,7 +92,7 @@ public sealed class SampleAdoptionTests : IDisposable
         Assert.Equal(SampleType.Instrumental, provenance?.Type);
         Assert.Equal(Track, provenance?.SourceVideoId);
 
-        var plan = _settings.Read().Tracks.Single(t => t.VideoId == Track).Plan;
+        var plan = _settings.Read().Single(t => t.VideoId == Track).Plan;
         Assert.Equal("Instrumental - Mixed", Assert.Single(plan!.AdoptedSamples).Label);
     }
 

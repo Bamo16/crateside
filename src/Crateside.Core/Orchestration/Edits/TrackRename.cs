@@ -16,7 +16,7 @@ public delegate IReadOnlyList<string> ReadLibraryFiles(string videoId);
 /// <c>Mashup Samples</c>, and in the sets that use them (ADR 0039, ADR 0040).
 /// </summary>
 public sealed class TrackRename(
-    QueueSettingsStore settings,
+    TrackInstructionStore instructions,
     ReadStagedFiles staged,
     FolderInfoWriter writer,
     CratesidePaths paths,
@@ -99,7 +99,7 @@ public sealed class TrackRename(
         if (plan.Refusal is { } refusal)
             return new RenameOutcome { Problem = refusal };
 
-        settings.SetName(videoId, stored);
+        instructions.SetName(videoId, stored);
 
         List<Move> done = [];
         List<string> markersLost = [];

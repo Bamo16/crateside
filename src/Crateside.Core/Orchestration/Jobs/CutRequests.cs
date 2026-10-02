@@ -37,25 +37,31 @@ public static class CutRequests
         IsSettled(item.CutRequestedAt, Latest(jobs, item.VideoId, JobStage.Handoff));
 
     /// <summary>Video IDs whose request still owes a separation.</summary>
-    public static IReadOnlySet<string> Cutting(QueueSettings settings, JobStore jobs) =>
+    public static IReadOnlySet<string> Cutting(
+        IReadOnlyList<TrackInstruction> instructions,
+        JobStore jobs
+    ) =>
         Where(
-            settings,
+            instructions,
             track => OwesCut(track.CutRequestedAt, Latest(jobs, track.VideoId, JobStage.Separation))
         );
 
     /// <summary>Video IDs whose request is not yet carried through, which keeps their rows.</summary>
-    public static IReadOnlySet<string> Unsettled(QueueSettings settings, JobStore jobs) =>
+    public static IReadOnlySet<string> Unsettled(
+        IReadOnlyList<TrackInstruction> instructions,
+        JobStore jobs
+    ) =>
         Where(
-            settings,
+            instructions,
             track => !IsSettled(track.CutRequestedAt, Latest(jobs, track.VideoId, JobStage.Handoff))
         );
 
     private static HashSet<string> Where(
-        QueueSettings settings,
+        IReadOnlyList<TrackInstruction> instructions,
         Func<TrackInstruction, bool> owing
     ) =>
-        settings
-            .Tracks.Where(track => track.CutRequestedAt is not null && owing(track))
+        instructions
+            .Where(track => track.CutRequestedAt is not null && owing(track))
             .Select(track => track.VideoId)
             .ToHashSet(StringComparer.Ordinal);
 

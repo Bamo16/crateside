@@ -33,6 +33,7 @@ public sealed class UnreadablePlaylistTests : IDisposable
     private WorkListService Unreadable(IntakeStore intake)
     {
         var options = Options.Create(new PlaylistOptions());
+        var file = new QueueFile(options, PathIn("queue.json"));
         var authorizer = new PlaylistAuthorizer(
             options,
             new ProtectedTokenStore(
@@ -53,7 +54,8 @@ public sealed class UnreadablePlaylistTests : IDisposable
                     Ledger = PathIn("runs.jsonl"),
                 }
             ),
-            new QueueSettingsStore(options, PathIn("queue.json")),
+            new PlaylistSettingsStore(file),
+            new TrackInstructionStore(file),
             new PlaylistReader(options),
             authorizer,
             new PlaylistRemover(authorizer),

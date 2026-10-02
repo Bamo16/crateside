@@ -11,7 +11,7 @@ namespace Crateside.Core.Orchestration.Edits;
 /// <c>Sample Staging</c> (ADR 0027, #33).
 /// </summary>
 public sealed class TrackRemoval(
-    QueueSettingsStore settings,
+    TrackInstructionStore instructions,
     IntakeStore intake,
     WorkingSet workingSet,
     ReadStagedFiles staged,
@@ -34,7 +34,7 @@ public sealed class TrackRemoval(
         var recycling = Recycling(uploads);
 
         // Both, because either one alone puts the track back on the next scan (ADR 0021).
-        settings.Forget(videoId);
+        instructions.Forget(videoId);
         intake.Forget(videoId);
 
         foreach (var upload in uploads.Distinct(StringComparer.Ordinal))

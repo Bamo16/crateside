@@ -11,7 +11,7 @@ namespace Crateside.Core.Orchestration.Edits;
 /// Points a track at a better upload of the same song, and puts it back through separation.
 /// </summary>
 public sealed class TrackSwap(
-    QueueSettingsStore settings,
+    TrackInstructionStore instructions,
     WorkingSet workingSet,
     ReadStagedFiles staged,
     CratesidePaths paths,
@@ -64,7 +64,7 @@ public sealed class TrackSwap(
         if (await RestateAsync(videoId, plan.NewVideoId!, plan.Url!, ledger, ct) is { } failure)
             return new SwapOutcome { Problem = failure };
 
-        settings.SetSourceUrl(videoId, plan.Url);
+        instructions.SetSourceUrl(videoId, plan.Url);
 
         var removed = 0;
 
@@ -93,7 +93,7 @@ public sealed class TrackSwap(
         // The retained download is the old upload, and separation prefers it over the URL.
         workingSet.Discard(videoId);
 
-        settings.RequestCut(videoId, DateTimeOffset.UtcNow);
+        instructions.RequestCut(videoId, DateTimeOffset.UtcNow);
 
         return new SwapOutcome { NewVideoId = plan.NewVideoId, Removed = removed };
     }

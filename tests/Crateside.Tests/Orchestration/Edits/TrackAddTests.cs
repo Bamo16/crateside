@@ -89,7 +89,7 @@ public sealed class TrackAddTests : IDisposable
 
         Assert.Equal(1, add.QueueUnjudged([Row(isLibraryOnly: true, hasVerdict: false)]));
 
-        var track = Assert.Single(settings.Read().Tracks);
+        var track = Assert.Single(settings.Read());
         Assert.True(track.Backfill);
         Assert.True(track.AddedByUrl);
     }
@@ -106,15 +106,17 @@ public sealed class TrackAddTests : IDisposable
 
     private TrackAdd Add() => Add(out _);
 
-    private TrackAdd Add(out QueueSettingsStore settings)
+    private TrackAdd Add(out TrackInstructionStore settings)
     {
         Directory.CreateDirectory(_scratch);
 
         var paths = new CratesidePaths { Ledger = Path.Combine(_scratch, "runs.jsonl") };
 
-        settings = new QueueSettingsStore(
-            Options.Create(new PlaylistOptions()),
-            Path.Combine(_scratch, "queue.json")
+        settings = new TrackInstructionStore(
+            new QueueFile(
+                Options.Create(new PlaylistOptions()),
+                Path.Combine(_scratch, "queue.json")
+            )
         );
 
         return new TrackAdd(

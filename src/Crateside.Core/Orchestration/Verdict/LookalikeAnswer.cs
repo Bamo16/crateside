@@ -6,7 +6,7 @@ namespace Crateside.Core.Orchestration.Verdict;
 
 /// <summary>Settles whether a track is the judged song its name looks like (#41).</summary>
 public sealed class LookalikeAnswer(
-    QueueSettingsStore settings,
+    TrackInstructionStore instructions,
     CratesidePaths paths,
     string uv = "uv"
 )
@@ -48,5 +48,5 @@ public sealed class LookalikeAnswer(
 
     /// <summary>Records that the track is a different song, which lets judging have it.</summary>
     public void DifferentSong(string videoId, LedgerRun song) =>
-        settings.SetDifferentFrom(videoId, song.Song);
+        instructions.SetDifferentFrom(videoId, song.Song);
 }

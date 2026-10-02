@@ -43,7 +43,7 @@ public partial class StoreFormatRealDataTests
 
     [Fact]
     public void Queue_settings_round_trip() =>
-        RoundTrips("queue.json", QueueSettingsJsonContext.Default.QueueSettings);
+        RoundTrips("queue.json", QueueFileJsonContext.Default.QueueDocument);
 
     [Fact]
     public void Jobs_round_trip() =>

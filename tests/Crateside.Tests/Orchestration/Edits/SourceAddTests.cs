@@ -36,9 +36,11 @@ public sealed class SourceAddTests : IDisposable
 
     private SourceAdd Sources() =>
         new(
-            new QueueSettingsStore(
-                Options.Create(new PlaylistOptions()),
-                Path.Combine(_root, "queue.json")
+            new TrackInstructionStore(
+                new QueueFile(
+                    Options.Create(new PlaylistOptions()),
+                    Path.Combine(_root, "queue.json")
+                )
             ),
             new CratesidePaths { KeytagRepo = _root },
             new SourceProbe()

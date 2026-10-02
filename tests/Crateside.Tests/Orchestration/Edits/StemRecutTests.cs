@@ -52,8 +52,13 @@ public sealed class StemRecutTests : IDisposable
 
     private JobStore Jobs() => new(Path.Combine(_root, "jobs.jsonl"));
 
-    private QueueSettingsStore Settings() =>
-        new(Options.Create(new PlaylistOptions()), Path.Combine(_root, "settings.json"));
+    private TrackInstructionStore Settings() =>
+        new(
+            new QueueFile(
+                Options.Create(new PlaylistOptions()),
+                Path.Combine(_root, "settings.json")
+            )
+        );
 
     /// <summary>A working set holding source audio for the track, as one still in staging has.</summary>
     private WorkingSet WorkingSetWithSource()
@@ -91,7 +96,7 @@ public sealed class StemRecutTests : IDisposable
         return path;
     }
 
-    private StemRecut Recut(QueueSettingsStore? settings = null) =>
+    private StemRecut Recut(TrackInstructionStore? settings = null) =>
         new(settings ?? Settings(), WorkingSetWithSource(), Staged());
 
     [Fact]
@@ -279,7 +284,7 @@ public sealed class StemRecutTests : IDisposable
 
         Assert.True(File.Exists(guide));
 
-        var stored = settings.Read().Tracks.Single(track => track.VideoId == Video).Plan;
+        var stored = settings.Read().Single(track => track.VideoId == Video).Plan;
 
         Assert.NotNull(stored);
         Assert.True(stored.AsksTheSameAs(wanted));
@@ -336,7 +341,7 @@ public sealed class StemRecutTests : IDisposable
         Assert.True(jobs.TryGet(Video, JobStage.Separation, out var separation));
         Assert.Equal(JobStatus.Succeeded, separation.Status);
 
-        var requested = Assert.Single(settings.Read().Tracks).CutRequestedAt;
+        var requested = Assert.Single(settings.Read()).CutRequestedAt;
 
         Assert.NotNull(requested);
         Assert.True(CutRequests.OwesCut(requested, separation));
@@ -356,7 +361,7 @@ public sealed class StemRecutTests : IDisposable
 
         Assert.Equal(0, outcome.Recipe!.Passes);
 
-        var requested = Assert.Single(settings.Read().Tracks).CutRequestedAt;
+        var requested = Assert.Single(settings.Read()).CutRequestedAt;
 
         Assert.False(CutRequests.IsSettled(requested, handoff: null));
     }
@@ -390,7 +395,7 @@ public sealed class StemRecutTests : IDisposable
             .Apply(Video, new StemPlan { Presets = ["instrumental_full"] }, Catalog);
 
         Assert.Equal(1, outcome.Removed);
-        Assert.Null(Assert.Single(settings.Read().Tracks).CutRequestedAt);
+        Assert.Null(Assert.Single(settings.Read()).CutRequestedAt);
     }
 
     [Fact]
@@ -415,7 +420,7 @@ public sealed class StemRecutTests : IDisposable
             Assert.Contains("open in Ableton", outcome.Problem);
         }
 
-        Assert.Empty(settings.Read().Tracks);
+        Assert.Empty(settings.Read());
     }
 
     private string StageAdopted(string label)

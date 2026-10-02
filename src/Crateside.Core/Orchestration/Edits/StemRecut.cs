@@ -15,7 +15,7 @@ public delegate IReadOnlyList<StagedFile> ReadStagedFiles(string videoId);
 /// Changes which files a track has, without judging it again (ADR 0018).
 /// </summary>
 public sealed class StemRecut(
-    QueueSettingsStore settings,
+    TrackInstructionStore instructions,
     WorkingSet workingSet,
     ReadStagedFiles staged,
     DeletionLog? deletions = null
@@ -98,20 +98,20 @@ public sealed class StemRecut(
             }
         }
 
-        settings.SetPlan(videoId, wanted);
+        instructions.SetPlan(videoId, wanted);
 
         // A change that only drops files asks for nothing to be made.
         if (plan.MakesSomething)
-            settings.RequestCut(videoId, DateTimeOffset.UtcNow);
+            instructions.RequestCut(videoId, DateTimeOffset.UtcNow);
 
         return new RecutOutcome { Removed = removed, Recipe = plan.Recipe };
     }
 
     /// <summary>The plan this track currently has, which says which of its files were added.</summary>
     private StemPlan Stored(string videoId) =>
-        settings
+        instructions
             .Read()
-            .Tracks.FirstOrDefault(track => track.VideoId.Equals(videoId, StringComparison.Ordinal))
+            .FirstOrDefault(track => track.VideoId.Equals(videoId, StringComparison.Ordinal))
             ?.Plan
         ?? StemPlan.Default;
 

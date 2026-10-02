@@ -10,7 +10,7 @@ namespace Crateside.Core.Orchestration.Edits;
 /// Puts a track into the work lists without the playlist (ADR 0010).
 /// </summary>
 public sealed class TrackAdd(
-    QueueSettingsStore settings,
+    TrackInstructionStore instructions,
     CratesidePaths paths,
     SourceProbe probe,
     ResolvedNameStore names
@@ -78,9 +78,9 @@ public sealed class TrackAdd(
 
         foreach (var videoId in unjudged)
         {
-            settings.AddByUrl(videoId);
-            settings.AcceptUpload(videoId, videoId);
-            settings.MarkBackfill(videoId);
+            instructions.AddByUrl(videoId);
+            instructions.AcceptUpload(videoId, videoId);
+            instructions.MarkBackfill(videoId);
         }
 
         return unjudged.Length;
@@ -110,7 +110,7 @@ public sealed class TrackAdd(
         if (probed.FallsShort && !anyway)
             return new AddTrackOutcome { Shortfall = probed };
 
-        settings.AddByUrl(plan.VideoId!);
+        instructions.AddByUrl(plan.VideoId!);
 
         // The probe already resolved the name, so keeping it is what stops a pasted row reading
         // as its own video ID until the name worker gets round to asking the same question.

@@ -53,7 +53,7 @@ public sealed class TrackRemovalTests : IDisposable
         Assert.False(File.Exists(source));
 
         Assert.DoesNotContain(
-            Settings().Read().Tracks,
+            Settings().Read(),
             track => track.VideoId == Video && track.Plan is not null
         );
     }
@@ -108,11 +108,13 @@ public sealed class TrackRemovalTests : IDisposable
         Assert.Single(_staged, stem => File.Exists(stem.Path) && !stem.IsAdopted);
     }
 
-    private TrackRemoval Removal(QueueSettingsStore settings, IntakeStore? intake = null) =>
+    private TrackRemoval Removal(TrackInstructionStore settings, IntakeStore? intake = null) =>
         new(settings, intake ?? Intake(), new WorkingSet(_working), _ => _staged);
 
-    private QueueSettingsStore Settings() =>
-        new(Options.Create(new PlaylistOptions()), Path.Combine(_root, "queue.json"));
+    private TrackInstructionStore Settings() =>
+        new(
+            new QueueFile(Options.Create(new PlaylistOptions()), Path.Combine(_root, "queue.json"))
+        );
 
     private IntakeStore Intake() => new(Path.Combine(_root, "intake.json"));
 

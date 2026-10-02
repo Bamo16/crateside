@@ -6,7 +6,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Core.Orchestration.Edits;
 
 /// <summary>Takes a file the user made into a track, where it already is (ADR 0022).</summary>
-public sealed class SampleAdoption(QueueSettingsStore settings, CratesidePaths paths)
+public sealed class SampleAdoption(TrackInstructionStore instructions, CratesidePaths paths)
 {
     /// <summary>
     /// Every sample in either root with no provenance to place it. Reads every file's tag, so never
@@ -51,7 +51,10 @@ public sealed class SampleAdoption(QueueSettingsStore settings, CratesidePaths p
         if (!StemAdoption.TryAdopt(path!, track.VideoId, label, type!.Value, out var problem))
             return problem;
 
-        settings.SetPlan(track.VideoId, track.Plan.Keeping(new AdoptedSample { Label = label }));
+        instructions.SetPlan(
+            track.VideoId,
+            track.Plan.Keeping(new AdoptedSample { Label = label })
+        );
 
         return null;
     }

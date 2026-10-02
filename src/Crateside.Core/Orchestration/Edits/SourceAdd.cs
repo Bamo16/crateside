@@ -13,7 +13,7 @@ namespace Crateside.Core.Orchestration.Edits;
 /// sample, and never separated (ADR 0019).
 /// </summary>
 public sealed class SourceAdd(
-    QueueSettingsStore settings,
+    TrackInstructionStore instructions,
     CratesidePaths paths,
     SourceProbe probe,
     string uv = "uv"
@@ -100,7 +100,7 @@ public sealed class SourceAdd(
         if (await RestateAsync(track.VideoId, source.VideoId, ct) is { } failure)
             return new AddOutcome { Problem = failure };
 
-        settings.SetPlan(track.VideoId, track.Plan.Adding(source));
+        instructions.SetPlan(track.VideoId, track.Plan.Adding(source));
 
         return new AddOutcome { Source = source };
     }

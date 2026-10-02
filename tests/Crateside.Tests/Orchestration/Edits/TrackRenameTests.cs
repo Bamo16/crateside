@@ -48,10 +48,15 @@ public sealed class TrackRenameTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private QueueSettingsStore Settings() =>
-        new(Options.Create(new PlaylistOptions()), Path.Combine(_root, "settings.json"));
+    private TrackInstructionStore Settings() =>
+        new(
+            new QueueFile(
+                Options.Create(new PlaylistOptions()),
+                Path.Combine(_root, "settings.json")
+            )
+        );
 
-    private TrackRename Renamer(QueueSettingsStore? settings = null) =>
+    private TrackRename Renamer(TrackInstructionStore? settings = null) =>
         new(settings ?? Settings(), _ => _staged, _writer, _paths, _ => _library, _sets);
 
     private string InLibrary(string name)
@@ -76,8 +81,8 @@ public sealed class TrackRenameTests : IDisposable
 
     private string Staged(string name) => Path.Combine(_paths.SampleStaging, name);
 
-    private static string? StoredName(QueueSettingsStore settings) =>
-        settings.Read().Tracks.FirstOrDefault(track => track.VideoId == Video)?.Name;
+    private static string? StoredName(TrackInstructionStore settings) =>
+        settings.Read().FirstOrDefault(track => track.VideoId == Video)?.Name;
 
     [Fact]
     public void The_preset_and_the_extension_survive_the_new_name()

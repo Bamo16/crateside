@@ -91,7 +91,9 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<PlaylistReader>();
         services.AddSingleton<EvidenceService>();
-        services.AddSingleton<QueueSettingsStore>();
+        services.AddSingleton<QueueFile>();
+        services.AddSingleton<PlaylistSettingsStore>();
+        services.AddSingleton<TrackInstructionStore>();
         return services;
     }
 
@@ -129,7 +131,8 @@ public static class ServiceRegistration
         // sets.
         services.AddSingleton(sp => new WorkListService(
             sp.GetRequiredService<IOptions<CratesidePaths>>(),
-            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<PlaylistSettingsStore>(),
+            sp.GetRequiredService<TrackInstructionStore>(),
             sp.GetRequiredService<PlaylistReader>(),
             sp.GetRequiredService<PlaylistAuthorizer>(),
             sp.GetRequiredService<PlaylistRemover>(),
@@ -140,7 +143,7 @@ public static class ServiceRegistration
                     .From(sp.GetRequiredService<JobStore>().All(), ledger)
                     .Union(
                         CutRequests.Unsettled(
-                            sp.GetRequiredService<QueueSettingsStore>().Read(),
+                            sp.GetRequiredService<TrackInstructionStore>().Read(),
                             sp.GetRequiredService<JobStore>()
                         )
                     )
@@ -150,7 +153,7 @@ public static class ServiceRegistration
                     .AwaitingCut(sp.GetRequiredService<JobStore>().All(), ledger)
                     .Union(
                         CutRequests.Cutting(
-                            sp.GetRequiredService<QueueSettingsStore>().Read(),
+                            sp.GetRequiredService<TrackInstructionStore>().Read(),
                             sp.GetRequiredService<JobStore>()
                         )
                     )
@@ -310,36 +313,36 @@ public static class ServiceRegistration
 
         services.AddSingleton(_ => new SourceProbe());
         services.AddSingleton(sp => new TrackAdd(
-            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<TrackInstructionStore>(),
             sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SourceProbe>(),
             sp.GetRequiredService<ResolvedNameStore>()
         ));
         services.AddSingleton(sp => new TrackRemoval(
-            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<TrackInstructionStore>(),
             sp.GetRequiredService<IntakeStore>(),
             sp.GetRequiredService<WorkingSet>(),
             StagedFiles(sp),
             sp.GetRequiredService<DeletionLog>()
         ));
         services.AddSingleton(sp => new SampleAdoption(
-            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<TrackInstructionStore>(),
             sp.GetRequiredService<CratesidePaths>()
         ));
         services.AddSingleton(sp => new SourceAdd(
-            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<TrackInstructionStore>(),
             sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SourceProbe>()
         ));
 
         services.AddSingleton(sp => new StemRecut(
-            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<TrackInstructionStore>(),
             sp.GetRequiredService<WorkingSet>(),
             StagedFiles(sp),
             sp.GetRequiredService<DeletionLog>()
         ));
         services.AddSingleton(sp => new TrackRename(
-            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<TrackInstructionStore>(),
             StagedFiles(sp),
             sp.GetRequiredService<FolderInfoWriter>(),
             sp.GetRequiredService<CratesidePaths>(),
@@ -351,12 +354,12 @@ public static class ServiceRegistration
             sp.GetRequiredService<ISetLinks>()
         ));
         services.AddSingleton(sp => new LookalikeAnswer(
-            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<TrackInstructionStore>(),
             sp.GetRequiredService<CratesidePaths>()
         ));
 
         services.AddSingleton(sp => new TrackSwap(
-            sp.GetRequiredService<QueueSettingsStore>(),
+            sp.GetRequiredService<TrackInstructionStore>(),
             sp.GetRequiredService<WorkingSet>(),
             StagedFiles(sp),
             sp.GetRequiredService<CratesidePaths>(),
@@ -368,9 +371,9 @@ public static class ServiceRegistration
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<IOptions<CratesidePaths>>(),
             videoId =>
-                sp.GetRequiredService<QueueSettingsStore>()
+                sp.GetRequiredService<TrackInstructionStore>()
                     .Read()
-                    .Tracks.FirstOrDefault(track =>
+                    .FirstOrDefault(track =>
                         track.VideoId.Equals(videoId, StringComparison.Ordinal)
                     )
                     ?.CutRequestedAt
@@ -463,7 +466,7 @@ public static class ServiceRegistration
                 };
             },
             sp.GetRequiredService<StageHub>(),
-            freshness: () => sp.GetRequiredService<QueueSettingsStore>().Read().RefreshInterval,
+            freshness: () => sp.GetRequiredService<PlaylistSettingsStore>().Read().RefreshInterval,
             actions: sp.GetRequiredService<ActionLog>()
         ));
 

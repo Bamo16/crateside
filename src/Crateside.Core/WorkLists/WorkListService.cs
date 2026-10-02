@@ -19,7 +19,8 @@ public delegate Task<PresetCatalog> ReadPresetCatalog(CancellationToken ct);
 
 public sealed class WorkListService(
     IOptions<CratesidePaths> paths,
-    QueueSettingsStore settings,
+    PlaylistSettingsStore settings,
+    TrackInstructionStore instructions,
     PlaylistReader reader,
     PlaylistAuthorizer authorizer,
     PlaylistRemover remover,
@@ -89,7 +90,7 @@ public sealed class WorkListService(
 
     /// <summary>How often crateside looks at the playlist unprompted.</summary>
     public int RefreshMinutes =>
-        settings.Read().RefreshMinutes ?? QueueSettings.DefaultRefreshMinutes;
+        settings.Read().RefreshMinutes ?? PlaylistSettings.DefaultRefreshMinutes;
 
     /// <summary>Sets it. Zero turns it off.</summary>
     public void SetRefreshMinutes(int minutes) => settings.SaveRefreshMinutes(minutes);
@@ -111,10 +112,10 @@ public sealed class WorkListService(
 
     /// <summary>Records that the user takes this upload's audio as it comes (#31).</summary>
     public void AcceptUpload(string videoId, string upload) =>
-        settings.AcceptUpload(videoId, upload);
+        instructions.AcceptUpload(videoId, upload);
 
     /// <summary>Records which files the user wants made for a track.</summary>
-    public void SetPlan(string videoId, StemPlan? plan) => settings.SetPlan(videoId, plan);
+    public void SetPlan(string videoId, StemPlan? plan) => instructions.SetPlan(videoId, plan);
 
     /// <summary>Entries crateside tried to empty from the playlist and could not.</summary>
     public IReadOnlyList<IntakeRecord> LeftInPlaylist =>
@@ -125,9 +126,9 @@ public sealed class WorkListService(
 
     /// <summary>The standing instruction for a track, or null when there is none.</summary>
     public TrackInstruction? InstructionFor(string videoId) =>
-        settings
+        instructions
             .Read()
-            .Tracks.FirstOrDefault(t => t.VideoId.Equals(videoId, StringComparison.Ordinal));
+            .FirstOrDefault(t => t.VideoId.Equals(videoId, StringComparison.Ordinal));
 
     /// <summary>Forgets the cached playlist, so the next read goes to the API.</summary>
     public void Invalidate()
@@ -216,9 +217,7 @@ public sealed class WorkListService(
 
         NoteFiledArrivals(arrivals, processed, ledger);
 
-        var instructions = settings
-            .Read()
-            .Tracks.ToDictionary(t => t.VideoId, StringComparer.Ordinal);
+        var byVideoId = instructions.Read().ToDictionary(t => t.VideoId, StringComparer.Ordinal);
 
         var catalog = presets is null ? PresetCatalog.Empty : await presets(ct);
 
@@ -232,7 +231,7 @@ public sealed class WorkListService(
                     .Where(i => parked.StemsFor(i.VideoId).Count > 0)
                     .Select(i => i.VideoId)
                     .ToHashSet(StringComparer.Ordinal),
-                instructions,
+                byVideoId,
                 Reopened(items, ledger),
                 bumped.VideoId,
                 awaitingCut?.Invoke(ledger),
@@ -240,7 +239,7 @@ public sealed class WorkListService(
             ),
             Ledger = ledger,
             Processed = processed,
-            Instructions = instructions,
+            Instructions = byVideoId,
             ReadAt = PlaylistReadAt,
             PlaylistProblem = PlaylistProblem,
         };
@@ -254,9 +253,9 @@ public sealed class WorkListService(
         return
         [
             .. playlist,
-            .. settings
+            .. instructions
                 .Read()
-                .Tracks.Where(track => track.AddedByUrl && !held.Contains(track.VideoId))
+                .Where(track => track.AddedByUrl && !held.Contains(track.VideoId))
                 .Select(track => new WorkItem { VideoId = track.VideoId, Title = track.VideoId }),
         ];
     }
@@ -351,9 +350,9 @@ public sealed class WorkListService(
     /// empty one is a finished track's residue, and owing it would re-download it.
     /// </summary>
     private IEnumerable<string> Owed() =>
-        settings
+        instructions
             .Read()
-            .Tracks.Where(track =>
+            .Where(track =>
                 track.Plan is { } plan && (plan.KeepSource || plan.AddedSources.Count > 0)
             )
             .Select(track => track.VideoId);
