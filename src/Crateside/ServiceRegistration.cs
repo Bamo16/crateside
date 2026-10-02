@@ -288,6 +288,13 @@ public static class ServiceRegistration
         services.AddSingleton<WarpLending>();
         services.AddHostedService<WarpWorker>();
 
+        // Unattended too: keeping a filed track's warp guide is a file move (ADR 0046).
+        services.AddSingleton(sp => new WarpGuideKeeper(
+            sp.GetRequiredService<CratesidePaths>(),
+            TimeProvider.System
+        ));
+        services.AddHostedService<WarpGuideWorker>();
+
         services.AddHostedService<DrainWorker>();
 
         // AddSingleton<IHostedService> rather than AddHostedService: the latter routes through

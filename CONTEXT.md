@@ -112,6 +112,10 @@ against it.
   saves over the file
   ([ADR 0043](docs/adr/0043-a-borrowed-warp-is-finished-and-says-where-it-came-from.md),
   [ADR 0045](docs/adr/0045-a-recut-takes-its-warp-from-its-own-kind-first.md)).
+- **Warp guide** — a track's drums stem, cut to be looked at while warping rather than heard.
+  Once the rest of the track is in **Mashup Samples**, crateside keeps it, with its analysis file,
+  in `Music\Stems\Drums`, outside every folder Ableton browses
+  ([ADR 0046](docs/adr/0046-a-filed-tracks-warp-guide-is-kept-outside-ableton.md)).
 - **Ready to move** — a track whose staged samples all have their default clip saved: warped, with
   only the move to **Mashup Samples** left.
 

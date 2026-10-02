@@ -284,7 +284,7 @@
     border-color: rgba(224, 122, 109, 0.6);
 }
 
-/* Not a box, because it is not a choice: the guide is always made and always deleted again. */
+/* Not a box, because it is not a choice: the guide is always made and always kept afterwards. */
 .tick.pinned {
     color: var(--text-50);
     border: 0;

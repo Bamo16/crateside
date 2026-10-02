@@ -88,7 +88,7 @@ public sealed class TrackStateResolutionTests
     }
 
     [Fact]
-    public void Ready_to_move_with_the_warp_guide_still_there_says_to_delete_it()
+    public void A_warp_guide_still_in_staging_does_not_change_what_ready_to_move_asks()
     {
         var row = Row() with
         {
@@ -97,7 +97,7 @@ public sealed class TrackStateResolutionTests
         };
 
         Assert.Equal(TrackState.ReadyToMove, row.State);
-        Assert.Equal("warped — delete the warp guide, then move to Mashup Samples", row.Next);
+        Assert.Equal("warped — move to Mashup Samples", row.Next);
     }
 
     [Fact]

@@ -389,9 +389,7 @@ public sealed record TrackRow
             TrackState.ReadyToWarp => Warped is 0
                 ? "your turn — warp, then move to Mashup Samples"
                 : $"your turn — {Warped} of {Staged} warped, then move to Mashup Samples",
-            TrackState.ReadyToMove => HasWarpGuide
-                ? "warped — delete the warp guide, then move to Mashup Samples"
-                : "warped — move to Mashup Samples",
+            TrackState.ReadyToMove => "warped — move to Mashup Samples",
             TrackState.Parked => ParkedFor is ParkReason.PremiumShortfall
                 ? "check for a better upload, or use this one anyway"
                 : "needs a better verdict — nothing automatic will move it",

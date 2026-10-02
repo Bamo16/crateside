@@ -81,8 +81,8 @@ public sealed record StagedFile
     public bool IsAdopted => AdoptedAs is not null;
 
     /// <summary>
-    /// A stem made to be <em>looked at</em> rather than heard: the drums, deleted once warping
-    /// is done. Every drums stem is one, with no way to say otherwise.
+    /// A stem made to be <em>looked at</em> rather than heard: the drums, kept outside Ableton
+    /// once its track is filed (ADR 0046). Every drums stem is one, with no way to say otherwise.
     /// </summary>
     public bool IsWarpGuide => IsWarpGuidePreset(Preset);
 

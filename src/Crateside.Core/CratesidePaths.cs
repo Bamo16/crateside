@@ -54,6 +54,9 @@ public sealed class CratesidePaths
     /// <summary>Where stems go when it does not — including when it has not been judged yet.</summary>
     public string StemsUnresolvedKey { get; set; } = Path.Combine(MusicStems, "Unresolved Key");
 
+    /// <summary>Where warp guides are kept once their track is filed: outside every folder Ableton browses (ADR 0046).</summary>
+    public string KeptWarpGuides { get; set; } = Path.Combine(MusicStems, "Drums");
+
     /// <summary>
     /// The folder a <see cref="StemDestination"/> names. Both already exist on this machine;
     /// crateside picks between them and never invents a sibling.
