@@ -66,7 +66,8 @@ public sealed record TracksView
         IReadOnlyDictionary<string, GenreRecord>? genres = null,
         IReadOnlyDictionary<string, FamiliarityRecord>? familiarity = null,
         Func<string, WarpTempo?>? tempoOf = null,
-        Func<string, BeatReading?>? beatsOf = null
+        Func<string, BeatReading?>? beatsOf = null,
+        Func<string, string?>? borrowedFrom = null
     )
     {
         var resolved = resolvedNames ?? new Dictionary<string, ResolvedName>();
@@ -275,7 +276,8 @@ public sealed record TracksView
                             catalog,
                             libraryTags,
                             tempoOf,
-                            beatsOf
+                            beatsOf,
+                            borrowedFrom
                         )
                     ),
                 ],
@@ -390,7 +392,8 @@ public sealed record TracksView
         PresetCatalog catalog,
         FolderInfo? libraryTags,
         Func<string, WarpTempo?>? tempoOf,
-        Func<string, BeatReading?>? beatsOf
+        Func<string, BeatReading?>? beatsOf,
+        Func<string, string?>? borrowedFrom
     ) =>
         [
             .. staged?.Samples.Select(sample =>
@@ -399,6 +402,9 @@ public sealed record TracksView
                     AbletonKey = sample.AbletonKey,
                     HasDefaultClip = sample.HasDefaultClip,
                     Tempo = sample.HasDefaultClip ? tempoOf?.Invoke(sample.Path) : null,
+                    WarpBorrowedFrom = sample.HasDefaultClip
+                        ? borrowedFrom?.Invoke(sample.Path)
+                        : null,
                     Beats = beatsOf?.Invoke(sample.Path),
                 }
             )

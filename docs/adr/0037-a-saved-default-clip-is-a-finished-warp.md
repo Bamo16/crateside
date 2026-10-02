@@ -1,6 +1,6 @@
 # 0037 — a saved default clip is a finished warp
 
-- Status: Accepted
+- Status: Accepted; amended by [ADR 0043](0043-a-borrowed-warp-is-finished-and-says-where-it-came-from.md), since crateside can now write a saved clip too
 - Date: 2026-09-26
 - Supersedes the decision of [ADR 0002](0002-there-is-no-warped-signal.md). Settles
   [#67](https://github.com/Bamo16/crateside/issues/67).

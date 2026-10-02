@@ -22,6 +22,7 @@ using Crateside.Core.Quota;
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
+using Crateside.Core.Warps;
 using Crateside.Core.WorkLists;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
@@ -53,6 +54,9 @@ public static class ServiceRegistration
         );
         builder.Services.Configure<PlaylistOptions>(
             builder.Configuration.GetSection(PlaylistOptions.SectionName)
+        );
+        builder.Services.Configure<WarpOptions>(
+            builder.Configuration.GetSection(WarpOptions.SectionName)
         );
 
         builder.Services.AddSingleton(sp =>
@@ -274,6 +278,16 @@ public static class ServiceRegistration
         // Unattended too: beatdetect runs on the CPU and contends for nothing (#75, #76).
         services.AddHostedService<BeatWorker>();
 
+        // Unattended for the same reason: lending a warp decodes on the CPU (ADR 0043).
+        services.AddSingleton(_ => new BorrowedWarps(BorrowedWarps.DefaultPath));
+        services.AddSingleton(sp => new WarpBorrower(
+            new FfmpegAudioDecoder(),
+            new OnsetDetector(),
+            sp.GetRequiredService<BorrowedWarps>()
+        ));
+        services.AddSingleton<WarpLending>();
+        services.AddHostedService<WarpWorker>();
+
         services.AddHostedService<DrainWorker>();
 
         // AddSingleton<IHostedService> rather than AddHostedService: the latter routes through
@@ -429,7 +443,8 @@ public static class ServiceRegistration
                     sp.GetRequiredService<GenreStore>().Read(),
                     sp.GetRequiredService<FamiliarityStore>().Read(),
                     sp.GetRequiredService<WarpTempoReader>().Read,
-                    sp.GetRequiredService<BeatReader>().Read
+                    sp.GetRequiredService<BeatReader>().Read,
+                    sp.GetRequiredService<BorrowedWarps>().BorrowedFrom
                 );
 
                 sp.GetRequiredService<WarpTempoReader>().Save();

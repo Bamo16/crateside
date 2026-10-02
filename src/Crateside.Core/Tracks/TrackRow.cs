@@ -556,6 +556,9 @@ public sealed record TrackSample
     /// </summary>
     public bool HasDefaultClip { get; init; }
 
+    /// <summary>The sibling whose warp crateside copied onto it, until the user saves over it (ADR 0043).</summary>
+    public string? WarpBorrowedFrom { get; init; }
+
     /// <summary>The tempo its warp holds, once its default clip is saved (ADR 0038).</summary>
     public WarpTempo? Tempo { get; init; }
 

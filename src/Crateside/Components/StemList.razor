@@ -1,5 +1,6 @@
 @using Crateside.Core.Ledger
 @using Crateside.Core.Plans
+@using Crateside.Core.Samples
 @using Crateside.Core.Tracks
 
 @{
@@ -309,6 +310,8 @@ else
         sample switch
         {
             { IsInLibrary: true } => "Mashup Samples",
+            { HasDefaultClip: true, WarpBorrowedFrom: { } from } =>
+                $"Sample Staging · warped from {StemFileName.PresetOf(from) ?? "the source"}",
             { HasDefaultClip: true } => "Sample Staging · warped",
             _ => "Sample Staging",
         };
