@@ -3,14 +3,14 @@ namespace Crateside.Core.Warps;
 /// <summary>
 /// Gives every staged stem without a finished warp the warp its siblings agree on, whether the
 /// stem just landed or the user just saved a sibling (#54, ADR 0043), or a starter warp at the
-/// judged BPM when nothing of its upload is warped (#77, ADR 0047).
+/// measured tempo when nothing of its upload is warped (#77, ADR 0047, ADR 0048).
 /// </summary>
-/// <param name="judgedBpm">keytag's BPM for an upload, or null before it is judged.</param>
+/// <param name="steadyBpm">crateside's own steady tempo for an audio file, or null before it is read or when it drifts.</param>
 public sealed class WarpLending(
     CratesidePaths paths,
     SidecarWriter writer,
     WarpOptions options,
-    Func<string, double?>? judgedBpm = null
+    Func<string, double?>? steadyBpm = null
 )
 {
     private readonly Dictionary<string, string> _tried = new(StringComparer.OrdinalIgnoreCase);
@@ -31,7 +31,7 @@ public sealed class WarpLending(
             [
                 .. authorities.Union(sameKind, StringComparer.OrdinalIgnoreCase),
             ];
-            var bpm = options.WriteStarterWarps ? judgedBpm?.Invoke(target.SourceVideoId) : null;
+            var bpm = options.WriteStarterWarps ? TempoOf(siblings.CutsOf(target)) : null;
             var signature = Signature(target.Path, lenders, bpm);
 
             if (_tried.TryGetValue(target.Path, out var tried) && tried == signature)
@@ -51,6 +51,12 @@ public sealed class WarpLending(
 
         return loans;
     }
+
+    private double? TempoOf(IEnumerable<SiblingFile> cuts) =>
+        WarpSiblings
+            .TempoSources(cuts)
+            .Select(cut => steadyBpm?.Invoke(cut.Path))
+            .FirstOrDefault(bpm => bpm is not null);
 
     /// <summary>A lent warp when a sibling holds one, else a starter; null when what applies is switched off.</summary>
     private async Task<WarpOutcome?> OutcomeAsync(
@@ -100,8 +106,8 @@ public sealed class WarpOptions
     public bool LendAutomatically { get; set; }
 
     /// <summary>
-    /// Whether staged stems of an upload nothing is warped on get a starter warp at keytag's BPM.
-    /// Off until the user has checked a borrowed warp in Live (ADR 0047).
+    /// Whether stems of an upload nothing is warped on get a starter warp at crateside's own tempo
+    /// reading. Off until the user has checked a borrowed warp in Live (ADR 0047, ADR 0048).
     /// </summary>
     public bool WriteStarterWarps { get; set; }
 }

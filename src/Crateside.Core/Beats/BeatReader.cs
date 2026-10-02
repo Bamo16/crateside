@@ -65,6 +65,16 @@ public sealed partial class BeatReader(
             ? entry.Reading
             : null;
 
+    /// <summary>Carries a reading to where its file was moved, since the audio itself is unchanged.</summary>
+    public void Moved(string from, string to)
+    {
+        if (_read.TryRemove(Path.GetFullPath(from), out var entry))
+        {
+            _read[Path.GetFullPath(to)] = entry;
+            _changed = true;
+        }
+    }
+
     /// <summary>Asks ffmpeg which build it is; null when it cannot be run.</summary>
     public async Task<FfmpegBuild?> RefreshBuildAsync(CancellationToken ct)
     {

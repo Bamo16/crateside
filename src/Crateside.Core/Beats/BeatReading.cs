@@ -29,6 +29,10 @@ public sealed record BeatReading
     [JsonIgnore]
     public bool Drifts => Drift >= DriftsAt;
 
+    /// <summary>The whole file's tempo when it holds steady, which a single warp marker can stand for (#77).</summary>
+    [JsonIgnore]
+    public double? SteadyBpm => this is { Bpm: > 0 and var bpm, Drifts: false } ? bpm : null;
+
     /// <summary>Null under three windows in one tempo and octave; octave-flipped reads are not exact multiples.</summary>
     public static double? Spread(IReadOnlyList<double> windows)
     {

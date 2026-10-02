@@ -5,6 +5,9 @@ namespace Crateside.Core.Warps;
 /// <summary>The files under some roots that share an upload, read once, for finding where a warp may come from.</summary>
 public sealed class WarpSiblings
 {
+    /// <summary>Which cuts a tempo is read from, best first: an instrumental, then the kept source, then karaoke.</summary>
+    private static readonly string?[] TempoKinds = ["Instrumental", null, "Karaoke"];
+
     private readonly ILookup<string, SiblingFile> _byVideoId;
 
     private WarpSiblings(IEnumerable<SiblingFile> files) =>
@@ -49,6 +52,13 @@ public sealed class WarpSiblings
                 )
                 .Select(file => file.Path),
         ];
+
+    /// <summary>Every cut of the target's upload under the scanned roots, the target included.</summary>
+    public IEnumerable<SiblingFile> CutsOf(SiblingFile target) => _byVideoId[target.SourceVideoId];
+
+    /// <summary>The cuts a track's tempo can be read from, best first (#77).</summary>
+    public static IEnumerable<SiblingFile> TempoSources(IEnumerable<SiblingFile> cuts) =>
+        TempoKinds.SelectMany(kind => cuts.Where(cut => cut.IsAuthority && cut.Kind == kind));
 
     public IEnumerable<SiblingFile> In(string root) =>
         _byVideoId

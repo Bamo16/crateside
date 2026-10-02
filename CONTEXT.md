@@ -112,11 +112,13 @@ against it.
   saves over the file
   ([ADR 0043](docs/adr/0043-a-borrowed-warp-is-finished-and-says-where-it-came-from.md),
   [ADR 0045](docs/adr/0045-a-recut-takes-its-warp-from-its-own-kind-first.md)).
-- **Starter warp** — a one-marker warp crateside writes at keytag's BPM onto each staged stem of an
-  upload nothing is warped on yet, so the group dragged into an empty set sets its tempo. It is not
+- **Starter warp** — a one-marker warp crateside writes, at its own steady beatdetect reading of the
+  instrumental, onto each stem of an upload nothing is warped on yet as it lands in staging, so the
+  group dragged into an empty set sets its tempo. It is not
   a finished warp: the stem still waits to be warped, it never lends, a lent warp replaces it, and
   it becomes the user's warp once Live saves over it
-  ([ADR 0047](docs/adr/0047-a-starter-warp-and-where-transients-came-from.md)).
+  ([ADR 0047](docs/adr/0047-a-starter-warp-and-where-transients-came-from.md),
+  [ADR 0048](docs/adr/0048-stems-arrive-in-staging-already-warped.md)).
 - **Warp guide** — a track's drums stem, cut to be looked at while warping rather than heard.
   Once the rest of the track is in **Mashup Samples**, crateside keeps it, with its analysis file,
   in `Music\Stems\Drums`, outside every folder Ableton browses

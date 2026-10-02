@@ -254,7 +254,7 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_stem_nothing_is_warped_on_gets_one_marker_at_the_start_at_the_judged_tempo()
+    public async Task A_stem_nothing_is_warped_on_gets_one_marker_at_the_start_at_the_given_tempo()
     {
         Audio(Target);
 

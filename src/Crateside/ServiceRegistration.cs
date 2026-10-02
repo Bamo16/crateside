@@ -295,12 +295,13 @@ public static class ServiceRegistration
             sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SidecarWriter>(),
             sp.GetRequiredService<IOptions<WarpOptions>>().Value,
-            videoId =>
-                KeyLedger
-                    .Read(sp.GetRequiredService<CratesidePaths>().Ledger)
-                    .TryGetLatestByVideoId(videoId, out var run)
-                    ? run.Bpm
-                    : null
+            path => sp.GetRequiredService<BeatReader>().Read(path)?.SteadyBpm
+        ));
+        services.AddSingleton(sp => new HandoffSidecars(
+            sp.GetRequiredService<CratesidePaths>(),
+            sp.GetRequiredService<SidecarWriter>(),
+            sp.GetRequiredService<BeatReader>(),
+            sp.GetRequiredService<IOptions<WarpOptions>>().Value
         ));
         services.AddHostedService<WarpWorker>();
 

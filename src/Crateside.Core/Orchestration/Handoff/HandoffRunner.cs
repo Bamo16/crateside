@@ -15,10 +15,12 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
     /// Staged files of an upload this track has been swapped away from, cleared <em>before</em>
     /// the move to make room for same-named replacements (ADR 0014).
     /// </param>
+    /// <param name="moved">Called with each stem's old and new path the moment it lands.</param>
     public HandoffResult Run(
         IReadOnlyList<string> stems,
         string? name = null,
-        IReadOnlyList<string>? superseded = null
+        IReadOnlyList<string>? superseded = null,
+        Action<string, string>? moved = null
     )
     {
         if (stems.Count is 0)
@@ -38,7 +40,10 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
             Directory.CreateDirectory(paths.SampleStaging);
 
             foreach (var (from, to) in moves)
+            {
                 File.Move(from, to);
+                moved?.Invoke(from, to);
+            }
 
             return HandoffResult.Succeeded(moves.Count, cleared);
         }

@@ -3,6 +3,7 @@ using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Separation;
+using Crateside.Core.Warps;
 using Crateside.Core.WorkLists;
 using Humanizer;
 using Microsoft.Extensions.Options;
@@ -19,30 +20,37 @@ public sealed class HandoffDrainer(
     IOptions<CratesidePaths> paths,
     TrackInstructionStore instructions,
     ResolvedNameStore names,
-    DeletionLog? deletions = null
+    DeletionLog? deletions = null,
+    HandoffSidecars? sidecars = null
 ) : IStageDrainer
 {
     private readonly CratesidePaths _paths = paths.Value;
 
     public JobStage Stage => JobStage.Handoff;
 
-    public Task<StageTick> DrainOnceAsync(CancellationToken ct = default)
+    public async Task<StageTick> DrainOnceAsync(CancellationToken ct = default)
     {
         var ledger = KeyLedger.Read(_paths.Ledger);
 
         StemLanding.ReleaseParked(_paths, ledger, jobs, deletions);
 
         if (!selector.TryPickNext(out var videoId, out var stems))
-            return Task.FromResult(StageTick.Idle);
+            return StageTick.Idle;
 
         var subject = ledger.TryGetLatestByVideoId(videoId, out var run) ? run.Song : videoId;
 
         jobs.Record(videoId, JobStage.Handoff, JobStatus.Running);
 
+        // Worked out before the move, so each stem lands in staging with its sidecar (#77).
+        var prepared = sidecars is null
+            ? new Dictionary<string, PreparedSidecar>()
+            : await sidecars.PrepareAsync(stems, ct);
+
         var result = runner.Run(
             stems,
             NameFor(videoId),
-            SupersededStems.In(_paths.SampleStaging, videoId, ledger, Kept())
+            SupersededStems.In(_paths.SampleStaging, videoId, ledger, Kept()),
+            (from, to) => sidecars?.Moved(prepared, from, to)
         );
 
         jobs.Record(
@@ -52,9 +60,7 @@ public sealed class HandoffDrainer(
             error: result.Error
         );
 
-        return Task.FromResult(
-            StageTick.Ran(subject, result.IsSuccess, result.Error, Cleared(result.Cleared))
-        );
+        return StageTick.Ran(subject, result.IsSuccess, result.Error, Cleared(result.Cleared));
     }
 
     /// <summary>

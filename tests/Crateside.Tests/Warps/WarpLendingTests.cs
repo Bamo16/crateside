@@ -117,7 +117,7 @@ public sealed class WarpLendingTests : IDisposable
     }
 
     [Fact]
-    public async Task Stems_of_an_upload_nothing_is_warped_on_get_starter_warps_at_the_judged_tempo()
+    public async Task Stems_of_an_upload_nothing_is_warped_on_get_starter_warps_at_the_measured_tempo()
     {
         var vocal = Stem(_paths.SampleStaging, "Song (Vocal - Full).flac", "Vocal - Full");
         var instrumental = Stem(
@@ -139,7 +139,7 @@ public sealed class WarpLendingTests : IDisposable
     }
 
     [Fact]
-    public async Task Without_a_judged_tempo_no_starter_is_written()
+    public async Task Without_a_steady_measured_tempo_no_starter_is_written()
     {
         var vocal = Stem(_paths.SampleStaging, "Song (Vocal - Full).flac", "Vocal - Full");
 

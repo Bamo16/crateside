@@ -22,6 +22,14 @@ public sealed class BeatReadingTests
             new BeatReading { Windows = [174.07, 174.02, 173.99, 173.97, 173.99, 173.99] }.Drifts
         );
 
+    [Theory]
+    [InlineData(new[] { 128.02, 128.01, 128.03, 128.02 }, 128.02)]
+    [InlineData(new[] { 120.0, 124.0, 128.0, 132.0 }, null)]
+    public void Only_a_steady_reading_gives_a_tempo_a_starter_warp_can_use(
+        double[] windows,
+        double? steady
+    ) => Assert.Equal(steady, new BeatReading { Bpm = 128.02, Windows = windows }.SteadyBpm);
+
     [Fact]
     public void A_window_read_at_double_tempo_is_left_out_rather_than_folded_in()
     {

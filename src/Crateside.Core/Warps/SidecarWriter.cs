@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AbleKit.Analysis;
 using Crateside.Core.Samples;
 
@@ -5,7 +6,7 @@ namespace Crateside.Core.Warps;
 
 /// <summary>
 /// Writes a stem's sidecar: a sibling's finished warp (#54, ADR 0043–0045), or a starter warp at the
-/// judged BPM when nothing of the upload is warped yet (#77, ADR 0047).
+/// measured BPM when nothing of the upload is warped yet (#77, ADR 0047).
 /// </summary>
 public sealed class SidecarWriter(
     IAudioDecoder decoder,
@@ -28,59 +29,74 @@ public sealed class SidecarWriter(
         IReadOnlyList<string> authorities,
         IReadOnlyList<string> sameKind,
         CancellationToken ct = default
+    ) => Settle(await PrepareBorrowAsync(target, authorities, sameKind, ct), target);
+
+    /// <summary>Writes one marker at the start of the clip at this tempo, where Live puts its own first marker.</summary>
+    public async Task<WarpOutcome> StartAsync(
+        string target,
+        IReadOnlyList<string> sameKind,
+        double bpm,
+        CancellationToken ct = default
+    ) => Settle(await PrepareStarterAsync(target, sameKind, bpm, ct), target);
+
+    /// <summary>Works out the sidecar <see cref="BorrowAsync"/> would write, without writing it.</summary>
+    public async Task<SidecarPlan> PrepareBorrowAsync(
+        string target,
+        IReadOnlyList<string> authorities,
+        IReadOnlyList<string> sameKind,
+        CancellationToken ct = default
     )
     {
         try
         {
             if (Own(target) is { IsUsers: true })
-                return new WarpOutcome.AlreadyWarped();
+                return Refuse(new WarpOutcome.AlreadyWarped());
 
             var saved = SavedAmong(sameKind) is { Count: > 0 } ownKind
                 ? ownKind
                 : SavedAmong(authorities);
 
             if (saved is [])
-                return new WarpOutcome.NoWarpedSibling();
+                return Refuse(new WarpOutcome.NoWarpedSibling());
 
             if (saved.Skip(1).Any(sibling => !SameWarp(sibling.Analysis, saved[0].Analysis)))
-                return new WarpOutcome.SiblingsDisagree([.. saved.Select(s => s.Path)]);
+                return Refuse(new WarpOutcome.SiblingsDisagree([.. saved.Select(s => s.Path)]));
 
             var (from, warp) = saved[0];
 
             if (await decoder.DecodeAsync(target, ct) is not { } audio)
-                return Undecodable(target);
+                return Refuse(Undecodable(target));
 
             if (
                 warp.Audio.HeadTable is not [.., var siblingFrames]
                 || siblingFrames != audio.Frames
             )
-                return new WarpOutcome.LengthsDiffer(
-                    from,
-                    warp.Audio.HeadTable is [.., var frames] ? frames : 0,
-                    audio.Frames
+                return Refuse(
+                    new WarpOutcome.LengthsDiffer(
+                        from,
+                        warp.Audio.HeadTable is [.., var frames] ? frames : 0,
+                        audio.Frames
+                    )
                 );
 
-            return
-                Write(
-                    target,
-                    sameKind,
-                    audio,
-                    analysis => warp with { Audio = analysis },
-                    () => written.RecordBorrowed(target, from)
-                )
-                    is { } source
-                ? new WarpOutcome.Written(from, source.From)
-                : new WarpOutcome.AlreadyWarped();
+            return Prepare(
+                target,
+                sameKind,
+                audio,
+                from,
+                null,
+                analysis => warp with { Audio = analysis }
+            );
         }
         catch (Exception ex)
             when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
-            return new WarpOutcome.Failed(ex.Message);
+            return Refuse(new WarpOutcome.Failed(ex.Message));
         }
     }
 
-    /// <summary>Writes one marker at the start of the clip at this tempo, where Live puts its own first marker.</summary>
-    public async Task<WarpOutcome> StartAsync(
+    /// <summary>Works out the sidecar <see cref="StartAsync"/> would write, without writing it.</summary>
+    public async Task<SidecarPlan> PrepareStarterAsync(
         string target,
         IReadOnlyList<string> sameKind,
         double bpm,
@@ -90,29 +106,78 @@ public sealed class SidecarWriter(
         try
         {
             if (Own(target) is { IsUsers: true } or { IsStarter: true })
-                return new WarpOutcome.AlreadyWarped();
+                return Refuse(new WarpOutcome.AlreadyWarped());
 
             if (await decoder.DecodeAsync(target, ct) is not { } audio)
-                return Undecodable(target);
+                return Refuse(Undecodable(target));
 
-            return
-                Write(
-                    target,
-                    sameKind,
-                    audio,
-                    analysis => Starter(bpm, (double)audio.Frames / audio.SampleRate, analysis),
-                    () => written.RecordStarter(target)
-                )
-                    is { } source
-                ? new WarpOutcome.Started(bpm, source.From)
-                : new WarpOutcome.AlreadyWarped();
+            return Prepare(
+                target,
+                sameKind,
+                audio,
+                null,
+                bpm,
+                analysis => Starter(bpm, (double)audio.Frames / audio.SampleRate, analysis)
+            );
         }
         catch (Exception ex)
             when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
+            return Refuse(new WarpOutcome.Failed(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Writes a prepared sidecar beside <paramref name="audioPath"/>, which may be where the target
+    /// has been moved to since, and records it there; never over a warp the user saved.
+    /// </summary>
+    public WarpOutcome Commit(PreparedSidecar sidecar, string audioPath)
+    {
+        try
+        {
+            if (Own(audioPath) is { IsUsers: true })
+                return new WarpOutcome.AlreadyWarped();
+
+            sidecar.File.Write(StemFileName.AnalysisFor(audioPath));
+
+            if (sidecar.From is { } lender)
+                written.RecordBorrowed(audioPath, lender);
+            else
+                written.RecordStarter(audioPath);
+
+            var transients = sidecar.File.Audio.Transients;
+            var transientsFrom = sidecar.TransientsFrom switch
+            {
+                null => null,
+                var own when Same(own, sidecar.Target) => audioPath,
+                var copied => copied,
+            };
+
+            if (transientsFrom is null)
+                origins.RecordDetected(transients, audioPath, detector.Version);
+            else if (!Same(transientsFrom, audioPath))
+                origins.RecordCopied(transients, audioPath, transientsFrom);
+
+            return sidecar switch
+            {
+                { From: { } from } => new WarpOutcome.Written(from, transientsFrom),
+                { Bpm: { } bpm } => new WarpOutcome.Started(bpm, transientsFrom),
+                _ => throw new UnreachableException(),
+            };
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
             return new WarpOutcome.Failed(ex.Message);
         }
     }
+
+    private WarpOutcome Settle(SidecarPlan plan, string target) =>
+        plan switch
+        {
+            SidecarPlan.Ready(var sidecar) => Commit(sidecar, target),
+            SidecarPlan.Refused(var outcome) => outcome,
+            _ => throw new UnreachableException(),
+        };
 
     /// <summary>
     /// A one-marker warp laid out as Live saves one: beat 0 at the start of the audio, the clip
@@ -142,20 +207,18 @@ public sealed class SidecarWriter(
         };
     }
 
-    /// <summary>
-    /// Writes the warp with the target's own waveform and the best transients, or returns null when
-    /// the user saved the stem in Live meanwhile.
-    /// </summary>
-    private TransientSource? Write(
+    /// <summary>The sidecar with the target's own waveform and the best transients it can have.</summary>
+    private SidecarPlan.Ready Prepare(
         string target,
         IReadOnlyList<string> sameKind,
         DecodedAudio audio,
-        Func<AudioAnalysis, AnalysisFile> sidecar,
-        Action record
+        string? from,
+        double? bpm,
+        Func<AudioAnalysis, AnalysisFile> sidecar
     )
     {
         var size = new FileInfo(target).Length;
-        var (from, transients) = TransientsFor(
+        var (transientsFrom, transients) = TransientsFor(
             target,
             Own(target)?.Analysis,
             sameKind,
@@ -169,19 +232,9 @@ public sealed class SidecarWriter(
             size
         );
 
-        // The user may have saved this stem in Live while it was being decoded.
-        if (Own(target) is { IsUsers: true })
-            return null;
-
-        sidecar(analysis).Write(StemFileName.AnalysisFor(target));
-        record();
-
-        if (from is null)
-            origins.RecordDetected(transients, target, detector.Version);
-        else if (!string.Equals(from, target, StringComparison.OrdinalIgnoreCase))
-            origins.RecordCopied(transients, target, from);
-
-        return new TransientSource(from);
+        return new SidecarPlan.Ready(
+            new PreparedSidecar(target, sidecar(analysis), from, bpm, transientsFrom)
+        );
     }
 
     private OwnSidecar? Own(string target) =>
@@ -268,14 +321,20 @@ public sealed class SidecarWriter(
         left.DefaultClip == right.DefaultClip
         && left.Warp.Markers.SequenceEqual(right.Warp.Markers);
 
+    private static bool Same(string left, string right) =>
+        string.Equals(
+            Path.GetFullPath(left),
+            Path.GetFullPath(right),
+            StringComparison.OrdinalIgnoreCase
+        );
+
+    private static SidecarPlan.Refused Refuse(WarpOutcome outcome) => new(outcome);
+
     private static WarpOutcome.Failed Undecodable(string target) =>
         new($"ffmpeg could not decode {Path.GetFileName(target)}");
 
     /// <param name="IsUsers">A saved default clip crateside did not write: the user's warp, never replaced.</param>
     private sealed record OwnSidecar(AnalysisFile Analysis, bool IsUsers, bool IsStarter);
-
-    /// <param name="From">The file whose Live-detected transients were used, or null if crateside detected them.</param>
-    private sealed record TransientSource(string? From);
 }
 
 public abstract record WarpOutcome
@@ -302,3 +361,25 @@ public abstract record WarpOutcome
 
     public sealed record Failed(string Error) : WarpOutcome;
 }
+
+/// <summary>A sidecar worked out and ready to write, or why there is none.</summary>
+public abstract record SidecarPlan
+{
+    private SidecarPlan() { }
+
+    public sealed record Ready(PreparedSidecar Sidecar) : SidecarPlan;
+
+    public sealed record Refused(WarpOutcome Outcome) : SidecarPlan;
+}
+
+/// <param name="Target">The audio file it was worked out for.</param>
+/// <param name="From">The sibling whose warp it carries, or null for a starter.</param>
+/// <param name="Bpm">A starter's tempo; null for a borrowed warp.</param>
+/// <param name="TransientsFrom">The file whose Live-detected transients it carries, or null if crateside detected them.</param>
+public sealed record PreparedSidecar(
+    string Target,
+    AnalysisFile File,
+    string? From,
+    double? Bpm,
+    string? TransientsFrom
+);
