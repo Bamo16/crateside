@@ -153,6 +153,41 @@ public sealed class WarpBorrowerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_recut_vocal_takes_the_warp_of_the_vocal_before_it_not_the_instrumentals()
+    {
+        var earlier = Path.Combine(_root, "Song (Vocal - Lead).flac");
+        WarpMarker[] shifted = [new(0.45, 1), new(2.45, 5)];
+        Audio(Target);
+        Audio(earlier);
+        Analysis(saved: true).Write($"{Sibling}.asd");
+        (Analysis(saved: true) with { Warp = new Warp { Markers = shifted } }).Write(
+            $"{earlier}.asd"
+        );
+
+        var outcome = await Borrower()
+            .BorrowAsync(Target, [Sibling], [earlier], TestContext.Current.CancellationToken);
+
+        Assert.Equal(earlier, Assert.IsType<WarpBorrowOutcome.Written>(outcome).From);
+        Assert.Equal(shifted, AnalysisFile.Read($"{Target}.asd").Warp.Markers);
+    }
+
+    [Fact]
+    public async Task Without_a_saved_cut_of_its_kind_a_stem_takes_the_instrumentals_warp()
+    {
+        var earlier = Path.Combine(_root, "Song (Vocal - Lead).flac");
+        Audio(Target);
+        Audio(earlier);
+        Analysis(saved: true).Write($"{Sibling}.asd");
+        Analysis(saved: false).Write($"{earlier}.asd");
+
+        var outcome = await Borrower()
+            .BorrowAsync(Target, [Sibling], [earlier], TestContext.Current.CancellationToken);
+
+        Assert.Equal(Sibling, Assert.IsType<WarpBorrowOutcome.Written>(outcome).From);
+        Assert.Equal(Markers, AnalysisFile.Read($"{Target}.asd").Warp.Markers);
+    }
+
+    [Fact]
     public async Task The_transients_Live_found_in_the_stems_own_analysis_are_kept()
     {
         Audio(Target);
@@ -178,7 +213,7 @@ public sealed class WarpBorrowerTests : IDisposable
         var outcome = await Borrower()
             .BorrowAsync(Target, [Sibling], [earlier], TestContext.Current.CancellationToken);
 
-        Assert.Equal(new WarpBorrowOutcome.Written(Sibling, earlier), outcome);
+        Assert.Equal(new WarpBorrowOutcome.Written(earlier, earlier), outcome);
         Assert.Equal(LiveFound, AnalysisFile.Read($"{Target}.asd").Audio.Transients);
     }
 
@@ -190,7 +225,7 @@ public sealed class WarpBorrowerTests : IDisposable
         File.WriteAllBytes(earlier, [1, 2, 3, 4]);
         Analysis(saved: true).Write($"{Sibling}.asd");
         Analysis(saved: false, transients: LiveFound, frames: Frames / 2).Write($"{Target}.asd");
-        Analysis(saved: true, transients: LiveFound).Write($"{earlier}.asd");
+        Analysis(saved: false, transients: LiveFound).Write($"{earlier}.asd");
 
         var outcome = await Borrower()
             .BorrowAsync(Target, [Sibling], [earlier], TestContext.Current.CancellationToken);

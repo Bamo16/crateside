@@ -107,9 +107,11 @@ against it.
   Default Clip* is pressed, so an analysis file with markers is a finished warp and one without is
   unwarped or still in progress ([ADR 0037](docs/adr/0037-a-saved-default-clip-is-a-finished-warp.md)).
 - **Borrowed warp** — a finished warp crateside copied onto a stem from a sibling cut from the
-  same upload: an instrumental, karaoke or the kept source, with its default clip saved. It counts
-  as finished, and stays *borrowed* until Live saves over the file
-  ([ADR 0043](docs/adr/0043-a-borrowed-warp-is-finished-and-says-where-it-came-from.md)).
+  same upload, with its default clip saved: a cut of the stem's own kind if there is one, else an
+  instrumental, karaoke or the kept source. It counts as finished, and stays *borrowed* until Live
+  saves over the file
+  ([ADR 0043](docs/adr/0043-a-borrowed-warp-is-finished-and-says-where-it-came-from.md),
+  [ADR 0045](docs/adr/0045-a-recut-takes-its-warp-from-its-own-kind-first.md)).
 - **Ready to move** — a track whose staged samples all have their default clip saved: warped, with
   only the move to **Mashup Samples** left.
 

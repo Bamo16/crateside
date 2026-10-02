@@ -1,6 +1,6 @@
 # 0043 — a borrowed warp is finished, and says where it came from
 
-- Status: Accepted; amended by [ADR 0044](0044-a-borrowed-warp-keeps-lives-transients-where-live-found-them.md), which takes Live's transients where Live found them and retires the reason lending ships off
+- Status: Accepted; amended by [ADR 0044](0044-a-borrowed-warp-keeps-lives-transients-where-live-found-them.md), which takes Live's transients where Live found them and retires the reason lending ships off, and by [ADR 0045](0045-a-recut-takes-its-warp-from-its-own-kind-first.md), which has a recut take its warp from its own kind first
 - Date: 2026-10-02
 - Amends [ADR 0037](0037-a-saved-default-clip-is-a-finished-warp.md). Builds
   [#54](https://github.com/Bamo16/crateside/issues/54).

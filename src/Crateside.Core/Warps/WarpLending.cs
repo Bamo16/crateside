@@ -18,26 +18,28 @@ public sealed class WarpLending(CratesidePaths paths, WarpBorrower borrower)
         {
             ct.ThrowIfCancellationRequested();
 
-            if (siblings.AuthoritiesFor(target) is not { Count: > 0 } authorities)
+            var authorities = siblings.AuthoritiesFor(target);
+            var sameKind = siblings.SameKindAs(target);
+
+            if (authorities is [] && sameKind is [])
                 continue;
 
-            var signature = Signature(target.Path, authorities);
+            IReadOnlyList<string> lenders =
+            [
+                .. authorities.Union(sameKind, StringComparer.OrdinalIgnoreCase),
+            ];
+            var signature = Signature(target.Path, lenders);
 
             if (_tried.TryGetValue(target.Path, out var tried) && tried == signature)
                 continue;
 
-            var outcome = await borrower.BorrowAsync(
-                target.Path,
-                authorities,
-                siblings.SameKindAs(target),
-                ct
-            );
+            var outcome = await borrower.BorrowAsync(target.Path, authorities, sameKind, ct);
 
             // A failure is a locked or half-written file, so it is tried again next time.
             if (outcome is WarpBorrowOutcome.Failed)
                 _tried.Remove(target.Path);
             else
-                _tried[target.Path] = Signature(target.Path, authorities);
+                _tried[target.Path] = Signature(target.Path, lenders);
 
             loans.Add(new WarpLoan(target.Path, outcome));
         }
@@ -45,14 +47,10 @@ public sealed class WarpLending(CratesidePaths paths, WarpBorrower borrower)
         return loans;
     }
 
-    private static string Signature(string target, IReadOnlyList<string> authorities) =>
+    private static string Signature(string target, IReadOnlyList<string> lenders) =>
         string.Join(
             '|',
-            [
-                Stamp(target),
-                Stamp($"{target}.asd"),
-                .. authorities.Select(path => Stamp($"{path}.asd")),
-            ]
+            [Stamp(target), Stamp($"{target}.asd"), .. lenders.Select(path => Stamp($"{path}.asd"))]
         );
 
     private static string Stamp(string path) =>

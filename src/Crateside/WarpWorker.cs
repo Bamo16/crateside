@@ -67,7 +67,7 @@ public sealed class WarpWorker(
 
             case WarpBorrowOutcome.SiblingsDisagree(var siblings):
                 logger.LogWarning(
-                    "Not warping {Target}: its instrumentals hold different warps ({Siblings})",
+                    "Not warping {Target}: the stems it could take a warp from hold different ones ({Siblings})",
                     target,
                     string.Join(", ", siblings.Select(Path.GetFileName))
                 );

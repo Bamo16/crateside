@@ -14,7 +14,7 @@ public sealed class WarpBorrower(
 )
 {
     /// <param name="authorities">The target's siblings whose warp is the track's; see <see cref="WarpSiblings"/>.</param>
-    /// <param name="sameKind">The target's siblings of its own kind, whose transients Live may have detected.</param>
+    /// <param name="sameKind">The target's siblings of its own kind, whose warp it takes first, since a vocal's may be shifted.</param>
     public async Task<WarpBorrowOutcome> BorrowAsync(
         string target,
         IReadOnlyList<string> authorities,
@@ -31,10 +31,11 @@ public sealed class WarpBorrower(
             if (own is { IsDefaultClipSaved: true })
                 return new WarpBorrowOutcome.AlreadyWarped();
 
-            var saved = authorities
-                .Select(path => (Path: path, Analysis: ReadSaved(path)))
-                .Where(sibling => sibling.Analysis is not null)
-                .ToList();
+            // A sidecar crateside wrote holds a copied warp, not one the user made for that kind.
+            var saved = SavedAmong(sameKind.Where(path => borrowed.BorrowedFrom(path) is null))
+                is { Count: > 0 } ownKind
+                ? ownKind
+                : SavedAmong(authorities);
 
             if (saved is [])
                 return new WarpBorrowOutcome.NoWarpedSibling();
@@ -86,6 +87,15 @@ public sealed class WarpBorrower(
             return new WarpBorrowOutcome.Failed(ex.Message);
         }
     }
+
+    private static List<(string Path, AnalysisFile? Analysis)> SavedAmong(
+        IEnumerable<string> siblings
+    ) =>
+        [
+            .. siblings
+                .Select(path => (Path: path, Analysis: ReadSaved(path)))
+                .Where(sibling => sibling.Analysis is not null),
+        ];
 
     /// <summary>The sibling's analysis when its default clip is saved, which Live needs to apply a warp.</summary>
     private static AnalysisFile? ReadSaved(string audioPath) =>
@@ -162,7 +172,7 @@ public abstract record WarpBorrowOutcome
 
     public sealed record NoWarpedSibling : WarpBorrowOutcome;
 
-    /// <summary>Two instrumentals of the track hold different warps, which is the user's to settle (#54).</summary>
+    /// <summary>Two stems it could take a warp from hold different ones, which is the user's to settle (#54).</summary>
     public sealed record SiblingsDisagree(IReadOnlyList<string> Siblings) : WarpBorrowOutcome;
 
     /// <param name="SiblingFrames">The sibling's length in sample frames when Live analysed it.</param>
