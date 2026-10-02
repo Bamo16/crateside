@@ -68,29 +68,6 @@ public sealed record RunEvidence
     /// <summary>The warp recommendation.</summary>
     public double? Bpm { get; init; }
 
-    public string? BpmSource { get; init; }
-
-    /// <summary>
-    /// The runner's own tempo estimate — often wrong, by a factor of two especially, so a
-    /// cross-check and never the answer.
-    /// </summary>
-    public double? BeatdetectBpm { get; init; }
-
-    /// <summary>
-    /// How far off an exact tempo octave still counts as the same tempo, in log2 space so that
-    /// doubling and halving are treated alike.
-    /// </summary>
-    private const double OctaveTolerance = 0.05;
-
-    /// <summary>
-    /// True when the two BPM figures are not a clean tempo-octave apart, so one of them is wrong.
-    /// </summary>
-    public bool BpmConflicts =>
-        Bpm is { } bpm and > 0
-        && BeatdetectBpm is { } rough and > 0
-        && Math.Abs(bpm - rough) > 1
-        && Math.Abs(Math.Log2(rough / bpm) - Math.Round(Math.Log2(rough / bpm))) > OctaveTolerance;
-
     /// <summary>The latest recorded run for a song identity, or null when the ledger has never seen it.</summary>
     public static RunEvidence? ReadLatestFor(string ledgerPath, string song) =>
         ReadLatest(ledgerPath).GetValueOrDefault(song);
@@ -194,8 +171,6 @@ public sealed record RunEvidence
                 }),
             ],
             Bpm = dto.Bpm?.Value,
-            BpmSource = dto.Bpm?.Source,
-            BeatdetectBpm = dto.Bpm?.Beatdetect,
         };
 }
 

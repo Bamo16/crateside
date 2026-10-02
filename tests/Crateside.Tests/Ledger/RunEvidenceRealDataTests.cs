@@ -182,29 +182,4 @@ public sealed class RunEvidenceRealDataTests
         Assert.All(pairs.Where(p => p.Agrees), p => Assert.NotNull(p.Recommended));
         Assert.All(pairs.Where(p => p.Status == "none"), p => Assert.False(p.Agrees));
     }
-
-    [Fact]
-    public void A_bpm_conflict_means_something_other_than_a_tempo_octave()
-    {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
-
-        Assert.All(
-            All().Where(e => e.BpmConflicts),
-            e =>
-            {
-                Assert.NotNull(e.Bpm);
-                Assert.NotNull(e.BeatdetectBpm);
-
-                var ratio = e.BeatdetectBpm!.Value / e.Bpm!.Value;
-
-                // Proportional to the octave: an absolute tolerance is looser below 1x than above it.
-                bool NearlyAt(double octave) => Math.Abs(ratio - octave) / octave < 0.02;
-
-                Assert.False(
-                    NearlyAt(2) || NearlyAt(0.5),
-                    $"{e.Song}: {ratio:F3} is a tempo octave and should not be flagged."
-                );
-            }
-        );
-    }
 }
