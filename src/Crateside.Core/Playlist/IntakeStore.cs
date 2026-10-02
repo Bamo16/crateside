@@ -70,6 +70,43 @@ public sealed class IntakeStore(string? path = null)
     }
 
     /// <summary>
+    /// The entries that are new arrivals: tracks never taken on, and tracks whose entry crateside
+    /// removed that the user has added again (#84). Records the first and puts the second back in
+    /// line to be removed.
+    /// </summary>
+    public IReadOnlyList<QueueItem> Arrive(IReadOnlyList<QueueItem> held)
+    {
+        lock (_gate)
+        {
+            var removed = Read()
+                .Where(record => record is { RemovalAttemptedAt: not null, RemovalFailure: null })
+                .ToDictionary(record => record.VideoId, StringComparer.Ordinal);
+
+            // A new entry has a new ID; the one crateside removed, read again from a stale
+            // playlist, does not.
+            var again = held.Where(item =>
+                    item.PlaylistItemId is { } entry
+                    && removed.TryGetValue(item.VideoId, out var record)
+                    && entry != record.RemovedEntryId
+                )
+                .ToList();
+
+            if (again.Count is not 0)
+                Update(
+                    again.Select(item => item.VideoId),
+                    record => record with { RemovalAttemptedAt = null, RemovedEntryId = null }
+                );
+
+            var known = Read().Select(record => record.VideoId).ToHashSet(StringComparer.Ordinal);
+            var fresh = held.Where(item => !known.Contains(item.VideoId)).ToList();
+
+            Record(fresh);
+
+            return [.. fresh, .. again];
+        }
+    }
+
+    /// <summary>
     /// Takes tracks crateside already knows of into the intake, for a store that predates it.
     /// </summary>
     public void Backfill(IEnumerable<string> videoIds)
@@ -91,15 +128,37 @@ public sealed class IntakeStore(string? path = null)
     /// Records that these entries have been offered back, so no scan offers them again. Call it
     /// before the removal, never after.
     /// </summary>
-    public void MarkRemovalAttempted(IEnumerable<string> videoIds, DateTimeOffset at) =>
-        SetRemovalAttempted(videoIds, at);
+    /// <param name="entries">The playlist entry offered for each video, so a later re-add is told from a stale read.</param>
+    public void MarkRemovalAttempted(
+        IEnumerable<string> videoIds,
+        DateTimeOffset at,
+        IReadOnlyDictionary<string, string>? entries = null
+    ) =>
+        Update(
+            videoIds,
+            record =>
+                record with
+                {
+                    RemovalAttemptedAt = at,
+                    RemovedEntryId = entries?.GetValueOrDefault(record.VideoId),
+                }
+        );
 
     /// <summary>
     /// Puts these entries back in line to be offered — only for a removal that never reached the
     /// API and so spent no quota (#34).
     /// </summary>
     public void ClearRemovalAttempted(IEnumerable<string> videoIds) =>
-        SetRemovalAttempted(videoIds, null);
+        Update(
+            videoIds,
+            record =>
+                record with
+                {
+                    RemovalAttemptedAt = null,
+                    RemovedEntryId = null,
+                    RemovalFailure = null,
+                }
+        );
 
     /// <summary>Keeps why each of these entries was left in the playlist.</summary>
     public void RecordRemovalFailures(IReadOnlyDictionary<string, RemovalFailure> byVideoId) =>
@@ -111,18 +170,6 @@ public sealed class IntakeStore(string? path = null)
     /// <summary>Forgets why these entries were left, once they are gone from the playlist however they went.</summary>
     public void ForgetRemovalFailures(IEnumerable<string> videoIds) =>
         Update(videoIds, record => record with { RemovalFailure = null });
-
-    // A cleared attempt takes its failure with it: the entry is back in line, not still failed.
-    private void SetRemovalAttempted(IEnumerable<string> videoIds, DateTimeOffset? at) =>
-        Update(
-            videoIds,
-            record =>
-                record with
-                {
-                    RemovalAttemptedAt = at,
-                    RemovalFailure = at is null ? null : record.RemovalFailure,
-                }
-        );
 
     private void Update(IEnumerable<string> videoIds, Func<IntakeRecord, IntakeRecord> change)
     {
@@ -254,6 +301,9 @@ public sealed record IntakeRecord
 
     /// <summary>Why the removal failed, or null when it did not (#34).</summary>
     public RemovalFailure? RemovalFailure { get; init; }
+
+    /// <summary>The playlist entry crateside offered back. Null on records older than #84.</summary>
+    public string? RemovedEntryId { get; init; }
 }
 
 /// <summary>Why a playlist entry was left behind, kept because nothing retries it on its own.</summary>

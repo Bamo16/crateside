@@ -133,4 +133,5 @@ public enum UserActionKind
     BumpCleared,
     RemovedFromPlaylist,
     Forgotten,
+    ArrivedAlreadyFiled,
 }

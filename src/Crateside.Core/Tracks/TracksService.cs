@@ -1,3 +1,4 @@
+using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Core.Tracks;
@@ -27,6 +28,9 @@ public sealed class TracksService : IDisposable
     /// <summary>Whether a read has landed yet, which is what makes the first one different.</summary>
     private bool _seeded;
 
+    private readonly ActionLog? _actions;
+    private DateTimeOffset _filedSince;
+
     /// <param name="freshness">
     /// How stale the rows may get with nothing announced. Zero turns the poll off.
     /// </param>
@@ -34,13 +38,16 @@ public sealed class TracksService : IDisposable
         ReadTracks read,
         StageHub hub,
         TimeProvider? time = null,
-        Func<TimeSpan>? freshness = null
+        Func<TimeSpan>? freshness = null,
+        ActionLog? actions = null
     )
     {
         _read = read;
+        _actions = actions;
         _freshness = freshness ?? (() => TimeSpan.Zero);
         _hub = hub;
         _time = time ?? TimeProvider.System;
+        _filedSince = _time.GetUtcNow();
 
         _timer = _time.CreateTimer(
             _ => _ = RefreshAsync(),
@@ -59,6 +66,9 @@ public sealed class TracksService : IDisposable
 
     /// <summary>Raised the first time a track is seen to be ready to warp, once per track.</summary>
     public event Action<TrackRow>? ReadyToWarp;
+
+    /// <summary>Raised once for each track taken from the playlist whose song was already filed (#84).</summary>
+    public event Action<UserAction>? AlreadyFiled;
 
     /// <summary>The rows as last built, or null before the first read.</summary>
     public TracksView? Current { get; private set; }
@@ -105,6 +115,8 @@ public sealed class TracksService : IDisposable
         if (Current is { } current)
             Announce(current);
 
+        AnnounceFiled();
+
         Changed?.Invoke();
     }
 
@@ -136,6 +148,33 @@ public sealed class TracksService : IDisposable
 
         foreach (var row in fresh)
             ReadyToWarp?.Invoke(row);
+    }
+
+    private void AnnounceFiled()
+    {
+        if (_actions is null)
+            return;
+
+        List<UserAction> filed;
+
+        lock (_announced)
+        {
+            filed =
+            [
+                .. _actions
+                    .All()
+                    .Where(action =>
+                        action is { Kind: UserActionKind.ArrivedAlreadyFiled }
+                        && action.At > _filedSince
+                    ),
+            ];
+
+            if (filed is [.., var last])
+                _filedSince = last.At;
+        }
+
+        foreach (var action in filed)
+            AlreadyFiled?.Invoke(action);
     }
 
     private Task PollAsync() =>

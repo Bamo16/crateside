@@ -1,4 +1,5 @@
 using Crateside.Core.Ledger;
+using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
 using Microsoft.Extensions.Options;
@@ -26,7 +27,8 @@ public sealed class QueueService(
     IntakeStore intake,
     ReadReopenedTracks? reopened = null,
     ReadReopenedTracks? awaitingCut = null,
-    ReadPresetCatalog? presets = null
+    ReadPresetCatalog? presets = null,
+    ActionLog? actions = null
 )
 {
     /// <summary>How long a playlist read is reused before going back to the API.</summary>
@@ -193,7 +195,7 @@ public sealed class QueueService(
     public async Task<QueueScan> ScanAsync(CancellationToken ct = default)
     {
         var held = Pasted(await ItemsAsync(ct));
-        var items = TakenOn(held);
+        var (items, arrivals) = TakenOn(held);
 
         if (PlaylistProblem is null)
             intake.ForgetRemovalFailures(
@@ -211,6 +213,8 @@ public sealed class QueueService(
         // Deliberately not counted as processed: that would let the janitor discard the
         // working set. It does mean the GPU has already run this track.
         var parked = ProcessedTracks.Scan(ledger, [_paths.StemsUnresolvedKey]);
+
+        NoteFiledArrivals(arrivals, processed, ledger);
 
         var instructions = settings
             .Read()
@@ -261,15 +265,85 @@ public sealed class QueueService(
     /// Everything crateside has taken on: what the playlist holds now, plus what it held once
     /// (ADR 0021).
     /// </summary>
-    private IReadOnlyList<QueueItem> TakenOn(IReadOnlyList<QueueItem> held)
+    private (IReadOnlyList<QueueItem> Items, IReadOnlyList<QueueItem> Arrivals) TakenOn(
+        IReadOnlyList<QueueItem> held
+    )
     {
         var owed = Owed().ToHashSet(StringComparer.Ordinal);
 
-        intake.Record(held);
+        // A first read takes on the whole playlist at once; none of it is news.
+        var isFirstRead = intake.Read().Count is 0;
+        var arrivals = intake.Arrive(held);
+
         intake.Backfill(owed);
         intake.Prune(owed, held.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal));
 
-        return IntakeStore.Merge(held, intake.Read());
+        return (IntakeStore.Merge(held, intake.Read()), isFirstRead ? [] : arrivals);
+    }
+
+    /// <summary>
+    /// Tells each arrival's activity that its song is already filed, since nothing else would
+    /// show that the add worked (#84).
+    /// </summary>
+    private void NoteFiledArrivals(
+        IReadOnlyList<QueueItem> arrivals,
+        ProcessedTracks processed,
+        KeyLedger ledger
+    )
+    {
+        if (actions is null)
+            return;
+
+        foreach (var arrival in arrivals)
+            if (FiledWhere(arrival, processed, ledger, _paths.MashupSamples) is { } where)
+                actions.Record(arrival.VideoId, UserActionKind.ArrivedAlreadyFiled, where);
+    }
+
+    /// <summary>
+    /// Where the arrival's song already has files, by song rather than upload, or null when it has
+    /// none. A song known only by a lookalike name is said to look like one.
+    /// </summary>
+    internal static string? FiledWhere(
+        QueueItem arrival,
+        ProcessedTracks processed,
+        KeyLedger ledger,
+        string finishedRoot
+    )
+    {
+        var known = ledger.SongFor(arrival.VideoId);
+        var song =
+            known
+            ?? (
+                Lookalikes.TryFind(arrival.Title, ledger, out var lookalike) ? lookalike.Song : null
+            );
+
+        var stems = processed
+            .StemsByVideoId.Where(entry =>
+                entry.Key.Equals(arrival.VideoId, StringComparison.Ordinal)
+                || (
+                    song is not null
+                    && string.Equals(
+                        ledger.SongFor(entry.Key),
+                        song,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+            )
+            .SelectMany(entry => entry.Value)
+            .ToList();
+
+        if (stems is [])
+            return null;
+
+        var place = stems.Any(stem =>
+            stem.Root.Equals(finishedRoot, StringComparison.OrdinalIgnoreCase)
+        )
+            ? "Mashup Samples"
+            : "Sample Staging";
+
+        return known is null && processed.StemsFor(arrival.VideoId) is []
+            ? $"looks like one in {place}"
+            : $"in {place}";
     }
 
     /// <summary>
@@ -321,7 +395,17 @@ public sealed class QueueService(
         // rather than reporting a fault — which is what it did.
         var offered = entries.Select(item => item.VideoId).ToList();
 
-        intake.MarkRemovalAttempted(offered, DateTimeOffset.UtcNow);
+        intake.MarkRemovalAttempted(
+            offered,
+            DateTimeOffset.UtcNow,
+            entries
+                .DistinctBy(item => item.VideoId)
+                .ToDictionary(
+                    item => item.VideoId,
+                    item => item.PlaylistItemId!,
+                    StringComparer.Ordinal
+                )
+        );
 
         try
         {

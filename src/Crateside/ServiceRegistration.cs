@@ -151,7 +151,8 @@ public static class ServiceRegistration
                         )
                     )
                     .ToHashSet(StringComparer.Ordinal),
-            sp.GetRequiredService<PresetCatalogReader>().ReadAsync
+            sp.GetRequiredService<PresetCatalogReader>().ReadAsync,
+            sp.GetRequiredService<ActionLog>()
         ));
         return services;
     }
@@ -440,7 +441,8 @@ public static class ServiceRegistration
                 };
             },
             sp.GetRequiredService<StageHub>(),
-            freshness: () => sp.GetRequiredService<QueueSettingsStore>().Read().RefreshInterval
+            freshness: () => sp.GetRequiredService<QueueSettingsStore>().Read().RefreshInterval,
+            actions: sp.GetRequiredService<ActionLog>()
         ));
 
         return services;

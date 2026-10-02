@@ -373,9 +373,25 @@
 
     <div class="spacer" @ref="_spacer"></div>
 
-    @if (_toasts.Count > 0 || _consentToast || _removed is not null)
+    @if (_toasts.Count > 0 || _consentToast || _removed is not null || _filed.Count > 0)
     {
         <div class="toasts">
+            @foreach (var filed in _filed)
+            {
+                <div class="toast">
+                    <span class="eyebrow">Already filed</span>
+                    <span class="toast-song">@(filed.Row?.Title ?? filed.Action.VideoId)</span>
+                    <span class="toast-foot">
+                        @Sentence(filed.Action.Detail ?? "already filed")
+                        @if (filed.Row is { } row)
+                        {
+                            <a class="show" href="@($"tracks#{Anchor(row)}")" @onclick="() => Show(row)">
+                                Show row
+                            </a>
+                        }
+                    </span>
+                </div>
+            }
             @if (_removed is { } removed)
             {
                 <div class="toast">
@@ -443,6 +459,7 @@
     private string _search = string.Empty;
 
     private readonly List<TrackRow> _toasts = [];
+    private readonly List<(UserAction Action, TrackRow? Row)> _filed = [];
 
     private readonly CancellationTokenSource _circuit = new();
 
@@ -591,6 +608,7 @@
 
         Source.Changed += OnChanged;
         Source.ReadyToWarp += OnReadyToWarp;
+        Source.AlreadyFiled += OnAlreadyFiled;
         Separation.Changed += OnChanged;
         Judging.Changed += OnChanged;
 
@@ -658,6 +676,7 @@
     {
         Source.Changed -= OnChanged;
         Source.ReadyToWarp -= OnReadyToWarp;
+        Source.AlreadyFiled -= OnAlreadyFiled;
         Separation.Changed -= OnChanged;
         Judging.Changed -= OnChanged;
 
@@ -702,6 +721,33 @@
         }
 
         _toasts.Remove(row);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnAlreadyFiled(UserAction action)
+    {
+        var filed = (action, Source.Current?.Rows.FirstOrDefault(row => row.VideoId == action.VideoId));
+
+        _filed.Insert(0, filed);
+        _ = InvokeAsync(StateHasChanged);
+        _ = DismissFiled(filed);
+    }
+
+    private static string Sentence(string text) => $"{char.ToUpperInvariant(text[0])}{text[1..]}.";
+
+    private async Task DismissFiled((UserAction Action, TrackRow? Row) filed)
+    {
+        try
+        {
+            await Task.Delay(ToastLife, _circuit.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        _filed.Remove(filed);
 
         await InvokeAsync(StateHasChanged);
     }
