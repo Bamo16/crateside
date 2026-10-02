@@ -53,11 +53,14 @@ public sealed class WarpWorker(
 
         switch (loan.Outcome)
         {
-            case WarpBorrowOutcome.Written(var from):
+            case WarpBorrowOutcome.Written(var from, var transientsFrom):
                 logger.LogInformation(
-                    "Warped {Target} with the warp of {From}",
+                    "Warped {Target} with the warp of {From}, transients {Transients}",
                     target,
-                    Path.GetFileName(from)
+                    Path.GetFileName(from),
+                    transientsFrom is null
+                        ? "detected by crateside"
+                        : $"from Live's analysis of {Path.GetFileName(transientsFrom)}"
                 );
 
                 break;

@@ -53,10 +53,35 @@ public sealed class WarpLendingTests : IDisposable
         var loans = await _lending.LendAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(
-            new WarpLoan(recut, new WarpBorrowOutcome.Written(finished)),
+            new WarpLoan(recut, new WarpBorrowOutcome.Written(finished, null)),
             Assert.Single(loans)
         );
         Assert.True(AnalysisFile.Read($"{recut}.asd").IsDefaultClipSaved);
+    }
+
+    [Fact]
+    public async Task A_recut_instrumental_keeps_the_transients_Live_found_in_the_one_it_replaces()
+    {
+        var finished = Stem(
+            _paths.MashupSamples,
+            "Song (Instrumental - Full).flac",
+            "Instrumental - Full"
+        );
+        Transient[] live = [new(500, 1), new(9_000, 0.3f)];
+        Saved(finished, live);
+        var recut = Stem(
+            _paths.SampleStaging,
+            "Song (Instrumental - Clean).flac",
+            "Instrumental - Clean"
+        );
+
+        var loans = await _lending.LendAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            new WarpLoan(recut, new WarpBorrowOutcome.Written(finished, finished)),
+            Assert.Single(loans)
+        );
+        Assert.Equal(live, AnalysisFile.Read($"{recut}.asd").Audio.Transients);
     }
 
     [Fact]
@@ -106,10 +131,15 @@ public sealed class WarpLendingTests : IDisposable
         return path;
     }
 
-    private static void Saved(string path) =>
+    private static void Saved(string path, Transient[]? transients = null) =>
         new AnalysisFile
         {
-            Audio = AudioAnalysis.FromSamples(new float[Frames * 2], 2, [], 1),
+            Audio = AudioAnalysis.FromSamples(
+                new float[Frames * 2],
+                2,
+                transients ?? [],
+                new FileInfo(path).Length
+            ),
             Warp = new Warp { Markers = [new(0.1, 0), new(0.4, 1)] },
             Clip = new Clip
             {

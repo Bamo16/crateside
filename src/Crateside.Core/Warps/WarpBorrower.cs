@@ -5,7 +5,7 @@ namespace Crateside.Core.Warps;
 
 /// <summary>
 /// Gives a stem the finished warp of a sibling cut from the same upload, by writing its sidecar
-/// with the sibling's clip and warp and its own waveform and transients (#54, ADR 0043).
+/// with the sibling's clip and warp and its own waveform and transients (#54, ADR 0043, ADR 0044).
 /// </summary>
 public sealed class WarpBorrower(
     IAudioDecoder decoder,
@@ -14,9 +14,11 @@ public sealed class WarpBorrower(
 )
 {
     /// <param name="authorities">The target's siblings whose warp is the track's; see <see cref="WarpSiblings"/>.</param>
+    /// <param name="sameKind">The target's siblings of its own kind, whose transients Live may have detected.</param>
     public async Task<WarpBorrowOutcome> BorrowAsync(
         string target,
         IReadOnlyList<string> authorities,
+        IReadOnlyList<string> sameKind,
         CancellationToken ct = default
     )
     {
@@ -24,7 +26,9 @@ public sealed class WarpBorrower(
 
         try
         {
-            if (sidecar.Exists && AnalysisFile.Read(sidecar.FullName).IsDefaultClipSaved)
+            var own = sidecar.Exists ? AnalysisFile.Read(sidecar.FullName) : null;
+
+            if (own is { IsDefaultClipSaved: true })
                 return new WarpBorrowOutcome.AlreadyWarped();
 
             var saved = authorities
@@ -55,11 +59,14 @@ public sealed class WarpBorrower(
                     audio.Frames
                 );
 
+            var size = new FileInfo(target).Length;
+            var (transientsFrom, transients) = TransientsFor(target, own, sameKind, audio, size);
+
             var analysis = AudioAnalysis.FromSamples(
                 audio.Samples,
                 audio.ChannelCount,
-                detector.Detect(audio),
-                new FileInfo(target).Length
+                transients,
+                size
             );
 
             // The user may have saved this stem in Live while it was being decoded.
@@ -71,7 +78,7 @@ public sealed class WarpBorrower(
             (warp with { Audio = analysis }).Write(sidecar.FullName);
             borrowed.Record(target, from);
 
-            return new WarpBorrowOutcome.Written(from);
+            return new WarpBorrowOutcome.Written(from, transientsFrom);
         }
         catch (Exception ex)
             when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
@@ -87,6 +94,57 @@ public sealed class WarpBorrower(
             ? analysis
             : null;
 
+    /// <summary>Live's transients from the target's own analysis or a same-kind sibling's, else crateside's (ADR 0044).</summary>
+    private (string? From, IReadOnlyList<Transient> Transients) TransientsFor(
+        string target,
+        AnalysisFile? own,
+        IReadOnlyList<string> sameKind,
+        DecodedAudio audio,
+        long size
+    )
+    {
+        if (own is not null && LiveTransients(own, size, audio.Frames) is { } live)
+            return (target, live);
+
+        foreach (var path in sameKind)
+        {
+            if (LiveTransients(path, audio.Frames) is { } copied)
+                return (path, copied);
+        }
+
+        return (null, detector.Detect(audio));
+    }
+
+    private IReadOnlyList<Transient>? LiveTransients(string audioPath, int frames)
+    {
+        try
+        {
+            return
+                borrowed.BorrowedFrom(audioPath) is null
+                && AnalysisFile.TryRead(StemFileName.AnalysisFor(audioPath), out var analysis)
+                ? LiveTransients(analysis, new FileInfo(audioPath).Length, frames)
+                : null;
+        }
+        catch (Exception ex)
+            when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The transients Live detected, when the analysis describes audio of this size and length.</summary>
+    private static IReadOnlyList<Transient>? LiveTransients(
+        AnalysisFile analysis,
+        long size,
+        int frames
+    ) =>
+        analysis.Audio
+            is { Transients: { Count: > 0 } transients, HeadTable: [.., var analysed] } audio
+        && audio.OriginalFileSize == size
+        && analysed == frames
+            ? transients
+            : null;
+
     private static bool SameWarp(AnalysisFile left, AnalysisFile right) =>
         left.DefaultClip == right.DefaultClip
         && left.Warp.Markers.SequenceEqual(right.Warp.Markers);
@@ -96,7 +154,8 @@ public abstract record WarpBorrowOutcome
 {
     private WarpBorrowOutcome() { }
 
-    public sealed record Written(string From) : WarpBorrowOutcome;
+    /// <param name="TransientsFrom">The file whose Live-detected transients were copied, or null if crateside detected them.</param>
+    public sealed record Written(string From, string? TransientsFrom) : WarpBorrowOutcome;
 
     /// <summary>The target's own default clip is saved: the user's warp, never replaced (ADR 0037).</summary>
     public sealed record AlreadyWarped : WarpBorrowOutcome;

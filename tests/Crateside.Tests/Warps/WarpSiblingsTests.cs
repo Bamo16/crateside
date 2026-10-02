@@ -51,6 +51,27 @@ public sealed class WarpSiblingsTests : IDisposable
     }
 
     [Fact]
+    public void A_cut_of_the_same_kind_is_one_whose_preset_starts_with_the_same_word()
+    {
+        var target = Stem("Song (Vocal - Lead).flac", "Vocal - Lead");
+        Stem("Song (Vocal - Full).flac", "Vocal - Full");
+        Stem("Song (Instrumental - Full).flac", "Instrumental - Full");
+        Stem(
+            "Song (Vocal - Clean).flac",
+            "Vocal - Clean",
+            "https://www.youtube.com/watch?v=zyxwvutsrqp"
+        );
+
+        Assert.Equal(
+            ["Song (Vocal - Full).flac"],
+            WarpSiblings
+                .Scan([_root])
+                .SameKindAs(WarpSiblings.Read(target)!)
+                .Select(Path.GetFileName)
+        );
+    }
+
+    [Fact]
     public void An_adopted_file_neither_lends_a_warp_nor_takes_one()
     {
         var adopted = Stem("Song (Instrumental - Mix).flac", preset: null, adopted: true);

@@ -26,7 +26,12 @@ public sealed class WarpLending(CratesidePaths paths, WarpBorrower borrower)
             if (_tried.TryGetValue(target.Path, out var tried) && tried == signature)
                 continue;
 
-            var outcome = await borrower.BorrowAsync(target.Path, authorities, ct);
+            var outcome = await borrower.BorrowAsync(
+                target.Path,
+                authorities,
+                siblings.SameKindAs(target),
+                ct
+            );
 
             // A failure is a locked or half-written file, so it is tried again next time.
             if (outcome is WarpBorrowOutcome.Failed)
@@ -65,7 +70,7 @@ public sealed class WarpOptions
 
     /// <summary>
     /// Whether staged stems take their siblings' finished warps without being asked. Off until the
-    /// transient detector meets its bar on vocals (ADR 0043).
+    /// user has checked a borrowed warp in Live (ADR 0044).
     /// </summary>
     public bool LendAutomatically { get; set; }
 }

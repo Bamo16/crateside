@@ -24,7 +24,8 @@ public sealed class WarpSiblings
     public static SiblingFile? Read(string path) =>
         StemTagReader.Read(path)?.Provenance
             is { IsAdopted: false, SourceVideoId: { } videoId } provenance
-            ? new SiblingFile(path, videoId, IsAuthority(path, provenance))
+        && (provenance.Preset ?? StemFileName.PresetOf(path)) is var preset
+            ? new SiblingFile(path, videoId, IsAuthority(preset), preset?.Split(' ')[0])
             : null;
 
     /// <summary>Every other file cut from the target's upload whose warp is the track's (#54).</summary>
@@ -33,6 +34,17 @@ public sealed class WarpSiblings
             .. _byVideoId[target.SourceVideoId]
                 .Where(file =>
                     file.IsAuthority
+                    && !string.Equals(file.Path, target.Path, StringComparison.OrdinalIgnoreCase)
+                )
+                .Select(file => file.Path),
+        ];
+
+    /// <summary>Every other cut of the target's upload of the same kind, such as an earlier instrumental of a re-cut one.</summary>
+    public IReadOnlyList<string> SameKindAs(SiblingFile target) =>
+        [
+            .. _byVideoId[target.SourceVideoId]
+                .Where(file =>
+                    file.Kind == target.Kind
                     && !string.Equals(file.Path, target.Path, StringComparison.OrdinalIgnoreCase)
                 )
                 .Select(file => file.Path),
@@ -53,13 +65,13 @@ public sealed class WarpSiblings
     /// An instrumental, which the user warps the track by, or the kept source; a vocal may have been
     /// re-warped on its own. A kept source is known only by a name with no parenthetical.
     /// </summary>
-    private static bool IsAuthority(string path, StemProvenance provenance) =>
-        (provenance.Preset ?? StemFileName.PresetOf(path)) switch
+    private static bool IsAuthority(string? preset) =>
+        preset switch
         {
             null => true,
-            var preset => preset.StartsWith("Instrumental", StringComparison.Ordinal)
-                || preset is "Karaoke",
+            _ => preset.StartsWith("Instrumental", StringComparison.Ordinal) || preset is "Karaoke",
         };
 }
 
-public sealed record SiblingFile(string Path, string SourceVideoId, bool IsAuthority);
+/// <param name="Kind">The preset's first word (<c>Instrumental</c>, <c>Vocal</c>), or null for the kept source.</param>
+public sealed record SiblingFile(string Path, string SourceVideoId, bool IsAuthority, string? Kind);
