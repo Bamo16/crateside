@@ -1,0 +1,229 @@
+using AbleKit.Analysis;
+
+namespace Crateside.Core.Tempo;
+
+/// <summary>Where a track's transients land against a beat grid: how well a tempo fits, and where a warp drifts or steps.</summary>
+public static class GridCheck
+{
+    public const double WindowSeconds = 10;
+
+    /// <summary>How far the windows either side of a boundary must part, in ms, to count as a step.</summary>
+    public const double StepMs = 15;
+
+    private const int StepWindows = 3;
+    private const int MinPerWindow = 4;
+    private const int SixteenthsPerBeat = 4;
+
+    /// <summary>The louder half of the transients, in seconds: the quiet half is mostly ghost notes and bleed.</summary>
+    public static double[] Strongest(IReadOnlyList<Transient> transients, int sampleRate)
+    {
+        if (transients.Count is 0)
+            return [];
+
+        var median = transients
+            .Select(transient => transient.Energy)
+            .Order()
+            .ElementAt(transients.Count / 2);
+
+        return
+        [
+            .. transients
+                .Where(transient => transient.Energy >= median)
+                .Select(transient => (double)transient.Position / sampleRate),
+        ];
+    }
+
+    /// <summary>How tightly the transients sit on a 16th-note grid at <paramref name="bpm"/>, whatever its phase: 1 is every one on a line.</summary>
+    public static double Fit(IReadOnlyList<double> times, double bpm) =>
+        Concentration(times.Select(time => time * bpm / 60));
+
+    /// <summary>The tempo within <paramref name="span"/> BPM of <paramref name="bpm"/> that the transients fit best, to 0.0005.</summary>
+    public static double Refine(IReadOnlyList<double> times, double bpm, double span = 0.06)
+    {
+        const double Step = 0.0005;
+        var steps = (int)Math.Round(span / Step);
+
+        return Enumerable
+            .Range(-steps, 2 * steps + 1)
+            .Select(i => bpm + i * Step)
+            .MaxBy(candidate => Fit(times, candidate));
+    }
+
+    /// <summary>The transients against the grid a warp lays down, so an offset of 0 is a transient on its line.</summary>
+    public static GridReport Against(IReadOnlyList<double> times, Warp warp) =>
+        warp is { Markers.Count: > 1 }
+            ? Report(times, time => BeatAt(warp, time), 60 / Tempo(warp))
+            : new GridReport([], []);
+
+    /// <summary>The transients against one steady tempo, phased to fit them all, so the offsets centre on 0.</summary>
+    public static GridReport Against(IReadOnlyList<double> times, double bpm)
+    {
+        var phase = Phase(times.Select(time => time * bpm / 60));
+
+        return Report(times, time => time * bpm / 60 - phase / SixteenthsPerBeat, 60 / bpm);
+    }
+
+    private static GridReport Report(
+        IReadOnlyList<double> times,
+        Func<double, double> beatAt,
+        double secondsPerBeat
+    )
+    {
+        if (times.Count is 0)
+            return new GridReport([], []);
+
+        var sixteenth = secondsPerBeat / SixteenthsPerBeat * 1000;
+        List<GridWindow> windows = [];
+
+        for (var start = 0.0; start < times[^1]; start += WindowSeconds)
+        {
+            var inside = times
+                .Where(time => time >= start && time < start + WindowSeconds)
+                .ToArray();
+
+            if (inside.Length >= MinPerWindow)
+                windows.Add(
+                    new GridWindow(
+                        start,
+                        start + WindowSeconds,
+                        Phase(inside.Select(beatAt)) * sixteenth,
+                        inside.Length
+                    )
+                );
+        }
+
+        return new GridReport(windows, Steps(windows));
+    }
+
+    /// <summary>Boundaries where the windows after sit a settled distance from the windows before, largest first within a stretch.</summary>
+    private static List<GridStep> Steps(List<GridWindow> windows)
+    {
+        List<GridStep> steps = [];
+
+        for (var i = StepWindows; i <= windows.Count - StepWindows; i++)
+        {
+            var parted =
+                Median(windows.Skip(i).Take(StepWindows))
+                - Median(windows.Skip(i - StepWindows).Take(StepWindows));
+
+            if (Math.Abs(parted) < StepMs)
+                continue;
+
+            if (steps is [.., var last] && windows[i].Start - last.At < StepWindows * WindowSeconds)
+            {
+                if (Math.Abs(parted) > Math.Abs(last.Ms))
+                    steps[^1] = new GridStep(windows[i].Start, parted);
+
+                continue;
+            }
+
+            steps.Add(new GridStep(windows[i].Start, parted));
+        }
+
+        return steps;
+    }
+
+    private static double Median(IEnumerable<GridWindow> windows)
+    {
+        var sorted = windows.Select(window => window.OffsetMs).Order().ToArray();
+
+        return sorted.Length % 2 is 1
+            ? sorted[sorted.Length / 2]
+            : (sorted[sorted.Length / 2 - 1] + sorted[sorted.Length / 2]) / 2;
+    }
+
+    /// <summary>The mean position within a 16th of the given beats, as a fraction of a 16th from -½ to ½.</summary>
+    private static double Phase(IEnumerable<double> beats)
+    {
+        var (cos, sin, _) = Sum(beats);
+
+        return Math.Atan2(sin, cos) / (2 * Math.PI);
+    }
+
+    private static double Concentration(IEnumerable<double> beats) =>
+        Sum(beats) is (var cos, var sin, > 0 and var count)
+            ? Math.Sqrt(cos * cos + sin * sin) / count
+            : 0;
+
+    /// <summary>Each beat as a point on the circle one 16th long, summed.</summary>
+    private static (double Cos, double Sin, int Count) Sum(IEnumerable<double> beats)
+    {
+        var (cos, sin, count) = (0.0, 0.0, 0);
+
+        foreach (var beat in beats)
+        {
+            var angle = 2 * Math.PI * beat * SixteenthsPerBeat;
+            cos += Math.Cos(angle);
+            sin += Math.Sin(angle);
+            count++;
+        }
+
+        return (cos, sin, count);
+    }
+
+    /// <summary>The inverse of <see cref="Warp.SecondsAt"/>, extending the first and last segments.</summary>
+    private static double BeatAt(Warp warp, double seconds)
+    {
+        var markers = warp.Markers;
+        var i = 1;
+
+        while (i < markers.Count - 1 && seconds > markers[i].Seconds)
+            i++;
+
+        var (from, to) = (markers[i - 1], markers[i]);
+
+        return from.Beat
+            + (seconds - from.Seconds) * (to.Beat - from.Beat) / (to.Seconds - from.Seconds);
+    }
+
+    /// <summary>The warp's tempo end to end, for the length of a 16th.</summary>
+    private static double Tempo(Warp warp) =>
+        (warp.Markers[^1].Beat - warp.Markers[0].Beat)
+        / (warp.Markers[^1].Seconds - warp.Markers[0].Seconds)
+        * 60;
+}
+
+/// <param name="Windows">Each 10 s with enough transients, in order.</param>
+/// <param name="Steps">Where the offset jumps and stays, as when a section was pasted a hair late.</param>
+public sealed record GridReport(IReadOnlyList<GridWindow> Windows, IReadOnlyList<GridStep> Steps)
+{
+    /// <summary>How far the offsets move per minute, steps taken out; a wrong tempo shows here.</summary>
+    public double DriftMsPerMinute
+    {
+        get
+        {
+            if (Windows.Count < 2)
+                return 0;
+
+            var points = Windows
+                .Select(window =>
+                    (
+                        X: (window.Start + window.End) / 2 / 60,
+                        Y: window.OffsetMs
+                            - Steps.Where(step => step.At <= window.Start).Sum(step => step.Ms)
+                    )
+                )
+                .ToArray();
+            var (meanX, meanY) = (
+                points.Average(point => point.X),
+                points.Average(point => point.Y)
+            );
+
+            return points.Sum(point => (point.X - meanX) * (point.Y - meanY))
+                / points.Sum(point => (point.X - meanX) * (point.X - meanX));
+        }
+    }
+
+    /// <summary>The widest any window sits from another, in ms.</summary>
+    public double SpreadMs =>
+        Windows.Count is 0
+            ? 0
+            : Windows.Max(window => window.OffsetMs) - Windows.Min(window => window.OffsetMs);
+}
+
+/// <param name="OffsetMs">Where the window's transients sit on average against the grid; positive is late.</param>
+public readonly record struct GridWindow(double Start, double End, double OffsetMs, int Transients);
+
+/// <param name="At">The start of the first window after the step, in seconds.</param>
+/// <param name="Ms">How far the offset moved; positive is later.</param>
+public readonly record struct GridStep(double At, double Ms);
