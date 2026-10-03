@@ -1,6 +1,6 @@
 # 0049 — a BPM shows only the precision crateside can vouch for
 
-- Status: Accepted
+- Status: Accepted; its nominal tempo superseded by [ADR 0050](0050-a-warp-shows-as-itself-and-is-vouched-for-by-its-grid.md)
 - Date: 2026-10-02
 - Builds on [ADR 0038](0038-a-warps-bpm-is-the-stable-tempo-that-holds-longest.md) and
   [ADR 0048](0048-stems-arrive-in-staging-already-warped.md). Wording and look go to design brief 13.
@@ -61,6 +61,8 @@ The headline everywhere (Tracks, the song page, Counts' charts) is the strongest
 The song page may show the others beside it, each saying what it is.
 
 ### The nominal tempo
+
+*Superseded by ADR 0050, 2026-10-02: nothing is snapped; a warp shows as itself.*
 
 A tempo's value is its **nominal tempo**: the figure the track was made at, when the evidence says
 so, else the figure as measured.
