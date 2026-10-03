@@ -9,7 +9,6 @@ public sealed record TrackTempo
     /// <summary>The reading's window spread, in percent, at or under which it is good to the hundredth.</summary>
     public const double VouchedSpread = 0.02;
 
-    private const double ExactWithin = 1e-6;
     private const double SnapWithin = 0.003;
 
     // A guard against snapping a warp to a different tempo; the snapped warps in #91 sit at most 0.017 off.
@@ -145,19 +144,13 @@ public sealed record TrackTempo
             Value = Pairing.RePitch.ArrangementBpm(Value, semitones),
         };
 
-    private static double Nominal(double measured, BeatReading? reading, bool isWarp)
-    {
-        if (isWarp && Math.Abs(measured - Grid(measured)) <= ExactWithin)
-            return Grid(measured);
-
-        return
-            reading is { Bpm: { } read, Drift: <= VouchedSpread }
-            && Grid(read) is var grid
-            && Math.Abs(read - grid) <= SnapWithin
-            && Math.Abs(measured - grid) <= (isWarp ? WarpSnapsWithin : SnapWithin)
+    private static double Nominal(double measured, BeatReading? reading, bool isWarp) =>
+        reading is { Bpm: { } read, Drift: <= VouchedSpread }
+        && Grid(read) is var grid
+        && Math.Abs(read - grid) <= SnapWithin
+        && Math.Abs(measured - grid) <= (isWarp ? WarpSnapsWithin : SnapWithin)
             ? grid
             : measured;
-    }
 
     /// <summary>The nearest whole or half number.</summary>
     private static double Grid(double bpm) =>

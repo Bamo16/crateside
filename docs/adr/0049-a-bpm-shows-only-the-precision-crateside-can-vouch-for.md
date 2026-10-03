@@ -102,3 +102,12 @@ Two decimals or none, never one: `119.50`, matching Ableton.
   typed ones keep the number the user typed, as declarations. Listening settles which is right.
 - **The wording, chips and layout of each state are design's**, in brief 13. This ADR fixes what each
   state means, not how it looks.
+
+## Amended 2026-10-02: a typed warp is not a declaration
+
+#91 re-warped six tracks from scratch ([note](../notes/2026-10-02-the-six-warps-in-91.md)). Both
+typed whole-number warps were wrong, most likely copied from crateside's whole-number BPM: *Blow
+the Whistle* is 99.98, not 100, and *If You Like It* 127.98, not 128. So an exact warp gets no
+special standing. It is held to the same snap as any other warp, which leaves every figure shown
+unchanged: a warp that typed 128 still shows `128`, through the snap when the reading agrees and as
+its own figure when it does not. The snap itself gave the settled figure on all six.

@@ -8,13 +8,11 @@ namespace Crateside.Tests.Tempo;
 public sealed class TrackTempoTests
 {
     [Theory]
-    [InlineData(128.0000004, 128)]
-    [InlineData(119.5000003, 119.5)]
-    [InlineData(85.52, 85.52)]
-    public void A_warp_on_a_whole_or_half_to_a_millionth_is_the_users_declaration(
-        double warped,
-        double nominal
-    ) => Assert.Equal(nominal, Warped(warped).Value);
+    [InlineData(128.0000004, "128")]
+    [InlineData(119.5000003, "119.50")]
+    [InlineData(85.52, "85.52")]
+    public void A_warp_with_no_reading_is_shown_as_warped(double warped, string shown) =>
+        Assert.Equal(shown, TempoFormat.Format(Warped(warped)).Text);
 
     [Fact]
     public void A_snapped_warp_takes_the_grid_number_a_tight_reading_sits_on()
