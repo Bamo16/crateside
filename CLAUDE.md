@@ -20,8 +20,10 @@ things fixtures could not, repeatedly. Prefer a real-data test over a mock when 
 ## The AbleKit library
 
 Reading Ableton's files is its own repo, `Bamo16/AbleKit` (formerly AbletonSampleData), checked out
-beside this one at `V:\Repos\AbleKit` and project-referenced from `Crateside.Core` until it
-is on NuGet (#82). Library changes are committed there, on `main`, with its own CI. Crateside's interpretation
+beside this one at `V:\Repos\AbleKit` and project-referenced from `Crateside.Core`. It is on
+NuGet as a preview, but crateside stays on the project reference until AbleKit's public API settles
+(its `PublicAPI.Shipped.txt` stops being empty) or crateside gains a CI that cannot see the sibling
+checkout (decided 2026-10-03). Library changes are committed there, on `main`, with its own CI. Crateside's interpretation
 of Live's data (key spelling, genre, the keyword whitelist) stays in `src/Crateside.Core/Ableton/`.
 Nothing goes public with the user's surname on it: see memory `keep-real-name-off-public-work`.
 
