@@ -46,6 +46,9 @@ labels and decoration only, never a sentence.
 
 A thing that is none of these is monochrome. The evidence's source-kind badges are the example:
 filled for authoritative, outlined for corroborating, dashed for algorithmic and chords-only.
+The warp view's provenance chips are the second: filled for the user's warp, outlined for one
+borrowed from a sibling, dashed for a starter, Live's unsaved analysis or no warp yet; amber only
+while waiting on Live, teal only while crateside writes.
 
 ## Type
 
@@ -83,6 +86,32 @@ fails if a page formats one itself. Summaries go through `Bin` and `Range` and c
   (*agrees*, *half of it*, *double it*, *two-thirds of it*, *three-quarters of it*, *not warped
   yet*, *not read yet*). Figures that fit no relation say *conflict* in `--red`; a known relation
   is never red.
+
+## Warp view
+
+Handoff 14, `WarpView`. A **Warp** section in Track details' main column under the sample list,
+open, no fold, drawn when the track has samples.
+
+- **One time axis for the group**: the samples cut from the upload most of them share, in the
+  sample list's order; the warp guide is left out. Grid of 200px gutter · 12px · the plot.
+- **Head line**: `WARP`, then `{n} stems · one warp · {markers} · {mode}`, or `{stem} warped on its
+  own` at `--text` (the only loud thing; not coloured). Zoom pills right: *Whole track · 32 bars ·
+  8 bars*; zoomed, `bars 61–68 · 2:10–2:27` and `‹ ›` move by half a view.
+- **Rows**: overview strip (zoomed only, click to move) · ruler (loop bar, bar ticks, clip-start
+  notch; bars counted from the shared warp's clip start) · tempo line (step line from the shared
+  markers, dashed at the headline figure, ±1 BPM when steady, the rounded range when drifting) · one
+  64px lane per stem · time axis.
+- **A lane**: flags (7×9 pennants) where every visible pair is ≥ 9px apart, else 9px ticks with
+  faint lines; Live's overview at 42%, stereo as two channels; transients only when zoomed;
+  outside the clip dimmed with `--bg` at 62%; a stem with markers of its own boxed dashed from where
+  it parts. No sidecar: a dashed box with one line (amber while waiting for Live).
+- **Markers are the ones Live shows**: Live writes one more, 1/32 beat past the last, and that one is
+  never drawn or counted. A steady warp is *1 marker*.
+- **The selected lane's detail**: file name and chip, seven facts (Tempo · Mode · Markers ·
+  Transients · Clip · Loop · Default clip), the provenance sentence, then the two controls in the
+  side stack's status + action shape under a stronger rule. A control that does not apply keeps its
+  label and says why at `--text-40`. Confirms are `.danger`; the asking label turns amber.
+- Wording lives in `WarpWording` (Core); times in the audio read `0:14.20`, dates `29 Sep`.
 
 ## State chips
 
@@ -146,6 +175,8 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
 
 ## Sample list
 
+- *Where it is* reads `Sample Staging · warped` for any stem with a finished warp; which sibling a
+  warp came from is said by the warp view's chip, not here.
 - **Closed**: one boxed line per sample (Sample · Ableton key · Where it is, and a note only where
   there is one), then the dashed *Change what is cut* opener. No samples yet is a dashed
   placeholder.
@@ -295,6 +326,19 @@ Re-Pitch 540px, Partners 860px.
 ## Differs from the design
 
 Where the build departs from a canvas, by page. Clear an entry once a later design supersedes it.
+
+### Warp view (handoff 14, #97)
+
+- **Marker counts are the markers Live shows**, one fewer than the canvas: the brief's "two
+  markers" counted the hidden one Live writes past the last. A steady warp reads *1 marker*.
+- **Flags or ticks is decided at the 832px plot** the page has at its width cap, not measured in the
+  browser.
+- **The overview strip moves the view in hundredths of the track**: it is 100 click targets, not a
+  measured click position.
+- **Re-apply is also offered on a starter** when a sibling holds a warp of the user's, as for Live's
+  analysis; lending would replace it within a minute anyway.
+- **"Putting the warp back"** reads *Live wrote a fresh file. crateside puts the warp back within a
+  minute.* while it lasts; the worker puts warps back once a minute.
 
 ### README (handoff 04)
 

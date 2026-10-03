@@ -88,8 +88,10 @@
                 @if (_row is not null)
                 {
                     <section class="samples">
-                        <StemList Editor="_stems" Row="_row" />
+                        <StemList Editor="_stems" Row="_row" OnSelect="path => _selectedWarp = path" />
                     </section>
+
+                    <WarpView Row="_row" @bind-SelectedPath="_selectedWarp" />
                 }
 
                 @if (HasEvidenceSection)
@@ -136,6 +138,7 @@
     private RunEvidence? _run;
     private StemEditor _stems = null!;
     private Timer? _clock;
+    private string? _selectedWarp;
 
     private LedgerRun? Verdict => _row?.Verdict;
 

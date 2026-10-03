@@ -451,6 +451,7 @@ public sealed record TracksView
 
         return new TrackSample
         {
+            Path = file.Path,
             Label = classified.DisplayName ?? "source",
             Kind = classified.Kind,
             PresetId = classified.PresetId,

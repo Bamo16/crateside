@@ -286,6 +286,7 @@ public static class ServiceRegistration
         // Unattended for the same reason: writing a sidecar decodes on the CPU (ADR 0043, 0047).
         services.AddSingleton(_ => new WrittenWarps(WrittenWarps.DefaultPath));
         services.AddSingleton(_ => new TransientOrigins(TransientOrigins.DefaultPath));
+        services.AddSingleton(_ => new LiveAnalyses(LiveAnalyses.DefaultPath));
         services.AddSingleton(sp => new SidecarWriter(
             new FfmpegAudioDecoder(),
             new OnsetDetector(),
@@ -296,8 +297,17 @@ public static class ServiceRegistration
             sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SidecarWriter>(),
             sp.GetRequiredService<IOptions<WarpOptions>>().Value,
-            path => TrackTempo.StarterBpm(sp.GetRequiredService<BeatReader>().Read(path))
+            path => TrackTempo.StarterBpm(sp.GetRequiredService<BeatReader>().Read(path)),
+            sp.GetRequiredService<LiveAnalyses>()
         ));
+        services.AddSingleton(sp => new WarpActions(
+            sp.GetRequiredService<SidecarWriter>(),
+            sp.GetRequiredService<WrittenWarps>(),
+            sp.GetRequiredService<LiveAnalyses>(),
+            new SidecarBackups(SidecarBackups.DefaultRoot, TimeProvider.System),
+            TimeProvider.System
+        ));
+        services.AddSingleton<StemWarpReader>();
         services.AddSingleton(sp => new HandoffSidecars(
             sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SidecarWriter>(),

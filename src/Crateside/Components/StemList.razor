@@ -197,6 +197,10 @@ else
     [Parameter]
     public bool Headed { get; set; } = true;
 
+    /// <summary>A sample line was clicked outside picking, so the warp view selects its lane.</summary>
+    [Parameter]
+    public EventCallback<string> OnSelect { get; set; }
+
     private static string PickLabel(StemChoice line) =>
         line switch
         {
@@ -310,8 +314,6 @@ else
         sample switch
         {
             { IsInLibrary: true } => "Mashup Samples",
-            { HasDefaultClip: true, WarpBorrowedFrom: { } from } =>
-                $"Sample Staging · warped from {StemFileName.PresetOf(from) ?? "the source"}",
             { HasDefaultClip: true } => "Sample Staging · warped",
             _ => "Sample Staging",
         };
@@ -338,10 +340,12 @@ else
     private const string OpenersKey = "sources:openers";
     private const string OpenerKey = "opener";
 
-    private void Pick(StemChoice line, bool tickable)
+    private async Task Pick(StemChoice line, bool tickable)
     {
         if (tickable)
             Editor.Toggle(Row, line);
+        else if (line.Files is [var file, ..])
+            await OnSelect.InvokeAsync(file.Path);
     }
 
     /// <summary>The picker's lines in the list's order: Vocal, Instrumental, the whole track, other sources, then the rest.</summary>

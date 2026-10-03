@@ -504,6 +504,8 @@ public enum TrackNameSource
 /// </summary>
 public sealed record TrackSample
 {
+    public string Path { get; init; } = string.Empty;
+
     /// <summary>What the separator called this file — <c>Vocal - Full</c> — or <c>source</c>.</summary>
     public required string Label { get; init; }
 

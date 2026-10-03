@@ -27,6 +27,46 @@ public sealed class WrittenWarps(string? path = null)
     /// <summary>Whether this sample's sidecar is still one crateside wrote, and so crateside's to replace.</summary>
     public bool IsCratesides(string audioPath) => Current(audioPath) is not null;
 
+    /// <summary>The warp crateside last wrote into this sample's sidecar, even if Live or the user has saved over it since.</summary>
+    public WrittenWarp? Ever(string audioPath)
+    {
+        lock (_lock)
+        {
+            return _entries.GetValueOrDefault(SidecarOf(audioPath));
+        }
+    }
+
+    /// <summary>The samples whose sidecars still hold this sample's warp, lent by crateside.</summary>
+    public IReadOnlyList<string> LentTo(string audioPath)
+    {
+        var lender = Path.GetFullPath(audioPath);
+        List<string> sidecars;
+
+        lock (_lock)
+        {
+            sidecars =
+            [
+                .. _entries
+                    .Where(pair =>
+                        pair.Value.From is { } from
+                        && string.Equals(
+                            Path.GetFullPath(from),
+                            lender,
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    .Select(pair => pair.Key),
+            ];
+        }
+
+        return
+        [
+            .. sidecars
+                .Select(sidecar => sidecar[..^".asd".Length])
+                .Where(borrower => Current(borrower) is not null),
+        ];
+    }
+
     public void RecordBorrowed(string audioPath, string from) => Record(audioPath, from);
 
     public void RecordStarter(string audioPath) => Record(audioPath, null);

@@ -14,14 +14,15 @@ public sealed class WarpSiblings
         _byVideoId = files.ToLookup(file => file.SourceVideoId, StringComparer.Ordinal);
 
     public static WarpSiblings Scan(IEnumerable<string> roots) =>
-        new(
+        Of(
             roots
                 .Where(Directory.Exists)
                 .SelectMany(Directory.EnumerateFiles)
                 .Where(SampleFiles.IsAudio)
-                .Select(Read)
-                .OfType<SiblingFile>()
         );
+
+    public static WarpSiblings Of(IEnumerable<string> audioPaths) =>
+        new(audioPaths.Select(Read).OfType<SiblingFile>());
 
     /// <summary>Null when the file carries no upload to share, or was adopted rather than cut.</summary>
     public static SiblingFile? Read(string path) =>

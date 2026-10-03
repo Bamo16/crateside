@@ -1,0 +1,751 @@
+@using System.Globalization
+@using System.Text
+@using AbleKit.Analysis
+@using Crateside.Core
+@using Crateside.Core.Tempo
+@using Crateside.Core.Tracks
+@using Crateside.Core.Warps
+@implements IDisposable
+@inject StemWarpReader Reader
+@inject WarpActions Actions
+@inject LiveAnalyses Waiting
+@inject CratesidePaths Paths
+@inject TracksService Tracks
+
+@if (_group is { Stems.Count: > 0 } group)
+{
+    var wording = Wording(group);
+    var (from, to) = View(group);
+    var selected = Selected(group);
+
+    <section class="warp">
+        <div class="head">
+            <span class="section-label">Warp</span>
+            <span class="group-line @(group.OnTheirOwn.Any() ? "loud" : null)">@GroupLine(group, wording)</span>
+            @if (group.Lender is not null)
+            {
+                <span class="zoom">
+                    @if (_zoom is not Zoom.Whole)
+                    {
+                        <span class="mono where-in">@ViewLabel(group, from, to)</span>
+                        <button class="outline mono nav" title="Earlier" @onclick="() => Move(group, -1)">‹</button>
+                        <button class="outline mono nav" title="Later" @onclick="() => Move(group, 1)">›</button>
+                    }
+                    @foreach (var zoom in Enum.GetValues<Zoom>())
+                    {
+                        <button class="pill @(zoom == _zoom ? "on plain" : "off")" @onclick="() => SetZoom(group, zoom)">@ZoomLabel(zoom)</button>
+                    }
+                </span>
+            }
+        </div>
+
+        <div class="grid">
+            @if (_zoom is not Zoom.Whole && group.Stems.FirstOrDefault(stem => stem.Sidecar is not null) is { } whole)
+            {
+                <span class="gutter faint">Whole track · click to move</span>
+                <div class="strip">
+                    <svg viewBox="0 0 @Columns 20" preserveAspectRatio="none">
+                        <path d="@Wave(whole, 0, group.Seconds, 20, mono: true)" />
+                    </svg>
+                    <div class="view-box" style="left: @P(from / group.Seconds * 100)%; width: @P((to - from) / group.Seconds * 100)%"></div>
+                    <div class="strip-hits">
+                        @for (var i = 0; i < StripColumns; i++)
+                        {
+                            var at = (i + 0.5) / StripColumns * group.Seconds;
+                            <span @onclick="() => CentreOn(group, at)"></span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <span class="gutter faint">Bar</span>
+            <div class="ruler">
+                @if (group.Lender?.Loop is { } loop)
+                {
+                    <div class="loop @(loop.On ? "on" : null)"
+                         style="left: @P(X(loop.Start, from, to))%; width: @P(X(loop.End, from, to) - X(loop.Start, from, to))%"
+                         title="@LoopTitle(loop)"></div>
+                    <span class="mono loop-word" style="left: calc(@P(X(loop.End, from, to))% + 4px)">@(loop.On ? "loop" : "loop off")</span>
+                }
+                @foreach (var (at, bar, numbered, beat) in BarTicks(group, from, to))
+                {
+                    <span class="tick @(numbered ? "numbered" : null) @(beat ? "beat" : null)" style="left: @P(X(at, from, to))%"></span>
+                    @if (numbered)
+                    {
+                        <span class="mono bar-number" style="left: @P(X(at, from, to))%">@bar</span>
+                    }
+                }
+                @if (group.Lender is { } lender)
+                {
+                    var clipStart = lender.Clip.Start;
+                    <span class="notch" style="left: @P(X(clipStart, from, to))%"
+                          title="Clip start · @WarpWording.Time(clipStart) · bar 1.1"></span>
+                }
+            </div>
+
+            @if (group.SharedAllMarkers is { Count: > 1 })
+            {
+                var (figure, low, high, drifts) = TempoScale(group);
+                <span class="gutter tempo-gutter">
+                    <span class="faint">Tempo from the markers</span>
+                    @if (Headline is { } headline)
+                    {
+                        <span><span class="mono figure">@headline.Text</span> <span class="note">@headline.Brief</span></span>
+                    }
+                </span>
+                <div class="tempo-line" title="@("marker".ToQuantity(group.SharedMarkers.Count)) · @Headline?.Note">
+                    <svg viewBox="0 0 @Columns 40" preserveAspectRatio="none">
+                        <line class="dashed" x1="0" x2="@Columns" y1="@P(Y(figure, low, high))" y2="@P(Y(figure, low, high))" />
+                        <path d="@TempoPath(group, from, to, low, high)" />
+                    </svg>
+                    @if (drifts)
+                    {
+                        <span class="mono range high">@((int)high)</span>
+                        <span class="mono range low">@((int)low)</span>
+                    }
+                </div>
+            }
+
+            @foreach (var stem in group.Stems)
+            {
+                var chip = Working(stem) ? new WarpChip("Writing", ChipStyle.Teal) : wording.Chip(stem);
+                var isSelected = stem == selected;
+                var parts = group.PartsFrom(stem);
+
+                <div class="lane @(isSelected ? "selected" : null)" @onclick="() => Select(stem)">
+                    <span class="gutter lane-gutter">
+                        <span class="name">@NameOf(stem.Path)</span>
+                        <span class="wchip @Style(chip.Style)">@chip.Label</span>
+                        <span class="sub">@(Working(stem) ? $"writing {wording.Name(group.Lender!.Path)}'s warp" : wording.Sub(stem))</span>
+                    </span>
+                    <div class="plot">
+                        @if (stem.Sidecar is null)
+                        {
+                            <div class="empty @(stem.Owner is WarpOwner.WaitingForLive ? "waiting" : null)">
+                                @(stem.Owner is WarpOwner.WaitingForLive ? "No warp · waiting for Live to open it" : "No overview · Live has not opened this file")
+                            </div>
+                        }
+                        else
+                        {
+                            <svg class="overview" viewBox="0 0 @Columns 45" preserveAspectRatio="none">
+                                <path d="@Wave(stem, from, to, 45, mono: false)" />
+                            </svg>
+
+                            var markers = stem.Markers;
+                            var flags = FlagsFit(markers, from, to);
+                            @for (var i = 0; i < markers.Count; i++)
+                            {
+                                var marker = markers[i];
+                                var x = X(marker.Seconds, from, to);
+                                if (x is < 0 or > 100)
+                                    continue;
+                                <span class="marker-line @(flags ? null : "dense")" style="left: @P(x)%"></span>
+                                <span class="@(flags ? "flag" : "flag-tick")" style="left: @P(x)%" title="@MarkerTitle(stem, i)"></span>
+                            }
+
+                            @if (_zoom is not Zoom.Whole)
+                            {
+                                @foreach (var at in stem.TransientTimes)
+                                {
+                                    var x = X(at, from, to);
+                                    if (x is < 0 or > 100)
+                                        continue;
+                                    <span class="transient" style="left: @P(x)%"></span>
+                                }
+                            }
+
+                            var (clipStart, clipEnd) = stem.Clip;
+                            @if (X(clipStart, from, to) > 0)
+                            {
+                                <div class="outside" style="left: 0; width: @P(Math.Min(100, X(clipStart, from, to)))%"></div>
+                            }
+                            @if (X(clipEnd, from, to) < 100)
+                            {
+                                <div class="outside" style="left: @P(Math.Max(0, X(clipEnd, from, to)))%; right: 0"></div>
+                            }
+                        }
+                        @if (parts is { } parting && wording.Name(group.Lender!.Path) is var sibling)
+                        {
+                            <div class="differs" style="left: @P(Math.Max(0, X(parting, from, to)))%"
+                                 title="Differs from @sibling from @TempoFormat.Clock(parting)"></div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <span class="gutter"></span>
+            <div class="axis">
+                @foreach (var at in TimeTicks(from, to))
+                {
+                    <span class="mono" style="left: @P(X(at, from, to))%">@TempoFormat.Clock(at)</span>
+                }
+            </div>
+        </div>
+
+        @if (selected is not null)
+        {
+            var chip = Working(selected) ? new WarpChip("Writing", ChipStyle.Teal) : wording.Chip(selected);
+            var sample = Row.Samples.FirstOrDefault(sample => sample.Path == selected.Path);
+
+            <div class="detail">
+                <div class="detail-head">
+                    <span class="file">@Path.GetFileName(selected.Path)</span>
+                    <span class="wchip @Style(chip.Style)">@chip.Label</span>
+                </div>
+
+                <div class="facts">
+                    @foreach (var (label, value, note, tone) in Facts(selected, sample, wording, group))
+                    {
+                        <div class="fact">
+                            <span class="fact-label">@label</span>
+                            <span class="mono fact-value @tone">@value</span>
+                            <span class="fact-note">@note</span>
+                        </div>
+                    }
+                </div>
+
+                <p class="provenance">@wording.Sentence(selected)</p>
+
+                <div class="controls">
+                    <div class="control">
+                        <div class="label-line">
+                            <span class="control-label @(_confirming is Confirming.Reapply ? "asking" : null)">Re-apply crateside's warp</span>
+                            @if (wording.CanReapply(selected) && _confirming is Confirming.None && _working is null)
+                            {
+                                <button class="outline" @onclick="() => _confirming = Confirming.Reapply">Re-apply</button>
+                            }
+                        </div>
+                        @if (Working(selected))
+                        {
+                            <span class="working"><span class="dot"></span>Writing @wording.Name(group.Lender!.Path)'s warp…</span>
+                            <span class="status">Your warp is backed up.</span>
+                        }
+                        else if (_confirming is Confirming.Reapply)
+                        {
+                            <span class="status">@wording.ReapplyQuestion(selected)</span>
+                            <span class="actions">
+                                <button class="danger" @onclick="() => ReapplyAsync(selected)">@wording.ReapplyConfirm(selected)</button>
+                                <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
+                            </span>
+                        }
+                        else if (Done(selected, Confirming.Reapply) is { } done)
+                        {
+                            <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
+                        }
+                        else
+                        {
+                            <span class="status @(wording.CanReapply(selected) && _working is null ? null : "faint")">
+                                @(_working is not null ? "Not while a change is under way." : wording.ReapplyStatus(selected))
+                            </span>
+                        }
+                    </div>
+
+                    <div class="control">
+                        <div class="label-line">
+                            <span class="control-label @(_confirming is Confirming.LetLive || selected.Owner is WarpOwner.WaitingForLive ? "asking" : null)">Let Live analyse</span>
+                            @if (WarpWording.CanLetLiveAnalyse(selected) && _confirming is Confirming.None && _working is null)
+                            {
+                                <button class="outline" @onclick="() => _confirming = Confirming.LetLive">Let Live analyse</button>
+                            }
+                        </div>
+                        @if (_confirming is Confirming.LetLive)
+                        {
+                            <span class="status">@wording.LetLiveQuestion(selected)</span>
+                            <span class="actions">
+                                <button class="danger" @onclick="() => LetLiveAnalyse(selected)">Send to Recycle Bin</button>
+                                <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
+                            </span>
+                        }
+                        else if (selected.Owner is WarpOwner.PuttingBack)
+                        {
+                            <span class="working"><span class="dot"></span>@wording.LetLiveStatus(selected, Folder(selected))</span>
+                        }
+                        else if (Done(selected, Confirming.LetLive) is { } done)
+                        {
+                            <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
+                        }
+                        else
+                        {
+                            <span class="status @(selected.Owner is WarpOwner.WaitingForLive ? "now" : WarpWording.CanLetLiveAnalyse(selected) && _working is null ? null : "faint")">
+                                @(_working is not null && selected.Owner is not WarpOwner.WaitingForLive ? "Not while a change is under way." : wording.LetLiveStatus(selected, Folder(selected)))
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </section>
+}
+
+@code {
+    private const int Columns = 832;
+    private const int StripColumns = 100;
+
+    /// <summary>The pixels a plot is at the page's width cap, for deciding whether flags have room.</summary>
+    private const double PlotPixels = 832;
+
+    private const double FlagRoom = 9;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    /// <summary>The sample whose lane is selected, shared with the sample list.</summary>
+    [Parameter]
+    public string? SelectedPath { get; set; }
+
+    [Parameter]
+    public EventCallback<string> SelectedPathChanged { get; set; }
+
+    private WarpGroup? _group;
+    private string? _stamp;
+    private Zoom _zoom = Zoom.Whole;
+    private double _centreBeat;
+    private Confirming _confirming;
+    private string? _working;
+    private ActionDone? _done;
+    private Timer? _poll;
+
+    private enum Zoom
+    {
+        Whole,
+        Bars32,
+        Bars8,
+    }
+
+    private enum Confirming
+    {
+        None,
+        Reapply,
+        LetLive,
+    }
+
+    private sealed record ActionDone(string Path, Confirming Action, bool Good, DateTimeOffset At, Func<string, string> Text);
+
+    private FormattedTempo? Headline => Row.Bpm is { } tempo ? TempoFormat.Format(tempo) : null;
+
+    protected override void OnInitialized() =>
+        _poll = new Timer(_ => _ = InvokeAsync(Poll), null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+
+    protected override void OnParametersSet() => Reload(force: false);
+
+    public void Dispose() => _poll?.Dispose();
+
+    private void Poll()
+    {
+        if (Reload(force: false))
+            StateHasChanged();
+    }
+
+    /// <summary>Re-reads the sidecars when any changed on disk; whether it did.</summary>
+    private bool Reload(bool force)
+    {
+        var paths = LanePaths();
+        var stamp = Stamp(paths);
+
+        if (!force && stamp == _stamp)
+            return false;
+
+        _stamp = stamp;
+        _group = WarpGroup.Of([.. paths.Select(Reader.Read)]);
+
+        return true;
+    }
+
+    /// <summary>The samples cut from the upload most of the track's samples share, in the sample list's order.</summary>
+    private List<string> LanePaths()
+    {
+        var upload = Row
+            .Samples.GroupBy(sample => sample.SourceVideoId)
+            .OrderByDescending(cut => cut.Count())
+            .Select(cut => cut.Key)
+            .FirstOrDefault();
+
+        return
+        [
+            .. Row
+                .Samples.Where(sample => sample.SourceVideoId == upload && sample.Path is { Length: > 0 })
+                .Select(sample => sample.Path),
+        ];
+    }
+
+    private string Stamp(IEnumerable<string> paths)
+    {
+        var stamp = new StringBuilder();
+
+        foreach (var path in paths)
+        {
+            var sidecar = new FileInfo($"{path}.asd");
+            stamp.Append(path)
+                .Append(sidecar.Exists ? $":{sidecar.Length}:{sidecar.LastWriteTimeUtc.Ticks}" : ":-")
+                .Append(Waiting.Of(path) is null ? null : ":w")
+                .Append('|');
+        }
+
+        return stamp.ToString();
+    }
+
+    private WarpWording Wording(WarpGroup group) => new(group, NameOf);
+
+    private string NameOf(string path) =>
+        Row.Samples.FirstOrDefault(sample => string.Equals(sample.Path, path, StringComparison.OrdinalIgnoreCase))?.Label
+        ?? Path.GetFileNameWithoutExtension(path);
+
+    private StemWarp? Selected(WarpGroup group) =>
+        group.Stems.FirstOrDefault(stem => string.Equals(stem.Path, SelectedPath, StringComparison.OrdinalIgnoreCase))
+        ?? group.OnTheirOwn.FirstOrDefault()
+        ?? group.Stems.FirstOrDefault(stem => stem.Owner is WarpOwner.Borrowed)
+        ?? group.Stems.FirstOrDefault();
+
+    private async Task Select(StemWarp stem)
+    {
+        if (stem.Path == SelectedPath)
+            return;
+
+        _confirming = Confirming.None;
+        SelectedPath = stem.Path;
+        await SelectedPathChanged.InvokeAsync(stem.Path);
+    }
+
+    private bool Working(StemWarp stem) => _working == stem.Path;
+
+    private ActionDone? Done(StemWarp stem, Confirming action) =>
+        _done is { } done && done.Path == stem.Path && done.Action == action ? done : null;
+
+    private string Folder(StemWarp stem) =>
+        Path.GetDirectoryName(stem.Path) is { } folder
+        && folder.Equals(Path.TrimEndingDirectorySeparator(Paths.MashupSamples), StringComparison.OrdinalIgnoreCase)
+            ? "Mashup Samples"
+            : "Sample Staging";
+
+    private async Task ReapplyAsync(StemWarp stem)
+    {
+        _confirming = Confirming.None;
+        _working = stem.Path;
+        StateHasChanged();
+
+        var siblings = WarpSiblings.Of(Row.Samples.Select(sample => sample.Path).Where(path => path is { Length: > 0 }));
+        var target = WarpSiblings.Read(stem.Path);
+        var outcome = target is null
+            ? new WarpOutcome.Failed("its tags do not say which upload it was cut from")
+            : await Actions.ReapplyAsync(stem.Path, siblings.AuthoritiesFor(target), siblings.SameKindAs(target));
+
+        _working = null;
+        _done = new ActionDone(
+            stem.Path,
+            Confirming.Reapply,
+            outcome is WarpOutcome.Written,
+            DateTimeOffset.UtcNow,
+            ago => outcome switch
+            {
+                WarpOutcome.Written => $"Re-applied {ago}. Your previous warp is backed up.",
+                WarpOutcome.SiblingsDisagree => "Not re-applied: the stems it could take a warp from hold different ones.",
+                WarpOutcome.LengthsDiffer(var sibling, _, _) => $"Not re-applied: {NameOf(sibling)} is a different length.",
+                WarpOutcome.NoWarpedSibling => "Not re-applied: no stem of this upload has a saved warp.",
+                WarpOutcome.Failed(var error) => $"Not re-applied: {error}",
+                _ => "Not re-applied.",
+            }
+        );
+        Reload(force: true);
+        await Tracks.EnsureFreshAsync(TimeSpan.Zero);
+    }
+
+    private async Task LetLiveAnalyse(StemWarp stem)
+    {
+        _confirming = Confirming.None;
+
+        var outcome = Actions.LetLiveAnalyse(stem.Path);
+
+        _done = outcome is LetLiveOutcome.Sent
+            ? null
+            : new ActionDone(
+                stem.Path,
+                Confirming.LetLive,
+                false,
+                DateTimeOffset.UtcNow,
+                _ => outcome is LetLiveOutcome.Failed(var error) ? $"Not sent: {error}" : "Not sent: it has no warp file."
+            );
+        Reload(force: true);
+        await Tracks.EnsureFreshAsync(TimeSpan.Zero);
+    }
+
+    private string GroupLine(WarpGroup group, WarpWording wording)
+    {
+        var stems = "stem".ToQuantity(group.Stems.Count);
+
+        return (group.OnTheirOwn.Select(stem => NameOf(stem.Path)).ToList(), group.Lender) switch
+        {
+            ([var one], _) => $"{stems} · {one} warped on its own",
+            ({ Count: > 1 } several, _) => $"{stems} · {several.Humanize()} warped on their own",
+            (_, { Sidecar.Warp.Mode: var mode } lender) =>
+                $"{stems} · one warp · {"marker".ToQuantity(lender.Markers.Count)} · {WarpWording.Mode(mode)}",
+            _ => $"{stems} · not warped yet",
+        };
+    }
+
+    private static string ZoomLabel(Zoom zoom) =>
+        zoom switch
+        {
+            Zoom.Bars32 => "32 bars",
+            Zoom.Bars8 => "8 bars",
+            _ => "Whole track",
+        };
+
+    private static int BarsOf(Zoom zoom) => zoom switch { Zoom.Bars32 => 32, Zoom.Bars8 => 8, _ => 0 };
+
+    private void SetZoom(WarpGroup group, Zoom zoom)
+    {
+        if (_zoom is Zoom.Whole && zoom is not Zoom.Whole)
+            _centreBeat = group.ClipStartBeat + BarsOf(zoom) * group.BeatsPerBar / 2.0;
+
+        _zoom = zoom;
+    }
+
+    private void Move(WarpGroup group, int direction) =>
+        _centreBeat += direction * BarsOf(_zoom) * group.BeatsPerBar / 2.0;
+
+    private void CentreOn(WarpGroup group, double seconds)
+    {
+        if (group.BeatAt(seconds) is { } beat)
+            _centreBeat = beat;
+    }
+
+    private (double From, double To) View(WarpGroup group)
+    {
+        if (_zoom is Zoom.Whole || group.Lender is null)
+            return (0, Math.Max(group.Seconds, 1));
+
+        var span = BarsOf(_zoom) * group.BeatsPerBar;
+
+        return group.SecondsAt(_centreBeat - span / 2.0) is { } start
+            && group.SecondsAt(_centreBeat + span / 2.0) is { } end
+            && end > start
+            ? (start, end)
+            : (0, Math.Max(group.Seconds, 1));
+    }
+
+    private string ViewLabel(WarpGroup group, double from, double to) =>
+        $"bars {Bar(group, from)}–{Bar(group, to) - 1} · {TempoFormat.Clock(from)}–{TempoFormat.Clock(to)}";
+
+    private static int Bar(WarpGroup group, double seconds) =>
+        group.BeatAt(seconds) is { } beat
+            ? (int)Math.Round((beat - group.ClipStartBeat) / group.BeatsPerBar) + 1
+            : 0;
+
+    private IEnumerable<(double At, int Bar, bool Numbered, bool Beat)> BarTicks(WarpGroup group, double from, double to)
+    {
+        if (group.Lender is null || group.BeatAt(from) is not { } first || group.BeatAt(to) is not { } last)
+            yield break;
+
+        var perBar = group.BeatsPerBar;
+        var (tickEvery, numberEvery) = _zoom switch
+        {
+            Zoom.Whole => (4, 16),
+            Zoom.Bars32 => (1, 4),
+            _ => (1, 1),
+        };
+
+        for (var bar = (int)Math.Floor((first - group.ClipStartBeat) / perBar) + 1; ; bar++)
+        {
+            var beat = group.ClipStartBeat + (bar - 1) * perBar;
+
+            if (beat > last)
+                yield break;
+
+            if (group.SecondsAt(beat) is not { } at)
+                continue;
+
+            if (bar >= 1 && (bar - 1) % tickEvery is 0)
+                yield return (at, bar, (bar - 1) % numberEvery is 0, false);
+
+            if (_zoom is Zoom.Bars8)
+            {
+                for (var i = 1; i < perBar; i++)
+                {
+                    if (group.SecondsAt(beat + i) is { } inBar)
+                        yield return (inBar, bar, false, true);
+                }
+            }
+        }
+    }
+
+    private IEnumerable<double> TimeTicks(double from, double to)
+    {
+        var every = _zoom switch
+        {
+            Zoom.Whole => 30,
+            Zoom.Bars32 => 10,
+            _ => 2,
+        };
+
+        for (var at = Math.Ceiling(from / every) * every; at <= to; at += every)
+            yield return at;
+    }
+
+    private (double Figure, double Low, double High, bool Drifts) TempoScale(WarpGroup group)
+    {
+        if (Row.Bpm is { Source: TempoSource.Warp, Range: { } range } drifting)
+            return (drifting.Value, TempoFormat.Edge(range.Low, up: false), TempoFormat.Edge(range.High, up: true), true);
+
+        var figure = Row.Bpm is { Source: TempoSource.Warp, Value: var value }
+            ? value
+            : group.Lender?.Sidecar?.Warp.TempoAt(group.Lender.Clip.Start) ?? 120;
+
+        return (figure, figure - 1, figure + 1, false);
+    }
+
+    private static double Y(double bpm, double low, double high) =>
+        Math.Clamp(40 - (bpm - low) / (high - low) * 40, 1, 39);
+
+    private static string TempoPath(WarpGroup group, double from, double to, double low, double high)
+    {
+        var markers = group.SharedAllMarkers;
+        var path = new StringBuilder();
+
+        for (var i = 0; i < markers.Count - 1; i++)
+        {
+            var span = markers[i + 1].Seconds - markers[i].Seconds;
+
+            if (span <= 0)
+                continue;
+
+            var bpm = (markers[i + 1].Beat - markers[i].Beat) / span * 60;
+            var start = i is 0 ? from : markers[i].Seconds;
+            var end = i == markers.Count - 2 ? to : markers[i + 1].Seconds;
+            var (x1, x2) = (Math.Clamp(X(start, from, to), 0, 100), Math.Clamp(X(end, from, to), 0, 100));
+
+            if (x2 <= x1)
+                continue;
+
+            var y = Y(bpm, low, high);
+            path.Append(path.Length is 0 ? 'M' : 'L')
+                .Append(P(x1 * Columns / 100)).Append(',').Append(P(y))
+                .Append('L').Append(P(x2 * Columns / 100)).Append(',').Append(P(y));
+        }
+
+        return path.ToString();
+    }
+
+    /// <summary>Each channel's envelope as one filled shape per channel, Left above Right.</summary>
+    private static string Wave(StemWarp stem, double from, double to, double height, bool mono)
+    {
+        var channels = stem.Overview(from, to, Columns);
+
+        if (channels is [])
+            return string.Empty;
+
+        IReadOnlyList<(float Min, float Max)[]> drawn = mono ? [Merged(channels)] : channels;
+        var gap = drawn.Count > 1 ? 2.0 : 0;
+        var each = (height - gap * (drawn.Count - 1)) / drawn.Count;
+        var path = new StringBuilder();
+
+        for (var channel = 0; channel < drawn.Count; channel++)
+        {
+            var centre = channel * (each + gap) + each / 2;
+            var column = drawn[channel];
+
+            path.Append('M');
+            for (var x = 0; x < column.Length; x++)
+                path.Append(P(x + 0.5)).Append(',').Append(P(centre - column[x].Max * each / 2)).Append(' ');
+            for (var x = column.Length - 1; x >= 0; x--)
+                path.Append(P(x + 0.5)).Append(',').Append(P(centre - Math.Min(column[x].Min, column[x].Max - 0.02f) * each / 2)).Append(' ');
+            path.Append('Z');
+        }
+
+        return path.ToString();
+    }
+
+    private static (float Min, float Max)[] Merged(IReadOnlyList<(float Min, float Max)[]> channels) =>
+        [
+            .. Enumerable
+                .Range(0, channels[0].Length)
+                .Select(x => (channels.Min(channel => channel[x].Min), channels.Max(channel => channel[x].Max))),
+        ];
+
+    /// <summary>Whether every pair of visible markers is far enough apart to draw flags rather than ticks.</summary>
+    private static bool FlagsFit(IReadOnlyList<WarpMarker> markers, double from, double to)
+    {
+        var visible = markers.Select(marker => X(marker.Seconds, from, to)).Where(x => x is >= 0 and <= 100).ToList();
+
+        return visible.Zip(visible.Skip(1)).All(pair => (pair.Second - pair.First) / 100 * PlotPixels >= FlagRoom);
+    }
+
+    private static string MarkerTitle(StemWarp stem, int i)
+    {
+        var markers = stem.Sidecar!.Warp.Markers;
+        var marker = markers[i];
+        var head = $"Marker {i + 1} of {stem.Markers.Count} · {WarpWording.Time(marker.Seconds)}";
+
+        if (i == stem.Markers.Count - 1)
+            return head;
+
+        var span = markers[i + 1].Seconds - marker.Seconds;
+
+        return span > 0
+            ? $"{head} · {WarpWording.Tempo((markers[i + 1].Beat - marker.Beat) / span * 60)} to the next"
+            : head;
+    }
+
+    private static IEnumerable<(string Label, string Value, string Note, string? Tone)> Facts(
+        StemWarp stem,
+        TrackSample? sample,
+        WarpWording wording,
+        WarpGroup group
+    )
+    {
+        if (stem.Sidecar is not { } sidecar)
+        {
+            foreach (var label in new[] { "Tempo", "Mode", "Markers", "Transients", "Clip", "Loop", "Default clip" })
+                yield return (label, "—", string.Empty, "faint");
+
+            yield break;
+        }
+
+        var tempo = sample?.Tempo is { } warp ? TrackTempo.Of(warp, null, null) : null;
+        yield return tempo is not null && TempoFormat.Format(tempo) is var formatted
+            ? ("Tempo", formatted.Text, formatted.Brief, formatted.IsApproximate ? "approx" : null)
+            : sidecar.Warp.TempoAt(stem.Clip.Start) is { } own
+                ? ("Tempo", WarpWording.Tempo(own), stem.Owner is WarpOwner.Starter ? "crateside's reading" : string.Empty, null)
+                : ("Tempo", "—", string.Empty, "faint");
+
+        yield return ("Mode", WarpWording.Mode(sidecar.Warp.Mode), string.Empty, null);
+        yield return ("Markers", $"{stem.Markers.Count}", wording.MarkersNote(stem), null);
+        yield return ("Transients", $"{sidecar.Audio.Transients.Count}", WarpWording.TransientsNote(stem), null);
+
+        var (clipStart, clipEnd) = stem.Clip;
+        yield return (
+            "Clip",
+            $"{WarpWording.Time(clipStart)}–{WarpWording.Time(clipEnd)}",
+            stem.IsWarped ? StartsAt(group, clipStart) : string.Empty,
+            null
+        );
+
+        yield return stem.Loop is { } loop && loop is var (loopStart, loopEnd, on)
+            ? ("Loop", $"{WarpWording.Time(loopStart)}–{WarpWording.Time(loopEnd)}", on ? "on" : "off", null)
+            : ("Loop", "—", string.Empty, "faint");
+
+        yield return sidecar.IsDefaultClipSaved
+            ? ("Default clip", "saved", "Live uses it", null)
+            : ("Default clip", "not saved", "Live ignores it", null);
+    }
+
+    private static string StartsAt(WarpGroup group, double seconds)
+    {
+        if (group.BeatAt(seconds) is not { } beat)
+            return string.Empty;
+
+        var bar = (beat - group.ClipStartBeat) / group.BeatsPerBar + 1;
+
+        return Math.Abs(bar - Math.Round(bar)) < 0.01
+            ? $"starts at bar {Math.Round(bar):0}"
+            : $"starts at bar {bar.ToString("0.##", CultureInfo.InvariantCulture)}";
+    }
+
+    private static string LoopTitle((double Start, double End, bool On) loop) =>
+        $"Loop {WarpWording.Time(loop.Start)}–{WarpWording.Time(loop.End)}{(loop.On ? null : " · off")}";
+
+    private static double X(double seconds, double from, double to) => (seconds - from) / (to - from) * 100;
+
+    private static string P(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+
+    private static string Style(ChipStyle style) => style.ToString().ToLowerInvariant();
+}

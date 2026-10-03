@@ -10,6 +10,7 @@ namespace Crateside;
 /// </summary>
 public sealed class WarpWorker(
     WarpLending lending,
+    WarpActions actions,
     IOptions<WarpOptions> options,
     ILogger<WarpWorker> logger
 ) : BackgroundService
@@ -18,15 +19,23 @@ public sealed class WarpWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (options.Value is { LendAutomatically: false, WriteStarterWarps: false })
-            return;
+        var lends = options.Value is not { LendAutomatically: false, WriteStarterWarps: false };
 
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
-                foreach (var loan in await lending.LendAsync(stoppingToken))
-                    Log(loan);
+                foreach (var putBack in actions.PutBack())
+                    logger.LogInformation(
+                        "Put the warp back into Live's fresh analysis of {Target}",
+                        Path.GetFileName(putBack)
+                    );
+
+                if (lends)
+                {
+                    foreach (var loan in await lending.LendAsync(stoppingToken))
+                        Log(loan);
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {

@@ -6,11 +6,13 @@ namespace Crateside.Core.Warps;
 /// measured tempo when nothing of its upload is warped (#77, ADR 0047, ADR 0048).
 /// </summary>
 /// <param name="steadyBpm">crateside's own steady tempo for an audio file, or null before it is read or when it drifts.</param>
+/// <param name="waiting">Stems left for Live to analyse, which nothing is written to meanwhile (#97).</param>
 public sealed class WarpLending(
     CratesidePaths paths,
     SidecarWriter writer,
     WarpOptions options,
-    Func<string, double?>? steadyBpm = null
+    Func<string, double?>? steadyBpm = null,
+    LiveAnalyses? waiting = null
 )
 {
     private readonly Dictionary<string, string> _tried = new(StringComparer.OrdinalIgnoreCase);
@@ -24,6 +26,9 @@ public sealed class WarpLending(
         foreach (var target in siblings.In(paths.SampleStaging))
         {
             ct.ThrowIfCancellationRequested();
+
+            if (waiting?.Of(target.Path) is not null)
+                continue;
 
             var authorities = siblings.AuthoritiesFor(target);
             var sameKind = siblings.SameKindAs(target);

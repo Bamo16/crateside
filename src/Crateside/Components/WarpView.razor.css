@@ -1,0 +1,557 @@
+.warp {
+    margin-top: 1.75rem;
+}
+
+.head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.section-label {
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.group-line {
+    font-size: 12px;
+    color: var(--text-60);
+}
+
+.group-line.loud {
+    color: var(--text);
+}
+
+.zoom {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.where-in {
+    font-size: 11.5px;
+    color: var(--text-50);
+    margin-right: 4px;
+}
+
+.nav {
+    padding: 2px 8px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    column-gap: 12px;
+}
+
+.gutter {
+    display: flex;
+    align-items: center;
+    font-size: 11.5px;
+    color: var(--text-50);
+}
+
+.gutter.faint {
+    color: var(--text-40);
+}
+
+/* Overview strip, shown only zoomed. */
+.strip {
+    position: relative;
+    height: 20px;
+    margin-bottom: 6px;
+}
+
+.strip svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.strip path {
+    fill: var(--text-30);
+}
+
+.view-box {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border: 1px solid var(--text-60);
+    background: rgba(236, 231, 220, 0.08);
+    pointer-events: none;
+}
+
+.strip-hits {
+    position: absolute;
+    inset: 0;
+    display: flex;
+}
+
+.strip-hits span {
+    flex: 1;
+    cursor: pointer;
+}
+
+/* Ruler. */
+.ruler {
+    position: relative;
+    height: 30px;
+}
+
+.loop {
+    position: absolute;
+    top: 3px;
+    height: 5px;
+    border: 1px solid var(--text-50);
+    border-radius: 1px;
+}
+
+.loop.on {
+    background: rgba(236, 231, 220, 0.55);
+}
+
+.loop-word {
+    position: absolute;
+    top: 0;
+    font-size: 10px;
+    color: var(--text-50);
+}
+
+.tick {
+    position: absolute;
+    bottom: 0;
+    width: 1px;
+    height: 4px;
+    background: var(--text-30);
+}
+
+.tick.numbered {
+    height: 8px;
+}
+
+.tick.beat {
+    height: 2px;
+}
+
+.bar-number {
+    position: absolute;
+    bottom: 9px;
+    font-size: 10.5px;
+    color: var(--text-45, rgba(236, 231, 220, 0.45));
+    transform: translateX(3px);
+}
+
+.notch {
+    position: absolute;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid var(--text);
+    transform: translateX(-5px);
+}
+
+/* Tempo line. */
+.tempo-gutter {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 2px;
+}
+
+.tempo-gutter .figure {
+    font-size: 12px;
+    color: var(--text);
+}
+
+.tempo-gutter .note {
+    color: var(--text-50);
+}
+
+.tempo-line {
+    position: relative;
+    height: 40px;
+    margin: 4px 0;
+}
+
+.tempo-line svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.tempo-line path {
+    fill: none;
+    stroke: var(--text-75);
+    stroke-width: 1.5;
+    vector-effect: non-scaling-stroke;
+}
+
+.tempo-line .dashed {
+    stroke: var(--text-35);
+    stroke-dasharray: 4 3;
+    vector-effect: non-scaling-stroke;
+}
+
+.range {
+    position: absolute;
+    right: 0;
+    font-size: 10.5px;
+    color: var(--text-40);
+}
+
+.range.high {
+    top: -2px;
+}
+
+.range.low {
+    bottom: -2px;
+}
+
+/* Lanes. */
+.lane {
+    display: contents;
+    cursor: pointer;
+}
+
+.lane > .lane-gutter,
+.lane > .plot {
+    background: rgba(255, 255, 255, 0.02);
+    margin-bottom: 4px;
+}
+
+.lane.selected > .lane-gutter,
+.lane.selected > .plot {
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 0 0 1px var(--text-35);
+}
+
+.lane-gutter {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+.lane-gutter .name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.lane.selected .name {
+    font-weight: 600;
+}
+
+.lane-gutter .sub {
+    font-size: 11.5px;
+    color: var(--text-50);
+}
+
+.plot {
+    position: relative;
+    height: 64px;
+    overflow: hidden;
+    border-radius: 6px;
+}
+
+.overview {
+    position: absolute;
+    top: 11px;
+    left: 0;
+    width: 100%;
+    height: 45px;
+}
+
+.overview path {
+    fill: rgba(236, 231, 220, 0.42);
+}
+
+.marker-line {
+    position: absolute;
+    top: 0;
+    bottom: 6px;
+    width: 1px;
+    background: var(--text-45, rgba(236, 231, 220, 0.45));
+    pointer-events: none;
+}
+
+.marker-line.dense {
+    background: rgba(236, 231, 220, 0.14);
+}
+
+.flag {
+    position: absolute;
+    top: 0;
+    width: 7px;
+    height: 9px;
+    background: var(--text);
+    clip-path: polygon(0 0, 100% 0, 72% 50%, 100% 100%, 0 100%);
+}
+
+.flag-tick {
+    position: absolute;
+    top: 0;
+    width: 1px;
+    height: 9px;
+    background: rgba(236, 231, 220, 0.7);
+}
+
+.transient {
+    position: absolute;
+    bottom: 1px;
+    width: 1px;
+    height: 5px;
+    background: var(--text-30);
+}
+
+.outside {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: rgba(20, 19, 16, 0.62);
+    pointer-events: none;
+}
+
+.differs {
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    right: 1px;
+    border: 1px dashed var(--text-40);
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+.empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11.5px;
+    color: var(--text-40);
+    border: 1px dashed rgba(236, 231, 220, 0.14);
+    border-radius: 6px;
+}
+
+.empty.waiting {
+    color: var(--amber);
+    border-color: rgba(232, 180, 90, 0.55);
+}
+
+.axis {
+    position: relative;
+    height: 22px;
+}
+
+.axis span {
+    position: absolute;
+    top: 4px;
+    font-size: 10.5px;
+    color: var(--text-40);
+    transform: translateX(-50%);
+}
+
+/* Provenance chips: monochrome by whose warp it is, coloured only for state. */
+.wchip {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.25;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+}
+
+.wchip.filled {
+    background: rgba(236, 231, 220, 0.14);
+    color: var(--text);
+}
+
+.wchip.outlined {
+    border-color: rgba(236, 231, 220, 0.35);
+    color: var(--text-75);
+}
+
+.wchip.dashed {
+    border: 1px dashed rgba(236, 231, 220, 0.3);
+    color: var(--text-60);
+}
+
+.wchip.faint {
+    border: 1px dashed rgba(236, 231, 220, 0.2);
+    color: var(--text-50);
+}
+
+.wchip.amber {
+    color: var(--amber);
+    background: rgba(232, 180, 90, 0.16);
+    border-color: rgba(232, 180, 90, 0.35);
+}
+
+.wchip.teal {
+    color: var(--teal);
+    background: rgba(111, 199, 214, 0.14);
+    border-color: rgba(111, 199, 214, 0.3);
+}
+
+/* The selected lane's detail. */
+.detail {
+    margin-top: 10px;
+    padding: 18px 20px;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+}
+
+.detail-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.file {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.facts {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.fact {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.fact-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-50);
+}
+
+.fact-value {
+    font-size: 13px;
+    color: var(--text);
+}
+
+.fact-value.faint {
+    color: var(--text-30);
+}
+
+.fact-value.approx {
+    font-weight: 400;
+}
+
+.fact-note {
+    font-size: 11.5px;
+    color: var(--text-50);
+}
+
+.provenance {
+    max-width: 760px;
+    margin: 14px 0 0;
+    font-size: 13px;
+    color: var(--text-75);
+}
+
+.controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.control {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.label-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 28px;
+}
+
+.control-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-50);
+}
+
+.control-label.asking {
+    color: var(--amber);
+}
+
+.status {
+    font-size: 13px;
+    color: var(--text-75);
+}
+
+.status.faint {
+    color: var(--text-40);
+}
+
+.status.now,
+.status.done {
+    color: var(--text);
+}
+
+.status.failed {
+    color: var(--red);
+}
+
+.working {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--teal);
+}
+
+.working .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+@media (max-width: 1200px) {
+    .facts {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}

@@ -31,6 +31,20 @@ public sealed class SidecarWriter(
         CancellationToken ct = default
     ) => Settle(await PrepareBorrowAsync(target, authorities, sameKind, ct), target);
 
+    /// <summary>As <see cref="BorrowAsync"/>, but over a warp the user saved too; only ever asked for by the user (#97).</summary>
+    public async Task<WarpOutcome> ReplaceAsync(
+        string target,
+        IReadOnlyList<string> authorities,
+        IReadOnlyList<string> sameKind,
+        CancellationToken ct = default
+    ) =>
+        await PrepareBorrowAsync(target, authorities, sameKind, replacing: true, ct) switch
+        {
+            SidecarPlan.Ready(var sidecar) => Commit(sidecar, target, replacing: true),
+            SidecarPlan.Refused(var outcome) => outcome,
+            _ => throw new UnreachableException(),
+        };
+
     /// <summary>Writes one marker at the start of the clip at this tempo, where Live puts its own first marker.</summary>
     public async Task<WarpOutcome> StartAsync(
         string target,
@@ -40,16 +54,24 @@ public sealed class SidecarWriter(
     ) => Settle(await PrepareStarterAsync(target, sameKind, bpm, ct), target);
 
     /// <summary>Works out the sidecar <see cref="BorrowAsync"/> would write, without writing it.</summary>
-    public async Task<SidecarPlan> PrepareBorrowAsync(
+    public Task<SidecarPlan> PrepareBorrowAsync(
         string target,
         IReadOnlyList<string> authorities,
         IReadOnlyList<string> sameKind,
         CancellationToken ct = default
+    ) => PrepareBorrowAsync(target, authorities, sameKind, replacing: false, ct);
+
+    private async Task<SidecarPlan> PrepareBorrowAsync(
+        string target,
+        IReadOnlyList<string> authorities,
+        IReadOnlyList<string> sameKind,
+        bool replacing,
+        CancellationToken ct
     )
     {
         try
         {
-            if (Own(target) is { IsUsers: true })
+            if (!replacing && Own(target) is { IsUsers: true })
                 return Refuse(new WarpOutcome.AlreadyWarped());
 
             var saved = SavedAmong(sameKind) is { Count: > 0 } ownKind
@@ -131,11 +153,14 @@ public sealed class SidecarWriter(
     /// Writes a prepared sidecar beside <paramref name="audioPath"/>, which may be where the target
     /// has been moved to since, and records it there; never over a warp the user saved.
     /// </summary>
-    public WarpOutcome Commit(PreparedSidecar sidecar, string audioPath)
+    public WarpOutcome Commit(PreparedSidecar sidecar, string audioPath) =>
+        Commit(sidecar, audioPath, replacing: false);
+
+    private WarpOutcome Commit(PreparedSidecar sidecar, string audioPath, bool replacing)
     {
         try
         {
-            if (Own(audioPath) is { IsUsers: true })
+            if (!replacing && Own(audioPath) is { IsUsers: true })
                 return new WarpOutcome.AlreadyWarped();
 
             sidecar.File.Write(StemFileName.AnalysisFor(audioPath));
