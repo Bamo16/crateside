@@ -333,8 +333,9 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   markers" counted the hidden one Live writes past the last. A steady warp reads *1 marker*.
 - **Flags or ticks is decided at the 832px plot** the page has at its width cap, not measured in the
   browser.
-- **The overview strip moves the view in hundredths of the track**: it is 100 click targets, not a
-  measured click position.
+- **The overview strip is dragged, not only clicked**: pressing jumps there and holding slides the
+  view, in hundredths of the track (100 targets, not a measured position), each view starting on a
+  bar line.
 - **Re-apply is also offered on a starter** when a sibling holds a warp of the user's, as for Live's
   analysis; lending would replace it within a minute anyway.
 - **"Putting the warp back"** reads *Live wrote a fresh file. crateside puts the warp back within a

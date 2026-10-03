@@ -66,6 +66,13 @@
     position: relative;
     height: 20px;
     margin-bottom: 6px;
+    user-select: none;
+    touch-action: none;
+}
+
+.strip:hover .view-box {
+    border-color: var(--text);
+    background: rgba(236, 231, 220, 0.14);
 }
 
 .strip svg {
@@ -96,7 +103,11 @@
 
 .strip-hits span {
     flex: 1;
-    cursor: pointer;
+    cursor: grab;
+}
+
+.strip-hits span:active {
+    cursor: grabbing;
 }
 
 /* Ruler. */

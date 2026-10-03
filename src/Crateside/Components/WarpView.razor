@@ -52,7 +52,7 @@
                         @for (var i = 0; i < StripColumns; i++)
                         {
                             var at = (i + 0.5) / StripColumns * group.Seconds;
-                            <span @onclick="() => CentreOn(group, at)"></span>
+                            <span @onpointerdown="() => CentreOn(group, at)" @onpointerenter="pointer => Drag(group, at, pointer)"></span>
                         }
                     </div>
                 </div>
@@ -509,6 +509,13 @@
 
     private void Move(WarpGroup group, int direction) =>
         _centreBeat += direction * BarsOf(_zoom) * group.BeatsPerBar / 2.0;
+
+    /// <summary>Follows the pointer across the strip while its button is held.</summary>
+    private void Drag(WarpGroup group, double seconds, PointerEventArgs pointer)
+    {
+        if ((pointer.Buttons & 1) is not 0)
+            CentreOn(group, seconds);
+    }
 
     /// <summary>Centres the view near a point, starting it on a bar line so it reads in whole bars.</summary>
     private void CentreOn(WarpGroup group, double seconds)
