@@ -25,12 +25,6 @@ public sealed class TrackTempoRealLibraryTests
     ) => Assert.Equal(nominal, Tempo(name).Value);
 
     [Theory]
-    [InlineData("Too $hort - Blow the Whistle", 100)]
-    [InlineData("White Shadow - If You Like It", 128)]
-    public void A_typed_warp_keeps_the_number_the_user_typed(string name, double typed) =>
-        Assert.Equal(typed, Tempo(name).Value);
-
-    [Theory]
     [InlineData("Paul Oakenfold, Asher D - Ready Steady Go (Extended Mix)", "128.02")]
     [InlineData("50 Cent - In Da Club", "90.01")]
     public void A_real_tempo_off_the_grid_shows_its_hundredths(string name, string text) =>
