@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif}a{color:#ece7dc;text-decoration:none}a:hover{color:#fff}button{cursor:pointer;font-family:inherit}</style>
+</helmet>
+
+<section style="padding:56px 56px 72px;display:flex;flex-direction:column;gap:56px;width:1600px;box-sizing:border-box;background:#0c0b09">
+  <header style="display:flex;flex-direction:column;gap:10px;max-width:980px">
+    <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Brief 14 · turn 1 · #97</div>
+    <h1 style="margin:0;font:600 28px 'IBM Plex Sans',sans-serif">Each stem's warp, on Track details</h1>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty"><strong style="color:#ece7dc;font-weight:500">One time axis for the group</strong>, under the sample list: a lane per stem, with Live's clip-view parts drawn in place. Flags above the waveform for markers, grey ticks under it for transients, a bar along the top for the loop, and everything outside the clip dimmed. Above the lanes, a <strong style="color:#ece7dc;font-weight:500">tempo line</strong> read from the markers. It is a flat line for a two-marker warp and a steady wobble for a dense one, so both read at a glance. The lanes share one axis, so stems that agree line up, and a stem warped on its own shows where it parts from the rest. Click a lane to see its details, where it came from, and the two controls. Everything is monochrome except state: amber for <em>waiting for Live</em> (your turn), teal while crateside writes.</p>
+    <p style="margin:0;font:400 12.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Waveforms, markers and dates are made up. <em>Rapper's Delight</em>'s range is the one DESIGN.md records. The lanes, pills and controls are live: click them.</p>
+  </header>
+
+  <sc-for list="{{ views }}" as="v" hint-placeholder-count="3">
+  <div id="{{ v.id }}" style="display:flex;flex-direction:column;gap:12px;scroll-margin-top:24px">
+    <div style="display:flex;align-items:baseline;gap:10px;max-width:1472px"><a href="#{{ v.id }}" style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">{{ v.id }}</a><span style="font:500 14px 'IBM Plex Sans',sans-serif">{{ v.title }}</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.55)">{{ v.caption }}</span></div>
+    <div style="width:1472px;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:28px;padding:16px 40px;background:#1b1a15;border-bottom:1px solid rgba(255,255,255,.08)">
+        <div style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect><rect x="3" y="10.8" width="14" height="2.4" rx="1.2" fill="#e8b45a"></rect><rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="#ece7dc"></rect></svg><span style="font:600 15px/1 'IBM Plex Sans',sans-serif">crateside</span></div>
+        <div style="display:flex;gap:16px;font:500 12.5px 'IBM Plex Sans',sans-serif"><span style="color:rgba(236,231,220,.5)">Dashboard</span><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Tools</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+      </div>
+      <div style="padding:24px 40px 40px">
+        <div style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);margin-bottom:10px">← Tracks</div>
+        <div style="display:flex;align-items:baseline;gap:16px"><h2 style="margin:0;font:600 28px/1.15 'IBM Plex Sans',sans-serif;letter-spacing:-.01em">{{ v.song }}</h2><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ v.meta }}</span></div>
+
+        <div style="margin-top:22px;display:grid;grid-template-columns:1fr 1fr 1fr 1.35fr;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px">
+          <div style="padding:22px 26px;display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Key</span><span style="font:600 52px/1 'IBM Plex Mono',monospace;letter-spacing:-.03em">{{ v.band.key }}</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">tagged in Ableton on {{ v.band.tagged }}</span></div>
+          <div style="padding:22px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Confidence</span><span style="font:500 52px/1 'IBM Plex Mono',monospace">HIGH</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ v.band.judged }}</span></div>
+          <div style="padding:22px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">BPM</span><span style="font-family:'IBM Plex Mono',monospace;font-size:52px;line-height:1;letter-spacing:-.03em;font-weight:{{ v.band.weight }}">{{ v.band.bpm }}</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ v.band.note }}</span>
+            <sc-if value="{{ v.band.hasStrip }}" hint-placeholder-val="{{ false }}">
+              <div style="display:grid;grid-template-columns:26px 1fr;gap:6px;margin-top:2px"><div style="display:flex;flex-direction:column;justify-content:space-between;height:44px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4);text-align:right"><span>{{ v.band.hi }}</span><span>{{ v.band.lo }}</span></div><div><svg width="200" height="44" style="display:block"><line x1="0" x2="200" y1="{{ v.band.figY }}" y2="{{ v.band.figY }}" stroke="rgba(236,231,220,.35)" stroke-dasharray="3 3"></line><path d="{{ v.band.strip }}" stroke="rgba(236,231,220,.75)" stroke-width="2" fill="none"></path></svg><div style="display:flex;justify-content:space-between;width:200px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)"><span>0:00</span><span>{{ v.band.end }}</span></div></div></div>
+            </sc-if>
+          </div>
+          <div style="padding:22px 26px;border-left:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Where it is</span><span style="display:inline-flex;width:fit-content;font:500 12px 'IBM Plex Sans',sans-serif;padding:4px 10px;border-radius:999px;color:rgba(236,231,220,.85);border:1px solid rgba(255,255,255,.25)">in Sample Staging</span><span style="font:400 13px/1.45 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">{{ v.band.next }}</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-decoration:underline;text-underline-offset:3px">Why {{ v.band.key }} ↓</span></div>
+        </div>
+
+        <div style="margin-top:32px;display:grid;grid-template-columns:minmax(0,1fr) 19rem;gap:44px;align-items:start">
+          <div style="min-width:0">
+            <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Samples</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">Sample Staging / {{ v.song }}</span></div>
+            <div style="display:grid;grid-template-columns:22px minmax(0,1fr) 120px 170px minmax(0,1fr);gap:14px;padding:0 12px;margin-bottom:6px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span></span><span>Sample</span><span>Ableton key</span><span>Where it is</span><span></span></div>
+            <sc-for list="{{ v.samples }}" as="s" hint-placeholder-count="2">
+              <div onClick="{{ s.pick }}" style="display:grid;grid-template-columns:22px minmax(0,1fr) 120px 170px minmax(0,1fr);gap:14px;align-items:center;padding:8px 12px;margin-bottom:4px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.12);border-radius:6px;cursor:pointer"><span></span><span style="font:500 13px 'IBM Plex Sans',sans-serif">{{ s.name }}</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">{{ s.key }}</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">{{ s.where }}</span><span></span></div>
+            </sc-for>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:8px;padding:8px 12px;font:500 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);border:1px dashed rgba(255,255,255,.18);border-radius:6px"><span style="font-family:'IBM Plex Mono',monospace">+</span><span>Change what is cut</span></div>
+
+            <div style="margin-top:36px">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;min-height:30px">
+                <span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Warp</span>
+                <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:{{ v.groupInk }}">{{ v.groupLine }}</span>
+                <span style="margin-left:auto;display:flex;align-items:center;gap:6px">
+                  <sc-if value="{{ v.zoomed }}" hint-placeholder-val="{{ false }}">
+                    <span style="display:flex;align-items:center;gap:6px;margin-right:10px"><span style="font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5);margin-right:4px">{{ v.winLabel }}</span><button onClick="{{ v.prev }}" title="Earlier" style="font:500 12px 'IBM Plex Mono',monospace;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:4px 9px">‹</button><button onClick="{{ v.next }}" title="Later" style="font:500 12px 'IBM Plex Mono',monospace;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:4px 9px">›</button></span>
+                  </sc-if>
+                  <sc-for list="{{ v.pills }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.on }}" style="font:500 12px 'IBM Plex Sans',sans-serif;border-radius:999px;padding:5px 12px;background:{{ p.bg }};color:{{ p.fg }};border:1px solid {{ p.bd }}">{{ p.label }}</button></sc-for>
+                </span>
+              </div>
+
+              <div style="display:grid;grid-template-columns:200px 832px;column-gap:12px">
+                <sc-if value="{{ v.zoomed }}" hint-placeholder-val="{{ false }}">
+                  <span style="font:400 11px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4);align-self:center">Whole track · click to move</span>
+                  <div onClick="{{ v.jump }}" title="Click to move the view here" style="position:relative;height:20px;margin-bottom:8px;cursor:pointer;background:rgba(255,255,255,.02);border-radius:3px">
+                    <svg width="832" height="20" style="display:block"><path d="{{ v.ov.d }}" fill="rgba(236,231,220,.3)"></path></svg>
+                    <div style="position:absolute;top:0;bottom:0;left:{{ v.ov.x }}px;width:{{ v.ov.w }}px;border:1px solid rgba(236,231,220,.6);border-radius:3px;background:rgba(236,231,220,.08);box-sizing:border-box"></div>
+                  </div>
+                </sc-if>
+
+                <span style="font:400 11px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4);align-self:end;padding-bottom:4px">Bar</span>
+                <div style="position:relative;height:30px;border-bottom:1px solid rgba(255,255,255,.08)">
+                  <sc-if value="{{ v.loop.show }}" hint-placeholder-val="{{ false }}"><div title="{{ v.loop.title }}" style="position:absolute;top:0;height:5px;left:{{ v.loop.x }}px;width:{{ v.loop.w }}px;background:{{ v.loop.bg }};border:1px solid rgba(236,231,220,.5);border-radius:1px;box-sizing:border-box"></div><span style="position:absolute;top:-2px;left:{{ v.loop.lx }}px;font:400 10px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.45);white-space:nowrap">{{ v.loop.label }}</span></sc-if>
+                  <sc-for list="{{ v.ruler }}" as="r" hint-placeholder-count="12"><div style="position:absolute;bottom:0;left:{{ r.x }}px;width:1px;height:{{ r.h }}px;background:rgba(236,231,220,.3)"></div><span style="position:absolute;bottom:6px;left:{{ r.lx }}px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.45)">{{ r.label }}</span></sc-for>
+                  <sc-if value="{{ v.clipStart.show }}" hint-placeholder-val="{{ false }}"><span title="{{ v.clipStart.title }}" style="position:absolute;bottom:-1px;left:{{ v.clipStart.x }}px;width:0;height:0;border-left:5px solid #ece7dc;border-top:5px solid transparent;border-bottom:5px solid transparent"></span></sc-if>
+                </div>
+
+                <div style="display:flex;flex-direction:column;justify-content:center;gap:2px;padding:6px 0">
+                  <span style="font:400 11px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4)">Tempo from the markers</span>
+                  <span style="display:flex;align-items:baseline;gap:6px"><span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:{{ v.tempo.weight }}">{{ v.tempo.fig }}</span><span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ v.tempo.short }}</span></span>
+                </div>
+                <div title="{{ v.tempo.title }}" style="position:relative;height:40px;border-bottom:1px solid rgba(255,255,255,.08)">
+                  <svg width="832" height="40" style="display:block"><line x1="0" x2="832" y1="{{ v.tempo.figY }}" y2="{{ v.tempo.figY }}" stroke="rgba(236,231,220,.35)" stroke-dasharray="3 3"></line><path d="{{ v.tempo.d }}" stroke="rgba(236,231,220,.75)" stroke-width="1.5" fill="none"></path></svg>
+                  <span style="position:absolute;right:4px;top:1px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">{{ v.tempo.hi }}</span>
+                  <span style="position:absolute;right:4px;bottom:1px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">{{ v.tempo.lo }}</span>
+                </div>
+
+                <sc-for list="{{ v.lanes }}" as="l" hint-placeholder-count="2">
+                  <div onClick="{{ l.pick }}" style="display:flex;flex-direction:column;gap:5px;justify-content:center;padding:8px 10px;margin:4px 0 0 -10px;border-radius:6px 0 0 6px;cursor:pointer;background:{{ l.bg }};box-shadow:{{ l.ring }}">
+                    <span style="font:{{ l.nameWeight }} 13px 'IBM Plex Sans',sans-serif">{{ l.short }}</span>
+                    <span style="display:inline-flex;align-items:center;gap:5px;width:fit-content;max-width:100%;font:500 11px/1.25 'IBM Plex Sans',sans-serif;padding:2px 8px;border-radius:999px;background:{{ l.chip.bg }};color:{{ l.chip.fg }};border:1px {{ l.chip.bs }} {{ l.chip.bc }}">{{ l.chip.label }}</span>
+                    <span style="font:400 11.5px/1.35 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ l.sub }}</span>
+                  </div>
+                  <div onClick="{{ l.pick }}" style="position:relative;height:64px;margin-top:4px;padding:6px 0;cursor:pointer;background:{{ l.bg }};box-shadow:{{ l.ringR }};border-radius:0 6px 6px 0">
+                    <sc-if value="{{ l.has }}" hint-placeholder-val="{{ true }}">
+                      <svg width="832" height="64" style="display:block;overflow:visible">
+                        <sc-for list="{{ l.chs }}" as="c" hint-placeholder-count="2"><path d="{{ c }}" fill="rgba(236,231,220,.42)"></path></sc-for>
+                        <path d="{{ l.lines }}" stroke="{{ l.lineInk }}" stroke-width="1" fill="none"></path>
+                        <path d="{{ l.ticks }}" stroke="rgba(236,231,220,.7)" stroke-width="1" fill="none"></path>
+                        <path d="{{ l.trans }}" stroke="rgba(236,231,220,.3)" stroke-width="1" fill="none"></path>
+                      </svg>
+                      <div style="position:absolute;top:6px;left:0;width:{{ l.dimL }}px;height:64px;background:rgba(20,19,16,.62);pointer-events:none"></div>
+                      <div style="position:absolute;top:6px;left:{{ l.dimRx }}px;width:{{ l.dimRw }}px;height:64px;background:rgba(20,19,16,.62);pointer-events:none"></div>
+                      <sc-if value="{{ l.diff.show }}" hint-placeholder-val="{{ false }}"><div title="{{ l.diff.title }}" style="position:absolute;top:4px;bottom:4px;left:{{ l.diff.x }}px;width:{{ l.diff.w }}px;border:1px dashed rgba(236,231,220,.4);border-radius:4px;box-sizing:border-box;pointer-events:none"></div></sc-if>
+                      <sc-for list="{{ l.flags }}" as="f" hint-placeholder-count="2"><div title="{{ f.title }}" style="position:absolute;top:6px;left:{{ f.x }}px;width:8px;height:10px;cursor:default"><div style="width:7px;height:9px;background:#ece7dc;clip-path:polygon(0 0,100% 0,72% 50%,100% 100%,0 100%)"></div></div></sc-for>
+                    </sc-if>
+                    <sc-if value="{{ l.empty }}" hint-placeholder-val="{{ false }}">
+                      <div style="height:64px;display:flex;align-items:center;justify-content:center;border:1px dashed {{ l.emptyBd }};border-radius:6px;box-sizing:border-box;font:400 12px 'IBM Plex Sans',sans-serif;color:{{ l.emptyFg }}">{{ l.emptyText }}</div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+
+                <span></span>
+                <div style="position:relative;height:22px;margin-top:6px">
+                  <sc-for list="{{ v.times }}" as="t" hint-placeholder-count="8"><span style="position:absolute;top:0;left:{{ t.x }}px;font:400 10.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">{{ t.label }}</span></sc-for>
+                </div>
+              </div>
+
+              <sc-if value="{{ v.hasDetail }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-top:14px;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:18px 20px 20px;display:flex;flex-direction:column;gap:16px">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="font:600 14px 'IBM Plex Sans',sans-serif">{{ v.d.file }}</span><span style="display:inline-flex;align-items:center;font:500 11px 'IBM Plex Sans',sans-serif;padding:2px 8px;border-radius:999px;background:{{ v.d.chip.bg }};color:{{ v.d.chip.fg }};border:1px {{ v.d.chip.bs }} {{ v.d.chip.bc }}">{{ v.d.chip.label }}</span></div>
+                <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:14px">
+                  <sc-for list="{{ v.d.facts }}" as="f" hint-placeholder-count="7"><div style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">{{ f.k }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:{{ f.w }};color:#ece7dc">{{ f.v }}</span><span style="font:400 11.5px/1.35 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ f.n }}</span></div></sc-for>
+                </div>
+                <p style="margin:0;font:400 13px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);max-width:760px;text-wrap:pretty">{{ v.d.prov }}</p>
+                <div style="border-top:1px solid rgba(255,255,255,.16);padding-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:32px">
+                  <sc-for list="{{ v.d.ctrls }}" as="c" hint-placeholder-count="2">
+                    <div style="display:flex;flex-direction:column;gap:7px">
+                      <div style="display:flex;align-items:center;gap:10px;min-height:28px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:{{ c.labelFg }}">{{ c.label }}</span><sc-if value="{{ c.hasBtn }}" hint-placeholder-val="{{ false }}"><button onClick="{{ c.onBtn }}" style="margin-left:auto;font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">{{ c.btn }}</button></sc-if></div>
+                      <sc-if value="{{ c.working }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:8px;font:400 12.5px 'IBM Plex Sans',sans-serif;color:#6fc7d6"><span style="width:7px;height:7px;border-radius:50%;background:#6fc7d6"></span>{{ c.workingText }}</span></sc-if>
+                      <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:{{ c.statusFg }};text-wrap:pretty">{{ c.status }}</span>
+                      <sc-if value="{{ c.confirm }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top:2px;padding:12px 14px;border:1px solid rgba(255,255,255,.12);border-radius:6px;background:#141310;display:flex;flex-direction:column;gap:10px"><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:#ece7dc;text-wrap:pretty">{{ c.confirmText }}</span><span style="display:flex;gap:8px"><button onClick="{{ c.onDanger }}" style="font:500 12px 'IBM Plex Sans',sans-serif;color:#e07a6d;background:rgba(224,122,109,.18);border:1px solid rgba(224,122,109,.45);border-radius:6px;padding:7px 12px">{{ c.dangerLabel }}</button><button onClick="{{ c.onCancel }}" style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Cancel</button></span></div>
+                      </sc-if>
+                      <sc-if value="{{ c.helper }}" hint-placeholder-val="{{ false }}"><button onClick="{{ c.onHelper }}" style="align-self:flex-start;font:400 11.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.45);background:transparent;border:1px dashed rgba(236,231,220,.25);border-radius:4px;padding:3px 8px">canvas only: Live opens it →</button></sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              </sc-if>
+            </div>
+
+            <div style="margin-top:28px;padding:18px 0 0;border-top:1px solid rgba(255,255,255,.08);font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Why {{ v.band.key }} · evidence as built</div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:22px;font:400 13px 'IBM Plex Sans',sans-serif">
+            <div style="display:flex;gap:8px"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Open folder</button></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;align-items:center"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Next</span></div><span style="color:rgba(236,231,220,.75);line-height:1.45">{{ v.band.next }}</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;align-items:center"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Genre</span><button style="margin-left:auto;font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:4px 9px">Change</button></div><span>Hip-hop</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;align-items:center"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Familiarity</span><button style="margin-left:auto;font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:4px 9px">Change</button></div><span>Mainstream</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><div style="display:flex;align-items:center"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Name</span><button style="margin-left:auto;font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:4px 9px">Rename</button></div><span>{{ v.song }}</span></div>
+            <div style="display:flex;flex-direction:column;gap:6px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Uploads</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">{{ v.upload }}</span></div>
+            <div style="border-top:1px solid rgba(255,255,255,.16);padding-top:16px;display:flex;flex-direction:column;gap:12px"><div style="display:flex;align-items:center"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Source</span><button style="margin-left:auto;font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:4px 9px">Swap</button></div><div style="display:flex;align-items:center"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Remove</span><button style="margin-left:auto;font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:4px 9px">Remove</button></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-for>
+
+  <div id="1d" style="display:flex;flex-direction:column;gap:12px;scroll-margin-top:24px">
+    <div style="display:flex;align-items:baseline;gap:10px"><a href="#1d" style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1d</a><span style="font:500 14px 'IBM Plex Sans',sans-serif">Whose warp it is: every state</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.55)">The lane's gutter, its drawing, the detail line, and which control is offered. Chips follow the evidence badges: filled for the user's, outlined for borrowed, dashed for crateside's or Live's own guess.</span></div>
+    <div style="width:1472px;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 28px 14px;box-sizing:border-box">
+      <div style="display:grid;grid-template-columns:210px 340px minmax(0,1fr) 150px 150px;gap:22px;padding:12px 0 8px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);border-bottom:1px solid rgba(255,255,255,.08)"><span>Gutter</span><span>Lane</span><span>Detail line</span><span>Re-apply</span><span>Let Live analyse</span></div>
+      <sc-for list="{{ states }}" as="s" hint-placeholder-count="7">
+        <div style="display:grid;grid-template-columns:210px 340px minmax(0,1fr) 150px 150px;gap:22px;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+          <div style="display:flex;flex-direction:column;gap:5px"><span style="font:500 13px 'IBM Plex Sans',sans-serif">Vocal - Full</span><span style="display:inline-flex;width:fit-content;font:500 11px/1.25 'IBM Plex Sans',sans-serif;padding:2px 8px;border-radius:999px;background:{{ s.chip.bg }};color:{{ s.chip.fg }};border:1px {{ s.chip.bs }} {{ s.chip.bc }}">{{ s.chip.label }}</span><span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ s.sub }}</span></div>
+          <div style="position:relative;height:48px">
+            <sc-if value="{{ s.has }}" hint-placeholder-val="{{ true }}"><svg width="340" height="48" style="display:block"><path d="{{ s.wave }}" fill="rgba(236,231,220,.42)"></path><path d="{{ s.lines }}" stroke="rgba(236,231,220,.45)" fill="none"></path></svg><div style="position:absolute;top:0;left:0;width:{{ s.dimL }}px;height:48px;background:rgba(20,19,16,.62)"></div><sc-for list="{{ s.flags }}" as="f" hint-placeholder-count="2"><div style="position:absolute;top:0;left:{{ f.x }}px;width:7px;height:9px;background:#ece7dc;clip-path:polygon(0 0,100% 0,72% 50%,100% 100%,0 100%)"></div></sc-for></sc-if>
+            <sc-if value="{{ s.empty }}" hint-placeholder-val="{{ false }}"><div style="height:48px;display:flex;align-items:center;justify-content:center;border:1px dashed {{ s.emptyBd }};border-radius:6px;box-sizing:border-box;font:400 12px 'IBM Plex Sans',sans-serif;color:{{ s.emptyFg }}">{{ s.emptyText }}</div></sc-if>
+          </div>
+          <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty">{{ s.prov }}</span>
+          <span style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:{{ s.raFg }}">{{ s.ra }}</span>
+          <span style="font:400 12px/1.4 'IBM Plex Sans',sans-serif;color:{{ s.laFg }}">{{ s.la }}</span>
+        </div>
+      </sc-for>
+      <p style="margin:12px 0 0;font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);max-width:900px">Transients' origin is a fact in the detail (<em>Live's</em>, <em>crateside's</em>, <em>from the earlier cut</em>), never drawn differently: they agree 87% of the time within 25 ms, so a second tick style would look like a difference that mostly isn't there.</p>
+    </div>
+  </div>
+
+  <div id="1e" style="display:flex;flex-direction:column;gap:12px;scroll-margin-top:24px">
+    <div style="display:flex;align-items:baseline;gap:10px"><a href="#1e" style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1e</a><span style="font:500 14px 'IBM Plex Sans',sans-serif">The two controls, step by step</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.55)">Both sit under a stronger rule at the foot of the lane's detail, set apart by position. They stay <code>.outline</code>, and <code>.danger</code> appears only at the confirm, which opens below its button.</span></div>
+    <sc-for list="{{ flows }}" as="fl" hint-placeholder-count="2">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font:500 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.8)">{{ fl.title }}</span>
+        <div style="display:flex;gap:16px;align-items:stretch">
+          <sc-for list="{{ fl.steps }}" as="s" hint-placeholder-count="4">
+            <div style="width:278px;flex:none;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px 16px 16px;display:flex;flex-direction:column;gap:10px;box-sizing:border-box">
+              <span style="font:500 11px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">{{ s.n }}</span>
+              <span style="display:inline-flex;width:fit-content;font:500 11px/1.25 'IBM Plex Sans',sans-serif;padding:2px 8px;border-radius:999px;background:{{ s.chip.bg }};color:{{ s.chip.fg }};border:1px {{ s.chip.bs }} {{ s.chip.bc }}">{{ s.chip.label }}</span>
+              <div style="border-top:1px solid rgba(255,255,255,.16);padding-top:10px;display:flex;flex-direction:column;gap:7px">
+                <div style="display:flex;align-items:center;gap:10px;min-height:28px"><span style="font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:{{ s.c.labelFg }}">{{ s.c.label }}</span><sc-if value="{{ s.c.hasBtn }}" hint-placeholder-val="{{ false }}"><span style="margin-left:auto;white-space:nowrap;font:500 12px 'IBM Plex Sans',sans-serif;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">{{ s.c.btn }}</span></sc-if></div>
+                <sc-if value="{{ s.c.working }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:8px;font:400 12.5px 'IBM Plex Sans',sans-serif;color:#6fc7d6"><span style="width:7px;height:7px;border-radius:50%;background:#6fc7d6"></span>{{ s.c.workingText }}</span></sc-if>
+                <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:{{ s.c.statusFg }};text-wrap:pretty">{{ s.c.status }}</span>
+                <sc-if value="{{ s.c.confirm }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 14px;border:1px solid rgba(255,255,255,.12);border-radius:6px;background:#141310;display:flex;flex-direction:column;gap:10px"><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;text-wrap:pretty">{{ s.c.confirmText }}</span><span style="display:flex;gap:8px"><span style="font:500 12px 'IBM Plex Sans',sans-serif;color:#e07a6d;background:rgba(224,122,109,.18);border:1px solid rgba(224,122,109,.45);border-radius:6px;padding:7px 12px">{{ s.c.dangerLabel }}</span><span style="font:500 12px 'IBM Plex Sans',sans-serif;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:7px 10px">Cancel</span></span></div></sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div id="1f" style="display:flex;flex-direction:column;gap:12px;max-width:980px;scroll-margin-top:24px">
+    <div style="display:flex;align-items:baseline;gap:10px"><a href="#1f" style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1f</a><span style="font:500 14px 'IBM Plex Sans',sans-serif">Zoom, and room to grow</span></div>
+    <div style="display:flex;flex-direction:column;gap:8px;font:400 13px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.72);text-wrap:pretty">
+      <p style="margin:0"><strong style="color:#ece7dc;font-weight:500">Zoom earns its place</strong>, as three fixed steps: <em>Whole track</em>, <em>32 bars</em> and <em>8 bars</em>, counted from the shared warp. Zoomed, a strip of the whole track appears above the ruler with the view boxed in it: click to move, or use ‹ ›. Transients are drawn only from 32 bars, where they sit 3px or more apart. Markers are drawn as flags wherever two are at least 9px apart. Closer than that, they become ticks in the flag row with faint lines through the lane, so a dense warp reads as a texture and its bunching still shows. See <a href="#1b" style="text-decoration:underline">1b</a> whole and <a href="#1c" style="text-decoration:underline">1c</a> at 8 bars.</p>
+      <p style="margin:0"><strong style="color:#ece7dc;font-weight:500">Editing, later.</strong> The flags are already the handles: in an editing version they drag along their lane, a click in the flag row adds one, and the clip-start notch in the ruler drags to bar 1 of the first verse. Edits would apply to the group, with a stem warped on its own edited on its own lane. 8 bars is the zoom an edit would need.</p>
+      <p style="margin:0"><strong style="color:#ece7dc;font-weight:500">Off the grid, #96.</strong> The 10 s offsets get a lane of their own between the tempo line and the stems: <em>Off the grid</em>, milliseconds either side of a centre line, on the same axis. A step like the 50 ms one at 4:40 would show directly above the markers that absorbed it, and the offer to correct it would sit in the detail, beside the two controls.</p>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const W = 832;
+const hsh = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const fmtT = t => { t = Math.max(0, t); return Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0'); };
+const fmtTc = t => { const m = Math.floor(t / 60); return m + ':' + (t - m * 60).toFixed(2).padStart(5, '0'); };
+const fmtB = v => v.toFixed(2).replace(/\.00$/, '');
+const fmtN = n => n.toLocaleString('en-US');
+const envAt = (E, t) => { let l = 0; for (const p of E) { if (t >= p[0]) l = p[1]; else break; } return l; };
+
+function mkWarp(M, single) {
+  const n = M.length;
+  const sl = i => (M[i + 1][0] - M[i][0]) / (M[i + 1][1] - M[i][1]);
+  const s0 = n > 1 ? sl(0) : 60 / single, s1 = n > 1 ? sl(n - 2) : 60 / single;
+  const find = (v, k) => { let lo = 0, hi = n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (M[m][k] <= v) lo = m; else hi = m; } return lo; };
+  return {
+    b2t: b => b <= M[0][1] ? M[0][0] + (b - M[0][1]) * s0 : b >= M[n - 1][1] ? M[n - 1][0] + (b - M[n - 1][1]) * s1 : (i => M[i][0] + (b - M[i][1]) * sl(i))(find(b, 1)),
+    t2b: t => t <= M[0][0] ? M[0][1] + (t - M[0][0]) / s0 : t >= M[n - 1][0] ? M[n - 1][1] + (t - M[n - 1][0]) / s1 : (i => M[i][1] + (t - M[i][0]) / sl(i))(find(t, 0)),
+  };
+}
+
+function genTrans(st, gw, dur) {
+  const out = [], k0 = Math.ceil(gw.t2b(0) * 2), k1 = Math.floor(gw.t2b(dur) * 2);
+  for (let k = k0; k <= k1; k++) {
+    const t = gw.b2t(k / 2) + (hsh(k + st.seed * 3) - .5) * .016;
+    if (t < 0 || t > dur) continue;
+    if (hsh(k * 1.7 + st.seed * 91) < (k % 2 === 0 ? st.tp[0] : st.tp[1]) && envAt(st.env, t) > .05) out.push(t);
+  }
+  return out;
+}
+
+function amp(st, t, ch, dur) {
+  if (t < 0 || t > dur) return 0;
+  let e = envAt(st.env, t);
+  if (st.gate && hsh(Math.floor(t / 2.3) * 3 + st.seed) > .74) e *= .12;
+  const T = st.trans; let lo = 0, hi = T.length - 1, p = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (T[m] <= t) { p = m; lo = m + 1; } else hi = m - 1; }
+  const pulse = p >= 0 ? Math.exp(-(t - T[p]) * 9) : 0;
+  const n = hsh(Math.floor(t * 30) + ch * 7777 + st.seed * 131);
+  return Math.min(1, e * (.32 + .3 * n + .5 * pulse));
+}
+
+function wave(st, dur, t0, t1, w, ch, y0, h) {
+  const mid = y0 + h / 2, hh = h / 2, dt = (t1 - t0) / w; let top = ''; const bot = [];
+  for (let x = 0; x <= w; x++) {
+    const t = t0 + x * dt; let a = 0;
+    for (let k = 0; k < 3; k++) a = Math.max(a, amp(st, t + k * dt / 3, ch, dur));
+    top += (x ? 'L' : 'M') + x + ' ' + (mid - a * hh - .25).toFixed(1);
+    bot.push('L' + x + ' ' + (mid + a * hh + .25).toFixed(1));
+  }
+  return top + bot.reverse().join('') + 'Z';
+}
+
+function markTitle(M, i) {
+  const [t, b] = M[i], bar = Math.floor(b / 4) + 1, beat = Math.floor(((b % 4) + 4) % 4) + 1;
+  let s = 'Marker ' + (i + 1) + ' of ' + M.length + ' · ' + fmtTc(t) + ' · bar ' + bar + '.' + beat;
+  if (i < M.length - 1) s += ' · ' + fmtB(60 * (M[i + 1][1] - b) / (M[i + 1][0] - t)) + ' to the next';
+  return s;
+}
+
+function markGeo(M, X, t0, t1, top, bot) {
+  const vis = [];
+  M.forEach((m, i) => { if (m[0] >= t0 - 1e-6 && m[0] <= t1 + 1e-6) vis.push([X(m[0]), i]); });
+  let gap = 1e9; for (let i = 1; i < vis.length; i++) gap = Math.min(gap, vis[i][0] - vis[i - 1][0]);
+  const flagsOn = gap >= 9;
+  return {
+    flagsOn,
+    lines: vis.map(v => 'M' + v[0].toFixed(1) + ' ' + top + 'V' + bot).join(''),
+    ticks: flagsOn ? '' : vis.map(v => 'M' + v[0].toFixed(1) + ' 0V9').join(''),
+    flags: flagsOn ? vis.map(([x, i]) => ({ x: (x - .5).toFixed(1), title: markTitle(M, i) })) : [],
+  };
+}
+
+function songA() {
+  const tempo = 94, cs = 14.2, beats = 372, ce = cs + beats * 60 / tempo, dur = 256;
+  const M = [[cs, 0], [ce, beats]];
+  const gw = mkWarp(M);
+  const inst = { short: 'Instrumental - Clean', ch: 2, prov: 'yours', M, seed: 1, tp: [.95, .62], mode: 'Complex', transOrigin: "Live's", saved: '29 Sep',
+    env: [[0, .28], [cs, .6], [55, .82], [76, .6], [117, .84], [138, .6], [180, .86], [222, .5], [ce, .1]] };
+  const voc = { short: 'Vocal - Full', ch: 1, prov: 'borrowed', from: 'Instrumental - Clean', M, seed: 2, tp: [.5, .32], gate: true, mode: 'Complex Pro', transOrigin: "crateside's", lent: '29 Sep',
+    env: [[0, 0], [3, .22], [9, 0], [cs, .55], [55, .72], [76, .55], [117, .72], [138, .55], [180, .74], [222, .4], [245, 0]] };
+  const S = { title: 'Many Men (Wish Death)', meta: 'Hip-hop · 1 upload', upload: 'youtube · 5D3crqpClPY', dur, clip: { s: cs, e: ce }, loop: { s: cs, e: gw.b2t(32), on: false },
+    GM: M, gw, stems: [inst, voc],
+    tempo: { fig: '94', weight: 600, note: 'from your warp', short: 'from your warp', lo: null, hi: null, value: 94 },
+    band: { key: 'B♭ min', tagged: '2 of 2 samples', judged: 'judged 2026-09-28', next: 'Warped. Tag the samples in Ableton and move them to Mashup Samples.' } };
+  S.stems.forEach(s => s.trans = genTrans(s, gw, dur));
+  return S;
+}
+
+function songB() {
+  const cs = 0.9, dur = 391;
+  const T = b => 111.5 + .9 * Math.sin(b / 70) + .4 * Math.sin(b / 23);
+  const dT = b => Math.abs(.9 / 70 * Math.cos(b / 70) + .4 / 23 * Math.cos(b / 23));
+  let b = 0, t = cs; const M = [[t, b]];
+  for (;;) {
+    const r = dT(b), step = r > .018 ? 2 : r > .009 ? 4 : 8;
+    const nt = t + step * 60 / T(b + step / 2);
+    if (nt > dur - 1.5) break;
+    b += step; t = nt; M.push([t + (hsh(b) - .5) * .004, b]);
+  }
+  const gw = mkWarp(M);
+  const split = 130;
+  const M2 = M.filter(m => m[0] < split);
+  let bb = M2[M2.length - 1][1] + 4;
+  while (gw.b2t(bb) < dur - 2) { M2.push([gw.b2t(bb) + .02 + .018 * Math.sin(bb / 9), bb]); bb += 4; }
+  const inst = { short: 'Instrumental - Clean', ch: 2, prov: 'yours', M, seed: 3, tp: [.97, .7], mode: 'Complex', transOrigin: "Live's", saved: '21 Sep',
+    env: [[0, .2], [cs, .66], [95, .74], [200, .68], [300, .74], [385, .3]] };
+  const voc = { short: 'Vocal - Full', ch: 1, prov: 'yoursWasBorrowed', from: 'Instrumental - Clean', M: M2, ownM: M2, seed: 4, tp: [.5, .34], gate: true, mode: 'Complex Pro', transOrigin: "Live's", lent: '21 Sep', saved: '30 Sep', differsFrom: split,
+    env: [[0, 0], [17, .6], [380, 0]] };
+  const full = { short: 'Instrumental - Full', ch: 2, prov: 'borrowed', from: 'Instrumental - Clean', M, seed: 5, tp: [.9, .6], mode: 'Complex', transOrigin: 'from the earlier cut', lent: '21 Sep',
+    env: [[0, .22], [cs, .72], [95, .8], [200, .74], [300, .8], [385, .3]] };
+  const S = { title: "Rapper's Delight", meta: 'Hip-hop · 1 upload', upload: 'youtube · mcCK99wHrk0', dur, clip: { s: cs, e: M[M.length - 1][0] }, loop: { s: cs, e: gw.b2t(16), on: true },
+    GM: M, gw, stems: [inst, voc, full],
+    tempo: { fig: '~111', weight: 400, note: 'drifts 110–113 · 2% · from your warp', short: 'drifts 110–113 · 2%', lo: 110, hi: 113, value: 111 },
+    band: { key: 'A min', tagged: '3 of 3 samples', judged: 'judged 2026-09-20', next: 'Warped. Tag the samples in Ableton and move them to Mashup Samples.' } };
+  S.stems.forEach(s => s.trans = genTrans(s, gw, dur));
+  return S;
+}
+
+const SONGS = { A: songA(), B: songB() };
+
+const CHIP = {
+  yours: () => ({ label: 'Your warp', bg: '#ece7dc', fg: '#0f0e0c', bs: 'solid', bc: '#ece7dc' }),
+  yoursWasBorrowed: () => ({ label: 'Your warp', bg: '#ece7dc', fg: '#0f0e0c', bs: 'solid', bc: '#ece7dc' }),
+  borrowed: s => ({ label: 'Borrowed from ' + s.from, bg: 'transparent', fg: 'rgba(236,231,220,.85)', bs: 'solid', bc: 'rgba(255,255,255,.3)' }),
+  starter: () => ({ label: 'Starter', bg: 'transparent', fg: 'rgba(236,231,220,.7)', bs: 'dashed', bc: 'rgba(255,255,255,.3)' }),
+  analysis: () => ({ label: "Live's analysis", bg: 'transparent', fg: 'rgba(236,231,220,.7)', bs: 'dashed', bc: 'rgba(255,255,255,.3)' }),
+  none: () => ({ label: 'No warp yet', bg: 'transparent', fg: 'rgba(236,231,220,.5)', bs: 'dashed', bc: 'rgba(255,255,255,.18)' }),
+  waiting: () => ({ label: 'Waiting for Live', bg: '#e8b45a', fg: '#0f0e0c', bs: 'solid', bc: '#e8b45a' }),
+  writing: () => ({ label: 'Writing', bg: '#6fc7d6', fg: '#0f0e0c', bs: 'solid', bc: '#6fc7d6' }),
+  putting: () => ({ label: 'Putting the warp back', bg: '#6fc7d6', fg: '#0f0e0c', bs: 'solid', bc: '#6fc7d6' }),
+};
+
+function lendsTo(S, s) { return S.stems.filter(o => o.from === s.short && o.prov === 'borrowed').map(o => o.short); }
+
+function subLine(S, s) {
+  switch (s.prov) {
+    case 'yours': { const l = lendsTo(S, s); return 'saved ' + s.saved + (l.length ? ' · lent to ' + l.join(', ') : ''); }
+    case 'borrowed': return 'unchanged since ' + s.lent;
+    case 'yoursWasBorrowed': return 'saved over crateside\'s · ' + s.saved + (s.differsFrom ? ' · differs from ' + fmtT(s.differsFrom) : '');
+    case 'starter': return 'one marker · not finished';
+    case 'analysis': return 'not saved, so Live ignores it';
+    case 'none': return 'Live has not opened it';
+    case 'waiting': return 'preview it in Live';
+    case 'writing': return 'writing ' + s.from + '\'s warp';
+    case 'putting': return 'Live opened it';
+  }
+  return '';
+}
+
+function provLine(S, s) {
+  switch (s.prov) {
+    case 'yours': { const l = lendsTo(S, s); return 'Saved in Live on ' + s.saved + '.' + (l.length ? ' crateside lends it to ' + l.join(' and ') + '.' : ''); }
+    case 'borrowed': return 'crateside copied ' + s.from + '\'s warp on ' + s.lent + '. Unchanged since.';
+    case 'yoursWasBorrowed': return 'crateside lent it ' + s.from + '\'s warp on ' + s.lent + '; you saved over it in Live on ' + s.saved + ', so it is yours now.' + (s.differsFrom ? ' It follows ' + s.from + ' up to ' + fmtT(s.differsFrom) + ', then has markers of its own.' : '');
+    case 'starter': return 'One marker at crateside\'s reading, 94, so dropping it into an empty set sets the set\'s tempo. Not a finished warp: warp it in Live and press Save Default Clip.';
+    case 'analysis': return 'Live has opened it, but no warp is saved. Live ignores these markers until you press Save Default Clip.';
+    case 'none': return 'Live has not opened this file, so there is no warp and no overview yet.';
+    case 'waiting': return 'Its warp file is in the Recycle Bin. Preview it in Live\'s browser and Live writes a fresh one; crateside then puts the warp back.';
+  }
+  return '';
+}
+
+const INK = { label: 'rgba(236,231,220,.4)', amber: '#e8b45a', status: 'rgba(236,231,220,.6)', quiet: 'rgba(236,231,220,.4)' };
+
+function ctrlsFor(s, step, h) {
+  const ra = { label: "Re-apply crateside's warp", labelFg: INK.label, hasBtn: false, statusFg: INK.status };
+  const la = { label: 'Let Live analyse', labelFg: INK.label, hasBtn: false, statusFg: INK.status };
+  const p = s.prov;
+  if (p === 'yours') { ra.status = s.lendsTo && s.lendsTo.length ? 'Nothing to re-apply: this is the warp crateside lends.' : 'Nothing to re-apply: crateside has lent this stem nothing.'; ra.statusFg = INK.quiet; }
+  else if (p === 'borrowed') { ra.status = 'Nothing to re-apply: it is still ' + s.from + '\'s warp, unchanged.'; ra.statusFg = INK.quiet; }
+  else if (p === 'yoursWasBorrowed' || (p === 'analysis' && s.from)) { ra.hasBtn = true; ra.btn = 'Re-apply'; ra.status = 'Writes ' + s.from + '\'s warp over ' + (p === 'analysis' ? 'Live\'s analysis' : 'yours') + ' again. Yours is backed up first.'; }
+  else if (p === 'starter' || p === 'analysis') { ra.status = 'Nothing to lend yet: no stem of this upload has a saved warp.'; ra.statusFg = INK.quiet; }
+  else if (p === 'none') { ra.status = 'Nothing to re-apply.'; ra.statusFg = INK.quiet; }
+  else { ra.status = 'Not while a change is under way.'; ra.statusFg = INK.quiet; }
+
+  if (['yours', 'borrowed', 'yoursWasBorrowed', 'starter', 'analysis'].includes(p)) { la.hasBtn = true; la.btn = 'Let Live analyse'; la.status = 'Sends this stem\'s warp file to the Recycle Bin, so Live analyses it afresh with its own transients. crateside then puts the warp back.'; }
+  else if (p === 'none') { la.status = 'No warp file yet: Live has not opened this stem.'; la.statusFg = INK.quiet; }
+  else if (p === 'waiting') { la.labelFg = INK.amber; la.status = 'Preview ' + s.short + ' in Live\'s browser (Sample Staging). Live writes a fresh file, and crateside puts the warp back within a minute.'; la.statusFg = '#ece7dc'; la.helper = true; }
+  else { la.status = 'Not while a change is under way.'; la.statusFg = INK.quiet; }
+
+  if (step === 'ra-confirm') { ra.hasBtn = false; ra.labelFg = INK.amber; ra.confirm = true; ra.confirmText = 'Replace your warp on ' + s.short + ' with ' + s.from + '\'s? Yours (' + fmtN(s.M.length) + ' markers, saved ' + s.saved + ') is backed up first.'; ra.dangerLabel = 'Replace my warp'; ra.status = ''; la.hasBtn = false; }
+  if (step === 'la-confirm') { la.hasBtn = false; la.labelFg = INK.amber; la.confirm = true; la.confirmText = 'Send ' + s.short + '\'s warp file to the Recycle Bin? Until Live opens the stem again, it has no warp.'; la.dangerLabel = 'Send to Recycle Bin'; la.status = ''; ra.hasBtn = false; }
+  if (p === 'writing') { ra.working = true; ra.workingText = 'Writing ' + s.from + '\'s warp…'; ra.status = 'Your warp is backed up.'; }
+  if (p === 'putting') { la.working = true; la.workingText = 'Live wrote a fresh file · putting the warp back…'; la.status = ''; }
+  if (s.doneNote) { (s.doneWhich === 'ra' ? ra : la).status = s.doneNote; (s.doneWhich === 'ra' ? ra : la).statusFg = '#ece7dc'; }
+  if (h) { ra.onBtn = h.raBtn; la.onBtn = h.laBtn; ra.onDanger = h.raGo; la.onDanger = h.laGo; ra.onCancel = la.onCancel = h.cancel; la.onHelper = h.liveOpens; }
+  return [ra, la];
+}
+
+class Component extends DCLogic {
+  state = {
+    vs: {
+      '1a': { song: 'A', zoom: 'whole', win: 1, sel: 1, step: null, over: {} },
+      '1b': { song: 'B', zoom: 'whole', win: 1, sel: 1, step: null, over: {} },
+      '1c': { song: 'B', zoom: '8', win: 61, sel: 1, step: null, over: {} },
+    },
+  };
+
+  upd(id, f) { this.setState(st => ({ vs: { ...st.vs, [id]: { ...st.vs[id], ...f(st.vs[id]) } } })); }
+
+  componentWillUnmount() { (this.timers || []).forEach(clearTimeout); }
+  later(fn, ms) { (this.timers = this.timers || []).push(setTimeout(fn, ms)); }
+
+  view(id, title, caption) {
+    const V = this.state.vs[id], S = SONGS[V.song], gw = S.gw;
+    const stems = S.stems.map((s, i) => ({ ...s, ...(V.over[i] || {}) }));
+    const Sx = { ...S, stems };
+    const len = V.zoom === 'whole' ? null : +V.zoom;
+    const maxBar = Math.floor(gw.t2b(S.dur) / 4) + 1;
+    const win = len ? Math.max(1, Math.min(V.win, maxBar - len + 1)) : 1;
+    const t0 = len ? gw.b2t((win - 1) * 4) : 0, t1 = len ? gw.b2t((win - 1 + len) * 4) : S.dur;
+    const X = t => (t - t0) / (t1 - t0) * W;
+    const cl = x => Math.max(0, Math.min(W, x));
+
+    const ruler = [];
+    const bStep = len === 8 ? 1 : len === 32 ? 1 : 4, lStep = len === 8 ? 1 : len === 32 ? 4 : 16;
+    const b0 = Math.ceil(gw.t2b(t0) / 4) + 1, b1 = Math.floor(gw.t2b(t1) / 4) + 1;
+    for (let bar = Math.max(1, b0); bar <= b1; bar++) {
+      if ((bar - 1) % bStep) continue;
+      const x = X(gw.b2t((bar - 1) * 4)); if (x < 0 || x > W - 1) continue;
+      const lab = (bar - 1) % lStep === 0;
+      ruler.push({ x: x.toFixed(1), h: lab ? 12 : 5, lx: (x + 3).toFixed(1), label: lab ? String(bar) : '' });
+      if (len === 8) for (let q = 1; q < 4; q++) { const xq = X(gw.b2t((bar - 1) * 4 + q)); if (xq < W) ruler.push({ x: xq.toFixed(1), h: 3, lx: 0, label: '' }); }
+    }
+    const tStep = len === 8 ? 2 : len === 32 ? 10 : 30, times = [];
+    for (let t = Math.ceil(t0 / tStep) * tStep; t <= t1; t += tStep) { const x = X(t); if (x <= W - 30) times.push({ x: x.toFixed(1), label: fmtT(t) }); }
+
+    const lx1 = cl(X(S.loop.s)), lx2 = cl(X(S.loop.e));
+    const loop = { show: lx2 - lx1 > 1, x: lx1.toFixed(1), w: (lx2 - lx1).toFixed(1), bg: S.loop.on ? 'rgba(236,231,220,.55)' : 'transparent', lx: (lx2 + 6).toFixed(1), label: S.loop.on ? 'loop' : 'loop off',
+      title: 'Loop ' + fmtTc(S.loop.s) + '–' + fmtTc(S.loop.e) + ' · ' + (S.loop.on ? 'on' : 'off') };
+    const csx = X(S.clip.s);
+    const clipStart = { show: csx >= 0 && csx <= W, x: (csx - 1).toFixed(1), title: 'Clip start · ' + fmtTc(S.clip.s) + ' · bar 1.1' };
+
+    const GM = S.GM, segs = [];
+    for (let i = 0; i < GM.length - 1; i++) segs.push({ a: GM[i][0], b: GM[i + 1][0], v: 60 * (GM[i + 1][1] - GM[i][1]) / (GM[i + 1][0] - GM[i][0]) });
+    const lo = S.tempo.lo ?? Math.round(S.tempo.value) - 1, hi = S.tempo.hi ?? Math.round(S.tempo.value) + 1;
+    const Y = v => (37 - (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo) * 34).toFixed(1);
+    let td = '';
+    segs.forEach(sg => { if (sg.b < t0 || sg.a > t1) return; const xa = cl(X(sg.a)), xb = cl(X(sg.b)); td += (td ? 'L' : 'M') + xa.toFixed(1) + ' ' + Y(sg.v) + 'H' + xb.toFixed(1); });
+    const tempo = { ...S.tempo, d: td, figY: Y(S.tempo.value), lo: S.tempo.lo ?? '', hi: S.tempo.hi ?? '', title: GM.length + ' markers · ' + S.tempo.note };
+
+    const h = i => ({
+      raBtn: () => this.upd(id, () => ({ sel: i, step: 'ra-confirm' })),
+      laBtn: () => this.upd(id, () => ({ sel: i, step: 'la-confirm' })),
+      cancel: () => this.upd(id, () => ({ step: null })),
+      raGo: () => { this.upd(id, v => ({ step: null, over: { ...v.over, [i]: { ...v.over[i], prov: 'writing', doneNote: null } } }));
+        this.later(() => this.upd(id, v => ({ over: { ...v.over, [i]: { prov: 'borrowed', M: S.GM, differsFrom: null, lent: '2 Oct', doneWhich: 'ra', doneNote: 'Re-applied just now. Your previous warp is backed up.' } } })), 1400); },
+      laGo: () => this.upd(id, v => ({ step: null, over: { ...v.over, [i]: { ...v.over[i], prov: 'waiting', was: (v.over[i] && v.over[i].prov) || S.stems[i].prov, doneNote: null } } })),
+      liveOpens: () => { this.upd(id, v => ({ over: { ...v.over, [i]: { ...v.over[i], prov: 'putting' } } }));
+        this.later(() => this.upd(id, v => ({ over: { ...v.over, [i]: { ...v.over[i], prov: v.over[i].was, transOrigin: "Live's", doneWhich: 'la', doneNote: 'Warp put back just now, into Live\'s fresh file. Transients are Live\'s.' } } })), 1400); },
+    });
+
+    const lanes = stems.map((s, i) => {
+      const sel = V.sel === i, noFile = s.prov === 'waiting' || s.prov === 'none';
+      const lane = {
+        short: s.short, nameWeight: sel ? 600 : 500, chip: CHIP[s.prov](s), sub: subLine(Sx, s),
+        bg: sel ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.02)',
+        ring: sel ? 'inset 1px 0 0 rgba(236,231,220,.35), inset 0 1px 0 rgba(236,231,220,.35), inset 0 -1px 0 rgba(236,231,220,.35)' : 'none',
+        ringR: sel ? 'inset -1px 0 0 rgba(236,231,220,.35), inset 0 1px 0 rgba(236,231,220,.35), inset 0 -1px 0 rgba(236,231,220,.35)' : 'none',
+        pick: () => this.upd(id, () => ({ sel: i, step: null })),
+        has: !noFile, empty: noFile,
+        emptyText: s.prov === 'waiting' ? 'No warp · waiting for Live to open it' : 'No overview · Live has not opened this file',
+        emptyBd: s.prov === 'waiting' ? 'rgba(232,180,90,.55)' : 'rgba(255,255,255,.14)',
+        emptyFg: s.prov === 'waiting' ? '#e8b45a' : 'rgba(236,231,220,.4)',
+      };
+      if (noFile) return lane;
+      const chs = s.ch === 2 ? [wave(s, S.dur, t0, t1, W, 0, 11, 21), wave(s, S.dur, t0, t1, W, 1, 34, 21)] : [wave(s, S.dur, t0, t1, W, 0, 11, 44)];
+      const mg = markGeo(s.M, X, t0, t1, 10, 56);
+      const vt = len ? s.trans.filter(t => t >= t0 && t <= t1).map(t => 'M' + X(t).toFixed(1) + ' 58V63').join('') : '';
+      const dl = cl(X(S.clip.s)), dr = cl(X(S.clip.e));
+      let diff = { show: false };
+      if (s.differsFrom && s.differsFrom < t1) { const x = cl(X(s.differsFrom)); diff = { show: true, x: x.toFixed(1), w: (W - x).toFixed(1), title: 'Differs from ' + s.from + ' from ' + fmtT(s.differsFrom) }; }
+      return { ...lane, chs, lines: mg.lines, ticks: mg.ticks, flags: mg.flags, lineInk: mg.flagsOn ? 'rgba(236,231,220,.45)' : 'rgba(236,231,220,.14)', trans: vt,
+        dimL: dl.toFixed(1), dimRx: dr.toFixed(1), dimRw: (W - dr).toFixed(1), diff };
+    });
+
+    const own = stems.filter(s => s.M !== S.GM && !['waiting', 'none', 'putting'].includes(s.prov));
+    const groupLine = own.length ? stems.length + ' stems · ' + own.map(s => s.short).join(', ') + ' warped on ' + (own.length > 1 ? 'their own' : 'its own')
+      : stems.length + ' stems · one warp · ' + fmtN(S.GM.length) + ' markers · ' + stems[0].mode;
+
+    const ss = stems[V.sel];
+    ss.lendsTo = lendsTo(Sx, ss);
+    const noFile = ['waiting', 'none'].includes(ss.prov);
+    const facts = [
+      { k: 'Tempo', v: S.tempo.fig, w: S.tempo.weight, n: S.tempo.short },
+      { k: 'Mode', v: noFile ? '—' : ss.mode, w: 400, n: '' },
+      { k: 'Markers', v: noFile ? '—' : fmtN(ss.M.length), w: 400, n: noFile ? '' : ss.M === S.GM ? (ss.short === S.stems[0].short ? 'shared by the group' : 'same as ' + S.stems[0].short) : 'its own' },
+      { k: 'Transients', v: noFile ? '—' : fmtN(ss.trans.length), w: 400, n: noFile ? '' : ss.transOrigin },
+      { k: 'Clip', v: noFile ? '—' : fmtTc(S.clip.s) + '–' + fmtTc(S.clip.e), w: 400, n: noFile ? '' : 'starts at bar 1' },
+      { k: 'Loop', v: noFile ? '—' : fmtTc(S.loop.s) + '–' + fmtTc(S.loop.e), w: 400, n: noFile ? '' : S.loop.on ? 'on' : 'off' },
+      { k: 'Default clip', v: noFile ? '—' : ss.prov === 'analysis' ? 'not saved' : 'saved', w: 400, n: noFile ? '' : ss.prov === 'analysis' ? 'Live ignores it' : 'Live uses it' },
+    ];
+    const ext = S.title + ' (' + ss.short + ').flac';
+    const d = { file: ext, chip: CHIP[ss.prov](ss), facts, prov: provLine(Sx, ss), ctrls: ctrlsFor(ss, V.step, h(V.sel)) };
+
+    const pills = [['whole', 'Whole track'], ['32', '32 bars'], ['8', '8 bars']].map(([k, label]) => ({
+      label, on: () => this.upd(id, v => ({ zoom: k, win: k === 'whole' ? 1 : v.win })),
+      bg: V.zoom === k ? '#ece7dc' : 'transparent', fg: V.zoom === k ? '#0f0e0c' : 'rgba(236,231,220,.75)', bd: V.zoom === k ? 'transparent' : 'rgba(255,255,255,.1)' }));
+
+    const ov = len ? { d: wave(S.stems[0], S.dur, 0, S.dur, W, 0, 1, 18), x: (t0 / S.dur * W).toFixed(1), w: Math.max(4, (t1 - t0) / S.dur * W).toFixed(1) } : { d: '', x: 0, w: 0 };
+    const move = dl => this.upd(id, v => ({ win: Math.max(1, Math.min(maxBar - len + 1, win + dl)) }));
+
+    let band = { ...S.band, bpm: S.tempo.fig, weight: S.tempo.weight, note: S.tempo.note, hasStrip: !!S.tempo.lo, lo: S.tempo.lo, hi: S.tempo.hi, end: fmtT(S.clip.e) };
+    if (band.hasStrip) {
+      let sp = ''; const tot = gw.t2b(S.clip.e);
+      for (let b = 0; b + 16 <= tot; b += 16) { const ta = gw.b2t(b), tb = gw.b2t(b + 16), v = 60 * 16 / (tb - ta); const x = ta / S.clip.e * 197; const y = 42 - (Math.max(lo, Math.min(hi, v)) - lo) / (hi - lo) * 40; sp += 'M' + x.toFixed(1) + ' ' + y.toFixed(1) + 'h3'; }
+      band.strip = sp; band.figY = (42 - (S.tempo.value - lo) / (hi - lo) * 40).toFixed(1);
+    }
+
+    return {
+      id, title, caption, song: S.title, meta: S.meta, upload: S.upload, band,
+      samples: stems.map((s, i) => ({ name: S.title + ' (' + s.short + ')', key: band.key + ' ✓', where: ['waiting', 'none'].includes(s.prov) ? 'Sample Staging' : 'Sample Staging · warped', pick: () => this.upd(id, () => ({ sel: i, step: null })) })),
+      groupLine, groupInk: own.length ? '#ece7dc' : 'rgba(236,231,220,.55)',
+      pills, zoomed: !!len, winLabel: len ? 'bars ' + win + '–' + (win + len - 1) + ' · ' + fmtT(t0) + '–' + fmtT(t1) : '',
+      prev: () => move(-Math.max(1, len / 2)), next: () => move(Math.max(1, len / 2)),
+      jump: e => { const r = e.currentTarget.getBoundingClientRect(); const f = (e.clientX - r.left) / r.width; const bar = Math.floor(gw.t2b(f * S.dur) / 4) + 1 - len / 2; this.upd(id, () => ({ win: Math.max(1, Math.min(maxBar - len + 1, Math.round(bar))) })); },
+      ov, loop, clipStart, ruler, times, tempo, lanes, hasDetail: true, d,
+    };
+  }
+
+  galleryStates() {
+    const S = SONGS.A, s0 = S.stems[1], w = 340, X = t => t / S.dur * w;
+    const base = wave(s0, S.dur, 0, S.dur, w, 0, 11, 34);
+    const dimL = X(S.clip.s).toFixed(1);
+    const two = markGeo(S.GM, X, 0, S.dur, 10, 46);
+    const one = markGeo([S.GM[0]], X, 0, S.dur, 10, 46);
+    const yes = '#ece7dc', no = 'rgba(236,231,220,.4)';
+    const mk = (prov, extra, ra, la) => {
+      const s = { ...s0, prov, saved: '2 Oct', ...extra };
+      const empty = prov === 'none' || prov === 'waiting';
+      const mg = prov === 'starter' ? one : prov === 'analysis' ? { lines: '', flags: [] } : two;
+      return { chip: CHIP[prov](s), sub: subLine({ stems: [] }, s), prov: provLine({ stems: [s, { short: 'Instrumental - Clean' }] , ...{} }, s), has: !empty, empty,
+        wave: base, lines: mg.lines, flags: mg.flags, dimL,
+        emptyText: prov === 'waiting' ? 'No warp · waiting for Live to open it' : 'No overview · Live has not opened this file',
+        emptyBd: prov === 'waiting' ? 'rgba(232,180,90,.55)' : 'rgba(255,255,255,.14)', emptyFg: prov === 'waiting' ? '#e8b45a' : 'rgba(236,231,220,.4)',
+        ra: ra[0], raFg: ra[1] ? yes : no, la: la[0], laFg: la[1] ? yes : no };
+    };
+    const yoursS = mk('yours', {}, ['— nothing lent', false], ['Let Live analyse', true]);
+    yoursS.sub = 'saved 2 Oct'; yoursS.prov = 'Saved in Live on 2 Oct.';
+    return [
+      yoursS,
+      mk('borrowed', { lent: '2 Oct' }, ['— unchanged', false], ['Let Live analyse', true]),
+      mk('yoursWasBorrowed', { lent: '29 Sep', differsFrom: null }, ['Re-apply', true], ['Let Live analyse', true]),
+      mk('starter', {}, ['— nothing to lend', false], ['Let Live analyse', true]),
+      mk('analysis', {}, ['Re-apply, if a sibling has a saved warp', true], ['Let Live analyse', true]),
+      mk('none', {}, ['—', false], ['— no file yet', false]),
+      mk('waiting', {}, ['—', false], ['waiting; see 1e', false]),
+    ];
+  }
+
+  flows() {
+    const s = { short: 'Vocal - Full', from: 'Instrumental - Clean', M: { length: 38 }, saved: '30 Sep' };
+    const C = (prov, step, extra) => ctrlsFor({ ...s, prov, ...extra }, step);
+    const ra = [
+      { n: '1 · offered', chip: CHIP.yoursWasBorrowed(), c: C('yoursWasBorrowed', null)[0] },
+      { n: '2 · confirm', chip: CHIP.yoursWasBorrowed(), c: C('yoursWasBorrowed', 'ra-confirm')[0] },
+      { n: '3 · writing', chip: CHIP.writing(), c: C('writing', null)[0] },
+      { n: '4 · done', chip: CHIP.borrowed(s), c: C('borrowed', null, { doneWhich: 'ra', doneNote: 'Re-applied just now. Your previous warp is backed up.' })[0] },
+    ];
+    const la = [
+      { n: '1 · offered', chip: CHIP.borrowed(s), c: C('borrowed', null)[1] },
+      { n: '2 · confirm', chip: CHIP.borrowed(s), c: C('borrowed', 'la-confirm')[1] },
+      { n: '3 · waiting for Live', chip: CHIP.waiting(), c: { ...C('waiting', null)[1], helper: false } },
+      { n: '4 · putting it back', chip: CHIP.putting(), c: C('putting', null)[1] },
+      { n: '5 · done', chip: CHIP.borrowed(s), c: C('borrowed', null, { doneWhich: 'la', doneNote: 'Warp put back just now, into Live\'s fresh file. Transients are Live\'s.' })[1] },
+    ];
+    return [{ title: "Re-apply crateside's warp · only where a sibling has a saved warp and this stem's differs from it", steps: ra },
+            { title: 'Let Live analyse · wherever a warp file exists', steps: la }];
+  }
+
+  renderVals() {
+    return {
+      views: [
+        this.view('1a', 'Two markers: one steady tempo', 'Many Men. The instrumental is the user\'s warp, lent to the vocal, so the lanes agree flag for flag.'),
+        this.view('1b', 'A dense warp, with one stem on its own', "Rapper's Delight, a live band. Markers bunch where the tempo moves. The vocal follows the group up to 2:10, then has its own markers."),
+        this.view('1c', 'Zoomed to 8 bars, where the vocal parts', 'Same track at bar 61. Flags carry a tooltip each; transients appear; the strip above shows where the view sits.'),
+      ],
+      states: this.galleryStates(),
+      flows: this.flows(),
+    };
+  }
+}
+</script>
+</body>
+</html>
