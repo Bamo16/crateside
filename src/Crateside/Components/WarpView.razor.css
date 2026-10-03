@@ -103,6 +103,11 @@
 .ruler {
     position: relative;
     height: 30px;
+    overflow: hidden;
+}
+
+.grid > * {
+    min-width: 0;
 }
 
 .loop {
@@ -115,6 +120,15 @@
 
 .loop.on {
     background: rgba(236, 231, 220, 0.55);
+}
+
+/* The loop runs on past the view. */
+.loop.open-left {
+    border-left: none;
+}
+
+.loop.open-right {
+    border-right: none;
 }
 
 .loop-word {
@@ -180,6 +194,7 @@
     position: relative;
     height: 40px;
     margin: 4px 0;
+    overflow: hidden;
 }
 
 .tempo-line svg {
@@ -354,6 +369,7 @@
 .axis {
     position: relative;
     height: 22px;
+    overflow: hidden;
 }
 
 .axis span {

@@ -62,10 +62,17 @@
             <div class="ruler">
                 @if (group.Lender?.Loop is { } loop)
                 {
-                    <div class="loop @(loop.On ? "on" : null)"
-                         style="left: @P(X(loop.Start, from, to))%; width: @P(X(loop.End, from, to) - X(loop.Start, from, to))%"
-                         title="@LoopTitle(loop)"></div>
-                    <span class="mono loop-word" style="left: calc(@P(X(loop.End, from, to))% + 4px)">@(loop.On ? "loop" : "loop off")</span>
+                    var (loopLeft, loopRight) = (Math.Clamp(X(loop.Start, from, to), 0, 100), Math.Clamp(X(loop.End, from, to), 0, 100));
+                    @if (loopRight > loopLeft)
+                    {
+                        <div class="loop @(loop.On ? "on" : null) @(X(loop.Start, from, to) < 0 ? "open-left" : null) @(X(loop.End, from, to) > 100 ? "open-right" : null)"
+                             style="left: @P(loopLeft)%; width: @P(loopRight - loopLeft)%"
+                             title="@LoopTitle(loop)"></div>
+                    }
+                    @if (X(loop.End, from, to) is >= 0 and <= 92)
+                    {
+                        <span class="mono loop-word" style="left: calc(@P(X(loop.End, from, to))% + 4px)">@(loop.On ? "loop" : "loop off")</span>
+                    }
                 }
                 @foreach (var (at, bar, numbered, beat) in BarTicks(group, from, to))
                 {
@@ -503,10 +510,15 @@
     private void Move(WarpGroup group, int direction) =>
         _centreBeat += direction * BarsOf(_zoom) * group.BeatsPerBar / 2.0;
 
+    /// <summary>Centres the view near a point, starting it on a bar line so it reads in whole bars.</summary>
     private void CentreOn(WarpGroup group, double seconds)
     {
-        if (group.BeatAt(seconds) is { } beat)
-            _centreBeat = beat;
+        if (group.BeatAt(seconds) is not { } beat)
+            return;
+
+        var half = BarsOf(_zoom) * group.BeatsPerBar / 2.0;
+        var bar = Math.Round((beat - half - group.ClipStartBeat) / group.BeatsPerBar);
+        _centreBeat = group.ClipStartBeat + bar * group.BeatsPerBar + half;
     }
 
     private (double From, double To) View(WarpGroup group)
