@@ -309,3 +309,10 @@ cautious:
 
 The rule that has not moved: crateside still never writes the tag store of `Mashup Samples`, and
 still never deletes a file from it.
+
+## The library's keys can be corrected — 2026-10-07
+
+[ADR 0052](0052-crateside-corrects-a-library-key-to-its-verdict.md) lets crateside rewrite a library
+file's key to its verdict, for files the user approves. The premise above, that the library holds
+hand-applied tags crateside knows nothing about, no longer holds: the user tags by hand in neither
+root. crateside still never deletes a file from the library.
