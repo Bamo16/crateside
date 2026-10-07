@@ -48,8 +48,8 @@ public sealed class OnsetDetector(OnsetSettings? settings = null) : ITransientDe
             var start = AttackStart(envelope, s.EnvelopeHop, centre, audio.SampleRate, s);
             var position = Math.Clamp(start, 0, audio.Frames - 1);
 
-            if (transients is [.., var last] && position < last.Position)
-                position = last.Position;
+            if (transients is [.., { Position: var lastPosition }] && position < lastPosition)
+                position = lastPosition;
 
             transients.Add(new Transient(position, flux[peak] / strongest));
         }

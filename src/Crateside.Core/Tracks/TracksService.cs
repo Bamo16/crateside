@@ -169,8 +169,8 @@ public sealed class TracksService : IDisposable
                     ),
             ];
 
-            if (filed is [.., var last])
-                _filedSince = last.At;
+            if (filed is [.., { At: var lastFiled }])
+                _filedSince = lastFiled;
         }
 
         foreach (var action in filed)
