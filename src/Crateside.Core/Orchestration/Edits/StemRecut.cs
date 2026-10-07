@@ -47,15 +47,23 @@ public sealed class StemRecut(
             IsFinished = known?.IsFinished is true,
         };
 
+        var stored = Stored(videoId);
         var recipe = SeparationRecipe.For(wanted, everywhere);
-        var removing = stagedInventory.Superseded(wanted, Stored(videoId));
+        var removing = stagedInventory.Superseded(wanted, stored);
 
         return new RecutPlan
         {
             Recipe = recipe,
             Removing = removing,
             WillRefetch = !workingSet.TryGetSource(videoId, out _),
-            Refusal = RefusalFor(catalog, wanted, everywhere, recipe, removing),
+            Refusal = RefusalFor(
+                catalog,
+                wanted,
+                everywhere,
+                recipe,
+                removing,
+                wanted.AsksTheSameAs(stored)
+            ),
         };
     }
 
@@ -133,7 +141,8 @@ public sealed class StemRecut(
         StemPlan wanted,
         StemInventory everywhere,
         SeparationRecipe recipe,
-        IReadOnlyList<ClassifiedStem> removing
+        IReadOnlyList<ClassifiedStem> removing,
+        bool isStoredPlan
     ) =>
         (catalog, wanted, everywhere, removing) switch
         {
@@ -145,8 +154,9 @@ public sealed class StemRecut(
             (_, { IsEmpty: true }, _, _) => "A track has to keep something.",
             (_, _, { Files.Count: 0 }, _) =>
                 "Nothing of this track is in Sample Staging or Mashup Samples.",
-            _ when recipe is { Presets.Count: 0, KeepSource: false } && removing.Count is 0 =>
-                "This track already has exactly these files.",
+            _ when recipe is { Presets.Count: 0, KeepSource: false }
+                    && removing.Count is 0
+                    && isStoredPlan => "This track already has exactly these files.",
             _ => null,
         };
 }

@@ -14,6 +14,9 @@ public sealed record StemPicker
     /// <summary>What the user has ticked, which is what a confirm would record.</summary>
     public required StemPlan Wanted { get; init; }
 
+    /// <summary>The track's own plan, with what the library already holds kept.</summary>
+    public required StemPlan Stored { get; init; }
+
     /// <summary>
     /// A cut is running or queued, so a tick records the want at once and unticking waits
     /// (ADR 0027).
@@ -34,8 +37,11 @@ public sealed record StemPicker
     /// <summary>Nothing is lost: every file already made stays where it is.</summary>
     public bool IsAdditive => Removing is 0;
 
-    /// <summary>Whether pressing confirm would do anything at all.</summary>
-    public bool ChangesAnything => Adding > 0 || Removing > 0;
+    /// <summary>
+    /// Whether pressing confirm would do anything at all, which includes no longer asking for a
+    /// file that was never made.
+    /// </summary>
+    public bool ChangesAnything => Adding > 0 || Removing > 0 || !Wanted.AsksTheSameAs(Stored);
 
     /// <summary>
     /// The files a track could have, in the separator's own vocabulary.
@@ -45,7 +51,7 @@ public sealed record StemPicker
     /// </param>
     public static StemPicker For(TrackRow row, PresetCatalog catalog, StemPlan? wanted = null)
     {
-        var plan = wanted ?? row.Plan;
+        var plan = WithLibraryFiles(wanted ?? row.Plan, row);
 
         var byPreset = row
             .Samples.Where(sample => sample.PresetId is not null)
@@ -166,9 +172,36 @@ public sealed record StemPicker
         {
             Bands = [.. bands.Where(band => band.Lines.Count > 0)],
             Wanted = plan,
+            Stored = WithLibraryFiles(row.Plan, row),
             IsCutInFlight = row.IsCutInFlight,
         };
     }
+
+    /// <summary>
+    /// The plan with every file already in <c>Mashup Samples</c> kept, since nothing can tick
+    /// those off (ADR 0019).
+    /// </summary>
+    private static StemPlan WithLibraryFiles(StemPlan plan, TrackRow row) =>
+        plan with
+        {
+            Presets =
+            [
+                .. plan.Presets.Union(
+                    row.Samples.Where(sample => sample.IsInLibrary)
+                        .Select(sample => sample.PresetId)
+                        .OfType<string>(),
+                    StringComparer.OrdinalIgnoreCase
+                ),
+            ],
+            KeepSource =
+                plan.KeepSource
+                || row.Samples.Any(sample =>
+                    sample is { Kind: StemKind.Source, IsInLibrary: true }
+                    && !plan.AddedSources.Any(added =>
+                        added.VideoId.Equals(sample.SourceVideoId, StringComparison.Ordinal)
+                    )
+                ),
+        };
 
     /// <summary>
     /// Presets the picker leaves out. Never drop them from the catalog, or a stem already cut

@@ -270,6 +270,42 @@ public sealed class StemPickerTests
     }
 
     [Fact]
+    public void A_source_in_the_library_is_kept_even_by_a_plan_that_never_asked_for_it()
+    {
+        var picker = StemPicker.For(Row(StemPlan.Default, false, LibrarySource), Catalog);
+
+        var source = Line(picker, "Rob Dougan - Furious Angels (Source)");
+
+        Assert.Equal(StemState.Kept, source.State);
+        Assert.True(picker.Wanted.KeepSource);
+        Assert.Equal(0, picker.Removing);
+    }
+
+    [Fact]
+    public void Dropping_stems_that_were_never_made_leaves_the_library_source_and_can_be_confirmed()
+    {
+        var row = Row(StemPlan.Default, false, LibrarySource);
+        var sourceOnly = StemPicker
+            .For(row, Catalog)
+            .Wanted.Toggling("vocal_full")
+            .Toggling("instrumental_full");
+
+        var picker = StemPicker.For(row, Catalog, sourceOnly);
+
+        Assert.False(picker.Wanted.IsEmpty);
+        Assert.Equal(0, picker.Adding);
+        Assert.Equal(0, picker.Removing);
+        Assert.True(picker.ChangesAnything);
+    }
+
+    private static readonly TrackSample LibrarySource = new()
+    {
+        Label = "Source",
+        Kind = StemKind.Source,
+        IsInLibrary = true,
+    };
+
+    [Fact]
     public void With_no_catalog_the_only_thing_offered_is_the_source()
     {
         var picker = StemPicker.For(Row(), PresetCatalog.Empty);

@@ -198,6 +198,28 @@ public sealed class StemRecutTests : IDisposable
     }
 
     [Fact]
+    public void Dropping_stems_that_were_never_made_records_the_plan_and_makes_nothing()
+    {
+        // The source sits in Mashup Samples; the stored plan still asks for the usual pair.
+        var known = StemInventory.Of(
+            [new StemOnDisk { Path = "M:/Rob Dougan - Furious Angels.flac", Root = "M:/" }],
+            Catalog
+        );
+        var settings = Settings();
+        var sourceOnly = new StemPlan { Presets = [], KeepSource = true };
+
+        var plan = Recut(settings).PlanFor(Video, sourceOnly, Catalog, known);
+        var outcome = Recut(settings).Apply(Video, sourceOnly, Catalog, known);
+
+        Assert.True(plan.IsPossible);
+        Assert.False(plan.MakesSomething);
+        Assert.True(outcome.Succeeded);
+        Assert.True(
+            settings.Read().Single(track => track.VideoId == Video).Plan?.AsksTheSameAs(sourceOnly)
+        );
+    }
+
+    [Fact]
     public void A_track_whose_audio_has_gone_is_re_cut_by_fetching_it_again()
     {
         Stage();

@@ -127,7 +127,7 @@ public sealed class StemEditor(
         }
 
         Picking = row.VideoId;
-        _wanted = row.Plan;
+        _wanted = StemPicker.For(row, Presets).Wanted;
         Plan = null;
 
         Opened?.Invoke();
