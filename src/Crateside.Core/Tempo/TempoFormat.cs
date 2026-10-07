@@ -46,8 +46,8 @@ public static class TempoFormat
         {
             [] => null,
             var all
-                when all.MinBy(tempo => tempo.Value)! is var slowest
-                    && all.MaxBy(tempo => tempo.Value)! is var fastest
+                when all.MinBy(tempo => tempo.Value) is { } slowest
+                    && all.MaxBy(tempo => tempo.Value) is { } fastest
                     && slowest.Value == fastest.Value => Text(slowest),
             var all => Span(all.Min(tempo => tempo.Value), all.Max(tempo => tempo.Value)),
         };
