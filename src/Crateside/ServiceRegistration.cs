@@ -266,6 +266,11 @@ public static class ServiceRegistration
             sp.GetRequiredService<FolderInfoReader>(),
             sp.GetRequiredService<FolderInfoWriter>()
         ));
+        services.AddSingleton(_ => new KeyCorrections());
+        services.AddSingleton(_ => new TagStoreBackups(
+            TagStoreBackups.DefaultRoot,
+            TimeProvider.System
+        ));
 
         // Factories for the same reason as the rest: the container will not apply the trailing
         // optional path and executable-name defaults.

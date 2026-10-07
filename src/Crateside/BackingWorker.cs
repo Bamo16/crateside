@@ -18,6 +18,9 @@ public sealed class BackingWorker(
     BackingRunner runner,
     GenreStore genres,
     FamiliarityStore familiarity,
+    KeyCorrections corrections,
+    TagStoreBackups backups,
+    FileIndexReader index,
     IOptions<CratesidePaths> paths,
     ILogger<BackingWorker> logger
 ) : BackgroundService
@@ -51,7 +54,8 @@ public sealed class BackingWorker(
                 delay = AfterFailure;
             }
 
-            await Task.Delay(delay, stoppingToken);
+            // An approval cuts the wait short, so a correction lands while the user is looking.
+            await corrections.WaitAsync(delay, stoppingToken);
         }
     }
 
@@ -76,7 +80,26 @@ public sealed class BackingWorker(
             ];
         }
 
-        var library = Report(runner.Run(_paths.MashupSamples, ledger, OwnedOf), "the library");
+        var library = Report(
+            runner.Run(
+                _paths.MashupSamples,
+                ledger,
+                OwnedOf,
+                corrections: corrections.Approved(),
+                beforeWrite: backups.Save
+            ),
+            "the library"
+        );
+
+        // From the index, which the write above reaches minutes later: an approval stays until
+        // the index agrees, so a correction is never dropped as done before it shows.
+        corrections.Found(
+            runner.Disagreements(
+                _paths.MashupSamples,
+                ledger,
+                AbletonReads.TagsOrEmpty(index.Read, _paths.MashupSamples)
+            )
+        );
         var staging = Report(
             runner.Run(_paths.SampleStaging, ledger, OwnedOf, backKeys: false),
             "Sample Staging"

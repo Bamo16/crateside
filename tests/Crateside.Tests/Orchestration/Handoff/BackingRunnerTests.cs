@@ -196,6 +196,39 @@ public sealed class BackingRunnerTests : IDisposable
         );
     }
 
+    [Fact]
+    public void A_correction_replaces_the_whole_key_and_keeps_everything_else()
+    {
+        var merged = BackingRunner.Merged(
+            Tags("Key|F♯", "Key|Major", "Type|Vocal", "Genre|Pop"),
+            ["Key|D♯", "Key|Minor", "Type|Instrumental"],
+            correcting: true
+        );
+
+        Assert.Equal(["Type|Vocal", "Genre|Pop", "Key|D♯", "Key|Minor"], merged);
+    }
+
+    [Fact]
+    public void A_correction_writes_the_whole_key_even_where_part_of_it_was_once_taken_off()
+    {
+        var merged = BackingRunner.Merged(
+            TestTags.Of(File1, ["Key|F♯", "Key|Major"], ["Key|Minor"]),
+            ["Key|D♯", "Key|Minor"],
+            correcting: true
+        );
+
+        Assert.Equal(["Key|D♯", "Key|Minor"], merged);
+    }
+
+    [Fact]
+    public void Only_a_keyed_entry_whose_key_is_not_the_approved_one_is_corrected()
+    {
+        Assert.True(BackingRunner.NeedsCorrection(Tags("Key|F♯", "Key|Major"), "D# minor"));
+        Assert.False(BackingRunner.NeedsCorrection(Tags("Key|D♯", "Key|Minor"), "D# minor"));
+        Assert.False(BackingRunner.NeedsCorrection(Tags("Type|Vocal"), "D# minor"));
+        Assert.False(BackingRunner.NeedsCorrection(null, "D# minor"));
+    }
+
     private static FileTags Tags(params string[] keywords) => TestTags.Of(File1, keywords);
 
     private static bool Needs(FileTags existing) => BackingRunner.NeedsAKey(existing);
