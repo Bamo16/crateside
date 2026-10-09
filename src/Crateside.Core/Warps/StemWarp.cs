@@ -25,7 +25,9 @@ public sealed record StemWarp
     /// <summary>Whether its sibling's warp is the track's: an instrumental, karaoke or the kept source.</summary>
     public bool IsAuthority { get; init; }
 
-    /// <summary>The markers Live shows: every one but the last, which Live writes 1/32 beat past the last it shows.</summary>
+    /// <summary>The markers Live shows: every one but the last, which Live keeps and never draws.</summary>
+    // Usually 1/32 beat past the anchor, but not always: a few hold it hundreds of beats out and
+    // Live hides those too, so the count is what defines it rather than the distance.
     public IReadOnlyList<WarpMarker> Markers =>
         Sidecar?.Warp.Markers is { Count: > 1 } markers ? [.. markers.Take(markers.Count - 1)] : [];
 
