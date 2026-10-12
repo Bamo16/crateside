@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -79,16 +80,23 @@ public sealed partial class BeatReader(
     {
         var outcome = await ExternalProcess.RunAsync(fileName, ["-version"], ct: ct);
 
-        return _build =
-            outcome.Succeeded
-            && VersionLine.Match(outcome.StandardOutput) is { Success: true } line
-            && Located() is { Exists: true } executable
-                ? new FfmpegBuild(
-                    line.Groups["Version"].Value,
-                    executable.Length,
-                    executable.LastWriteTimeUtc
-                )
+        if (
+            !outcome.Succeeded
+            || VersionLine.Match(outcome.StandardOutput) is not { Success: true } line
+            || Located() is not { Exists: true } executable
+        )
+            return _build = null;
+
+        var sha256 = await HashAsync(executable, ct);
+        var commit =
+            Path.Combine(executable.DirectoryName ?? string.Empty, "build.json") is var info
+            && BeatJsonContext.Default.BuildInfo.ReadFileOrDefault(info)
+                is { Sha256: { } recorded, Commit: { } recordedCommit }
+            && recorded.Equals(sha256, StringComparison.OrdinalIgnoreCase)
+                ? recordedCommit
                 : null;
+
+        return _build = new FfmpegBuild(line.Groups["Version"].Value, sha256, commit);
     }
 
     /// <summary>Reads the whole file, then each full 30 s of it; a file ffmpeg cannot read keeps an empty reading.</summary>
@@ -280,6 +288,13 @@ public sealed partial class BeatReader(
                 ))
                 .FirstOrDefault(candidate => candidate.Exists);
 
+    private static async Task<string> HashAsync(FileInfo executable, CancellationToken ct)
+    {
+        await using var stream = executable.OpenRead();
+
+        return Convert.ToHexStringLower(await SHA256.HashDataAsync(stream, ct));
+    }
+
     private static double SecondsOf(string audioPath)
     {
         try
@@ -302,8 +317,13 @@ public sealed partial class BeatReader(
             : [];
 }
 
-/// <summary>Which ffmpeg read a file: its version, and the executable's size and time to tell rebuilds apart.</summary>
-public sealed record FfmpegBuild(string Version, long Length, DateTime Written);
+/// <summary>Which ffmpeg read a file: its version and the executable's hash, with the commit when a <c>build.json</c> beside it vouches for that hash.</summary>
+public sealed record FfmpegBuild(string Version, string Sha256, string? Commit)
+{
+    public string Label => Commit is { Length: >= 7 } ? $"{Version}-{Commit[..7]}" : Version;
+}
+
+internal sealed record BuildInfo(string? Commit, string? Sha256);
 
 internal readonly record struct Detected(
     double? Bpm,
@@ -326,4 +346,5 @@ internal sealed record BeatFile(int Version, Dictionary<string, BeatEntry> Entri
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
 )]
 [JsonSerializable(typeof(BeatFile))]
+[JsonSerializable(typeof(BuildInfo))]
 internal sealed partial class BeatJsonContext : JsonSerializerContext { }
