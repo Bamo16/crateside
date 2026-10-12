@@ -37,7 +37,7 @@ public sealed partial class BeatReader(
     private int _toRead;
     private int _readSoFar;
 
-    [GeneratedRegex(@"lavfi\.beatdetect\.(?<Key>\w+)=(?<Value>[0-9.]+)")]
+    [GeneratedRegex(@"lavfi\.beatdetect\.(?<Key>[a-z_]+?)(?<Index>\d*)=(?<Value>\S+)")]
     private static partial Regex MetadataLine { get; }
 
     [GeneratedRegex(@"^ffmpeg version (?<Version>\S+)")]
@@ -121,6 +121,13 @@ public sealed partial class BeatReader(
             Bpm = whole.Bpm,
             Confidence = whole.Confidence,
             TempoSpread = whole.TempoSpread,
+            BeatOffsetMs = whole.BeatOffsetMs,
+            DownbeatOffsetMs = whole.DownbeatOffsetMs,
+            DownbeatConfidence = whole.DownbeatConfidence,
+            BeatsPerBar = whole.BeatsPerBar,
+            TempoWander = whole.TempoWander,
+            Candidates = whole.Candidates,
+            Segments = whole.Segments,
             Windows = windows,
         };
 
@@ -184,7 +191,8 @@ public sealed partial class BeatReader(
         foreach (Match line in MetadataLine.Matches(printed))
         {
             if (
-                double.TryParse(
+                line.Groups["Index"] is { Length: 0 }
+                && double.TryParse(
                     line.Groups["Value"].Value,
                     NumberStyles.Float,
                     CultureInfo.InvariantCulture,
@@ -194,12 +202,37 @@ public sealed partial class BeatReader(
                 last[line.Groups["Key"].Value] = value;
         }
 
+        var final = MetadataLine.Matches(LastFrame(printed));
+
         return new Detected(
             last.TryGetValue("bpm", out var bpm) && bpm > 0 ? bpm : null,
             last.TryGetValue("confidence", out var confidence) ? confidence : null,
             last.TryGetValue("beat_interval_ms", out var interval) ? interval : null,
             last.TryGetValue("tempo_spread", out var spread) ? spread : null
-        );
+        )
+        {
+            BeatOffsetMs = last.TryGetValue("beat_offset_ms", out var offset) ? offset : null,
+            DownbeatOffsetMs = last.TryGetValue("downbeat_offset_ms", out var downbeat)
+                ? downbeat
+                : null,
+            DownbeatConfidence = last.TryGetValue("downbeat_confidence", out var sure)
+                ? sure
+                : null,
+            BeatsPerBar = last.TryGetValue("beats_per_bar", out var perBar) ? (int)perBar : null,
+            TempoWander = last.TryGetValue("tempo_wander", out var wander) ? wander : null,
+            Candidates =
+            [
+                .. Indexed(final, "candidate")
+                    .Select(value => BeatCandidate.TryParse(value))
+                    .OfType<BeatCandidate>(),
+            ],
+            Segments =
+            [
+                .. Indexed(final, "tempo_segment")
+                    .Select(value => TempoSegment.TryParse(value))
+                    .OfType<TempoSegment>(),
+            ],
+        };
     }
 
     /// <summary>Every full window's start; a file shorter than one window is read once from the top.</summary>
@@ -210,6 +243,17 @@ public sealed partial class BeatReader(
         for (var start = 0; start < max; start += BeatReading.WindowSeconds)
             yield return start;
     }
+
+    private static string LastFrame(string printed) =>
+        printed.LastIndexOf("frame:", StringComparison.Ordinal) is var at and >= 0
+            ? printed[at..]
+            : printed;
+
+    private static IEnumerable<string> Indexed(MatchCollection lines, string key) =>
+        lines
+            .Where(line => line.Groups["Key"].Value == key && line.Groups["Index"].Length > 0)
+            .OrderBy(line => int.Parse(line.Groups["Index"].Value, CultureInfo.InvariantCulture))
+            .Select(line => line.Groups["Value"].Value);
 
     private async Task<Detected> DetectAsync(string audioPath, int? start, CancellationToken ct)
     {
@@ -330,7 +374,16 @@ internal readonly record struct Detected(
     double? Confidence,
     double? BeatIntervalMs,
     double? TempoSpread
-);
+)
+{
+    public double? BeatOffsetMs { get; init; }
+    public double? DownbeatOffsetMs { get; init; }
+    public double? DownbeatConfidence { get; init; }
+    public int? BeatsPerBar { get; init; }
+    public double? TempoWander { get; init; }
+    public IReadOnlyList<BeatCandidate> Candidates { get; init; } = [];
+    public IReadOnlyList<TempoSegment> Segments { get; init; } = [];
+}
 
 internal sealed record BeatStamp(long Length, DateTime Written)
 {

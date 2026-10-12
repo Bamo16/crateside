@@ -86,7 +86,10 @@ public sealed class BeatReadingTests
             """
         );
 
-        Assert.Equal(new Detected(173.99, 0.144, 344.86, null), detected);
+        Assert.Equal(173.99, detected.Bpm);
+        Assert.Equal(0.144, detected.Confidence);
+        Assert.Equal(344.86, detected.BeatIntervalMs);
+        Assert.Null(detected.TempoSpread);
     }
 
     [Fact]
@@ -106,7 +109,51 @@ public sealed class BeatReadingTests
             """
         );
 
-        Assert.Equal(new Detected(183.24584, 0.126, 327.4290, 2.234), detected);
+        Assert.Equal(183.24584, detected.Bpm);
+        Assert.Equal(0.126, detected.Confidence);
+        Assert.Equal(327.4290, detected.BeatIntervalMs);
+        Assert.Equal(2.234, detected.TempoSpread);
+    }
+
+    [Fact]
+    public void A_1_3_build_final_frame_gives_the_grid_downbeat_candidates_and_segments()
+    {
+        var detected = BeatReader.Parse(
+            """
+            frame:3070 pts:12574720 pts_time:285.141043
+            lavfi.beatdetect.bpm=180.35088
+            lavfi.beatdetect.tempo_segment2=0:1:99
+            frame:3071 pts:12578816 pts_time:285.233923
+            lavfi.beatdetect.bpm=134.99356
+            lavfi.beatdetect.confidence=0.195
+            lavfi.beatdetect.beat_interval_ms=444.4656
+            lavfi.beatdetect.beat_offset_ms=60.75
+            lavfi.beatdetect.tempo_spread=0.139
+            lavfi.beatdetect.candidate0=67.436:0.136:306.5
+            lavfi.beatdetect.candidate1=135.087:0.163:221.0
+            lavfi.beatdetect.tempo_segment0=0:262777:135.00671
+            lavfi.beatdetect.tempo_segment1=262777:285222:135.66048
+            lavfi.beatdetect.tempo_wander=0.571
+            lavfi.beatdetect.downbeat_offset_ms=1394.15
+            lavfi.beatdetect.beats_per_bar=4
+            lavfi.beatdetect.downbeat_confidence=0.029
+            lavfi.beatdetect.final=1
+            """
+        );
+
+        Assert.Equal(60.75, detected.BeatOffsetMs);
+        Assert.Equal(1394.15, detected.DownbeatOffsetMs);
+        Assert.Equal(0.029, detected.DownbeatConfidence);
+        Assert.Equal(4, detected.BeatsPerBar);
+        Assert.Equal(0.571, detected.TempoWander);
+        Assert.Equal(
+            [new BeatCandidate(67.436, 0.136, 306.5), new BeatCandidate(135.087, 0.163, 221.0)],
+            detected.Candidates
+        );
+        Assert.Equal(
+            [new TempoSegment(0, 262777, 135.00671), new TempoSegment(262777, 285222, 135.66048)],
+            detected.Segments
+        );
     }
 
     [Fact]

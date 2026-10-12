@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Serialization;
 
 namespace Crateside.Core.Beats;
@@ -20,6 +21,26 @@ public sealed record BeatReading
 
     /// <summary>The filter's own drift figure, as a percentage; null from a build without it, or where it could not tell.</summary>
     public double? TempoSpread { get; init; }
+
+    /// <summary>Where the first beat falls, in ms from the start of the file; null from a build without it.</summary>
+    public double? BeatOffsetMs { get; init; }
+
+    /// <summary>Where the first bar's downbeat falls, in ms; null from a build without it.</summary>
+    public double? DownbeatOffsetMs { get; init; }
+
+    /// <summary>How sure the filter is of the downbeat; 0.03 and up is the working threshold.</summary>
+    public double? DownbeatConfidence { get; init; }
+
+    public int? BeatsPerBar { get; init; }
+
+    /// <summary>How far the tempo moves through the file; 0.7 and up catches the strong wanderers.</summary>
+    public double? TempoWander { get; init; }
+
+    /// <summary>The tempos the filter considered, the octave alternatives among them.</summary>
+    public IReadOnlyList<BeatCandidate> Candidates { get; init; } = [];
+
+    /// <summary>The stretches over which the filter held one tempo; more than one means it moves.</summary>
+    public IReadOnlyList<TempoSegment> Segments { get; init; } = [];
 
     /// <summary>Each consecutive full 30 s window's tempo, from its beat interval.</summary>
     public IReadOnlyList<double> Windows { get; init; } = [];
@@ -101,4 +122,24 @@ public sealed record BeatReading
 
         return sorted[below] + (sorted[above] - sorted[below]) * (position - below);
     }
+}
+
+/// <summary>One tempo the filter considered: its score, and where the first beat falls under it.</summary>
+public sealed record BeatCandidate(double Bpm, double Score, double OffsetMs)
+{
+    internal static BeatCandidate? TryParse(string text) =>
+        Numbers(text) is [var bpm, var score, var offset] ? new(bpm, score, offset) : null;
+
+    internal static double[] Numbers(string text) =>
+        text.Split(':') is var parts
+        && parts.All(part => double.TryParse(part, CultureInfo.InvariantCulture, out _))
+            ? [.. parts.Select(part => double.Parse(part, CultureInfo.InvariantCulture))]
+            : [];
+}
+
+/// <summary>A stretch of the file, in ms, over which the filter held one tempo.</summary>
+public sealed record TempoSegment(double StartMs, double EndMs, double Bpm)
+{
+    internal static TempoSegment? TryParse(string text) =>
+        BeatCandidate.Numbers(text) is [var start, var end, var bpm] ? new(start, end, bpm) : null;
 }
