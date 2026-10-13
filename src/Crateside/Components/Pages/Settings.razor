@@ -335,36 +335,34 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                         <span>@folder.Name</span>
                         <span class="gist">@folder.Gist</span>
                     </div>
-                    @if (folder.Edit is { } edit)
-                    {
-                        <input type="text" class="path mono" @bind="edit.Value" @bind:event="oninput" />
-                    }
-                    else
-                    {
-                        <span class="path mono">@folder.Path</span>
-                    }
-                    <button class="outline" @onclick="() => Reveal(folder)">
-                        @(folder.IsFile ? "Show in folder" : "Open")
-                    </button>
+                    <span class="path mono">@folder.Path</span>
+                    <div class="actions">
+                        @if (folder.Place is not null)
+                        {
+                            <button class="outline" @onclick="() => _choosing = folder.Place">Change</button>
+                        }
+                        <button class="outline" @onclick="() => Reveal(folder)">
+                            @(folder.IsFile ? "Show in folder" : "Open")
+                        </button>
+                    </div>
                 </div>
             }
 
-            <div class="row">
-                <div class="name"></div>
-                <div class="control">
-                    <div class="field">
-                        <button class="primary" @onclick="SaveFolders" disabled="@(!HasPendingFolders)">Save folders</button>
-                    </div>
-                    @if (_foldersSaved)
-                    {
-                        <span class="status">Saved. Restart crateside for the new folders to apply.</span>
-                    }
-                </div>
-            </div>
+            @if (_choosing is { } place)
+            {
+                <FolderChooser Title="@($"Choose the {place} folder")"
+                               Start="@(place is Place.Staging ? _staging : _library)"
+                               Chosen="folder => Chosen(place, folder)"
+                               Cancelled="() => _choosing = null" />
+            }
 
             @if (_folderProblem is { } folderProblem)
             {
                 <span class="status problem">@folderProblem</span>
+            }
+            else if (_foldersChanged)
+            {
+                <span class="status">Saved. Restart crateside for the new folder to apply.</span>
             }
 
             <span class="status note">
@@ -394,16 +392,14 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     private string? _consentProblem;
     private string? _removeProblem;
     private string? _folderProblem;
-    private bool _foldersSaved;
-    private FolderEdit _staging = null!;
-    private FolderEdit _library = null!;
+    private Place? _choosing;
+    private bool _foldersChanged;
+    private string _staging = string.Empty;
+    private string _library = string.Empty;
     private IReadOnlyList<RemovalResult>? _removals;
 
     private bool HasPendingChange =>
         PlaylistReference.TryParse(_playlist, out var parsed) && parsed != Playlist.PlaylistId;
-
-    private bool HasPendingFolders =>
-        _staging.Value.Trim() != Paths.StagingFolder || _library.Value.Trim() != Paths.LibraryFolder;
 
     private bool HasPlaylist => Playlist.PlaylistId is { Length: > 0 };
 
@@ -424,8 +420,8 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
     private IEnumerable<Folder> Folders =>
     [
-        new("Staging", "Where new stems land.", Paths.StagingFolder, IsFile: false, _staging),
-        new("Library", "Where finished stems go.", Paths.LibraryFolder, IsFile: false, _library),
+        new("Staging", "Where new stems land.", _staging, IsFile: false, Place.Staging),
+        new("Library", "Where finished stems go.", _library, IsFile: false, Place.Library),
         new("Ableton projects", "Your sets, relinked when a track is renamed.", Paths.AbletonProjects, IsFile: false),
         new("keytag ledger", "Detector runs, for keys and BPM.", Paths.Ledger, IsFile: true),
     ];
@@ -446,8 +442,8 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
         await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
 
-        _staging = new FolderEdit(Paths.StagingFolder);
-        _library = new FolderEdit(Paths.LibraryFolder);
+        _staging = Paths.StagingFolder;
+        _library = Paths.LibraryFolder;
 
         _playlist = Playlist.PlaylistId ?? string.Empty;
         _refresh = Playlist.RefreshMinutes;
@@ -507,24 +503,17 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         }
     }
 
-    private void SaveFolders()
+    private void Chosen(Place place, string folder)
     {
-        var staging = _staging.Value.Trim();
-        var library = _library.Value.Trim();
+        _choosing = null;
 
-        _foldersSaved = false;
-        _folderProblem = (staging, library) switch
-        {
-            _ when !Directory.Exists(staging) => $"No folder at {staging}.",
-            _ when !Directory.Exists(library) => $"No folder at {library}.",
-            _ => null,
-        };
+        if (place is Place.Staging)
+            _staging = folder;
+        else
+            _library = folder;
 
-        if (_folderProblem is not null)
-            return;
-
-        Overrides.Remember(staging, library);
-        _foldersSaved = true;
+        Overrides.Remember(_staging, _library);
+        _foldersChanged = true;
     }
 
     private async Task Save()
@@ -616,11 +605,12 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         string Gist,
         string Path,
         bool IsFile,
-        FolderEdit? Edit = null
+        Place? Place = null
     );
 
-    private sealed class FolderEdit(string value)
+    private enum Place
     {
-        public string Value { get; set; } = value;
+        Staging,
+        Library,
     }
 }

@@ -190,6 +190,7 @@ public static class ServiceRegistration
             sp.GetRequiredService<CratesidePaths>()
         ));
         // Running unless the user paused it, and a pause of theirs outlives a restart.
+        services.AddSingleton<FolderBrowser>();
         services.AddSingleton(_ => new PathOverrideStore());
         services.AddSingleton(_ => new PauseStore());
         services.AddSingleton(sp => new DrainControl(

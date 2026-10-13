@@ -242,3 +242,8 @@ a {
 .name .problem {
     color: var(--red);
 }
+
+.actions {
+    display: flex;
+    gap: 8px;
+}
