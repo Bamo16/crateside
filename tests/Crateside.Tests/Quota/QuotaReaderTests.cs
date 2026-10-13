@@ -73,6 +73,29 @@ public sealed class QuotaReaderTests : IDisposable
     }
 
     [Fact]
+    public void Reads_the_weekly_window_beside_the_five_hour_one()
+    {
+        var quota = QuotaReader.Parse(RealisticPayload);
+
+        Assert.Equal(25.0, quota.WeeklyUtilization);
+        Assert.Equal(
+            DateTimeOffset.Parse("2026-09-09T04:00:00-05:00", CultureInfo.InvariantCulture),
+            quota.WeeklyResetsAt
+        );
+    }
+
+    [Fact]
+    public void Falls_back_to_the_weekly_row_of_limits_when_seven_day_is_missing()
+    {
+        var quota = QuotaReader.Parse(
+            """{ "five_hour": { "utilization": 5.0 }, "limits": [{ "kind": "weekly_all", "percent": 88 }] }"""
+        );
+
+        Assert.Equal(88, quota.WeeklyUtilization);
+        Assert.Equal(5.0, quota.Utilization);
+    }
+
+    [Fact]
     public void Falls_back_to_the_session_row_of_limits_when_utilization_is_renamed()
     {
         // The kind tag keeps the weekly window, in the same array, from being read as this one.

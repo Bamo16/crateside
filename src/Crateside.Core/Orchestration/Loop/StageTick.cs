@@ -17,6 +17,9 @@ public sealed record StageTick
 
     public static StageTick Paused { get; } = new() { Outcome = StageOutcome.Paused };
 
+    public static StageTick Held(string reason) =>
+        new() { Outcome = StageOutcome.Held, Error = reason };
+
     public required StageOutcome Outcome { get; init; }
 
     /// <summary>
@@ -71,6 +74,9 @@ public enum StageOutcome
     Ran,
     Idle,
     Paused,
+
+    /// <summary>Held back by a guard that lifts by itself, not paused by the user.</summary>
+    Held,
 
     /// <summary>The playlist could not be read. Distinct from an empty queue, deliberately.</summary>
     Unavailable,

@@ -74,6 +74,10 @@
             }
             <span class="status">Nothing to judge. <span class="mono value">@JudgingWaiting</span> waiting</span>
         }
+        @if (Hold is { } hold)
+        {
+            <span class="status">@hold.Reason</span>
+        }
     </div>
 
     <div class="card">
@@ -91,6 +95,20 @@
                 }
                 checked @Clock.Ago(QuotaReadAt)
                 <RefreshButton Title="Check the Claude quota now" Busy="QuotaReading" OnClick="OnRefreshQuota" />
+            </span>
+        </div>
+        <div class="meter">
+            <div class="meter-line">
+                <span>Claude, weekly</span>
+                <span class="mono">@(Quota.WeeklyUtilization is { } week ? $"{week:N0} %" : "—")</span>
+            </div>
+            <span class="bar quiet"><span style="width: @Percent(Quota.WeeklyUtilization ?? 0, 100)"></span></span>
+            <span class="note">
+                @if (Quota.WeeklyResetsAt is { } weekResets)
+                {
+                    <text>resets <span class="mono">@weekResets.ToLocalTime().ToString("ddd t")</span> · </text>
+                }
+                judging stops at @QuotaGuard.WeeklyLimit.ToString("N0") %
             </span>
         </div>
         <div class="meter">
@@ -171,6 +189,8 @@
 
     [Parameter]
     public EventCallback OnRefreshQuota { get; set; }
+
+    private QuotaHold? Hold => QuotaGuard.HoldOf(Quota, DateTimeOffset.UtcNow);
 
     private TrackRow? Separating => Rows.FirstOrDefault(row => row.State is TrackState.Separating);
 

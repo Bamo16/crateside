@@ -695,6 +695,7 @@
     private string JudgingState =>
         _rows.Any(row => row.State is TrackState.Judging) ? "a track"
         : Judging.IsPaused ? "paused"
+        : QuotaGuard.HoldOf(_quota, DateTimeOffset.UtcNow) is not null ? "held at the weekly limit"
         : "idle";
 
     private string TimeGist =>

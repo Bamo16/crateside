@@ -74,7 +74,7 @@
             }
             <div class="activity-line">
                 <span class="dot @(Judging.IsPaused ? "amber" : judging is null ? "idle" : "teal")"></span>
-                <span class="subject">@(judging?.Title ?? (Judging.IsPaused ? "paused" : "idle"))</span>
+                <span class="subject">@(judging?.Title ?? (Judging.IsPaused ? "paused" : QuotaGuard.HoldOf(_quota, DateTimeOffset.UtcNow) is not null ? "held at the weekly limit" : "idle"))</span>
                 @if (judging?.RunningSince is { } judgingSince)
                 {
                     <span class="mono elapsed">@Clock.Elapsed(judgingSince) elapsed</span>

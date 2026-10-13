@@ -221,6 +221,12 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new VerdictControl(
             sp.GetRequiredService<PauseStore>().Read().Judging
         ));
+        // The reader is resolved per reading: a typed HttpClient held for the life of the app
+        // outlives its handler.
+        services.AddSingleton(sp => new QuotaGuard(
+            ct => sp.GetRequiredService<QuotaReader>().ReadAsync(ct),
+            TimeProvider.System
+        ));
         services.AddSingleton(sp =>
         {
             var remembered = sp.GetRequiredService<PauseStore>().Read();

@@ -325,6 +325,10 @@ the two run types below are named after which of them they produce.
   for another replaces it. Held in
   memory, so a restart forgets it (ADR 0015). The one way a **library backfill** track is
   judged outside an **idle window**.
+- **Weekly hold** — judging, backfill included, not starting a track while weekly Claude use
+  is at or above 85%. Not the user's pause: it is not remembered, and lifts by itself when the
+  figure drops or the weekly reset passes
+  ([ADR 0053](docs/adr/0053-judging-stops-at-85-percent-of-the-weekly-limit.md)).
 - **Draining** — working the **work lists** down continuously, one track at a time,
   for as long as there is anything outstanding. The normal state of the system rather than
   an action someone takes: what limits separation is that two at once are ruinous,

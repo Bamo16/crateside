@@ -2,6 +2,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Playlist;
+using Crateside.Core.Quota;
 using Crateside.Core.WorkLists;
 using Microsoft.Extensions.Options;
 
@@ -16,6 +17,7 @@ public sealed class VerdictDrainer(
     VerdictSelector selector,
     JobStore jobs,
     VerdictControl control,
+    QuotaGuard guard,
     IOptions<CratesidePaths> paths
 ) : IStageDrainer
 {
@@ -58,6 +60,9 @@ public sealed class VerdictDrainer(
 
     private async Task<StageTick> JudgeNextAsync(bool backfill, CancellationToken ct)
     {
+        if (await guard.CheckAsync(ct) is { } hold)
+            return StageTick.Held(hold.Reason);
+
         WorkListsView view;
 
         try
