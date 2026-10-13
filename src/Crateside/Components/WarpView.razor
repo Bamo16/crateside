@@ -248,37 +248,44 @@
                         }
                     </div>
 
-                    @if (WarpWording.CanTrueUp(selected, Row.Bpm) && Row.Bpm is { } tempo)
+                    @if (wording.CanTrueUp(Row.Bpm) && Row.Bpm is { } tempo && group.Lender is { } canonical)
                     {
                         <div class="control">
                             <div class="label-line">
-                                <span class="control-label @(_confirming is Confirming.TrueUp ? "asking" : null)">True up the warp</span>
-                                @if (_confirming is Confirming.None && _working is null)
+                                <span class="control-label @(_confirming is Confirming.TrueUp ? "asking" : null)">True up the track's warp</span>
+                                @if (_confirming is Confirming.None && _working is null && _trueUp is { Plan: TrueUpPlan.Retype })
                                 {
-                                    <button class="outline" @onclick="() => PlanTrueUpAsync(selected)">True up</button>
+                                    <button class="outline" @onclick="() => _confirming = Confirming.TrueUp">True up</button>
                                 }
                             </div>
-                            @if (Working(selected))
+                            @if (Working(canonical))
                             {
                                 <span class="working"><span class="dot"></span>Retyping the warp…</span>
-                                <span class="status">Your warp is backed up.</span>
+                                <span class="status">The old warp is backed up.</span>
                             }
-                            else if (_confirming is Confirming.TrueUp && _planned is var (plan, siblings))
+                            else if (_confirming is Confirming.TrueUp && _trueUp is { Plan: TrueUpPlan.Retype plan, Siblings: var siblings })
                             {
                                 <span class="status">@wording.TrueUpQuestion(plan)</span>
                                 <span class="actions">
-                                    <button class="danger" @onclick="() => TrueUpAsync(selected, plan, siblings)">Retype my warp</button>
+                                    <button class="danger" @onclick="() => TrueUpAsync(canonical, plan, siblings)">Retype the warp</button>
                                     <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
                                 </span>
                             }
-                            else if (Done(selected, Confirming.TrueUp) is { } done)
+                            else if (Done(canonical, Confirming.TrueUp) is { } done)
                             {
                                 <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
                             }
                             else
                             {
-                                <span class="status @(_working is null ? null : "faint")">
-                                    @(_working is not null ? "Not while a change is under way." : WarpWording.TrueUpStatus(tempo))
+                                <span class="status @(_working is null && _trueUp is { Plan: TrueUpPlan.Retype } ? null : "faint")">
+                                    @(_working is not null
+                                        ? "Not while a change is under way."
+                                        : _trueUp switch
+                                        {
+                                            null => "Checking the warp against the audio…",
+                                            { Plan: TrueUpPlan.Retype ready } => wording.TrueUpStatus(tempo, ready),
+                                            { Plan: var refused } => WarpWording.TrueUpRefusal(refused),
+                                        })
                                 </span>
                             }
                         </div>
@@ -347,7 +354,8 @@
     private Confirming _confirming;
     private string? _working;
     private ActionDone? _done;
-    private (TrueUpPlan.Retype Plan, WarpSiblings Siblings)? _planned;
+    private (TrueUpPlan Plan, WarpSiblings Siblings)? _trueUp;
+    private string? _trueUpKey;
     private Timer? _poll;
 
     private enum Zoom
@@ -372,14 +380,21 @@
     protected override void OnInitialized() =>
         _poll = new Timer(_ => _ = InvokeAsync(Poll), null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
 
-    protected override void OnParametersSet() => Reload(force: false);
+    protected override void OnParametersSet()
+    {
+        Reload(force: false);
+        EnsureTrueUp();
+    }
 
     public void Dispose() => _poll?.Dispose();
 
     private void Poll()
     {
         if (Reload(force: false))
+        {
+            EnsureTrueUp();
             StateHasChanged();
+        }
     }
 
     /// <summary>Re-reads the sidecars when any changed on disk; whether it did.</summary>
@@ -495,29 +510,44 @@
         await Tracks.EnsureFreshAsync(TimeSpan.Zero);
     }
 
-    private async Task PlanTrueUpAsync(StemWarp stem)
+    /// <summary>Checks the track's warp once per change to it, so the control says up front whether a true-up is on offer.</summary>
+    private void EnsureTrueUp()
+    {
+        if (_group is not { Lender: { } lender } group || !Wording(group).CanTrueUp(Row.Bpm))
+        {
+            (_trueUpKey, _trueUp) = (null, null);
+
+            return;
+        }
+
+        var key = $"{_stamp}|{Row.Bpm?.Off?.Bpm}";
+
+        if (key == _trueUpKey)
+            return;
+
+        (_trueUpKey, _trueUp) = (key, null);
+        _ = PlanTrueUpAsync(lender.Path, key);
+    }
+
+    private async Task PlanTrueUpAsync(string path, string key)
     {
         var guides = Directory.Exists(Paths.KeptWarpGuides) ? Directory.EnumerateFiles(Paths.KeptWarpGuides) : [];
         var siblings = WarpSiblings.Of(
             Row.Samples
                 .Select(sample => sample.Path)
-                .Where(path => path is { Length: > 0 })
+                .Where(sample => sample is { Length: > 0 })
                 .Concat(guides)
-                .Where(path => !path.EndsWith(".asd", StringComparison.OrdinalIgnoreCase))
+                .Where(file => !file.EndsWith(".asd", StringComparison.OrdinalIgnoreCase))
         );
-        var song = WarpSiblings.Read(stem.Path);
-        var plan = song is null
-            ? new TrueUpPlan.Failed("its tags do not say which upload it was cut from")
-            : await Task.Run(() => TrueUp.Plan(siblings, song, rephase: true));
+        var plan = WarpSiblings.Read(path) is { } song
+            ? await Task.Run(() => TrueUp.Plan(siblings, song, rephase: true))
+            : new TrueUpPlan.Failed("its tags do not say which upload it was cut from");
 
-        if (plan is TrueUpPlan.Retype retype)
-        {
-            (_planned, _confirming) = ((retype, siblings), Confirming.TrueUp);
-
+        if (key != _trueUpKey)
             return;
-        }
 
-        _done = new ActionDone(stem.Path, Confirming.TrueUp, false, DateTimeOffset.UtcNow, _ => WarpWording.TrueUpRefusal(plan));
+        _trueUp = (plan, siblings);
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task TrueUpAsync(StemWarp stem, TrueUpPlan.Retype plan, WarpSiblings siblings)

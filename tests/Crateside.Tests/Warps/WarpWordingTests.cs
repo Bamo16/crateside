@@ -103,15 +103,33 @@ public sealed class WarpWordingTests
             null
         );
 
-        Assert.True(WarpWording.CanTrueUp(Lender(), off));
-        Assert.False(WarpWording.CanTrueUp(Lender(), holds));
-        Assert.False(WarpWording.CanTrueUp(Lender() with { IsAuthority = false }, off));
+        Assert.True(Wording(Lender()).CanTrueUp(off));
+        Assert.False(Wording(Lender()).CanTrueUp(holds));
+        Assert.False(Wording(Lender() with { IsAuthority = false }).CanTrueUp(off));
         Assert.False(
-            WarpWording.CanTrueUp(Lender() with { Owner = new WarpOwner.Starter(Saved) }, off)
+            Wording(Lender() with { Owner = new WarpOwner.Starter(Saved) }).CanTrueUp(off)
         );
+    }
+
+    [Fact]
+    public void The_true_up_status_says_how_far_off_the_warp_runs_and_what_would_change()
+    {
+        var off = TrackTempo.Of(
+            new WarpTempo(180, TempoShape.Steady, 180, 180, []) { Grid = new(null, 179.983, 23) },
+            null,
+            null
+        )!;
+        var plan = new TrueUpPlan.Retype(
+            new TrueUpVerdict.Retype(179.983, 180, false, 23.4, 0.1),
+            [],
+            [],
+            0.0032,
+            null
+        );
+
         Assert.Equal(
-            "Runs 0.017 fast and drifts 23 ms over the track. Retypes it to 179.983 and lines it up with the drums. Yours is backed up first.",
-            WarpWording.TrueUpStatus(off!)
+            "Runs 0.017 fast and drifts 23 ms over the track. Retypes Instrumental - Clean's warp to 179.983 and lines it up with Instrumental - Clean's transients. It is backed up first.",
+            Wording(Lender()).TrueUpStatus(off, plan)
         );
     }
 
@@ -127,7 +145,7 @@ public sealed class WarpWordingTests
         );
 
         Assert.Equal(
-            "Retype to 179.983 and move the grid 3.2 ms later onto this stem's transients? It drifts 23 ms now, and will hold within 5 ms. Vocal - Full are written again from it.",
+            "Retype Instrumental - Clean's warp to 179.983 and move the grid 3.2 ms later onto Instrumental - Clean's transients? It drifts 23 ms now, and will hold within 5 ms. Vocal - Full are written again from it.",
             Wording(Lender(), Stem(Vocal, new WarpOwner.Borrowed(Instrumental, Saved), Shared))
                 .TrueUpQuestion(plan)
         );
@@ -137,7 +155,7 @@ public sealed class WarpWordingTests
     public void A_true_up_that_does_not_happen_says_why()
     {
         Assert.Equal(
-            "Not retyped: the grid would not hold within 5 ms all through the track.",
+            "Not offered: the grid would not hold within 5 ms all through the track.",
             WarpWording.TrueUpRefusal(new TrueUpPlan.Left(TrueUpReason.DoesNotHold))
         );
         Assert.Equal(

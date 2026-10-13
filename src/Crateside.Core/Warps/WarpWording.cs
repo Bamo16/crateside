@@ -126,33 +126,39 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
     public string ReapplyConfirm(StemWarp stem) =>
         stem.Owner is WarpOwner.Yours ? "Replace my warp" : "Replace";
 
-    /// <summary>Whether the warp can be trued up: the user's, on a stem the track is warped by, and measured off its tempo (#96).</summary>
-    public static bool CanTrueUp(StemWarp stem, TrackTempo? tempo) =>
-        stem is { IsAuthority: true, Owner: WarpOwner.Yours } && tempo is { Off.DriftMs: not null };
+    /// <summary>Whether the track has a warp of the user's, on a stem it is warped by, measured off its tempo (#96).</summary>
+    public bool CanTrueUp(TrackTempo? tempo) =>
+        group.Lender is { IsAuthority: true, Owner: WarpOwner.Yours }
+        && tempo is { Off.DriftMs: not null };
 
-    public static string TrueUpStatus(TrackTempo tempo) =>
-        tempo.Off is { DriftMs: { } ms } off
-            ? $"Runs {TempoFormat.Offset(tempo.Measured, off.Bpm)} and drifts {Math.Abs(ms):0} ms over the track. Retypes it to {Thousandths(off.Bpm)} and lines it up with the drums. Yours is backed up first."
+    public string TrueUpStatus(TrackTempo tempo, TrueUpPlan.Retype plan) =>
+        tempo.Off is { } off
+            ? $"Runs {TempoFormat.Offset(tempo.Measured, off.Bpm)} and drifts {Math.Abs(plan.Verdict.DriftMs):0} ms over the track. Retypes {Name(group.Lender!.Path)}'s warp to {Thousandths(plan.Verdict.Bpm)} and lines it up with {Transients(plan)}. It is backed up first."
             : string.Empty;
 
     public string TrueUpQuestion(TrueUpPlan.Retype plan) =>
-        $"Retype to {Thousandths(plan.Verdict.Bpm)} and move the grid {Math.Abs(plan.ShiftSeconds * 1000):0.0} ms {(plan.ShiftSeconds < 0 ? "earlier" : "later")} onto {(plan.PhasedFrom is { } drums ? $"{Name(drums)}'s" : "this stem's")} transients? It drifts {Math.Abs(plan.Verdict.DriftMs):0} ms now, and will hold within {WarpTrueUp.HoldsWithinMs:0} ms."
+        $"Retype {Name(group.Lender!.Path)}'s warp to {Thousandths(plan.Verdict.Bpm)} and move the grid {Math.Abs(plan.ShiftSeconds * 1000):0.0} ms {(plan.ShiftSeconds < 0 ? "earlier" : "later")} onto {Transients(plan)}? It drifts {Math.Abs(plan.Verdict.DriftMs):0} ms now, and will hold within {WarpTrueUp.HoldsWithinMs:0} ms."
         + (plan.Lent.Count > 0 ? $" {Names(plan.Lent)} are written again from it." : string.Empty);
+
+    private string Transients(TrueUpPlan.Retype plan) =>
+        plan.PhasedFrom is null
+            ? $"{Name(group.Lender!.Path)}'s transients"
+            : "the kept drum stem's transients";
 
     public static string TrueUpRefusal(TrueUpPlan plan) =>
         plan switch
         {
             TrueUpPlan.Left(TrueUpReason.DoesNotHold) =>
-                $"Not retyped: the grid would not hold within {WarpTrueUp.HoldsWithinMs:0} ms all through the track.",
+                $"Not offered: the grid would not hold within {WarpTrueUp.HoldsWithinMs:0} ms all through the track.",
             TrueUpPlan.Left(TrueUpReason.WithinNoise) =>
-                "Not retyped: the warp already holds against the audio.",
+                "Not offered: the warp already holds against the audio.",
             TrueUpPlan.Left(TrueUpReason.Steps) =>
-                "Not retyped: the grid steps partway through, which a new tempo does not fix.",
-            TrueUpPlan.Left => "Not retyped: crateside could not check the warp against the audio.",
+                "Not offered: the grid steps partway through, which a new tempo does not fix.",
+            TrueUpPlan.Left => "Not offered: crateside could not check the warp against the audio.",
             TrueUpPlan.Disagree =>
-                "Not retyped: the stems the track is warped by hold different warps.",
-            TrueUpPlan.Failed(var error) => $"Not retyped: {error}",
-            _ => "Not retyped.",
+                "Not offered: the stems the track is warped by hold different warps.",
+            TrueUpPlan.Failed(var error) => $"Not offered: {error}",
+            _ => "Not offered.",
         };
 
     public static string TrueUpDone(TrueUpOutcome outcome, string ago) =>

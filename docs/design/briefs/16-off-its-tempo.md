@@ -61,3 +61,6 @@ A batch action (true up every track that is off) later; nothing to design for it
   missing; fixed with a margin). The larger question: should the indicator sit beside the title at
   all? It belongs with the BPM. There is no room for a chip there, but a small mark (a dot or a
   glyph) would fit, with the detail on hover.
+- The *True up* control acts on the track's canonical warp, not on the stem selected, and checks
+  up front whether a true-up is on offer: when it is not, the row says why (`Not offered: …`) and
+  has no button. The brief's question about where this belongs on the page stands.
