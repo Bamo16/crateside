@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using AbleKit.Analysis;
 using Crateside.Core.Samples;
+using Crateside.Core.Tempo;
 
 namespace Crateside.Core.Warps;
 
@@ -17,6 +18,8 @@ public sealed class SidecarWriter(
 {
     /// <summary>Live writes one marker more than it shows, this many beats after the last.</summary>
     private const double HiddenMarkerBeats = 1.0 / 32;
+
+    private const int MinTransientsToRefine = 32;
 
     /// <summary>Whether any of these siblings holds a saved warp the user made, which <see cref="BorrowAsync"/> would lend.</summary>
     public bool HasWarpToLend(IReadOnlyList<string> authorities, IReadOnlyList<string> sameKind) =>
@@ -106,8 +109,7 @@ public sealed class SidecarWriter(
                 sameKind,
                 audio,
                 from,
-                null,
-                analysis => warp with { Audio = analysis }
+                analysis => (warp with { Audio = analysis }, null)
             );
         }
         catch (Exception ex)
@@ -138,8 +140,15 @@ public sealed class SidecarWriter(
                 sameKind,
                 audio,
                 null,
-                bpm,
-                analysis => Starter(bpm, (double)audio.Frames / audio.SampleRate, analysis)
+                analysis =>
+                {
+                    var tempo = Refined(bpm, analysis.Transients, audio.SampleRate);
+
+                    return (
+                        Starter(tempo, (double)audio.Frames / audio.SampleRate, analysis),
+                        tempo
+                    );
+                }
             );
         }
         catch (Exception ex)
@@ -232,14 +241,23 @@ public sealed class SidecarWriter(
         };
     }
 
+    /// <summary>The tempo within a hair of the reading that the stem's stronger transients fit best, or the reading when there are too few to say (ADR 0050).</summary>
+    private static double Refined(
+        double bpm,
+        IReadOnlyList<Transient> transients,
+        int sampleRate
+    ) =>
+        GridCheck.Strongest(transients, sampleRate) is { Length: >= MinTransientsToRefine } times
+            ? GridCheck.Refine(times, bpm)
+            : bpm;
+
     /// <summary>The sidecar with the target's own waveform and the best transients it can have.</summary>
     private SidecarPlan.Ready Prepare(
         string target,
         IReadOnlyList<string> sameKind,
         DecodedAudio audio,
         string? from,
-        double? bpm,
-        Func<AudioAnalysis, AnalysisFile> sidecar
+        Func<AudioAnalysis, (AnalysisFile File, double? Bpm)> sidecar
     )
     {
         var size = new FileInfo(target).Length;
@@ -257,9 +275,9 @@ public sealed class SidecarWriter(
             size
         );
 
-        return new SidecarPlan.Ready(
-            new PreparedSidecar(target, sidecar(analysis), from, bpm, transientsFrom)
-        );
+        var (file, bpm) = sidecar(analysis);
+
+        return new SidecarPlan.Ready(new PreparedSidecar(target, file, from, bpm, transientsFrom));
     }
 
     private OwnSidecar? Own(string target) =>

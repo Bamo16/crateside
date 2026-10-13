@@ -273,6 +273,33 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task A_starter_takes_the_tempo_its_transients_fit_best_around_the_reading()
+    {
+        Audio(Target);
+        var hits = Enumerable
+            .Range(0, 480)
+            .Select(i => new Transient((int)(i * 30 / 120.03 * 44_100), i % 2 is 0 ? 1f : 0.5f))
+            .ToArray();
+        SidecarWriter writer = new(
+            new FixedDecoder(Samples(0.5f, 130 * 44_100)),
+            new FixedDetector(hits),
+            _written,
+            _origins
+        );
+
+        var outcome = await writer.StartAsync(
+            Target,
+            [],
+            120,
+            TestContext.Current.CancellationToken
+        );
+
+        var started = Assert.IsType<WarpOutcome.Started>(outcome);
+        Assert.Equal(120.03, started.Bpm, 3);
+        Assert.Equal(120.03, AnalysisFile.Read($"{Target}.asd").Warp.TempoAt(0) ?? 0, 3);
+    }
+
+    [Fact]
     public async Task The_transients_a_starter_carries_are_recorded_with_the_detector_that_found_them()
     {
         Audio(Target);
@@ -360,11 +387,11 @@ public sealed class SidecarWriterTests : IDisposable
     private static DecodedAudio Samples(float level, int frames) =>
         new([.. Enumerable.Repeat(level, frames * 2)], 2, 44_100);
 
-    private sealed class FixedDetector : ITransientDetector
+    private sealed class FixedDetector(IReadOnlyList<Transient>? found = null) : ITransientDetector
     {
         public string Version => "fixed 1";
 
-        public IReadOnlyList<Transient> Detect(DecodedAudio audio) => Detected;
+        public IReadOnlyList<Transient> Detect(DecodedAudio audio) => found ?? Detected;
     }
 
     private sealed class FixedDecoder(DecodedAudio audio) : IAudioDecoder
