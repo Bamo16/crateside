@@ -34,8 +34,8 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
         }
 
         if (
-            !outcome.Succeeded
-            || FilterHelp.Match(outcome.StandardOutput) is not { Success: true } line
+            outcome is not { Succeeded: true, StandardOutput: { } stdOut }
+            || FilterHelp.Match(stdOut) is not { Success: true } line
             || Located(fileName) is not { Exists: true } executable
         )
             return null;
