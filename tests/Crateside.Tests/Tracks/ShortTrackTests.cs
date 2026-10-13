@@ -30,7 +30,7 @@ public sealed class ShortTrackTests
     [Fact]
     public void A_track_whose_files_all_reached_the_library_is_still_short_if_one_never_existed()
     {
-        // Everything present is in Mashup Samples, which otherwise reads as done (#38).
+        // Everything present is in the library, which otherwise reads as done (#38).
         Assert.Equal(TrackState.Short, Row(inLibrary: true, "Vocal - Full").State);
     }
 

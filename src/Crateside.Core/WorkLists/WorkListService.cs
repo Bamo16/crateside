@@ -207,9 +207,9 @@ public sealed class WorkListService(
 
         await ConsumeAsync(held, ct);
 
-        // Both staging and Mashup Samples count — a track that moved out is still processed.
+        // Both staging and the library count — a track that moved out is still processed.
         var ledger = KeyLedger.Read(_paths.Ledger);
-        var processed = ProcessedTracks.Scan(ledger, [_paths.SampleStaging, _paths.MashupSamples]);
+        var processed = ProcessedTracks.Scan(ledger, [_paths.StagingFolder, _paths.LibraryFolder]);
 
         // Deliberately not counted as processed: that would let the janitor discard the
         // working set. It does mean the GPU has already run this track.
@@ -235,7 +235,7 @@ public sealed class WorkListService(
                 Reopened(items, ledger),
                 bumped.VideoId,
                 awaitingCut?.Invoke(ledger),
-                InventoriesBySong(processed, ledger, catalog, _paths.MashupSamples)
+                InventoriesBySong(processed, ledger, catalog, _paths.LibraryFolder)
             ),
             Ledger = ledger,
             Processed = processed,
@@ -294,7 +294,7 @@ public sealed class WorkListService(
             return;
 
         foreach (var arrival in arrivals)
-            if (FiledWhere(arrival, processed, ledger, _paths.MashupSamples) is { } where)
+            if (FiledWhere(arrival, processed, ledger, _paths.LibraryFolder) is { } where)
                 actions.Record(arrival.VideoId, UserActionKind.ArrivedAlreadyFiled, where);
     }
 
@@ -337,8 +337,8 @@ public sealed class WorkListService(
         var place = stems.Any(stem =>
             stem.Root.Equals(finishedRoot, StringComparison.OrdinalIgnoreCase)
         )
-            ? "Mashup Samples"
-            : "Sample Staging";
+            ? "the library"
+            : "Staging";
 
         return known is null && processed.StemsFor(arrival.VideoId) is []
             ? $"looks like one in {place}"
@@ -538,7 +538,7 @@ public sealed record QueueScan
     public required KeyLedger Ledger { get; init; }
 
     /// <summary>
-    /// Every file found under <c>Sample Staging</c> and <c>Mashup Samples</c>, by video ID. Which
+    /// Every file found under <c>Staging</c> and the library, by video ID. Which
     /// root a file turned up in is what says whether the user has finished with it (ADR 0007).
     /// </summary>
     public required ProcessedTracks Processed { get; init; }

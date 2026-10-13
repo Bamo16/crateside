@@ -793,7 +793,7 @@
         );
 
     private static string Waiting(TrackRow row) =>
-        $"{"sample".ToQuantity(row.Samples.Count(sample => !sample.IsInLibrary))} in Sample Staging, key-tagged.";
+        $"{"sample".ToQuantity(row.Samples.Count(sample => !sample.IsInLibrary))} in Staging, key-tagged.";
 
     // Raised on a worker thread, never the circuit's, so the render is marshalled back.
     private void OnStemsChanged() => _ = InvokeAsync(StateHasChanged);

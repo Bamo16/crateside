@@ -178,7 +178,7 @@ public sealed record StemPicker
     }
 
     /// <summary>
-    /// The plan with every file already in <c>Mashup Samples</c> kept, since nothing can tick
+    /// The plan with every file already in the library kept, since nothing can tick
     /// those off (ADR 0019).
     /// </summary>
     private static StemPlan WithLibraryFiles(StemPlan plan, TrackRow row) =>
@@ -255,7 +255,7 @@ public sealed record StemChoice
 
     /// <summary>
     /// Whether ticking it is out of the user's hands: a guide, or a file already in
-    /// <c>Mashup Samples</c> (ADR 0019).
+    /// the library (ADR 0019).
     /// </summary>
     public bool IsPinned => !IsSample || IsInLibrary;
 

@@ -40,13 +40,13 @@ public sealed record TracksView
     /// Joins everything known about the playlist into one row per track.
     /// </summary>
     /// <param name="staging">
-    /// What is in Sample Staging, which carries per-file tag state that no other source has.
+    /// What is in Staging, which carries per-file tag state that no other source has.
     /// </param>
     /// <param name="instructions">
     /// The user's standing instructions, by video ID; they outlive the playlist entry.
     /// </param>
     /// <param name="finishedRoot">
-    /// The folder that means the user is done with a file — <c>Mashup Samples</c>.
+    /// The folder that means the user is done with a file — the library.
     /// </param>
     /// <param name="acquisitions">
     /// How each retained download turned out, by video ID — what a row is parked over.
@@ -436,7 +436,7 @@ public sealed record TracksView
         ];
 
     /// <summary>
-    /// What Ableton has tagged a library file with, which Sample Staging cannot say.
+    /// What Ableton has tagged a library file with, which Staging cannot say.
     /// </summary>
     private static string? KeyIn(FolderInfo? tags, string path) =>
         tags?.TryGet(path, out var tagged) is true ? tagged.Key : null;

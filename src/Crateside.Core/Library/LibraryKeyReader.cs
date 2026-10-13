@@ -26,7 +26,7 @@ public sealed class LibraryKeyReader(
 
     public KeyDistribution Read()
     {
-        var root = _paths.MashupSamples;
+        var root = _paths.LibraryFolder;
 
         if (!Directory.Exists(root))
             return KeyDistribution.Empty(root);

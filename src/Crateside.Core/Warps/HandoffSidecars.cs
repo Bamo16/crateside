@@ -23,7 +23,7 @@ public sealed class HandoffSidecars(
         if (options is { LendAutomatically: false, WriteStarterWarps: false })
             return new Dictionary<string, PreparedSidecar>();
 
-        var siblings = WarpSiblings.Scan([paths.SampleStaging, paths.MashupSamples]);
+        var siblings = WarpSiblings.Scan([paths.StagingFolder, paths.LibraryFolder]);
         var cuts = stems.Select(WarpSiblings.Read).OfType<SiblingFile>().ToList();
         double? bpm = null;
         var measured = false;

@@ -38,7 +38,7 @@
     else
     {
         <p class="warning">
-            Removes @("file".ToQuantity(picker.Removing)) from Sample Staging.
+            Removes @("file".ToQuantity(picker.Removing)) from Staging.
             @Balance(picker)
         </p>
 
@@ -91,6 +91,6 @@
     private static string Untouched(StemPicker picker) =>
         picker.Keeping is 0
             ? string.Empty
-            : $"The {"file".ToQuantity(picker.Keeping)} already in Sample Staging "
+            : $"The {"file".ToQuantity(picker.Keeping)} already in Staging "
                 + $"{(picker.Keeping is 1 ? "is" : "are")} untouched.";
 }

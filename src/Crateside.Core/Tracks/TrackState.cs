@@ -23,7 +23,7 @@ public enum TrackState
     /// <summary>On the GPU now. Single-flight, and the reason nothing else may start.</summary>
     Separating,
 
-    /// <summary>The handoff is in flight: moving finished stems into <c>Sample Staging</c>.</summary>
+    /// <summary>The handoff is in flight: moving finished stems into <c>Staging</c>.</summary>
     Staging,
 
     /// <summary>Writing the settled key onto the staged files as Ableton tags.</summary>
@@ -40,7 +40,7 @@ public enum TrackState
     ReadyToMove,
 
     /// <summary>
-    /// Every sample has reached <c>Mashup Samples</c>: warped, tagged, and in the finished library.
+    /// Every sample has reached the library: warped, tagged, and in the finished library.
     /// </summary>
     Done,
 

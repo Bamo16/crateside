@@ -26,11 +26,11 @@ public sealed class SampleAdoptionTests : IDisposable
     {
         _paths = new CratesidePaths
         {
-            SampleStaging = Path.Combine(_root, "Sample Staging"),
-            MashupSamples = Path.Combine(_root, "Mashup Samples"),
+            StagingFolder = Path.Combine(_root, "Staging"),
+            LibraryFolder = Path.Combine(_root, "Library"),
         };
-        Directory.CreateDirectory(_paths.SampleStaging);
-        Directory.CreateDirectory(_paths.MashupSamples);
+        Directory.CreateDirectory(_paths.StagingFolder);
+        Directory.CreateDirectory(_paths.LibraryFolder);
 
         _settings = new TrackInstructionStore(
             new QueueFile(Options.Create(new PlaylistOptions()), Path.Combine(_root, "queue.json"))
@@ -57,7 +57,7 @@ public sealed class SampleAdoptionTests : IDisposable
 
     private string HandBuilt(string name, string? comment = null)
     {
-        var path = Path.Combine(_paths.MashupSamples, name);
+        var path = Path.Combine(_paths.LibraryFolder, name);
         File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), path);
 
         using var file = TagLib.File.Create(path);

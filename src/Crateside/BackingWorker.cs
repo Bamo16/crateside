@@ -82,7 +82,7 @@ public sealed class BackingWorker(
 
         var library = Report(
             runner.Run(
-                _paths.MashupSamples,
+                _paths.LibraryFolder,
                 ledger,
                 OwnedOf,
                 corrections: corrections.Approved(),
@@ -95,14 +95,14 @@ public sealed class BackingWorker(
         // the index agrees, so a correction is never dropped as done before it shows.
         corrections.Found(
             runner.Disagreements(
-                _paths.MashupSamples,
+                _paths.LibraryFolder,
                 ledger,
-                AbletonReads.TagsOrEmpty(index.Read, _paths.MashupSamples)
+                AbletonReads.TagsOrEmpty(index.Read, _paths.LibraryFolder)
             )
         );
         var staging = Report(
-            runner.Run(_paths.SampleStaging, ledger, OwnedOf, backKeys: false),
-            "Sample Staging"
+            runner.Run(_paths.StagingFolder, ledger, OwnedOf, backKeys: false),
+            "Staging"
         );
 
         return library < staging ? library : staging;

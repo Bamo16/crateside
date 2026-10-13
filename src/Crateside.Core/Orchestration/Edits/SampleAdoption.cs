@@ -14,7 +14,7 @@ public sealed class SampleAdoption(TrackInstructionStore instructions, Crateside
     /// </summary>
     public IReadOnlyList<string> Candidates() =>
         [
-            .. new[] { paths.SampleStaging, paths.MashupSamples }
+            .. new[] { paths.StagingFolder, paths.LibraryFolder }
                 .Where(Directory.Exists)
                 .SelectMany(root =>
                     Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)

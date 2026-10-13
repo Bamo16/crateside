@@ -7,7 +7,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Core.Orchestration.Edits;
 
 /// <summary>
-/// A track's files as they currently sit in <c>Sample Staging</c>.
+/// A track's files as they currently sit in <c>Staging</c>.
 /// </summary>
 public delegate IReadOnlyList<StagedFile> ReadStagedFiles(string videoId);
 
@@ -39,7 +39,7 @@ public sealed class StemRecut(
         var files = staged(videoId);
         var stagedInventory = StemInventory.Of(files.Select(AsOnDisk), catalog);
 
-        // Everywhere the track's files could be, so a preset already sitting in Mashup Samples
+        // Everywhere the track's files could be, so a preset already sitting in the library
         // is never asked for again — only staging is trusted to say what a re-cut may delete.
         var everywhere = new StemInventory
         {
@@ -152,8 +152,7 @@ public sealed class StemRecut(
                 "The separator could not be asked what it can make, so crateside cannot tell "
                     + "which of these files this track already has.",
             (_, { IsEmpty: true }, _, _) => "A track has to keep something.",
-            (_, _, { Files.Count: 0 }, _) =>
-                "Nothing of this track is in Sample Staging or Mashup Samples.",
+            (_, _, { Files.Count: 0 }, _) => "Nothing of this track is in Staging or the library.",
             _ when recipe is { Presets.Count: 0, KeepSource: false }
                     && removing.Count is 0
                     && isStoredPlan => "This track already has exactly these files.",

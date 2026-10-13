@@ -6,7 +6,7 @@ using Crateside.Core.Samples;
 namespace Crateside.Core.Staging;
 
 /// <summary>
-/// Reads what is in Sample Staging, by song, from disk on every call. Reads the XMP, which is ahead
+/// Reads what is in Staging, by song, from disk on every call. Reads the XMP, which is ahead
 /// of Ableton's index where crateside writes (ADR 0017).
 /// </summary>
 public sealed class StagingReader(FolderInfoReader? folderInfoReader = null)
@@ -18,9 +18,9 @@ public sealed class StagingReader(FolderInfoReader? folderInfoReader = null)
     /// Reads the staging folder and rolls its stems up into songs, newest-looking first.
     /// Returns nothing — never throws — for a folder that does not exist.
     /// </summary>
-    /// <summary>Reads Sample Staging where the paths say it is, against the ledger as it is now.</summary>
+    /// <summary>Reads Staging where the paths say it is, against the ledger as it is now.</summary>
     public IReadOnlyList<StagedSong> Read(CratesidePaths paths) =>
-        Build(paths.SampleStaging, KeyLedger.Read(paths.Ledger));
+        Build(paths.StagingFolder, KeyLedger.Read(paths.Ledger));
 
     public IReadOnlyList<StagedSong> Build(string stagingRoot, KeyLedger ledger)
     {

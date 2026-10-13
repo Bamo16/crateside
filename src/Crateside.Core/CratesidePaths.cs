@@ -19,10 +19,10 @@ public sealed class CratesidePaths
         @"V:\Repos\beatdetect-harness\builds\1.3.0-1e57fec\ffmpeg.exe";
 
     /// <summary>Where freshly separated stems land, awaiting the human-limited steps.</summary>
-    public string SampleStaging { get; set; } = @"P:\RYAN\Ableton\Sample Staging";
+    public string StagingFolder { get; set; } = @"P:\RYAN\Ableton\Sample Staging";
 
     /// <summary>Where stems go once the work on them is finished.</summary>
-    public string MashupSamples { get; set; } = @"P:\RYAN\Ableton\Mashup Samples";
+    public string LibraryFolder { get; set; } = @"P:\RYAN\Ableton\Mashup Samples";
 
     /// <summary>Where the user's Ableton sets live, read for the samples they use.</summary>
     public string AbletonProjects { get; set; } = @"P:\RYAN\Ableton\Projects";

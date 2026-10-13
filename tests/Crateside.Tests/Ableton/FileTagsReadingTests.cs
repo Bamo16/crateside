@@ -62,7 +62,7 @@ public sealed class FileTagsReadingTests
         // The vocabulary is a closed set derived from this library, so it must accept all of it.
         var reader = new FolderInfoReader();
 
-        var keywords = new[] { Paths.SampleStaging, Paths.MashupSamples }
+        var keywords = new[] { Paths.StagingFolder, Paths.LibraryFolder }
             .Where(Directory.Exists)
             .SelectMany(root => reader.Read(root).Entries)
             .SelectMany(entry => entry.Keywords)
@@ -80,8 +80,8 @@ public sealed class FileTagsReadingTests
     public void Keys_in_the_library_recombine_into_one_of_the_24_ledger_spellings()
     {
         Assert.SkipUnless(
-            Directory.Exists(Paths.MashupSamples),
-            $"{Paths.MashupSamples} not present."
+            Directory.Exists(Paths.LibraryFolder),
+            $"{Paths.LibraryFolder} not present."
         );
 
         string[] tonics = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
@@ -90,7 +90,7 @@ public sealed class FileTagsReadingTests
             .ToHashSet(StringComparer.Ordinal);
 
         var keys = new FolderInfoReader()
-            .Read(Paths.MashupSamples)
+            .Read(Paths.LibraryFolder)
             .Entries.Where(entry => entry.IsKeyTagged)
             .Select(entry => entry.Key!)
             .ToArray();
@@ -103,13 +103,13 @@ public sealed class FileTagsReadingTests
     public void Half_tagged_files_in_the_library_are_partial_not_keyed()
     {
         Assert.SkipUnless(
-            Directory.Exists(Paths.MashupSamples),
-            $"{Paths.MashupSamples} not present."
+            Directory.Exists(Paths.LibraryFolder),
+            $"{Paths.LibraryFolder} not present."
         );
 
         // Asserts the shape, not the count: the user may fix them at any time.
         var partial = new FolderInfoReader()
-            .Read(Paths.MashupSamples)
+            .Read(Paths.LibraryFolder)
             .Entries.Where(entry => entry.HasPartialKey)
             .ToArray();
 
@@ -121,11 +121,11 @@ public sealed class FileTagsReadingTests
     [Fact]
     public void Keys_from_lives_index_arrive_in_the_ledgers_ascii_spelling()
     {
-        Assert.SkipUnless(RealLibrary.HasStems(Paths.MashupSamples), "no stems on this machine.");
+        Assert.SkipUnless(RealLibrary.HasStems(Paths.LibraryFolder), "no stems on this machine.");
         Assert.SkipUnless(Directory.Exists(Paths.AbletonIndex), "Live's index is not present.");
 
         var keyed = new FileIndexReader(Paths.AbletonIndex)
-            .Read(Paths.MashupSamples)
+            .Read(Paths.LibraryFolder)
             .Entries.Where(entry => entry.IsKeyTagged)
             .ToArray();
 

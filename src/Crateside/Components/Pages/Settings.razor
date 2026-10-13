@@ -18,6 +18,7 @@
 @inject WindowRoll Roll
 @inject PauseStore Remembered
 @inject CratesidePaths Paths
+@inject PathOverrideStore Overrides
 
 <PageTitle>Settings · crateside</PageTitle>
 
@@ -58,7 +59,7 @@
                 <div class="name">
                     <span>Look for new tracks</span>
                     <span class="gist">
-                        How often Tracks checks the playlist and Sample Staging. Nothing tells
+                        How often Tracks checks the playlist and Staging. Nothing tells
                         crateside when either changes.
                     </span>
                 </div>
@@ -334,12 +335,32 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                         <span>@folder.Name</span>
                         <span class="gist">@folder.Gist</span>
                     </div>
-                    <span class="path mono">@folder.Path</span>
+                    @if (folder.Edit is { } edit)
+                    {
+                        <input type="text" class="path mono" @bind="edit.Value" @bind:event="oninput" />
+                    }
+                    else
+                    {
+                        <span class="path mono">@folder.Path</span>
+                    }
                     <button class="outline" @onclick="() => Reveal(folder)">
                         @(folder.IsFile ? "Show in folder" : "Open")
                     </button>
                 </div>
             }
+
+            <div class="row">
+                <div class="name"></div>
+                <div class="control">
+                    <div class="field">
+                        <button class="primary" @onclick="SaveFolders" disabled="@(!HasPendingFolders)">Save folders</button>
+                    </div>
+                    @if (_foldersSaved)
+                    {
+                        <span class="status">Saved. Restart crateside for the new folders to apply.</span>
+                    }
+                </div>
+            </div>
 
             @if (_folderProblem is { } folderProblem)
             {
@@ -347,7 +368,8 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             }
 
             <span class="status note">
-                Read-only. Set in <code>appsettings.json</code>; crateside never writes there.
+                Staging and the library are changed here and take effect at the next start. The rest are set in
+                <code>appsettings.json</code>, which crateside never writes.
             </span>
         </section>
     </div>
@@ -372,10 +394,16 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     private string? _consentProblem;
     private string? _removeProblem;
     private string? _folderProblem;
+    private bool _foldersSaved;
+    private FolderEdit _staging = null!;
+    private FolderEdit _library = null!;
     private IReadOnlyList<RemovalResult>? _removals;
 
     private bool HasPendingChange =>
         PlaylistReference.TryParse(_playlist, out var parsed) && parsed != Playlist.PlaylistId;
+
+    private bool HasPendingFolders =>
+        _staging.Value.Trim() != Paths.StagingFolder || _library.Value.Trim() != Paths.LibraryFolder;
 
     private bool HasPlaylist => Playlist.PlaylistId is { Length: > 0 };
 
@@ -396,8 +424,8 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
     private IEnumerable<Folder> Folders =>
     [
-        new("Sample Staging", "Where new stems land.", Paths.SampleStaging, IsFile: false),
-        new("Mashup Samples", "The library, where finished stems go.", Paths.MashupSamples, IsFile: false),
+        new("Staging", "Where new stems land.", Paths.StagingFolder, IsFile: false, _staging),
+        new("Library", "Where finished stems go.", Paths.LibraryFolder, IsFile: false, _library),
         new("Ableton projects", "Your sets, relinked when a track is renamed.", Paths.AbletonProjects, IsFile: false),
         new("keytag ledger", "Detector runs, for keys and BPM.", Paths.Ledger, IsFile: true),
     ];
@@ -417,6 +445,9 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         Roll.Changed += OnChanged;
 
         await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
+
+        _staging = new FolderEdit(Paths.StagingFolder);
+        _library = new FolderEdit(Paths.LibraryFolder);
 
         _playlist = Playlist.PlaylistId ?? string.Empty;
         _refresh = Playlist.RefreshMinutes;
@@ -474,6 +505,26 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         {
             _folderProblem = $"Could not open {folder.Path}: {ex.Message}";
         }
+    }
+
+    private void SaveFolders()
+    {
+        var staging = _staging.Value.Trim();
+        var library = _library.Value.Trim();
+
+        _foldersSaved = false;
+        _folderProblem = (staging, library) switch
+        {
+            _ when !Directory.Exists(staging) => $"No folder at {staging}.",
+            _ when !Directory.Exists(library) => $"No folder at {library}.",
+            _ => null,
+        };
+
+        if (_folderProblem is not null)
+            return;
+
+        Overrides.Remember(staging, library);
+        _foldersSaved = true;
     }
 
     private async Task Save()
@@ -560,5 +611,16 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         }
     }
 
-    private sealed record Folder(string Name, string Gist, string Path, bool IsFile);
+    private sealed record Folder(
+        string Name,
+        string Gist,
+        string Path,
+        bool IsFile,
+        FolderEdit? Edit = null
+    );
+
+    private sealed class FolderEdit(string value)
+    {
+        public string Value { get; set; } = value;
+    }
 }

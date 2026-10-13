@@ -249,7 +249,7 @@ public sealed class TrackSwapTests : IDisposable
             settings ?? Settings(),
             workingSet ?? new WorkingSet(WorkingRoot),
             Staged(),
-            new CratesidePaths { Ledger = LedgerPath, SampleStaging = StagingRoot }
+            new CratesidePaths { Ledger = LedgerPath, StagingFolder = StagingRoot }
         );
 
     private TrackInstructionStore Settings() =>

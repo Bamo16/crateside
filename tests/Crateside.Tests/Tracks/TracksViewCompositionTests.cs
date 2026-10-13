@@ -467,7 +467,7 @@ public sealed class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
-    public void A_sample_found_in_Mashup_Samples_is_warped_and_finishes_the_track()
+    public void A_sample_found_in_the_library_is_warped_and_finishes_the_track()
     {
         var row = Assert.Single(Compose(onDisk: Finished("Vocal - Full", "Instrumental - Full")));
 
@@ -714,7 +714,7 @@ public sealed class TracksViewCompositionTests : IDisposable
         );
 
         Assert.Equal("2 files + folder info", partly.RenameScope);
-        Assert.Contains("Sample Staging and Mashup Samples", partly.RenameDetail);
+        Assert.Contains("Staging and the library", partly.RenameDetail);
     }
 
     [Fact]

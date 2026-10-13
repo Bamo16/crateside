@@ -19,7 +19,7 @@ public sealed class HandoffSupersedeTests : IDisposable
 
     public HandoffSupersedeTests()
     {
-        _staging = Path.Combine(_root, "Sample Staging");
+        _staging = Path.Combine(_root, "Staging");
         _cut = Path.Combine(_root, "Key Identified");
 
         Directory.CreateDirectory(_staging);
@@ -103,7 +103,7 @@ public sealed class HandoffSupersedeTests : IDisposable
         var paths = new CratesidePaths();
 
         Assert.SkipUnless(
-            Directory.Exists(paths.SampleStaging) && File.Exists(paths.Ledger),
+            Directory.Exists(paths.StagingFolder) && File.Exists(paths.Ledger),
             "The real staging root and ledger must be present."
         );
 
@@ -111,7 +111,7 @@ public sealed class HandoffSupersedeTests : IDisposable
 
         // Only a song with an upload in staging can have a file there superseded.
         var stagedSongs = Directory
-            .EnumerateFiles(paths.SampleStaging)
+            .EnumerateFiles(paths.StagingFolder)
             .Where(SampleFiles.IsAudio)
             .Select(path => StemTagReader.Read(path)?.SourceVideoId)
             .OfType<string>()
@@ -128,7 +128,7 @@ public sealed class HandoffSupersedeTests : IDisposable
         foreach (var videoId in videoIds)
         {
             Assert.DoesNotContain(
-                SupersededStems.In(paths.SampleStaging, videoId, ledger),
+                SupersededStems.In(paths.StagingFolder, videoId, ledger),
                 path => StemTagsSay(path, videoId)
             );
         }
@@ -144,7 +144,7 @@ public sealed class HandoffSupersedeTests : IDisposable
             SupersededStems.In(_staging, "zzzzzzzzzzz", KeyLedger.Read(Path.Combine(_root, "x")))
         );
 
-    private HandoffRunner Runner() => new(new CratesidePaths { SampleStaging = _staging });
+    private HandoffRunner Runner() => new(new CratesidePaths { StagingFolder = _staging });
 
     private string Staged(string name)
     {

@@ -310,7 +310,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
         _recycling.Count is 0
             ? "Drop crateside's record of this track? No file is touched."
             : $"Drop crateside's record and recycle {"staged file".ToQuantity(_recycling.Count)}? "
-                + "Nothing in Mashup Samples is touched.";
+                + "Nothing in the library is touched.";
 
     private async Task ConfirmRemove()
     {

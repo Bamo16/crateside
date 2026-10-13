@@ -4,17 +4,17 @@ namespace Crateside.Core.Staging;
 
 /// <summary>
 /// Moves a warp guide and its sidecar out of staging, out of Ableton's sight, once the rest of
-/// its track is in Mashup Samples (#87, ADR 0046).
+/// its track is in the library (#87, ADR 0046).
 /// </summary>
 public sealed class WarpGuideKeeper(CratesidePaths paths, TimeProvider time)
 {
     public IReadOnlyList<GuideKeeping> Keep()
     {
-        if (!Directory.Exists(paths.SampleStaging))
+        if (!Directory.Exists(paths.StagingFolder))
             return [];
 
-        var staged = Cuts(paths.SampleStaging);
-        var filed = Cuts(paths.MashupSamples)
+        var staged = Cuts(paths.StagingFolder);
+        var filed = Cuts(paths.LibraryFolder)
             .Select(cut => cut.VideoId)
             .ToHashSet(StringComparer.Ordinal);
         List<GuideKeeping> kept = [];

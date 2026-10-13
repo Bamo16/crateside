@@ -24,7 +24,7 @@ public sealed class SupersededStemsTests : IDisposable
 
     public SupersededStemsTests()
     {
-        _staging = Path.Combine(_root, "Sample Staging");
+        _staging = Path.Combine(_root, "Staging");
         _ledgerPath = Path.Combine(_root, "runs.jsonl");
 
         Directory.CreateDirectory(_staging);

@@ -19,8 +19,8 @@ public sealed class TagAuditRealLibraryTests
     private static CratesidePaths Paths =>
         new()
         {
-            SampleStaging = StagingRoot,
-            MashupSamples = LibraryRoot,
+            StagingFolder = StagingRoot,
+            LibraryFolder = LibraryRoot,
             Ledger = LedgerPath,
         };
 

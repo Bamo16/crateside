@@ -68,7 +68,7 @@ public sealed class TrackStateResolutionTests
         var row = Row() with { Samples = [Sample("Vocal - Full"), Sample("Instrumental - Full")] };
 
         Assert.Equal(TrackState.ReadyToWarp, row.State);
-        Assert.Equal("your turn — warp, then move to Mashup Samples", row.Next);
+        Assert.Equal("your turn — warp, then move to the library", row.Next);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public sealed class TrackStateResolutionTests
         };
 
         Assert.Equal(TrackState.ReadyToMove, row.State);
-        Assert.Equal("warped — move to Mashup Samples", row.Next);
+        Assert.Equal("warped — move to the library", row.Next);
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public sealed class TrackStateResolutionTests
         };
 
         Assert.Equal(TrackState.ReadyToMove, row.State);
-        Assert.Equal("warped — move to Mashup Samples", row.Next);
+        Assert.Equal("warped — move to the library", row.Next);
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public sealed class TrackStateResolutionTests
         };
 
         Assert.Equal(TrackState.ReadyToWarp, row.State);
-        Assert.Equal("your turn — 1 of 2 warped, then move to Mashup Samples", row.Next);
+        Assert.Equal("your turn — 1 of 2 warped, then move to the library", row.Next);
     }
 
     [Fact]
@@ -136,9 +136,9 @@ public sealed class TrackStateResolutionTests
     }
 
     [Fact]
-    public void A_track_whose_samples_have_all_reached_Mashup_Samples_is_done()
+    public void A_track_whose_samples_have_all_reached_the_library_is_done()
     {
-        // Presence in Mashup Samples is what says a sample is finished (ADR 0002).
+        // Presence in the library is what says a sample is finished (ADR 0002).
         var row = Row() with
         {
             Samples =
@@ -149,7 +149,7 @@ public sealed class TrackStateResolutionTests
         };
 
         Assert.Equal(TrackState.Done, row.State);
-        Assert.Equal("in Mashup Samples", row.Next);
+        Assert.Equal("in the library", row.Next);
     }
 
     [Fact]
@@ -174,7 +174,7 @@ public sealed class TrackStateResolutionTests
     }
 
     [Fact]
-    public void A_sample_already_in_Mashup_Samples_is_not_waiting_to_be_tagged()
+    public void A_sample_already_in_the_library_is_not_waiting_to_be_tagged()
     {
         var row = Row() with
         {

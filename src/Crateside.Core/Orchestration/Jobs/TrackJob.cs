@@ -71,7 +71,7 @@ public enum JobStage
     Separation,
 
     /// <summary>
-    /// Hands the finished stems to the human half by moving them into <c>Sample Staging</c>.
+    /// Hands the finished stems to the human half by moving them into <c>Staging</c>.
     /// A file move, so it contends for nothing.
     /// </summary>
     Handoff,

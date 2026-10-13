@@ -20,7 +20,7 @@ public sealed class TagStoreBackupsTests : IDisposable
     [Fact]
     public void Each_write_keeps_a_copy_of_the_store_and_only_the_newest_are_kept()
     {
-        var library = Path.Combine(_root, "Mashup Samples");
+        var library = Path.Combine(_root, "Library");
         var store = Path.Combine(library, "Ableton Folder Info");
         Directory.CreateDirectory(store);
         File.WriteAllText(Path.Combine(store, "store.xmp"), "first");

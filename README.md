@@ -28,11 +28,11 @@ For every track in the playlist, in order, crateside:
 3. **Separates** the track into stems on the GPU: by default a full vocal, a full
    instrumental, and a drums stem that exists only as a **warp guide** for placing
    markers and is meant to be deleted afterwards.
-4. **Stages** the stems into your `Sample Staging` folder and **writes the key tag**
+4. **Stages** the stems into your Staging folder and **writes the key tag**
    Ableton's browser reads.
 
 Then it is your turn: warp the samples in Ableton, set their default clips, and drag them
-into `Mashup Samples`. That move is the only "done" signal crateside looks for — nothing
+into the library. That move is the only "done" signal crateside looks for — nothing
 is marked finished by hand.
 
 Only one of those stages costs anything scarce (judging spends Claude quota; separation
@@ -56,7 +56,7 @@ judging, and how much of the current Claude quota window is used.
   confirmation that lists exactly what will be deleted), or remove it from the playlist.
 - **Song** — one page per track, the long form of an expanded row.
 - **Library** — how many samples you have in each key, across everything already in
-  `Mashup Samples`. Counted from Ableton's own index, which is what the browser shows,
+  the library. Counted from Ableton's own index, which is what the browser shows,
   so it reaches files the folder's tag store has never caught up with.
 - **Partners** — pick a key and get the keys that pair with it, ranked by how cheap
   they are to try (pitch shift first, circle-of-fifths distance second). It returns
@@ -67,10 +67,10 @@ judging, and how much of the current Claude quota window is used.
 
 - **It never guesses that a file is warped.** An `.asd` sidecar means Ableton analysed
   a file, not that you warped it, so crateside does not read them. Presence in
-  `Mashup Samples` is the signal ([ADR 0002](docs/adr/0002-there-is-no-warped-signal.md),
+  the library is the signal ([ADR 0002](docs/adr/0002-there-is-no-warped-signal.md),
   [ADR 0007](docs/adr/0007-the-move-out-of-staging-is-the-warp-signal.md)).
 - **It never writes into Ableton's own database.** Tags go into the
-  `Ableton Folder Info\*.xmp` store for `Sample Staging` only; everything else is read
+  `Ableton Folder Info\*.xmp` store for Staging only; everything else is read
   from Ableton's index, which is what the browser actually shows
   ([ADR 0003](docs/adr/0003-crateside-may-write-abletons-tag-store.md),
   [ADR 0013](docs/adr/0013-the-index-is-the-tag-state-and-the-xmp-may-never-catch-up.md)).
@@ -105,8 +105,8 @@ folders, so nothing falls out of sync.
 
 ## Running it
 
-Requirements: Windows, .NET 10 SDK, Ableton Live with `Sample Staging` and
-`Mashup Samples` folders as watched roots, keytag and StemForge checked out as siblings,
+Requirements: Windows, .NET 10 SDK, Ableton Live with a Staging folder and
+a library folder as watched roots (both set in Settings), keytag and StemForge checked out as siblings,
 a GPU for separation, and a Claude subscription for judging.
 
 ```

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Library;
 
-/// <summary>The key distribution over the real <c>Mashup Samples</c>.</summary>
+/// <summary>The key distribution over the real library.</summary>
 public sealed class LibraryKeyReaderRealLibraryTests
 {
     private static readonly CratesidePaths Paths = new();
@@ -38,10 +38,10 @@ public sealed class LibraryKeyReaderRealLibraryTests
         SkipUnlessPresent();
 
         var ledger = KeyLedger.Read(Paths.Ledger);
-        var tags = new FileIndexReader(Paths.AbletonIndex).Read(Paths.MashupSamples);
+        var tags = new FileIndexReader(Paths.AbletonIndex).Read(Paths.LibraryFolder);
 
         var conflicts = Directory
-            .EnumerateFiles(Paths.MashupSamples, "*", SearchOption.AllDirectories)
+            .EnumerateFiles(Paths.LibraryFolder, "*", SearchOption.AllDirectories)
             .Where(SampleFiles.IsAudio)
             .Select(file =>
                 (
@@ -91,8 +91,8 @@ public sealed class LibraryKeyReaderRealLibraryTests
     private static void SkipUnlessPresent()
     {
         Assert.SkipUnless(
-            Directory.Exists(Paths.MashupSamples),
-            $"{Paths.MashupSamples} not present on this machine."
+            Directory.Exists(Paths.LibraryFolder),
+            $"{Paths.LibraryFolder} not present on this machine."
         );
         Assert.SkipUnless(
             Directory.Exists(Paths.AbletonIndex),

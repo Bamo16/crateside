@@ -32,7 +32,7 @@ public sealed class TrackTempoRealLibraryTests
 
     private static TrackTempo Tempo(string name)
     {
-        var audio = Path.Combine(Paths.MashupSamples, $"{name} (Instrumental - Full).flac");
+        var audio = Path.Combine(Paths.LibraryFolder, $"{name} (Instrumental - Full).flac");
         Assert.SkipUnless(File.Exists(audio), $"{name} is not in the library on this machine.");
 
         var warp = Warps.Read(audio);

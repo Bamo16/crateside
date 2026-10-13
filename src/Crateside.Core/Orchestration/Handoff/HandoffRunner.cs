@@ -5,7 +5,7 @@ namespace Crateside.Core.Orchestration.Handoff;
 
 /// <summary>
 /// Hands one track's finished stems to the human half, by moving them into
-/// <c>Sample Staging</c>.
+/// <c>Staging</c>.
 /// </summary>
 public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions = null)
 {
@@ -37,7 +37,7 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
 
         try
         {
-            Directory.CreateDirectory(paths.SampleStaging);
+            Directory.CreateDirectory(paths.StagingFolder);
 
             foreach (var (from, to) in moves)
             {
@@ -79,7 +79,7 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
 
     private string Destination(string stem, string? name) =>
         Path.Combine(
-            paths.SampleStaging,
+            paths.StagingFolder,
             Path.GetFileName(StemFileName.IsUsable(name) ? StemFileName.Renamed(stem, name) : stem)
         );
 }

@@ -32,12 +32,12 @@ public sealed class TrackRenameTests : IDisposable
     {
         _paths = new CratesidePaths
         {
-            SampleStaging = Path.Combine(_root, "Sample Staging"),
-            MashupSamples = Path.Combine(_root, "Mashup Samples"),
+            StagingFolder = Path.Combine(_root, "Staging"),
+            LibraryFolder = Path.Combine(_root, "Library"),
         };
 
-        Directory.CreateDirectory(_paths.SampleStaging);
-        Directory.CreateDirectory(_paths.MashupSamples);
+        Directory.CreateDirectory(_paths.StagingFolder);
+        Directory.CreateDirectory(_paths.LibraryFolder);
     }
 
     public void Dispose()
@@ -61,7 +61,7 @@ public sealed class TrackRenameTests : IDisposable
 
     private string InLibrary(string name)
     {
-        var path = Path.Combine(_paths.MashupSamples, name);
+        var path = Path.Combine(_paths.LibraryFolder, name);
 
         File.WriteAllText(path, "stem");
         _library.Add(path);
@@ -71,7 +71,7 @@ public sealed class TrackRenameTests : IDisposable
 
     private string Stage(string name)
     {
-        var path = Path.Combine(_paths.SampleStaging, name);
+        var path = Path.Combine(_paths.StagingFolder, name);
 
         File.WriteAllText(path, "stem");
         _staged.Add(new StagedFile { Path = path, FileName = name });
@@ -79,7 +79,7 @@ public sealed class TrackRenameTests : IDisposable
         return path;
     }
 
-    private string Staged(string name) => Path.Combine(_paths.SampleStaging, name);
+    private string Staged(string name) => Path.Combine(_paths.StagingFolder, name);
 
     private static string? StoredName(TrackInstructionStore settings) =>
         settings.Read().FirstOrDefault(track => track.VideoId == Video)?.Name;
@@ -129,7 +129,7 @@ public sealed class TrackRenameTests : IDisposable
         Stage("99th Street (Vocal - Full).flac");
 
         _writer.Apply(
-            _paths.SampleStaging,
+            _paths.StagingFolder,
             [
                 new TagAssignment
                 {
@@ -143,7 +143,7 @@ public sealed class TrackRenameTests : IDisposable
 
         Assert.Null(outcome.Note);
 
-        var entry = Assert.Single(_reader.Read(_paths.SampleStaging).Entries);
+        var entry = Assert.Single(_reader.Read(_paths.StagingFolder).Entries);
 
         Assert.Equal("Starjunk 95 - 99th Street (Vocal - Full).flac", entry.RelativePath);
         Assert.Equal("A minor", entry.Key);
@@ -151,13 +151,13 @@ public sealed class TrackRenameTests : IDisposable
     }
 
     [Fact]
-    public void A_file_in_Mashup_Samples_is_renamed_with_its_markers_and_its_tags()
+    public void A_file_in_the_library_is_renamed_with_its_markers_and_its_tags()
     {
         var sample = InLibrary("99th Street (Vocal - Full).flac");
         File.WriteAllText($"{sample}.asd", "markers");
 
         _writer.Apply(
-            _paths.MashupSamples,
+            _paths.LibraryFolder,
             [
                 new TagAssignment
                 {
@@ -170,14 +170,14 @@ public sealed class TrackRenameTests : IDisposable
         var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
 
         var renamed = Path.Combine(
-            _paths.MashupSamples,
+            _paths.LibraryFolder,
             "Starjunk 95 - 99th Street (Vocal - Full).flac"
         );
         Assert.True(outcome.Succeeded);
         Assert.True(File.Exists(renamed));
         Assert.Equal("markers", File.ReadAllText($"{renamed}.asd"));
 
-        var entry = Assert.Single(_reader.Read(_paths.MashupSamples).Entries);
+        var entry = Assert.Single(_reader.Read(_paths.LibraryFolder).Entries);
         Assert.Equal("Starjunk 95 - 99th Street (Vocal - Full).flac", entry.RelativePath);
         Assert.Equal("A minor", entry.Key);
     }
@@ -216,7 +216,7 @@ public sealed class TrackRenameTests : IDisposable
         Assert.Equal(
             new SampleMove(
                 sample,
-                Path.Combine(_paths.MashupSamples, "Starjunk 95 - 99th Street (Vocal - Full).flac")
+                Path.Combine(_paths.LibraryFolder, "Starjunk 95 - 99th Street (Vocal - Full).flac")
             ),
             Assert.Single(Assert.Single(_sets.Relinks))
         );
@@ -281,17 +281,17 @@ public sealed class TrackRenameTests : IDisposable
     }
 
     [Fact]
-    public void A_name_already_in_Mashup_Samples_is_refused()
+    public void A_name_already_in_the_library_is_refused()
     {
         InLibrary("99th Street (Vocal - Full).flac");
         File.WriteAllText(
-            Path.Combine(_paths.MashupSamples, "Taken (Vocal - Full).flac"),
+            Path.Combine(_paths.LibraryFolder, "Taken (Vocal - Full).flac"),
             "theirs"
         );
 
         var outcome = Renamer().Apply(Video, "Taken");
 
-        Assert.Contains("already in Mashup Samples", outcome.Problem);
+        Assert.Contains("already in Library", outcome.Problem);
     }
 
     [Fact]
@@ -339,7 +339,7 @@ public sealed class TrackRenameTests : IDisposable
         var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
 
         Assert.False(outcome.Succeeded);
-        Assert.Contains("already in Sample Staging", outcome.Problem);
+        Assert.Contains("already in Staging", outcome.Problem);
         Assert.True(File.Exists(sample));
         Assert.Equal(
             "somebody else's markers",
@@ -370,7 +370,7 @@ public sealed class TrackRenameTests : IDisposable
         Stage("99th Street (Vocal - Full).flac");
 
         _writer.Apply(
-            _paths.SampleStaging,
+            _paths.StagingFolder,
             [
                 new TagAssignment
                 {
@@ -387,7 +387,7 @@ public sealed class TrackRenameTests : IDisposable
 
         Renamer().Apply(Video, "Starjunk 95 - 99th Street");
 
-        var info = _reader.Read(_paths.SampleStaging);
+        var info = _reader.Read(_paths.StagingFolder);
 
         Assert.True(info.TryGet(Staged("Somebody Else - Their Track.flac"), out var theirs));
         Assert.Equal("C major", theirs.Key);
@@ -451,7 +451,7 @@ public sealed class TrackRenameTests : IDisposable
     public void A_name_that_is_already_in_staging_is_refused_before_anything_moves()
     {
         var mine = Stage("99th Street (Vocal - Full).flac");
-        var theirs = Path.Combine(_paths.SampleStaging, "Taken (Vocal - Full).flac");
+        var theirs = Path.Combine(_paths.StagingFolder, "Taken (Vocal - Full).flac");
 
         File.WriteAllText(theirs, "someone else");
 
@@ -459,7 +459,7 @@ public sealed class TrackRenameTests : IDisposable
         var outcome = Renamer(settings).Apply(Video, "Taken");
 
         Assert.False(outcome.Succeeded);
-        Assert.Contains("already in Sample Staging", outcome.Problem);
+        Assert.Contains("already in Staging", outcome.Problem);
         Assert.True(File.Exists(mine));
         Assert.Equal("someone else", File.ReadAllText(theirs));
         Assert.Null(StoredName(settings));

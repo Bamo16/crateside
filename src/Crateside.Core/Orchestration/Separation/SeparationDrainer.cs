@@ -153,20 +153,20 @@ public static class StemLanding
         var duplicates = released.Where(path => IsStagedAlready(paths, path)).ToArray();
 
         foreach (var duplicate in duplicates)
-            (deletions ?? DeletionLog.None).Recycle(duplicate, "a copy already in Sample Staging");
+            (deletions ?? DeletionLog.None).Recycle(duplicate, "a copy already in Staging");
 
         // A staged file of the same name and different bytes stays parked: the handoff would only
         // refuse it, and which one is right is the user's call.
         var clear = released
             .Except(duplicates)
-            .Where(path => !File.Exists(Path.Combine(paths.SampleStaging, Path.GetFileName(path))));
+            .Where(path => !File.Exists(Path.Combine(paths.StagingFolder, Path.GetFileName(path))));
 
         return duplicates.Length + Moved(paths, clear).Count;
     }
 
     private static bool IsStagedAlready(CratesidePaths paths, string parked)
     {
-        var staged = Path.Combine(paths.SampleStaging, Path.GetFileName(parked));
+        var staged = Path.Combine(paths.StagingFolder, Path.GetFileName(parked));
 
         if (!File.Exists(staged) || new FileInfo(staged).Length != new FileInfo(parked).Length)
             return false;

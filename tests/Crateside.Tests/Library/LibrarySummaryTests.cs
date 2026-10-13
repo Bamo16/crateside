@@ -75,7 +75,7 @@ public sealed class LibrarySummaryTests : IDisposable
     public void A_root_that_does_not_exist_reads_as_nothing_rather_than_throwing()
     {
         var paths = Options.Create(
-            new CratesidePaths { MashupSamples = Path.Combine(_root, "gone") }
+            new CratesidePaths { LibraryFolder = Path.Combine(_root, "gone") }
         );
 
         var distribution = new LibraryKeyReader(
@@ -91,7 +91,7 @@ public sealed class LibrarySummaryTests : IDisposable
 
     private LibrarySummary Summary()
     {
-        var paths = Options.Create(new CratesidePaths { MashupSamples = _root });
+        var paths = Options.Create(new CratesidePaths { LibraryFolder = _root });
 
         return new LibrarySummary(
             new LibraryKeyReader(

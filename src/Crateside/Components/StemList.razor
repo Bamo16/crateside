@@ -288,11 +288,11 @@ else
     private static string? Note(StemChoice line, TrackRow row) =>
         line switch
         {
-            { State: StemState.Going } => "deleted from Sample Staging, with its .asd",
+            { State: StemState.Going } => "deleted from Staging, with its .asd",
             { Kind: StemKind.WarpGuide, IsOnDisk: true } => "already cut — no new guide is made",
             { Kind: StemKind.WarpGuide, IsWanted: true } => "cut alongside the new files",
             { Kind: StemKind.WarpGuide } => "nothing is being made, so no guide is needed",
-            { IsInLibrary: true, State: StemState.Kept } => "in Mashup Samples — not crateside's to remove",
+            { IsInLibrary: true, State: StemState.Kept } => "in the library — not crateside's to remove",
             { Kind: StemKind.Unrecognised } => line.Description,
             { State: StemState.Kept } when row.HasSeveralUploads => string.Join(
                 " · ",
@@ -313,9 +313,9 @@ else
     private static string Where(TrackSample sample) =>
         sample switch
         {
-            { IsInLibrary: true } => "Mashup Samples",
-            { HasDefaultClip: true } => "Sample Staging · warped",
-            _ => "Sample Staging",
+            { IsInLibrary: true } => "Library",
+            { HasDefaultClip: true } => "Staging · warped",
+            _ => "Staging",
         };
 
     // The key Ableton holds, never the verdict's — on a row where they disagree, the verdict

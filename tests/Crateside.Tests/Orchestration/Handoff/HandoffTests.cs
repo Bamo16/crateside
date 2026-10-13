@@ -20,7 +20,7 @@ public sealed class HandoffTests : IDisposable
     {
         _paths = new CratesidePaths
         {
-            SampleStaging = Path.Combine(_directory, "Sample Staging"),
+            StagingFolder = Path.Combine(_directory, "Staging"),
             StemsKeyIdentified = Path.Combine(_directory, "Key Identified"),
             StemsUnresolvedKey = Path.Combine(_directory, "Unresolved Key"),
         };
@@ -47,7 +47,7 @@ public sealed class HandoffTests : IDisposable
         return path;
     }
 
-    private string Staged(string name) => Path.Combine(_paths.SampleStaging, name);
+    private string Staged(string name) => Path.Combine(_paths.StagingFolder, name);
 
     /// <summary>A stem in the cut root carrying a given video ID in its StemForge provenance.</summary>
     private void Provenanced(string fileName, string videoId)
@@ -94,7 +94,7 @@ public sealed class HandoffTests : IDisposable
     [Fact]
     public void A_name_already_in_staging_stops_the_whole_track()
     {
-        Directory.CreateDirectory(_paths.SampleStaging);
+        Directory.CreateDirectory(_paths.StagingFolder);
         File.WriteAllText(Staged("Yes - Owner (Drums).flac"), "already here");
 
         string[] stems =
@@ -138,7 +138,7 @@ public sealed class HandoffTests : IDisposable
     public void A_clash_under_the_new_name_stops_the_track_just_the_same()
     {
         // Checked against where the files are going, not where they came from.
-        Directory.CreateDirectory(_paths.SampleStaging);
+        Directory.CreateDirectory(_paths.StagingFolder);
         File.WriteAllText(Staged("Renamed (Drums).flac"), "already here");
 
         var result = _runner.Run([Stem("Yes - Owner (Drums).flac")], "Renamed");

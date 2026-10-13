@@ -2,7 +2,7 @@ using Crateside.Core.Samples;
 
 namespace Crateside.Tests.Samples;
 
-/// <summary>The reader against the real Sample Staging folder.</summary>
+/// <summary>The reader against the real Staging folder.</summary>
 public sealed class StemTagReaderRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";

@@ -71,7 +71,7 @@ public sealed record TrackRow
     /// <summary>The sentence beside the button, saying what <see cref="RenameScope"/> means.</summary>
     public string RenameDetail =>
         FileCount is 0
-            ? "Nothing of this track is in Sample Staging yet, so the name is recorded now and the stems are made with it."
+            ? "Nothing of this track is in Staging yet, so the name is recorded now and the stems are made with it."
             : $"Renames the files in {Folders} and their entries in Ableton's tag store, so the tags follow the name.";
 
     /// <summary>This track's files on disk, warp guide included.</summary>
@@ -83,9 +83,9 @@ public sealed record TrackRow
             Samples.Any(sample => sample.IsInLibrary)
         ) switch
         {
-            (true, true) => "Sample Staging and Mashup Samples",
-            (false, true) => "Mashup Samples",
-            _ => "Sample Staging",
+            (true, true) => "Staging and the library",
+            (false, true) => "the library",
+            _ => "Staging",
         };
 
     /// <summary>The current verdict, or null when the ledger has never seen this track.</summary>
@@ -221,7 +221,7 @@ public sealed record TrackRow
     public string? Folder { get; init; }
 
     /// <summary>
-    /// When this track's files arrived in <c>Sample Staging</c>, read off the files, or null once
+    /// When this track's files arrived in <c>Staging</c>, read off the files, or null once
     /// none are left (ADR 0008).
     /// </summary>
     public DateTimeOffset? StagedSince { get; init; }
@@ -367,18 +367,18 @@ public sealed record TrackRow
             TrackState.Judging => "verdict in about a minute",
             TrackState.JudgedInLine => InLine,
             TrackState.Separating => "then staging",
-            TrackState.Staging => "moving stems into Sample Staging",
+            TrackState.Staging => "moving stems into Staging",
             TrackState.Tagging => "writing Ableton key tags",
             TrackState.ReadyToWarp => Warped is 0
-                ? "your turn — warp, then move to Mashup Samples"
-                : $"your turn — {Warped} of {Staged} warped, then move to Mashup Samples",
-            TrackState.ReadyToMove => "warped — move to Mashup Samples",
+                ? "your turn — warp, then move to the library"
+                : $"your turn — {Warped} of {Staged} warped, then move to the library",
+            TrackState.ReadyToMove => "warped — move to the library",
             TrackState.Parked => ParkedFor is ParkReason.PremiumShortfall
                 ? "check for a better upload, or use this one anyway"
                 : "needs a better verdict — nothing automatic will move it",
             TrackState.GaveUp => "retry, or take it out of the playlist",
             TrackState.Short => "cut what is missing, or drop it from the plan",
-            TrackState.Done => "in Mashup Samples",
+            TrackState.Done => "in the library",
             _ => "downloading next",
         };
 
@@ -433,7 +433,7 @@ public sealed record TrackRow
         confidence.Humanize(LetterCasing.LowerCase);
 
     /// <summary>
-    /// Every sample has left for <c>Mashup Samples</c>. The move is the signal — see
+    /// Every sample has left for the library. The move is the signal — see
     /// <see cref="TrackSample.IsInLibrary"/>.
     /// </summary>
     private bool IsDone => Samples is { Count: > 0 } && Samples.All(s => s.IsInLibrary);
@@ -457,7 +457,7 @@ public sealed record TrackRow
     private TrackState AtRest =>
         Samples switch
         {
-            // A moved sample counts as tagged too — crateside never re-tags in Mashup Samples.
+            // A moved sample counts as tagged too — crateside never re-tags in the library.
             { Count: > 0 } when !Samples.All(s => s.IsInLibrary || s.IsKeyTagged) =>
                 TrackState.Tagging,
             { Count: > 0 } when Samples.All(s => s.IsInLibrary || s.HasDefaultClip) =>
@@ -530,7 +530,7 @@ public sealed record TrackSample
     /// <summary>Whether it was downloaded as premium audio. Null when the file does not say.</summary>
     public bool? IsPremium { get; init; }
 
-    /// <summary>Whether this sample has reached <c>Mashup Samples</c>, which is what says it is done.</summary>
+    /// <summary>Whether this sample has reached the library, which is what says it is done.</summary>
     public bool IsInLibrary { get; init; }
 
     /// <summary>

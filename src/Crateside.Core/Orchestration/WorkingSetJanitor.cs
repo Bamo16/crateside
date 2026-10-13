@@ -25,7 +25,7 @@ public sealed class WorkingSetJanitor(
             return 0;
 
         var ledger = KeyLedger.Read(_paths.Ledger);
-        var staged = ProcessedTracks.Scan(ledger, [_paths.SampleStaging]);
+        var staged = ProcessedTracks.Scan(ledger, [_paths.StagingFolder]);
 
         List<string> discarded = [.. held.Where(videoId => IsFinishedWith(videoId, staged))];
 
@@ -37,7 +37,7 @@ public sealed class WorkingSetJanitor(
         {
             var finished = ProcessedTracks.Scan(
                 ledger,
-                [_paths.SampleStaging, _paths.MashupSamples]
+                [_paths.StagingFolder, _paths.LibraryFolder]
             );
 
             discarded.AddRange(candidates.Where(finished.IsFullyProcessed));

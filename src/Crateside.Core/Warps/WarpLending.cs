@@ -20,10 +20,10 @@ public sealed class WarpLending(
     /// <summary>Tries each staged stem whose own files or siblings' sidecars changed since its last try.</summary>
     public async Task<IReadOnlyList<WarpLoan>> LendAsync(CancellationToken ct = default)
     {
-        var siblings = WarpSiblings.Scan([paths.SampleStaging, paths.MashupSamples]);
+        var siblings = WarpSiblings.Scan([paths.StagingFolder, paths.LibraryFolder]);
         List<WarpLoan> loans = [];
 
-        foreach (var target in siblings.In(paths.SampleStaging))
+        foreach (var target in siblings.In(paths.StagingFolder))
         {
             ct.ThrowIfCancellationRequested();
 

@@ -36,7 +36,7 @@ public sealed class StemRecutTests : IDisposable
 
     public StemRecutTests()
     {
-        _staging = Path.Combine(_root, "Sample Staging");
+        _staging = Path.Combine(_root, "Staging");
         _working = Path.Combine(_root, "working");
 
         Directory.CreateDirectory(_staging);
@@ -105,13 +105,13 @@ public sealed class StemRecutTests : IDisposable
         var plan = Recut().PlanFor(Video, StemPlan.Default, Catalog);
 
         Assert.False(plan.IsPossible);
-        Assert.Contains("Sample Staging", plan.Refusal);
+        Assert.Contains("Staging", plan.Refusal);
     }
 
     [Fact]
     public void A_source_can_be_added_to_a_track_whose_stems_already_left_for_the_library()
     {
-        // Everything is in Mashup Samples, and only a copy of the source is asked for.
+        // Everything is in the library, and only a copy of the source is asked for.
         var known = StemInventory.Of(
             [
                 new StemOnDisk
@@ -143,7 +143,7 @@ public sealed class StemRecutTests : IDisposable
     [Fact]
     public void A_preset_already_in_the_library_is_never_offered_for_deletion()
     {
-        // crateside never deletes from Mashup Samples (ADR 0019).
+        // crateside never deletes from the library (ADR 0019).
         var known = StemInventory.Of(
             [
                 new StemOnDisk
@@ -200,7 +200,7 @@ public sealed class StemRecutTests : IDisposable
     [Fact]
     public void Dropping_stems_that_were_never_made_records_the_plan_and_makes_nothing()
     {
-        // The source sits in Mashup Samples; the stored plan still asks for the usual pair.
+        // The source sits in the library; the stored plan still asks for the usual pair.
         var known = StemInventory.Of(
             [new StemOnDisk { Path = "M:/Rob Dougan - Furious Angels.flac", Root = "M:/" }],
             Catalog

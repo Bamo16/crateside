@@ -33,7 +33,7 @@ public sealed class StemLandingTests : IDisposable
         {
             StemsKeyIdentified = Path.Combine(_root, "identified"),
             StemsUnresolvedKey = Path.Combine(_root, "unresolved"),
-            SampleStaging = Path.Combine(_root, "staging"),
+            StagingFolder = Path.Combine(_root, "staging"),
             Ledger = Path.Combine(_root, "runs.jsonl"),
         };
 
@@ -222,9 +222,9 @@ public sealed class StemLandingTests : IDisposable
     {
         // Logistics - Over and Out, 2026-09-25: released onto a staged twin, the handoff struck out.
         var parked = ParkedSource();
-        var staged = Path.Combine(Paths.SampleStaging, Path.GetFileName(parked));
+        var staged = Path.Combine(Paths.StagingFolder, Path.GetFileName(parked));
 
-        Directory.CreateDirectory(Paths.SampleStaging);
+        Directory.CreateDirectory(Paths.StagingFolder);
         File.Copy(parked, staged);
 
         Assert.Equal(1, StemLanding.ReleaseParked(Paths, Ledger("HIGH"), Jobs));
@@ -245,8 +245,8 @@ public sealed class StemLandingTests : IDisposable
     {
         var parked = ParkedSource();
 
-        Directory.CreateDirectory(Paths.SampleStaging);
-        File.WriteAllText(Path.Combine(Paths.SampleStaging, Path.GetFileName(parked)), "other");
+        Directory.CreateDirectory(Paths.StagingFolder);
+        File.WriteAllText(Path.Combine(Paths.StagingFolder, Path.GetFileName(parked)), "other");
 
         Assert.Equal(0, StemLanding.ReleaseParked(Paths, Ledger("HIGH"), Jobs));
         Assert.True(File.Exists(parked));

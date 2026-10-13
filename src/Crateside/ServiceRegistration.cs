@@ -50,6 +50,8 @@ public static class ServiceRegistration
         if (!builder.Environment.IsDevelopment())
             builder.Configuration.AddUserSecrets<Program>(optional: true);
 
+        builder.Configuration.AddJsonFile(PathOverrideStore.DefaultPath, optional: true);
+
         builder.Services.Configure<CratesidePaths>(
             builder.Configuration.GetSection(CratesidePaths.SectionName)
         );
@@ -188,6 +190,7 @@ public static class ServiceRegistration
             sp.GetRequiredService<CratesidePaths>()
         ));
         // Running unless the user paused it, and a pause of theirs outlives a restart.
+        services.AddSingleton(_ => new PathOverrideStore());
         services.AddSingleton(_ => new PauseStore());
         services.AddSingleton(sp => new DrainControl(
             sp.GetRequiredService<PauseStore>().Read().Separation
@@ -383,7 +386,7 @@ public static class ServiceRegistration
             sp.GetRequiredService<CratesidePaths>(),
             videoId =>
                 StemTagReader.FilesCutFrom(
-                    sp.GetRequiredService<CratesidePaths>().MashupSamples,
+                    sp.GetRequiredService<CratesidePaths>().LibraryFolder,
                     videoId
                 ),
             sp.GetRequiredService<ISetLinks>()
@@ -474,7 +477,7 @@ public static class ServiceRegistration
                     sp.GetRequiredService<StagingReader>()
                         .Read(sp.GetRequiredService<CratesidePaths>()),
                     scan.Processed.StemsByVideoId,
-                    sp.GetRequiredService<CratesidePaths>().MashupSamples,
+                    sp.GetRequiredService<CratesidePaths>().LibraryFolder,
                     sp.GetRequiredService<JobStore>(),
                     scan.Instructions,
                     sp.GetRequiredService<ResolvedNameStore>().Read(),
@@ -482,7 +485,7 @@ public static class ServiceRegistration
                     await sp.GetRequiredService<PresetCatalogReader>().ReadAsync(ct),
                     AbletonReads.TagsOrEmpty(
                         sp.GetRequiredService<FileIndexReader>().Read,
-                        sp.GetRequiredService<CratesidePaths>().MashupSamples
+                        sp.GetRequiredService<CratesidePaths>().LibraryFolder
                     ),
                     sp.GetRequiredService<DeletionLog>().All(),
                     sp.GetRequiredService<GenreStore>().Read(),

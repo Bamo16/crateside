@@ -8,7 +8,7 @@ namespace Crateside.Core.Orchestration.Tagging;
 
 /// <summary>
 /// Applies the key the ledger settled, as Ableton tags, to one track's files in
-/// <c>Sample Staging</c>. Only files with no key applied are touched.
+/// <c>Staging</c>. Only files with no key applied are touched.
 /// </summary>
 public sealed class TaggingRunner(CratesidePaths paths, FolderInfoWriter? writer = null)
 {
@@ -28,14 +28,14 @@ public sealed class TaggingRunner(CratesidePaths paths, FolderInfoWriter? writer
                 .Where(x => x.Keywords.Count > 0)
                 .Select(x => new TagAssignment
                 {
-                    RelativePath = Path.GetRelativePath(paths.SampleStaging, x.Stem.Path),
+                    RelativePath = Path.GetRelativePath(paths.StagingFolder, x.Stem.Path),
                     Keywords = x.Keywords,
                 }),
         ];
 
         return assignments.Count is 0
             ? new TagWriteOutcome.Rejected("nothing about these files could be turned into tags")
-            : CratesideKeywords.Apply(_writer, paths.SampleStaging, assignments);
+            : CratesideKeywords.Apply(_writer, paths.StagingFolder, assignments);
     }
 
     /// <summary>

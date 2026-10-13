@@ -155,8 +155,8 @@ public sealed partial class BeatReader(
         CratesidePaths paths,
         FolderInfoReader folderInfo
     ) =>
-        Instrumentals(paths.SampleStaging, SearchOption.TopDirectoryOnly, folderInfo)
-            .Concat(Instrumentals(paths.MashupSamples, SearchOption.AllDirectories, folderInfo));
+        Instrumentals(paths.StagingFolder, SearchOption.TopDirectoryOnly, folderInfo)
+            .Concat(Instrumentals(paths.LibraryFolder, SearchOption.AllDirectories, folderInfo));
 
     /// <summary>
     /// Ableton's Type says so, which a kept source used as the instrumental carries too; an untagged

@@ -20,13 +20,13 @@ public sealed class FiledArrivalTests : IDisposable
 
     public FiledArrivalTests()
     {
-        Directory.CreateDirectory(Path.Combine(_directory, "Mashup Samples"));
-        Directory.CreateDirectory(Path.Combine(_directory, "Sample Staging"));
+        Directory.CreateDirectory(Path.Combine(_directory, "Library"));
+        Directory.CreateDirectory(Path.Combine(_directory, "Staging"));
     }
 
-    private string Mashup => Path.Combine(_directory, "Mashup Samples");
+    private string Mashup => Path.Combine(_directory, "Library");
 
-    private string Staging => Path.Combine(_directory, "Sample Staging");
+    private string Staging => Path.Combine(_directory, "Staging");
 
     public void Dispose()
     {
@@ -94,12 +94,12 @@ public sealed class FiledArrivalTests : IDisposable
     }
 
     [Fact]
-    public void An_upload_with_stems_in_mashup_samples_is_already_filed_there()
+    public void An_upload_with_stems_in_the_library_is_already_filed_there()
     {
         Stem(Mashup, "How We Do (Vocal - Full).flac", Filed);
 
         Assert.Equal(
-            "in Mashup Samples",
+            "in the library",
             Where(Item(Filed, "entry-1", "The Game, 50 Cent - How We Do"))
         );
     }
@@ -110,7 +110,7 @@ public sealed class FiledArrivalTests : IDisposable
         Stem(Staging, "How We Do (Vocal - Full).flac", Filed);
 
         Assert.Equal(
-            "looks like one in Sample Staging",
+            "looks like one in Staging",
             Where(Item(OtherUpload, "entry-2", "The Game, 50 Cent - How We Do (Official Video)"))
         );
     }

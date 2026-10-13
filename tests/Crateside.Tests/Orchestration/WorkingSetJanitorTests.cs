@@ -15,8 +15,8 @@ public sealed class WorkingSetJanitorTests : IDisposable
         Guid.NewGuid().ToString("n")
     );
 
-    private string Staging => Path.Combine(_directory, "Sample Staging");
-    private string Library => Path.Combine(_directory, "Mashup Samples");
+    private string Staging => Path.Combine(_directory, "Staging");
+    private string Library => Path.Combine(_directory, "Library");
     private JobStore Jobs => field ??= new JobStore(Path.Combine(_directory, "jobs.jsonl"));
     private WorkingSet Set => field ??= new WorkingSet(Path.Combine(_directory, "working"));
 
@@ -29,8 +29,8 @@ public sealed class WorkingSetJanitorTests : IDisposable
             Options.Create(
                 new CratesidePaths
                 {
-                    SampleStaging = Staging,
-                    MashupSamples = Library,
+                    StagingFolder = Staging,
+                    LibraryFolder = Library,
                     Ledger = Path.Combine(_directory, "runs.jsonl"),
                 }
             ),

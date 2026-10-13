@@ -47,8 +47,8 @@ public sealed class UnreadablePlaylistTests : IDisposable
             Options.Create(
                 new CratesidePaths
                 {
-                    SampleStaging = PathIn("staging"),
-                    MashupSamples = PathIn("library"),
+                    StagingFolder = PathIn("staging"),
+                    LibraryFolder = PathIn("library"),
                     StemsKeyIdentified = PathIn("identified"),
                     StemsUnresolvedKey = PathIn("unresolved"),
                     Ledger = PathIn("runs.jsonl"),

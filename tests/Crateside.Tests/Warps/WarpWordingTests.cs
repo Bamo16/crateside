@@ -80,7 +80,7 @@ public sealed class WarpWordingTests
         Assert.False(WarpWording.CanLetLiveAnalyse(vocal));
         Assert.Equal(
             "No warp file yet: Live has not opened this stem.",
-            wording.LetLiveStatus(vocal, "Sample Staging")
+            wording.LetLiveStatus(vocal, "Staging")
         );
     }
 

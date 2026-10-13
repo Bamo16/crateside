@@ -25,7 +25,7 @@ public sealed class TrackRemovalTests : IDisposable
 
     public TrackRemovalTests()
     {
-        _staging = Path.Combine(_root, "Sample Staging");
+        _staging = Path.Combine(_root, "Staging");
         _working = Path.Combine(_root, "working");
 
         Directory.CreateDirectory(_staging);

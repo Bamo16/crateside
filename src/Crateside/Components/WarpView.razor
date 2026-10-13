@@ -420,9 +420,9 @@
 
     private string Folder(StemWarp stem) =>
         Path.GetDirectoryName(stem.Path) is { } folder
-        && folder.Equals(Path.TrimEndingDirectorySeparator(Paths.MashupSamples), StringComparison.OrdinalIgnoreCase)
-            ? "Mashup Samples"
-            : "Sample Staging";
+        && folder.Equals(Path.TrimEndingDirectorySeparator(Paths.LibraryFolder), StringComparison.OrdinalIgnoreCase)
+            ? "the library"
+            : "Staging";
 
     private async Task ReapplyAsync(StemWarp stem)
     {

@@ -178,7 +178,7 @@ public sealed class WarpTempoRealLibraryTests
         SkipUnlessPresent();
 
         var missing = Directory
-            .EnumerateFiles(Paths.MashupSamples, "*.asd", SearchOption.AllDirectories)
+            .EnumerateFiles(Paths.LibraryFolder, "*.asd", SearchOption.AllDirectories)
             .Where(asd =>
                 AnalysisFile.TryRead(asd, out var analysis) && analysis is { DefaultClip: not null }
             )
@@ -193,7 +193,7 @@ public sealed class WarpTempoRealLibraryTests
     {
         SkipUnlessPresent();
 
-        var audio = Path.Combine(Paths.MashupSamples, $"{name}.flac");
+        var audio = Path.Combine(Paths.LibraryFolder, $"{name}.flac");
         Assert.SkipUnless(File.Exists(audio), $"{name} is no longer in the library.");
 
         return Reader.Read(audio) ?? throw new InvalidOperationException($"{name}: no tempo");
@@ -201,7 +201,7 @@ public sealed class WarpTempoRealLibraryTests
 
     private static void SkipUnlessPresent() =>
         Assert.SkipUnless(
-            Directory.Exists(Paths.MashupSamples),
-            $"{Paths.MashupSamples} not present on this machine."
+            Directory.Exists(Paths.LibraryFolder),
+            $"{Paths.LibraryFolder} not present on this machine."
         );
 }

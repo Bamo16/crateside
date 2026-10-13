@@ -22,11 +22,11 @@ public sealed class WarpLendingTests : IDisposable
     {
         _paths = new CratesidePaths
         {
-            SampleStaging = Path.Combine(_root, "Sample Staging"),
-            MashupSamples = Path.Combine(_root, "Mashup Samples"),
+            StagingFolder = Path.Combine(_root, "Staging"),
+            LibraryFolder = Path.Combine(_root, "Library"),
         };
-        Directory.CreateDirectory(_paths.SampleStaging);
-        Directory.CreateDirectory(_paths.MashupSamples);
+        Directory.CreateDirectory(_paths.StagingFolder);
+        Directory.CreateDirectory(_paths.LibraryFolder);
 
         _lending = Lending(new WarpOptions { LendAutomatically = true });
     }
@@ -40,12 +40,12 @@ public sealed class WarpLendingTests : IDisposable
     public async Task A_recut_stem_in_staging_takes_the_warp_of_its_finished_instrumental()
     {
         var finished = Stem(
-            _paths.MashupSamples,
+            _paths.LibraryFolder,
             "Song (Instrumental - Full).flac",
             "Instrumental - Full"
         );
         Saved(finished);
-        var recut = Stem(_paths.SampleStaging, "Song (Vocal - Clean).flac", "Vocal - Clean");
+        var recut = Stem(_paths.StagingFolder, "Song (Vocal - Clean).flac", "Vocal - Clean");
 
         var loans = await _lending.LendAsync(TestContext.Current.CancellationToken);
 
@@ -60,14 +60,14 @@ public sealed class WarpLendingTests : IDisposable
     public async Task A_recut_instrumental_keeps_the_transients_Live_found_in_the_one_it_replaces()
     {
         var finished = Stem(
-            _paths.MashupSamples,
+            _paths.LibraryFolder,
             "Song (Instrumental - Full).flac",
             "Instrumental - Full"
         );
         Transient[] live = [new(500, 1), new(9_000, 0.3f)];
         Saved(finished, live);
         var recut = Stem(
-            _paths.SampleStaging,
+            _paths.StagingFolder,
             "Song (Instrumental - Clean).flac",
             "Instrumental - Clean"
         );
@@ -85,12 +85,12 @@ public sealed class WarpLendingTests : IDisposable
     public async Task Saving_one_staged_instrumental_warps_its_staged_siblings()
     {
         var instrumental = Stem(
-            _paths.SampleStaging,
+            _paths.StagingFolder,
             "Song (Instrumental - Full).flac",
             "Instrumental - Full"
         );
-        var vocal = Stem(_paths.SampleStaging, "Song (Vocal - Full).flac", "Vocal - Full");
-        var drums = Stem(_paths.SampleStaging, "Song (Drums).flac", "Drums - htdemucs_ft");
+        var vocal = Stem(_paths.StagingFolder, "Song (Vocal - Full).flac", "Vocal - Full");
+        var drums = Stem(_paths.StagingFolder, "Song (Drums).flac", "Drums - htdemucs_ft");
 
         var before = await _lending.LendAsync(TestContext.Current.CancellationToken);
 
@@ -109,8 +109,8 @@ public sealed class WarpLendingTests : IDisposable
     [Fact]
     public async Task A_stem_is_not_tried_again_until_its_files_or_its_siblings_change()
     {
-        Saved(Stem(_paths.MashupSamples, "Song (Instrumental - Full).flac", "Instrumental - Full"));
-        Stem(_paths.SampleStaging, "Song (Vocal - Full).flac", "Vocal - Full");
+        Saved(Stem(_paths.LibraryFolder, "Song (Instrumental - Full).flac", "Instrumental - Full"));
+        Stem(_paths.StagingFolder, "Song (Vocal - Full).flac", "Vocal - Full");
 
         Assert.NotEmpty(await _lending.LendAsync(TestContext.Current.CancellationToken));
         Assert.Empty(await _lending.LendAsync(TestContext.Current.CancellationToken));
@@ -119,9 +119,9 @@ public sealed class WarpLendingTests : IDisposable
     [Fact]
     public async Task Stems_of_an_upload_nothing_is_warped_on_get_starter_warps_at_the_measured_tempo()
     {
-        var vocal = Stem(_paths.SampleStaging, "Song (Vocal - Full).flac", "Vocal - Full");
+        var vocal = Stem(_paths.StagingFolder, "Song (Vocal - Full).flac", "Vocal - Full");
         var instrumental = Stem(
-            _paths.SampleStaging,
+            _paths.StagingFolder,
             "Song (Instrumental - Full).flac",
             "Instrumental - Full"
         );
@@ -141,7 +141,7 @@ public sealed class WarpLendingTests : IDisposable
     [Fact]
     public async Task Without_a_steady_measured_tempo_no_starter_is_written()
     {
-        var vocal = Stem(_paths.SampleStaging, "Song (Vocal - Full).flac", "Vocal - Full");
+        var vocal = Stem(_paths.StagingFolder, "Song (Vocal - Full).flac", "Vocal - Full");
 
         Assert.Empty(
             await Lending(new WarpOptions { WriteStarterWarps = true })
@@ -154,12 +154,12 @@ public sealed class WarpLendingTests : IDisposable
     public async Task With_lending_off_a_finished_sibling_still_holds_back_a_starter()
     {
         var finished = Stem(
-            _paths.MashupSamples,
+            _paths.LibraryFolder,
             "Song (Instrumental - Full).flac",
             "Instrumental - Full"
         );
         Saved(finished);
-        var recut = Stem(_paths.SampleStaging, "Song (Vocal - Clean).flac", "Vocal - Clean");
+        var recut = Stem(_paths.StagingFolder, "Song (Vocal - Clean).flac", "Vocal - Clean");
 
         Assert.Empty(
             await Lending(new WarpOptions { WriteStarterWarps = true }, bpm: 128)

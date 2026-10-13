@@ -83,7 +83,7 @@ public sealed class KeyLedgerRealDataTests
 
         // Its ledger identity is "alan gomez, luck ra - luck ra | mission 15": only the video ID
         // in the tag can find it.
-        var stem = new[] { StagingRoot, new CratesidePaths().MashupSamples }
+        var stem = new[] { StagingRoot, new CratesidePaths().LibraryFolder }
             .Select(r => Path.Combine(r, "Alan Gomez - Mission 15 (Vocal - Full).flac"))
             .FirstOrDefault(File.Exists);
 

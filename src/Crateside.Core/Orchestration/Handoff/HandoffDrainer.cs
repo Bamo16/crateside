@@ -49,7 +49,7 @@ public sealed class HandoffDrainer(
         var result = runner.Run(
             stems,
             NameFor(videoId),
-            SupersededStems.In(_paths.SampleStaging, videoId, ledger, Kept()),
+            SupersededStems.In(_paths.StagingFolder, videoId, ledger, Kept()),
             (from, to) => sidecars?.Moved(prepared, from, to)
         );
 
@@ -68,7 +68,7 @@ public sealed class HandoffDrainer(
     /// sign of it is samples quietly ceasing to appear in the row (ADR 0014).
     /// </summary>
     private static string? Cleared(int count) =>
-        count is 0 ? null : $"{"superseded file".ToQuantity(count)} removed from Sample Staging";
+        count is 0 ? null : $"{"superseded file".ToQuantity(count)} removed from Staging";
 
     /// <summary>Every upload the user has asked to keep, across all tracks, and so never superseded.</summary>
     private HashSet<string> Kept() =>

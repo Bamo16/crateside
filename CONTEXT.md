@@ -11,12 +11,14 @@ specific to crateside: pairing, importing, tags, the views, and running the work
 
 ## Places
 
-- **Staging** — shorthand for **Sample Staging**: where samples wait to be warped.
-- **The library** — shorthand for **Mashup Samples**: where a sample goes once it is
-  **imported**. Ableton draws no such line: both folders sit in its *User Library* and it
-  treats them alike. The distinction is crateside's, made by which folder a sample is in.
-  "The library" in crateside never means Ableton's whole User Library. A more formal name is
-  still open ([#66](https://github.com/Bamo16/crateside/issues/66)).
+- **Staging** — where samples wait to be warped. keytag's name for the user's folder is
+  **Sample Staging**; crateside says Staging, and the folder is a setting, not a fixed place.
+- **The library** — where a sample goes once it is **imported**; keytag's **Mashup Samples**.
+  Ableton draws no such line: both folders sit in its *User Library* and it treats them
+  alike. The distinction is crateside's, made by which folder a sample is in. "The library"
+  in crateside never means Ableton's whole User Library. The two names were settled in
+  [#66](https://github.com/Bamo16/crateside/issues/66); the folders are changed in Settings
+  and take effect at the next start.
 
 ## Pairing
 
@@ -50,7 +52,7 @@ against it.
 ## Import
 
 - **Import** — finishing a song: warping it, tagging it, saving its default clip, and
-  moving it into **Mashup Samples**. The steps can happen in any order, but the move is
+  moving it into **the library**. The steps can happen in any order, but the move is
   kept last, so **presence in Mashup Samples is what says a song is imported**: a sample
   sitting there unwarped or mistagged is a mistake rather than a state the workflow
   produces. **Warp markers do not say a warp is done.** Ableton's *Warp* button places one
@@ -131,11 +133,11 @@ against it.
   ([ADR 0047](docs/adr/0047-a-starter-warp-and-where-transients-came-from.md),
   [ADR 0048](docs/adr/0048-stems-arrive-in-staging-already-warped.md)).
 - **Warp guide** — a track's drums stem, cut to be looked at while warping rather than heard.
-  Once the rest of the track is in **Mashup Samples**, crateside keeps it, with its analysis file,
+  Once the rest of the track is in **the library**, crateside keeps it, with its analysis file,
   in `Music\Stems\Drums`, outside every folder Ableton browses
   ([ADR 0046](docs/adr/0046-a-filed-tracks-warp-guide-is-kept-outside-ableton.md)).
 - **Ready to move** — a track whose staged samples all have their default clip saved: warped, with
-  only the move to **Mashup Samples** left.
+  only the move to **the library** left.
 
 ## Tags
 
@@ -153,7 +155,7 @@ against it.
   decisive for keeping (ADR 0013's 2026-09-12 amendment).
 - **Backing** — a file's entry in its root's **tag store**. A key held only in the **index**, with
   no entry behind it, is destroyed by the next write to that root, so backing is what makes a key
-  *durable* rather than what records it. Every file arrives in **Mashup Samples** unbacked, because
+  *durable* rather than what records it. Every file arrives in **the library** unbacked, because
   a move carries the keyword in the index and writes no entry
   ([ADR 0023](docs/adr/0023-a-key-with-no-store-entry-is-not-durable.md)).
 - **Familiarity** — how likely a listener is to know a **song**: `Mainstream` or `Obscure`, under
@@ -176,12 +178,12 @@ against it.
   Ableton's own *Type* tag group, whose built-in tags (Loop, One Shot and the rest) mean
   nothing here.
 - **Written root** — a root whose **tag store** holds its whole tag state, which is
-  **Sample Staging** and only ever that: every key there is one crateside wrote into the
+  **Staging** and only ever that: every key there is one crateside wrote into the
   store itself. Read from the store, because that is the only place crateside can see its
   own writes at once — the index follows, but not at once. A file with no key there has no
   key.
 - **Mirrored root** — a root whose store holds only part of its tag state, which is
-  **Mashup Samples**. Read from the **index**, because the store is a mirror that may never
+  **the library**. Read from the **index**, because the store is a mirror that may never
   converge: measured 2026-09-10, 108 of 591 files were keyed in the index and not in the
   store, and the store had been rewritten that same day
   ([ADR 0017](docs/adr/0017-each-root-is-audited-from-the-store-that-holds-its-tags.md)).
@@ -196,7 +198,7 @@ against it.
 
 - **Tracks view** — every track crateside knows, whatever its state, as one list
   narrowed by filters. Its default, *Unfinished*, answers "what is in front of me
-  right now?": what is in **Sample Staging**, plus the tracks still in flight or
+  right now?": what is in **Staging**, plus the tracks still in flight or
   stopped. Entirely derived — it holds no state of its own and nothing on it is
   marked done by hand.
 - **Partners** — the interactive answer to "what else can I use with this?".
@@ -205,7 +207,7 @@ against it.
 - **Track details** — one track on a page of its own: its key and BPM, where it is in
   the **stages**, its samples, the evidence behind its verdict, and what has happened to
   it. It offers the same actions as the track's row in the Tracks view.
-- **Library** — what is finished and filed in **Mashup Samples**, counted by key and
+- **Library** — what is finished and filed in **the library**, counted by key and
   genre, one count per song however many samples it has, read from the **index**. It is
   also where the library's never-judged tracks are queued as the **library backfill**.
 
@@ -275,7 +277,7 @@ the two run types below are named after which of them they produce.
   stage that requires an agent, because weighing evidence and going to look for
   human corroboration is the only part of the workflow that genuinely needs one.
 - **Handoff** — the stage that moves a track's finished stems out of the transient
-  stems output and into **Sample Staging**, which is the line between the automated
+  stems output and into **Staging**, which is the line between the automated
   and the human halves of the workflow. It is what makes the stems output transient
   rather than merely described as such, and what lets a separated track become
   **fully processed**. Only stems with a key the user could tag with are handed

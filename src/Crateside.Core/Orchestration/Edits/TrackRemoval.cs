@@ -8,7 +8,7 @@ namespace Crateside.Core.Orchestration.Edits;
 
 /// <summary>
 /// Takes a track out of crateside, records before files, and never reaches past
-/// <c>Sample Staging</c> (ADR 0027, #33).
+/// <c>Staging</c> (ADR 0027, #33).
 /// </summary>
 public sealed class TrackRemoval(
     TrackInstructionStore instructions,

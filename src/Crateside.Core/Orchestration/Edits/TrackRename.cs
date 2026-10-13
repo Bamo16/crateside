@@ -8,12 +8,12 @@ using Humanizer;
 
 namespace Crateside.Core.Orchestration.Edits;
 
-/// <summary>A track's files in <c>Mashup Samples</c>, by the upload they were cut from.</summary>
+/// <summary>A track's files in the library, by the upload they were cut from.</summary>
 public delegate IReadOnlyList<string> ReadLibraryFiles(string videoId);
 
 /// <summary>
-/// Puts the user's own name on a track, on its files in <c>Sample Staging</c> and
-/// <c>Mashup Samples</c>, and in the sets that use them (ADR 0039, ADR 0040).
+/// Puts the user's own name on a track, on its files in <c>Staging</c> and
+/// the library, and in the sets that use them (ADR 0039, ADR 0040).
 /// </summary>
 public sealed class TrackRename(
     TrackInstructionStore instructions,
@@ -243,14 +243,14 @@ public sealed class TrackRename(
 
     private IEnumerable<(string Path, string Root)> Files(string videoId) =>
         [
-            .. staged(videoId).Select(stem => (stem.Path, paths.SampleStaging)),
-            .. (library?.Invoke(videoId) ?? []).Select(path => (path, paths.MashupSamples)),
+            .. staged(videoId).Select(stem => (stem.Path, paths.StagingFolder)),
+            .. (library?.Invoke(videoId) ?? []).Select(path => (path, paths.LibraryFolder)),
         ];
 
     private string RootOf(string path) =>
-        path.StartsWith(paths.MashupSamples, StringComparison.OrdinalIgnoreCase)
-            ? paths.MashupSamples
-            : paths.SampleStaging;
+        path.StartsWith(paths.LibraryFolder, StringComparison.OrdinalIgnoreCase)
+            ? paths.LibraryFolder
+            : paths.StagingFolder;
 
     private static RenamePlan Impossible(string name, string refusal) =>
         new()

@@ -25,8 +25,8 @@ public sealed class HandoffSidecarsTests : IDisposable
     {
         _paths = new CratesidePaths
         {
-            SampleStaging = Path.Combine(_root, "Sample Staging"),
-            MashupSamples = Path.Combine(_root, "Mashup Samples"),
+            StagingFolder = Path.Combine(_root, "Staging"),
+            LibraryFolder = Path.Combine(_root, "Library"),
         };
         Directory.CreateDirectory(Path.Combine(_root, "working"));
         _writer = new SidecarWriter(new SilenceDecoder(), new OneTransient(), _written, _origins);
@@ -64,7 +64,7 @@ public sealed class HandoffSidecarsTests : IDisposable
             moved: (from, to) => sidecars.Moved(prepared, from, to)
         );
 
-        var staged = Path.Combine(_paths.SampleStaging, "Song (Vocal - Full).flac");
+        var staged = Path.Combine(_paths.StagingFolder, "Song (Vocal - Full).flac");
         Assert.True(AnalysisFile.Read($"{staged}.asd").IsDefaultClipSaved);
         Assert.True(_written.IsStarter(staged));
         Assert.False(File.Exists($"{working}.asd"));

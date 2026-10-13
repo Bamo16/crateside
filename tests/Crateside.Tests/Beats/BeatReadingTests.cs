@@ -191,8 +191,8 @@ public sealed class BeatReadingTests
     {
         var paths = new CratesidePaths();
         Assert.SkipUnless(
-            Directory.Exists(paths.MashupSamples),
-            $"{paths.MashupSamples} not present."
+            Directory.Exists(paths.LibraryFolder),
+            $"{paths.LibraryFolder} not present."
         );
 
         Assert.Contains(

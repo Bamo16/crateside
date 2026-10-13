@@ -3,7 +3,7 @@ using Crateside.Core.Ledger;
 namespace Crateside.Core.Staging;
 
 /// <summary>
-/// One song's files in Sample Staging, rolled up. Entirely derived, nothing stored.
+/// One song's files in Staging, rolled up. Entirely derived, nothing stored.
 /// </summary>
 public sealed record StagedSong
 {

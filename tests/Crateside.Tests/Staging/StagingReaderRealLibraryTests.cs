@@ -3,7 +3,7 @@ using Crateside.Core.Staging;
 
 namespace Crateside.Tests.Staging;
 
-/// <summary>Sample Staging read against the real staging folder and the real ledger.</summary>
+/// <summary>Staging read against the real staging folder and the real ledger.</summary>
 public sealed class StagingReaderRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";

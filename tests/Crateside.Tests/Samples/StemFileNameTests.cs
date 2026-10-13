@@ -5,7 +5,7 @@ namespace Crateside.Tests.Samples;
 /// <summary>Where a stem's name ends and its preset begins.</summary>
 public sealed class StemFileNameTests
 {
-    private static readonly string Folder = Path.Combine("P:", "Sample Staging");
+    private static readonly string Folder = Path.Combine("P:", "Staging");
 
     private static string In(string name) => Path.Combine(Folder, name);
 
