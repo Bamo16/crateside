@@ -2,6 +2,7 @@ using AbleKit.Sets;
 using AbleKit.Tags;
 using Crateside.Core;
 using Crateside.Core.Ableton;
+using Crateside.Core.Library;
 using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Playlist;
 using Crateside.Core.Staging;
@@ -83,6 +84,21 @@ public sealed class TrackRenameTests : IDisposable
 
     private static string? StoredName(TrackInstructionStore settings) =>
         settings.Read().FirstOrDefault(track => track.VideoId == Video)?.Name;
+
+    [Fact]
+    public void Renaming_a_sourceless_song_renames_its_files_and_stores_no_instruction()
+    {
+        var vocal = InLibrary("Old (Vocal - Full).flac");
+        InLibrary("Old (Instrumental - Full).flac");
+        var settings = Settings();
+
+        var outcome = Renamer(settings).Apply(SourcelessSongs.KeyNamed("Old"), "New");
+
+        Assert.True(outcome.Succeeded);
+        Assert.True(File.Exists(Path.Combine(_paths.LibraryFolder, "New (Vocal - Full).flac")));
+        Assert.False(File.Exists(vocal));
+        Assert.Empty(settings.Read());
+    }
 
     [Fact]
     public void The_preset_and_the_extension_survive_the_new_name()

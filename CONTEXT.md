@@ -352,8 +352,8 @@ the two run types below are named after which of them they produce.
 - **Sourceless song** — a library song StemForge cut before it recorded a source (about
   June 2026), so no video ID names it. Its row is library-only and keyed `name:` plus the
   file name without the preset, the identity the Library page already uses; renaming the
-  files changes the key. It has no upload, so nothing that needs one is offered, and it is
-  never queued for backfill (#94).
+  files changes the key, and the song page follows. It has no upload, so nothing that needs
+  one is offered, and it is never queued for backfill (#94).
 - **Idle window** — a five-hour Claude window that has read 0% for fifteen minutes.
   One verdict spends it, then none for five hours
   ([ADR 0029](docs/adr/0029-an-idle-window-is-opened-by-one-verdict.md)).

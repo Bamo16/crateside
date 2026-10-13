@@ -392,10 +392,15 @@ public static class ServiceRegistration
             sp.GetRequiredService<FolderInfoWriter>(),
             sp.GetRequiredService<CratesidePaths>(),
             videoId =>
-                StemTagReader.FilesCutFrom(
-                    sp.GetRequiredService<CratesidePaths>().LibraryFolder,
-                    videoId
-                ),
+                SourcelessSongs.IsKey(videoId)
+                    ? SourcelessSongs.FilesOf(
+                        sp.GetRequiredService<CratesidePaths>().LibraryFolder,
+                        videoId
+                    )
+                    : StemTagReader.FilesCutFrom(
+                        sp.GetRequiredService<CratesidePaths>().LibraryFolder,
+                        videoId
+                    ),
             sp.GetRequiredService<ISetLinks>()
         ));
         services.AddSingleton(sp => new LookalikeAnswer(

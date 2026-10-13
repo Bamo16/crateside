@@ -1,4 +1,5 @@
 @using Crateside.Core.Orchestration.Edits
+@using Crateside.Core.Library
 @using Crateside.Core.Orchestration.Jobs
 @using Crateside.Core.Orchestration.Loop
 @using Crateside.Core.Samples
@@ -9,6 +10,7 @@
 @inject StageSignals Signals
 @inject TracksService Tracks
 @inject ActionLog Actions
+@inject NavigationManager Navigation
 
 @if (Part is Parts.Name)
 {
@@ -67,12 +69,9 @@
                             Revert
                         </button>
                     }
-                    @if (Row.HasUpload)
-                    {
                     <button class="outline" @onclick="() => StartRename(Row.Title)" disabled="@_working">
                         Rename
                     </button>
-                    }
                 </span>
             </div>
             <span class="stack-value">@Row.Title</span>
@@ -276,6 +275,10 @@ else if (Part is Parts.Source && HasSource(Row))
             {
                 record();
                 Editing.Close();
+
+                // The name is the sourceless song's key, so its page moved with it.
+                if (!Row.HasUpload && outcome.Name is { } renamed && Navigation.Uri.Contains("/song/", StringComparison.Ordinal))
+                    Navigation.NavigateTo($"song/{Uri.EscapeDataString(SourcelessSongs.KeyNamed(renamed))}", replace: true);
             }
 
             await Tracks.RefreshAsync(_circuit.Token);

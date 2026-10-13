@@ -15,7 +15,13 @@ public static class SourcelessSongs
     public static bool IsKey(string key) => key.StartsWith(Prefix, StringComparison.Ordinal);
 
     /// <summary>The identity <see cref="LibrarySong.Song"/> falls back to for this file.</summary>
-    public static string KeyOf(string path) => $"{Prefix}{StemFileName.WithoutPreset(path)}";
+    public static string KeyOf(string path) => KeyNamed(StemFileName.WithoutPreset(path));
+
+    /// <summary>The key a song has once its files are named <paramref name="name"/>.</summary>
+    public static string KeyNamed(string name) => $"{Prefix}{name}";
+
+    public static IReadOnlyList<string> FilesOf(string libraryFolder, string key) =>
+        Scan(libraryFolder).GetValueOrDefault(key)?.Select(file => file.Path).ToArray() ?? [];
 
     /// <summary>The library's StemForge-cut files that name no source, by <see cref="KeyOf"/>.</summary>
     public static IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>> Scan(

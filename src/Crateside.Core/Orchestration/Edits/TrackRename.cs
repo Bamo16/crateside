@@ -1,6 +1,7 @@
 using AbleKit.Sets;
 using AbleKit.Tags;
 using Crateside.Core.Ableton;
+using Crateside.Core.Library;
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
 using Crateside.Core.WorkLists;
@@ -99,7 +100,9 @@ public sealed class TrackRename(
         if (plan.Refusal is { } refusal)
             return new RenameOutcome { Problem = refusal };
 
-        instructions.SetName(videoId, stored);
+        // A sourceless song is identified by its file name, so the files carry the name.
+        if (!SourcelessSongs.IsKey(videoId))
+            instructions.SetName(videoId, stored);
 
         List<Move> done = [];
         List<string> markersLost = [];
