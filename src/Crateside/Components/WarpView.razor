@@ -501,14 +501,19 @@
 
     private void SetZoom(WarpGroup group, Zoom zoom)
     {
-        if (_zoom is Zoom.Whole && zoom is not Zoom.Whole)
-            _centreBeat = group.ClipStartBeat + BarsOf(zoom) * group.BeatsPerBar / 2.0;
+        var fromWhole = _zoom is Zoom.Whole;
 
         _zoom = zoom;
+
+        if (zoom is not Zoom.Whole)
+            _centreBeat = Clamped(
+                group,
+                fromWhole ? group.ClipStartBeat + BarsOf(zoom) * group.BeatsPerBar / 2.0 : _centreBeat
+            );
     }
 
     private void Move(WarpGroup group, int direction) =>
-        _centreBeat += direction * BarsOf(_zoom) * group.BeatsPerBar / 2.0;
+        _centreBeat = Clamped(group, _centreBeat + direction * BarsOf(_zoom) * group.BeatsPerBar / 2.0);
 
     /// <summary>Follows the pointer across the strip while its button is held.</summary>
     private void Drag(WarpGroup group, double seconds, PointerEventArgs pointer)
@@ -525,7 +530,18 @@
 
         var half = BarsOf(_zoom) * group.BeatsPerBar / 2.0;
         var bar = Math.Round((beat - half - group.ClipStartBeat) / group.BeatsPerBar);
-        _centreBeat = group.ClipStartBeat + bar * group.BeatsPerBar + half;
+        _centreBeat = Clamped(group, group.ClipStartBeat + bar * group.BeatsPerBar + half);
+    }
+
+    /// <summary>Keeps the whole window inside the track, so it never runs off either end.</summary>
+    private double Clamped(WarpGroup group, double centreBeat)
+    {
+        if (group.BeatAt(0) is not { } first || group.BeatAt(group.Seconds) is not { } last)
+            return centreBeat;
+
+        var half = BarsOf(_zoom) * group.BeatsPerBar / 2.0;
+
+        return first + half >= last - half ? (first + last) / 2 : Math.Clamp(centreBeat, first + half, last - half);
     }
 
     private (double From, double To) View(WarpGroup group)
