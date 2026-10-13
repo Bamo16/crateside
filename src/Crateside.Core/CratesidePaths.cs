@@ -14,8 +14,9 @@ public sealed class CratesidePaths
         "Stems"
     );
 
-    /// <summary>The ffmpeg that reads BPM: FiLL's beatdetect build, kept apart from the full one on PATH.</summary>
-    public string BeatdetectFfmpeg { get; set; } = @"P:\PATH\ffmpeg-beatdetect-1.1.0.exe";
+    /// <summary>The beatdetect build a machine knowing none starts on: the newest the harness has scored.</summary>
+    public string BeatdetectFfmpeg { get; set; } =
+        @"V:\Repos\beatdetect-harness\builds\1.3.0-1e57fec\ffmpeg.exe";
 
     /// <summary>Where freshly separated stems land, awaiting the human-limited steps.</summary>
     public string SampleStaging { get; set; } = @"P:\RYAN\Ableton\Sample Staging";

@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -12,13 +11,15 @@ using Crateside.Core.Samples;
 namespace Crateside.Core.Beats;
 
 /// <summary>
-/// Runs <c>beatdetect</c> on an instrumental and keeps the reading until the file or the ffmpeg
-/// build changes (#76). Kept across restarts when given a path.
+/// Runs <c>beatdetect</c> with the pinned build on an instrumental and keeps the reading until the
+/// file changes (#76, #102). A reading outlives a change of pin, marked as from an older build.
+/// Kept across restarts when given a path.
 /// </summary>
 public sealed partial class BeatReader(
     string? path = null,
     string fileName = "ffmpeg",
-    string filter = "beatdetect"
+    string filter = "beatdetect",
+    KnownBuilds? builds = null
 )
 {
     // Bump when MeasureAsync changes what it runs, or a kept reading outlives the method that made it.
@@ -40,10 +41,7 @@ public sealed partial class BeatReader(
     [GeneratedRegex(@"lavfi\.beatdetect\.(?<Key>[a-z_]+?)(?<Index>\d*)=(?<Value>\S+)")]
     private static partial Regex MetadataLine { get; }
 
-    [GeneratedRegex(@"^ffmpeg version (?<Version>\S+)")]
-    private static partial Regex VersionLine { get; }
-
-    /// <summary>The build readings are current for, or null until <see cref="RefreshBuildAsync"/> finds one.</summary>
+    /// <summary>The pinned build new readings are made with, or null until <see cref="RefreshBuildAsync"/> finds one.</summary>
     public FfmpegBuild? Build => _build;
 
     /// <summary>How far the current pass has got, as instrumentals read of those that had no reading.</summary>
@@ -56,14 +54,15 @@ public sealed partial class BeatReader(
         _readSoFar = 0;
     }
 
-    /// <summary>The kept reading, or null when the file changed since or was read by another build.</summary>
-    public BeatReading? Read(string audioPath) =>
-        new FileInfo(audioPath) is { Exists: true } file
-        && _read.TryGetValue(file.FullName, out var entry)
-        && entry.Stamp == BeatStamp.Of(file)
-        && (_build is null || entry.Build == _build)
-            ? entry.Reading
-            : null;
+    /// <summary>The kept reading, whichever build made it, or null when the file changed since.</summary>
+    public BeatReading? Read(string audioPath) => Kept(audioPath)?.Reading;
+
+    /// <summary>The build that made the kept reading; null when there is none or its build was never identified.</summary>
+    public FfmpegBuild? BuildOf(string audioPath) => Kept(audioPath)?.Build;
+
+    /// <summary>True when the kept reading was made by a build other than the pinned one.</summary>
+    public bool IsFromOlderBuild(string audioPath) =>
+        Kept(audioPath) is { } entry && _build is { } pinned && entry.Build != pinned;
 
     /// <summary>Carries a reading to where its file was moved, since the audio itself is unchanged.</summary>
     public void Moved(string from, string to)
@@ -75,28 +74,13 @@ public sealed partial class BeatReader(
         }
     }
 
-    /// <summary>Asks ffmpeg which build it is; null when it cannot be run.</summary>
+    /// <summary>Asks the pinned ffmpeg which build it is; null when it cannot be run.</summary>
     public async Task<FfmpegBuild?> RefreshBuildAsync(CancellationToken ct)
     {
-        var outcome = await ExternalProcess.RunAsync(fileName, ["-version"], ct: ct);
+        if (builds is not null)
+            await builds.SeedAsync(ct);
 
-        if (
-            !outcome.Succeeded
-            || VersionLine.Match(outcome.StandardOutput) is not { Success: true } line
-            || Located() is not { Exists: true } executable
-        )
-            return _build = null;
-
-        var sha256 = await HashAsync(executable, ct);
-        var commit =
-            Path.Combine(executable.DirectoryName ?? string.Empty, "build.json") is var info
-            && BeatJsonContext.Default.BuildInfo.ReadFileOrDefault(info)
-                is { Sha256: { } recorded, Commit: { } recordedCommit }
-            && recorded.Equals(sha256, StringComparison.OrdinalIgnoreCase)
-                ? recordedCommit
-                : null;
-
-        return _build = new FfmpegBuild(line.Groups["Version"].Value, sha256, commit);
+        return _build = await FfmpegBuild.IdentifyAsync(PinnedFileName, ct);
     }
 
     /// <summary>Reads the whole file, then each full 30 s of it; a file ffmpeg cannot read keeps an empty reading.</summary>
@@ -255,6 +239,15 @@ public sealed partial class BeatReader(
             .OrderBy(line => int.Parse(line.Groups["Index"].Value, CultureInfo.InvariantCulture))
             .Select(line => line.Groups["Value"].Value);
 
+    private string PinnedFileName => builds?.Pinned?.Path ?? fileName;
+
+    private BeatEntry? Kept(string audioPath) =>
+        new FileInfo(audioPath) is { Exists: true } file
+        && _read.TryGetValue(file.FullName, out var entry)
+        && entry.Stamp == BeatStamp.Of(file)
+            ? entry
+            : null;
+
     private async Task<Detected> DetectAsync(string audioPath, int? start, CancellationToken ct)
     {
         using var limit = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -273,7 +266,7 @@ public sealed partial class BeatReader(
         try
         {
             var outcome = await ExternalProcess.RunAsync(
-                fileName,
+                PinnedFileName,
                 [
                     "-hide_banner",
                     "-nostats",
@@ -317,28 +310,6 @@ public sealed partial class BeatReader(
             );
     }
 
-    private FileInfo? Located() =>
-        Path.IsPathRooted(fileName)
-            ? new FileInfo(fileName)
-            : (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
-                .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
-                .Select(folder => new FileInfo(
-                    Path.Combine(
-                        folder,
-                        OperatingSystem.IsWindows() && !Path.HasExtension(fileName)
-                            ? $"{fileName}.exe"
-                            : fileName
-                    )
-                ))
-                .FirstOrDefault(candidate => candidate.Exists);
-
-    private static async Task<string> HashAsync(FileInfo executable, CancellationToken ct)
-    {
-        await using var stream = executable.OpenRead();
-
-        return Convert.ToHexStringLower(await SHA256.HashDataAsync(stream, ct));
-    }
-
     private static double SecondsOf(string audioPath)
     {
         try
@@ -360,14 +331,6 @@ public sealed partial class BeatReader(
             ? entries
             : [];
 }
-
-/// <summary>Which ffmpeg read a file: its version and the executable's hash, with the commit when a <c>build.json</c> beside it vouches for that hash.</summary>
-public sealed record FfmpegBuild(string Version, string Sha256, string? Commit)
-{
-    public string Label => Commit is { Length: >= 7 } ? $"{Version}-{Commit[..7]}" : Version;
-}
-
-internal sealed record BuildInfo(string? Commit, string? Sha256);
 
 internal readonly record struct Detected(
     double? Bpm,
@@ -400,4 +363,5 @@ internal sealed record BeatFile(int Version, Dictionary<string, BeatEntry> Entri
 )]
 [JsonSerializable(typeof(BeatFile))]
 [JsonSerializable(typeof(BuildInfo))]
+[JsonSerializable(typeof(KnownBuildsFile))]
 internal sealed partial class BeatJsonContext : JsonSerializerContext { }

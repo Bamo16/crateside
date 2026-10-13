@@ -82,10 +82,15 @@ public static class ServiceRegistration
             sp.GetRequiredService<WrittenWarps>().IsStarter
         ));
         // hpss matched an AI drum stem on the instrumental, measured 2026-09-30 (#83).
+        services.AddSingleton(sp => new KnownBuilds(
+            Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "builds.json"),
+            sp.GetRequiredService<CratesidePaths>().BeatdetectFfmpeg
+        ));
         services.AddSingleton(sp => new BeatReader(
             Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "beats.json"),
             sp.GetRequiredService<CratesidePaths>().BeatdetectFfmpeg,
-            "beatdetect=hpss=1"
+            "beatdetect=hpss=1",
+            sp.GetRequiredService<KnownBuilds>()
         ));
         services.AddSingleton<ISetLinks>(sp => new AbletonSetLinks(
             sp.GetRequiredService<CratesidePaths>(),
