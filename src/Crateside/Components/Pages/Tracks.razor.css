@@ -118,6 +118,7 @@
 }
 
 .quota-figure {
+    white-space: nowrap;
     display: flex;
     align-items: baseline;
     gap: 8px;
