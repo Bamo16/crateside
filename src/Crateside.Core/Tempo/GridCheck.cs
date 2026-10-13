@@ -52,7 +52,11 @@ public static class GridCheck
     /// <summary>The transients against the grid a warp lays down, so an offset of 0 is a transient on its line.</summary>
     public static GridReport Against(IReadOnlyList<double> times, Warp warp) =>
         warp is { Markers.Count: > 1 }
-            ? Report(times, time => BeatAt(warp, time), 60 / Tempo(warp))
+            ? Report(
+                times,
+                time => BeatAt(warp, time),
+                seconds => 60 / (warp.TempoAt(seconds) ?? 120)
+            )
             : new GridReport([], []);
 
     /// <summary>The transients against one steady tempo, phased to fit them all, so the offsets centre on 0.</summary>
@@ -60,19 +64,18 @@ public static class GridCheck
     {
         var phase = Phase(times.Select(time => time * bpm / 60));
 
-        return Report(times, time => time * bpm / 60 - phase / SixteenthsPerBeat, 60 / bpm);
+        return Report(times, time => time * bpm / 60 - phase / SixteenthsPerBeat, _ => 60 / bpm);
     }
 
     private static GridReport Report(
         IReadOnlyList<double> times,
         Func<double, double> beatAt,
-        double secondsPerBeat
+        Func<double, double> secondsPerBeatAt
     )
     {
         if (times.Count is 0)
             return new GridReport([], []);
 
-        var sixteenth = secondsPerBeat / SixteenthsPerBeat * 1000;
         List<GridWindow> windows = [];
 
         for (var start = 0.0; start < times[^1]; start += WindowSeconds)
@@ -86,7 +89,10 @@ public static class GridCheck
                     new GridWindow(
                         start,
                         start + WindowSeconds,
-                        Phase(inside.Select(beatAt)) * sixteenth,
+                        Phase(inside.Select(beatAt))
+                            * secondsPerBeatAt(start + WindowSeconds / 2)
+                            / SixteenthsPerBeat
+                            * 1000,
                         inside.Length
                     )
                 );
@@ -175,12 +181,6 @@ public static class GridCheck
         return from.Beat
             + (seconds - from.Seconds) * (to.Beat - from.Beat) / (to.Seconds - from.Seconds);
     }
-
-    /// <summary>The warp's tempo end to end, for the length of a 16th.</summary>
-    private static double Tempo(Warp warp) =>
-        (warp.Markers[^1].Beat - warp.Markers[0].Beat)
-        / (warp.Markers[^1].Seconds - warp.Markers[0].Seconds)
-        * 60;
 }
 
 /// <param name="Windows">Each 10 s with enough transients, in order.</param>

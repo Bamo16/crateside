@@ -20,6 +20,22 @@ public sealed class GridCheckTests
     }
 
     [Fact]
+    public void Every_window_of_a_two_tempo_warp_reports_the_same_lateness_in_its_own_tempo()
+    {
+        Warp warp = new() { Markers = [new(0, 0), new(60, 120), new(60 + 60 * 60 / 150, 270)] };
+        double[] times =
+        [
+            .. Hits(120, seconds: 60).Select(time => time + 0.010),
+            .. Hits(150, seconds: 60).Select(time => 60 + time + 0.010),
+        ];
+
+        var report = GridCheck.Against(times, warp);
+
+        Assert.True(report.Windows.Count >= 10);
+        Assert.All(report.Windows, window => Assert.InRange(window.OffsetMs, 9, 11));
+    }
+
+    [Fact]
     public void A_warp_a_little_fast_shows_a_steady_drift_and_no_step()
     {
         // Against a grid at 120.02, hits at 120 land 10 ms later each minute.
