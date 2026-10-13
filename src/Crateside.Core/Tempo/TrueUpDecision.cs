@@ -72,22 +72,25 @@ public static class TrueUpDecision
             _ => throw new UnreachableException(),
         };
 
-    /// <summary>The warp with every marker after the first moved onto the line through it at this tempo, each keeping its beat.</summary>
-    public static Warp Retyped(Warp warp, double bpm) =>
+    /// <summary>
+    /// The warp with every marker after the first moved onto the line through it at this tempo, each
+    /// keeping its beat, and all of them then moved later by <paramref name="shiftSeconds"/>.
+    /// </summary>
+    public static Warp Retyped(Warp warp, double bpm, double shiftSeconds = 0) =>
         warp.Markers is [var anchor, ..]
             ? warp with
             {
                 Markers =
                 [
-                    anchor,
-                    .. warp
-                        .Markers.Skip(1)
-                        .Select(marker =>
-                            marker with
-                            {
-                                Seconds = anchor.Seconds + (marker.Beat - anchor.Beat) * 60 / bpm,
-                            }
-                        ),
+                    .. warp.Markers.Select(marker =>
+                        marker with
+                        {
+                            Seconds =
+                                anchor.Seconds
+                                + (marker.Beat - anchor.Beat) * 60 / bpm
+                                + shiftSeconds,
+                        }
+                    ),
                 ],
             }
             : warp;

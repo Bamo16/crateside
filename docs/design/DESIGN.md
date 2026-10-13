@@ -377,6 +377,16 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **The *Working on* card puts key · Camelot and the tempo on lines of their own**, the figure and key
   at full ink and the note in Sans, instead of one mono string that wrapped mid-phrase (user,
   2026-10-02).
+- **A steady warp that drifts from its audio is *off its tempo* (#96, ADR 0050).** The figure is
+  approximate (`~`, whole), the note reads `off its tempo · runs 0.017 fast · drifts 23 ms · from your
+  warp` (the amount to the thousandth, the drift in whole ms), and the Tracks flag is the neutral
+  chip with the amount in mono. A warp whose grid steps, or that has too few transients to check,
+  reads `steps in its grid` or `grid not confirmed` and is approximate with no flag. A tight
+  reading a hundredth or more from a warp that holds flags it too, `off its tempo · crateside
+  reads 99.98`, with the figure left bare. The state has no design yet: brief 16.
+- **Track details' warp view gets a *True up the warp* control** beside *Re-apply* and *Let Live
+  analyse*, built from the same row, button, status, confirm and done lines, on the user's own
+  warp of a stem the track is warped by, while it is off its tempo.
 - **A part that changes tempo is always *one part***, never *the intro* or *the outro*; the warp's
   reading does not yet say where the change is.
 - **A warp's drift range is measured over windows of four audible bars**, a variant of the

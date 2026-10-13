@@ -83,7 +83,7 @@ public sealed class WarpTempoReader(string? path = null, Func<string, bool>? isS
             ? entries
             : [];
 
-    private static int? SampleRateOf(string audioPath)
+    internal static int? SampleRateOf(string audioPath)
     {
         try
         {

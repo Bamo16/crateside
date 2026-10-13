@@ -16,12 +16,13 @@ internal static class SteadyTrack
         double trackBpm,
         double stepAt = double.PositiveInfinity,
         double stepSeconds = 0,
-        double seconds = 240
+        double seconds = 240,
+        double hitsLate = 0
     )
     {
         var hits = Enumerable
             .Range(0, (int)(seconds * trackBpm / 30))
-            .Select(i => 0.5 + i * 30 / trackBpm)
+            .Select(i => 0.5 + hitsLate + i * 30 / trackBpm)
             .Select(time => time > stepAt ? time + stepSeconds : time)
             .Where(time => time < seconds)
             .ToArray();

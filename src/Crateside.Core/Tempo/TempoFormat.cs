@@ -171,18 +171,18 @@ public static class TempoFormat
             { Drifts: true } => new("tempo drifts"),
             { ChangesTempo: true } => new("changes tempo"),
             { PartChanges: true } => new("part changes tempo"),
-            { Off: { } off } => new("off its tempo", Direction(tempo.Measured, off.Bpm)),
+            { Off: { } off } => new("off its tempo", Offset(tempo.Measured, off.Bpm)),
             _ => null,
         };
 
     /// <summary><c>runs 0.012 fast · drifts 23 ms</c>, or what the reading says where only it disagrees.</summary>
     private static string OffBy(TrackTempo tempo, TempoOff off) =>
         off.DriftMs is { } ms
-            ? Join($"runs {Direction(tempo.Measured, off.Bpm)}", $"drifts {Math.Abs(ms):0} ms")
+            ? Join($"runs {Offset(tempo.Measured, off.Bpm)}", $"drifts {Math.Abs(ms):0} ms")
             : $"crateside reads {Hundredths(off.Bpm)}";
 
     /// <summary>How far a warp sits from the tempo it should be at, to the thousandth, and which way: <c>0.012 fast</c>.</summary>
-    private static string Direction(double warp, double should) =>
+    public static string Offset(double warp, double should) =>
         Math.Abs(warp - should) is var off && off < 0.0005
             ? "<0.001"
             : $"{off.ToString("0.000", CultureInfo.InvariantCulture)} {(warp > should ? "fast" : "slow")}";

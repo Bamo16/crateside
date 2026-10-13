@@ -139,3 +139,16 @@ track. 5 ms is about 2.8 of those; the 3-error test is the real gate and 5 ms th
 | The Naked And Famous - Young Blood | 105.0000 | 104.9978 | +5.2 | +0.0 |
 | The Notorious B.I.G. - Big Poppa | 84.5212 | 84.5241 | -8.7 | -0.0 |
 | The Prodigy - Voodoo People | 148.9950 | 148.9930 | +5.3 | +0.0 |
+
+## With the grid moved onto the transients (#96)
+
+The same 78 retypes with `rephase`: the retyped warp is moved so the kept drum stem's strongest
+transients (the instrumental's where none is kept; 4 of the 78 have a drum stem) centre on its grid,
+and kept only where every 30 s then sits within 5 ms of it.
+
+| outcome | songs |
+|---|---|
+| moved and kept | 63 |
+| grid would not hold within 5 ms all through | 15 |
+
+The moves are 3.0 ms at the median and 16.3 ms at most.

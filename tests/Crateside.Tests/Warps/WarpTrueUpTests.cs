@@ -112,6 +112,58 @@ public sealed class WarpTrueUpTests : IDisposable
     }
 
     [Fact]
+    public async Task Rephasing_moves_the_grid_onto_the_transients_the_retype_alone_leaves_late()
+    {
+        await Setup(warpBpm: 119.99, trackBpm: 120, hitsLate: 0.008);
+        var siblings = WarpSiblings.Scan([_root]);
+        var song = WarpSiblings.Read(Instrumental)!;
+
+        var plain = Assert.IsType<TrueUpPlan.Retype>(Truer().Plan(siblings, song));
+        var phased = Assert.IsType<TrueUpPlan.Retype>(Truer().Plan(siblings, song, rephase: true));
+
+        Assert.Equal(0, plain.ShiftSeconds);
+        Assert.Equal(0.008, phased.ShiftSeconds, 3);
+        Assert.Null(phased.PhasedFrom);
+    }
+
+    [Fact]
+    public async Task A_kept_drum_stems_transients_set_the_phase_when_there_is_one()
+    {
+        await Setup(warpBpm: 119.99, trackBpm: 120, hitsLate: 0.008);
+        var drums = Path.Combine(_root, "Song (Drums).flac");
+        Stem(drums, "Drums - htdemucs_ft");
+        SteadyTrack.Analysis(120, 120, seconds: Seconds, hitsLate: 0.012).Write($"{drums}.asd");
+        var siblings = WarpSiblings.Scan([_root]);
+
+        var plan = Assert.IsType<TrueUpPlan.Retype>(
+            Truer().Plan(siblings, WarpSiblings.Read(Instrumental)!, rephase: true)
+        );
+
+        Assert.Equal(0.012, plan.ShiftSeconds, 3);
+        Assert.Equal(drums, plan.PhasedFrom);
+    }
+
+    [Fact]
+    public async Task Applying_a_rephased_plan_leaves_the_transients_centred_on_the_grid()
+    {
+        await Setup(warpBpm: 119.99, trackBpm: 120, hitsLate: 0.008);
+        var siblings = WarpSiblings.Scan([_root]);
+        var plan = Assert.IsType<TrueUpPlan.Retype>(
+            Truer().Plan(siblings, WarpSiblings.Read(Instrumental)!, rephase: true)
+        );
+
+        await Truer().ApplyAsync(plan, siblings, TestContext.Current.CancellationToken);
+
+        var written = AnalysisFile.Read($"{Instrumental}.asd");
+        var report = GridCheck.Against(
+            GridCheck.Strongest(written.Audio.Transients, SteadyTrack.SampleRate),
+            written.Warp
+        );
+        Assert.InRange(report.MedianOffsetMs, -0.5, 0.5);
+        Assert.All(report.OffsetsPer(30), ms => Assert.InRange(ms, -1, 1));
+    }
+
+    [Fact]
     public async Task A_warp_that_already_holds_is_left()
     {
         await Setup(warpBpm: 120, trackBpm: 120);
@@ -135,12 +187,12 @@ public sealed class WarpTrueUpTests : IDisposable
     }
 
     /// <summary>An instrumental the user warped, a vocal crateside lent it, and a vocal the user warped by hand.</summary>
-    private async Task Setup(double warpBpm, double trackBpm)
+    private async Task Setup(double warpBpm, double trackBpm, double hitsLate = 0)
     {
         Stem(Instrumental, "Instrumental - Full");
         Stem(Vocal, "Vocal - Full");
         Stem(HandWarpedVocal, "Vocal - Lead");
-        var sibling = SteadyTrack.Analysis(warpBpm, trackBpm, seconds: Seconds);
+        var sibling = SteadyTrack.Analysis(warpBpm, trackBpm, seconds: Seconds, hitsLate: hitsLate);
         sibling.Write($"{Instrumental}.asd");
         (sibling with { Warp = new Warp { Markers = Users } }).Write($"{HandWarpedVocal}.asd");
 

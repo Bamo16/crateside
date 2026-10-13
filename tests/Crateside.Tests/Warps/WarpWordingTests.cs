@@ -1,4 +1,6 @@
 using AbleKit.Analysis;
+using Crateside.Core.Ableton;
+using Crateside.Core.Tempo;
 using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Warps;
@@ -81,6 +83,70 @@ public sealed class WarpWordingTests
         Assert.Equal(
             "No warp file yet: Live has not opened this stem.",
             wording.LetLiveStatus(vocal, "Staging")
+        );
+    }
+
+    [Fact]
+    public void Trueing_up_is_offered_only_on_the_users_canonical_warp_while_it_is_off_its_tempo()
+    {
+        var off = TrackTempo.Of(
+            new WarpTempo(180, TempoShape.Steady, 180, 180, []) { Grid = new(null, 179.983, 23) },
+            null,
+            null
+        );
+        var holds = TrackTempo.Of(
+            new WarpTempo(180, TempoShape.Steady, 180, 180, [])
+            {
+                Grid = new(TrueUpReason.WithinNoise, null, 0),
+            },
+            null,
+            null
+        );
+
+        Assert.True(WarpWording.CanTrueUp(Lender(), off));
+        Assert.False(WarpWording.CanTrueUp(Lender(), holds));
+        Assert.False(WarpWording.CanTrueUp(Lender() with { IsAuthority = false }, off));
+        Assert.False(
+            WarpWording.CanTrueUp(Lender() with { Owner = new WarpOwner.Starter(Saved) }, off)
+        );
+        Assert.Equal(
+            "Runs 0.017 fast and drifts 23 ms over the track. Retypes it to 179.983 and lines it up with the drums. Yours is backed up first.",
+            WarpWording.TrueUpStatus(off!)
+        );
+    }
+
+    [Fact]
+    public void The_true_up_question_says_what_moves_and_to_where()
+    {
+        var plan = new TrueUpPlan.Retype(
+            new TrueUpVerdict.Retype(179.983, 180, false, 23.4, 0.1),
+            [],
+            [Vocal],
+            0.0032,
+            null
+        );
+
+        Assert.Equal(
+            "Retype to 179.983 and move the grid 3.2 ms later onto the instrumental's transients? It drifts 23 ms now, and will hold within 5 ms. Vocal - Full are written again from it.",
+            Wording(Lender(), Stem(Vocal, new WarpOwner.Borrowed(Instrumental, Saved), Shared))
+                .TrueUpQuestion(plan)
+        );
+    }
+
+    [Fact]
+    public void A_true_up_that_does_not_happen_says_why()
+    {
+        Assert.Equal(
+            "Not retyped: the grid would not hold within 5 ms all through the track.",
+            WarpWording.TrueUpRefusal(new TrueUpPlan.Left(TrueUpReason.DoesNotHold))
+        );
+        Assert.Equal(
+            "Not retyped: the warp was saved again since crateside looked at it.",
+            WarpWording.TrueUpDone(new TrueUpOutcome.Changed(), "just now")
+        );
+        Assert.Equal(
+            "Retyped to 125.026 just now. Your previous warp is backed up.",
+            WarpWording.TrueUpDone(new TrueUpOutcome.Retyped(125.0257, []), "just now")
         );
     }
 

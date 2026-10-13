@@ -126,6 +126,45 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
     public string ReapplyConfirm(StemWarp stem) =>
         stem.Owner is WarpOwner.Yours ? "Replace my warp" : "Replace";
 
+    /// <summary>Whether the warp can be trued up: the user's, on a stem the track is warped by, and measured off its tempo (#96).</summary>
+    public static bool CanTrueUp(StemWarp stem, TrackTempo? tempo) =>
+        stem is { IsAuthority: true, Owner: WarpOwner.Yours } && tempo is { Off.DriftMs: not null };
+
+    public static string TrueUpStatus(TrackTempo tempo) =>
+        tempo.Off is { DriftMs: { } ms } off
+            ? $"Runs {TempoFormat.Offset(tempo.Measured, off.Bpm)} and drifts {Math.Abs(ms):0} ms over the track. Retypes it to {Thousandths(off.Bpm)} and lines it up with the drums. Yours is backed up first."
+            : string.Empty;
+
+    public string TrueUpQuestion(TrueUpPlan.Retype plan) =>
+        $"Retype to {Thousandths(plan.Verdict.Bpm)} and move the grid {Math.Abs(plan.ShiftSeconds * 1000):0.0} ms {(plan.ShiftSeconds < 0 ? "earlier" : "later")} onto {(plan.PhasedFrom is { } drums ? $"{Name(drums)}'s" : "the instrumental's")} transients? It drifts {Math.Abs(plan.Verdict.DriftMs):0} ms now, and will hold within 5 ms."
+        + (plan.Lent.Count > 0 ? $" {Names(plan.Lent)} are written again from it." : string.Empty);
+
+    public static string TrueUpRefusal(TrueUpPlan plan) =>
+        plan switch
+        {
+            TrueUpPlan.Left(TrueUpReason.DoesNotHold) =>
+                "Not retyped: the grid would not hold within 5 ms all through the track.",
+            TrueUpPlan.Left => "Not retyped: the warp already holds against the audio.",
+            TrueUpPlan.Disagree =>
+                "Not retyped: the stems the track is warped by hold different warps.",
+            TrueUpPlan.Failed(var error) => $"Not retyped: {error}",
+            _ => "Not retyped.",
+        };
+
+    public static string TrueUpDone(TrueUpOutcome outcome, string ago) =>
+        outcome switch
+        {
+            TrueUpOutcome.Retyped(var bpm, _) =>
+                $"Retyped to {Thousandths(bpm)} {ago}. Your previous warp is backed up.",
+            TrueUpOutcome.Changed =>
+                "Not retyped: the warp was saved again since crateside looked at it.",
+            TrueUpOutcome.Failed(var error) => $"Not retyped: {error}",
+            _ => "Not retyped.",
+        };
+
+    private static string Thousandths(double bpm) =>
+        bpm.ToString("0.000", CultureInfo.InvariantCulture);
+
     public static bool CanLetLiveAnalyse(StemWarp stem) =>
         stem.Sidecar is not null
         && stem.Owner is not (WarpOwner.WaitingForLive or WarpOwner.PuttingBack);

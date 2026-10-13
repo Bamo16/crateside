@@ -245,6 +245,21 @@ public sealed record GridReport(IReadOnlyList<GridWindow> Windows, IReadOnlyList
         }
     }
 
+    /// <summary>Where the windows sit on the whole, in ms; positive is late.</summary>
+    public double MedianOffsetMs =>
+        Windows.Select(window => window.OffsetMs).Order().ToArray() switch
+        {
+            [] => 0,
+            var sorted when sorted.Length % 2 is 1 => sorted[sorted.Length / 2],
+            var sorted => (sorted[sorted.Length / 2 - 1] + sorted[sorted.Length / 2]) / 2,
+        };
+
+    /// <summary>The windows' mean offset in each stretch of this many seconds that holds any, in ms.</summary>
+    public IEnumerable<double> OffsetsPer(double seconds) =>
+        Windows
+            .GroupBy(window => (int)(window.Start / seconds))
+            .Select(group => group.Average(window => window.OffsetMs));
+
     /// <summary>The widest any window sits from another, in ms.</summary>
     public double SpreadMs =>
         Windows.Count is 0
