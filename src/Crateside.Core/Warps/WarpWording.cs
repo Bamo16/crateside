@@ -136,15 +136,19 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             : string.Empty;
 
     public string TrueUpQuestion(TrueUpPlan.Retype plan) =>
-        $"Retype to {Thousandths(plan.Verdict.Bpm)} and move the grid {Math.Abs(plan.ShiftSeconds * 1000):0.0} ms {(plan.ShiftSeconds < 0 ? "earlier" : "later")} onto {(plan.PhasedFrom is { } drums ? $"{Name(drums)}'s" : "the instrumental's")} transients? It drifts {Math.Abs(plan.Verdict.DriftMs):0} ms now, and will hold within 5 ms."
+        $"Retype to {Thousandths(plan.Verdict.Bpm)} and move the grid {Math.Abs(plan.ShiftSeconds * 1000):0.0} ms {(plan.ShiftSeconds < 0 ? "earlier" : "later")} onto {(plan.PhasedFrom is { } drums ? $"{Name(drums)}'s" : "this stem's")} transients? It drifts {Math.Abs(plan.Verdict.DriftMs):0} ms now, and will hold within {WarpTrueUp.HoldsWithinMs:0} ms."
         + (plan.Lent.Count > 0 ? $" {Names(plan.Lent)} are written again from it." : string.Empty);
 
     public static string TrueUpRefusal(TrueUpPlan plan) =>
         plan switch
         {
             TrueUpPlan.Left(TrueUpReason.DoesNotHold) =>
-                "Not retyped: the grid would not hold within 5 ms all through the track.",
-            TrueUpPlan.Left => "Not retyped: the warp already holds against the audio.",
+                $"Not retyped: the grid would not hold within {WarpTrueUp.HoldsWithinMs:0} ms all through the track.",
+            TrueUpPlan.Left(TrueUpReason.WithinNoise) =>
+                "Not retyped: the warp already holds against the audio.",
+            TrueUpPlan.Left(TrueUpReason.Steps) =>
+                "Not retyped: the grid steps partway through, which a new tempo does not fix.",
+            TrueUpPlan.Left => "Not retyped: crateside could not check the warp against the audio.",
             TrueUpPlan.Disagree =>
                 "Not retyped: the stems the track is warped by hold different warps.",
             TrueUpPlan.Failed(var error) => $"Not retyped: {error}",

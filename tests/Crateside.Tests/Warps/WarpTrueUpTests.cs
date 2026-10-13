@@ -164,6 +164,45 @@ public sealed class WarpTrueUpTests : IDisposable
     }
 
     [Fact]
+    public async Task A_write_that_fails_part_way_puts_back_what_it_had_written()
+    {
+        await Setup(warpBpm: 119.99, trackBpm: 120);
+        var karaoke = Path.Combine(_root, "Song (Karaoke).flac");
+        Stem(karaoke, "Karaoke");
+        File.Copy($"{Instrumental}.asd", $"{karaoke}.asd");
+        var siblings = WarpSiblings.Scan([_root]);
+        var plan = Assert.IsType<TrueUpPlan.Retype>(
+            Truer().Plan(siblings, WarpSiblings.Read(Instrumental)!)
+        );
+        var before = await File.ReadAllBytesAsync(
+            $"{Instrumental}.asd",
+            TestContext.Current.CancellationToken
+        );
+        var last = plan.Sidecars[^1].Path;
+        File.SetAttributes($"{last}.asd", FileAttributes.ReadOnly);
+
+        try
+        {
+            var outcome = await Truer()
+                .ApplyAsync(plan, siblings, TestContext.Current.CancellationToken);
+
+            Assert.IsType<TrueUpOutcome.Failed>(outcome);
+            Assert.Equal(
+                before,
+                await File.ReadAllBytesAsync(
+                    $"{Instrumental}.asd",
+                    TestContext.Current.CancellationToken
+                )
+            );
+        }
+        finally
+        {
+            foreach (var file in Directory.EnumerateFiles(_root, "*", SearchOption.AllDirectories))
+                File.SetAttributes(file, FileAttributes.Normal);
+        }
+    }
+
+    [Fact]
     public async Task A_warp_that_already_holds_is_left()
     {
         await Setup(warpBpm: 120, trackBpm: 120);

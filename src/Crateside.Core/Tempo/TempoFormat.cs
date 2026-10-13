@@ -183,9 +183,12 @@ public static class TempoFormat
 
     /// <summary>How far a warp sits from the tempo it should be at, to the thousandth, and which way: <c>0.012 fast</c>.</summary>
     public static string Offset(double warp, double should) =>
-        Math.Abs(warp - should) is var off && off < 0.0005
-            ? "<0.001"
-            : $"{off.ToString("0.000", CultureInfo.InvariantCulture)} {(warp > should ? "fast" : "slow")}";
+        Math.Abs(warp - should) switch
+        {
+            < 0.0005 => "<0.001",
+            var off =>
+                $"{off.ToString("0.000", CultureInfo.InvariantCulture)} {(warp > should ? "fast" : "slow")}",
+        };
 
     /// <summary><c>drifts 110–112 · 2%</c>, or just <c>drifts</c> when there is no range to give.</summary>
     private static string Drift(TrackTempo tempo) =>

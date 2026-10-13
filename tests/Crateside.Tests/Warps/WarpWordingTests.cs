@@ -127,7 +127,7 @@ public sealed class WarpWordingTests
         );
 
         Assert.Equal(
-            "Retype to 179.983 and move the grid 3.2 ms later onto the instrumental's transients? It drifts 23 ms now, and will hold within 5 ms. Vocal - Full are written again from it.",
+            "Retype to 179.983 and move the grid 3.2 ms later onto this stem's transients? It drifts 23 ms now, and will hold within 5 ms. Vocal - Full are written again from it.",
             Wording(Lender(), Stem(Vocal, new WarpOwner.Borrowed(Instrumental, Saved), Shared))
                 .TrueUpQuestion(plan)
         );

@@ -22,7 +22,7 @@ public sealed class WarpTrueUp(
     private const int DefaultSampleRate = 44_100;
 
     /// <summary>How far any 30 s of the track may sit from its grid after a rephase, in ms.</summary>
-    private const double HoldsWithinMs = 5;
+    public const double HoldsWithinMs = 5;
 
     private const double BlockSeconds = 30;
     private const int MinWindowsToPhase = 6;
@@ -161,23 +161,42 @@ public sealed class WarpTrueUp(
             if (plan.Sidecars.Any(stamp => Stamped(stamp.Path) != stamp))
                 return new TrueUpOutcome.Changed();
 
-            foreach (var stamp in plan.Sidecars)
-            {
-                var sidecar = StemFileName.AnalysisFor(stamp.Path);
-                var analysis = AnalysisFile.Read(sidecar);
+            List<(string Sidecar, string Backup)> written = [];
 
-                backups.Keep(sidecar);
-                (
-                    analysis with
-                    {
-                        Warp = TrueUpDecision.Retyped(
-                            analysis.Warp,
-                            plan.Verdict.Bpm,
-                            plan.ShiftSeconds
-                        ),
-                    }
-                ).Write(sidecar);
-                retyped.Record(stamp.Path, plan.Verdict.Bpm, time.GetUtcNow());
+            try
+            {
+                foreach (var stamp in plan.Sidecars)
+                {
+                    if (Stamped(stamp.Path) != stamp)
+                        throw new TrueUpChangedException();
+
+                    var sidecar = StemFileName.AnalysisFor(stamp.Path);
+                    var analysis = AnalysisFile.Read(sidecar);
+                    var backup = backups.Keep(sidecar);
+
+                    (
+                        analysis with
+                        {
+                            Warp = TrueUpDecision.Retyped(
+                                analysis.Warp,
+                                plan.Verdict.Bpm,
+                                plan.ShiftSeconds
+                            ),
+                        }
+                    ).Write(sidecar);
+                    written.Add((sidecar, backup));
+                    retyped.Record(stamp.Path, plan.Verdict.Bpm, time.GetUtcNow());
+                }
+            }
+            catch (Exception ex)
+                when (ex is TrueUpChangedException or IOException or UnauthorizedAccessException)
+            {
+                foreach (var (sidecar, backup) in written)
+                    File.Copy(backup, sidecar, overwrite: true);
+
+                return ex is TrueUpChangedException
+                    ? new TrueUpOutcome.Changed()
+                    : new TrueUpOutcome.Failed(ex.Message);
             }
 
             List<(string Path, WarpOutcome Outcome)> lent = [];
@@ -268,3 +287,6 @@ public abstract record TrueUpOutcome
 
     public sealed record Failed(string Error) : TrueUpOutcome;
 }
+
+/// <summary>A canonical sidecar was saved over between being checked and being written.</summary>
+internal sealed class TrueUpChangedException : Exception;

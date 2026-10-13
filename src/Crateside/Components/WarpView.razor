@@ -263,11 +263,11 @@
                                 <span class="working"><span class="dot"></span>Retyping the warp…</span>
                                 <span class="status">Your warp is backed up.</span>
                             }
-                            else if (_confirming is Confirming.TrueUp && _plan is { } plan)
+                            else if (_confirming is Confirming.TrueUp && _planned is var (plan, siblings))
                             {
                                 <span class="status">@wording.TrueUpQuestion(plan)</span>
                                 <span class="actions">
-                                    <button class="danger" @onclick="() => TrueUpAsync(selected, plan)">Retype my warp</button>
+                                    <button class="danger" @onclick="() => TrueUpAsync(selected, plan, siblings)">Retype my warp</button>
                                     <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
                                 </span>
                             }
@@ -347,8 +347,7 @@
     private Confirming _confirming;
     private string? _working;
     private ActionDone? _done;
-    private TrueUpPlan.Retype? _plan;
-    private WarpSiblings? _planSiblings;
+    private (TrueUpPlan.Retype Plan, WarpSiblings Siblings)? _planned;
     private Timer? _poll;
 
     private enum Zoom
@@ -513,7 +512,7 @@
 
         if (plan is TrueUpPlan.Retype retype)
         {
-            (_plan, _planSiblings, _confirming) = (retype, siblings, Confirming.TrueUp);
+            (_planned, _confirming) = ((retype, siblings), Confirming.TrueUp);
 
             return;
         }
@@ -521,13 +520,13 @@
         _done = new ActionDone(stem.Path, Confirming.TrueUp, false, DateTimeOffset.UtcNow, _ => WarpWording.TrueUpRefusal(plan));
     }
 
-    private async Task TrueUpAsync(StemWarp stem, TrueUpPlan.Retype plan)
+    private async Task TrueUpAsync(StemWarp stem, TrueUpPlan.Retype plan, WarpSiblings siblings)
     {
         _confirming = Confirming.None;
         _working = stem.Path;
         StateHasChanged();
 
-        var outcome = await TrueUp.ApplyAsync(plan, _planSiblings!);
+        var outcome = await TrueUp.ApplyAsync(plan, siblings);
 
         _working = null;
         _done = new ActionDone(
