@@ -142,3 +142,12 @@ Single-context — `CONTEXT.md` and `docs/adr/` at the root, with shared vocabul
 
 Page design goes to a Claude Design session, which reads the repo but cannot write to it or see
 issues. Briefs out and results back: see `docs/agents/design.md`.
+
+## This repository is going public
+
+The maintainer intends to publish it ([#107](https://github.com/Bamo16/crateside/issues/107)).
+Until then, new work must not add to what has to be undone: no new machine-specific paths, no new
+dependency on a sibling checkout, no surname or personal circumstances anywhere (handle `Bamo16`
+only), paid services behind a switchable interface, nothing listening beyond localhost without
+authentication. Write issues and docs in the public voice ("the maintainer"). The full list and
+the pre-publication checklist are in #107.
