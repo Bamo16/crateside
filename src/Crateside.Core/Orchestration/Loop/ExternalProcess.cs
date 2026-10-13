@@ -1,5 +1,6 @@
-using System.Diagnostics;
 using System.Text;
+using CliWrap;
+using CliWrap.Buffered;
 
 namespace Crateside.Core.Orchestration.Loop;
 
@@ -15,41 +16,17 @@ public static class ExternalProcess
         CancellationToken ct = default
     )
     {
-        var info = new ProcessStartInfo(fileName, arguments)
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding = Encoding.UTF8,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            WorkingDirectory = workingDirectory ?? string.Empty,
-        };
-
-        using var process =
-            Process.Start(info)
-            ?? throw new InvalidOperationException($"could not start {fileName}");
-
-        // Read both streams before waiting: a full pipe with nobody draining it blocks forever.
-        var stdout = process.StandardOutput.ReadToEndAsync(ct);
-        var stderr = process.StandardError.ReadToEndAsync(ct);
-
-        try
-        {
-            await process.WaitForExitAsync(ct);
-        }
-        catch (OperationCanceledException)
-        {
-            Stop(process);
-
-            throw;
-        }
+        var result = await Cli.Wrap(fileName)
+            .WithArguments(arguments)
+            .WithWorkingDirectory(workingDirectory ?? string.Empty)
+            .WithValidation(CommandResultValidation.None)
+            .ExecuteBufferedAsync(Encoding.UTF8, ct);
 
         return new ProcessOutcome
         {
-            ExitCode = process.ExitCode,
-            StandardOutput = await stdout,
-            StandardError = await stderr,
+            ExitCode = result.ExitCode,
+            StandardOutput = result.StandardOutput,
+            StandardError = result.StandardError,
         };
     }
 
@@ -63,19 +40,6 @@ public static class ExternalProcess
             ?.Split('\n')
             .LastOrDefault(l => !l.AsSpan().IsWhiteSpace())
             ?.Trim();
-
-    private static void Stop(Process process)
-    {
-        try
-        {
-            if (!process.HasExited)
-                process.Kill(entireProcessTree: true);
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or SystemException)
-        {
-            // It exited on its own between the check and the kill. Nothing to do.
-        }
-    }
 }
 
 /// <summary>What a command did.</summary>

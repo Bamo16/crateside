@@ -4,6 +4,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="CliWrap" Version="3.10.5" />
         <PackageReference Include="Google.Apis.Auth" Version="1.75.0" />
         <PackageReference Include="Humanizer.Core" Version="3.0.10" />
         <PackageReference Include="Google.Apis.YouTube.v3" Version="1.75.0.4234" />

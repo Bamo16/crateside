@@ -1,5 +1,8 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
+using CliWrap;
+using CliWrap.Buffered;
 using Crateside.Core.Orchestration.Jobs;
 using Humanizer;
 
@@ -26,32 +29,26 @@ public sealed class SeparationRunner(
         if (interlock.TryGetLive(out var live))
             return SeparationResult.Refused($"already separating {live.VideoId}");
 
-        using var process = Start(order, retained);
+        // No forceful token: ct must not kill the separation, only stop us waiting for it.
+        var running = Start(order, retained);
 
         // The check above and this claim must stay adjacent, and only this method may call
         // Start — there is a gap between them since claiming needs the process to exist,
         // harmless only because one worker drives this loop.
         interlock.Claim(
             order.VideoId,
-            process.Id,
-            StartTimeOf(process),
+            running.ProcessId,
+            StartTimeOf(running.ProcessId),
             new SeparationPromise(order.Recipe.ExpectedOutputs, order.Destination)
         );
 
-        // Both reads start before either is awaited: draining stdout first would block if
-        // stderr's buffer fills, wedging the child that holds the GPU for six minutes. Only
-        // --json keeping stderr quiet makes this safe today, not a guarantee.
-        var stdoutRead = process.StandardOutput.ReadToEndAsync(ct);
-        var stderrRead = process.StandardError.ReadToEndAsync(ct);
-
         // ct fires on shutdown: the separation keeps running and its job stays open, for the next
         // start to adopt or settle off disk (ADR 0042).
-        var stdout = await stdoutRead;
-        var stderr = await stderrRead;
+        var result = await running.Task.WaitAsync(ct);
+        var stdout = result.StandardOutput;
+        var stderr = result.StandardError;
 
-        await process.WaitForExitAsync(ct);
-
-        var error = FailureFrom(process.ExitCode, stdout, stderr);
+        var error = FailureFrom(result.ExitCode, stdout, stderr);
         IReadOnlyList<string> outputs = [];
 
         if (error is null)
@@ -74,13 +71,16 @@ public sealed class SeparationRunner(
                 + $"and the run produced {outputs.Count}"
             : null;
 
-    private static DateTimeOffset StartTimeOf(Process process)
+    private static DateTimeOffset StartTimeOf(int processId)
     {
         try
         {
+            using var process = Process.GetProcessById(processId);
+
             return process.StartTime;
         }
-        catch (Exception ex) when (ex is InvalidOperationException or SystemException)
+        catch (Exception ex)
+            when (ex is InvalidOperationException or ArgumentException or SystemException)
         {
             // A process that exited immediately may refuse to report a start time; the
             // interlock treats an unverifiable PID as ours anyway.
@@ -139,43 +139,30 @@ public sealed class SeparationRunner(
         }
     }
 
-    private Process Start(WorkOrder order, string? retained)
-    {
-        var info = new ProcessStartInfo(fileName)
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            StandardOutputEncoding = System.Text.Encoding.UTF8,
-            StandardErrorEncoding = System.Text.Encoding.UTF8,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
+    private CommandTask<BufferedCommandResult> Start(WorkOrder order, string? retained) =>
+        Cli.Wrap(fileName)
+            .WithArguments(args =>
+            {
+                args.Add("separate");
 
-        info.ArgumentList.Add("separate");
+                // Safe only because the file is StemForge's own — it reads back the provenance
+                // comment stemforge-cli download wrote, carrying the source URL, and therefore
+                // the video ID, into the stems. A file from elsewhere would produce stems that
+                // join to nothing.
+                args.Add(retained ?? order.SourceUrl);
 
-        // Safe only because the file is StemForge's own — it reads back the provenance comment
-        // stemforge-cli download wrote, carrying the source URL, and therefore the video ID,
-        // into the stems. A file from elsewhere would produce stems that join to nothing.
-        info.ArgumentList.Add(retained ?? order.SourceUrl);
+                foreach (var preset in order.Recipe.Presets)
+                    args.Add("--preset").Add(preset);
 
-        foreach (var preset in order.Recipe.Presets)
-        {
-            info.ArgumentList.Add("--preset");
-            info.ArgumentList.Add(preset);
-        }
+                if (order.Recipe.ExtractDrums)
+                    args.Add("--extract-drums");
 
-        if (order.Recipe.ExtractDrums)
-            info.ArgumentList.Add("--extract-drums");
-
-        info.ArgumentList.Add("--format");
-        info.ArgumentList.Add(order.Recipe.Format);
-        info.ArgumentList.Add("--output");
-        info.ArgumentList.Add(paths.DestinationFor(order.Destination));
-        info.ArgumentList.Add("--json");
-
-        return Process.Start(info)
-            ?? throw new InvalidOperationException($"could not start {fileName}");
-    }
+                args.Add("--format").Add(order.Recipe.Format);
+                args.Add("--output").Add(paths.DestinationFor(order.Destination));
+                args.Add("--json");
+            })
+            .WithValidation(CommandResultValidation.None)
+            .ExecuteBufferedAsync(Encoding.UTF8);
 }
 
 /// <summary>How one separation turned out.</summary>
