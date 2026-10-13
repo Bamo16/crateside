@@ -94,10 +94,10 @@
         <div class="cell quota">
             <div class="label-row">
                 <span class="label">Claude quota</span>
-                @if (_quota.ResetsAt is { } resets)
-                {
-                    <span class="mono waiting">resets @resets.ToLocalTime().ToString("h:mm tt").ToLowerInvariant()</span>
-                }
+                <span class="mono waiting">
+                    resets @(_quota.ResetsAt is { } resets ? resets.ToLocalTime().ToString("h:mm tt").ToLowerInvariant() : "—")
+                    · @(_quota.WeeklyResetsAt is { } weekResets ? weekResets.ToLocalTime().ToString("ddd h:mm tt").ToLowerInvariant() : "—")
+                </span>
             </div>
             <div class="quota-pair">
                 <div class="quota-window">
@@ -109,7 +109,7 @@
                         <div class="fill" style="width: @($"{Math.Clamp(_quota.Utilization ?? 0, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
                     </div>
                 </div>
-                <div class="quota-window" title="@(_quota.WeeklyResetsAt is { } weekResets ? $"Weekly limit resets {weekResets.ToLocalTime():ddd h:mm tt}" : null)">
+                <div class="quota-window">
                     <div class="quota-figure">
                         <span class="mono percent">@(_quota.WeeklyUtilization is { } week ? $"{week:N0}%" : "—")</span>
                         <span class="of">weekly</span>

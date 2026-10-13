@@ -111,7 +111,9 @@
     gap: 24px;
 }
 
+
 .quota-window {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 8px;
