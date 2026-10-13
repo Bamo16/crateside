@@ -214,6 +214,37 @@ public sealed record GridReport(IReadOnlyList<GridWindow> Windows, IReadOnlyList
         }
     }
 
+    /// <summary>One standard error of <see cref="DriftMsPerMinute"/>, from how far the windows scatter around their line.</summary>
+    public double DriftNoiseMsPerMinute
+    {
+        get
+        {
+            if (Windows.Count < 3)
+                return double.PositiveInfinity;
+
+            var points = Windows
+                .Select(window =>
+                    (
+                        X: (window.Start + window.End) / 2 / 60,
+                        Y: window.OffsetMs
+                            - Steps.Where(step => step.At <= window.Start).Sum(step => step.Ms)
+                    )
+                )
+                .ToArray();
+            var (meanX, meanY) = (
+                points.Average(point => point.X),
+                points.Average(point => point.Y)
+            );
+            var spreadX = points.Sum(point => (point.X - meanX) * (point.X - meanX));
+            var slope = DriftMsPerMinute;
+            var residuals = points.Sum(point =>
+                Math.Pow(point.Y - meanY - slope * (point.X - meanX), 2)
+            );
+
+            return Math.Sqrt(residuals / (points.Length - 2) / spreadX);
+        }
+    }
+
     /// <summary>The widest any window sits from another, in ms.</summary>
     public double SpreadMs =>
         Windows.Count is 0

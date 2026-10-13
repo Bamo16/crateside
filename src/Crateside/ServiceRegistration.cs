@@ -327,6 +327,14 @@ public static class ServiceRegistration
             new SidecarBackups(SidecarBackups.DefaultRoot, TimeProvider.System),
             TimeProvider.System
         ));
+        services.AddSingleton(_ => new RetypedWarps(RetypedWarps.DefaultPath));
+        services.AddSingleton(sp => new WarpTrueUp(
+            sp.GetRequiredService<RetypedWarps>(),
+            sp.GetRequiredService<WrittenWarps>(),
+            new SidecarBackups(SidecarBackups.DefaultRoot, TimeProvider.System),
+            sp.GetRequiredService<WarpActions>(),
+            TimeProvider.System
+        ));
         services.AddSingleton<StemWarpReader>();
         services.AddSingleton(sp => new HandoffSidecars(
             sp.GetRequiredService<CratesidePaths>(),
