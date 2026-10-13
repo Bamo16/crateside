@@ -41,23 +41,22 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
             return null;
 
         var sha256 = await HashAsync(executable, ct);
-        var vouched =
-            BeatJsonContext.Default.BuildInfo.ReadFileOrDefault(
-                Path.Combine(executable.DirectoryName ?? string.Empty, "build.json")
-            )
-                is { Sha256: { } recorded } info
+        var buildJson = Path.Combine(executable.DirectoryName ?? string.Empty, "build.json");
+
+        // A build.json vouches for the commit only when it records this binary's hash.
+        var commit =
+            BeatJsonContext.Default.BuildInfo.ReadFileOrDefault(buildJson)
+                is { Sha256: { } recorded, Commit: { } recordedCommit }
             && recorded.Equals(sha256, StringComparison.OrdinalIgnoreCase)
-                ? info
+                ? recordedCommit
                 : null;
 
-        // The filter reports its own version; builds before versioning say none, and several builds share one.
-        return new FfmpegBuild(
-            line.Groups["Version"] is { Success: true, Value: var version }
-                ? version
-                : "unversioned",
-            sha256,
-            vouched?.Commit
-        );
+        // The filter reports its own version; builds before versioning say none.
+        var version = line.Groups["Version"] is { Success: true, Value: var reported }
+            ? reported
+            : "unversioned";
+
+        return new FfmpegBuild(version, sha256, commit);
     }
 
     private static FileInfo? Located(string fileName) =>
