@@ -418,6 +418,9 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   recorded by hand carries no detectors, so its song uses the latest run that has them.
 - **The BPM detector figures differ from the canvas** (from handoff 08): some detectors read fast
   as well as slow, so the fourth band is *Triplet or dotted* with its wider rule.
+- **The BPM detectors panel has one detector, beatdetect.** keytag stopped producing a BPM
+  (keytag ADR 0010), so its row was retired (#93); older ledger lines keep their `bpm` as the
+  last-resort figure, but nothing is compared.
 - **The shape line reads "Steady · Mostly steady · Drifting"** (handoff 08 drew the older names).
 
 ### Tools (handoff 12, #79)

@@ -30,13 +30,9 @@ public sealed class DetectorBands
         var compared = songs.Where(song => song.Tempo is not null).ToList();
 
         return new DetectorBands(
-            compared.Count(song => song is { Run.Bpm: not null } or { Beats.Bpm: not null }),
+            compared.Count(song => song is { Beats.Bpm: not null }),
             new()
             {
-                [Detector.Keytag] = Reads(
-                    compared,
-                    song => TrackTempo.Of(null, null, song.Run?.Bpm)
-                ),
                 // crateside's own reading with the ffmpeg on PATH, not the ledger's (#76).
                 [Detector.Beatdetect] = Reads(
                     compared,
@@ -109,7 +105,6 @@ public sealed record DetectorRead(LibrarySong Song, TrackTempo Warped, TrackTemp
 
 public enum Detector
 {
-    Keytag,
     Beatdetect,
 }
 

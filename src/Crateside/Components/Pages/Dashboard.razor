@@ -616,7 +616,7 @@
 
     private static readonly string[] Sections = [TurnId, WorkId, TimeId, LibraryId];
 
-    private static readonly Detector[] Detectors = [Detector.Keytag, Detector.Beatdetect];
+    private static readonly Detector[] Detectors = [Detector.Beatdetect];
 
     private static readonly TimeSpan Tick = TimeSpan.FromSeconds(1);
 
@@ -966,7 +966,6 @@
     private static string DetectorHead(Detector detector) =>
         detector switch
         {
-            Detector.Keytag => "keytag, recommended",
             Detector.Beatdetect => "beatdetect, raw",
             _ => detector.ToString(),
         };
@@ -994,7 +993,7 @@
         };
 
     private string BandSentence(Detector detector, TempoBand band, int songs) =>
-        $"{(detector is Detector.Keytag ? "keytag" : "beatdetect")} · {"song".ToQuantity(songs)} "
+        $"beatdetect · {"song".ToQuantity(songs)} "
         + band switch
         {
             TempoBand.Exact => "read exactly",
