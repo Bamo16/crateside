@@ -34,7 +34,7 @@ public sealed class QuotaGuardTests
         var hold = QuotaGuard.HoldOf(Weekly(85), _time.GetUtcNow());
 
         Assert.Equal(Reset, hold?.ResumesAt);
-        Assert.Contains("85 %", hold?.Reason);
+        Assert.Contains("85%", hold?.Reason);
     }
 
     [Fact]

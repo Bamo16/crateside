@@ -60,10 +60,10 @@ public sealed class QuotaGuard(Func<CancellationToken, Task<QuotaSnapshot>> read
 public sealed record QuotaHold(double Used, DateTimeOffset? ResumesAt)
 {
     public string Reason =>
-        $"Weekly Claude use is at {Used:N0} %, past the {QuotaGuard.WeeklyLimit:N0} % limit"
+        $"Weekly Claude use is at {Used:N0}%, past the {QuotaGuard.WeeklyLimit:N0}% limit. "
         + (
             ResumesAt is { } at
-                ? $"; judging resumes when it resets at {at.ToLocalTime():ddd h:mm tt}."
-                : "; judging resumes once it drops."
+                ? $"The hold lifts when it resets at {at.ToLocalTime():ddd h:mm tt}."
+                : "The hold lifts once it drops."
         );
 }

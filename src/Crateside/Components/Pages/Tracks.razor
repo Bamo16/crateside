@@ -106,6 +106,13 @@
             <div class="bar">
                 <div class="fill" style="width: @($"{Math.Clamp(_quota.Utilization ?? 0, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
             </div>
+            <div class="quota-figure">
+                <span class="mono percent">@(_quota.WeeklyUtilization is { } week ? $"{week:N0}%" : "—")</span>
+                <span class="of">of this week@(_quota.WeeklyResetsAt is { } weekResets ? $", resets {weekResets.ToLocalTime():ddd h:mm tt}" : null)</span>
+            </div>
+            <div class="bar">
+                <div class="fill" style="width: @($"{Math.Clamp(_quota.WeeklyUtilization ?? 0, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
+            </div>
         </div>
     </PageHeader>
 
