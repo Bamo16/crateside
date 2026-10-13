@@ -10,16 +10,23 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
 {
     public string Label => Commit is { Length: >= 7 } ? $"{Version}-{Commit[..7]}" : Version;
 
-    [GeneratedRegex(@"^ffmpeg version (?<Version>\S+)")]
-    private static partial Regex VersionLine { get; }
+    [GeneratedRegex(
+        @"^Filter beatdetect\r?\n(.*\(beatdetect (?<Version>[^)\s]+)\))?",
+        RegexOptions.Multiline
+    )]
+    private static partial Regex FilterHelp { get; }
 
-    /// <summary>Asks the executable which build it is; null when it cannot be run or is not ffmpeg.</summary>
+    /// <summary>Asks the executable for its beatdetect filter; null when it cannot be run or has none.</summary>
     public static async Task<FfmpegBuild?> IdentifyAsync(string fileName, CancellationToken ct)
     {
         ProcessOutcome outcome;
         try
         {
-            outcome = await ExternalProcess.RunAsync(fileName, ["-version"], ct: ct);
+            outcome = await ExternalProcess.RunAsync(
+                fileName,
+                ["-hide_banner", "-h", "filter=beatdetect"],
+                ct: ct
+            );
         }
         catch (Win32Exception)
         {
@@ -28,7 +35,7 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
 
         if (
             !outcome.Succeeded
-            || VersionLine.Match(outcome.StandardOutput) is not { Success: true } line
+            || FilterHelp.Match(outcome.StandardOutput) is not { Success: true } line
             || Located(fileName) is not { Exists: true } executable
         )
             return null;
@@ -43,9 +50,11 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
                 ? info
                 : null;
 
-        // build.json names the filter's version; ffmpeg -version only names the ffmpeg it was built on.
+        // The filter reports its own version; builds before versioning say none, and several builds share one.
         return new FfmpegBuild(
-            vouched?.Version ?? line.Groups["Version"].Value,
+            line.Groups["Version"] is { Success: true, Value: var version }
+                ? version
+                : "unversioned",
             sha256,
             vouched?.Commit
         );
@@ -74,4 +83,4 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
     }
 }
 
-internal sealed record BuildInfo(string? Version, string? Commit, string? Sha256);
+internal sealed record BuildInfo(string? Commit, string? Sha256);

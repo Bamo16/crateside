@@ -32,4 +32,29 @@ public class BeatReaderBuildTests
         Assert.Equal(64, build.Sha256.Length);
         Assert.EndsWith(build.Commit[..7], build.Label);
     }
+
+    [Theory]
+    [InlineData("1.2.0-563e4e4", "1.2.0")]
+    [InlineData("1.3.0-1e57fec", "1.3.0")]
+    public async Task The_version_is_the_one_the_filter_reports_not_the_ffmpegs(
+        string folder,
+        string version
+    )
+    {
+        var executable = Path.Combine(HarnessBuilds, folder, "ffmpeg.exe");
+
+        if (!File.Exists(executable))
+        {
+            Assert.Skip("No harness build on this machine");
+
+            return;
+        }
+
+        var build = await FfmpegBuild.IdentifyAsync(
+            executable,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(version, build?.Version);
+    }
 }
