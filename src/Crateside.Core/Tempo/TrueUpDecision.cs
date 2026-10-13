@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AbleKit.Analysis;
 using Crateside.Core.Ableton;
 
@@ -20,7 +21,7 @@ public static class TrueUpDecision
 
     public static TrueUpVerdict Of(AnalysisFile analysis, int sampleRate)
     {
-        if (WarpTempo.Of(analysis, sampleRate) is not { Shape: TempoShape.Steady, Bpm: var bpm })
+        if (SteadyBpm(analysis, sampleRate) is not { } bpm)
             return Leave(TrueUpReason.NotSteady);
 
         var all = analysis
@@ -62,6 +63,15 @@ public static class TrueUpDecision
             : Leave(TrueUpReason.DoesNotHold);
     }
 
+    /// <summary>How the warp's grid sits against the audio, for a steady warp to be shown as it is (ADR 0050).</summary>
+    public static WarpGrid GridOf(AnalysisFile analysis, int sampleRate) =>
+        Of(analysis, sampleRate) switch
+        {
+            TrueUpVerdict.Retype retype => new(null, retype.Bpm, retype.DriftMs),
+            TrueUpVerdict.Leave(var reason) => new(reason, null, 0),
+            _ => throw new UnreachableException(),
+        };
+
     /// <summary>The warp with every marker after the first moved onto the line through it at this tempo, each keeping its beat.</summary>
     public static Warp Retyped(Warp warp, double bpm) =>
         warp.Markers is [var anchor, ..]
@@ -90,6 +100,13 @@ public static class TrueUpDecision
         && Math.Abs(after.DriftMsPerMinute) < DriftSignificance * Noise(after)
         && after.SpreadMs <= before.SpreadMs
             ? after
+            : null;
+
+    private static double? SteadyBpm(AnalysisFile analysis, int sampleRate) =>
+        analysis.DefaultClip is { } clip
+        && WarpTempo.Of(clip, analysis.Warp, analysis.Audio.Overview, sampleRate)
+            is { Shape: TempoShape.Steady, Bpm: var bpm }
+            ? bpm
             : null;
 
     /// <summary>The drift's standard error, never under a tenth of a ms a minute, which a grid this clean could not honestly claim.</summary>

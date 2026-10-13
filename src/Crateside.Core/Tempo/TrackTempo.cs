@@ -3,20 +3,21 @@ using Crateside.Core.Beats;
 
 namespace Crateside.Core.Tempo;
 
-/// <summary>A BPM as crateside shows it: the nominal value, where it came from, and the raw figures behind it (ADR 0049).</summary>
+/// <summary>A BPM as crateside shows it: the value, where it came from, and the figures behind it (ADR 0049, 0050).</summary>
 public sealed record TrackTempo
 {
     /// <summary>The reading's window spread, in percent, at or under which it is good to the hundredth.</summary>
     public const double VouchedSpread = 0.02;
 
-    private const double SnapWithin = 0.003;
+    /// <summary>How far a tight reading may sit from a warp before the warp is called off its tempo.</summary>
+    public const double ReadingDisagreesAt = 0.01;
 
-    // A guard against snapping a warp to a different tempo; the snapped warps in #91 sit at most 0.017 off.
-    private const double WarpSnapsWithin = 0.05;
+    // Beyond this the reading is a different octave or tempo, not a hair off.
+    private const double SameTempoWithin = 0.5;
 
     public required TempoSource Source { get; init; }
 
-    /// <summary>The nominal tempo: what the track was made at when the evidence says so, else as measured.</summary>
+    /// <summary>The tempo as its source gives it, shifted if the track is.</summary>
     public required double Value { get; init; }
 
     public WarpTempo? Warp { get; init; }
@@ -26,7 +27,7 @@ public sealed record TrackTempo
     /// <summary>keytag's estimate.</summary>
     public double? Estimate { get; init; }
 
-    /// <summary>The source's own figure, never snapped.</summary>
+    /// <summary>The source's own figure, before any shift.</summary>
     public double Measured =>
         this switch
         {
@@ -41,12 +42,43 @@ public sealed record TrackTempo
             is { Source: TempoSource.Warp, Warp.Shape: TempoShape.Drifting }
                 or { Source: TempoSource.Reading, Reading.Drifts: true };
 
-    /// <summary>Known to the hundredth: any warp that holds, a typed figure, or a reading whose windows agree tightly.</summary>
+    /// <summary>Known to the hundredth: a steady warp whose grid holds against the audio, any other warp that holds, a typed figure, or a reading whose windows agree tightly.</summary>
     public bool IsVouched =>
         !Drifts
-        && this
-            is { Source: TempoSource.Warp or TempoSource.Typed }
-                or { Source: TempoSource.Reading, Reading.Drift: <= VouchedSpread };
+        && this switch
+        {
+            { Source: TempoSource.Warp, Warp: { Shape: TempoShape.Steady, Grid: var grid } } => grid
+                is { Holds: true },
+            { Source: TempoSource.Warp or TempoSource.Typed } => true,
+            { Source: TempoSource.Reading, Reading.Drift: <= VouchedSpread } => true,
+            _ => false,
+        };
+
+    /// <summary>A steady warp that sits off the tempo the audio holds, and the tempo it should be at (#96).</summary>
+    public TempoOff? Off =>
+        this switch
+        {
+            {
+                Source: TempoSource.Warp,
+                Warp: { Shape: TempoShape.Steady, Grid: { TrueBpm: { } bpm } grid }
+            } => new(bpm, grid.DriftMs),
+            {
+                Source: TempoSource.Warp,
+                Warp: { Shape: TempoShape.Steady, Grid.Holds: true, Bpm: var warp },
+                Reading: { Bpm: { } read, Drift: <= VouchedSpread }
+            } when Math.Abs(read - warp) is >= ReadingDisagreesAt and < SameTempoWithin => new(
+                read,
+                null
+            ),
+            _ => null,
+        };
+
+    /// <summary>A steady warp the audio gives no verdict on: a step in its grid, too few transients, or no tempo that holds.</summary>
+    public WarpGrid? Unconfirmed =>
+        this is { Source: TempoSource.Warp, Warp: { Shape: TempoShape.Steady, Grid: { } grid } }
+        && grid is { Holds: false, TrueBpm: null }
+            ? grid
+            : null;
 
     /// <summary>A warp with two or more stable tempos.</summary>
     public bool ChangesTempo => this is { Source: TempoSource.Warp, Warp.Stable.Count: > 1 };
@@ -93,10 +125,7 @@ public sealed record TrackTempo
             ({ } held, _, _) => new()
             {
                 Source = TempoSource.Warp,
-                Value =
-                    held.Shape is TempoShape.Drifting
-                        ? held.Bpm
-                        : Nominal(held.Bpm, reading, isWarp: true),
+                Value = held.Bpm,
                 Warp = held,
                 Reading = reading,
                 Estimate = estimate,
@@ -104,7 +133,7 @@ public sealed record TrackTempo
             (null, { Bpm: > 0 and var read }, _) => new()
             {
                 Source = TempoSource.Reading,
-                Value = reading.Drifts ? read : Nominal(read, reading, isWarp: false),
+                Value = read,
                 Reading = reading,
                 Estimate = estimate,
             },
@@ -120,7 +149,7 @@ public sealed record TrackTempo
 
     public static TrackTempo Typed(double bpm) => new() { Source = TempoSource.Typed, Value = bpm };
 
-    /// <summary>The tempo a starter warp's single marker is written at; null when the reading drifts or there is none (ADR 0048).</summary>
+    /// <summary>The tempo a starter warp's single marker is written at, as read; null when the reading drifts or there is none (ADR 0048).</summary>
     public static double? StarterBpm(BeatReading? reading) =>
         Of(null, reading, null) is { Source: TempoSource.Reading, Drifts: false, Value: var bpm }
             ? bpm
@@ -144,18 +173,6 @@ public sealed record TrackTempo
             Value = Pairing.RePitch.ArrangementBpm(Value, semitones),
         };
 
-    private static double Nominal(double measured, BeatReading? reading, bool isWarp) =>
-        reading is { Bpm: { } read, Drift: <= VouchedSpread }
-        && Grid(read) is var grid
-        && Math.Abs(read - grid) <= SnapWithin
-        && Math.Abs(measured - grid) <= (isWarp ? WarpSnapsWithin : SnapWithin)
-            ? grid
-            : measured;
-
-    /// <summary>The nearest whole or half number.</summary>
-    private static double Grid(double bpm) =>
-        Math.Round(bpm * 2, MidpointRounding.AwayFromZero) / 2;
-
     private TempoWindow[] Folded(IReadOnlyList<(int Index, double Bpm)> windows)
     {
         if (windows.Count is 0)
@@ -174,6 +191,10 @@ public sealed record TrackTempo
         ];
     }
 }
+
+/// <param name="Bpm">The tempo the warp should be at.</param>
+/// <param name="DriftMs">What the warp drifts over the track, positive when it runs fast; null where a reading, not the grid, says so.</param>
+public sealed record TempoOff(double Bpm, double? DriftMs);
 
 public enum TempoSource
 {

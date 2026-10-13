@@ -15,14 +15,15 @@ public sealed class TrackTempoRealLibraryTests
     );
 
     [Theory]
-    [InlineData("Lil Jon - Get Low", 101)]
-    [InlineData("Snail's House - Flash Drive", 160)]
-    [InlineData("Aiobahn - non-reflection (feat. 牧野由依)", 180)]
-    [InlineData("Princess Superstar - Perfect", 119.5)]
-    public void A_snapped_warp_shows_the_grid_tempo_the_reading_sits_on(
-        string name,
-        double nominal
-    ) => Assert.Equal(nominal, Tempo(name).Value);
+    [InlineData("Lil Jon - Get Low")]
+    [InlineData("Snail's House - Flash Drive")]
+    [InlineData("Princess Superstar - Perfect")]
+    public void A_warp_shows_as_itself_not_as_the_round_number_near_it(string name)
+    {
+        var tempo = Tempo(name);
+
+        Assert.Equal(tempo.Warp!.Bpm, tempo.Value);
+    }
 
     [Theory]
     [InlineData("Paul Oakenfold, Asher D - Ready Steady Go (Extended Mix)", "128.02")]

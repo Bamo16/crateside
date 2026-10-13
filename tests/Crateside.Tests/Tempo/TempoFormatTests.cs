@@ -26,6 +26,41 @@ public sealed class TempoFormatTests
     }
 
     [Fact]
+    public void A_steady_warp_off_its_tempo_is_approximate_and_says_how_far_and_which_way()
+    {
+        var shown = TempoFormat.Format(Warped(180, grid: new(null, 179.983, 23)));
+
+        Assert.Equal(("~180", true), (shown.Text, shown.IsApproximate));
+        Assert.Equal("off its tempo · runs 0.017 fast · drifts 23 ms · from your warp", shown.Note);
+        Assert.Equal(new TempoFlag("off its tempo", "0.017 fast"), shown.Flag);
+        Assert.Equal("off its tempo", shown.Brief);
+    }
+
+    [Fact]
+    public void A_warp_that_holds_but_a_tight_reading_disagrees_with_is_flagged_by_the_reading()
+    {
+        var shown = TempoFormat.Format(Warped(100, Tight(99.9817)));
+
+        Assert.Equal("off its tempo · crateside reads 99.98 · from your warp", shown.Note);
+        Assert.Equal(new TempoFlag("off its tempo", "0.018 fast"), shown.Flag);
+    }
+
+    [Theory]
+    [InlineData(TrueUpReason.Steps, "steps in its grid · from your warp")]
+    [InlineData(TrueUpReason.TooFewTransients, "grid not confirmed · from your warp")]
+    [InlineData(TrueUpReason.DoesNotHold, "grid not confirmed · from your warp")]
+    public void A_steady_warp_the_audio_gives_no_verdict_on_is_approximate(
+        TrueUpReason reason,
+        string note
+    )
+    {
+        var shown = TempoFormat.Format(Warped(100, grid: new(reason, null, 0)));
+
+        Assert.Equal(("~100", note), (shown.Text, shown.Note));
+        Assert.Null(shown.Flag);
+    }
+
+    [Fact]
     public void A_tight_reading_is_vouched_and_says_so()
     {
         var shown = TempoFormat.Format(TrackTempo.Of(null, Tight(174.0004), null)!);
@@ -228,8 +263,17 @@ public sealed class TempoFormatTests
     private static TrackTempo Warped(
         double bpm,
         BeatReading? reading = null,
-        double? estimate = null
-    ) => TrackTempo.Of(new WarpTempo(bpm, TempoShape.Steady, bpm, bpm, []), reading, estimate)!;
+        double? estimate = null,
+        WarpGrid? grid = null
+    ) =>
+        TrackTempo.Of(
+            new WarpTempo(bpm, TempoShape.Steady, bpm, bpm, [])
+            {
+                Grid = grid ?? new(TrueUpReason.WithinNoise, null, 0),
+            },
+            reading,
+            estimate
+        )!;
 
     private static BeatReading Tight(double bpm) =>
         new() { Bpm = bpm, Windows = [bpm, bpm, bpm, bpm] };

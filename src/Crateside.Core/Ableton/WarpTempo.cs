@@ -1,4 +1,6 @@
+using System.Text.Json.Serialization;
 using AbleKit.Analysis;
+using Crateside.Core.Tempo;
 
 namespace Crateside.Core.Ableton;
 
@@ -30,10 +32,19 @@ public sealed record WarpTempo(
     /// <summary>Each audible run of four bars and its tempo, where a drifting warp's range is read.</summary>
     public IReadOnlyList<TempoWindow> Windows { get; init; } = [];
 
+    /// <summary>Where a steady warp's grid sits against the audio's transients; null for any other shape (ADR 0050).</summary>
+    public WarpGrid? Grid { get; init; }
+
     /// <summary>The tempo of a saved warp; null when the default clip was never saved.</summary>
     public static WarpTempo? Of(AnalysisFile analysis, int sampleRate) =>
         analysis.DefaultClip is { } clip
-            ? Of(clip, analysis.Warp, analysis.Audio.Overview, sampleRate)
+        && Of(clip, analysis.Warp, analysis.Audio.Overview, sampleRate) is { } tempo
+            ? tempo is { Shape: TempoShape.Steady }
+                ? tempo with
+                {
+                    Grid = TrueUpDecision.GridOf(analysis, sampleRate),
+                }
+                : tempo
             : null;
 
     /// <summary>The tempo across <paramref name="clip"/>; bars <paramref name="overview"/> shows silent are set aside.</summary>
@@ -213,6 +224,19 @@ public readonly record struct TempoWindow(double Start, double End, double Bpm);
 
 /// <summary>One stable tempo in a warp and how many audible bars hold it.</summary>
 public readonly record struct StableTempo(double Bpm, int Bars);
+
+/// <summary>
+/// A steady warp checked against the audio: <paramref name="Reason"/> is why it was left, null where
+/// <paramref name="TrueBpm"/> would fit better.
+/// </summary>
+/// <param name="TrueBpm">The tempo that removes the warp's drift, when it is worth retyping.</param>
+/// <param name="DriftMs">What the warp drifts over the track at its own tempo, positive when it runs fast.</param>
+public sealed record WarpGrid(TrueUpReason? Reason, double? TrueBpm, double DriftMs)
+{
+    /// <summary>It sits on the audio's grid within what the windows can tell apart.</summary>
+    [JsonIgnore]
+    public bool Holds => Reason is TrueUpReason.WithinNoise;
+}
 
 public enum TempoShape
 {

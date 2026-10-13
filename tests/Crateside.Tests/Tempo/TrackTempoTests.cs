@@ -4,7 +4,7 @@ using Crateside.Core.Tempo;
 
 namespace Crateside.Tests.Tempo;
 
-/// <summary>The nominal tempo and the headline source (ADR 0049).</summary>
+/// <summary>The headline tempo and its source (ADR 0049, 0050).</summary>
 public sealed class TrackTempoTests
 {
     [Theory]
@@ -15,42 +15,54 @@ public sealed class TrackTempoTests
         Assert.Equal(shown, TempoFormat.Format(Warped(warped)).Text);
 
     [Fact]
-    public void A_snapped_warp_takes_the_grid_number_a_tight_reading_sits_on()
+    public void A_warp_shows_as_itself_whatever_round_number_a_reading_sits_on()
     {
         var tempo = Warped(128.002, Tight(128.001));
 
-        Assert.Equal(128, tempo.Value);
+        Assert.Equal(128.002, tempo.Value);
         Assert.Equal(128.002, tempo.Measured);
     }
 
-    [Fact]
-    public void A_reading_whose_windows_agree_less_tightly_snaps_nothing() =>
-        Assert.Equal(128.002, Warped(128.002, Loose(128.001)).Value);
-
     [Theory]
-    [InlineData(128.02, 128.021)]
-    [InlineData(90.008, 90.009)]
-    public void A_real_tempo_off_the_grid_is_never_snapped(double warped, double read) =>
-        Assert.Equal(warped, Warped(warped, Tight(read)).Value);
-
-    [Fact]
-    public void A_typed_warp_stays_where_the_user_put_it_whatever_the_reading_says() =>
-        Assert.Equal(100, Warped(100, Tight(99.9817)).Value);
-
-    [Fact]
-    public void A_warp_an_octave_from_the_reading_is_not_snapped_to_it() =>
-        Assert.Equal(64.001, Warped(64.001, Tight(128.0005)).Value);
-
-    [Theory]
-    [InlineData(101.0015, 101)]
-    [InlineData(160.0006, 160)]
-    [InlineData(90.009, 90.009)]
-    public void A_reading_alone_snaps_only_within_three_thousandths(double read, double nominal)
+    [InlineData(101.0015)]
+    [InlineData(160.0006)]
+    [InlineData(90.009)]
+    public void A_reading_alone_shows_as_read(double read)
     {
         var tempo = TrackTempo.Of(null, Tight(read), 87)!;
 
-        Assert.Equal((TempoSource.Reading, nominal), (tempo.Source, tempo.Value));
+        Assert.Equal((TempoSource.Reading, read), (tempo.Source, tempo.Value));
         Assert.True(tempo.IsVouched);
+    }
+
+    [Fact]
+    public void A_steady_warp_is_vouched_only_while_its_grid_holds_against_the_audio()
+    {
+        Assert.True(Warped(128).IsVouched);
+        Assert.False(Warped(128, grid: new(null, 127.988, 23)).IsVouched);
+        Assert.False(Warped(128, grid: new(TrueUpReason.Steps, null, 0)).IsVouched);
+        Assert.False(
+            TrackTempo
+                .Of(new WarpTempo(128, TempoShape.Steady, 128, 128, []), null, null)!
+                .IsVouched
+        );
+    }
+
+    [Fact]
+    public void A_warp_whose_grid_drifts_is_off_its_tempo_by_the_tempo_that_fits()
+    {
+        var tempo = Warped(128, grid: new(null, 127.988, 23));
+
+        Assert.Equal(new TempoOff(127.988, 23), tempo.Off);
+    }
+
+    [Fact]
+    public void A_tight_reading_a_hundredth_from_a_warp_that_holds_calls_it_off()
+    {
+        Assert.Equal(new TempoOff(99.98, null), Warped(100, Tight(99.98)).Off);
+        Assert.Null(Warped(100, Tight(99.995)).Off);
+        Assert.Null(Warped(100, Loose(99.98)).Off);
+        Assert.Null(Warped(100, Tight(50)).Off);
     }
 
     [Fact]
@@ -68,10 +80,10 @@ public sealed class TrackTempoTests
     }
 
     [Theory]
-    [InlineData(128.001, new[] { 128.001, 128.001, 128.001, 128.001 }, 128.0)]
+    [InlineData(128.001, new[] { 128.001, 128.001, 128.001, 128.001 }, 128.001)]
     [InlineData(128.02, new[] { 128.02, 128.01, 128.03, 128.02 }, 128.02)]
     [InlineData(126.0, new[] { 120.0, 124.0, 128.0, 132.0 }, null)]
-    public void A_starter_warp_is_written_at_the_nominal_tempo_of_a_steady_reading(
+    public void A_starter_warp_is_written_at_the_tempo_of_a_steady_reading_as_read(
         double bpm,
         double[] windows,
         double? starter
@@ -120,8 +132,17 @@ public sealed class TrackTempoTests
     private static TrackTempo Warped(
         double bpm,
         BeatReading? reading = null,
-        double? estimate = null
-    ) => TrackTempo.Of(new WarpTempo(bpm, TempoShape.Steady, bpm, bpm, []), reading, estimate)!;
+        double? estimate = null,
+        WarpGrid? grid = null
+    ) =>
+        TrackTempo.Of(
+            new WarpTempo(bpm, TempoShape.Steady, bpm, bpm, [])
+            {
+                Grid = grid ?? new(TrueUpReason.WithinNoise, null, 0),
+            },
+            reading,
+            estimate
+        )!;
 
     /// <summary>A reading whose windows agree exactly.</summary>
     private static BeatReading Tight(double bpm) =>

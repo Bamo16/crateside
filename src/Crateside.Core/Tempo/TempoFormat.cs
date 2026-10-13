@@ -135,6 +135,9 @@ public static class TempoFormat
                     Source(tempo)
                 ),
             { PartChanges: true } => Join("one part changes tempo", Source(tempo)),
+            { Off: { } off } => Join("off its tempo", OffBy(tempo, off), Source(tempo)),
+            { Unconfirmed.Reason: TrueUpReason.Steps } => Join("steps in its grid", Source(tempo)),
+            { Unconfirmed: not null } => Join("grid not confirmed", Source(tempo)),
             { Source: TempoSource.Reading, IsVouched: true } => Join(
                 FromReading,
                 "steady to the hundredth"
@@ -154,6 +157,7 @@ public static class TempoFormat
             { Drifts: true } => Drift(tempo),
             { ChangesTempo: true } => "changes tempo",
             { PartChanges: true } => "part changes tempo",
+            { Off: not null } => "off its tempo",
             _ => Source(tempo),
         };
 
@@ -167,8 +171,21 @@ public static class TempoFormat
             { Drifts: true } => new("tempo drifts"),
             { ChangesTempo: true } => new("changes tempo"),
             { PartChanges: true } => new("part changes tempo"),
+            { Off: { } off } => new("off its tempo", Direction(tempo.Measured, off.Bpm)),
             _ => null,
         };
+
+    /// <summary><c>runs 0.012 fast · drifts 23 ms</c>, or what the reading says where only it disagrees.</summary>
+    private static string OffBy(TrackTempo tempo, TempoOff off) =>
+        off.DriftMs is { } ms
+            ? Join($"runs {Direction(tempo.Measured, off.Bpm)}", $"drifts {Math.Abs(ms):0} ms")
+            : $"crateside reads {Hundredths(off.Bpm)}";
+
+    /// <summary>How far a warp sits from the tempo it should be at, to the thousandth, and which way: <c>0.012 fast</c>.</summary>
+    private static string Direction(double warp, double should) =>
+        Math.Abs(warp - should) is var off && off < 0.0005
+            ? "<0.001"
+            : $"{off.ToString("0.000", CultureInfo.InvariantCulture)} {(warp > should ? "fast" : "slow")}";
 
     /// <summary><c>drifts 110–112 · 2%</c>, or just <c>drifts</c> when there is no range to give.</summary>
     private static string Drift(TrackTempo tempo) =>
