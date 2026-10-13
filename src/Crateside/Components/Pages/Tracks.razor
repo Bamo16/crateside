@@ -94,8 +94,8 @@
         <div class="cell quota">
             <div class="label-row">
                 <span class="label">Claude quota</span>
-                <span class="mono waiting">
-                    resets @(_quota.ResetsAt is { } resets ? resets.ToLocalTime().ToString("h:mm tt").ToLowerInvariant() : "—")
+                <span class="mono waiting" title="When the 5-hour and weekly windows reset">
+                    @(_quota.ResetsAt is { } resets ? resets.ToLocalTime().ToString("h:mm tt").ToLowerInvariant() : "—")
                     · @(_quota.WeeklyResetsAt is { } weekResets ? weekResets.ToLocalTime().ToString("ddd h:mm tt").ToLowerInvariant() : "—")
                 </span>
             </div>

@@ -17,6 +17,8 @@
 }
 
 .label-row {
+    white-space: nowrap;
+    gap: 16px;
     display: flex;
     justify-content: space-between;
     align-items: baseline;
