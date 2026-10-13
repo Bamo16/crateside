@@ -106,6 +106,17 @@
     }
 }
 
+.quota-pair {
+    display: flex;
+    gap: 24px;
+}
+
+.quota-window {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .quota-figure {
     display: flex;
     align-items: baseline;

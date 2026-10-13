@@ -99,19 +99,25 @@
                     <span class="mono waiting">resets @resets.ToLocalTime().ToString("h:mm tt").ToLowerInvariant()</span>
                 }
             </div>
-            <div class="quota-figure">
-                <span class="mono percent">@(_quota.Utilization is { } used ? $"{used:N0}%" : "—")</span>
-                <span class="of">of this 5-hour window</span>
-            </div>
-            <div class="bar">
-                <div class="fill" style="width: @($"{Math.Clamp(_quota.Utilization ?? 0, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
-            </div>
-            <div class="quota-figure">
-                <span class="mono percent">@(_quota.WeeklyUtilization is { } week ? $"{week:N0}%" : "—")</span>
-                <span class="of">of this week@(_quota.WeeklyResetsAt is { } weekResets ? $", resets {weekResets.ToLocalTime():ddd h:mm tt}" : null)</span>
-            </div>
-            <div class="bar">
-                <div class="fill" style="width: @($"{Math.Clamp(_quota.WeeklyUtilization ?? 0, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
+            <div class="quota-pair">
+                <div class="quota-window">
+                    <div class="quota-figure">
+                        <span class="mono percent">@(_quota.Utilization is { } used ? $"{used:N0}%" : "—")</span>
+                        <span class="of">of this 5-hour window</span>
+                    </div>
+                    <div class="bar">
+                        <div class="fill" style="width: @($"{Math.Clamp(_quota.Utilization ?? 0, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
+                    </div>
+                </div>
+                <div class="quota-window" title="@(_quota.WeeklyResetsAt is { } weekResets ? $"Weekly limit resets {weekResets.ToLocalTime():ddd h:mm tt}" : null)">
+                    <div class="quota-figure">
+                        <span class="mono percent">@(_quota.WeeklyUtilization is { } week ? $"{week:N0}%" : "—")</span>
+                        <span class="of">of this week</span>
+                    </div>
+                    <div class="bar">
+                        <div class="fill" style="width: @($"{Math.Clamp(_quota.WeeklyUtilization ?? 0, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </PageHeader>
