@@ -71,7 +71,7 @@ public sealed class TrackAdd(
     public int QueueUnjudged(IReadOnlyList<TrackRowFacts> known)
     {
         var unjudged = known
-            .Where(track => track is { IsLibraryOnly: true, HasVerdict: false })
+            .Where(track => track is { IsLibraryOnly: true, HasVerdict: false, HasUpload: true })
             .Select(track => track.VideoId)
             .Distinct(StringComparer.Ordinal)
             .ToArray();

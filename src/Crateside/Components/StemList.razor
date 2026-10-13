@@ -116,7 +116,7 @@
                 </div>
             }
 
-            @if (band.TakesSources)
+            @if (band.TakesSources && Row.HasUpload)
             {
                 <div class="grow @(ticking ? "shown" : null)" @key="OpenersKey">
                     <div class="grow-inner">
@@ -149,6 +149,8 @@
             }
         }
 
+        @if (Row.HasUpload)
+        {
         <div class="grow @(ticking ? null : "shown")" @key="OpenerKey">
             <div class="grow-inner">
                 <button class="opener" @onclick="() => Editor.TogglePicking(Row)" disabled="@(ticking || Editor.Working)">
@@ -158,6 +160,7 @@
                 </button>
             </div>
         </div>
+        }
 
         @if (picking && !FormsBeside)
         {

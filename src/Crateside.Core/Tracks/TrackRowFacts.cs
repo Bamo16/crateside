@@ -27,6 +27,8 @@ public sealed record TrackRowFacts
     /// </summary>
     public bool HasVerdict { get; init; }
 
+    public bool HasUpload { get; init; } = true;
+
     /// <summary>Labels already in use, which a new one may not repeat.</summary>
     public IReadOnlyList<string> Labels => [.. Plan.AddedSources.Select(source => source.Label)];
 }

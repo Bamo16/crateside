@@ -677,7 +677,7 @@
     private IReadOnlyList<TrackRowFacts> Unjudged =>
         [
             .. _rows
-                .Where(row => row is { IsLibraryOnly: true, Verdict: null, IsAddedByUrl: false })
+                .Where(row => row is { IsLibraryOnly: true, Verdict: null, IsAddedByUrl: false, HasUpload: true })
                 .Select(row => row.Facts),
         ];
 

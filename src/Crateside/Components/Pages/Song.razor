@@ -73,7 +73,7 @@
                 }
                 @if (HasEvidenceSection)
                 {
-                    <a class="why" href="@($"song/{VideoId}#evidence")">Why @Verdicted ↓</a>
+                    <a class="why" href="@($"song/{Uri.EscapeDataString(VideoId)}#evidence")">Why @Verdicted ↓</a>
                 }
             </div>
         </section>
@@ -249,6 +249,9 @@
     /// <summary>Every upload this track has used, the one it is cut from first, with its role.</summary>
     private static List<(string VideoId, string Role)> Uploads(TrackRow row)
     {
+        if (!row.HasUpload)
+            return [];
+
         var cutFrom =
             row.StatedSourceUrl is { } stated && YouTubeUrl.TryGetVideoId(stated, out var swapped)
                 ? swapped
@@ -275,7 +278,7 @@
     private IReadOnlyList<string> CopyHeader(TrackRow row) =>
         [
             row.Title,
-            $"video {row.VideoId}",
+            row.HasUpload ? $"video {row.VideoId}" : "no source recorded",
             $"state {row.ChipLabel}",
             $"verdict {KeyText.Spell(Key) ?? "—"} · {KeyText.Confidence(Confidence)}",
         ];

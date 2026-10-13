@@ -67,9 +67,12 @@
                             Revert
                         </button>
                     }
+                    @if (Row.HasUpload)
+                    {
                     <button class="outline" @onclick="() => StartRename(Row.Title)" disabled="@_working">
                         Rename
                     </button>
+                    }
                 </span>
             </div>
             <span class="stack-value">@Row.Title</span>

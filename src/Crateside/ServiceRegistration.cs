@@ -483,7 +483,12 @@ public static class ServiceRegistration
                     scan.Ledger,
                     sp.GetRequiredService<StagingReader>()
                         .Read(sp.GetRequiredService<CratesidePaths>()),
-                    scan.Processed.StemsByVideoId,
+                    scan.Processed.StemsByVideoId.Concat(
+                            SourcelessSongs.Scan(
+                                sp.GetRequiredService<CratesidePaths>().LibraryFolder
+                            )
+                        )
+                        .ToDictionary(),
                     sp.GetRequiredService<CratesidePaths>().LibraryFolder,
                     sp.GetRequiredService<JobStore>(),
                     scan.Instructions,

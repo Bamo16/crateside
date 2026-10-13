@@ -134,7 +134,7 @@ public sealed class LibraryKeyReader(
     private static string TrackOf(string file, KeyLedger ledger) =>
         StemTagReader.Read(file)?.Provenance is { SourceVideoId: { } videoId }
             ? ledger.SongFor(videoId) ?? videoId
-            : $"name:{StemFileName.WithoutPreset(file)}";
+            : SourcelessSongs.KeyOf(file);
 
     private static string? MostCommon(
         IEnumerable<(string File, FileTags? Tags)> samples,

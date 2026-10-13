@@ -3,6 +3,7 @@ using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
+using Crateside.Core.Library;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Jobs;
@@ -176,6 +177,9 @@ public sealed record TrackRow
     /// </summary>
     public bool IsLibraryOnly { get; init; }
 
+    /// <summary>False for a song StemForge cut without recording a source: its key is a file name, not a video ID (#94).</summary>
+    public bool HasUpload => !SourcelessSongs.IsKey(VideoId);
+
     /// <summary>Which files the user wants made for this track.</summary>
     public StemPlan Plan { get; init; } = StemPlan.Default;
 
@@ -281,14 +285,17 @@ public sealed record TrackRow
             Song = Verdict?.Song,
             Key = Key,
             Plan = Plan,
-            Uploads =
-            [
-                VideoId,
-                .. Samples.Select(sample => sample.SourceVideoId).OfType<string>(),
-                .. Plan.AddedSources.Select(source => source.VideoId),
-            ],
+            Uploads = HasUpload
+                ?
+                [
+                    VideoId,
+                    .. Samples.Select(sample => sample.SourceVideoId).OfType<string>(),
+                    .. Plan.AddedSources.Select(source => source.VideoId),
+                ]
+                : [],
             IsLibraryOnly = IsLibraryOnly,
             HasVerdict = Verdict is not null,
+            HasUpload = HasUpload,
         };
 
     /// <summary>

@@ -24,7 +24,7 @@
             }
             @if (ShowDetailsLink)
             {
-                <a class="outline" href="@($"song/{Row.VideoId}")">Track details</a>
+                <a class="outline" href="@($"song/{Uri.EscapeDataString(Row.VideoId)}")">Track details</a>
             }
         </div>
         @if (_problem is { } problem)

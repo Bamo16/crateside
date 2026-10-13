@@ -407,7 +407,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
     private IReadOnlyList<TrackRow> Rows => Tracks.Current?.Rows ?? [];
 
-    private int NotQueued => Rows.Count(row => row is { IsLibraryOnly: true, Verdict: null, IsAddedByUrl: false });
+    private int NotQueued => Rows.Count(row => row is { IsLibraryOnly: true, Verdict: null, IsAddedByUrl: false, HasUpload: true });
 
     private string NextWindow =>
         (Roll.IsEnabled, Roll.RolledAt) switch
