@@ -54,3 +54,10 @@ Today the new state uses only existing pieces:
 ## Leave room for
 
 A batch action (true up every track that is off) later; nothing to design for it yet.
+
+## Raised by the maintainer while checking the first build
+
+- The flag beside the title reads `off its tempo0.022 slow` (the gap between words and amount was
+  missing; fixed with a margin). The larger question: should the indicator sit beside the title at
+  all? It belongs with the BPM. There is no room for a chip there, but a small mark (a dot or a
+  glyph) would fit, with the detail on hover.

@@ -693,3 +693,7 @@
 .toast.lapsed .eyebrow {
     color: var(--warn);
 }
+
+.flag .mono {
+    margin-left: 0.4em;
+}
