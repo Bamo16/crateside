@@ -55,7 +55,7 @@ B's 72 misses beyond 10 ms (*measured*):
 
 | error as a share of the beat | misses |
 |---|---|
-| within ±½ of a beat of half a beat off (over 0.42) | 31 |
+| half a beat off (over 0.42 of a beat either way) | 31 |
 | within ±10% of the beat (10 ms to about 40 ms: close, not a subdivision) | 38 |
 | elsewhere (a third or quarter) | 3 |
 
