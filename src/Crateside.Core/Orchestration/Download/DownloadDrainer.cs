@@ -78,12 +78,28 @@ public sealed class DownloadDrainer(
     }
 
     /// <summary>
+    /// Whether the source is already a sample in Staging or the library. A second copy in the stem
+    /// folder makes the next handoff refuse to move anything, guide included.
+    /// </summary>
+    internal static bool IsFiled(CratesidePaths paths, string fileName) =>
+        File.Exists(Path.Combine(paths.StagingFolder, fileName))
+        || (
+            Directory.Exists(paths.LibraryFolder)
+            && Directory
+                .EnumerateFiles(paths.LibraryFolder, fileName, SearchOption.AllDirectories)
+                .Any()
+        );
+
+    /// <summary>
     /// Copies the separation source into the destination, for a plan that keeps it as a sample.
     /// </summary>
     private string? Copied(string videoId, string destination)
     {
         if (!workingSet.TryGetSource(videoId, out var held))
             return "the audio to copy is no longer on disk";
+
+        if (IsFiled(_paths, Path.GetFileName(held)))
+            return null;
 
         try
         {
