@@ -253,6 +253,22 @@ public sealed class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
+    public void A_never_judged_track_with_its_source_waiting_for_a_verdict_is_parked_over_a_poor_download_not_the_key()
+    {
+        var row = Assert.Single(
+            Compose(
+                View(separatedWithoutKey: new HashSet<string> { Video }),
+                acquisitions: new Dictionary<string, Acquisition>(StringComparer.Ordinal)
+                {
+                    [Video] = new() { PremiumStatus = PremiumStatus.NoPremiumLadder },
+                }
+            )
+        );
+
+        Assert.Equal(ParkReason.PremiumShortfall, row.ParkedFor);
+    }
+
+    [Fact]
     public void A_download_that_got_premium_audio_leaves_the_row_alone()
     {
         // Recorded on every download, so the outcome counts, not the record's presence.

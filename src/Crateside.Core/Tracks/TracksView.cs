@@ -76,6 +76,7 @@ public sealed record TracksView
         var acquired = acquisitions ?? new Dictionary<string, Acquisition>();
 
         var parked = VideoIdsOf(view.AwaitingKey);
+        var unjudged = VideoIdsOf(view.Outstanding);
 
         // By song, not upload: a swap's old upload stops being a member once its files are gone.
         var deletedBySong = (deletions ?? [])
@@ -244,10 +245,17 @@ public sealed record TracksView
                 // The work list covers the queue item; the instruction covers everything after it
                 // leaves the playlist.
                 Plan = instruction?.Plan ?? StemPlan.Default,
-                // Want of a key outranks a shortfall: it is the later stage, and the GPU has
-                // already been spent by the time a track can be in it.
+                // Want of a key outranks a shortfall once the track has been judged: the GPU has
+                // already been spent. Never judged, its stems in the unresolved-key folder are only
+                // waiting (a source-only plan copies the source there), and the shortfall that
+                // stops the verdict is what holds it.
                 ParkedFor =
-                    members.Any(seed => parked.Contains(seed.VideoId)) ? ParkReason.NoKey
+                    members.Any(seed => parked.Contains(seed.VideoId))
+                    && (
+                        acquisition?.Stops is not true
+                        || !members.Any(seed => unjudged.Contains(seed.VideoId))
+                    )
+                        ? ParkReason.NoKey
                     : acquisition?.Stops is true ? ParkReason.PremiumShortfall
                     : null,
                 Acquisition = acquisition,
