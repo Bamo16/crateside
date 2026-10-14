@@ -28,8 +28,11 @@ public sealed class QuotaGuard(Func<CancellationToken, Task<QuotaSnapshot>> read
         }
     }
 
-    /// <summary>The hold as of the last reading, without reading again.</summary>
-    public QuotaHold? Hold => HoldOf(_last, time.GetUtcNow());
+    /// <summary>
+    /// The hold as of the last reading, without reading again. Before any reading has succeeded
+    /// the hold is on, since an unread quota is not a spare one (ADR 0053).
+    /// </summary>
+    public QuotaHold? Hold => _last.IsKnown ? HoldOf(_last, time.GetUtcNow()) : QuotaHold.Unread;
 
     /// <summary>The hold a reading puts on judging at <paramref name="now"/>, or null if none.</summary>
     public static QuotaHold? HoldOf(QuotaSnapshot quota, DateTimeOffset now) =>
@@ -80,15 +83,19 @@ public sealed class QuotaGuard(Func<CancellationToken, Task<QuotaSnapshot>> read
     }
 }
 
-/// <param name="Used">Weekly use when read, as a percentage.</param>
+/// <param name="Used">Weekly use when read, as a percentage, or null if it has not been read.</param>
 /// <param name="ResumesAt">When the weekly limit resets, or null if the payload did not say.</param>
-public sealed record QuotaHold(double Used, DateTimeOffset? ResumesAt)
+public sealed record QuotaHold(double? Used, DateTimeOffset? ResumesAt)
 {
+    public static QuotaHold Unread { get; } = new(null, null);
+
     public string Reason =>
-        $"Weekly Claude use is at {Used:N0}%, past the {QuotaGuard.WeeklyLimit:N0}% limit. "
-        + (
-            ResumesAt is { } at
-                ? $"The hold lifts when it resets at {at.ToLocalTime():ddd h:mm tt}."
-                : "The hold lifts once it drops."
-        );
+        Used is not { } used
+            ? "Weekly Claude use has not been read yet, so judging waits for a reading."
+            : $"Weekly Claude use is at {used:N0}%, past the {QuotaGuard.WeeklyLimit:N0}% limit. "
+                + (
+                    ResumesAt is { } at
+                        ? $"The hold lifts when it resets at {at.ToLocalTime():ddd h:mm tt}."
+                        : "The hold lifts once it drops."
+                );
 }

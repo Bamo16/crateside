@@ -107,4 +107,17 @@ public sealed class QuotaGuardTests
 
         Assert.Null(guard.PassedVideoId);
     }
+
+    [Fact]
+    public async Task Judging_is_held_until_a_reading_has_succeeded()
+    {
+        var readings = new Queue<QuotaSnapshot>([QuotaSnapshot.Unknown, Weekly(20)]);
+        QuotaGuard guard = new(_ => Task.FromResult(readings.Dequeue()), _time);
+
+        Assert.NotNull(await guard.CheckAsync(TestContext.Current.CancellationToken));
+
+        _time.Advance(TimeSpan.FromMinutes(6));
+
+        Assert.Null(await guard.CheckAsync(TestContext.Current.CancellationToken));
+    }
 }
