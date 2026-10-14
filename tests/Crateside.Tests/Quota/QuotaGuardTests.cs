@@ -92,4 +92,19 @@ public sealed class QuotaGuardTests
 
         Assert.Equal(1, reads);
     }
+
+    [Fact]
+    public void A_pass_names_one_track_and_a_second_replaces_it()
+    {
+        QuotaGuard guard = new(_ => Task.FromResult(Weekly(90)), _time);
+
+        guard.Pass("first");
+        guard.Pass("second");
+
+        Assert.Equal("second", guard.PassedVideoId);
+
+        guard.ClearPass();
+
+        Assert.Null(guard.PassedVideoId);
+    }
 }

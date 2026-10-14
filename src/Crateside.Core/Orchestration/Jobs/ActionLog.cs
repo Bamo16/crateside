@@ -134,4 +134,6 @@ public enum UserActionKind
     RemovedFromPlaylist,
     Forgotten,
     ArrivedAlreadyFiled,
+    PassedTheHold,
+    PassCleared,
 }

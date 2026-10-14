@@ -30,6 +30,16 @@ public sealed class VerdictSelector(
         return next is not null;
     }
 
+    /// <summary>This one track, if it is outstanding and judgeable.</summary>
+    public bool TryPick(WorkListsView view, KeyLedger ledger, string videoId, out WorkItem next)
+    {
+        next = view.Outstanding.FirstOrDefault(i =>
+            i.VideoId == videoId && IsJudgeable(i, ledger)
+        )!;
+
+        return next is not null;
+    }
+
     /// <summary>The next library backfill track, for an idle window to judge; never anything else.</summary>
     public bool TryPickBackfill(WorkListsView view, KeyLedger ledger, out WorkItem next)
     {

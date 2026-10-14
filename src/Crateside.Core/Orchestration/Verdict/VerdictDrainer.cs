@@ -60,7 +60,12 @@ public sealed class VerdictDrainer(
 
     private async Task<StageTick> JudgeNextAsync(bool backfill, CancellationToken ct)
     {
-        if (await guard.CheckAsync(ct) is { } hold)
+        var hold = await guard.CheckAsync(ct);
+
+        if (hold is null)
+            guard.ClearPass();
+
+        if (hold is not null && (backfill || guard.PassedVideoId is null))
             return StageTick.Held(hold.Reason);
 
         WorkListsView view;
@@ -77,12 +82,21 @@ public sealed class VerdictDrainer(
         // Read once and used for both the choice and the order, so the two cannot disagree.
         var ledger = KeyLedger.Read(_paths.Ledger);
 
-        var picked = backfill
-            ? selector.TryPickBackfill(view, ledger, out var item)
-            : selector.TryPickNext(view, ledger, out item);
+        WorkItem item;
+
+        var picked = (backfill, hold, guard.PassedVideoId) switch
+        {
+            (true, _, _) => selector.TryPickBackfill(view, ledger, out item),
+            // Held, so only the track the user let through is judged
+            (_, not null, { } passed) => selector.TryPick(view, ledger, passed, out item),
+            _ => selector.TryPickNext(view, ledger, out item),
+        };
 
         if (!picked)
-            return StageTick.Idle;
+            return hold is { } held ? StageTick.Held(held.Reason) : StageTick.Idle;
+
+        if (hold is not null)
+            guard.ClearPass();
 
         var order = WorkOrder.Compose(item, ledger);
 

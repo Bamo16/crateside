@@ -12,9 +12,21 @@ public sealed class QuotaGuard(Func<CancellationToken, Task<QuotaSnapshot>> read
     private static readonly TimeSpan MaxAge = TimeSpan.FromMinutes(5);
 
     private readonly SemaphoreSlim _reading = new(1, 1);
+    private readonly Lock _gate = new();
 
     private QuotaSnapshot _last = QuotaSnapshot.Unknown;
     private DateTimeOffset _readAt;
+    private string? _passedVideoId;
+
+    /// <summary>The one track the user let through the hold, held in memory only.</summary>
+    public string? PassedVideoId
+    {
+        get
+        {
+            lock (_gate)
+                return _passedVideoId;
+        }
+    }
 
     /// <summary>The hold as of the last reading, without reading again.</summary>
     public QuotaHold? Hold => HoldOf(_last, time.GetUtcNow());
@@ -25,6 +37,19 @@ public sealed class QuotaGuard(Func<CancellationToken, Task<QuotaSnapshot>> read
         && (quota.WeeklyResetsAt is not { } resets || now < resets)
             ? new QuotaHold(used, quota.WeeklyResetsAt)
             : null;
+
+    /// <summary>Lets this one track be judged despite the hold; a second call replaces the first.</summary>
+    public void Pass(string videoId)
+    {
+        lock (_gate)
+            _passedVideoId = videoId;
+    }
+
+    public void ClearPass()
+    {
+        lock (_gate)
+            _passedVideoId = null;
+    }
 
     /// <summary>
     /// The hold now, reading the quota again if the last reading is old. A reading that fails

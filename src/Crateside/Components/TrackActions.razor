@@ -3,6 +3,7 @@
 @using Crateside.Core.Orchestration.Jobs
 @using Crateside.Core.Orchestration.Loop
 @using Crateside.Core.Playlist
+@using Crateside.Core.Quota
 @using Crateside.Core.Staging
 @using Crateside.Core.Tracks
 @using Crateside.Core.WorkLists
@@ -13,6 +14,7 @@
 @inject TrackRemoval Removal
 @inject TracksService Tracks
 @inject ActionLog Actions
+@inject QuotaGuard Quota
 
 @if (Part is Parts.Go && (Row.Folder is not null || ShowDetailsLink))
 {
@@ -96,6 +98,14 @@ else if (Part is Parts.Queue && (ShowNextSentence || HasQueueButtons))
                 else if (CanBump)
                 {
                     <button class="outline" @onclick="Bump">Work this first</button>
+                }
+                @if (IsPassed)
+                {
+                    <button class="primary" @onclick="ClearPass">Stop judging this anyway</button>
+                }
+                else if (CanPass)
+                {
+                    <button class="outline" @onclick="Pass" title="@Quota.Hold?.Reason">Judge this one anyway</button>
                 }
             </div>
         }
@@ -181,8 +191,13 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
     /// </summary>
     private bool CanBump => Row.State is TrackState.Queued or TrackState.JudgedInLine;
 
+    private bool IsPassed => Quota.PassedVideoId == Row.VideoId;
+
+    /// <summary>Only while weekly use holds judging back, and only for a track headed for it.</summary>
+    private bool CanPass => Row.IsAwaitingJudgement && Quota.Hold is not null;
+
     private bool HasQueueButtons =>
-        Row is { GaveUpAt: not null } or { State: TrackState.Short } || IsBumped || CanBump;
+        Row is { GaveUpAt: not null } or { State: TrackState.Short } || IsBumped || CanBump || IsPassed || CanPass;
 
     public static bool HasRemove(TrackRow row, WorkListService playlist) =>
         row is { PlaylistItemId: not null } && playlist.IsAuthorized || row.CanForget;
@@ -228,6 +243,23 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
     {
         Playlist.ClearBump();
         Actions.Record(Row.VideoId, UserActionKind.BumpCleared);
+
+        await Tracks.RefreshAsync(_circuit.Token);
+    }
+
+    private async Task Pass()
+    {
+        Quota.Pass(Row.VideoId);
+        Actions.Record(Row.VideoId, UserActionKind.PassedTheHold);
+        Signals.Wake([JobStage.Verdict]);
+
+        await Tracks.RefreshAsync(_circuit.Token);
+    }
+
+    private async Task ClearPass()
+    {
+        Quota.ClearPass();
+        Actions.Record(Row.VideoId, UserActionKind.PassCleared);
 
         await Tracks.RefreshAsync(_circuit.Token);
     }
