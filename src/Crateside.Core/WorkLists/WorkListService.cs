@@ -396,21 +396,7 @@ public sealed class WorkListService(
 
             // Kept on the record rather than discarded: nothing will try these again, so this is
             // the only trace that they were left in the playlist, and why (#34).
-            intake.RecordRemovalFailures(
-                results
-                    .Where(result =>
-                        !result.Removed && videoIdOf.ContainsKey(result.PlaylistItemId)
-                    )
-                    .ToDictionary(
-                        result => videoIdOf[result.PlaylistItemId],
-                        result => new RemovalFailure
-                        {
-                            Reason = result.Reason ?? "the API gave no reason",
-                            CanSucceedLater = result.CanSucceedLater,
-                        },
-                        StringComparer.Ordinal
-                    )
-            );
+            intake.RecordRemovalFailures(FailuresByVideo(results, videoIdOf));
         }
         catch (PlaylistUnavailableException)
         {
@@ -420,6 +406,24 @@ public sealed class WorkListService(
             intake.ClearRemovalAttempted(offered);
         }
     }
+
+    /// <summary>One failure per video: a playlist can hold the same video twice, and both entries can fail.</summary>
+    internal static Dictionary<string, RemovalFailure> FailuresByVideo(
+        IEnumerable<RemovalResult> results,
+        IReadOnlyDictionary<string, string> videoIdOf
+    ) =>
+        results
+            .Where(result => !result.Removed && videoIdOf.ContainsKey(result.PlaylistItemId))
+            .GroupBy(result => videoIdOf[result.PlaylistItemId], StringComparer.Ordinal)
+            .ToDictionary(
+                group => group.Key,
+                group => new RemovalFailure
+                {
+                    Reason = group.First().Reason ?? "the API gave no reason",
+                    CanSucceedLater = group.First().CanSucceedLater,
+                },
+                StringComparer.Ordinal
+            );
 
     /// <summary>
     /// What each video ID already has, counting every upload of the same song — including those

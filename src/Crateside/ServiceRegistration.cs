@@ -497,44 +497,55 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new TracksService(
             async ct =>
             {
-                var scan = await sp.GetRequiredService<WorkListService>().ScanAsync(ct);
-
-                var view = TracksView.Compose(
-                    scan.View,
-                    scan.Ledger,
-                    sp.GetRequiredService<StagingReader>()
-                        .Read(sp.GetRequiredService<CratesidePaths>()),
-                    scan.Processed.StemsByVideoId.Concat(
-                            SourcelessSongs.Scan(
-                                sp.GetRequiredService<CratesidePaths>().LibraryFolder
-                            )
-                        )
-                        .ToDictionary(),
-                    sp.GetRequiredService<CratesidePaths>().LibraryFolder,
-                    sp.GetRequiredService<JobStore>(),
-                    scan.Instructions,
-                    sp.GetRequiredService<ResolvedNameStore>().Read(),
-                    sp.GetRequiredService<WorkingSet>().Acquisitions(),
-                    await sp.GetRequiredService<PresetCatalogReader>().ReadAsync(ct),
-                    AbletonReads.TagsOrEmpty(
-                        sp.GetRequiredService<FileIndexReader>().Read,
-                        sp.GetRequiredService<CratesidePaths>().LibraryFolder
-                    ),
-                    sp.GetRequiredService<DeletionLog>().All(),
-                    sp.GetRequiredService<GenreStore>().Read(),
-                    sp.GetRequiredService<FamiliarityStore>().Read(),
-                    sp.GetRequiredService<WarpTempoReader>().Read,
-                    sp.GetRequiredService<BeatReader>().Read,
-                    sp.GetRequiredService<WrittenWarps>().Of
-                );
-
-                sp.GetRequiredService<WarpTempoReader>().Save();
-
-                return view with
+                try
                 {
-                    ReadAt = scan.ReadAt,
-                    PlaylistProblem = scan.PlaylistProblem,
-                };
+                    var scan = await sp.GetRequiredService<WorkListService>().ScanAsync(ct);
+
+                    var view = TracksView.Compose(
+                        scan.View,
+                        scan.Ledger,
+                        sp.GetRequiredService<StagingReader>()
+                            .Read(sp.GetRequiredService<CratesidePaths>()),
+                        scan.Processed.StemsByVideoId.Concat(
+                                SourcelessSongs.Scan(
+                                    sp.GetRequiredService<CratesidePaths>().LibraryFolder
+                                )
+                            )
+                            .ToDictionary(),
+                        sp.GetRequiredService<CratesidePaths>().LibraryFolder,
+                        sp.GetRequiredService<JobStore>(),
+                        scan.Instructions,
+                        sp.GetRequiredService<ResolvedNameStore>().Read(),
+                        sp.GetRequiredService<WorkingSet>().Acquisitions(),
+                        await sp.GetRequiredService<PresetCatalogReader>().ReadAsync(ct),
+                        AbletonReads.TagsOrEmpty(
+                            sp.GetRequiredService<FileIndexReader>().Read,
+                            sp.GetRequiredService<CratesidePaths>().LibraryFolder
+                        ),
+                        sp.GetRequiredService<DeletionLog>().All(),
+                        sp.GetRequiredService<GenreStore>().Read(),
+                        sp.GetRequiredService<FamiliarityStore>().Read(),
+                        sp.GetRequiredService<WarpTempoReader>().Read,
+                        sp.GetRequiredService<BeatReader>().Read,
+                        sp.GetRequiredService<WrittenWarps>().Of
+                    );
+
+                    sp.GetRequiredService<WarpTempoReader>().Save();
+
+                    return view with
+                    {
+                        ReadAt = scan.ReadAt,
+                        PlaylistProblem = scan.PlaylistProblem,
+                    };
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    sp.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("Crateside.Tracks")
+                        .LogError(ex, "Reading the queue failed");
+
+                    throw;
+                }
             },
             sp.GetRequiredService<StageHub>(),
             freshness: () => sp.GetRequiredService<PlaylistSettingsStore>().Read().RefreshInterval,
