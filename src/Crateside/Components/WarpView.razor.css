@@ -582,3 +582,107 @@
         grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 }
+
+/* Off the grid: how far the audio sits from the warp's grid, window by window (#96). */
+.off-gutter {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 2px;
+}
+
+.off-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.off-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.off-head .outline {
+    padding: 2px 10px;
+    font-size: 12px;
+}
+
+.off-figure {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.off-runs {
+    font-size: 11.5px;
+    color: var(--text-50);
+}
+
+.off-line {
+    position: relative;
+    height: 72px;
+    margin: 4px 0;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.off-line svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.off-line .dashed {
+    stroke: var(--text-30);
+    stroke-dasharray: 4 3;
+    vector-effect: non-scaling-stroke;
+}
+
+.off-line polyline {
+    fill: none;
+    stroke: var(--text-35);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+.off-dot {
+    position: absolute;
+    width: 4.4px;
+    height: 4.4px;
+    border-radius: 50%;
+    background: var(--text);
+    opacity: 0.85;
+    transform: translate(-50%, -50%);
+}
+
+.off-label {
+    position: absolute;
+    right: 4px;
+    font-size: 10px;
+    color: var(--text-40);
+}
+
+.off-label.top {
+    top: 2px;
+}
+
+.off-label.bottom {
+    bottom: 2px;
+}
+
+.off-status {
+    grid-column: 2;
+    max-width: 760px;
+    margin-bottom: 8px;
+}
+
+.off-status .confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    background: var(--surface);
+}

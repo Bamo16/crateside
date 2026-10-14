@@ -2,6 +2,7 @@
 @using System.Text
 @using AbleKit.Analysis
 @using Crateside.Core
+@using Crateside.Core.Ableton
 @using Crateside.Core.Tempo
 @using Crateside.Core.Tracks
 @using Crateside.Core.Warps
@@ -112,6 +113,76 @@
                         <span class="mono range low">@((int)low)</span>
                     }
                 </div>
+            }
+
+            @if (OffGrid(group) is { } off)
+            {
+                <span class="gutter off-gutter">
+                    <span class="off-head">
+                        <span class="off-title">Off the grid</span>
+                        @if (off.CanTrueUp && _confirming is Confirming.None && _working is null && _trueUp is { Plan: TrueUpPlan.Retype })
+                        {
+                            <button class="outline small" @onclick="() => _confirming = Confirming.TrueUp">True up</button>
+                        }
+                    </span>
+                    <span class="mono off-figure">@off.Figure</span>
+                    @if (off.Runs is { } runs)
+                    {
+                        <span class="off-runs">@runs</span>
+                    }
+                </span>
+                <div class="off-line">
+                    <svg viewBox="0 0 @Columns 72" preserveAspectRatio="none">
+                        <line class="dashed" x1="0" x2="@Columns" y1="36" y2="36" />
+                        @if (off.Points(from, to) is { Count: > 1 } points)
+                        {
+                            <polyline points="@string.Join(' ', points.Select(point => $"{P(point.X / 100 * Columns)},{P(point.Y / 100 * 72)}"))" />
+                        }
+                    </svg>
+                    @foreach (var point in off.Points(from, to))
+                    {
+                        <span class="off-dot" style="left: @P(point.X)%; top: @P(point.Y)%"></span>
+                    }
+                    <span class="mono off-label top">audio early +30 ms</span>
+                    <span class="mono off-label bottom">late −30 ms</span>
+                </div>
+                @if (off.CanTrueUp && Row.Bpm is { } tempo && group.Lender is { } canonical)
+                {
+                    <div class="off-status">
+                        @if (Working(canonical))
+                        {
+                            <span class="working"><span class="dot"></span>@(_trueUp is { Plan: TrueUpPlan.Retype working } ? WarpWording.TrueUpWorking(working) : "Retyping the warp…")</span>
+                        }
+                        else if (_confirming is Confirming.TrueUp && _trueUp is { Plan: TrueUpPlan.Retype plan, Siblings: var siblings })
+                        {
+                            <div class="confirm">
+                                <span class="control-label asking">True up the warp</span>
+                                <span class="status">@wording.TrueUpQuestion(plan)</span>
+                                <span class="actions">
+                                    <button class="danger" @onclick="() => TrueUpAsync(canonical, plan, siblings)">True up my warp</button>
+                                    <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
+                                </span>
+                            </div>
+                        }
+                        else if (Done(canonical, Confirming.TrueUp) is { } done)
+                        {
+                            <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
+                        }
+                        else
+                        {
+                            <span class="status @(_working is null && _trueUp is { Plan: TrueUpPlan.Retype } ? null : "faint")">
+                                @(_working is not null
+                                    ? "Not while a change is under way."
+                                    : _trueUp switch
+                                    {
+                                        null => "Checking the warp against the audio…",
+                                        { Plan: TrueUpPlan.Retype ready } => wording.TrueUpStatus(tempo, ready),
+                                        { Plan: var refused } => WarpWording.TrueUpRefusal(refused),
+                                    })
+                            </span>
+                        }
+                    </div>
+                }
             }
 
             @foreach (var stem in group.Stems)
@@ -248,49 +319,6 @@
                         }
                     </div>
 
-                    @if (wording.CanTrueUp(Row.Bpm) && Row.Bpm is { } tempo && group.Lender is { } canonical)
-                    {
-                        <div class="control">
-                            <div class="label-line">
-                                <span class="control-label @(_confirming is Confirming.TrueUp ? "asking" : null)">True up the track's warp</span>
-                                @if (_confirming is Confirming.None && _working is null && _trueUp is { Plan: TrueUpPlan.Retype })
-                                {
-                                    <button class="outline" @onclick="() => _confirming = Confirming.TrueUp">True up</button>
-                                }
-                            </div>
-                            @if (Working(canonical))
-                            {
-                                <span class="working"><span class="dot"></span>Retyping the warp…</span>
-                                <span class="status">The old warp is backed up.</span>
-                            }
-                            else if (_confirming is Confirming.TrueUp && _trueUp is { Plan: TrueUpPlan.Retype plan, Siblings: var siblings })
-                            {
-                                <span class="status">@wording.TrueUpQuestion(plan)</span>
-                                <span class="actions">
-                                    <button class="danger" @onclick="() => TrueUpAsync(canonical, plan, siblings)">Retype the warp</button>
-                                    <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
-                                </span>
-                            }
-                            else if (Done(canonical, Confirming.TrueUp) is { } done)
-                            {
-                                <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
-                            }
-                            else
-                            {
-                                <span class="status @(_working is null && _trueUp is { Plan: TrueUpPlan.Retype } ? null : "faint")">
-                                    @(_working is not null
-                                        ? "Not while a change is under way."
-                                        : _trueUp switch
-                                        {
-                                            null => "Checking the warp against the audio…",
-                                            { Plan: TrueUpPlan.Retype ready } => wording.TrueUpStatus(tempo, ready),
-                                            { Plan: var refused } => WarpWording.TrueUpRefusal(refused),
-                                        })
-                                </span>
-                            }
-                        </div>
-                    }
-
                     <div class="control">
                         <div class="label-line">
                             <span class="control-label @(_confirming is Confirming.LetLive || selected.Owner is WarpOwner.WaitingForLive ? "asking" : null)">Let Live analyse</span>
@@ -346,6 +374,48 @@
 
     [Parameter]
     public EventCallback<string> SelectedPathChanged { get; set; }
+
+    private GridReport? _offGrid;
+
+    /// <summary>The Off the grid row's content for the track's canonical warp, when it is a steady one the check ran on (#96).</summary>
+    private OffGridRow? OffGrid(WarpGroup group) =>
+        Row.Bpm is { Source: TempoSource.Warp, Warp.Shape: TempoShape.Steady } tempo
+        && _offGrid is { } report
+        && Wording(group) is var wording
+            ? new OffGridRow(tempo, report, wording.CanTrueUp(tempo))
+            : null;
+
+    private sealed record OffGridRow(TrackTempo Tempo, GridReport Report, bool CanTrueUp)
+    {
+        private const double ScaleMs = 30;
+
+        /// <summary>Each 10 s window's median offset as a point in the plot, in percent; early is up.</summary>
+        public IReadOnlyList<(double X, double Y)> Points(double from, double to) =>
+            [
+                .. Report
+                    .Windows.Select(window =>
+                        (
+                            X: ((window.Start + window.End) / 2 - from) / (to - from) * 100,
+                            Y: 50 + Math.Clamp(window.OffsetMs, -ScaleMs, ScaleMs) / ScaleMs * 50
+                        )
+                    )
+                    .Where(point => point.X is >= 0 and <= 100),
+            ];
+
+        public string Figure =>
+            (Tempo.Off, Tempo.Unconfirmed, Report.Windows.Count) switch
+            {
+                ({ DriftMs: { } _ }, _, _) => $"{TempoFormat.ByTheEnd(Tempo)} by the end",
+                (_, { Reason: TrueUpReason.Steps }, _) => "steps in its grid",
+                (_, not null, _) or (_, _, 0) => "too few transients",
+                _ => "holds",
+            };
+
+        public string? Runs =>
+            Tempo.Off is { DriftMs: { } ms }
+                ? $"runs {TempoFormat.Runs(Tempo)} · grid falls {(ms < 0 ? "behind" : "ahead")}"
+                : null;
+    }
 
     private WarpGroup? _group;
     private string? _stamp;
@@ -408,6 +478,7 @@
 
         _stamp = stamp;
         _group = WarpGroup.Of([.. paths.Select(Reader.Read)]);
+        _offGrid = _group.Lender is { } lender ? WarpTrueUp.Check(lender) : null;
 
         return true;
     }

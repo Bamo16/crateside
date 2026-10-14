@@ -128,7 +128,7 @@ public sealed class WarpWordingTests
         );
 
         Assert.Equal(
-            "Runs 0.017 fast and drifts 23 ms over the track. Retypes Instrumental - Clean's warp to 179.983 and lines it up with Instrumental - Clean's transients. It is backed up first.",
+            "Runs 0.017 fast, so its grid falls 23 ms ahead by the end. Retypes it to 179.983 and lines it up with Instrumental - Clean's transients. Yours is backed up first.",
             Wording(Lender()).TrueUpStatus(off, plan)
         );
     }
@@ -145,7 +145,7 @@ public sealed class WarpWordingTests
         );
 
         Assert.Equal(
-            "Retype Instrumental - Clean's warp to 179.983 and move the grid 3.2 ms later onto Instrumental - Clean's transients? It drifts 23 ms now, and will hold within 5 ms. Vocal - Full are written again from it.",
+            "Retype your warp from 180 to 179.983 and line its first beat up with Instrumental - Clean's transients? The grid moves by up to 23 ms, most at the end. Vocal - Full borrows this warp and moves with it. Yours (2 markers, saved 30 Sep) is backed up first.",
             Wording(Lender(), Stem(Vocal, new WarpOwner.Borrowed(Instrumental, Saved), Shared))
                 .TrueUpQuestion(plan)
         );
@@ -163,7 +163,7 @@ public sealed class WarpWordingTests
             WarpWording.TrueUpDone(new TrueUpOutcome.Changed(), "just now")
         );
         Assert.Equal(
-            "Retyped to 125.026 just now. Your previous warp is backed up.",
+            "Trued up just now: 125.026, holding within 5 ms all through the track. Your previous warp is backed up.",
             WarpWording.TrueUpDone(new TrueUpOutcome.Retyped(125.0257, []), "just now")
         );
     }

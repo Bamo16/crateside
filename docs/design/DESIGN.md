@@ -81,6 +81,15 @@ fails if a page formats one itself. Summaries go through `Bin` and `Range` and c
   under it. A drifting tempo adds the **tempo strip** under the note: 44px, one `--text-75` tick per
   window, placed by its time and between the rounded range, a dashed `--text-35` line at the figure shown,
   range labels left and times below (mono 10.5, `--text-40`), a tick's title `2:30–2:38 · ~112`.
+- **A warp off its tempo wears a pennant** (handoff 16, #96), after the figure and nowhere else:
+  filled (`--text` at 80%) from 10 ms by the end, hollow (1px `--text-60`) below. It means one thing,
+  *crateside can fix this for you*, so `steps in its grid`, `grid not confirmed` and a reading that
+  merely disagrees get none. In a Tracks BPM cell it sits in the invisible `.00`'s slot, 4px after
+  the figure (7×9, the column stays 84px); on Track details it is 11×14, top-aligned. `OffMarkGlyph`.
+- **Track details names both figures** under the note, 13px `--text-75`: `Your warp is typed at
+  125. The audio holds 125.017, so its grid falls 27 ms behind by the end.` with a *True up in Warp ↓*
+  link; hollow: `…: 4 ms by the end, too little to hear.`; the other states say why there is no
+  retype. The words live in `TempoFormat.Explanation`.
 - **The evidence panel's Tempo block**: the headline at 20px and its note, then a ruled line per
   other source: label, figure (mono 13, `--text-75`, decimal-padded in 64px) and how it relates
   (*agrees*, *half of it*, *double it*, *two-thirds of it*, *three-quarters of it*, *not warped
@@ -99,8 +108,15 @@ open, no fold, drawn when the track has samples.
   8 bars*; zoomed, `bars 61–68 · 2:10–2:27` and `‹ ›` move by half a view.
 - **Rows**: overview strip (zoomed only, click to move) · ruler (loop bar, bar ticks, clip-start
   notch; bars counted from the shared warp's clip start) · tempo line (step line from the shared
-  markers, dashed at the headline figure, ±1 BPM when steady, the rounded range when drifting) · one
-  64px lane per stem · time axis.
+  markers, dashed at the headline figure, ±1 BPM when steady, the rounded range when drifting) ·
+  **Off the grid** (below) · one 64px lane per stem · time axis.
+- **Off the grid** (handoff 16, #96): drawn for a steady warp whenever the check ran, never for one
+  that changes tempo. A 72px plot, a dashed zero line and one dot per 10 s window at the median
+  offset of its transients from the warp's grid, joined by a 1px line, ±30 ms, early up. The gutter
+  names the drift (`27 ms by the end`, `holds`, `steps in its grid`, `too few transients`) and
+  carries **True up**, which acts on the track's canonical warp, so selecting a lane never changes
+  it. The status line under it takes the states offered, confirm, writing, done and *Not offered:
+  …*. The milliseconds are drawn here only, never on the lanes.
 - **A lane**: flags (7×9 pennants) where every visible pair is ≥ 9px apart, else 9px ticks with
   faint lines; Live's overview at 42%, stereo as two channels; transients only when zoomed;
   outside the clip dimmed with `--bg` at 62%; a stem with markers of its own boxed dashed from where
@@ -198,6 +214,10 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
   Mainstream / Obscure (`GenreStrip Shape="Chips"`, `FamiliarityStrip Inline`). An answered row
   stays in place at 45% until the view is left.
 - A **Tempo drifts** filter (#75): tracks not warped yet whose tempo beatdetect reads drifting.
+- An **Off its tempo** filter (handoff 16, #96) beside it: steady warps whose grid falls away from
+  the audio, the furthest first. Columns Song · Key · BPM · **Runs** (`0.017 slow`, mono 13
+  `--text-75`) · **By the end** (`27 ms`, mono 13/500, right; under 10 ms muted) · State, with a gist
+  right of the pills. The title chip for this state is gone: the pennant by the BPM replaces it.
 - **The BPM column is 84px, aligned on the decimal point**: right-aligned, and a whole figure
   carries an invisible `.00`, so the tilde hangs to the left. 600/14px (16px roomy), 400 when
   approximate; amber on a ready-to-warp row, approximate figures included. The cell's title is
@@ -377,16 +397,16 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **The *Working on* card puts key · Camelot and the tempo on lines of their own**, the figure and key
   at full ink and the note in Sans, instead of one mono string that wrapped mid-phrase (user,
   2026-10-02).
-- **A steady warp that drifts from its audio is *off its tempo* (#96, ADR 0050).** The figure is
-  approximate (`~`, whole), the note reads `off its tempo · runs 0.017 fast · drifts 23 ms · from your
-  warp` (the amount to the thousandth, the drift in whole ms), and the Tracks flag is the neutral
-  chip with the amount in mono. A warp whose grid steps, or that has too few transients to check,
-  reads `steps in its grid` or `grid not confirmed` and is approximate with no flag. A tight
-  reading a hundredth or more from a warp that holds flags it too, `off its tempo · crateside
-  reads 99.98`, with the figure left bare. The state has no design yet: brief 16.
-- **Track details' warp view gets a *True up the warp* control** beside *Re-apply* and *Let Live
-  analyse*, built from the same row, button, status, confirm and done lines, on the user's own
-  warp of a stem the track is warped by, while it is off its tempo.
+- **Off its tempo (handoff 16, #96, ADR 0050), where the build differs from the design:**
+  - The pennant's outline is drawn by hand (a notched 7×9 polygon); the canvas's exact path was not
+    copied.
+  - The design's `--text-55` for an under-10 ms *By the end* is `--text-50`: there is no 55 tier.
+  - The done line reads `Trued up just now: 125.017, holding within 5 ms all through the track. Your
+    previous warp is backed up.` The build does not keep the residual or the old figure, so it says
+    the 5 ms it requires instead of `within 1 ms`, and not `(125, saved 29 Sep)`.
+  - The confirm names the real source of the phase (`the drums`, or the stem's own transients).
+  - A warp view row is drawn with the check's own windows (10 s). Whether a longer window reads
+    straighter, and where a step jumps, are open: see the issue.
 - **A part that changes tempo is always *one part***, never *the intro* or *the outro*; the warp's
   reading does not yet say where the change is.
 - **A warp's drift range is measured over windows of four audible bars**, a variant of the

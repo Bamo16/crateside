@@ -143,6 +143,15 @@ public sealed class WarpTrueUp(
         return (GridCheck.Strongest(canonical.Audio.Transients, rate), canonicalPath);
     }
 
+    /// <summary>The canonical stem's strongest transients against the grid its warp lays down, for the warp view's Off the grid row (#96).</summary>
+    public static GridReport? Check(StemWarp lender) =>
+        lender.Sidecar is { Warp.Markers.Count: > 1 } sidecar
+            ? GridCheck.Against(
+                GridCheck.Strongest(sidecar.Audio.Transients, RateOf(lender.Path)),
+                sidecar.Warp
+            )
+            : null;
+
     private static int RateOf(string audioPath) =>
         WarpTempoReader.SampleRateOf(audioPath) ?? DefaultSampleRate;
 

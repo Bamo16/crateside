@@ -133,17 +133,29 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
 
     public string TrueUpStatus(TrackTempo tempo, TrueUpPlan.Retype plan) =>
         tempo.Off is { } off
-            ? $"Runs {TempoFormat.Offset(tempo.Measured, off.Bpm)} and drifts {Math.Abs(plan.Verdict.DriftMs):0} ms over the track. Retypes {Name(group.Lender!.Path)}'s warp to {Thousandths(plan.Verdict.Bpm)} and lines it up with {Transients(plan)}. It is backed up first."
+            ? $"Runs {TempoFormat.Offset(tempo.Measured, off.Bpm)}, so its grid falls {Math.Abs(plan.Verdict.DriftMs):0} ms {(plan.Verdict.DriftMs < 0 ? "behind" : "ahead")} by the end. Retypes it to {Thousandths(plan.Verdict.Bpm)} and lines it up with {Transients(plan)}. Yours is backed up first."
             : string.Empty;
 
     public string TrueUpQuestion(TrueUpPlan.Retype plan) =>
-        $"Retype {Name(group.Lender!.Path)}'s warp to {Thousandths(plan.Verdict.Bpm)} and move the grid {Math.Abs(plan.ShiftSeconds * 1000):0.0} ms {(plan.ShiftSeconds < 0 ? "earlier" : "later")} onto {Transients(plan)}? It drifts {Math.Abs(plan.Verdict.DriftMs):0} ms now, and will hold within {WarpTrueUp.HoldsWithinMs:0} ms."
-        + (plan.Lent.Count > 0 ? $" {Names(plan.Lent)} are written again from it." : string.Empty);
+        $"Retype your warp from {Figure(plan.Verdict.WarpBpm)} to {Thousandths(plan.Verdict.Bpm)} and line its first beat up with {Transients(plan)}? The grid moves by up to {Math.Abs(plan.Verdict.DriftMs):0} ms, most at the end."
+        + (
+            plan.Lent.Count > 0
+                ? $" {Names(plan.Lent)} {(plan.Lent.Count is 1 ? "borrows this warp and moves" : "borrow this warp and move")} with it."
+                : string.Empty
+        )
+        + (
+            group.Lender is { Owner: WarpOwner.Yours(var saved, _, _), Markers.Count: var markers }
+                ? $" Yours ({"marker".ToQuantity(markers)}, saved {Day(saved)}) is backed up first."
+                : " Yours is backed up first."
+        );
+
+    public static string TrueUpWorking(TrueUpPlan.Retype plan) =>
+        $"Retyping the warp to {Thousandths(plan.Verdict.Bpm)}… Yours is backed up.";
 
     private string Transients(TrueUpPlan.Retype plan) =>
-        plan.PhasedFrom is null
-            ? $"{Name(group.Lender!.Path)}'s transients"
-            : "the kept drum stem's transients";
+        plan.PhasedFrom is null ? $"{Name(group.Lender!.Path)}'s transients" : "the drums";
+
+    private static string Figure(double bpm) => bpm.ToString("0.###", CultureInfo.InvariantCulture);
 
     public static string TrueUpRefusal(TrueUpPlan plan) =>
         plan switch
@@ -165,7 +177,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
         outcome switch
         {
             TrueUpOutcome.Retyped(var bpm, _) =>
-                $"Retyped to {Thousandths(bpm)} {ago}. Your previous warp is backed up.",
+                $"Trued up {ago}: {Thousandths(bpm)}, holding within {WarpTrueUp.HoldsWithinMs:0} ms all through the track. Your previous warp is backed up.",
             TrueUpOutcome.Changed =>
                 "Not retyped: the warp was saved again since crateside looked at it.",
             TrueUpOutcome.Failed(var error) => $"Not retyped: {error}",
