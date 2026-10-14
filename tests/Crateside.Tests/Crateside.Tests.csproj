@@ -8,7 +8,7 @@
         <!-- DataProtectionProvider.Create, for standing up a real key ring in tests. -->
         <PackageReference
             Include="Microsoft.AspNetCore.DataProtection.Extensions"
-            Version="10.0.11"
+            Version="10.0.13"
         />
         <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.11" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.11" />
