@@ -324,6 +324,36 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task A_tempo_only_starter_keeps_its_marker_and_clip_at_the_start_whatever_the_transients_say()
+    {
+        Audio(Target);
+        var hits = Enumerable
+            .Range(0, 240)
+            .Select(i => new Transient((int)((0.3 + i * 0.5) * 44_100), 1f))
+            .ToArray();
+        SidecarWriter writer = new(
+            new FixedDecoder(Samples(0.5f, 130 * 44_100)),
+            new FixedDetector(hits),
+            _written,
+            _origins
+        );
+
+        await writer.StartAsync(
+            Target,
+            [],
+            120,
+            TestContext.Current.CancellationToken,
+            onTheGrid: false
+        );
+
+        var written = AnalysisFile.Read($"{Target}.asd");
+
+        Assert.Equal(0, written.Warp.Markers[0].Seconds);
+        Assert.Equal(0, written.Warp.Markers[0].Beat);
+        Assert.Equal(0, written.DefaultClip?.Start ?? -1);
+    }
+
+    [Fact]
     public async Task Every_stem_of_a_group_gets_the_same_marker_whatever_its_own_transients_say()
     {
         var reference = Path.Combine(_root, "Song (Instrumental - Full).flac");

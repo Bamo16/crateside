@@ -58,9 +58,17 @@ public static class ServiceRegistration
         builder.Services.Configure<PlaylistOptions>(
             builder.Configuration.GetSection(PlaylistOptions.SectionName)
         );
-        builder.Services.Configure<WarpOptions>(
-            builder.Configuration.GetSection(WarpOptions.SectionName)
-        );
+        builder.Services.AddSingleton(_ => new WarpSettingsStore());
+        builder
+            .Services.AddOptions<WarpOptions>()
+            .Bind(builder.Configuration.GetSection(WarpOptions.SectionName))
+            .PostConfigure<WarpSettingsStore>(
+                (options, store) =>
+                {
+                    if (store.Read() is { } chosen)
+                        options.StarterWarps = chosen;
+                }
+            );
 
         builder.Services.AddSingleton(sp =>
             sp.GetRequiredService<IOptions<CratesidePaths>>().Value

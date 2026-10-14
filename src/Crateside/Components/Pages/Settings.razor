@@ -10,8 +10,10 @@
 @using Crateside.Core.Playlist
 @using Crateside.Core.Quota
 @using Crateside.Core.Tracks
+@using Crateside.Core.Warps
 @using Crateside.Core.WorkLists
 @using Humanizer
+@using Microsoft.Extensions.Options
 
 @inject WorkListService Playlist
 @inject TracksService Tracks
@@ -19,6 +21,8 @@
 @inject PauseStore Remembered
 @inject CratesidePaths Paths
 @inject PathOverrideStore Overrides
+@inject IOptions<WarpOptions> Warps
+@inject WarpSettingsStore WarpStore
 
 <PageTitle>Settings · crateside</PageTitle>
 
@@ -192,6 +196,30 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                     </div>
 
                     <span class="status">@NextWindow</span>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>Starter warps</h3>
+
+            <div class="row">
+                <div class="name">
+                    <span>For a track nothing is warped on</span>
+                    <span class="gist">
+                        What crateside writes beside each stem as it lands in staging. A stem
+                        already in staging keeps what it has.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="pills">
+                        @foreach (var mode in Enum.GetValues<StarterWarps>())
+                        {
+                            <button class="pill @(Starter == mode ? "on plain" : "off")"
+                                    @onclick="() => SetStarter(mode)">@StarterName(mode)</button>
+                        }
+                    </div>
+                    <span class="status">@StarterNote(Starter)</span>
                 </div>
             </div>
         </section>
@@ -374,6 +402,34 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 </div>
 
 @code {
+    private StarterWarps Starter => Warps.Value.StarterWarps;
+
+    // Read again by the workers each time they look, so it applies to the next stem to land.
+    private void SetStarter(StarterWarps mode)
+    {
+        Warps.Value.StarterWarps = mode;
+        WarpStore.Remember(mode);
+    }
+
+    private static string StarterName(StarterWarps mode) =>
+        mode switch
+        {
+            StarterWarps.Off => "Off",
+            StarterWarps.TempoOnly => "Tempo only",
+            _ => "On the grid",
+        };
+
+    private static string StarterNote(StarterWarps mode) =>
+        mode switch
+        {
+            StarterWarps.Off =>
+                "Nothing is written, so Live analyses each stem itself, with its own transients.",
+            StarterWarps.TempoOnly =>
+                "One marker at the start of the audio, at crateside's tempo reading, so the group sets the arrangement's tempo.",
+            _ =>
+                "As tempo only, with the marker on a beat the transients place and the clip starting on it. Seen in Live on one track so far.",
+        };
+
     private const int MinutesPerDay = 1440;
     private const int RemovalUnits = 50;
 

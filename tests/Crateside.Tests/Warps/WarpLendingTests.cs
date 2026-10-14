@@ -126,7 +126,10 @@ public sealed class WarpLendingTests : IDisposable
             "Instrumental - Full"
         );
 
-        var loans = await Lending(new WarpOptions { WriteStarterWarps = true }, bpm: 128)
+        var loans = await Lending(
+                new WarpOptions { StarterWarps = StarterWarps.OnTheGrid },
+                bpm: 128
+            )
             .LendAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(
@@ -144,7 +147,7 @@ public sealed class WarpLendingTests : IDisposable
         var vocal = Stem(_paths.StagingFolder, "Song (Vocal - Full).flac", "Vocal - Full");
 
         Assert.Empty(
-            await Lending(new WarpOptions { WriteStarterWarps = true })
+            await Lending(new WarpOptions { StarterWarps = StarterWarps.OnTheGrid })
                 .LendAsync(TestContext.Current.CancellationToken)
         );
         Assert.False(File.Exists($"{vocal}.asd"));
@@ -162,7 +165,7 @@ public sealed class WarpLendingTests : IDisposable
         var recut = Stem(_paths.StagingFolder, "Song (Vocal - Clean).flac", "Vocal - Clean");
 
         Assert.Empty(
-            await Lending(new WarpOptions { WriteStarterWarps = true }, bpm: 128)
+            await Lending(new WarpOptions { StarterWarps = StarterWarps.OnTheGrid }, bpm: 128)
                 .LendAsync(TestContext.Current.CancellationToken)
         );
         Assert.False(File.Exists($"{recut}.asd"));

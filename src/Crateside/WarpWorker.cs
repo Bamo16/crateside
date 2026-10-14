@@ -19,7 +19,8 @@ public sealed class WarpWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var lends = options.Value is not { LendAutomatically: false, WriteStarterWarps: false };
+        var lends =
+            options.Value is not { LendAutomatically: false, StarterWarps: StarterWarps.Off };
 
         while (!stoppingToken.IsCancellationRequested)
         {

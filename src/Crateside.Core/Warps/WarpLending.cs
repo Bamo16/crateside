@@ -36,7 +36,9 @@ public sealed class WarpLending(
             [
                 .. authorities.Union(sameKind, StringComparer.OrdinalIgnoreCase),
             ];
-            var tempo = options.WriteStarterWarps ? TempoOf(siblings.CutsOf(target)) : null;
+            var tempo = options.StarterWarps is not StarterWarps.Off
+                ? TempoOf(siblings.CutsOf(target))
+                : null;
             var bpm = tempo?.Bpm;
             var signature = Signature(target.Path, lenders, bpm);
 
@@ -83,7 +85,14 @@ public sealed class WarpLending(
                 : null;
 
         return tempo is var (bpm, from)
-            ? await writer.StartAsync(target, sameKind, bpm, ct, from)
+            ? await writer.StartAsync(
+                target,
+                sameKind,
+                bpm,
+                ct,
+                from,
+                options.StarterWarps is StarterWarps.OnTheGrid
+            )
             : null;
     }
 
@@ -118,8 +127,21 @@ public sealed class WarpOptions
     public bool LendAutomatically { get; set; }
 
     /// <summary>
-    /// Whether stems of an upload nothing is warped on get a starter warp at crateside's own tempo
-    /// reading. Off until the user has checked a borrowed warp in Live (ADR 0047, ADR 0048).
+    /// What stems of an upload nothing is warped on get (ADR 0047, ADR 0048, ADR 0054). Changed from
+    /// Settings while crateside runs, so every reader looks again each time.
     /// </summary>
-    public bool WriteStarterWarps { get; set; }
+    public StarterWarps StarterWarps { get; set; } = StarterWarps.TempoOnly;
+}
+
+/// <summary>What crateside writes for a stem nothing of its upload is warped on.</summary>
+public enum StarterWarps
+{
+    /// <summary>Nothing: the sidecar is left for Live to write, with Live's own transients.</summary>
+    Off,
+
+    /// <summary>One marker at the start of the audio, at crateside's own tempo reading.</summary>
+    TempoOnly,
+
+    /// <summary>The marker on a beat the transients place, and the clip starting on it (ADR 0054).</summary>
+    OnTheGrid,
 }

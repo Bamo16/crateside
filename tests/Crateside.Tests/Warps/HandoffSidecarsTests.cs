@@ -56,7 +56,7 @@ public sealed class HandoffSidecarsTests : IDisposable
             _paths,
             _writer,
             new BeatReader(),
-            new WarpOptions { WriteStarterWarps = true }
+            new WarpOptions { StarterWarps = StarterWarps.OnTheGrid }
         );
 
         new HandoffRunner(_paths).Run(

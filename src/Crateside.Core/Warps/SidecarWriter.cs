@@ -56,13 +56,16 @@ public sealed class SidecarWriter(
 
     /// <summary>Writes one marker at this tempo, on the first beat the transients place, else where Live puts its own first marker.</summary>
     /// <param name="timingFrom">The stem the group's tempo and beat are read from, so every stem gets the same marker; the target when null.</param>
+    /// <param name="onTheGrid">False for a marker at the start of the audio and the clip from there, holding only the tempo.</param>
     public async Task<WarpOutcome> StartAsync(
         string target,
         IReadOnlyList<string> sameKind,
         double bpm,
         CancellationToken ct = default,
-        string? timingFrom = null
-    ) => Settle(await PrepareStarterAsync(target, sameKind, bpm, ct, timingFrom), target);
+        string? timingFrom = null,
+        bool onTheGrid = true
+    ) =>
+        Settle(await PrepareStarterAsync(target, sameKind, bpm, ct, timingFrom, onTheGrid), target);
 
     /// <summary>Works out the sidecar <see cref="BorrowAsync"/> would write, without writing it.</summary>
     public Task<SidecarPlan> PrepareBorrowAsync(
@@ -133,7 +136,8 @@ public sealed class SidecarWriter(
         IReadOnlyList<string> sameKind,
         double bpm,
         CancellationToken ct = default,
-        string? timingFrom = null
+        string? timingFrom = null,
+        bool onTheGrid = true
     )
     {
         try
@@ -158,7 +162,7 @@ public sealed class SidecarWriter(
                             timing.Bpm,
                             (double)audio.Frames / audio.SampleRate,
                             analysis,
-                            timing.FirstBeat
+                            onTheGrid ? timing.FirstBeat : null
                         ),
                         timing.Bpm
                     )

@@ -20,7 +20,7 @@ public sealed class HandoffSidecars(
         CancellationToken ct = default
     )
     {
-        if (options is { LendAutomatically: false, WriteStarterWarps: false })
+        if (options is { LendAutomatically: false, StarterWarps: StarterWarps.Off })
             return new Dictionary<string, PreparedSidecar>();
 
         var siblings = WarpSiblings.Scan([paths.StagingFolder, paths.LibraryFolder]);
@@ -40,7 +40,7 @@ public sealed class HandoffSidecars(
                 if (options.LendAutomatically)
                     plan = await writer.PrepareBorrowAsync(cut.Path, authorities, sameKind, ct);
             }
-            else if (options.WriteStarterWarps)
+            else if (options.StarterWarps is not StarterWarps.Off)
             {
                 if (!measured)
                 {
@@ -54,7 +54,8 @@ public sealed class HandoffSidecars(
                         sameKind,
                         tempo,
                         ct,
-                        WarpSiblings.TempoSources(cuts).FirstOrDefault()?.Path
+                        WarpSiblings.TempoSources(cuts).FirstOrDefault()?.Path,
+                        options.StarterWarps is StarterWarps.OnTheGrid
                     );
             }
 
