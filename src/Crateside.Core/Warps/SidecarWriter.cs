@@ -229,7 +229,7 @@ public sealed class SidecarWriter(
     /// <summary>
     /// A one-marker warp laid out as Live saves one, the clip running to the end of the audio with
     /// looping off. The marker sits on the first beat when the transients place one (#72), else at the
-    /// start of the audio.
+    /// start of the audio; the clip starts on the marker's beat, so it lands on the arrangement's grid.
     /// </summary>
     private static AnalysisFile Starter(
         double bpm,
@@ -240,8 +240,8 @@ public sealed class SidecarWriter(
     {
         var beatSeconds = 60 / bpm;
         var (markerSeconds, markerBeat) = firstBeat is { } placed ? (placed, 1.0) : (0.0, 0.0);
-        var start = markerBeat - markerSeconds / beatSeconds;
-        var end = start + seconds / beatSeconds;
+        var start = markerBeat;
+        var end = markerBeat + (seconds - markerSeconds) / beatSeconds;
 
         return new AnalysisFile
         {

@@ -25,8 +25,9 @@ warps, with the pinned beatdetect build ([first note](../notes/2026-10-13-placin
 ## Decision
 
 **The starter warp's marker is written on the first beat the transients place** (`GridCheck.FirstBeat`),
-as beat 1, so the audio's first moment is the fractional beat before it and the clip runs from there
-to the end of the file. With fewer than 32 transients nothing is placed and the marker stays where
+as beat 1, and the clip starts on that beat and runs to the end of the file. A clip start between
+beats leaves the clip off the arrangement's grid, so the audio before the first beat is left out of
+the clip (2026-10-13, found on *How Will I Know*). With fewer than 32 transients nothing is placed and the marker stays where
 ADR 0047 put it: beat 0 at the start of the audio.
 
 - **The whole group is timed from one stem**: the instrumental its tempo is read from. Timed each
@@ -37,8 +38,8 @@ ADR 0047 put it: beat 0 at the start of the audio.
 - **Beat 1 is a beat, not a bar line.** Which beat starts a bar is unknown and stays the user's.
 - **The tempo is the one the starter already refines** (ADR 0050); the phase is taken at that tempo.
 - **The octave is not touched.** The fold is at the starter's tempo whichever octave that is.
-- **Not verified in Live** at the time of writing: a first marker at a nonzero time with a fractional
-  clip start is how a user's saved warp looks, but a starter written this way has not been opened.
+- **Opened in Live** on *How Will I Know* (2026-10-13): the marker and tempo are right, and the clip
+  start, which began between beats, now starts on one.
 
 ## Consequences
 

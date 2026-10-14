@@ -320,7 +320,7 @@ public sealed class SidecarWriterTests : IDisposable
 
         Assert.Equal(0.3, written.Warp.Markers[0].Seconds, 2);
         Assert.Equal(1, written.Warp.Markers[0].Beat);
-        Assert.Equal(0.4, written.DefaultClip?.Start ?? 0, 2);
+        Assert.Equal(1, written.DefaultClip?.Start ?? 0, 2);
     }
 
     [Fact]
