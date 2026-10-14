@@ -36,13 +36,14 @@ public sealed class WarpLending(
             [
                 .. authorities.Union(sameKind, StringComparer.OrdinalIgnoreCase),
             ];
-            var bpm = options.WriteStarterWarps ? TempoOf(siblings.CutsOf(target)) : null;
+            var tempo = options.WriteStarterWarps ? TempoOf(siblings.CutsOf(target)) : null;
+            var bpm = tempo?.Bpm;
             var signature = Signature(target.Path, lenders, bpm);
 
             if (_tried.TryGetValue(target.Path, out var tried) && tried == signature)
                 continue;
 
-            var outcome = await OutcomeAsync(target.Path, authorities, sameKind, bpm, ct);
+            var outcome = await OutcomeAsync(target.Path, authorities, sameKind, tempo, ct);
 
             // A failure is a locked or half-written file, so it is tried again next time.
             if (outcome is WarpOutcome.Failed)
@@ -57,18 +58,22 @@ public sealed class WarpLending(
         return loans;
     }
 
-    private double? TempoOf(IEnumerable<SiblingFile> cuts) =>
+    /// <summary>The group's tempo and the stem it was read from, which also times every stem's marker.</summary>
+    private (double Bpm, string From)? TempoOf(IEnumerable<SiblingFile> cuts) =>
         WarpSiblings
             .TempoSources(cuts)
-            .Select(cut => steadyBpm?.Invoke(cut.Path))
-            .FirstOrDefault(bpm => bpm is not null);
+            .Select(cut => (Bpm: steadyBpm?.Invoke(cut.Path), From: cut.Path))
+            .FirstOrDefault(source => source.Bpm is not null)
+            is { Bpm: { } bpm } source
+            ? (bpm, source.From)
+            : null;
 
     /// <summary>A lent warp when a sibling holds one, else a starter; null when what applies is switched off.</summary>
     private async Task<WarpOutcome?> OutcomeAsync(
         string target,
         IReadOnlyList<string> authorities,
         IReadOnlyList<string> sameKind,
-        double? bpm,
+        (double Bpm, string From)? tempo,
         CancellationToken ct
     )
     {
@@ -77,7 +82,9 @@ public sealed class WarpLending(
                 ? await writer.BorrowAsync(target, authorities, sameKind, ct)
                 : null;
 
-        return bpm is { } tempo ? await writer.StartAsync(target, sameKind, tempo, ct) : null;
+        return tempo is var (bpm, from)
+            ? await writer.StartAsync(target, sameKind, bpm, ct, from)
+            : null;
     }
 
     private static string Signature(string target, IReadOnlyList<string> lenders, double? bpm) =>

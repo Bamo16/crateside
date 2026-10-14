@@ -324,6 +324,35 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task Every_stem_of_a_group_gets_the_same_marker_whatever_its_own_transients_say()
+    {
+        var reference = Path.Combine(_root, "Song (Instrumental - Full).flac");
+        Audio(reference);
+        Audio(Target);
+        SidecarWriter writer = new(
+            new LevelDecoder(),
+            new PhaseByLevelDetector(),
+            _written,
+            _origins
+        );
+
+        await writer.StartAsync(reference, [], 120, TestContext.Current.CancellationToken);
+        await writer.StartAsync(
+            Target,
+            [],
+            120,
+            TestContext.Current.CancellationToken,
+            timingFrom: reference
+        );
+
+        Assert.Equal(
+            AnalysisFile.Read($"{reference}.asd").Warp.Markers,
+            AnalysisFile.Read($"{Target}.asd").Warp.Markers
+        );
+        Assert.Equal(0.3, AnalysisFile.Read($"{Target}.asd").Warp.Markers[0].Seconds, 2);
+    }
+
+    [Fact]
     public async Task The_transients_a_starter_carries_are_recorded_with_the_detector_that_found_them()
     {
         Audio(Target);
@@ -416,6 +445,31 @@ public sealed class SidecarWriterTests : IDisposable
         public string Version => "fixed 1";
 
         public IReadOnlyList<Transient> Detect(DecodedAudio audio) => found ?? Detected;
+    }
+
+    /// <summary>An instrumental is loud and a vocal quiet, so a stem can be told by its level.</summary>
+    private sealed class LevelDecoder : IAudioDecoder
+    {
+        public Task<DecodedAudio?> DecodeAsync(string path, CancellationToken ct = default) =>
+            Task.FromResult<DecodedAudio?>(
+                Samples(path.Contains("Instrumental") ? 0.5f : 0.25f, 130 * 44_100)
+            );
+    }
+
+    /// <summary>Finds the beat at 0.3 s in the loud stem and at 0.1 s in the quiet one.</summary>
+    private sealed class PhaseByLevelDetector : ITransientDetector
+    {
+        public string Version => "phase 1";
+
+        public IReadOnlyList<Transient> Detect(DecodedAudio audio) =>
+            [
+                .. Enumerable
+                    .Range(0, 240)
+                    .Select(i => new Transient(
+                        (int)(((audio.Samples[0] > 0.4f ? 0.3 : 0.1) + i * 0.5) * 44_100),
+                        1f
+                    )),
+            ];
     }
 
     private sealed class FixedDecoder(DecodedAudio audio) : IAudioDecoder

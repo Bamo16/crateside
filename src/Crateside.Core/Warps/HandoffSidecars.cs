@@ -49,7 +49,13 @@ public sealed class HandoffSidecars(
                 }
 
                 if (bpm is { } tempo)
-                    plan = await writer.PrepareStarterAsync(cut.Path, sameKind, tempo, ct);
+                    plan = await writer.PrepareStarterAsync(
+                        cut.Path,
+                        sameKind,
+                        tempo,
+                        ct,
+                        WarpSiblings.TempoSources(cuts).FirstOrDefault()?.Path
+                    );
             }
 
             if (plan is SidecarPlan.Ready(var sidecar))

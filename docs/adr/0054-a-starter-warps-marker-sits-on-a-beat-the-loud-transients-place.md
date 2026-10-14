@@ -29,6 +29,11 @@ as beat 1, so the audio's first moment is the fractional beat before it and the 
 to the end of the file. With fewer than 32 transients nothing is placed and the marker stays where
 ADR 0047 put it: beat 0 at the start of the audio.
 
+- **The whole group is timed from one stem**: the instrumental its tempo is read from. Timed each
+  from its own transients, *How Will I Know*'s drums, instrumental and vocal got three tempos
+  (119.5175, 119.5160, 119.5405) and three markers (0.18 s, 0.14 s, 0.43 s), and Live would not edit
+  them together (*3 audio clips with different Warp Markers*). ADR 0047's rule that every stem gets
+  the same marker holds.
 - **Beat 1 is a beat, not a bar line.** Which beat starts a bar is unknown and stays the user's.
 - **The tempo is the one the starter already refines** (ADR 0050); the phase is taken at that tempo.
 - **The octave is not touched.** The fold is at the starter's tempo whichever octave that is.

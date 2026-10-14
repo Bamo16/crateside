@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using AbleKit.Analysis;
 using Crateside.Core.Samples;
@@ -20,6 +21,11 @@ public sealed class SidecarWriter(
     private const double HiddenMarkerBeats = 1.0 / 32;
 
     private const int MinTransientsToRefine = 32;
+
+    private readonly ConcurrentDictionary<
+        (string Reference, long Length, double Bpm),
+        StarterTiming
+    > _timings = new();
 
     /// <summary>Whether any of these siblings holds a saved warp the user made, which <see cref="BorrowAsync"/> would lend.</summary>
     public bool HasWarpToLend(IReadOnlyList<string> authorities, IReadOnlyList<string> sameKind) =>
@@ -49,12 +55,14 @@ public sealed class SidecarWriter(
         };
 
     /// <summary>Writes one marker at this tempo, on the first beat the transients place, else where Live puts its own first marker.</summary>
+    /// <param name="timingFrom">The stem the group's tempo and beat are read from, so every stem gets the same marker; the target when null.</param>
     public async Task<WarpOutcome> StartAsync(
         string target,
         IReadOnlyList<string> sameKind,
         double bpm,
-        CancellationToken ct = default
-    ) => Settle(await PrepareStarterAsync(target, sameKind, bpm, ct), target);
+        CancellationToken ct = default,
+        string? timingFrom = null
+    ) => Settle(await PrepareStarterAsync(target, sameKind, bpm, ct, timingFrom), target);
 
     /// <summary>Works out the sidecar <see cref="BorrowAsync"/> would write, without writing it.</summary>
     public Task<SidecarPlan> PrepareBorrowAsync(
@@ -124,7 +132,8 @@ public sealed class SidecarWriter(
         string target,
         IReadOnlyList<string> sameKind,
         double bpm,
-        CancellationToken ct = default
+        CancellationToken ct = default,
+        string? timingFrom = null
     )
     {
         try
@@ -135,25 +144,24 @@ public sealed class SidecarWriter(
             if (await decoder.DecodeAsync(target, ct) is not { } audio)
                 return Refuse(Undecodable(target));
 
+            if (await TimingAsync(timingFrom ?? target, bpm, ct) is not { } timing)
+                return Refuse(Undecodable(timingFrom ?? target));
+
             return Prepare(
                 target,
                 sameKind,
                 audio,
                 null,
                 analysis =>
-                {
-                    var tempo = Refined(bpm, analysis.Transients, audio.SampleRate);
-
-                    return (
+                    (
                         Starter(
-                            tempo,
+                            timing.Bpm,
                             (double)audio.Frames / audio.SampleRate,
                             analysis,
-                            GridCheck.FirstBeat(analysis.Transients, audio.SampleRate, tempo)
+                            timing.FirstBeat
                         ),
-                        tempo
-                    );
-                }
+                        timing.Bpm
+                    )
             );
         }
         catch (Exception ex)
@@ -261,6 +269,38 @@ public sealed class SidecarWriter(
             IsDefaultClipSaved = true,
         };
     }
+
+    /// <summary>The tempo and first beat one stem gives a whole group, so their warps match and Live can adjust them together.</summary>
+    private async Task<StarterTiming?> TimingAsync(
+        string reference,
+        double bpm,
+        CancellationToken ct
+    )
+    {
+        var key = (reference, new FileInfo(reference).Length, bpm);
+
+        if (_timings.TryGetValue(key, out var kept))
+            return kept;
+
+        if (await decoder.DecodeAsync(reference, ct) is not { } audio)
+            return null;
+
+        var (_, transients) = TransientsFor(
+            reference,
+            Own(reference)?.Analysis,
+            [],
+            audio,
+            key.Item2
+        );
+        var tempo = Refined(bpm, transients, audio.SampleRate);
+
+        return _timings[key] = new StarterTiming(
+            tempo,
+            GridCheck.FirstBeat(transients, audio.SampleRate, tempo)
+        );
+    }
+
+    private sealed record StarterTiming(double Bpm, double? FirstBeat);
 
     /// <summary>The tempo within a hair of the reading that the stem's stronger transients fit best, or the reading when there are too few to say (ADR 0050).</summary>
     private static double Refined(
