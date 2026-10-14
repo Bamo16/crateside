@@ -300,6 +300,30 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
+    public async Task A_starter_puts_its_marker_on_the_first_beat_the_loud_transients_fall_on()
+    {
+        Audio(Target);
+        var hits = Enumerable
+            .Range(0, 240)
+            .Select(i => new Transient((int)((0.3 + i * 0.5) * 44_100), 1f))
+            .ToArray();
+        SidecarWriter writer = new(
+            new FixedDecoder(Samples(0.5f, 130 * 44_100)),
+            new FixedDetector(hits),
+            _written,
+            _origins
+        );
+
+        await writer.StartAsync(Target, [], 120, TestContext.Current.CancellationToken);
+
+        var written = AnalysisFile.Read($"{Target}.asd");
+
+        Assert.Equal(0.3, written.Warp.Markers[0].Seconds, 2);
+        Assert.Equal(1, written.Warp.Markers[0].Beat);
+        Assert.Equal(0.4, written.DefaultClip?.Start ?? 0, 2);
+    }
+
+    [Fact]
     public async Task The_transients_a_starter_carries_are_recorded_with_the_detector_that_found_them()
     {
         Audio(Target);

@@ -48,7 +48,7 @@ public sealed class SidecarWriter(
             _ => throw new UnreachableException(),
         };
 
-    /// <summary>Writes one marker at the start of the clip at this tempo, where Live puts its own first marker.</summary>
+    /// <summary>Writes one marker at this tempo, on the first beat the transients place, else where Live puts its own first marker.</summary>
     public async Task<WarpOutcome> StartAsync(
         string target,
         IReadOnlyList<string> sameKind,
@@ -145,7 +145,12 @@ public sealed class SidecarWriter(
                     var tempo = Refined(bpm, analysis.Transients, audio.SampleRate);
 
                     return (
-                        Starter(tempo, (double)audio.Frames / audio.SampleRate, analysis),
+                        Starter(
+                            tempo,
+                            (double)audio.Frames / audio.SampleRate,
+                            analysis,
+                            GridCheck.FirstBeat(analysis.Transients, audio.SampleRate, tempo)
+                        ),
                         tempo
                     );
                 }
@@ -214,27 +219,43 @@ public sealed class SidecarWriter(
         };
 
     /// <summary>
-    /// A one-marker warp laid out as Live saves one: beat 0 at the start of the audio, the clip
-    /// running to its end, looping off.
+    /// A one-marker warp laid out as Live saves one, the clip running to the end of the audio with
+    /// looping off. The marker sits on the first beat when the transients place one (#72), else at the
+    /// start of the audio.
     /// </summary>
-    private static AnalysisFile Starter(double bpm, double seconds, AudioAnalysis audio)
+    private static AnalysisFile Starter(
+        double bpm,
+        double seconds,
+        AudioAnalysis audio,
+        double? firstBeat
+    )
     {
-        var beats = seconds * bpm / 60;
+        var beatSeconds = 60 / bpm;
+        var (markerSeconds, markerBeat) = firstBeat is { } placed ? (placed, 1.0) : (0.0, 0.0);
+        var start = markerBeat - markerSeconds / beatSeconds;
+        var end = start + seconds / beatSeconds;
 
         return new AnalysisFile
         {
             Audio = audio,
             Warp = new Warp
             {
-                Markers = [new(0, 0), new(HiddenMarkerBeats * 60 / bpm, HiddenMarkerBeats)],
+                Markers =
+                [
+                    new(markerSeconds, markerBeat),
+                    new(
+                        markerSeconds + HiddenMarkerBeats * beatSeconds,
+                        markerBeat + HiddenMarkerBeats
+                    ),
+                ],
             },
             Clip = new Clip
             {
-                LoopStart = 0,
-                LoopEnd = beats,
-                HiddenLoopStart = 0,
-                HiddenLoopEnd = beats,
-                OutMarker = beats,
+                LoopStart = start,
+                LoopEnd = end,
+                HiddenLoopStart = start,
+                HiddenLoopEnd = end,
+                OutMarker = end,
                 LoopOn = false,
             },
             IsDefaultClipSaved = true,

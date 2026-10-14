@@ -13,6 +13,9 @@ public static class GridCheck
     private const int StepWindows = 3;
     private const int MinPerWindow = 4;
     private const int SixteenthsPerBeat = 4;
+    private const int MinToPlace = 32;
+    private const double LoudnessPower = 4;
+    private const int SmoothingBins = 3;
 
     /// <summary>The louder half of the transients, in seconds: the quiet half is mostly ghost notes and bleed.</summary>
     public static double[] Strongest(IReadOnlyList<Transient> transients, int sampleRate)
@@ -47,6 +50,38 @@ public static class GridCheck
             .Range(-steps, 2 * steps + 1)
             .Select(i => bpm + i * Step)
             .MaxBy(candidate => Fit(times, candidate));
+    }
+
+    /// <summary>
+    /// Where the first beat falls at <paramref name="bpm"/>, in seconds from the start of the file: the transients
+    /// folded onto one beat, the louder weighted to the fourth power, and the peak taken (#72); null when too few.
+    /// </summary>
+    public static double? FirstBeat(IReadOnlyList<Transient> transients, int sampleRate, double bpm)
+    {
+        if (transients.Count < MinToPlace)
+            return null;
+
+        var beatMs = 60_000 / bpm;
+        var bins = (int)Math.Ceiling(beatMs);
+        var weights = new double[bins];
+
+        foreach (var transient in transients)
+        {
+            var ms = transient.Position * 1000.0 / sampleRate % beatMs;
+            weights[(int)ms % bins] += Math.Pow(transient.Energy, LoudnessPower);
+        }
+
+        var peak = Enumerable
+            .Range(0, bins)
+            .MaxBy(bin =>
+                Enumerable
+                    .Range(-SmoothingBins, 2 * SmoothingBins + 1)
+                    .Sum(step =>
+                        weights[(bin + step + bins) % bins] * (SmoothingBins + 1 - Math.Abs(step))
+                    )
+            );
+
+        return (peak + 0.5) / 1000;
     }
 
     /// <summary>The transients against the grid a warp lays down, so an offset of 0 is a transient on its line.</summary>

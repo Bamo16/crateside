@@ -1,6 +1,6 @@
 # 0047 — a starter warp, and a record of where every written transient came from
 
-- Status: Accepted; amended by [ADR 0048](0048-stems-arrive-in-staging-already-warped.md), which writes sidecars at handoff and takes the tempo from crateside's own reading, not keytag's
+- Status: Accepted; amended by [ADR 0048](0048-stems-arrive-in-staging-already-warped.md), which writes sidecars at handoff and takes the tempo from crateside's own reading, not keytag's; its marker's place is amended by [ADR 0054](0054-a-starter-warps-marker-sits-on-a-beat-the-loud-transients-place.md)
 - Date: 2026-10-02
 - Builds [#77](https://github.com/Bamo16/crateside/issues/77). Amends
   [ADR 0043](0043-a-borrowed-warp-is-finished-and-says-where-it-came-from.md) and

@@ -127,7 +127,9 @@ against it.
   the pin moves it stays, marked as from an older build.
 - **Starter warp** — a one-marker warp crateside writes, at its own steady beatdetect reading of the
   instrumental, onto each stem of an upload nothing is warped on yet as it lands in staging, so the
-  group dragged into an empty set sets its tempo. It is not
+  group dragged into an empty set sets its tempo. Its marker sits on a beat the loud transients
+  place ([ADR 0054](docs/adr/0054-a-starter-warps-marker-sits-on-a-beat-the-loud-transients-place.md)),
+  not necessarily a downbeat. It is not
   a finished warp: the stem still waits to be warped, it never lends, a lent warp replaces it, and
   it becomes the user's warp once Live saves over it
   ([ADR 0047](docs/adr/0047-a-starter-warp-and-where-transients-came-from.md),

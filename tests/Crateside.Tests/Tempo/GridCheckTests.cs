@@ -11,6 +11,33 @@ public sealed class GridCheckTests
         Assert.Equal(128.02, GridCheck.Refine(Hits(128.02, seconds: 240), 128), 3);
 
     [Fact]
+    public void The_first_beat_is_where_the_loud_transients_fall_not_where_the_most_do()
+    {
+        const int Rate = 44_100;
+        var transients = Enumerable
+            .Range(0, 80)
+            .Select(beat => new Transient((int)((0.55 + beat * 0.5) * Rate), 0.7f))
+            .Concat(
+                Enumerable
+                    .Range(0, 40)
+                    .Select(bar => new Transient((int)((0.3 + bar * 1.0) * Rate), 1f))
+            )
+            .ToArray();
+
+        Assert.Equal(0.3, GridCheck.FirstBeat(transients, Rate, 120) ?? 0, 2);
+    }
+
+    [Fact]
+    public void Too_few_transients_place_no_first_beat() =>
+        Assert.Null(
+            GridCheck.FirstBeat(
+                [.. Enumerable.Range(0, 31).Select(i => new Transient(i * 22_050, 1f))],
+                44_100,
+                120
+            )
+        );
+
+    [Fact]
     public void Transients_on_the_warps_grid_sit_at_no_offset_and_do_not_drift()
     {
         var report = GridCheck.Against(Hits(120, seconds: 180, at: 0.5), Warp(120, start: 0.5));
