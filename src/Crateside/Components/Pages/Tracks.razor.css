@@ -306,6 +306,31 @@
     min-width: 0;
 }
 
+/* Off its tempo: how far each warp has fallen, the furthest first (#96). */
+.heads.off,
+.row.off {
+    grid-template-columns: 24px 1fr 90px 84px 110px 110px 190px;
+}
+
+.row.off .runs {
+    font-size: 13px;
+    color: var(--text-75);
+}
+
+.row.off .by-the-end {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.row.off .by-the-end.small {
+    color: var(--text-50);
+}
+
+.gist {
+    font-size: 13px;
+    color: var(--text-50);
+}
+
 /* Tags to answer: every chip in reach, so a song is one click (#65). */
 .heads.tags,
 .row.tags {
@@ -450,6 +475,15 @@
 /* A whole figure carries an invisible .00, so every figure aligns on its decimal point. */
 .bpm .pad {
     visibility: hidden;
+    position: relative;
+}
+
+/* The off-its-tempo pennant sits in the invisible .00's slot, so the column keeps its width. */
+.bpm .pad ::deep .pennant {
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .right {

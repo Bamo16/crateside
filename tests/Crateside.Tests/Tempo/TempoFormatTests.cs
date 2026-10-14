@@ -32,8 +32,33 @@ public sealed class TempoFormatTests
 
         Assert.Equal(("~180", true), (shown.Text, shown.IsApproximate));
         Assert.Equal("off its tempo · runs 0.017 fast · drifts 23 ms · from your warp", shown.Note);
-        Assert.Equal(new TempoFlag("off its tempo", "0.017 fast"), shown.Flag);
+        Assert.Null(shown.Flag);
         Assert.Equal("off its tempo", shown.Brief);
+        Assert.Equal(OffMark.Filled, shown.Mark);
+        Assert.Equal(
+            "Your warp is typed at 180. The audio holds 179.983, so its grid falls 23 ms ahead by the end.",
+            shown.Explanation
+        );
+    }
+
+    [Fact]
+    public void A_warp_off_by_under_ten_milliseconds_gets_a_hollow_mark_and_says_it_is_too_little_to_hear()
+    {
+        var shown = TempoFormat.Format(Warped(98, grid: new(null, 97.998, 4)));
+
+        Assert.Equal(OffMark.Hollow, shown.Mark);
+        Assert.Equal(
+            "Your warp is typed at 98. The audio holds 97.998: 4 ms by the end, too little to hear.",
+            shown.Explanation
+        );
+    }
+
+    [Fact]
+    public void A_slow_warp_says_its_grid_falls_behind()
+    {
+        var shown = TempoFormat.Format(Warped(125, grid: new(null, 125.017, -27)));
+
+        Assert.Contains("falls 27 ms behind", shown.Explanation);
     }
 
     [Fact]
@@ -42,7 +67,9 @@ public sealed class TempoFormatTests
         var shown = TempoFormat.Format(Warped(100, Tight(99.9817)));
 
         Assert.Equal("off its tempo · crateside reads 99.98 · from your warp", shown.Note);
-        Assert.Equal(new TempoFlag("off its tempo", "0.018 fast"), shown.Flag);
+        Assert.Null(shown.Flag);
+        Assert.Equal(OffMark.None, shown.Mark);
+        Assert.Equal("Your warp is typed at 100. crateside reads 99.98.", shown.Explanation);
     }
 
     [Theory]

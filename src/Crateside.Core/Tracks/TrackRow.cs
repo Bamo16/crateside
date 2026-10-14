@@ -151,6 +151,9 @@ public sealed record TrackRow
     /// <summary>Not warped yet, and beatdetect reads the tempo drifting (#75).</summary>
     public bool TempoDrifts => this is { Tempo: null, Beats.Drifts: true };
 
+    /// <summary>A steady warp whose grid falls away from the audio (#96).</summary>
+    public bool OffItsTempo => this is { Bpm.Off.DriftMs: not null };
+
     /// <summary>The stage crateside currently believes is working this track, if any.</summary>
     public JobStage? RunningStage { get; init; }
 

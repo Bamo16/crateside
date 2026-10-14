@@ -101,6 +101,16 @@ h1 {
     color: var(--text-60);
 }
 
+.explain {
+    font-size: 13px;
+    color: var(--text-75);
+}
+
+.value.bpm ::deep .pennant {
+    margin-left: 4px;
+    vertical-align: top;
+}
+
 .next {
     font-size: 14px;
     color: var(--text-75);

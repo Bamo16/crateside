@@ -1,0 +1,22 @@
+@using Crateside.Core.Tempo
+
+@if (Mark is not OffMark.None)
+{
+    <svg class="pennant @(Mark is OffMark.Filled ? "filled" : "hollow") @(Large ? "large" : null)"
+         viewBox="0 0 7 9" role="img" aria-label="@Words" aria-hidden="false">
+        <title>@Words</title>
+        <polygon points="@(Mark is OffMark.Filled ? "0,0 7,0 4.8,4.5 7,9 0,9" : "0.5,0.5 6,0.5 4.1,4.5 6,8.5 0.5,8.5")" />
+    </svg>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required OffMark Mark { get; set; }
+
+    /// <summary>The Track details size, 11 by 14.</summary>
+    [Parameter]
+    public bool Large { get; set; }
+
+    private string Words =>
+        Mark is OffMark.Filled ? "off its tempo: worth truing up" : "off its tempo by a hair";
+}

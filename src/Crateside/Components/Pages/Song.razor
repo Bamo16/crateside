@@ -4,6 +4,7 @@
 @implements IDisposable
 @using Crateside.Core
 @using Crateside.Core.Ledger
+@using Crateside.Core.Tempo
 @using Crateside.Core.Tracks
 @inject EvidenceService Evidence
 @inject TracksService Tracks
@@ -47,8 +48,14 @@
             </div>
             <div class="cell">
                 <span class="label">BPM</span>
-                <span class="mono value bpm @(_row?.State is TrackState.ReadyToWarp ? "ready" : null) @(Bpm is null ? "empty" : null) @(Bpm?.IsApproximate is true ? "approx" : null) @(Bpm?.IsEstimate is true ? "estimate" : null)">@(Bpm?.Text ?? "—")</span>
+                <span class="mono value bpm @(_row?.State is TrackState.ReadyToWarp ? "ready" : null) @(Bpm is null ? "empty" : null) @(Bpm?.IsApproximate is true ? "approx" : null) @(Bpm?.IsEstimate is true ? "estimate" : null)">@(Bpm?.Text ?? "—")@if (Bpm is { Mark: not OffMark.None })
+                {<OffMarkGlyph Mark="Bpm.Mark" Large="true" />}</span>
                 <span class="sub">@(Bpm?.Note ?? "not measured")</span>
+                @if (Bpm?.Explanation is { } explanation)
+                {
+                    <span class="explain">@explanation@if (Bpm.Mark is not OffMark.None)
+                    {<text> </text><a href="@WarpViewLink">True up in Warp ↓</a>}</span>
+                }
                 @if (Tempo is { Drifts: true } drifting)
                 {
                     <TempoStrip Tempo="drifting" />
@@ -131,6 +138,8 @@
 </div>
 
 @code {
+    private string WarpViewLink => $"{new Uri(Navigation.Uri).GetLeftPart(UriPartial.Query)}#warp-view";
+
     [Parameter]
     public required string VideoId { get; set; }
 

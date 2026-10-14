@@ -13,6 +13,9 @@ public static class TempoFormat
     private const string FromEstimate = "keytag's estimate";
     private const double RelatedWithin = 2;
 
+    /// <summary>From this many ms by the end an off-tempo warp is worth truing up, and its mark is filled.</summary>
+    public const double FilledAtMs = 10;
+
     private static readonly (double Multiple, string Words)[] Relations =
     [
         (1, "agrees"),
@@ -31,7 +34,9 @@ public static class TempoFormat
             tempo.Source is TempoSource.Estimate,
             Note(tempo),
             Flag(tempo),
-            Brief(tempo)
+            Brief(tempo),
+            Mark(tempo),
+            Explanation(tempo)
         );
 
     /// <summary>A bin of the tempo chart: whole numbers, no marks.</summary>
@@ -171,9 +176,46 @@ public static class TempoFormat
             { Drifts: true } => new("tempo drifts"),
             { ChangesTempo: true } => new("changes tempo"),
             { PartChanges: true } => new("part changes tempo"),
-            { Off: { } off } => new("off its tempo", Offset(tempo.Measured, off.Bpm)),
             _ => null,
         };
+
+    private static OffMark Mark(TrackTempo tempo) =>
+        tempo.Off switch
+        {
+            { DriftMs: { } ms } when Math.Abs(ms) >= FilledAtMs => OffMark.Filled,
+            { DriftMs: not null } => OffMark.Hollow,
+            _ => OffMark.None,
+        };
+
+    /// <summary>How fast or slow the warp runs against the audio, for the Off its tempo list: <c>0.017 slow</c>.</summary>
+    public static string? Runs(TrackTempo tempo) =>
+        tempo.Off is { DriftMs: not null } off ? Offset(tempo.Measured, off.Bpm) : null;
+
+    /// <summary>How far the grid has fallen by the end, for the Off its tempo list: <c>27 ms</c>.</summary>
+    public static string? ByTheEnd(TrackTempo tempo) =>
+        tempo.Off is { DriftMs: { } ms } ? $"{Math.Abs(ms):0} ms" : null;
+
+    /// <summary>The song page's sentence naming the user's figure and what the audio holds; null where the warp is not the one questioned.</summary>
+    private static string? Explanation(TrackTempo tempo) =>
+        tempo switch
+        {
+            { Off: { DriftMs: { } ms } off } when Math.Abs(ms) >= FilledAtMs =>
+                $"Your warp is typed at {Hundredths(tempo.Measured)}. The audio holds {Thousandths(off.Bpm)}, so its grid falls {Math.Abs(ms):0} ms {(ms < 0 ? "behind" : "ahead")} by the end.",
+            { Off: { DriftMs: { } ms } off } =>
+                $"Your warp is typed at {Hundredths(tempo.Measured)}. The audio holds {Thousandths(off.Bpm)}: {Math.Abs(ms):0} ms by the end, too little to hear.",
+            { Off: { } off } =>
+                $"Your warp is typed at {Hundredths(tempo.Measured)}. crateside reads {Hundredths(off.Bpm)}.",
+            { Unconfirmed.Reason: TrueUpReason.Steps } =>
+                "Your warp holds one tempo, but the beat jumps partway through. That takes a marker in Live where it jumps, not a retype.",
+            { Unconfirmed: not null } =>
+                "Too few transients to check your warp against. The figure is the one you typed; crateside can't vouch for it.",
+            _ => null,
+        };
+
+    /// <summary>Up to three decimals with trailing zeros dropped: <c>125.017</c>, <c>98.002</c>, <c>125</c>.</summary>
+    private static string Thousandths(double bpm) =>
+        Math.Round(bpm, 3, MidpointRounding.AwayFromZero)
+            .ToString("0.###", CultureInfo.InvariantCulture);
 
     /// <summary><c>runs 0.012 fast · drifts 23 ms</c>, or what the reading says where only it disagrees.</summary>
     private static string OffBy(TrackTempo tempo, TempoOff off) =>
@@ -223,13 +265,17 @@ public static class TempoFormat
 /// <param name="Note">The song page's note, and the tooltip wherever the figure stands without one.</param>
 /// <param name="Flag">The Tracks flag beside the title, where the tempo's shape earns one.</param>
 /// <param name="Brief">The Tools card's short note.</param>
+/// <param name="Mark">The pennant after the figure, for a warp crateside can true up.</param>
+/// <param name="Explanation">The song page's sentence naming both figures, where the user's warp is the one questioned.</param>
 public sealed record FormattedTempo(
     string Text,
     bool IsApproximate,
     bool IsEstimate,
     string Note,
     TempoFlag? Flag,
-    string Brief
+    string Brief,
+    OffMark Mark = OffMark.None,
+    string? Explanation = null
 )
 {
     /// <summary>What the clipboard gets: the figure as shown, without the tilde.</summary>
@@ -243,6 +289,14 @@ public sealed record FormattedTempo(
         IsApproximate
             ? $"Copied {Figure}. The tempo drifts, so it's approximate."
             : $"Copied {Figure}";
+}
+
+/// <summary>How far off its tempo a warp is: filled from 10 ms by the end, hollow below, none where a reading alone disagrees.</summary>
+public enum OffMark
+{
+    None,
+    Hollow,
+    Filled,
 }
 
 /// <summary>The Tracks flag beside the title; the spread, where there is one, is set in mono.</summary>

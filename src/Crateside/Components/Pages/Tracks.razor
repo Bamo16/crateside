@@ -13,6 +13,7 @@
 @using Crateside.Core.Orchestration.Loop
 @using Crateside.Core.Orchestration.Verdict
 @using Crateside.Core.Playlist
+@using Crateside.Core.Tempo
 @using Crateside.Core.Quota
 @using Crateside.Core.Tracks
 @using Crateside.Core.WorkLists
@@ -131,6 +132,10 @@
                 <span class="mono count @Tone(filter)">@Rows.Count(filter)</span>
             </button>
         }
+        @if (_filter is TrackFilter.OffItsTempo)
+        {
+            <span class="gist">steady warps whose grid falls away from the audio · furthest first</span>
+        }
         <div class="search">
             <input type="search" placeholder="Find a track" aria-label="Find a track"
                    value="@_search" @oninput="OnSearch" />
@@ -219,6 +224,18 @@
             <span>Familiarity</span>
         </div>
     }
+    else if (_filter is TrackFilter.OffItsTempo)
+    {
+        <div class="heads off">
+            <span></span>
+            <span>Song</span>
+            <span>Key</span>
+            <span class="right">BPM</span>
+            <span class="right">Runs</span>
+            <span class="right">By the end</span>
+            <span>State</span>
+        </div>
+    }
     else
     {
         <div class="heads @(_filter is TrackFilter.InStaging ? "roomy" : null)">
@@ -303,6 +320,29 @@
                     </span>
                 </div>
             }
+            else if (_filter is TrackFilter.OffItsTempo && row.Bpm is { } off)
+            {
+                <div id="@Anchor(row)" class="row off @(open ? "open" : null)" @onclick="() => Expand(row)">
+                    <span class="chevron mono">@(open ? "⌄" : "›")</span>
+
+                    <span class="song-cell">
+                        <span class="song">@row.Title</span>
+                    </span>
+
+                    <span class="mono key @(row.Key is null ? "none" : null)">@(KeyText.Spell(row.Key) ?? "—")</span>
+
+                    <span class="mono bpm right approx" title="@bpm?.Note">@bpm?.Text<span class="pad">@bpm?.Padding@if (bpm is { Mark: not OffMark.None })
+                    {<OffMarkGlyph Mark="bpm.Mark" />}</span></span>
+
+                    <span class="mono runs right">@TempoFormat.Runs(off)</span>
+
+                    <span class="mono by-the-end right @(bpm?.Mark is OffMark.Hollow ? "small" : null)">@TempoFormat.ByTheEnd(off)</span>
+
+                    <span>
+                        <StateChip Row="row" />
+                    </span>
+                </div>
+            }
             else
             {
             <div id="@Anchor(row)"
@@ -343,7 +383,8 @@
 
                 <span class="mono conf @KeyText.ConfidenceTone(row.Confidence)">@KeyText.Confidence(row.Confidence)</span>
 
-                <span class="mono bpm right @(row.State is TrackState.ReadyToWarp ? "ready" : null) @(bpm is null ? "none" : null) @(bpm?.IsApproximate is true ? "approx" : null) @(bpm?.IsEstimate is true ? "estimate" : null)" title="@bpm?.Note">@(bpm?.Text ?? "—")<span class="pad">@bpm?.Padding</span></span>
+                <span class="mono bpm right @(row.State is TrackState.ReadyToWarp ? "ready" : null) @(bpm is null ? "none" : null) @(bpm?.IsApproximate is true ? "approx" : null) @(bpm?.IsEstimate is true ? "estimate" : null)" title="@bpm?.Note">@(bpm?.Text ?? "—")<span class="pad">@bpm?.Padding@if (bpm is { Mark: not OffMark.None })
+                {<OffMarkGlyph Mark="bpm.Mark" />}</span></span>
 
                 <span class="genre-cell">
                     <GenreStrip Row="row" Shape="GenreStrip.Shapes.Cell" />
@@ -586,7 +627,14 @@
     private readonly HashSet<string> _held = new(StringComparer.Ordinal);
 
     private IEnumerable<TrackRow> Shown =>
-        _filter is TrackFilter.TagsToAnswer ? Answering() : Found.Where(row => row.Matches(_filter));
+        _filter switch
+        {
+            TrackFilter.TagsToAnswer => Answering(),
+            TrackFilter.OffItsTempo => Found
+                .Where(row => row.Matches(_filter))
+                .OrderByDescending(row => Math.Abs(row.Bpm?.Off?.DriftMs ?? 0)),
+            _ => Found.Where(row => row.Matches(_filter)),
+        };
 
     private IEnumerable<TrackRow> Answering()
     {
@@ -920,6 +968,7 @@
             TrackFilter.NeedsAttention => "Needs attention",
             TrackFilter.TagsToAnswer => "Tags to answer",
             TrackFilter.TempoDrifts => "Tempo drifts",
+            TrackFilter.OffItsTempo => "Off its tempo",
             _ => filter.ToString(),
         };
 

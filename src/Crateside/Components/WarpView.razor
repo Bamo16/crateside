@@ -19,7 +19,7 @@
     var (from, to) = View(group);
     var selected = Selected(group);
 
-    <section class="warp">
+    <section class="warp" id="warp-view">
         <div class="head">
             <span class="section-label">Warp</span>
             <span class="group-line @(group.OnTheirOwn.Any() ? "loud" : null)">@GroupLine(group, wording)</span>
