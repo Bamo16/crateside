@@ -329,4 +329,16 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.Contains("Do not run git", prompt);
         Assert.Contains("not to a judging session", prompt);
     }
+
+    [Fact]
+    public void The_session_is_told_it_is_finished_only_once_a_run_is_recorded()
+    {
+        // Sessions stated a verdict, or announced a next step, and ended without recording.
+        GiveEvidence();
+
+        var prompt = Runner(records: false).Prompt(Order());
+
+        Assert.Contains("finished only when the recorder has accepted a run", prompt);
+        Assert.Contains("WITHHELD included", prompt);
+    }
 }
