@@ -33,4 +33,5 @@ Claude, not accuracy.*
   with no tool call. One refused a genuine three-way split, which Claude called MEDIUM.
   Under the runner, all five are "finished without recording a verdict", a strike each.
 - **The provider session held** for the whole batch (about 13 minutes). An earlier session had
-  expired after roughly two hours idle; the cause is not known (*measured once each*).
+  expired between runs, and the browser it came from was signed out too, so the provider ended
+  it; why is not known (*measured once each*).
