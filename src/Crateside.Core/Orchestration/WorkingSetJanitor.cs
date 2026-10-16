@@ -25,6 +25,13 @@ public sealed class WorkingSetJanitor(
         if (workingSet.VideoIds is not { Count: > 0 } held)
             return 0;
 
+        var running = jobs.All()
+            .Where(job => job.Status is JobStatus.Running)
+            .Select(job => job.VideoId)
+            .ToHashSet();
+
+        held = [.. held.Where(videoId => !running.Contains(videoId))];
+
         var ledger = store.Read();
         var staged = ProcessedTracks.Scan(ledger, [_paths.StagingFolder]);
 

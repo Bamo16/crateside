@@ -70,6 +70,18 @@ public sealed class WorkingSetJanitorTests : IDisposable
     }
 
     [Fact]
+    public void A_track_with_a_stage_running_keeps_its_working_set()
+    {
+        GiveWorkingSet();
+        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(VideoId, JobStage.Verdict, JobStatus.Running);
+
+        Assert.Equal(0, Janitor.Sweep());
+        Assert.Single(Set.VideoIds);
+        Assert.True(Set.HasEvidence(VideoId));
+    }
+
+    [Fact]
     public void A_track_that_was_never_separated_keeps_its_working_set()
     {
         // "Nothing in staging" is also true before the stems exist.
