@@ -28,8 +28,7 @@ start. Enums are stored by name (`Dorian`, `ChordRecogniser`); times as round-tr
   one tonic, the centre being the harmony's. `SourceUrl` is the upload the audio came from,
   null only with `LocalSource`. `Direction` is the user's note sent with windows. `Evidence`
   is the detectors' report as JSON. `OldBpm*` are the old estimates of imported history, never
-  written again. `KeytagLine` is the timestamp of the line a run was imported from, a column kept
-  for that history and never set by a new run.
+  written again.
 - **Sections**: a run's sections, each a `Label` with its own `Tonic` and `Mode`.
 - **Sources**: what the judge consulted. `Kind` is `Authoritative`, `Corroborating`,
   `Algorithmic`, `ChordRecogniser` or `Ear` (the user's own reading). `StatesKey` is what
@@ -69,5 +68,5 @@ already has is a skip, not a failure.
 ## Where the rows come from
 
 The judge writes here itself ([docs/judge.md](judge.md)). The rows before it were imported once from
-a predecessor tool's JSONL, and the import is gone: `OldBpm*`, `KeytagLine` and the windows with
+a predecessor tool's JSONL, and the import is gone: `OldBpm*` and the windows with
 no asker are what is left of it ([ADR 0055](adr/0055-crateside-owns-the-key-judge-and-its-ledger.md)).
