@@ -210,7 +210,7 @@ public sealed class LedgerStoreTests : IDisposable
     }
 
     [Fact]
-    public void New_keytag_lines_are_imported_whenever_the_file_changes()
+    public void Keytags_history_is_imported_once_into_an_empty_ledger()
     {
         var jsonl = Path.Combine(_root, "runs.jsonl");
 
@@ -221,8 +221,20 @@ public sealed class LedgerStoreTests : IDisposable
 
         File.AppendAllLines(jsonl, [KeytagLine("2026-08-02T00:00:00+00:00", Other)]);
 
-        Assert.Equal(2, store.Read().Runs.Count);
-        Assert.Equal(2, store.Read().Runs.Count);
+        Assert.Single(store.Read().Runs);
+    }
+
+    [Fact]
+    public void A_ledger_that_already_holds_runs_imports_nothing()
+    {
+        var jsonl = Path.Combine(_root, "runs.jsonl");
+
+        using var store = new LedgerStore(LedgerStore.InMemory, jsonl, _time);
+
+        store.Record(Run());
+        File.WriteAllLines(jsonl, [KeytagLine("2026-08-02T00:00:00+00:00", Other)]);
+
+        Assert.Single(store.Read().Runs);
     }
 
     [Fact]

@@ -36,13 +36,10 @@ public sealed class CratesidePaths
 
     private string? _keytagLedger;
 
-    /// <summary>
-    /// The keytag checkout, reached only through <c>keytag-detect</c> for the evidence run and
-    /// <c>/detect-key</c> for the verdict (keytag ADR 0006).
-    /// </summary>
+    /// <summary>The keytag checkout, reached only through <c>keytag-detect</c> for the evidence run (ADR 0055).</summary>
     public string KeytagRepo { get; set; } = @"V:\Repos\keytag";
 
-    /// <summary>keytag's <c>runs.jsonl</c>, imported into the ledger until the judge writes there itself (#111).</summary>
+    /// <summary>keytag's <c>runs.jsonl</c>, imported once into an empty ledger (docs/ledger.md).</summary>
     public string KeytagLedger
     {
         get => _keytagLedger ?? Path.Combine(KeytagRepo, "results", "runs.jsonl");

@@ -8,7 +8,7 @@ namespace Crateside.Core.Ledger;
 
 /// <summary>
 /// crateside's ledger of key verdicts, in SQLite (docs/ledger.md): every read and write goes
-/// through here, and keytag's JSONL is imported until the judge writes here itself (ADR 0055).
+/// through here, and keytag's JSONL is imported once, into an empty ledger (ADR 0055).
 /// </summary>
 public sealed class LedgerStore : IDisposable
 {
@@ -23,6 +23,7 @@ public sealed class LedgerStore : IDisposable
     private readonly string? _keytagLedger;
     private readonly TimeProvider _time;
     private (long Length, DateTime Written)? _keytagSeen;
+    private bool _holdsRuns;
     private KeyLedger? _snapshot;
 
     /// <summary>Lines of keytag's ledger the import could not take, and why.</summary>
@@ -43,7 +44,7 @@ public sealed class LedgerStore : IDisposable
             : null;
 
     /// <param name="databasePath">The SQLite file, or <see cref="InMemory"/>, which keeps no backups or export.</param>
-    /// <param name="keytagLedger">keytag's <c>runs.jsonl</c> to import from, or null for none.</param>
+    /// <param name="keytagLedger">keytag's <c>runs.jsonl</c> to import from while the ledger is empty, or null for none.</param>
     public LedgerStore(string databasePath, string? keytagLedger, TimeProvider time)
     {
         _databasePath = databasePath;
@@ -74,7 +75,7 @@ public sealed class LedgerStore : IDisposable
         }
     }
 
-    /// <summary>The ledger as it stands, with any new keytag lines imported first.</summary>
+    /// <summary>The ledger as it stands, with keytag's history imported first if it holds no run yet.</summary>
     public KeyLedger Read()
     {
         lock (_gate)
@@ -290,10 +291,10 @@ public sealed class LedgerStore : IDisposable
 
     private LedgerContext Context() => new(_options);
 
-    /// <summary>Imports the keytag lines not yet held, when the file changed; true when any were.</summary>
+    /// <summary>Imports keytag's history into a ledger that holds no run yet; true when anything was.</summary>
     private bool ImportKeytag()
     {
-        if (_keytagLedger is null)
+        if (_keytagLedger is null || _holdsRuns)
             return false;
 
         var file = new FileInfo(_keytagLedger);
@@ -305,6 +306,14 @@ public sealed class LedgerStore : IDisposable
         _keytagSeen = seen;
 
         using var context = Context();
+
+        if (context.Runs.Any())
+        {
+            _holdsRuns = true;
+
+            return false;
+        }
+
         using var transaction = context.Database.BeginTransaction();
 
         var held = context

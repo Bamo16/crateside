@@ -197,3 +197,20 @@ The first addendum's hint ("the same-notes neighbour one Camelot step away") hol
 Lydian and Mixolydian. Worked for A: Dorian shares G major's notes (tag 8A, notes 9B), Phrygian F
 major's (8A, 7B) and Locrian B♭ major's (8A, 6B), none of them adjacent on the wheel. The hint names
 the same-notes key and its Camelot code; it does not claim a distance. Brief 17 carries the table.
+
+## Addendum, 2026-10-16: the judge writes a verdict file, and keytag's history is imported once
+
+Built in [#111](https://github.com/Bamo16/crateside/issues/111) (the judge rewrite); how it runs
+is in [docs/judge.md](../judge.md).
+
+- **The import no longer repeats.** The third addendum's repeat import existed only because
+  keytag's recorder was still writing verdicts. The judge now records straight into the ledger,
+  so keytag's file is imported once, into a ledger that holds no run yet, and never read again
+  after that. `Paths:KeytagLedger` stays readable for retiring keytag (#115).
+- **crateside keeps the song identity.** The verdict file names artist and title; crateside
+  builds the identity from them as keytag's recorder did, except that a track already in the
+  ledger keeps the identity it has, so a re-judged song supersedes its old run whatever the
+  judge calls it.
+- **Windows asked for and a missing file are resumed separately**, each at most once per run. A
+  WITHHELD verdict that asked for windows is recorded as it was if the resume writes nothing
+  usable.

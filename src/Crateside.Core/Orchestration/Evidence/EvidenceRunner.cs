@@ -1,12 +1,26 @@
+using System.Globalization;
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Core.Orchestration.Evidence;
+
+/// <summary>Detects over one stretch of a track, for a judge that asked for windows (ADR 0055).</summary>
+public interface IWindowDetector
+{
+    Task<EvidenceResult> DetectWindowAsync(
+        string audioPath,
+        RunWindow window,
+        string evidencePath,
+        CancellationToken ct = default
+    );
+}
 
 /// <summary>
 /// Produces the evidence for one track: runs the detectors over audio crateside already holds
 /// (ADR 0019).
 /// </summary>
 public sealed class EvidenceRunner(WorkingSet workingSet, CratesidePaths paths, string uv = "uv")
+    : IWindowDetector
 {
     public async Task<EvidenceResult> RunAsync(WorkOrder order, CancellationToken ct = default)
     {
@@ -16,21 +30,33 @@ public sealed class EvidenceRunner(WorkingSet workingSet, CratesidePaths paths, 
         if (!workingSet.TryGetSource(order.VideoId, out var audio))
             return EvidenceResult.Failed("no audio in the working set to detect over");
 
-        return await DetectAsync(order, audio, ct);
+        return await DetectAsync(audio, workingSet.EvidencePathFor(order.VideoId), [], ct);
     }
 
-    /// <summary>
-    /// Runs keytag's declared detector over the audio, writing the machine layer into the
-    /// working set for a verdict run to pick up later.
-    /// </summary>
-    private async Task<EvidenceResult> DetectAsync(
-        WorkOrder order,
+    public Task<EvidenceResult> DetectWindowAsync(
         string audioPath,
+        RunWindow window,
+        string evidencePath,
+        CancellationToken ct = default
+    ) =>
+        DetectAsync(
+            audioPath,
+            evidencePath,
+            [
+                "--segment",
+                string.Create(CultureInfo.InvariantCulture, $"{window.Start},{window.End}"),
+            ],
+            ct
+        );
+
+    /// <summary>Runs keytag's declared detector over the audio, writing the machine layer where asked.</summary>
+    private async Task<EvidenceResult> DetectAsync(
+        string audioPath,
+        string evidencePath,
+        IEnumerable<string> segment,
         CancellationToken ct
     )
     {
-        var evidencePath = workingSet.EvidencePathFor(order.VideoId);
-
         var outcome = await ExternalProcess.RunAsync(
             uv,
             [
@@ -39,6 +65,7 @@ public sealed class EvidenceRunner(WorkingSet workingSet, CratesidePaths paths, 
                 paths.KeytagRepo,
                 "keytag-detect",
                 audioPath,
+                .. segment,
                 "--json-out",
                 evidencePath,
             ],
