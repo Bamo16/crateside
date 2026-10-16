@@ -232,3 +232,36 @@ h1 {
         font-size: 36px;
     }
 }
+
+/* Judging from these bars (#116): the invitation where the verdict is withheld or split, and the run while it goes. */
+.invitation {
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--text-75);
+}
+
+.invite {
+    width: fit-content;
+    white-space: nowrap;
+    font-size: 12.5px;
+}
+
+.judging-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    width: fit-content;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--teal);
+    color: var(--ink);
+}
+
+.judging-chip .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ink);
+}

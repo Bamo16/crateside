@@ -128,6 +128,23 @@ open, no fold, drawn when the track has samples.
   side stack's status + action shape under a stronger rule. A control that does not apply keeps its
   label and says why at `--text-40`. Confirms are `.danger`; the asking label turns amber.
 - Wording lives in `WarpWording` (Core); times in the audio read `0:14.20`, dates `29 Sep`.
+- **Judge from these bars** (handoff 18, #116): a small `.outline` opener after the head line's
+  gist, on a track with an upload, hidden while the form is open or a run goes. The form sits
+  between the head line and the ruler in a `--surface` box (1px `--text` 12%, radius 8): the label
+  amber, the unit note `--text-50`; one row per range (number · range 120px mono · label 160px ·
+  note · ×), a dashed *+ another range*, then *What you hear* (key, mode select, the Ear setting's
+  hint) and the cost line beside `.primary` *Judge from these bars* and Cancel. No confirm. While
+  it is open the ruler grows to 44px, takes a crosshair and snaps a drag to whole bars (whole
+  seconds without a warp, whose ruler counts time); a drag on a range's first or last bar moves
+  that edge. **Bands**, one per window, in every row from the ruler down: yours solid at 50% with a
+  6% fill, the judge's dashed with no fill, the one being read teal; the tag sits on the ruler
+  (`1 · 33–48`, `1 · read`, `Chorus · C♯ min`, `judge · bars 57–72`). Running, the form folds into
+  a teal-bordered line: step chips, the step in teal, *You can leave…* right. Done, a neutral line
+  says what was recorded; withheld again or failed reopens the form with its ranges.
+- **The band invites it** only where the verdict is WITHHELD, or LOW with the whole-file detectors
+  split: the Confidence cell adds the reason and an `.outline` *Judge from these bars ↓* that scrolls
+  here and opens the form. Running, the cell holds the teal chip `● judging from bars` and
+  `{spans} · {step} · started {time}`; recorded, `judged from bars 33–48, 82–96 · just now`.
 
 ## State chips
 
@@ -324,6 +341,8 @@ Handoff 10. Every setting is one **row**: name (14px/500) and a one-line gist (`
 - **Folders are read-only**: name, the path in mono, and Open (or *Show in folder* for a file).
   They come from `CratesidePaths`.
 - Rows that need a playlist are drawn disabled until one is saved.
+- **Your ear** (handoff 18) sits in *Work* beside the backfill: *Hint* · *Human source*, read by the
+  judge at the start of each run.
 
 ## Page headers
 
@@ -356,6 +375,23 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   repeated, so a song whose sections all share the tag shows no sections block.
 - **The Off Its Tempo list keeps its 90px Key column and shows no abbreviation**, as it never showed
   more than the tag.
+### Judge from these bars (handoff 18, #116)
+
+- **The cost line gives no share of the week.** Nobody has measured what one session costs of the
+  weekly quota, so it says the tokens only. The 85% sentence is added when the guard holds.
+- **One note per range is kept as one direction.** The ledger has one `Direction` per run, so the
+  notes are joined under their windows' names (a single window keeps its note bare). A window's
+  block in *Why this key* says *Given by you.* rather than whether it had a note.
+- **WITHHELD keeps the band's red weak tone**, not `--text-50`; the invitation, its reason and the
+  running and recorded states are as designed.
+- **Bands are drawn row by row**: each row draws the band's sides and fill, with no top or bottom
+  edge, rather than one rectangle over the grid.
+- **Enter in the last field adds a line but does not move focus to it.**
+- **Window blocks sit in the measurements column**, their left part 11rem rather than 250px, and
+  stack below 40rem. The whole file folds under them as a `<details>`.
+- **The form needs the full mix**: the working set's, else a source kept in the library. Without
+  either it says there is nothing to detect over and the button is disabled.
+
 ### Warp view (handoff 14, #97)
 
 - **Marker counts are the markers Live shows**, one fewer than the canvas: the brief's "two

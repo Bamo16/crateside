@@ -4,12 +4,14 @@
 @implements IDisposable
 @using Crateside.Core
 @using Crateside.Core.Ledger
+@using Crateside.Core.Orchestration.Verdict
 @using Crateside.Core.Tempo
 @using Crateside.Core.Tracks
 @inject LedgerStore Ledger
 @inject TracksService Tracks
 @inject IServiceProvider Services
 @inject NavigationManager Navigation
+@inject BarJudging Judging
 
 <PageTitle>@(Name ?? "Track details") · crateside</PageTitle>
 
@@ -63,8 +65,23 @@
             </div>
             <div class="cell">
                 <span class="label">Confidence</span>
-                <span class="mono value conf @KeyText.ConfidenceTone(Confidence)">@KeyText.Confidence(Confidence)</span>
-                <span class="sub">@(Verdict is { } judged ? $"judged {judged.Timestamp.ToLocalTime():yyyy-MM-dd}" : "never judged")</span>
+                @if (Judging.Of(VideoId) is { IsRunning: true } running)
+                {
+                    <span class="judging-chip"><span class="dot"></span>judging from bars</span>
+                    <span class="sub">
+                        @JudgeText.Spans(running.Direction.Windows) · @JudgeText.Brief(running) · started @running.StartedAt.ToLocalTime().ToString("h:mm tt")
+                    </span>
+                }
+                else
+                {
+                    <span class="mono value conf @KeyText.ConfidenceTone(Confidence)">@KeyText.Confidence(Confidence)</span>
+                    <span class="sub">@ConfidenceNote</span>
+                    @if (Invitation is { } invitation)
+                    {
+                        <span class="invitation">@invitation</span>
+                        <a class="outline invite" href="@WarpViewLink" @onclick="() => _openRequests++">Judge from these bars ↓</a>
+                    }
+                }
             </div>
             <div class="cell">
                 <span class="label">BPM</span>
@@ -118,7 +135,7 @@
                         <StemList Editor="_stems" Row="_row" OnSelect="path => _selectedWarp = path" />
                     </section>
 
-                    <WarpView Row="_row" @bind-SelectedPath="_selectedWarp" />
+                    <WarpView Row="_row" @bind-SelectedPath="_selectedWarp" Run="_run" OpenRequests="_openRequests" />
                 }
 
                 @if (HasEvidenceSection)
@@ -168,6 +185,7 @@
     private StemEditor _stems = null!;
     private Timer? _clock;
     private string? _selectedWarp;
+    private int _openRequests;
 
     private LedgerRun? Verdict => _row?.Verdict;
 
@@ -195,6 +213,20 @@
     private bool HasEvidenceSection => Verdict is not null || _run is not null;
 
     private KeyConfidence Confidence => _row?.Confidence ?? KeyConfidence.Unknown;
+
+    /// <summary>When it was judged, and from which of the user's bars where it was judged from some.</summary>
+    private string ConfidenceNote =>
+        (Verdict, _run?.Windows.Where(window => window.AskedBy is WindowAsker.User).ToList()) switch
+        {
+            ({ } judged, [_, ..] yours) when _run!.Timestamp == judged.Timestamp =>
+                $"judged from {JudgeText.Spans(yours)} · {Clock.Ago(judged.Timestamp)}",
+            ({ } judged, _) => $"judged {judged.Timestamp.ToLocalTime():yyyy-MM-dd}",
+            _ => "never judged",
+        };
+
+    /// <summary>Why to judge it from bars, where the verdict is withheld or the detectors split and the warp view is there to do it in.</summary>
+    private string? Invitation =>
+        _row is { HasUpload: true, Samples.Count: > 0 } ? JudgeText.Invitation(Confidence, _run) : null;
 
     private TrackTempo? Tempo => _row is null ? TrackTempo.Of(null, null, _run?.Bpm) : _row.Bpm;
 
@@ -236,6 +268,7 @@
         _stems = ActivatorUtilities.CreateInstance<StemEditor>(Services);
         _stems.Changed += OnStemsChanged;
         Tracks.Changed += OnChanged;
+        Judging.Changed += OnChanged;
 
         await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
         Read();
@@ -249,6 +282,7 @@
     public void Dispose()
     {
         Tracks.Changed -= OnChanged;
+        Judging.Changed -= OnChanged;
         _stems.Changed -= OnStemsChanged;
         _stems.Dispose();
         _clock?.Dispose();

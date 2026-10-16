@@ -7,6 +7,7 @@
 @using System.Diagnostics
 @using Crateside.Core
 @using Crateside.Core.Orchestration.Loop
+@using Crateside.Core.Orchestration.Verdict
 @using Crateside.Core.Playlist
 @using Crateside.Core.Quota
 @using Crateside.Core.Tracks
@@ -23,6 +24,8 @@
 @inject PathOverrideStore Overrides
 @inject IOptions<WarpOptions> Warps
 @inject WarpSettingsStore WarpStore
+@inject IOptions<JudgeOptions> Judge
+@inject JudgeSettingsStore JudgeStore
 
 <PageTitle>Settings · crateside</PageTitle>
 
@@ -196,6 +199,23 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                     </div>
 
                     <span class="status">@NextWindow</span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="name">
+                    <span>Your ear</span>
+                    <span class="gist">How much the key you say you hear counts.</span>
+                </div>
+                <div class="control">
+                    <div class="pills">
+                        @foreach (var ear in Enum.GetValues<EarWeight>())
+                        {
+                            <button class="pill @(Ear == ear ? "on plain" : "off")"
+                                    @onclick="() => SetEar(ear)">@EarName(ear)</button>
+                        }
+                    </div>
+                    <span class="status">@EarNote(Ear)</span>
                 </div>
             </div>
         </section>
@@ -402,6 +422,22 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 </div>
 
 @code {
+    private EarWeight Ear => Judge.Value.Ear;
+
+    // The judge reads it at the start of each run, so it applies to the next one.
+    private void SetEar(EarWeight ear)
+    {
+        Judge.Value.Ear = ear;
+        JudgeStore.RememberEar(ear);
+    }
+
+    private static string EarName(EarWeight ear) => ear is EarWeight.HumanSource ? "Human source" : "Hint";
+
+    private static string EarNote(EarWeight ear) =>
+        ear is EarWeight.HumanSource
+            ? "Counted like an authoritative source: it can settle a split by itself."
+            : "Weighed with the rest, but it never raises confidence on its own.";
+
     private StarterWarps Starter => Warps.Value.StarterWarps;
 
     // Read again by the workers each time they look, so it applies to the next stem to land.
