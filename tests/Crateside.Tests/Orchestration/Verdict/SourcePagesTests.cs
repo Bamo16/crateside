@@ -56,6 +56,17 @@ public sealed class SourcePagesTests
     }
 
     [Fact]
+    public void Musicnotes_older_product_layout_gives_its_key_too()
+    {
+        var page = SourcePages.MusicnotesPage(
+            "https://www.musicnotes.com/sheetmusic/nelly/hot-in-herre/MN0103472",
+            Fixture("musicnotes-hot-in-herre.html")
+        );
+
+        Assert.Equal("E Minor", Assert.Single(page.Keys).Key);
+    }
+
+    [Fact]
     public void Ultimate_guitar_keeps_the_songs_tabs_that_state_a_key_then_its_most_voted_chords()
     {
         var pages = SourcePages.UltimateGuitarPages(

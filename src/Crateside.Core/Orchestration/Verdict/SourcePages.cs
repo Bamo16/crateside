@@ -258,7 +258,10 @@ public sealed partial class SourcePages(Func<HttpClient> client) : ISourcePages
     [GeneratedRegex(@"/sheetmusic/(?<Artist>[^""/]+)/(?<Title>[^""/]+)/MN\d+")]
     private static partial Regex MusicnotesLink { get; }
 
-    [GeneratedRegex(@"Original Published Key</dt>\s*<dd[^>]*>\s*(?<Key>[^<]+)")]
+    [GeneratedRegex(
+        @"Original Published Key:?\s*(</?[a-z0-9]+[^>]*>\s*)*(?<Key>[^<\s][^<]*)",
+        RegexOptions.ExplicitCapture
+    )]
     private static partial Regex MusicnotesKey { get; }
 
     [GeneratedRegex(@"""scoring"":""(?<Scoring>[^""]+)""")]
