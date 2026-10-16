@@ -67,6 +67,12 @@ public sealed record RunEvidence
     /// </summary>
     public IReadOnlyList<AgreementPair> Agreement { get; init; } = [];
 
+    /// <summary>
+    /// Which of madmom and edma named keydetect's key; null on a run detected before the port
+    /// (#113), or when keydetect read nothing.
+    /// </summary>
+    public IReadOnlyList<string>? Backers { get; init; }
+
     /// <summary>The committed chord progression — the cheap check for a relative-key swap.</summary>
     public IReadOnlyList<string> Chords { get; init; } = [];
 
@@ -134,6 +140,7 @@ public sealed record RunEvidence
                     Note = pair.Note,
                 }),
             ],
+            Backers = machine?.Backers,
             Chords = machine?.Chords ?? [],
             KeyEvents =
             [
@@ -364,34 +371,62 @@ public sealed record AlgorithmResult
 
     public string? Error { get; init; }
 
+    /// <summary>The detectors a run recorded: keytag's trio before the port (#113), keydetect, madmom and edma after.</summary>
     internal static IReadOnlyList<AlgorithmResult> FromDto(AlgorithmsDto? dto) =>
         dto is null
             ? []
             :
             [
-                new()
+                .. new AlgorithmResult?[]
                 {
-                    Name = "librosa (K-S)",
-                    Key = dto.LibrosaKs?.Key,
-                    Confidence = dto.LibrosaKs?.Confidence,
-                    Error = dto.LibrosaKs?.Error,
-                },
-                new()
-                {
-                    Name = "CREMA",
-                    Key = dto.Crema?.Key,
-                    RunnerUpKey = dto.Crema?.RunnerUp?.Key,
-                    RunnerUpRatio = dto.Crema?.RunnerUp?.Ratio,
-                    Error = dto.Crema?.Error,
-                },
-                new()
-                {
-                    Name = "ffmpeg keydetect",
-                    Key = dto.FfmpegKeydetect?.Key,
-                    Confidence = dto.FfmpegKeydetect?.R,
-                    Flag = dto.FfmpegKeydetect?.RFlag,
-                    Error = dto.FfmpegKeydetect?.Error,
-                },
+                    dto.LibrosaKs is { } librosa
+                        ? new()
+                        {
+                            Name = "librosa (K-S)",
+                            Key = librosa.Key,
+                            Confidence = librosa.Confidence,
+                            Error = librosa.Error,
+                        }
+                        : null,
+                    dto.Crema is { } crema
+                        ? new()
+                        {
+                            Name = "CREMA",
+                            Key = crema.Key,
+                            RunnerUpKey = crema.RunnerUp?.Key,
+                            RunnerUpRatio = crema.RunnerUp?.Ratio,
+                            Error = crema.Error,
+                        }
+                        : null,
+                    dto.FfmpegKeydetect is { } keydetect
+                        ? new()
+                        {
+                            Name = "ffmpeg keydetect",
+                            Key = keydetect.Key,
+                            Confidence = keydetect.R,
+                            Flag = keydetect.RFlag,
+                            Error = keydetect.Error,
+                        }
+                        : null,
+                    dto.Madmom is { } madmom
+                        ? new()
+                        {
+                            Name = "madmom",
+                            Key = madmom.Key,
+                            Confidence = madmom.Confidence,
+                            Error = madmom.Error,
+                        }
+                        : null,
+                    dto.EssentiaEdma is { } edma
+                        ? new()
+                        {
+                            Name = "Essentia edma",
+                            Key = edma.Key,
+                            Confidence = edma.Confidence,
+                            Error = edma.Error,
+                        }
+                        : null,
+                }.OfType<AlgorithmResult>(),
             ];
 }
 
@@ -429,15 +464,25 @@ public sealed record KeyEvent
     public double R { get; init; }
 }
 
+/// <summary>The evidence file's shape: written by the detectors (#113), and by keytag-detect before them.</summary>
 internal sealed record MachineDto
 {
+    public string? Input { get; init; }
+
+    /// <summary>Start and end in seconds, when only a window was detected.</summary>
+    public IReadOnlyList<double>? Segment { get; init; }
+
     public AlgorithmsDto? Algorithms { get; init; }
+
+    public IReadOnlyList<string>? Backers { get; init; }
 
     public IReadOnlyList<PairDto>? PairwiseAgreement { get; init; }
 
     public IReadOnlyList<string>? Chords { get; init; }
 
     public IReadOnlyList<KeyEventDto>? KeyEvents { get; init; }
+
+    public IReadOnlyDictionary<string, string?>? Versions { get; init; }
 
     internal sealed record PairDto
     {
@@ -467,6 +512,10 @@ internal sealed record AlgorithmsDto
     public CremaDto? Crema { get; init; }
 
     public FfmpegDto? FfmpegKeydetect { get; init; }
+
+    public SimpleDto? Madmom { get; init; }
+
+    public SimpleDto? EssentiaEdma { get; init; }
 
     internal sealed record SimpleDto
     {

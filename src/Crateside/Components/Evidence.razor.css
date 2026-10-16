@@ -250,6 +250,12 @@
     color: var(--warn);
 }
 
+.backers {
+    margin: 0.5rem 0 0;
+    font-size: 0.88rem;
+    color: var(--text-75);
+}
+
 /* The only pairwise-agreement outcome that survives into the view. See Evidence.razor for
    why the list went: it restated the detector table immediately above it. */
 .relative-split {

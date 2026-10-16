@@ -36,8 +36,11 @@ public sealed class CratesidePaths
 
     private string? _keytagLedger;
 
-    /// <summary>The keytag checkout, reached only through <c>keytag-detect</c> for the evidence run (ADR 0055).</summary>
+    /// <summary>The keytag checkout, read only for its ledger until #115 retires it.</summary>
     public string KeytagRepo { get; set; } = @"V:\Repos\keytag";
+
+    /// <summary>The ffmpeg that detects keys and decodes for the other detectors: a build with FiLL's <c>keydetect</c>.</summary>
+    public string KeydetectFfmpeg { get; set; } = "ffmpeg";
 
     /// <summary>keytag's <c>runs.jsonl</c>, imported once into an empty ledger (docs/ledger.md).</summary>
     public string KeytagLedger

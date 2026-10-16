@@ -10,12 +10,20 @@ public sealed record KeyDetectorCounts(
     IReadOnlyList<AllThreeWrong> AllWrong
 )
 {
-    /// <summary>The detectors in the ledger's own names, in the order the panel shows them.</summary>
+    /// <summary>The detectors one run has: three, whichever three detected it.</summary>
+    private const int DetectorsPerRun = 3;
+
+    /// <summary>
+    /// The detectors in the ledger's own names, in the order the panel shows them: keytag's trio,
+    /// then the two that replaced CREMA and librosa (#113).
+    /// </summary>
     public static readonly IReadOnlyList<(string Ledger, string Shown, string Who)> Names =
     [
         ("ffmpeg keydetect", "keydetect", "FiLL's ffmpeg filter"),
         ("CREMA", "crema", "python"),
         ("librosa (K-S)", "librosa", "python"),
+        ("madmom", "madmom", "CNN, ONNX"),
+        ("Essentia edma", "edma", "HPCP profile"),
     ];
 
     public static KeyDetectorCounts From(
@@ -42,13 +50,22 @@ public sealed record KeyDetectorCounts(
             )
             .ToList();
 
+        // A detector no song has a reading from yet is left out of the panel.
+        var shown = Names
+            .Where(name =>
+                judged.Any(song =>
+                    song.Evidence.Algorithms.Any(result => result.Name == name.Ledger)
+                )
+            )
+            .ToList();
+
         var readings = judged
             .Select(song =>
                 (
                     song.Evidence,
                     song.Run,
                     song.Verdict,
-                    Reads: Names
+                    Reads: shown
                         .Select(name =>
                             MusicKey.FromString(
                                 song.Evidence.Algorithms.FirstOrDefault(result =>
@@ -64,7 +81,7 @@ public sealed record KeyDetectorCounts(
         return new KeyDetectorCounts(
             judged.Count,
             [
-                .. Names.Select(
+                .. shown.Select(
                     (name, index) =>
                         new KeyDetectorTally(
                             name.Shown,
@@ -79,7 +96,8 @@ public sealed record KeyDetectorCounts(
             [
                 .. readings
                     .Where(song =>
-                        song.Reads.All(read => read is not null && !read.Equals(song.Verdict))
+                        song.Reads.Count(read => read is not null) is DetectorsPerRun
+                        && song.Reads.All(read => read is null || !read.Equals(song.Verdict))
                     )
                     .Select(song => new AllThreeWrong(
                         song.Evidence.DisplayName,
@@ -110,7 +128,7 @@ public sealed record KeyDetectorTally(
         ByMiss.Where(pair => pair.Key is not KeyMiss.Right).Sum(pair => pair.Value);
 }
 
-/// <summary>A song every detector read, and none read as the verdict.</summary>
+/// <summary>A song all three of its run's detectors read, and none read as the verdict.</summary>
 public sealed record AllThreeWrong(
     string Song,
     MusicKey Verdict,
