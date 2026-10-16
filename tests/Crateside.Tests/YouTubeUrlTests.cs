@@ -41,7 +41,7 @@ public sealed class YouTubeUrlTests
     [InlineData("https://www.youtube.com/watch?v=vfBJjufAG1E")]
     public void A_youtube_reference_normalises_to_one_canonical_watch_url(string input)
     {
-        // keytag refuses anything that is not an http(s) URL, so a bare ID has to become one
+        // The ledger refuses anything that is not an http(s) URL, so a bare ID has to become one
         // before it leaves crateside.
         Assert.True(YouTubeUrl.TryNormalize(input, out var normalized));
         Assert.Equal("https://music.youtube.com/watch?v=vfBJjufAG1E", normalized);

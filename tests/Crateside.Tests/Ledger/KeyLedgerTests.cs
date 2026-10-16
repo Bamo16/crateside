@@ -122,7 +122,7 @@ public sealed class KeyLedgerTests : IDisposable
     [Fact]
     public void A_line_carrying_no_verdict_is_refused_rather_than_taking_the_songs_key_away()
     {
-        // Why a restatement carries the whole verdict (keytag ADR 0008).
+        // Why a restatement carries the whole verdict (ADR 0055).
         File.WriteAllLines(
             _path,
             [
@@ -150,7 +150,7 @@ public sealed class KeyLedgerTests : IDisposable
         Assert.False(store.Read().HasRunFor("dQw4w9WgXcQ"));
     }
 
-    /// <summary>A restatement shaped like a real <c>keytag-restate --dry-run</c>.</summary>
+    /// <summary>A restatement line.</summary>
     private static string Restatement(
         string timestamp,
         string song,

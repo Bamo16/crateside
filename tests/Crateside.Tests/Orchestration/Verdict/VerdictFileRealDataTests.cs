@@ -5,7 +5,7 @@ using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Verdict;
 
-/// <summary>Every verdict keytag recorded, written as a verdict file, reads back as the same verdict.</summary>
+/// <summary>Every verdict the ledger recorded, written as a verdict file, reads back as the same verdict.</summary>
 public sealed class VerdictFileRealDataTests : IDisposable
 {
     private readonly string _path = Path.Combine(

@@ -27,15 +27,16 @@ start. Enums are stored by name (`Dorian`, `ChordRecogniser`); times as round-tr
   (one of the seven diatonic modes), both null only when withheld. `Mixed` marks two modes on
   one tonic, the centre being the harmony's. `SourceUrl` is the upload the audio came from,
   null only with `LocalSource`. `Direction` is the user's note sent with windows. `Evidence`
-  is the detectors' report as JSON. `OldBpm*` are keytag's old estimates, imported and never
-  written again. `KeytagLine` is the timestamp of the keytag line a run was imported from.
+  is the detectors' report as JSON. `OldBpm*` are the old estimates of imported history, never
+  written again. `KeytagLine` is the timestamp of the line a run was imported from, a column kept
+  for that history and never set by a new run.
 - **Sections**: a run's sections, each a `Label` with its own `Tonic` and `Mode`.
 - **Sources**: what the judge consulted. `Kind` is `Authoritative`, `Corroborating`,
   `Algorithmic`, `ChordRecogniser` or `Ear` (the user's own reading). `StatesKey` is what
   the source said as a 24-key name, `StatesMode` the mode it named, `Sections` the labels
   it covered as a JSON list (null when it did not say).
 - **Windows**: stretches detected on their own, `Start` and `End` in seconds, with an
-  optional `Label` and who asked (`User` or `Judge`; null on windows imported from keytag).
+  optional `Label` and who asked (`User` or `Judge`; null on windows imported from history).
   `FirstBar` and `LastBar` are the bars the user gave, both included, where they gave bars;
   `Why` is the judge's reason for asking.
 - **Restatements**: "this upload is that song": a `SourceUrl` and the `RunId` whose verdict
@@ -46,7 +47,7 @@ mode reduced to major or minor (A Dorian is tagged A minor).
 
 ## What is refused
 
-Carried over from keytag's `ledger.py`. A run is refused only where a wrong value would be
+A run is refused only where a wrong value would be
 worse than no run:
 
 - a confidence outside the four, or a centre missing on a verdict that is not withheld;
@@ -65,13 +66,8 @@ stated key is normalized to the 24-key spelling.
 A restatement is refused for an upload the ledger has never seen. One for an upload the song
 already has is a skip, not a failure.
 
-## The import from keytag
+## Where the rows come from
 
-The judge writes here itself ([docs/judge.md](judge.md)). keytag's history, its
-`results/runs.jsonl` (`Paths:KeytagLedger`), is imported once: into a ledger that holds no run
-yet, at the first start. crateside never writes that file. A line it cannot take is listed in
-`LedgerStore.ImportRefusals`. Imported, a `key` becomes its tonic on Ionian or Aeolian, or on
-the mode the line stated.
-
-One line of the history is left out: the 2026-08-01 "segment reanalysis" of *A Horny Money
-World*, which was re-recorded unchanged under the song's own identity on 2026-08-12.
+The judge writes here itself ([docs/judge.md](judge.md)). The rows before it were imported once from
+a predecessor tool's JSONL, and the import is gone: `OldBpm*`, `KeytagLine` and the windows with
+no asker are what is left of it ([ADR 0055](adr/0055-crateside-owns-the-key-judge-and-its-ledger.md)).

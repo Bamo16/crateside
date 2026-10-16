@@ -26,7 +26,7 @@ public sealed class RunEvidenceTests : IDisposable
     [Fact]
     public void A_restatement_does_not_become_the_evidence_for_its_song()
     {
-        // A restatement carries no machine layer at all (keytag ADR 0008).
+        // A restatement carries no machine layer at all (ADR 0055).
         File.WriteAllLines(_path, [Run("2026-09-01T00:00:00+00:00"), Restatement()]);
 
         var evidence = TestLedger.EvidenceFor(_path, Song);

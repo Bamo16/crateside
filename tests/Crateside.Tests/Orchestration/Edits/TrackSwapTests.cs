@@ -181,7 +181,7 @@ public sealed class TrackSwapTests : IDisposable
     [Fact]
     public void A_bare_video_id_is_accepted_and_canonicalised()
     {
-        // keytag requires an http(s) URL.
+        // A run needs an http(s) URL.
         var plan = Swap().PlanFor(Video, "NSLYAT7sjAA");
 
         Assert.True(plan.IsPossible);
