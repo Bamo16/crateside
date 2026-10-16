@@ -135,7 +135,8 @@ open, no fold, drawn when the track has samples.
   note · ×), a dashed *+ another range*, then *What you hear* (key, mode select, the Ear setting's
   hint) and the cost line beside `.primary` *Judge from these bars* and Cancel. No confirm. While
   it is open the ruler grows to 44px, takes a crosshair and snaps a drag to whole bars (whole
-  seconds without a warp, whose ruler counts time). The drag is drawn in the browser and sent once,
+  seconds without a warp, whose ruler counts time). The band itself follows the drag, snapped as it
+  goes, in the browser, and the range is sent once,
   on release; each range has a handle on either edge to drag. **Bands**, one per window, in every row from the ruler down: yours solid at 50% with a
   6% fill, the judge's dashed with no fill, the one being read teal; the tag sits on the ruler
   (`1 · 33–48`, `1 · read`, `Chorus · C♯ min`, `judge · bars 57–72`). Running, the form folds into
