@@ -479,7 +479,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         new("Staging", "Where new stems land.", _staging, IsFile: false, Place.Staging),
         new("Library", "Where finished stems go.", _library, IsFile: false, Place.Library),
         new("Ableton projects", "Your sets, relinked when a track is renamed.", Paths.AbletonProjects, IsFile: false),
-        new("keytag ledger", "Detector runs, for keys and BPM.", Paths.Ledger, IsFile: true),
+        new("Key ledger", "Every key verdict, and the evidence behind it.", Paths.LedgerDatabase, IsFile: true),
     ];
 
     private int Backfill(Func<TrackRow, bool> matches) =>

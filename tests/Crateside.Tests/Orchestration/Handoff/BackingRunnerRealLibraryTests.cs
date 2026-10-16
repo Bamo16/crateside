@@ -2,6 +2,7 @@ using AbleKit.Tags;
 using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Handoff;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Handoff;
 
@@ -16,7 +17,7 @@ public sealed class BackingRunnerRealLibraryTests
     private static IReadOnlyList<TagAssignment> Unbacked() =>
         new BackingRunner(new FolderInfoReader(), new FolderInfoWriter()).Unbacked(
             LibraryRoot,
-            KeyLedger.Read(LedgerPath)
+            TestLedger.From(LedgerPath)
         );
 
     [Fact]

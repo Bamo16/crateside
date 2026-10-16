@@ -24,7 +24,7 @@ public sealed class KeyLedgerTests : IDisposable
     private KeyLedger ReadLines(params string[] lines)
     {
         File.WriteAllLines(_path, lines);
-        return KeyLedger.Read(_path);
+        return TestLedger.From(_path);
     }
 
     private static string Line(
@@ -120,33 +120,35 @@ public sealed class KeyLedgerTests : IDisposable
     }
 
     [Fact]
-    public void A_line_carrying_no_verdict_would_take_the_songs_key_away()
+    public void A_line_carrying_no_verdict_is_refused_rather_than_taking_the_songs_key_away()
     {
         // Why a restatement carries the whole verdict (keytag ADR 0008).
-        var ledger = ReadLines(
-            Line(
-                "2026-08-01T00:00:00+00:00",
-                "a - b",
-                "https://www.youtube.com/watch?v=NSLYAT7sjAA",
-                "C# minor",
-                "HIGH"
-            ),
-            JsonSerializer.Serialize(
-                new
-                {
-                    timestamp = "2026-08-12T00:00:00+00:00",
-                    song = "a - b",
-                    source_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                }
-            )
+        File.WriteAllLines(
+            _path,
+            [
+                Line(
+                    "2026-08-01T00:00:00+00:00",
+                    "a - b",
+                    "https://www.youtube.com/watch?v=NSLYAT7sjAA",
+                    "C# minor",
+                    "HIGH"
+                ),
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        timestamp = "2026-08-12T00:00:00+00:00",
+                        song = "a - b",
+                        source_url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    }
+                ),
+            ]
         );
+        using var store = TestLedger.Store(_path);
 
-        Assert.True(ledger.TryGetLatestByVideoId("dQw4w9WgXcQ", out var swapped));
-        Assert.Null(swapped.Key);
-        Assert.False(swapped.HasTaggableKey);
-
-        Assert.True(ledger.TryGetLatestByVideoId("NSLYAT7sjAA", out var original));
-        Assert.Null(original.Key);
+        Assert.True(store.Read().TryGetLatestByVideoId("NSLYAT7sjAA", out var original));
+        Assert.Equal("C# minor", original.Key);
+        Assert.False(store.Read().HasRunFor("dQw4w9WgXcQ"));
+        Assert.Equal("2026-08-12T00:00:00+00:00", Assert.Single(store.ImportRefusals).Line);
     }
 
     /// <summary>A restatement shaped like a real <c>keytag-restate --dry-run</c>.</summary>
@@ -283,7 +285,6 @@ public sealed class KeyLedgerTests : IDisposable
     [Theory]
     [InlineData("LOW")]
     [InlineData("WITHHELD")]
-    [InlineData("SOMETHING_NEW")]
     public void Only_high_and_medium_verdicts_are_taggable(string confidence)
     {
         var ledger = ReadLines(
@@ -291,6 +292,19 @@ public sealed class KeyLedgerTests : IDisposable
         );
 
         Assert.False(Assert.Single(ledger.Runs).HasTaggableKey);
+    }
+
+    [Fact]
+    public void A_confidence_the_ledger_does_not_know_is_refused()
+    {
+        File.WriteAllLines(
+            _path,
+            [Line("2026-08-01T00:00:00+00:00", "a - b", null, "C major", "SOMETHING_NEW")]
+        );
+        using var store = TestLedger.Store(_path);
+
+        Assert.Empty(store.Read().Runs);
+        Assert.StartsWith("confidence", Assert.Single(store.ImportRefusals).Problem);
     }
 
     [Fact]
@@ -309,7 +323,7 @@ public sealed class KeyLedgerTests : IDisposable
     [Fact]
     public void An_absent_ledger_reads_empty_rather_than_throwing()
     {
-        var ledger = KeyLedger.Read(Path.Combine(Path.GetTempPath(), "no-such-ledger.jsonl"));
+        var ledger = TestLedger.From(Path.Combine(Path.GetTempPath(), "no-such-ledger.jsonl"));
 
         Assert.Empty(ledger.Runs);
         Assert.False(ledger.HasRunFor("NSLYAT7sjAA"));

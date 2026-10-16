@@ -2,6 +2,7 @@ using Crateside.Core;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Handoff;
 using Crateside.Core.Samples;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Handoff;
 
@@ -103,11 +104,11 @@ public sealed class HandoffSupersedeTests : IDisposable
         var paths = new CratesidePaths();
 
         Assert.SkipUnless(
-            Directory.Exists(paths.StagingFolder) && File.Exists(paths.Ledger),
+            Directory.Exists(paths.StagingFolder) && File.Exists(paths.KeytagLedger),
             "The real staging root and ledger must be present."
         );
 
-        var ledger = KeyLedger.Read(paths.Ledger);
+        var ledger = TestLedger.From(paths.KeytagLedger);
 
         // Only a song with an upload in staging can have a file there superseded.
         var stagedSongs = Directory
@@ -141,7 +142,7 @@ public sealed class HandoffSupersedeTests : IDisposable
     [Fact]
     public void A_track_the_ledger_has_never_judged_supersedes_nothing() =>
         Assert.Empty(
-            SupersededStems.In(_staging, "zzzzzzzzzzz", KeyLedger.Read(Path.Combine(_root, "x")))
+            SupersededStems.In(_staging, "zzzzzzzzzzz", TestLedger.From(Path.Combine(_root, "x")))
         );
 
     private HandoffRunner Runner() => new(new CratesidePaths { StagingFolder = _staging });

@@ -14,6 +14,8 @@ builder.Services.AddSingleton<ToolsMemory>();
 
 var app = builder.Build();
 
+app.Services.GetRequiredService<Crateside.Core.Ledger.LedgerStore>().Start();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);

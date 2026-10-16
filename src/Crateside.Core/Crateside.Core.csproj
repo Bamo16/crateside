@@ -10,6 +10,8 @@
         <PackageReference Include="Google.Apis.YouTube.v3" />
         <PackageReference Include="Microsoft.AspNetCore.DataProtection" />
         <PackageReference Include="Microsoft.Data.Sqlite" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
         <PackageReference Include="Microsoft.Extensions.Options" />
         <PackageReference Include="TagLibSharp" />
     </ItemGroup>

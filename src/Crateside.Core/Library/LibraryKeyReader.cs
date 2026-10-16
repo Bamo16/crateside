@@ -15,6 +15,7 @@ namespace Crateside.Core.Library;
 /// song's samples and sources count once between them.
 /// </summary>
 public sealed class LibraryKeyReader(
+    LedgerStore store,
     IOptions<CratesidePaths> paths,
     FileIndexReader index,
     FolderInfoReader folderInfo,
@@ -33,7 +34,7 @@ public sealed class LibraryKeyReader(
 
         var tags = AbletonReads.TagsOrEmpty(index.Read, root);
         var backed = AbletonReads.TagsOrEmpty(folderInfo.Read, root);
-        var ledger = KeyLedger.Read(_paths.Ledger);
+        var ledger = store.Read();
         var tracks = new Dictionary<string, List<(string File, FileTags? Tags)>>(
             StringComparer.OrdinalIgnoreCase
         );

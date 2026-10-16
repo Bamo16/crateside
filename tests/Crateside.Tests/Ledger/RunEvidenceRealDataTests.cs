@@ -10,7 +10,7 @@ public sealed class RunEvidenceRealDataTests
     private static bool Available => File.Exists(LedgerPath);
 
     private static readonly Lazy<IReadOnlyList<RunEvidence>> Evidence = new(() =>
-        [.. RunEvidence.ReadLatest(LedgerPath).Values]
+        [.. TestLedger.LatestEvidence(LedgerPath).Values]
     );
 
     private static IReadOnlyList<RunEvidence> All() => Evidence.Value;
@@ -20,8 +20,8 @@ public sealed class RunEvidenceRealDataTests
     {
         Assert.SkipUnless(Available, "The keytag ledger must be present.");
 
-        var ledger = KeyLedger.Read(LedgerPath);
-        var latest = RunEvidence.ReadLatest(LedgerPath);
+        var ledger = TestLedger.From(LedgerPath);
+        var latest = TestLedger.LatestEvidence(LedgerPath);
 
         Assert.All(
             ledger.Runs.Select(r => r.Song).Distinct(StringComparer.OrdinalIgnoreCase),

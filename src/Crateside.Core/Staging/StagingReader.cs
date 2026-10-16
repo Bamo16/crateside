@@ -9,7 +9,7 @@ namespace Crateside.Core.Staging;
 /// Reads what is in Staging, by song, from disk on every call. Reads the XMP, which is ahead
 /// of Ableton's index where crateside writes (ADR 0017).
 /// </summary>
-public sealed class StagingReader(FolderInfoReader? folderInfoReader = null)
+public sealed class StagingReader(LedgerStore store, FolderInfoReader? folderInfoReader = null)
 {
     private readonly FolderInfoReader _folderInfoReader =
         folderInfoReader ?? new FolderInfoReader();
@@ -20,7 +20,7 @@ public sealed class StagingReader(FolderInfoReader? folderInfoReader = null)
     /// </summary>
     /// <summary>Reads Staging where the paths say it is, against the ledger as it is now.</summary>
     public IReadOnlyList<StagedSong> Read(CratesidePaths paths) =>
-        Build(paths.StagingFolder, KeyLedger.Read(paths.Ledger));
+        Build(paths.StagingFolder, store.Read());
 
     public IReadOnlyList<StagedSong> Build(string stagingRoot, KeyLedger ledger)
     {
@@ -55,7 +55,7 @@ public sealed class StagingReader(FolderInfoReader? folderInfoReader = null)
         ];
     }
 
-    private StagedSong BuildSong(
+    private static StagedSong BuildSong(
         string groupKey,
         IReadOnlyList<(string Path, StemTags? Tags)> group,
         FolderInfo folderInfo,

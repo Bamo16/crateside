@@ -7,10 +7,10 @@ namespace Crateside.Core.Orchestration.Verdict;
 /// Turns evidence into a verdict, by handing one track's work order to a headless agent session.
 /// </summary>
 public sealed class VerdictRunner(
+    LedgerStore store,
     WorkingSet workingSet,
     CratesidePaths paths,
-    string executable = "claude",
-    string uv = "uv"
+    string executable = "claude"
 )
 {
     /// <summary>Tools the session may use, scoped to what the skill needs.</summary>
@@ -73,9 +73,9 @@ public sealed class VerdictRunner(
 
         // The ledger decides success, not the exit code: a session that dies halfway leaves
         // nothing and is simply picked up again.
-        var ledger = KeyLedger.Read(paths.Ledger);
+        var ledger = store.Read();
 
-        if (ledger.HasRunFor(order.VideoId) || await LinkSwappedSourceAsync(order, ledger, ct))
+        if (ledger.HasRunFor(order.VideoId) || LinkSwappedSource(order, ledger))
             return VerdictResult.Succeeded();
 
         // A session that never ran says nothing about the track, so it must not cost a strike.
@@ -94,23 +94,12 @@ public sealed class VerdictRunner(
     /// A source swapped before its verdict is recorded under the stated upload, so the row's own
     /// ID is linked to that song, as the swap does for a judged track (#88).
     /// </summary>
-    private async Task<bool> LinkSwappedSourceAsync(
-        WorkOrder order,
-        KeyLedger ledger,
-        CancellationToken ct
-    ) =>
+    private bool LinkSwappedSource(WorkOrder order, KeyLedger ledger) =>
         YouTubeUrl.TryGetVideoId(order.SourceUrl, out var source)
         && !source.Equals(order.VideoId, StringComparison.Ordinal)
         && ledger.HasRunFor(source)
-        && await KeytagRestate.RunAsync(
-            uv,
-            paths.KeytagRepo,
-            source,
-            $"https://music.youtube.com/watch?v={order.VideoId}",
-            ct
-        )
-            is null
-        && KeyLedger.Read(paths.Ledger).HasRunFor(order.VideoId);
+        && store.Restate(source, $"https://music.youtube.com/watch?v={order.VideoId}").Refusal
+            is null;
 
     /// <summary>
     /// Why the agent could not be run, read from its prose as well as its JSON, or null when the

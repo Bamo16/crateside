@@ -1,5 +1,6 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Staging;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Staging;
 
@@ -12,7 +13,7 @@ public sealed class StagingReaderRealLibraryTests
     private static bool Available => RealLibrary.HasStems(StagingRoot) && File.Exists(LedgerPath);
 
     private static IReadOnlyList<StagedSong> Staged() =>
-        new StagingReader().Build(StagingRoot, KeyLedger.Read(LedgerPath));
+        new StagingReader(TestLedger.Store()).Build(StagingRoot, TestLedger.From(LedgerPath));
 
     [Fact]
     public void Rolls_the_staged_stems_up_into_songs()
@@ -101,9 +102,9 @@ public sealed class StagingReaderRealLibraryTests
     [Fact]
     public void An_absent_staging_folder_yields_an_empty_board()
     {
-        var songs = new StagingReader().Build(
+        var songs = new StagingReader(TestLedger.Store()).Build(
             Path.Combine(Path.GetTempPath(), "no-such-staging-root"),
-            KeyLedger.Read(LedgerPath)
+            TestLedger.From(LedgerPath)
         );
 
         Assert.Empty(songs);

@@ -4,6 +4,7 @@ using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Separation;
 
@@ -25,7 +26,7 @@ public sealed class SeparationSelectorTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static readonly KeyLedger NoLedger = KeyLedger.Read("does-not-exist");
+    private static readonly KeyLedger NoLedger = TestLedger.From("does-not-exist");
 
     /// <summary>A queue whose separation work list is these tracks: judged, no stems, not held.</summary>
     private static WorkListsView View(params WorkItem[] awaitingSeparation) =>
@@ -45,7 +46,7 @@ public sealed class SeparationSelectorTests : IDisposable
         Directory.CreateDirectory(_directory);
         File.WriteAllLines(path, videoIds.Select(v => Line(v, confidence)));
 
-        return KeyLedger.Read(path);
+        return TestLedger.From(path);
     }
 
     private static string Line(string videoId, string confidence) =>

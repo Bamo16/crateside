@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Crateside.Core.Ledger;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.WorkLists;
 
@@ -81,7 +82,7 @@ public sealed class ProcessedTracksTests : IDisposable
             )
         );
 
-        return KeyLedger.Read(_ledgerPath);
+        return TestLedger.From(_ledgerPath);
     }
 
     [Fact]

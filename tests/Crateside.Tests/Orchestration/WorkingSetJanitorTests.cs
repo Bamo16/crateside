@@ -1,6 +1,7 @@
 using Crateside.Core;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Jobs;
+using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration;
@@ -24,6 +25,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
 
     private WorkingSetJanitor Janitor =>
         field ??= new WorkingSetJanitor(
+            TestLedger.Store(Path.Combine(_directory, "runs.jsonl")),
             Set,
             Jobs,
             Options.Create(
@@ -31,7 +33,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
                 {
                     StagingFolder = Staging,
                     LibraryFolder = Library,
-                    Ledger = Path.Combine(_directory, "runs.jsonl"),
+                    KeytagLedger = Path.Combine(_directory, "runs.jsonl"),
                 }
             ),
             _ => _requested

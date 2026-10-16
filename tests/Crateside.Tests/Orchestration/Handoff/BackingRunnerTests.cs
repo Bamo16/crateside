@@ -3,6 +3,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Handoff;
 using Crateside.Tests.Ableton;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Handoff;
 
@@ -85,7 +86,7 @@ public sealed class BackingRunnerTests : IDisposable
     {
         var runner = new BackingRunner(new FolderInfoReader(), new FolderInfoWriter());
 
-        Assert.Empty(runner.Unbacked(Path.Combine(_root, "gone"), KeyLedger.Read("no-such-file")));
+        Assert.Empty(runner.Unbacked(Path.Combine(_root, "gone"), TestLedger.From("no-such-file")));
     }
 
     [Fact]

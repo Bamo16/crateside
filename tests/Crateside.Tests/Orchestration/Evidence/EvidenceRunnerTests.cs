@@ -3,6 +3,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Evidence;
 
@@ -38,7 +39,7 @@ public sealed class EvidenceRunnerTests : IDisposable
                 VideoId = VideoId,
                 Title = "Yes - Owner of a Lonely Heart",
             },
-            KeyLedger.Read("does-not-exist")
+            TestLedger.From("does-not-exist")
         );
 
     private void Held()

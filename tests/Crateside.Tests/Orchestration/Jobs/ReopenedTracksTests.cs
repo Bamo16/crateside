@@ -1,6 +1,7 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Jobs;
 
@@ -10,7 +11,9 @@ public sealed class ReopenedTracksTests
     private const string VideoId = "_DiMKyZwaA0";
 
     private static KeyLedger Ledger =>
-        KeyLedger.Read(Path.Combine(Path.GetTempPath(), "crateside-tests", "no-such-ledger.jsonl"));
+        TestLedger.From(
+            Path.Combine(Path.GetTempPath(), "crateside-tests", "no-such-ledger.jsonl")
+        );
 
     [Fact]
     public void A_failed_separation_with_strikes_left_is_still_owed()

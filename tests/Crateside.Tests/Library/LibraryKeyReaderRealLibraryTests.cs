@@ -4,6 +4,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
 using Crateside.Core.Samples;
+using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Library;
@@ -37,7 +38,7 @@ public sealed class LibraryKeyReaderRealLibraryTests
     {
         SkipUnlessPresent();
 
-        var ledger = KeyLedger.Read(Paths.Ledger);
+        var ledger = TestLedger.From(Paths.KeytagLedger);
         var tags = new FileIndexReader(Paths.AbletonIndex).Read(Paths.LibraryFolder);
 
         var conflicts = Directory
@@ -81,6 +82,7 @@ public sealed class LibraryKeyReaderRealLibraryTests
         var paths = Options.Create(Paths);
 
         return new LibraryKeyReader(
+            TestLedger.Store(paths.Value.KeytagLedger),
             paths,
             new FileIndexReader(paths.Value.AbletonIndex),
             new FolderInfoReader(),

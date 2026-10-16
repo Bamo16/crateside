@@ -1,6 +1,7 @@
 using Crateside.Core;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 
@@ -44,6 +45,7 @@ public sealed class UnreadablePlaylistTests : IDisposable
         );
 
         return new WorkListService(
+            TestLedger.Store(PathIn("runs.jsonl")),
             Options.Create(
                 new CratesidePaths
                 {
@@ -51,7 +53,7 @@ public sealed class UnreadablePlaylistTests : IDisposable
                     LibraryFolder = PathIn("library"),
                     StemsKeyIdentified = PathIn("identified"),
                     StemsUnresolvedKey = PathIn("unresolved"),
-                    Ledger = PathIn("runs.jsonl"),
+                    KeytagLedger = PathIn("runs.jsonl"),
                 }
             ),
             new PlaylistSettingsStore(file),

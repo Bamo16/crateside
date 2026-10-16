@@ -67,12 +67,14 @@
     }
 
     private Task SameSong(LedgerRun like) =>
-        Working(async () =>
+        Working(() =>
         {
-            _problem = await Lookalike.SameSongAsync(Row.VideoId, like, _circuit.Token);
+            _problem = Lookalike.SameSong(Row.VideoId, like);
 
             if (_problem is null)
                 Actions.Record(Row.VideoId, UserActionKind.SameSong, like.DisplayName);
+
+            return Task.CompletedTask;
         });
 
     private Task DifferentSong(LedgerRun like) =>

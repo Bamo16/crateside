@@ -41,7 +41,7 @@ public sealed class LookalikesTests : IDisposable
             )
         );
 
-        return KeyLedger.Read(path);
+        return TestLedger.From(path);
     }
 
     [Theory]

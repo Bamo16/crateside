@@ -7,6 +7,7 @@ using Crateside.Core.Plans;
 using Crateside.Core.Tracks;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ableton;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Tracks;
 
@@ -57,7 +58,7 @@ public sealed class AddedSourceRowTests : IDisposable
 
         File.WriteAllText(path, string.Empty);
 
-        return KeyLedger.Read(path);
+        return TestLedger.From(path);
     }
 
     private static StemOnDisk Library(string name, string videoId, string? preset = null) =>

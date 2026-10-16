@@ -21,7 +21,7 @@ public sealed class TrackSearchTests
         {
             Timestamp = DateTimeOffset.UnixEpoch,
             Song = "TLC - No Scrubs",
-            Key = "F# minor",
+            Centre = new TonalCentre("F#", DiatonicMode.Aeolian),
         },
         Samples = [new TrackSample { Label = "Vocal - Full", IsInLibrary = true }],
     };

@@ -4,6 +4,7 @@ using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Plans;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Separation;
 
@@ -51,7 +52,7 @@ public sealed class SeparationRunnerTests : IDisposable
                 Title = "Yes - Owner of a Lonely Heart",
                 Plan = StemPlan.InstrumentalRelease,
             },
-            Crateside.Core.Ledger.KeyLedger.Read("does-not-exist")
+            TestLedger.From("does-not-exist")
         );
 
     private static WorkOrder Order() =>
@@ -62,7 +63,7 @@ public sealed class SeparationRunnerTests : IDisposable
                 VideoId = VideoId,
                 Title = "Yes - Owner of a Lonely Heart",
             },
-            Crateside.Core.Ledger.KeyLedger.Read("does-not-exist")
+            TestLedger.From("does-not-exist")
         );
 
     /// <summary>A stand-in for stemforge-cli that prints what the test wants and exits.</summary>

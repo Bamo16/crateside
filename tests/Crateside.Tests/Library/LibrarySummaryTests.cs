@@ -2,6 +2,7 @@ using AbleKit.Tags;
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Library;
+using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Library;
@@ -79,6 +80,7 @@ public sealed class LibrarySummaryTests : IDisposable
         );
 
         var distribution = new LibraryKeyReader(
+            TestLedger.Store(paths.Value.KeytagLedger),
             paths,
             new FileIndexReader(paths.Value.AbletonIndex),
             new FolderInfoReader(),
@@ -95,6 +97,7 @@ public sealed class LibrarySummaryTests : IDisposable
 
         return new LibrarySummary(
             new LibraryKeyReader(
+                TestLedger.Store(paths.Value.KeytagLedger),
                 paths,
                 new FileIndexReader(paths.Value.AbletonIndex),
                 new FolderInfoReader(),

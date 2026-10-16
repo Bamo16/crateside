@@ -2,6 +2,7 @@ using System.Text.Json;
 using Crateside.Core.Ledger;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.WorkLists;
 
@@ -154,7 +155,7 @@ public sealed class FiledArrivalTests : IDisposable
             )
         );
 
-        return KeyLedger.Read(path);
+        return TestLedger.From(path);
     }
 
     private static void Stem(string root, string name, string videoId)

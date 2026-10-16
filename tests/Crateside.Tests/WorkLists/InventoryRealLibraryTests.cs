@@ -1,6 +1,7 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Plans;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.WorkLists;
 
@@ -19,7 +20,7 @@ public sealed class InventoryRealLibraryTests
     {
         Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
 
-        var ledger = KeyLedger.Read(LedgerPath);
+        var ledger = TestLedger.From(LedgerPath);
         var processed = ProcessedTracks.Scan(ledger, [StagingRoot, LibraryRoot]);
         var inventories = WorkListService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
 
@@ -44,7 +45,7 @@ public sealed class InventoryRealLibraryTests
     {
         Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
 
-        var ledger = KeyLedger.Read(LedgerPath);
+        var ledger = TestLedger.From(LedgerPath);
         var processed = ProcessedTracks.Scan(ledger, [StagingRoot, LibraryRoot]);
         var inventories = WorkListService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
 

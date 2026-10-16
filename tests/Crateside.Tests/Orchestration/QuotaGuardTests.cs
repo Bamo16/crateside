@@ -5,6 +5,7 @@ using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration;
 
@@ -99,7 +100,7 @@ public sealed class QuotaGuardTests : IDisposable
             )
         );
 
-        return KeyLedger.Read(path);
+        return TestLedger.From(path);
     }
 
     private static WorkItem Item(string videoId) =>

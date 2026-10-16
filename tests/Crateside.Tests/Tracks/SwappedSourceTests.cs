@@ -4,6 +4,7 @@ using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Tracks;
 
@@ -222,7 +223,7 @@ public sealed class SwappedSourceTests : IDisposable
             ]
         );
 
-        return KeyLedger.Read(path);
+        return TestLedger.From(path);
     }
 
     private static string Line(string timestamp, string videoId, string? restates) =>

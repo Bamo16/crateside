@@ -6,6 +6,7 @@ using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
 using Crateside.Core.Tracks;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Edits;
@@ -110,7 +111,7 @@ public sealed class TrackAddTests : IDisposable
     {
         Directory.CreateDirectory(_scratch);
 
-        var paths = new CratesidePaths { Ledger = Path.Combine(_scratch, "runs.jsonl") };
+        var paths = new CratesidePaths { KeytagLedger = Path.Combine(_scratch, "runs.jsonl") };
 
         settings = new TrackInstructionStore(
             new QueueFile(
@@ -120,8 +121,8 @@ public sealed class TrackAddTests : IDisposable
         );
 
         return new TrackAdd(
+            TestLedger.Store(paths.KeytagLedger),
             settings,
-            paths,
             new SourceProbe(),
             new ResolvedNameStore(Path.Combine(_scratch, "names.json"))
         );

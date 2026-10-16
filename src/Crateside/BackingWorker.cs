@@ -22,6 +22,7 @@ public sealed class BackingWorker(
     TagStoreBackups backups,
     FileIndexReader index,
     IOptions<CratesidePaths> paths,
+    LedgerStore store,
     ILogger<BackingWorker> logger
 ) : BackgroundService
 {
@@ -61,7 +62,7 @@ public sealed class BackingWorker(
 
     private TimeSpan Tick()
     {
-        var ledger = KeyLedger.Read(_paths.Ledger);
+        var ledger = store.Read();
         var settled = genres.Read();
         var reach = familiarity.Read();
 

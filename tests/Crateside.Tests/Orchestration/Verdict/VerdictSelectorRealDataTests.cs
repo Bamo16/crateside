@@ -4,6 +4,7 @@ using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Verdict;
 
@@ -29,7 +30,7 @@ public sealed class VerdictSelectorRealDataTests
 
         Assert.SkipWhen(detected.Count is 0, "no working sets on this machine");
 
-        var ledger = KeyLedger.Read(Paths.Ledger);
+        var ledger = TestLedger.From(Paths.KeytagLedger);
 
         // Checked one at a time so a failure names which condition is false.
         foreach (var videoId in detected)

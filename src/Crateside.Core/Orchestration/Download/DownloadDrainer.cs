@@ -11,6 +11,7 @@ namespace Crateside.Core.Orchestration.Download;
 
 /// <summary>Fetches one source at a time, for as long as any is owed.</summary>
 public sealed class DownloadDrainer(
+    LedgerStore store,
     WorkListService queue,
     DownloadRunner runner,
     DownloadSelector selector,
@@ -39,7 +40,7 @@ public sealed class DownloadDrainer(
         if (!selector.TryPickNext(view, out var wanted))
             return StageTick.Idle;
 
-        var ledger = KeyLedger.Read(_paths.Ledger);
+        var ledger = store.Read();
         var order = WorkOrder.Compose(wanted.Track, ledger);
 
         jobs.Record(wanted.VideoId, JobStage.Download, JobStatus.Running);

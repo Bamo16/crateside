@@ -21,7 +21,7 @@ public sealed class LookalikesRealDataTests
     {
         Assert.SkipUnless(File.Exists(LedgerPath), "The keytag ledger must be present.");
 
-        var ledger = KeyLedger.Read(LedgerPath);
+        var ledger = TestLedger.From(LedgerPath);
 
         var mistaken = ledger
             .Latest.Where(run =>

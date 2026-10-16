@@ -10,15 +10,15 @@ namespace Crateside.Core.Orchestration.Edits;
 /// Puts a track into the work lists without the playlist (ADR 0010).
 /// </summary>
 public sealed class TrackAdd(
+    LedgerStore store,
     TrackInstructionStore instructions,
-    CratesidePaths paths,
     SourceProbe probe,
     ResolvedNameStore names
 )
 {
     /// <summary>What adding this track would do, or why it cannot be done.</summary>
     public AddTrackPlan PlanFor(string? url, IReadOnlyList<TrackRowFacts> known) =>
-        PlanFor(url, known, KeyLedger.Read(paths.Ledger));
+        PlanFor(url, known, store.Read());
 
     private static AddTrackPlan PlanFor(
         string? url,
@@ -97,7 +97,7 @@ public sealed class TrackAdd(
         CancellationToken ct = default
     )
     {
-        var plan = PlanFor(url, known, KeyLedger.Read(paths.Ledger));
+        var plan = PlanFor(url, known, store.Read());
 
         if (plan.Refusal is { } refusal)
             return new AddTrackOutcome { Problem = refusal };

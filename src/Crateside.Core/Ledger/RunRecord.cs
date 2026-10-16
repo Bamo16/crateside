@@ -1,0 +1,113 @@
+namespace Crateside.Core.Ledger;
+
+/// <summary>A run as it is written to the ledger, checked by <see cref="LedgerStore.Record"/> (docs/ledger.md).</summary>
+public sealed record RunRecord
+{
+    public required DateTimeOffset RecordedAt { get; init; }
+
+    /// <summary>The song identity: normalized <c>artist - title</c>, lowercased. What a later run supersedes.</summary>
+    public required string Song { get; init; }
+
+    public string? Artist { get; init; }
+    public string? Title { get; init; }
+
+    /// <summary>Where the audio came from; required unless <see cref="LocalSource"/> says there is none.</summary>
+    public string? SourceUrl { get; init; }
+
+    public bool LocalSource { get; init; }
+
+    public string? InputPath { get; init; }
+
+    /// <summary><c>full_mix</c>, <c>instrumental</c> or <c>vocal</c>.</summary>
+    public string? InputKind { get; init; }
+
+    /// <summary>Null means nobody said, never "it has vocals".</summary>
+    public bool? HasVocals { get; init; }
+
+    public required KeyConfidence Confidence { get; init; }
+
+    /// <summary>The primary tonal centre; null only when withheld.</summary>
+    public TonalCentre? Centre { get; init; }
+
+    /// <summary>Two modes on one tonic; <see cref="Centre"/> is then the harmony's.</summary>
+    public bool Mixed { get; init; }
+
+    public IReadOnlyList<Section> Sections { get; init; } = [];
+
+    public IReadOnlyList<RunSource> Sources { get; init; } = [];
+
+    /// <summary>The stretches the evidence was detected over, where it was not the whole track.</summary>
+    public IReadOnlyList<RunWindow> Windows { get; init; } = [];
+
+    /// <summary>The user's note to the judge, sent with the windows.</summary>
+    public string? Direction { get; init; }
+
+    public string? TonicCheck { get; init; }
+    public string? Reasoning { get; init; }
+
+    /// <summary>The detectors' report, as JSON.</summary>
+    public string? Evidence { get; init; }
+
+    /// <summary>The BPM estimate keytag once recorded. Imported, never written by a new run.</summary>
+    public OldBpm? OldBpm { get; init; }
+}
+
+/// <summary>An external source consulted for a verdict, as written.</summary>
+public sealed record RunSource
+{
+    public string? Url { get; init; }
+    public string? Via { get; init; }
+    public required SourceKind Kind { get; init; }
+
+    /// <summary>Everything the source said about the key, verbatim.</summary>
+    public string? States { get; init; }
+
+    /// <summary>What it said as a 24-key name in the ledger's spelling, so it compares.</summary>
+    public string? StatesKey { get; init; }
+
+    public DiatonicMode? StatesMode { get; init; }
+
+    public string? Note { get; init; }
+
+    /// <summary>The labels of the sections it covered; null when it did not say.</summary>
+    public IReadOnlyList<string>? Sections { get; init; }
+}
+
+/// <summary>A stretch of the track detected on its own, in seconds.</summary>
+public sealed record RunWindow(double Start, double End, string? Label, WindowAsker? AskedBy);
+
+/// <summary>Who asked for a window. Null on a window imported from keytag, which never said.</summary>
+public enum WindowAsker
+{
+    User,
+    Judge,
+}
+
+/// <summary>keytag's old BPM estimate: its value, where it came from, and beatdetect's reading beside it.</summary>
+public sealed record OldBpm(double? Value, string? Source, double? Beatdetect);
+
+/// <summary>Whether a run went into the ledger.</summary>
+public abstract record RecordOutcome
+{
+    private RecordOutcome() { }
+
+    public sealed record Recorded(long Id) : RecordOutcome;
+
+    public sealed record Refused(string Field, string Problem) : RecordOutcome;
+}
+
+/// <summary>Whether a restatement went into the ledger.</summary>
+public abstract record RestateOutcome
+{
+    private RestateOutcome() { }
+
+    public sealed record Restated(string Song) : RestateOutcome;
+
+    /// <summary>The song already had that upload: a skip, not a failure.</summary>
+    public sealed record AlreadyHeld(string Song) : RestateOutcome;
+
+    public sealed record Refused(string Problem) : RestateOutcome;
+
+    /// <summary>Null when the ledger now has the upload, else why not.</summary>
+    public string? Refusal => this is Refused(var problem) ? problem : null;
+}

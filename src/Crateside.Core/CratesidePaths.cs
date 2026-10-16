@@ -34,20 +34,24 @@ public sealed class CratesidePaths
     public string AbletonIndex { get; set; } =
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("Ableton", "Live Database");
 
-    private string? _ledger;
+    private string? _keytagLedger;
 
     /// <summary>
     /// The keytag checkout, reached only through <c>keytag-detect</c> for the evidence run and
-    /// <c>runs.jsonl</c> for the verdict (keytag ADR 0006).
+    /// <c>/detect-key</c> for the verdict (keytag ADR 0006).
     /// </summary>
     public string KeytagRepo { get; set; } = @"V:\Repos\keytag";
 
-    /// <summary>keytag's append-only record of detect-key runs. Read-only; keytag owns it.</summary>
-    public string Ledger
+    /// <summary>keytag's <c>runs.jsonl</c>, imported into the ledger until the judge writes there itself (#111).</summary>
+    public string KeytagLedger
     {
-        get => _ledger ?? Path.Combine(KeytagRepo, "results", "runs.jsonl");
-        set => _ledger = value;
+        get => _keytagLedger ?? Path.Combine(KeytagRepo, "results", "runs.jsonl");
+        set => _keytagLedger = value;
     }
+
+    /// <summary>crateside's ledger of key verdicts, a SQLite file (docs/ledger.md).</summary>
+    public string LedgerDatabase { get; set; } =
+        Environment.SpecialFolder.LocalApplicationData.GetFolderPath("crateside", "ledger.db");
 
     /// <summary>Where stems go when the track has a key the user would tag with.</summary>
     public string StemsKeyIdentified { get; set; } = Path.Combine(MusicStems, "Key Identified");
