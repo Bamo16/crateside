@@ -4,14 +4,14 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CliWrap" Version="3.10.5" />
-        <PackageReference Include="Google.Apis.Auth" Version="1.75.0" />
-        <PackageReference Include="Humanizer.Core" Version="3.0.10" />
-        <PackageReference Include="Google.Apis.YouTube.v3" Version="1.75.0.4234" />
-        <PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="10.0.13" />
-        <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.11" />
-        <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.13" />
-        <PackageReference Include="TagLibSharp" Version="2.3.0" />
+        <PackageReference Include="CliWrap" />
+        <PackageReference Include="Google.Apis.Auth" />
+        <PackageReference Include="Humanizer.Core" />
+        <PackageReference Include="Google.Apis.YouTube.v3" />
+        <PackageReference Include="Microsoft.AspNetCore.DataProtection" />
+        <PackageReference Include="Microsoft.Data.Sqlite" />
+        <PackageReference Include="Microsoft.Extensions.Options" />
+        <PackageReference Include="TagLibSharp" />
     </ItemGroup>
 
     <ItemGroup>

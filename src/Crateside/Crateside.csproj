@@ -13,7 +13,7 @@
 
     <ItemGroup>
         <!-- Pluralization and number-to-words in the UI. No hand-rolled "s" suffixes. -->
-        <PackageReference Include="Humanizer.Core" Version="3.0.10" />
+        <PackageReference Include="Humanizer.Core" />
     </ItemGroup>
 
     <ItemGroup>
