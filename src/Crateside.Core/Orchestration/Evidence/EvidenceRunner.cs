@@ -1,6 +1,6 @@
-using System.Globalization;
+using System.Diagnostics;
+using Crateside.Core.KeyDetection;
 using Crateside.Core.Ledger;
-using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Core.Orchestration.Evidence;
 
@@ -19,8 +19,7 @@ public interface IWindowDetector
 /// Produces the evidence for one track: runs the detectors over audio crateside already holds
 /// (ADR 0019).
 /// </summary>
-public sealed class EvidenceRunner(WorkingSet workingSet, CratesidePaths paths, string uv = "uv")
-    : IWindowDetector
+public sealed class EvidenceRunner(WorkingSet workingSet, DetectorSet detectors) : IWindowDetector
 {
     public async Task<EvidenceResult> RunAsync(WorkOrder order, CancellationToken ct = default)
     {
@@ -30,7 +29,12 @@ public sealed class EvidenceRunner(WorkingSet workingSet, CratesidePaths paths, 
         if (!workingSet.TryGetSource(order.VideoId, out var audio))
             return EvidenceResult.Failed("no audio in the working set to detect over");
 
-        return await DetectAsync(audio, workingSet.EvidencePathFor(order.VideoId), [], ct);
+        return await DetectAsync(
+            audio,
+            window: null,
+            workingSet.EvidencePathFor(order.VideoId),
+            ct
+        );
     }
 
     public Task<EvidenceResult> DetectWindowAsync(
@@ -38,53 +42,20 @@ public sealed class EvidenceRunner(WorkingSet workingSet, CratesidePaths paths, 
         RunWindow window,
         string evidencePath,
         CancellationToken ct = default
-    ) =>
-        DetectAsync(
-            audioPath,
-            evidencePath,
-            [
-                "--segment",
-                string.Create(CultureInfo.InvariantCulture, $"{window.Start},{window.End}"),
-            ],
-            ct
-        );
+    ) => DetectAsync(audioPath, window, evidencePath, ct);
 
-    /// <summary>Runs keytag's declared detector over the audio, writing the machine layer where asked.</summary>
     private async Task<EvidenceResult> DetectAsync(
         string audioPath,
+        RunWindow? window,
         string evidencePath,
-        IEnumerable<string> segment,
         CancellationToken ct
-    )
-    {
-        var outcome = await ExternalProcess.RunAsync(
-            uv,
-            [
-                "run",
-                "--project",
-                paths.KeytagRepo,
-                "keytag-detect",
-                audioPath,
-                .. segment,
-                "--json-out",
-                evidencePath,
-            ],
-            workingDirectory: null,
-            ct
-        );
-
-        if (!outcome.Succeeded)
-            return EvidenceResult.Failed(
-                ExternalProcess.Describe(outcome.StandardError, outcome.StandardOutput)
-                    ?? $"keytag-detect exited with {outcome.ExitCode}"
-            );
-
-        // Checked against the file, not the exit code — a clean exit that wrote nothing has
-        // not produced evidence.
-        return File.Exists(evidencePath)
-            ? EvidenceResult.Succeeded(evidencePath)
-            : EvidenceResult.Failed("keytag-detect exited cleanly but wrote no evidence");
-    }
+    ) =>
+        await detectors.DetectAsync(audioPath, window, evidencePath, ct) switch
+        {
+            DetectionOutcome.Written(var path) => EvidenceResult.Succeeded(path),
+            DetectionOutcome.Failed(var error) => EvidenceResult.Failed(error),
+            _ => throw new UnreachableException(),
+        };
 }
 
 /// <summary>How one evidence run turned out.</summary>

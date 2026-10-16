@@ -396,6 +396,9 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **Stage chips are all coloured by state** (done green, running teal, your turn amber, stopped red),
   with the current stage the only filled, bold chip. **No timestamps** under them: the Activity log
   carries times. The user asked for both on 2026-09-25.
+- **The evidence panel says who backs keydetect** (#113): a line under the detector table, *keydetect
+  is backed by both madmom and edma*, *by madmom only* or *by neither madmom nor edma*, in
+  `--text-75` at 0.88rem. Added without a design; a run detected before the port has no line.
 
 ### Tempo (handoff 13, #92)
 
@@ -463,6 +466,9 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   (keytag ADR 0010), so its row was retired (#93); older ledger lines keep their `bpm` as the
   last-resort figure, but nothing is compared.
 - **The shape line reads "Steady · Mostly steady · Drifting"** (handoff 08 drew the older names).
+- **Key detectors gains madmom and edma** (#113) as columns once a run has a reading from them;
+  until then the panel is keytag's three. A song counts as *all three wrong* when the three
+  detectors of its own run all read it and all miss, whichever three those were.
 
 ### Tools (handoff 12, #79)
 

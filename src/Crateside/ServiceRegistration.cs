@@ -4,6 +4,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
+using Crateside.Core.KeyDetection;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
 using Crateside.Core.Naming;
@@ -228,9 +229,15 @@ public static class ServiceRegistration
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<WorkingSet>()
         ));
+        services.AddSingleton(sp =>
+            DetectorSet.For(
+                sp.GetRequiredService<IProcessRunner>(),
+                sp.GetRequiredService<CratesidePaths>().KeydetectFfmpeg
+            )
+        );
         services.AddSingleton(sp => new EvidenceRunner(
             sp.GetRequiredService<WorkingSet>(),
-            sp.GetRequiredService<CratesidePaths>()
+            sp.GetRequiredService<DetectorSet>()
         ));
         services.AddSingleton<EvidenceDrainer>();
 

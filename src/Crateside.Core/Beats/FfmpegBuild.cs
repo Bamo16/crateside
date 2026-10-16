@@ -59,7 +59,7 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
         return new FfmpegBuild(version, sha256, commit);
     }
 
-    private static FileInfo? Located(string fileName) =>
+    internal static FileInfo? Located(string fileName) =>
         Path.IsPathRooted(fileName)
             ? new FileInfo(fileName)
             : (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
@@ -74,7 +74,7 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
                 ))
                 .FirstOrDefault(candidate => candidate.Exists);
 
-    private static async Task<string> HashAsync(FileInfo executable, CancellationToken ct)
+    internal static async Task<string> HashAsync(FileInfo executable, CancellationToken ct)
     {
         await using var stream = executable.OpenRead();
 

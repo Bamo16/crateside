@@ -130,6 +130,19 @@
             </tbody>
         </table>
 
+        @if (Run.Backers is { } backers)
+        {
+            <p class="backers">
+                keydetect is backed by
+                @(backers switch
+                {
+                    [] => "neither madmom nor edma",
+                    [var one] => $"{Shown(one)} only",
+                    _ => "both madmom and edma",
+                })
+            </p>
+        }
+
         @if (Run.Agreement.FirstOrDefault(p => p.IsRelative) is { } split)
         {
             <p class="relative-split" title="@StatusTitle("relative")">
@@ -218,6 +231,14 @@
     /// <summary>The song's headline tempo; the panel lists its other sources under it.</summary>
     [Parameter]
     public TrackTempo? Tempo { get; set; }
+
+    /// <summary>A backer as the detector table names it.</summary>
+    private static string Shown(string backer) =>
+        backer switch
+        {
+            "essentia_edma" => "edma",
+            _ => backer,
+        };
 
     private static string StanceMark(SourceStance stance) =>
         stance switch

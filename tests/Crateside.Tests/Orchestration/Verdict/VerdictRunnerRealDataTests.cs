@@ -1,4 +1,5 @@
 using Crateside.Core;
+using Crateside.Core.KeyDetection;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Evidence;
@@ -22,7 +23,10 @@ public sealed class VerdictRunnerRealDataTests
             TestLedger.Store(),
             Set,
             new ProcessRunner(),
-            new EvidenceRunner(Set, new CratesidePaths()),
+            new EvidenceRunner(
+                Set,
+                DetectorSet.For(new ProcessRunner(), new CratesidePaths().KeydetectFfmpeg)
+            ),
             new SourcePages(() => new HttpClient()),
             new JudgeOptions(),
             TimeProvider.System
