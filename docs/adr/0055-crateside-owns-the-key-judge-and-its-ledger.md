@@ -115,3 +115,14 @@ them, not the session.
 - **The maintainer's ear is a hint**, recorded as a source of its own kind, which the judge
   weighs but which never raises confidence by itself.
 - Every ported detector accepts a time window.
+
+## Addendum, 2026-10-15: how much the user's ear counts is a setting
+
+Users will trust their own ear differently; the maintainer does not trust theirs yet. **Ear** is a
+setting with two values: **hint** (the default, as above: weighed, never raising confidence) and
+**human source** (counted like an authoritative source, so a dissent from it caps the verdict
+at MEDIUM and agreement with a backed detector can reach HIGH). The judge is told which applies.
+
+Asking for windows is given to the judge as authority, not a last resort: where the evidence
+looks odd (a three-way split, a detector failing, a long stretch with no harmony), it should ask
+for windows before withholding.
