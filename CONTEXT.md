@@ -37,6 +37,14 @@ specific to crateside: keys, pairing, importing, tags, the views, and running th
   *G major*'s) is one **Camelot** step from the collapsed one.
 - **Backer** — another detector that names the same key as keydetect. Whether keydetect has
   backers says more about its being right than its own confidence does.
+- **Window** — a stretch of a track detected on its own, given by the user in bars or asked
+  for by the judge. The windows of a judged run become its verdict's **sections**.
+- **Direction** — the user's free-text note to the judge, sent with windows and kept with
+  the run.
+- **Ear** — the user's own reading of a key, a source of its own kind. A hint by default;
+  the Ear setting can count it as a human source.
+- **Restatement** — the ledger's record that another upload is a song already judged. It
+  carries the song's verdict to the new upload and never changes it.
 
 ## Places
 

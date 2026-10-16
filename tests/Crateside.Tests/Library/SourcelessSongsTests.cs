@@ -4,6 +4,7 @@ using Crateside.Core.Library;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Tracks;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Library;
 
@@ -80,7 +81,7 @@ public sealed class SourcelessSongsTests : IDisposable
             TracksView
                 .Compose(
                     EmptyView(),
-                    KeyLedger.Read(Path.Combine(_library, "none.jsonl")),
+                    TestLedger.From(Path.Combine(_library, "none.jsonl")),
                     [],
                     SourcelessSongs.Scan(_library),
                     _library,
@@ -122,7 +123,7 @@ public sealed class SourcelessSongsTests : IDisposable
         var rows = TracksView
             .Compose(
                 EmptyView(),
-                KeyLedger.Read(paths.Ledger),
+                TestLedger.From(paths.KeytagLedger),
                 [],
                 sourceless,
                 paths.LibraryFolder,

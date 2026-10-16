@@ -8,6 +8,7 @@ using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Playlist;
 using Crateside.Core.Staging;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Edits;
@@ -26,6 +27,7 @@ public sealed class TrackSwapTests : IDisposable
 
     private string StagingRoot => Path.Combine(_root, "staging");
     private string LedgerPath => Path.Combine(_root, "runs.jsonl");
+    private LedgerStore Ledger => field ??= TestLedger.Store(LedgerPath);
     private string WorkingRoot => Path.Combine(_root, "working");
 
     public TrackSwapTests()
@@ -36,6 +38,8 @@ public sealed class TrackSwapTests : IDisposable
 
     public void Dispose()
     {
+        Ledger.Dispose();
+
         if (Directory.Exists(_root))
             Directory.Delete(_root, recursive: true);
 
@@ -94,7 +98,7 @@ public sealed class TrackSwapTests : IDisposable
     }
 
     [Fact]
-    public async Task Applying_records_the_url_clears_the_old_audio_and_reopens_separation()
+    public void Applying_records_the_url_clears_the_old_audio_and_reopens_separation()
     {
         Stage("Rob Dougan - Furious Angels (Vocal - Full).flac");
         GiveSource();
@@ -103,14 +107,12 @@ public sealed class TrackSwapTests : IDisposable
         var jobs = Jobs();
         var workingSet = new WorkingSet(WorkingRoot);
 
-        // Already restated, so nothing shells out to keytag.
         WriteLedger(
             Line("2026-09-01T00:00:00+00:00", Song, Video),
             Line("2026-09-09T00:00:00+00:00", Song, "NSLYAT7sjAA")
         );
 
-        var outcome = await Swap(settings, workingSet)
-            .ApplyAsync(Video, Replacement, TestContext.Current.CancellationToken);
+        var outcome = Swap(settings, workingSet).Apply(Video, Replacement);
 
         Assert.True(outcome.Succeeded, outcome.Problem);
         Assert.Equal(1, outcome.Removed);
@@ -127,16 +129,13 @@ public sealed class TrackSwapTests : IDisposable
     }
 
     [Fact]
-    public async Task The_verdict_still_resolves_through_both_video_ids_afterwards()
+    public void The_verdict_still_resolves_through_both_video_ids_afterwards()
     {
-        WriteLedger(
-            Line("2026-09-01T00:00:00+00:00", Song, Video),
-            Line("2026-09-09T00:00:00+00:00", Song, "NSLYAT7sjAA")
-        );
+        WriteLedger(Line("2026-09-01T00:00:00+00:00", Song, Video));
 
-        await Swap().ApplyAsync(Video, Replacement, TestContext.Current.CancellationToken);
+        Swap().Apply(Video, Replacement);
 
-        var ledger = KeyLedger.Read(LedgerPath);
+        var ledger = Ledger.Read();
 
         Assert.True(ledger.TryGetLatestByVideoId(Video, out var viaOld));
         Assert.True(ledger.TryGetLatestByVideoId("NSLYAT7sjAA", out var viaNew));
@@ -145,7 +144,7 @@ public sealed class TrackSwapTests : IDisposable
     }
 
     [Fact]
-    public async Task A_swapped_track_is_separated_from_the_stated_url()
+    public void A_swapped_track_is_separated_from_the_stated_url()
     {
         WriteLedger(
             Line("2026-09-01T00:00:00+00:00", Song, Video),
@@ -154,7 +153,7 @@ public sealed class TrackSwapTests : IDisposable
 
         var settings = Settings();
 
-        await Swap(settings).ApplyAsync(Video, Replacement, TestContext.Current.CancellationToken);
+        Swap(settings).Apply(Video, Replacement);
 
         var item = WorkListsView
             .Compose(
@@ -175,7 +174,7 @@ public sealed class TrackSwapTests : IDisposable
 
         Assert.Equal(
             "https://music.youtube.com/watch?v=NSLYAT7sjAA",
-            WorkOrder.Compose(item, KeyLedger.Read(LedgerPath)).SourceUrl
+            WorkOrder.Compose(item, Ledger.Read()).SourceUrl
         );
     }
 
@@ -191,7 +190,7 @@ public sealed class TrackSwapTests : IDisposable
     }
 
     [Fact]
-    public async Task A_reopened_track_is_separated_from_the_stated_url()
+    public void A_reopened_track_is_separated_from_the_stated_url()
     {
         WriteLedger(
             Line("2026-09-01T00:00:00+00:00", Song, Video),
@@ -200,7 +199,7 @@ public sealed class TrackSwapTests : IDisposable
 
         var settings = Settings();
 
-        await Swap(settings).ApplyAsync(Video, Replacement, TestContext.Current.CancellationToken);
+        Swap(settings).Apply(Video, Replacement);
 
         var reopened = new WorkItem { VideoId = Video, Title = "Rob Dougan - Furious Angels" };
 
@@ -217,14 +216,14 @@ public sealed class TrackSwapTests : IDisposable
 
         Assert.Equal(
             "https://music.youtube.com/watch?v=NSLYAT7sjAA",
-            WorkOrder.Compose(item, KeyLedger.Read(LedgerPath)).SourceUrl
+            WorkOrder.Compose(item, Ledger.Read()).SourceUrl
         );
     }
 
     [Fact]
-    public async Task Swapping_an_unjudged_track_records_the_url_without_restating_anything()
+    public void Swapping_an_unjudged_track_records_the_url_without_restating_anything()
     {
-        // Nothing shells out to keytag here: there is no run to restate.
+        // There is no run to restate.
         var settings = Settings();
         var workingSet = new WorkingSet(WorkingRoot);
 
@@ -233,8 +232,7 @@ public sealed class TrackSwapTests : IDisposable
             new Acquisition { PremiumStatus = PremiumStatus.NoPremiumLadder }
         );
 
-        var outcome = await Swap(settings, workingSet: workingSet)
-            .ApplyAsync("neverJudged", Replacement, TestContext.Current.CancellationToken);
+        var outcome = Swap(settings, workingSet: workingSet).Apply("neverJudged", Replacement);
 
         Assert.True(outcome.Succeeded, outcome.Problem);
 
@@ -245,12 +243,7 @@ public sealed class TrackSwapTests : IDisposable
     }
 
     private TrackSwap Swap(TrackInstructionStore? settings = null, WorkingSet? workingSet = null) =>
-        new(
-            settings ?? Settings(),
-            workingSet ?? new WorkingSet(WorkingRoot),
-            Staged(),
-            new CratesidePaths { Ledger = LedgerPath, StagingFolder = StagingRoot }
-        );
+        new(Ledger, settings ?? Settings(), workingSet ?? new WorkingSet(WorkingRoot), Staged());
 
     private TrackInstructionStore Settings() =>
         new(

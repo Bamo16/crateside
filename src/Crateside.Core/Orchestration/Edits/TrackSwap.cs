@@ -11,19 +11,17 @@ namespace Crateside.Core.Orchestration.Edits;
 /// Points a track at a better upload of the same song, and puts it back through separation.
 /// </summary>
 public sealed class TrackSwap(
+    LedgerStore store,
     TrackInstructionStore instructions,
     WorkingSet workingSet,
     ReadStagedFiles staged,
-    CratesidePaths paths,
-    string uv = "uv",
     DeletionLog? deletions = null
 )
 {
     private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
 
     /// <summary>What swapping this track's source would do, or why it cannot be done.</summary>
-    public SwapPlan PlanFor(string videoId, string? url) =>
-        PlanFor(videoId, url, KeyLedger.Read(paths.Ledger));
+    public SwapPlan PlanFor(string videoId, string? url) => PlanFor(videoId, url, store.Read());
 
     private SwapPlan PlanFor(string videoId, string? url, KeyLedger ledger)
     {
@@ -46,22 +44,18 @@ public sealed class TrackSwap(
     }
 
     /// <summary>
-    /// Tells keytag the new video is this song — first, or its stems resolve to nothing — then
+    /// Records the new video as this song — first, or its stems resolve to nothing — then
     /// records the URL, throws away the old audio, and reopens separation.
     /// </summary>
-    public async Task<SwapOutcome> ApplyAsync(
-        string videoId,
-        string url,
-        CancellationToken ct = default
-    )
+    public SwapOutcome Apply(string videoId, string url)
     {
-        var ledger = KeyLedger.Read(paths.Ledger);
+        var ledger = store.Read();
         var plan = PlanFor(videoId, url, ledger);
 
         if (plan.Refusal is { } refusal)
             return new SwapOutcome { Problem = refusal };
 
-        if (await RestateAsync(videoId, plan.NewVideoId!, plan.Url!, ledger, ct) is { } failure)
+        if (Restate(videoId, plan.Url!, ledger) is { } failure)
             return new SwapOutcome { Problem = failure };
 
         instructions.SetSourceUrl(videoId, plan.Url);
@@ -99,29 +93,11 @@ public sealed class TrackSwap(
     }
 
     /// <summary>
-    /// Has keytag record that the new video is this song, or says why it could not; skipped with no
-    /// verdict to carry across (ADR 0016).
+    /// Records that the new video is this song, or says why it could not; skipped with no verdict
+    /// to carry across (ADR 0016).
     /// </summary>
-    private async Task<string?> RestateAsync(
-        string videoId,
-        string newVideoId,
-        string url,
-        KeyLedger ledger,
-        CancellationToken ct
-    )
-    {
-        if (!ledger.TryGetLatestByVideoId(videoId, out var current))
-            return null;
-
-        // keytag refuses a URL the song already has, so a retry must skip rather than fail.
-        if (
-            ledger.TryGetLatestByVideoId(newVideoId, out var already)
-            && already.Song.Equals(current.Song, StringComparison.OrdinalIgnoreCase)
-        )
-            return null;
-
-        return await KeytagRestate.RunAsync(uv, paths.KeytagRepo, videoId, url, ct);
-    }
+    private string? Restate(string videoId, string url, KeyLedger ledger) =>
+        ledger.HasRunFor(videoId) ? store.Restate(videoId, url).Refusal : null;
 
     private static SwapPlan Impossible(string refusal) =>
         new() { Removing = [], Refusal = refusal };
@@ -131,7 +107,7 @@ public sealed class TrackSwap(
 public sealed record SwapPlan
 {
     private const string CarriedDetail =
-        "keytag records the new video as this song, so the key and BPM carry across and nothing "
+        "The ledger records the new video as this song, so the key and BPM carry across and nothing "
         + "is judged again. Separation downloads the replacement and runs from it.";
 
     private const string FreshDetail =

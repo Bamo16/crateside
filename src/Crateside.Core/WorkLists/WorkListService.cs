@@ -18,6 +18,7 @@ public delegate IReadOnlySet<string> ReadReopenedTracks(KeyLedger ledger);
 public delegate Task<PresetCatalog> ReadPresetCatalog(CancellationToken ct);
 
 public sealed class WorkListService(
+    LedgerStore store,
     IOptions<CratesidePaths> paths,
     PlaylistSettingsStore settings,
     TrackInstructionStore instructions,
@@ -208,7 +209,7 @@ public sealed class WorkListService(
         await ConsumeAsync(held, ct);
 
         // Both staging and the library count — a track that moved out is still processed.
-        var ledger = KeyLedger.Read(_paths.Ledger);
+        var ledger = store.Read();
         var processed = ProcessedTracks.Scan(ledger, [_paths.StagingFolder, _paths.LibraryFolder]);
 
         // Deliberately not counted as processed: that would let the janitor discard the

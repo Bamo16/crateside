@@ -3,6 +3,7 @@ using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Audit;
 using Crateside.Core.Ledger;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Audit;
 
@@ -21,12 +22,12 @@ public sealed class TagAuditRealLibraryTests
         {
             StagingFolder = StagingRoot,
             LibraryFolder = LibraryRoot,
-            Ledger = LedgerPath,
+            KeytagLedger = LedgerPath,
         };
 
     private static TagAuditReport Report() =>
         TagAudit.Run(
-            KeyLedger.Read(LedgerPath),
+            TestLedger.From(LedgerPath),
             [AuditRoot.Written(StagingRoot), AuditRoot.Mirrored(LibraryRoot)],
             TagAudit.Using(new FileIndexReader(Paths.AbletonIndex))
         );

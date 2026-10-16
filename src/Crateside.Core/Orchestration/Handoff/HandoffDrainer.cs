@@ -14,6 +14,7 @@ namespace Crateside.Core.Orchestration.Handoff;
 /// Works down the stems waiting to be handed to the human half, one track at a time.
 /// </summary>
 public sealed class HandoffDrainer(
+    LedgerStore store,
     HandoffRunner runner,
     HandoffSelector selector,
     JobStore jobs,
@@ -30,7 +31,7 @@ public sealed class HandoffDrainer(
 
     public async Task<StageTick> DrainOnceAsync(CancellationToken ct = default)
     {
-        var ledger = KeyLedger.Read(_paths.Ledger);
+        var ledger = store.Read();
 
         StemLanding.ReleaseParked(_paths, ledger, jobs, deletions);
 

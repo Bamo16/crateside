@@ -1,5 +1,6 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Handoff;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Handoff;
 
@@ -47,7 +48,7 @@ public sealed class SupersededStemsTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private KeyLedger Ledger() => KeyLedger.Read(_ledgerPath);
+    private KeyLedger Ledger() => TestLedger.From(_ledgerPath);
 
     [Fact]
     public void A_swap_still_clears_the_upload_it_replaced()

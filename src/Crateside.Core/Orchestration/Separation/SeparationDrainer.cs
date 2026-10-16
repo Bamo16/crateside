@@ -12,6 +12,7 @@ namespace Crateside.Core.Orchestration.Separation;
 /// Works the queue down, one track at a time, for as long as there is anything outstanding.
 /// </summary>
 public sealed class SeparationDrainer(
+    LedgerStore store,
     WorkListService queue,
     SeparationRunner runner,
     SeparationSelector selector,
@@ -48,7 +49,7 @@ public sealed class SeparationDrainer(
             return DrainTick.Unavailable(ex.Message);
         }
 
-        if (!selector.TryPickNext(view, KeyLedger.Read(_paths.Ledger), out var order))
+        if (!selector.TryPickNext(view, store.Read(), out var order))
             return DrainTick.Idle;
 
         control.Report($"Separating {order.Title}");
@@ -58,12 +59,7 @@ public sealed class SeparationDrainer(
             var result = await runner.RunAsync(order, ct);
 
             if (result.Outcome is SeparationOutcome.Succeeded)
-                StemLanding.Reconcile(
-                    _paths,
-                    KeyLedger.Read(_paths.Ledger),
-                    order,
-                    result.OutputFiles
-                );
+                StemLanding.Reconcile(_paths, store.Read(), order, result.OutputFiles);
 
             return DrainTick.Ran(order, result);
         }
@@ -78,7 +74,7 @@ public sealed class SeparationDrainer(
         foreach (var settled in reconciliation.Finished)
             StemLanding.Reconcile(
                 _paths,
-                KeyLedger.Read(_paths.Ledger),
+                store.Read(),
                 settled.Job.VideoId,
                 settled.Promise.Destination,
                 settled.OutputFiles

@@ -22,13 +22,21 @@ public sealed record RunEvidence
             : Song;
 
     /// <summary>The verdict's key, so a source's own answer can be compared against it.</summary>
-    public string? Key { get; init; }
+    public string? Key => Centre?.Collapsed;
 
-    /// <summary>
-    /// The diatonic mode, where a human source established one. Null means nobody looked, not
-    /// plain major or minor.
-    /// </summary>
-    public string? Mode { get; init; }
+    public TonalCentre? Centre { get; init; }
+
+    public DiatonicMode? Mode => Centre?.Mode;
+
+    public bool Mixed { get; init; }
+
+    public IReadOnlyList<Section> Sections { get; init; } = [];
+
+    /// <summary>The stretches detected on their own, where the evidence is not the whole track's.</summary>
+    public IReadOnlyList<RunWindow> Windows { get; init; } = [];
+
+    /// <summary>The user's note to the judge, sent with the windows.</summary>
+    public string? Direction { get; init; }
 
     /// <summary>
     /// The argument that the tonic is not its relative. Null on older runs, whose prose is in
@@ -65,113 +73,68 @@ public sealed record RunEvidence
     /// <summary>Every time the running key estimate changed. Early instability is often just a sparse intro.</summary>
     public IReadOnlyList<KeyEvent> KeyEvents { get; init; } = [];
 
-    /// <summary>The warp recommendation.</summary>
+    /// <summary>keytag's old BPM estimate.</summary>
     public double? Bpm { get; init; }
 
-    /// <summary>The latest recorded run for a song identity, or null when the ledger has never seen it.</summary>
-    public static RunEvidence? ReadLatestFor(string ledgerPath, string song) =>
-        ReadLatest(ledgerPath).GetValueOrDefault(song);
-
-    /// <summary>The latest recorded run for every song identity in the ledger, in one pass.</summary>
-    public static IReadOnlyDictionary<string, RunEvidence> ReadLatest(string ledgerPath)
+    internal static RunEvidence From(RunRecord run)
     {
-        var latest = new Dictionary<string, RunEvidence>(StringComparer.OrdinalIgnoreCase);
+        var machine = run.Evidence is { } json
+            ? JsonSerializer.Deserialize(json, RunEvidenceJsonContext.Default.MachineDto)
+            : null;
 
-        if (!File.Exists(ledgerPath))
-            return latest;
-
-        using var stream = new FileStream(
-            ledgerPath,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.ReadWrite | FileShare.Delete
-        );
-        using var reader = new StreamReader(stream);
-
-        while (reader.ReadLine() is { } line)
+        return new()
         {
-            if (line.AsSpan().IsWhiteSpace())
-                continue;
-
-            RunEvidenceDto? dto;
-
-            try
-            {
-                dto = JsonSerializer.Deserialize(
-                    line,
-                    RunEvidenceJsonContext.Default.RunEvidenceDto
-                );
-            }
-            catch (JsonException)
-            {
-                continue;
-            }
-
-            // A restatement carries the verdict forward under a new source URL and no evidence at
-            // all (keytag ADR 0008), so taking the latest *line* would empty this view the first
-            // time a track's source was swapped.
-            if (dto is not { Song: { } song, Restates: null })
-                continue;
-
-            // Append-only, so a later line supersedes an earlier one for the same identity.
-            var evidence = FromDto(dto);
-
-            if (!latest.TryGetValue(song, out var held) || evidence.Timestamp >= held.Timestamp)
-                latest[song] = evidence;
-        }
-
-        return latest;
-    }
-
-    private static RunEvidence FromDto(RunEvidenceDto dto) =>
-        new()
-        {
-            Timestamp = dto.Timestamp ?? default,
-            Song = dto.Song ?? string.Empty,
-            Key = dto.Verdict?.Key,
-            Mode = dto.Verdict?.Mode,
-            Artist = dto.Artist,
-            Title = dto.Title,
-            TonicCheck = dto.TonicCheck,
-            Reasoning = dto.Reasoning,
-            InputKind = dto.InputKind,
+            Timestamp = run.RecordedAt,
+            Song = run.Song,
+            Artist = run.Artist,
+            Title = run.Title,
+            Centre = run.Centre,
+            Mixed = run.Mixed,
+            Sections = run.Sections,
+            Windows = run.Windows,
+            Direction = run.Direction,
+            TonicCheck = run.TonicCheck,
+            Reasoning = run.Reasoning,
+            InputKind = run.InputKind,
             Sources =
             [
-                .. (dto.Sources ?? []).Select(s => new EvidenceSource
+                .. run.Sources.Select(source => new EvidenceSource
                 {
-                    Url = s.Url,
-                    Via = s.Via,
-                    States = s.States,
-                    StatesKey = s.StatesKey,
-                    StatesMode = s.StatesMode,
-                    RecordedKind = s.Kind,
-                    Note = s.Note,
-                    VerdictKey = dto.Verdict?.Key,
+                    Url = source.Url,
+                    Via = source.Via,
+                    States = source.States,
+                    StatesKey = source.StatesKey,
+                    StatesMode = source.StatesMode?.ToString().ToLowerInvariant(),
+                    RecordedKind = EvidenceSource.StoredName(source.Kind),
+                    Note = source.Note,
+                    Sections = source.Sections,
+                    VerdictKey = run.Centre?.Collapsed,
                 }),
             ],
-            Algorithms = AlgorithmResult.FromDto(dto.Machine?.Algorithms),
+            Algorithms = AlgorithmResult.FromDto(machine?.Algorithms),
             Agreement =
             [
-                .. (dto.Machine?.PairwiseAgreement ?? []).Select(p => new AgreementPair
+                .. (machine?.PairwiseAgreement ?? []).Select(pair => new AgreementPair
                 {
-                    Pair = p.Pair ?? string.Empty,
-                    Status = p.Status ?? "none",
-                    Recommended = p.Recommended,
-                    Note = p.Note,
+                    Pair = pair.Pair ?? string.Empty,
+                    Status = pair.Status ?? "none",
+                    Recommended = pair.Recommended,
+                    Note = pair.Note,
                 }),
             ],
-            Chords = dto.Machine?.Chords ?? [],
+            Chords = machine?.Chords ?? [],
             KeyEvents =
             [
-                .. (dto.Machine?.KeyEvents ?? []).Select(e => new KeyEvent
+                .. (machine?.KeyEvents ?? []).Select(change => new KeyEvent
                 {
-                    Seconds = e.T,
-                    Key = e.Key ?? string.Empty,
-                    R = e.R,
+                    Seconds = change.T,
+                    Key = change.Key ?? string.Empty,
+                    R = change.R,
                 }),
             ],
-            Bpm = dto.Bpm?.Value,
+            Bpm = run.OldBpm?.Value,
         };
+    }
 }
 
 /// <summary>An external source consulted for a verdict.</summary>
@@ -206,6 +169,9 @@ public sealed partial record EvidenceSource
     /// was handled.
     /// </summary>
     public string? Note { get; init; }
+
+    /// <summary>The labels of the sections the source covered; null when it did not say.</summary>
+    public IReadOnlyList<string>? Sections { get; init; }
 
     /// <summary>The verdict this source was consulted for, so agreement can be computed.</summary>
     public string? VerdictKey { get; init; }
@@ -267,13 +233,22 @@ public sealed partial record EvidenceSource
         && KindFromHost is not (SourceKind.Unknown or SourceKind.Unclassified)
         && recorded != KindFromHost;
 
-    private static SourceKind? ParseKind(string? recorded) =>
+    /// <summary>How the ledger spells a kind: <c>chord_recogniser</c>.</summary>
+    internal static string StoredName(SourceKind kind) =>
+        kind switch
+        {
+            SourceKind.ChordRecogniser => "chord_recogniser",
+            _ => kind.ToString().ToLowerInvariant(),
+        };
+
+    internal static SourceKind? ParseKind(string? recorded) =>
         recorded?.Trim().ToLowerInvariant() switch
         {
             "authoritative" => SourceKind.Authoritative,
             "corroborating" => SourceKind.Corroborating,
             "chord_recogniser" => SourceKind.ChordRecogniser,
             "algorithmic" => SourceKind.Algorithmic,
+            "ear" => SourceKind.Ear,
             _ => null,
         };
 
@@ -326,6 +301,12 @@ public enum SourceKind
 
     /// <summary>A host the catalog does not list and no recorded kind. Read the agent's note.</summary>
     Unclassified,
+
+    /// <summary>
+    /// The user's own reading. A hint unless the Ear setting counts it as a human source
+    /// (ADR 0055).
+    /// </summary>
+    Ear,
 
     /// <summary>Shares this tool's failure modes — corroboration only, never the answer.</summary>
     Algorithmic,
@@ -428,71 +409,6 @@ public sealed record KeyEvent
     public double Seconds { get; init; }
     public required string Key { get; init; }
     public double R { get; init; }
-}
-
-// Only what the view shows. Deserialized per song on demand, never for the whole ledger.
-internal sealed record RunEvidenceDto
-{
-    public DateTimeOffset? Timestamp { get; init; }
-
-    public string? Song { get; init; }
-
-    /// <summary>
-    /// Set on a restatement, naming the run it copies. Its presence is what marks a line as
-    /// carrying no evidence of its own (keytag ADR 0008).
-    /// </summary>
-    public string? Restates { get; init; }
-
-    public string? Artist { get; init; }
-
-    public string? Title { get; init; }
-
-    public VerdictDto? Verdict { get; init; }
-
-    public string? TonicCheck { get; init; }
-
-    public string? Reasoning { get; init; }
-
-    public string? InputKind { get; init; }
-
-    public IReadOnlyList<SourceDto>? Sources { get; init; }
-
-    public BpmDto? Bpm { get; init; }
-
-    public MachineDto? Machine { get; init; }
-
-    internal sealed record VerdictDto
-    {
-        public string? Key { get; init; }
-
-        public string? Mode { get; init; }
-    }
-
-    internal sealed record SourceDto
-    {
-        public string? Url { get; init; }
-
-        public string? Via { get; init; }
-
-        public string? States { get; init; }
-
-        public string? StatesKey { get; init; }
-
-        public string? StatesMode { get; init; }
-
-        public string? Kind { get; init; }
-
-        public string? Note { get; init; }
-    }
-
-    internal sealed record BpmDto
-    {
-        public double? Value { get; init; }
-
-        public string? Source { get; init; }
-
-        public double? Beatdetect { get; init; }
-    }
 }
 
 internal sealed record MachineDto

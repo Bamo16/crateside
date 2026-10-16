@@ -91,14 +91,15 @@ judging, and how much of the current Claude quota window is used.
 
 ## How it relates to keytag and StemForge
 
-- [**keytag**](../keytag) (private) is the key-detection tool and the owner of the
-  **ledger** — an append-only `results/runs.jsonl` of every verdict. crateside reads it
-  as data; keytag never learns crateside exists.
+- [**keytag**](../keytag) (private) is the key-detection tool. crateside keeps the
+  **ledger** of every verdict itself, in SQLite ([docs/ledger.md](docs/ledger.md)); until
+  the judge writes there directly (#111), crateside imports the verdicts keytag's recorder
+  appends to its `results/runs.jsonl`. keytag never learns crateside exists.
 - [**StemForge**](https://github.com/Bamo16/StemForge) does the downloading and the stem
   separation. crateside calls its CLI and reads the provenance it writes into each file's
   tags — that provenance (the video ID) is how every later step recognises a file.
 
-crateside itself keeps very little: the YouTube OAuth token, a record of the work it has
+Beyond the ledger, crateside keeps very little: the YouTube OAuth token, a record of the work it has
 run, and per-track instructions (the plan for which stems to cut, a name override, a
 chosen source). Everything else on screen is derived from the ledger and the Ableton
 folders, so nothing falls out of sync.

@@ -30,3 +30,7 @@ dotnet_diagnostic.CA1873.severity = none
 [tests/**.cs]
 # Inline arrays in test data are clearer than hoisting each into a static field.
 dotnet_diagnostic.CA1861.severity = none
+
+# EF Core writes these; they are regenerated, never edited.
+[src/Crateside.Core/Ledger/Migrations/**.cs]
+generated_code = true

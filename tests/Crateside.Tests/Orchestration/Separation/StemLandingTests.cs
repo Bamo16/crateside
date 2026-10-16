@@ -4,6 +4,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Separation;
 
@@ -34,13 +35,13 @@ public sealed class StemLandingTests : IDisposable
             StemsKeyIdentified = Path.Combine(_root, "identified"),
             StemsUnresolvedKey = Path.Combine(_root, "unresolved"),
             StagingFolder = Path.Combine(_root, "staging"),
-            Ledger = Path.Combine(_root, "runs.jsonl"),
+            KeytagLedger = Path.Combine(_root, "runs.jsonl"),
         };
 
     private KeyLedger Ledger(string? confidence)
     {
         File.WriteAllText(
-            Paths.Ledger,
+            Paths.KeytagLedger,
             confidence is null
                 ? string.Empty
                 : JsonSerializer.Serialize(
@@ -56,7 +57,7 @@ public sealed class StemLandingTests : IDisposable
                 )
         );
 
-        return KeyLedger.Read(Paths.Ledger);
+        return TestLedger.From(Paths.KeytagLedger);
     }
 
     private IReadOnlyList<string> Parked(params string[] names)

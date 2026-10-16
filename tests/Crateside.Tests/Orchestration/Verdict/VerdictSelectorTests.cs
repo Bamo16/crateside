@@ -7,6 +7,7 @@ using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Verdict;
 
@@ -29,7 +30,7 @@ public sealed class VerdictSelectorTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static readonly KeyLedger NoLedger = KeyLedger.Read("does-not-exist");
+    private static readonly KeyLedger NoLedger = TestLedger.From("does-not-exist");
 
     private void GiveEvidence(string videoId)
     {
@@ -59,7 +60,7 @@ public sealed class VerdictSelectorTests : IDisposable
             )
         );
 
-        return KeyLedger.Read(path);
+        return TestLedger.From(path);
     }
 
     private static WorkItem Item(string videoId, bool unavailable = false) =>
@@ -270,7 +271,7 @@ public sealed class VerdictSelectorTests : IDisposable
             )
         );
 
-        return KeyLedger.Read(path);
+        return TestLedger.From(path);
     }
 
     [Fact]

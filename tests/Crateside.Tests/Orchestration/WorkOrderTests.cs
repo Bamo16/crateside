@@ -4,6 +4,7 @@ using Crateside.Core.Orchestration;
 using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration;
 
@@ -56,7 +57,7 @@ public sealed class WorkOrderTests : IDisposable
             """
         );
 
-        return KeyLedger.Read(_ledgerPath);
+        return TestLedger.From(_ledgerPath);
     }
 
     [Theory]
@@ -88,7 +89,7 @@ public sealed class WorkOrderTests : IDisposable
     [Fact]
     public void A_track_with_no_verdict_yet_routes_to_unresolved_rather_than_nowhere()
     {
-        var order = WorkOrder.Compose(Item(), KeyLedger.Read(_ledgerPath));
+        var order = WorkOrder.Compose(Item(), TestLedger.From(_ledgerPath));
 
         Assert.Equal(StemDestination.UnresolvedKey, order.Destination);
     }

@@ -10,6 +10,7 @@ namespace Crateside.Core.Orchestration;
 /// </summary>
 /// <param name="requestedAt">When a re-cut or swap was last asked for a track, or null (#50).</param>
 public sealed class WorkingSetJanitor(
+    LedgerStore store,
     WorkingSet workingSet,
     JobStore jobs,
     IOptions<CratesidePaths> paths,
@@ -24,7 +25,7 @@ public sealed class WorkingSetJanitor(
         if (workingSet.VideoIds is not { Count: > 0 } held)
             return 0;
 
-        var ledger = KeyLedger.Read(_paths.Ledger);
+        var ledger = store.Read();
         var staged = ProcessedTracks.Scan(ledger, [_paths.StagingFolder]);
 
         List<string> discarded = [.. held.Where(videoId => IsFinishedWith(videoId, staged))];

@@ -11,6 +11,7 @@ namespace Crateside.Core.Orchestration.Evidence;
 /// Works the queue down one detection at a time, for as long as anything is undetected.
 /// </summary>
 public sealed class EvidenceDrainer(
+    LedgerStore store,
     WorkListService queue,
     EvidenceRunner runner,
     EvidenceSelector selector,
@@ -39,7 +40,7 @@ public sealed class EvidenceDrainer(
         if (!selector.TryPickNext(view, out var item))
             return StageTick.Idle;
 
-        var order = WorkOrder.Compose(item, KeyLedger.Read(_paths.Ledger));
+        var order = WorkOrder.Compose(item, store.Read());
 
         // Recorded before the run starts, so a crash leaves the job "Running" rather than
         // absent, distinguishing an interrupted attempt from one never made.

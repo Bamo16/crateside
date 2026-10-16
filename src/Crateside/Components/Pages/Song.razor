@@ -6,7 +6,7 @@
 @using Crateside.Core.Ledger
 @using Crateside.Core.Tempo
 @using Crateside.Core.Tracks
-@inject EvidenceService Evidence
+@inject LedgerStore Ledger
 @inject TracksService Tracks
 @inject IServiceProvider Services
 @inject NavigationManager Navigation
@@ -244,7 +244,7 @@
         _row = Tracks.Current?.Rows.FirstOrDefault(row =>
             row.VideoId.Equals(VideoId, StringComparison.Ordinal)
         );
-        _run = Verdict is { Song: var song } ? Evidence.ForSong(song) : Evidence.ForVideoId(VideoId);
+        _run = Verdict is { Song: var song } ? Ledger.EvidenceFor(song) : Ledger.EvidenceForVideoId(VideoId);
     }
 
     // Raised on a worker thread, never the circuit's, so the render is marshalled back.

@@ -11,6 +11,7 @@ namespace Crateside.Core.Orchestration.Tagging;
 /// Works down the files in staging that have a verdict and no key applied, one track at a time.
 /// </summary>
 public sealed class TaggingDrainer(
+    LedgerStore store,
     TaggingRunner runner,
     TaggingSelector selector,
     JobStore jobs,
@@ -23,7 +24,7 @@ public sealed class TaggingDrainer(
 
     public Task<StageTick> DrainOnceAsync(CancellationToken ct = default)
     {
-        var ledger = KeyLedger.Read(_paths.Ledger);
+        var ledger = store.Read();
 
         if (!selector.TryPickNext(ledger, out var videoId, out var stems))
             return Task.FromResult(StageTick.Idle);

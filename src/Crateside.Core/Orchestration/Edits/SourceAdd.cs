@@ -1,6 +1,5 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Download;
-using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Plans;
 using Crateside.Core.Samples;
 using Crateside.Core.Tracks;
@@ -13,15 +12,14 @@ namespace Crateside.Core.Orchestration.Edits;
 /// sample, and never separated (ADR 0019).
 /// </summary>
 public sealed class SourceAdd(
+    LedgerStore store,
     TrackInstructionStore instructions,
-    CratesidePaths paths,
-    SourceProbe probe,
-    string uv = "uv"
+    SourceProbe probe
 )
 {
     /// <summary>What adding this source would do, or why it cannot be done.</summary>
     public AddPlan PlanFor(TrackRowFacts track, string? url, string? label, SampleType? type) =>
-        PlanFor(track, url, label, type, KeyLedger.Read(paths.Ledger));
+        PlanFor(track, url, label, type, store.Read());
 
     private static AddPlan PlanFor(
         TrackRowFacts track,
@@ -49,7 +47,7 @@ public sealed class SourceAdd(
                 "This track already has that upload."
             ),
             _ when OtherSong(ledger, videoId, track.Song) is { } song => Impossible(
-                $"keytag has that video as {song}. Adding it here would make the two one song."
+                $"The ledger has that video as {song}. Adding it here would make the two one song."
             ),
             (_, { } given) => new AddPlan
             {
@@ -65,7 +63,7 @@ public sealed class SourceAdd(
     }
 
     /// <summary>
-    /// Tells keytag the video is this song, then — never before — records it on the plan for the
+    /// Records in the ledger that the video is this song, then — never before — records it on the plan for the
     /// download stage to fetch.
     /// </summary>
     /// <param name="anyway">
@@ -81,7 +79,7 @@ public sealed class SourceAdd(
         CancellationToken ct = default
     )
     {
-        var plan = PlanFor(track, url, label, type, KeyLedger.Read(paths.Ledger));
+        var plan = PlanFor(track, url, label, type, store.Read());
 
         if (plan.Refusal is { } refusal)
             return new AddOutcome { Problem = refusal };
@@ -97,7 +95,12 @@ public sealed class SourceAdd(
         if (probed.FallsShort && !anyway)
             return new AddOutcome { Shortfall = probed };
 
-        if (await RestateAsync(track.VideoId, source.VideoId, ct) is { } failure)
+        if (
+            store
+                .Restate(track.VideoId, $"https://music.youtube.com/watch?v={source.VideoId}")
+                .Refusal is
+            { } failure
+        )
             return new AddOutcome { Problem = failure };
 
         instructions.SetPlan(track.VideoId, track.Plan.Adding(source));
@@ -111,36 +114,12 @@ public sealed class SourceAdd(
             ? (await probe.ReadAsync($"https://music.youtube.com/watch?v={videoId}", ct)).Title
             : null;
 
-    /// <summary>The song keytag already has this video under, when it is not this track's.</summary>
+    /// <summary>The song the ledger already has this video under, when it is not this track's.</summary>
     private static string? OtherSong(KeyLedger ledger, string videoId, string? song) =>
         ledger.SongFor(videoId) is { } known
         && !known.Equals(song, StringComparison.OrdinalIgnoreCase)
             ? known
             : null;
-
-    private async Task<string?> RestateAsync(string videoId, string added, CancellationToken ct)
-    {
-        var outcome = await ExternalProcess.RunAsync(
-            uv,
-            [
-                "run",
-                "--project",
-                paths.KeytagRepo,
-                "keytag-restate",
-                "--from",
-                videoId,
-                "--to",
-                $"https://music.youtube.com/watch?v={added}",
-            ],
-            workingDirectory: null,
-            ct
-        );
-
-        return outcome.Succeeded
-            ? null
-            : ExternalProcess.Describe(outcome.StandardError, outcome.StandardOutput)
-                ?? $"keytag-restate exited with {outcome.ExitCode}";
-    }
 
     private static AddPlan Impossible(string refusal) => new() { Refusal = refusal };
 }

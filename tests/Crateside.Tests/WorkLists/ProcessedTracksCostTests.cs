@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Crateside.Core.Ledger;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.WorkLists;
 
@@ -19,7 +20,7 @@ public sealed class ProcessedTracksCostTests
             "Needs the real ledger and stem roots."
         );
 
-        var ledger = KeyLedger.Read(LedgerPath);
+        var ledger = TestLedger.From(LedgerPath);
 
         var stopwatch = Stopwatch.StartNew();
         var processed = ProcessedTracks.Scan(ledger, [StagingRoot, MashupRoot]);

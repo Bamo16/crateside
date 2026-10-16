@@ -29,6 +29,7 @@
 @inject GenreStore GenreRecords
 @inject FamiliarityStore FamiliarityRecords
 @inject TracksService Tracks
+@inject LedgerStore Ledger
 @inject BeatReader Beats
 @inject TrackAdd Adding
 @inject WorkListService Playlist
@@ -872,8 +873,8 @@
         _detectors = DetectorBands.From(distribution.Songs);
         _drift = DriftCount.From(distribution.Songs);
 
-        var evidence = RunEvidence.ReadLatest(Paths.Ledger).Values;
-        var ledger = KeyLedger.Read(Paths.Ledger);
+        var evidence = Ledger.LatestEvidence().Values;
+        var ledger = Ledger.Read();
         _keysBoth = KeyDetectorCounts.From(evidence, ledger, highOnly: false);
         _keysHigh = KeyDetectorCounts.From(evidence, ledger, highOnly: true);
 

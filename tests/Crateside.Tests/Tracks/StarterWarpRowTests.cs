@@ -4,6 +4,7 @@ using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
 using Crateside.Core.Warps;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Tracks;
 
@@ -61,7 +62,7 @@ public sealed class StarterWarpRowTests : IDisposable
                     new HashSet<string>(),
                     new Dictionary<string, TrackInstruction>()
                 ),
-                KeyLedger.Read(Path.Combine(_root, "runs.jsonl")),
+                TestLedger.From(Path.Combine(_root, "runs.jsonl")),
                 [
                     new StagedSong
                     {

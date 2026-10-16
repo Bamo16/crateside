@@ -1,18 +1,19 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Text.Json;
 
 namespace Crateside.Core.Ledger;
 
 /// <summary>
-/// keytag's <c>results/runs.jsonl</c>, read-only, looked up video ID → song → latest run so a
-/// supersede wins.
+/// The ledger as it stood when read from <see cref="LedgerStore"/>, looked up video ID → song →
+/// latest run so a supersede wins.
 /// </summary>
 public sealed class KeyLedger
 {
     private readonly Dictionary<string, LedgerRun> _latestBySong;
     private readonly Dictionary<string, string> _songByVideoId;
 
-    /// <summary>Every run parsed from the file, in file order.</summary>
+    public static KeyLedger Empty { get; } = new([]);
+
+    /// <summary>Every run and restatement, oldest first.</summary>
     public IReadOnlyList<LedgerRun> Runs { get; }
 
     /// <summary>The number of distinct songs the ledger knows about.</summary>
@@ -21,68 +22,24 @@ public sealed class KeyLedger
     /// <summary>The current verdict of every song.</summary>
     public IEnumerable<LedgerRun> Latest => _latestBySong.Values;
 
-    private KeyLedger(IReadOnlyList<LedgerRun> runs)
+    internal KeyLedger(IReadOnlyList<LedgerRun> runs)
     {
         Runs = runs;
 
-        // Ordered by timestamp, not file position, so an out-of-order append still resolves
-        // correctly.
-        _latestBySong = runs.GroupBy(r => r.Song, StringComparer.OrdinalIgnoreCase)
+        _latestBySong = runs.GroupBy(run => run.Song, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
-                g => g.Key,
-                g => g.OrderBy(r => r.Timestamp).Last(),
+                song => song.Key,
+                song => song.OrderBy(run => run.Timestamp).Last(),
                 StringComparer.OrdinalIgnoreCase
             );
 
-        _songByVideoId = runs.Where(r => r.SourceVideoId is not null)
-            .GroupBy(r => r.SourceVideoId!, StringComparer.Ordinal)
+        _songByVideoId = runs.Where(run => run.SourceVideoId is not null)
+            .GroupBy(run => run.SourceVideoId!, StringComparer.Ordinal)
             .ToDictionary(
-                g => g.Key,
-                g => g.OrderBy(r => r.Timestamp).Last().Song,
+                upload => upload.Key,
+                upload => upload.OrderBy(run => run.Timestamp).Last().Song,
                 StringComparer.Ordinal
             );
-    }
-
-    /// <summary>
-    /// Reads the ledger. A malformed line is skipped rather than failing the whole read —
-    /// the file is append-only and may be caught mid-write.
-    /// </summary>
-    public static KeyLedger Read(string path)
-    {
-        if (!File.Exists(path))
-            return new KeyLedger([]);
-
-        var runs = new List<LedgerRun>();
-
-        using var stream = new FileStream(
-            path,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.ReadWrite | FileShare.Delete
-        );
-        using var reader = new StreamReader(stream);
-
-        while (reader.ReadLine() is { } line)
-        {
-            if (line.AsSpan().IsWhiteSpace())
-                continue;
-
-            LedgerRunDto? dto;
-
-            try
-            {
-                dto = JsonSerializer.Deserialize(line, KeyLedgerJsonContext.Default.LedgerRunDto);
-            }
-            catch (JsonException)
-            {
-                continue;
-            }
-
-            if (dto is not null && LedgerRun.FromDto(dto) is { } run)
-                runs.Add(run);
-        }
-
-        return new KeyLedger(runs);
     }
 
     /// <summary>The current verdict for a song identity — the latest run recorded for it.</summary>

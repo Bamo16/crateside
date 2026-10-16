@@ -29,7 +29,7 @@ public sealed class RunEvidenceTests : IDisposable
         // A restatement carries no machine layer at all (keytag ADR 0008).
         File.WriteAllLines(_path, [Run("2026-09-01T00:00:00+00:00"), Restatement()]);
 
-        var evidence = RunEvidence.ReadLatestFor(_path, Song);
+        var evidence = TestLedger.EvidenceFor(_path, Song);
 
         Assert.NotNull(evidence);
         Assert.Equal("the argument", evidence.Reasoning);
@@ -48,7 +48,7 @@ public sealed class RunEvidenceTests : IDisposable
             ]
         );
 
-        Assert.Equal("the newer argument", RunEvidence.ReadLatestFor(_path, Song)?.Reasoning);
+        Assert.Equal("the newer argument", TestLedger.EvidenceFor(_path, Song)?.Reasoning);
     }
 
     private static string Run(string timestamp, string reasoning = "the argument") =>

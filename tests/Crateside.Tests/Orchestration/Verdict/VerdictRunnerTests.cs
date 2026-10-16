@@ -5,6 +5,7 @@ using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Plans;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Verdict;
 
@@ -21,12 +22,15 @@ public sealed class VerdictRunnerTests : IDisposable
 
     private string LedgerPath => Path.Combine(_directory, "runs.jsonl");
     private WorkingSet Set => field ??= new WorkingSet(Path.Combine(_directory, "working"));
-    private CratesidePaths Paths => field ??= new CratesidePaths { Ledger = LedgerPath };
+    private CratesidePaths Paths => field ??= new CratesidePaths { KeytagLedger = LedgerPath };
+    private LedgerStore Ledger => field ??= TestLedger.Store(LedgerPath);
 
     public VerdictRunnerTests() => Directory.CreateDirectory(_directory);
 
     public void Dispose()
     {
+        Ledger.Dispose();
+
         if (Directory.Exists(_directory))
             Directory.Delete(_directory, recursive: true);
 
@@ -43,7 +47,7 @@ public sealed class VerdictRunnerTests : IDisposable
                 Plan = instrumentalRelease ? StemPlan.InstrumentalRelease : StemPlan.Default,
                 StatedSourceUrl = statedSource,
             },
-            KeyLedger.Read("does-not-exist")
+            TestLedger.From("does-not-exist")
         );
 
     private void GiveEvidence(string evidence = "{}")
@@ -68,26 +72,6 @@ public sealed class VerdictRunnerTests : IDisposable
             }
         );
 
-    /// <summary>A stand-in for <c>uv run keytag-restate</c>: notes its arguments and appends the row's line.</summary>
-    private string FakeUv()
-    {
-        var restated = Path.Combine(_directory, "restated.jsonl");
-        var script = Path.Combine(_directory, "fake-uv.cmd");
-
-        File.WriteAllText(restated, LedgerLine(VideoId) + "\n");
-        File.WriteAllText(
-            script,
-            $"""
-            @echo off
-            echo %* > "{Path.Combine(_directory, "uv-args.txt")}"
-            type "{restated}" >> "{LedgerPath}"
-            exit /b 0
-            """
-        );
-
-        return script;
-    }
-
     /// <summary>A stand-in for the agent that records a verdict, or does not, and exits.</summary>
     private VerdictRunner Runner(
         bool records,
@@ -111,7 +95,7 @@ public sealed class VerdictRunnerTests : IDisposable
             """
         );
 
-        return new VerdictRunner(Set, Paths, script);
+        return new VerdictRunner(Ledger, Set, Paths, script);
     }
 
     [Fact]
@@ -170,10 +154,10 @@ public sealed class VerdictRunnerTests : IDisposable
             "@echo off\r\nexit /b 0\r\n"
         );
         var runner = new VerdictRunner(
+            Ledger,
             Set,
             Paths,
-            Path.Combine(_directory, "fake-claude.cmd"),
-            FakeUv()
+            Path.Combine(_directory, "fake-claude.cmd")
         );
 
         var result = await runner.RunAsync(
@@ -182,11 +166,11 @@ public sealed class VerdictRunnerTests : IDisposable
         );
 
         Assert.True(result.IsSuccess);
-        Assert.True(KeyLedger.Read(LedgerPath).HasRunFor(VideoId));
-        Assert.Contains(
-            $"--from={SwappedTo}",
-            File.ReadAllText(Path.Combine(_directory, "uv-args.txt"))
+        Assert.Equal(
+            Ledger.Read().SongFor(SwappedTo),
+            Assert.Single(Ledger.Read().Runs, run => run.Restates is not null).Song
         );
+        Assert.True(Ledger.Read().HasRunFor(VideoId));
     }
 
     [Fact]

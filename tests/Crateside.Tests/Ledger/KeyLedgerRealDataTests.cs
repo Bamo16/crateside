@@ -15,7 +15,7 @@ public sealed class KeyLedgerRealDataTests
     {
         Assert.SkipUnless(File.Exists(LedgerPath), $"{LedgerPath} not present.");
 
-        var ledger = KeyLedger.Read(LedgerPath);
+        var ledger = TestLedger.From(LedgerPath);
 
         Assert.NotEmpty(ledger.Runs);
         Assert.All(ledger.Runs, r => Assert.NotEmpty(r.Song));
@@ -27,7 +27,7 @@ public sealed class KeyLedgerRealDataTests
     {
         Assert.SkipUnless(File.Exists(LedgerPath), $"{LedgerPath} not present.");
 
-        var modal = KeyLedger.Read(LedgerPath).Runs.Where(r => r.IsCollapsed).ToList();
+        var modal = TestLedger.From(LedgerPath).Runs.Where(r => r.IsCollapsed).ToList();
 
         // A mode must never contradict the tag it collapses to.
         Assert.NotEmpty(modal);
@@ -40,7 +40,7 @@ public sealed class KeyLedgerRealDataTests
     {
         Assert.SkipUnless(File.Exists(LedgerPath), $"{LedgerPath} not present.");
 
-        var runs = KeyLedger.Read(LedgerPath).Runs;
+        var runs = TestLedger.From(LedgerPath).Runs;
         var withId = runs.Count(r => r.SourceVideoId is not null);
 
         // Measured at 124/125 at design; a run from a local file has no URL.
@@ -58,7 +58,7 @@ public sealed class KeyLedgerRealDataTests
             "Ledger and staging root must both be present."
         );
 
-        var ledger = KeyLedger.Read(LedgerPath);
+        var ledger = TestLedger.From(LedgerPath);
 
         var unresolved = Directory
             .GetFiles(StagingRoot, "*.flac")
@@ -93,7 +93,7 @@ public sealed class KeyLedgerRealDataTests
         Assert.NotNull(tags?.SourceVideoId);
 
         Assert.True(
-            KeyLedger.Read(LedgerPath).TryGetLatestByVideoId(tags.SourceVideoId, out var run)
+            TestLedger.From(LedgerPath).TryGetLatestByVideoId(tags.SourceVideoId, out var run)
         );
         Assert.DoesNotContain("mission 15", Path.GetFileNameWithoutExtension(stem));
         Assert.Contains("mission 15", run.Song, StringComparison.OrdinalIgnoreCase);

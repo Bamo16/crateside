@@ -330,7 +330,7 @@ else if (Part is Parts.Source && HasSource(Row))
         try
         {
             var url = _draft;
-            var outcome = await Swap.ApplyAsync(Row.VideoId, url, _circuit.Token);
+            var outcome = Swap.Apply(Row.VideoId, url);
 
             _problem = outcome.Problem;
 

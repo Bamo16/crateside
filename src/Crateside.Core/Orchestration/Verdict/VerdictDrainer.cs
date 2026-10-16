@@ -12,6 +12,7 @@ namespace Crateside.Core.Orchestration.Verdict;
 /// Works the queue down one judgment at a time, for as long as anything detected is unjudged.
 /// </summary>
 public sealed class VerdictDrainer(
+    LedgerStore store,
     WorkListService queue,
     VerdictRunner runner,
     VerdictSelector selector,
@@ -80,7 +81,7 @@ public sealed class VerdictDrainer(
         }
 
         // Read once and used for both the choice and the order, so the two cannot disagree.
-        var ledger = KeyLedger.Read(_paths.Ledger);
+        var ledger = store.Read();
 
         WorkItem item;
 

@@ -3,6 +3,7 @@ using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Plans;
 using Crateside.Core.Staging;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Plans;
 
@@ -54,7 +55,7 @@ public sealed class PresetCatalogRealDataTests
         var catalog = await RealCatalogAsync();
 
         var unresolved = ProcessedTracks
-            .Scan(KeyLedger.Read(LedgerPath), [StagingRoot, MashupRoot])
+            .Scan(TestLedger.From(LedgerPath), [StagingRoot, MashupRoot])
             .StemsByVideoId.SelectMany(entry => entry.Value)
             .Select(file => file.Preset)
             .Where(preset => preset is not null && !StagedFile.IsWarpGuidePreset(preset))

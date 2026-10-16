@@ -80,6 +80,11 @@ public static class ServiceRegistration
     /// <summary>Stateless readers over files crateside does not own; safe to share.</summary>
     public static IServiceCollection AddCratesideReaders(this IServiceCollection services)
     {
+        services.AddSingleton(sp => new LedgerStore(
+            sp.GetRequiredService<CratesidePaths>().LedgerDatabase,
+            sp.GetRequiredService<CratesidePaths>().KeytagLedger,
+            TimeProvider.System
+        ));
         services.AddSingleton<FolderInfoReader>();
         services.AddSingleton(sp => new FileIndexReader(
             sp.GetRequiredService<IOptions<CratesidePaths>>().Value.AbletonIndex
@@ -107,7 +112,6 @@ public static class ServiceRegistration
             TimeProvider.System
         ));
         services.AddSingleton<PlaylistReader>();
-        services.AddSingleton<EvidenceService>();
         services.AddSingleton<QueueFile>();
         services.AddSingleton<PlaylistSettingsStore>();
         services.AddSingleton<TrackInstructionStore>();
@@ -147,6 +151,7 @@ public static class ServiceRegistration
         // two ReadReopenedTracks parameters to the same registration, and they mean different
         // sets.
         services.AddSingleton(sp => new WorkListService(
+            sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<IOptions<CratesidePaths>>(),
             sp.GetRequiredService<PlaylistSettingsStore>(),
             sp.GetRequiredService<TrackInstructionStore>(),
@@ -257,6 +262,7 @@ public static class ServiceRegistration
                     ?.DisplayTitle
         ));
         services.AddSingleton(sp => new VerdictRunner(
+            sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<WorkingSet>(),
             sp.GetRequiredService<CratesidePaths>()
         ));
@@ -374,8 +380,8 @@ public static class ServiceRegistration
 
         services.AddSingleton(_ => new SourceProbe());
         services.AddSingleton(sp => new TrackAdd(
+            sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<TrackInstructionStore>(),
-            sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SourceProbe>(),
             sp.GetRequiredService<ResolvedNameStore>()
         ));
@@ -391,8 +397,8 @@ public static class ServiceRegistration
             sp.GetRequiredService<CratesidePaths>()
         ));
         services.AddSingleton(sp => new SourceAdd(
+            sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<TrackInstructionStore>(),
-            sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SourceProbe>()
         ));
 
@@ -420,19 +426,20 @@ public static class ServiceRegistration
             sp.GetRequiredService<ISetLinks>()
         ));
         services.AddSingleton(sp => new LookalikeAnswer(
-            sp.GetRequiredService<TrackInstructionStore>(),
-            sp.GetRequiredService<CratesidePaths>()
+            sp.GetRequiredService<LedgerStore>(),
+            sp.GetRequiredService<TrackInstructionStore>()
         ));
 
         services.AddSingleton(sp => new TrackSwap(
+            sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<TrackInstructionStore>(),
             sp.GetRequiredService<WorkingSet>(),
             StagedFiles(sp),
-            sp.GetRequiredService<CratesidePaths>(),
             deletions: sp.GetRequiredService<DeletionLog>()
         ));
 
         services.AddSingleton(sp => new WorkingSetJanitor(
+            sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<WorkingSet>(),
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<IOptions<CratesidePaths>>(),

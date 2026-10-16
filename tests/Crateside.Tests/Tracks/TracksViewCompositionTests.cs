@@ -7,6 +7,7 @@ using Crateside.Core.Plans;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Tracks;
 
@@ -43,7 +44,7 @@ public sealed class TracksViewCompositionTests : IDisposable
         var path = Path.Combine(_root, "runs.jsonl");
         File.WriteAllText(path, string.Empty);
 
-        return KeyLedger.Read(path);
+        return TestLedger.From(path);
     }
 
     private KeyLedger LedgerWith(string key, string confidence, double bpm)
@@ -66,7 +67,7 @@ public sealed class TracksViewCompositionTests : IDisposable
             )
         );
 
-        return KeyLedger.Read(path);
+        return TestLedger.From(path);
     }
 
     private static StagedSong Staged(params StagedFile[] stems) =>
@@ -167,15 +168,17 @@ public sealed class TracksViewCompositionTests : IDisposable
         File.WriteAllLines(
             path,
             [
-                .. new[] { Old, Video }.Select(upload =>
-                    System.Text.Json.JsonSerializer.Serialize(
-                        new
-                        {
-                            timestamp = "2026-08-01T00:00:00+00:00",
-                            song = "rob dougan - furious angels",
-                            source_url = $"https://www.youtube.com/watch?v={upload}",
-                        }
-                    )
+                .. new[] { Old, Video }.Select(
+                    (upload, index) =>
+                        System.Text.Json.JsonSerializer.Serialize(
+                            new
+                            {
+                                timestamp = $"2026-08-0{index + 1}T00:00:00+00:00",
+                                song = "rob dougan - furious angels",
+                                source_url = $"https://www.youtube.com/watch?v={upload}",
+                                verdict = new { confidence = "WITHHELD" },
+                            }
+                        )
                 ),
             ]
         );
@@ -184,7 +187,7 @@ public sealed class TracksViewCompositionTests : IDisposable
             TracksView
                 .Compose(
                     View(),
-                    KeyLedger.Read(path),
+                    TestLedger.From(path),
                     [],
                     new Dictionary<string, IReadOnlyList<StemOnDisk>>(),
                     FinishedRoot,

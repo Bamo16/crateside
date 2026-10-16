@@ -3,6 +3,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Orchestration.Verdict;
 
@@ -14,7 +15,7 @@ public sealed class VerdictRunnerRealDataTests
 
     private static readonly WorkingSet Set = new();
 
-    private static VerdictRunner Runner => new(Set, new CratesidePaths());
+    private static VerdictRunner Runner => new(TestLedger.Store(), Set, new CratesidePaths());
 
     private static WorkOrder Order(string videoId) =>
         WorkOrder.Compose(
@@ -24,7 +25,7 @@ public sealed class VerdictRunnerRealDataTests
                 VideoId = videoId,
                 Title = videoId,
             },
-            KeyLedger.Read("does-not-exist")
+            TestLedger.From("does-not-exist")
         );
 
     private static List<string> Detected => [.. Set.VideoIds.Where(Set.HasEvidence)];

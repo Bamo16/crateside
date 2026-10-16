@@ -126,3 +126,23 @@ at MEDIUM and agreement with a backed detector can reach HIGH). The judge is tol
 Asking for windows is given to the judge as authority, not a last resort: where the evidence
 looks odd (a three-way split, a detector failing, a long stretch with no harmony), it should ask
 for windows before withholding.
+
+## Addendum, 2026-10-15: the ledger is EF Core over SQLite, and the import follows the file
+
+Built in [#110](https://github.com/Bamo16/crateside/issues/110); the format is in
+[docs/ledger.md](../ledger.md).
+
+- **The schema is EF Core's**, changed only by migrations applied at start, at the
+  maintainer's request; it suits a schema that grows again with the judge rewrite, windows
+  and the Ear setting.
+  One connection is held for the store's life and handed to EF, which is what lets SQLite's
+  backup API copy it and an in-memory ledger serve the tests.
+- **The import repeats whenever keytag's file changes**, not only at start as #110 said. Until
+  the judge rewrite, a verdict session ends with keytag's recorder appending a line, and the
+  verdict stage reads the ledger straight after to decide whether the session succeeded; an
+  import at start alone would count every such session a failure.
+- **A keytag line is identified by its timestamp**, as keytag's own restatements point at
+  it. A second line with the same timestamp is refused, not merged.
+- **The import refuses what the ledger would refuse**: a line with no confidence, or one
+  outside the four, is listed and left out rather than stored as an unreadable verdict. On
+  2026-10-15 the real history imported with no refusals.

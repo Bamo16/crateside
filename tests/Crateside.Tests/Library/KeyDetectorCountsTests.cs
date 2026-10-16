@@ -2,6 +2,7 @@ using Crateside.Core;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
 using Crateside.Core.Pairing;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Library;
 
@@ -29,8 +30,8 @@ public sealed class KeyDetectorCountsTests
         Assert.SkipUnless(File.Exists(Ledger), $"{Ledger} not present on this machine.");
 
         var counts = KeyDetectorCounts.From(
-            RunEvidence.ReadLatest(Ledger).Values,
-            KeyLedger.Read(Ledger),
+            TestLedger.LatestEvidence(Ledger).Values,
+            TestLedger.From(Ledger),
             highOnly: false
         );
 
