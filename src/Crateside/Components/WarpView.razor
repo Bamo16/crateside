@@ -235,7 +235,7 @@
                     <div class="ruler-hits" @onpointerup="() => dragged.EndDrag()" @onpointerleave="() => dragged.EndDrag()">
                         @foreach (var (unit, left, right) in DragUnits(group, from, to))
                         {
-                            <span style="left: @P(left)%; width: @P(right - left)%"
+                            <span class="@(dragged.IsEdge(unit) ? "edge" : null)" style="left: @P(left)%; width: @P(right - left)%"
                                   @onpointerdown="() => dragged.BeginDrag(unit)"
                                   @onpointerenter="pointer => DragOver(dragged, unit, pointer)"></span>
                         }
@@ -651,6 +651,7 @@
                     .Lines.Select((line, index) => (Window: form.Window(line, group), Line: line, Number: index + 1))
                     .Where(pair => pair.Window is not null)
                     .Select(pair => new Band(pair.Window!.Start, pair.Window.End, $"{pair.Number} · {pair.Line.Range.Trim()}", "yours")),
+                .. form.Pending(group) is { } pending ? [new Band(pending.Start, pending.End, "new", "yours")] : Array.Empty<Band>(),
             ];
 
         if (BarRun is { IsRunning: true } run)
