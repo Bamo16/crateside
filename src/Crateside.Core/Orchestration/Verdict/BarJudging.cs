@@ -1,4 +1,6 @@
 using Crateside.Core.Ledger;
+using Crateside.Core.Plans;
+using Crateside.Core.Tracks;
 
 namespace Crateside.Core.Orchestration.Verdict;
 
@@ -21,6 +23,30 @@ public sealed class BarJudging(VerdictDrainer drainer, WorkingSet workingSet, Ti
         lock (_gate)
             return _runs.GetValueOrDefault(videoId);
     }
+
+    /// <summary>The order a run from bars judges under: the upload the track is cut from, as the queue would.</summary>
+    public static WorkOrder OrderFor(TrackRow row) =>
+        new()
+        {
+            VideoId = row.VideoId,
+            Title = row.Title,
+            SourceUrl = row.StatedSourceUrl is { Length: > 0 } stated
+                ? stated
+                : $"https://music.youtube.com/watch?v={row.VideoId}",
+            Destination = row.Verdict?.HasTaggableKey is true
+                ? StemDestination.KeyIdentified
+                : StemDestination.UnresolvedKey,
+        };
+
+    /// <summary>The full mix to detect over: the working set's, else the source kept in the library; null when neither is left.</summary>
+    public string? AudioFor(TrackRow row) =>
+        workingSet.TryGetSource(row.VideoId, out var held) ? held
+        : row.Samples.FirstOrDefault(sample =>
+            sample.Kind is StemKind.Source && File.Exists(sample.Path)
+        )
+            is { } kept
+            ? kept.Path
+        : null;
 
     /// <summary>Starts a run in the background; false when one for this track is already going.</summary>
     public bool TryStart(WorkOrder order, JudgeDirection direction)

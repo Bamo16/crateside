@@ -96,6 +96,129 @@
     </section>
 
     <section class="measurements">
+        @if (Run.Direction is { Length: > 0 } || Ear is not null)
+        {
+            <div class="direction">
+                @if (Run.Direction is { Length: > 0 } direction)
+                {
+                    <h4>Your note to the judge</h4>
+                    <p class="note-to-judge">"@direction"</p>
+                }
+                @if (Ear is { } ear)
+                {
+                    <p class="ear-line">
+                        Your ear: <span class="mono">@(ModeText.Stated(ear.StatesKey, ear.StatesMode) ?? ear.States)</span>
+                        @if (ear.Note is { Length: > 0 } weight)
+                        {
+                            <text> · @weight</text>
+                        }
+                        · run of @Run.Timestamp.ToLocalTime().ToString("d MMM, h:mm tt")
+                    </p>
+                }
+            </div>
+        }
+
+        @if (Run.Readings.Count > 0)
+        {
+            <h3>Windows</h3>
+            @foreach (var reading in Run.Readings)
+            {
+                var yours = reading.Window.AskedBy is WindowAsker.User;
+
+                <div class="window @(yours ? "yours" : "judges")">
+                    <div class="window-who">
+                        <span class="who-line">
+                            <span class="who">@(yours ? "yours" : "judge")</span>
+                            <span class="window-label">@(reading.Window.Label ?? (yours ? "Window" : "Asked for"))</span>
+                        </span>
+                        <span class="mono span">@WindowSpan(reading.Window)</span>
+                        <span class="why">
+                            @(yours
+                                ? "Given by you."
+                                : reading.Window.Why is { Length: > 0 } why
+                                    ? $"The judge asked for it: “{why}” crateside ran it unattended."
+                                    : "The judge asked for it, and crateside ran it unattended.")
+                        </span>
+                    </div>
+                    <div class="window-readings">
+                        <table class="algorithms">
+                            <tbody>
+                                @foreach (var algorithm in reading.Algorithms)
+                                {
+                                    <tr>
+                                        <th>@algorithm.Name</th>
+                                        <td class="algo-key">@(algorithm.Key ?? "—")</td>
+                                        <td class="detail">
+                                            @if (algorithm.Error is { Length: > 0 } error)
+                                            {
+                                                <span class="problem">@error</span>
+                                            }
+                                            else if (algorithm.Confidence is { } confidence)
+                                            {
+                                                <span>@confidence.ToString("F3")</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <span class="became">
+                            @(reading.Section is { } section
+                                ? $"→ section {section.Label}: {ModeText.Named(section.Centre)}"
+                                : "→ no section: the judge did not place this window as a centre of its own")
+                        </span>
+                    </div>
+                </div>
+            }
+        }
+
+        @if (Run.Readings.Count > 0)
+        {
+            <details class="whole-file">
+                <summary>The whole file <span class="muted">· @WholeFile</span></summary>
+                @Measurements
+            </details>
+        }
+        else
+        {
+            @Measurements
+        }
+    </section>
+</div>
+
+@code {
+    private const int CompactChordLimit = 24;
+
+    [Parameter, EditorRequired]
+    public required RunEvidence Run { get; set; }
+
+    /// <summary>Trims to what answers "why this key" at a glance.</summary>
+    [Parameter]
+    public bool Compact { get; set; }
+
+    /// <summary>The song's headline tempo; the panel lists its other sources under it.</summary>
+    [Parameter]
+    public TrackTempo? Tempo { get; set; }
+
+    /// <summary>What the user said they hear, recorded as a source of its own kind.</summary>
+    private EvidenceSource? Ear => Run.Sources.FirstOrDefault(source => source.Kind is SourceKind.Ear);
+
+    private static string WindowSpan(RunWindow window) =>
+        window.Bars is { } bars
+            ? $"bars {bars.First}–{bars.Last} · {JudgeText.Time(window)}"
+            : JudgeText.Time(window);
+
+    /// <summary>The whole-file detectors in a phrase: agreed, or split how many ways.</summary>
+    private string WholeFile =>
+        Run.Algorithms.Select(algorithm => algorithm.Key).OfType<string>().Distinct(StringComparer.OrdinalIgnoreCase).ToList() switch
+        {
+            [] => "no reading",
+            [var one] => $"agreed on {KeyText.Spell(one)}",
+            var keys => $"split {keys.Count.ToWords()} ways: {string.Join(", ", keys.Select(KeyText.Spell))}",
+        };
+
+    private RenderFragment Measurements =>
+        @<div class="whole">
         <h3>What the detectors reported</h3>
 
         <table class="algorithms">
@@ -215,22 +338,7 @@
                 <text> from the @kind.Replace('_', ' ')</text>
             }
         </p>
-    </section>
-</div>
-
-@code {
-    private const int CompactChordLimit = 24;
-
-    [Parameter, EditorRequired]
-    public required RunEvidence Run { get; set; }
-
-    /// <summary>Trims to what answers "why this key" at a glance.</summary>
-    [Parameter]
-    public bool Compact { get; set; }
-
-    /// <summary>The song's headline tempo; the panel lists its other sources under it.</summary>
-    [Parameter]
-    public TrackTempo? Tempo { get; set; }
+        </div>;
 
     /// <summary>A backer as the detector table names it.</summary>
     private static string Shown(string backer) =>
