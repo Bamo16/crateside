@@ -47,7 +47,21 @@ verdict stage counts it as a strike.
 over each, resumes the same session once with that evidence, and records whatever it writes
 then. If nothing usable follows, the WITHHELD verdict is recorded as it was. The windows
 detected over are kept with the run, and their evidence inside the run's evidence under
-`windows`.
+`windows`. A window the judge asked for keeps its reasoning as `Why`.
+
+**Judging from these bars** (#116). On a track's page the user gives windows themselves: bar
+ranges from their warp (converted to seconds through the warp of the sample Ableton shows), or
+minutes and seconds where there is no warp, each with an optional label, plus a note to the judge
+and what they hear. crateside detects over each window before the first session, so the work
+order carries them with their evidence and asks for one section per window; no resume is needed
+for them. The windows are recorded with `AskedBy = User` and their bars, the note as the run's
+`Direction`, and what they hear as a source of kind `ear` that crateside writes itself, noting how
+much it counted. The judge may still ask for windows of its own, which are run as above.
+
+The run needs the full mix: the working set's audio, or the source kept in the library. A track
+whose working set has gone is detected over whole first, into a working set made for the run and
+thrown away after it. It is the user's own run, so it ignores the pause and the 85% guard, and
+waits for any judgment in progress.
 
 ## Settings
 
@@ -56,7 +70,7 @@ Under `Judge` in `appsettings.json`, user-secrets or the environment (`Judge__Mo
 | setting | default | what it does |
 |---|---|---|
 | `Model` | `sonnet` | passed to `claude --model` |
-| `Ear` | `Hint` | how much the user's own reading of a key counts: `Hint` (weighed, never raising confidence by itself) or `HumanSource` (counted like an authoritative source) |
+| `Ear` | `Hint` | how much the user's own reading of a key counts: `Hint` (weighed, never raising confidence by itself) or `HumanSource` (counted like an authoritative source). Settings → **Your ear** overrides it, and is read on every run |
 | `Environment` | empty | variables set for the judge process only |
 
 ### The endpoint

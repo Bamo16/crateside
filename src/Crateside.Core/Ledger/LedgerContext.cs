@@ -206,6 +206,9 @@ internal sealed class RunRow
                             End = window.End,
                             Label = window.Label,
                             AskedBy = window.AskedBy,
+                            FirstBar = window.Bars?.First,
+                            LastBar = window.Bars?.Last,
+                            Why = window.Why,
                         }
                 ),
             ],
@@ -267,7 +270,13 @@ internal sealed class RunRow
                         window.End,
                         window.Label,
                         window.AskedBy
-                    )),
+                    )
+                    {
+                        Bars = window is { FirstBar: { } first, LastBar: { } last }
+                            ? new(first, last)
+                            : null,
+                        Why = window.Why,
+                    }),
             ],
         };
 }
@@ -302,6 +311,9 @@ internal sealed class WindowRow
     public double End { get; set; }
     public string? Label { get; set; }
     public WindowAsker? AskedBy { get; set; }
+    public int? FirstBar { get; set; }
+    public int? LastBar { get; set; }
+    public string? Why { get; set; }
 }
 
 internal sealed class RestatementRow

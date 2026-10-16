@@ -59,6 +59,50 @@ public sealed class VerdictDrainer(
         }
     }
 
+    /// <summary>
+    /// Judges one track from the windows the user gave, paused or held or not, once any judgment
+    /// in progress has finished: the user asked for this one (#116).
+    /// </summary>
+    public async Task<VerdictResult> JudgeFromBarsAsync(
+        WorkOrder order,
+        JudgeDirection direction,
+        Action<JudgeStep> onStep,
+        CancellationToken ct = default
+    )
+    {
+        await _oneAtATime.WaitAsync(ct);
+
+        try
+        {
+            jobs.Record(order.VideoId, JobStage.Verdict, JobStatus.Running);
+            control.Report($"Judging {order.Title} from bars");
+
+            var result = await runner.RunAsync(order, direction, onStep, ct);
+
+            jobs.Record(
+                order.VideoId,
+                JobStage.Verdict,
+                result switch
+                {
+                    { IsSuccess: true } => JobStatus.Succeeded,
+                    { IsAgentUnavailable: true } => JobStatus.Cancelled,
+                    _ => JobStatus.Failed,
+                },
+                error: result.Error
+            );
+
+            if (result.IsAgentUnavailable)
+                control.Pause();
+
+            return result;
+        }
+        finally
+        {
+            control.Report(null);
+            _oneAtATime.Release();
+        }
+    }
+
     private async Task<StageTick> JudgeNextAsync(bool backfill, CancellationToken ct)
     {
         var hold = await guard.CheckAsync(ct);

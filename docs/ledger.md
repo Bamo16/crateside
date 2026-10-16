@@ -36,6 +36,8 @@ start. Enums are stored by name (`Dorian`, `ChordRecogniser`); times as round-tr
   it covered as a JSON list (null when it did not say).
 - **Windows**: stretches detected on their own, `Start` and `End` in seconds, with an
   optional `Label` and who asked (`User` or `Judge`; null on windows imported from keytag).
+  `FirstBar` and `LastBar` are the bars the user gave, both included, where they gave bars;
+  `Why` is the judge's reason for asking.
 - **Restatements**: "this upload is that song": a `SourceUrl` and the `RunId` whose verdict
   it carries over. It never changes an answer; the song's latest run is still its verdict.
 

@@ -4,12 +4,19 @@ using Crateside.Core.Ledger;
 
 namespace Crateside.Core.Orchestration.Evidence;
 
-/// <summary>Detects over one stretch of a track, for a judge that asked for windows (ADR 0055).</summary>
+/// <summary>Detects over one stretch of a track, for windows the judge or the user asked for (ADR 0055).</summary>
 public interface IWindowDetector
 {
     Task<EvidenceResult> DetectWindowAsync(
         string audioPath,
         RunWindow window,
+        string evidencePath,
+        CancellationToken ct = default
+    );
+
+    /// <summary>The whole track, for a run whose working set no longer holds its evidence.</summary>
+    Task<EvidenceResult> DetectWholeAsync(
+        string audioPath,
         string evidencePath,
         CancellationToken ct = default
     );
@@ -43,6 +50,12 @@ public sealed class EvidenceRunner(WorkingSet workingSet, DetectorSet detectors)
         string evidencePath,
         CancellationToken ct = default
     ) => DetectAsync(audioPath, window, evidencePath, ct);
+
+    public Task<EvidenceResult> DetectWholeAsync(
+        string audioPath,
+        string evidencePath,
+        CancellationToken ct = default
+    ) => DetectAsync(audioPath, window: null, evidencePath, ct);
 
     private async Task<EvidenceResult> DetectAsync(
         string audioPath,

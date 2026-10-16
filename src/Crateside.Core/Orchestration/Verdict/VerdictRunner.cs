@@ -34,15 +34,47 @@ public sealed partial class VerdictRunner(
     public static string Instructions { get; } = ReadInstructions();
 
     /// <summary>Judges one track: records its verdict, or says why there is none.</summary>
-    public async Task<VerdictResult> RunAsync(WorkOrder order, CancellationToken ct = default)
+    public Task<VerdictResult> RunAsync(WorkOrder order, CancellationToken ct = default) =>
+        RunAsync(order, direction: null, onStep: null, ct);
+
+    /// <summary>Judges one track, from the windows the user gave where there is a <paramref name="direction"/> (#116).</summary>
+    public async Task<VerdictResult> RunAsync(
+        WorkOrder order,
+        JudgeDirection? direction,
+        Action<JudgeStep>? onStep,
+        CancellationToken ct = default
+    )
     {
+        var step = onStep ?? (_ => { });
+
         if (!workingSet.HasEvidence(order.VideoId))
-            return VerdictResult.Failed("no evidence to judge");
+        {
+            if (direction is null)
+                return VerdictResult.Failed("no evidence to judge");
+
+            step(new JudgeStep.DetectingWhole());
+            workingSet.Prepare(order.VideoId);
+
+            var whole = await detector.DetectWholeAsync(
+                direction.Audio,
+                workingSet.EvidencePathFor(order.VideoId),
+                ct
+            );
+
+            if (!whole.IsSuccess)
+                return VerdictResult.Failed($"detecting the whole track failed: {whole.Error}");
+        }
 
         var folder = workingSet.Prepare(order.VideoId);
         var verdictPath = Path.Combine(folder, VerdictFileName);
         var session = Guid.NewGuid().ToString();
-        List<DetectedWindow> detected = [];
+        var audio =
+            direction?.Audio
+            ?? (workingSet.TryGetSource(order.VideoId, out var held) ? held : null);
+        var given = direction is null
+            ? []
+            : await DetectAsync(direction.Audio, folder, direction.Windows, step, ct);
+        var detected = given;
         RunRecord? withheld = null;
         var resumedWithWindows = false;
         var resumedToWrite = false;
@@ -50,9 +82,12 @@ public sealed partial class VerdictRunner(
         File.Delete(verdictPath);
 
         var lookups = await LookUpAsync(order, folder, ct);
+
+        step(new JudgeStep.Judging());
+
         var outcome = await SessionAsync(
             ["--session-id", session],
-            Prompt(order, verdictPath, lookups),
+            Prompt(order, verdictPath, lookups, direction, given),
             folder,
             ct
         );
@@ -61,22 +96,28 @@ public sealed partial class VerdictRunner(
         {
             string prompt;
 
-            switch (Assess(VerdictFile.Check(verdictPath), order, detected))
+            switch (Assess(VerdictFile.Check(verdictPath), order, direction, audio, detected))
             {
                 case VerdictCheck.Recordable(var run):
-                    return Record(Complete(run, order, detected), order);
+                    return Record(Complete(run, order, direction, audio, detected), order);
 
                 case VerdictCheck.WindowsAsked(var windows, var run)
-                    when !resumedWithWindows
-                        && workingSet.TryGetSource(order.VideoId, out var audio):
+                    when !resumedWithWindows && audio is not null:
                     resumedWithWindows = true;
-                    detected = await DetectAsync(audio, folder, windows, ct);
-                    withheld = Complete(run, order, detected);
-                    prompt = WindowsPrompt(detected, verdictPath);
+                    List<RunWindow> asked =
+                    [
+                        .. windows.Select(window => window with { Why = run.Reasoning }),
+                    ];
+                    step(new JudgeStep.JudgeAsked(asked));
+                    var judged = await DetectAsync(audio, folder, asked, step, ct, given.Count);
+                    detected = [.. given, .. judged];
+                    withheld = Complete(run, order, direction, audio, detected);
+                    prompt = WindowsPrompt(judged, verdictPath);
+                    step(new JudgeStep.Judging());
                     break;
 
                 case VerdictCheck.WindowsAsked(_, var run):
-                    return Record(Complete(run, order, detected), order);
+                    return Record(Complete(run, order, direction, audio, detected), order);
 
                 case VerdictCheck.Unusable when AgentUnavailableReason(outcome) is { } reason:
                     return VerdictResult.AgentUnavailable(reason);
@@ -84,6 +125,7 @@ public sealed partial class VerdictRunner(
                 case VerdictCheck.Unusable(var problem) when !resumedToWrite:
                     resumedToWrite = true;
                     prompt = $"Write the verdict file now, at {verdictPath}. Last time: {problem}.";
+                    step(new JudgeStep.Resuming(problem));
                     break;
 
                 case VerdictCheck.Unusable(var problem):
@@ -108,7 +150,19 @@ public sealed partial class VerdictRunner(
     }
 
     /// <summary>The work order, rendered for the session.</summary>
-    internal string Prompt(WorkOrder order, string verdictPath, IReadOnlyList<SiteLookup> lookups)
+    internal string Prompt(
+        WorkOrder order,
+        string verdictPath,
+        IReadOnlyList<SiteLookup> lookups
+    ) => Prompt(order, verdictPath, lookups, direction: null, given: []);
+
+    private string Prompt(
+        WorkOrder order,
+        string verdictPath,
+        IReadOnlyList<SiteLookup> lookups,
+        JudgeDirection? direction,
+        IReadOnlyList<DetectedWindow> given
+    )
     {
         List<string> lines =
         [
@@ -138,7 +192,39 @@ public sealed partial class VerdictRunner(
                 "```",
             ]);
 
+        if (direction is not null)
+            lines.AddRange(DirectionLines(direction, given));
+
         return string.Join('\n', lines);
+    }
+
+    /// <summary>The user's windows, note and ear, with each window's evidence; the windows become the sections.</summary>
+    private static IEnumerable<string> DirectionLines(
+        JudgeDirection direction,
+        IReadOnlyList<DetectedWindow> given
+    )
+    {
+        yield return string.Empty;
+        yield return "The maintainer asked for this judgment and named the stretches where they "
+            + "hear the key clearly. crateside detected over each; weigh them above the whole "
+            + "file. Write one section per window, labelled with the window's name, with the key you "
+            + "hear in it.";
+
+        if (direction.Note is { Length: > 0 } note)
+        {
+            yield return string.Empty;
+            yield return $"Their note to you: \"{note}\"";
+        }
+
+        if (direction.Ear is { } ear)
+        {
+            yield return string.Empty;
+            yield return $"What they hear: {ear.Name}. crateside records it in `sources` with "
+                + "kind `ear`; do not add it yourself.";
+        }
+
+        foreach (var line in WindowLines(given))
+            yield return line;
     }
 
     /// <summary>The fetched pages, for the judge to accept or reject as this recording.</summary>
@@ -182,11 +268,11 @@ public sealed partial class VerdictRunner(
         ear switch
         {
             EarWeight.HumanSource =>
-                "The maintainer's own reading of the key, where given (record it with kind `ear`), "
+                "The maintainer's own reading of the key, where given (crateside records it with kind `ear`), "
                     + "counts like an authoritative source: a dissent from it caps the verdict at "
                     + "MEDIUM, and agreement with a backed keydetect can reach HIGH.",
             _ =>
-                "The maintainer's own reading of the key, where given (record it with kind `ear`), "
+                "The maintainer's own reading of the key, where given (crateside records it with kind `ear`), "
                     + "is a hint: weigh it, but it never raises confidence by itself.",
         };
 
@@ -195,25 +281,28 @@ public sealed partial class VerdictRunner(
         List<string> lines =
         [
             $"crateside detected over the windows you asked for. Judge again with this evidence and write the verdict file at {verdictPath}.",
+            .. WindowLines(detected),
         ];
 
+        return string.Join('\n', lines);
+    }
+
+    private static IEnumerable<string> WindowLines(IReadOnlyList<DetectedWindow> detected)
+    {
         foreach (var (window, evidence, error) in detected)
         {
-            lines.AddRange([string.Empty, $"Window {Describe(window)}:"]);
-            lines.Add(
-                evidence is { } json
-                    ? $"```json\n{json.TrimEnd()}\n```"
-                    : $"detection failed: {error}"
-            );
+            yield return string.Empty;
+            yield return $"Window {Describe(window)}:";
+            yield return evidence is { } json
+                ? $"```json\n{json.TrimEnd()}\n```"
+                : $"detection failed: {error}";
         }
-
-        return string.Join('\n', lines);
     }
 
     private static string Describe(RunWindow window) =>
         string.Create(
             CultureInfo.InvariantCulture,
-            $"{window.Start}–{window.End} s{(window.Label is { } label ? $" ({label})" : string.Empty)}"
+            $"\"{window.Name}\", {window.Start:0.##}–{window.End:0.##} s"
         );
 
     private async Task<ProcessOutcome> SessionAsync(
@@ -294,19 +383,23 @@ public sealed partial class VerdictRunner(
             : null;
     }
 
+    /// <param name="first">How many windows this run has already detected, so their files are kept.</param>
     private async Task<List<DetectedWindow>> DetectAsync(
         string audio,
         string folder,
         IReadOnlyList<RunWindow> windows,
-        CancellationToken ct
+        Action<JudgeStep> step,
+        CancellationToken ct,
+        int first = 0
     )
     {
         List<DetectedWindow> detected = [];
 
         foreach (var (window, index) in windows.Select((window, index) => (window, index)))
         {
-            var path = Path.Combine(folder, $"evidence.window{index + 1}.json");
+            var path = Path.Combine(folder, $"evidence.window{first + index + 1}.json");
 
+            step(new JudgeStep.DetectingWindow(index + 1, windows.Count, window));
             File.Delete(path);
 
             var result = await detector.DetectWindowAsync(audio, window, path, ct);
@@ -325,10 +418,14 @@ public sealed partial class VerdictRunner(
     private VerdictCheck Assess(
         VerdictCheck check,
         WorkOrder order,
+        JudgeDirection? direction,
+        string? audio,
         IReadOnlyList<DetectedWindow> detected
     ) =>
         check is VerdictCheck.Recordable(var run)
-        && RunValidation.Refusal(RunValidation.Normalize(Complete(run, order, detected)))
+        && RunValidation.Refusal(
+            RunValidation.Normalize(Complete(run, order, direction, audio, detected))
+        )
             is { } refusal
             ? new VerdictCheck.Unusable($"{refusal.Field}: {refusal.Problem}")
             : check;
@@ -337,10 +434,11 @@ public sealed partial class VerdictRunner(
     private RunRecord Complete(
         RunRecord run,
         WorkOrder order,
+        JudgeDirection? direction,
+        string? audio,
         IReadOnlyList<DetectedWindow> detected
     )
     {
-        workingSet.TryGetSource(order.VideoId, out var audio);
         workingSet.TryReadEvidence(order.VideoId, out var evidence);
 
         return run with
@@ -356,9 +454,32 @@ public sealed partial class VerdictRunner(
                     .Where(window => window.Evidence is not null)
                     .Select(window => window.Window),
             ],
+            Direction = direction?.Note,
+            Sources = direction?.Ear is { } ear
+                ?
+                [
+                    .. run.Sources.Where(source => source.Kind is not SourceKind.Ear),
+                    EarSource(ear),
+                ]
+                : run.Sources,
             Evidence = Evidence(evidence, detected),
         };
     }
+
+    /// <summary>What the user said they hear, as a source, with how much it counted on the day.</summary>
+    private RunSource EarSource(TonalCentre ear) =>
+        new()
+        {
+            Via = "the maintainer's ear",
+            Kind = SourceKind.Ear,
+            States = ear.Name,
+            StatesKey = ear.Collapsed,
+            StatesMode = ear.Mode,
+            Note =
+                options.Ear is EarWeight.HumanSource
+                    ? "counted as a human source"
+                    : "weighed as a hint",
+        };
 
     private static string? Evidence(string? whole, IReadOnlyList<DetectedWindow> detected)
     {
