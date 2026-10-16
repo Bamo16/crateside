@@ -4,10 +4,39 @@ Glossary for the helper bench that supports the **human-limited steps** of the
 user's Ableton mashup workflow. Glossary only — no implementation detail.
 
 Terms shared with the detection tool — **Track**, **Stem**, **Sample**, **Warp
-guide**, **Song identity**, **Verdict**, **Source video ID**, **Queue**, **Fully
+guide**, **Song identity**, **Source video ID**, **Queue**, **Fully
 processed**, **Sample Staging**, **Mashup Samples** — are defined once in
-`keytag`'s `CONTEXT.md` and are not repeated here. This file covers what is
-specific to crateside: pairing, importing, tags, the views, and running the workflow.
+`keytag`'s `CONTEXT.md` and are not repeated here. **Verdict**, **Diatonic mode** and
+**Collapse** are defined below under Keys, and replace keytag's. This file covers what is
+specific to crateside: keys, pairing, importing, tags, the views, and running the workflow.
+
+## Keys
+
+- **Verdict** — the judge's confidence-rated conclusion about a *song*'s key. It names a
+  **tonal centre**, and where the song moves, its **sections**; it may be **mixed**. A song-level
+  fact: one verdict covers every stem of the song. Its tag is derived from it by the **collapse**
+  and is never the verdict itself.
+- **Tonal centre** — a tonic and a **diatonic mode**: *A Dorian*, *E minor*. What the music
+  is, as a person transcribing it would name it.
+- **Diatonic mode** — one of the seven rotations of the major scale. A closed set; harmonic and
+  melodic minor are colour within Aeolian, not modes of their own. Only a human source can
+  establish one, since every detector reports major or minor alone.
+
+  | mode | quality |
+  |---|---|
+  | Ionian (major), Lydian, Mixolydian | major |
+  | Aeolian (minor), Dorian, Phrygian, Locrian | minor |
+
+- **Section** — a part of a song with its own tonal centre: *A Dorian (verse), E minor
+  (chorus)*. A source's key covers the sections it analysed, not necessarily the song.
+- **Mixed** — two modes on one tonic at once, such as a major melody over minor harmony. Its
+  collapse follows the harmony.
+- **Collapse** — reducing a tonal centre to one of the 24 major and minor keys Ableton's Key
+  tag admits, keeping the tonic: *A Dorian* → *A minor*, *G Mixolydian* → *G major*. Always
+  shown beside the mode, never instead of it. The key with the same notes (*A Dorian* has
+  *G major*'s) is one **Camelot** step from the collapsed one.
+- **Backer** — another detector that names the same key as keydetect. Whether keydetect has
+  backers says more about its being right than its own confidence does.
 
 ## Places
 
