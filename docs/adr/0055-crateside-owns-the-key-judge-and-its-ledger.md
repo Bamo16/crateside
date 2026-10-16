@@ -95,3 +95,23 @@ frozen with a pointer here once crateside no longer reads them. The shared gloss
 The bake-off comes first, since what is ported depends on it. Then: the ledger with the new
 verdict shape, the judge rewrite (prompt, verdict file, resume, endpoint), pre-fetching, the
 detector port, the display, and finally retiring every reference to keytag.
+
+## Addendum, 2026-10-15: windows replace the judge's `--segment`
+
+Dropping the `--segment` re-run (above) lost the one method that rescued tracks nothing else did:
+Houshou Marine's *A Horny Money World*, withheld on a three-way split until the maintainer gave
+the choruses as bars 33–48 and 82–96 from their warp, and two songs where the agent chose a
+window itself (Chris Rinox – Burst Mode, Death Grips – Takyon). Windows stay; crateside runs
+them, not the session.
+
+- **The maintainer can give windows** on a track's page: bar ranges with an optional label
+  ("Chorus: 33–48, 82–96") and an optional note to the judge. Bars are converted to seconds
+  through the warp of the sample Ableton shows, so the numbers match what the maintainer reads
+  there; with no warp they are given in seconds. crateside detects over each window and judges
+  again with that evidence. The windows become the verdict's sections, and the direction is
+  recorded with the run.
+- **The judge can ask for windows**: its verdict file may say WITHHELD with the windows to detect
+  over. crateside runs them unattended and resumes the same session once with the new evidence.
+- **The maintainer's ear is a hint**, recorded as a source of its own kind, which the judge
+  weighs but which never raises confidence by itself.
+- Every ported detector accepts a time window.
