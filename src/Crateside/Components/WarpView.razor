@@ -193,7 +193,8 @@
                     <span class="drag-hint">drag here to add a range</span>
                 }
             </span>
-            <div class="ruler @(bands.Count > 0 || _form is not null ? "tall" : null) @(_form is not null ? "dragging" : null)">
+            <div class="ruler @(bands.Count > 0 || _form is not null ? "tall" : null) @(_form is not null ? "dragging" : null)"
+                 data-snaps="@(_form is null ? null : string.Join(',', SnapBounds(group, from, to).Select(F)))">
                 @if (group.Lender is null)
                 {
                     @foreach (var at in TimeTicks(from, to))
@@ -240,11 +241,11 @@
                             var (left, right) = (X(window.Start, from, to), X(window.End, from, to));
                             @if (left is >= 0 and <= 100)
                             {
-                                <span class="edge" style="left: @P(left)%" data-line="@index" data-fixed="@P(right / 100)"></span>
+                                <span class="edge" style="left: @P(left)%" data-line="@index" data-side="start" data-fixed="@F(right / 100)"></span>
                             }
                             @if (right is >= 0 and <= 100)
                             {
-                                <span class="edge" style="left: @P(right)%" data-line="@index" data-fixed="@P(left / 100)"></span>
+                                <span class="edge" style="left: @P(right)%" data-line="@index" data-side="end" data-fixed="@F(left / 100)"></span>
                             }
                         }
                     }
@@ -561,7 +562,8 @@
             ? "counted as a human source: it can settle a split"
             : "weighed as a hint, never raises confidence";
 
-    private sealed record Band(double Start, double End, string Tag, string Style);
+    /// <param name="Line">The form's line the band is drawn for, which a drag on the ruler moves.</param>
+    private sealed record Band(double Start, double End, string Tag, string Style, int? Line = null);
 
     private void Open(WarpGroup group) => _form = new BarForm(group.Lender is not null);
 
@@ -666,7 +668,7 @@
                 .. form
                     .Lines.Select((line, index) => (Window: form.Window(line, group), Line: line, Number: index + 1))
                     .Where(pair => pair.Window is not null)
-                    .Select(pair => new Band(pair.Window!.Start, pair.Window.End, $"{pair.Number} · {pair.Line.Range.Trim()}", "yours")),
+                    .Select(pair => new Band(pair.Window!.Start, pair.Window.End, $"{pair.Number} · {pair.Line.Range.Trim()}", "yours", pair.Number - 1)),
             ];
 
         if (BarRun is { IsRunning: true } run)
@@ -718,7 +720,7 @@
                 var (left, right) = (Math.Clamp(X(band.Start, from, to), 0, 100), Math.Clamp(X(band.End, from, to), 0, 100));
                 @if (right > left)
                 {
-                    <div class="jband @band.Style" style="left: @P(left)%; width: @P(right - left)%">
+                    <div class="jband @band.Style" style="left: @P(left)%; width: @P(right - left)%" data-line="@band.Line">
                         @if (tags)
                         {
                             <span class="mono jtag">@band.Tag</span>
@@ -727,6 +729,29 @@
                 }
             }
         </text>;
+
+    /// <summary>Where a drag on the ruler snaps, as fractions of the view: each bar line, or every few seconds without a warp.</summary>
+    private static IEnumerable<double> SnapBounds(WarpGroup group, double from, double to)
+    {
+        if (group.Lender is not null)
+        {
+            if (group.BeatAt(from) is not { } first || group.BeatAt(to) is not { } last)
+                yield break;
+
+            for (var bar = Math.Max(1, JudgeRanges.BarAt(group, first)); bar <= JudgeRanges.BarAt(group, last) + 1; bar++)
+            {
+                if (group.SecondsAt(JudgeRanges.BeatOfBar(group, bar)) is { } at && X(at, from, to) is >= 0 and <= 100 and var x)
+                    yield return x / 100;
+            }
+
+            yield break;
+        }
+
+        var step = Math.Max(1, (int)Math.Ceiling((to - from) / 200));
+
+        for (var second = (int)Math.Ceiling(from / step) * step; second <= to; second += step)
+            yield return X(second, from, to) / 100;
+    }
 
     /// <summary>A range let go on the ruler, as fractions of the view: whole bars, or whole seconds without a warp.</summary>
     [JSInvokable]
@@ -743,7 +768,7 @@
         else if (group.BeatAt(startSeconds) is { } first && group.BeatAt(endSeconds) is { } last)
             form.Place(
                 line,
-                Math.Max(1, JudgeRanges.BarAt(group, first)),
+                Math.Max(1, JudgeRanges.BarAt(group, first + 0.001)),
                 Math.Max(1, JudgeRanges.BarAt(group, last - 0.001))
             );
 
@@ -1379,6 +1404,9 @@
     private static double X(double seconds, double from, double to) => (seconds - from) / (to - from) * 100;
 
     private static string P(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+
+    /// <summary>A fraction for the drag script, precise enough that an edge and its snap compare equal.</summary>
+    private static string F(double value) => value.ToString("0.######", CultureInfo.InvariantCulture);
 
     private static string Style(ChipStyle style) => style.ToString().ToLowerInvariant();
 }
