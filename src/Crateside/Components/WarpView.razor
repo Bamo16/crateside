@@ -10,7 +10,7 @@
 @using Crateside.Core.Tracks
 @using Crateside.Core.Warps
 @using Microsoft.Extensions.Options
-@implements IDisposable
+@implements IAsyncDisposable
 @inject StemWarpReader Reader
 @inject WarpActions Actions
 @inject WarpTrueUp TrueUp
@@ -20,6 +20,7 @@
 @inject BarJudging Judging
 @inject QuotaGuard Guard
 @inject IOptions<JudgeOptions> Judge
+@inject IJSRuntime Js
 
 @if (_group is { Stems.Count: > 0 } group)
 {
@@ -27,7 +28,7 @@
     var (from, to) = View(group);
     var selected = Selected(group);
 
-    <section class="warp" id="warp-view">
+    <section class="warp" id="warp-view" @ref="_section">
         <div class="head">
             <span class="section-label">Warp</span>
             <span class="group-line @(group.OnTheirOwn.Any() ? "loud" : null)">@GroupLine(group, wording)</span>
@@ -232,14 +233,21 @@
                 }
                 @if (_form is { } dragged)
                 {
-                    <div class="ruler-hits" @onpointerup="() => dragged.EndDrag()" @onpointerleave="() => dragged.EndDrag()">
-                        @foreach (var (unit, left, right) in DragUnits(group, from, to))
+                    @foreach (var (line, index) in dragged.Lines.Select((line, index) => (line, index)))
+                    {
+                        @if (dragged.Window(line, group) is { } window)
                         {
-                            <span class="@(dragged.IsEdge(unit) ? "edge" : null)" style="left: @P(left)%; width: @P(right - left)%"
-                                  @onpointerdown="() => dragged.BeginDrag(unit)"
-                                  @onpointerenter="pointer => DragOver(dragged, unit, pointer)"></span>
+                            var (left, right) = (X(window.Start, from, to), X(window.End, from, to));
+                            @if (left is >= 0 and <= 100)
+                            {
+                                <span class="edge" style="left: @P(left)%" data-line="@index" data-fixed="@P(right / 100)"></span>
+                            }
+                            @if (right is >= 0 and <= 100)
+                            {
+                                <span class="edge" style="left: @P(right)%" data-line="@index" data-fixed="@P(left / 100)"></span>
+                            }
                         }
-                    </div>
+                    }
                 }
             </div>
 
@@ -538,6 +546,9 @@
     public int OpenRequests { get; set; }
 
     private BarForm? _form;
+    private ElementReference _section;
+    private IJSObjectReference? _drag;
+    private DotNetObjectReference<WarpView>? _self;
     private int _openRequestsSeen;
     private DateTimeOffset? _reopenedAfter;
 
@@ -593,14 +604,19 @@
             return $"Withheld again {ago}. The form is open again with your ranges, so a second try is one edit away.";
 
         var key = verdict.Centre is { } centre ? ModeText.Named(centre) : KeyText.Spell(verdict.Key);
+        // A window in another centre is a section of the song, not a dissent, so it is named rather than counted.
         var yours = Run?.Readings.Where(reading => reading.Window.AskedBy is WindowAsker.User).ToList() ?? [];
-        var agreed = yours.Count(reading => reading.Section?.Centre == verdict.Centre);
-        var agreement = (agreed, yours.Count) switch
+        var elsewhere = yours
+            .Where(reading => reading.Section is { } section && section.Centre != verdict.Centre)
+            .Select(reading => $"{reading.Section!.Label}: {ModeText.Named(reading.Section.Centre)}")
+            .ToList();
+        var agreement = (yours.Count, elsewhere) switch
         {
             (0, _) => null,
-            (2, 2) => " Both windows agreed.",
-            var (all, count) when all == count => " Every window agreed.",
-            var (some, count) => $" {some} of {count} windows agreed.",
+            (2, []) when yours.All(reading => reading.Section is not null) => " Both windows agreed.",
+            (_, []) when yours.All(reading => reading.Section is not null) => " Every window agreed.",
+            (_, []) => null,
+            _ => $" {string.Join("; ", elsewhere)}.",
         };
         var kept = (run.Direction.Note is not null, run.Direction.Ear is not null) switch
         {
@@ -651,7 +667,6 @@
                     .Lines.Select((line, index) => (Window: form.Window(line, group), Line: line, Number: index + 1))
                     .Where(pair => pair.Window is not null)
                     .Select(pair => new Band(pair.Window!.Start, pair.Window.End, $"{pair.Number} · {pair.Line.Range.Trim()}", "yours")),
-                .. form.Pending(group) is { } pending ? [new Band(pending.Start, pending.End, "new", "yours")] : Array.Empty<Band>(),
             ];
 
         if (BarRun is { IsRunning: true } run)
@@ -713,34 +728,26 @@
             }
         </text>;
 
-    /// <summary>What a drag on the ruler snaps to: each bar in view, or each whole second (or a few) without a warp.</summary>
-    private IEnumerable<(int Unit, double Left, double Right)> DragUnits(WarpGroup group, double from, double to)
+    /// <summary>A range let go on the ruler, as fractions of the view: whole bars, or whole seconds without a warp.</summary>
+    [JSInvokable]
+    public void DropRange(int line, double start, double end)
     {
-        if (group.Lender is not null)
-        {
-            if (group.BeatAt(from) is not { } first || group.BeatAt(to) is not { } last)
-                yield break;
+        if (_form is not { } form || _group is not { } group)
+            return;
 
-            for (var bar = Math.Max(1, JudgeRanges.BarAt(group, first)); bar <= JudgeRanges.BarAt(group, last); bar++)
-            {
-                if (group.SecondsAt(JudgeRanges.BeatOfBar(group, bar)) is { } start
-                    && group.SecondsAt(JudgeRanges.BeatOfBar(group, bar + 1)) is { } end)
-                    yield return (bar, Math.Clamp(X(start, from, to), 0, 100), Math.Clamp(X(end, from, to), 0, 100));
-            }
+        var (from, to) = View(group);
+        var (startSeconds, endSeconds) = (from + start * (to - from), from + end * (to - from));
 
-            yield break;
-        }
+        if (!form.InBars)
+            form.Place(line, (int)Math.Round(startSeconds), (int)Math.Round(endSeconds));
+        else if (group.BeatAt(startSeconds) is { } first && group.BeatAt(endSeconds) is { } last)
+            form.Place(
+                line,
+                Math.Max(1, JudgeRanges.BarAt(group, first)),
+                Math.Max(1, JudgeRanges.BarAt(group, last - 0.001))
+            );
 
-        var step = Math.Max(1, (int)Math.Ceiling((to - from) / 200));
-
-        for (var second = (int)Math.Floor(from / step) * step; second < to; second += step)
-            yield return (second, Math.Clamp(X(second, from, to), 0, 100), Math.Clamp(X(second + step, from, to), 0, 100));
-    }
-
-    private static void DragOver(BarForm form, int unit, PointerEventArgs pointer)
-    {
-        if ((pointer.Buttons & 1) is not 0 && form.IsDragging)
-            form.DragTo(unit);
+        StateHasChanged();
     }
 
     private GridReport? _offGrid;
@@ -837,10 +844,31 @@
         ReopenIfWithheld();
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         Judging.Changed -= OnJudgingChanged;
         _poll?.Dispose();
+        _self?.Dispose();
+
+        try
+        {
+            if (_drag is not null)
+                await _drag.InvokeVoidAsync("dispose");
+        }
+        // The circuit is already gone when the page is closed.
+        catch (JSDisconnectedException) { }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_drag is not null || _section.Id is null)
+            return;
+
+        _self = DotNetObjectReference.Create(this);
+
+        var module = await Js.InvokeAsync<IJSObjectReference>("import", "./Components/WarpView.razor.js");
+
+        _drag = await module.InvokeAsync<IJSObjectReference>("rulerDrag", _section, _self);
     }
 
     private void Poll()

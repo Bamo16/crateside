@@ -135,8 +135,8 @@ open, no fold, drawn when the track has samples.
   note · ×), a dashed *+ another range*, then *What you hear* (key, mode select, the Ear setting's
   hint) and the cost line beside `.primary` *Judge from these bars* and Cancel. No confirm. While
   it is open the ruler grows to 44px, takes a crosshair and snaps a drag to whole bars (whole
-  seconds without a warp, whose ruler counts time); a drag on a range's first or last bar moves
-  that edge. **Bands**, one per window, in every row from the ruler down: yours solid at 50% with a
+  seconds without a warp, whose ruler counts time). The drag is drawn in the browser and sent once,
+  on release; each range has a handle on either edge to drag. **Bands**, one per window, in every row from the ruler down: yours solid at 50% with a
   6% fill, the judge's dashed with no fill, the one being read teal; the tag sits on the ruler
   (`1 · 33–48`, `1 · read`, `Chorus · C♯ min`, `judge · bars 57–72`). Running, the form folds into
   a teal-bordered line: step chips, the step in teal, *You can leave…* right. Done, a neutral line
@@ -387,6 +387,9 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **Bands are drawn row by row**: each row draws the band's sides and fill, with no top or bottom
   edge, rather than one rectangle over the grid.
 - **Enter in the last field adds a line but does not move focus to it.**
+- **A window in another centre is named in the recorded line** (`Vocal: G major.`) rather than
+  counted as not agreeing, since it is a section of the song, not a dissent.
+- **Ruler tags run past a narrow band** rather than being cut to its width.
 - **Window blocks sit in the measurements column**, their left part 11rem rather than 250px, and
   stack below 40rem. The whole file folds under them as a `<details>`.
 - **The form needs the full mix**: the working set's, else a source kept in the library. Without

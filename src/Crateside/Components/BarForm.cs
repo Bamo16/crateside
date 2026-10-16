@@ -10,12 +10,6 @@ namespace Crateside.Components;
 /// <param name="inBars">Whether ranges are bars through the warp, or minutes and seconds without one.</param>
 public sealed class BarForm(bool inBars)
 {
-    private (int Line, bool End)? _dragging;
-
-    // A new range is held here until the drag ends: adding its line sooner moves the ruler away
-    // from under the pointer.
-    private (int Anchor, int At)? _pending;
-
     public bool InBars { get; } = inBars;
 
     public List<BarLine> Lines { get; } = [new()];
@@ -24,21 +18,6 @@ public sealed class BarForm(bool inBars)
     public string Ear { get; set; } = string.Empty;
 
     public DiatonicMode? EarMode { get; set; }
-
-    public bool IsDragging => _dragging is not null || _pending is not null;
-
-    /// <summary>The range being dragged out, before it has a line.</summary>
-    public RunWindow? Pending(WarpGroup group) =>
-        _pending is var (anchor, at)
-            ? Window(
-                new BarLine { Range = Text(Math.Min(anchor, at), Math.Max(anchor, at)) },
-                group
-            )
-            : null;
-
-    /// <summary>Whether a drag starting at this unit would move a range's edge.</summary>
-    public bool IsEdge(int at) =>
-        Lines.Any(line => Units(line) is var (first, last) && (at == first || at == last));
 
     /// <summary>The form again with the ranges a finished run was given, for a second try.</summary>
     public static BarForm From(BarRun run, bool inBars)
@@ -136,81 +115,24 @@ public sealed class BarForm(bool inBars)
             Lines.Add(new());
     }
 
-    /// <summary>Starts a drag at a bar, or a whole second without a warp: on a range's edge it moves that edge, elsewhere it adds a range.</summary>
-    public void BeginDrag(int at)
+    /// <summary>
+    /// Puts a range dragged on the ruler, in bars or whole seconds, on its line, or on the first
+    /// empty line (else a new one) when <paramref name="line"/> is -1.
+    /// </summary>
+    public void Place(int line, int first, int last)
     {
-        for (var i = 0; i < Lines.Count; i++)
+        if (line < 0 || line >= Lines.Count)
         {
-            if (Units(Lines[i]) is not var (first, last))
-                continue;
+            line = Lines.FindIndex(each => each.Range.Trim() is { Length: 0 });
 
-            if (at == first || at == last)
+            if (line < 0)
             {
-                _dragging = (i, at == last);
-
-                return;
+                Lines.Add(new());
+                line = Lines.Count - 1;
             }
         }
 
-        _pending = (at, at);
-    }
-
-    public void DragTo(int at)
-    {
-        if (_pending is var (anchor, _))
-        {
-            _pending = (anchor, at);
-
-            return;
-        }
-
-        if (_dragging is not var (index, end) || Units(Lines[index]) is not var (first, last))
-            return;
-
-        var (from, to) = end ? (first, at) : (at, last);
-
-        // Dragged past the fixed edge: the other edge is now the one held.
-        if (to < from)
-        {
-            (from, to) = (to, from);
-            _dragging = (index, !end);
-        }
-
-        Lines[index].Range = Text(from, to);
-    }
-
-    /// <summary>Ends a drag; a new range takes the first empty line, else a line of its own.</summary>
-    public void EndDrag()
-    {
-        _dragging = null;
-
-        if (_pending is not var (anchor, at))
-            return;
-
-        _pending = null;
-
-        var empty = Lines.FindIndex(line => line.Range.Trim() is { Length: 0 });
-
-        if (empty < 0)
-        {
-            Lines.Add(new());
-            empty = Lines.Count - 1;
-        }
-
-        Lines[empty].Range = Text(Math.Min(anchor, at), Math.Max(anchor, at));
-    }
-
-    /// <summary>A line's range in drag units (bars, or whole seconds), whatever it was typed as.</summary>
-    private (int First, int Last)? Units(BarLine line)
-    {
-        if (InBars)
-            return JudgeRanges.TryParseBars(line.Range, out var bars)
-                ? (bars.First, bars.Last)
-                : null;
-
-        return JudgeRanges.TryParseTimes(line.Range, out var start, out var end)
-            ? ((int)Math.Round(start), (int)Math.Round(end))
-            : null;
+        Lines[line].Range = Text(first, last);
     }
 
     // A time range cannot be empty, as a single bar can, so it is a second at least.
