@@ -23,6 +23,7 @@ public sealed class VerdictRunnerRealDataTests
             Set,
             new ProcessRunner(),
             new EvidenceRunner(Set, new CratesidePaths()),
+            new SourcePages(() => new HttpClient()),
             new JudgeOptions(),
             TimeProvider.System
         );
@@ -67,7 +68,7 @@ public sealed class VerdictRunnerRealDataTests
 
         foreach (var videoId in Detected)
         {
-            var prompt = Runner.Prompt(Order(videoId), VerdictRunner.VerdictFileName);
+            var prompt = Runner.Prompt(Order(videoId), VerdictRunner.VerdictFileName, []);
 
             Assert.Contains("\"algorithms\"", prompt);
             Assert.Contains("```json", prompt);

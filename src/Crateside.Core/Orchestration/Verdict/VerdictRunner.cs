@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Loop;
@@ -11,17 +12,21 @@ namespace Crateside.Core.Orchestration.Verdict;
 /// Turns evidence into a verdict: a headless session writes a verdict file, which crateside
 /// checks and records (ADR 0055).
 /// </summary>
-public sealed class VerdictRunner(
+public sealed partial class VerdictRunner(
     LedgerStore store,
     WorkingSet workingSet,
     IProcessRunner processes,
     IWindowDetector detector,
+    ISourcePages sourcePages,
     JudgeOptions options,
     TimeProvider time,
     string fileName = "claude"
 )
 {
     public const string VerdictFileName = "verdict.json";
+
+    /// <summary>The pages fetched for the track before its first session, kept beside the evidence.</summary>
+    public const string SourcesFileName = "sources.json";
 
     private static readonly string[] Tools = ["Read", "Write", "WebSearch", "WebFetch"];
 
@@ -44,9 +49,10 @@ public sealed class VerdictRunner(
 
         File.Delete(verdictPath);
 
+        var lookups = await LookUpAsync(order, folder, ct);
         var outcome = await SessionAsync(
             ["--session-id", session],
-            Prompt(order, verdictPath),
+            Prompt(order, verdictPath, lookups),
             folder,
             ct
         );
@@ -102,7 +108,7 @@ public sealed class VerdictRunner(
     }
 
     /// <summary>The work order, rendered for the session.</summary>
-    internal string Prompt(WorkOrder order, string verdictPath)
+    internal string Prompt(WorkOrder order, string verdictPath, IReadOnlyList<SiteLookup> lookups)
     {
         List<string> lines =
         [
@@ -120,6 +126,7 @@ public sealed class VerdictRunner(
             );
 
         lines.AddRange([string.Empty, EarLine(options.Ear)]);
+        lines.AddRange(PagesLines(lookups));
 
         if (workingSet.TryReadEvidence(order.VideoId, out var evidence))
             lines.AddRange([
@@ -132,6 +139,43 @@ public sealed class VerdictRunner(
             ]);
 
         return string.Join('\n', lines);
+    }
+
+    /// <summary>The fetched pages, for the judge to accept or reject as this recording.</summary>
+    internal static IEnumerable<string> PagesLines(IReadOnlyList<SiteLookup> lookups)
+    {
+        if (lookups is [])
+            yield break;
+
+        yield return string.Empty;
+        yield return "Pages crateside found by artist and title before this session, read for you. "
+            + "Whether each is this recording is yours to decide; one you rely on goes in `sources` "
+            + "like any other.";
+        yield return string.Empty;
+
+        foreach (var page in lookups.SelectMany(lookup => lookup.Pages))
+        {
+            var about = string.Join(", ", new[] { page.Arrangement, page.Note }.OfType<string>());
+            var keys = page.Keys is []
+                ? "no key stated"
+                : string.Join(
+                    "; ",
+                    page.Keys.Select(key =>
+                        string.Create(
+                            CultureInfo.InvariantCulture,
+                            $"{(key.Section is { } section ? $"{section}: " : string.Empty)}{key.Key}{(key.Tempo is { } tempo ? $", {tempo} BPM" : string.Empty)}"
+                        )
+                    )
+                );
+
+            yield return $"- {page.Site}, {page.Url}{(about is "" ? string.Empty : $" ({about})")}: "
+                + $"\"{page.Heading}\". {keys}";
+        }
+
+        foreach (var lookup in lookups.Where(lookup => lookup.Status is not LookupStatus.Found))
+            yield return lookup.Status is LookupStatus.NotFound
+                ? $"- {lookup.Site}: nothing found"
+                : $"- {lookup.Site}: not reached ({lookup.Error})";
     }
 
     internal static string EarLine(EarWeight ear) =>
@@ -211,6 +255,44 @@ public sealed class VerdictRunner(
             },
             ct
         );
+
+    /// <summary>The pages for this track, fetched once and then read from beside the evidence.</summary>
+    private async Task<IReadOnlyList<SiteLookup>> LookUpAsync(
+        WorkOrder order,
+        string folder,
+        CancellationToken ct
+    )
+    {
+        var path = Path.Combine(folder, SourcesFileName);
+
+        if (
+            SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.ReadFileOrDefault(path) is
+            { } cached
+        )
+            return cached;
+
+        if (ArtistAndTitle(order) is not var (artist, title))
+            return [];
+
+        var lookups = await sourcePages.FetchAsync(artist, title, ct);
+
+        SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.WriteFile(path, lookups);
+
+        return lookups;
+    }
+
+    /// <summary>The ledger's names for a song judged before, else the row's <c>Artist - Title</c> without its bracketed tail.</summary>
+    private (string Artist, string Title)? ArtistAndTitle(WorkOrder order)
+    {
+        if (HeldRun(order) is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title })
+            return (artist, title);
+
+        return
+            order.Title.Split(" - ", 2) is [var named, var rest]
+            && BracketedTail.Replace(rest, string.Empty).Trim() is { Length: > 0 } bare
+            ? (named.Trim(), bare)
+            : null;
+    }
 
     private async Task<List<DetectedWindow>> DetectAsync(
         string audio,
@@ -362,6 +444,9 @@ public sealed class VerdictRunner(
 
         return reader.ReadToEnd();
     }
+
+    [GeneratedRegex(@"(\s*[(\[][^()\[\]]*[)\]])+\s*$")]
+    private static partial Regex BracketedTail { get; }
 
     private sealed record DetectedWindow(RunWindow Window, string? Evidence, string? Error);
 }

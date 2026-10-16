@@ -15,6 +15,23 @@ the file and records it in the [ledger](ledger.md). Decided in
 - **Tools**: `Read`, `Write`, `WebSearch` and `WebFetch`, nothing else. Its working directory
   is the track's working set, where the verdict file goes.
 
+## Pages fetched before the session
+
+Before a track's first session crateside looks the song up by artist and title (the ledger's
+names for a song judged before, otherwise the row's `Artist - Title` without a bracketed tail)
+and puts what it finds in the work order:
+
+| site | requests | what is kept |
+|---|---|---|
+| Hooktheory | the TheoryTab page at `theorytab/view/<artist>/<title>` | each section's key, mode and tempo |
+| Musicnotes | the search, then the first product filed under the artist and title themselves | the Original Published Key and the arrangement |
+| Ultimate Guitar | the search | up to three of the song's tabs: those that state a key, then the most-voted chord charts |
+
+A page that is not there, or a site that cannot be reached, is listed as such. The lookup is made
+once per track, with the user agent `crateside/1.0`, and kept as `sources.json` beside the
+evidence. crateside matches names only; whether a page is the right recording is the judge's
+call, and the judge may still search.
+
 ## The verdict file
 
 `verdict.json` in the working set, UTF-8 JSON in the shape the instructions give. crateside
