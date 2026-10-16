@@ -1,5 +1,8 @@
 using System.Diagnostics;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Pairing;
@@ -14,6 +17,15 @@ namespace Crateside.Core.KeyDetection;
 /// </summary>
 public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, MadmomKeyCnn madmom)
 {
+    /// <summary>Without the escaping meant for HTML, so a title's own script and a pair's <c>+</c> stay readable.</summary>
+    private static readonly JsonTypeInfo<MachineDto> Written =
+        (JsonTypeInfo<MachineDto>)
+            new JsonSerializerOptions(RunEvidenceJsonContext.Default.Options)
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            }.GetTypeInfo(typeof(MachineDto));
+
     /// <summary>All three through one ffmpeg, which must be a build with <c>keydetect</c>.</summary>
     public static DetectorSet For(IProcessRunner runner, string ffmpeg) =>
         new(
@@ -67,11 +79,7 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
                 $"no detector read a key: {evidence.Algorithms.FfmpegKeydetect.Error}"
             );
 
-        await File.WriteAllTextAsync(
-            evidencePath,
-            JsonSerializer.Serialize(evidence, RunEvidenceJsonContext.Default.MachineDto),
-            ct
-        );
+        await File.WriteAllTextAsync(evidencePath, JsonSerializer.Serialize(evidence, Written), ct);
 
         return new DetectionOutcome.Written(evidencePath);
     }
