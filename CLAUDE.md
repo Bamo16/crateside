@@ -13,7 +13,7 @@ dotnet csharpier check .                   # must be clean before every commit
 ```
 
 Many tests **assert against the real library** — the Ableton roots under `P:\RYAN\Ableton`, the
-keytag ledger, this machine's working sets — and skip when those are absent. That has caught
+ledger, this machine's working sets — and skip when those are absent. That has caught
 things fixtures could not, repeatedly. Prefer a real-data test over a mock when the question is
 "what is actually true on this machine".
 
@@ -82,7 +82,7 @@ several rows and each carries the same usage object.
 
 ## Documents hold one kind of content each
 
-Same rule as keytag ([its ADR 0005](../keytag/docs/adr/0005-instructions-carry-no-history.md)):
+Each kind of document holds one kind of content:
 
 - **`docs/adr/`** holds history. Append-only, dated, superseded in place, never pruned.
 - **`CONTEXT.md`** holds current definitions. A glossary and nothing else.
@@ -135,8 +135,7 @@ The five canonical names, unchanged. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
-Single-context — `CONTEXT.md` and `docs/adr/` at the root, with shared vocabulary in keytag's
-`CONTEXT.md`. See `docs/agents/domain.md`.
+Single-context — `CONTEXT.md` and `docs/adr/` at the root, See `docs/agents/domain.md`.
 
 ### Design
 

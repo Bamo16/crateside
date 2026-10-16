@@ -62,18 +62,18 @@ fails if a page formats one itself. Summaries go through `Bin` and `Range` and c
 
 - **Two marks, used together.** Vouched: the bare figure at 600 (headline) or 500 (secondary), two
   decimals with `.00` dropped (`128`, `128.02`, `119.50`), never one. Approximate: `~` and weight 400,
-  always a whole number. keytag's estimate is approximate and also `--text-50`. No tempo: `—` at
+  always a whole number. The ledger's estimate is approximate and also `--text-50`. No tempo: `—` at
   `--text-30`.
 - **States.** Vouched: any warp that holds, or a reading whose windows agree within 0.02%.
   Approximate: a reading that agrees less tightly. Drifting: `~` the median. Mostly steady and
-  changing: the main tempo, vouched. keytag's estimate: only with no warp and no reading.
+  changing: the main tempo, vouched. The ledger's estimate: only with no warp and no reading.
 - **The note**, also the tooltip wherever a figure stands without one: shape first, then source,
   joined by ` · `. `drifts 110–112 · 2% · from your warp`, `steady for 91% · one part changes tempo ·
   from your warp`, `changes tempo · 24 bars at 132 · from your warp`, `crateside's reading · steady
-  to the hundredth`, `crateside's reading · steady, but not to the hundredth`, `keytag's estimate ·
+  to the hundredth`, `crateside's reading · steady, but not to the hundredth`, `ledger's estimate ·
   not read yet`.
-- **Three source phrases only**: `from your warp`, `crateside's reading`, `keytag's estimate`; as a
-  label, `Your warp`, `crateside's reading`, `keytag's estimate`.
+- **Three source phrases only**: `from your warp`, `crateside's reading`, `ledger's estimate`; as a
+  label, `Your warp`, `crateside's reading`, `ledger's estimate`.
 - **Drifting**: the range is the slowest and fastest window, rounded outward (`127–129`, never
   hundredths); the spread is that range over the figure shown, as a whole percent, `<1%` under one.
   A warp's windows are four audible bars, read from its bar lines; a reading's are its 30 s windows.
@@ -505,12 +505,11 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   recorded by hand carries no detectors, so its song uses the latest run that has them.
 - **The BPM detector figures differ from the canvas** (from handoff 08): some detectors read fast
   as well as slow, so the fourth band is *Triplet or dotted* with its wider rule.
-- **The BPM detectors panel has one detector, beatdetect.** keytag stopped producing a BPM
-  (keytag ADR 0010), so its row was retired (#93); older ledger lines keep their `bpm` as the
+- **The BPM detectors panel has one detector, beatdetect.** The ledger stopped producing a BPM
+  (#93), so its row was retired; older ledger lines keep their `bpm` as the
   last-resort figure, but nothing is compared.
 - **The shape line reads "Steady · Mostly steady · Drifting"** (handoff 08 drew the older names).
-- **Key detectors gains madmom and edma** (#113) as columns once a run has a reading from them;
-  until then the panel is keytag's three. A song counts as *all three wrong* when the three
+- **Key detectors gains madmom and edma** (#113) as columns once a run has a reading from them. A song counts as *all three wrong* when the three
   detectors of its own run all read it and all miss, whichever three those were.
 
 ### Tools (handoff 12, #79)

@@ -21,7 +21,7 @@ Time passes. A batch begins.
 
 - **Get the key and the BPM.** The key has to be right; the BPM is a warp starting point and is
   rarely exactly right anyway. Historically this was a web search and a look at Tunebat; then
-  keytag's `detect-key` skill; now crateside's verdict run ([judge.md](judge.md)).
+  a Claude Code skill; now crateside's verdict run ([judge.md](judge.md)).
 - **Separate.** Vocal, instrumental and drums. For an already-instrumental release, drums only —
   the source track is kept and *is* the instrumental. StemForge takes either the YouTube URL or
   a local file, so a file already downloaded for key detection is reused; if separation runs

@@ -3,12 +3,46 @@
 Glossary for the helper bench that supports the **human-limited steps** of the
 user's Ableton mashup workflow. Glossary only — no implementation detail.
 
-Terms shared with the detection tool — **Track**, **Stem**, **Sample**, **Warp
-guide**, **Song identity**, **Source video ID**, **Queue**, **Fully
-processed**, **Sample Staging**, **Mashup Samples** — are defined once in
-`keytag`'s `CONTEXT.md` and are not repeated here. **Verdict**, **Diatonic mode** and
-**Collapse** are defined below under Keys, and replace keytag's. This file covers what is
-specific to crateside: keys, pairing, importing, tags, the views, and running the workflow.
+This file covers what crateside is about: the units it works on, keys, pairing, importing, tags,
+the views, and running the workflow.
+
+## Units and intake
+
+- **Track** (or **Song**) — one piece of source material: an artist's recording, the thing a
+  key verdict is about.
+- **Stem** — one separated part of a track (vocal, instrumental, drums). Describes only **how a
+  file was made**, and implies nothing about what it is for or whether it is kept.
+- **Sample** — a file the user actually mixes with: key-tagged, and destined for **the
+  library**. Describes **what a file is for**. Usually a stem, but for a release that is already
+  instrumental the source track itself is the sample. The two axes cross, which is why both
+  words are needed: a vocal stem and a drums stem are equally stems and only one is kept, while an
+  instrumental release is a sample and no kind of stem at all.
+- **Canonical version** — of the several uploads a song has, the one that is the right master.
+  Chosen once, at the front of the workflow; the verdict and every stem inherit it. Its address
+  is the canonical URL.
+- **Instrumental release** — a track with no vocals to begin with, so nothing is separated out
+  and **the source track is the sample**. The user states it (`has_vocals: false`); crateside
+  never concludes it. Named around the word because "instrumental" already names a stem preset.
+- **Human-limited steps** — the parts of the workflow only the user can do: **warping**,
+  **tagging**, and sometimes renaming. Everything before them crateside automates; nothing after
+  them is.
+- **Song identity** — how a song is keyed in the ledger: lowercased `artist - title` with
+  whitespace collapsed and any stem suffix like `(Instrumental - Full)` dropped, since key is
+  song-level. Always derived from the artist and title beside it, never authored, and computed
+  only from names already repaired of encoding damage. It says *which song*, never *how a run
+  was done*: a method note belongs in the reasoning, not appended to the identity.
+- **Source video ID** — the YouTube video identifier a track came from, embedded in each stem
+  file at separation time and so surviving renames. The durable anchor from a stem on disk back
+  to its **song identity**. A song may have several; all keep resolving (see **Restatement**).
+- **Queue** — the YouTube playlist the user adds tracks to as they think of them. Unordered and
+  open-ended: being in it means "I want this eventually", never "process this next".
+- **Fully processed** — a track has genuinely made it out of the **Queue**: a verdict recorded
+  for its **source video ID**, *and* at least one stem carrying that ID on disk. Both halves are
+  required, since a key can be determined for a track whose separation then failed.
+- **Stems output** — where separation writes a track's stems (`Music\Stems`, by whether the
+  track has a key to tag with). Transient: the **handoff** moves them on.
+- **Dummy project** — a throwaway Ableton project the user drags staged samples into, to **warp**
+  them and apply **Key tags** by hand.
 
 ## Keys
 
@@ -45,15 +79,34 @@ specific to crateside: keys, pairing, importing, tags, the views, and running th
   the run.
 - **Ear** — the user's own reading of a key, a source of its own kind. A hint by default;
   the Ear setting can count it as a human source.
+- **Evidence** — everything gathered about a song that bears on its key: each detector's answer
+  and confidence, the chord progression, the in-stream key flicker, and the **evidence
+  sources** consulted. Facts, not conclusions; the **verdict** is what the judge concludes from them.
+- **Evidence source** — an external reference consulted for a verdict (a Hooktheory page, a
+  photographed sheet): where it came from, what key it stated, and its **source kind**. Weighed
+  above the judge's own interpretation.
+- **Source kind** — what an evidence source is worth on the tonic, a closed set:
+  **authoritative** (human analysis, published sheet music), **corroborating** (human
+  transcription), **chord recogniser** (its chords are evidence, its key never is) and
+  **algorithmic** (shares the detectors' failure modes, so corroboration only). A kind, not a rank.
+- **Confidence** — HIGH, MEDIUM or LOW on a verdict, from detector agreement plus corroboration
+  by human sources. Governs whether a tag is recommended.
+- **Tonic check** — the argument, against the chord progression and key flicker, for why the
+  verdict's tonic is the tonic and not its relative. Owed on every run, and recorded apart from
+  the reasoning because it is read against the chords it argues about.
+- **Supersede** — how a re-run replaces an earlier verdict: filed under the same **song
+  identity**, the latest run wins, so each run's prose stands on its own.
 - **Restatement** — the ledger's record that another upload is a song already judged. It
   carries the song's verdict to the new upload and never changes it.
 
 ## Places
 
-- **Staging** — where samples wait to be warped. keytag's name for the user's folder is
-  **Sample Staging**; crateside says Staging, and the folder is a setting, not a fixed place.
-- **The library** — where a sample goes once it is **imported**; keytag's **Mashup Samples**.
-  Ableton draws no such line: both folders sit in its *User Library* and it treats them
+- **Staging** — where samples wait to be warped, once called *Sample Staging*. The holding area
+  between the automated and the human halves of the workflow: what is in it has been through
+  separation but not the **human-limited steps**, and it may sit there for weeks. It is not a
+  queue and implies no urgency. The folder is a setting, not a fixed place.
+- **The library** — where a sample goes once it is **imported**, once called *Mashup Samples*;
+  a sample there is warped and tagged. Ableton draws no such line: both folders sit in its *User Library* and it treats them
   alike. The distinction is crateside's, made by which folder a sample is in. "The library"
   in crateside never means Ableton's whole User Library. The two names were settled in
   [#66](https://github.com/Bamo16/crateside/issues/66); the folders are changed in Settings
@@ -116,12 +169,13 @@ against it.
 - **Warped BPM** — the tempo a finished warp holds: the stable tempo covering the most bars of
   the default clip, or the median bar where no tempo holds for eight
   ([ADR 0038](docs/adr/0038-a-warps-bpm-is-the-stable-tempo-that-holds-longest.md)). Shown in
-  place of keytag's estimate once a track is warped.
+  place of the ledger's estimate once a track is warped.
 - **Tempo** — beats per minute of the beat the user warps to; the number is the **BPM**. A
   reading at half or double is the same tempo at **the other octave**, and the octave is the
   user's call, not an error.
 - **Headline tempo** — the one BPM shown for a track everywhere: the **warped BPM** where there is
-  one, else crateside's reading, else keytag's estimate
+  one, else crateside's reading, else the **ledger's estimate** (the BPM of imported history, a warp
+  starting point that no new run writes)
   ([ADR 0049](docs/adr/0049-a-bpm-shows-only-the-precision-crateside-can-vouch-for.md)).
 - **Vouched** — a BPM known to the hundredth: a steady warp whose grid holds against the track's
   transients (`GridCheck`: no step, no drift beyond the noise), or a reading whose 30 s windows
@@ -173,7 +227,10 @@ against it.
   it becomes the user's warp once Live saves over it
   ([ADR 0047](docs/adr/0047-a-starter-warp-and-where-transients-came-from.md),
   [ADR 0048](docs/adr/0048-stems-arrive-in-staging-already-warped.md)).
-- **Warp guide** — a track's drums stem, cut to be looked at while warping rather than heard.
+- **Warp guide** — a **role** a sample plays, not a kind of file: a track's drums stem, cut to be
+  looked at while warping rather than heard. It is never tagged and never mixed, and deleting it
+  is a step in the workflow, so its presence says "warping outstanding". A drums stem could be
+  kept; every one is treated as a guide, and keeping one is done by hand.
   Once the rest of the track is in **the library**, crateside keeps it, with its analysis file,
   in `Music\Stems\Drums`, outside every folder Ableton browses
   ([ADR 0046](docs/adr/0046-a-filed-tracks-warp-guide-is-kept-outside-ableton.md)).
@@ -255,8 +312,7 @@ against it.
 ## Orchestration
 
 What crateside does when it stops only *showing* the workflow and starts *running*
-it. **Evidence** and **Verdict** are keytag's terms and keep their meanings here;
-the two run types below are named after which of them they produce.
+it. The two run types below are named after which of **evidence** and **verdict** they produce.
 
 - **Work order** — crateside's instruction for one track: which URL is canonical,
   where its stems belong, what quality to ask for. The thing that replaces a
@@ -268,9 +324,8 @@ the two run types below are named after which of them they produce.
 - **Source** — a whole file of a track's audio, as against a **stem** cut out of
   one. crateside's own download is a source; so is an official instrumental found
   later, or a local file. A track has as many as the user gives it, and each is a
-  **sample** in its own right once kept. Distinct from keytag's *source*, which is
-  an external reference consulted for a verdict — that sense reaches crateside only
-  compounded, as **evidence source**.
+  **sample** in its own right once kept. Distinct from an **evidence
+  source**, an external reference consulted for a verdict.
 - **Separation source** — the one source a track's stems are cut from, and the one
   *Swap source* changes. Every other source is an **added source**: downloaded or
   copied, tagged and staged like anything else, but never separated.
@@ -307,7 +362,7 @@ the two run types below are named after which of them they produce.
   what form. A **stem plan** rendered for the separator, plus a **warp guide** when new
   presets are cut and the track has none yet (or a first cut that only keeps the source).
   The guide is never part of the plan. A recipe is crateside's alone and is not recorded
-  anywhere keytag reads.
+  in the ledger.
 - **Download** — the stage that fetches a source: the audio a track is cut from, a
   kept source, or an added one. Contends for nothing scarce
   ([ADR 0019](docs/adr/0019-a-track-has-many-sources-and-one-of-them-is-the-separation-source.md)).

@@ -89,14 +89,12 @@ judging, and how much of the current Claude quota window is used.
   ([ADR 0012](docs/adr/0012-the-source-url-is-an-instruction-not-an-identity.md),
   [ADR 0014](docs/adr/0014-the-song-is-the-identity-and-the-name-is-not.md)).
 
-## How it relates to keytag and StemForge
+## How it relates to StemForge
 
-- [**keytag**](../keytag) (private) is where the key detection and judging began. crateside now
-  detects keys itself (FiLL's `keydetect` filter through ffmpeg, with ports of madmom's key CNN
+- crateside detects keys itself (FiLL's `keydetect` filter through ffmpeg, with ports of madmom's key CNN
   and Essentia's `edma` profile as its backers), judges with its own prompt, and keeps the
-  **ledger** of every verdict in SQLite ([docs/ledger.md](docs/ledger.md)). keytag's history,
-  its `results/runs.jsonl`, is imported once into an empty ledger. keytag never learns
-  crateside exists.
+  **ledger** of every verdict in SQLite ([docs/ledger.md](docs/ledger.md)). It began as a separate
+  tool, keytag, whose history it took over ([ADR 0055](docs/adr/0055-crateside-owns-the-key-judge-and-its-ledger.md)).
 - [**StemForge**](https://github.com/Bamo16/StemForge) does the downloading and the stem
   separation. crateside calls its CLI and reads the provenance it writes into each file's
   tags — that provenance (the video ID) is how every later step recognises a file.
@@ -125,13 +123,13 @@ reshapes an object already in memory — so a multi-file edit can leave the app 
 that is genuinely inconsistent while reporting *"Hot reload succeeded"*. Use it for razor and
 CSS; use `run` for anything else.
 
-Many tests assert against the real Ableton roots and the keytag ledger and skip when
+Many tests assert against the real Ableton roots and the ledger and skip when
 those are absent — that has repeatedly caught things fixtures would not have.
 
 ## Reading further
 
 - [CONTEXT.md](CONTEXT.md) — the glossary. Every noun above (track, stem, sample, warp
-  guide, verdict, parked, recipe, work order) is defined there or in keytag's.
+  guide, verdict, parked, recipe, work order) is defined there.
 - [docs/adr](docs/adr) — seventeen decision records; the ones linked above are the
   load-bearing ones.
 - [docs/the-manual-workflow.md](docs/the-manual-workflow.md) — the human half, step

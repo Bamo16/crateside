@@ -7,21 +7,9 @@ codebase.
 
 - **`CONTEXT.md`** at the repo root — a glossary and nothing else.
 - **`docs/adr/`** — read the ADRs that touch the area you are about to work in.
-- **`V:\Repos\keytag\CONTEXT.md`** — see below.
 
 Single-context repo: one `CONTEXT.md`, one `docs/adr/`, no `CONTEXT-MAP.md` and no
 context-scoped ADR directories.
-
-## Vocabulary is shared with keytag, and half of it is defined next door
-
-`CONTEXT.md` says so in its own opening: **Track**, **Stem**, **Sample**, **Warp guide**,
-**Song identity**, **Verdict**, **Source video ID**, **Queue**, **Fully processed**, **Sample
-Staging** and **Mashup Samples** are defined once in keytag's `CONTEXT.md` and deliberately not
-repeated here. A skill that reads only this repo's glossary will conclude those terms are
-undefined and invent definitions for them. Read both.
-
-The two repos cite each other's ADRs by relative path (`../../../keytag/docs/adr/…`). Follow
-those links rather than reasoning around them; several decisions here are half of a pair.
 
 ## Each document holds one kind of content
 
