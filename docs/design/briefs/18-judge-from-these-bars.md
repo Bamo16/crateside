@@ -36,8 +36,8 @@ the direction is kept with the run.
 
 ## What the maintainer reads bars from
 
-**The warp of the sample Ableton shows.** In Live a sample in the library shows one warp, and the
-numbers the maintainer reads off its bar ruler are the numbers they will type. crateside converts
+**The warp of the sample Ableton shows.** The numbers the maintainer reads off Live's bar ruler are
+the numbers they will type. crateside converts
 bars to seconds through that warp, so the form's bars match Live's. The warp view (brief 14)
 already draws that warp's ruler on Track details, with bars counted from the clip start, and
 zoom pills (*Whole track · 32 bars · 8 bars*). With **no warp**, a range is entered in seconds,
@@ -48,7 +48,7 @@ and the form says why.
 - **Opens "Judge from these bars"** on a track's page. It is offered on any track, and **offered
   first** where the verdict is withheld or the detectors split.
 - **Adds one or more ranges**: `from bar` · `to bar`, a label, and a note to the judge. Typing
-  `33–48` is the common case. A second range is one more line.
+  is the expected path (`33–48`). A second range is one more line.
 - **Says what they hear**, optionally, as an ear hint: a key, with a mode if they know it.
 - **Sees what will happen before it does.** Judging spends Claude quota (about a session's
   start-up, ~37k tokens, per track), so this run is **never in the background**: the maintainer asks
