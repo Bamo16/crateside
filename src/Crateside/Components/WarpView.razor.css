@@ -1023,3 +1023,12 @@
     background: var(--teal);
     border-color: var(--teal);
 }
+
+.ruler-hits span.edge {
+    cursor: ew-resize;
+}
+
+.add-line,
+.range-row .remove {
+    cursor: pointer;
+}
