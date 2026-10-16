@@ -74,9 +74,34 @@ Every track decoded to 44.1 kHz mono float by the same ffmpeg for both sides.
 | set | tracks | madmom keys equal | `edma` keys equal | largest confidence difference |
 |---|---|---|---|---|
 | keydetect-harness corpus | 37 | 37 | 37 | madmom 5e-6, `edma` 5e-6 |
+| the ledger's songs in the bake-off | 224 | 224 | 224 | not compared |
 
-The container also reproduced the bake-off CSV's `madmom` and `ess_edma` columns on all 37, so the
-CSV is a fair yardstick for the port.
+The container also reproduced the bake-off CSV's `madmom` and `ess_edma` columns on all 37 corpus
+tracks, so the CSV is a fair yardstick for the port. The ledger songs were fetched again with
+`stemforge-cli download --format flac`, as the bake-off fetched them; that the ports matched the CSV
+on every one says the audio had not changed either. There is no difference to explain.
+
+keydetect, run by crateside's parser on the 9.0 build, matched the CSV on all 37 corpus tracks
+(the bake-off ran `keytag-detect` on the same build there). On the ledger songs it differs from
+the CSV on 37 of 224: the CSV holds the ledger's recorded readings, mostly from the
+`8.1.2-NoMercy-MediaServer` build. Against human sources on the bake-off's 221, 9.0 is right on
+163 (74%), the recorded readings on 157 (71%).
+
+## The backed-by figures, restated
+
+For the judge's prompt, on the bake-off's 221 human-sourced ledger songs, keydetect read by the 9.0
+build and backed by the ported madmom and `edma`; "right" is the human sources' key:
+
+| keydetect's `r` | backed by both | by one | by neither |
+|---|---|---|---|
+| ≥ 0.80 | 77/81 (95%) | 14/17 (82%) | 1/10 (10%) |
+| < 0.80 | 38/42 (90%) | 20/31 (65%) | 13/40 (32%) |
+
+The cells with fewer than 20 songs are thin. On the 58 songs keydetect gets wrong, madmom is right
+on 33 and `edma` on 29; the two agree on 32 of them, rightly on 23. Unlike CREMA and librosa, the
+new backers often hold the answer, not only the doubt. The yardstick differs from the old table's
+(the verdict, over 495 songs), because the ported detectors have readings only for the bake-off's
+songs.
 
 ## Speed
 
