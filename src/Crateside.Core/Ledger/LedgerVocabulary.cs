@@ -153,6 +153,24 @@ public static partial class LedgerVocabulary
         return (null, string.Join(' ', new[] { text, via }.OfType<string>()));
     }
 
+    /// <summary>The song identity: lowercased <c>artist - title</c>, whitespace collapsed, a stem suffix dropped.</summary>
+    public static string SongIdentity(string artist, string title) =>
+        $"{Collapsed(artist)} - {Collapsed(WithoutStemSuffix(title))}".ToLowerInvariant();
+
+    /// <summary><c>Title (Instrumental)</c> → <c>Title</c>, as StemForge names a stem.</summary>
+    public static string WithoutStemSuffix(string title)
+    {
+        string previous;
+
+        do
+        {
+            previous = title;
+            title = StemSuffix.Replace(title, string.Empty).Trim();
+        } while (title != previous);
+
+        return title;
+    }
+
     /// <summary>Undoes a bad encoding hop: escaped bytes first, then UTF-8 read as CP1252, run by run.</summary>
     public static string RepairText(string text) => UndoDoubleEncode(UndoSurrogateEscape(text));
 
@@ -162,6 +180,8 @@ public static partial class LedgerVocabulary
         || Residue.IsMatch(text)
         || text.Contains('�')
         || text.Any(char.IsSurrogate) && !IsWellFormed(text);
+
+    private static string Collapsed(string text) => Whitespace.Replace(text, " ").Trim();
 
     private static string UndoDoubleEncode(string text) =>
         MojibakeRun.Replace(
@@ -270,4 +290,10 @@ public static partial class LedgerVocabulary
 
     [GeneratedRegex(@"\s*\((?<Note>[^()]*)\)\s*$")]
     private static partial Regex TrailingNote { get; }
+
+    [GeneratedRegex(@"\s*\((instrumental|vocal|drums|bass)[^)]*\)\s*$", RegexOptions.IgnoreCase)]
+    private static partial Regex StemSuffix { get; }
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex Whitespace { get; }
 }

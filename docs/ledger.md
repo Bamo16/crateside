@@ -63,12 +63,11 @@ stated key is normalized to the 24-key spelling.
 A restatement is refused for an upload the ledger has never seen. One for an upload the song
 already has is a skip, not a failure.
 
-## The bridge from keytag
+## The import from keytag
 
-Until the judge writes here itself (#111, the judge rewrite), verdicts still arrive through keytag's
-recorder in its `results/runs.jsonl` (`Paths:KeytagLedger`). crateside imports every line it
-does not yet hold whenever that file changes, so a verdict a session just recorded is visible
-at once. It never writes the file. A line it cannot take is listed in
+The judge writes here itself ([docs/judge.md](judge.md)). keytag's history, its
+`results/runs.jsonl` (`Paths:KeytagLedger`), is imported once: into a ledger that holds no run
+yet, at the first start. crateside never writes that file. A line it cannot take is listed in
 `LedgerStore.ImportRefusals`. Imported, a `key` becomes its tonic on Ionian or Aeolian, or on
 the mode the line stated.
 

@@ -1,11 +1,12 @@
 # Secrets
 
-crateside holds two secrets, and they are worth very different amounts.
+crateside holds two secrets, and they are worth very different amounts. A third is optional.
 
 | secret | what it can do | where it lives |
 |---|---|---|
 | **YouTube API key** | Read a public/unlisted playlist. Cannot write. Quota-capped, revocable, restrictable to the YouTube Data API. | user-secrets |
 | **OAuth refresh token** | **Delete items from the user's playlist.** | DPAPI-encrypted at rest — see below |
+| **Judge API key** (optional) | Spend money on the judge's endpoint. Only needed to judge somewhere other than Claude Code's own login; see [judge.md](judge.md#the-endpoint). | user-secrets |
 
 **Nothing secret is ever committed.** `.gitignore` covers `token.json`, `*.token.json`,
 `client_secret*.json`, `appsettings.Secrets.json` and `appsettings.*.Local.json`, but the

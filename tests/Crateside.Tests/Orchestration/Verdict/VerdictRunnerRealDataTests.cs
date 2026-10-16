@@ -1,6 +1,8 @@
 using Crateside.Core;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Evidence;
+using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
@@ -15,7 +17,15 @@ public sealed class VerdictRunnerRealDataTests
 
     private static readonly WorkingSet Set = new();
 
-    private static VerdictRunner Runner => new(TestLedger.Store(), Set, new CratesidePaths());
+    private static VerdictRunner Runner =>
+        new(
+            TestLedger.Store(),
+            Set,
+            new ProcessRunner(),
+            new EvidenceRunner(Set, new CratesidePaths()),
+            new JudgeOptions(),
+            TimeProvider.System
+        );
 
     private static WorkOrder Order(string videoId) =>
         WorkOrder.Compose(
@@ -57,7 +67,7 @@ public sealed class VerdictRunnerRealDataTests
 
         foreach (var videoId in Detected)
         {
-            var prompt = Runner.Prompt(Order(videoId));
+            var prompt = Runner.Prompt(Order(videoId), VerdictRunner.VerdictFileName);
 
             Assert.Contains("\"algorithms\"", prompt);
             Assert.Contains("```json", prompt);

@@ -58,6 +58,9 @@ public static class ServiceRegistration
         builder.Services.Configure<PlaylistOptions>(
             builder.Configuration.GetSection(PlaylistOptions.SectionName)
         );
+        builder.Services.Configure<JudgeOptions>(
+            builder.Configuration.GetSection(JudgeOptions.SectionName)
+        );
         builder.Services.AddSingleton(_ => new WarpSettingsStore());
         builder
             .Services.AddOptions<WarpOptions>()
@@ -261,10 +264,14 @@ public static class ServiceRegistration
                     .GetValueOrDefault(videoId)
                     ?.DisplayTitle
         ));
+        services.AddSingleton<IProcessRunner, ProcessRunner>();
         services.AddSingleton(sp => new VerdictRunner(
             sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<WorkingSet>(),
-            sp.GetRequiredService<CratesidePaths>()
+            sp.GetRequiredService<IProcessRunner>(),
+            sp.GetRequiredService<EvidenceRunner>(),
+            sp.GetRequiredService<IOptions<JudgeOptions>>().Value,
+            TimeProvider.System
         ));
         services.AddSingleton<VerdictDrainer>();
 

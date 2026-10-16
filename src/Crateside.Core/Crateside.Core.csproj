@@ -17,6 +17,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <EmbeddedResource
+            Include="Orchestration\Verdict\judge-prompt.md"
+            LogicalName="judge-prompt.md"
+        />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\..\..\AbleKit\src\AbleKit\AbleKit.csproj" />
     </ItemGroup>
 </Project>

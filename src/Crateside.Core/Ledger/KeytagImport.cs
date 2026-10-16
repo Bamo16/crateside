@@ -4,8 +4,8 @@ using System.Text.Json.Serialization;
 namespace Crateside.Core.Ledger;
 
 /// <summary>
-/// keytag's <c>results/runs.jsonl</c> read as ledger rows, for the import that repeats at each
-/// read until the judge writes to crateside itself (#111).
+/// keytag's <c>results/runs.jsonl</c> read as ledger rows, for the one import into an empty
+/// ledger.
 /// </summary>
 internal static class KeytagImport
 {

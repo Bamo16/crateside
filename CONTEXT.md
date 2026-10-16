@@ -317,6 +317,9 @@ the two run types below are named after which of them they produce.
 - **Verdict run** — the stage that turns evidence into a **verdict**. The only
   stage that requires an agent, because weighing evidence and going to look for
   human corroboration is the only part of the workflow that genuinely needs one.
+- **Verdict file** — what a verdict run's session writes, and the only thing it writes: the
+  verdict, its sources and its reasoning, or a WITHHELD asking for **windows**. crateside
+  checks it and records it in the ledger ([docs/judge.md](docs/judge.md)).
 - **Handoff** — the stage that moves a track's finished stems out of the transient
   stems output and into **Staging**, which is the line between the automated
   and the human halves of the workflow. It is what makes the stems output transient
