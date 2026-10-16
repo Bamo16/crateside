@@ -117,6 +117,49 @@
     gap: 0.5rem;
 }
 
+.centres {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.centres li {
+    display: grid;
+    grid-template-columns: 90px auto minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: baseline;
+    padding: 0.35rem 0;
+    border-top: 1px solid var(--line);
+}
+
+.centres li:first-child {
+    border-top: none;
+}
+
+.section-label {
+    color: var(--text-60);
+}
+
+.centre-key {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* What the source covered, neutral: a source is none of the states the colours mean. */
+.covers {
+    align-self: flex-start;
+    padding: 0 0.4rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: 11px;
+    color: var(--text-60);
+}
+
+.relation {
+    font-size: 0.8rem;
+    color: var(--text-60);
+}
+
 .states,
 .states-key {
     color: var(--text);

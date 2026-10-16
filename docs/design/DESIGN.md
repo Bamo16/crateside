@@ -347,6 +347,15 @@ Re-Pitch 540px, Partners 860px.
 
 Where the build departs from a canvas, by page. Clear an entry once a later design supersedes it.
 
+### Mode beside its tag (handoff 17, #114)
+
+- **No time strip in *Why this key*.** The centres are the ruled lines with their labels; the strip
+  on the track's time axis waits for the judge to write section times (#111). The covers chip and
+  the relation line are built.
+- **The sections in Track details list every other centre.** A centre equal to the primary is not
+  repeated, so a song whose sections all share the tag shows no sections block.
+- **The Off Its Tempo list keeps its 90px Key column and shows no abbreviation**, as it never showed
+  more than the tag.
 ### Warp view (handoff 14, #97)
 
 - **Marker counts are the markers Live shows**, one fewer than the canvas: the brief's "two

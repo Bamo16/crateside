@@ -13,6 +13,21 @@
             <p class="muted">No reasoning was recorded for this run.</p>
         }
 
+        @if (Run.Sections.Count > 1 && Run.Centre is { } primary)
+        {
+            <h4>Centres</h4>
+            <ul class="centres">
+                @foreach (var part in Run.Sections)
+                {
+                    <li>
+                        <span class="section-label">@part.Label</span>
+                        <span class="mono centre-key">@(ModeText.Arrow(part.Centre, false) ?? ModeText.Tag(part.Centre))</span>
+                        <span class="muted">@(part.Centre == primary ? "primary · the tag follows it" : null)</span>
+                    </li>
+                }
+            </ul>
+        }
+
         <h4>Human sources</h4>
         @if (Run.Sources.Count == 0)
         {
@@ -44,9 +59,14 @@
                                     <span class="problem" title="@HostMismatchTitle(source)">kind ≠ host</span>
                                 }
                             </span>
+                            <span class="covers">@source.Covers</span>
                             @if (source.StatesKey is { Length: > 0 } stated)
                             {
-                                <span class="states-key">@stated@(source.StatesMode is { Length: > 0 } m ? $" ({m})" : null)</span>
+                                <span class="states-key">@ModeText.Stated(stated, source.StatesMode)</span>
+                                @if (source.Relation is { } relation)
+                                {
+                                    <span class="relation">@relation</span>
+                                }
                             }
                             else if (source.States is { Length: > 0 } states)
                             {

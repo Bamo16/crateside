@@ -48,6 +48,52 @@ h1 {
     min-width: 0;
     padding: 1.1rem 1.4rem 1.2rem;
     border-left: 1px solid var(--line-strong);
+    justify-content: flex-end;
+}
+
+/* A modal verdict's mode leads the tag; the tag itself stays at its size. */
+.lead {
+    font-size: 18px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--text);
+}
+
+.lead .arrow {
+    color: var(--text-60);
+}
+
+.reason {
+    font-size: 12.5px;
+    color: var(--text-75);
+}
+
+.sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    width: 100%;
+    margin: 0.2rem 0 0;
+    padding: 0.5rem 0 0;
+    list-style: none;
+    border-top: 1px solid var(--line);
+}
+
+.sections li {
+    display: flex;
+    gap: 0.6rem;
+    align-items: baseline;
+}
+
+.section-label {
+    flex: 0 0 52px;
+    font-size: 12.5px;
+    color: var(--text-60);
+}
+
+.section-key {
+    font-size: 12.5px;
+    font-weight: 500;
 }
 
 .cell:first-child {

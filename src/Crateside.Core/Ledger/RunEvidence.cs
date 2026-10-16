@@ -98,17 +98,29 @@ public sealed record RunEvidence
             InputKind = run.InputKind,
             Sources =
             [
-                .. run.Sources.Select(source => new EvidenceSource
+                .. run.Sources.Select(source =>
                 {
-                    Url = source.Url,
-                    Via = source.Via,
-                    States = source.States,
-                    StatesKey = source.StatesKey,
-                    StatesMode = source.StatesMode?.ToString().ToLowerInvariant(),
-                    RecordedKind = EvidenceSource.StoredName(source.Kind),
-                    Note = source.Note,
-                    Sections = source.Sections,
-                    VerdictKey = run.Centre?.Collapsed,
+                    var coverage = ModeText.Coverage(
+                        source.Sections,
+                        run.Sections,
+                        run.Centre,
+                        source.StatesKey
+                    );
+
+                    return new EvidenceSource
+                    {
+                        Url = source.Url,
+                        Via = source.Via,
+                        States = source.States,
+                        StatesKey = source.StatesKey,
+                        StatesMode = source.StatesMode?.ToString().ToLowerInvariant(),
+                        RecordedKind = EvidenceSource.StoredName(source.Kind),
+                        Note = source.Note,
+                        Sections = source.Sections,
+                        Covers = coverage.Covers,
+                        Relation = coverage.Relation,
+                        VerdictKey = coverage.JudgedAgainst,
+                    };
                 }),
             ],
             Algorithms = AlgorithmResult.FromDto(machine?.Algorithms),
@@ -173,7 +185,13 @@ public sealed partial record EvidenceSource
     /// <summary>The labels of the sections the source covered; null when it did not say.</summary>
     public IReadOnlyList<string>? Sections { get; init; }
 
-    /// <summary>The verdict this source was consulted for, so agreement can be computed.</summary>
+    /// <summary>What the source covered: <c>whole song</c>, <c>chorus only</c>.</summary>
+    public string Covers { get; init; } = "whole song";
+
+    /// <summary>How its key relates to the part it covered, when that is not the whole song.</summary>
+    public string? Relation { get; init; }
+
+    /// <summary>The key this source is judged against: the verdict's, or the section it covered.</summary>
     public string? VerdictKey { get; init; }
 
     /// <summary>

@@ -272,7 +272,7 @@
 .heads,
 .row {
     display: grid;
-    grid-template-columns: 24px 1fr 90px 100px 84px 150px 190px;
+    grid-template-columns: 24px 1fr 112px 100px 84px 150px 190px;
     gap: 14px;
     align-items: center;
     max-width: var(--table-tracks);
@@ -283,7 +283,7 @@
    the one thing worth saying about a state a track rests in for weeks. */
 .heads.roomy,
 .row.roomy {
-    grid-template-columns: 24px 1fr 90px 100px 84px 150px 190px 1fr;
+    grid-template-columns: 24px 1fr 112px 100px 84px 150px 190px 1fr;
 }
 
 .heads {
@@ -420,6 +420,24 @@
 
 .row.roomy .key {
     font-size: 14px;
+}
+
+.key-cell {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+}
+
+/* A modal verdict says so after its tag, outlined like a corroborating badge; no colour. */
+.mode-badge {
+    padding: 2px 4px 3px;
+    border: 1px solid color-mix(in srgb, var(--text) 45%, transparent);
+    border-radius: 3px;
+    font-size: 10.5px;
+    font-weight: 500;
+    line-height: 1.1;
+    color: color-mix(in srgb, var(--text) 85%, transparent);
 }
 
 .key.none,
