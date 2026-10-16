@@ -148,7 +148,6 @@ public sealed class KeyLedgerTests : IDisposable
         Assert.True(store.Read().TryGetLatestByVideoId("NSLYAT7sjAA", out var original));
         Assert.Equal("C# minor", original.Key);
         Assert.False(store.Read().HasRunFor("dQw4w9WgXcQ"));
-        Assert.Equal("2026-08-12T00:00:00+00:00", Assert.Single(store.ImportRefusals).Line);
     }
 
     /// <summary>A restatement shaped like a real <c>keytag-restate --dry-run</c>.</summary>
@@ -304,7 +303,6 @@ public sealed class KeyLedgerTests : IDisposable
         using var store = TestLedger.Store(_path);
 
         Assert.Empty(store.Read().Runs);
-        Assert.StartsWith("confidence", Assert.Single(store.ImportRefusals).Problem);
     }
 
     [Fact]

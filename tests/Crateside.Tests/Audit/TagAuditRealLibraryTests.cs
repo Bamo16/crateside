@@ -12,22 +12,16 @@ public sealed class TagAuditRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
     private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";
-    private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
 
     private static bool Available =>
-        Directory.Exists(LibraryRoot) && File.Exists(LedgerPath) && Directory.Exists(StagingRoot);
+        Directory.Exists(LibraryRoot) && TestLedger.HasReal && Directory.Exists(StagingRoot);
 
     private static CratesidePaths Paths =>
-        new()
-        {
-            StagingFolder = StagingRoot,
-            LibraryFolder = LibraryRoot,
-            KeytagLedger = LedgerPath,
-        };
+        new() { StagingFolder = StagingRoot, LibraryFolder = LibraryRoot };
 
     private static TagAuditReport Report() =>
         TagAudit.Run(
-            TestLedger.From(LedgerPath),
+            TestLedger.FromReal(),
             [AuditRoot.Written(StagingRoot), AuditRoot.Mirrored(LibraryRoot)],
             TagAudit.Using(new FileIndexReader(Paths.AbletonIndex))
         );

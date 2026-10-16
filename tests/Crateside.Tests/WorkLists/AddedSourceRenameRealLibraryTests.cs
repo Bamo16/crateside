@@ -9,16 +9,15 @@ namespace Crateside.Tests.WorkLists;
 public sealed class AddedSourceRenameRealLibraryTests
 {
     private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";
-    private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
 
-    private static bool Available => Directory.Exists(LibraryRoot) && File.Exists(LedgerPath);
+    private static bool Available => Directory.Exists(LibraryRoot) && TestLedger.HasReal;
 
     [Fact]
     public void An_added_source_moved_to_the_library_is_still_held()
     {
         Assert.SkipUnless(Available, "The library and the ledger must be present.");
 
-        var ledger = TestLedger.From(LedgerPath);
+        var ledger = TestLedger.FromReal();
 
         var processed = ProcessedTracks.Scan(ledger, [LibraryRoot]);
         var inventories = WorkListService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);

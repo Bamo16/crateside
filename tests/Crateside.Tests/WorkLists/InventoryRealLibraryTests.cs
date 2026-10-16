@@ -10,17 +10,16 @@ public sealed class InventoryRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
     private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";
-    private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
 
     private static bool Available =>
-        Directory.Exists(LibraryRoot) && File.Exists(LedgerPath) && Directory.Exists(StagingRoot);
+        Directory.Exists(LibraryRoot) && TestLedger.HasReal && Directory.Exists(StagingRoot);
 
     [Fact]
     public void Every_upload_of_a_cut_song_reaches_that_songs_stems()
     {
         Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
 
-        var ledger = TestLedger.From(LedgerPath);
+        var ledger = TestLedger.FromReal();
         var processed = ProcessedTracks.Scan(ledger, [StagingRoot, LibraryRoot]);
         var inventories = WorkListService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
 
@@ -45,7 +44,7 @@ public sealed class InventoryRealLibraryTests
     {
         Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
 
-        var ledger = TestLedger.From(LedgerPath);
+        var ledger = TestLedger.FromReal();
         var processed = ProcessedTracks.Scan(ledger, [StagingRoot, LibraryRoot]);
         var inventories = WorkListService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
 

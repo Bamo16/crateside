@@ -133,7 +133,7 @@ public sealed record AddTrackPlan
 {
     public string? VideoId { get; init; }
 
-    /// <summary>What keytag already calls this video, when it has seen it.</summary>
+    /// <summary>What the ledger already calls this video, when it has seen it.</summary>
     public string? Song { get; init; }
 
     public string? Refusal { get; init; }

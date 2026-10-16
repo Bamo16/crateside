@@ -149,7 +149,7 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
     }
 
     /// <summary>
-    /// keytag's bands for <c>r</c>, from the 2026-07-19 corpus evaluation of the 8.1.2 build; they
+    /// The bands for <c>r</c>, from the 2026-07-19 corpus evaluation of the 8.1.2 build; they
     /// shift with the build, so the evidence records which ffmpeg read it.
     /// </summary>
     private static string TrustBand(double r) =>
@@ -175,7 +175,7 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
     private static MusicKey? KeyOf(KeyReading reading) =>
         reading is KeyReading.Read(var key, _) ? key : null;
 
-    /// <summary>keytag's statuses: <c>full</c>, <c>relative</c>, <c>none</c>, or <c>single</c> when one side has no key.</summary>
+    /// <summary>The pair statuses: <c>full</c>, <c>relative</c>, <c>none</c>, or <c>single</c> when one side has no key.</summary>
     private static MachineDto.PairDto Pair(string name, MusicKey? first, MusicKey? second) =>
         (first, second) switch
         {

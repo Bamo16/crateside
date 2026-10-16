@@ -82,7 +82,7 @@ public sealed record RunEvidence
     /// <summary>Every time the running key estimate changed. Early instability is often just a sparse intro.</summary>
     public IReadOnlyList<KeyEvent> KeyEvents { get; init; } = [];
 
-    /// <summary>keytag's old BPM estimate.</summary>
+    /// <summary>The old BPM estimate, a warp starting point.</summary>
     public double? Bpm { get; init; }
 
     internal static RunEvidence From(RunRecord run)
@@ -410,7 +410,7 @@ public sealed record AlgorithmResult
 
     public string? Error { get; init; }
 
-    /// <summary>The detectors a run recorded: keytag's trio before the port (#113), keydetect, madmom and edma after.</summary>
+    /// <summary>The detectors a run recorded: keydetect, CREMA and librosa before the port (#113), keydetect, madmom and edma after.</summary>
     internal static IReadOnlyList<AlgorithmResult> FromDto(AlgorithmsDto? dto) =>
         dto is null
             ? []
@@ -503,7 +503,7 @@ public sealed record KeyEvent
     public double R { get; init; }
 }
 
-/// <summary>The evidence file's shape: written by the detectors (#113), and by keytag-detect before them.</summary>
+/// <summary>The evidence file's shape: written by the detectors (#113), and by the Python detectors before them.</summary>
 internal sealed record MachineDto
 {
     public string? Input { get; init; }

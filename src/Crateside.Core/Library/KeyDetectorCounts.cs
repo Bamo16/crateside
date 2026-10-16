@@ -14,7 +14,7 @@ public sealed record KeyDetectorCounts(
     private const int DetectorsPerRun = 3;
 
     /// <summary>
-    /// The detectors in the ledger's own names, in the order the panel shows them: keytag's trio,
+    /// The detectors in the ledger's own names, in the order the panel shows them: keydetect, CREMA and librosa,
     /// then the two that replaced CREMA and librosa (#113).
     /// </summary>
     public static readonly IReadOnlyList<(string Ledger, string Shown, string Who)> Names =

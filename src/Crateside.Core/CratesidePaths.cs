@@ -34,20 +34,8 @@ public sealed class CratesidePaths
     public string AbletonIndex { get; set; } =
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("Ableton", "Live Database");
 
-    private string? _keytagLedger;
-
-    /// <summary>The keytag checkout, read only for its ledger until #115 retires it.</summary>
-    public string KeytagRepo { get; set; } = @"V:\Repos\keytag";
-
     /// <summary>The ffmpeg that detects keys and decodes for the other detectors: a build with FiLL's <c>keydetect</c>.</summary>
     public string KeydetectFfmpeg { get; set; } = "ffmpeg";
-
-    /// <summary>keytag's <c>runs.jsonl</c>, imported once into an empty ledger (docs/ledger.md).</summary>
-    public string KeytagLedger
-    {
-        get => _keytagLedger ?? Path.Combine(KeytagRepo, "results", "runs.jsonl");
-        set => _keytagLedger = value;
-    }
 
     /// <summary>crateside's ledger of key verdicts, a SQLite file (docs/ledger.md).</summary>
     public string LedgerDatabase { get; set; } =

@@ -8,7 +8,6 @@ namespace Crateside.Tests.WorkLists;
 /// <summary>A measurement of what a Queue refresh costs, not an assertion about correctness.</summary>
 public sealed class ProcessedTracksCostTests
 {
-    private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
     private const string MashupRoot = @"P:\RYAN\Ableton\Mashup Samples";
 
@@ -16,11 +15,11 @@ public sealed class ProcessedTracksCostTests
     public void The_disk_scan_is_the_expensive_half_of_a_refresh()
     {
         Assert.SkipUnless(
-            File.Exists(LedgerPath) && Directory.Exists(MashupRoot),
+            TestLedger.HasReal && Directory.Exists(MashupRoot),
             "Needs the real ledger and stem roots."
         );
 
-        var ledger = TestLedger.From(LedgerPath);
+        var ledger = TestLedger.FromReal();
 
         var stopwatch = Stopwatch.StartNew();
         var processed = ProcessedTracks.Scan(ledger, [StagingRoot, MashupRoot]);

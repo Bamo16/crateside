@@ -104,11 +104,11 @@ public sealed class HandoffSupersedeTests : IDisposable
         var paths = new CratesidePaths();
 
         Assert.SkipUnless(
-            Directory.Exists(paths.StagingFolder) && File.Exists(paths.KeytagLedger),
+            Directory.Exists(paths.StagingFolder) && TestLedger.HasReal,
             "The real staging root and ledger must be present."
         );
 
-        var ledger = TestLedger.From(paths.KeytagLedger);
+        var ledger = TestLedger.FromReal();
 
         // Only a song with an upload in staging can have a file there superseded.
         var stagedSongs = Directory

@@ -10,14 +10,13 @@ namespace Crateside.Tests.Orchestration.Handoff;
 public sealed class BackingRunnerRealLibraryTests
 {
     private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";
-    private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
 
-    private static bool Available => Directory.Exists(LibraryRoot) && File.Exists(LedgerPath);
+    private static bool Available => Directory.Exists(LibraryRoot) && TestLedger.HasReal;
 
     private static IReadOnlyList<TagAssignment> Unbacked() =>
         new BackingRunner(new FolderInfoReader(), new FolderInfoWriter()).Unbacked(
             LibraryRoot,
-            TestLedger.From(LedgerPath)
+            TestLedger.FromReal()
         );
 
     [Fact]

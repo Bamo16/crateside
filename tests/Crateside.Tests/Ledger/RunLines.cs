@@ -1,26 +1,48 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Crateside.Core;
+using Crateside.Core.Ledger;
+using Microsoft.Extensions.Time.Testing;
 
-namespace Crateside.Core.Ledger;
+namespace Crateside.Tests.Ledger;
 
-/// <summary>
-/// keytag's <c>results/runs.jsonl</c> read as ledger rows, for the one import into an empty
-/// ledger.
-/// </summary>
-internal static class KeytagImport
+/// <summary>Fixture ledgers written as JSONL, one run (or restatement) per line, read into a store.</summary>
+internal static class RunLines
 {
-    /// <summary>
-    /// Lines left out of the import. The 2026-08-01 "segment reanalysis" of A Horny Money World was
-    /// re-recorded unchanged under the song's own identity on 2026-08-12.
-    /// </summary>
-    private static readonly HashSet<string> Skipped = ["2026-08-01T21:36:01.800560+00:00"];
-
-    /// <summary>Every readable line, in file order; a malformed one is skipped, as it may be caught mid-write.</summary>
-    public static IEnumerable<KeytagLine> Read(string path)
+    public static void Load(LedgerStore store, FakeTimeProvider time, string path)
     {
         if (!File.Exists(path))
-            yield break;
+            return;
 
+        Dictionary<string, string> videoIds = new(StringComparer.Ordinal);
+
+        foreach (var line in Read(path))
+        {
+            if (line.Restates is { } restates)
+            {
+                if (videoIds.TryGetValue(restates, out var videoId) && line.SourceUrl is { } url)
+                {
+                    time.SetUtcNow(DateTimeOffset.Parse(line.Timestamp!));
+                    store.Restate(videoId, url);
+                }
+
+                continue;
+            }
+
+            var run = ToRun(line);
+
+            if (
+                store.Record(run) is RecordOutcome.Recorded
+                && run.SourceUrl is { } source
+                && YouTubeUrl.TryGetVideoId(source, out var id)
+            )
+                videoIds[line.Timestamp!] = id;
+        }
+    }
+
+    /// <summary>Every readable line, in file order.</summary>
+    public static IEnumerable<RunLine> Read(string path)
+    {
         using var stream = new FileStream(
             path,
             FileMode.Open,
@@ -34,24 +56,24 @@ internal static class KeytagImport
             if (text.AsSpan().IsWhiteSpace())
                 continue;
 
-            KeytagLine? line;
+            RunLine? line;
 
             try
             {
-                line = JsonSerializer.Deserialize(text, KeytagJsonContext.Default.KeytagLine);
+                line = JsonSerializer.Deserialize(text, RunLineJsonContext.Default.RunLine);
             }
             catch (JsonException)
             {
                 continue;
             }
 
-            if (line is { Timestamp: { } timestamp } && !Skipped.Contains(timestamp))
+            if (line is { Timestamp: not null })
                 yield return line;
         }
     }
 
     /// <summary>A run line as a run, with <c>key</c> and <c>mode</c> becoming a tonal centre.</summary>
-    public static RunRecord ToRun(KeytagLine line) =>
+    public static RunRecord ToRun(RunLine line) =>
         new()
         {
             RecordedAt = DateTimeOffset.Parse(line.Timestamp!),
@@ -99,7 +121,7 @@ internal static class KeytagImport
         };
 }
 
-internal sealed record KeytagLine
+internal sealed record RunLine
 {
     /// <summary>Kept as written: it is the line's identity, and what a restatement points at.</summary>
     public string? Timestamp { get; init; }
@@ -118,7 +140,7 @@ internal sealed record KeytagLine
     public JsonElement? Machine { get; init; }
     public BpmDto? Bpm { get; init; }
 
-    /// <summary>Set on a restatement, naming the run it copies (keytag ADR 0008).</summary>
+    /// <summary>Set on a restatement, naming the run it copies.</summary>
     public string? Restates { get; init; }
 
     internal sealed record VerdictDto
@@ -151,5 +173,5 @@ internal sealed record KeytagLine
     PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower,
     PropertyNameCaseInsensitive = true
 )]
-[JsonSerializable(typeof(KeytagLine))]
-internal sealed partial class KeytagJsonContext : JsonSerializerContext { }
+[JsonSerializable(typeof(RunLine))]
+internal sealed partial class RunLineJsonContext : JsonSerializerContext { }

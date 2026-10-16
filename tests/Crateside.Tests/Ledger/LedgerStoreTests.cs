@@ -20,7 +20,7 @@ public sealed class LedgerStoreTests : IDisposable
         DateTimeOffset.Parse("2026-10-15T12:00:00+00:00")
     );
 
-    private LedgerStore Store => field ??= new(LedgerStore.InMemory, null, _time);
+    private LedgerStore Store => field ??= new(LedgerStore.InMemory, _time);
 
     public LedgerStoreTests() => Directory.CreateDirectory(_root);
 
@@ -210,37 +210,9 @@ public sealed class LedgerStoreTests : IDisposable
     }
 
     [Fact]
-    public void Keytags_history_is_imported_once_into_an_empty_ledger()
-    {
-        var jsonl = Path.Combine(_root, "runs.jsonl");
-
-        File.WriteAllLines(jsonl, [KeytagLine("2026-08-01T00:00:00+00:00", Judged)]);
-        using var store = new LedgerStore(LedgerStore.InMemory, jsonl, _time);
-
-        Assert.Single(store.Read().Runs);
-
-        File.AppendAllLines(jsonl, [KeytagLine("2026-08-02T00:00:00+00:00", Other)]);
-
-        Assert.Single(store.Read().Runs);
-    }
-
-    [Fact]
-    public void A_ledger_that_already_holds_runs_imports_nothing()
-    {
-        var jsonl = Path.Combine(_root, "runs.jsonl");
-
-        using var store = new LedgerStore(LedgerStore.InMemory, jsonl, _time);
-
-        store.Record(Run());
-        File.WriteAllLines(jsonl, [KeytagLine("2026-08-02T00:00:00+00:00", Other)]);
-
-        Assert.Single(store.Read().Runs);
-    }
-
-    [Fact]
     public void Each_start_keeps_a_dated_backup_and_only_the_last_seven()
     {
-        using var store = new LedgerStore(Path.Combine(_root, "ledger.db"), null, _time);
+        using var store = new LedgerStore(Path.Combine(_root, "ledger.db"), _time);
 
         store.Record(Run());
 
@@ -254,7 +226,7 @@ public sealed class LedgerStoreTests : IDisposable
 
         Assert.Equal(7, backups.Length);
 
-        using var copy = new LedgerStore(backups.Order().Last(), null, _time);
+        using var copy = new LedgerStore(backups.Order().Last(), _time);
 
         Assert.Single(copy.Read().Runs);
     }
@@ -262,7 +234,7 @@ public sealed class LedgerStoreTests : IDisposable
     [Fact]
     public void The_export_has_a_line_for_every_run_and_restatement()
     {
-        using var store = new LedgerStore(Path.Combine(_root, "ledger.db"), null, _time);
+        using var store = new LedgerStore(Path.Combine(_root, "ledger.db"), _time);
 
         store.Record(Run() with { Evidence = """{"chords":["Am","G"]}""" });
         store.Restate(Judged, Other);
@@ -275,15 +247,4 @@ public sealed class LedgerStoreTests : IDisposable
         Assert.Equal("Am", lines[0].GetProperty("evidence").GetProperty("chords")[0].GetString());
         Assert.Equal(Song, lines[1].GetProperty("restatement").GetProperty("song").GetString());
     }
-
-    private static string KeytagLine(string timestamp, string videoId) =>
-        JsonSerializer.Serialize(
-            new
-            {
-                timestamp,
-                song = $"song {videoId}",
-                source_url = $"https://www.youtube.com/watch?v={videoId}",
-                verdict = new { key = "Eb major", confidence = "MEDIUM" },
-            }
-        );
 }

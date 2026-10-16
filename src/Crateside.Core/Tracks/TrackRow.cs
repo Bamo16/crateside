@@ -131,7 +131,7 @@ public sealed record TrackRow
 
     public KeyConfidence Confidence => Verdict?.Confidence ?? KeyConfidence.Unknown;
 
-    /// <summary>The headline tempo: the finished warp's, else crateside's reading, else keytag's estimate (ADR 0049).</summary>
+    /// <summary>The headline tempo: the finished warp's, else crateside's reading, else the ledger's estimate (ADR 0049).</summary>
     public TrackTempo? Bpm => TrackTempo.Of(Tempo, Beats, Verdict?.Bpm);
 
     /// <summary>The tempo of a finished warp, the instrumental's where there is one.</summary>
@@ -493,7 +493,7 @@ public enum TrackNameSource
     /// <summary>The files themselves — what Ableton shows, so the row matches it.</summary>
     Files,
 
-    /// <summary>keytag's verdict, for a track with nothing on disk yet.</summary>
+    /// <summary>The ledger's verdict, for a track with nothing on disk yet.</summary>
     Ledger,
 
     /// <summary>

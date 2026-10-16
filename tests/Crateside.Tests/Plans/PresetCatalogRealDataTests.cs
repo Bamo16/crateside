@@ -10,7 +10,6 @@ namespace Crateside.Tests.Plans;
 /// <summary>Asks the real separator, and joins its answer against the real library.</summary>
 public sealed class PresetCatalogRealDataTests
 {
-    private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
     private const string MashupRoot = @"P:\RYAN\Ableton\Mashup Samples";
 
@@ -48,14 +47,14 @@ public sealed class PresetCatalogRealDataTests
     public async Task Every_preset_the_library_carries_resolves_back_to_an_id()
     {
         Assert.SkipUnless(
-            File.Exists(LedgerPath) && Directory.Exists(MashupRoot),
+            TestLedger.HasReal && Directory.Exists(MashupRoot),
             "Needs the real ledger and stem roots."
         );
 
         var catalog = await RealCatalogAsync();
 
         var unresolved = ProcessedTracks
-            .Scan(TestLedger.From(LedgerPath), [StagingRoot, MashupRoot])
+            .Scan(TestLedger.FromReal(), [StagingRoot, MashupRoot])
             .StemsByVideoId.SelectMany(entry => entry.Value)
             .Select(file => file.Preset)
             .Where(preset => preset is not null && !StagedFile.IsWarpGuidePreset(preset))

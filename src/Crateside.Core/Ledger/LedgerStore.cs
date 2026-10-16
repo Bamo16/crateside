@@ -8,7 +8,7 @@ namespace Crateside.Core.Ledger;
 
 /// <summary>
 /// crateside's ledger of key verdicts, in SQLite (docs/ledger.md): every read and write goes
-/// through here, and keytag's JSONL is imported once, into an empty ledger (ADR 0055).
+/// through here (ADR 0055).
 /// </summary>
 public sealed class LedgerStore : IDisposable
 {
@@ -20,14 +20,8 @@ public sealed class LedgerStore : IDisposable
     private readonly SqliteConnection _connection;
     private readonly DbContextOptions<LedgerContext> _options;
     private readonly string _databasePath;
-    private readonly string? _keytagLedger;
     private readonly TimeProvider _time;
-    private (long Length, DateTime Written)? _keytagSeen;
-    private bool _holdsRuns;
     private KeyLedger? _snapshot;
-
-    /// <summary>Lines of keytag's ledger the import could not take, and why.</summary>
-    public IReadOnlyList<(string Line, string Problem)> ImportRefusals { get; private set; } = [];
 
     private bool IsFile => _databasePath != InMemory;
 
@@ -44,11 +38,9 @@ public sealed class LedgerStore : IDisposable
             : null;
 
     /// <param name="databasePath">The SQLite file, or <see cref="InMemory"/>, which keeps no backups or export.</param>
-    /// <param name="keytagLedger">keytag's <c>runs.jsonl</c> to import from while the ledger is empty, or null for none.</param>
-    public LedgerStore(string databasePath, string? keytagLedger, TimeProvider time)
+    public LedgerStore(string databasePath, TimeProvider time)
     {
         _databasePath = databasePath;
-        _keytagLedger = keytagLedger;
         _time = time;
 
         if (IsFile && Path.GetDirectoryName(Path.GetFullPath(databasePath)) is { } folder)
@@ -75,14 +67,11 @@ public sealed class LedgerStore : IDisposable
         }
     }
 
-    /// <summary>The ledger as it stands, with keytag's history imported first if it holds no run yet.</summary>
+    /// <summary>The ledger as it stands.</summary>
     public KeyLedger Read()
     {
         lock (_gate)
         {
-            if (ImportKeytag())
-                Export();
-
             return _snapshot ??= Load();
         }
     }
@@ -140,7 +129,7 @@ public sealed class LedgerStore : IDisposable
         {
             using var context = Context();
 
-            var outcome = Add(context, run, keytagLine: null);
+            var outcome = Add(context, run);
 
             if (outcome is RecordOutcome.Recorded)
                 Export();
@@ -291,122 +280,14 @@ public sealed class LedgerStore : IDisposable
 
     private LedgerContext Context() => new(_options);
 
-    /// <summary>Imports keytag's history into a ledger that holds no run yet; true when anything was.</summary>
-    private bool ImportKeytag()
-    {
-        if (_keytagLedger is null || _holdsRuns)
-            return false;
-
-        var file = new FileInfo(_keytagLedger);
-        (long, DateTime)? seen = file.Exists ? (file.Length, file.LastWriteTimeUtc) : null;
-
-        if (seen == _keytagSeen)
-            return false;
-
-        _keytagSeen = seen;
-
-        using var context = Context();
-
-        if (context.Runs.Any())
-        {
-            _holdsRuns = true;
-
-            return false;
-        }
-
-        using var transaction = context.Database.BeginTransaction();
-
-        var held = context
-            .Runs.Where(run => run.KeytagLine != null)
-            .Select(run => run.KeytagLine)
-            .Concat(
-                context
-                    .Restatements.Where(restatement => restatement.KeytagLine != null)
-                    .Select(restatement => restatement.KeytagLine)
-            )
-            .AsEnumerable()
-            .OfType<string>()
-            .ToHashSet(StringComparer.Ordinal);
-        List<(string, string)> refusals = [];
-        var imported = 0;
-
-        HashSet<string> read = new(StringComparer.Ordinal);
-
-        foreach (var line in KeytagImport.Read(_keytagLedger))
-        {
-            if (!read.Add(line.Timestamp!))
-            {
-                refusals.Add(
-                    (line.Timestamp!, "a second line with this timestamp, which names a line")
-                );
-
-                continue;
-            }
-
-            if (held.Contains(line.Timestamp!))
-                continue;
-
-            if (Import(context, line) is { } problem)
-                refusals.Add((line.Timestamp!, problem));
-            else
-                imported++;
-        }
-
-        transaction.Commit();
-        ImportRefusals = refusals;
-
-        return imported > 0;
-    }
-
-    /// <summary>One keytag line into the ledger, or why it was not taken.</summary>
-    private string? Import(LedgerContext context, KeytagLine line)
-    {
-        if (line.Restates is not { } restates)
-            return
-                Add(context, KeytagImport.ToRun(line), line.Timestamp)
-                    is RecordOutcome.Refused(var field, var problem)
-                ? $"{field}: {problem}"
-                : null;
-
-        if (
-            context
-                .Runs.Where(run => run.KeytagLine == restates)
-                .Select(run => new { run.Id, run.Song })
-                .FirstOrDefault()
-            is not { } restated
-        )
-            return $"restates {restates}, which is not a recorded run";
-
-        if (
-            line.SourceUrl is not { } url
-            || !RunValidation.IsHttp(url)
-            || !restated.Song.Equals(line.Song, StringComparison.OrdinalIgnoreCase)
-        )
-            return "a restatement needs an http(s) URL and the restated run's song";
-
-        context.Restatements.Add(
-            new RestatementRow
-            {
-                RecordedAt = DateTimeOffset.Parse(line.Timestamp!, CultureInfo.InvariantCulture),
-                RunId = restated.Id,
-                SourceUrl = url,
-                KeytagLine = line.Timestamp,
-            }
-        );
-        context.SaveChanges();
-        _snapshot = null;
-
-        return null;
-    }
-
-    private RecordOutcome Add(LedgerContext context, RunRecord given, string? keytagLine)
+    private RecordOutcome Add(LedgerContext context, RunRecord given)
     {
         var run = RunValidation.Normalize(given);
 
         if (RunValidation.Refusal(run) is { } refusal)
             return refusal;
 
-        var row = RunRow.From(run, keytagLine);
+        var row = RunRow.From(run);
 
         context.Runs.Add(row);
         context.SaveChanges();

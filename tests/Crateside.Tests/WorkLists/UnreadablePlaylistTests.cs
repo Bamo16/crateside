@@ -53,7 +53,6 @@ public sealed class UnreadablePlaylistTests : IDisposable
                     LibraryFolder = PathIn("library"),
                     StemsKeyIdentified = PathIn("identified"),
                     StemsUnresolvedKey = PathIn("unresolved"),
-                    KeytagLedger = PathIn("runs.jsonl"),
                 }
             ),
             new PlaylistSettingsStore(file),

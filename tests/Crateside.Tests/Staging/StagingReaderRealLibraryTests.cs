@@ -8,12 +8,11 @@ namespace Crateside.Tests.Staging;
 public sealed class StagingReaderRealLibraryTests
 {
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
-    private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
 
-    private static bool Available => RealLibrary.HasStems(StagingRoot) && File.Exists(LedgerPath);
+    private static bool Available => RealLibrary.HasStems(StagingRoot) && TestLedger.HasReal;
 
     private static IReadOnlyList<StagedSong> Staged() =>
-        new StagingReader(TestLedger.Store()).Build(StagingRoot, TestLedger.From(LedgerPath));
+        new StagingReader(TestLedger.Store()).Build(StagingRoot, TestLedger.FromReal());
 
     [Fact]
     public void Rolls_the_staged_stems_up_into_songs()
@@ -104,7 +103,7 @@ public sealed class StagingReaderRealLibraryTests
     {
         var songs = new StagingReader(TestLedger.Store()).Build(
             Path.Combine(Path.GetTempPath(), "no-such-staging-root"),
-            TestLedger.From(LedgerPath)
+            TestLedger.FromReal()
         );
 
         Assert.Empty(songs);

@@ -8,8 +8,6 @@ namespace Crateside.Tests.Library;
 
 public sealed class KeyDetectorCountsTests
 {
-    private const string Ledger = @"V:\Repos\keytag\results\runs.jsonl";
-
     [Theory]
     [InlineData("A minor", "A minor", KeyMiss.Right)]
     [InlineData("E minor", "A minor", KeyMiss.Fifth)]
@@ -27,11 +25,11 @@ public sealed class KeyDetectorCountsTests
     [Fact]
     public void The_ledger_gives_keydetect_the_lead_and_every_song_one_place_per_detector()
     {
-        Assert.SkipUnless(File.Exists(Ledger), $"{Ledger} not present on this machine.");
+        Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
 
         var counts = KeyDetectorCounts.From(
-            TestLedger.LatestEvidence(Ledger).Values,
-            TestLedger.From(Ledger),
+            TestLedger.LatestEvidenceReal().Values,
+            TestLedger.FromReal(),
             highOnly: false
         );
 
@@ -45,6 +43,7 @@ public sealed class KeyDetectorCountsTests
             counts
                 .Detectors.OrderByDescending(tally => tally.Count(KeyMiss.Right))
                 .Select(tally => tally.Name)
+                .Take(3)
         );
         Assert.NotEmpty(counts.AllWrong);
     }

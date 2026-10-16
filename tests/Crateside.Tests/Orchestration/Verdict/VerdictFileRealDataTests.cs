@@ -8,8 +8,6 @@ namespace Crateside.Tests.Orchestration.Verdict;
 /// <summary>Every verdict keytag recorded, written as a verdict file, reads back as the same verdict.</summary>
 public sealed class VerdictFileRealDataTests : IDisposable
 {
-    private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
-
     private readonly string _path = Path.Combine(
         Path.GetTempPath(),
         "crateside-tests",
@@ -23,11 +21,11 @@ public sealed class VerdictFileRealDataTests : IDisposable
     [Fact]
     public void Every_recorded_verdict_survives_the_trip_through_a_verdict_file()
     {
-        Assert.SkipUnless(File.Exists(LedgerPath), $"{LedgerPath} not present.");
+        Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
 
-        var latest = TestLedger.LatestEvidence(LedgerPath);
+        var latest = TestLedger.LatestEvidenceReal();
         var confidence = TestLedger
-            .From(LedgerPath)
+            .FromReal()
             .Runs.Where(run => run.Restates is null)
             .GroupBy(run => run.Song, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(

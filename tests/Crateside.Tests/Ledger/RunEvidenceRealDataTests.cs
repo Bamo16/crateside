@@ -1,16 +1,15 @@
 using System.Text.Json;
+using Crateside.Core;
 using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Ledger;
 
 public sealed class RunEvidenceRealDataTests
 {
-    private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
-
-    private static bool Available => File.Exists(LedgerPath);
+    private static bool Available => TestLedger.HasReal;
 
     private static readonly Lazy<IReadOnlyList<RunEvidence>> Evidence = new(() =>
-        [.. TestLedger.LatestEvidence(LedgerPath).Values]
+        [.. TestLedger.LatestEvidenceReal().Values]
     );
 
     private static IReadOnlyList<RunEvidence> All() => Evidence.Value;
@@ -18,10 +17,10 @@ public sealed class RunEvidenceRealDataTests
     [Fact]
     public void Every_song_on_the_board_can_be_expanded()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
-        var ledger = TestLedger.From(LedgerPath);
-        var latest = TestLedger.LatestEvidence(LedgerPath);
+        var ledger = TestLedger.FromReal();
+        var latest = TestLedger.LatestEvidenceReal();
 
         Assert.All(
             ledger.Runs.Select(r => r.Song).Distinct(StringComparer.OrdinalIgnoreCase),
@@ -32,7 +31,7 @@ public sealed class RunEvidenceRealDataTests
     [Fact]
     public void The_reasoning_is_always_there_because_it_is_the_actual_argument()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         Assert.All(All(), e => Assert.False(string.IsNullOrWhiteSpace(e.Reasoning)));
     }
@@ -41,9 +40,14 @@ public sealed class RunEvidenceRealDataTests
     [Fact]
     public void No_string_anywhere_in_the_ledger_is_mis_encoded()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
-        foreach (var line in File.ReadLines(LedgerPath).Where(l => l.Trim().Length > 0))
+        foreach (
+            var line in File.ReadLines(
+                    Path.ChangeExtension(new CratesidePaths().LedgerDatabase, ".jsonl")
+                )
+                .Where(l => l.Trim().Length > 0)
+        )
         {
             using var document = JsonDocument.Parse(line);
 
@@ -70,12 +74,16 @@ public sealed class RunEvidenceRealDataTests
     [Fact]
     public void The_machine_layer_survives_the_round_trip()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         Assert.All(
             All(),
             e =>
             {
+                // A run recorded without its evidence file holds no machine layer.
+                if (e.Algorithms.Count is 0)
+                    return;
+
                 Assert.Equal(3, e.Algorithms.Count);
                 Assert.Equal(3, e.Agreement.Count);
                 Assert.All(
@@ -96,7 +104,7 @@ public sealed class RunEvidenceRealDataTests
     [Fact]
     public void A_run_with_no_human_source_is_an_ordinary_state()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         var all = All();
 
@@ -107,7 +115,7 @@ public sealed class RunEvidenceRealDataTests
     [Fact]
     public void Every_source_carries_a_kind_from_the_closed_set()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         var sources = All().SelectMany(e => e.Sources).ToList();
 
@@ -121,7 +129,7 @@ public sealed class RunEvidenceRealDataTests
     [Fact]
     public void A_sources_stance_on_the_verdict_is_computed_not_read()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         var sources = All().SelectMany(e => e.Sources).ToList();
 
@@ -132,7 +140,7 @@ public sealed class RunEvidenceRealDataTests
     [Fact]
     public void A_source_with_no_page_still_says_where_it_came_from()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         Assert.Contains(
             All().SelectMany(e => e.Sources),
@@ -143,7 +151,7 @@ public sealed class RunEvidenceRealDataTests
     [Fact]
     public void A_recorded_url_that_is_not_a_link_is_not_offered_as_one()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         var sources = All().SelectMany(e => e.Sources).ToList();
 
@@ -163,7 +171,7 @@ public sealed class RunEvidenceRealDataTests
     [Fact]
     public void The_chord_recognisers_in_the_ledger_are_identified_as_such()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         Assert.Contains(
             All().SelectMany(e => e.Sources),
@@ -174,7 +182,7 @@ public sealed class RunEvidenceRealDataTests
     [Fact]
     public void Full_agreement_is_reported_as_agreement()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         var pairs = All().SelectMany(e => e.Agreement).ToList();
 
