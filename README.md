@@ -91,10 +91,12 @@ judging, and how much of the current Claude quota window is used.
 
 ## How it relates to keytag and StemForge
 
-- [**keytag**](../keytag) (private) is the key-detection tool. crateside keeps the
-  **ledger** of every verdict itself, in SQLite ([docs/ledger.md](docs/ledger.md)); until
-  the judge writes there directly (#111), crateside imports the verdicts keytag's recorder
-  appends to its `results/runs.jsonl`. keytag never learns crateside exists.
+- [**keytag**](../keytag) (private) is where the key detection and judging began. crateside now
+  detects keys itself (FiLL's `keydetect` filter through ffmpeg, with ports of madmom's key CNN
+  and Essentia's `edma` profile as its backers), judges with its own prompt, and keeps the
+  **ledger** of every verdict in SQLite ([docs/ledger.md](docs/ledger.md)). keytag's history,
+  its `results/runs.jsonl`, is imported once into an empty ledger. keytag never learns
+  crateside exists.
 - [**StemForge**](https://github.com/Bamo16/StemForge) does the downloading and the stem
   separation. crateside calls its CLI and reads the provenance it writes into each file's
   tags — that provenance (the video ID) is how every later step recognises a file.
@@ -107,8 +109,9 @@ folders, so nothing falls out of sync.
 ## Running it
 
 Requirements: Windows, .NET 10 SDK, Ableton Live with a Staging folder and
-a library folder as watched roots (both set in Settings), keytag and StemForge checked out as siblings,
-a GPU for separation, and a Claude subscription for judging.
+a library folder as watched roots (both set in Settings), StemForge checked out as a sibling, an
+ffmpeg build with FiLL's `keydetect` filter on `PATH` (or named by `Paths:KeydetectFfmpeg`), a GPU
+for separation, and a Claude subscription for judging.
 
 ```
 dotnet run --project src/Crateside          # the app
