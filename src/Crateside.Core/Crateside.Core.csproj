@@ -13,6 +13,7 @@
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
         <PackageReference Include="Microsoft.Extensions.Options" />
+        <PackageReference Include="Microsoft.ML.OnnxRuntime" />
         <PackageReference Include="TagLibSharp" />
     </ItemGroup>
 
@@ -20,6 +21,10 @@
         <EmbeddedResource
             Include="Orchestration\Verdict\judge-prompt.md"
             LogicalName="judge-prompt.md"
+        />
+        <EmbeddedResource
+            Include="KeyDetection\Madmom\key-cnn.onnx"
+            LogicalName="madmom-key-cnn.onnx"
         />
     </ItemGroup>
 
