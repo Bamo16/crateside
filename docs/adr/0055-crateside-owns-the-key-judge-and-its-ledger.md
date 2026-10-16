@@ -214,3 +214,24 @@ is in [docs/judge.md](../judge.md).
 - **Windows asked for and a missing file are resumed separately**, each at most once per run. A
   WITHHELD verdict that asked for windows is recorded as it was if the resume writes nothing
   usable.
+
+## Addendum, 2026-10-16: the detectors are crateside's own
+
+Built in [#113](https://github.com/Bamo16/crateside/issues/113); how each port was checked is in
+[the porting note](../notes/2026-10-16-porting-the-key-detectors.md).
+
+- **madmom runs through ONNX Runtime on the CPU**, from a converted file embedded in crateside with
+  its CC BY-NC-SA 4.0 licence beside it. **`edma` is C#.** Both name the key their Python original
+  named on all 261 tracks of the bake-off's set.
+- **Essentia's arithmetic was measured, not read.** Its documentation does not give whitening's
+  envelope or `KeyExtractor`'s internal settings, so they were fitted against its output; only the
+  `edma` profile values came from its source, as data. Parity did not need its code.
+- **keydetect is still an ffmpeg call**, on `Paths:KeydetectFfmpeg` (`PATH`'s `ffmpeg` by default),
+  which also decodes for the other two. The evidence records its version and hash, since `r`'s
+  bands are the build's.
+- **The evidence keeps keytag-detect's shape**, with `madmom` and `essentia_edma` in place of
+  CREMA and librosa and a `backers` list of those naming keydetect's key. Runs detected before the
+  port keep their CREMA and librosa readings, and the pages still show them.
+- **The prompt's backed-by table was restated** on the 221 human-sourced songs with keydetect on
+  the 9.0 build: 95% / 82% / 10% at `r` ≥ 0.80, 90% / 65% / 32% below. Its sentence that a backer
+  rarely holds the answer went: madmom is right on 33 of keydetect's 58 misses.

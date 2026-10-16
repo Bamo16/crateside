@@ -11,10 +11,10 @@ A wrong key is worse than no key: the maintainer picks mashup partners by it. Wi
 
   | keydetect's `r` | backed by both | by one | by neither |
   |---|---|---|---|
-  | ≥ 0.80 | 95% | 85% | 56% |
-  | < 0.80 | 93% | 78% | 33% |
+  | ≥ 0.80 | 95% | 82% | 10% |
+  | < 0.80 | 90% | 65% | 32% |
 
-  When keydetect is wrong, a backer rarely holds the right answer; backing measures doubt.
+  When keydetect is wrong, madmom names the right key a little over half the time, and when madmom and edma agree on another key they are right about three times in four: a dissent is a candidate, not only doubt.
 - A detector's confidence never corroborates its own answer. A relative swap (C major ↔ A minor, the same notes) is a confident wrong answer, and breaking it takes evidence of another kind: a cadence, or a human source.
 - **Tonic check**: in 2–4 sentences, say whether the chords and the running estimate support the tonic over its relative and its fifth neighbours: does V→i resolve there, is early instability only a sparse intro.
 
