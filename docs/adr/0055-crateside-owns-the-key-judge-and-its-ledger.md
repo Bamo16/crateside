@@ -146,3 +146,47 @@ Built in [#110](https://github.com/Bamo16/crateside/issues/110); the format is i
 - **The import refuses what the ledger would refuse**: a line with no confidence, or one
   outside the four, is listed and left out rather than stored as an unreadable verdict. On
   2026-10-15 the real history imported with no refusals.
+
+## Addendum, 2026-10-15: the set to port is keydetect, madmom's CNN and Essentia's `edma`
+
+The bake-off ([note](../notes/2026-10-15-the-detector-bake-off.md), #109) scored Essentia,
+madmom and libKeyFinder against keytag's three on the harness corpus (37 tracks) and the ledger's
+221 human-sourced songs with audio. This replaces the first bullet of **Detectors** above: CREMA and
+librosa do not earn their keep once madmom and Essentia are on the table.
+
+**Ported (#113):**
+
+| detector | route in .NET | why |
+|---|---|---|
+| ffmpeg `keydetect` | none: the ffmpeg call crateside already makes | best alone on the corpus (81%), level with the rest on the ledger (71%); its `r`, chords and key flicker feed the judge |
+| madmom CNN key model | ONNX Runtime; the weights converted from `key_cnn.pkl`, the log-spectrogram front end written in C# | best backer on both yardsticks (AUC 0.82 on the ledger against CREMA's 0.71), and right on 36 of the 64 songs keydetect gets wrong |
+| Essentia `edma` | native C#: HPCP and the profile correlation | the best Essentia profile (73% alone, AUC 0.75); about 0.25 s a track; no model |
+
+With keydetect, the pair madmom + `edma` backs its answer best on the ledger (AUC 0.844 against 0.751
+for CREMA + librosa; where both back it keydetect is right 92%, where neither does 21%). It ties with
+CREMA + madmom (0.843); `edma` is chosen over CREMA because it needs no TensorFlow, no venv and no model.
+
+**Left out:** CREMA, librosa K-S, libKeyFinder (64% alone; GPL; a native build with FFTW) and
+Essentia's other profiles (`bgate` and `shaath` trail `edma` and add nothing to the set; `temperley`
+and `edmm` miss mostly by the relative key).
+
+**The evidence** keeps the shape the judge reads. keydetect's chord stream and flicker stay; each
+ported detector contributes its key and a confidence (madmom's probability, Essentia's strength); and
+"backed by both / one / neither" counts madmom and `edma` against keydetect's answer. The judge's
+prompt takes its figures from the note's backed-by table, rewritten for these two partners.
+
+**Windows:** all three take a window by decoding only that range (checked in the note). No port
+needs its own windowing.
+
+**Acceptance for #113:** each port gives the same key as its Python original on every track in
+[the readings CSV](../notes/2026-10-15-the-detector-bake-off.csv) (`madmom`, `ess_edma` columns), or
+each difference is explained in the commit.
+
+**Licences, for #107.**
+- madmom's model files are CC BY-NC-SA 4.0, and a converted ONNX file is derived from them. The
+  ONNX file is committed beside the code that loads it with its own licence file and a line in the
+  README saying crateside's use of it is non-commercial. Choosing crateside's own licence has to
+  account for that.
+- Essentia is AGPL-3.0. The `edma` port is written from the published algorithm (Gómez's HPCP;
+  Faraldo et al.'s profiles, taken as data) and the parity check above, not by transcribing Essentia's
+  source. If parity cannot be reached without copying code, the maintainer decides before it merges.
