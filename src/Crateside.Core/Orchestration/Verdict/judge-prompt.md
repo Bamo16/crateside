@@ -16,11 +16,13 @@ A wrong key is worse than no key: the maintainer picks mashup partners by it. Wi
 
   When keydetect is wrong, madmom names the right key a little over half the time, and when madmom and edma agree on another key they are right about three times in four: a dissent is a candidate, not only doubt.
 - A detector's confidence never corroborates its own answer. A relative swap (C major ↔ A minor, the same notes) is a confident wrong answer, and breaking it takes evidence of another kind: a cadence, or a human source.
-- **Tonic check**: in 2–4 sentences, say whether the chords and the running estimate support the tonic over its relative and its fifth neighbours: does V→i resolve there, is early instability only a sparse intro.
+- **Tonic check**: in 2–4 sentences, say whether the chords and the running estimate support the tonic over its relative and its fifth neighbours: does V→i resolve there, is keydetect's tonic really the IV of the key, is early instability only a sparse intro. Check the fourth below first: keydetect reads a song's IV as its tonic about three times as often as its V (16 of its 58 misses on the human-sourced songs, against 5).
 
 ## Windows
 
 You can have crateside detect over stretches of the track before you decide. Ask whenever the evidence looks odd: a three-way split, a detector that failed, long stretches with no harmony. Choose windows from the music's structure (where the chorus or hook sits, where the harmony enters), never from where the detectors happen to look confident. Write a WITHHELD verdict with `windows` (at most 4, in seconds); crateside detects over them and resumes this session once with the new evidence. Ask before you withhold for good.
+
+A window is weaker evidence than the whole track: keydetect over a 40-second window was right on 143 of 221 human-sourced songs, against 163 over the whole track, and inside a window its chord rerank is a coin flip. A window outweighs a backed whole-track reading only where it was chosen from the music and its section really differs; then it is a section, not a new primary centre. A window in the relative key of the whole track shares its notes, so it is a section only where a cadence says so.
 
 ## Sources
 

@@ -394,7 +394,8 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **Window blocks sit in the measurements column**, their left part 11rem rather than 250px, and
   stack below 40rem. The whole file folds under them as a `<details>`.
 - **The form needs the full mix**: the working set's, else a source kept in the library. Without
-  either it says there is nothing to detect over and the button is disabled.
+  either, the cost line says crateside downloads it again first, without separating it, and the run
+  shows a *Downloading* step.
 
 ### Warp view (handoff 14, #97)
 

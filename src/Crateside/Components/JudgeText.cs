@@ -31,6 +31,7 @@ public static class JudgeText
         run.Step switch
         {
             null => "Waiting for the judgment already under way to finish",
+            JudgeStep.Downloading => "Downloading the full mix again, without separating it",
             JudgeStep.DetectingWhole =>
                 "Detecting the whole track first: crateside no longer held its evidence",
             JudgeStep.DetectingWindow(var number, var of, var window)
@@ -50,6 +51,7 @@ public static class JudgeText
         run.Step switch
         {
             null => "waiting its turn",
+            JudgeStep.Downloading => "downloading the full mix",
             JudgeStep.DetectingWhole => "detecting the whole track",
             JudgeStep.DetectingWindow(var number, var of, _) when run.JudgeAsked.Count > 0 =>
                 $"detecting the judge's window {number} of {of}",

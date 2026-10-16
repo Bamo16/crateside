@@ -58,9 +58,10 @@ for them. The windows are recorded with `AskedBy = User` and their bars, the not
 `Direction`, and what they hear as a source of kind `ear` that crateside writes itself, noting how
 much it counted. The judge may still ask for windows of its own, which are run as above.
 
-The run needs the full mix: the working set's audio, or the source kept in the library. A track
-whose working set has gone is detected over whole first, into a working set made for the run and
-thrown away after it. It is the user's own run, so it ignores the pause and the 85% guard, and
+The run needs the full mix: the working set's audio, or the source kept in the library, or else
+the upload downloaded again (`stemforge-cli download`, no separation). A track whose working set
+has gone is detected over whole first, into a working set made for the run and thrown away after
+it. It is the user's own run, so it ignores the pause and the 85% guard, and
 waits for any judgment in progress.
 
 ## Settings

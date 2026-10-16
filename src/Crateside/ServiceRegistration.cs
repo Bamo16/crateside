@@ -304,6 +304,7 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new BarJudging(
             sp.GetRequiredService<VerdictDrainer>(),
             sp.GetRequiredService<WorkingSet>(),
+            sp.GetRequiredService<DownloadRunner>(),
             TimeProvider.System
         ));
 

@@ -89,7 +89,7 @@ public sealed class BarForm(bool inBars)
     public bool EarIsUnreadable => Ear.Trim() is { Length: > 0 } && EarCentre() is null;
 
     /// <summary>The request, with the lines' notes as one direction: each under its window's name when there are several.</summary>
-    public JudgeDirection Direction(WarpGroup group, string audio)
+    public JudgeDirection Direction(WarpGroup group, string? audio)
     {
         var noted = Lines
             .Select(line => (Window: Window(line, group), Note: line.Note.Trim()))

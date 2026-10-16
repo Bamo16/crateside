@@ -3,18 +3,21 @@ using Crateside.Core.Ledger;
 namespace Crateside.Core.Orchestration.Verdict;
 
 /// <summary>What the user asks of a judgment from these bars: the windows, a note, and what they hear (ADR 0055).</summary>
-/// <param name="Audio">The full mix to detect over.</param>
+/// <param name="Audio">The full mix to detect over; null when it has to be downloaded again first.</param>
 public sealed record JudgeDirection(
     IReadOnlyList<RunWindow> Windows,
     string? Note,
     TonalCentre? Ear,
-    string Audio
+    string? Audio
 );
 
 /// <summary>Where a judgment from these bars has got to.</summary>
 public abstract record JudgeStep
 {
     private JudgeStep() { }
+
+    /// <summary>The full mix, downloaded again because crateside no longer held it; never separated.</summary>
+    public sealed record Downloading : JudgeStep;
 
     /// <summary>The whole track, when crateside holds no evidence for it any more.</summary>
     public sealed record DetectingWhole : JudgeStep;
