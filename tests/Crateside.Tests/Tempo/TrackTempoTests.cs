@@ -70,7 +70,7 @@ public sealed class TrackTempoTests
         Assert.False(TrackTempo.Of(null, Loose(123.03), null)!.IsVouched);
 
     [Fact]
-    public void Keytags_estimate_is_the_headline_only_without_a_warp_or_a_reading()
+    public void The_ledgers_estimate_is_the_headline_only_without_a_warp_or_a_reading()
     {
         var tempo = TrackTempo.Of(null, null, 128)!;
 

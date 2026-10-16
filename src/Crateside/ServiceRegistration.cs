@@ -94,7 +94,6 @@ public static class ServiceRegistration
     {
         services.AddSingleton(sp => new LedgerStore(
             sp.GetRequiredService<CratesidePaths>().LedgerDatabase,
-            sp.GetRequiredService<CratesidePaths>().KeytagLedger,
             TimeProvider.System
         ));
         services.AddSingleton<FolderInfoReader>();

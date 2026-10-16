@@ -390,7 +390,7 @@ public sealed class StemEditor(
 
     /// <summary>What an added source is, said where the boxes to describe one are.</summary>
     public static string AddNote(TrackRow row) =>
-        "Another file of this song, kept whole and never separated. keytag records it as this "
+        "Another file of this song, kept whole and never separated. the ledger records it as this "
         + "song so it stages beside the stems"
         + (
             row.Key is { } key

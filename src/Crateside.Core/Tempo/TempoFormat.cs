@@ -10,7 +10,7 @@ public static class TempoFormat
 {
     private const string FromWarp = "from your warp";
     private const string FromReading = "crateside's reading";
-    private const string FromEstimate = "keytag's estimate";
+    private const string FromEstimate = "ledger's estimate";
     private const double RelatedWithin = 2;
 
     /// <summary>From this many ms by the end an off-tempo warp is worth truing up, and its mark is filled.</summary>
@@ -261,7 +261,7 @@ public static class TempoFormat
 }
 
 /// <param name="IsApproximate">Drawn with the tilde at weight 400.</param>
-/// <param name="IsEstimate">keytag's, so also drawn at <c>--text-50</c>.</param>
+/// <param name="IsEstimate">the ledger's, so also drawn at <c>--text-50</c>.</param>
 /// <param name="Note">The song page's note, and the tooltip wherever the figure stands without one.</param>
 /// <param name="Flag">The Tracks flag beside the title, where the tempo's shape earns one.</param>
 /// <param name="Brief">The Tools card's short note.</param>

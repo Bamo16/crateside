@@ -7,15 +7,14 @@ namespace Crateside.Tests.Ledger;
 /// <summary>A stem on disk joins to a ledger verdict, against the real ledger and library.</summary>
 public sealed class KeyLedgerRealDataTests
 {
-    private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
     private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
 
     [Fact]
     public void Reads_the_real_ledger()
     {
-        Assert.SkipUnless(File.Exists(LedgerPath), $"{LedgerPath} not present.");
+        Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
 
-        var ledger = TestLedger.From(LedgerPath);
+        var ledger = TestLedger.FromReal();
 
         Assert.NotEmpty(ledger.Runs);
         Assert.All(ledger.Runs, r => Assert.NotEmpty(r.Song));
@@ -25,9 +24,9 @@ public sealed class KeyLedgerRealDataTests
     [Fact]
     public void A_modal_verdict_reads_as_a_collapse_of_the_tagged_key()
     {
-        Assert.SkipUnless(File.Exists(LedgerPath), $"{LedgerPath} not present.");
+        Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
 
-        var modal = TestLedger.From(LedgerPath).Runs.Where(r => r.IsCollapsed).ToList();
+        var modal = TestLedger.FromReal().Runs.Where(r => r.IsCollapsed).ToList();
 
         // A mode must never contradict the tag it collapses to.
         Assert.NotEmpty(modal);
@@ -38,9 +37,9 @@ public sealed class KeyLedgerRealDataTests
     [Fact]
     public void Nearly_every_run_carries_an_extractable_video_id()
     {
-        Assert.SkipUnless(File.Exists(LedgerPath), $"{LedgerPath} not present.");
+        Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
 
-        var runs = TestLedger.From(LedgerPath).Runs;
+        var runs = TestLedger.FromReal().Runs;
         var withId = runs.Count(r => r.SourceVideoId is not null);
 
         // Measured at 124/125 at design; a run from a local file has no URL.
@@ -54,11 +53,11 @@ public sealed class KeyLedgerRealDataTests
     public void Every_staged_stem_joins_to_a_ledger_verdict()
     {
         Assert.SkipUnless(
-            File.Exists(LedgerPath) && Directory.Exists(StagingRoot),
+            TestLedger.HasReal && Directory.Exists(StagingRoot),
             "Ledger and staging root must both be present."
         );
 
-        var ledger = TestLedger.From(LedgerPath);
+        var ledger = TestLedger.FromReal();
 
         var unresolved = Directory
             .GetFiles(StagingRoot, "*.flac")
@@ -77,7 +76,7 @@ public sealed class KeyLedgerRealDataTests
     public void The_join_survives_a_renamed_file()
     {
         Assert.SkipUnless(
-            File.Exists(LedgerPath) && Directory.Exists(StagingRoot),
+            TestLedger.HasReal && Directory.Exists(StagingRoot),
             "Ledger and staging root must both be present."
         );
 
@@ -92,9 +91,7 @@ public sealed class KeyLedgerRealDataTests
         var tags = StemTagReader.Read(stem);
         Assert.NotNull(tags?.SourceVideoId);
 
-        Assert.True(
-            TestLedger.From(LedgerPath).TryGetLatestByVideoId(tags.SourceVideoId, out var run)
-        );
+        Assert.True(TestLedger.FromReal().TryGetLatestByVideoId(tags.SourceVideoId, out var run));
         Assert.DoesNotContain("mission 15", Path.GetFileNameWithoutExtension(stem));
         Assert.Contains("mission 15", run.Song, StringComparison.OrdinalIgnoreCase);
     }

@@ -62,7 +62,7 @@ public sealed record LedgerRun
 
     public KeyConfidence Confidence { get; init; }
 
-    /// <summary>keytag's old BPM estimate, a warp starting point. Never written by a new run.</summary>
+    /// <summary>The old BPM estimate, a warp starting point. Never written by a new run.</summary>
     public double? Bpm { get; init; }
 
     /// <summary>When this is a restatement: the time of the run whose verdict it carries over.</summary>

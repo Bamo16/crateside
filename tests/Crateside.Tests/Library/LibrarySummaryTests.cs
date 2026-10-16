@@ -80,7 +80,7 @@ public sealed class LibrarySummaryTests : IDisposable
         );
 
         var distribution = new LibraryKeyReader(
-            TestLedger.Store(paths.Value.KeytagLedger),
+            TestLedger.Store(),
             paths,
             new FileIndexReader(paths.Value.AbletonIndex),
             new FolderInfoReader(),
@@ -97,7 +97,7 @@ public sealed class LibrarySummaryTests : IDisposable
 
         return new LibrarySummary(
             new LibraryKeyReader(
-                TestLedger.Store(paths.Value.KeytagLedger),
+                TestLedger.Store(),
                 paths,
                 new FileIndexReader(paths.Value.AbletonIndex),
                 new FolderInfoReader(),

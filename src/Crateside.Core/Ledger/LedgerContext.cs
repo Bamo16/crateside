@@ -131,7 +131,7 @@ internal sealed class RunRow
     public string? OldBpmSource { get; set; }
     public double? OldBpmBeatdetect { get; set; }
 
-    /// <summary>The timestamp of the keytag line this was imported from.</summary>
+    /// <summary>The timestamp of the line this row was first imported from; never set by a new row.</summary>
     public string? KeytagLine { get; set; }
 
     public List<SectionRow> Sections { get; set; } = [];
@@ -140,7 +140,7 @@ internal sealed class RunRow
 
     public TonalCentre? Centre => Tonic is not null && Mode is { } mode ? new(Tonic, mode) : null;
 
-    public static RunRow From(RunRecord run, string? keytagLine) =>
+    public static RunRow From(RunRecord run) =>
         new()
         {
             RecordedAt = run.RecordedAt,
@@ -163,7 +163,6 @@ internal sealed class RunRow
             OldBpm = run.OldBpm?.Value,
             OldBpmSource = run.OldBpm?.Source,
             OldBpmBeatdetect = run.OldBpm?.Beatdetect,
-            KeytagLine = keytagLine,
             Sections =
             [
                 .. run.Sections.Select(
@@ -323,6 +322,6 @@ internal sealed class RestatementRow
     public long RunId { get; set; }
     public string SourceUrl { get; set; } = string.Empty;
 
-    /// <summary>The timestamp of the keytag line this was imported from.</summary>
+    /// <summary>The timestamp of the line this row was first imported from; never set by a new row.</summary>
     public string? KeytagLine { get; set; }
 }

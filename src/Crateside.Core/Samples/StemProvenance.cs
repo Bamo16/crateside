@@ -49,7 +49,7 @@ public sealed record StemProvenance
 
     /// <summary>
     /// The YouTube video ID extracted from <see cref="SourceUrl"/> — the join key onto the
-    /// keytag ledger, and the reason this parse exists.
+    /// key ledger, and the reason this parse exists.
     /// </summary>
     public string? SourceVideoId { get; init; }
 

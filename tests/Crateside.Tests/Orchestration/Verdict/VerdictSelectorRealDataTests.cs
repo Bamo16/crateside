@@ -30,7 +30,7 @@ public sealed class VerdictSelectorRealDataTests
 
         Assert.SkipWhen(detected.Count is 0, "no working sets on this machine");
 
-        var ledger = TestLedger.From(Paths.KeytagLedger);
+        var ledger = TestLedger.FromReal();
 
         // Checked one at a time so a failure names which condition is false.
         foreach (var videoId in detected)

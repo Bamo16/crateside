@@ -24,7 +24,7 @@ public sealed record TrackTempo
 
     public BeatReading? Reading { get; init; }
 
-    /// <summary>keytag's estimate.</summary>
+    /// <summary>The ledger's estimate.</summary>
     public double? Estimate { get; init; }
 
     /// <summary>The source's own figure, before any shift.</summary>
@@ -118,7 +118,7 @@ public sealed record TrackTempo
             _ => null,
         };
 
-    /// <summary>The headline tempo: the warp, else crateside's reading, else keytag's estimate; null with none of them.</summary>
+    /// <summary>The headline tempo: the warp, else crateside's reading, else the ledger's estimate; null with none of them.</summary>
     public static TrackTempo? Of(WarpTempo? warp, BeatReading? reading, double? estimate) =>
         (warp, reading, estimate) switch
         {
@@ -204,7 +204,7 @@ public enum TempoSource
     /// <summary>crateside's whole-file beatdetect reading of the instrumental.</summary>
     Reading,
 
-    /// <summary>keytag's estimate, shown only while there is neither of the others.</summary>
+    /// <summary>The ledger's estimate, shown only while there is neither of the others.</summary>
     Estimate,
 
     /// <summary>A figure the user typed into Tools.</summary>

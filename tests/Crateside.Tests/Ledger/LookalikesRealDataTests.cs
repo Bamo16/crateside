@@ -4,8 +4,6 @@ namespace Crateside.Tests.Ledger;
 
 public sealed class LookalikesRealDataTests
 {
-    private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
-
     /// <summary>The two cases #41 measured on 2026-09-24, older identity first.</summary>
     private static readonly string[] KnownTwins =
     [
@@ -19,9 +17,9 @@ public sealed class LookalikesRealDataTests
     [Fact]
     public void Only_the_measured_twins_look_like_another_song()
     {
-        Assert.SkipUnless(File.Exists(LedgerPath), "The keytag ledger must be present.");
+        Assert.SkipUnless(TestLedger.HasReal, "The ledger must be present.");
 
-        var ledger = TestLedger.From(LedgerPath);
+        var ledger = TestLedger.FromReal();
 
         var mistaken = ledger
             .Latest.Where(run =>

@@ -109,12 +109,12 @@ public sealed class TempoFormatTests
     }
 
     [Fact]
-    public void Keytags_estimate_is_approximate_and_drawn_as_an_estimate()
+    public void The_ledgers_estimate_is_approximate_and_drawn_as_an_estimate()
     {
         var shown = TempoFormat.Format(TrackTempo.Of(null, null, 127.8)!);
 
         Assert.Equal(("~128", true, true), (shown.Text, shown.IsApproximate, shown.IsEstimate));
-        Assert.Equal("keytag's estimate · not read yet", shown.Note);
+        Assert.Equal("ledger's estimate · not read yet", shown.Note);
     }
 
     [Fact]
@@ -224,7 +224,7 @@ public sealed class TempoFormatTests
         Assert.Equal(
             [
                 ("crateside's reading", "128", "agrees", false),
-                ("keytag's estimate", "~128", "agrees", false),
+                ("ledger's estimate", "~128", "agrees", false),
             ],
             Lines(agreeing)
         );
@@ -234,7 +234,7 @@ public sealed class TempoFormatTests
         Assert.Equal(
             [
                 ("Your warp", "—", "not warped yet", false),
-                ("keytag's estimate", "~104", "conflict", true),
+                ("ledger's estimate", "~104", "conflict", true),
             ],
             Lines(TrackTempo.Of(null, reading, 104)!)
         );

@@ -38,7 +38,7 @@ public sealed class LibraryKeyReaderRealLibraryTests
     {
         SkipUnlessPresent();
 
-        var ledger = TestLedger.From(Paths.KeytagLedger);
+        var ledger = TestLedger.FromReal();
         var tags = new FileIndexReader(Paths.AbletonIndex).Read(Paths.LibraryFolder);
 
         var conflicts = Directory
@@ -74,6 +74,8 @@ public sealed class LibraryKeyReaderRealLibraryTests
         StemTagReader.Read(file)?.Provenance is { SourceVideoId: { } videoId }
         && ledger.TryGetLatestByVideoId(videoId, out var run)
         && run.HasTaggableKey
+        // A re-judged song's new verdict waits on the approval list (ADR 0052) before its files change.
+        && ledger.Runs.Count(other => other.Song == run.Song && other.Restates is null) is 1
             ? run.Key
             : null;
 
@@ -82,7 +84,7 @@ public sealed class LibraryKeyReaderRealLibraryTests
         var paths = Options.Create(Paths);
 
         return new LibraryKeyReader(
-            TestLedger.Store(paths.Value.KeytagLedger),
+            TestLedger.Store(),
             paths,
             new FileIndexReader(paths.Value.AbletonIndex),
             new FolderInfoReader(),

@@ -1,6 +1,6 @@
 namespace Crateside.Core.Ledger;
 
-/// <summary>keytag's contract for a run, carried over: what is repaired on the way in, and what is refused.</summary>
+/// <summary>The contract for a run: what is repaired on the way in, and what is refused.</summary>
 internal static class RunValidation
 {
     private static readonly HashSet<string> ChordRecogniserHosts = ["chordify.net", "chordu.com"];

@@ -29,19 +29,20 @@ public sealed class StemLandingTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    private string LedgerFile => Path.Combine(_root, "runs.jsonl");
+
     private CratesidePaths Paths =>
         field ??= new CratesidePaths
         {
             StemsKeyIdentified = Path.Combine(_root, "identified"),
             StemsUnresolvedKey = Path.Combine(_root, "unresolved"),
             StagingFolder = Path.Combine(_root, "staging"),
-            KeytagLedger = Path.Combine(_root, "runs.jsonl"),
         };
 
     private KeyLedger Ledger(string? confidence)
     {
         File.WriteAllText(
-            Paths.KeytagLedger,
+            LedgerFile,
             confidence is null
                 ? string.Empty
                 : JsonSerializer.Serialize(
@@ -57,7 +58,7 @@ public sealed class StemLandingTests : IDisposable
                 )
         );
 
-        return TestLedger.From(Paths.KeytagLedger);
+        return TestLedger.From(LedgerFile);
     }
 
     private IReadOnlyList<string> Parked(params string[] names)

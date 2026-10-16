@@ -31,7 +31,7 @@ public sealed class WarpTempoReaderTests : IDisposable
     }
 
     [Fact]
-    public void A_starter_warp_gives_no_tempo_since_it_is_only_keytags_guess()
+    public void A_starter_warp_gives_no_tempo_since_it_is_only_a_guess()
     {
         var audio = Sample("sidecar-clicks.asd");
 

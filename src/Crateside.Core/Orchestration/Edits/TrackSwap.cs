@@ -117,13 +117,13 @@ public sealed record SwapPlan
     /// <summary>The video the track would be cut from, or null when the URL was unreadable.</summary>
     public string? NewVideoId { get; init; }
 
-    /// <summary>The canonical watch URL for <see cref="NewVideoId"/>, which is what keytag is given.</summary>
+    /// <summary>The canonical watch URL for <see cref="NewVideoId"/>.</summary>
     public string? Url { get; init; }
 
     /// <summary>The staged files that would go: they came from the upload being replaced.</summary>
     public required IReadOnlyList<StagedFile> Removing { get; init; }
 
-    /// <summary>Whether there is a verdict for keytag to carry across to the new upload.</summary>
+    /// <summary>Whether there is a verdict to carry across to the new upload.</summary>
     public bool CarriesVerdict { get; init; }
 
     /// <summary>Why this cannot happen, or null when it can.</summary>

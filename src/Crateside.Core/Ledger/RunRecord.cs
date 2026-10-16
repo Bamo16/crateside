@@ -50,7 +50,7 @@ public sealed record RunRecord
     /// <summary>The detectors' report, as JSON.</summary>
     public string? Evidence { get; init; }
 
-    /// <summary>The BPM estimate keytag once recorded. Imported, never written by a new run.</summary>
+    /// <summary>The old BPM estimate, from imported history. Never written by a new run.</summary>
     public OldBpm? OldBpm { get; init; }
 }
 
@@ -94,14 +94,14 @@ public sealed record RunWindow(double Start, double End, string? Label, WindowAs
 /// <summary>Bars <see cref="First"/> to <see cref="Last"/>, both included.</summary>
 public sealed record BarSpan(int First, int Last);
 
-/// <summary>Who asked for a window. Null on a window imported from keytag, which never said.</summary>
+/// <summary>Who asked for a window. Null on a window imported from history, which never said.</summary>
 public enum WindowAsker
 {
     User,
     Judge,
 }
 
-/// <summary>keytag's old BPM estimate: its value, where it came from, and beatdetect's reading beside it.</summary>
+/// <summary>The old BPM estimate: its value, where it came from, and beatdetect's reading beside it.</summary>
 public sealed record OldBpm(double? Value, string? Source, double? Beatdetect);
 
 /// <summary>Whether a run went into the ledger.</summary>

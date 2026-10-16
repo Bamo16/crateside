@@ -28,14 +28,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
             TestLedger.Store(Path.Combine(_directory, "runs.jsonl")),
             Set,
             Jobs,
-            Options.Create(
-                new CratesidePaths
-                {
-                    StagingFolder = Staging,
-                    LibraryFolder = Library,
-                    KeytagLedger = Path.Combine(_directory, "runs.jsonl"),
-                }
-            ),
+            Options.Create(new CratesidePaths { StagingFolder = Staging, LibraryFolder = Library }),
             _ => _requested
         );
 

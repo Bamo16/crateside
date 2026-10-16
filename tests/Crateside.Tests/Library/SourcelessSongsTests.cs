@@ -123,7 +123,7 @@ public sealed class SourcelessSongsTests : IDisposable
         var rows = TracksView
             .Compose(
                 EmptyView(),
-                TestLedger.From(paths.KeytagLedger),
+                TestLedger.FromReal(),
                 [],
                 sourceless,
                 paths.LibraryFolder,

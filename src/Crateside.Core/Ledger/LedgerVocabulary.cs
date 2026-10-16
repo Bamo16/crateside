@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Crateside.Core.Ledger;
 
 /// <summary>
-/// The ledger's spelling rules, carried over from keytag's <c>ledger.py</c>: keys, modes, links
+/// The ledger's spelling rules, kept from the ledger's first implementation: keys, modes, links
 /// and text that survived its trip intact (docs/ledger.md).
 /// </summary>
 public static partial class LedgerVocabulary

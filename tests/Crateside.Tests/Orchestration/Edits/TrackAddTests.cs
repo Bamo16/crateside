@@ -111,7 +111,7 @@ public sealed class TrackAddTests : IDisposable
     {
         Directory.CreateDirectory(_scratch);
 
-        var paths = new CratesidePaths { KeytagLedger = Path.Combine(_scratch, "runs.jsonl") };
+        var paths = new CratesidePaths();
 
         settings = new TrackInstructionStore(
             new QueueFile(
@@ -121,7 +121,7 @@ public sealed class TrackAddTests : IDisposable
         );
 
         return new TrackAdd(
-            TestLedger.Store(paths.KeytagLedger),
+            TestLedger.Store(Path.Combine(_scratch, "runs.jsonl")),
             settings,
             new SourceProbe(),
             new ResolvedNameStore(Path.Combine(_scratch, "names.json"))
