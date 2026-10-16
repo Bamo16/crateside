@@ -34,7 +34,9 @@ specific to crateside: keys, pairing, importing, tags, the views, and running th
 - **Collapse** — reducing a tonal centre to one of the 24 major and minor keys Ableton's Key
   tag admits, keeping the tonic: *A Dorian* → *A minor*, *G Mixolydian* → *G major*. Always
   shown beside the mode, never instead of it. The key with the same notes (*A Dorian* has
-  *G major*'s) is one **Camelot** step from the collapsed one.
+  *G major*'s) is next to the collapsed one on the **Camelot** wheel only for Aeolian, Lydian and
+  Mixolydian; for Dorian and Phrygian it is the relative major's neighbour (*A Dorian*: 8A → 9B;
+  *A Phrygian*: 8A → 7B), and for Locrian further off (*A Locrian*: 8A → 6B).
 - **Backer** — another detector that names the same key as keydetect. Whether keydetect has
   backers says more about its being right than its own confidence does.
 - **Window** — a stretch of a track detected on its own, given by the user in bars or asked
