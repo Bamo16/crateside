@@ -120,7 +120,7 @@
                         }
                     </span>
                     <span class="actions">
-                        <button class="primary" disabled="@(unreadable.Count > 0 || form.EarIsUnreadable || form.Windows(group).Count is 0)"
+                        <button class="primary" disabled="@(unreadable.Count > 0 || form.EarIsUnreadable)"
                                 @onclick="() => StartRun(form, group, audio)">Judge from these bars</button>
                         <button class="outline" @onclick="() => _form = null">Cancel</button>
                     </span>
@@ -568,7 +568,9 @@
 
     private string CostLine(int windows, bool download) =>
         (download ? "crateside no longer holds this track's full mix, so it downloads it again first, without separating it. " : null)
-        + $"Runs now, while you watch: the detectors over {"window".ToQuantity(windows)}, then one judge session of about 37k tokens."
+        + (windows is 0
+            ? "With no ranges it judges the whole track again: one judge session of about 37k tokens."
+            : $"Runs now, while you watch: the detectors over {"window".ToQuantity(windows)}, then one judge session of about 37k tokens.")
         + (Guard.Hold is { Used: not null }
             ? $" Background judging is paused at {QuotaGuard.WeeklyLimit:N0}% of the week; this one is yours, so it runs anyway."
             : null);

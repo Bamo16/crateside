@@ -393,6 +393,8 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **Ruler tags run past a narrow band** rather than being cut to its width.
 - **Window blocks sit in the measurements column**, their left part 11rem rather than 250px, and
   stack below 40rem. The whole file folds under them as a `<details>`.
+- **The form runs with no ranges**, judging the whole track again, so a plain re-judge needs no
+  window.
 - **The form needs the full mix**: the working set's, else a source kept in the library. Without
   either, the cost line says crateside downloads it again first, without separating it, and the run
   shows a *Downloading* step.

@@ -211,11 +211,14 @@ public sealed partial class VerdictRunner(
     )
     {
         yield return string.Empty;
-        yield return "The maintainer asked for this judgment and named the stretches where they "
-            + "hear the key clearly. crateside detected over each. A window is weaker evidence than "
-            + "the whole track (see Windows in your instructions), so weigh each against the whole "
-            + "file, not above it. Write one section per window, labelled with the window's name, "
-            + "with the key you hear in it.";
+
+        yield return direction.Windows is []
+            ? "The maintainer asked for this track to be judged again, over the whole track."
+            : "The maintainer asked for this judgment and named the stretches where they hear the "
+                + "key clearly. crateside detected over each. A window is weaker evidence than the "
+                + "whole track (see Windows in your instructions), so weigh each against the whole "
+                + "file, not above it. Write one section per window, labelled with the window's "
+                + "name, with the key you hear in it.";
 
         if (direction.Note is { Length: > 0 } note)
         {
