@@ -257,6 +257,7 @@ measured on the bake-off's 221 human-sourced songs with ffmpeg 9.0 at its defaul
 ## Addendum, 2026-10-16: keytag retired (#115)
 
 The import of keytag's `runs.jsonl` is deleted (`KeytagImport`, `CratesidePaths.KeytagRepo` and
-`KeytagLedger`), and crateside starts with no keytag checkout. The `KeytagLine` and `OldBpm*`
-columns stay: they hold imported data, and the migrations that made them stay with them. keytag is
+`KeytagLedger`), and crateside starts with no keytag checkout. The `OldBpm*`
+columns stay, as they hold imported data. The `KeytagLine` columns, which only recorded which line a
+row came from, are dropped by the `DropKeytagLine` migration. keytag is
 frozen by its own ADR 0011; the shared glossary terms now live in `CONTEXT.md`.

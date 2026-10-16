@@ -39,7 +39,6 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
             run.Ignore(row => row.Centre);
             run.Property(row => row.Song).UseCollation("NOCASE");
             run.HasIndex(row => new { row.Song, row.RecordedAt });
-            run.HasIndex(row => row.KeytagLine).IsUnique();
             run.OwnsMany(
                 row => row.Sections,
                 section =>
@@ -76,7 +75,6 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
         {
             restatement.ToTable("Restatements");
             restatement.HasOne<RunRow>().WithMany().HasForeignKey(row => row.RunId);
-            restatement.HasIndex(row => row.KeytagLine).IsUnique();
         });
     }
 
@@ -130,9 +128,6 @@ internal sealed class RunRow
     public double? OldBpm { get; set; }
     public string? OldBpmSource { get; set; }
     public double? OldBpmBeatdetect { get; set; }
-
-    /// <summary>The timestamp of the line this row was first imported from; never set by a new row.</summary>
-    public string? KeytagLine { get; set; }
 
     public List<SectionRow> Sections { get; set; } = [];
     public List<SourceRow> Sources { get; set; } = [];
@@ -321,7 +316,4 @@ internal sealed class RestatementRow
     public DateTimeOffset RecordedAt { get; set; }
     public long RunId { get; set; }
     public string SourceUrl { get; set; } = string.Empty;
-
-    /// <summary>The timestamp of the line this row was first imported from; never set by a new row.</summary>
-    public string? KeytagLine { get; set; }
 }
