@@ -228,11 +228,20 @@ namespace Crateside.Core.Ledger.Migrations
                             b1.Property<double>("End")
                                 .HasColumnType("REAL");
 
+                            b1.Property<int?>("FirstBar")
+                                .HasColumnType("INTEGER");
+
                             b1.Property<string>("Label")
                                 .HasColumnType("TEXT");
 
+                            b1.Property<int?>("LastBar")
+                                .HasColumnType("INTEGER");
+
                             b1.Property<double>("Start")
                                 .HasColumnType("REAL");
+
+                            b1.Property<string>("Why")
+                                .HasColumnType("TEXT");
 
                             b1.HasKey("RunId", "Position");
 

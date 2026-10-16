@@ -38,6 +38,9 @@ public sealed record RunEvidence
     /// <summary>The user's note to the judge, sent with the windows.</summary>
     public string? Direction { get; init; }
 
+    /// <summary>What the detectors read in each window, in the order the windows were detected.</summary>
+    public IReadOnlyList<WindowReading> Readings { get; init; } = [];
+
     /// <summary>
     /// The argument that the tonic is not its relative. Null on older runs, whose prose is in
     /// <see cref="Reasoning"/>.
@@ -99,6 +102,7 @@ public sealed record RunEvidence
             Sections = run.Sections,
             Windows = run.Windows,
             Direction = run.Direction,
+            Readings = WindowReading.Of(run, machine?.Windows ?? []),
             TonicCheck = run.TonicCheck,
             Reasoning = run.Reasoning,
             InputKind = run.InputKind,
@@ -154,6 +158,41 @@ public sealed record RunEvidence
             Bpm = run.OldBpm?.Value,
         };
     }
+}
+
+/// <summary>One window's detector readings, and the section the verdict gave it, if any.</summary>
+public sealed record WindowReading(
+    RunWindow Window,
+    IReadOnlyList<AlgorithmResult> Algorithms,
+    IReadOnlyList<string>? Backers,
+    Section? Section
+)
+{
+    /// <summary>The run's windows matched to their reports by span, and to sections by name.</summary>
+    internal static IReadOnlyList<WindowReading> Of(
+        RunRecord run,
+        IReadOnlyList<MachineDto.WindowDto> reports
+    ) =>
+        [
+            .. run.Windows.Select(window =>
+            {
+                var report = reports
+                    .FirstOrDefault(report =>
+                        Math.Abs(report.Start - window.Start) < 0.01
+                        && Math.Abs(report.End - window.End) < 0.01
+                    )
+                    ?.Evidence;
+
+                return new WindowReading(
+                    window,
+                    AlgorithmResult.FromDto(report?.Algorithms),
+                    report?.Backers,
+                    run.Sections.FirstOrDefault(section =>
+                        section.Label.Equals(window.Name, StringComparison.OrdinalIgnoreCase)
+                    )
+                );
+            }),
+        ];
 }
 
 /// <summary>An external source consulted for a verdict.</summary>
@@ -483,6 +522,18 @@ internal sealed record MachineDto
     public IReadOnlyList<KeyEventDto>? KeyEvents { get; init; }
 
     public IReadOnlyDictionary<string, string?>? Versions { get; init; }
+
+    /// <summary>Each window's own report, where windows were detected.</summary>
+    public IReadOnlyList<WindowDto>? Windows { get; init; }
+
+    internal sealed record WindowDto
+    {
+        public double Start { get; init; }
+
+        public double End { get; init; }
+
+        public MachineDto? Evidence { get; init; }
+    }
 
     internal sealed record PairDto
     {

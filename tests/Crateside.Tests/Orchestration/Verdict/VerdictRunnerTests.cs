@@ -209,13 +209,16 @@ public sealed class VerdictRunnerTests : IDisposable
             SessionId(Sessions.Requests[0], "--session-id"),
             SessionId(Sessions.Requests[1], "--resume")
         );
-        Assert.Contains("62–94.5 s (Chorus)", Sessions.Requests[1].StandardInput);
+        Assert.Contains("\"Chorus\", 62–94.5 s", Sessions.Requests[1].StandardInput);
         Assert.Contains("window-evidence", Sessions.Requests[1].StandardInput);
 
         var evidence = Ledger.EvidenceFor("yes - owner of a lonely heart")!;
 
         Assert.Equal(
-            new RunWindow(62, 94.5, "Chorus", WindowAsker.Judge),
+            new RunWindow(62, 94.5, "Chorus", WindowAsker.Judge)
+            {
+                Why = "A three-way split; the intro is drums only.",
+            },
             Assert.Single(evidence.Windows)
         );
         Assert.Equal(KeyConfidence.High, Assert.Single(Ledger.Read().Runs).Confidence);
@@ -502,6 +505,161 @@ public sealed class VerdictRunnerTests : IDisposable
 
     private static string SessionId(ProcessRequest request, string flag) => After(request, flag);
 
+    private const string FromTheBars = """
+        {
+          "artist": "Yes",
+          "title": "Owner of a Lonely Heart",
+          "confidence": "HIGH",
+          "centre": { "tonic": "C#", "mode": "aeolian" },
+          "sections": [
+            { "label": "Chorus", "tonic": "C#", "mode": "aeolian" },
+            { "label": "bars 82–96", "tonic": "C#", "mode": "aeolian" }
+          ],
+          "sources": [{ "kind": "ear", "states": "C# minor" }],
+          "reasoning": "Both windows read C# minor."
+        }
+        """;
+
+    private string AudioPath => Path.Combine(_directory, "kept source.flac");
+
+    private JudgeDirection Direction(TonalCentre? ear = null) =>
+        new(
+            [
+                new RunWindow(45, 67, "Chorus", WindowAsker.User) { Bars = new(33, 48) },
+                new RunWindow(112, 133, null, WindowAsker.User) { Bars = new(82, 96) },
+            ],
+            "The air horn throws the detectors; listen to the choruses.",
+            ear,
+            AudioPath
+        );
+
+    private Task<VerdictResult> JudgeFromBarsAsync(
+        JudgeDirection direction,
+        List<JudgeStep> steps
+    ) => Runner.RunAsync(Order(), direction, steps.Add, TestContext.Current.CancellationToken);
+
+    [Fact]
+    public async Task The_users_windows_are_detected_before_the_first_session_and_sent_with_it()
+    {
+        GiveEvidence();
+        Session(FromTheBars);
+        List<JudgeStep> steps = [];
+
+        var result = await JudgeFromBarsAsync(Direction(), steps);
+
+        Assert.True(result.IsSuccess, result.Error);
+        Assert.Equal([(45.0, 67.0), (112.0, 133.0)], Detector.Asked);
+
+        var prompt = Assert.Single(Sessions.Requests).StandardInput!;
+
+        Assert.Contains("\"Chorus\", 45–67 s", prompt);
+        Assert.Contains("\"bars 82–96\", 112–133 s", prompt);
+        Assert.Contains("C# minor @ 112", prompt);
+        Assert.Contains("listen to the choruses", prompt);
+        Assert.Equal(
+            [
+                new JudgeStep.DetectingWindow(1, 2, Direction().Windows[0]),
+                new JudgeStep.DetectingWindow(2, 2, Direction().Windows[1]),
+                new JudgeStep.Judging(),
+            ],
+            steps
+        );
+    }
+
+    [Fact]
+    public async Task A_run_from_bars_records_the_windows_as_sections_with_the_note()
+    {
+        GiveEvidence();
+        Session(FromTheBars);
+
+        await JudgeFromBarsAsync(Direction(), []);
+
+        var evidence = Ledger.EvidenceFor("yes - owner of a lonely heart")!;
+
+        Assert.Equal(Direction().Windows, evidence.Windows);
+        Assert.Equal(
+            "The air horn throws the detectors; listen to the choruses.",
+            evidence.Direction
+        );
+        Assert.Equal(
+            [("Chorus", "C# minor @ 45"), ("bars 82–96", "C# minor @ 112")],
+            evidence.Readings.Select(reading =>
+                (reading.Section!.Label, reading.Algorithms.Single(a => a.Key is not null).Key)
+            )
+        );
+        Assert.Equal("full_mix", evidence.InputKind);
+    }
+
+    [Fact]
+    public async Task What_the_user_hears_is_recorded_by_crateside_once_with_how_much_it_counted()
+    {
+        GiveEvidence();
+        Options.Ear = EarWeight.HumanSource;
+        Session(FromTheBars);
+
+        await JudgeFromBarsAsync(Direction(new TonalCentre("C#", DiatonicMode.Aeolian)), []);
+
+        var ear = Assert.Single(Ledger.EvidenceFor("yes - owner of a lonely heart")!.Sources);
+
+        Assert.Equal(SourceKind.Ear, ear.Kind);
+        Assert.Equal("C# minor", ear.StatesKey);
+        Assert.Equal("counted as a human source", ear.Note);
+        Assert.Contains("counts like an authoritative source", Sessions.Requests[0].StandardInput);
+        Assert.Contains("What they hear: C# minor", Sessions.Requests[0].StandardInput);
+    }
+
+    [Fact]
+    public async Task Without_evidence_in_the_working_set_the_whole_track_is_detected_first()
+    {
+        Session(FromTheBars);
+        List<JudgeStep> steps = [];
+
+        var result = await JudgeFromBarsAsync(Direction(), steps);
+
+        Assert.True(result.IsSuccess, result.Error);
+        Assert.Equal(1, Detector.WholeAsked);
+        Assert.IsType<JudgeStep.DetectingWhole>(steps[0]);
+        Assert.Equal(["C#m", "G#"], Ledger.EvidenceFor("yes - owner of a lonely heart")!.Chords);
+    }
+
+    [Fact]
+    public async Task Windows_the_judge_asks_for_in_a_run_from_bars_follow_the_users_with_its_reason()
+    {
+        GiveEvidence();
+        Session(AsksForWindows);
+        Session(FromTheBars);
+        List<JudgeStep> steps = [];
+
+        await JudgeFromBarsAsync(Direction(), steps);
+
+        Assert.Equal([(45.0, 67.0), (112.0, 133.0), (62.0, 94.5)], Detector.Asked);
+        Assert.True(File.Exists(Path.Combine(Set.Prepare(VideoId), "evidence.window3.json")));
+        Assert.Contains(steps, step => step is JudgeStep.JudgeAsked);
+
+        var windows = Ledger.EvidenceFor("yes - owner of a lonely heart")!.Windows;
+
+        Assert.Equal(
+            [WindowAsker.User, WindowAsker.User, WindowAsker.Judge],
+            windows.Select(window => window.AskedBy)
+        );
+        Assert.Equal("A three-way split; the intro is drums only.", windows[2].Why);
+    }
+
+    [Fact]
+    public async Task A_run_from_bars_that_writes_nothing_is_resumed_once_and_says_so()
+    {
+        GiveEvidence();
+        Session(writes: null);
+        Session(FromTheBars);
+        List<JudgeStep> steps = [];
+
+        var result = await JudgeFromBarsAsync(Direction(), steps);
+
+        Assert.True(result.IsSuccess, result.Error);
+        Assert.IsType<JudgeStep.Resuming>(steps[^1]);
+        Assert.Equal(2, Sessions.Requests.Count);
+    }
+
     private sealed class FakeSessions : IProcessRunner
     {
         public Queue<Func<ProcessRequest, ProcessOutcome>> Turns { get; } = [];
@@ -562,8 +720,31 @@ public sealed class VerdictRunnerTests : IDisposable
             Asked.Add((window.Start, window.End));
             File.WriteAllText(
                 evidencePath,
-                JsonSerializer.Serialize(new { note = "window-evidence" })
+                JsonSerializer.Serialize(
+                    new
+                    {
+                        note = "window-evidence",
+                        algorithms = new
+                        {
+                            ffmpeg_keydetect = new { key = $"C# minor @ {window.Start}" },
+                        },
+                    }
+                )
             );
+
+            return Task.FromResult(EvidenceResult.Succeeded(evidencePath));
+        }
+
+        public int WholeAsked { get; private set; }
+
+        public Task<EvidenceResult> DetectWholeAsync(
+            string audioPath,
+            string evidencePath,
+            CancellationToken ct = default
+        )
+        {
+            WholeAsked++;
+            File.WriteAllText(evidencePath, """{"chords":["C#m","G#"]}""");
 
             return Task.FromResult(EvidenceResult.Succeeded(evidencePath));
         }

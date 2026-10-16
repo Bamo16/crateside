@@ -59,9 +59,17 @@ public static class ServiceRegistration
         builder.Services.Configure<PlaylistOptions>(
             builder.Configuration.GetSection(PlaylistOptions.SectionName)
         );
-        builder.Services.Configure<JudgeOptions>(
-            builder.Configuration.GetSection(JudgeOptions.SectionName)
-        );
+        builder.Services.AddSingleton(_ => new JudgeSettingsStore());
+        builder
+            .Services.AddOptions<JudgeOptions>()
+            .Bind(builder.Configuration.GetSection(JudgeOptions.SectionName))
+            .PostConfigure<JudgeSettingsStore>(
+                (options, store) =>
+                {
+                    if (store.ReadEar() is { } ear)
+                        options.Ear = ear;
+                }
+            );
         builder.Services.AddSingleton(_ => new WarpSettingsStore());
         builder
             .Services.AddOptions<WarpOptions>()
@@ -293,6 +301,11 @@ public static class ServiceRegistration
             TimeProvider.System
         ));
         services.AddSingleton<VerdictDrainer>();
+        services.AddSingleton(sp => new BarJudging(
+            sp.GetRequiredService<VerdictDrainer>(),
+            sp.GetRequiredService<WorkingSet>(),
+            TimeProvider.System
+        ));
 
         services.AddSingleton(sp => new HandoffSelector(
             sp.GetRequiredService<JobStore>(),

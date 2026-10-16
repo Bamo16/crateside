@@ -1,3 +1,5 @@
+using Crateside.Core.Tempo;
+
 namespace Crateside.Core.Ledger;
 
 /// <summary>A run as it is written to the ledger, checked by <see cref="LedgerStore.Record"/> (docs/ledger.md).</summary>
@@ -74,7 +76,23 @@ public sealed record RunSource
 }
 
 /// <summary>A stretch of the track detected on its own, in seconds.</summary>
-public sealed record RunWindow(double Start, double End, string? Label, WindowAsker? AskedBy);
+public sealed record RunWindow(double Start, double End, string? Label, WindowAsker? AskedBy)
+{
+    /// <summary>The bars the user gave, as Live counts them; null when given in time or asked for by the judge.</summary>
+    public BarSpan? Bars { get; init; }
+
+    /// <summary>Why the judge asked for it, in its own words.</summary>
+    public string? Why { get; init; }
+
+    /// <summary>What the window's section is called: its label, else its span.</summary>
+    public string Name =>
+        Label is { Length: > 0 } label ? label
+        : Bars is { } bars ? $"bars {bars.First}–{bars.Last}"
+        : $"{TempoFormat.Clock(Start)}–{TempoFormat.Clock(End)}";
+}
+
+/// <summary>Bars <see cref="First"/> to <see cref="Last"/>, both included.</summary>
+public sealed record BarSpan(int First, int Last);
 
 /// <summary>Who asked for a window. Null on a window imported from keytag, which never said.</summary>
 public enum WindowAsker
