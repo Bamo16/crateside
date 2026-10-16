@@ -379,7 +379,13 @@
                     }
                 </span>
 
-                <span class="mono key @(row.Key is null ? "none" : null)">@(KeyText.Spell(row.Key) ?? "—")</span>
+                <span class="key-cell" title="@KeyTitle(row)">
+                    <span class="mono key @(row.Key is null ? "none" : null)">@(KeyText.Spell(row.Key) ?? "—")</span>
+                    @if (ModeBadge(row) is { } badge)
+                    {
+                        <span class="mono mode-badge">@badge</span>
+                    }
+                </span>
 
                 <span class="mono conf @KeyText.ConfidenceTone(row.Confidence)">@KeyText.Confidence(row.Confidence)</span>
 
@@ -491,6 +497,14 @@
     [SupplyParameterFromQuery(Name = "filter")]
     public string? OpenOn { get; set; }
     private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
+
+    private static string? ModeBadge(TrackRow row) =>
+        row is { Key: not null, Verdict: { Centre: { } centre, Mixed: var mixed } }
+            ? ModeText.Abbreviation(centre, mixed)
+            : null;
+
+    private static string? KeyTitle(TrackRow row) =>
+        row is { Key: not null, Verdict: { } verdict } ? ModeText.Hover(verdict) : null;
 
     private static readonly TimeSpan ToastLife = TimeSpan.FromSeconds(20);
 
