@@ -660,6 +660,20 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.Equal(2, Sessions.Requests.Count);
     }
 
+    [Fact]
+    public async Task A_run_from_bars_with_no_ranges_judges_the_whole_track_again()
+    {
+        GiveEvidence();
+        Session(Verdict);
+
+        var result = await JudgeFromBarsAsync(new JudgeDirection([], null, null, AudioPath), []);
+
+        Assert.True(result.IsSuccess, result.Error);
+        Assert.Empty(Detector.Asked);
+        Assert.Contains("judged again, over the whole track", Sessions.Requests[0].StandardInput);
+        Assert.Empty(Ledger.EvidenceFor("yes - owner of a lonely heart")!.Windows);
+    }
+
     private sealed class FakeSessions : IProcessRunner
     {
         public Queue<Func<ProcessRequest, ProcessOutcome>> Turns { get; } = [];
