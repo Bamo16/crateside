@@ -134,4 +134,10 @@ those are absent — that has repeatedly caught things fixtures would not have.
 - [docs/the-manual-workflow.md](docs/the-manual-workflow.md) — the human half, step
   by step, for what to do once a track is ready to warp.
 
+## Licence
+
+[MIT](LICENSE). The IBM Plex fonts in `src/Crateside/wwwroot/fonts/` are under the SIL Open Font
+License 1.1 (`OFL.txt` beside them). NuGet dependencies keep their own licences; the one that is
+not MIT or Apache is TagLibSharp (LGPL-2.1), used as an unmodified package.
+
 <!-- LOGO: small mark, 24px, could sit before the footer line or be omitted. -->
