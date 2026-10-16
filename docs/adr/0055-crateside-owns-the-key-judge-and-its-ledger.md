@@ -235,3 +235,21 @@ Built in [#113](https://github.com/Bamo16/crateside/issues/113); how each port w
 - **The prompt's backed-by table was restated** on the 221 human-sourced songs with keydetect on
   the 9.0 build: 95% / 82% / 10% at `r` ≥ 0.80, 90% / 65% / 32% below. Its sentence that a backer
   rarely holds the answer went: madmom is right on 33 of keydetect's 58 misses.
+
+## Addendum, 2026-10-16: windows weigh less than the whole track, and the tonic check looks at IV first
+
+From keydetect-harness's [report 05](https://github.com/Bamo16/keydetect-harness/blob/main/docs/05_keydetect_9.0_on_the_crateside_ledger_2026-10-16.md),
+measured on the bake-off's 221 human-sourced songs with ffmpeg 9.0 at its defaults:
+
+- **A window is weaker evidence than the whole track.** keydetect over a 40-second window (60–100 s,
+  not chosen from the music) was right on 143, against 163 over the whole track, and its chord rerank
+  inside a window was right 19 times in 50. The judge's prompt now says a window outweighs a backed
+  whole-track reading only where it was chosen from the music and its section really differs, and
+  then as a section; the work order for the user's windows no longer says to weigh them above the
+  whole file. Musically chosen windows were not measured.
+- **keydetect reads IV as the tonic more than V** (16 of its 58 misses, against 5), so the tonic check
+  asks whether keydetect's tonic is the key's IV first.
+- **Not done:** switching keydetect to `profile=edma` (+5 on these songs, but it turns IV misses into
+  V misses, and was measured on the same songs as the judge's figures), and carrying `key_alt` and
+  `key_reranked` into the evidence, left for an issue of its own.
+- A user run with no full mix left downloads the upload again (no separation) rather than refusing.

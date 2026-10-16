@@ -1,4 +1,5 @@
 using Crateside.Core.Ledger;
+using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Plans;
 using Crateside.Core.Tracks;
 
@@ -8,8 +9,12 @@ namespace Crateside.Core.Orchestration.Verdict;
 /// The judgments from these bars the user has started, each the track's own state until it is
 /// recorded, so it carries on when the page is left (#116).
 /// </summary>
-public sealed class BarJudging(VerdictDrainer drainer, WorkingSet workingSet, TimeProvider time)
-    : IDisposable
+public sealed class BarJudging(
+    VerdictDrainer drainer,
+    WorkingSet workingSet,
+    DownloadRunner downloads,
+    TimeProvider time
+) : IDisposable
 {
     private readonly Dictionary<string, BarRun> _runs = new(StringComparer.Ordinal);
     private readonly Lock _gate = new();
@@ -38,7 +43,7 @@ public sealed class BarJudging(VerdictDrainer drainer, WorkingSet workingSet, Ti
                 : StemDestination.UnresolvedKey,
         };
 
-    /// <summary>The full mix to detect over: the working set's, else the source kept in the library; null when neither is left.</summary>
+    /// <summary>The full mix to detect over: the working set's, else the source kept in the library; null when it has to be downloaded again.</summary>
     public string? AudioFor(TrackRow row) =>
         workingSet.TryGetSource(row.VideoId, out var held) ? held
         : row.Samples.FirstOrDefault(sample =>
@@ -78,12 +83,7 @@ public sealed class BarJudging(VerdictDrainer drainer, WorkingSet workingSet, Ti
 
         try
         {
-            result = await drainer.JudgeFromBarsAsync(
-                order,
-                direction,
-                step => Update(order.VideoId, run => run.After(step, time.GetUtcNow())),
-                _stopping.Token
-            );
+            result = await JudgeAsync(order, direction);
         }
         catch (OperationCanceledException)
         {
@@ -99,6 +99,35 @@ public sealed class BarJudging(VerdictDrainer drainer, WorkingSet workingSet, Ti
             workingSet.Discard(order.VideoId);
 
         Update(order.VideoId, run => run with { Outcome = result, FinishedAt = time.GetUtcNow() });
+    }
+
+    /// <summary>Downloads the full mix again where crateside no longer holds it, then judges.</summary>
+    private async Task<VerdictResult> JudgeAsync(WorkOrder order, JudgeDirection direction)
+    {
+        if (direction.Audio is null)
+        {
+            Update(order.VideoId, run => run.After(new JudgeStep.Downloading(), time.GetUtcNow()));
+
+            var fetched = await downloads.RunAsync(
+                order.SourceUrl,
+                workingSet.Prepare(order.VideoId),
+                ct: _stopping.Token
+            );
+
+            if (fetched is not { IsSuccess: true, Path: { } path })
+                return VerdictResult.Failed(
+                    $"the full mix could not be downloaded again: {fetched.Error}"
+                );
+
+            direction = direction with { Audio = path };
+        }
+
+        return await drainer.JudgeFromBarsAsync(
+            order,
+            direction,
+            step => Update(order.VideoId, run => run.After(step, time.GetUtcNow())),
+            _stopping.Token
+        );
     }
 
     private void Update(string videoId, Func<BarRun, BarRun> change)

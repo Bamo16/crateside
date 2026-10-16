@@ -47,6 +47,12 @@ public sealed partial class VerdictRunner(
     {
         var step = onStep ?? (_ => { });
 
+        if (direction is { Audio: null })
+            throw new ArgumentException(
+                "a run from bars needs its audio found or fetched first",
+                nameof(direction)
+            );
+
         if (!workingSet.HasEvidence(order.VideoId))
         {
             if (direction is null)
@@ -206,9 +212,10 @@ public sealed partial class VerdictRunner(
     {
         yield return string.Empty;
         yield return "The maintainer asked for this judgment and named the stretches where they "
-            + "hear the key clearly. crateside detected over each; weigh them above the whole "
-            + "file. Write one section per window, labelled with the window's name, with the key you "
-            + "hear in it.";
+            + "hear the key clearly. crateside detected over each. A window is weaker evidence than "
+            + "the whole track (see Windows in your instructions), so weigh each against the whole "
+            + "file, not above it. Write one section per window, labelled with the window's name, "
+            + "with the key you hear in it.";
 
         if (direction.Note is { Length: > 0 } note)
         {
