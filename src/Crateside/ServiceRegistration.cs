@@ -265,11 +265,23 @@ public static class ServiceRegistration
                     ?.DisplayTitle
         ));
         services.AddSingleton<IProcessRunner, ProcessRunner>();
+        services.AddHttpClient(
+            SourcePages.ClientName,
+            client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(15);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd(SourcePages.UserAgent);
+            }
+        );
+        services.AddSingleton<ISourcePages>(sp => new SourcePages(() =>
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(SourcePages.ClientName)
+        ));
         services.AddSingleton(sp => new VerdictRunner(
             sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<WorkingSet>(),
             sp.GetRequiredService<IProcessRunner>(),
             sp.GetRequiredService<EvidenceRunner>(),
+            sp.GetRequiredService<ISourcePages>(),
             sp.GetRequiredService<IOptions<JudgeOptions>>().Value,
             TimeProvider.System
         ));

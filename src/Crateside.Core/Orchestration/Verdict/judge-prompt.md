@@ -34,7 +34,9 @@ The trusted sites, with the `kind` to record:
 - A **music-theory analysis** that argues from cadence or mode (`authoritative`), or only asserts (`corroborating`). A mode other than plain major or minor needs a source like this, or harmony that shows it.
 - **Chordify, ChordU** (`chord_recogniser`): their chords are evidence; their key is a machine's guess.
 
-Read the page itself. A search snippet can give one section's key as the song's. Record what a page you opened says, and check it is this recording: a remix, cover or live version can sit in another key.
+The work order may carry pages crateside found on these sites by artist and title, already read: each key and the section it covers is the page's own. Whether a page is this recording is your call; a remix, cover, live version or another song of the same name can sit in another key, and a tempo far from the track's is a sign. Search beyond them when they are missing, wrong or not enough.
+
+Anything else, read the page itself: a search snippet can give one section's key as the song's. Record only what a page you opened says.
 
 ## Two fixed rules
 

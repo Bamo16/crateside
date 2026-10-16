@@ -53,6 +53,7 @@ public sealed class VerdictRunnerTests : IDisposable
     private string VerdictPath => Path.Combine(Set.Prepare(VideoId), VerdictRunner.VerdictFileName);
     private FakeSessions Sessions { get; } = new();
     private FakeDetector Detector { get; } = new();
+    private FakePages Pages { get; } = new();
 
     private JudgeOptions Options { get; } =
         new() { Environment = new() { ["ANTHROPIC_BASE_URL"] = "https://api.anthropic.com" } };
@@ -69,7 +70,7 @@ public sealed class VerdictRunnerTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private VerdictRunner Runner => new(Ledger, Set, Sessions, Detector, Options, _time);
+    private VerdictRunner Runner => new(Ledger, Set, Sessions, Detector, Pages, Options, _time);
 
     private static WorkOrder Order(bool instrumentalRelease = false, string? statedSource = null) =>
         WorkOrder.Compose(
@@ -369,7 +370,7 @@ public sealed class VerdictRunnerTests : IDisposable
     {
         GiveEvidence();
 
-        var prompt = Runner.Prompt(Order(), VerdictPath);
+        var prompt = Runner.Prompt(Order(), VerdictPath, []);
 
         Assert.Contains(Set.EvidencePathFor(VideoId), prompt);
         Assert.Contains(VerdictPath, prompt);
@@ -382,7 +383,7 @@ public sealed class VerdictRunnerTests : IDisposable
     {
         GiveEvidence($$"""{"key_events":"{{new string('x', 64 * 1024)}}"}""");
 
-        var prompt = Runner.Prompt(Order(), VerdictPath);
+        var prompt = Runner.Prompt(Order(), VerdictPath, []);
 
         Assert.DoesNotContain("```json", prompt);
         Assert.Contains(Set.EvidencePathFor(VideoId), prompt);
@@ -394,7 +395,7 @@ public sealed class VerdictRunnerTests : IDisposable
         // Judging has nothing to do with which files get cut (ADR 0018).
         GiveEvidence();
 
-        var prompt = Runner.Prompt(Order(instrumentalRelease: true), VerdictPath);
+        var prompt = Runner.Prompt(Order(instrumentalRelease: true), VerdictPath, []);
 
         Assert.DoesNotContain("instrumental", prompt, StringComparison.OrdinalIgnoreCase);
     }
@@ -404,11 +405,11 @@ public sealed class VerdictRunnerTests : IDisposable
     {
         GiveEvidence();
 
-        Assert.Contains("never raises confidence", Runner.Prompt(Order(), VerdictPath));
+        Assert.Contains("never raises confidence", Runner.Prompt(Order(), VerdictPath, []));
 
         Options.Ear = EarWeight.HumanSource;
 
-        Assert.Contains("caps the verdict at MEDIUM", Runner.Prompt(Order(), VerdictPath));
+        Assert.Contains("caps the verdict at MEDIUM", Runner.Prompt(Order(), VerdictPath, []));
     }
 
     [Fact]
@@ -416,6 +417,84 @@ public sealed class VerdictRunnerTests : IDisposable
     {
         Assert.Contains("caps the verdict at MEDIUM", VerdictRunner.Instructions);
         Assert.Contains("Tunebat", VerdictRunner.Instructions);
+    }
+
+    [Fact]
+    public async Task Pages_are_looked_up_by_the_rows_artist_and_title_and_reach_the_work_order()
+    {
+        GiveEvidence();
+        Session(Verdict);
+
+        await RunAsync();
+
+        Assert.Equal(("Yes", "Owner of a Lonely Heart"), Assert.Single(Pages.Asked));
+        Assert.Contains(
+            "- Hooktheory, https://www.hooktheory.com/theorytab/view/yes/owner-of-a-lonely-heart: "
+                + "\"Owner of a Lonely Heart by Yes\". Chorus: A minor, 124 BPM",
+            Sessions.Requests[0].StandardInput
+        );
+        Assert.Contains("- Musicnotes: nothing found", Sessions.Requests[0].StandardInput);
+        Assert.Contains(
+            "- Ultimate Guitar: not reached (timed out)",
+            Sessions.Requests[0].StandardInput
+        );
+    }
+
+    [Fact]
+    public async Task Pages_are_fetched_once_per_track_and_then_read_from_beside_the_evidence()
+    {
+        GiveEvidence();
+        Session(writes: null);
+        Session(writes: null);
+        await RunAsync();
+        Session(Verdict);
+
+        await RunAsync();
+
+        Assert.Single(Pages.Asked);
+        Assert.Contains("Chorus: A minor", Sessions.Requests[2].StandardInput);
+    }
+
+    [Fact]
+    public async Task A_row_with_no_artist_in_its_title_is_not_looked_up()
+    {
+        GiveEvidence();
+        Session(Verdict);
+
+        await RunAsync(
+            WorkOrder.Compose(
+                new WorkItem
+                {
+                    PlaylistItemId = "PLI1",
+                    VideoId = VideoId,
+                    Title = "Owner of a Lonely Heart",
+                },
+                TestLedger.From("does-not-exist")
+            )
+        );
+
+        Assert.Empty(Pages.Asked);
+    }
+
+    [Fact]
+    public async Task A_bracketed_tail_is_left_out_of_the_lookup()
+    {
+        GiveEvidence();
+        Session(Verdict);
+
+        await RunAsync(
+            WorkOrder.Compose(
+                new WorkItem
+                {
+                    PlaylistItemId = "PLI1",
+                    VideoId = VideoId,
+                    Title = "Yes - Owner of a Lonely Heart (2003 Remaster) [Official Video]",
+                },
+                TestLedger.From("does-not-exist")
+            )
+        );
+
+        Assert.Equal(("Yes", "Owner of a Lonely Heart"), Assert.Single(Pages.Asked));
     }
 
     private static string After(ProcessRequest request, string flag) =>
@@ -433,6 +512,39 @@ public sealed class VerdictRunnerTests : IDisposable
             Requests.Add(request);
 
             return Task.FromResult(Turns.Dequeue()(request));
+        }
+    }
+
+    private sealed class FakePages : ISourcePages
+    {
+        public List<(string, string)> Asked { get; } = [];
+
+        public Task<IReadOnlyList<SiteLookup>> FetchAsync(
+            string artist,
+            string title,
+            CancellationToken ct = default
+        )
+        {
+            Asked.Add((artist, title));
+
+            return Task.FromResult<IReadOnlyList<SiteLookup>>([
+                new(
+                    "Hooktheory",
+                    LookupStatus.Found,
+                    [
+                        new FetchedPage
+                        {
+                            Site = "Hooktheory",
+                            Url =
+                                "https://www.hooktheory.com/theorytab/view/yes/owner-of-a-lonely-heart",
+                            Heading = "Owner of a Lonely Heart by Yes",
+                            Keys = [new PageKey("A minor", "Chorus", 124)],
+                        },
+                    ]
+                ),
+                new("Musicnotes", LookupStatus.NotFound, []),
+                new("Ultimate Guitar", LookupStatus.Unreachable, []) { Error = "timed out" },
+            ]);
         }
     }
 
