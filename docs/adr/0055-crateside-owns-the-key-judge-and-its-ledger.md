@@ -190,3 +190,10 @@ each difference is explained in the commit.
 - Essentia is AGPL-3.0. The `edma` port is written from the published algorithm (Gómez's HPCP;
   Faraldo et al.'s profiles, taken as data) and the parity check above, not by transcribing Essentia's
   source. If parity cannot be reached without copying code, the maintainer decides before it merges.
+
+## Addendum, 2026-10-16: the same-notes key is not always one Camelot step away
+
+The first addendum's hint ("the same-notes neighbour one Camelot step away") holds only for Aeolian,
+Lydian and Mixolydian. Worked for A: Dorian shares G major's notes (tag 8A, notes 9B), Phrygian F
+major's (8A, 7B) and Locrian B♭ major's (8A, 6B), none of them adjacent on the wheel. The hint names
+the same-notes key and its Camelot code; it does not claim a distance. Brief 17 carries the table.
