@@ -1,39 +1,10 @@
 namespace Crateside.Core.Pairing;
 
-/// <summary>
-/// What a partner <em>is</em> to the source key, in musical terms — a description, not a cost.
-/// </summary>
+/// <summary>What a partner is to the source, where it is one of the two worth naming (ADR 0056).</summary>
 public enum Relationship
 {
-    /// <summary>The same key.</summary>
-    PerfectMatch,
+    SameKey,
 
-    /// <summary>The relative major or minor — same circle position, other mode.</summary>
-    Relative,
-
-    /// <summary>One step clockwise on the circle, same mode.</summary>
-    EnergyRise,
-
-    /// <summary>One step counter-clockwise on the circle, same mode.</summary>
-    Relaxed,
-
-    /// <summary>One step around the circle <em>and</em> a change of mode.</summary>
-    MoodShift,
-
-    /// <summary>Everything else not covered by the other values.</summary>
-    Modulation,
-}
-
-public static class RelationshipExtensions
-{
-    public static string ToDisplayString(this Relationship relationship) =>
-        relationship switch
-        {
-            Relationship.PerfectMatch => "Perfect Match",
-            Relationship.Relative => "Relative (Epic)",
-            Relationship.EnergyRise => "Energy Rise",
-            Relationship.Relaxed => "Relaxed",
-            Relationship.MoodShift => "Mood Shift",
-            _ => "Modulation",
-        };
+    /// <summary>A key holding the source's seven notes on another tonic.</summary>
+    SameNotes,
 }

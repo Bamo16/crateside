@@ -1,108 +1,102 @@
+using System.Diagnostics.CodeAnalysis;
+using Crateside.Core.Ledger;
+
 namespace Crateside.Core.Pairing;
 
-/// <summary>A key that pairs acceptably with a source key, with the cost of getting there.</summary>
+/// <summary>A key that pairs with a source centre, at the shift that gets it there.</summary>
 public sealed record MashupPartner
 {
-    public required MusicKey Source { get; init; }
-    public required MusicKey Key { get; init; }
+    public required TonalCentre Source { get; init; }
 
-    /// <summary>What this partner is to the source, musically.</summary>
-    public required Relationship Relationship { get; init; }
+    /// <summary>One of the 24 keys, or a modal source's own centre.</summary>
+    public required TonalCentre Key { get; init; }
 
-    /// <summary>
-    /// The ranking value: <c>circleDistance * 10 + |shift|</c>, with an exact match scoring 0
-    /// and the relative scoring 0.1. Subordinate to <see cref="AbsoluteShift"/> in the sort.
-    /// </summary>
-    public required double Score { get; init; }
+    /// <summary>Named only at shift 0; null for every other partner.</summary>
+    public Relationship? Relationship { get; init; }
 
-    /// <summary>
-    /// Semitones the partner must move to sit with the source, signed, normalized to ±6.
-    /// The first sort key.
-    /// </summary>
+    /// <summary>Whether this is a modal source's tag, its collapse: <c>A minor</c> for A Dorian.</summary>
+    public bool IsTag { get; init; }
+
+    /// <summary>Semitones the partner must move to sit with the source, signed, within ±6.</summary>
     public required int Shift { get; init; }
 
-    /// <summary>
-    /// The other transpositions reaching this same partner, a fifth away either way —
-    /// alternatives to <see cref="Shift"/>, not additions to it.
-    /// </summary>
+    /// <summary>The other transpositions reaching this partner, a fifth away either way.</summary>
     public required IReadOnlyList<int> AltShifts { get; init; }
 
-    public string CamelotCode => Key.CamelotCode;
+    /// <summary>How many of the source's seven notes the partner holds once moved by its shift.</summary>
+    public required int NotesShared { get; init; }
+
+    /// <summary>The key Ableton's browser filters by: the partner's collapse.</summary>
+    public MusicKey Tag => MusicKey.Of(Key);
+
+    public string CamelotCode => Tag.CamelotCode;
 
     public int AbsoluteShift => Math.Abs(Shift);
 
-    /// <summary>Formats a shift for display, with a leading <c>+</c> on positives.</summary>
-    public static string FormatShift(int shift) => shift > 0 ? $"+{shift}" : shift.ToString();
-
     public string AltShiftsDisplay => string.Join(", ", AltShifts.Select(FormatShift));
 
-    public static MashupPartner Create(MusicKey source, MusicKey candidate)
+    /// <summary>Formats a shift for display, with a leading <c>+</c> and a real minus.</summary>
+    public static string FormatShift(int shift) =>
+        shift switch
+        {
+            > 0 => $"+{shift}",
+            < 0 => $"−{-shift}",
+            _ => "0",
+        };
+
+    /// <summary>The partner at its shift closest to 0 within the range; false when none of its shifts is in it.</summary>
+    public static bool TryCreate(
+        TonalCentre source,
+        TonalCentre candidate,
+        int lowest,
+        int highest,
+        [NotNullWhen(true)] out MashupPartner? partner
+    )
     {
-        var circleDistance =
-            Math.Abs(candidate.CirclePos - source.CirclePos) is var distance && distance > 6
-                ? 12 - distance
-                : distance;
+        var sameKey = candidate == source;
+        var sameNotes = !sameKey && Scale.Notes(candidate) == Scale.Notes(source);
 
-        // The relative key is reachable without moving: same notes, other tonic.
-        var semitoneDifference =
-            circleDistance == 0 && candidate.Mode != source.Mode
-                ? 0
-                : Normalize(candidate.Chromatic - source.Chromatic);
+        // A key holding the source's notes, or its tag's, needs no shift; any other moves its tonic onto the source's.
+        var unmoved = sameKey || sameNotes || Scale.Notes(candidate) == Scale.Notes(source.Plain);
+        var difference = unmoved ? 0 : Normalize(candidate.Chromatic - source.Chromatic);
 
-        int[] potentialShifts =
+        int[] shifts =
         [
             .. new[]
             {
-                Normalize(-semitoneDifference),
-                Normalize(-semitoneDifference + 7),
-                Normalize(-semitoneDifference - 7),
+                Normalize(-difference),
+                Normalize(-difference + 7),
+                Normalize(-difference - 7),
             }.Distinct(),
         ];
 
-        var primary = potentialShifts.OrderBy(Math.Abs).First();
-
-        var score = ((circleDistance * 10) + Math.Abs(primary)) switch
+        if (
+            shifts.Where(shift => shift >= lowest && shift <= highest).OrderBy(Math.Abs).ToList()
+            is not [var listed, ..]
+        )
         {
-            _ when candidate.Equals(source) => 0d,
-            0 => 0.1,
-            var s => s,
-        };
+            partner = null;
 
-        return new MashupPartner
+            return false;
+        }
+
+        partner = new MashupPartner
         {
             Source = source,
             Key = candidate,
-            Relationship = GetRelationship(source, candidate, circleDistance),
-            Score = score,
-            Shift = primary,
-            AltShifts = [.. potentialShifts.Where(s => s != primary).OrderBy(Math.Abs)],
+            Relationship = (listed, sameKey, sameNotes) switch
+            {
+                (0, true, _) => Pairing.Relationship.SameKey,
+                (0, _, true) => Pairing.Relationship.SameNotes,
+                _ => null,
+            },
+            IsTag = source.IsModal && candidate == source.Plain,
+            Shift = listed,
+            AltShifts = [.. shifts.Where(shift => shift != listed).OrderBy(Math.Abs)],
+            NotesShared = int.PopCount(Scale.Notes(source) & Scale.Notes(candidate, listed)),
         };
-    }
 
-    private static Relationship GetRelationship(
-        MusicKey source,
-        MusicKey candidate,
-        int circleDistance
-    )
-    {
-        if (candidate.Equals(source))
-            return Relationship.PerfectMatch;
-
-        // Same position on the wheel, different mode — the relative key.
-        if (circleDistance == 0 && source.Mode != candidate.Mode)
-            return Relationship.Relative;
-
-        if (candidate.Mode == source.Mode && circleDistance == 1)
-        {
-            // Clockwise brightens, counter-clockwise relaxes.
-            var direction = candidate.CirclePos - source.CirclePos;
-            return direction is 1 or -11 ? Relationship.EnergyRise : Relationship.Relaxed;
-        }
-
-        if (circleDistance == 1 && source.Mode != candidate.Mode)
-            return Relationship.MoodShift;
-
-        return Relationship.Modulation;
+        return true;
     }
 
     /// <summary>Wraps a semitone difference into ±6, the shorter way round.</summary>

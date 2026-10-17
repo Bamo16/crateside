@@ -1,3 +1,4 @@
+@using Crateside.Core.Ledger
 @using Crateside.Core.Library
 @using Crateside.Core.Pairing
 
@@ -12,10 +13,14 @@
                 <span class="change">Change ▾</span>
             </div>
             <span class="facts">
-                <span class="mono key">@(track.Key is { } key ? key.Name : "no key")</span>
-                @if (track.Key is { } camelot)
+                @if (track.Centre is { } centre)
                 {
-                    <span class="mono camelot">@camelot.CamelotCode</span>
+                    <span class="mono key">@(ModeText.Arrow(centre, track.Run?.Mixed is true) ?? ModeText.Named(centre))</span>
+                    <span class="mono camelot">@MusicKey.Of(centre).CamelotCode</span>
+                }
+                else
+                {
+                    <span class="mono key">no key</span>
                 }
             </span>
             <span class="facts">
@@ -68,16 +73,31 @@
 
     <div class="by-hand">
         <span class="caps">@(Track is null ? "Or by hand" : "From the track")</span>
-        <label>
-            <span>Key</span>
-            <select value="@KeyName" @onchange="e => OnKey.InvokeAsync(e.Value as string ?? string.Empty)">
-                <option value="">No key</option>
-                @foreach (var key in MusicKey.AllKeys.OrderBy(k => k.Mode).ThenBy(k => k.CirclePos))
-                {
-                    <option value="@key.LedgerName">@key.Name — @key.CamelotCode</option>
-                }
-            </select>
-        </label>
+        <span class="key-pick">
+            <label class="tonic">
+                <span>Tonic</span>
+                <select class="mono" value="@(Centre?.Tonic ?? string.Empty)" @onchange="PickTonic">
+                    <option value="">—</option>
+                    @foreach (var tonic in TonalCentre.Tonics)
+                    {
+                        <option value="@tonic">@tonic.Replace('#', '♯')</option>
+                    }
+                </select>
+            </label>
+            <label class="mode">
+                <span>Mode</span>
+                <select value="@Mode" @onchange="PickMode">
+                    <option value="@DiatonicMode.Ionian">major</option>
+                    <option value="@DiatonicMode.Aeolian">minor</option>
+                    <optgroup label="Modes">
+                        @foreach (var mode in Modes)
+                        {
+                            <option value="@mode">@mode</option>
+                        }
+                    </optgroup>
+                </select>
+            </label>
+        </span>
         <label>
             <span>BPM</span>
             <span class="bpm-field">
@@ -92,7 +112,7 @@
         <span class="hint">
             @(Track is null ? "Or pick a warped track above."
               : Shown is { IsApproximate: true } ? "The tempo drifts, so every figure here is approximate. Typing in the field drops the track."
-              : "Editing either lets go of the track and keeps what you typed.")
+              : "The verdict's centre, mode included. Editing any of these drops the track and keeps what you picked.")
         </span>
     </div>
 </div>
@@ -100,12 +120,22 @@
 @code {
     private const int MatchesShown = 8;
 
+    private static readonly DiatonicMode[] Modes =
+    [
+        DiatonicMode.Dorian,
+        DiatonicMode.Phrygian,
+        DiatonicMode.Lydian,
+        DiatonicMode.Mixolydian,
+        DiatonicMode.Locrian,
+    ];
+
     private string _search = string.Empty;
     private IReadOnlyList<LibrarySong> _matches = [];
     private int _highlight;
     private bool _searching;
     private bool _focus;
     private ElementReference _box;
+    private DiatonicMode _mode = DiatonicMode.Ionian;
 
     [Parameter]
     public LibrarySong? Track { get; set; }
@@ -120,8 +150,9 @@
     [Parameter]
     public string? DetailsHref { get; set; }
 
+    /// <summary>The centre the picker shows: the track's, as it pairs, or the one picked.</summary>
     [Parameter]
-    public string KeyName { get; set; } = string.Empty;
+    public TonalCentre? Centre { get; set; }
 
     [Parameter]
     public string BpmText { get; set; } = string.Empty;
@@ -130,10 +161,12 @@
     public EventCallback<LibrarySong> OnPick { get; set; }
 
     [Parameter]
-    public EventCallback<string> OnKey { get; set; }
+    public EventCallback<TonalCentre?> OnCentre { get; set; }
 
     [Parameter]
     public EventCallback<string> OnBpm { get; set; }
+
+    private DiatonicMode Mode => Centre?.Mode ?? _mode;
 
     private FormattedTempo? Shown => Track?.Bpm is { } tempo ? TempoFormat.Format(tempo) : null;
 
@@ -146,6 +179,16 @@
 
         _focus = false;
         await _box.FocusAsync();
+    }
+
+    private Task PickTonic(ChangeEventArgs e) =>
+        OnCentre.InvokeAsync(e.Value is string { Length: > 0 } tonic ? new TonalCentre(tonic, Mode) : null);
+
+    private Task PickMode(ChangeEventArgs e)
+    {
+        _mode = Enum.Parse<DiatonicMode>((string)e.Value!);
+
+        return Centre is null ? Task.CompletedTask : OnCentre.InvokeAsync(Centre with { Mode = _mode });
     }
 
     private void StartSearch()

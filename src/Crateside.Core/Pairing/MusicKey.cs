@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
+using Crateside.Core.Ledger;
 
 namespace Crateside.Core.Pairing;
 
@@ -169,6 +170,20 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
 
         return null;
     }
+
+    /// <summary>A centre's tag as a key: its collapse.</summary>
+    public static MusicKey Of(TonalCentre centre) =>
+        AllKeys.Single(key =>
+            key.Chromatic == centre.Chromatic
+            && key.Mode == (TonalCentre.IsMajor(centre.Mode) ? Mode.Major : Mode.Minor)
+        );
+
+    /// <summary>The key as a centre on Ionian or Aeolian.</summary>
+    public static TonalCentre CentreOf(MusicKey key) =>
+        new(
+            TonalCentre.Tonics[key.Chromatic],
+            key.Mode is Mode.Major ? DiatonicMode.Ionian : DiatonicMode.Aeolian
+        );
 
     /// <summary>The key <paramref name="semitones"/> away in the same mode, up or down.</summary>
     public MusicKey Transposed(int semitones) =>

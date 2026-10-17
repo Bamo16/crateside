@@ -29,6 +29,9 @@ public sealed record LibrarySong
 
     public LedgerRun? Run { get; init; }
 
+    /// <summary>What Partners works from: the verdict's primary centre, else the samples' Key tag (ADR 0056).</summary>
+    public TonalCentre? Centre => Run?.Centre ?? (Key is { } key ? MusicKey.CentreOf(key) : null);
+
     /// <summary>The headline tempo: the warp where there is one (ADR 0049).</summary>
     public TrackTempo? Bpm => TrackTempo.Of(Tempo, Beats, Run?.Bpm);
 }
