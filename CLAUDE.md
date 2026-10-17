@@ -141,8 +141,8 @@ Single-context — `CONTEXT.md` and `docs/adr/` at the root, See `docs/agents/do
 
 ### Design
 
-Page design goes to a Claude Design session, which reads the repo but cannot write to it or see
-issues. Briefs out and results back: see `docs/agents/design.md`.
+Page design goes to a Claude Design session, which reads the repo and issues and commits its own
+result (ADR 0057). Briefs out and results back: see `docs/agents/design.md`.
 
 ## This repository is going public
 

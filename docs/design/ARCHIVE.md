@@ -38,8 +38,8 @@ The written spec for each canvas turn, in the order it was sent. The later ones 
 | `04-brand.md` | Brand | |
 | `05-song-page-issue-21.md` | Track Page | #21 |
 | `06-actions-layout.md` | Actions Layout | #62 |
-| `06b-workflow-fixes.md` | none: a review of this workflow | |
-| `06c-link-delivery.md` | none: results delivered by link | |
+| `06b-workflow-fixes.md` | none: a review of this workflow; the round trip is now ADR 0057's | |
+| `06c-link-delivery.md` | none: results delivered by link, now only a fallback (ADR 0057) | |
 | `07-row-proportions.md` | Row Proportions, Row Stack | #65 |
 | `08-library-as-reports.md` | Counts Page | #68, #60, #56 |
 | `09-mashup-tools.md` | Tools Page | #57, #58 |

@@ -32,4 +32,4 @@ Edit the right-hand column to match whatever vocabulary you actually use.
 
 | Label | Meaning |
 | ----- | ------- |
-| `needs-design` | Waiting on a Claude Design session. Like `ready-for-human`, but the human's part is taking the brief to that session and bringing its result back to the issue as a comment with the files attached. Build from that comment, not before it. |
+| `needs-design` | Waiting on a Claude Design session. Like `ready-for-human`, but the human's part is taking the brief to that session. The session commits its result and comments on the issue (ADR 0057); build from that commit, not before it. |
