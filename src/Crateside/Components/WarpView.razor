@@ -34,7 +34,7 @@
             <span class="group-line @(group.OnTheirOwn.Any() ? "loud" : null)">@GroupLine(group, wording)</span>
             @if (Row.HasUpload && _form is null && BarRun is not { IsRunning: true })
             {
-                <button class="outline small" @onclick="() => Open(group)">Judge from these bars</button>
+                <button class="outline small" @onclick="() => Open(group)">Judge again</button>
             }
             @if (group.Lender is not null)
             {

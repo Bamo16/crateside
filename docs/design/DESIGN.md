@@ -128,12 +128,12 @@ open, no fold, drawn when the track has samples.
   side stack's status + action shape under a stronger rule. A control that does not apply keeps its
   label and says why at `--text-40`. Confirms are `.danger`; the asking label turns amber.
 - Wording lives in `WarpWording` (Core); times in the audio read `0:14.20`, dates `29 Sep`.
-- **Judge from these bars** (handoff 18, #116): a small `.outline` opener after the head line's
+- **Judge from these bars** (handoff 18, #116): a small `.outline` opener reading *Judge again* after the head line's
   gist, on a track with an upload, hidden while the form is open or a run goes. The form sits
   between the head line and the ruler in a `--surface` box (1px `--text` 12%, radius 8): the label
   amber, the unit note `--text-50`; one row per range (number · range 120px mono · label 160px ·
   note · ×), a dashed *+ another range*, then *What you hear* (key, mode select, the Ear setting's
-  hint) and the cost line beside `.primary` *Judge from these bars* and Cancel. No confirm. While
+  hint) and the cost line beside `.primary` button (*Judge from these bars*, or *Judge the whole track again* while no range is filled in) and Cancel. No confirm. While
   it is open the ruler grows to 44px, takes a crosshair and snaps a drag to whole bars (whole
   seconds without a warp, whose ruler counts time). The band itself follows the drag in the
   browser, snapped as it goes, and the range is sent once, on release; each range has a handle on
