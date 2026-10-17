@@ -70,7 +70,8 @@ public sealed class VerdictDrainer(
         CancellationToken ct = default
     )
     {
-        await _oneAtATime.WaitAsync(ct);
+        using (control.WaitingFormRun())
+            await _oneAtATime.WaitAsync(ct);
 
         try
         {
