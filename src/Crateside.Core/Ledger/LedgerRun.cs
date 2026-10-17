@@ -51,10 +51,7 @@ public sealed record LedgerRun
 
     public DiatonicMode? Mode => Centre?.Mode;
 
-    /// <summary>
-    /// True when the tagged key is a <em>collapse</em> of something else — the track is modal,
-    /// and <see cref="Key"/> is its parallel major or minor, one note away from what it plays.
-    /// </summary>
+    /// <summary>True when the tagged key loses the mode: the track is modal, and <see cref="Key"/> keeps only its tonic.</summary>
     public bool IsCollapsed => Centre is { IsModal: true };
 
     /// <summary>The key as the song actually plays it (<c>D Dorian</c>), when it is modal.</summary>

@@ -175,6 +175,13 @@ with AM/PM here. Never a hard-coded `HH:mm`.
 The sample list and picker are `StemList` and `StemConfirm`, both driven by one `StemEditor`, and
 are mounted by the Tracks row and by Track details.
 
+**A range of shifts is a row of chips**, −6 … +6 (handoff 19, Partners): 38×30, radius 6, mono 12.5,
+off on `--raised` with a 1px `--line` (the `0` chip at `--text-75` as the anchor), in the span
+`--text` at 9% with a 50% border and 600, the two ends at 18% so the span reads as a bar. With one
+shift chosen, clicking another stretches the span to it; with a span, a click collapses it to that
+chip. After the chips, the span in mono (`0 only`, `−1 to +3`) and the count; under them a hint
+saying how clicking works. Each chip carries `aria-pressed`.
+
 ## Side stack
 
 The Tracks row's right column (340px) and Track details' rail (19rem) are one component,
@@ -299,26 +306,44 @@ Tools · Settings**), at `/` and `/dashboard`; Tracks moved to `/tracks`. No wid
 Handoff 12, superseding handoff 09's sub-tabs. **One page at `/tools`, no sub-tabs**, in columns
 left to right as the user works: *Working on* (340px), **Re-Pitch** (540px, foldable), **Partners**
 (up to 860px; never folds), the **Camelot wheel** (340px). The state lives in the query (`?track=`
-or `?key=&bpm=`, plus `&shift=` and `&rel=1`), so a reload or a pasted link restores it, and the tab
-reopens where it was left until a restart.
+and `&section=`, or `?key=a-dorian&bpm=`, plus `&shift=` and `&lo=&hi=`), so a reload or a pasted
+link restores it, and the tab reopens where it was left until a restart.
 
-- **The selected track** is a clickable card (song, key · Camelot, the formatted BPM with its weight
-  and its short note, genre ·
+- **The selected track** is a clickable card (song, the verdict's key with the arrow for a mode,
+  `A Dorian → A min · 8A`, the formatted BPM with its weight and its short note, genre ·
   familiarity · Track details). Clicking it turns it into the search, open and focused; Esc or clicking
-  away puts it back. Under it, key and BPM by hand; **editing either drops the track** and keeps what was
-  typed.
+  away puts it back. Under it, the key and BPM by hand; **editing any of them drops the track** and keeps
+  what was picked. The key is **two selects**: *Tonic* (72px, mono, sharps as the rest of the app
+  spells them) and *Mode* (`major`, `minor`, then an optgroup *Modes*: Dorian, Phrygian, Lydian,
+  Mixolydian, Locrian). The mode starts at the track's centre, or `major`.
 - **Re-Pitch rows are selectable**: the chosen shift is 600 weight on `rgba(255,255,255,.08)` with
   a 1px inset `--text-35` ring and a *→ Partners* tag. **This is the house style for a chosen row
   in a tool table.** Clicking it again returns to 0. The BPM cell copies instead of selecting.
 - **Folded, Re-Pitch** is a dashed summary line above Partners, and its shift stays in force. The
   fold is remembered per browser, in a cookie so the first paint is already folded; the default
   is open.
-- **Partners' basis box** says which key it works from and why, with two pills (the key, its
-  relative) and *Back to {key}* while a shift is in force. The table splits into *Mixes as is*
-  and *A shift away*, each sorted by score; a relationship carries a second line saying what it
-  means.
-- **The wheel** is monochrome: working-from filled `--text`, mixes-as-is at 22%, a shift away
-  dashed, and the track's own key ringed when a shift or the relative is in force. Read-only.
+- **Partners' basis box** (handoff 19) says which centre it works from: caps *Working from*, then
+  for a mode the lead in mono 15/500 with `→` at `--text-60`, the tag 20/600 and its Camelot. Under
+  it the source in one sentence (*The track's verdict.*, *The key you picked.*, *Re-Pitch −1 from
+  the track's A Dorian.* with *Back to A Dorian*, or which section), and for a mode or a mixed
+  verdict `ModeText`'s reason. **No relative pill**: the relative is the *same notes* row at shift 0.
+- **Section pills** sit in the basis box under a hairline, one per section in ledger order
+  (`verse A Dor primary`), when the verdict has sections. The chosen pill is the house *chosen*
+  style for pills: `--text` at 14% fill, 50% border, 600. The primary is chosen by default; picking
+  a section makes its centre the source and returns Re-Pitch to 0.
+- **Partners' table** has *Key · Camelot · Shift · Notes shared · Alt*, in two groups, *As is ·
+  shift 0* and *A shift away · pitch the sample by Shift to land on {source}*; an empty group is not
+  drawn. Rows sort by |shift|, then notes shared. At shift 0 only, a key carries one mark: **same
+  key** (filled pill, `--text` 85%, `--ink` text) or **same notes** (the same pill outlined); a
+  modal source's tag row says *the tag* in plain `--text-50`. Neither is coloured: they are facts.
+  A modal row's Camelot is its tag's, at `--text-40`. **Notes shared** is seven 8px pips (held
+  filled `--text` 85%, the rest a 1px `--text-30` outline) and the figure `6 of 7` in mono, `7 of 7`
+  at `--text`. Shifts carry a real minus.
+- **The wheel** is monochrome: working-from filled `--text` (a mode fills its tag's segment),
+  mixes-as-is at 22%, a shift away dashed, and the track's own key ringed when a Re-Pitch shift is
+  in force. Read-only.
+- **Re-Pitch's *Lands on*** names the centre, mode included (`G♯ Dorian`), with its tag's Camelot.
+  It keeps its ±N slider: it lists every shift's BPM to pick one row, which a span would not help.
 - **Breakpoints**: four columns at ≥ 2200px; below, the wheel sits beside the basis box inside
   Partners; below 1700px *Working on* runs across the top; below 1100px one column with the wheel
   last.
@@ -366,6 +391,18 @@ Re-Pitch 540px, Partners 860px.
 ## Differs from the design
 
 Where the build departs from a canvas, by page. Clear an entry once a later design supersedes it.
+
+### Partners by notes (handoff 19, #125)
+
+- **Keys are spelled with sharps** (`C♯ major`), in the table and the tonic select, as everywhere
+  else in the app; the canvas spelled majors flat. The wheel keeps its own labels.
+- **The primary section is the one whose centre is the verdict's**, where the canvas took the
+  first. When no section holds it, none is marked primary and none is chosen until clicked.
+- **A track with no verdict** pairs from its samples' Key tag, and says so: *The track's Key tag:
+  it has no verdict.*
+- **"Clockwise first" in the sort counts any clockwise step**, where the canvas counted only the
+  next segment. It only orders rows tied on everything else; both of brief 19's tables come out
+  the same.
 
 ### Mode beside its tag (handoff 17, #114)
 
@@ -516,13 +553,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 
 - **No redirects from `/tools/partners`, `/tools/repitch` or `/partners`.** The user asked for no
   aliases that nothing uses (2026-09-28), and nothing links to them.
-- **Partners keeps the built model's relationship names** (*Perfect Match*, *Relative (Epic)*,
-  *Energy Rise*, *Relaxed*, *Mood Shift*, *Modulation*), with the meaning line under each, where
-  the canvas's simple model named the rows "a fifth up" and so on. The handoff asked for the built
-  calculation.
 - **The track is picked from warped library songs**, as the Re-Pitch search already did.
 - **Re-Pitch sits above Partners, in one column**, not in a column of its own between *Working on*
   and Partners: folding it shifted Partners and the wheel sideways (user, 2026-09-29). It keeps
   its 540px width.
-- **Partners' max shift is ±0 to ±2, default ±1.** Every key is within two semitones of a partner
-  from any source, so a wider slider only repeated the full list (user, 2026-09-29).

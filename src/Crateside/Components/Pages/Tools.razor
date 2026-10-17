@@ -5,6 +5,7 @@
 
 @using Crateside.Components.Tools
 @using Crateside.Core.Familiarity
+@using Crateside.Core.Ledger
 @using Crateside.Core.Library
 @using Crateside.Core.Pairing
 @using Crateside.Core.Tracks
@@ -29,14 +30,14 @@
     <div class="columns">
         <div class="col working-col">
             <WorkingOn Track="_track" Songs="Warped" Familiarity="@TrackFamiliarity" DetailsHref="@DetailsHref"
-                       KeyName="@_keyName" BpmText="@_bpmText"
-                       OnPick="Pick" OnKey="TypeKey" OnBpm="TypeBpm" />
+                       Centre="Picked" BpmText="@_bpmText"
+                       OnPick="Pick" OnCentre="PickCentre" OnBpm="TypeBpm" />
         </div>
 
         <div class="col tools-col">
             @if (_rePitchOpen)
             {
-                <RePitchTool Key="Own" Tempo="Tempo" IsTrack="_track is not null"
+                <RePitchTool Centre="Own" Tempo="Tempo" IsTrack="_track is not null"
                              Shift="_shift" OnShift="ChooseShift"
                              Max="_rePitchMax" OnMax="max => Change(() => { _rePitchMax = max; _shift = Math.Clamp(_shift, -max, max); })"
                              OnToggle="ToggleRePitch" />
@@ -46,7 +47,7 @@
                 <button class="folded-tool" @onclick="ToggleRePitch">
                     <span class="mono chevron">▸</span>
                     <strong>Re-Pitch</strong>
-                    @if (_shift is not 0 && Own is { } own)
+                    @if (_shift is not 0 && Shown is { } shown)
                     {
                         <span>
                             <span class="mono">@MashupPartner.FormatShift(_shift)</span>
@@ -54,7 +55,7 @@
                             {
                                 <text> · </text><span class="mono">@TempoFormat.Format(tempo.Shifted(_shift)).Text</span><text> BPM</text>
                             }
-                            · @own.Transposed(_shift).Name, sent to Partners
+                            · @ModeText.Named(shown), sent to Partners
                         </span>
                     }
                     else
@@ -64,20 +65,22 @@
                 </button>
             }
 
-            <PartnersTool Own="Own" Shift="_shift" Relative="_relative" Working="Working" IsTrack="_track is not null"
-                          Partners="_partners" Max="_partnersMax"
-                          OnMax="max => Change(() => _partnersMax = max)"
-                          OnRelative="relative => Change(() => _relative = relative)"
+            <PartnersTool Own="Own" Shift="_shift" Centre="Shown" Mixed="Mixed" IsTrack="_track is not null"
+                          HasVerdict="_track?.Run?.Centre is not null"
+                          Sections="Sections" Primary="Primary" Section="_section"
+                          OnSection="ChooseSection"
+                          Partners="_partners" Lowest="_lowest" Highest="_highest"
+                          OnSpan="ChooseSpan"
                           OnBack="() => Change(() => _shift = 0)">
                 <Wheel>
-                    <CamelotWheel Working="Working" Own="Own" Partners="_partners" />
+                    <CamelotWheel Working="WheelWorking" Own="WheelOwn" Partners="_partners" />
                 </Wheel>
             </PartnersTool>
         </div>
 
         <div class="col wheel-col">
             <span class="caps">Camelot wheel</span>
-            <CamelotWheel Working="Working" Own="Own" Partners="_partners" />
+            <CamelotWheel Working="WheelWorking" Own="WheelOwn" Partners="_partners" />
             <div class="legend">
                 <span><i class="swatch working"></i>working from</span>
                 <span><i class="swatch near"></i>mixes as is</span>
@@ -93,13 +96,14 @@
     private const string RePitchCookie = "crateside.tools.repitch";
 
     private LibrarySong? _track;
-    private string _keyName = string.Empty;
+    private TonalCentre? _hand;
+    private int? _section;
     private string _bpmText = string.Empty;
     private int _shift;
-    private bool _relative;
+    private int _lowest;
+    private int _highest;
     private bool _rePitchOpen = true;
     private int _rePitchMax = Core.Pairing.RePitch.DefaultMaxShift;
-    private int _partnersMax = Core.Pairing.Partners.DefaultMaxShift;
     private IReadOnlyList<MashupPartner> _partners = [];
     private IJSObjectReference? _module;
 
@@ -122,21 +126,48 @@
     [SupplyParameterFromQuery(Name = "shift")]
     public int? ShiftFromQuery { get; set; }
 
-    [SupplyParameterFromQuery(Name = "rel")]
-    public int? RelativeFromQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "lo")]
+    public int? LowestFromQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "hi")]
+    public int? HighestFromQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "section")]
+    public int? SectionFromQuery { get; set; }
 
     private IReadOnlyList<LibrarySong> Warped =>
         [.. Library.Current.Songs.Where(song => song.Tempo is not null)];
 
-    /// <summary>The key before any shift: the track's, or the one typed.</summary>
-    private MusicKey? Own => MusicKey.FromString(_keyName);
+    private IReadOnlyList<Section> Sections => _track?.Run?.Sections ?? [];
+
+    private int? Primary =>
+        _track?.Run?.Centre is { } centre
+        && Sections.ToList().FindIndex(section => section.Centre == centre) is var index and >= 0
+            ? index
+            : null;
+
+    /// <summary>The centre before any shift: the chosen section's, the track's, or the one picked.</summary>
+    private TonalCentre? Own =>
+        _track is null ? _hand
+        : _section is { } index ? Sections[index].Centre
+        : _track.Centre;
+
+    /// <summary>A mixed verdict's primary pairs as its collapse; a section has no mix of its own.</summary>
+    private bool Mixed => _track?.Run is { Mixed: true } && _section is null;
+
+    private TonalCentre? Shown => Own?.Transposed(_shift);
+
+    /// <summary>What the key picker shows: the centre as it pairs.</summary>
+    private TonalCentre? Picked => Own is { } own ? Core.Pairing.Partners.Basis(own, Mixed) : null;
+
+    private MusicKey? WheelWorking => Shown is { } shown ? MusicKey.Of(shown) : null;
+
+    private MusicKey? WheelOwn => Own is { } own ? MusicKey.Of(own) : null;
 
     /// <summary>The track's tempo while one is picked, else the figure typed, which counts as vouched.</summary>
     private TrackTempo? Tempo =>
         _track?.Bpm
         ?? (Core.Pairing.RePitch.TryParseBpm(_bpmText, out var typed) ? TrackTempo.Typed(typed.Value) : null);
-
-    private MusicKey? Working => Own?.Transposed(_shift) is { } shifted ? (_relative ? shifted.Relative : shifted) : null;
 
     private string? TrackFamiliarity =>
         _track is null ? null : FamiliarityRecords.Read().GetValueOrDefault(_track.Song)?.Written;
@@ -160,16 +191,24 @@
         }
 
         if (TrackFromQuery is { } id && Warped.FirstOrDefault(song => song.Song.Equals(id, StringComparison.OrdinalIgnoreCase)) is { } track)
+        {
             Select(track);
+            _section = SectionFromQuery is { } section && section >= 0 && section < Sections.Count && section != Primary ? section : null;
+        }
         else
         {
-            _keyName = MusicKey.FromString(KeyFromQuery)?.LedgerName ?? string.Empty;
+            _hand = ParseCentre(KeyFromQuery);
             _bpmText = BpmFromQuery ?? string.Empty;
         }
 
         _shift = Math.Clamp(ShiftFromQuery ?? 0, -Core.Pairing.RePitch.MaxShift, Core.Pairing.RePitch.MaxShift);
         _rePitchMax = Math.Max(_rePitchMax, Math.Abs(_shift));
-        _relative = RelativeFromQuery is 1;
+
+        var farthest = Core.Pairing.Partners.FarthestShift;
+        var lowest = Math.Clamp(LowestFromQuery ?? 0, -farthest, farthest);
+        var highest = Math.Clamp(HighestFromQuery ?? 0, -farthest, farthest);
+        (_lowest, _highest) = lowest <= highest ? (lowest, highest) : (0, 0);
+
         Recalculate();
     }
 
@@ -195,7 +234,8 @@
     private void Select(LibrarySong track)
     {
         _track = track;
-        _keyName = track.Key?.LedgerName ?? string.Empty;
+        _hand = null;
+        _section = null;
         _bpmText = track.Bpm is { } tempo ? TempoFormat.Format(tempo).Figure : string.Empty;
     }
 
@@ -204,29 +244,37 @@
         {
             Select(track);
             _shift = 0;
-            _relative = false;
         });
 
-    private Task TypeKey(string key) =>
+    private Task PickCentre(TonalCentre? centre) =>
         Change(() =>
         {
             _track = null;
-            _keyName = key;
+            _section = null;
+            _hand = centre;
+            _shift = 0;
         });
 
     private Task TypeBpm(string bpm) =>
         Change(() =>
         {
+            _hand = Picked;
             _track = null;
+            _section = null;
             _bpmText = bpm;
         });
 
-    private Task ChooseShift(int shift) =>
+    private Task ChooseShift(int shift) => Change(() => _shift = shift);
+
+    // A Re-Pitch shift was a shift of the previous source.
+    private Task ChooseSection(int? section) =>
         Change(() =>
         {
-            _shift = shift;
-            _relative = false;
+            _section = section;
+            _shift = 0;
         });
+
+    private Task ChooseSpan((int Lowest, int Highest) span) => Change(() => (_lowest, _highest) = span);
 
     private async Task ToggleRePitch()
     {
@@ -249,18 +297,41 @@
     }
 
     private void Recalculate() =>
-        _partners = Working is { } working ? Core.Pairing.Partners.For(working, _partnersMax) : [];
+        _partners = Shown is { } shown
+            ? Core.Pairing.Partners.For(Core.Pairing.Partners.Basis(shown, Mixed), _lowest, _highest)
+            : [];
+
+    /// <summary>A key from the address: <c>a-dorian</c>, or a 24-key name from before modes.</summary>
+    private static TonalCentre? ParseCentre(string? text) =>
+        text?.Split('-') is [var tonic, var mode]
+        && TonalCentre.Tonics.FirstOrDefault(known => known.Equals(tonic, StringComparison.OrdinalIgnoreCase)) is { } known
+            ? mode.ToLowerInvariant() switch
+            {
+                "major" => new(known, DiatonicMode.Ionian),
+                "minor" => new(known, DiatonicMode.Aeolian),
+                _ when Enum.TryParse<DiatonicMode>(mode, ignoreCase: true, out var diatonic) => new(known, diatonic),
+                _ => null,
+            }
+            : TonalCentre.FromKey(text);
+
+    private static string Slug(TonalCentre centre) =>
+        $"{centre.Tonic.ToLowerInvariant()}-{(centre.IsModal ? centre.Mode.ToString().ToLowerInvariant() : centre.Collapsed.Split(' ')[1])}";
 
     private string Query()
     {
         var parts = new List<string>();
 
         if (_track is not null)
+        {
             parts.Add($"track={Uri.EscapeDataString(_track.Song)}");
+
+            if (_section is { } section)
+                parts.Add($"section={section}");
+        }
         else
         {
-            if (_keyName.Length > 0)
-                parts.Add($"key={Uri.EscapeDataString(_keyName)}");
+            if (_hand is { } hand)
+                parts.Add($"key={Uri.EscapeDataString(Slug(hand))}");
 
             if (_bpmText.Trim().Length > 0)
                 parts.Add($"bpm={Uri.EscapeDataString(_bpmText.Trim())}");
@@ -269,8 +340,8 @@
         if (_shift is not 0)
             parts.Add($"shift={_shift}");
 
-        if (_relative)
-            parts.Add("rel=1");
+        if ((_lowest, _highest) is not (0, 0))
+            parts.Add($"lo={_lowest}&hi={_highest}");
 
         return parts.Count is 0 ? string.Empty : $"?{string.Join('&', parts)}";
     }

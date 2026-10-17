@@ -131,8 +131,8 @@ by hand; everything below describes candidates against it.
   away in either direction (±7, normalized). Alternatives, not extras: use one
   *instead of* the shift, when it suits the material better.
 - **Circle distance** — how many steps apart two keys sit on the circle of fifths,
-  wrapped so it never exceeds 6. The harmonic half of the ranking, subordinate to
-  shift.
+  wrapped so it never exceeds 6. Only breaks ties in the ranking, after shift and notes
+  shared.
 - **Notes shared** — how many of the source's seven notes a partner's scale holds once moved
   by its **shift**: `6 of 7`. The second sort key, after shift
   ([ADR 0056](docs/adr/0056-partners-pairs-by-notes.md)).

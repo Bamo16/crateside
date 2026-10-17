@@ -60,8 +60,8 @@
             new[]
             {
                 key.Equals(Working) ? "working"
-                : Partners.Any(partner => partner.Shift is 0 && partner.Key.Equals(key)) ? "near"
-                : Partners.Any(partner => partner.Key.Equals(key)) ? "far"
+                : Partners.Any(partner => partner.Shift is 0 && partner.Tag.Equals(key)) ? "near"
+                : Partners.Any(partner => partner.Tag.Equals(key)) ? "far"
                 : null,
                 Own is not null && !Own.Equals(Working) && key.Equals(Own) ? "own" : null,
             }.OfType<string>()

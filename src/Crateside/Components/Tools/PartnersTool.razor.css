@@ -68,18 +68,21 @@ h3 {
     font-weight: 600;
 }
 
-.camelot {
-    font-size: 13px;
-    color: var(--text-50);
+.lead {
+    font-size: 15px;
+    font-weight: 500;
 }
 
-.pills {
-    display: flex;
-    gap: 6px;
-    margin-left: auto;
+.arrow {
+    color: var(--text-60);
 }
 
-.reason {
+.basis-line .camelot {
+    font-size: 14px;
+    color: var(--text-60);
+}
+
+.why {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -88,32 +91,131 @@ h3 {
     color: var(--text-75);
 }
 
+.reason {
+    font-size: 12.5px;
+    color: var(--text-60);
+}
+
 .small {
     padding: 3px 10px;
     font-size: 12px;
 }
 
-.slider {
+.sections {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 6px;
-    font-size: 12px;
+    margin-top: 2px;
+    padding-top: 10px;
+    border-top: 1px solid var(--line);
+}
+
+.sections .caps {
+    width: 64px;
+}
+
+/* The house chosen style for pills. */
+.section-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 4px 11px;
+    font: inherit;
+    font-size: 12.5px;
     font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    color: var(--text-75);
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.section-pill.chosen {
+    font-weight: 600;
+    color: var(--text);
+    background: rgba(236, 231, 220, 0.14);
+    border-color: rgba(236, 231, 220, 0.5);
+}
+
+.section-pill .primary {
+    font-size: 11px;
+    font-weight: 400;
     color: var(--text-50);
 }
 
-.slider em {
-    font-style: normal;
-    letter-spacing: 0;
-    text-transform: none;
-    color: var(--text);
+.span {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-.slider input {
-    width: 14rem;
-    accent-color: var(--teal);
+.span-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.span-label {
+    width: 40px;
+    font-size: 13px;
+    color: var(--text-60);
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.chip {
+    width: 38px;
+    height: 30px;
+    padding: 0;
+    font-size: 12.5px;
+    color: var(--text-50);
+    background: var(--raised);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.chip.anchor {
+    color: var(--text-75);
+}
+
+/* The span reads as a bar with ends. */
+.chip.in {
+    font-weight: 600;
+    color: var(--text);
+    background: rgba(236, 231, 220, 0.09);
+    border-color: rgba(236, 231, 220, 0.5);
+}
+
+.chip.in.end {
+    background: rgba(236, 231, 220, 0.18);
+}
+
+.span-text {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.count {
+    font-size: 12.5px;
+    color: var(--text-50);
+}
+
+.hint {
+    margin: 0;
+    padding-left: 50px;
+    font-size: 12px;
+    color: var(--text-50);
+}
+
+p.hint {
+    padding-left: 0;
 }
 
 .partners {
@@ -142,26 +244,44 @@ td {
     padding-top: 16px;
 }
 
-.numeric,
-th.numeric {
-    text-align: right;
-}
-
 .key {
     font-weight: 500;
     white-space: nowrap;
 }
 
-/* The same key auditions in seconds, so it earns emphasis. */
-.same .key,
-.same .shift {
-    color: var(--green);
-    font-weight: 600;
+/* A fact, not a state: no colour. */
+.label {
+    margin-left: 8px;
+    padding: 1px 7px 2px;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: 999px;
 }
 
-.shifted .shift {
-    font-weight: 500;
-    color: var(--text);
+.label.same-key {
+    color: var(--ink);
+    background: rgba(236, 231, 220, 0.85);
+}
+
+.label.same-notes {
+    color: rgba(236, 231, 220, 0.85);
+    border: 1px solid rgba(236, 231, 220, 0.45);
+}
+
+.the-tag {
+    margin-left: 8px;
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-50);
+}
+
+.camelot {
+    font-size: 13px;
+    color: var(--text-75);
+}
+
+.camelot.modal {
+    color: var(--text-40);
 }
 
 .shift,
@@ -170,17 +290,45 @@ th.numeric {
     white-space: nowrap;
 }
 
-.alts,
-.muted {
+.shift.shifted {
+    font-weight: 500;
+}
+
+.alts {
+    font-size: 12.5px;
     color: var(--text-50);
 }
 
-.relationship {
-    display: block;
+.shared {
+    white-space: nowrap;
 }
 
-.meaning {
-    display: block;
-    font-size: 12px;
-    color: var(--text-50);
+.pips {
+    display: inline-flex;
+    gap: 3px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.pips i {
+    width: 8px;
+    height: 8px;
+    box-sizing: border-box;
+    border: 1px solid var(--text-30);
+    border-radius: 2px;
+}
+
+.pips i.held {
+    background: rgba(236, 231, 220, 0.85);
+    border-color: transparent;
+}
+
+.figure {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-75);
+}
+
+.figure.all {
+    color: var(--text);
 }

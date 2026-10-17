@@ -176,6 +176,20 @@ select:focus {
     width: 100%;
 }
 
+.key-pick {
+    display: flex;
+    gap: 8px;
+}
+
+.key-pick .tonic {
+    flex: none;
+    width: 72px;
+}
+
+.key-pick .mode {
+    flex: 1;
+}
+
 .bpm {
     width: 120px;
     font-family: var(--font-mono);
