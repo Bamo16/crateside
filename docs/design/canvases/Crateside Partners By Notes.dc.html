@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Partners by notes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>body{margin:0;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif}a{color:#ece7dc;text-decoration:none}a:hover{color:#fff}button{cursor:pointer;font-family:inherit}select{font-family:inherit}</style>
+</helmet>
+
+<section style="padding:28px;display:flex;flex-direction:column;gap:28px;width:1720px;box-sizing:border-box;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif">
+  <header style="display:flex;flex-direction:column;gap:8px;max-width:1000px">
+    <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Brief 19 · issue #125 · ADR 0056 · built against 500b721</div>
+    <h1 style="margin:0;font:600 28px 'IBM Plex Sans',sans-serif">Partners pairs by notes</h1>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">Every row says how many of the source's seven notes the partner holds, as pips and <span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">6 of 7</span>. Two labels are left: <strong style="color:#ece7dc;font-weight:500">same key</strong> and <strong style="color:#ece7dc;font-weight:500">same notes</strong>. The shift is a span of chips, 0 by default. The relative pill goes; a song with sections offers each section's centre in its place. A key by hand is a tonic and a mode.</p>
+  </header>
+
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1a</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Tools, the Partners part · live: click a shift chip, a section, the tonic and mode on the left</span></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">Canvas state</span>
+      <sc-for list="{{ presets }}" as="p" hint-placeholder-count="8"><button onClick="{{ p.go }}" style="padding:4px 12px;border-radius:999px;border:1px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }};font:500 12.5px 'IBM Plex Sans',sans-serif">{{ p.label }}</button></sc-for>
+    </div>
+
+    <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:22px;display:grid;grid-template-columns:340px 860px 340px;gap:32px;align-items:start">
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)">Working on</span>
+        <sc-if value="{{ hasTrack }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:6px;background:#1b1a15;border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:14px 16px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><span style="font:500 15px 'IBM Plex Sans',sans-serif">{{ track.song }}</span><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Change ▾</span></div>
+            <span style="font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ track.keyLine }}</span>
+            <span style="font:400 13px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ track.bpm }} BPM, warped</span>
+            <span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ track.meta }} · <a href="#">Track details</a></span>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noTrack }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;height:38px;padding:0 12px;background:#23211a;border:1px solid rgba(255,255,255,.12);border-radius:6px;font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">⌕ Search warped tracks</div>
+        </sc-if>
+        <div style="display:flex;flex-direction:column;gap:10px;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px 16px">
+          <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)">{{ handLabel }}</span>
+          <div style="display:grid;grid-template-columns:72px minmax(0,1fr);gap:8px;align-items:end">
+            <label style="display:flex;flex-direction:column;gap:4px;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Tonic
+              <select value="{{ pick.tonic }}" onChange="{{ setTonic }}" style="height:32px;background:#23211a;color:#ece7dc;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:0 6px;font:500 13px 'IBM Plex Mono',monospace">
+                <sc-for list="{{ tonicOptions }}" as="o" hint-placeholder-count="12"><option value="{{ o.v }}">{{ o.label }}</option></sc-for>
+              </select>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:4px;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Mode
+              <select value="{{ pick.mode }}" onChange="{{ setMode }}" style="height:32px;background:#23211a;color:#ece7dc;border:1px solid rgba(255,255,255,.12);border-radius:6px;padding:0 6px;font:500 13px 'IBM Plex Sans',sans-serif">
+                <option value="major">major</option>
+                <option value="minor">minor</option>
+                <optgroup label="Modes">
+                  <option value="dorian">Dorian</option>
+                  <option value="phrygian">Phrygian</option>
+                  <option value="lydian">Lydian</option>
+                  <option value="mixolydian">Mixolydian</option>
+                  <option value="locrian">Locrian</option>
+                </optgroup>
+              </select>
+            </label>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:4px;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">BPM
+            <span style="display:flex;align-items:center;height:32px;padding:0 8px;background:#23211a;border:1px solid rgba(255,255,255,.12);border-radius:6px;font:500 13px 'IBM Plex Mono',monospace;color:#ece7dc">{{ pick.bpm }}</span>
+          </label>
+          <span style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);text-wrap:pretty">{{ handHint }}</span>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px dashed rgba(255,255,255,.18);border-radius:6px;font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)"><span>▸</span><strong style="color:#ece7dc;font-weight:600">Re-Pitch</strong><span style="font-family:'IBM Plex Mono',monospace">{{ repSummary }}</span></div>
+
+        <div style="display:flex;align-items:baseline;gap:10px"><h3 style="margin:0;font:600 16px 'IBM Plex Sans',sans-serif">Partners</h3><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">keys to filter for in Ableton's browser, never files</span></div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:14px 16px">
+          <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+            <span style="font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)">Working from</span>
+            <sc-if value="{{ basis.hasLead }}" hint-placeholder-val="{{ true }}"><span style="font:500 15px 'IBM Plex Mono',monospace;color:#ece7dc">{{ basis.lead }} <span style="color:rgba(236,231,220,.6)">→</span></span></sc-if>
+            <span style="font:600 20px 'IBM Plex Sans',sans-serif">{{ basis.key }}</span>
+            <span style="font:400 14px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">{{ basis.cam }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7)"><span>{{ basis.why }}</span><sc-if value="{{ basis.canReset }}" hint-placeholder-val="{{ false }}"><button onClick="{{ resetRp }}" style="padding:3px 10px;background:#23211a;color:#ece7dc;border:1px solid rgba(255,255,255,.12);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif">{{ basis.resetLabel }}</button></sc-if></div>
+          <sc-if value="{{ basis.hasReason }}" hint-placeholder-val="{{ true }}"><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">{{ basis.reason }}</span></sc-if>
+          <sc-if value="{{ hasSections }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:8px;border-top:1px solid rgba(255,255,255,.08);margin-top:4px;padding-top:10px">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5);width:64px">Section</span>
+                <sc-for list="{{ sectionPills }}" as="p" hint-placeholder-count="3"><button onClick="{{ p.go }}" style="display:flex;align-items:baseline;gap:6px;padding:4px 12px;border-radius:999px;border:1px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }};font:{{ p.weight }} 12.5px 'IBM Plex Sans',sans-serif"><span>{{ p.label }}</span><span style="font-family:'IBM Plex Mono',monospace">{{ p.key }}</span><span style="font:400 11px 'IBM Plex Sans',sans-serif;color:{{ p.tagFg }}">{{ p.tag }}</span></button></sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);width:40px">Shift</span>
+            <div style="display:flex;gap:4px">
+              <sc-for list="{{ chips }}" as="c" hint-placeholder-count="13"><button onClick="{{ c.go }}" aria-pressed="{{ c.pressed }}" style="width:38px;height:30px;padding:0;border-radius:6px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:{{ c.weight }} 12.5px 'IBM Plex Mono',monospace">{{ c.label }}</button></sc-for>
+            </div>
+            <span style="font:500 13px 'IBM Plex Mono',monospace;color:#ece7dc">{{ rangeText }}</span>
+            <span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ rowCount }}</span>
+          </div>
+          <span style="padding-left:52px;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Click a shift to work at it alone; click another to stretch the span to it.</span>
+        </div>
+
+        <div style="display:flex;flex-direction:column">
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 72px 64px 170px 96px;gap:12px;padding:0 12px 8px;border-bottom:1px solid rgba(255,255,255,.14);font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)"><span>Key</span><span>Camelot</span><span>Shift</span><span>Notes shared</span><span>Alt</span></div>
+          <sc-for list="{{ groups }}" as="g" hint-placeholder-count="1">
+            <div style="padding:16px 12px 6px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">{{ g.title }}</div>
+            <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="7">
+              <div style="display:grid;grid-template-columns:minmax(0,1fr) 72px 64px 170px 96px;gap:12px;align-items:center;min-height:36px;padding:0 12px;border-bottom:1px solid rgba(255,255,255,.06)">
+                <span style="display:flex;align-items:center;gap:8px;min-width:0">
+                  <span style="font:500 14px 'IBM Plex Sans',sans-serif">{{ r.key }}</span>
+                  <sc-if value="{{ r.isSameKey }}" hint-placeholder-val="{{ false }}"><span style="padding:1px 7px 2px;border-radius:999px;background:rgba(236,231,220,.85);color:#0f0e0c;font:500 11px 'IBM Plex Sans',sans-serif">same key</span></sc-if>
+                  <sc-if value="{{ r.isSameNotes }}" hint-placeholder-val="{{ false }}"><span style="padding:0 6px 1px;border-radius:999px;border:1px solid rgba(236,231,220,.45);color:rgba(236,231,220,.85);font:500 11px 'IBM Plex Sans',sans-serif">same notes</span></sc-if>
+                  <sc-if value="{{ r.isTag }}" hint-placeholder-val="{{ false }}"><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">the tag</span></sc-if>
+                </span>
+                <span style="font:400 13px 'IBM Plex Mono',monospace;color:{{ r.camFg }}">{{ r.cam }}</span>
+                <span style="font:{{ r.shiftWeight }} 13px 'IBM Plex Mono',monospace">{{ r.shift }}</span>
+                <span style="display:flex;align-items:center;gap:10px">
+                  <span style="display:flex;gap:3px" role="img" aria-label="{{ r.shared }} notes shared"><sc-for list="{{ r.pips }}" as="p" hint-placeholder-count="7"><span style="width:8px;height:8px;border-radius:2px;box-sizing:border-box;background:{{ p.bg }};border:1px solid {{ p.bd }}"></span></sc-for></span>
+                  <span style="font:500 13px 'IBM Plex Mono',monospace;color:{{ r.sharedFg }}">{{ r.shared }}</span>
+                </span>
+                <span style="font:400 12.5px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">{{ r.alt }}</span>
+              </div>
+            </sc-for>
+          </sc-for>
+        </div>
+        <span style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ tableHint }}</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font:500 12px 'IBM Plex Sans',sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(236,231,220,.5)">Camelot wheel</span>
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:320px;height:320px;box-sizing:border-box;padding:28px;border:1px dashed rgba(255,255,255,.18);border-radius:50%;text-align:center">
+          <span style="font:500 13px 'IBM Plex Sans',sans-serif">Unchanged</span>
+          <span style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">As built (handoff 12 §5). Working from fills <span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">{{ basis.cam }}</span>, the tag's segment; the rows at shift 0 are its 22% segments.</span>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:1100px;text-wrap:pretty">The rows are computed on the canvas with ADR 0056's rule: the shift brings the partner's tonic onto the source's, or a fifth either way, wrapped to ±6; the tag's relative and every key holding the centre's notes sit at 0; notes shared is counted after the shift; rows sort by |shift|, then notes shared. The C major and A Dorian states reproduce the brief's tables. Song names and the sections are illustrative.</p>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1720,"height":1500}}'>
+const SCALES = {
+  major: [0, 2, 4, 5, 7, 9, 11], minor: [0, 2, 3, 5, 7, 8, 10],
+  dorian: [0, 2, 3, 5, 7, 9, 10], phrygian: [0, 1, 3, 5, 7, 8, 10], lydian: [0, 2, 4, 6, 7, 9, 11],
+  mixolydian: [0, 2, 4, 5, 7, 9, 10], locrian: [0, 1, 3, 5, 6, 8, 10]
+};
+const QUALITY = { major: 'major', minor: 'minor', dorian: 'minor', phrygian: 'minor', lydian: 'major', mixolydian: 'major', locrian: 'minor', mixed: 'minor' };
+const MODE_NAME = { dorian: 'Dorian', phrygian: 'Phrygian', lydian: 'Lydian', mixolydian: 'Mixolydian', locrian: 'Locrian', mixed: 'mixed' };
+const FLAT = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
+const SHARP = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+
+const mod = (n) => ((n % 12) + 12) % 12;
+const norm = (n) => { let s = mod(n); if (s > 6) s -= 12; return s; };
+const sgn = (n) => n > 0 ? '+' + n : n < 0 ? '−' + (-n) : '0';
+const spell = (t, q) => (q === 'major' ? FLAT : SHARP)[mod(t)];
+const full = (t, q) => spell(t, q) + ' ' + q;
+const short = (t, q) => spell(t, q) + (q === 'major' ? ' maj' : ' min');
+const centreName = (c) => c.mode === 'major' || c.mode === 'minor' ? full(c.t, c.mode) : spell(c.t, QUALITY[c.mode]) + ' ' + MODE_NAME[c.mode];
+const isModal = (c) => c.mode !== 'major' && c.mode !== 'minor';
+const notesOf = (t, mode) => SCALES[mode === 'mixed' ? 'minor' : mode].map((i) => mod(t + i));
+const pos = (t, q) => q === 'major' ? mod(t * 7) : mod((t + 3) * 7);
+const camelot = (t, q) => (mod(pos(t, q) + 7) + 1) + (q === 'major' ? 'B' : 'A');
+const sameSet = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
+
+function partners(src, lo, hi) {
+  const q = QUALITY[src.mode];
+  const srcNotes = notesOf(src.t, src.mode);
+  const cands = [];
+  for (let t = 0; t < 12; t++) for (const cq of ['major', 'minor']) cands.push({ t, mode: cq });
+  if (isModal(src) && src.mode !== 'mixed') cands.unshift({ t: src.t, mode: src.mode });
+  const rows = [];
+  for (const c of cands) {
+    const cq = QUALITY[c.mode];
+    const cNotes = notesOf(c.t, c.mode);
+    const sameKey = c.t === src.t && c.mode === (src.mode === 'mixed' ? q : src.mode);
+    const isTag = isModal(src) && !sameKey && c.t === src.t && c.mode === q;
+    const dist = Math.min(Math.abs(pos(c.t, cq) - pos(src.t, q)), 12 - Math.abs(pos(c.t, cq) - pos(src.t, q)));
+    const relative = !isModal(c) && dist === 0 && cq !== q;
+    const sameNotes = !sameKey && (src.mode === 'mixed' || !isModal(src) ? relative : sameSet(cNotes, srcNotes));
+    const d = sameKey || sameNotes || relative ? 0 : norm(c.t - src.t);
+    const shifts = [...new Set([norm(-d), norm(-d + 7), norm(-d - 7)])].sort((a, b) => Math.abs(a) - Math.abs(b));
+    const inRange = shifts.filter((s) => s >= lo && s <= hi);
+    if (!inRange.length) continue;
+    const shift = inRange[0];
+    const moved = cNotes.map((n) => mod(n + shift));
+    const shared = srcNotes.filter((n) => moved.includes(n)).length;
+    const dir = mod(pos(c.t, cq) - pos(src.t, q)) === 1 ? 0 : 1;
+    rows.push({ c, shift, shared, sameKey: sameKey && shift === 0, sameNotes: sameNotes && shift === 0, isTag, alts: shifts.filter((s) => s !== shift),
+      rank: sameKey ? 0 : sameNotes ? 1 : isTag ? 2 : 3, dist, dir });
+  }
+  rows.sort((a, b) => Math.abs(a.shift) - Math.abs(b.shift) || b.shared - a.shared || a.rank - b.rank || a.dist - b.dist || a.dir - b.dir || (a.c.mode === 'major' ? 0 : 1) - (b.c.mode === 'major' ? 0 : 1));
+  return rows;
+}
+
+const TRACKS = {
+  plain: { song: '[Song with a plain verdict]', bpm: '124', meta: 'house · familiar', centre: { t: 0, mode: 'major' } },
+  modal: { song: '[Song judged A Dorian]', bpm: '96', meta: 'funk · familiar', centre: { t: 9, mode: 'dorian' } },
+  sections: { song: '[Song with three sections]', bpm: '110', meta: 'pop · new', centre: { t: 9, mode: 'dorian' },
+    sections: [{ label: 'verse', c: { t: 9, mode: 'dorian' } }, { label: 'chorus', c: { t: 4, mode: 'minor' } }, { label: 'bridge', c: { t: 0, mode: 'lydian' } }] },
+  mixed: { song: '[Song judged A mixed]', bpm: '88', meta: 'soul · familiar', centre: { t: 9, mode: 'mixed' } }
+};
+
+const PRESETS = [
+  ['plain', 'C major, plain', { track: 'plain' }],
+  ['modal', 'A Dorian', { track: 'modal' }],
+  ['wide', 'A Dorian, −1 to +3', { track: 'modal', lo: -1, hi: 3 }],
+  ['far', 'A Dorian, +3 to +5', { track: 'modal', lo: 3, hi: 5 }],
+  ['repitch', 'A Dorian, Re-Pitch −1', { track: 'modal', rp: -1 }],
+  ['sections', 'Sections', { track: 'sections' }],
+  ['mixed', 'Mixed', { track: 'mixed' }],
+  ['hand', 'By hand, no track', { track: null, hand: { t: 6, mode: 'minor' } }]
+];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = this.preset('modal');
+  }
+  preset(id) {
+    const p = PRESETS.find((x) => x[0] === id)[2];
+    return { preset: id, track: p.track, hand: p.hand || null, lo: p.lo ?? 0, hi: p.hi ?? 0, rp: p.rp || 0, section: 0 };
+  }
+  renderVals() {
+    const s = this.state;
+    const tr = s.track ? TRACKS[s.track] : null;
+    const sections = tr && tr.sections ? tr.sections : null;
+    const own = sections ? sections[s.section].c : tr ? tr.centre : s.hand;
+    const src = { t: mod(own.t + s.rp), mode: own.mode };
+    const q = QUALITY[src.mode];
+    const ownName = centreName(own);
+
+    const rows = partners(src, s.lo, s.hi);
+    const mkRow = (r) => ({
+      key: centreName(r.c), isSameKey: r.sameKey, isSameNotes: r.sameNotes, isTag: r.isTag,
+      cam: isModal(r.c) ? camelot(r.c.t, QUALITY[r.c.mode]) : camelot(r.c.t, r.c.mode),
+      camFg: isModal(r.c) ? 'rgba(236,231,220,.4)' : 'rgba(236,231,220,.75)',
+      shift: sgn(r.shift), shiftWeight: r.shift === 0 ? '400' : '500',
+      shared: r.shared + ' of 7', sharedFg: r.shared === 7 ? '#ece7dc' : 'rgba(236,231,220,.75)',
+      pips: [0, 1, 2, 3, 4, 5, 6].map((i) => i < r.shared ? { bg: 'rgba(236,231,220,.85)', bd: 'rgba(236,231,220,.85)' } : { bg: 'transparent', bd: 'rgba(236,231,220,.3)' }),
+      alt: r.alts.map(sgn).join(', ')
+    });
+    const asIs = rows.filter((r) => r.shift === 0).map(mkRow);
+    const away = rows.filter((r) => r.shift !== 0).map(mkRow);
+    const groups = [];
+    if (asIs.length) groups.push({ title: 'As is · shift 0', rows: asIs });
+    if (away.length) groups.push({ title: 'A shift away · pitch the sample by Shift to land on ' + centreName(src), rows: away });
+
+    const hasLead = isModal(src);
+    let why;
+    if (s.rp) why = 'Re-Pitch ' + sgn(s.rp) + ' from the track’s ' + ownName + '.';
+    else if (!tr) why = 'The key you picked.';
+    else if (sections) why = s.section === 0 ? 'The ' + sections[0].label + ', the primary centre: the tag follows it.' : 'The ' + sections[s.section].label + '’s centre, not the primary.';
+    else why = 'The track’s verdict.';
+    let reason = '';
+    if (src.mode === 'mixed') reason = 'Major melody over minor harmony; tagged by the harmony, and paired as its tag.';
+    else if (hasLead) {
+      const sn = [0, 1].map(() => null);
+      let maj = 0; for (let t = 0; t < 12; t++) if (sameSet(notesOf(t, 'major'), notesOf(src.t, src.mode))) maj = t;
+      reason = MODE_NAME[src.mode] + ' is a ' + q + ' mode, so it is tagged by its tonic. Same notes as ' + full(maj, 'major') + ' (' + camelot(maj, 'major') + ').';
+    }
+    const basis = {
+      hasLead, lead: hasLead ? spell(src.t, q) + ' ' + MODE_NAME[src.mode] : '',
+      key: hasLead ? short(src.t, q) : full(src.t, q), cam: camelot(src.t, q),
+      why, reason, hasReason: !!reason, canReset: !!s.rp, resetLabel: 'Back to ' + ownName
+    };
+
+    const lo = s.lo, hi = s.hi;
+    const chips = [];
+    for (let n = -6; n <= 6; n++) {
+      const on = n >= lo && n <= hi, end = n === lo || n === hi;
+      chips.push({
+        label: sgn(n), pressed: on ? 'true' : 'false',
+        bg: on ? (end ? 'rgba(236,231,220,.18)' : 'rgba(236,231,220,.09)') : '#23211a',
+        bd: on ? 'rgba(236,231,220,.5)' : 'rgba(255,255,255,.1)',
+        fg: on ? '#ece7dc' : (n === 0 ? 'rgba(236,231,220,.75)' : 'rgba(236,231,220,.5)'),
+        weight: on ? '600' : '400',
+        go: () => this.setState(lo === hi && n !== lo ? { lo: Math.min(lo, n), hi: Math.max(lo, n), preset: '' } : { lo: n, hi: n, preset: '' })
+      });
+    }
+    const rangeText = lo === hi ? (lo === 0 ? '0 only' : sgn(lo) + ' only') : sgn(lo) + ' to ' + sgn(hi);
+
+    const sectionPills = sections ? sections.map((x, i) => {
+      const on = i === s.section;
+      const k = isModal(x.c) ? spell(x.c.t, QUALITY[x.c.mode]) + ' ' + MODE_NAME[x.c.mode].slice(0, 3) : short(x.c.t, x.c.mode);
+      return { label: x.label, key: k, tag: i === 0 ? 'primary' : '',
+        bg: on ? 'rgba(236,231,220,.14)' : 'transparent', bd: on ? 'rgba(236,231,220,.5)' : 'rgba(255,255,255,.14)',
+        fg: on ? '#ece7dc' : 'rgba(236,231,220,.7)', tagFg: 'rgba(236,231,220,.5)', weight: on ? '600' : '500',
+        go: () => this.setState({ section: i, rp: 0, preset: '' }) };
+    }) : [];
+
+    const pick = tr ? { tonic: String(own.t), mode: own.mode === 'mixed' ? 'minor' : own.mode, bpm: tr.bpm } : { tonic: String(s.hand.t), mode: s.hand.mode, bpm: '—' };
+    const tonicQ = QUALITY[pick.mode] || 'minor';
+    const tonicOptions = [...Array(12).keys()].map((t) => ({ v: String(t), label: spell(t, tonicQ) }));
+    const handOf = () => tr ? { t: own.t, mode: own.mode === 'mixed' ? 'minor' : own.mode } : s.hand;
+
+    const keyLine = tr ? (isModal(tr.centre) ? spell(tr.centre.t, QUALITY[tr.centre.mode]) + ' ' + MODE_NAME[tr.centre.mode] + ' → ' + short(tr.centre.t, QUALITY[tr.centre.mode]) : full(tr.centre.t, tr.centre.mode)) + ' · ' + camelot(tr.centre.t, QUALITY[tr.centre.mode]) : '';
+
+    return {
+      presets: PRESETS.map(([id, label]) => ({ label, go: () => this.setState(this.preset(id)),
+        bg: s.preset === id ? '#ece7dc' : 'transparent', fg: s.preset === id ? '#0f0e0c' : 'rgba(236,231,220,.75)', bd: s.preset === id ? '#ece7dc' : 'rgba(255,255,255,.14)' })),
+      hasTrack: !!tr, noTrack: !tr,
+      track: tr ? { song: tr.song, bpm: tr.bpm, meta: tr.meta, keyLine } : { song: '', bpm: '', meta: '', keyLine: '' },
+      handLabel: tr ? 'From the track' : 'Or by hand',
+      handHint: tr ? 'The verdict’s centre, mode included. Editing either drops the track and keeps what you picked.' : 'The mode starts at major or minor; the five modes sit under them.',
+      pick, tonicOptions,
+      setTonic: (e) => this.setState({ track: null, hand: { ...handOf(), t: Number(e.target.value) }, section: 0, rp: 0, preset: '' }),
+      setMode: (e) => this.setState({ track: null, hand: { ...handOf(), mode: e.target.value }, section: 0, rp: 0, preset: '' }),
+      repSummary: s.rp ? sgn(s.rp) + ' · ' + centreName(src) + ', sent to Partners' : 'no shift chosen',
+      basis, resetRp: () => this.setState({ rp: 0, preset: '' }),
+      hasSections: !!sections, sectionPills,
+      chips, rangeText, rowCount: rows.length + (rows.length === 1 ? ' key' : ' keys'),
+      groups,
+      tableHint: lo === 0 && hi === 0 ? 'Every key reaches every other within ±2 at its smallest shift; widen the span to see them.' : 'A key is listed once, at its in-range shift closest to 0. Alt holds its other shifts, a fifth either way.'
+    };
+  }
+}
+</script>
+</body>
+</html>

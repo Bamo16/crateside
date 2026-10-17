@@ -22,8 +22,9 @@ Open any `.dc.html` in a browser. They need `support.js` beside them. Each is a 
 | `Crateside BPM Display.dc.html` | 1 · how each tempo state reads, everywhere a BPM shows (1a–1f) · 2 · how much a drifting tempo drifts: range, spread, tempo strip (2a–2c) | Handoff 13 (#92). |
 | `Crateside Warp View.dc.html` | 1 · each stem's warp in Track details: two markers (1a), dense with a stem on its own (1b), 8-bar zoom (1c), every provenance state (1d), both controls step by step (1e), zoom and room to grow (1f) | Handoff 14 (#97). |
 | `Crateside Off Its Tempo.dc.html` | 1 · a warp that sits off its tempo: the BPM-cell mark and filter (1a), Track details (1b), the Off the grid row and True up step by step (1c), the shape of each state (1d) | Handoff 16 (#96). Delivered as a bundle (v2), then as a `.dc.html` that needs `support.js` (v3, which also draws the warp view's bar numbers and time axis). |
-| `Crateside Mode Beside Its Tag.dc.html` | 1 · a verdict's mode beside its tag: the Tracks Key cell (1a), the Track details band (1b), Why this key with sections (1c), Partners (1d, a proposal) | Handoff 17 (#114). |
+| `Crateside Mode Beside Its Tag.dc.html` | 1 · a verdict's mode beside its tag: the Tracks Key cell (1a), the Track details band (1b), Why this key with sections (1c), Partners (1d, a proposal, superseded by handoff 19) | Handoff 17 (#114). |
 | `Crateside Judge From These Bars.dc.html` | 1 · judging from bars the maintainer names: the band (1a), the warp view form, bands and run states (1b), Why this key's windows (1c), the Ear setting (1d) | Handoff 18 (#116). |
+| `Crateside Partners By Notes.dc.html` | 1a · Partners pairs by notes: notes shared, the shift span, sections as a basis, tonic and mode by hand; live | Handoff 19 (#125). Supersedes 1d of Mode Beside Its Tag. |
 | `Crateside Brand.dc.html` | 1 · five marks · 2 · fifteen more | **1a chosen** (interim). The rest are kept in case the brand is revisited. |
 
 ### `handoffs/`: what was sent to the implementing agent each time
@@ -52,6 +53,7 @@ The written spec for each canvas turn, in the order it was sent. The later ones 
 | `16-off-its-tempo.md` | Off Its Tempo | #96 |
 | `17-mode-beside-its-tag.md` | Mode Beside Its Tag | #114 |
 | `18-judge-from-these-bars.md` | Judge From These Bars | #116 |
+| `19-partners-by-notes.md` | Partners By Notes | #125 |
 
 ### `brand/`: the 1a assets
 `mark.svg` (header), `favicon.svg` plus PNG fallbacks (browser tab), `lockup.svg` (README), `mark-tile.svg` (app icon). Usage rules are in `handoffs/04-brand.md`.
