@@ -55,6 +55,8 @@ public class DrainControl(bool startPaused = true) : DrainSignal
         Changed?.Invoke();
     }
 
+    protected void RaiseChanged() => Changed?.Invoke();
+
     private void Set(bool paused)
     {
         lock (_gate)

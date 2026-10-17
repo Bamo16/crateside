@@ -60,6 +60,10 @@ public sealed class BarForm(bool inBars)
             : null;
     }
 
+    /// <summary>What the form does when run: judge the bars given, or the whole track again when none are.</summary>
+    public string Title(WarpGroup group) =>
+        Windows(group) is [] ? "Judge the whole track again" : "Judge from these bars";
+
     public IReadOnlyList<RunWindow> Windows(WarpGroup group) =>
         [.. Lines.Select(line => Window(line, group)).OfType<RunWindow>()];
 

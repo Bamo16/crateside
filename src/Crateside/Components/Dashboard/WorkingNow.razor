@@ -196,7 +196,7 @@
 
     private TrackRow? JudgingRow => Rows.FirstOrDefault(row => row.State is TrackState.Judging);
 
-    private int JudgingWaiting => Rows.Count(row => row.IsAwaitingJudgement);
+    private int JudgingWaiting => Rows.Count(row => row.IsAwaitingJudgement) + Judging.FormRunsWaiting;
 
     private string SeparationWaiting
     {

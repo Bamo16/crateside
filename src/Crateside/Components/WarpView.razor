@@ -60,7 +60,7 @@
 
             <div class="judge-form">
                 <div class="form-head">
-                    <span class="form-label">Judge from these bars</span>
+                    <span class="form-label">@form.Title(group)</span>
                     <span class="unit-note">
                         @(form.InBars
                             ? "Bars as Live counts them, from the clip start of your warp."
@@ -121,7 +121,7 @@
                     </span>
                     <span class="actions">
                         <button class="primary" disabled="@(unreadable.Count > 0 || form.EarIsUnreadable)"
-                                @onclick="() => StartRun(form, group, audio)">Judge from these bars</button>
+                                @onclick="() => StartRun(form, group, audio)">@form.Title(group)</button>
                         <button class="outline" @onclick="() => _form = null">Cancel</button>
                     </span>
                 </div>
