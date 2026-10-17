@@ -114,9 +114,9 @@ the views, and running the workflow.
 
 ## Pairing
 
-The domain of "what else can I play over this?". A **source key** is the key of
-the thing the user already has in hand; everything below describes candidates
-against it.
+The domain of "what else can I play over this?". The **source** is the tonal centre of
+the thing the user already has in hand: its verdict's primary centre, a section's, or one picked
+by hand; everything below describes candidates against it.
 
 - **Partner** — a key that pairs acceptably with the source key. Partnership is a
   relationship between *keys*, not between tracks: a partner names a key to go
@@ -133,10 +133,19 @@ against it.
 - **Circle distance** — how many steps apart two keys sit on the circle of fifths,
   wrapped so it never exceeds 6. The harmonic half of the ranking, subordinate to
   shift.
-- **Relationship** — what a partner *is* to the source in musical terms: the same
-  key, its relative, a step around the circle in either direction, or a borrowing.
-  Distinct from **shift** and **circle distance**, which are costs; this is a
-  description.
+- **Notes shared** — how many of the source's seven notes a partner's scale holds once moved
+  by its **shift**: `6 of 7`. The second sort key, after shift
+  ([ADR 0056](docs/adr/0056-partners-pairs-by-notes.md)).
+- **Relationship** — what a partner *is* to the source, named only where it is one of two:
+  **same key**, or **same notes** (a **same-notes key**, which for plain major and minor is the
+  **relative**). Every other partner is described by its notes shared.
+- **Same-notes key** — a major or minor key whose seven notes are a tonal centre's, other than
+  its collapse: *G major* and *E minor* for *A Dorian*. For Ionian and Aeolian it is the
+  **relative**, and is called that. Shared with keydetect-harness.
+- **Relative** — the collapse's major or minor with the same notes: *C major* for *A minor*,
+  and also for *A Dorian*, whose notes it does not share.
+- **Parallel** — the collapse's tonic with the other quality: *G minor* for *G major*, *A major*
+  for *A Dorian*. Shared with keydetect-harness.
 - **Camelot code** — the harmonic-mixing notation (`8A`, `5B`, …) that numbers the
   circle of fifths and letters the mode. An alternate spelling of a key, not a
   separate concept.
@@ -459,14 +468,10 @@ it. The two run types below are named after which of **evidence** and **verdict*
 
 ## Flagged ambiguities
 
-- **"Vibe"** — the existing cmdlet's label for a partner's **relationship**
-  (`Perfect Match`, `Relative (Epic)`, `Energy Rise`, `Relaxed`, `Mood Shift`,
-  `Modulation`). It is lossy: `Modulation` is a catch-all for every relationship
-  that is not the tonic, the relative, or one step around the circle — so it covers
-  musically distinct borrowings, and it is the label on nearly everything once a
-  shift is involved. **Resolution: prefer "relationship" as the term**, and say
-  what each actually is rather than bucketing it. Retiring `Modulation` is a
-  behaviour change from the cmdlet and should be a deliberate one.
+- **"Vibe"** — the cmdlet's labels for a partner (`Perfect Match`, `Relative (Epic)`,
+  `Energy Rise`, `Relaxed`, `Mood Shift`, `Modulation`), retired by ADR 0056. Say **same key**,
+  **same notes** or **notes shared**. _Avoid_ "modulation" for a partner: since ADR 0055 it
+  reads as a key change within a song, which is a **section**.
 - **"Stable tempo"** — ADR 0038's word for a run of 8+ bars at one tempo, not the opposite of
   **drifting**. The warp classes it named *Steady with changes* and *Unsteady* were renamed
   *Mostly steady* and *Drifting* on 2026-09-28; notes and design handoffs before then use the old
