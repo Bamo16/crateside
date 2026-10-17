@@ -45,7 +45,8 @@ centre's. For plain major and minor this is the relative alone, so nothing chang
 that the partner's scale holds once moved by its shift, shown as `6 of 7`. The rows sort by
 absolute shift, then by notes shared. Only two labels remain, **same key** and **same notes**.
 The cmdlet's score and its mood names (Energy Rise, Relaxed, Mood Shift, Modulation, "Relative
-(Epic)") go.
+(Epic)") go. A modal source's own centre is its same-key row (*A Dorian*, 7 of 7), for consistency with a
+plain key's. Its tag (*A minor*) is an ordinary row.
 
 **The shift range defaults to 0** and can be asymmetric (−1 to +3, say). Its control is the
 design's (#125).
