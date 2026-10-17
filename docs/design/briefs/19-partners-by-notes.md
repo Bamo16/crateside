@@ -42,6 +42,8 @@ set on, and use Re-Pitch (speed and pitch together) occasionally.
   mode**, replacing today's 24-entry dropdown of major and minor keys.
 - **A song with sections offers each section's centre as the source**, with the primary chosen by
   default. Sections are shown in the order the ledger holds them, since they have no times yet.
+- **A modal source's own centre is its same-key row**: *A Dorian*, 7 of 7, first. Live's browser
+  will find it once the mode is written as a Key tag (#127).
 - **A mixed verdict** pairs from its tag.
 
 Partners still returns **keys** to filter for in Ableton's browser, never files.
@@ -66,9 +68,10 @@ Measured on the crateside code with the rule above, at shift 0.
 
 | key | shift | notes shared | label |
 |---|---|---|---|
+| A Dorian | 0 | 7 of 7 | same key |
 | G major | 0 | 7 of 7 | same notes |
 | E minor | 0 | 7 of 7 | same notes |
-| A minor | 0 | 6 of 7 | (the tag) |
+| A minor | 0 | 6 of 7 | |
 | C major | 0 | 6 of 7 | |
 | D major | 0 | 6 of 7 | |
 | D minor | 0 | 5 of 7 | |
@@ -80,8 +83,9 @@ Measured on the crateside code with the rule above, at shift 0.
 - **The table.** What do the columns become once *Relationship* and *Score* are gone? Do labelled
   rows stand apart, or is the label enough? `7 of 7` repeats on every row, so does it need a
   visual form (a bar, pips) or is the figure better?
-- **The tag's row on a modal source.** *A minor* is not A Dorian's key, but it is the tag the
-  samples carry. Does it get a label of its own, or none?
+- **The tag's row on a modal source.** *A minor* is not A Dorian's key, but it is the tag most
+  of the user's samples are filtered by, and it sits at 6 of 7. Does it need marking as the tag,
+  or is notes shared enough?
 - **The shift range.** It defaults to 0 and is asymmetric. Two handles on one track collide at 0.
   An alternative is a row of shift chips (−6 … +6) where the user can pick a span, which also
   handles 0 alone. Choose, or propose something better. Re-Pitch has a ±N slider of its own;
