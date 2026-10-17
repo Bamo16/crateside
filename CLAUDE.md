@@ -4,6 +4,8 @@
 
 **Commit directly to `master` and push to `origin`.** No PR flow, no branch, and do not ask
 each time. This is solo work. Finished work is committed *and pushed*, not left sitting local.
+This holds in a cloud session too. A `claude/...` branch the session assigns is not used:
+commit on `master` and push nothing else.
 
 ## Tests and tooling
 
