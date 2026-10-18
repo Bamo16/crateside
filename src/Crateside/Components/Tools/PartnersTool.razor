@@ -72,7 +72,7 @@
             <div class="span-row">
                 <span class="span-label">Shift</span>
                 <span class="chips">
-                    @for (var n = -Core.Pairing.Partners.FarthestShift; n <= Core.Pairing.Partners.FarthestShift; n++)
+                    @for (var n = -Core.Pairing.Partners.WidestShift; n <= Core.Pairing.Partners.WidestShift; n++)
                     {
                         var shift = n;
                         var inSpan = shift >= Lowest && shift <= Highest;
