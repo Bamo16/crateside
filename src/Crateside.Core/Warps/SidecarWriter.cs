@@ -61,11 +61,11 @@ public sealed class SidecarWriter(
         string target,
         IReadOnlyList<string> sameKind,
         double bpm,
-        CancellationToken ct = default,
         string? timingFrom = null,
-        bool onTheGrid = true
+        bool onTheGrid = true,
+        CancellationToken ct = default
     ) =>
-        Settle(await PrepareStarterAsync(target, sameKind, bpm, ct, timingFrom, onTheGrid), target);
+        Settle(await PrepareStarterAsync(target, sameKind, bpm, timingFrom, onTheGrid, ct), target);
 
     /// <summary>Works out the sidecar <see cref="BorrowAsync"/> would write, without writing it.</summary>
     public Task<SidecarPlan> PrepareBorrowAsync(
@@ -135,9 +135,9 @@ public sealed class SidecarWriter(
         string target,
         IReadOnlyList<string> sameKind,
         double bpm,
-        CancellationToken ct = default,
         string? timingFrom = null,
-        bool onTheGrid = true
+        bool onTheGrid = true,
+        CancellationToken ct = default
     )
     {
         try
@@ -189,7 +189,7 @@ public sealed class SidecarWriter(
             if (!replacing && Own(audioPath) is { IsUsers: true })
                 return new WarpOutcome.AlreadyWarped();
 
-            sidecar.File.Write(StemFileName.AnalysisFor(audioPath));
+            Coloured(sidecar.File, audioPath).Write(StemFileName.AnalysisFor(audioPath));
 
             if (sidecar.From is { } lender)
                 written.RecordBorrowed(audioPath, lender);
@@ -221,6 +221,50 @@ public sealed class SidecarWriter(
             return new WarpOutcome.Failed(ex.Message);
         }
     }
+
+    /// <summary>
+    /// Gives a saved sidecar its stem's clip colour, changing nothing else, even over a warp the user
+    /// saved; one crateside wrote stays crateside's. True when it was rewritten (#130).
+    /// </summary>
+    public bool Recolour(string audioPath)
+    {
+        var path = StemFileName.AnalysisFor(audioPath);
+
+        try
+        {
+            if (
+                ClipColours.For(audioPath) is not { } colour
+                || !AnalysisFile.TryRead(path, out var analysis)
+                || analysis is not { IsDefaultClipSaved: true, Clip.ColorIndex: var current }
+                || current == colour
+            )
+                return false;
+
+            var ours = written.Of(audioPath);
+
+            (analysis with { Clip = analysis.Clip with { ColorIndex = colour } }).Write(path);
+
+            if (ours is { From: { } lender })
+                written.RecordBorrowed(audioPath, lender);
+            else if (ours is not null)
+                written.RecordStarter(audioPath);
+
+            return true;
+        }
+        catch (Exception ex)
+            when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            return false;
+        }
+    }
+
+    private static AnalysisFile Coloured(AnalysisFile file, string audioPath) =>
+        ClipColours.For(audioPath) is { } colour && file.Clip.ColorIndex != colour
+            ? file with
+            {
+                Clip = file.Clip with { ColorIndex = colour },
+            }
+            : file;
 
     private WarpOutcome Settle(SidecarPlan plan, string target) =>
         plan switch
@@ -294,7 +338,7 @@ public sealed class SidecarWriter(
             Own(reference)?.Analysis,
             [],
             audio,
-            key.Item2
+            key.Length
         );
         var tempo = Refined(bpm, transients, audio.SampleRate);
 

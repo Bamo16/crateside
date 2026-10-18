@@ -60,7 +60,7 @@ public sealed class TaggingRunner(CratesidePaths paths, FolderInfoWriter? writer
     }
 
     /// <summary>A file with neither is a kept source, used as an instrumental (ADR 0028).</summary>
-    private static string? TypeFor(string? preset, SampleType? type) =>
+    internal static string? TypeFor(string? preset, SampleType? type) =>
         preset switch
         {
             null or "" => (type ?? SampleType.Instrumental).ToString(),

@@ -49,7 +49,10 @@ public sealed class BackingRunnerRealLibraryTests
                 if (!backed.TryGet(Path.Combine(LibraryRoot, assignment.RelativePath), out var was))
                     return;
 
-                Assert.All(was.Keywords, keyword => Assert.Contains(keyword, assignment.Keywords));
+                Assert.All(
+                    was.Keywords,
+                    keyword => Assert.Contains(keyword, assignment.Keywords ?? [])
+                );
             }
         );
     }
@@ -60,7 +63,7 @@ public sealed class BackingRunnerRealLibraryTests
         Assert.SkipUnless(Available, "The library and the ledger must be present.");
 
         Assert.All(
-            Unbacked().SelectMany(a => a.Keywords),
+            Unbacked().SelectMany(a => a.Keywords ?? []),
             keyword =>
                 Assert.True(
                     CratesideKeywords.IsKnown(keyword),
@@ -79,7 +82,9 @@ public sealed class BackingRunnerRealLibraryTests
             assignment =>
                 Assert.Equal(
                     2,
-                    assignment.Keywords.Count(k => k.StartsWith("Key|", StringComparison.Ordinal))
+                    (assignment.Keywords ?? []).Count(k =>
+                        k.StartsWith("Key|", StringComparison.Ordinal)
+                    )
                 )
         );
     }

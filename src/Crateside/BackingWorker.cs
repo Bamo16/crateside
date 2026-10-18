@@ -81,12 +81,25 @@ public sealed class BackingWorker(
             ];
         }
 
+        // Null when it cannot be read: read as empty, an imported file would lose its Collections.
+        FolderInfo? libraryIndex;
+
+        try
+        {
+            libraryIndex = index.Read(_paths.LibraryFolder);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            libraryIndex = null;
+        }
+
         var library = Report(
             runner.Run(
                 _paths.LibraryFolder,
                 ledger,
                 OwnedOf,
                 corrections: corrections.Approved(),
+                index: libraryIndex,
                 beforeWrite: backups.Save
             ),
             "the library"
@@ -98,7 +111,7 @@ public sealed class BackingWorker(
             runner.Disagreements(
                 _paths.LibraryFolder,
                 ledger,
-                AbletonReads.TagsOrEmpty(index.Read, _paths.LibraryFolder)
+                libraryIndex ?? FolderInfo.Empty(_paths.LibraryFolder)
             )
         );
         var staging = Report(

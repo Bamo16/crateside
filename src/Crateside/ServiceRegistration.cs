@@ -389,6 +389,7 @@ public static class ServiceRegistration
             TimeProvider.System
         ));
         services.AddSingleton<StemWarpReader>();
+        services.AddSingleton<StagingMarks>();
         services.AddSingleton(sp => new HandoffSidecars(
             sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SidecarWriter>(),
