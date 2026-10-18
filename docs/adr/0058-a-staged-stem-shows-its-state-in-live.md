@@ -81,6 +81,9 @@ Live has two places crateside can write to:
 - **What Live does with a Collection crateside writes into the store is not yet seen.** Keywords
   written there reach the index (ADR 0017), and Collections sit beside them, but the first write
   is the test. If the browser does not show them, the store is the wrong place.
+  **Amended 2026-10-17: MEASURED.** On the first run the browser showed every staged file's
+  Collections within the minute, with *Mine* kept beside a warp state (Daft Punk's drums) and
+  *Odd bars* kept where the maintainer had put it (the GYARI instrumental).
 - **The import is inferred, not watched.** That the move carries Collections in the index, as it
   carries keywords, and that the next write drops the warp states, is ADR 0023's mechanism applied
   to a field it was not measured on. A Collection the maintainer adds by hand to a library file
