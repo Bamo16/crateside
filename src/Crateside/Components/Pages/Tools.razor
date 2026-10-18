@@ -204,9 +204,9 @@
         _shift = Math.Clamp(ShiftFromQuery ?? 0, -Core.Pairing.RePitch.MaxShift, Core.Pairing.RePitch.MaxShift);
         _rePitchMax = Math.Max(_rePitchMax, Math.Abs(_shift));
 
-        var farthest = Core.Pairing.Partners.FarthestShift;
-        var lowest = Math.Clamp(LowestFromQuery ?? 0, -farthest, farthest);
-        var highest = Math.Clamp(HighestFromQuery ?? 0, -farthest, farthest);
+        var widest = Core.Pairing.Partners.WidestShift;
+        var lowest = Math.Clamp(LowestFromQuery ?? 0, -widest, widest);
+        var highest = Math.Clamp(HighestFromQuery ?? 0, -widest, widest);
         (_lowest, _highest) = lowest <= highest ? (lowest, highest) : (0, 0);
 
         Recalculate();

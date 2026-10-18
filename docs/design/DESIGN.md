@@ -175,11 +175,11 @@ with AM/PM here. Never a hard-coded `HH:mm`.
 The sample list and picker are `StemList` and `StemConfirm`, both driven by one `StemEditor`, and
 are mounted by the Tracks row and by Track details.
 
-**A range of shifts is a row of chips**, −6 … +6 (handoff 19, Partners): 38×30, radius 6, mono 12.5,
+**A range of shifts is a row of chips**, −2 … +2 (handoff 19, Partners): 38×30, radius 6, mono 12.5,
 off on `--raised` with a 1px `--line` (the `0` chip at `--text-75` as the anchor), in the span
 `--text` at 9% with a 50% border and 600, the two ends at 18% so the span reads as a bar. With one
 shift chosen, clicking another stretches the span to it; with a span, a click collapses it to that
-chip. After the chips, the span in mono (`0 only`, `−1 to +3`) and the count; under them a hint
+chip. After the chips, the span in mono (`0 only`, `−1 to +2`) and the count; under them a hint
 saying how clicking works. Each chip carries `aria-pressed`.
 
 ## Side stack
@@ -393,6 +393,10 @@ Re-Pitch 540px, Partners 860px.
 Where the build departs from a canvas, by page. Clear an entry once a later design supersedes it.
 
 ### Partners by notes (handoff 19, #125)
+
+- **The shift chips run −2 … +2, not −6 … +6.** Every key is within ±2 of a partner at its
+  smallest shift, so a chip past ±2 could only list keys at shifts the *Alt* column already shows
+  (user, 2026-10-17).
 
 - **Keys are spelled with sharps** (`C♯ major`), in the table and the tonic select, as everywhere
   else in the app; the canvas spelled majors flat. The wheel keeps its own labels.
