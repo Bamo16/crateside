@@ -30,7 +30,7 @@ public static class CratesideKeywords
         string rootFolder,
         IReadOnlyList<TagAssignment> assignments
     ) =>
-        assignments.SelectMany(a => a.Keywords).FirstOrDefault(k => !IsKnown(k)) is { } bad
+        assignments.SelectMany(a => a.Keywords ?? []).FirstOrDefault(k => !IsKnown(k)) is { } bad
             ? new TagWriteOutcome.Rejected($"'{bad}' is not a keyword Ableton already knows")
             : TagWriteOutcome.Of(() => writer.Apply(rootFolder, assignments));
 }

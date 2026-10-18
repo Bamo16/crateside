@@ -1,6 +1,6 @@
 # 0043 — a borrowed warp is finished, and says where it came from
 
-- Status: Accepted; amended by [ADR 0044](0044-a-borrowed-warp-keeps-lives-transients-where-live-found-them.md), which takes Live's transients where Live found them and retires the reason lending ships off, and by [ADR 0045](0045-a-recut-takes-its-warp-from-its-own-kind-first.md), which has a recut take its warp from its own kind first, and by [ADR 0047](0047-a-starter-warp-and-where-transients-came-from.md), which renames the record and adds starter warps
+- Status: Accepted; amended by [ADR 0044](0044-a-borrowed-warp-keeps-lives-transients-where-live-found-them.md), which takes Live's transients where Live found them and retires the reason lending ships off, and by [ADR 0045](0045-a-recut-takes-its-warp-from-its-own-kind-first.md), which has a recut take its warp from its own kind first, and by [ADR 0047](0047-a-starter-warp-and-where-transients-came-from.md), which renames the record and adds starter warps, and by [ADR 0058](0058-a-staged-stem-shows-its-state-in-live.md), which lets crateside set the colour of a sidecar the user saved, and nothing else on it
 - Date: 2026-10-02
 - Amends [ADR 0037](0037-a-saved-default-clip-is-a-finished-warp.md). Builds
   [#54](https://github.com/Bamo16/crateside/issues/54).

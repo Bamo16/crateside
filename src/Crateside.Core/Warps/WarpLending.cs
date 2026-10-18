@@ -89,9 +89,9 @@ public sealed class WarpLending(
                 target,
                 sameKind,
                 bpm,
-                ct,
                 from,
-                options.StarterWarps is StarterWarps.OnTheGrid
+                options.StarterWarps is StarterWarps.OnTheGrid,
+                ct
             )
             : null;
     }

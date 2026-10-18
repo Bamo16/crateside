@@ -46,7 +46,7 @@ public sealed class HandoffSidecarsTests : IDisposable
             working,
             [],
             128,
-            TestContext.Current.CancellationToken
+            ct: TestContext.Current.CancellationToken
         );
         var prepared = new Dictionary<string, PreparedSidecar>
         {

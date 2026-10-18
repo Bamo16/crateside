@@ -53,9 +53,9 @@ public sealed class HandoffSidecars(
                         cut.Path,
                         sameKind,
                         tempo,
-                        ct,
                         WarpSiblings.TempoSources(cuts).FirstOrDefault()?.Path,
-                        options.StarterWarps is StarterWarps.OnTheGrid
+                        options.StarterWarps is StarterWarps.OnTheGrid,
+                        ct
                     );
             }
 

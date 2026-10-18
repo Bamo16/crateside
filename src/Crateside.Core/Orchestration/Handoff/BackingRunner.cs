@@ -11,7 +11,8 @@ namespace Crateside.Core.Orchestration.Handoff;
 
 /// <summary>
 /// Gives every unbacked file in a root the entry its verdict earns, so its key survives the next
-/// write (ADR 0023), and every keyed entry crateside's own tags: genre (ADR 0030) and familiarity (#52).
+/// write (ADR 0023), and every keyed entry crateside's own tags: genre (ADR 0030), familiarity (#52)
+/// and its track's Collections (#130).
 /// </summary>
 public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter writer)
 {
@@ -28,6 +29,7 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
     /// <param name="ownedOf">A video ID's keywords in crateside's own groups; a group left out is left alone.</param>
     /// <param name="backKeys">False where another stage writes the keys, which is staging.</param>
     /// <param name="corrections">Paths the user approved re-keying, each to the verdict they saw (ADR 0052).</param>
+    /// <param name="index">Live's index of the root, which an imported file's Collections arrive in; null leaves Collections alone.</param>
     /// <param name="beforeWrite">Called with the root just before a write that changes something.</param>
     public TagWriteOutcome Run(
         string root,
@@ -35,6 +37,7 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
         Func<string, IReadOnlyList<string>>? ownedOf = null,
         bool backKeys = true,
         IReadOnlyDictionary<string, string>? corrections = null,
+        FolderInfo? index = null,
         Action<string>? beforeWrite = null
     )
     {
@@ -42,7 +45,7 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
 
         try
         {
-            unbacked = Unbacked(root, ledger, ownedOf, backKeys, corrections);
+            unbacked = Unbacked(root, ledger, ownedOf, backKeys, corrections, index);
         }
         // A store Live is writing reads as nothing backed; wait for it rather than back everything.
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -85,15 +88,17 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
             : [];
 
     /// <summary>
-    /// Every file under <paramref name="root"/> whose entry is missing a key or a genre it could
-    /// have, with what the entry should say; a key already in the store is never rewritten.
+    /// Every file under <paramref name="root"/> whose entry is missing a key, a tag or a Collection it
+    /// could have, with what the entry should say; a key already in the store is never rewritten.
     /// </summary>
+    /// <param name="index">Given, every keyed entry is put in its track's Collections and out of the warp states.</param>
     public IReadOnlyList<TagAssignment> Unbacked(
         string root,
         KeyLedger ledger,
         Func<string, IReadOnlyList<string>>? ownedOf = null,
         bool backKeys = true,
-        IReadOnlyDictionary<string, string>? corrections = null
+        IReadOnlyDictionary<string, string>? corrections = null,
+        FolderInfo? index = null
     )
     {
         if (!Directory.Exists(root))
@@ -126,41 +131,81 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
                 .Where(file =>
                     file.NeedsKey
                     || file.CorrectTo is not null
-                    || (ownedOf is not null && CanTakeOwnedTags(file.Existing))
+                    || (
+                        (ownedOf is not null || index is not null)
+                        && CanTakeOwnedTags(file.Existing)
+                    )
                 )
                 .Select(file =>
                 {
+                    var provenance = ProvenanceOf(file.Path);
                     var (keywords, corrects) = KeywordsFor(
-                        ProvenanceOf(file.Path),
+                        provenance,
                         ledger,
                         ownedOf,
                         file.NeedsKey,
                         file.CorrectTo
                     );
+                    var merged = Merged(file.Existing, keywords, correcting: corrects);
+                    // A write that changes nothing is not worth a reconcile — and one whose whole
+                    // key the user had taken off changes nothing.
+                    var changes =
+                        keywords.Count > 0
+                        && (
+                            file.Existing is null
+                            || !merged
+                                .ToHashSet(StringComparer.Ordinal)
+                                .SetEquals(file.Existing.Keywords)
+                        );
+                    // An entry written without a key would make Live drop the one the index holds.
+                    var keyed = keywords.Count > 0 || CanTakeOwnedTags(file.Existing);
 
                     return new
                     {
                         file.Path,
-                        file.Existing,
-                        Keywords = Merged(file.Existing, keywords, correcting: corrects),
-                        Empty = keywords.Count is 0,
+                        Keywords = changes ? merged : null,
+                        Collections = index is not null && keyed
+                            ? CollectionsFor(file.Path, file.Existing, index, provenance, ledger)
+                            : null,
                     };
                 })
-                .Where(file => !file.Empty)
-                // A write that changes nothing is not worth a reconcile — and one whose whole key
-                // the user had taken off changes nothing.
-                .Where(file =>
-                    file.Existing is null
-                    || !file
-                        .Keywords.ToHashSet(StringComparer.Ordinal)
-                        .SetEquals(file.Existing.Keywords)
-                )
+                .Where(file => file.Keywords is not null || file.Collections is not null)
                 .Select(file => new TagAssignment
                 {
                     RelativePath = Path.GetRelativePath(root, file.Path),
                     Keywords = file.Keywords,
+                    Collections = file.Collections,
                 }),
         ];
+    }
+
+    /// <summary>
+    /// The entry's Collections with its track's marks and no warp state, or null when it has them
+    /// already. A file not in the store yet has its Collections in the index alone.
+    /// </summary>
+    private static IReadOnlyList<int>? CollectionsFor(
+        string path,
+        FileTags? existing,
+        FolderInfo index,
+        StemProvenance? provenance,
+        KeyLedger ledger
+    )
+    {
+        LedgerRun? verdict = null;
+
+        if (provenance is { SourceVideoId: { } videoId })
+            ledger.TryGetLatestByVideoId(videoId, out verdict);
+
+        var has =
+            existing?.Collections
+            ?? (index.TryGet(path, out var indexed) ? indexed.Collections : []);
+        var wanted = BrowserCollections.Merged(
+            has,
+            BrowserCollections.TrackMarksFor(verdict),
+            BrowserCollections.Cratesides
+        );
+
+        return existing is not null && wanted.SequenceEqual(existing.Collections) ? null : wanted;
     }
 
     /// <summary>

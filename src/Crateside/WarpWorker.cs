@@ -1,16 +1,22 @@
+using System.Diagnostics;
+using Crateside.Core.Ableton;
+using Crateside.Core.Staging;
 using Crateside.Core.Warps;
+using Humanizer;
 using Microsoft.Extensions.Options;
 
 namespace Crateside;
 
 /// <summary>
-/// Lends staged stems their siblings' finished warps, or writes starter warps, once a minute.
+/// Lends staged stems their siblings' finished warps, or writes starter warps, and marks each stem's
+/// state in Live (#130), once a minute.
 /// Decoding runs on the CPU and contends for nothing, so this runs unattended like detection
 /// (ADR 0043, ADR 0047).
 /// </summary>
 public sealed class WarpWorker(
     WarpLending lending,
     WarpActions actions,
+    StagingMarks marks,
     IOptions<WarpOptions> options,
     ILogger<WarpWorker> logger
 ) : BackgroundService
@@ -49,12 +55,53 @@ public sealed class WarpWorker(
 
             try
             {
+                Mark();
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Marking staged stems in Live failed");
+            }
+
+            try
+            {
                 await Task.Delay(Interval, stoppingToken);
             }
             catch (OperationCanceledException)
             {
                 break;
             }
+        }
+    }
+
+    private void Mark()
+    {
+        foreach (var recoloured in marks.Recolour())
+            logger.LogInformation("Gave {Target} its clip colour", Path.GetFileName(recoloured));
+
+        switch (marks.Collect())
+        {
+            case TagWriteOutcome.Written(0):
+                break;
+
+            case TagWriteOutcome.Written(var moved):
+                logger.LogInformation(
+                    "Moved {Moved} between Live's Collections",
+                    "staged file".ToQuantity(moved)
+                );
+
+                break;
+
+            // Another write got to the store first; the next minute tries again.
+            case TagWriteOutcome.Stale:
+                break;
+
+            case TagWriteOutcome.Rejected(var error):
+                logger.LogWarning("Could not put staged stems in Collections: {Error}", error);
+
+                break;
+
+            default:
+                throw new UnreachableException();
         }
     }
 

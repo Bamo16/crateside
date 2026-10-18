@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AbleKit.Tags;
 using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
@@ -11,6 +12,7 @@ namespace Crateside.Tests.Orchestration.Handoff;
 public sealed class BackingRunnerTests : IDisposable
 {
     private const string File1 = "Lil Wayne - A Milli (A Cappella).flac";
+    private const string Upload = "https://www.youtube.com/watch?v=abcdefghijk";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -228,6 +230,101 @@ public sealed class BackingRunnerTests : IDisposable
         Assert.False(BackingRunner.NeedsCorrection(Tags("Key|D♯", "Key|Minor"), "D# minor"));
         Assert.False(BackingRunner.NeedsCorrection(Tags("Type|Vocal"), "D# minor"));
         Assert.False(BackingRunner.NeedsCorrection(null, "D# minor"));
+    }
+
+    [Fact]
+    public void An_imported_file_keeps_the_users_Collections_and_loses_its_warp_state()
+    {
+        var stem = LibraryStem();
+        var index = new FolderInfo(
+            _root,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|A", "Key|Minor"],
+                    Collections = [1, (int)BrowserCollection.Warped],
+                },
+            ]
+        );
+
+        var assignment = Assert.Single(Runner().Unbacked(_root, Ledger("HIGH"), index: index));
+
+        Assert.Equal([1], assignment.Collections);
+        Assert.Equal(["Key|A", "Key|Minor", "Type|Vocal"], assignment.Keywords);
+    }
+
+    [Fact]
+    public void A_backed_entry_takes_its_tracks_key_caveat_and_keeps_its_keywords()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [new() { RelativePath = Path.GetFileName(stem), Keywords = ["Key|A", "Key|Minor"] }]
+        );
+
+        var assignment = Assert.Single(
+            Runner().Unbacked(_root, Ledger("LOW"), index: FolderInfo.Empty(_root))
+        );
+
+        Assert.Equal([(int)BrowserCollection.KeyCaveat], assignment.Collections);
+        Assert.Null(assignment.Keywords);
+    }
+
+    [Fact]
+    public void Without_the_index_Collections_are_left_alone()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|A", "Key|Minor"],
+                    Collections = [(int)BrowserCollection.CheckBeat],
+                },
+            ]
+        );
+
+        Assert.Empty(Runner().Unbacked(_root, Ledger("LOW")));
+    }
+
+    private static BackingRunner Runner() => new(new FolderInfoReader(), new FolderInfoWriter());
+
+    private string LibraryStem()
+    {
+        Directory.CreateDirectory(_root);
+
+        var path = Path.Combine(_root, "Song (Vocal - Full).flac");
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), path);
+
+        using var file = TagLib.File.Create(path);
+        file.Tag.Comment = $"stemforge/0.4.0.0 | preset: Vocal - Full | source: {Upload}";
+        file.Save();
+
+        return path;
+    }
+
+    private KeyLedger Ledger(string confidence)
+    {
+        var jsonl = Path.Combine(_root, "ledger.jsonl");
+        File.WriteAllText(
+            jsonl,
+            JsonSerializer.Serialize(
+                new
+                {
+                    timestamp = "2026-08-01T00:00:00+00:00",
+                    song = "A - T",
+                    artist = "A",
+                    title = "T",
+                    source_url = Upload,
+                    verdict = new { key = "A minor", confidence },
+                }
+            )
+        );
+
+        return TestLedger.From(jsonl);
     }
 
     private static FileTags Tags(params string[] keywords) => TestTags.Of(File1, keywords);

@@ -245,9 +245,19 @@ by hand; everything below describes candidates against it.
   ([ADR 0046](docs/adr/0046-a-filed-tracks-warp-guide-is-kept-outside-ableton.md)).
 - **Ready to move** — a track whose staged samples all have their default clip saved: warped, with
   only the move to **the library** left.
+- **Clip colour** — the colour a staged stem's clip takes when dragged into a set, saved in its
+  analysis file: its kind picks the family (drums, vocals, instrumentals) and its song the shade.
+  It says nothing about the warp, which is the stem's **Collection**'s to say. crateside sets it on
+  every saved analysis file in staging, the user's included
+  ([ADR 0058](docs/adr/0058-a-staged-stem-shows-its-state-in-live.md)).
 
 ## Tags
 
+- **Collection** — one of the seven coloured labels in Live's browser, numbered 1 to 7 and named
+  by the user. crateside puts each staged stem in the one for its warp state (*Check beat*, *Place
+  beat*, *Warped*, *Warp by hand*), taken away on import, and every stem of a track whose Key tag
+  may mislead in *Key caveat*. *Mine* is the user's, and *Odd bars* stays theirs until #86 can
+  mark a track ([ADR 0058](docs/adr/0058-a-staged-stem-shows-its-state-in-live.md)).
 - **Index** — Ableton's own file database, `Live-files-<schema>.db` under
   `%LOCALAPPDATA%\Ableton\Live Database`. The authoritative tag state, and the thing the
   browser shows. Read-only to crateside, and read while Live is running
