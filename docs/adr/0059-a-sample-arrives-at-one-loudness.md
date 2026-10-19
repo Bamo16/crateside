@@ -39,17 +39,23 @@ integrated loudness.** The audio is never touched; crateside writes the one fiel
   staging, the maintainer's hand-set gains included, and re-writes it whenever the file is off
   target, including after Live saves over it. A sidecar that is with Live (#97) is left until
   Live is done. Starter and lent warps carry the gain from the first write.
-- **A stem with no starter** gets a sidecar holding its colour and gain and no warp, recorded as
-  crateside's own (as starters are) so the board does not read an unwarped stem as warped (ADR
-  0037). Whether Live applies it and keeps the manual warp flow is a spike, not yet run.
+- **A stem with no starter** gets a sidecar holding its colour and gain with **Warp off** and the
+  clip's start and end in seconds over the whole file, recorded as crateside's own (as starters
+  are) so the board does not read an unwarped stem as warped (ADR 0037). MEASURED 2026-10-19 in
+  Live: such a clip came in at -6 dB in colour 14 (red), unwarped and playing at the source's tempo,
+  and Warp switched on as it does for a sample never warped (one marker at the start, the set's
+  tempo). The same clip with Warp **on** and no markers was ignored whole, gain and colour, at
+  zero and at the clip's end in beats alike; a guess is that Live checks the sidecar and rejects a
+  warped clip with no markers, which Live's own editor cannot make.
 - **The loudness reading lives in `Crateside.Core`**, not AbleKit, and is shared with #39.
 
 ## Consequences
 
 - **Every gain is one number away from undone.** Setting each saved default clip's `SampleVolume`
   to 1 (0 dB) reverts the change, and the target setting retunes it.
-- **Still unmeasured:** that Live applies a gain crateside wrote on drag (observed only for gains
-  saved through Live's *Save Default Clip*), and the colour-and-gain sidecar with no warp. True
+- **MEASURED 2026-10-19:** a gain written into a sidecar by AbleKit applies on drag (-6 and +6 dB,
+  on a starter-shaped clip), and so does a colour-and-gain sidecar with Warp off (above).
+- **Not measured:** True
   peak was not measured: clip gain above 0 dBFS is routine, and only the Main track, which carries
   a limiter, can clip.
 - **A quiet vocal is lifted by at most about 10 dB** with the floor in place; the boost is capped
