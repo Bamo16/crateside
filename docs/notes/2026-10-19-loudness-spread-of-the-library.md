@@ -10,7 +10,7 @@ ffmpeg 9.0-NoMercy-MediaServer's `ebur128=framelog=verbose` over every audio fil
 `Mashup Samples` (the library, 1,034 files) and `Sample Staging` (78), whole file, with the
 run's frame log parsed for the short-term (3 s) series. Per file: integrated LUFS, and the 50th,
 90th, 95th and 99th percentile of short-term loudness over frames above -70 LUFS. 1,112 of 1,113
-files give a reading; `Johnny Pearson - Action in Memphis (Vocal - Full)` is silence (-70.0).
+files give a reading; `Johnny Pearson - Action in Memphis (Vocal - Full)` is silence (-70.0): the song is an instrumental, queued with the default recipe.
 Kind comes from the trailing parenthesis of the file name; a name with none is a **source**
 (the original track).
 
@@ -46,11 +46,15 @@ Kind comes from the trailing parenthesis of the file name; a name with none is a
 - **Short-term p50 is the wrong metric for vocals.** Its spread is the widest (sd 4.4 for
   vocals against 2.9 integrated), because gaps in a vocal pull the median down: the effect the
   issue feared of integrated loudness is stronger in p50 than in integrated.
-- **Sources are 4–6 dB louder than the stems** (median -8.4), mastered hot; stems keep the
-  separator's headroom. A target must be chosen for the stems; the 42 sources in staging or the
-  library sit well above any plausible target and would be turned down about 10 dB.
-- **Staging has the widest tail** (sd 4.6, p5 -23.8): a freshly separated stem, before anything
-  has been judged, is quieter and more varied than what has been filed.
+- **Sources are louder than stems, but only 14 stems of 8 songs can be paired with their source**
+  (the other 34 sources have no stems here). Instrumental - Full is 0.4 to 5.5 dB below its
+  source; Vocal - Full is 6 to 18 dB below. The gap varies by song, so a source's loudness does
+  not give a fixed offset to its stems. The 42 sources' own median is -8.4 LUFS, against -13.8 for
+  everything, but those are different songs.
+- **Staging's wider tail is its mix of kinds, not freshly separated stems being quieter.**
+  Staging holds all 25 Drums stems (median -17.5, quiet by nature) and a handful of vocal
+  outliers (-28.6, -36.7). Its instrumentals (median -14.1 against -12.9) and vocals (-15.2
+  against -14.8) are close to the library's.
 
 ## What was not done
 
@@ -61,8 +65,8 @@ Kind comes from the trailing parenthesis of the file name; a name with none is a
   4 dB below the library median, so it would turn most files down.
 - The sidecars' present `SampleVolume` values were not read, so how many hand-set gains exist
   (to be discarded) is unknown.
-- True peak was not captured (the parse did not match ffmpeg's summary line), so headroom for
-  files that would be turned up is unmeasured.
+- True peak was not captured. The maintainer's view: clip gain above 0 dBFS on a track is
+  routine, only Main clips, and Loudmax on Main covers that, so it is not worth measuring.
 
 ## Raw data
 
