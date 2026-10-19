@@ -10,6 +10,8 @@ namespace Crateside;
 public sealed class LoudnessWorker(Levelling levelling, ILogger<LoudnessWorker> logger)
     : BackgroundService
 {
+    private const int ListedAtMost = 5;
+
     private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -18,18 +20,24 @@ public sealed class LoudnessWorker(Levelling levelling, ILogger<LoudnessWorker> 
         {
             try
             {
-                if (await levelling.ReadAsync(stoppingToken) is > 0 and var read)
+                if (levelling.Unread() is { Count: > 0 } unread)
+                {
+                    logger.LogInformation(
+                        "Reading the loudness of {Count}",
+                        "sample".ToQuantity(unread.Count)
+                    );
+                    await levelling.ReadAsync(unread, stoppingToken);
                     logger.LogInformation(
                         "Read the loudness of {Count}",
-                        "sample".ToQuantity(read)
+                        "sample".ToQuantity(unread.Count)
                     );
+                }
 
                 if (levelling.Level() is { Count: > 0 } levelled)
                     logger.LogInformation(
                         "Set the clip gain of {Count}: {Samples}",
                         "sample".ToQuantity(levelled.Count),
-                        string.Join(", ", levelled.Take(5).Select(Path.GetFileName))
-                            + (levelled.Count > 5 ? ", …" : string.Empty)
+                        Listed(levelled)
                     );
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -51,4 +59,9 @@ public sealed class LoudnessWorker(Levelling levelling, ILogger<LoudnessWorker> 
             }
         }
     }
+
+    private static string Listed(IReadOnlyList<string> samples) =>
+        samples.Count > ListedAtMost
+            ? $"{string.Join(", ", samples.Take(ListedAtMost).Select(Path.GetFileName))} and {samples.Count - ListedAtMost} more"
+            : samples.Select(Path.GetFileName).Humanize();
 }

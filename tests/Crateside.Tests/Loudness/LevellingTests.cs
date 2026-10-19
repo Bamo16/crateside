@@ -45,7 +45,8 @@ public sealed class LevellingTests : IDisposable
         );
         var levelling = Levelling(_ => -20);
 
-        Assert.Equal(1, await levelling.ReadAsync(TestContext.Current.CancellationToken));
+        Assert.Single(levelling.Unread());
+        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
         Assert.Equal([stem], levelling.Level());
 
         var sidecar = AnalysisFile.Read($"{stem}.asd");
@@ -61,7 +62,7 @@ public sealed class LevellingTests : IDisposable
         var before = File.GetLastWriteTimeUtc($"{stem}.asd");
         var levelling = Levelling(_ => -20);
 
-        await levelling.ReadAsync(TestContext.Current.CancellationToken);
+        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
 
         Assert.Empty(levelling.Level());
         Assert.Equal(before, File.GetLastWriteTimeUtc($"{stem}.asd"));
@@ -72,7 +73,7 @@ public sealed class LevellingTests : IDisposable
     {
         var stem = Sample(Path.Combine("Staging", "Song (Vocal - Full).flac"), gain: 1);
         var levelling = Levelling(_ => -20);
-        await levelling.ReadAsync(TestContext.Current.CancellationToken);
+        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
         levelling.Level();
 
         Saved(stem, gain: 1);
@@ -87,7 +88,7 @@ public sealed class LevellingTests : IDisposable
     {
         var stem = Sample(Path.Combine("Staging", "Song (Vocal - Full).flac"), gain: 1);
         var levelling = Levelling(_ => -20);
-        await levelling.ReadAsync(TestContext.Current.CancellationToken);
+        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
         levelling.Level();
 
         _options.TargetLufs = -18;
@@ -101,7 +102,7 @@ public sealed class LevellingTests : IDisposable
     {
         var drums = Sample(Path.Combine("Staging", "Song (Drums).flac"), gain: 0.5f);
         var levelling = Levelling(_ => -17);
-        await levelling.ReadAsync(TestContext.Current.CancellationToken);
+        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
 
         Assert.Equal([drums], levelling.Level());
         Assert.Equal(1, AnalysisFile.Read($"{drums}.asd").Clip.SampleVolume);
@@ -113,7 +114,7 @@ public sealed class LevellingTests : IDisposable
         var stem = Sample(Path.Combine("Staging", "Song (Vocal - Full).flac"), gain: 1);
         _waiting.Await(stem, new AwaitedAnalysis("backup.asd", null, false, DateTime.UtcNow));
         var levelling = Levelling(_ => -20);
-        await levelling.ReadAsync(TestContext.Current.CancellationToken);
+        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
 
         Assert.Empty(levelling.Level());
         Assert.Equal(1, AnalysisFile.Read($"{stem}.asd").Clip.SampleVolume);
@@ -128,7 +129,7 @@ public sealed class LevellingTests : IDisposable
             saved: false
         );
         var levelling = Levelling(_ => -20);
-        await levelling.ReadAsync(TestContext.Current.CancellationToken);
+        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
 
         Assert.Empty(levelling.Level());
     }
@@ -139,7 +140,7 @@ public sealed class LevellingTests : IDisposable
         var stem = Sample(Path.Combine("Staging", "Song (Vocal - Full).flac"), gain: 1);
         _written.RecordStarter(stem);
         var levelling = Levelling(_ => -20);
-        await levelling.ReadAsync(TestContext.Current.CancellationToken);
+        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
 
         Assert.Equal([stem], levelling.Level());
         Assert.True(_written.IsStarter(stem));
@@ -152,8 +153,9 @@ public sealed class LevellingTests : IDisposable
         Sample(Path.Combine("Library", "Artist", "Other (Instrumental - Full).flac"), gain: 1);
         var levelling = Levelling(_ => -20);
 
-        Assert.Equal(2, await levelling.ReadAsync(TestContext.Current.CancellationToken));
-        Assert.Equal(0, await levelling.ReadAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(2, levelling.Unread().Count);
+        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
+        Assert.Empty(levelling.Unread());
     }
 
     private static readonly WarpMarker[] Markers = [new(0.1, 0), new(0.4, 1), new(0.41, 1.03125)];
