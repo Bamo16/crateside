@@ -1,6 +1,7 @@
 # 0058 — A staged stem shows its state in Live
 
-- Status: Accepted
+- Status: Accepted; amended by [ADR 0059](0059-a-sample-arrives-at-one-loudness.md), which has crateside
+  write the clip gain as well as the colour, in the library too
 - Date: 2026-10-17
 - Amends [ADR 0043](0043-a-borrowed-warp-is-finished-and-says-where-it-came-from.md): crateside
   may rewrite a sidecar the user saved, to set its colour and nothing else. Builds

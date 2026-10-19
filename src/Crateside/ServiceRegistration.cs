@@ -7,6 +7,7 @@ using Crateside.Core.Genres;
 using Crateside.Core.KeyDetection;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
+using Crateside.Core.Loudness;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
@@ -70,6 +71,9 @@ public static class ServiceRegistration
                         options.Ear = ear;
                 }
             );
+        builder.Services.Configure<LoudnessOptions>(
+            builder.Configuration.GetSection(LoudnessOptions.SectionName)
+        );
         builder.Services.AddSingleton(_ => new WarpSettingsStore());
         builder
             .Services.AddOptions<WarpOptions>()
@@ -360,11 +364,21 @@ public static class ServiceRegistration
         services.AddSingleton(_ => new WrittenWarps(WrittenWarps.DefaultPath));
         services.AddSingleton(_ => new TransientOrigins(TransientOrigins.DefaultPath));
         services.AddSingleton(_ => new LiveAnalyses(LiveAnalyses.DefaultPath));
+        services.AddSingleton(sp => new LoudnessReader(
+            sp.GetRequiredService<IProcessRunner>(),
+            LoudnessReader.DefaultPath
+        ));
+        // Read on every use, so a target changed in appsettings re-levels every sidecar.
+        services.AddSingleton(sp => new ClipGains(
+            sp.GetRequiredService<LoudnessReader>(),
+            () => sp.GetRequiredService<IOptionsMonitor<LoudnessOptions>>().CurrentValue
+        ));
         services.AddSingleton(sp => new SidecarWriter(
             new FfmpegAudioDecoder(),
             new OnsetDetector(),
             sp.GetRequiredService<WrittenWarps>(),
-            sp.GetRequiredService<TransientOrigins>()
+            sp.GetRequiredService<TransientOrigins>(),
+            sp.GetRequiredService<ClipGains>()
         ));
         services.AddSingleton(sp => new WarpLending(
             sp.GetRequiredService<CratesidePaths>(),
@@ -397,6 +411,10 @@ public static class ServiceRegistration
             sp.GetRequiredService<IOptions<WarpOptions>>().Value
         ));
         services.AddHostedService<WarpWorker>();
+
+        // Unattended too: reading loudness is ffmpeg on the CPU (ADR 0059).
+        services.AddSingleton<Levelling>();
+        services.AddHostedService<LoudnessWorker>();
 
         // Unattended too: keeping a filed track's warp guide is a file move (ADR 0046).
         services.AddSingleton(sp => new WarpGuideKeeper(

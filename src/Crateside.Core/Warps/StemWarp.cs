@@ -31,8 +31,8 @@ public sealed record StemWarp
     public IReadOnlyList<WarpMarker> Markers =>
         Sidecar?.Warp.Markers is { Count: > 1 } markers ? [.. markers.Take(markers.Count - 1)] : [];
 
-    /// <summary>Whether Live applies the warp, which it does only once the default clip is saved.</summary>
-    public bool IsWarped => Sidecar is { IsDefaultClipSaved: true };
+    /// <summary>Whether Live applies a warp, which it does only once the default clip is saved with Warp on.</summary>
+    public bool IsWarped => Sidecar is { IsDefaultClipSaved: true, Warp.IsWarped: true };
 
     /// <summary>The clip's start and end in seconds of audio; the whole file when no clip is saved.</summary>
     public (double Start, double End) Clip =>
@@ -145,6 +145,9 @@ public abstract record WarpOwner
 
     public sealed record Starter(DateTime Written) : WarpOwner;
 
+    /// <summary>A clip crateside saved with Warp off, so the stem arrives at its gain and colour for the user to warp (ADR 0059).</summary>
+    public sealed record Unwarped(DateTime Written) : WarpOwner;
+
     /// <summary>Live analysed the file but no warp was saved, so Live ignores its markers.</summary>
     public sealed record LiveAnalysis : WarpOwner;
 
@@ -188,6 +191,7 @@ public sealed class StemWarpReader(
         WarpOwner owner = (awaited, written.Of(audioPath), sidecar.IsDefaultClipSaved) switch
         {
             ({ } waited, _, false) => new WarpOwner.PuttingBack(waited),
+            (_, { IsUnwarped: true }, _) => new WarpOwner.Unwarped(changed),
             (_, { IsStarter: true }, _) => new WarpOwner.Starter(changed),
             (_, { From: { } from }, _) => new WarpOwner.Borrowed(from, changed),
             (_, _, true) => new WarpOwner.Yours(

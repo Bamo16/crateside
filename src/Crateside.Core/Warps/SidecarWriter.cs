@@ -1,20 +1,22 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using AbleKit.Analysis;
+using Crateside.Core.Loudness;
 using Crateside.Core.Samples;
 using Crateside.Core.Tempo;
 
 namespace Crateside.Core.Warps;
 
 /// <summary>
-/// Writes a stem's sidecar: a sibling's finished warp (#54, ADR 0043–0045), or a starter warp at the
-/// measured BPM when nothing of the upload is warped yet (#77, ADR 0047).
+/// Writes a stem's sidecar: a sibling's finished warp (#54, ADR 0043–0045), a starter warp at the
+/// measured BPM (#77, ADR 0047), or a clip with Warp off; each at its clip gain (ADR 0059).
 /// </summary>
 public sealed class SidecarWriter(
     IAudioDecoder decoder,
     ITransientDetector detector,
     WrittenWarps written,
-    TransientOrigins origins
+    TransientOrigins origins,
+    ClipGains? gains = null
 )
 {
     /// <summary>Live writes one marker more than it shows, this many beats after the last.</summary>
@@ -26,6 +28,9 @@ public sealed class SidecarWriter(
         (string Reference, long Length, double Bpm),
         StarterTiming
     > _timings = new();
+
+    // The warp worker and the levelling pass both rewrite sidecars; neither may undo the other.
+    private readonly Lock _writing = new();
 
     /// <summary>Whether any of these siblings holds a saved warp the user made, which <see cref="BorrowAsync"/> would lend.</summary>
     public bool HasWarpToLend(IReadOnlyList<string> authorities, IReadOnlyList<string> sameKind) =>
@@ -66,6 +71,13 @@ public sealed class SidecarWriter(
         CancellationToken ct = default
     ) =>
         Settle(await PrepareStarterAsync(target, sameKind, bpm, timingFrom, onTheGrid, ct), target);
+
+    /// <summary>Writes a clip with Warp off over the whole file, for a stem that gets no starter (ADR 0059).</summary>
+    public async Task<WarpOutcome> UnwarpAsync(
+        string target,
+        IReadOnlyList<string> sameKind,
+        CancellationToken ct = default
+    ) => Settle(await PrepareUnwarpedAsync(target, sameKind, ct), target);
 
     /// <summary>Works out the sidecar <see cref="BorrowAsync"/> would write, without writing it.</summary>
     public Task<SidecarPlan> PrepareBorrowAsync(
@@ -120,6 +132,7 @@ public sealed class SidecarWriter(
                 sameKind,
                 audio,
                 from,
+                await GainAsync(target, ct),
                 analysis => (warp with { Audio = analysis }, null)
             );
         }
@@ -156,6 +169,7 @@ public sealed class SidecarWriter(
                 sameKind,
                 audio,
                 null,
+                await GainAsync(target, ct),
                 analysis =>
                     (
                         Starter(
@@ -166,6 +180,37 @@ public sealed class SidecarWriter(
                         ),
                         timing.Bpm
                     )
+            );
+        }
+        catch (Exception ex)
+            when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            return Refuse(new WarpOutcome.Failed(ex.Message));
+        }
+    }
+
+    /// <summary>Works out the sidecar <see cref="UnwarpAsync"/> would write, without writing it; never over one crateside or the user wrote.</summary>
+    public async Task<SidecarPlan> PrepareUnwarpedAsync(
+        string target,
+        IReadOnlyList<string> sameKind,
+        CancellationToken ct = default
+    )
+    {
+        try
+        {
+            if (Own(target) is { IsUsers: true } || written.IsCratesides(target))
+                return Refuse(new WarpOutcome.AlreadyWarped());
+
+            if (await decoder.DecodeAsync(target, ct) is not { } audio)
+                return Refuse(Undecodable(target));
+
+            return Prepare(
+                target,
+                sameKind,
+                audio,
+                null,
+                await GainAsync(target, ct),
+                analysis => (Unwarped((double)audio.Frames / audio.SampleRate, analysis), null)
             );
         }
         catch (Exception ex)
@@ -186,15 +231,20 @@ public sealed class SidecarWriter(
     {
         try
         {
-            if (!replacing && Own(audioPath) is { IsUsers: true })
-                return new WarpOutcome.AlreadyWarped();
+            lock (_writing)
+            {
+                if (!replacing && Own(audioPath) is { IsUsers: true })
+                    return new WarpOutcome.AlreadyWarped();
 
-            Coloured(sidecar.File, audioPath).Write(StemFileName.AnalysisFor(audioPath));
+                Coloured(sidecar.File, audioPath).Write(StemFileName.AnalysisFor(audioPath));
 
-            if (sidecar.From is { } lender)
-                written.RecordBorrowed(audioPath, lender);
-            else
-                written.RecordStarter(audioPath);
+                if (sidecar.From is { } lender)
+                    written.RecordBorrowed(audioPath, lender);
+                else if (sidecar.IsUnwarped)
+                    written.RecordUnwarped(audioPath);
+                else
+                    written.RecordStarter(audioPath);
+            }
 
             var transients = sidecar.File.Audio.Transients;
             var transientsFrom = sidecar.TransientsFrom switch
@@ -213,6 +263,7 @@ public sealed class SidecarWriter(
             {
                 { From: { } from } => new WarpOutcome.Written(from, transientsFrom),
                 { Bpm: { } bpm } => new WarpOutcome.Started(bpm, transientsFrom),
+                { IsUnwarped: true } => new WarpOutcome.Unwarped(transientsFrom),
                 _ => throw new UnreachableException(),
             };
         }
@@ -226,30 +277,51 @@ public sealed class SidecarWriter(
     /// Gives a saved sidecar its stem's clip colour, changing nothing else, even over a warp the user
     /// saved; one crateside wrote stays crateside's. True when it was rewritten (#130).
     /// </summary>
-    public bool Recolour(string audioPath)
+    public bool Recolour(string audioPath) =>
+        ClipColours.For(audioPath) is { } colour
+        && Rewrite(
+            audioPath,
+            clip => clip.ColorIndex == colour ? null : clip with { ColorIndex = colour }
+        );
+
+    /// <summary>As <see cref="Recolour"/>, for the clip gain, linear: 1 is 0 dB (ADR 0059).</summary>
+    public bool Level(string audioPath, float gain) =>
+        Rewrite(
+            audioPath,
+            clip =>
+                ClipGains.IsOnTarget(clip.SampleVolume, gain)
+                    ? null
+                    : clip with
+                    {
+                        SampleVolume = gain,
+                    }
+        );
+
+    /// <param name="change">The clip to write, or null when the saved one needs nothing.</param>
+    private bool Rewrite(string audioPath, Func<Clip, Clip?> change)
     {
         var path = StemFileName.AnalysisFor(audioPath);
 
         try
         {
-            if (
-                ClipColours.For(audioPath) is not { } colour
-                || !AnalysisFile.TryRead(path, out var analysis)
-                || analysis is not { IsDefaultClipSaved: true, Clip.ColorIndex: var current }
-                || current == colour
-            )
-                return false;
+            lock (_writing)
+            {
+                if (
+                    !AnalysisFile.TryRead(path, out var analysis)
+                    || analysis is not { IsDefaultClipSaved: true }
+                    || change(analysis.Clip) is not { } clip
+                )
+                    return false;
 
-            var ours = written.Of(audioPath);
+                var ours = written.Of(audioPath);
 
-            (analysis with { Clip = analysis.Clip with { ColorIndex = colour } }).Write(path);
+                (analysis with { Clip = clip }).Write(path);
 
-            if (ours is { From: { } lender })
-                written.RecordBorrowed(audioPath, lender);
-            else if (ours is not null)
-                written.RecordStarter(audioPath);
+                if (ours is not null)
+                    written.Rerecord(audioPath, ours);
 
-            return true;
+                return true;
+            }
         }
         catch (Exception ex)
             when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
@@ -265,6 +337,9 @@ public sealed class SidecarWriter(
                 Clip = file.Clip with { ColorIndex = colour },
             }
             : file;
+
+    private async Task<float?> GainAsync(string target, CancellationToken ct) =>
+        gains is null ? null : await gains.MeasureAsync(target, ct) ?? 1;
 
     private WarpOutcome Settle(SidecarPlan plan, string target) =>
         plan switch
@@ -318,6 +393,25 @@ public sealed class SidecarWriter(
         };
     }
 
+    /// <summary>
+    /// A clip over the whole file with Warp off, which Live applies, gain and colour, then warps as a
+    /// sample never warped; it ignores a warped clip with no markers whole (ADR 0059).
+    /// </summary>
+    private static AnalysisFile Unwarped(double seconds, AudioAnalysis audio) =>
+        new()
+        {
+            Audio = audio,
+            Warp = new Warp { IsWarped = false },
+            Clip = new Clip
+            {
+                LoopEnd = seconds,
+                HiddenLoopEnd = seconds,
+                OutMarker = seconds,
+                LoopOn = false,
+            },
+            IsDefaultClipSaved = true,
+        };
+
     /// <summary>The tempo and first beat one stem gives a whole group, so their warps match and Live can adjust them together.</summary>
     private async Task<StarterTiming?> TimingAsync(
         string reference,
@@ -366,6 +460,7 @@ public sealed class SidecarWriter(
         IReadOnlyList<string> sameKind,
         DecodedAudio audio,
         string? from,
+        float? gain,
         Func<AudioAnalysis, (AnalysisFile File, double? Bpm)> sidecar
     )
     {
@@ -385,6 +480,9 @@ public sealed class SidecarWriter(
         );
 
         var (file, bpm) = sidecar(analysis);
+
+        if (gain is { } level)
+            file = file with { Clip = file.Clip with { SampleVolume = level } };
 
         return new SidecarPlan.Ready(new PreparedSidecar(target, file, from, bpm, transientsFrom));
     }
@@ -499,6 +597,9 @@ public abstract record WarpOutcome
     /// <param name="TransientsFrom">As for <see cref="Written"/>.</param>
     public sealed record Started(double Bpm, string? TransientsFrom) : WarpOutcome;
 
+    /// <param name="TransientsFrom">As for <see cref="Written"/>.</param>
+    public sealed record Unwarped(string? TransientsFrom) : WarpOutcome;
+
     /// <summary>The target holds the user's warp, never replaced (ADR 0037), or already a starter.</summary>
     public sealed record AlreadyWarped : WarpOutcome;
 
@@ -534,4 +635,7 @@ public sealed record PreparedSidecar(
     string? From,
     double? Bpm,
     string? TransientsFrom
-);
+)
+{
+    public bool IsUnwarped => !File.Warp.IsWarped;
+}

@@ -142,12 +142,26 @@ public sealed class WarpLendingTests : IDisposable
     }
 
     [Fact]
-    public async Task Without_a_steady_measured_tempo_no_starter_is_written()
+    public async Task Without_a_steady_measured_tempo_a_stem_gets_a_clip_with_Warp_off_and_no_starter()
+    {
+        var vocal = Stem(_paths.StagingFolder, "Song (Vocal - Full).flac", "Vocal - Full");
+
+        var loans = await Lending(new WarpOptions { StarterWarps = StarterWarps.OnTheGrid })
+            .LendAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(new WarpLoan(vocal, new WarpOutcome.Unwarped(null)), Assert.Single(loans));
+        Assert.False(AnalysisFile.Read($"{vocal}.asd").Warp.IsWarped);
+    }
+
+    [Fact]
+    public async Task With_starter_warps_off_a_stem_with_no_tempo_is_left_for_Live()
     {
         var vocal = Stem(_paths.StagingFolder, "Song (Vocal - Full).flac", "Vocal - Full");
 
         Assert.Empty(
-            await Lending(new WarpOptions { StarterWarps = StarterWarps.OnTheGrid })
+            await Lending(
+                    new WarpOptions { LendAutomatically = true, StarterWarps = StarterWarps.Off }
+                )
                 .LendAsync(TestContext.Current.CancellationToken)
         );
         Assert.False(File.Exists($"{vocal}.asd"));

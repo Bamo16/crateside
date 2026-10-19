@@ -3,7 +3,8 @@ namespace Crateside.Core.Warps;
 /// <summary>
 /// Gives every staged stem without a finished warp the warp its siblings agree on, whether the
 /// stem just landed or the user just saved a sibling (#54, ADR 0043), or a starter warp at the
-/// measured tempo when nothing of its upload is warped (#77, ADR 0047, ADR 0048).
+/// measured tempo when nothing of its upload is warped (#77, ADR 0047, ADR 0048), else a clip with
+/// Warp off so it still arrives at its gain and colour (ADR 0059).
 /// </summary>
 /// <param name="steadyBpm">crateside's own steady tempo for an audio file, or null before it is read or when it drifts.</param>
 /// <param name="waiting">Stems left for Live to analyse, which nothing is written to meanwhile (#97).</param>
@@ -70,7 +71,7 @@ public sealed class WarpLending(
             ? (bpm, source.From)
             : null;
 
-    /// <summary>A lent warp when a sibling holds one, else a starter; null when what applies is switched off.</summary>
+    /// <summary>A lent warp when a sibling holds one, else a starter, else Warp off; null when what applies is switched off.</summary>
     private async Task<WarpOutcome?> OutcomeAsync(
         string target,
         IReadOnlyList<string> authorities,
@@ -84,16 +85,19 @@ public sealed class WarpLending(
                 ? await writer.BorrowAsync(target, authorities, sameKind, ct)
                 : null;
 
-        return tempo is var (bpm, from)
-            ? await writer.StartAsync(
+        return (options.StarterWarps, tempo) switch
+        {
+            (StarterWarps.Off, _) => null,
+            (var starters, var (bpm, from)) => await writer.StartAsync(
                 target,
                 sameKind,
                 bpm,
                 from,
-                options.StarterWarps is StarterWarps.OnTheGrid,
+                starters is StarterWarps.OnTheGrid,
                 ct
-            )
-            : null;
+            ),
+            _ => await writer.UnwarpAsync(target, sameKind, ct),
+        };
     }
 
     private static string Signature(string target, IReadOnlyList<string> lenders, double? bpm) =>

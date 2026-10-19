@@ -58,14 +58,18 @@ public sealed class StagingMarksTests : IDisposable
         Sidecar(tempoOnly, markerBeat: 0);
         _written.RecordStarter(tempoOnly);
         var unwarped = Stem("Song (Drums).flac", "Drums");
+        var warpOff = Stem("Other (Instrumental - Full).flac", "Instrumental - Full");
+        Sidecar(warpOff, markerBeat: 0);
+        _written.RecordUnwarped(warpOff);
 
-        Assert.Equal(new TagWriteOutcome.Written(4), _marks.Collect());
+        Assert.Equal(new TagWriteOutcome.Written(5), _marks.Collect());
 
         var info = _reader.Read(_paths.StagingFolder);
         Assert.Equal([(int)BrowserCollection.Warped], CollectionsOf(info, saved));
         Assert.Equal([(int)BrowserCollection.CheckBeat], CollectionsOf(info, onTheGrid));
         Assert.Equal([(int)BrowserCollection.PlaceBeat], CollectionsOf(info, tempoOnly));
         Assert.Equal([(int)BrowserCollection.WarpByHand], CollectionsOf(info, unwarped));
+        Assert.Equal([(int)BrowserCollection.WarpByHand], CollectionsOf(info, warpOff));
     }
 
     [Fact]

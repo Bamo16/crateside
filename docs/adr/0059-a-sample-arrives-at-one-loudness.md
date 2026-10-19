@@ -49,6 +49,22 @@ integrated loudness.** The audio is never touched; crateside writes the one fiel
   warped clip with no markers, which Live's own editor cannot make.
 - **The loudness reading lives in `Crateside.Core`**, not AbleKit, and is shared with #39.
 
+**Amended 2026-10-19, as built:**
+
+- **"Never levelled" means 0 dB, enforced.** A drums stem or one below the floor is given a gain of
+  1, so a hand-set gain on either is discarded like any other.
+- **On target is within 0.05 dB** of the gain wanted, so float rounding never rewrites a sidecar.
+- **The library gets the gain, not the colour.** ADR 0058's colour stays staging's; only
+  `SampleVolume` is written on a library sidecar.
+- **The Warp-off clip follows the starter-warp setting.** It is written where a starter would be,
+  when the stem gets none (its tempo drifts or is not read yet), and not at all with starter warps
+  *Off*, which leaves the sidecar for Live. A starter or a lent warp replaces it, never the other
+  way round, and it never lends.
+- **A file ffmpeg cannot read keeps its gain**, and a starter or lent warp written for one carries
+  0 dB, not the lender's.
+- **Every sample is read**, saved clip or not, once a minute for any without a current reading,
+  eight at a time, so a clip saved later is levelled within the minute.
+
 ## Consequences
 
 - **Every gain is one number away from undone.** Setting each saved default clip's `SampleVolume`

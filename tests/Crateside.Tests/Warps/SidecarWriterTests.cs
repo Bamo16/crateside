@@ -438,8 +438,115 @@ public sealed class SidecarWriterTests : IDisposable
         );
     }
 
+    [Fact]
+    public async Task A_starter_carries_the_stems_clip_gain_from_its_first_write()
+    {
+        Audio(Target);
+
+        await Levelling(lufs: -20)
+            .StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken);
+
+        Assert.Equal(PlusSixDb, AnalysisFile.Read($"{Target}.asd").Clip.SampleVolume, 4);
+    }
+
+    [Fact]
+    public async Task A_lent_warp_carries_the_borrowers_gain_not_the_lenders()
+    {
+        Audio(Target);
+        (
+            Analysis(saved: true) with
+            {
+                Clip = new Clip { LoopEnd = 5, SampleVolume = 0.25f },
+            }
+        ).Write($"{Sibling}.asd");
+
+        await Levelling(lufs: -20)
+            .BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);
+
+        Assert.Equal(PlusSixDb, AnalysisFile.Read($"{Target}.asd").Clip.SampleVolume, 4);
+    }
+
+    [Fact]
+    public async Task A_stem_with_no_starter_gets_a_saved_clip_with_Warp_off_over_the_whole_file()
+    {
+        Audio(Target);
+
+        var outcome = await Levelling(lufs: -20)
+            .UnwarpAsync(Target, [], TestContext.Current.CancellationToken);
+
+        Assert.Equal(new WarpOutcome.Unwarped(null), outcome);
+
+        var written = AnalysisFile.Read($"{Target}.asd");
+        Assert.True(written.IsDefaultClipSaved);
+        Assert.False(written.Warp.IsWarped);
+        Assert.Empty(written.Warp.Markers);
+        Assert.Equal(
+            (0.0, 1.0, 1.0, false),
+            (
+                written.Clip.LoopStart,
+                written.Clip.LoopEnd,
+                written.Clip.OutMarker,
+                written.Clip.LoopOn
+            )
+        );
+        Assert.Equal(ClipColours.For(Target), written.Clip.ColorIndex);
+        Assert.Equal(PlusSixDb, written.Clip.SampleVolume, 4);
+        Assert.True(_written.Of(Target) is { IsUnwarped: true, IsStarter: false, From: null });
+    }
+
+    [Fact]
+    public async Task A_clip_with_Warp_off_never_lends()
+    {
+        Audio(Target);
+        Audio(Sibling);
+        await Borrower().UnwarpAsync(Sibling, [], TestContext.Current.CancellationToken);
+
+        Assert.IsType<WarpOutcome.NoWarpedSibling>(
+            await Borrower()
+                .BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken)
+        );
+    }
+
+    [Fact]
+    public async Task A_starter_replaces_a_clip_with_Warp_off_but_never_the_other_way_round()
+    {
+        Audio(Target);
+        await Borrower().UnwarpAsync(Target, [], TestContext.Current.CancellationToken);
+
+        Assert.IsType<WarpOutcome.Started>(
+            await Borrower().StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken)
+        );
+        Assert.IsType<WarpOutcome.AlreadyWarped>(
+            await Borrower().UnwarpAsync(Target, [], TestContext.Current.CancellationToken)
+        );
+        Assert.True(_written.IsStarter(Target));
+    }
+
+    [Fact]
+    public async Task A_clip_with_Warp_off_is_never_written_over_the_users_warp()
+    {
+        Audio(Target);
+        Analysis(saved: true).Write($"{Target}.asd");
+
+        Assert.IsType<WarpOutcome.AlreadyWarped>(
+            await Borrower().UnwarpAsync(Target, [], TestContext.Current.CancellationToken)
+        );
+        Assert.True(AnalysisFile.Read($"{Target}.asd").Warp.IsWarped);
+    }
+
+    private const float PlusSixDb = 1.9952623f;
+
     private SidecarWriter Borrower(float level = 0.5f, int frames = Frames) =>
         new(new FixedDecoder(Samples(level, frames)), new FixedDetector(), _written, _origins);
+
+    private SidecarWriter Levelling(double lufs) =>
+        new(
+            new FixedDecoder(Samples(0.5f, Frames)),
+            new FixedDetector(),
+            _written,
+            _origins,
+            Loudness.FakeEbur128.Gains(_ => lufs)
+        );
 
     private static void Audio(string path) => File.WriteAllBytes(path, [1, 2, 3]);
 

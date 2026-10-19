@@ -42,6 +42,11 @@ public static class StemTagReader
         return tags;
     }
 
+    /// <summary>The preset the stem was cut with: its provenance's, else its file name's.</summary>
+    // A kept source's name can hold a parenthetical that is not a preset.
+    public static string? PresetOf(string path) =>
+        Read(path)?.Provenance is { } provenance ? provenance.Preset : StemFileName.PresetOf(path);
+
     private static StemTags? ReadFromDisk(string path)
     {
         try

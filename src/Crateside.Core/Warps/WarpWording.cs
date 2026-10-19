@@ -39,6 +39,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
                 ChipStyle.Outlined
             ),
             WarpOwner.Starter => new("Starter", ChipStyle.Dashed),
+            WarpOwner.Unwarped => new("Warp off", ChipStyle.Dashed),
             WarpOwner.LiveAnalysis => new("Live's analysis", ChipStyle.Dashed),
             WarpOwner.WaitingForLive => new("Waiting for Live", ChipStyle.Amber),
             WarpOwner.PuttingBack => new("Putting the warp back", ChipStyle.Teal),
@@ -55,6 +56,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             WarpOwner.Yours(var saved, _, _) => $"saved {Day(saved)}{Differs(stem)}",
             WarpOwner.Borrowed(_, var written) => $"unchanged since {Day(written)}",
             WarpOwner.Starter => "one marker · not finished",
+            WarpOwner.Unwarped => "gain and colour only · warp it by hand",
             WarpOwner.LiveAnalysis => "not saved, so Live ignores it",
             WarpOwner.WaitingForLive => "preview it in Live",
             WarpOwner.PuttingBack => "Live opened it",
@@ -65,7 +67,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
         stem.Owner switch
         {
             WarpOwner.Yours(var saved, _, { } over) =>
-                $"crateside {(over.From is { } from ? $"lent it {Name(from)}'s warp" : "gave it a starter warp")} on {Day(over.Written.ToLocalTime())}; you saved over it in Live on {Day(saved)}, so it is yours now.{FollowsUntil(stem)}",
+                $"crateside {WhatItWrote(over)} on {Day(over.Written.ToLocalTime())}; you saved over it in Live on {Day(saved)}, so it is yours now.{FollowsUntil(stem)}",
             WarpOwner.Yours(var saved, { Count: > 0 } lentTo, _) =>
                 $"Saved in Live on {Day(saved)}. crateside lends it to {Names(lentTo)}.",
             WarpOwner.Yours(var saved, _, _) =>
@@ -74,6 +76,8 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
                 $"crateside copied {Name(from)}'s warp on {Day(written)}. Unchanged since.",
             WarpOwner.Starter =>
                 $"One marker at crateside's reading{StarterTempo(stem)}, so dropping it into an empty set sets the set's tempo. Not a finished warp: warp it in Live and press Save Default Clip.",
+            WarpOwner.Unwarped(var written) =>
+                $"crateside saved its clip with Warp off on {Day(written)}, so it comes in at the loudness target in its colour. Its tempo drifts or is not read yet, so it has no starter: warp it in Live and press Save Default Clip.",
             WarpOwner.LiveAnalysis =>
                 "Live has opened it, but no warp is saved. Live ignores these markers until you press Save Default Clip.",
             WarpOwner.WaitingForLive =>
@@ -90,7 +94,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
         && stem.Owner switch
         {
             WarpOwner.Yours => group.PartsFrom(stem) is not null,
-            WarpOwner.LiveAnalysis or WarpOwner.Starter => true,
+            WarpOwner.LiveAnalysis or WarpOwner.Starter or WarpOwner.Unwarped => true,
             _ => false,
         };
 
@@ -101,6 +105,8 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
                 $"Writes {Name(lender.Path)}'s warp over yours again. Yours is backed up first.",
             (true, WarpOwner.Starter, { } lender) =>
                 $"Writes {Name(lender.Path)}'s warp over the starter. The starter is backed up first.",
+            (true, WarpOwner.Unwarped, { } lender) =>
+                $"Writes {Name(lender.Path)}'s warp over the clip with Warp off. It is backed up first.",
             (true, _, { } lender) =>
                 $"Writes {Name(lender.Path)}'s warp over Live's analysis again. Live's is backed up first.",
             (_, WarpOwner.Yours(_, { Count: > 0 }, _), _) =>
@@ -108,7 +114,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             (_, WarpOwner.Yours, _) => "Nothing to re-apply: crateside has lent this stem nothing.",
             (_, WarpOwner.Borrowed(var from, _), _) =>
                 $"Nothing to re-apply: it is still {Name(from)}'s warp, unchanged.",
-            (_, WarpOwner.Starter or WarpOwner.LiveAnalysis, _) =>
+            (_, WarpOwner.Starter or WarpOwner.LiveAnalysis or WarpOwner.Unwarped, _) =>
                 "Nothing to lend yet: no stem of this upload has a saved warp.",
             _ => "Nothing to re-apply.",
         };
@@ -243,6 +249,14 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             ({ } parts, { } lender) =>
                 $" It follows {Name(lender.Path)} up to {TempoFormat.Clock(parts)}, then has markers of its own.",
             _ => string.Empty,
+        };
+
+    private string WhatItWrote(WrittenWarp warp) =>
+        warp switch
+        {
+            { From: { } from } => $"lent it {Name(from)}'s warp",
+            { IsUnwarped: true } => "saved its clip with Warp off",
+            _ => "gave it a starter warp",
         };
 
     private static string StarterTempo(StemWarp stem) =>

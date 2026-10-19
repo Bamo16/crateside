@@ -131,6 +131,15 @@ public sealed class WarpWorker(
 
                 break;
 
+            case WarpOutcome.Unwarped(var transientsFrom):
+                logger.LogInformation(
+                    "Gave {Target} a clip with Warp off at its gain, transients {Transients}",
+                    target,
+                    Transients(transientsFrom)
+                );
+
+                break;
+
             case WarpOutcome.SiblingsDisagree(var siblings):
                 logger.LogWarning(
                     "Not warping {Target}: the stems it could take a warp from hold different ones ({Siblings})",
