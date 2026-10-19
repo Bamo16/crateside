@@ -76,6 +76,16 @@ public sealed class PlaylistReader(IOptions<PlaylistOptions> options) : IDisposa
                 ex
             );
         }
+        catch (Exception ex)
+            when (ex is HttpRequestException
+                || (ex is OperationCanceledException && !ct.IsCancellationRequested)
+            )
+        {
+            throw new PlaylistUnavailableException(
+                $"YouTube could not be reached: {ex.Message}",
+                ex
+            );
+        }
 
         return items;
     }
