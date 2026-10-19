@@ -55,7 +55,7 @@ integrated loudness.** The audio is never touched; crateside writes the one fiel
   to 1 (0 dB) reverts the change, and the target setting retunes it.
 - **MEASURED 2026-10-19:** a gain written into a sidecar by AbleKit applies on drag (-6 and +6 dB,
   on a starter-shaped clip), and so does a colour-and-gain sidecar with Warp off (above).
-- **Not measured:** True
+- **Not measured:** true
   peak was not measured: clip gain above 0 dBFS is routine, and only the Main track, which carries
   a limiter, can clip.
 - **A quiet vocal is lifted by at most about 10 dB** with the floor in place; the boost is capped
