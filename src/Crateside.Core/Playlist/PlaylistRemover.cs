@@ -95,6 +95,20 @@ public sealed class PlaylistRemover(PlaylistAuthorizer authorizer)
                 CanSucceedLater = CanSucceedLater(ex),
             };
         }
+        catch (Exception ex)
+            when (ex is HttpRequestException
+                || (ex is OperationCanceledException && !ct.IsCancellationRequested)
+            )
+        {
+            return new RemovalResult
+            {
+                PlaylistItemId = id,
+                Title = item.Title,
+                Removed = false,
+                Reason = $"YouTube could not be reached: {ex.Message}",
+                CanSucceedLater = true,
+            };
+        }
     }
 
     /// <summary>
