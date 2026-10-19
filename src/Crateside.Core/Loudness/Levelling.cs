@@ -23,12 +23,12 @@ public sealed class Levelling(
         StringComparer.OrdinalIgnoreCase
     );
 
-    /// <summary>Reads every sample without a current reading, staging's first; the number read.</summary>
-    public async Task<int> ReadAsync(CancellationToken ct)
-    {
-        string[] unread = [.. Samples().Where(path => reader.Read(path) is null)];
+    /// <summary>The samples without a current reading, staging's first.</summary>
+    public IReadOnlyList<string> Unread() =>
+        [.. Samples().Where(path => reader.Read(path) is null)];
 
-        await Parallel.ForEachAsync(
+    public Task ReadAsync(IReadOnlyList<string> unread, CancellationToken ct) =>
+        Parallel.ForEachAsync(
             unread,
             new ParallelOptions { MaxDegreeOfParallelism = AtOnce, CancellationToken = ct },
             async (path, token) =>
@@ -37,9 +37,6 @@ public sealed class Levelling(
                 reader.Save();
             }
         );
-
-        return unread.Length;
-    }
 
     /// <summary>Sets the clip gain of every saved sidecar that is off it; the samples rewritten.</summary>
     public IReadOnlyList<string> Level()
