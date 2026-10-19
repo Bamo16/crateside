@@ -38,7 +38,7 @@ Live has two places crateside can write to:
 | 4 green | Warped | it holds a warp the maintainer saved, or one lent from it |
 | 5 blue | Warp by hand | it holds no starter: its tempo drifts or is unread |
 | 6 purple | Key caveat | its verdict is modal, LOW or withheld |
-| 7 gray | Odd bars | its track has a bar that gains or drops beats |
+| 7 gray | Odd bars | its track is not consistent 4/4: a bar that gains or drops beats, a meter that changes, or a whole track in 3/4 or 6/8 (amended 2026-10-18, #86) |
 
 - **2 to 5 are one per stem, in staging only.** A stem whose sidecar is with Live (#97) keeps the
   state it had until Live is done. A starter is *on the grid* when its first marker is on beat 1,
