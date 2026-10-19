@@ -48,15 +48,16 @@ public sealed class HandoffSidecars(
                     measured = true;
                 }
 
-                if (bpm is { } tempo)
-                    plan = await writer.PrepareStarterAsync(
+                plan = bpm is { } tempo
+                    ? await writer.PrepareStarterAsync(
                         cut.Path,
                         sameKind,
                         tempo,
                         WarpSiblings.TempoSources(cuts).FirstOrDefault()?.Path,
                         options.StarterWarps is StarterWarps.OnTheGrid,
                         ct
-                    );
+                    )
+                    : await writer.PrepareUnwarpedAsync(cut.Path, sameKind, ct);
             }
 
             if (plan is SidecarPlan.Ready(var sidecar))
@@ -78,7 +79,7 @@ public sealed class HandoffSidecars(
         return prepared.TryGetValue(from, out var sidecar) ? writer.Commit(sidecar, to) : null;
     }
 
-    /// <summary>The nominal tempo of the batch's instrumental when it holds steady; a drifting one gets no starter.</summary>
+    /// <summary>The nominal tempo of the batch's instrumental when it holds steady; a drifting one gets Warp off instead of a starter.</summary>
     private async Task<double?> SteadyBpmAsync(List<SiblingFile> cuts, CancellationToken ct)
     {
         if (WarpSiblings.TempoSources(cuts).FirstOrDefault() is not { } instrumental)

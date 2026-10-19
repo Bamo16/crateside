@@ -250,6 +250,17 @@ by hand; everything below describes candidates against it.
   It says nothing about the warp, which is the stem's **Collection**'s to say. crateside sets it on
   every saved analysis file in staging, the user's included
   ([ADR 0058](docs/adr/0058-a-staged-stem-shows-its-state-in-live.md)).
+- **Clip gain** — the gain a sample's default clip carries, saved in its analysis file, that brings
+  the whole file's integrated loudness to the **loudness target** (-14 LUFS, a setting). Drums,
+  and a stem quieter than the floor (-24 LUFS), keep 0 dB. crateside sets it on every saved
+  analysis file in staging and the library, the user's included, and sets it again whenever Live
+  saves over one; the audio is never touched
+  ([ADR 0059](docs/adr/0059-a-sample-arrives-at-one-loudness.md)).
+- **Warp off clip** — the analysis file crateside writes for a staged stem that gets no **starter
+  warp** (its tempo drifts or is not read yet): a saved clip over the whole file with Warp off,
+  carrying only its **clip colour** and **clip gain**. It is not a warp: the stem still waits to be
+  warped by hand, it never lends, a starter or a lent warp replaces it, and it becomes the user's
+  once Live saves over it ([ADR 0059](docs/adr/0059-a-sample-arrives-at-one-loudness.md)).
 
 ## Tags
 

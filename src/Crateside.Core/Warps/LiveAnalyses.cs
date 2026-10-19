@@ -64,7 +64,14 @@ public sealed class LiveAnalyses(string? path = null)
 /// <param name="Backup">The sidecar as it was before it went to the Recycle Bin, whose clip and warp are put back.</param>
 /// <param name="From">The sibling it was borrowed from, or null.</param>
 /// <param name="WasStarter">Whether it held a starter warp crateside wrote.</param>
-public sealed record AwaitedAnalysis(string Backup, string? From, bool WasStarter, DateTime Sent);
+/// <param name="WasUnwarped">Whether it held a clip crateside saved with Warp off.</param>
+public sealed record AwaitedAnalysis(
+    string Backup,
+    string? From,
+    bool WasStarter,
+    DateTime Sent,
+    bool WasUnwarped = false
+);
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(Dictionary<string, AwaitedAnalysis>))]
@@ -141,7 +148,8 @@ public sealed class WarpActions(
                     backup,
                     crateside?.From,
                     crateside is { IsStarter: true },
-                    time.GetUtcNow().UtcDateTime
+                    time.GetUtcNow().UtcDateTime,
+                    crateside is { IsUnwarped: true }
                 )
             );
 
@@ -190,6 +198,8 @@ public sealed class WarpActions(
                     written.RecordBorrowed(target, from);
                 else if (awaited.WasStarter)
                     written.RecordStarter(target);
+                else if (awaited.WasUnwarped)
+                    written.RecordUnwarped(target);
 
                 waiting.Forget(target);
                 putBack.Add(target);

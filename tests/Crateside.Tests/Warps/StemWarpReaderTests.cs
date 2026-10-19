@@ -57,6 +57,19 @@ public sealed class StemWarpReaderTests : IDisposable
     }
 
     [Fact]
+    public async Task A_clip_with_Warp_off_is_crateside_s_and_no_warp_to_share()
+    {
+        File.Delete($"{Sibling}.asd");
+        await Writer().UnwarpAsync(Target, [], TestContext.Current.CancellationToken);
+
+        var stem = Reader().Read(Target);
+
+        Assert.IsType<WarpOwner.Unwarped>(stem.Owner);
+        Assert.False(stem.IsWarped);
+        Assert.Null(WarpGroup.Of([stem]).Lender);
+    }
+
+    [Fact]
     public async Task A_lent_warp_says_whose_it_is_and_the_lender_says_where_it_went()
     {
         await Writer().BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);

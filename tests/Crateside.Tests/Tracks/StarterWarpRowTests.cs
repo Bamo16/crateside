@@ -49,6 +49,20 @@ public sealed class StarterWarpRowTests : IDisposable
     }
 
     [Fact]
+    public void A_clip_with_Warp_off_reads_as_unwarped_and_the_users_own_warp_as_warped()
+    {
+        var samples = Row(path =>
+            path.Contains("Vocal", StringComparison.Ordinal)
+                ? new WrittenWarp(null, 0, default, IsUnwarped: true)
+                : null
+        )
+            .Samples.ToDictionary(sample => sample.Label);
+
+        Assert.False(samples["Vocal - Full"].HasDefaultClip);
+        Assert.True(samples["Instrumental - Full"].HasDefaultClip);
+    }
+
+    [Fact]
     public void A_track_whose_stems_hold_only_starter_warps_is_not_ready_to_move() =>
         Assert.NotEqual(TrackState.ReadyToMove, Row(_ => new WrittenWarp(null, 0, default)).State);
 

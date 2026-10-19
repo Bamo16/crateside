@@ -41,8 +41,7 @@ public static class ClipColours
     public static int? For(string audioPath)
     {
         var provenance = StemTagReader.Read(audioPath)?.Provenance;
-        // A kept source's name can hold a parenthetical that is not a preset.
-        var preset = provenance is not null ? provenance.Preset : StemFileName.PresetOf(audioPath);
+        var preset = StemTagReader.PresetOf(audioPath);
         var song = provenance?.SourceVideoId ?? StemFileName.WithoutPreset(audioPath);
 
         if (StagedFile.IsWarpGuidePreset(preset))
