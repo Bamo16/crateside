@@ -150,5 +150,7 @@ The maintainer intends to publish it ([#107](https://github.com/Bamo16/crateside
 Until then, new work must not add to what has to be undone: no new machine-specific paths, no new
 dependency on a sibling checkout, no surname or personal circumstances anywhere (handle `Bamo16`
 only), paid services behind a switchable interface, nothing listening beyond localhost without
-authentication. Write issues and docs in the public voice ("the maintainer"). The full list and
-the pre-publication checklist are in #107.
+authentication. Write issues and docs in the public voice ("the maintainer"). A song named in
+a doc gets its artist and title, enough for a stranger to find it (romanise a title in another
+script beside it); otherwise describe it and leave the name out. The full list and the
+pre-publication checklist are in #107.
