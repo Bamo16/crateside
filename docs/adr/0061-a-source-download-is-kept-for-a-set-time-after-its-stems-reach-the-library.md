@@ -39,3 +39,12 @@ measured on an input other than the one a question is about is not wanted.
 
 - With *Forever*, the working set grows by about 45 MB a track (GUESSED from 68 downloads at 3.0 GB).
 - A source kept as a sample is listed, and not downloaded again.
+
+## Backfill
+
+A Settings action downloads the source of every library track that has none held or kept, through
+`stemforge-cli download … --format flac` (Premium; never plain yt-dlp), one at a time, CPU and
+network only. It shows the count and an estimate first (45 MB each, GUESSED), and refuses to start
+at zero days, since the downloads would go at the next sweep. Each folder gets its clock record
+before it downloads, so the janitor reads it as joined to the store; a failed download leaves no
+folder. **Built 2026-10-20, not run.**

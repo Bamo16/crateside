@@ -70,6 +70,31 @@ public sealed class SourceRetentionTests : IDisposable
     }
 
     [Fact]
+    public async Task A_failed_backfill_download_leaves_no_folder_behind_to_be_mistaken_for_a_source()
+    {
+        var set = new WorkingSet(Path.Combine(_directory, "working"));
+        var backfill = new SourceBackfill(
+            TestLedger.Store(),
+            set,
+            new DownloadRunner(Path.Combine(_directory, "no-such-stemforge.exe")),
+            TimeProvider.System,
+            new CratesidePaths
+            {
+                StagingFolder = Path.Combine(_directory, "Staging"),
+                LibraryFolder = Path.Combine(_directory, "Library"),
+            }
+        );
+
+        var results = await backfill.RunAsync(
+            ["dQw4w9WgXcQ"],
+            ct: TestContext.Current.CancellationToken
+        );
+
+        Assert.NotNull(Assert.Single(results).Error);
+        Assert.Empty(set.VideoIds);
+    }
+
+    [Fact]
     public void The_index_lists_a_held_source_and_is_rewritten_only_when_it_changes()
     {
         var set = new WorkingSet(Path.Combine(_directory, "working"));
