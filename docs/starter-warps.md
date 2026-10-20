@@ -125,12 +125,12 @@ pass it (MEASURED, ADR 0048).
 
 ## History
 
-[ADR 0047](adr/0047-a-starter-warp-and-where-transients-came-from.md) (the starter warp),
-[ADR 0048](adr/0048-stems-arrive-in-staging-already-warped.md) (written at handoff, crateside's
-own tempo, the 10 ms check, beatdetect's moving flag dropped),
-[ADR 0050](adr/0050-a-warp-shows-as-itself-and-is-vouched-for-by-its-grid.md) (the refined tempo),
-[ADR 0054](adr/0054-a-starter-warps-marker-sits-on-a-beat-the-loud-transients-place.md) (the
-marker on a beat, numbered from the downbeat),
-[ADR 0058](adr/0058-a-staged-stem-shows-its-state-in-live.md) (Collections),
-[ADR 0059](adr/0059-a-sample-arrives-at-one-loudness.md) (clip gain, and Warp off when there is
-no starter).
+- [ADR 0047](adr/0047-a-starter-warp-and-where-transients-came-from.md): the starter warp
+- [ADR 0048](adr/0048-stems-arrive-in-staging-already-warped.md): written at handoff, at
+  crateside's own tempo; the 10 ms check; beatdetect's moving flag dropped
+- [ADR 0050](adr/0050-a-warp-shows-as-itself-and-is-vouched-for-by-its-grid.md): the refined tempo
+- [ADR 0054](adr/0054-a-starter-warps-marker-sits-on-a-beat-the-loud-transients-place.md): the
+  marker on a beat, numbered from the downbeat
+- [ADR 0058](adr/0058-a-staged-stem-shows-its-state-in-live.md): Collections
+- [ADR 0059](adr/0059-a-sample-arrives-at-one-loudness.md): clip gain, and Warp off when there is
+  no starter
