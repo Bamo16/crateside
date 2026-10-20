@@ -42,10 +42,16 @@ public sealed class HandoffSidecarsTests : IDisposable
     {
         var working = Path.Combine(_root, "working", "Song (Vocal - Full).flac");
         await File.WriteAllBytesAsync(working, [1, 2, 3], TestContext.Current.CancellationToken);
-        var plan = await _writer.PrepareStarterAsync(
+        var writer = new SidecarWriter(
+            SteadyHits.Decoder,
+            SteadyHits.Detector(),
+            _written,
+            _origins
+        );
+        var plan = await writer.PrepareStarterAsync(
             working,
             [],
-            128,
+            120,
             ct: TestContext.Current.CancellationToken
         );
         var prepared = new Dictionary<string, PreparedSidecar>
@@ -54,7 +60,7 @@ public sealed class HandoffSidecarsTests : IDisposable
         };
         var sidecars = new HandoffSidecars(
             _paths,
-            _writer,
+            writer,
             new BeatReader(),
             new WarpOptions { StarterWarps = StarterWarps.OnTheGrid }
         );
@@ -69,7 +75,7 @@ public sealed class HandoffSidecarsTests : IDisposable
         Assert.True(_written.IsStarter(staged));
         Assert.False(File.Exists($"{working}.asd"));
         Assert.Equal(
-            "onsets test",
+            "steady 1",
             _origins.Of(AnalysisFile.Read($"{staged}.asd").Audio.Transients, staged)?.Detector
         );
     }

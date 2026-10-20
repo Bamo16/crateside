@@ -128,14 +128,17 @@ public sealed class WarpLendingTests : IDisposable
 
         var loans = await Lending(
                 new WarpOptions { StarterWarps = StarterWarps.OnTheGrid },
-                bpm: 128
+                bpm: 120,
+                steady: true
             )
             .LendAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(
             [instrumental, vocal],
             loans
-                .Where(loan => loan.Outcome is WarpOutcome.Started(128, _))
+                .Where(loan =>
+                    loan.Outcome is WarpOutcome.Started(var bpm, _) && Math.Abs(bpm - 120) < 0.01
+                )
                 .Select(loan => loan.Target)
                 .Order(StringComparer.Ordinal)
         );
@@ -185,12 +188,12 @@ public sealed class WarpLendingTests : IDisposable
         Assert.False(File.Exists($"{recut}.asd"));
     }
 
-    private WarpLending Lending(WarpOptions options, double? bpm = null) =>
+    private WarpLending Lending(WarpOptions options, double? bpm = null, bool steady = false) =>
         new(
             _paths,
             new SidecarWriter(
-                new SilenceDecoder(),
-                new NoTransients(),
+                steady ? SteadyHits.Decoder : new SilenceDecoder(),
+                steady ? SteadyHits.Detector() : new NoTransients(),
                 new WrittenWarps(),
                 new TransientOrigins()
             ),

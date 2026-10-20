@@ -59,7 +59,8 @@ integrated loudness.** The audio is never touched; crateside writes the one fiel
 - **The Warp-off clip follows the starter-warp setting.** It is written where a starter would be,
   when the stem gets none (its tempo drifts or is not read yet), and not at all with starter warps
   *Off*, which leaves the sidecar for Live. A starter or a lent warp replaces it, never the other
-  way round, and it never lends.
+  way round, and it never lends. (Amended by [ADR 0060](0060-a-starter-is-written-only-where-one-tempo-holds.md):
+  it now replaces a starter whose tempo does not hold.)
 - **A file ffmpeg cannot read keeps its gain**, and a starter or lent warp written for one carries
   0 dB, not the lender's.
 - **Every sample is read**, saved clip or not, once a minute for any without a current reading,

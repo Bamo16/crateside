@@ -24,6 +24,12 @@ public sealed class SidecarWriter(
 
     private const int MinTransientsToRefine = 32;
 
+    /// <summary>How far apart any two 30 s of the track may sit on a starter's grid, in ms; more and the stem gets Warp off.</summary>
+    public const double StarterHoldsWithinMs = 10;
+
+    private const double HoldBlockSeconds = 30;
+    private const int MinWindowsToHold = 6;
+
     private readonly ConcurrentDictionary<
         (string Reference, long Length, double Bpm),
         StarterTiming
@@ -143,7 +149,10 @@ public sealed class SidecarWriter(
         }
     }
 
-    /// <summary>Works out the sidecar <see cref="StartAsync"/> would write, without writing it.</summary>
+    /// <summary>
+    /// Works out the sidecar <see cref="StartAsync"/> would write, without writing it: Warp off instead,
+    /// over a starter too, when one tempo does not hold on the group's beats.
+    /// </summary>
     public async Task<SidecarPlan> PrepareStarterAsync(
         string target,
         IReadOnlyList<string> sameKind,
@@ -155,14 +164,24 @@ public sealed class SidecarWriter(
     {
         try
         {
-            if (Own(target) is { IsUsers: true } or { IsStarter: true })
+            var own = Own(target);
+
+            if (own is { IsUsers: true })
+                return Refuse(new WarpOutcome.AlreadyWarped());
+
+            if (await TimingAsync(timingFrom ?? target, bpm, ct) is not { } timing)
+                return Refuse(Undecodable(timingFrom ?? target));
+
+            if (!timing.Holds)
+                return written.Of(target) is { IsStarter: false }
+                    ? Refuse(new WarpOutcome.AlreadyWarped())
+                    : await UnwarpedAsync(target, sameKind, ct);
+
+            if (own is { IsStarter: true })
                 return Refuse(new WarpOutcome.AlreadyWarped());
 
             if (await decoder.DecodeAsync(target, ct) is not { } audio)
                 return Refuse(Undecodable(target));
-
-            if (await TimingAsync(timingFrom ?? target, bpm, ct) is not { } timing)
-                return Refuse(Undecodable(timingFrom ?? target));
 
             return Prepare(
                 target,
@@ -189,7 +208,7 @@ public sealed class SidecarWriter(
         }
     }
 
-    /// <summary>Works out the sidecar <see cref="UnwarpAsync"/> would write, without writing it; never over one crateside or the user wrote.</summary>
+    /// <summary>Works out the sidecar <see cref="UnwarpAsync"/> would write, without writing it; over a starter, but never a lent warp or the user's.</summary>
     public async Task<SidecarPlan> PrepareUnwarpedAsync(
         string target,
         IReadOnlyList<string> sameKind,
@@ -198,20 +217,9 @@ public sealed class SidecarWriter(
     {
         try
         {
-            if (Own(target) is { IsUsers: true } || written.IsCratesides(target))
-                return Refuse(new WarpOutcome.AlreadyWarped());
-
-            if (await decoder.DecodeAsync(target, ct) is not { } audio)
-                return Refuse(Undecodable(target));
-
-            return Prepare(
-                target,
-                sameKind,
-                audio,
-                null,
-                await GainAsync(target, ct),
-                analysis => (Unwarped((double)audio.Frames / audio.SampleRate, analysis), null)
-            );
+            return Own(target) is { IsUsers: true } || written.Of(target) is { IsStarter: false }
+                ? Refuse(new WarpOutcome.AlreadyWarped())
+                : await UnwarpedAsync(target, sameKind, ct);
         }
         catch (Exception ex)
             when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
@@ -219,6 +227,22 @@ public sealed class SidecarWriter(
             return Refuse(new WarpOutcome.Failed(ex.Message));
         }
     }
+
+    private async Task<SidecarPlan> UnwarpedAsync(
+        string target,
+        IReadOnlyList<string> sameKind,
+        CancellationToken ct
+    ) =>
+        await decoder.DecodeAsync(target, ct) is not { } audio
+            ? Refuse(Undecodable(target))
+            : Prepare(
+                target,
+                sameKind,
+                audio,
+                null,
+                await GainAsync(target, ct),
+                analysis => (Unwarped((double)audio.Frames / audio.SampleRate, analysis), null)
+            );
 
     /// <summary>
     /// Writes a prepared sidecar beside <paramref name="audioPath"/>, which may be where the target
@@ -438,11 +462,18 @@ public sealed class SidecarWriter(
 
         return _timings[key] = new StarterTiming(
             tempo,
-            GridCheck.FirstBeat(transients, audio.SampleRate, tempo)
+            GridCheck.FirstBeat(transients, audio.SampleRate, tempo),
+            Holds(GridCheck.Against(GridCheck.Strongest(transients, audio.SampleRate), tempo))
         );
     }
 
-    private sealed record StarterTiming(double Bpm, double? FirstBeat);
+    /// <param name="Holds">Whether one tempo keeps the stronger transients on its grid through the whole track.</param>
+    private sealed record StarterTiming(double Bpm, double? FirstBeat, bool Holds);
+
+    private static bool Holds(GridReport report) =>
+        report is { Windows.Count: >= MinWindowsToHold, Steps.Count: 0 }
+        && report.OffsetsPer(HoldBlockSeconds).ToArray() is { Length: > 0 } blocks
+        && blocks.Max() - blocks.Min() <= StarterHoldsWithinMs;
 
     /// <summary>The tempo within a hair of the reading that the stem's stronger transients fit best, or the reading when there are too few to say (ADR 0050).</summary>
     private static double Refined(

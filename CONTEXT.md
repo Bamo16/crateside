@@ -229,7 +229,9 @@ by hand; everything below describes candidates against it.
   the pin moves it stays, marked as from an older build.
 - **Starter warp** — a one-marker warp crateside writes, at its own steady beatdetect reading of the
   instrumental, onto each stem of an upload nothing is warped on yet as it lands in staging, so the
-  group dragged into an empty set sets its tempo. Its marker sits on a beat the loud transients
+  group dragged into an empty set sets its tempo. It is written only where that one tempo keeps the
+  beats on its grid through the track, within 10 ms
+  ([ADR 0060](docs/adr/0060-a-starter-is-written-only-where-one-tempo-holds.md)). Its marker sits on a beat the loud transients
   place ([ADR 0054](docs/adr/0054-a-starter-warps-marker-sits-on-a-beat-the-loud-transients-place.md)),
   not necessarily a downbeat. It is not
   a finished warp: the stem still waits to be warped, it never lends, a lent warp replaces it, and
@@ -257,10 +259,12 @@ by hand; everything below describes candidates against it.
   saves over one; the audio is never touched
   ([ADR 0059](docs/adr/0059-a-sample-arrives-at-one-loudness.md)).
 - **Warp off clip** — the analysis file crateside writes for a staged stem that gets no **starter
-  warp** (its tempo drifts or is not read yet): a saved clip over the whole file with Warp off,
-  carrying only its **clip colour** and **clip gain**. It is not a warp: the stem still waits to be
-  warped by hand, it never lends, a starter or a lent warp replaces it, and it becomes the user's
-  once Live saves over it ([ADR 0059](docs/adr/0059-a-sample-arrives-at-one-loudness.md)).
+  warp** (one tempo does not hold on its beats, or its tempo is not read yet): a saved clip over the
+  whole file with Warp off, carrying only its **clip colour** and **clip gain**. It is not a warp:
+  the stem still waits to be warped by hand, it never lends, a starter whose tempo holds or a lent
+  warp replaces it, and it becomes the user's once Live saves over it
+  ([ADR 0059](docs/adr/0059-a-sample-arrives-at-one-loudness.md),
+  [ADR 0060](docs/adr/0060-a-starter-is-written-only-where-one-tempo-holds.md)).
 
 ## Tags
 
