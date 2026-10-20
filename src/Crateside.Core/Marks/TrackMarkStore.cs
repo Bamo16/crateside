@@ -15,6 +15,9 @@ public sealed class TrackMarkStore(string? path = null)
 
     private Dictionary<string, TrackMarkRecord>? _cached;
 
+    /// <summary>Raised after a mark is set or cleared.</summary>
+    public event Action? Changed;
+
     /// <summary>Every song with a mark, by song identity. Never throws: an unreadable file reads as empty.</summary>
     public IReadOnlyDictionary<string, TrackMarkRecord> Read()
     {
@@ -53,6 +56,8 @@ public sealed class TrackMarkStore(string? path = null)
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
+
+        Changed?.Invoke();
     }
 
     private Dictionary<string, TrackMarkRecord> TryReadFile() =>

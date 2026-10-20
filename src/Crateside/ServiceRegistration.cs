@@ -27,6 +27,7 @@ using Crateside.Core.Staging;
 using Crateside.Core.Tempo;
 using Crateside.Core.Tracks;
 using Crateside.Core.Warps;
+using Crateside.Core.Watching;
 using Crateside.Core.WorkLists;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
@@ -555,7 +556,16 @@ public static class ServiceRegistration
             .SetHandlerLifetime(TimeSpan.FromMinutes(5));
         services.AddHostedService<GenreWorker>();
 
-        services.AddSingleton(_ => new TrackMarkStore());
+        services.AddSingleton(_ => new FileChanges(TimeProvider.System));
+        services.AddHostedService<FileWatchService>();
+
+        services.AddSingleton(sp =>
+        {
+            var store = new TrackMarkStore();
+            store.Changed += sp.GetRequiredService<FileChanges>().Notify;
+
+            return store;
+        });
 
         services.AddSingleton(_ => new FamiliarityStore());
         services

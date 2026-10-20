@@ -1,18 +1,24 @@
 using Crateside.Core.Loudness;
+using Crateside.Core.Watching;
 using Humanizer;
 
 namespace Crateside;
 
 /// <summary>
-/// Reads every sample's loudness and keeps each saved default clip at its clip gain, once a minute.
+/// Reads every sample's loudness and keeps each saved default clip at its clip gain, when Staging or the library changes and every ten minutes besides.
 /// Never paused: ffmpeg runs on the CPU and contends for nothing, like detection (ADR 0059).
 /// </summary>
-public sealed class LoudnessWorker(Levelling levelling, ILogger<LoudnessWorker> logger)
-    : BackgroundService
+public sealed class LoudnessWorker(
+    Levelling levelling,
+    FileChanges changes,
+    ILogger<LoudnessWorker> logger
+) : BackgroundService
 {
     private const int ListedAtMost = 5;
 
-    private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan Interval = TimeSpan.FromMinutes(10);
+
+    private readonly FileChanges.Listener _wake = changes.Listen();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -51,7 +57,7 @@ public sealed class LoudnessWorker(Levelling levelling, ILogger<LoudnessWorker> 
 
             try
             {
-                await Task.Delay(Interval, stoppingToken);
+                await _wake.WaitAsync(Interval, stoppingToken);
             }
             catch (OperationCanceledException)
             {

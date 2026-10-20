@@ -83,7 +83,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             WarpOwner.WaitingForLive =>
                 "Its warp file is in the Recycle Bin. Preview it in Live's browser and Live writes a fresh one; crateside then puts the warp back.",
             WarpOwner.PuttingBack =>
-                "Live wrote a fresh file. crateside puts the warp back within a minute.",
+                "Live wrote a fresh file. crateside puts the warp back shortly.",
             _ => "Live has not opened this file, so there is no warp and no overview yet.",
         };
 
@@ -201,7 +201,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
         stem.Owner switch
         {
             WarpOwner.WaitingForLive =>
-                $"Preview {Name(stem.Path)} in Live's browser ({folder}). Live writes a fresh file, and crateside puts the warp back within a minute.",
+                $"Preview {Name(stem.Path)} in Live's browser ({folder}). Live writes a fresh file, and crateside puts the warp back shortly.",
             WarpOwner.PuttingBack => "Live wrote a fresh file · putting the warp back…",
             _ when stem.Sidecar is null => "No warp file yet: Live has not opened this stem.",
             _ =>
