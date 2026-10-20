@@ -140,6 +140,61 @@ public sealed class KnownBuildsTests : IDisposable
         Assert.Equal("1.2.0-563e4e4", reader.BuildOf(audio)?.Label);
     }
 
+    [Fact]
+    public async Task A_reading_from_an_older_build_is_read_again_after_those_with_none()
+    {
+        if (!SkipUnlessHarness())
+            return;
+
+        var (old, fresh) = (Path.Combine(_folder, "old.wav"), Path.Combine(_folder, "fresh.wav"));
+        WriteSilence(old);
+        WriteSilence(fresh);
+        var builds = new KnownBuilds(StatePath);
+        await builds.AddAsync(Older, TestContext.Current.CancellationToken);
+        var newer = Assert.IsType<BuildAddOutcome.Added>(
+            await builds.AddAsync(Newest, TestContext.Current.CancellationToken)
+        );
+        var reader = new BeatReader(Path.Combine(_folder, "beats.json"), builds: builds);
+        await reader.RefreshBuildAsync(TestContext.Current.CancellationToken);
+        await reader.MeasureAsync(old, TestContext.Current.CancellationToken);
+
+        builds.Pin(newer.Known.Build.Sha256);
+        await reader.RefreshBuildAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal([fresh, old], reader.ToRead([old, fresh]));
+
+        await reader.MeasureAsync(old, TestContext.Current.CancellationToken);
+
+        Assert.Equal([fresh], reader.ToRead([old, fresh]));
+        Assert.Equal("1.3.0-1e57fec", reader.BuildOf(old)?.Label);
+    }
+
+    [Fact]
+    public async Task A_reading_from_a_newer_build_than_the_pin_is_kept()
+    {
+        if (!SkipUnlessHarness())
+            return;
+
+        var audio = Path.Combine(_folder, "tone.wav");
+        WriteSilence(audio);
+        var builds = new KnownBuilds(StatePath);
+        var older = Assert.IsType<BuildAddOutcome.Added>(
+            await builds.AddAsync(Older, TestContext.Current.CancellationToken)
+        );
+        var newer = Assert.IsType<BuildAddOutcome.Added>(
+            await builds.AddAsync(Newest, TestContext.Current.CancellationToken)
+        );
+        builds.Pin(newer.Known.Build.Sha256);
+        var reader = new BeatReader(Path.Combine(_folder, "beats.json"), builds: builds);
+        await reader.RefreshBuildAsync(TestContext.Current.CancellationToken);
+        await reader.MeasureAsync(audio, TestContext.Current.CancellationToken);
+
+        builds.Pin(older.Known.Build.Sha256);
+        await reader.RefreshBuildAsync(TestContext.Current.CancellationToken);
+
+        Assert.Empty(reader.ToRead([audio]));
+    }
+
     private static bool SkipUnlessHarness()
     {
         if (File.Exists(Newest) && File.Exists(Older))
