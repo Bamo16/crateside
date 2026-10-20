@@ -10,12 +10,12 @@ public sealed class BrowserCollectionsTests
     public void A_new_warp_state_replaces_the_old_and_the_users_own_Collections_stay()
     {
         var merged = BrowserCollections.Merged(
-            [1, 2, 7],
+            [1, 2],
             [BrowserCollection.Warped],
             BrowserCollections.Cratesides
         );
 
-        Assert.Equal([1, 4, 7], merged);
+        Assert.Equal([1, 4], merged);
     }
 
     [Fact]
@@ -27,10 +27,31 @@ public sealed class BrowserCollectionsTests
     }
 
     [Fact]
-    public void Odd_bars_stays_the_users_until_crateside_can_mark_a_track_with_it()
+    public void Odd_bars_is_crateside_s_to_set_and_take_away_and_Mine_stays_the_users()
     {
-        Assert.DoesNotContain(BrowserCollection.OddBars, BrowserCollections.Cratesides);
+        Assert.Contains(BrowserCollection.OddBars, BrowserCollections.Cratesides);
         Assert.DoesNotContain(BrowserCollection.Mine, BrowserCollections.Cratesides);
+    }
+
+    [Fact]
+    public void A_track_marked_odd_bars_is_put_in_that_Collection_and_a_hand_set_one_goes_when_it_is_not()
+    {
+        Assert.Equal(
+            [BrowserCollection.OddBars],
+            BrowserCollections.TrackMarksFor(null, [TrackMark.OddBars])
+        );
+        Assert.Equal(
+            [BrowserCollection.KeyCaveat, BrowserCollection.OddBars],
+            BrowserCollections.TrackMarksFor(null, [TrackMark.OddBars, TrackMark.ChangesKey])
+        );
+        Assert.Equal(
+            [1],
+            BrowserCollections.Merged(
+                [1, 7],
+                BrowserCollections.TrackMarksFor(null),
+                BrowserCollections.Cratesides
+            )
+        );
     }
 
     [Theory]

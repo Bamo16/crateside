@@ -8,4 +8,7 @@ public enum TrackMark
 {
     /// <summary>The key changes partway (#128).</summary>
     ChangesKey,
+
+    /// <summary>The track is not consistent 4/4 (#86).</summary>
+    OddBars,
 }
