@@ -29,6 +29,7 @@
 @inject JudgeSettingsStore JudgeStore
 @inject TrueUpAll TrueUps
 @inject SourceRetentionStore RetentionStore
+@inject SourceBackfill SourceFill
 
 <PageTitle>Settings · crateside</PageTitle>
 
@@ -348,6 +349,78 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                     <span class="status">@RetentionNote</span>
                 </div>
             </div>
+
+            <div class="row">
+                <div class="name">
+                    <span>Download the missing ones</span>
+                    <span class="gist">
+                        Fetches the source of every library track that has none held or kept, the
+                        same way crateside downloads. Network and CPU only, no GPU. Each lands
+                        under the retention above.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="line">
+                        <span class="state">
+                            @if (_missing is { } missing)
+                            {
+                                <text>
+                                    <span class="mono value">@missing.Count</span>
+                                    @("source".ToQuantity(missing.Count, ShowQuantityAs.None)) missing, about
+                                    <span class="mono value">@((missing.Count * SourceBackfill.GuessedBytesPerSource / 1_000_000_000.0).ToString("N1")) GB</span>
+                                    (a guess: 45 MB each)
+                                </text>
+                            }
+                            else
+                            {
+                                <text>@(_missingWorking ? "Counting…" : "Not counted yet")</text>
+                            }
+                        </span>
+                        <button class="outline" @onclick="CountMissingAsync"
+                                disabled="@(_missingWorking || _filling)">Count them</button>
+                    </div>
+
+                    @if (_missing is { Count: > 0 } toFetch && !_filling)
+                    {
+                        <div class="confirm">
+                            <span>
+                                Download <span class="mono value">@toFetch.Count</span>
+                                @("source".ToQuantity(toFetch.Count, ShowQuantityAs.None))?
+                                @if (_retention.KeepsNothing)
+                                {
+                                    <text>With the retention at 0 days they would be discarded at once, so set it first.</text>
+                                }
+                            </span>
+                            <div class="actions">
+                                <button class="primary" @onclick="() => FillAsync(toFetch)"
+                                        disabled="@_retention.KeepsNothing">Download them</button>
+                                <button class="outline" @onclick="() => _missing = null">Cancel</button>
+                            </div>
+                        </div>
+                    }
+
+                    @if (_filling)
+                    {
+                        <div class="actions">
+                            <span class="status">
+                                Downloaded <span class="mono">@_filled</span> of <span class="mono">@_fillTotal</span>…
+                            </span>
+                            <button class="outline" @onclick="() => _fillCancel?.Cancel()">Stop</button>
+                        </div>
+                    }
+                    else if (_fillFailures is { } failures)
+                    {
+                        <span class="status">
+                            Downloaded <span class="mono">@_filled</span>; <span class="mono">@failures.Count</span> failed.
+                        </span>
+
+                        @foreach (var failure in failures)
+                        {
+                            <span class="status problem">@failure.VideoId: @failure.Error</span>
+                        }
+                    }
+                </div>
+            </div>
         </section>
 
         <section>
@@ -548,6 +621,13 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
     private SourceRetention _retention = new();
     private int _days;
+    private IReadOnlyList<string>? _missing;
+    private bool _missingWorking;
+    private bool _filling;
+    private int _filled;
+    private int _fillTotal;
+    private IReadOnlyList<BackfillResult>? _fillFailures;
+    private CancellationTokenSource? _fillCancel;
 
     private string RetentionNote =>
         _retention switch
@@ -566,6 +646,50 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         RetentionStore.Remember(chosen);
         _retention = RetentionStore.Read();
         _days = _retention.Days;
+    }
+
+    private async Task CountMissingAsync()
+    {
+        (_missingWorking, _missing, _fillFailures) = (true, null, null);
+
+        try
+        {
+            _missing = await Task.Run(SourceFill.Missing);
+        }
+        finally
+        {
+            _missingWorking = false;
+        }
+    }
+
+    private async Task FillAsync(IReadOnlyList<string> videoIds)
+    {
+        (_filling, _filled, _fillTotal, _fillFailures) = (true, 0, videoIds.Count, null);
+        _fillCancel = new CancellationTokenSource();
+
+        try
+        {
+            var results = await SourceFill.RunAsync(
+                videoIds,
+                result =>
+                {
+                    if (result.Error is null)
+                        _filled++;
+
+                    _ = InvokeAsync(StateHasChanged);
+                },
+                _fillCancel.Token
+            );
+
+            _fillFailures = [.. results.Where(result => result.Error is not null)];
+        }
+        finally
+        {
+            _filling = false;
+            _missing = null;
+            _fillCancel.Dispose();
+            _fillCancel = null;
+        }
     }
 
     private TrueUpBatch? _trueUps;

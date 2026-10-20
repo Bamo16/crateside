@@ -501,6 +501,13 @@ public static class ServiceRegistration
 
         services.AddSingleton(_ => new SourceRetentionStore());
         services.AddSingleton(sp => new SourceIndex(sp.GetRequiredService<WorkingSet>()));
+        services.AddSingleton(sp => new SourceBackfill(
+            sp.GetRequiredService<LedgerStore>(),
+            sp.GetRequiredService<WorkingSet>(),
+            sp.GetRequiredService<DownloadRunner>(),
+            TimeProvider.System,
+            sp.GetRequiredService<CratesidePaths>()
+        ));
         services.AddSingleton(sp => new WorkingSetJanitor(
             sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<WorkingSet>(),
