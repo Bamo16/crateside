@@ -11,8 +11,7 @@ works this way is in the ADRs listed at the end.
 
 | crateside wrote | the stem's Collection | left to do by hand |
 |---|---|---|
-| a starter, *On the grid* | Check beat (orange) | check the marker's beat, set the clip start, save |
-| a starter, *Tempo only* | Place beat (yellow) | move the marker onto a beat, set the clip start, save |
+| a starter | Check beat (orange) | check the marker's beat, set the clip start, save |
 | a clip with Warp off | Warp by hand (blue) | the whole warp |
 | a lent warp (a sibling's saved warp) | Warped (green) | nothing |
 
@@ -27,8 +26,9 @@ amended 2026-10-19).
 - **`Warps:StarterWarps`**, changed from Settings while crateside runs and kept in
   `warp-settings.json`, which wins over appsettings:
   - *Off*: nothing is written, and Live analyses the stem itself.
-  - *Tempo only* (the appsettings default): one marker at the start of the audio, at crateside's tempo.
-  - *On the grid*: the marker on a beat, and the clip starting there.
+  - *On the grid* (the default): the marker on a beat, and the clip starting there.
+
+  *Tempo only*, a marker at 0 s that only set the tempo, was removed on 2026-10-19 (ADR 0054).
 - **`Warps:LendAutomatically`**: whether a sibling's saved warp is copied without asking. When a
   stem has a warp to borrow, that always comes first, so no starter is written even with lending off.
 
@@ -74,12 +74,12 @@ allows. Neither replaces a lent warp or the maintainer's own.
    - every 30 s block's average offset within **10 ms** of every other's.
 
    A stem that fails gets a clip with Warp off.
-7. **Place the marker** (*On the grid* only). Fold the transients onto one beat at the refined
-   tempo, louder ones weighted to the fourth power, and take the peak (`GridCheck.FirstBeat`). That
-   is the first beat in the file, at most one beat from its start. With fewer than 32 transients, or
-   in *Tempo only*, the marker sits at 0 s.
+7. **Place the marker.** Fold the transients onto one beat at the refined tempo, louder ones
+   weighted to the fourth power, and take the peak (`GridCheck.FirstBeat`). That is the first beat
+   in the file, at most one beat from its start. With fewer than 32 transients no beat is placed,
+   and the stem gets a clip with Warp off.
 8. **Write the sidecar** for each stem (`SidecarWriter.Starter`):
-   - one marker (as Live's beat 1, or beat 0 at 0 s), plus Live's hidden marker 1/32 of a beat later;
+   - one marker, as Live's beat 1, plus Live's hidden marker 1/32 of a beat later;
    - the clip from the marker's beat to the end of the file, looping off;
    - the stem's own waveform and transients;
    - its clip gain to the loudness target (ADR 0059);
@@ -98,6 +98,7 @@ allows. Neither replaces a lent warp or the maintainer's own.
 | beatdetect reports it as moving | Warp off |
 | the windows drift | Warp off |
 | one tempo does not hold within 10 ms, or has a step | Warp off |
+| too few transients to place a beat (under 32) | Warp off |
 | the maintainer already saved a warp | untouched |
 
 About one steady track in eight fails the 10 ms check. On the library, 345 of 394 steady warps

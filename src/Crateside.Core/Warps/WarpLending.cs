@@ -88,14 +88,7 @@ public sealed class WarpLending(
         return (options.StarterWarps, tempo) switch
         {
             (StarterWarps.Off, _) => null,
-            (var starters, var (bpm, from)) => await writer.StartAsync(
-                target,
-                sameKind,
-                bpm,
-                from,
-                starters is StarterWarps.OnTheGrid,
-                ct
-            ),
+            (_, var (bpm, from)) => await writer.StartAsync(target, sameKind, bpm, from, ct),
             _ => await writer.UnwarpAsync(target, sameKind, ct),
         };
     }
@@ -134,7 +127,7 @@ public sealed class WarpOptions
     /// What stems of an upload nothing is warped on get (ADR 0047, ADR 0048, ADR 0054). Changed from
     /// Settings while crateside runs, so every reader looks again each time.
     /// </summary>
-    public StarterWarps StarterWarps { get; set; } = StarterWarps.TempoOnly;
+    public StarterWarps StarterWarps { get; set; } = StarterWarps.OnTheGrid;
 }
 
 /// <summary>What crateside writes for a stem nothing of its upload is warped on.</summary>
@@ -142,9 +135,6 @@ public enum StarterWarps
 {
     /// <summary>Nothing: the sidecar is left for Live to write, with Live's own transients.</summary>
     Off,
-
-    /// <summary>One marker at the start of the audio, at crateside's own tempo reading.</summary>
-    TempoOnly,
 
     /// <summary>The marker on a beat the transients place, and the clip starting on it (ADR 0054).</summary>
     OnTheGrid,

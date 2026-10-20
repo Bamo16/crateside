@@ -1,7 +1,7 @@
 # 0054 — a starter warp's marker sits on a beat the loud transients place
 
 - Status: Accepted; amended 2026-10-19 (below): the marker's beat is numbered from the downbeat
-  where the filter is sure of it
+  where the filter is sure of it, and *Tempo only* is removed
 - Date: 2026-10-13
 - Amends [ADR 0047](0047-a-starter-warp-and-where-transients-came-from.md), which put the starter
   warp's one marker at the start of the audio. Builds [#72](https://github.com/Bamo16/crateside/issues/72)
@@ -63,13 +63,22 @@ reported as a guess.
 - Not yet built: where the clip starts when the bar line falls just before the audio, and whether
   the downbeat is read from the drum stem, are settled in #134.
 
+**Amended 2026-10-19: *Tempo only* is removed, and a stem whose beat cannot be placed arrives with
+Warp off.** The maintainer's reasons: a tempo-only starter was rarely useful, and a marker that
+might or might not sit on a beat makes every marker harder to read. It could only ever help a
+steady track, and a steady track is now placed on the grid. The setting is *Off* or *On the
+grid*, and *On the grid* is the default. Under *On the grid*, a stem with too few transients to
+place a beat (under 32) used to get a marker at 0 s. Now it gets ADR 0059's clip with Warp off,
+the same as a tempo that does not hold. A `warp-settings.json` that still says *Tempo only* reads
+as no choice made, so appsettings applies. The maintainer may bring the mode back.
+
 ## Consequences
 
 - About one track in eleven still lands half a beat off (31 of 353 on the corpus). It is moved the
   same way as before.
 - The filter's own beat offset is not used for placement. `StarterGrid`, which reads it, is not
   wired into the writer; it stays for the downbeat, its confidence gate and the moving flags.
-- **It is a setting, not a given** (2026-10-14). `Warps:StarterWarps` replaces `WriteStarterWarps` and
+- **It is a setting, not a given** (2026-10-14; *Tempo only* removed 2026-10-19, above). `Warps:StarterWarps` replaces `WriteStarterWarps` and
   has three values: *Off* (nothing is written, so Live analyses the stem with its own transients,
   which the beatdetect harness needs), *Tempo only* (the marker and clip at the start of the audio,
   ADR 0047's starter, with the group's shared tempo) and *On the grid* (this ADR). Settings changes it

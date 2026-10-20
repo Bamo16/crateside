@@ -564,7 +564,6 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         mode switch
         {
             StarterWarps.Off => "Off",
-            StarterWarps.TempoOnly => "Tempo only",
             _ => "On the grid",
         };
 
@@ -573,10 +572,8 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         {
             StarterWarps.Off =>
                 "Nothing is written, so Live analyses each stem itself, with its own transients.",
-            StarterWarps.TempoOnly =>
-                "One marker at the start of the audio, at crateside's tempo reading, so the group sets the arrangement's tempo.",
             _ =>
-                "As tempo only, with the marker on a beat the transients place and the clip starting on it. About one track in eleven lands half a beat off.",
+                "One marker at crateside's tempo reading, on a beat the transients place, and the clip starting on it. A stem whose beat cannot be placed arrives with Warp off. About one track in eleven lands half a beat off.",
         };
 
     private const int MinutesPerDay = 1440;

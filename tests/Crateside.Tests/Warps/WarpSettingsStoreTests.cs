@@ -14,7 +14,6 @@ public sealed class WarpSettingsStoreTests : IDisposable
 
     [Theory]
     [InlineData(StarterWarps.Off)]
-    [InlineData(StarterWarps.TempoOnly)]
     [InlineData(StarterWarps.OnTheGrid)]
     public void A_choice_outlives_the_store_that_made_it(StarterWarps chosen)
     {
@@ -23,6 +22,15 @@ public sealed class WarpSettingsStoreTests : IDisposable
         new WarpSettingsStore(path).Remember(chosen);
 
         Assert.Equal(chosen, new WarpSettingsStore(path).Read());
+    }
+
+    [Fact]
+    public void A_mode_since_removed_reads_as_nothing_chosen()
+    {
+        var path = Path.Combine(_root, "old.json");
+        File.WriteAllText(path, """{ "starterWarps": "TempoOnly" }""");
+
+        Assert.Null(new WarpSettingsStore(path).Read());
     }
 
     [Fact]
