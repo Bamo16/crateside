@@ -1,7 +1,7 @@
 # 0048 — stems arrive in staging already warped, at crateside's own tempo
 
-- Status: Accepted; amended by [ADR 0060](0060-a-starter-is-written-only-where-one-tempo-holds.md),
-  which writes a starter only where one tempo holds on the beats
+- Status: Accepted; amended 2026-10-19 (below): a starter is written only where one tempo holds on
+  the beats
 - Date: 2026-10-02
 - Amends [ADR 0047](0047-a-starter-warp-and-where-transients-came-from.md). Builds
   [#77](https://github.com/Bamo16/crateside/issues/77).
@@ -39,6 +39,34 @@ kept readings.
 
 Both remain switched off (`Warps:LendAutomatically`, `Warps:WriteStarterWarps`) until the user has
 checked a borrowed warp in Live.
+
+**Amended 2026-10-19: a starter is written only where one tempo holds on the beats.** "A reading
+that drifts" was judged by the interquartile range of the 30 s windows (under 0.1%), which misses a
+tempo that wanders and comes back, a step, and a track beatdetect itself reports as moving.
+MEASURED that day on the six starters in staging, laying each grid against the instrumental's
+strong transients: two held (*Hey Ya!* within 1 ms over every 30 s, GYARI 4 ms) and four did not
+(*drivers license* 34 ms, *Nineteen* 27 ms with a step, *Kiss from a Rose* 79 ms with five, *Action
+in Memphis* 83 ms, flagged as moving). The maintainer's rule: auto-warp only what can be done
+properly, a steady tempo on a grid (not necessarily the downbeat); otherwise arrive unwarped and
+say so.
+
+- **The check.** The starter's tempo (the reading, refined on the transients as before) is laid
+  against the reference stem's stronger transients, phased to fit them, and must hold: at least six
+  10 s windows, no step, and every 30 s within **10 ms** of every other. A reading beatdetect reports
+  as moving gets no starter.
+- **A stem that fails gets [ADR 0059](0059-a-sample-arrives-at-one-loudness.md)'s clip with Warp
+  off** and the *Warp by hand* Collection, a starter written before the check included, the next
+  time crateside looks at it. A starter and a clip with Warp off replace each other as the tempo
+  allows; a lent warp or the user's own is never replaced.
+- **The threshold, MEASURED** over the 450 library tracks whose reading would give a starter,
+  against the user's own warp of each: of 394 steady warps 345 pass (88%), of 22 with a step none,
+  of 34 that change tempo 11 (ones a single tempo serves within 10 ms anyway). The steady warps'
+  spread has a median of 4.1 ms and a 90th percentile of 11.7 ms; 8 ms would keep 314, 15 ms 370
+  but let one stepped track through. Correcting the tempo for its measured drift first, as a
+  true-up does, rescued only 4 more, so it was left out.
+- **About one steady track in eight now arrives unwarped**, those on which one tempo drifts 10 to
+  30 ms across the track. The check uses the transients the starter would carry: Live's where the
+  stem has a Live analysis, else crateside's detector's; the measurement used Live's.
 
 ## Consequences
 
