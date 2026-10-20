@@ -31,22 +31,26 @@ public static class BrowserCollections
         };
 
     /// <summary>Marks on every stem of a track, in staging and the library alike.</summary>
-    // Odd bars joins once a track can be marked as having a bar that gains or drops beats (#86).
     public static IReadOnlySet<BrowserCollection> TrackMarks { get; } =
-        new HashSet<BrowserCollection> { BrowserCollection.KeyCaveat };
+        new HashSet<BrowserCollection> { BrowserCollection.KeyCaveat, BrowserCollection.OddBars };
 
     /// <summary>Every Collection crateside sets and takes away; one it does not own is the user's.</summary>
     public static IReadOnlySet<BrowserCollection> Cratesides { get; } =
         new HashSet<BrowserCollection>(WarpStates.Concat(TrackMarks));
 
-    /// <summary>Key caveat when the verdict's Key tag may mislead a pairing, or the maintainer marked the key as changing.</summary>
+    /// <summary>Key caveat when the verdict's Key tag may mislead a pairing or the maintainer marked the key as changing; Odd bars when they marked the track so.</summary>
     public static IReadOnlyList<BrowserCollection> TrackMarksFor(
         LedgerRun? verdict,
         IReadOnlyCollection<TrackMark>? marked = null
     ) =>
-        MayMislead(verdict) || marked?.Contains(TrackMark.ChangesKey) is true
-            ? [BrowserCollection.KeyCaveat]
-            : [];
+        [
+            .. MayMislead(verdict) || marked?.Contains(TrackMark.ChangesKey) is true
+                ? [BrowserCollection.KeyCaveat]
+                : Array.Empty<BrowserCollection>(),
+            .. marked?.Contains(TrackMark.OddBars) is true
+                ? [BrowserCollection.OddBars]
+                : Array.Empty<BrowserCollection>(),
+        ];
 
     /// <summary>A file's Collections with those in <paramref name="replacing"/> swapped for <paramref name="wanted"/>.</summary>
     public static IReadOnlyList<int> Merged(

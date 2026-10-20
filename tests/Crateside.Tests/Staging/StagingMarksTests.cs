@@ -142,6 +142,20 @@ public sealed class StagingMarksTests : IDisposable
     }
 
     [Fact]
+    public void A_stem_of_a_track_marked_odd_bars_is_put_in_Odd_bars()
+    {
+        var stem = Stem("Song (Drums).flac", "Drums");
+        _trackMarks.Set("abcdefghijk", TrackMark.OddBars, true);
+
+        _marks.Collect();
+
+        Assert.Equal(
+            [(int)BrowserCollection.WarpByHand, (int)BrowserCollection.OddBars],
+            CollectionsOf(_reader.Read(_paths.StagingFolder), stem)
+        );
+    }
+
+    [Fact]
     public void A_saved_warp_takes_its_stems_colour_and_stays_the_users()
     {
         var stem = Stem("Song (Drums).flac", "Drums");

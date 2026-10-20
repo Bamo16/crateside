@@ -47,6 +47,18 @@ public sealed class TrackMarkStoreTests : IDisposable
     }
 
     [Fact]
+    public void Each_mark_is_set_and_cleared_on_its_own()
+    {
+        var store = new TrackMarkStore(StorePath);
+        store.Set("song", TrackMark.OddBars, true);
+        store.Set("song", TrackMark.ChangesKey, true);
+
+        store.Set("song", TrackMark.OddBars, false);
+
+        Assert.Equal([TrackMark.ChangesKey], new TrackMarkStore(StorePath).Of("song"));
+    }
+
+    [Fact]
     public void Marking_twice_records_it_once()
     {
         var store = new TrackMarkStore(StorePath);

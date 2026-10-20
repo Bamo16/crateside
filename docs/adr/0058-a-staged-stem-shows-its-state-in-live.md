@@ -3,7 +3,8 @@
 - Status: Accepted; amended by [ADR 0059](0059-a-sample-arrives-at-one-loudness.md), which has crateside
   write the clip gain as well as the colour, in the library too; *Place beat* no longer given since
   [ADR 0054](0054-a-starter-warps-marker-sits-on-a-beat-the-loud-transients-place.md)'s amendment
-  of 2026-10-19
+  of 2026-10-19; *Key caveat* and *Odd bars* also set by a **track mark** the maintainer sets
+  (#128, #86), and *Key caveat* by a verdict whose sections have different centres (2026-10-20)
 - Date: 2026-10-17
 - Amends [ADR 0043](0043-a-borrowed-warp-is-finished-and-says-where-it-came-from.md): crateside
   may rewrite a sidecar the user saved, to set its colour and nothing else. Builds
@@ -40,16 +41,19 @@ Live has two places crateside can write to:
 | 3 yellow | Place beat | it holds a tempo-only starter *(no longer given from 2026-10-19: there are no tempo-only starters. crateside still owns 3, so a stem left in it is taken out)* |
 | 4 green | Warped | it holds a warp the maintainer saved, or one lent from it |
 | 5 blue | Warp by hand | it holds no starter: its tempo drifts or is unread |
-| 6 purple | Key caveat | its verdict is modal, LOW or withheld |
-| 7 gray | Odd bars | its track is not consistent 4/4: a bar that gains or drops beats, a meter that changes, or a whole track in 3/4 or 6/8 (amended 2026-10-18, #86) |
+| 6 purple | Key caveat | its verdict is modal, LOW or withheld, has sections in different centres, or the maintainer marked the track as changing key |
+| 7 gray | Odd bars | the maintainer marked its track as not consistent 4/4: a bar that gains or drops beats, a meter that changes, or a whole track in 3/4 or 6/8 (amended 2026-10-18, #86) |
 
 - **2 to 5 are one per stem, in staging only.** A stem whose sidecar is with Live (#97) keeps the
   state it had until Live is done. A starter is *on the grid* when its first marker is on beat 1,
   which is where crateside puts it once the transients place a beat (ADR 0054).
 - **6 and 7 are marks on every stem of the track**, in staging and the library, since they are
-  what the maintainer wants to see while picking a sample. 6 ships with the verdict's half and
-  gains #128's (a key change) when that mark exists. **7 waits on #86**: until a track can be
-  marked, 7 is not crateside's, and one put there by hand stays.
+  what the maintainer wants to see while picking a sample. 6 is set by the verdict or by the
+  *Changes key* mark (#128), 7 by the *Odd bars* mark (#86). Both marks are set in crateside's
+  Track details and kept in `track-marks.json`. **crateside owns 7 from 2026-10-20**: one put
+  there by hand on a track that is not marked is taken away. The colour a library sidecar carries
+  is ADR 0059's to withhold; these are Collections in the tag store, which backing writes in the
+  library, so they are not covered by it.
 - **crateside changes only the Collections it owns**: 2 to 6 today. Any other the file is in
   stays.
 - **On import, 2 to 5 go.** A file moved into the library arrives keyed in the index alone (ADR
