@@ -55,13 +55,14 @@ allows. Neither replaces a lent warp or the maintainer's own.
    `1.3.0-1e57fec`) runs `beatdetect=hpss=1` over the whole file, then over each full 30 s of it
    (`BeatReader`). The reading is kept until the file changes, even after the pin moves.
 3. **Gate on the reading** (`TrackTempo.StarterBpm`). No starter when:
-   - **it moves**: more than one tempo segment, or `tempo_wander` 0.7 or more;
    - **it drifts**: the 30 s windows in their majority octave spread 0.1% or more (interquartile range
      over median); or
    - there is no reading.
 
    Fewer than three windows in one octave cannot show drift, so they pass this gate. The check in
-   step 6 still applies.
+   step 6 still applies. beatdetect's own `tempo_wander` and tempo segments are not used: on the
+   library they refused steady tracks the check in step 6 passes, and caught nothing it misses
+   (#135, ADR 0048).
 4. **Get the reference stem's transients.** Live's, when that stem has a Live analysis, else
    crateside's own onset detector (`SidecarWriter.TransientsFor`).
 5. **Refine the tempo** on the louder half of those transients: the tempo within ±0.06 BPM of the
@@ -95,7 +96,6 @@ allows. Neither replaces a lent warp or the maintainer's own.
 | a sibling holds a saved warp | the lent warp, or nothing if lending is off |
 | no instrumental, kept source or karaoke | Warp off |
 | no reading yet | Warp off, until a reading arrives |
-| beatdetect reports it as moving | Warp off |
 | the windows drift | Warp off |
 | one tempo does not hold within 10 ms, or has a step | Warp off |
 | too few transients to place a beat (under 32) | Warp off |
@@ -107,17 +107,12 @@ pass it (MEASURED, ADR 0048).
 ## Known issues
 
 - **The downbeat** is not used: see the gap above and #134.
-- **A dead-steady track can read as moving on the pinned build.** MEASURED 2026-10-19: on GYARI –
-  *アカリがやってきたぞっ* (*Akari ga Yattekita zo*), which holds within 4 ms, beatdetect 1.3.0
-  gives the instrumental a `tempo_wander` of 1.831 against 0.055 on its drums. The starter it has
-  was written from a reading by an older build that had no wander figure. Read again on the pinned
-  build, it would get Warp off.
 
 ## History
 
 [ADR 0047](adr/0047-a-starter-warp-and-where-transients-came-from.md) (the starter warp),
 [ADR 0048](adr/0048-stems-arrive-in-staging-already-warped.md) (written at handoff, crateside's
-own tempo, the 10 ms check),
+own tempo, the 10 ms check, beatdetect's moving flag dropped),
 [ADR 0050](adr/0050-a-warp-shows-as-itself-and-is-vouched-for-by-its-grid.md) (the refined tempo),
 [ADR 0054](adr/0054-a-starter-warps-marker-sits-on-a-beat-the-loud-transients-place.md) (the
 marker on a beat; the downbeat, amended),

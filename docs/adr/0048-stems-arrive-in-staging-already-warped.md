@@ -1,7 +1,7 @@
 # 0048 — stems arrive in staging already warped, at crateside's own tempo
 
 - Status: Accepted; amended 2026-10-19 (below): a starter is written only where one tempo holds on
-  the beats
+  the beats; amended again the same day: a reading beatdetect calls moving is no longer refused
 - Date: 2026-10-02
 - Amends [ADR 0047](0047-a-starter-warp-and-where-transients-came-from.md). Builds
   [#77](https://github.com/Bamo16/crateside/issues/77).
@@ -68,6 +68,24 @@ say so.
 - **About one steady track in eight now arrives unwarped**, those on which one tempo drifts 10 to
   30 ms across the track. The check uses the transients the starter would carry: Live's where the
   stem has a Live analysis, else crateside's detector's; the measurement used Live's.
+
+**Amended again 2026-10-19: a reading beatdetect calls moving is no longer refused**
+([#135](https://github.com/Bamo16/crateside/issues/135)). The 10 ms check decides alone, with the
+windows' drift as before. beatdetect 1.3.0 called GYARI – *アカリがやってきたぞっ* (*Akari ga
+Yattekita zo*), which holds within 4 ms, moving (`tempo_wander` 1.831 on the instrumental, 0.055 on
+its drums). MEASURED that day on the library's instrumentals with the maintainer's saved warp,
+read whole by 1.3.0 with `hpss=1`, each laid against its Live transients exactly as a starter's
+check is (`StarterGateRealLibraryTests` runs the same once crateside's kept readings are on that
+build):
+
+- **Steady warps (471): 45 read as moving, and 25 of them hold within 10 ms**, 21 of the 31 read in
+  the right octave. The moving gate refused those 25 a starter they would have passed.
+- **Warps that are not steady (71): 50 read as moving, and 4 of them hold within 10 ms.** These are
+  the tracks a single tempo serves anyway, which this ADR already accepts. The other 46 fail the
+  check by themselves.
+- So the gate caught nothing the 10 ms check does not, and cost one steady track in nineteen.
+  `BeatReading.Moves` is removed; the filter's `tempo_wander` and tempo segments are still kept in
+  each reading.
 
 ## Consequences
 
