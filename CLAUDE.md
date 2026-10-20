@@ -14,6 +14,11 @@ dotnet test --solution Crateside.slnx      # not --nologo: it is forwarded to th
 dotnet csharpier check .                   # must be clean before every commit
 ```
 
+**A track's full-mix download is in `%LOCALAPPDATA%\crateside\working\<videoId>\`** until its
+stems leave staging. Folders are named by video ID, not by song (find the ID in the stem's
+`COMMENT` tag or the ledger's `sourceUrl`). Look there before downloading again: a redownload is
+not the file the stems were cut from, and can sit tens of ms off them.
+
 Many tests **assert against the real library** — the Ableton roots under `P:\RYAN\Ableton`, the
 ledger, this machine's working sets — and skip when those are absent. That has caught
 things fixtures could not, repeatedly. Prefer a real-data test over a mock when the question is
