@@ -1,6 +1,7 @@
 # 0048 — stems arrive in staging already warped, at crateside's own tempo
 
-- Status: Accepted
+- Status: Accepted; amended by [ADR 0060](0060-a-starter-is-written-only-where-one-tempo-holds.md),
+  which writes a starter only where one tempo holds on the beats
 - Date: 2026-10-02
 - Amends [ADR 0047](0047-a-starter-warp-and-where-transients-came-from.md). Builds
   [#77](https://github.com/Bamo16/crateside/issues/77).

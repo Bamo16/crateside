@@ -77,7 +77,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             WarpOwner.Starter =>
                 $"One marker at crateside's reading{StarterTempo(stem)}, so dropping it into an empty set sets the set's tempo. Not a finished warp: warp it in Live and press Save Default Clip.",
             WarpOwner.Unwarped(var written) =>
-                $"crateside saved its clip with Warp off on {Day(written)}, so it comes in at the loudness target in its colour. Its tempo drifts or is not read yet, so it has no starter: warp it in Live and press Save Default Clip.",
+                $"crateside saved its clip with Warp off on {Day(written)}, so it comes in at the loudness target in its colour. One tempo does not hold on its beats, or it is not read yet, so it has no starter: warp it in Live and press Save Default Clip.",
             WarpOwner.LiveAnalysis =>
                 "Live has opened it, but no warp is saved. Live ignores these markers until you press Save Default Clip.",
             WarpOwner.WaitingForLive =>

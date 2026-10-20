@@ -258,8 +258,14 @@ public sealed class SidecarWriterTests : IDisposable
     {
         Audio(Target);
 
-        var outcome = await Borrower()
-            .StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken);
+        var outcome = await Steady()
+            .StartAsync(
+                Target,
+                [],
+                120,
+                onTheGrid: false,
+                ct: TestContext.Current.CancellationToken
+            );
 
         Assert.Equal(new WarpOutcome.Started(120, null), outcome);
 
@@ -267,7 +273,7 @@ public sealed class SidecarWriterTests : IDisposable
 
         Assert.True(written.IsDefaultClipSaved);
         Assert.Equal([new(0, 0), new(0.015625, 0.03125)], written.Warp.Markers);
-        Assert.Equal(new DefaultClip(0, 2), written.DefaultClip);
+        Assert.Equal(new DefaultClip(0, SteadyHits.Seconds * 2), written.DefaultClip);
         Assert.Equal(WarpMode.Complex, written.Warp.Mode);
         Assert.True(_written.IsStarter(Target));
     }
@@ -508,18 +514,56 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_starter_replaces_a_clip_with_Warp_off_but_never_the_other_way_round()
+    public async Task A_starter_and_a_clip_with_Warp_off_replace_each_other_as_the_tempo_allows()
     {
         Audio(Target);
-        await Borrower().UnwarpAsync(Target, [], TestContext.Current.CancellationToken);
+        await Steady().UnwarpAsync(Target, [], TestContext.Current.CancellationToken);
 
         Assert.IsType<WarpOutcome.Started>(
-            await Borrower().StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken)
+            await Steady().StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken)
+        );
+        Assert.IsType<WarpOutcome.Unwarped>(
+            await Steady().UnwarpAsync(Target, [], TestContext.Current.CancellationToken)
         );
         Assert.IsType<WarpOutcome.AlreadyWarped>(
-            await Borrower().UnwarpAsync(Target, [], TestContext.Current.CancellationToken)
+            await Steady().UnwarpAsync(Target, [], TestContext.Current.CancellationToken)
         );
-        Assert.True(_written.IsStarter(Target));
+    }
+
+    [Fact]
+    public async Task A_stem_whose_beats_one_tempo_does_not_hold_gets_Warp_off_instead_of_a_starter()
+    {
+        Audio(Target);
+
+        var outcome = await Steady(jumpAt: 35, jumpSeconds: 0.04)
+            .StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken);
+
+        Assert.IsType<WarpOutcome.Unwarped>(outcome);
+        Assert.False(AnalysisFile.Read($"{Target}.asd").Warp.IsWarped);
+        Assert.True(_written.Of(Target) is { IsUnwarped: true });
+    }
+
+    [Fact]
+    public async Task A_starter_written_before_the_check_is_replaced_by_Warp_off_once_its_beats_do_not_hold()
+    {
+        Audio(Target);
+        await Steady().StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken);
+
+        var outcome = await Steady(jumpAt: 35, jumpSeconds: 0.04)
+            .StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken);
+
+        Assert.IsType<WarpOutcome.Unwarped>(outcome);
+        Assert.False(_written.IsStarter(Target));
+    }
+
+    [Fact]
+    public async Task A_stem_too_quiet_on_hits_to_vouch_for_a_tempo_gets_Warp_off()
+    {
+        Audio(Target);
+
+        Assert.IsType<WarpOutcome.Unwarped>(
+            await Borrower().StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken)
+        );
     }
 
     [Fact]
@@ -538,6 +582,9 @@ public sealed class SidecarWriterTests : IDisposable
 
     private SidecarWriter Borrower(float level = 0.5f, int frames = Frames) =>
         new(new FixedDecoder(Samples(level, frames)), new FixedDetector(), _written, _origins);
+
+    private SidecarWriter Steady(double jumpAt = double.PositiveInfinity, double jumpSeconds = 0) =>
+        new(SteadyHits.Decoder, SteadyHits.Detector(jumpAt, jumpSeconds), _written, _origins);
 
     private SidecarWriter Levelling(double lufs) =>
         new(
