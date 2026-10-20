@@ -516,7 +516,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 
 - **No Separation or Judging rows.** Their pause controls already live in the Tracks header.
 - **Folders also lists Ableton projects**, which postdates the design (ADR 0040).
-- **A *Starter warps* section** (Off · Tempo only · On the grid, with a note under the pills) sits
+- **A *Starter warps* section** (Off · On the grid, with a note under the pills; *Tempo only* was removed on 2026-10-19) sits
   before Emptying the playlist. It was added without a design, from the existing row and pills.
 - **Emptying as tracks are taken on** is disabled until removal access is granted, with a status
   saying so. The canvas only drew the authorized state.

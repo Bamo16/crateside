@@ -254,28 +254,31 @@ public sealed class SidecarWriterTests : IDisposable
     }
 
     [Fact]
-    public async Task A_stem_nothing_is_warped_on_gets_one_marker_at_the_start_at_the_given_tempo()
+    public async Task A_stem_whose_tempo_holds_but_whose_beat_cannot_be_placed_arrives_with_Warp_off()
     {
         Audio(Target);
+        // One hit a bar over a minute: enough windows to hold, too few hits to place a beat.
+        var hits = Enumerable
+            .Range(0, 31)
+            .Select(i => new Transient((int)((0.3 + i * 2) * 44_100), 1f))
+            .ToArray();
+        SidecarWriter writer = new(
+            new FixedDecoder(Samples(0.5f, 130 * 44_100)),
+            new FixedDetector(hits),
+            _written,
+            _origins
+        );
 
-        var outcome = await Steady()
-            .StartAsync(
-                Target,
-                [],
-                120,
-                onTheGrid: false,
-                ct: TestContext.Current.CancellationToken
-            );
+        var outcome = await writer.StartAsync(
+            Target,
+            [],
+            120,
+            ct: TestContext.Current.CancellationToken
+        );
 
-        Assert.Equal(new WarpOutcome.Started(120, null), outcome);
-
-        var written = AnalysisFile.Read($"{Target}.asd");
-
-        Assert.True(written.IsDefaultClipSaved);
-        Assert.Equal([new(0, 0), new(0.015625, 0.03125)], written.Warp.Markers);
-        Assert.Equal(new DefaultClip(0, SteadyHits.Seconds * 2), written.DefaultClip);
-        Assert.Equal(WarpMode.Complex, written.Warp.Mode);
-        Assert.True(_written.IsStarter(Target));
+        Assert.Equal(new WarpOutcome.Unwarped(null), outcome);
+        Assert.False(_written.IsStarter(Target));
+        Assert.Empty(AnalysisFile.Read($"{Target}.asd").Warp.Markers);
     }
 
     [Fact]
@@ -327,36 +330,6 @@ public sealed class SidecarWriterTests : IDisposable
         Assert.Equal(0.3, written.Warp.Markers[0].Seconds, 2);
         Assert.Equal(1, written.Warp.Markers[0].Beat);
         Assert.Equal(1, written.DefaultClip?.Start ?? 0, 2);
-    }
-
-    [Fact]
-    public async Task A_tempo_only_starter_keeps_its_marker_and_clip_at_the_start_whatever_the_transients_say()
-    {
-        Audio(Target);
-        var hits = Enumerable
-            .Range(0, 240)
-            .Select(i => new Transient((int)((0.3 + i * 0.5) * 44_100), 1f))
-            .ToArray();
-        SidecarWriter writer = new(
-            new FixedDecoder(Samples(0.5f, 130 * 44_100)),
-            new FixedDetector(hits),
-            _written,
-            _origins
-        );
-
-        await writer.StartAsync(
-            Target,
-            [],
-            120,
-            ct: TestContext.Current.CancellationToken,
-            onTheGrid: false
-        );
-
-        var written = AnalysisFile.Read($"{Target}.asd");
-
-        Assert.Equal(0, written.Warp.Markers[0].Seconds);
-        Assert.Equal(0, written.Warp.Markers[0].Beat);
-        Assert.Equal(0, written.DefaultClip?.Start ?? -1);
     }
 
     [Fact]

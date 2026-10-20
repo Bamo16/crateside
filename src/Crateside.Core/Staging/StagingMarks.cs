@@ -88,9 +88,7 @@ public sealed class StagingMarks(
         stem switch
         {
             { Owner: WarpOwner.WaitingForLive or WarpOwner.PuttingBack } => null,
-            { Owner: WarpOwner.Starter, Sidecar.Warp.Markers: [{ Beat: > 0 }, ..] } =>
-                BrowserCollection.CheckBeat,
-            { Owner: WarpOwner.Starter } => BrowserCollection.PlaceBeat,
+            { Owner: WarpOwner.Starter } => BrowserCollection.CheckBeat,
             { Owner: WarpOwner.Yours or WarpOwner.Borrowed } => BrowserCollection.Warped,
             _ => BrowserCollection.WarpByHand,
         };

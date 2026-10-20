@@ -54,7 +54,6 @@ public sealed class HandoffSidecars(
                         sameKind,
                         tempo,
                         WarpSiblings.TempoSources(cuts).FirstOrDefault()?.Path,
-                        options.StarterWarps is StarterWarps.OnTheGrid,
                         ct
                     )
                     : await writer.PrepareUnwarpedAsync(cut.Path, sameKind, ct);

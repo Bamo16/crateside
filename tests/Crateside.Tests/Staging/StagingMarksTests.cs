@@ -54,20 +54,16 @@ public sealed class StagingMarksTests : IDisposable
         var onTheGrid = Stem("Song (Vocal - Full).flac", "Vocal - Full");
         Sidecar(onTheGrid, markerBeat: 1);
         _written.RecordStarter(onTheGrid);
-        var tempoOnly = Stem("Other (Vocal - Full).flac", "Vocal - Full");
-        Sidecar(tempoOnly, markerBeat: 0);
-        _written.RecordStarter(tempoOnly);
         var unwarped = Stem("Song (Drums).flac", "Drums");
         var warpOff = Stem("Other (Instrumental - Full).flac", "Instrumental - Full");
         Sidecar(warpOff, markerBeat: 0);
         _written.RecordUnwarped(warpOff);
 
-        Assert.Equal(new TagWriteOutcome.Written(5), _marks.Collect());
+        Assert.Equal(new TagWriteOutcome.Written(4), _marks.Collect());
 
         var info = _reader.Read(_paths.StagingFolder);
         Assert.Equal([(int)BrowserCollection.Warped], CollectionsOf(info, saved));
         Assert.Equal([(int)BrowserCollection.CheckBeat], CollectionsOf(info, onTheGrid));
-        Assert.Equal([(int)BrowserCollection.PlaceBeat], CollectionsOf(info, tempoOnly));
         Assert.Equal([(int)BrowserCollection.WarpByHand], CollectionsOf(info, unwarped));
         Assert.Equal([(int)BrowserCollection.WarpByHand], CollectionsOf(info, warpOff));
     }
@@ -94,6 +90,29 @@ public sealed class StagingMarksTests : IDisposable
         Assert.True(_reader.Read(_paths.StagingFolder).TryGet(stem, out var tags));
         Assert.Equal([1, (int)BrowserCollection.WarpByHand], tags.Collections);
         Assert.Equal(["Key|A", "Key|Minor"], tags.Keywords);
+    }
+
+    [Fact]
+    public void A_stem_left_in_Place_beat_is_taken_out_of_it()
+    {
+        var stem = Stem("Song (Drums).flac", "Drums");
+        new FolderInfoWriter().Apply(
+            _paths.StagingFolder,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Collections = [(int)BrowserCollection.PlaceBeat],
+                },
+            ]
+        );
+
+        _marks.Collect();
+
+        Assert.Equal(
+            [(int)BrowserCollection.WarpByHand],
+            CollectionsOf(_reader.Read(_paths.StagingFolder), stem)
+        );
     }
 
     [Fact]

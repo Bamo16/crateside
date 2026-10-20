@@ -65,18 +65,15 @@ public sealed class SidecarWriter(
             _ => throw new UnreachableException(),
         };
 
-    /// <summary>Writes one marker at this tempo, on the first beat the transients place, else where Live puts its own first marker.</summary>
+    /// <summary>Writes one marker at this tempo, on the first beat the transients place.</summary>
     /// <param name="timingFrom">The stem the group's tempo and beat are read from, so every stem gets the same marker; the target when null.</param>
-    /// <param name="onTheGrid">False for a marker at the start of the audio and the clip from there, holding only the tempo.</param>
     public async Task<WarpOutcome> StartAsync(
         string target,
         IReadOnlyList<string> sameKind,
         double bpm,
         string? timingFrom = null,
-        bool onTheGrid = true,
         CancellationToken ct = default
-    ) =>
-        Settle(await PrepareStarterAsync(target, sameKind, bpm, timingFrom, onTheGrid, ct), target);
+    ) => Settle(await PrepareStarterAsync(target, sameKind, bpm, timingFrom, ct), target);
 
     /// <summary>Writes a clip with Warp off over the whole file, for a stem that gets no starter (ADR 0059).</summary>
     public async Task<WarpOutcome> UnwarpAsync(
@@ -151,14 +148,13 @@ public sealed class SidecarWriter(
 
     /// <summary>
     /// Works out the sidecar <see cref="StartAsync"/> would write, without writing it: Warp off instead,
-    /// over a starter too, when one tempo does not hold on the group's beats.
+    /// over a starter too, when one tempo does not hold on the group's beats or no beat is placed.
     /// </summary>
     public async Task<SidecarPlan> PrepareStarterAsync(
         string target,
         IReadOnlyList<string> sameKind,
         double bpm,
         string? timingFrom = null,
-        bool onTheGrid = true,
         CancellationToken ct = default
     )
     {
@@ -172,7 +168,7 @@ public sealed class SidecarWriter(
             if (await TimingAsync(timingFrom ?? target, bpm, ct) is not { } timing)
                 return Refuse(Undecodable(timingFrom ?? target));
 
-            if (!timing.Holds)
+            if (timing is not { Holds: true, FirstBeat: { } firstBeat })
                 return written.Of(target) is { IsStarter: false }
                     ? Refuse(new WarpOutcome.AlreadyWarped())
                     : await UnwarpedAsync(target, sameKind, ct);
@@ -195,7 +191,7 @@ public sealed class SidecarWriter(
                             timing.Bpm,
                             (double)audio.Frames / audio.SampleRate,
                             analysis,
-                            onTheGrid ? timing.FirstBeat : null
+                            firstBeat
                         ),
                         timing.Bpm
                     )
@@ -374,21 +370,19 @@ public sealed class SidecarWriter(
         };
 
     /// <summary>
-    /// A one-marker warp laid out as Live saves one, the clip running to the end of the audio with
-    /// looping off. The marker sits on the first beat when the transients place one (#72), else at the
-    /// start of the audio; the clip starts on the marker's beat, so it lands on the arrangement's grid.
+    /// A one-marker warp laid out as Live saves one, the marker on the first beat (#72) and the clip
+    /// running from it to the end of the audio, looping off, so it lands on the arrangement's grid.
     /// </summary>
     private static AnalysisFile Starter(
         double bpm,
         double seconds,
         AudioAnalysis audio,
-        double? firstBeat
+        double markerSeconds
     )
     {
+        const double MarkerBeat = 1;
         var beatSeconds = 60 / bpm;
-        var (markerSeconds, markerBeat) = firstBeat is { } placed ? (placed, 1.0) : (0.0, 0.0);
-        var start = markerBeat;
-        var end = markerBeat + (seconds - markerSeconds) / beatSeconds;
+        var end = MarkerBeat + (seconds - markerSeconds) / beatSeconds;
 
         return new AnalysisFile
         {
@@ -397,18 +391,18 @@ public sealed class SidecarWriter(
             {
                 Markers =
                 [
-                    new(markerSeconds, markerBeat),
+                    new(markerSeconds, MarkerBeat),
                     new(
                         markerSeconds + HiddenMarkerBeats * beatSeconds,
-                        markerBeat + HiddenMarkerBeats
+                        MarkerBeat + HiddenMarkerBeats
                     ),
                 ],
             },
             Clip = new Clip
             {
-                LoopStart = start,
+                LoopStart = MarkerBeat,
                 LoopEnd = end,
-                HiddenLoopStart = start,
+                HiddenLoopStart = MarkerBeat,
                 HiddenLoopEnd = end,
                 OutMarker = end,
                 LoopOn = false,

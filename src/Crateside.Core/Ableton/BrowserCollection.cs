@@ -7,6 +7,8 @@ public enum BrowserCollection
 {
     Mine = 1,
     CheckBeat = 2,
+
+    // No longer given (ADR 0054, amended 2026-10-19), but still crateside's, so a stem in it is taken out.
     PlaceBeat = 3,
     Warped = 4,
     WarpByHand = 5,

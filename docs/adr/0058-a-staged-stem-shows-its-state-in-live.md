@@ -1,7 +1,9 @@
 # 0058 — A staged stem shows its state in Live
 
 - Status: Accepted; amended by [ADR 0059](0059-a-sample-arrives-at-one-loudness.md), which has crateside
-  write the clip gain as well as the colour, in the library too
+  write the clip gain as well as the colour, in the library too; *Place beat* no longer given since
+  [ADR 0054](0054-a-starter-warps-marker-sits-on-a-beat-the-loud-transients-place.md)'s amendment
+  of 2026-10-19
 - Date: 2026-10-17
 - Amends [ADR 0043](0043-a-borrowed-warp-is-finished-and-says-where-it-came-from.md): crateside
   may rewrite a sidecar the user saved, to set its colour and nothing else. Builds
@@ -35,7 +37,7 @@ Live has two places crateside can write to:
 |---|---|---|
 | 1 red | Mine | never: the maintainer's |
 | 2 orange | Check beat | it holds a starter on the grid |
-| 3 yellow | Place beat | it holds a tempo-only starter |
+| 3 yellow | Place beat | it holds a tempo-only starter *(no longer given from 2026-10-19: there are no tempo-only starters. crateside still owns 3, so a stem left in it is taken out)* |
 | 4 green | Warped | it holds a warp the maintainer saved, or one lent from it |
 | 5 blue | Warp by hand | it holds no starter: its tempo drifts or is unread |
 | 6 purple | Key caveat | its verdict is modal, LOW or withheld |

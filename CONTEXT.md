@@ -269,8 +269,8 @@ by hand; everything below describes candidates against it.
 ## Tags
 
 - **Collection** — one of the seven coloured labels in Live's browser, numbered 1 to 7 and named
-  by the user. crateside puts each staged stem in the one for its warp state (*Check beat*, *Place
-  beat*, *Warped*, *Warp by hand*), taken away on import, and every stem of a track whose Key tag
+  by the user. crateside puts each staged stem in the one for its warp state (*Check beat*,
+  *Warped*, *Warp by hand*), taken away on import, and every stem of a track whose Key tag
   may mislead in *Key caveat*. *Mine* is the user's. *Odd bars* means a track that is not
   consistent 4/4, and stays the user's until #86 can mark one ([ADR 0058](docs/adr/0058-a-staged-stem-shows-its-state-in-live.md)).
 - **Index** — Ableton's own file database, `Live-files-<schema>.db` under
