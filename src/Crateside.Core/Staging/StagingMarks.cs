@@ -1,6 +1,7 @@
 using AbleKit.Tags;
 using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
+using Crateside.Core.Marks;
 using Crateside.Core.Samples;
 using Crateside.Core.Warps;
 
@@ -16,6 +17,7 @@ public sealed class StagingMarks(
     SidecarWriter sidecars,
     LiveAnalyses waiting,
     LedgerStore store,
+    TrackMarkStore trackMarks,
     FolderInfoReader reader,
     FolderInfoWriter writer
 )
@@ -40,6 +42,7 @@ public sealed class StagingMarks(
         }
 
         var ledger = store.Read();
+        var marked = trackMarks.Read();
 
         List<TagAssignment> assignments =
         [
@@ -47,7 +50,7 @@ public sealed class StagingMarks(
                 .Select(path =>
                 {
                     var has = existing.TryGet(path, out var tags) ? tags.Collections : [];
-                    var wanted = Wanted(warps.Read(path), ledger, has);
+                    var wanted = Wanted(warps.Read(path), ledger, marked, has);
 
                     return has.SequenceEqual(wanted)
                         ? null
@@ -68,15 +71,20 @@ public sealed class StagingMarks(
     private static IReadOnlyList<int> Wanted(
         StemWarp stem,
         KeyLedger ledger,
+        IReadOnlyDictionary<string, TrackMarkRecord> marked,
         IReadOnlyList<int> has
     )
     {
         LedgerRun? verdict = null;
+        IReadOnlyCollection<TrackMark> mine = [];
 
         if (StemTagReader.Read(stem.Path)?.SourceVideoId is { } videoId)
+        {
             ledger.TryGetLatestByVideoId(videoId, out verdict);
+            mine = marked.GetValueOrDefault(verdict?.Song ?? videoId)?.Marks ?? [];
+        }
 
-        var marks = BrowserCollections.TrackMarksFor(verdict);
+        var marks = BrowserCollections.TrackMarksFor(verdict, mine);
 
         // A stem whose warp is with Live keeps the warp state it had until Live is done.
         return WarpStateOf(stem) is { } state

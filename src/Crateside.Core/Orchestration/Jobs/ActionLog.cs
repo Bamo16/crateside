@@ -120,6 +120,8 @@ public enum UserActionKind
     Swapped,
     GenreSettled,
     FamiliaritySettled,
+    MarkSet,
+    MarkCleared,
     SameSong,
     DifferentSong,
     UsedAnyway,

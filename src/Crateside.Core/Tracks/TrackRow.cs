@@ -4,6 +4,7 @@ using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
+using Crateside.Core.Marks;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Jobs;
@@ -109,6 +110,9 @@ public sealed record TrackRow
 
     /// <summary>How far the song reaches, measured or settled, or null when nothing has asked yet.</summary>
     public FamiliarityRecord? Familiarity { get; init; }
+
+    /// <summary>What the maintainer has marked this track as.</summary>
+    public IReadOnlyList<TrackMark> Marks { get; init; } = [];
 
     public bool HasTagsToAnswer =>
         this

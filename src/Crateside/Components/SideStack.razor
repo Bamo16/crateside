@@ -1,3 +1,4 @@
+@using Crateside.Core.Marks
 @using Crateside.Core.Tracks
 @using Crateside.Core.WorkLists
 @implements IDisposable
@@ -65,6 +66,7 @@
             <div class="group tags">
                 <GenreStrip Row="Row" />
                 <FamiliarityStrip Row="Row" />
+                <TrackMarkStrip Row="Row" Mark="TrackMark.ChangesKey" />
             </div>
         </div>
 

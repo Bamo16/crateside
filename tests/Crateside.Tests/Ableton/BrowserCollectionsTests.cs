@@ -1,5 +1,6 @@
 using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
+using Crateside.Core.Marks;
 
 namespace Crateside.Tests.Ableton;
 
@@ -55,6 +56,28 @@ public sealed class BrowserCollectionsTests
         Assert.Equal(
             caveat,
             BrowserCollections.TrackMarksFor(verdict).Contains(BrowserCollection.KeyCaveat)
+        );
+    }
+
+    [Fact]
+    public void A_track_marked_as_changing_key_carries_the_caveat_whatever_the_verdict()
+    {
+        var verdict = new LedgerRun
+        {
+            Timestamp = DateTimeOffset.UnixEpoch,
+            Song = "a - b",
+            Centre = new TonalCentre("A", DiatonicMode.Aeolian),
+            Confidence = KeyConfidence.High,
+        };
+
+        Assert.Empty(BrowserCollections.TrackMarksFor(verdict, []));
+        Assert.Equal(
+            [BrowserCollection.KeyCaveat],
+            BrowserCollections.TrackMarksFor(verdict, [TrackMark.ChangesKey])
+        );
+        Assert.Equal(
+            [BrowserCollection.KeyCaveat],
+            BrowserCollections.TrackMarksFor(null, [TrackMark.ChangesKey])
         );
     }
 

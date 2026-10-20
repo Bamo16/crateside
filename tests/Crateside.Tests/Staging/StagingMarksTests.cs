@@ -2,6 +2,7 @@ using AbleKit.Analysis;
 using AbleKit.Tags;
 using Crateside.Core;
 using Crateside.Core.Ableton;
+using Crateside.Core.Marks;
 using Crateside.Core.Staging;
 using Crateside.Core.Warps;
 using Crateside.Tests.Ledger;
@@ -22,6 +23,7 @@ public sealed class StagingMarksTests : IDisposable
     private readonly WrittenWarps _written = new();
     private readonly LiveAnalyses _waiting = new();
     private readonly FolderInfoReader _reader = new();
+    private readonly TrackMarkStore _trackMarks;
     private readonly StagingMarks _marks;
 
     public StagingMarksTests()
@@ -29,6 +31,7 @@ public sealed class StagingMarksTests : IDisposable
         _paths = new CratesidePaths { StagingFolder = Path.Combine(_root, "Staging") };
         Directory.CreateDirectory(_paths.StagingFolder);
 
+        _trackMarks = new TrackMarkStore(Path.Combine(_root, "track-marks.json"));
         var origins = new TransientOrigins();
         _marks = new StagingMarks(
             _paths,
@@ -36,6 +39,7 @@ public sealed class StagingMarksTests : IDisposable
             new SidecarWriter(new NoDecoder(), new OnsetDetector(), _written, origins),
             _waiting,
             TestLedger.Store(),
+            _trackMarks,
             _reader,
             new FolderInfoWriter()
         );
@@ -107,6 +111,28 @@ public sealed class StagingMarksTests : IDisposable
             ]
         );
 
+        _marks.Collect();
+
+        Assert.Equal(
+            [(int)BrowserCollection.WarpByHand],
+            CollectionsOf(_reader.Read(_paths.StagingFolder), stem)
+        );
+    }
+
+    [Fact]
+    public void A_stem_of_a_track_marked_as_changing_key_is_put_in_Key_caveat_until_unmarked()
+    {
+        var stem = Stem("Song (Drums).flac", "Drums");
+        _trackMarks.Set("abcdefghijk", TrackMark.ChangesKey, true);
+
+        _marks.Collect();
+
+        Assert.Equal(
+            [(int)BrowserCollection.WarpByHand, (int)BrowserCollection.KeyCaveat],
+            CollectionsOf(_reader.Read(_paths.StagingFolder), stem)
+        );
+
+        _trackMarks.Set("abcdefghijk", TrackMark.ChangesKey, false);
         _marks.Collect();
 
         Assert.Equal(

@@ -4,6 +4,7 @@ using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
+using Crateside.Core.Marks;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Jobs;
@@ -68,7 +69,8 @@ public sealed record TracksView
         IReadOnlyDictionary<string, FamiliarityRecord>? familiarity = null,
         Func<string, WarpTempo?>? tempoOf = null,
         Func<string, BeatReading?>? beatsOf = null,
-        Func<string, WrittenWarp?>? writtenWarp = null
+        Func<string, WrittenWarp?>? writtenWarp = null,
+        IReadOnlyDictionary<string, TrackMarkRecord>? marks = null
     )
     {
         var resolved = resolvedNames ?? new Dictionary<string, ResolvedName>();
@@ -234,6 +236,7 @@ public sealed record TracksView
                 Verdict = verdict,
                 Genre = genres?.GetValueOrDefault(verdict?.Song ?? primary.VideoId),
                 Familiarity = familiarity?.GetValueOrDefault(verdict?.Song ?? primary.VideoId),
+                Marks = marks?.GetValueOrDefault(verdict?.Song ?? primary.VideoId)?.Marks ?? [],
                 Lookalike =
                     verdict is null && primary.Item is { } item
                         ? VerdictSelector.LookalikeOf(

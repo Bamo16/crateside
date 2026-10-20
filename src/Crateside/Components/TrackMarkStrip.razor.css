@@ -1,0 +1,28 @@
+.tag-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 28px;
+}
+
+.tag-label {
+    flex: none;
+    width: 88px;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-50);
+}
+
+.tag-value {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.tag-value.quiet {
+    font-weight: 400;
+    color: var(--text-50);
+}
