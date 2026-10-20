@@ -53,6 +53,26 @@ public sealed class WarpTrueUpTests : IDisposable
     }
 
     [Fact]
+    public async Task A_vocal_the_user_saved_with_the_instrumentals_warp_moves_with_it()
+    {
+        await Setup(warpBpm: 119.99, trackBpm: 120);
+        File.Copy($"{Instrumental}.asd", $"{Vocal}.asd", overwrite: true);
+        var siblings = WarpSiblings.Scan([_root]);
+
+        var plan = Assert.IsType<TrueUpPlan.Retype>(
+            Truer().Plan(siblings, WarpSiblings.Read(Instrumental)!, rephase: true)
+        );
+        await Truer().ApplyAsync(plan, siblings, TestContext.Current.CancellationToken);
+
+        Assert.False(_written.IsCratesides(Vocal));
+        Assert.Equal(
+            AnalysisFile.Read($"{Instrumental}.asd").Warp.Markers,
+            AnalysisFile.Read($"{Vocal}.asd").Warp.Markers
+        );
+        Assert.Equal(120, AnalysisFile.Read($"{Vocal}.asd").Warp.TempoAt(10) ?? 0, 6);
+    }
+
+    [Fact]
     public async Task A_warp_the_user_made_on_another_stem_is_left_as_it_was()
     {
         await Setup(warpBpm: 119.99, trackBpm: 120);

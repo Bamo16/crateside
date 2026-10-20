@@ -7,9 +7,9 @@ using Crateside.Core.Tempo;
 namespace Crateside.Core.Warps;
 
 /// <summary>
-/// Retypes the steady warp a song's canonical stems share to the tempo its transients hold, then
-/// lends it again to the stems crateside copied it to (#99). Never touches a warp the user made on
-/// another stem.
+/// Retypes the steady warp a song's canonical stems share to the tempo its transients hold, with any
+/// stem the user saved with the same markers, then lends it again to the stems crateside copied it to
+/// (#99). Never touches a warp of the user's that differs.
 /// </summary>
 public sealed class WarpTrueUp(
     RetypedWarps retyped,
@@ -51,13 +51,24 @@ public sealed class WarpTrueUp(
             var source = WarpSiblings.TempoSources(canonical.Select(stem => stem.Cut)).First();
             var analysis = canonical.First(stem => stem.Cut == source).Analysis!;
 
+            // A vocal the user saved with the track's warp is usually the same markers; it moves too.
+            var sharing = siblings
+                .CutsOf(song)
+                .Where(cut =>
+                    !cut.IsAuthority
+                    && !written.IsCratesides(cut.Path)
+                    && Saved(cut.Path) is { } other
+                    && other.Warp.Markers.SequenceEqual(analysis.Warp.Markers)
+                )
+                .Select(cut => cut.Path);
+
             var rate = RateOf(source.Path);
 
             return TrueUpDecision.Of(analysis, rate) switch
             {
                 TrueUpVerdict.Retype verdict => Retype(
                     verdict,
-                    canonical.Select(stem => stem.Cut.Path),
+                    canonical.Select(stem => stem.Cut.Path).Concat(sharing),
                     rephase
                         ? Phase(siblings, song, analysis, source.Path, verdict.Bpm, rate)
                         : (0, null)
