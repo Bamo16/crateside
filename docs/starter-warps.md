@@ -39,8 +39,8 @@ works this way is in the ADRs listed at the end.
 - **Once a minute over staging** (`WarpLending`), for what changes later: a sibling saved, the
   setting changed, a stem put in staging by hand. A stem is looked at again only when its files,
   its siblings' sidecars, or the tempo or downbeat it would be given changed.
-- **Never while Live is analysing a stem** whose sidecar was recycled from the warp view (#97,
-  the warp view).
+- **Never while Live is analysing a stem** whose sidecar was recycled from the warp view
+  (#97, showing each stem's warp in Track details).
 
 **Order of precedence:** the maintainer's own warp, which is never touched; then a lent warp; then a
 starter; then a clip with Warp off. A starter and a Warp-off clip replace each other as the tempo
@@ -65,7 +65,7 @@ replaces a lent warp or the maintainer's own.
    Fewer than three windows in one octave cannot show drift, so they pass this gate. The check in
    step 6 still applies. beatdetect's own `tempo_wander` and tempo segments are not used: on the
    library they refused steady tracks the check in step 6 passes, and caught nothing it misses
-   (#135, ADR 0048).
+   (ADR 0048).
 4. **Get the reference stem's transients.** Live's, when that stem has a Live analysis, else
    crateside's own onset detector (`SidecarWriter.TransientsFor`).
 5. **Refine the tempo** on the louder half of those transients: the tempo within ±0.06 BPM of the
@@ -86,7 +86,7 @@ replaces a lent warp or the maintainer's own.
    are every fourth beat from beat 0. When the reading's `downbeat_confidence` is 0.03 or more, in
    bars of four, the marker is the beat it falls on counting from beatdetect's downbeat: 0 to 3, so
    a pickup makes it 1, 2 or 3. Otherwise the marker is beat 0, a downbeat. On the library this puts
-   the bar right on 66% of steady tracks, against 52% for the marker always as a downbeat (#134).
+   the bar right on 66% of steady tracks, against 52% for the marker always as a downbeat (ADR 0054).
 9. **Write the sidecar** for each stem (`SidecarWriter.Starter`):
    - the marker, plus Live's hidden marker 1/32 of a beat later;
    - the clip from beat 0, the bar line at or before the marker, to the end of the file, looping
