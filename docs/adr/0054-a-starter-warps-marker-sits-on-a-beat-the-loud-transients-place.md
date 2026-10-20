@@ -73,8 +73,12 @@ numbered as a downbeat, as before.
   past the audio into silence in Live, and the first starter written this way is to be checked
   there.
 - **The downbeat is read from the reference stem**, the instrumental, like the tempo. Reading it
-  from the drum stem was proposed (on GYARI's drums the confidence was 0.078 against 0.002) but is
-  not measured: the library keeps no drum stems to measure it on.
+  from the drum stem was proposed (on GYARI's drums the confidence was 0.078 against 0.002).
+  MEASURED 2026-10-19 on the 42 kept drum stems (warp guides) whose instrumental holds a steady
+  warp, both read in its octave by 1.3.0 with `hpss=1`: the drums are less sure (median confidence
+  0.017 against 0.039), and no rule using them does better. Beat 1 lands right on 24 with the rule
+  built, 23 with the drums' downbeat at the same gate, 22 with the drums first and the instrumental
+  second. On this small set the rule built also does no better than the first beat alone (24).
 - **A starter already written is written again** when its marker's beat or clip start differs from
   the one crateside would now write, so staged starters take the numbering once their instrumental
   is read on the pinned build. The beat worker reads again any instrumental whose reading is from an
