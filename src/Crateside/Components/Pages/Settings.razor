@@ -6,6 +6,7 @@
 
 @using System.Diagnostics
 @using Crateside.Core
+@using Crateside.Core.Orchestration
 @using Crateside.Core.Orchestration.Loop
 @using Crateside.Core.Orchestration.Verdict
 @using Crateside.Core.Playlist
@@ -27,6 +28,7 @@
 @inject IOptions<JudgeOptions> Judge
 @inject JudgeSettingsStore JudgeStore
 @inject TrueUpAll TrueUps
+@inject SourceRetentionStore RetentionStore
 
 <PageTitle>Settings · crateside</PageTitle>
 
@@ -315,6 +317,40 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         </section>
 
         <section>
+            <h3>Source downloads</h3>
+
+            <div class="row">
+                <div class="name">
+                    <span>Keep the download</span>
+                    <span class="gist">
+                        How long a track's full-mix download stays after its last stem leaves
+                        Staging for the library. Shortening it discards on the next pass, every
+                        ten minutes.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="pills">
+                        <button class="pill @(_retention.Forever ? "off" : "on plain")"
+                                @onclick="() => SetForever(false)">Days</button>
+                        <button class="pill @(_retention.Forever ? "on plain" : "off")"
+                                @onclick="() => SetForever(true)">Forever</button>
+                    </div>
+
+                    @if (!_retention.Forever)
+                    {
+                        <div class="field">
+                            <input type="number" min="0" @bind="_days" />
+                            <button class="primary" @onclick="SaveDays"
+                                    disabled="@(_days == _retention.Days || _days < 0)">Save</button>
+                        </div>
+                    }
+
+                    <span class="status">@RetentionNote</span>
+                </div>
+            </div>
+        </section>
+
+        <section>
             <h3>Emptying the playlist</h3>
 
             <div class="row">
@@ -510,6 +546,28 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
     private StarterWarps Starter => Warps.Value.StarterWarps;
 
+    private SourceRetention _retention = new();
+    private int _days;
+
+    private string RetentionNote =>
+        _retention switch
+        {
+            { Forever: true } => "Every source is kept. Where each one is: source-index.json in %LOCALAPPDATA%\\crateside.",
+            { Days: <= 0 } => "Discarded as soon as the last stem leaves Staging.",
+            _ => $"Kept {"day".ToQuantity(_retention.Days)} after the last stem leaves Staging.",
+        };
+
+    private void SetForever(bool forever) => Remember(_retention with { Forever = forever });
+
+    private void SaveDays() => Remember(_retention with { Days = Math.Max(0, _days) });
+
+    private void Remember(SourceRetention chosen)
+    {
+        RetentionStore.Remember(chosen);
+        _retention = RetentionStore.Read();
+        _days = _retention.Days;
+    }
+
     private TrueUpBatch? _trueUps;
     private IReadOnlyList<TrueUpDone>? _trueUpDone;
     private bool _trueUpWorking;
@@ -650,6 +708,8 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         _playlist = Playlist.PlaylistId ?? string.Empty;
         _refresh = Playlist.RefreshMinutes;
         _consume = Playlist.ConsumeOnArrival;
+        _retention = RetentionStore.Read();
+        _days = _retention.Days;
 
         await Load();
     }

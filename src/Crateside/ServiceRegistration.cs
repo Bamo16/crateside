@@ -499,11 +499,15 @@ public static class ServiceRegistration
             deletions: sp.GetRequiredService<DeletionLog>()
         ));
 
+        services.AddSingleton(_ => new SourceRetentionStore());
+        services.AddSingleton(sp => new SourceIndex(sp.GetRequiredService<WorkingSet>()));
         services.AddSingleton(sp => new WorkingSetJanitor(
             sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<WorkingSet>(),
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<IOptions<CratesidePaths>>(),
+            sp.GetRequiredService<SourceRetentionStore>(),
+            TimeProvider.System,
             videoId =>
                 sp.GetRequiredService<TrackInstructionStore>()
                     .Read()
@@ -611,6 +615,7 @@ public static class ServiceRegistration
                     );
 
                     sp.GetRequiredService<WarpTempoReader>().Save();
+                    sp.GetRequiredService<SourceIndex>().Refresh(scan.Processed, scan.Ledger);
 
                     return view with
                     {

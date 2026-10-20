@@ -6,7 +6,8 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
-/// Throws away the working set of every track that has been <strong>imported</strong>.
+/// Throws away the working set of every track that has been <strong>imported</strong>, once its
+/// source has been kept for the retention the user set (#133).
 /// </summary>
 /// <param name="requestedAt">When a re-cut or swap was last asked for a track, or null (#50).</param>
 public sealed class WorkingSetJanitor(
@@ -14,12 +15,14 @@ public sealed class WorkingSetJanitor(
     WorkingSet workingSet,
     JobStore jobs,
     IOptions<CratesidePaths> paths,
+    SourceRetentionStore retention,
+    TimeProvider time,
     Func<string, DateTimeOffset?>? requestedAt = null
 )
 {
     private readonly CratesidePaths _paths = paths.Value;
 
-    /// <summary>Discards what is finished with, and reports how many went.</summary>
+    /// <summary>Discards what is finished with and past its retention, and reports how many went.</summary>
     public int Sweep()
     {
         if (workingSet.VideoIds is not { Count: > 0 } held)
@@ -34,8 +37,29 @@ public sealed class WorkingSetJanitor(
 
         var ledger = store.Read();
         var staged = ProcessedTracks.Scan(ledger, [_paths.StagingFolder]);
+        var (keeping, now) = (retention.Read(), time.GetUtcNow());
+        var everywhere = new Lazy<ProcessedTracks>(() =>
+            ProcessedTracks.Scan(ledger, [_paths.StagingFolder, _paths.LibraryFolder])
+        );
 
-        List<string> discarded = [.. held.Where(videoId => IsFinishedWith(videoId, staged))];
+        List<string> discarded = [];
+
+        foreach (var videoId in held.Where(videoId => IsFinishedWith(videoId, staged)))
+        {
+            if (workingSet.LeftStagingAt(videoId) is not { } left)
+                workingSet.RecordLeftStaging(videoId, left = now);
+
+            // The library already holds this audio (the same decode, MEASURED in #133).
+            if (
+                keeping.HasLapsed(left, now)
+                || everywhere.Value.StemsFor(videoId).Any(stem => stem.IsVerbatimSource)
+            )
+                discarded.Add(videoId);
+        }
+
+        // Back in staging: the clock restarts when the stems leave again.
+        foreach (var videoId in held.Where(videoId => staged.StemsFor(videoId) is { Count: > 0 }))
+            workingSet.ClearLeftStaging(videoId);
 
         // Opening every file in the library is costly, so only when something could be judge-only.
         if (
@@ -43,12 +67,15 @@ public sealed class WorkingSetJanitor(
             { Count: > 0 } candidates
         )
         {
-            var finished = ProcessedTracks.Scan(
-                ledger,
-                [_paths.StagingFolder, _paths.LibraryFolder]
+            // A download that joined the store (a backfill) keeps its clock; a judging run's goes.
+            discarded.AddRange(
+                candidates
+                    .Where(everywhere.Value.IsFullyProcessed)
+                    .Where(videoId =>
+                        workingSet.LeftStagingAt(videoId) is not { } left
+                        || keeping.HasLapsed(left, now)
+                    )
             );
-
-            discarded.AddRange(candidates.Where(finished.IsFullyProcessed));
         }
 
         foreach (var videoId in discarded)

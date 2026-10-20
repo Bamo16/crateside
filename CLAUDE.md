@@ -14,9 +14,12 @@ dotnet test --solution Crateside.slnx      # not --nologo: it is forwarded to th
 dotnet csharpier check .                   # must be clean before every commit
 ```
 
-**A track's full-mix download is in `%LOCALAPPDATA%\crateside\working\<videoId>\`** until its
-stems leave staging. Folders are named by video ID, not by song (find the ID in the stem's
-`COMMENT` tag or the ledger's `sourceUrl`). Look there before downloading again. To download
+**Find a track's source without searching.** `%LOCALAPPDATA%\crateside\source-index.json` lists
+every source on disk, by `videoId` and `song`, with its `path`: the full-mix download in the working
+set (`location: WorkingSet`, kept for the retention set in Settings after the stems reach the
+library), or the sample the library keeps (`KeptSample`). The working set's folders are named by
+video ID, not by song (the ID is in the stem's `COMMENT` tag or the ledger's `sourceUrl`). Look in
+the index before downloading again, and never search directories by song name. To download
 one, use `stemforge-cli download <url> --format flac --output <dir>`, never `yt-dlp`: stemforge
 fetches the Premium format the stems were cut from, and gives the identical file. Plain `yt-dlp`
 fetched a free format whose audio started 36 ms off (#133).

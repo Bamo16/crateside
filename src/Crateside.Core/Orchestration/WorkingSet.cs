@@ -14,6 +14,9 @@ public sealed class WorkingSet(string? root = null)
     /// <summary>How the download went, as <c>stemforge-cli</c> reported it.</summary>
     public const string AcquisitionFileName = "acquisition.json";
 
+    /// <summary>When the track's last stem left staging, which starts the source's retention clock (#133).</summary>
+    public const string LeftStagingFileName = "left-staging.json";
+
     /// <summary>The largest evidence file worth carrying rather than pointing at.</summary>
     private const long MaxInlineBytes = 32 * 1024;
 
@@ -148,6 +151,38 @@ public sealed class WorkingSet(string? root = null)
         return path is not null;
     }
 
+    /// <summary>When the track left staging, or null while no clock is running for it.</summary>
+    public DateTimeOffset? LeftStagingAt(string videoId) =>
+        WorkingSetJsonContext
+            .Default.LeftStaging.ReadFileOrDefault(
+                Path.Combine(DirectoryFor(videoId), LeftStagingFileName)
+            )
+            ?.At;
+
+    public void RecordLeftStaging(string videoId, DateTimeOffset at)
+    {
+        try
+        {
+            WorkingSetJsonContext.Default.LeftStaging.WriteFile(
+                Path.Combine(DirectoryFor(videoId), LeftStagingFileName),
+                new LeftStaging(at)
+            );
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // The clock starts at the next sweep instead.
+        }
+    }
+
+    public void ClearLeftStaging(string videoId)
+    {
+        try
+        {
+            File.Delete(Path.Combine(DirectoryFor(videoId), LeftStagingFileName));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+    }
+
     /// <summary>Throws the whole working set away, once the track is imported.</summary>
     public void Discard(string videoId)
     {
@@ -176,3 +211,6 @@ public sealed class WorkingSet(string? root = null)
         }
     }
 }
+
+/// <summary>The moment a track's last stem left staging.</summary>
+public sealed record LeftStaging(DateTimeOffset At);
