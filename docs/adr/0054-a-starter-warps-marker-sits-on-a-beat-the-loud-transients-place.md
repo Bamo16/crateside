@@ -53,15 +53,33 @@ it is are separate. It still sits on the first beat the transients place. Which 
 is comes from beatdetect's downbeat, so a pickup can make it beat 2, 3 or 4. The clip starts on a bar
 line, so a clip dropped on a bar in the arrangement keeps the track's bars. Where the downbeat
 confidence is under the working threshold, the starter is written as above and the downbeat is
-reported as a guess.
+numbered as a downbeat, as before.
 
 - **The case that showed it** (MEASURED 2026-10-19): GYARI – *アカリがやってきたぞっ* (*Akari ga
   Yattekita zo*). The marker sat at 0.4395 s as beat 1.0, the clip starting there. beatdetect 1.3.0
   puts the bar lines at ~0.00 s and every 1.76 s after it on the drums (confidence 0.078), the
   instrumental (0.002) and the source mix (0.001). In the arrangement, the track's bars landed one
   beat off.
-- Not yet built: where the clip starts when the bar line falls just before the audio, and whether
-  the downbeat is read from the drum stem, are settled in #134.
+- **Built 2026-10-19** (`StarterGrid`, `SidecarWriter.StarterWarp`). The downbeat is trusted from
+  `downbeat_confidence` 0.03, in bars of four; otherwise the marker's beat is numbered as a downbeat,
+  as before. MEASURED that day against the 382 steady warps of the library read in the right octave
+  by beatdetect 1.3.0, taking the warp's bar lines as the true downbeats: this rule puts the bar on
+  the right beat on 251 (66%), against 199 (52%) for the first beat alone and 232 (61%) for the
+  downbeat at any confidence. 0.01, 0.05, 0.1 and 0.3 give 65%, 64%, 63% and 61%. About a third
+  still need the marker's beat changed by hand.
+- **The numbering.** Bar lines are every fourth beat from beat 0. The marker is beat 0, 1, 2 or 3,
+  and the clip starts at beat 0, the bar line at or before the marker. That bar line is usually
+  before the audio (the marker is the first beat in the file); the maintainer has had clips reach
+  past the audio into silence in Live, and the first starter written this way is to be checked
+  there.
+- **The downbeat is read from the reference stem**, the instrumental, like the tempo. Reading it
+  from the drum stem was proposed (on GYARI's drums the confidence was 0.078 against 0.002) but is
+  not measured: the library keeps no drum stems to measure it on.
+- **A starter already written is written again** when its marker's beat or clip start differs from
+  the one crateside would now write, so staged starters take the numbering once their instrumental
+  is read on the pinned build. The beat worker reads again any instrumental whose reading is from an
+  older build than the pin, after every one with no reading: 553 of the 570 kept readings were from
+  1.1.0, which reports no downbeat.
 
 **Amended 2026-10-19: *Tempo only* is removed, and a stem whose beat cannot be placed arrives with
 Warp off.** The maintainer's reasons: a tempo-only starter was rarely useful, and a marker that

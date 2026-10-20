@@ -15,33 +15,18 @@ public sealed class StarterGridTests
     );
 
     [Fact]
-    public void A_sure_downbeat_is_where_the_marker_goes() =>
-        Assert.Equal(
-            new StarterGrid(120, 1.5, true),
-            StarterGrid.Of(
-                new BeatReading
-                {
-                    Bpm = 120,
-                    BeatOffsetMs = 500,
-                    DownbeatOffsetMs = 1500,
-                    DownbeatConfidence = 0.03,
-                }
-            )
-        );
+    public void A_sure_downbeat_numbers_the_starters_beats() =>
+        Assert.Equal(new StarterGrid(120, 1.5), StarterGrid.Of(Reading(confidence: 0.03)));
 
     [Fact]
-    public void An_unsure_downbeat_leaves_the_marker_on_the_first_beat_and_says_so() =>
+    public void An_unsure_downbeat_leaves_which_beat_starts_a_bar_a_guess() =>
+        Assert.Equal(new StarterGrid(120, null), StarterGrid.Of(Reading(confidence: 0.029)));
+
+    [Fact]
+    public void A_downbeat_in_bars_of_three_is_not_used_on_a_grid_of_four() =>
         Assert.Equal(
-            new StarterGrid(120, 0.5, false),
-            StarterGrid.Of(
-                new BeatReading
-                {
-                    Bpm = 120,
-                    BeatOffsetMs = 500,
-                    DownbeatOffsetMs = 1500,
-                    DownbeatConfidence = 0.029,
-                }
-            )
+            new StarterGrid(120, null),
+            StarterGrid.Of(Reading(confidence: 0.2) with { BeatsPerBar = 3 })
         );
 
     [Fact]
@@ -49,27 +34,40 @@ public sealed class StarterGridTests
         Assert.Null(StarterGrid.Of(new BeatReading { BeatOffsetMs = 500 }));
 
     [Fact]
-    public async Task A_steady_corpus_track_gets_its_marker_on_the_warps_grid_and_its_downbeat_on_a_bar()
+    public void A_drifting_reading_gives_no_grid() =>
+        Assert.Null(
+            StarterGrid.Of(Reading(confidence: 0.2) with { Windows = [118, 119, 120, 121, 122] })
+        );
+
+    [Fact]
+    public async Task A_steady_corpus_tracks_downbeat_falls_on_a_bar_line_of_its_warp()
     {
         var truth = Corpus("maroon-5-sugar");
         var grid = StarterGrid.Of(await ReadAsync(truth));
 
-        Assert.NotNull(grid);
-        Assert.True(grid.DownbeatKnown);
-        Assert.InRange(truth.GridErrorMs(grid.MarkerSeconds), -25, 25);
-        Assert.InRange(truth.BarOffsetFromClipStart(grid.MarkerSeconds), -0.1, 0.1);
+        Assert.NotNull(grid?.DownbeatSeconds);
+        Assert.InRange(truth.GridErrorMs(grid.DownbeatSeconds.Value), -25, 25);
+        Assert.InRange(truth.BarOffsetFromClipStart(grid.DownbeatSeconds.Value), -0.1, 0.1);
     }
 
     [Fact]
-    public async Task A_corpus_track_the_filter_is_unsure_of_is_marked_a_guess_on_a_beat_that_is_still_on_the_grid()
+    public async Task A_corpus_track_the_filter_is_unsure_of_gives_no_downbeat()
     {
-        var truth = Corpus("adele-rolling-in-the-deep");
-        var grid = StarterGrid.Of(await ReadAsync(truth));
+        var grid = StarterGrid.Of(await ReadAsync(Corpus("adele-rolling-in-the-deep")));
 
         Assert.NotNull(grid);
-        Assert.False(grid.DownbeatKnown);
-        Assert.InRange(truth.GridErrorMs(grid.MarkerSeconds), -25, 25);
+        Assert.Null(grid.DownbeatSeconds);
     }
+
+    private static BeatReading Reading(double confidence) =>
+        new()
+        {
+            Bpm = 120,
+            BeatOffsetMs = 500,
+            DownbeatOffsetMs = 1500,
+            DownbeatConfidence = confidence,
+            BeatsPerBar = 4,
+        };
 
     private static CorpusTrack Corpus(string id)
     {

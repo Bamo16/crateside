@@ -11,22 +11,17 @@ works this way is in the ADRs listed at the end.
 
 | crateside wrote | the stem's Collection | left to do by hand |
 |---|---|---|
-| a starter | Check beat (orange) | check the marker's beat, set the clip start, save |
+| a starter | Check beat (orange) | check the marker's beat in its bar, save |
 | a clip with Warp off | Warp by hand (blue) | the whole warp |
 | a lent warp (a sibling's saved warp) | Warped (green) | nothing |
-
-**Known gap: which beat of the bar the marker is.** The clip starts on the marker's beat, so a clip
-dropped on a bar line in the arrangement treats that beat as the downbeat. That is right only when
-the first beat the transients place is a downbeat. The fix, numbering the marker's beat from
-beatdetect's downbeat, is [#134](https://github.com/Bamo16/crateside/issues/134) (ADR 0054,
-amended 2026-10-19).
 
 ## Settings
 
 - **`Warps:StarterWarps`**, changed from Settings while crateside runs and kept in
   `warp-settings.json`, which wins over appsettings:
   - *Off*: nothing is written, and Live analyses the stem itself.
-  - *On the grid* (the default): the marker on a beat, and the clip starting there.
+  - *On the grid* (the default): the marker on a beat, numbered within its bar, and the clip
+    starting on the bar line.
 
   *Tempo only*, a marker at 0 s that only set the tempo, was removed on 2026-10-19 (ADR 0054).
 - **`Warps:LendAutomatically`**: whether a sibling's saved warp is copied without asking. When a
@@ -44,7 +39,8 @@ amended 2026-10-19).
 
 **Order of precedence:** the maintainer's own warp, which is never touched; then a lent warp; then a
 starter; then a clip with Warp off. A starter and a Warp-off clip replace each other as the tempo
-allows. Neither replaces a lent warp or the maintainer's own.
+allows, and a starter replaces an older starter whose marker is numbered differently. Neither
+replaces a lent warp or the maintainer's own.
 
 ## The steps
 
@@ -81,9 +77,15 @@ allows. Neither replaces a lent warp or the maintainer's own.
    weighted to the fourth power, and take the peak (`GridCheck.FirstBeat`). That is the first beat
    in the file, at most one beat from its start. With fewer than 32 transients no beat is placed,
    and the stem gets a clip with Warp off.
-8. **Write the sidecar** for each stem (`SidecarWriter.Starter`):
-   - one marker, as Live's beat 1, plus Live's hidden marker 1/32 of a beat later;
-   - the clip from the marker's beat to the end of the file, looping off;
+8. **Number the marker's beat in its bar** (`StarterGrid`, `SidecarWriter.StarterWarp`). Bar lines
+   are every fourth beat from beat 0. When the reading's `downbeat_confidence` is 0.03 or more, in
+   bars of four, the marker is the beat it falls on counting from beatdetect's downbeat: 0 to 3, so
+   a pickup makes it 1, 2 or 3. Otherwise the marker is beat 0, a downbeat. On the library this puts
+   the bar right on 66% of steady tracks, against 52% for the marker always as a downbeat (#134).
+9. **Write the sidecar** for each stem (`SidecarWriter.Starter`):
+   - the marker, plus Live's hidden marker 1/32 of a beat later;
+   - the clip from beat 0, the bar line at or before the marker, to the end of the file, looping
+     off. That bar line is usually before the audio starts;
    - the stem's own waveform and transients;
    - its clip gain to the loudness target (ADR 0059);
    - its colour by kind.
@@ -108,7 +110,12 @@ pass it (MEASURED, ADR 0048).
 
 ## Known issues
 
-- **The downbeat** is not used: see the gap above and #134.
+- **A third of steady tracks still get the wrong beat of the bar**: the downbeat is a guess under
+  confidence 0.03, and wrong on one in five above it. The marker's beat is then changed by hand.
+- **The downbeat comes from the instrumental.** The drum stem may give a surer one (0.078 against
+  0.002 on GYARI – *アカリがやってきたぞっ* (*Akari ga Yattekita zo*)); unmeasured.
+- **A clip that starts before the audio** has not yet been opened in Live from a starter. The first
+  one written is to be checked there.
 
 ## History
 
@@ -117,7 +124,7 @@ pass it (MEASURED, ADR 0048).
 own tempo, the 10 ms check, beatdetect's moving flag dropped),
 [ADR 0050](adr/0050-a-warp-shows-as-itself-and-is-vouched-for-by-its-grid.md) (the refined tempo),
 [ADR 0054](adr/0054-a-starter-warps-marker-sits-on-a-beat-the-loud-transients-place.md) (the
-marker on a beat; the downbeat, amended),
+marker on a beat, numbered from the downbeat),
 [ADR 0058](adr/0058-a-staged-stem-shows-its-state-in-live.md) (Collections),
 [ADR 0059](adr/0059-a-sample-arrives-at-one-loudness.md) (clip gain, and Warp off when there is
 no starter).

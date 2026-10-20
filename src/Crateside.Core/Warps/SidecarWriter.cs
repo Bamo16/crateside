@@ -65,15 +65,15 @@ public sealed class SidecarWriter(
             _ => throw new UnreachableException(),
         };
 
-    /// <summary>Writes one marker at this tempo, on the first beat the transients place.</summary>
+    /// <summary>Writes one marker at the grid's tempo, on the first beat the transients place, numbered from its downbeat.</summary>
     /// <param name="timingFrom">The stem the group's tempo and beat are read from, so every stem gets the same marker; the target when null.</param>
     public async Task<WarpOutcome> StartAsync(
         string target,
         IReadOnlyList<string> sameKind,
-        double bpm,
+        StarterGrid grid,
         string? timingFrom = null,
         CancellationToken ct = default
-    ) => Settle(await PrepareStarterAsync(target, sameKind, bpm, timingFrom, ct), target);
+    ) => Settle(await PrepareStarterAsync(target, sameKind, grid, timingFrom, ct), target);
 
     /// <summary>Writes a clip with Warp off over the whole file, for a stem that gets no starter (ADR 0059).</summary>
     public async Task<WarpOutcome> UnwarpAsync(
@@ -147,13 +147,13 @@ public sealed class SidecarWriter(
     }
 
     /// <summary>
-    /// Works out the sidecar <see cref="StartAsync"/> would write, without writing it: Warp off instead,
-    /// over a starter too, when one tempo does not hold on the group's beats or no beat is placed.
+    /// Works out the sidecar <see cref="StartAsync"/> would write, without writing it, over a starter that
+    /// differs; Warp off instead when one tempo does not hold on the group's beats or no beat is placed.
     /// </summary>
     public async Task<SidecarPlan> PrepareStarterAsync(
         string target,
         IReadOnlyList<string> sameKind,
-        double bpm,
+        StarterGrid grid,
         string? timingFrom = null,
         CancellationToken ct = default
     )
@@ -165,7 +165,7 @@ public sealed class SidecarWriter(
             if (own is { IsUsers: true })
                 return Refuse(new WarpOutcome.AlreadyWarped());
 
-            if (await TimingAsync(timingFrom ?? target, bpm, ct) is not { } timing)
+            if (await TimingAsync(timingFrom ?? target, grid.Bpm, ct) is not { } timing)
                 return Refuse(Undecodable(timingFrom ?? target));
 
             if (timing is not { Holds: true, FirstBeat: { } firstBeat })
@@ -173,7 +173,12 @@ public sealed class SidecarWriter(
                     ? Refuse(new WarpOutcome.AlreadyWarped())
                     : await UnwarpedAsync(target, sameKind, ct);
 
-            if (own is { IsStarter: true })
+            var warp = StarterWarp(timing.Bpm, firstBeat, grid.DownbeatSeconds);
+
+            if (
+                own is { IsStarter: true, Analysis: { Clip.LoopStart: 0 } kept }
+                && kept.Warp.Markers.SequenceEqual(warp.Markers)
+            )
                 return Refuse(new WarpOutcome.AlreadyWarped());
 
             if (await decoder.DecodeAsync(target, ct) is not { } audio)
@@ -188,10 +193,10 @@ public sealed class SidecarWriter(
                 analysis =>
                     (
                         Starter(
+                            warp,
                             timing.Bpm,
                             (double)audio.Frames / audio.SampleRate,
-                            analysis,
-                            firstBeat
+                            analysis
                         ),
                         timing.Bpm
                     )
@@ -370,39 +375,48 @@ public sealed class SidecarWriter(
         };
 
     /// <summary>
-    /// A one-marker warp laid out as Live saves one, the marker on the first beat (#72) and the clip
-    /// running from it to the end of the audio, looping off, so it lands on the arrangement's grid.
+    /// One marker on the first beat (#72), numbered within its bar from the downbeat when there is one,
+    /// else as a downbeat, with bar lines on every fourth beat from 0 (ADR 0054).
     /// </summary>
-    private static AnalysisFile Starter(
-        double bpm,
-        double seconds,
-        AudioAnalysis audio,
-        double markerSeconds
-    )
+    private static Warp StarterWarp(double bpm, double markerSeconds, double? downbeatSeconds)
     {
-        const double MarkerBeat = 1;
         var beatSeconds = 60 / bpm;
-        var end = MarkerBeat + (seconds - markerSeconds) / beatSeconds;
+        var markerBeat = downbeatSeconds is { } downbeat
+            ? (
+                Math.Round((markerSeconds - downbeat) / beatSeconds) % StarterGrid.BeatsPerBar
+                + StarterGrid.BeatsPerBar
+            ) % StarterGrid.BeatsPerBar
+            : 0;
+
+        return new Warp
+        {
+            Markers =
+            [
+                new(markerSeconds, markerBeat),
+                new(
+                    markerSeconds + HiddenMarkerBeats * beatSeconds,
+                    markerBeat + HiddenMarkerBeats
+                ),
+            ],
+        };
+    }
+
+    /// <summary>
+    /// The starter laid out as Live saves one: the clip from beat 0, the bar line at or before the
+    /// marker even when that is before the audio, to the end of the audio, looping off.
+    /// </summary>
+    private static AnalysisFile Starter(Warp warp, double bpm, double seconds, AudioAnalysis audio)
+    {
+        var marker = warp.Markers[0];
+        var end = marker.Beat + (seconds - marker.Seconds) * bpm / 60;
 
         return new AnalysisFile
         {
             Audio = audio,
-            Warp = new Warp
-            {
-                Markers =
-                [
-                    new(markerSeconds, MarkerBeat),
-                    new(
-                        markerSeconds + HiddenMarkerBeats * beatSeconds,
-                        MarkerBeat + HiddenMarkerBeats
-                    ),
-                ],
-            },
+            Warp = warp,
             Clip = new Clip
             {
-                LoopStart = MarkerBeat,
                 LoopEnd = end,
-                HiddenLoopStart = MarkerBeat,
                 HiddenLoopEnd = end,
                 OutMarker = end,
                 LoopOn = false,

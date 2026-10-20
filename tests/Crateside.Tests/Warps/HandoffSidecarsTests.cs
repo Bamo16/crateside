@@ -51,7 +51,7 @@ public sealed class HandoffSidecarsTests : IDisposable
         var plan = await writer.PrepareStarterAsync(
             working,
             [],
-            120,
+            new(120, null),
             ct: TestContext.Current.CancellationToken
         );
         var prepared = new Dictionary<string, PreparedSidecar>
