@@ -231,7 +231,7 @@ by hand; everything below describes candidates against it.
   instrumental, onto each stem of an upload nothing is warped on yet as it lands in staging, so the
   group dragged into an empty set sets its tempo. It is written only where that one tempo keeps the
   beats on its grid through the track, within 10 ms
-  ([ADR 0060](docs/adr/0060-a-starter-is-written-only-where-one-tempo-holds.md)). Its marker sits on a beat the loud transients
+  ([ADR 0048](docs/adr/0048-stems-arrive-in-staging-already-warped.md)). Its marker sits on a beat the loud transients
   place ([ADR 0054](docs/adr/0054-a-starter-warps-marker-sits-on-a-beat-the-loud-transients-place.md)),
   not necessarily a downbeat. It is not
   a finished warp: the stem still waits to be warped, it never lends, a lent warp replaces it, and
@@ -264,7 +264,7 @@ by hand; everything below describes candidates against it.
   the stem still waits to be warped by hand, it never lends, a starter whose tempo holds or a lent
   warp replaces it, and it becomes the user's once Live saves over it
   ([ADR 0059](docs/adr/0059-a-sample-arrives-at-one-loudness.md),
-  [ADR 0060](docs/adr/0060-a-starter-is-written-only-where-one-tempo-holds.md)).
+  [ADR 0048](docs/adr/0048-stems-arrive-in-staging-already-warped.md)).
 
 ## Tags
 
