@@ -16,8 +16,8 @@ dotnet csharpier check .                   # must be clean before every commit
 
 **A track's full-mix download is in `%LOCALAPPDATA%\crateside\working\<videoId>\`** until its
 stems leave staging. Folders are named by video ID, not by song (find the ID in the stem's
-`COMMENT` tag or the ledger's `sourceUrl`). Look there before downloading again: a redownload is
-not the file the stems were cut from, and can sit tens of ms off them.
+`COMMENT` tag or the ledger's `sourceUrl`). Look there before downloading again: a redownload need not
+start where the stems' source did (one measured 36 ms off, #133).
 
 Many tests **assert against the real library** — the Ableton roots under `P:\RYAN\Ableton`, the
 ledger, this machine's working sets — and skip when those are absent. That has caught
