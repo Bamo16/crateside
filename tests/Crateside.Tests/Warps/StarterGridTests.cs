@@ -17,7 +17,7 @@ public sealed class StarterGridTests
     [Fact]
     public void A_sure_downbeat_is_where_the_marker_goes() =>
         Assert.Equal(
-            new StarterGrid(120, 1.5, true, false),
+            new StarterGrid(120, 1.5, true),
             StarterGrid.Of(
                 new BeatReading
                 {
@@ -32,7 +32,7 @@ public sealed class StarterGridTests
     [Fact]
     public void An_unsure_downbeat_leaves_the_marker_on_the_first_beat_and_says_so() =>
         Assert.Equal(
-            new StarterGrid(120, 0.5, false, false),
+            new StarterGrid(120, 0.5, false),
             StarterGrid.Of(
                 new BeatReading
                 {
@@ -48,27 +48,6 @@ public sealed class StarterGridTests
     public void A_reading_without_a_tempo_gives_no_grid() =>
         Assert.Null(StarterGrid.Of(new BeatReading { BeatOffsetMs = 500 }));
 
-    [Theory]
-    [InlineData(0.69, 1, false)]
-    [InlineData(0.7, 1, true)]
-    [InlineData(0.1, 2, true)]
-    public void A_track_moves_on_a_strong_wander_or_a_second_tempo(
-        double wander,
-        int segments,
-        bool moves
-    ) =>
-        Assert.Equal(
-            moves,
-            new BeatReading
-            {
-                TempoWander = wander,
-                Segments =
-                [
-                    .. Enumerable.Range(0, segments).Select(i => new TempoSegment(i, i + 1, 120)),
-                ],
-            }.Moves
-        );
-
     [Fact]
     public async Task A_steady_corpus_track_gets_its_marker_on_the_warps_grid_and_its_downbeat_on_a_bar()
     {
@@ -76,7 +55,6 @@ public sealed class StarterGridTests
         var grid = StarterGrid.Of(await ReadAsync(truth));
 
         Assert.NotNull(grid);
-        Assert.False(grid.Moves);
         Assert.True(grid.DownbeatKnown);
         Assert.InRange(truth.GridErrorMs(grid.MarkerSeconds), -25, 25);
         Assert.InRange(truth.BarOffsetFromClipStart(grid.MarkerSeconds), -0.1, 0.1);
@@ -92,12 +70,6 @@ public sealed class StarterGridTests
         Assert.False(grid.DownbeatKnown);
         Assert.InRange(truth.GridErrorMs(grid.MarkerSeconds), -25, 25);
     }
-
-    [Theory]
-    [InlineData("pink-floyd-money")]
-    [InlineData("billie-eilish-bad-guy")]
-    public async Task A_corpus_track_that_changes_tempo_is_flagged_as_moving(string id) =>
-        Assert.True(StarterGrid.Of(await ReadAsync(Corpus(id)))?.Moves);
 
     private static CorpusTrack Corpus(string id)
     {

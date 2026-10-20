@@ -94,6 +94,21 @@ public sealed class TrackTempoTests
         );
 
     [Fact]
+    public void A_reading_the_filter_calls_moving_still_gives_a_starter_tempo() =>
+        Assert.Equal(
+            136,
+            TrackTempo.StarterBpm(
+                new BeatReading
+                {
+                    Bpm = 136,
+                    TempoWander = 1.831,
+                    Segments = [new(0, 60_000, 136), new(60_000, 120_000, 136.4)],
+                    Windows = [136, 136, 136],
+                }
+            )
+        );
+
+    [Fact]
     public void A_drifting_readings_range_leaves_out_a_window_read_at_double_tempo()
     {
         var reading = new BeatReading

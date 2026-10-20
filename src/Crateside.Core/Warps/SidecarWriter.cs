@@ -464,13 +464,13 @@ public sealed class SidecarWriter(
     /// <param name="Holds">Whether one tempo keeps the stronger transients on its grid through the whole track.</param>
     private sealed record StarterTiming(double Bpm, double? FirstBeat, bool Holds);
 
-    private static bool Holds(GridReport report) =>
+    internal static bool Holds(GridReport report) =>
         report is { Windows.Count: >= MinWindowsToHold, Steps.Count: 0 }
         && report.OffsetsPer(HoldBlockSeconds).ToArray() is { Length: > 0 } blocks
         && blocks.Max() - blocks.Min() <= StarterHoldsWithinMs;
 
     /// <summary>The tempo within a hair of the reading that the stem's stronger transients fit best, or the reading when there are too few to say (ADR 0050).</summary>
-    private static double Refined(
+    internal static double Refined(
         double bpm,
         IReadOnlyList<Transient> transients,
         int sampleRate

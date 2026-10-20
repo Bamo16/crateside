@@ -11,9 +11,6 @@ public sealed record BeatReading
 
     public const int WindowSeconds = 30;
 
-    /// <summary>The filter's tempo wander at which a track counts as moving.</summary>
-    public const double WandersAt = 0.7;
-
     private const double SameTempoClass = 0.06;
     private const int MinWindows = 3;
 
@@ -36,13 +33,13 @@ public sealed record BeatReading
 
     public int? BeatsPerBar { get; init; }
 
-    /// <summary>How far the tempo moves through the file; 0.7 and up catches the strong wanderers.</summary>
+    /// <summary>How far the tempo moves through the file, as the filter reports it.</summary>
     public double? TempoWander { get; init; }
 
     /// <summary>The tempos the filter considered, the octave alternatives among them.</summary>
     public IReadOnlyList<BeatCandidate> Candidates { get; init; } = [];
 
-    /// <summary>The stretches over which the filter held one tempo; more than one means it moves.</summary>
+    /// <summary>The stretches over which the filter held one tempo.</summary>
     public IReadOnlyList<TempoSegment> Segments { get; init; } = [];
 
     /// <summary>Each consecutive full 30 s window's tempo, from its beat interval.</summary>
@@ -54,10 +51,6 @@ public sealed record BeatReading
 
     [JsonIgnore]
     public bool Drifts => Drift >= DriftsAt;
-
-    /// <summary>The filter found more than one tempo, or a strong wander; an octave-off read can cry wolf.</summary>
-    [JsonIgnore]
-    public bool Moves => Segments is { Count: > 1 } || TempoWander >= WandersAt;
 
     /// <summary>Null under three windows in one tempo and octave; octave-flipped reads are not exact multiples.</summary>
     public static double? Spread(IReadOnlyList<double> windows)
