@@ -82,6 +82,37 @@ public sealed class BrowserCollectionsTests
     }
 
     [Fact]
+    public void A_verdict_with_sections_in_different_centres_carries_the_caveat()
+    {
+        LedgerRun Verdict(params Section[] sections) =>
+            new()
+            {
+                Timestamp = DateTimeOffset.UnixEpoch,
+                Song = "a - b",
+                Centre = new TonalCentre("E", DiatonicMode.Ionian),
+                Confidence = KeyConfidence.High,
+                Sections = sections,
+            };
+        var home = new TonalCentre("E", DiatonicMode.Ionian);
+
+        Assert.Empty(
+            BrowserCollections.TrackMarksFor(
+                Verdict(new Section("Verse", home), new Section("Chorus", home))
+            )
+        );
+        Assert.Empty(BrowserCollections.TrackMarksFor(Verdict(new Section("All", home))));
+        Assert.Equal(
+            [BrowserCollection.KeyCaveat],
+            BrowserCollections.TrackMarksFor(
+                Verdict(
+                    new Section("Verse", home),
+                    new Section("Outro", new TonalCentre("F#", DiatonicMode.Ionian))
+                )
+            )
+        );
+    }
+
+    [Fact]
     public void A_song_the_ledger_has_not_seen_carries_no_caveat()
     {
         Assert.Empty(BrowserCollections.TrackMarksFor(null));

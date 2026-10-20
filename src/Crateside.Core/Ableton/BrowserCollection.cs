@@ -44,10 +44,7 @@ public static class BrowserCollections
         LedgerRun? verdict,
         IReadOnlyCollection<TrackMark>? marked = null
     ) =>
-        verdict
-            is { IsCollapsed: true }
-                or { Confidence: KeyConfidence.Low or KeyConfidence.Withheld }
-        || marked?.Contains(TrackMark.ChangesKey) is true
+        MayMislead(verdict) || marked?.Contains(TrackMark.ChangesKey) is true
             ? [BrowserCollection.KeyCaveat]
             : [];
 
@@ -63,4 +60,12 @@ public static class BrowserCollections
                 .Union(wanted.Select(collection => (int)collection))
                 .Order(),
         ];
+
+    // Modal, LOW or withheld, or sections the judge placed in different centres.
+    private static bool MayMislead(LedgerRun? verdict) =>
+        verdict
+            is { IsCollapsed: true }
+                or { Confidence: KeyConfidence.Low or KeyConfidence.Withheld }
+        || verdict is { Sections: { Count: > 1 } sections }
+            && sections.Select(section => section.Centre).Distinct().Count() > 1;
 }
