@@ -402,6 +402,7 @@ public static class ServiceRegistration
             sp.GetRequiredService<WarpActions>(),
             TimeProvider.System
         ));
+        services.AddSingleton<TrueUpAll>();
         services.AddSingleton<StemWarpReader>();
         services.AddSingleton<StagingMarks>();
         services.AddSingleton(sp => new HandoffSidecars(

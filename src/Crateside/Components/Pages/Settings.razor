@@ -26,6 +26,7 @@
 @inject WarpSettingsStore WarpStore
 @inject IOptions<JudgeOptions> Judge
 @inject JudgeSettingsStore JudgeStore
+@inject TrueUpAll TrueUps
 
 <PageTitle>Settings · crateside</PageTitle>
 
@@ -242,6 +243,75 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                     <span class="status">@StarterNote(Starter)</span>
                 </div>
             </div>
+
+            <div class="row">
+                <div class="name">
+                    <span>True up every warp</span>
+                    <span class="gist">
+                        Retypes each warp that drifts off its transients, as Track details does
+                        for one, with the vocal saved with it. A warp that would not hold is left.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="line">
+                        <span class="state">
+                            @if (_trueUps is { } batch)
+                            {
+                                <text>
+                                    <span class="mono">@batch.Plans.Count</span>
+                                    @("track".ToQuantity(batch.Plans.Count, ShowQuantityAs.None)) to true up,
+                                    <span class="mono">@batch.Refused</span> left because the grid would not hold
+                                </text>
+                            }
+                            else
+                            {
+                                <text>@(_trueUpWorking ? "Checking every warp…" : "Not checked yet")</text>
+                            }
+                        </span>
+                        <button class="outline" @onclick="CheckTrueUpsAsync"
+                                disabled="@(_trueUpWorking || _trueUps is { Plans.Count: > 0 })">
+                            Check the library
+                        </button>
+                    </div>
+
+                    @if (_trueUps is { Plans.Count: > 0 and var toTrueUp } && _trueUpDone is null)
+                    {
+                        <div class="confirm">
+                            <span>
+                                True up <span class="mono value">@toTrueUp</span>
+                                @("track".ToQuantity(toTrueUp, ShowQuantityAs.None))? Every sidecar
+                                rewritten is backed up first, and a track saved in Live since this
+                                check is skipped.
+                            </span>
+                            <div class="actions">
+                                <button class="primary" @onclick="TrueUpAllAsync" disabled="@_trueUpWorking">
+                                    @(_trueUpWorking ? "Truing up…" : "True them up")
+                                </button>
+                                <button class="outline" @onclick="() => _trueUps = null"
+                                        disabled="@_trueUpWorking">Cancel</button>
+                            </div>
+                        </div>
+                    }
+
+                    @if (_trueUpDone is { } done)
+                    {
+                        <span class="status">
+                            Trued up <span class="mono">@done.Count(item => item.Outcome is TrueUpOutcome.Retyped)</span>
+                            of <span class="mono">@done.Count</span>. Backups are in
+                            <code>%APPDATA%\crateside\backups\warps</code>.
+                        </span>
+
+                        @foreach (var item in done.Where(item => item.Outcome is not TrueUpOutcome.Retyped))
+                        {
+                            <span class="status problem">@item.Song: @WarpWording.TrueUpDone(item.Outcome, string.Empty)</span>
+                        }
+                    }
+                    else if (_trueUpProblem is { } trueUpProblem)
+                    {
+                        <span class="status problem">@trueUpProblem</span>
+                    }
+                </div>
+            </div>
         </section>
 
         <section>
@@ -439,6 +509,49 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             : "Weighed with the rest, but it never raises confidence on its own.";
 
     private StarterWarps Starter => Warps.Value.StarterWarps;
+
+    private TrueUpBatch? _trueUps;
+    private IReadOnlyList<TrueUpDone>? _trueUpDone;
+    private bool _trueUpWorking;
+    private string? _trueUpProblem;
+
+    private async Task CheckTrueUpsAsync()
+    {
+        (_trueUpWorking, _trueUps, _trueUpDone, _trueUpProblem) = (true, null, null, null);
+
+        try
+        {
+            _trueUps = await Task.Run(() => TrueUps.Plan());
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _trueUpProblem = ex.Message;
+        }
+        finally
+        {
+            _trueUpWorking = false;
+        }
+    }
+
+    private async Task TrueUpAllAsync()
+    {
+        if (_trueUps is not { } batch)
+            return;
+
+        _trueUpWorking = true;
+
+        try
+        {
+            _trueUpDone = await Task.Run(() => TrueUps.ApplyAsync(batch));
+            _trueUps = null;
+        }
+        finally
+        {
+            _trueUpWorking = false;
+        }
+
+        await Tracks.EnsureFreshAsync(TimeSpan.Zero);
+    }
 
     // Read again by the workers each time they look, so it applies to the next stem to land.
     private void SetStarter(StarterWarps mode)
