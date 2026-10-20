@@ -431,8 +431,13 @@ it. The two run types below are named after which of **evidence** and **verdict*
   that is the point at which there is nothing further to do with the track and
   therefore nothing further to do with what was gathered about it. A track queued only
   to be judged is never imported by crateside, so its working set goes once it is
-  judged. Crateside's own
+  judged. A track that was imported keeps its source for the **source retention** the user set,
+  counted from when its last stem left staging, and *Forever* keeps it. Crateside's own
   scratch, never a record of anything — losing it costs a re-run, never a fact.
+- **Source retention** — how long a track's source download stays in its **working set** after
+  the last stem of the track leaves staging for the library: a number of days, or *Forever*.
+  Zero days discards at once. Where every source is: `source-index.json`
+  ([ADR 0061](docs/adr/0061-a-source-download-is-kept-for-a-set-time-after-its-stems-reach-the-library.md)).
 - **Acquisition** — how the download crateside is holding turned out, as
   `stemforge-cli` reported it: which premium outcome it met, and whether the user
   has accepted it. Kept in the working set so it dies with the audio it describes —

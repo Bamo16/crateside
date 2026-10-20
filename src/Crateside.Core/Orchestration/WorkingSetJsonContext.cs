@@ -9,4 +9,5 @@ namespace Crateside.Core.Orchestration;
     UseStringEnumConverter = true
 )]
 [JsonSerializable(typeof(Acquisition))]
+[JsonSerializable(typeof(LeftStaging))]
 internal sealed partial class WorkingSetJsonContext : JsonSerializerContext { }

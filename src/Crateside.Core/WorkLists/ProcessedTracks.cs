@@ -132,6 +132,9 @@ public sealed record StemOnDisk
     /// </summary>
     public string? Preset { get; init; }
 
+    /// <summary>A verbatim copy of the download, which is how a kept source reads.</summary>
+    public bool IsVerbatimSource => Preset is null && !IsAdopted;
+
     /// <summary>What the user calls an adopted sample. Null for anything crateside made.</summary>
     public string? Label { get; init; }
 
