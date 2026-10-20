@@ -1,9 +1,13 @@
 # Starter warps: how a steady track arrives warped
 
 What crateside does today to give a staged stem a warp of its own making, and when it does not.
-The aim: a track with one steady tempo arrives in Sample Staging already on Live's grid. The
-maintainer then drags the stems in, checks which beat of the bar the marker is, and saves the
-default clip.
+The aim: a track with one steady tempo arrives in Sample Staging already on Live's grid, its bars
+on the track's downbeats. The maintainer then drags the stems in, moves the clip start to the bar
+where the first verse begins, and saves the default clip.
+
+The clip start crateside writes is only a bar line near the start of the file. The default clip
+saved for the library carries the maintainer's clip start, which only they can choose; the
+starter's job is to make that a matter of picking the right bar.
 
 This page describes the current behaviour and is edited in place whenever that changes. Why it
 works this way is in the ADRs listed at the end.
@@ -12,9 +16,9 @@ works this way is in the ADRs listed at the end.
 
 | crateside wrote | the stem's Collection | left to do by hand |
 |---|---|---|
-| a starter | Check beat (orange) | check the marker's beat in its bar, save |
-| a clip with Warp off | Warp by hand (blue) | the whole warp |
-| a lent warp (a sibling's saved warp) | Warped (green) | nothing |
+| a starter | Check beat (orange) | check the bars fall on the downbeats, move the clip start to the first verse's bar, save |
+| a clip with Warp off | Warp by hand (blue) | the whole warp and the clip start |
+| a lent warp (a sibling's saved warp) | Warped (green) | nothing: the sibling's clip start comes with it |
 
 ## Settings
 
