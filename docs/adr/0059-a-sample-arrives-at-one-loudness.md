@@ -21,9 +21,12 @@ the extremes, where one part buries the other.
 integrated loudness.** The audio is never touched; crateside writes the one field.
 
 - **Metric: integrated loudness (EBU R128), whole file.** Eight vocal/instrumental pairs were
-  rendered under integrated and under the 95th percentile of short-term loudness and listened to
-  by the maintainer, who could not tell them apart. Where the ear is indifferent, integrated is
-  the one ffmpeg already reports.
+  rendered under integrated and under the 95th percentile of short-term loudness, and the
+  maintainer listened to part of two or three of them and judged whether each level needed
+  changing; he did not hear a difference. That is a weak test: about 20 s of instrumental came
+  before the vocal, so it leaned on memory, and it was not a comparison of how the two balances
+  sound side by side or in a crossfade (corrected 2026-10-20). Integrated is the one ffmpeg
+  already reports, and the two differ by a near-constant 1.7 to 1.8 dB.
 - **Target: -14 LUFS.** A GUESS, near the library median (-13.8), so most files move little and
   the extremes move most. The target is a setting, not a constant: the maintainer chose it
   without a reference, and changing it re-writes every sidecar.
