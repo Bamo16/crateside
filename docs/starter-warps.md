@@ -36,7 +36,8 @@ works this way is in the ADRs listed at the end.
 
 - **At handoff**, while the stems are still in the working set (`HandoffSidecars`). Each sidecar is
   written as its stem lands in staging, so a stem never sits there unanalysed.
-- **Once a minute over staging** (`WarpLending`), for what changes later: a sibling saved, the
+- **Over staging when Staging or the library changes, and every ten minutes besides**
+  (`WarpLending`, [ADR 0060](adr/0060-the-file-workers-wake-on-a-change-and-the-timer-is-the-net.md)), for what changes later: a sibling saved, the
   setting changed, a stem put in staging by hand. A stem is looked at again only when its files,
   its siblings' sidecars, or the tempo or downbeat it would be given changed.
 - **Never while Live is analysing a stem** whose sidecar was recycled from the warp view

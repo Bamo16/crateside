@@ -1,15 +1,22 @@
 using Crateside.Core.Staging;
+using Crateside.Core.Watching;
 
 namespace Crateside;
 
 /// <summary>
-/// Keeps each filed track's warp guide outside Ableton once a minute. Moving a file contends for
+/// Keeps each filed track's warp guide outside Ableton, when Staging or the library changes and
+/// every ten minutes besides. Moving a file contends for
 /// nothing, so this runs unattended like detection (ADR 0046).
 /// </summary>
-public sealed class WarpGuideWorker(WarpGuideKeeper keeper, ILogger<WarpGuideWorker> logger)
-    : BackgroundService
+public sealed class WarpGuideWorker(
+    WarpGuideKeeper keeper,
+    FileChanges changes,
+    ILogger<WarpGuideWorker> logger
+) : BackgroundService
 {
-    private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan Interval = TimeSpan.FromMinutes(10);
+
+    private readonly FileChanges.Listener _wake = changes.Listen();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -27,7 +34,7 @@ public sealed class WarpGuideWorker(WarpGuideKeeper keeper, ILogger<WarpGuideWor
 
             try
             {
-                await Task.Delay(Interval, stoppingToken);
+                await _wake.WaitAsync(Interval, stoppingToken);
             }
             catch (OperationCanceledException)
             {
@@ -51,7 +58,7 @@ public sealed class WarpGuideWorker(WarpGuideKeeper keeper, ILogger<WarpGuideWor
 
             case GuideKeeping.Failed(var guide, var error):
                 logger.LogWarning(
-                    "Could not keep the warp guide {Guide}, trying again in a minute: {Error}",
+                    "Could not keep the warp guide {Guide}, trying again at the next change: {Error}",
                     Path.GetFileName(guide),
                     error
                 );

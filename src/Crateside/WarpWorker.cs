@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Crateside.Core.Ableton;
 using Crateside.Core.Staging;
 using Crateside.Core.Warps;
+using Crateside.Core.Watching;
 using Humanizer;
 using Microsoft.Extensions.Options;
 
@@ -9,7 +10,7 @@ namespace Crateside;
 
 /// <summary>
 /// Lends staged stems their siblings' finished warps, or writes starter warps, and marks each stem's
-/// state in Live (#130), once a minute.
+/// state in Live (#130), when Staging or the library changes and every ten minutes besides.
 /// Decoding runs on the CPU and contends for nothing, so this runs unattended like detection
 /// (ADR 0043, ADR 0047).
 /// </summary>
@@ -17,11 +18,14 @@ public sealed class WarpWorker(
     WarpLending lending,
     WarpActions actions,
     StagingMarks marks,
+    FileChanges changes,
     IOptions<WarpOptions> options,
     ILogger<WarpWorker> logger
 ) : BackgroundService
 {
-    private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
+    private static readonly TimeSpan Interval = TimeSpan.FromMinutes(10);
+
+    private readonly FileChanges.Listener _wake = changes.Listen();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -64,7 +68,7 @@ public sealed class WarpWorker(
 
             try
             {
-                await Task.Delay(Interval, stoppingToken);
+                await _wake.WaitAsync(Interval, stoppingToken);
             }
             catch (OperationCanceledException)
             {
@@ -91,7 +95,7 @@ public sealed class WarpWorker(
 
                 break;
 
-            // Another write got to the store first; the next minute tries again.
+            // Another write got to the store first; the next change or the timer tries again.
             case TagWriteOutcome.Stale:
                 break;
 
