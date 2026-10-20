@@ -1,4 +1,5 @@
 using Crateside.Core.Ledger;
+using Crateside.Core.Marks;
 
 namespace Crateside.Core.Ableton;
 
@@ -38,11 +39,15 @@ public static class BrowserCollections
     public static IReadOnlySet<BrowserCollection> Cratesides { get; } =
         new HashSet<BrowserCollection>(WarpStates.Concat(TrackMarks));
 
-    /// <summary>Key caveat when the verdict's Key tag may mislead a pairing: modal, LOW or withheld.</summary>
-    public static IReadOnlyList<BrowserCollection> TrackMarksFor(LedgerRun? verdict) =>
+    /// <summary>Key caveat when the verdict's Key tag may mislead a pairing, or the maintainer marked the key as changing.</summary>
+    public static IReadOnlyList<BrowserCollection> TrackMarksFor(
+        LedgerRun? verdict,
+        IReadOnlyCollection<TrackMark>? marked = null
+    ) =>
         verdict
             is { IsCollapsed: true }
                 or { Confidence: KeyConfidence.Low or KeyConfidence.Withheld }
+        || marked?.Contains(TrackMark.ChangesKey) is true
             ? [BrowserCollection.KeyCaveat]
             : [];
 

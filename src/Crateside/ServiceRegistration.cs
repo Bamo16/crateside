@@ -8,6 +8,7 @@ using Crateside.Core.KeyDetection;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
 using Crateside.Core.Loudness;
+using Crateside.Core.Marks;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
@@ -554,6 +555,8 @@ public static class ServiceRegistration
             .SetHandlerLifetime(TimeSpan.FromMinutes(5));
         services.AddHostedService<GenreWorker>();
 
+        services.AddSingleton(_ => new TrackMarkStore());
+
         services.AddSingleton(_ => new FamiliarityStore());
         services
             .AddHttpClient<FamiliarityLookup>(client => client.Timeout = TimeSpan.FromSeconds(15))
@@ -593,7 +596,8 @@ public static class ServiceRegistration
                         sp.GetRequiredService<FamiliarityStore>().Read(),
                         sp.GetRequiredService<WarpTempoReader>().Read,
                         sp.GetRequiredService<BeatReader>().Read,
-                        sp.GetRequiredService<WrittenWarps>().Of
+                        sp.GetRequiredService<WrittenWarps>().Of,
+                        sp.GetRequiredService<TrackMarkStore>().Read()
                     );
 
                     sp.GetRequiredService<WarpTempoReader>().Save();

@@ -5,6 +5,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
+using Crateside.Core.Marks;
 using Crateside.Core.Orchestration.Handoff;
 using Microsoft.Extensions.Options;
 
@@ -18,6 +19,7 @@ public sealed class BackingWorker(
     BackingRunner runner,
     GenreStore genres,
     FamiliarityStore familiarity,
+    TrackMarkStore trackMarks,
     KeyCorrections corrections,
     TagStoreBackups backups,
     FileIndexReader index,
@@ -100,6 +102,7 @@ public sealed class BackingWorker(
                 OwnedOf,
                 corrections: corrections.Approved(),
                 index: libraryIndex,
+                marksOf: trackMarks.Of,
                 beforeWrite: backups.Save
             ),
             "the library"

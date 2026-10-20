@@ -4,6 +4,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
+using Crateside.Core.Marks;
 using Crateside.Core.Orchestration.Tagging;
 using Crateside.Core.Samples;
 
@@ -30,6 +31,7 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
     /// <param name="backKeys">False where another stage writes the keys, which is staging.</param>
     /// <param name="corrections">Paths the user approved re-keying, each to the verdict they saw (ADR 0052).</param>
     /// <param name="index">Live's index of the root, which an imported file's Collections arrive in; null leaves Collections alone.</param>
+    /// <param name="marksOf">A song's marks the maintainer set; none when left out.</param>
     /// <param name="beforeWrite">Called with the root just before a write that changes something.</param>
     public TagWriteOutcome Run(
         string root,
@@ -38,6 +40,7 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
         bool backKeys = true,
         IReadOnlyDictionary<string, string>? corrections = null,
         FolderInfo? index = null,
+        Func<string, IReadOnlyCollection<TrackMark>>? marksOf = null,
         Action<string>? beforeWrite = null
     )
     {
@@ -45,7 +48,7 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
 
         try
         {
-            unbacked = Unbacked(root, ledger, ownedOf, backKeys, corrections, index);
+            unbacked = Unbacked(root, ledger, ownedOf, backKeys, corrections, index, marksOf);
         }
         // A store Live is writing reads as nothing backed; wait for it rather than back everything.
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -98,7 +101,8 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
         Func<string, IReadOnlyList<string>>? ownedOf = null,
         bool backKeys = true,
         IReadOnlyDictionary<string, string>? corrections = null,
-        FolderInfo? index = null
+        FolderInfo? index = null,
+        Func<string, IReadOnlyCollection<TrackMark>>? marksOf = null
     )
     {
         if (!Directory.Exists(root))
@@ -165,7 +169,14 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
                         file.Path,
                         Keywords = changes ? merged : null,
                         Collections = index is not null && keyed
-                            ? CollectionsFor(file.Path, file.Existing, index, provenance, ledger)
+                            ? CollectionsFor(
+                                file.Path,
+                                file.Existing,
+                                index,
+                                provenance,
+                                ledger,
+                                marksOf
+                            )
                             : null,
                     };
                 })
@@ -188,20 +199,25 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
         FileTags? existing,
         FolderInfo index,
         StemProvenance? provenance,
-        KeyLedger ledger
+        KeyLedger ledger,
+        Func<string, IReadOnlyCollection<TrackMark>>? marksOf
     )
     {
         LedgerRun? verdict = null;
+        IReadOnlyCollection<TrackMark> mine = [];
 
         if (provenance is { SourceVideoId: { } videoId })
+        {
             ledger.TryGetLatestByVideoId(videoId, out verdict);
+            mine = marksOf?.Invoke(verdict?.Song ?? videoId) ?? [];
+        }
 
         var has =
             existing?.Collections
             ?? (index.TryGet(path, out var indexed) ? indexed.Collections : []);
         var wanted = BrowserCollections.Merged(
             has,
-            BrowserCollections.TrackMarksFor(verdict),
+            BrowserCollections.TrackMarksFor(verdict, mine),
             BrowserCollections.Cratesides
         );
 
