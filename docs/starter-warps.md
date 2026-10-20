@@ -2,7 +2,8 @@
 
 What crateside does today to give a staged stem a warp of its own making, and when it does not.
 The aim: a track with one steady tempo arrives in Sample Staging already on Live's grid. The
-maintainer then drags the stems in, sets the clip start, and saves the default clip.
+maintainer then drags the stems in, checks which beat of the bar the marker is, and saves the
+default clip.
 
 This page describes the current behaviour and is edited in place whenever that changes. Why it
 works this way is in the ADRs listed at the end.
@@ -33,7 +34,7 @@ works this way is in the ADRs listed at the end.
   written as its stem lands in staging, so a stem never sits there unanalysed.
 - **Once a minute over staging** (`WarpLending`), for what changes later: a sibling saved, the
   setting changed, a stem put in staging by hand. A stem is looked at again only when its files,
-  its siblings' sidecars or its tempo changed.
+  its siblings' sidecars, or the tempo or downbeat it would be given changed.
 - **Never while Live is analysing a stem** whose sidecar was recycled from the warp view (#97,
   the warp view).
 
