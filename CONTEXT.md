@@ -232,9 +232,10 @@ by hand; everything below describes candidates against it.
   instrumental, onto each stem of an upload nothing is warped on yet as it lands in staging, so the
   group dragged into an empty set sets its tempo. It is written only where that one tempo keeps the
   beats on its grid through the track, within 10 ms
-  ([ADR 0048](docs/adr/0048-stems-arrive-in-staging-already-warped.md)). Its marker sits on a beat the loud transients
-  place ([ADR 0054](docs/adr/0054-a-starter-warps-marker-sits-on-a-beat-the-loud-transients-place.md)),
-  not necessarily a downbeat. It is not
+  ([ADR 0048](docs/adr/0048-stems-arrive-in-staging-already-warped.md)). Its marker sits on the first beat the loud
+  transients place, numbered within its bar from beatdetect's downbeat where the filter is sure of
+  it, and its clip starts on the bar line at or before the marker
+  ([ADR 0054](docs/adr/0054-a-starter-warps-marker-sits-on-a-beat-the-loud-transients-place.md)). It is not
   a finished warp: the stem still waits to be warped, it never lends, a lent warp replaces it, and
   it becomes the user's warp once Live saves over it
   ([ADR 0047](docs/adr/0047-a-starter-warp-and-where-transients-came-from.md),

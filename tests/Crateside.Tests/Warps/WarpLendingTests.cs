@@ -198,7 +198,7 @@ public sealed class WarpLendingTests : IDisposable
                 new TransientOrigins()
             ),
             options,
-            _ => bpm
+            _ => bpm is { } tempo ? new StarterGrid(tempo, null) : null
         );
 
     private static string Stem(string root, string name, string preset)

@@ -384,7 +384,7 @@ public static class ServiceRegistration
             sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SidecarWriter>(),
             sp.GetRequiredService<IOptions<WarpOptions>>().Value,
-            path => TrackTempo.StarterBpm(sp.GetRequiredService<BeatReader>().Read(path)),
+            path => StarterGrid.Of(sp.GetRequiredService<BeatReader>().Read(path)),
             sp.GetRequiredService<LiveAnalyses>()
         ));
         services.AddSingleton(sp => new WarpActions(

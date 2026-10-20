@@ -272,7 +272,7 @@ public sealed class SidecarWriterTests : IDisposable
         var outcome = await writer.StartAsync(
             Target,
             [],
-            120,
+            new(120, null),
             ct: TestContext.Current.CancellationToken
         );
 
@@ -299,7 +299,7 @@ public sealed class SidecarWriterTests : IDisposable
         var outcome = await writer.StartAsync(
             Target,
             [],
-            120,
+            new(120, null),
             ct: TestContext.Current.CancellationToken
         );
 
@@ -312,25 +312,76 @@ public sealed class SidecarWriterTests : IDisposable
     public async Task A_starter_puts_its_marker_on_the_first_beat_the_loud_transients_fall_on()
     {
         Audio(Target);
-        var hits = Enumerable
-            .Range(0, 240)
-            .Select(i => new Transient((int)((0.3 + i * 0.5) * 44_100), 1f))
-            .ToArray();
-        SidecarWriter writer = new(
-            new FixedDecoder(Samples(0.5f, 130 * 44_100)),
-            new FixedDetector(hits),
-            _written,
-            _origins
-        );
 
-        await writer.StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken);
+        await OnTheHalfSecond()
+            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
 
         var written = AnalysisFile.Read($"{Target}.asd");
 
         Assert.Equal(0.3, written.Warp.Markers[0].Seconds, 2);
-        Assert.Equal(1, written.Warp.Markers[0].Beat);
-        Assert.Equal(1, written.DefaultClip?.Start ?? 0, 2);
+        Assert.Equal(0, written.Warp.Markers[0].Beat);
+        Assert.Equal(0, written.DefaultClip?.Start ?? -1, 2);
     }
+
+    [Fact]
+    public async Task A_sure_downbeat_numbers_the_marker_within_its_bar_and_starts_the_clip_on_the_bar_line_before_the_audio()
+    {
+        Audio(Target);
+
+        await OnTheHalfSecond()
+            .StartAsync(Target, [], new(120, 1.3), ct: TestContext.Current.CancellationToken);
+
+        var written = AnalysisFile.Read($"{Target}.asd");
+
+        Assert.Equal(0.3, written.Warp.Markers[0].Seconds, 2);
+        Assert.Equal(2, written.Warp.Markers[0].Beat);
+        Assert.Equal(0, written.DefaultClip?.Start ?? -1, 2);
+        Assert.Equal(-0.7, written.Warp.SecondsAt(0) ?? 0, 2);
+        Assert.Equal(1.3, written.Warp.SecondsAt(4) ?? 0, 2);
+    }
+
+    [Fact]
+    public async Task A_starter_is_written_again_when_the_downbeat_changes_its_numbering()
+    {
+        Audio(Target);
+        var writer = OnTheHalfSecond();
+        await writer.StartAsync(
+            Target,
+            [],
+            new(120, null),
+            ct: TestContext.Current.CancellationToken
+        );
+
+        var renumbered = await writer.StartAsync(
+            Target,
+            [],
+            new(120, 1.3),
+            ct: TestContext.Current.CancellationToken
+        );
+        var again = await writer.StartAsync(
+            Target,
+            [],
+            new(120, 1.3),
+            ct: TestContext.Current.CancellationToken
+        );
+
+        Assert.IsType<WarpOutcome.Started>(renumbered);
+        Assert.IsType<WarpOutcome.AlreadyWarped>(again);
+        Assert.Equal(2, AnalysisFile.Read($"{Target}.asd").Warp.Markers[0].Beat);
+        Assert.True(_written.IsStarter(Target));
+    }
+
+    private SidecarWriter OnTheHalfSecond() =>
+        new(
+            new FixedDecoder(Samples(0.5f, 130 * 44_100)),
+            new FixedDetector([
+                .. Enumerable
+                    .Range(0, 240)
+                    .Select(i => new Transient((int)((0.3 + i * 0.5) * 44_100), 1f)),
+            ]),
+            _written,
+            _origins
+        );
 
     [Fact]
     public async Task Every_stem_of_a_group_gets_the_same_marker_whatever_its_own_transients_say()
@@ -345,11 +396,16 @@ public sealed class SidecarWriterTests : IDisposable
             _origins
         );
 
-        await writer.StartAsync(reference, [], 120, ct: TestContext.Current.CancellationToken);
+        await writer.StartAsync(
+            reference,
+            [],
+            new(120, null),
+            ct: TestContext.Current.CancellationToken
+        );
         await writer.StartAsync(
             Target,
             [],
-            120,
+            new(120, null),
             ct: TestContext.Current.CancellationToken,
             timingFrom: reference
         );
@@ -366,7 +422,8 @@ public sealed class SidecarWriterTests : IDisposable
     {
         Audio(Target);
 
-        await Borrower().StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken);
+        await Borrower()
+            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
 
         Assert.Equal(
             new TransientOrigin("Song (Vocal - Full).flac", "fixed 1", null),
@@ -379,7 +436,8 @@ public sealed class SidecarWriterTests : IDisposable
     {
         Audio(Target);
         Audio(Sibling);
-        await Borrower().StartAsync(Sibling, [], 120, ct: TestContext.Current.CancellationToken);
+        await Borrower()
+            .StartAsync(Sibling, [], new(120, null), ct: TestContext.Current.CancellationToken);
 
         var outcome = await Borrower()
             .BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);
@@ -391,7 +449,8 @@ public sealed class SidecarWriterTests : IDisposable
     public async Task A_lent_warp_replaces_a_starter()
     {
         Audio(Target);
-        await Borrower().StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken);
+        await Borrower()
+            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
         Analysis(saved: true).Write($"{Sibling}.asd");
 
         var outcome = await Borrower()
@@ -406,14 +465,16 @@ public sealed class SidecarWriterTests : IDisposable
     public async Task Once_Live_saves_over_a_starter_it_is_the_users_warp()
     {
         Audio(Target);
-        await Borrower().StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken);
+        await Borrower()
+            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
 
         Analysis(saved: true).Write($"{Target}.asd");
         File.SetLastWriteTimeUtc($"{Target}.asd", DateTime.UtcNow.AddMinutes(1));
 
         Assert.False(_written.IsStarter(Target));
         Assert.IsType<WarpOutcome.AlreadyWarped>(
-            await Borrower().StartAsync(Target, [], 90, ct: TestContext.Current.CancellationToken)
+            await Borrower()
+                .StartAsync(Target, [], new(90, null), ct: TestContext.Current.CancellationToken)
         );
     }
 
@@ -423,7 +484,7 @@ public sealed class SidecarWriterTests : IDisposable
         Audio(Target);
 
         await Levelling(lufs: -20)
-            .StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken);
+            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
 
         Assert.Equal(PlusSixDb, AnalysisFile.Read($"{Target}.asd").Clip.SampleVolume, 4);
     }
@@ -493,7 +554,8 @@ public sealed class SidecarWriterTests : IDisposable
         await Steady().UnwarpAsync(Target, [], TestContext.Current.CancellationToken);
 
         Assert.IsType<WarpOutcome.Started>(
-            await Steady().StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken)
+            await Steady()
+                .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken)
         );
         Assert.IsType<WarpOutcome.Unwarped>(
             await Steady().UnwarpAsync(Target, [], TestContext.Current.CancellationToken)
@@ -509,7 +571,7 @@ public sealed class SidecarWriterTests : IDisposable
         Audio(Target);
 
         var outcome = await Steady(jumpAt: 35, jumpSeconds: 0.04)
-            .StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken);
+            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
 
         Assert.IsType<WarpOutcome.Unwarped>(outcome);
         Assert.False(AnalysisFile.Read($"{Target}.asd").Warp.IsWarped);
@@ -520,10 +582,11 @@ public sealed class SidecarWriterTests : IDisposable
     public async Task A_starter_written_before_the_check_is_replaced_by_Warp_off_once_its_beats_do_not_hold()
     {
         Audio(Target);
-        await Steady().StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken);
+        await Steady()
+            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
 
         var outcome = await Steady(jumpAt: 35, jumpSeconds: 0.04)
-            .StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken);
+            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
 
         Assert.IsType<WarpOutcome.Unwarped>(outcome);
         Assert.False(_written.IsStarter(Target));
@@ -535,7 +598,8 @@ public sealed class SidecarWriterTests : IDisposable
         Audio(Target);
 
         Assert.IsType<WarpOutcome.Unwarped>(
-            await Borrower().StartAsync(Target, [], 120, ct: TestContext.Current.CancellationToken)
+            await Borrower()
+                .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken)
         );
     }
 

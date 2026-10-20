@@ -25,7 +25,7 @@ public sealed class HandoffSidecars(
 
         var siblings = WarpSiblings.Scan([paths.StagingFolder, paths.LibraryFolder]);
         var cuts = stems.Select(WarpSiblings.Read).OfType<SiblingFile>().ToList();
-        double? bpm = null;
+        StarterGrid? grid = null;
         var measured = false;
         Dictionary<string, PreparedSidecar> prepared = new(StringComparer.OrdinalIgnoreCase);
 
@@ -44,15 +44,15 @@ public sealed class HandoffSidecars(
             {
                 if (!measured)
                 {
-                    bpm = await SteadyBpmAsync(cuts, ct);
+                    grid = await StarterGridAsync(cuts, ct);
                     measured = true;
                 }
 
-                plan = bpm is { } tempo
+                plan = grid is not null
                     ? await writer.PrepareStarterAsync(
                         cut.Path,
                         sameKind,
-                        tempo,
+                        grid,
                         WarpSiblings.TempoSources(cuts).FirstOrDefault()?.Path,
                         ct
                     )
@@ -78,8 +78,8 @@ public sealed class HandoffSidecars(
         return prepared.TryGetValue(from, out var sidecar) ? writer.Commit(sidecar, to) : null;
     }
 
-    /// <summary>The nominal tempo of the batch's instrumental when it holds steady; a drifting one gets Warp off instead of a starter.</summary>
-    private async Task<double?> SteadyBpmAsync(List<SiblingFile> cuts, CancellationToken ct)
+    /// <summary>The starter grid of the batch's instrumental when its tempo holds steady; a drifting one gets Warp off instead of a starter.</summary>
+    private async Task<StarterGrid?> StarterGridAsync(List<SiblingFile> cuts, CancellationToken ct)
     {
         if (WarpSiblings.TempoSources(cuts).FirstOrDefault() is not { } instrumental)
             return null;
@@ -90,6 +90,6 @@ public sealed class HandoffSidecars(
         var reading =
             beats.Read(instrumental.Path) ?? await beats.MeasureAsync(instrumental.Path, ct);
 
-        return TrackTempo.StarterBpm(reading);
+        return StarterGrid.Of(reading);
     }
 }

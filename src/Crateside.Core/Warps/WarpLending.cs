@@ -6,13 +6,13 @@ namespace Crateside.Core.Warps;
 /// measured tempo when nothing of its upload is warped (#77, ADR 0047, ADR 0048), else a clip with
 /// Warp off so it still arrives at its gain and colour (ADR 0059).
 /// </summary>
-/// <param name="steadyBpm">crateside's own steady tempo for an audio file, or null before it is read or when it drifts.</param>
+/// <param name="starterGrid">What a starter takes from an audio file's reading, or null before it is read or when it drifts.</param>
 /// <param name="waiting">Stems left for Live to analyse, which nothing is written to meanwhile (#97).</param>
 public sealed class WarpLending(
     CratesidePaths paths,
     SidecarWriter writer,
     WarpOptions options,
-    Func<string, double?>? steadyBpm = null,
+    Func<string, StarterGrid?>? starterGrid = null,
     LiveAnalyses? waiting = null
 )
 {
@@ -40,8 +40,8 @@ public sealed class WarpLending(
             var tempo = options.StarterWarps is not StarterWarps.Off
                 ? TempoOf(siblings.CutsOf(target))
                 : null;
-            var bpm = tempo?.Bpm;
-            var signature = Signature(target.Path, lenders, bpm);
+            var grid = tempo?.Grid;
+            var signature = Signature(target.Path, lenders, grid);
 
             if (_tried.TryGetValue(target.Path, out var tried) && tried == signature)
                 continue;
@@ -52,7 +52,7 @@ public sealed class WarpLending(
             if (outcome is WarpOutcome.Failed)
                 _tried.Remove(target.Path);
             else
-                _tried[target.Path] = Signature(target.Path, lenders, bpm);
+                _tried[target.Path] = Signature(target.Path, lenders, grid);
 
             if (outcome is not null)
                 loans.Add(new WarpLoan(target.Path, outcome));
@@ -61,14 +61,14 @@ public sealed class WarpLending(
         return loans;
     }
 
-    /// <summary>The group's tempo and the stem it was read from, which also times every stem's marker.</summary>
-    private (double Bpm, string From)? TempoOf(IEnumerable<SiblingFile> cuts) =>
+    /// <summary>The group's grid and the stem it was read from, which also times every stem's marker.</summary>
+    private (StarterGrid Grid, string From)? TempoOf(IEnumerable<SiblingFile> cuts) =>
         WarpSiblings
             .TempoSources(cuts)
-            .Select(cut => (Bpm: steadyBpm?.Invoke(cut.Path), From: cut.Path))
-            .FirstOrDefault(source => source.Bpm is not null)
-            is { Bpm: { } bpm } source
-            ? (bpm, source.From)
+            .Select(cut => (Grid: starterGrid?.Invoke(cut.Path), From: cut.Path))
+            .FirstOrDefault(source => source.Grid is not null)
+            is { Grid: { } grid } source
+            ? (grid, source.From)
             : null;
 
     /// <summary>A lent warp when a sibling holds one, else a starter, else Warp off; null when what applies is switched off.</summary>
@@ -76,7 +76,7 @@ public sealed class WarpLending(
         string target,
         IReadOnlyList<string> authorities,
         IReadOnlyList<string> sameKind,
-        (double Bpm, string From)? tempo,
+        (StarterGrid Grid, string From)? tempo,
         CancellationToken ct
     )
     {
@@ -88,19 +88,23 @@ public sealed class WarpLending(
         return (options.StarterWarps, tempo) switch
         {
             (StarterWarps.Off, _) => null,
-            (_, var (bpm, from)) => await writer.StartAsync(target, sameKind, bpm, from, ct),
+            (_, var (grid, from)) => await writer.StartAsync(target, sameKind, grid, from, ct),
             _ => await writer.UnwarpAsync(target, sameKind, ct),
         };
     }
 
-    private static string Signature(string target, IReadOnlyList<string> lenders, double? bpm) =>
+    private static string Signature(
+        string target,
+        IReadOnlyList<string> lenders,
+        StarterGrid? grid
+    ) =>
         string.Join(
             '|',
             [
                 Stamp(target),
                 Stamp($"{target}.asd"),
                 .. lenders.Select(path => Stamp($"{path}.asd")),
-                $"{bpm}",
+                $"{grid}",
             ]
         );
 
