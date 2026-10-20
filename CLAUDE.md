@@ -151,6 +151,7 @@ Until then, new work must not add to what has to be undone: no new machine-speci
 dependency on a sibling checkout, no surname or personal circumstances anywhere (handle `Bamo16`
 only), paid services behind a switchable interface, nothing listening beyond localhost without
 authentication. Write issues and docs in the public voice ("the maintainer"). A song named in
-a doc gets its artist and title, enough for a stranger to find it (romanise a title in another
-script beside it); otherwise describe it and leave the name out. The full list and the
+a doc gets its artist and title, enough for a stranger to find it, written `Artist – *Title*`
+(plain artist, en dash, italic title; a title in another script gets its romanisation beside it);
+otherwise describe it and leave the name out. The full list and the
 pre-publication checklist are in #107.

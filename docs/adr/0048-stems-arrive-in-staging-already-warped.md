@@ -44,10 +44,10 @@ checked a borrowed warp in Live.
 that drifts" was judged by the interquartile range of the 30 s windows (under 0.1%), which misses a
 tempo that wanders and comes back, a step, and a track beatdetect itself reports as moving.
 MEASURED that day on the six starters in staging, laying each grid against the instrumental's
-strong transients: two held (OutKast, *Hey Ya!*, within 1 ms over every 30 s; GYARI, *アカリがやってきたぞっ*
-(*Akari ga Yattekita zo*), 4 ms) and four did not (Olivia Rodrigo, *drivers license*, 34 ms; Rob
-Araujo, *Nineteen*, 27 ms with a step; Seal, *Kiss from a Rose*, 79 ms with five; Johnny Pearson,
-*Action in Memphis*, 83 ms, flagged as moving). The maintainer's rule: auto-warp only what can be done
+strong transients: two held (OutKast – *Hey Ya!*, within 1 ms over every 30 s; GYARI –
+*アカリがやってきたぞっ* (*Akari ga Yattekita zo*), 4 ms) and four did not (Olivia Rodrigo –
+*drivers license*, 34 ms; Rob Araujo – *Nineteen*, 27 ms with a step; Seal – *Kiss from a Rose*,
+79 ms with five; Johnny Pearson – *Action in Memphis*, 83 ms, flagged as moving). The maintainer's rule: auto-warp only what can be done
 properly, a steady tempo on a grid (not necessarily the downbeat); otherwise arrive unwarped and
 say so.
 
