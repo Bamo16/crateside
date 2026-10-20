@@ -1,6 +1,7 @@
 # 0054 — a starter warp's marker sits on a beat the loud transients place
 
-- Status: Accepted
+- Status: Accepted; amended 2026-10-19 (below): the marker's beat is numbered from the downbeat
+  where the filter is sure of it
 - Date: 2026-10-13
 - Amends [ADR 0047](0047-a-starter-warp-and-where-transients-came-from.md), which put the starter
   warp's one marker at the start of the audio. Builds [#72](https://github.com/Bamo16/crateside/issues/72)
@@ -11,6 +12,10 @@
 A starter warp set the tempo and left the phase to the user, who moved the marker onto a beat by
 hand. The user's bar is any beat of the grid, not the downbeat (2026-10-13): beat 1 and the octave
 stay theirs, and a marker already on a beat saves most of the move.
+
+*Corrected 2026-10-19: this misread the request.* The maintainer wanted the marker on a clear
+transient so the drum stem shows what is under it, not on a stretch of silence. Which beat of the
+bar it is was never meant to be left to them. See the amendment below.
 
 Two measurements, on the 353 steady single-marker warps of the library against the user's own
 warps, with the pinned beatdetect build ([first note](../notes/2026-10-13-placing-the-marker-from-many-transients.md),
@@ -36,10 +41,27 @@ ADR 0047 put it: beat 0 at the start of the audio.
   them together (*3 audio clips with different Warp Markers*). ADR 0047's rule that every stem gets
   the same marker holds.
 - **Beat 1 is a beat, not a bar line.** Which beat starts a bar is unknown and stays the user's.
+  *(Superseded 2026-10-19 by the amendment below.)*
 - **The tempo is the one the starter already refines** (ADR 0050); the phase is taken at that tempo.
 - **The octave is not touched.** The fold is at the starter's tempo whichever octave that is.
 - **Opened in Live** on *How Will I Know* (2026-10-13): the marker and tempo are right, and the clip
   start, which began between beats, now starts on one.
+
+**Amended 2026-10-19: the marker's beat is numbered from the downbeat where the filter is sure of
+it** ([#134](https://github.com/Bamo16/crateside/issues/134)). Where the marker sits and which beat
+it is are separate. It still sits on the first beat the transients place. Which beat of the bar that
+is comes from beatdetect's downbeat, so a pickup can make it beat 2, 3 or 4. The clip starts on a bar
+line, so a clip dropped on a bar in the arrangement keeps the track's bars. Where the downbeat
+confidence is under the working threshold, the starter is written as above and the downbeat is
+reported as a guess.
+
+- **The case that showed it** (MEASURED 2026-10-19): GYARI – *アカリがやってきたぞっ* (*Akari ga
+  Yattekita zo*). The marker sat at 0.4395 s as beat 1.0, the clip starting there. beatdetect 1.3.0
+  puts the bar lines at ~0.00 s and every 1.76 s after it on the drums (confidence 0.078), the
+  instrumental (0.002) and the source mix (0.001). In the arrangement, the track's bars landed one
+  beat off.
+- Not yet built: where the clip starts when the bar line falls just before the audio, and whether
+  the downbeat is read from the drum stem, are settled in #134.
 
 ## Consequences
 
