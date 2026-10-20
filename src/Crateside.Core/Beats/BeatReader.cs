@@ -44,15 +44,21 @@ public sealed partial class BeatReader(
     /// <summary>The pinned build new readings are made with, or null until <see cref="RefreshBuildAsync"/> finds one.</summary>
     public FfmpegBuild? Build => _build;
 
-    /// <summary>How far the current pass has got, as instrumentals read of those that had no reading.</summary>
+    /// <summary>How far the current pass has got, as instrumentals read of those it set out to read.</summary>
     public (int Read, int Of) Progress => (_readSoFar, _toRead);
 
     /// <summary>Starts counting a pass over this many instrumentals.</summary>
-    public void Begin(int unread)
+    public void Begin(int toRead)
     {
-        _toRead = unread;
+        _toRead = toRead;
         _readSoFar = 0;
     }
+
+    /// <summary>The instrumentals with no reading, then those whose reading is from an older build than the pin, each in the order given.</summary>
+    public IEnumerable<string> ToRead(IReadOnlyList<string> instrumentals) =>
+        instrumentals
+            .Where(file => Read(file) is null)
+            .Concat(instrumentals.Where(IsFromOlderBuild));
 
     /// <summary>The kept reading, whichever build made it, or null when the file changed since.</summary>
     public BeatReading? Read(string audioPath) => Kept(audioPath)?.Reading;
@@ -60,9 +66,11 @@ public sealed partial class BeatReader(
     /// <summary>The build that made the kept reading; null when there is none or its build was never identified.</summary>
     public FfmpegBuild? BuildOf(string audioPath) => Kept(audioPath)?.Build;
 
-    /// <summary>True when the kept reading was made by a build other than the pinned one.</summary>
+    /// <summary>True when the kept reading was made by an older build than the pinned one, or one never identified.</summary>
     public bool IsFromOlderBuild(string audioPath) =>
-        Kept(audioPath) is { } entry && _build is { } pinned && entry.Build != pinned;
+        Kept(audioPath) is { } entry
+        && _build is { } pinned
+        && (entry.Build is null || entry.Build.IsOlderThan(pinned));
 
     /// <summary>Carries a reading to where its file was moved, since the audio itself is unchanged.</summary>
     public void Moved(string from, string to)

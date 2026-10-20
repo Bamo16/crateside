@@ -8,8 +8,9 @@ using Humanizer;
 namespace Crateside;
 
 /// <summary>
-/// Reads <c>beatdetect</c> on every instrumental without a current reading, staging before the
-/// library. Never paused: it runs on the CPU and contends for nothing, like detection (#75, #76).
+/// Reads <c>beatdetect</c> on every instrumental without a current reading, then again on those read
+/// by an older build than the pin, staging before the library. Never paused: it runs on the CPU and
+/// contends for nothing, like detection (#75, #76).
 /// </summary>
 public sealed class BeatWorker(
     BeatReader reader,
@@ -82,23 +83,20 @@ public sealed class BeatWorker(
             return AfterFailure;
         }
 
-        string[] unread =
-        [
-            .. BeatReader.Instrumentals(paths, folderInfo).Where(file => reader.Read(file) is null),
-        ];
+        string[] toRead = [.. reader.ToRead([.. BeatReader.Instrumentals(paths, folderInfo)])];
 
-        reader.Begin(unread.Length);
+        reader.Begin(toRead.Length);
 
-        if (unread.Length is 0)
+        if (toRead.Length is 0)
             return IdleDelay;
 
         logger.LogInformation(
             "Reading beatdetect on {Count}",
-            "instrumental".ToQuantity(unread.Length)
+            "instrumental".ToQuantity(toRead.Length)
         );
 
         await Parallel.ForEachAsync(
-            unread,
+            toRead,
             new ParallelOptions
             {
                 MaxDegreeOfParallelism = AtOnce,
@@ -113,7 +111,7 @@ public sealed class BeatWorker(
 
         logger.LogInformation(
             "Read beatdetect on {Count}",
-            "instrumental".ToQuantity(unread.Length)
+            "instrumental".ToQuantity(toRead.Length)
         );
 
         return IdleDelay;

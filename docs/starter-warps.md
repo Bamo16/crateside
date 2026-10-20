@@ -53,7 +53,9 @@ allows. Neither replaces a lent warp or the maintainer's own.
    the same tempo and marker, and Live can edit them together. No such stem: no starter.
 2. **Read its tempo with beatdetect.** The pinned build (`BeatdetectFfmpeg`, today
    `1.3.0-1e57fec`) runs `beatdetect=hpss=1` over the whole file, then over each full 30 s of it
-   (`BeatReader`). The reading is kept until the file changes, even after the pin moves.
+   (`BeatReader`). The reading is kept until the file changes. A reading from an older build than
+   the pin is used until the beat worker reads the file again, which it does once every file with
+   no reading has one (`BeatReader.ToRead`).
 3. **Gate on the reading** (`TrackTempo.StarterBpm`). No starter when:
    - **it drifts**: the 30 s windows in their majority octave spread 0.1% or more (interquartile range
      over median); or

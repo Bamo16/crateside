@@ -16,6 +16,18 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
     )]
     private static partial Regex FilterHelp { get; }
 
+    [GeneratedRegex(@"(?<Number>\d+\.\d+\.\d+)$")]
+    private static partial Regex TrailingNumber { get; }
+
+    /// <summary>Whether the filter's version is below <paramref name="other"/>'s; an unversioned build is older than any versioned one.</summary>
+    public bool IsOlderThan(FfmpegBuild other) =>
+        (NumberOf(Version), NumberOf(other.Version)) switch
+        {
+            (null, not null) => true,
+            ({ } mine, { } theirs) => mine < theirs,
+            _ => false,
+        };
+
     /// <summary>Asks the executable for its beatdetect filter; null when it cannot be run or has none.</summary>
     public static async Task<FfmpegBuild?> IdentifyAsync(string fileName, CancellationToken ct)
     {
@@ -58,6 +70,11 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
 
         return new FfmpegBuild(version, sha256, commit);
     }
+
+    private static System.Version? NumberOf(string version) =>
+        TrailingNumber.Match(version).Groups["Number"] is { Success: true, Value: var number }
+            ? System.Version.Parse(number)
+            : null;
 
     internal static FileInfo? Located(string fileName) =>
         Path.IsPathRooted(fileName)
