@@ -64,15 +64,8 @@ public sealed record LoudnessSpread(
         );
     }
 
-    private static string NameOf(string path, string label)
-    {
-        var tags = StemTagReader.Read(path);
-        var title = tags?.Title ?? StemFileName.WithoutPreset(path);
-
-        return tags is { Artist: { } artist }
-            ? $"{artist} – {title} ({label})"
-            : $"{title} ({label})";
-    }
+    private static string NameOf(string path, string label) =>
+        $"{StemFileName.WithoutPreset(path)} ({label})";
 
     private sealed class Tally
     {
