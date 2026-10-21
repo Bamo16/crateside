@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
 builder.AddCratesideConfiguration();
+builder.AddCratesideLogging();
 builder.Services.AddCrateside();
 builder.Services.AddSingleton<ToolsMemory>();
 

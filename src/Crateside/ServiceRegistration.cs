@@ -29,6 +29,7 @@ using Crateside.Core.Watching;
 using Crateside.Core.WorkLists;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
+using Serilog;
 
 namespace Crateside;
 
@@ -37,6 +38,30 @@ public static class ServiceRegistration
     /// <summary>
     /// Configuration sources and the options bound from them.
     /// </summary>
+    public static WebApplicationBuilder AddCratesideLogging(this WebApplicationBuilder builder)
+    {
+        var logsFolder =
+            builder
+                .Configuration.GetSection(CratesidePaths.SectionName)
+                .Get<CratesidePaths>()
+                ?.LogsFolder
+            ?? new CratesidePaths().LogsFolder;
+
+        var fileLogger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .WriteTo.File(
+                Path.Combine(logsFolder, "crateside-.log"),
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3} {SourceContext}: {Message:lj}{NewLine}{Exception}",
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 14,
+                shared: true
+            )
+            .CreateLogger();
+        builder.Logging.AddSerilog(fileLogger, dispose: true);
+
+        return builder;
+    }
+
     public static WebApplicationBuilder AddCratesideConfiguration(
         this WebApplicationBuilder builder
     )

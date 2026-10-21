@@ -17,6 +17,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- The daily log file under CratesidePaths.LogsFolder (#145). -->
+        <PackageReference Include="Serilog.Extensions.Logging" />
+        <PackageReference Include="Serilog.Sinks.File" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\Crateside.Core\Crateside.Core.csproj" />
     </ItemGroup>
 </Project>
