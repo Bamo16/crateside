@@ -221,15 +221,8 @@ public static class ServiceRegistration
             }
         );
         services.AddSingleton<ISourcePages, SourcePages>();
-        services.AddSingleton(sp => new VerdictRunner(
-            sp.GetRequiredService<LedgerStore>(),
-            sp.GetRequiredService<WorkingSet>(),
-            sp.GetRequiredService<IProcessRunner>(),
-            sp.GetRequiredService<EvidenceRunner>(),
-            sp.GetRequiredService<ISourcePages>(),
-            sp.GetRequiredService<IOptions<JudgeOptions>>().Value,
-            sp.GetRequiredService<TimeProvider>()
-        ));
+        services.AddSingleton<IWindowDetector, EvidenceRunner>();
+        services.AddSingleton<VerdictRunner>();
         services.AddSingleton<VerdictDrainer>();
         services.AddSingleton<BarJudging>();
 
@@ -280,7 +273,7 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new WarpLending(
             sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SidecarWriter>(),
-            sp.GetRequiredService<IOptions<WarpOptions>>().Value,
+            sp.GetRequiredService<IOptions<WarpOptions>>(),
             path => StarterGrid.Of(sp.GetRequiredService<BeatReader>().Read(path)),
             sp.GetRequiredService<LiveAnalyses>()
         ));
@@ -302,12 +295,7 @@ public static class ServiceRegistration
         services.AddSingleton<TrueUpAll>();
         services.AddSingleton<StemWarpReader>();
         services.AddSingleton<StagingMarks>();
-        services.AddSingleton(sp => new HandoffSidecars(
-            sp.GetRequiredService<CratesidePaths>(),
-            sp.GetRequiredService<SidecarWriter>(),
-            sp.GetRequiredService<BeatReader>(),
-            sp.GetRequiredService<IOptions<WarpOptions>>().Value
-        ));
+        services.AddSingleton<HandoffSidecars>();
         services.AddHostedService<WarpWorker>();
 
         // Unattended too: reading loudness is ffmpeg on the CPU (ADR 0059).

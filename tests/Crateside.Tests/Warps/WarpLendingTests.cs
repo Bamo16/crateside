@@ -1,6 +1,7 @@
 using AbleKit.Analysis;
 using Crateside.Core;
 using Crateside.Core.Warps;
+using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Warps;
 
@@ -197,7 +198,7 @@ public sealed class WarpLendingTests : IDisposable
                 new WrittenWarps(),
                 new TransientOrigins()
             ),
-            options,
+            Options.Create(options),
             _ => bpm is { } tempo ? new StarterGrid(tempo, null) : null
         );
 
