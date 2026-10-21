@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Crateside.Core.Ledger;
+using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Evidence;
@@ -305,13 +306,19 @@ public sealed class VerdictSelectorTests : IDisposable
 
         var item = Item("jWj-UVA1304") with { Title = "some upload" };
 
-        Assert.True(new VerdictSelector(Jobs, Set).TryPickNext(View(item), SouthSide(), out _));
+        var names = new ResolvedNameStore(Path.Combine(_directory, "names.json"));
+
+        Assert.True(
+            new VerdictSelector(Jobs, Set, names: names).TryPickNext(View(item), SouthSide(), out _)
+        );
+
+        names.Save(
+            "jWj-UVA1304",
+            new ResolvedName { DisplayTitle = "Moby - South Side", BaseName = "Moby - South Side" }
+        );
+
         Assert.False(
-            new VerdictSelector(Jobs, Set, resolvedName: _ => "Moby - South Side").TryPickNext(
-                View(item),
-                SouthSide(),
-                out _
-            )
+            new VerdictSelector(Jobs, Set, names: names).TryPickNext(View(item), SouthSide(), out _)
         );
     }
 

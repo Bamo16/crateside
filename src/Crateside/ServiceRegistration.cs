@@ -210,15 +210,7 @@ public static class ServiceRegistration
 
         services.AddSingleton<StageSignals>();
 
-        services.AddSingleton(sp => new VerdictSelector(
-            sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<WorkingSet>(),
-            resolvedName: videoId =>
-                sp.GetRequiredService<ResolvedNameStore>()
-                    .Read()
-                    .GetValueOrDefault(videoId)
-                    ?.DisplayTitle
-        ));
+        services.AddSingleton<VerdictSelector>();
         services.AddSingleton<IProcessRunner, ProcessRunner>();
         services.AddHttpClient(
             SourcePages.ClientName,
