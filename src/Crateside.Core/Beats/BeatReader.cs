@@ -15,23 +15,18 @@ namespace Crateside.Core.Beats;
 /// file changes (#76, #102). A reading outlives a change of pin, marked as from an older build.
 /// Kept across restarts when given a path.
 /// </summary>
-public sealed partial class BeatReader(
-    string? path = null,
-    string fileName = "ffmpeg",
-    string filter = "beatdetect",
-    KnownBuilds? builds = null
-)
+public sealed partial class BeatReader
 {
     // Bump when MeasureAsync changes what it runs, or a kept reading outlives the method that made it.
     private const int Version = 2;
 
     private static readonly TimeSpan RunLimit = TimeSpan.FromMinutes(10);
 
-    private readonly string? _path = path;
-    private readonly ConcurrentDictionary<string, BeatEntry> _read = new(
-        Load(path),
-        StringComparer.OrdinalIgnoreCase
-    );
+    private readonly string? _path;
+    private readonly string _fileName;
+    private readonly string _filter;
+    private readonly KnownBuilds? _builds;
+    private readonly ConcurrentDictionary<string, BeatEntry> _read;
     private readonly Lock _saving = new();
     private volatile bool _changed;
     private volatile FfmpegBuild? _build;
@@ -40,6 +35,25 @@ public sealed partial class BeatReader(
 
     [GeneratedRegex(@"lavfi\.beatdetect\.(?<Key>[a-z_]+?)(?<Index>\d*)=(?<Value>\S+)")]
     private static partial Regex MetadataLine { get; }
+
+    // hpss matched an AI drum stem on the instrumental, measured 2026-09-30 (#83).
+    public BeatReader(CratesidePaths paths, KnownBuilds builds)
+        : this(paths.BeatCache, paths.BeatdetectFfmpeg, "beatdetect=hpss=1", builds) { }
+
+    /// <summary>Keeps nothing on disk when <paramref name="path"/> is null.</summary>
+    internal BeatReader(
+        string? path = null,
+        string fileName = "ffmpeg",
+        string filter = "beatdetect",
+        KnownBuilds? builds = null
+    )
+    {
+        _path = path;
+        _fileName = fileName;
+        _filter = filter;
+        _builds = builds;
+        _read = new(Load(path), StringComparer.OrdinalIgnoreCase);
+    }
 
     /// <summary>The pinned build new readings are made with, or null until <see cref="RefreshBuildAsync"/> finds one.</summary>
     public FfmpegBuild? Build => _build;
@@ -85,8 +99,8 @@ public sealed partial class BeatReader(
     /// <summary>Asks the pinned ffmpeg which build it is; null when it cannot be run.</summary>
     public async Task<FfmpegBuild?> RefreshBuildAsync(CancellationToken ct)
     {
-        if (builds is not null)
-            await builds.SeedAsync(ct);
+        if (_builds is not null)
+            await _builds.SeedAsync(ct);
 
         return _build = await FfmpegBuild.IdentifyAsync(PinnedFileName, ct);
     }
@@ -247,7 +261,7 @@ public sealed partial class BeatReader(
             .OrderBy(line => int.Parse(line.Groups["Index"].Value, CultureInfo.InvariantCulture))
             .Select(line => line.Groups["Value"].Value);
 
-    private string PinnedFileName => builds?.Pinned?.Path ?? fileName;
+    private string PinnedFileName => _builds?.Pinned?.Path ?? _fileName;
 
     private BeatEntry? Kept(string audioPath) =>
         new FileInfo(audioPath) is { Exists: true } file
@@ -283,7 +297,7 @@ public sealed partial class BeatReader(
                     audioPath,
                     "-vn",
                     "-af",
-                    $"{filter},ametadata=mode=print:file=-",
+                    $"{_filter},ametadata=mode=print:file=-",
                     "-f",
                     "null",
                     "-",

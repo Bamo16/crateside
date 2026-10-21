@@ -3,14 +3,21 @@ namespace Crateside.Core.Orchestration.Handoff;
 /// <summary>
 /// Copies a root's tag store aside before crateside writes it, keeping the newest few (ADR 0052).
 /// </summary>
-public sealed class TagStoreBackups(string root, TimeProvider time, int keep = 20)
+public sealed class TagStoreBackups
 {
-    public static string DefaultRoot { get; } =
-        Environment.SpecialFolder.ApplicationData.GetFolderPath(
-            "crateside",
-            "backups",
-            "tag-stores"
-        );
+    private readonly string _root;
+    private readonly TimeProvider _time;
+    private readonly int _keep;
+
+    public TagStoreBackups(CratesidePaths paths, TimeProvider time)
+        : this(paths.TagStoreBackups, time) { }
+
+    internal TagStoreBackups(string root, TimeProvider time, int keep = 20)
+    {
+        _root = root;
+        _time = time;
+        _keep = keep;
+    }
 
     public void Save(string tagged)
     {
@@ -20,8 +27,8 @@ public sealed class TagStoreBackups(string root, TimeProvider time, int keep = 2
             return;
 
         var target = Path.Combine(
-            root,
-            $"{time.GetLocalNow():yyyyMMdd-HHmmss}-{Path.GetFileName(tagged.TrimEnd('\\', '/'))}"
+            _root,
+            $"{_time.GetLocalNow():yyyyMMdd-HHmmss}-{Path.GetFileName(tagged.TrimEnd('\\', '/'))}"
         );
 
         Directory.CreateDirectory(target);
@@ -31,9 +38,9 @@ public sealed class TagStoreBackups(string root, TimeProvider time, int keep = 2
 
         foreach (
             var old in Directory
-                .EnumerateDirectories(root)
+                .EnumerateDirectories(_root)
                 .Order(StringComparer.Ordinal)
-                .SkipLast(keep)
+                .SkipLast(_keep)
         )
             Directory.Delete(old, recursive: true);
     }

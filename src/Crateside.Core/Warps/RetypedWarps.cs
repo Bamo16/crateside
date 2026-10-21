@@ -7,13 +7,21 @@ namespace Crateside.Core.Warps;
 /// The sidecars whose warp crateside retyped to a truer tempo (#99). The warp stays the user's,
 /// so it still lends and is still never replaced; this only remembers that crateside last wrote it.
 /// </summary>
-public sealed class RetypedWarps(string? path = null)
+public sealed class RetypedWarps
 {
     private readonly Lock _lock = new();
-    private readonly Dictionary<string, RetypedWarp> _entries = Load(path);
+    private readonly string? _path;
+    private readonly Dictionary<string, RetypedWarp> _entries;
 
-    public static string DefaultPath { get; } =
-        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "retyped-warps.json");
+    public RetypedWarps(CratesidePaths paths)
+        : this(paths.RetypedWarpsFile) { }
+
+    /// <summary>Keeps nothing on disk when <paramref name="path"/> is null.</summary>
+    internal RetypedWarps(string? path = null)
+    {
+        _path = path;
+        _entries = Load(path);
+    }
 
     /// <summary>The retype this sample's sidecar still holds, or null once Live or the user has saved over it.</summary>
     public RetypedWarp? Of(string audioPath)
@@ -45,9 +53,9 @@ public sealed class RetypedWarps(string? path = null)
                 at
             );
 
-            if (path is not null)
+            if (_path is not null)
                 RetypedWarpsJsonContext.Default.DictionaryStringRetypedWarp.WriteFile(
-                    path,
+                    _path,
                     _entries
                         .Where(pair => File.Exists(pair.Key))
                         .ToDictionary(pair => pair.Key, pair => pair.Value)

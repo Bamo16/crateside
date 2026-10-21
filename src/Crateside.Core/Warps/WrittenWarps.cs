@@ -8,13 +8,21 @@ namespace Crateside.Core.Warps;
 /// as crateside's only while it is the file crateside wrote; once Live saves over it, it is the
 /// user's (ADR 0043, ADR 0059).
 /// </summary>
-public sealed class WrittenWarps(string? path = null)
+public sealed class WrittenWarps
 {
     private readonly Lock _lock = new();
-    private readonly Dictionary<string, WrittenWarp> _entries = Load(path);
+    private readonly string? _path;
+    private readonly Dictionary<string, WrittenWarp> _entries;
 
-    public static string DefaultPath { get; } =
-        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "written-warps.json");
+    public WrittenWarps(CratesidePaths paths)
+        : this(paths.WrittenWarpsFile) { }
+
+    /// <summary>Keeps nothing on disk when <paramref name="path"/> is null.</summary>
+    internal WrittenWarps(string? path = null)
+    {
+        _path = path;
+        _entries = Load(path);
+    }
 
     /// <summary>The warp crateside wrote that this sample's sidecar still holds, or null if it holds the user's.</summary>
     public WrittenWarp? Of(string audioPath) => Current(audioPath);
@@ -108,9 +116,9 @@ public sealed class WrittenWarps(string? path = null)
                 unwarped
             );
 
-            if (path is not null)
+            if (_path is not null)
                 WrittenWarpsJsonContext.Default.DictionaryStringWrittenWarp.WriteFile(
-                    path,
+                    _path,
                     _entries
                         .Where(pair => File.Exists(pair.Key))
                         .ToDictionary(pair => pair.Key, pair => pair.Value)

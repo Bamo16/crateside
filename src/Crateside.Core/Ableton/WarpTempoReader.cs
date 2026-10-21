@@ -9,18 +9,27 @@ namespace Crateside.Core.Ableton;
 /// A sample's warped tempo, read from its sidecar once and again only when the sidecar changes:
 /// reading every sidecar in the library is about 400 MB (ADR 0038). Kept across restarts when given a path.
 /// </summary>
-public sealed class WarpTempoReader(string? path = null, WrittenWarps? written = null)
+public sealed class WarpTempoReader
 {
     // Bump when WarpTempo.Of changes what it computes, or a kept tempo outlives the rule that made it.
     private const int Version = 5;
 
-    private readonly string? _path = path;
-    private readonly ConcurrentDictionary<string, TempoEntry> _read = new(
-        Load(path),
-        StringComparer.OrdinalIgnoreCase
-    );
+    private readonly string? _path;
+    private readonly WrittenWarps? _written;
+    private readonly ConcurrentDictionary<string, TempoEntry> _read;
     private readonly Lock _saving = new();
     private volatile bool _changed;
+
+    public WarpTempoReader(CratesidePaths paths, WrittenWarps written)
+        : this(paths.TempoCache, written) { }
+
+    /// <summary>Keeps nothing on disk when <paramref name="path"/> is null.</summary>
+    internal WarpTempoReader(string? path = null, WrittenWarps? written = null)
+    {
+        _path = path;
+        _written = written;
+        _read = new(Load(path), StringComparer.OrdinalIgnoreCase);
+    }
 
     /// <summary>Null when the sample has no sidecar, no saved default clip, only a starter warp, or cannot be read.</summary>
     public WarpTempo? Read(string audioPath)
@@ -28,7 +37,7 @@ public sealed class WarpTempoReader(string? path = null, WrittenWarps? written =
         if (
             new FileInfo($"{audioPath}.asd") is not { Exists: true } sidecar
             // A starter warp is crateside's own reading, not the user's (#77).
-            || written?.IsStarter(audioPath) is true
+            || _written?.IsStarter(audioPath) is true
         )
             return null;
 

@@ -53,6 +53,38 @@ public sealed class CratesidePaths
     public string TempoCache { get; set; } =
         Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "tempos.json");
 
+    /// <summary>The loudness ffmpeg has read, kept across restarts.</summary>
+    public string LoudnessCache { get; set; } =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "loudness.json");
+
+    /// <summary>The sidecars crateside wrote, so it knows which are still its own.</summary>
+    public string WrittenWarpsFile { get; set; } =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "written-warps.json");
+
+    /// <summary>The sidecars crateside retyped, so it knows which retypes still stand.</summary>
+    public string RetypedWarpsFile { get; set; } =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "retyped-warps.json");
+
+    /// <summary>Where the transients crateside wrote into sidecars came from.</summary>
+    public string TransientOriginsFile { get; set; } =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "transients.json");
+
+    /// <summary>Samples waiting for Live to analyse them afresh.</summary>
+    public string LiveAnalysesFile { get; set; } =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "live-analyses.json");
+
+    /// <summary>Copies of sidecars taken before crateside replaced or recycled them.</summary>
+    public string WarpBackups { get; set; } =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "backups", "warps");
+
+    /// <summary>Copies of tag stores taken before crateside wrote them.</summary>
+    public string TagStoreBackups { get; set; } =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath(
+            "crateside",
+            "backups",
+            "tag-stores"
+        );
+
     /// <summary>Where stems go when the track has a key the user would tag with.</summary>
     public string StemsKeyIdentified { get; set; } = Path.Combine(MusicStems, "Key Identified");
 
