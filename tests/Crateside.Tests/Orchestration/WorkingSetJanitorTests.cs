@@ -312,19 +312,13 @@ public sealed class WorkingSetJanitorTests : IDisposable
 
     private void WriteStem(string fileName)
     {
-        var source = Directory
-            .EnumerateFiles(
-                @"P:\RYAN\Ableton\Sample Staging",
-                "*.flac",
-                SearchOption.TopDirectoryOnly
-            )
-            .FirstOrDefault();
-
-        Assert.SkipWhen(source is null, "no real staged stem to copy provenance from");
-
         var path = Path.Combine(Staging, fileName);
 
-        File.Copy(source!, path, overwrite: true);
+        File.Copy(
+            Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"),
+            path,
+            overwrite: true
+        );
 
         using var file = TagLib.File.Create(path);
         file.Tag.Comment =

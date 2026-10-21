@@ -423,6 +423,11 @@ public sealed class StemRecutTests : IDisposable
     [Fact]
     public void A_file_it_cannot_delete_stops_it_before_anything_is_asked_for()
     {
+        Assert.SkipUnless(
+            OperatingSystem.IsWindows(),
+            "Only Windows refuses a file another program holds."
+        );
+
         // Nearly always a file Ableton has open.
         Stage("Instrumental - Full");
 

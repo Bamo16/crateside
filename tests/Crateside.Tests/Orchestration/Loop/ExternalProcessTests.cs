@@ -7,11 +7,17 @@ public sealed class ExternalProcessTests
     [Fact]
     public async Task A_failing_command_is_returned_with_what_it_said_rather_than_thrown()
     {
-        var outcome = await ExternalProcess.RunAsync(
-            "cmd",
-            ["/c", "echo out& echo err 1>&2& exit /b 3"],
-            ct: TestContext.Current.CancellationToken
-        );
+        var outcome = OperatingSystem.IsWindows()
+            ? await ExternalProcess.RunAsync(
+                "cmd",
+                ["/c", "echo out& echo err 1>&2& exit /b 3"],
+                ct: TestContext.Current.CancellationToken
+            )
+            : await ExternalProcess.RunAsync(
+                "sh",
+                ["-c", "echo out; echo err 1>&2; exit 3"],
+                ct: TestContext.Current.CancellationToken
+            );
 
         Assert.Equal(3, outcome.ExitCode);
         Assert.Equal("out", outcome.StandardOutput.Trim());
@@ -24,7 +30,13 @@ public sealed class ExternalProcessTests
         using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            ExternalProcess.RunAsync("ping", ["-n", "30", "127.0.0.1"], ct: cancellation.Token)
+            OperatingSystem.IsWindows()
+                ? ExternalProcess.RunAsync(
+                    "ping",
+                    ["-n", "30", "127.0.0.1"],
+                    ct: cancellation.Token
+                )
+                : ExternalProcess.RunAsync("sleep", ["30"], ct: cancellation.Token)
         );
     }
 }

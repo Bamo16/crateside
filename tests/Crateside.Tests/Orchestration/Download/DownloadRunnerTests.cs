@@ -21,24 +21,8 @@ public sealed class DownloadRunnerTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private string Script(string body)
-    {
-        var path = Path.Combine(_directory, "fake-stemforge.cmd");
-
-        File.WriteAllText(path, $"@echo off{Environment.NewLine}{body}");
-
-        return path;
-    }
-
     private DownloadRunner Runner(string stdout, int exitCode = 0) =>
-        new(
-            Script(
-                $"""
-                echo {stdout}
-                exit /b {exitCode}
-                """
-            )
-        );
+        new(FakeCli.Printing(_directory, "fake-stemforge", stdout, exitCode));
 
     private static string Says(string path, string? premiumStatus = null, bool isPremium = false) =>
         premiumStatus is null

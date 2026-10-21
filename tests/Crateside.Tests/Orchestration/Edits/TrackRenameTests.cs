@@ -366,6 +366,11 @@ public sealed class TrackRenameTests : IDisposable
     [Fact]
     public void Markers_that_could_not_follow_are_reported_rather_than_undone()
     {
+        Assert.SkipUnless(
+            OperatingSystem.IsWindows(),
+            "Only Windows refuses a file another program holds."
+        );
+
         var sample = Stage("99th Street (Vocal - Full).flac");
 
         File.WriteAllText(sample + ".asd", "warp markers");
@@ -455,6 +460,11 @@ public sealed class TrackRenameTests : IDisposable
     [InlineData("Starjunk 95: 99th Street")]
     public void A_name_no_file_can_carry_is_refused(string name)
     {
+        Assert.SkipWhen(
+            !OperatingSystem.IsWindows() && name.IndexOfAny([':', '?']) >= 0,
+            "Only Windows forbids ':' and '?' in a file name."
+        );
+
         Stage("99th Street (Vocal - Full).flac");
 
         var plan = Renamer().PlanFor(Video, name);
@@ -497,6 +507,11 @@ public sealed class TrackRenameTests : IDisposable
     [Fact]
     public void A_file_it_cannot_rename_keeps_the_name_that_was_stated()
     {
+        Assert.SkipUnless(
+            OperatingSystem.IsWindows(),
+            "Only Windows refuses a file another program holds."
+        );
+
         // Nearly always a file Ableton has open.
         Stage("99th Street (Vocal - Full).flac");
 

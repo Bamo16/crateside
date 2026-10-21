@@ -103,7 +103,7 @@ public sealed class StagingReaderRealLibraryTests
     {
         var songs = new StagingReader(TestLedger.Store()).Build(
             Path.Combine(Path.GetTempPath(), "no-such-staging-root"),
-            TestLedger.FromReal()
+            TestLedger.From("")
         );
 
         Assert.Empty(songs);

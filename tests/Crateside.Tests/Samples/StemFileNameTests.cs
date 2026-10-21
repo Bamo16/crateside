@@ -47,6 +47,11 @@ public sealed class StemFileNameTests
     [InlineData("Starjunk 95 - 99th Street", true)]
     public void A_name_is_usable_only_if_a_file_could_carry_it(string? name, bool usable)
     {
+        Assert.SkipWhen(
+            !OperatingSystem.IsWindows() && name?.IndexOfAny([':', '?']) >= 0,
+            "Only Windows forbids ':' and '?' in a file name."
+        );
+
         Assert.Equal(usable, StemFileName.IsUsable(name));
     }
 }

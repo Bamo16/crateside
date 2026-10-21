@@ -69,16 +69,7 @@ public sealed class SeparationRunnerTests : IDisposable
     /// <summary>A stand-in for stemforge-cli that prints what the test wants and exits.</summary>
     private SeparationRunner RunnerPrinting(string stdout, int exitCode = 0)
     {
-        var script = Path.Combine(_directory, "fake-stemforge.cmd");
-
-        File.WriteAllText(
-            script,
-            $"""
-            @echo off
-            echo {stdout}
-            exit /b {exitCode}
-            """
-        );
+        var script = FakeCli.Printing(_directory, "fake-stemforge", stdout, exitCode);
 
         return new SeparationRunner(Interlock, Set, Paths, script);
     }
@@ -163,15 +154,18 @@ public sealed class SeparationRunnerTests : IDisposable
     [Fact]
     public async Task Shutting_down_leaves_the_separation_running_and_its_job_open()
     {
-        var script = Path.Combine(_directory, "slow-stemforge.cmd");
-
         // Long enough that the run is still going when the token trips.
-        File.WriteAllText(
-            script,
-            """
+        var script = FakeCli.Write(
+            _directory,
+            "slow-stemforge",
+            windows: """
             @echo off
             ping -n 30 127.0.0.1 > nul
             echo [{"succeeded":true}]
+            """,
+            unix: """
+            sleep 30
+            echo '[{"succeeded":true}]'
             """
         );
 
@@ -200,16 +194,19 @@ public sealed class SeparationRunnerTests : IDisposable
     /// <summary>A stand-in that writes its own argument list out for inspection.</summary>
     private SeparationRunner RunnerEchoingArguments(out string argumentsFile)
     {
-        var script = Path.Combine(_directory, "echo-stemforge.cmd");
-
         argumentsFile = Path.Combine(_directory, "arguments.txt");
 
-        File.WriteAllText(
-            script,
-            $$"""
+        var script = FakeCli.Write(
+            _directory,
+            "echo-stemforge",
+            windows: $$"""
             @echo off
             echo %* > "{{argumentsFile}}"
             echo [{"succeeded":true,"outputFiles":["one.flac","two.flac","three.flac"]}]
+            """,
+            unix: $$"""
+            echo "$@" > '{{argumentsFile}}'
+            echo '[{"succeeded":true,"outputFiles":["one.flac","two.flac","three.flac"]}]'
             """
         );
 
