@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Loop;
+using Humanizer;
 
 namespace Crateside.Core.Orchestration.Verdict;
 
@@ -266,12 +267,74 @@ public sealed partial class VerdictRunner(
 
             yield return $"- {page.Site}, {page.Url}{(about is "" ? string.Empty : $" ({about})")}: "
                 + $"\"{page.Heading}\". {keys}";
+
+            if (page.Tab is { } tab)
+            {
+                foreach (var line in TabLines(tab))
+                    yield return $"  - {line}";
+            }
         }
 
         foreach (var lookup in lookups.Where(lookup => lookup.Status is not LookupStatus.Found))
             yield return lookup.Status is LookupStatus.NotFound
                 ? $"- {lookup.Site}: nothing found"
                 : $"- {lookup.Site}: not reached ({lookup.Error})";
+    }
+
+    /// <summary>What a TheoryTab states beyond its sections' first keys: who made it, how much of the recording it maps, and where a section modulates.</summary>
+    private static IEnumerable<string> TabLines(HooktheoryTab tab)
+    {
+        var sections = string.Join(", ", tab.Sections.Select(section => section.Name));
+        var wholeSong = tab.AllKeys is { Length: > 0 } keys
+            ? $"; the site lists the whole song's keys as {keys}"
+            : string.Empty;
+
+        yield return tab.Contributors is []
+            ? $"no contributor named; {"section".ToQuantity(tab.Sections.Count)} ({sections}){wholeSong}"
+            : $"{"contributor".ToQuantity(tab.Contributors.Count)} ({string.Join(", ", tab.Contributors)}); "
+                + $"{"section".ToQuantity(tab.Sections.Count)} ({sections}){wholeSong}";
+
+        var other = tab.Sections.Count(section => section.VideoId is not null);
+        var synced = tab.SyncedVideoId is { } video
+            ? $"synced to YouTube {video}"
+            : "not synced to a video";
+
+        yield return (tab.Coverage, tab.Sections.Any(section => section.Keys is not [])) switch
+        {
+            ({ } coverage, _) => string.Create(
+                CultureInfo.InvariantCulture,
+                $"{synced}; its sections span {coverage * 100:0.0}% of that video{(other is 0 ? string.Empty : $", and {"section".ToQuantity(other)} are synced to other videos")}"
+            ),
+            (null, true) => $"{synced}; no section is synced to it, so its coverage is unknown",
+            _ => $"{synced}; the sections' own scores could not be read, so their sync is unknown",
+        };
+
+        foreach (var section in tab.Sections)
+        {
+            var filled = (section.PercentChord, section.PercentMelody) switch
+            {
+                ({ } chords, { } melody) => string.Create(
+                    CultureInfo.InvariantCulture,
+                    $" (chords {chords:0}% filled in, melody {melody:0}%)"
+                ),
+                _ => string.Empty,
+            };
+
+            if (section.Progression is { Length: > 0 } progression)
+                yield return $"{section.Name}: {progression}{filled}";
+
+            if (section.Keys is { Count: > 1 } changes)
+                yield return $"{section.Name} changes key inside the section: "
+                    + string.Join(
+                        ", then ",
+                        changes.Select(change =>
+                            string.Create(
+                                CultureInfo.InvariantCulture,
+                                $"{change.Key} from beat {change.Beat}"
+                            )
+                        )
+                    );
+        }
     }
 
     internal static string EarLine(EarWeight ear) =>
