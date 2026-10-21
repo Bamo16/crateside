@@ -14,6 +14,8 @@ dotnet test --solution Crateside.slnx      # not --nologo: it is forwarded to th
 dotnet csharpier check .                   # must be clean before every commit
 ```
 
+**Read the app's log from its file, not the terminal.** `%LOCALAPPDATA%\crateside\logs\crateside-<yyyyMMdd>.log` holds every entry, one line each with the full date and time; the last 14 days are kept.
+
 **Find a track's source without searching.** `%LOCALAPPDATA%\crateside\source-index.json` lists
 every source on disk, by `videoId` and `song`, with its `path`: the full-mix download in the working
 set (`location: WorkingSet`, kept for the retention set in Settings after the stems reach the
