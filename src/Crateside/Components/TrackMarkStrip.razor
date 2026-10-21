@@ -9,19 +9,18 @@
 <div class="tag-line">
     <span class="tag-label">@Label</span>
     <span class="tag-value @(Marked ? null : "quiet")">@(Marked ? "Marked" : "Not marked")</span>
-    <button class="outline" disabled="@_working" @onclick="Toggle">@(Marked ? "Clear" : "Mark")</button>
+    <button class="outline" @onclick="Toggle">@(Marked ? "Clear" : "Mark")</button>
 </div>
 
 @code {
-    private bool _working;
-
     [Parameter, EditorRequired]
     public required TrackRow Row { get; set; }
 
     [Parameter, EditorRequired]
     public required TrackMark Mark { get; set; }
 
-    private bool Marked => Row.Marks.Contains(Mark);
+    // From the store, not the row, which is a rescan behind.
+    private bool Marked => Marks.Of(Row.Song).Contains(Mark);
 
     private string Label =>
         Mark switch
@@ -31,26 +30,17 @@
             _ => throw new UnreachableException(),
         };
 
-    private async Task Toggle()
+    private void Toggle()
     {
-        _working = true;
+        var marking = !Marked;
 
-        try
-        {
-            var marking = !Marked;
+        Marks.Set(Row.Song, Mark, marking);
+        Actions.Record(
+            Row.VideoId,
+            marking ? UserActionKind.MarkSet : UserActionKind.MarkCleared,
+            Label
+        );
 
-            Marks.Set(Row.Song, Mark, marking);
-            Actions.Record(
-                Row.VideoId,
-                marking ? UserActionKind.MarkSet : UserActionKind.MarkCleared,
-                Label
-            );
-
-            await Tracks.RefreshAsync();
-        }
-        finally
-        {
-            _working = false;
-        }
+        _ = Tracks.RefreshAsync();
     }
 }

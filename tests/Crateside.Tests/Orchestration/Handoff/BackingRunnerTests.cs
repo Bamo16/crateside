@@ -272,6 +272,23 @@ public sealed class BackingRunnerTests : IDisposable
     }
 
     [Fact]
+    public void A_pass_for_one_song_leaves_the_files_of_another_alone()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [new() { RelativePath = Path.GetFileName(stem), Keywords = ["Key|A", "Key|Minor"] }]
+        );
+        var runner = Runner();
+        var ledger = Ledger("LOW");
+
+        Assert.Empty(runner.Unbacked(_root, ledger, index: FolderInfo.Empty(_root), song: "B - U"));
+        Assert.Single(
+            runner.Unbacked(_root, ledger, index: FolderInfo.Empty(_root), song: "a - t")
+        );
+    }
+
+    [Fact]
     public void Without_the_index_Collections_are_left_alone()
     {
         var stem = LibraryStem();

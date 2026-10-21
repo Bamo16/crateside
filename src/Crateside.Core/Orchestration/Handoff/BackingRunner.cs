@@ -33,6 +33,7 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
     /// <param name="index">Live's index of the root, which an imported file's Collections arrive in; null leaves Collections alone.</param>
     /// <param name="marksOf">A song's marks the maintainer set; none when left out.</param>
     /// <param name="beforeWrite">Called with the root just before a write that changes something.</param>
+    /// <param name="song">Limits the pass to one song's files, as a mark's write is (#144).</param>
     public TagWriteOutcome Run(
         string root,
         KeyLedger ledger,
@@ -41,14 +42,15 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
         IReadOnlyDictionary<string, string>? corrections = null,
         FolderInfo? index = null,
         Func<string, IReadOnlyCollection<TrackMark>>? marksOf = null,
-        Action<string>? beforeWrite = null
+        Action<string>? beforeWrite = null,
+        string? song = null
     )
     {
         IReadOnlyList<TagAssignment> unbacked;
 
         try
         {
-            unbacked = Unbacked(root, ledger, ownedOf, backKeys, corrections, index, marksOf);
+            unbacked = Unbacked(root, ledger, ownedOf, backKeys, corrections, index, marksOf, song);
         }
         // A store Live is writing reads as nothing backed; wait for it rather than back everything.
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -95,6 +97,7 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
     /// could have, with what the entry should say; a key already in the store is never rewritten.
     /// </summary>
     /// <param name="index">Given, every keyed entry is put in its track's Collections and out of the warp states.</param>
+    /// <param name="song">Given, only files of this song are looked at.</param>
     public IReadOnlyList<TagAssignment> Unbacked(
         string root,
         KeyLedger ledger,
@@ -102,7 +105,8 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
         bool backKeys = true,
         IReadOnlyDictionary<string, string>? corrections = null,
         FolderInfo? index = null,
-        Func<string, IReadOnlyCollection<TrackMark>>? marksOf = null
+        Func<string, IReadOnlyCollection<TrackMark>>? marksOf = null,
+        string? song = null
     )
     {
         if (!Directory.Exists(root))
@@ -138,6 +142,17 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
                     || (
                         (ownedOf is not null || index is not null)
                         && CanTakeOwnedTags(file.Existing)
+                    )
+                )
+                .Where(file =>
+                    song is null
+                    || (
+                        ProvenanceOf(file.Path) is { SourceVideoId: { } videoId }
+                        && string.Equals(
+                            ledger.SongFor(videoId) ?? videoId,
+                            song,
+                            StringComparison.OrdinalIgnoreCase
+                        )
                     )
                 )
                 .Select(file =>
