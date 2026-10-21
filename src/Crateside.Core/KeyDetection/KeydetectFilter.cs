@@ -125,7 +125,16 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, string ffmpeg
                         match.Groups["Key"].Value,
                         double.Parse(match.Groups["R"].Value, CultureInfo.InvariantCulture)
                     )),
-            ]
+            ],
+            RunnerUpMatch.Matches(stderr) is [.., var altLine]
+                ? TryParseToken(altLine.Groups["Key"].Value)
+                : null,
+            RunnerUpCorrelation.Matches(stderr) is [.., var altRLine]
+                ? double.Parse(altRLine.Groups["R"].Value, CultureInfo.InvariantCulture)
+                : null,
+            Reranks.Matches(stderr) is [.., var reranked]
+                ? reranked.Groups["Flag"].Value is "1"
+                : null
         );
     }
 
@@ -156,6 +165,15 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, string ffmpeg
     [GeneratedRegex(@"lavfi\.keydetect\.key_confidence=(?<R>[0-9.+-]+)")]
     private static partial Regex Confidence { get; }
 
+    [GeneratedRegex(@"lavfi\.keydetect\.key_alt=(?<Key>[A-G][#b]?m?)\s*$", RegexOptions.Multiline)]
+    private static partial Regex RunnerUpMatch { get; }
+
+    [GeneratedRegex(@"lavfi\.keydetect\.key_alt_confidence=(?<R>[0-9.+-]+)")]
+    private static partial Regex RunnerUpCorrelation { get; }
+
+    [GeneratedRegex(@"lavfi\.keydetect\.key_reranked=(?<Flag>[01])")]
+    private static partial Regex Reranks { get; }
+
     [GeneratedRegex(@"lavfi\.keydetect\.chords=(?<Chords>[A-Gb#mN-]+)")]
     private static partial Regex FinalChords { get; }
 
@@ -171,11 +189,16 @@ public abstract record KeydetectReading
     /// <param name="R">The correlation of the key's profile with the audio's chroma.</param>
     /// <param name="Chords">The committed progression, repeats collapsed, in the filter's spelling.</param>
     /// <param name="KeyEvents">Every change of the running estimate as the stream played.</param>
+    /// <param name="RunnerUp">The second-ranked key (<c>key_alt</c>), where the build prints one.</param>
+    /// <param name="Reranked">Whether the chord rerank changed the answer (<c>key_reranked</c>).</param>
     public sealed record Read(
         MusicKey Key,
         double R,
         IReadOnlyList<string> Chords,
-        IReadOnlyList<KeydetectEvent> KeyEvents
+        IReadOnlyList<KeydetectEvent> KeyEvents,
+        MusicKey? RunnerUp = null,
+        double? RunnerUpR = null,
+        bool? Reranked = null
     ) : KeydetectReading;
 
     public sealed record Failed(string Error) : KeydetectReading;

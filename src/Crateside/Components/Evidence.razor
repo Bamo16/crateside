@@ -233,18 +233,25 @@
                             {
                                 <span class="problem">@error</span>
                             }
-                            else if (algorithm.RunnerUpKey is { } runnerUp)
+                            else
                             {
-                                <span title="CREMA reports no usable confidence; this is how close second place was.">
-                                    runner-up @runnerUp @(algorithm.RunnerUpRatio is { } r ? $"({r:F3})" : null)
-                                </span>
-                            }
-                            else if (algorithm.Confidence is { } confidence)
-                            {
-                                <span>@confidence.ToString("F3")</span>
-                                @if (algorithm.Flag is { Length: > 0 } flag)
+                                @if (algorithm.Confidence is { } confidence)
                                 {
-                                    <span class="flag @flag.ToLowerInvariant()">@flag</span>
+                                    <span>@confidence.ToString("F3")</span>
+                                    @if (algorithm.Flag is { Length: > 0 } flag)
+                                    {
+                                        <span class="flag @flag.ToLowerInvariant()">@flag</span>
+                                    }
+                                }
+                                @if (algorithm.RunnerUpKey is { } runnerUp)
+                                {
+                                    <span title="How close second place was.">
+                                        runner-up @runnerUp @((algorithm.RunnerUpRatio ?? algorithm.RunnerUpConfidence) is { } r ? $"({r:F3})" : null)
+                                    </span>
+                                }
+                                @if (algorithm.Reranked is true)
+                                {
+                                    <span title="The chord rerank changed keydetect's answer.">reranked</span>
                                 }
                             }
                         </td>
