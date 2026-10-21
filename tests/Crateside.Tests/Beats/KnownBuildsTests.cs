@@ -1,3 +1,4 @@
+using Crateside.Core;
 using Crateside.Core.Beats;
 
 namespace Crateside.Tests.Beats;
@@ -14,12 +15,15 @@ public sealed class KnownBuildsTests : IDisposable
 
     private string StatePath => Path.Combine(_folder, "builds.json");
 
+    private CratesidePaths Paths(string? seed = null) =>
+        new() { KnownBuildsFile = StatePath, BeatdetectFfmpeg = seed ?? string.Empty };
+
     public void Dispose() => Directory.Delete(_folder, recursive: true);
 
     [Fact]
     public async Task A_path_that_is_not_ffmpeg_is_refused_and_nothing_is_kept()
     {
-        var builds = new KnownBuilds(StatePath);
+        var builds = new KnownBuilds(Paths());
 
         var outcome = await builds.AddAsync(
             Path.Combine(_folder, "nothing.exe"),
@@ -37,7 +41,7 @@ public sealed class KnownBuildsTests : IDisposable
         if (!SkipUnlessHarness())
             return;
 
-        var builds = new KnownBuilds(StatePath);
+        var builds = new KnownBuilds(Paths());
 
         await builds.AddAsync(Newest, TestContext.Current.CancellationToken);
         await builds.AddAsync(Older, TestContext.Current.CancellationToken);
@@ -52,7 +56,7 @@ public sealed class KnownBuildsTests : IDisposable
         if (!SkipUnlessHarness())
             return;
 
-        var builds = new KnownBuilds(StatePath);
+        var builds = new KnownBuilds(Paths());
 
         await builds.AddAsync(Newest, TestContext.Current.CancellationToken);
         var again = await builds.AddAsync(Newest, TestContext.Current.CancellationToken);
@@ -67,7 +71,7 @@ public sealed class KnownBuildsTests : IDisposable
         if (!SkipUnlessHarness())
             return;
 
-        var builds = new KnownBuilds(StatePath);
+        var builds = new KnownBuilds(Paths());
         await builds.AddAsync(Newest, TestContext.Current.CancellationToken);
         var older = Assert.IsType<BuildAddOutcome.Added>(
             await builds.AddAsync(Older, TestContext.Current.CancellationToken)
@@ -75,7 +79,7 @@ public sealed class KnownBuildsTests : IDisposable
 
         Assert.True(builds.Pin(older.Known.Build.Sha256));
 
-        var restarted = new KnownBuilds(StatePath);
+        var restarted = new KnownBuilds(Paths());
 
         Assert.Equal(2, restarted.All.Count);
         Assert.Equal(older.Known.Build.Label, restarted.Pinned?.Build.Label);
@@ -87,7 +91,7 @@ public sealed class KnownBuildsTests : IDisposable
         if (!SkipUnlessHarness())
             return;
 
-        var builds = new KnownBuilds(StatePath);
+        var builds = new KnownBuilds(Paths());
         var added = Assert.IsType<BuildAddOutcome.Added>(
             await builds.AddAsync(Newest, TestContext.Current.CancellationToken)
         );
@@ -103,7 +107,7 @@ public sealed class KnownBuildsTests : IDisposable
         if (!SkipUnlessHarness())
             return;
 
-        var builds = new KnownBuilds(StatePath, Newest);
+        var builds = new KnownBuilds(Paths(Newest));
 
         await builds.SeedAsync(TestContext.Current.CancellationToken);
         await builds.SeedAsync(TestContext.Current.CancellationToken);
@@ -120,7 +124,7 @@ public sealed class KnownBuildsTests : IDisposable
 
         var audio = Path.Combine(_folder, "tone.wav");
         WriteSilence(audio);
-        var builds = new KnownBuilds(StatePath);
+        var builds = new KnownBuilds(Paths());
         await builds.AddAsync(Older, TestContext.Current.CancellationToken);
         var newer = Assert.IsType<BuildAddOutcome.Added>(
             await builds.AddAsync(Newest, TestContext.Current.CancellationToken)
@@ -149,7 +153,7 @@ public sealed class KnownBuildsTests : IDisposable
         var (old, fresh) = (Path.Combine(_folder, "old.wav"), Path.Combine(_folder, "fresh.wav"));
         WriteSilence(old);
         WriteSilence(fresh);
-        var builds = new KnownBuilds(StatePath);
+        var builds = new KnownBuilds(Paths());
         await builds.AddAsync(Older, TestContext.Current.CancellationToken);
         var newer = Assert.IsType<BuildAddOutcome.Added>(
             await builds.AddAsync(Newest, TestContext.Current.CancellationToken)
@@ -177,7 +181,7 @@ public sealed class KnownBuildsTests : IDisposable
 
         var audio = Path.Combine(_folder, "tone.wav");
         WriteSilence(audio);
-        var builds = new KnownBuilds(StatePath);
+        var builds = new KnownBuilds(Paths());
         var older = Assert.IsType<BuildAddOutcome.Added>(
             await builds.AddAsync(Older, TestContext.Current.CancellationToken)
         );
