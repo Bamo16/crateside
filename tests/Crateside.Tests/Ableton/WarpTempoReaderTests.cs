@@ -1,6 +1,7 @@
 using AbleKit.Analysis;
 using Crateside.Core;
 using Crateside.Core.Ableton;
+using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Ableton;
 
@@ -35,7 +36,10 @@ public sealed class WarpTempoReaderTests : IDisposable
     {
         var audio = Sample("sidecar-clicks.asd");
 
-        Assert.Null(new WarpTempoReader(isStarter: path => path == audio).Read(audio));
+        var written = new WrittenWarps();
+        written.RecordStarter(audio);
+
+        Assert.Null(new WarpTempoReader(written: written).Read(audio));
     }
 
     [Fact]
