@@ -18,7 +18,7 @@ namespace Crateside.Components;
 /// them, so the row and Track details cannot drift apart (#21).
 /// </summary>
 public sealed class StemEditor(
-    WorkListService playlist,
+    TrackInstructionStore instructions,
     StemRecut recut,
     SourceAdd sources,
     SampleAdoption adoption,
@@ -175,7 +175,7 @@ public sealed class StemEditor(
         if (row.CanChangePlan)
         {
             // Nothing has been made, so there is nothing to confirm and nothing to lose.
-            playlist.SetPlan(row.VideoId, wanted);
+            instructions.SetPlan(row.VideoId, wanted);
             actions.Record(row.VideoId, UserActionKind.PlanChanged, line.Label);
 
             _ticked[row.VideoId] = wanted;
@@ -443,7 +443,7 @@ public sealed class StemEditor(
             ? PlanOf(row).TogglingSource()
             : PlanOf(row).Toggling(line.PresetId!);
 
-        playlist.SetPlan(row.VideoId, wanted);
+        instructions.SetPlan(row.VideoId, wanted);
 
         _ticked[row.VideoId] = wanted;
         _wanted = wanted;

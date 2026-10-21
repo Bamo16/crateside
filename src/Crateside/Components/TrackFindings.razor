@@ -8,7 +8,7 @@
 @using Crateside.Core.WorkLists
 @implements IDisposable
 @inject LookalikeAnswer Lookalike
-@inject WorkListService Playlist
+@inject TrackInstructionStore Instructions
 @inject WorkingSet Held
 @inject VerdictControl Judging
 @inject TracksService Tracks
@@ -92,7 +92,7 @@
         Working(() =>
         {
             if (YouTubeUrl.TryGetVideoId(Row.StatedSourceUrl ?? Row.VideoId, out var upload))
-                Playlist.AcceptUpload(Row.VideoId, upload);
+                Instructions.AcceptUpload(Row.VideoId, upload);
 
             if (!Held.AcceptAcquisition(Row.VideoId))
                 _problem =

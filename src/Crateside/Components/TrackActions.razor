@@ -9,6 +9,8 @@
 @using Crateside.Core.WorkLists
 @implements IDisposable
 @inject WorkListService Playlist
+@inject PlaylistAuthorizer Authorizer
+@inject BumpedTrack Bumped
 @inject JobStore Jobs
 @inject StageSignals Signals
 @inject TrackRemoval Removal
@@ -115,12 +117,12 @@ else if (Part is Parts.Queue && (ShowNextSentence || HasQueueButtons))
         }
     </div>
 }
-else if (Part is Parts.Remove && HasRemove(Row, Playlist))
+else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
 {
     <div class="stack-part">
         <div class="label-line">
             <span class="stack-label">Track</span>
-            @if (Row.PlaylistItemId is { } playlistItemId && Playlist.IsAuthorized)
+            @if (Row.PlaylistItemId is { } playlistItemId && Authorizer.IsAuthorized)
             {
                 <button class="outline" @onclick="() => Remove(playlistItemId)">
                     Remove from playlist
@@ -183,7 +185,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
     [Parameter]
     public EventCallback<(string Title, string Note)> Removed { get; set; }
 
-    private bool IsBumped => Playlist.BumpedVideoId == Row.VideoId;
+    private bool IsBumped => Bumped.VideoId == Row.VideoId;
 
     /// <summary>
     /// Waiting is the only time this means anything: once a stage has the track, the work lists
@@ -199,8 +201,8 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
     private bool HasQueueButtons =>
         Row is { GaveUpAt: not null } or { State: TrackState.Short } || IsBumped || CanBump || IsPassed || CanPass;
 
-    public static bool HasRemove(TrackRow row, WorkListService playlist) =>
-        row is { PlaylistItemId: not null } && playlist.IsAuthorized || row.CanForget;
+    public static bool HasRemove(TrackRow row, PlaylistAuthorizer authorizer) =>
+        row is { PlaylistItemId: not null } && authorizer.IsAuthorized || row.CanForget;
 
     public void Dispose()
     {
@@ -233,7 +235,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
 
     private async Task Bump()
     {
-        Playlist.Bump(Row.VideoId);
+        Bumped.Bump(Row.VideoId);
         Actions.Record(Row.VideoId, UserActionKind.Bumped);
 
         await Tracks.RefreshAsync(_circuit.Token);
@@ -241,7 +243,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Playlist))
 
     private async Task ClearBump()
     {
-        Playlist.ClearBump();
+        Bumped.Clear();
         Actions.Record(Row.VideoId, UserActionKind.BumpCleared);
 
         await Tracks.RefreshAsync(_circuit.Token);

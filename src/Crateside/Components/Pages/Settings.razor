@@ -18,6 +18,9 @@
 @using Microsoft.Extensions.Options
 
 @inject WorkListService Playlist
+@inject PlaylistAuthorizer Authorizer
+@inject PlaylistSettingsStore PlaylistStore
+@inject IntakeStore Intake
 @inject TracksService Tracks
 @inject WindowRoll Roll
 @inject PauseStore Remembered
@@ -128,7 +131,7 @@
 
                     <div class="access">
                         <span class="caps">Remove</span>
-                        @if (!Playlist.CanAuthorize)
+                        @if (!Authorizer.IsConfigured)
                         {
                             <div class="state-block">
                                 <span class="state">Not set up</span>
@@ -142,7 +145,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                                 </details>
                             </div>
                         }
-                        else if (!Playlist.IsAuthorized)
+                        else if (!Authorizer.IsAuthorized)
                         {
                             <span class="state">Not granted</span>
                             <button class="primary" @onclick="Consent" disabled="@_working">
@@ -439,7 +442,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                                 @onclick="() => SaveConsume(false)" disabled="@(!CanEmpty)">Off</button>
                     </div>
                     <span class="status">
-                        @if (HasPlaylist && !Playlist.IsAuthorized)
+                        @if (HasPlaylist && !Authorizer.IsAuthorized)
                         {
                             <text>Needs removal access, under YouTube access above.</text>
                         }
@@ -455,7 +458,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                 </div>
             </div>
 
-            @if (Playlist.IsAuthorized && HasPlaylist)
+            @if (Authorizer.IsAuthorized && HasPlaylist)
             {
                 <div class="row">
                     <div class="name">
@@ -524,7 +527,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                 </div>
             }
 
-            @if (Playlist.LeftInPlaylist is { Count: > 0 } left)
+            @if (Intake.LeftInPlaylist is { Count: > 0 } left)
             {
                 <div class="row">
                     <div class="name">
@@ -541,7 +544,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                                 </div>
                                 @if (record.RemovalFailure.CanSucceedLater)
                                 {
-                                    <button class="outline" @onclick="() => Playlist.RetryRemoval(record.VideoId)">
+                                    <button class="outline" @onclick="() => Intake.ClearRemovalAttempted([record.VideoId])">
                                         Try again
                                     </button>
                                 }
@@ -787,7 +790,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
     private bool HasPlaylist => Playlist.PlaylistId is { Length: > 0 };
 
-    private bool CanEmpty => HasPlaylist && Playlist.IsAuthorized;
+    private bool CanEmpty => HasPlaylist && Authorizer.IsAuthorized;
 
     private IReadOnlyList<TrackRow> Rows => Tracks.Current?.Rows ?? [];
 
@@ -830,8 +833,9 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         _library = Paths.LibraryFolder;
 
         _playlist = Playlist.PlaylistId ?? string.Empty;
-        _refresh = Playlist.RefreshMinutes;
-        _consume = Playlist.ConsumeOnArrival;
+        var saved = PlaylistStore.Read();
+        _refresh = saved.RefreshMinutes ?? PlaylistSettings.DefaultRefreshMinutes;
+        _consume = saved.ConsumeOnArrival;
         _retention = RetentionStore.Read();
         _days = _retention.Days;
 
@@ -855,13 +859,13 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     private void SaveRefresh(int minutes)
     {
         _refresh = minutes;
-        Playlist.SetRefreshMinutes(minutes);
+        PlaylistStore.SaveRefreshMinutes(minutes);
     }
 
     private void SaveConsume(bool consume)
     {
         _consume = consume;
-        Playlist.SetConsumeOnArrival(consume);
+        PlaylistStore.SaveConsumeOnArrival(consume);
     }
 
     private static string RefreshLabel(int minutes) =>
@@ -922,7 +926,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
         try
         {
-            await Playlist.ConsentAsync();
+            await Authorizer.ConsentAsync();
         }
         catch (Exception ex)
         {
@@ -938,7 +942,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
     private async Task SignOut()
     {
-        await Playlist.SignOutAsync();
+        await Authorizer.SignOutAsync();
 
         _confirming = false;
         _channel = null;
@@ -976,8 +980,8 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         {
             _processed = (await Playlist.ReadAsync()).FullyProcessed.Count;
 
-            if (Playlist.IsAuthorized)
-                _channel = await Playlist.GetAuthorizedChannelAsync();
+            if (Authorizer.IsAuthorized)
+                _channel = await Authorizer.GetAuthorizedChannelAsync();
         }
         catch (PlaylistUnavailableException ex)
         {
