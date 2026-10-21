@@ -18,7 +18,7 @@ public sealed class SourcePagesNetworkTests
 
             client.DefaultRequestHeaders.UserAgent.ParseAdd(SourcePages.UserAgent);
 
-            return new SourcePages(() => client);
+            return new SourcePages(new FixedHttpClientFactory(client));
         }
     }
 

@@ -27,7 +27,7 @@ public sealed class VerdictRunnerRealDataTests
                 Set,
                 DetectorSet.For(new ProcessRunner(), new CratesidePaths().KeydetectFfmpeg)
             ),
-            new SourcePages(() => new HttpClient()),
+            new SourcePages(new FixedHttpClientFactory(new HttpClient())),
             new JudgeOptions(),
             TimeProvider.System
         );
