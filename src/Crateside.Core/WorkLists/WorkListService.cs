@@ -7,12 +7,6 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Core.WorkLists;
 
 /// <summary>
-/// Video IDs crateside has separation to redo for, whatever the playlist says, decided per song
-/// (ADR 0014).
-/// </summary>
-public delegate IReadOnlySet<string> ReadReopenedTracks(KeyLedger ledger);
-
-/// <summary>
 /// What the separator can make, and what it calls each one.
 /// </summary>
 public delegate Task<PresetCatalog> ReadPresetCatalog(CancellationToken ct);
@@ -27,8 +21,7 @@ public sealed class WorkListService(
     PlaylistRemover remover,
     BumpedTrack bumped,
     IntakeStore intake,
-    ReadReopenedTracks? reopened = null,
-    ReadReopenedTracks? awaitingCut = null,
+    IReopenedWork? reopened = null,
     ReadPresetCatalog? presets = null,
     ActionLog? actions = null
 )
@@ -235,7 +228,7 @@ public sealed class WorkListService(
                 byVideoId,
                 Reopened(items, ledger),
                 bumped.VideoId,
-                awaitingCut?.Invoke(ledger),
+                reopened?.AwaitingCut(ledger),
                 InventoriesBySong(processed, ledger, catalog, _paths.LibraryFolder)
             ),
             Ledger = ledger,
@@ -467,7 +460,7 @@ public sealed class WorkListService(
     /// </summary>
     private IReadOnlyList<WorkItem> Reopened(IReadOnlyList<WorkItem> items, Ledger.KeyLedger ledger)
     {
-        if (reopened?.Invoke(ledger) is not { Count: > 0 } videoIds)
+        if (reopened?.Owing(ledger) is not { Count: > 0 } videoIds)
             return [];
 
         var queued = items.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);

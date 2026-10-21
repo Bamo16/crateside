@@ -156,9 +156,8 @@ public static class ServiceRegistration
         services.AddSingleton<BumpedTrack>();
         services.AddSingleton<PresetCatalogReader>();
 
-        // Both trailing delegates and the catalog are passed by hand: the container resolves the
-        // two ReadReopenedTracks parameters to the same registration, and they mean different
-        // sets.
+        services.AddSingleton<IReopenedWork, ReopenedWork>();
+        // The catalog is passed by hand: the container cannot fill a delegate.
         services.AddSingleton(sp => new WorkListService(
             sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<IOptions<CratesidePaths>>(),
@@ -169,26 +168,7 @@ public static class ServiceRegistration
             sp.GetRequiredService<PlaylistRemover>(),
             sp.GetRequiredService<BumpedTrack>(),
             sp.GetRequiredService<IntakeStore>(),
-            ledger =>
-                ReopenedTracks
-                    .From(sp.GetRequiredService<JobStore>().All(), ledger)
-                    .Union(
-                        CutRequests.Unsettled(
-                            sp.GetRequiredService<TrackInstructionStore>().Read(),
-                            sp.GetRequiredService<JobStore>()
-                        )
-                    )
-                    .ToHashSet(StringComparer.Ordinal),
-            ledger =>
-                ReopenedTracks
-                    .AwaitingCut(sp.GetRequiredService<JobStore>().All(), ledger)
-                    .Union(
-                        CutRequests.Cutting(
-                            sp.GetRequiredService<TrackInstructionStore>().Read(),
-                            sp.GetRequiredService<JobStore>()
-                        )
-                    )
-                    .ToHashSet(StringComparer.Ordinal),
+            sp.GetRequiredService<IReopenedWork>(),
             sp.GetRequiredService<PresetCatalogReader>().ReadAsync,
             sp.GetRequiredService<ActionLog>()
         ));
