@@ -71,6 +71,12 @@ integrated loudness.** The audio is never touched; crateside writes the one fiel
 
 ## Consequences
 
+- **Live keeps a clip as it last loaded it, until a new set** (MEASURED 2026-10-21). On GYARI –
+  *アカリがやってきたぞっ* (*Akari ga Yattekita zo*), the maintainer saved a default clip at +15.6 dB;
+  crateside levelled the sidecar back to −1.3 dB within seconds (read from the file), but a second
+  drag into the same set still came in at +15.6. After File → New Live Set it came in at −1.3. So
+  any rewrite of a sidecar Live has open (a gain, a true-up, a re-applied warp) is heard only in a
+  new set, or after Live restarts.
 - **Every gain is one number away from undone.** Setting each saved default clip's `SampleVolume`
   to 1 (0 dB) reverts the change, and the target setting retunes it.
 - **MEASURED 2026-10-19:** a gain written into a sidecar by AbleKit applies on drag (-6 and +6 dB,
