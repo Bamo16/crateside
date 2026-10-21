@@ -157,6 +157,14 @@
     border-bottom: 1px solid var(--line);
 }
 
+/* The status text grows as time passes, so only the search box gives way to it: a chip that
+   shrank would wrap its label onto two lines (#143). */
+.filters .pill,
+.status {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
 .count {
     font-size: 11px;
 }
@@ -193,10 +201,11 @@
     margin-left: auto;
     display: flex;
     align-items: center;
+    flex: 0 1 15rem;
+    min-width: 6rem;
 }
 
-.search input {
-    width: 15rem;
+%;
     padding: 5px 22px 5px 10px;
     font: inherit;
     font-size: 12px;
