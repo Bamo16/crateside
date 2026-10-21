@@ -21,11 +21,11 @@ public sealed class TracksServiceTests
         var reads = 0;
 
         using var service = new TracksService(
-            _ =>
+            new TracksReads(() =>
             {
                 reads++;
-                return Task.FromResult(Empty);
-            },
+                return Empty;
+            }),
             hub,
             time
         );
@@ -56,11 +56,11 @@ public sealed class TracksServiceTests
         var reads = 0;
 
         using var service = new TracksService(
-            _ =>
+            new TracksReads(() =>
             {
                 reads++;
-                return Task.FromResult(Empty);
-            },
+                return Empty;
+            }),
             hub,
             time
         );
@@ -98,11 +98,11 @@ public sealed class TracksServiceTests
         var reads = 0;
 
         using var service = new TracksService(
-            _ =>
+            new TracksReads(() =>
             {
                 reads++;
-                return Task.FromResult(Empty);
-            },
+                return Empty;
+            }),
             new StageHub(),
             time
         );
@@ -136,11 +136,11 @@ public sealed class TracksServiceTests
         var reads = 0;
 
         var service = new TracksService(
-            _ =>
+            new TracksReads(() =>
             {
                 reads++;
-                return Task.FromResult(Empty);
-            },
+                return Empty;
+            }),
             hub,
             time
         );
