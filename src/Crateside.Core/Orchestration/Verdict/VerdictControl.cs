@@ -3,12 +3,19 @@ using Crateside.Core.Orchestration.Loop;
 namespace Crateside.Core.Orchestration.Verdict;
 
 /// <summary>Whether the verdict stage is running, and what it is doing right now.</summary>
-public sealed class VerdictControl(bool startPaused = true) : DrainControl(startPaused)
+public sealed class VerdictControl : DrainControl
 {
     private int _formRunsWaiting;
 
     /// <summary>Runs started from a track's page that are waiting for the judgment in progress (#120).</summary>
     public int FormRunsWaiting => Volatile.Read(ref _formRunsWaiting);
+
+    /// <summary>Paused or not as the user last left judging.</summary>
+    public VerdictControl(PauseStore remembered)
+        : base(remembered.Read().Judging) { }
+
+    internal VerdictControl(bool startPaused = true)
+        : base(startPaused) { }
 
     /// <summary>Counts a form run as waiting until the returned scope is disposed.</summary>
     public IDisposable WaitingFormRun()

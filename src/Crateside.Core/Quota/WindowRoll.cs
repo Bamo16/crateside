@@ -1,10 +1,12 @@
+using Crateside.Core.Orchestration.Loop;
+
 namespace Crateside.Core.Quota;
 
 /// <summary>
 /// Whether an idle five-hour window should judge one library backfill track (ADR 0029, ADR 0035).
 /// A window that cannot be read is never idle.
 /// </summary>
-public sealed class WindowRoll(bool enabled = false, DateTimeOffset? rolledAt = null)
+public sealed class WindowRoll
 {
     /// <summary>How long a window must read 0% before it counts as idle rather than just turned over.</summary>
     public static readonly TimeSpan IdleFor = TimeSpan.FromMinutes(15);
@@ -14,9 +16,9 @@ public sealed class WindowRoll(bool enabled = false, DateTimeOffset? rolledAt = 
 
     private readonly Lock _gate = new();
 
-    private bool _enabled = enabled;
+    private bool _enabled;
     private DateTimeOffset? _idleSince;
-    private DateTimeOffset? _rolledAt = rolledAt;
+    private DateTimeOffset? _rolledAt;
 
     /// <summary>Raised whenever the state changes, so a rendered page can catch up.</summary>
     public event Action? Changed;
@@ -38,6 +40,16 @@ public sealed class WindowRoll(bool enabled = false, DateTimeOffset? rolledAt = 
             lock (_gate)
                 return _rolledAt;
         }
+    }
+
+    /// <summary>On or off, and last rolled, as the user last left it.</summary>
+    public WindowRoll(PauseStore remembered)
+        : this(remembered.Read().Backfill, remembered.Read().BackfillJudgedAt) { }
+
+    internal WindowRoll(bool enabled = false, DateTimeOffset? rolledAt = null)
+    {
+        _enabled = enabled;
+        _rolledAt = rolledAt;
     }
 
     public void Enable() => Set(enabled: true);
