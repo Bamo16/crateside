@@ -1,3 +1,4 @@
+using System.Globalization;
 using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
@@ -19,6 +20,8 @@ namespace Crateside.Core.Tracks;
 /// </summary>
 public sealed record TrackRow
 {
+    private static readonly CultureInfo English = CultureInfo.GetCultureInfo("en");
+
     public required string VideoId { get; init; }
 
     /// <summary>
@@ -488,7 +491,7 @@ public sealed record TrackRow
     private string InLine =>
         Recipe.Passes is 0 ? "copying the source — no GPU needed"
         : GpuPosition is 1 ? "next on the GPU"
-        : $"{GpuPosition.GetValueOrDefault().Ordinalize()} for the GPU";
+        : $"{GpuPosition.GetValueOrDefault().Ordinalize(English)} for the GPU";
 }
 
 /// <summary>Where a track's derived name came from, best first.</summary>
