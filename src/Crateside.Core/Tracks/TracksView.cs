@@ -242,7 +242,7 @@ public sealed record TracksView
                         ? VerdictSelector.LookalikeOf(
                             item,
                             ledger,
-                            videoId => resolved.GetValueOrDefault(videoId)?.DisplayTitle
+                            resolved.GetValueOrDefault(item.VideoId)?.DisplayTitle
                         )
                         : null,
                 // The work list covers the queue item; the instruction covers everything after it
