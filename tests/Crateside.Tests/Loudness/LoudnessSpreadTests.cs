@@ -57,7 +57,7 @@ public sealed class LoudnessSpreadTests : IDisposable
     }
 
     [Fact]
-    public async Task A_sample_is_named_as_its_file_is_not_with_its_artist_added_again()
+    public async Task A_sample_with_its_kinds_usual_preset_is_named_by_its_song_alone()
     {
         const string name = "Harry Nilsson - Without You (Instrumental - Full).flac";
         var reader = new LoudnessReader(new FakeEbur128(_ => -21));
@@ -83,7 +83,7 @@ public sealed class LoudnessSpreadTests : IDisposable
         );
 
         Assert.Equal(
-            "Harry Nilsson - Without You (Instrumental - Full)",
+            "Harry Nilsson - Without You",
             Assert.Single(spread.Instrumentals.Boosts).Name
         );
     }
