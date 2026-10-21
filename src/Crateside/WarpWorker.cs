@@ -171,6 +171,12 @@ public sealed class WarpWorker(
 
                 break;
 
+            // Filed or deleted while the pass was reading it: nothing is left to warp.
+            case WarpOutcome.Failed when !File.Exists(loan.Target):
+                logger.LogDebug("{Target} left staging before it could be warped", target);
+
+                break;
+
             case WarpOutcome.Failed(var error):
                 logger.LogWarning("Could not warp {Target}: {Error}", target, error);
 
