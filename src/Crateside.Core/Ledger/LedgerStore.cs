@@ -37,6 +37,9 @@ public sealed class LedgerStore : IDisposable
             )
             : null;
 
+    public LedgerStore(CratesidePaths paths, TimeProvider time)
+        : this(paths.LedgerDatabase, time) { }
+
     /// <param name="databasePath">The SQLite file, or <see cref="InMemory"/>, which keeps no backups or export.</param>
     public LedgerStore(string databasePath, TimeProvider time)
     {

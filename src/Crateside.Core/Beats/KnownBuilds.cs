@@ -18,12 +18,12 @@ public abstract record BuildAddOutcome
 
 /// <summary>
 /// The beatdetect builds crateside knows and the one it pins for beatdetect alone; the ffmpeg on
-/// PATH is untouched (#102). Kept across restarts when given a path.
+/// PATH is untouched (#102). Kept across restarts.
 /// </summary>
-public sealed class KnownBuilds(string? path = null, string? seed = null)
+public sealed class KnownBuilds(CratesidePaths paths)
 {
     private readonly Lock _gate = new();
-    private KnownBuildsFile _state = Load(path);
+    private KnownBuildsFile _state = Load(paths.KnownBuildsFile);
 
     public IReadOnlyList<KnownBuild> All
     {
@@ -132,18 +132,15 @@ public sealed class KnownBuilds(string? path = null, string? seed = null)
     /// <summary>On a machine that knows no build yet, adds the configured one and pins it.</summary>
     public async Task SeedAsync(CancellationToken ct)
     {
-        if (seed is not null && All is [])
-            await AddAsync(seed, ct);
+        if (All is [])
+            await AddAsync(paths.BeatdetectFfmpeg, ct);
     }
 
     private void Save()
     {
-        if (path is null)
-            return;
-
         try
         {
-            BeatJsonContext.Default.KnownBuildsFile.WriteFile(path, _state);
+            BeatJsonContext.Default.KnownBuildsFile.WriteFile(paths.KnownBuildsFile, _state);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
@@ -151,9 +148,8 @@ public sealed class KnownBuilds(string? path = null, string? seed = null)
     private static bool IsSame(string left, string right) =>
         left.Equals(right, StringComparison.OrdinalIgnoreCase);
 
-    private static KnownBuildsFile Load(string? path) =>
-        path is not null
-        && BeatJsonContext.Default.KnownBuildsFile.ReadFileOrDefault(path) is { } file
+    private static KnownBuildsFile Load(string path) =>
+        BeatJsonContext.Default.KnownBuildsFile.ReadFileOrDefault(path) is { } file
             ? file
             : new KnownBuildsFile([], null);
 }

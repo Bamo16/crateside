@@ -99,10 +99,7 @@ public static class ServiceRegistration
     public static IServiceCollection AddCratesideReaders(this IServiceCollection services)
     {
         services.AddSingleton(TimeProvider.System);
-        services.AddSingleton(sp => new LedgerStore(
-            sp.GetRequiredService<CratesidePaths>().LedgerDatabase,
-            sp.GetRequiredService<TimeProvider>()
-        ));
+        services.AddSingleton<LedgerStore>();
         services.AddSingleton<FolderInfoReader>();
         services.AddSingleton(sp => new FileIndexReader(
             sp.GetRequiredService<IOptions<CratesidePaths>>().Value.AbletonIndex
@@ -111,16 +108,13 @@ public static class ServiceRegistration
         services.AddSingleton<LibrarySummary>();
         services.AddSingleton<StagingReader>();
         services.AddSingleton(sp => new WarpTempoReader(
-            Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "tempos.json"),
+            sp.GetRequiredService<CratesidePaths>().TempoCache,
             sp.GetRequiredService<WrittenWarps>().IsStarter
         ));
         // hpss matched an AI drum stem on the instrumental, measured 2026-09-30 (#83).
-        services.AddSingleton(sp => new KnownBuilds(
-            Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "builds.json"),
-            sp.GetRequiredService<CratesidePaths>().BeatdetectFfmpeg
-        ));
+        services.AddSingleton<KnownBuilds>();
         services.AddSingleton(sp => new BeatReader(
-            Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "beats.json"),
+            sp.GetRequiredService<CratesidePaths>().BeatCache,
             sp.GetRequiredService<CratesidePaths>().BeatdetectFfmpeg,
             "beatdetect=hpss=1",
             sp.GetRequiredService<KnownBuilds>()

@@ -41,6 +41,18 @@ public sealed class CratesidePaths
     public string LedgerDatabase { get; set; } =
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("crateside", "ledger.db");
 
+    /// <summary>The beatdetect builds crateside knows, and the one it pins.</summary>
+    public string KnownBuildsFile { get; set; } =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "builds.json");
+
+    /// <summary>The beats beatdetect has read, kept across restarts.</summary>
+    public string BeatCache { get; set; } =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "beats.json");
+
+    /// <summary>The tempos read from warped clips, kept across restarts.</summary>
+    public string TempoCache { get; set; } =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "tempos.json");
+
     /// <summary>Where stems go when the track has a key the user would tag with.</summary>
     public string StemsKeyIdentified { get; set; } = Path.Combine(MusicStems, "Key Identified");
 
