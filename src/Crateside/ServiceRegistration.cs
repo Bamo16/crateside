@@ -352,21 +352,7 @@ public static class ServiceRegistration
         services.AddSingleton<SourceRetentionStore>();
         services.AddSingleton<SourceIndex>();
         services.AddSingleton<SourceBackfill>();
-        services.AddSingleton(sp => new WorkingSetJanitor(
-            sp.GetRequiredService<LedgerStore>(),
-            sp.GetRequiredService<WorkingSet>(),
-            sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<IOptions<CratesidePaths>>(),
-            sp.GetRequiredService<SourceRetentionStore>(),
-            sp.GetRequiredService<TimeProvider>(),
-            videoId =>
-                sp.GetRequiredService<TrackInstructionStore>()
-                    .Read()
-                    .FirstOrDefault(track =>
-                        track.VideoId.Equals(videoId, StringComparison.Ordinal)
-                    )
-                    ?.CutRequestedAt
-        ));
+        services.AddSingleton<WorkingSetJanitor>();
         services.AddHostedService<JanitorWorker>();
         return services;
     }
