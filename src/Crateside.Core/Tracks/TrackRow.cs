@@ -24,6 +24,9 @@ public sealed record TrackRow
 
     public required string VideoId { get; init; }
 
+    /// <summary>The page-relative link to Track details.</summary>
+    public string DetailsHref => $"song/{Uri.EscapeDataString(VideoId)}";
+
     /// <summary>
     /// The playlist entry, which is what removing the track targets. Null once it has none.
     /// </summary>

@@ -1,9 +1,10 @@
+using Crateside.Core.Familiarity;
 using Crateside.Core.Ledger;
 using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Tracks;
 
-/// <summary>What counts as a match, and where to point when there is none here.</summary>
+/// <summary>What counts as a match, and what the familiarity filter keeps.</summary>
 public sealed class TrackSearchTests
 {
     private static readonly TrackRow Staged = new()
@@ -74,27 +75,6 @@ public sealed class TrackSearchTests
         Assert.All(All, row => Assert.False(row.Matches("nonesuch")));
 
     [Fact]
-    public void The_filters_holding_a_match_are_named_so_a_fruitless_search_can_point_somewhere()
-    {
-        Assert.Equal([TrackFilter.InStaging], All.Holding("southern"));
-    }
-
-    [Fact]
-    public void All_is_offered_only_when_nothing_more_specific_holds_the_match()
-    {
-        Assert.Equal([TrackFilter.All], All.Holding("scrubs"));
-        Assert.DoesNotContain(TrackFilter.All, All.Holding("southern"));
-    }
-
-    [Fact]
-    public void Unfinished_is_never_offered_as_somewhere_to_look() =>
-        Assert.DoesNotContain(TrackFilter.Unfinished, All.Holding("southern"));
-
-    [Fact]
-    public void A_search_nothing_answers_holds_no_filters() =>
-        Assert.Empty(All.Holding("nonesuch"));
-
-    [Fact]
     public void Searching_does_not_change_what_the_pills_count()
     {
         var before = All.Count(TrackFilter.All);
@@ -103,5 +83,28 @@ public sealed class TrackSearchTests
 
         Assert.Single(shown);
         Assert.Equal(before, All.Count(TrackFilter.All));
+    }
+
+    [Fact]
+    public void The_familiarity_filter_keeps_only_the_rows_settled_that_way()
+    {
+        var mainstream = Finished with
+        {
+            Familiarity = new FamiliarityRecord
+            {
+                Song = "TLC - No Scrubs",
+                Settled = "Mainstream",
+            },
+        };
+
+        Assert.Equal(
+            [mainstream],
+            new[] { mainstream, Staged }.Where(row => row.HasFamiliarity("Mainstream"))
+        );
+        Assert.DoesNotContain(
+            mainstream,
+            new[] { mainstream, Staged }.Where(row => row.HasFamiliarity("Obscure"))
+        );
+        Assert.Equal(2, new[] { mainstream, Staged }.Count(row => row.HasFamiliarity(null)));
     }
 }

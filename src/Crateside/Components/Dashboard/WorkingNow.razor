@@ -23,7 +23,7 @@
         {
             <div class="subject">
                 <StateChip Row="row" />
-                <a href="@SongHref(row)">@row.Title</a>
+                <a href="@row.DetailsHref">@row.Title</a>
             </div>
             @if (row.RunningSince is { } since)
             {
@@ -55,7 +55,7 @@
         {
             <div class="subject">
                 <StateChip Row="judged" />
-                <a href="@SongHref(judged)">@judged.Title</a>
+                <a href="@judged.DetailsHref">@judged.Title</a>
             </div>
             <span class="status">
                 @if (judged.RunningSince is { } judgingSince)
@@ -237,7 +237,7 @@
     /// <summary>The track a stage is working on, or idle.</summary>
     private RenderFragment Current(TrackState state) =>
         Rows.FirstOrDefault(row => row.State == state) is { } row
-            ? @<a class="working" href="@SongHref(row)">@row.Title</a>
+            ? @<a class="working" href="@row.DetailsHref">@row.Title</a>
             : @<span class="idle">idle</span>;
 
     private static RenderFragment Waiting(int count) =>
@@ -245,7 +245,6 @@
             ? @<span class="idle">idle</span>
             : @<span class="mono waiting">@count waiting</span>;
 
-    private static string SongHref(TrackRow row) => $"song/{Uri.EscapeDataString(row.VideoId)}";
 
     private static string Minutes(TimeSpan span) =>
         span.TotalMinutes < 90 ? $"{Math.Max(1, (int)Math.Round(span.TotalMinutes))} min" : $"{span.TotalHours:0.#} h";
