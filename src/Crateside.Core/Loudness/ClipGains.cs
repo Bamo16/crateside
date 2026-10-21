@@ -1,24 +1,27 @@
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
+using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Loudness;
 
 /// <summary>The clip gain, linear, that brings a sample's whole file to the loudness target (ADR 0059).</summary>
-public sealed class ClipGains(LoudnessReader reader, Func<LoudnessOptions> options)
+public sealed class ClipGains(LoudnessReader reader, IOptionsMonitor<LoudnessOptions> options)
 {
     /// <summary>A gain this close to the one wanted, in dB, is on target, so float rounding never rewrites a sidecar.</summary>
     private const double ToleranceDb = 0.05;
 
-    public LoudnessOptions Options => options();
+    public LoudnessOptions Options => options.CurrentValue;
 
     /// <summary>Null until the file is read, or when ffmpeg found no loudness in it.</summary>
     public float? For(string audioPath) =>
-        reader.Read(audioPath) is { } reading ? Wanted(audioPath, reading, options()) : null;
+        reader.Read(audioPath) is { } reading
+            ? Wanted(audioPath, reading, options.CurrentValue)
+            : null;
 
     /// <summary>As <see cref="For"/>, reading the file first when it has no current reading.</summary>
     public async Task<float?> MeasureAsync(string audioPath, CancellationToken ct) =>
         (reader.Read(audioPath) ?? await reader.MeasureAsync(audioPath, ct)) is { } reading
-            ? Wanted(audioPath, reading, options())
+            ? Wanted(audioPath, reading, options.CurrentValue)
             : null;
 
     public static bool IsOnTarget(float gain, float wanted) =>

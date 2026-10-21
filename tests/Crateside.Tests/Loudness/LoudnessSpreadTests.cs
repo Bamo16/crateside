@@ -76,7 +76,11 @@ public sealed class LoudnessSpreadTests : IDisposable
 
         await reader.MeasureAsync(path, TestContext.Current.CancellationToken);
 
-        var spread = LoudnessSpread.From([path], reader, new ClipGains(reader, () => _options));
+        var spread = LoudnessSpread.From(
+            [path],
+            reader,
+            new ClipGains(reader, new CurrentOptions<LoudnessOptions>(() => _options))
+        );
 
         Assert.Equal(
             "Harry Nilsson - Without You (Instrumental - Full)",
@@ -95,7 +99,11 @@ public sealed class LoudnessSpreadTests : IDisposable
         );
         var unread = new LoudnessReader(new FakeEbur128(_ => -14));
 
-        var notRead = LoudnessSpread.From([path], unread, new ClipGains(unread, () => _options));
+        var notRead = LoudnessSpread.From(
+            [path],
+            unread,
+            new ClipGains(unread, new CurrentOptions<LoudnessOptions>(() => _options))
+        );
 
         Assert.Equal(1, spread.Vocals.BelowFloor);
         Assert.Equal(1, spread.Vocals.Count);
@@ -132,6 +140,10 @@ public sealed class LoudnessSpreadTests : IDisposable
             await reader.MeasureAsync(path, TestContext.Current.CancellationToken);
         }
 
-        return LoudnessSpread.From(paths, reader, new ClipGains(reader, () => _options));
+        return LoudnessSpread.From(
+            paths,
+            reader,
+            new ClipGains(reader, new CurrentOptions<LoudnessOptions>(() => _options))
+        );
     }
 }

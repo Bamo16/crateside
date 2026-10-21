@@ -273,11 +273,7 @@ public static class ServiceRegistration
             sp.GetRequiredService<IProcessRunner>(),
             LoudnessReader.DefaultPath
         ));
-        // Read on every use, so a target changed in appsettings re-levels every sidecar.
-        services.AddSingleton(sp => new ClipGains(
-            sp.GetRequiredService<LoudnessReader>(),
-            () => sp.GetRequiredService<IOptionsMonitor<LoudnessOptions>>().CurrentValue
-        ));
+        services.AddSingleton<ClipGains>();
         services.AddSingleton<IAudioDecoder, FfmpegAudioDecoder>();
         services.AddSingleton<ITransientDetector, OnsetDetector>();
         services.AddSingleton<SidecarWriter>();
