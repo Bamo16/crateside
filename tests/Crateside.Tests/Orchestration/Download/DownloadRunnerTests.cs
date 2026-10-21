@@ -1,4 +1,5 @@
 using Crateside.Core.Orchestration.Download;
+using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Tests.Orchestration.Download;
 
@@ -22,7 +23,7 @@ public sealed class DownloadRunnerTests : IDisposable
     }
 
     private DownloadRunner Runner(string stdout, int exitCode = 0) =>
-        new(FakeCli.Printing(_directory, "fake-stemforge", stdout, exitCode));
+        new(new ProcessRunner(), FakeCli.Printing(_directory, "fake-stemforge", stdout, exitCode));
 
     private static string Says(string path, string? premiumStatus = null, bool isPremium = false) =>
         premiumStatus is null
@@ -112,7 +113,10 @@ public sealed class DownloadRunnerTests : IDisposable
     [Fact]
     public async Task A_downloader_that_is_not_there_is_an_answer_rather_than_a_throw()
     {
-        var result = await new DownloadRunner("stemforge-cli-that-does-not-exist").RunAsync(
+        var result = await new DownloadRunner(
+            new ProcessRunner(),
+            "stemforge-cli-that-does-not-exist"
+        ).RunAsync(
             "https://example/watch",
             _directory,
             "flac",

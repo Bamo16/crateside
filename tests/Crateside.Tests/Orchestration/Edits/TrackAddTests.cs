@@ -2,6 +2,7 @@ using Crateside.Core;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Edits;
+using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
 using Crateside.Core.Tracks;
@@ -123,7 +124,7 @@ public sealed class TrackAddTests : IDisposable
         return new TrackAdd(
             TestLedger.Store(Path.Combine(_scratch, "runs.jsonl")),
             settings,
-            new SourceProbe(),
+            new SourceProbe(new ProcessRunner()),
             new ResolvedNameStore(Path.Combine(_scratch, "names.json"))
         );
     }

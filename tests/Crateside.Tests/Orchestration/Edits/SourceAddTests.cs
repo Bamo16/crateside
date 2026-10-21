@@ -1,6 +1,6 @@
-using Crateside.Core;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Edits;
+using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
 using Crateside.Core.Samples;
@@ -44,7 +44,7 @@ public sealed class SourceAddTests : IDisposable
                     Path.Combine(_root, "queue.json")
                 )
             ),
-            new SourceProbe()
+            new SourceProbe(new ProcessRunner())
         );
 
     [Fact]

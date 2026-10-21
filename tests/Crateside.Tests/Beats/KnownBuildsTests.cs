@@ -1,5 +1,6 @@
 using Crateside.Core;
 using Crateside.Core.Beats;
+using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Tests.Beats;
 
@@ -23,7 +24,7 @@ public sealed class KnownBuildsTests : IDisposable
     [Fact]
     public async Task A_path_that_is_not_ffmpeg_is_refused_and_nothing_is_kept()
     {
-        var builds = new KnownBuilds(Paths());
+        var builds = new KnownBuilds(new ProcessRunner(), Paths());
 
         var outcome = await builds.AddAsync(
             Path.Combine(_folder, "nothing.exe"),
@@ -41,7 +42,7 @@ public sealed class KnownBuildsTests : IDisposable
         if (!SkipUnlessHarness())
             return;
 
-        var builds = new KnownBuilds(Paths());
+        var builds = new KnownBuilds(new ProcessRunner(), Paths());
 
         await builds.AddAsync(Newest, TestContext.Current.CancellationToken);
         await builds.AddAsync(Older, TestContext.Current.CancellationToken);
@@ -56,7 +57,7 @@ public sealed class KnownBuildsTests : IDisposable
         if (!SkipUnlessHarness())
             return;
 
-        var builds = new KnownBuilds(Paths());
+        var builds = new KnownBuilds(new ProcessRunner(), Paths());
 
         await builds.AddAsync(Newest, TestContext.Current.CancellationToken);
         var again = await builds.AddAsync(Newest, TestContext.Current.CancellationToken);
@@ -71,7 +72,7 @@ public sealed class KnownBuildsTests : IDisposable
         if (!SkipUnlessHarness())
             return;
 
-        var builds = new KnownBuilds(Paths());
+        var builds = new KnownBuilds(new ProcessRunner(), Paths());
         await builds.AddAsync(Newest, TestContext.Current.CancellationToken);
         var older = Assert.IsType<BuildAddOutcome.Added>(
             await builds.AddAsync(Older, TestContext.Current.CancellationToken)
@@ -79,7 +80,7 @@ public sealed class KnownBuildsTests : IDisposable
 
         Assert.True(builds.Pin(older.Known.Build.Sha256));
 
-        var restarted = new KnownBuilds(Paths());
+        var restarted = new KnownBuilds(new ProcessRunner(), Paths());
 
         Assert.Equal(2, restarted.All.Count);
         Assert.Equal(older.Known.Build.Label, restarted.Pinned?.Build.Label);
@@ -91,7 +92,7 @@ public sealed class KnownBuildsTests : IDisposable
         if (!SkipUnlessHarness())
             return;
 
-        var builds = new KnownBuilds(Paths());
+        var builds = new KnownBuilds(new ProcessRunner(), Paths());
         var added = Assert.IsType<BuildAddOutcome.Added>(
             await builds.AddAsync(Newest, TestContext.Current.CancellationToken)
         );
@@ -107,7 +108,7 @@ public sealed class KnownBuildsTests : IDisposable
         if (!SkipUnlessHarness())
             return;
 
-        var builds = new KnownBuilds(Paths(Newest));
+        var builds = new KnownBuilds(new ProcessRunner(), Paths(Newest));
 
         await builds.SeedAsync(TestContext.Current.CancellationToken);
         await builds.SeedAsync(TestContext.Current.CancellationToken);
@@ -124,12 +125,16 @@ public sealed class KnownBuildsTests : IDisposable
 
         var audio = Path.Combine(_folder, "tone.wav");
         WriteSilence(audio);
-        var builds = new KnownBuilds(Paths());
+        var builds = new KnownBuilds(new ProcessRunner(), Paths());
         await builds.AddAsync(Older, TestContext.Current.CancellationToken);
         var newer = Assert.IsType<BuildAddOutcome.Added>(
             await builds.AddAsync(Newest, TestContext.Current.CancellationToken)
         );
-        var reader = new BeatReader(Path.Combine(_folder, "beats.json"), builds: builds);
+        var reader = new BeatReader(
+            new ProcessRunner(),
+            Path.Combine(_folder, "beats.json"),
+            builds: builds
+        );
 
         await reader.RefreshBuildAsync(TestContext.Current.CancellationToken);
         await reader.MeasureAsync(audio, TestContext.Current.CancellationToken);
@@ -153,12 +158,16 @@ public sealed class KnownBuildsTests : IDisposable
         var (old, fresh) = (Path.Combine(_folder, "old.wav"), Path.Combine(_folder, "fresh.wav"));
         WriteSilence(old);
         WriteSilence(fresh);
-        var builds = new KnownBuilds(Paths());
+        var builds = new KnownBuilds(new ProcessRunner(), Paths());
         await builds.AddAsync(Older, TestContext.Current.CancellationToken);
         var newer = Assert.IsType<BuildAddOutcome.Added>(
             await builds.AddAsync(Newest, TestContext.Current.CancellationToken)
         );
-        var reader = new BeatReader(Path.Combine(_folder, "beats.json"), builds: builds);
+        var reader = new BeatReader(
+            new ProcessRunner(),
+            Path.Combine(_folder, "beats.json"),
+            builds: builds
+        );
         await reader.RefreshBuildAsync(TestContext.Current.CancellationToken);
         await reader.MeasureAsync(old, TestContext.Current.CancellationToken);
 
@@ -181,7 +190,7 @@ public sealed class KnownBuildsTests : IDisposable
 
         var audio = Path.Combine(_folder, "tone.wav");
         WriteSilence(audio);
-        var builds = new KnownBuilds(Paths());
+        var builds = new KnownBuilds(new ProcessRunner(), Paths());
         var older = Assert.IsType<BuildAddOutcome.Added>(
             await builds.AddAsync(Older, TestContext.Current.CancellationToken)
         );
@@ -189,7 +198,11 @@ public sealed class KnownBuildsTests : IDisposable
             await builds.AddAsync(Newest, TestContext.Current.CancellationToken)
         );
         builds.Pin(newer.Known.Build.Sha256);
-        var reader = new BeatReader(Path.Combine(_folder, "beats.json"), builds: builds);
+        var reader = new BeatReader(
+            new ProcessRunner(),
+            Path.Combine(_folder, "beats.json"),
+            builds: builds
+        );
         await reader.RefreshBuildAsync(TestContext.Current.CancellationToken);
         await reader.MeasureAsync(audio, TestContext.Current.CancellationToken);
 

@@ -6,7 +6,7 @@ namespace Crateside.Core.Orchestration.Download;
 /// <summary>
 /// What an upload offers, asked with <c>--list-formats</c> before any audio is fetched (ADR 0019).
 /// </summary>
-public sealed class SourceProbe(string stemforge = "stemforge-cli")
+public sealed class SourceProbe(IProcessRunner processes, string stemforge = "stemforge-cli")
 {
     /// <summary>
     /// What the upload is and what it would arrive as. Never throws: a private, removed or
@@ -18,10 +18,8 @@ public sealed class SourceProbe(string stemforge = "stemforge-cli")
 
         try
         {
-            outcome = await ExternalProcess.RunAsync(
-                stemforge,
-                ["download", url, "--list-formats", "--json"],
-                workingDirectory: null,
+            outcome = await processes.RunAsync(
+                new ProcessRequest(stemforge, ["download", url, "--list-formats", "--json"]),
                 ct
             );
         }

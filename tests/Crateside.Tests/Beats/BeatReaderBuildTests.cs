@@ -1,4 +1,5 @@
 using Crateside.Core.Beats;
+using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Tests.Beats;
 
@@ -23,7 +24,7 @@ public class BeatReaderBuildTests
             return;
         }
 
-        var reader = new BeatReader(fileName: executable);
+        var reader = new BeatReader(new ProcessRunner(), fileName: executable);
 
         var build = await reader.RefreshBuildAsync(TestContext.Current.CancellationToken);
 
@@ -51,6 +52,7 @@ public class BeatReaderBuildTests
         }
 
         var build = await FfmpegBuild.IdentifyAsync(
+            new ProcessRunner(),
             executable,
             TestContext.Current.CancellationToken
         );

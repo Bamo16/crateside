@@ -89,8 +89,7 @@ public sealed partial class KeydetectFilter(IProcessRunner runner, string ffmpeg
         return outcome.Succeeded
             ? Parse(outcome.StandardError)
             : new KeydetectReading.Failed(
-                ExternalProcess.Describe(outcome.StandardError, outcome.StandardOutput)
-                    ?? $"ffmpeg exited with {outcome.ExitCode}"
+                outcome.LastLine ?? $"ffmpeg exited with {outcome.ExitCode}"
             );
     }
 

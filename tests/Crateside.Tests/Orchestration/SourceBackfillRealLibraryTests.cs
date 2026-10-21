@@ -1,6 +1,7 @@
 using Crateside.Core;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
+using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
 
@@ -22,7 +23,7 @@ public sealed class SourceBackfillRealLibraryTests
         var missing = new SourceBackfill(
             store,
             set,
-            new DownloadRunner(),
+            new DownloadRunner(new ProcessRunner()),
             TimeProvider.System,
             paths
         ).Missing();

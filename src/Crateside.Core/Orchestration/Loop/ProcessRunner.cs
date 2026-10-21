@@ -4,7 +4,7 @@ using CliWrap.Buffered;
 
 namespace Crateside.Core.Orchestration.Loop;
 
-/// <summary>Runs a command to completion: the seam a test replaces where <see cref="ExternalProcess"/> cannot be.</summary>
+/// <summary>Runs a command to completion: the seam a test replaces.</summary>
 public interface IProcessRunner
 {
     Task<ProcessOutcome> RunAsync(ProcessRequest request, CancellationToken ct = default);
@@ -49,4 +49,23 @@ public sealed class ProcessRunner : IProcessRunner
             StandardError = result.StandardError,
         };
     }
+}
+
+/// <summary>What a command did.</summary>
+public sealed record ProcessOutcome
+{
+    public required int ExitCode { get; init; }
+    public required string StandardOutput { get; init; }
+    public required string StandardError { get; init; }
+
+    public bool Succeeded => ExitCode is 0;
+
+    /// <summary>The last non-blank line it said, stderr before stdout, for a human to read.</summary>
+    public string? LastLine =>
+        new[] { StandardError, StandardOutput }
+            .Select(stream => stream.Trim())
+            .FirstOrDefault(stream => stream is { Length: > 0 })
+            ?.Split('\n')
+            .LastOrDefault(line => !line.AsSpan().IsWhiteSpace())
+            ?.Trim();
 }

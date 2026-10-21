@@ -1,7 +1,7 @@
 using Crateside.Core;
-using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
+using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
 
@@ -76,7 +76,10 @@ public sealed class SourceRetentionTests : IDisposable
         var backfill = new SourceBackfill(
             TestLedger.Store(),
             set,
-            new DownloadRunner(Path.Combine(_directory, "no-such-stemforge.exe")),
+            new DownloadRunner(
+                new ProcessRunner(),
+                Path.Combine(_directory, "no-such-stemforge.exe")
+            ),
             TimeProvider.System,
             new CratesidePaths
             {

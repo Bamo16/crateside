@@ -1,4 +1,4 @@
-using Crateside.Core.Ledger;
+using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Plans;
 using Crateside.Core.Staging;
@@ -15,7 +15,7 @@ public sealed class PresetCatalogRealDataTests
 
     private static async Task<PresetCatalog> RealCatalogAsync()
     {
-        var catalog = await new PresetCatalogReader().ReadAsync(
+        var catalog = await new PresetCatalogReader(new ProcessRunner()).ReadAsync(
             TestContext.Current.CancellationToken
         );
 

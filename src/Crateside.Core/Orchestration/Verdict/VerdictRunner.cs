@@ -144,10 +144,7 @@ public sealed partial class VerdictRunner(
                         : VerdictResult.Failed(
                             outcome.Succeeded
                                 ? problem
-                                : ExternalProcess.Describe(
-                                    outcome.StandardError,
-                                    outcome.StandardOutput
-                                ) ?? $"{fileName} exited with {outcome.ExitCode}"
+                                : outcome.LastLine ?? $"{fileName} exited with {outcome.ExitCode}"
                         );
 
                 default:

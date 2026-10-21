@@ -7,7 +7,10 @@ namespace Crateside.Core.Orchestration.Separation;
 /// <summary>
 /// Asks StemForge what it can make, once per process.
 /// </summary>
-public sealed class PresetCatalogReader(string stemforge = "stemforge-cli")
+public sealed class PresetCatalogReader(
+    IProcessRunner processes,
+    string stemforge = "stemforge-cli"
+)
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
 
@@ -48,10 +51,8 @@ public sealed class PresetCatalogReader(string stemforge = "stemforge-cli")
 
         try
         {
-            outcome = await ExternalProcess.RunAsync(
-                stemforge,
-                ["presets", "--json"],
-                workingDirectory: null,
+            outcome = await processes.RunAsync(
+                new ProcessRequest(stemforge, ["presets", "--json"]),
                 ct
             );
         }
