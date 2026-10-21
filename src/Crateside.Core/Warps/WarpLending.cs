@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+
 namespace Crateside.Core.Warps;
 
 /// <summary>
@@ -11,11 +13,13 @@ namespace Crateside.Core.Warps;
 public sealed class WarpLending(
     CratesidePaths paths,
     SidecarWriter writer,
-    WarpOptions options,
+    IOptions<WarpOptions> options,
     Func<string, StarterGrid?>? starterGrid = null,
     LiveAnalyses? waiting = null
 )
 {
+    private readonly WarpOptions _options = options.Value;
+
     private readonly Dictionary<string, string> _tried = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Tries each staged stem whose own files or siblings' sidecars changed since its last try.</summary>
@@ -37,7 +41,7 @@ public sealed class WarpLending(
             [
                 .. authorities.Union(sameKind, StringComparer.OrdinalIgnoreCase),
             ];
-            var tempo = options.StarterWarps is not StarterWarps.Off
+            var tempo = _options.StarterWarps is not StarterWarps.Off
                 ? TempoOf(siblings.CutsOf(target))
                 : null;
             var grid = tempo?.Grid;
@@ -81,11 +85,11 @@ public sealed class WarpLending(
     )
     {
         if (writer.HasWarpToLend(authorities, sameKind))
-            return options.LendAutomatically
+            return _options.LendAutomatically
                 ? await writer.BorrowAsync(target, authorities, sameKind, ct)
                 : null;
 
-        return (options.StarterWarps, tempo) switch
+        return (_options.StarterWarps, tempo) switch
         {
             (StarterWarps.Off, _) => null,
             (_, var (grid, from)) => await writer.StartAsync(target, sameKind, grid, from, ct),

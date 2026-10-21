@@ -7,6 +7,7 @@ using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
+using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Verdict;
 
@@ -28,7 +29,7 @@ public sealed class VerdictRunnerRealDataTests
                 DetectorSet.For(new ProcessRunner(), new CratesidePaths().KeydetectFfmpeg)
             ),
             new SourcePages(new FixedHttpClientFactory(new HttpClient())),
-            new JudgeOptions(),
+            Options.Create(new JudgeOptions()),
             TimeProvider.System
         );
 

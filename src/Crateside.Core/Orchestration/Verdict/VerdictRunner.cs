@@ -6,6 +6,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Loop;
 using Humanizer;
+using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Orchestration.Verdict;
 
@@ -19,7 +20,7 @@ public sealed partial class VerdictRunner(
     IProcessRunner processes,
     IWindowDetector detector,
     ISourcePages sourcePages,
-    JudgeOptions options,
+    IOptions<JudgeOptions> options,
     TimeProvider time,
     string fileName = "claude"
 )
@@ -30,6 +31,8 @@ public sealed partial class VerdictRunner(
     public const string SourcesFileName = "sources.json";
 
     private static readonly string[] Tools = ["Read", "Write", "WebSearch", "WebFetch"];
+
+    private readonly JudgeOptions _options = options.Value;
 
     /// <summary>The judge's instructions, the same for every track (judge-prompt.md).</summary>
     public static string Instructions { get; } = ReadInstructions();
@@ -186,7 +189,7 @@ public sealed partial class VerdictRunner(
                 $"- already judged as artist \"{artist}\", title \"{title}\": write those again"
             );
 
-        lines.AddRange([string.Empty, EarLine(options.Ear)]);
+        lines.AddRange([string.Empty, EarLine(_options.Ear)]);
         lines.AddRange(PagesLines(lookups));
 
         if (workingSet.TryReadEvidence(order.VideoId, out var evidence))
@@ -394,7 +397,7 @@ public sealed partial class VerdictRunner(
                     "-p",
                     .. session,
                     "--model",
-                    options.Model,
+                    _options.Model,
                     "--output-format",
                     "json",
                     "--append-system-prompt",
@@ -415,7 +418,7 @@ public sealed partial class VerdictRunner(
             )
             {
                 WorkingDirectory = folder,
-                Environment = options.Environment,
+                Environment = _options.Environment,
                 StandardInput = prompt,
             },
             ct
@@ -552,7 +555,7 @@ public sealed partial class VerdictRunner(
             StatesKey = ear.Collapsed,
             StatesMode = ear.Mode,
             Note =
-                options.Ear is EarWeight.HumanSource
+                _options.Ear is EarWeight.HumanSource
                     ? "counted as a human source"
                     : "weighed as a hint",
         };

@@ -7,6 +7,7 @@ using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Plans;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Crateside.Tests.Orchestration.Verdict;
@@ -55,7 +56,7 @@ public sealed class VerdictRunnerTests : IDisposable
     private FakeDetector Detector { get; } = new();
     private FakePages Pages { get; } = new();
 
-    private JudgeOptions Options { get; } =
+    private JudgeOptions Judge { get; } =
         new() { Environment = new() { ["ANTHROPIC_BASE_URL"] = "https://api.anthropic.com" } };
 
     public VerdictRunnerTests() => Directory.CreateDirectory(_directory);
@@ -70,7 +71,8 @@ public sealed class VerdictRunnerTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private VerdictRunner Runner => new(Ledger, Set, Sessions, Detector, Pages, Options, _time);
+    private VerdictRunner Runner =>
+        new(Ledger, Set, Sessions, Detector, Pages, Options.Create(Judge), _time);
 
     private static WorkOrder Order(bool instrumentalRelease = false, string? statedSource = null) =>
         WorkOrder.Compose(
@@ -410,7 +412,7 @@ public sealed class VerdictRunnerTests : IDisposable
 
         Assert.Contains("never raises confidence", Runner.Prompt(Order(), VerdictPath, []));
 
-        Options.Ear = EarWeight.HumanSource;
+        Judge.Ear = EarWeight.HumanSource;
 
         Assert.Contains("caps the verdict at MEDIUM", Runner.Prompt(Order(), VerdictPath, []));
     }
@@ -594,7 +596,7 @@ public sealed class VerdictRunnerTests : IDisposable
     public async Task What_the_user_hears_is_recorded_by_crateside_once_with_how_much_it_counted()
     {
         GiveEvidence();
-        Options.Ear = EarWeight.HumanSource;
+        Judge.Ear = EarWeight.HumanSource;
         Session(FromTheBars);
 
         await JudgeFromBarsAsync(Direction(new TonalCentre("C#", DiatonicMode.Aeolian)), []);

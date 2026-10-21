@@ -1,5 +1,6 @@
 using Crateside.Core.Beats;
 using Crateside.Core.Tempo;
+using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Warps;
 
@@ -11,16 +12,18 @@ public sealed class HandoffSidecars(
     CratesidePaths paths,
     SidecarWriter writer,
     BeatReader beats,
-    WarpOptions options
+    IOptions<WarpOptions> options
 )
 {
+    private readonly WarpOptions _options = options.Value;
+
     /// <summary>The sidecars to write, by the stem's path in the working set; empty when both switches are off.</summary>
     public async Task<IReadOnlyDictionary<string, PreparedSidecar>> PrepareAsync(
         IReadOnlyList<string> stems,
         CancellationToken ct = default
     )
     {
-        if (options is { LendAutomatically: false, StarterWarps: StarterWarps.Off })
+        if (_options is { LendAutomatically: false, StarterWarps: StarterWarps.Off })
             return new Dictionary<string, PreparedSidecar>();
 
         var siblings = WarpSiblings.Scan([paths.StagingFolder, paths.LibraryFolder]);
@@ -37,10 +40,10 @@ public sealed class HandoffSidecars(
 
             if (writer.HasWarpToLend(authorities, sameKind))
             {
-                if (options.LendAutomatically)
+                if (_options.LendAutomatically)
                     plan = await writer.PrepareBorrowAsync(cut.Path, authorities, sameKind, ct);
             }
-            else if (options.StarterWarps is not StarterWarps.Off)
+            else if (_options.StarterWarps is not StarterWarps.Off)
             {
                 if (!measured)
                 {

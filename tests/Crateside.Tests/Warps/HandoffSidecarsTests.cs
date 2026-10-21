@@ -3,6 +3,7 @@ using Crateside.Core;
 using Crateside.Core.Beats;
 using Crateside.Core.Orchestration.Handoff;
 using Crateside.Core.Warps;
+using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Warps;
 
@@ -62,7 +63,7 @@ public sealed class HandoffSidecarsTests : IDisposable
             _paths,
             writer,
             new BeatReader(),
-            new WarpOptions { StarterWarps = StarterWarps.OnTheGrid }
+            Options.Create(new WarpOptions { StarterWarps = StarterWarps.OnTheGrid })
         );
 
         new HandoffRunner(_paths).Run(
