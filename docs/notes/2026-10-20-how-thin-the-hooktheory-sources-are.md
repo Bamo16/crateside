@@ -81,8 +81,8 @@ cover under a tenth; only 9 reach half.** A TheoryTab almost never maps the whol
   two sections, 120 cover under a quarter of the video, 51 under a tenth.
 - Of the 14 `Corroborating` rows: 1 is one contributor with one or two sections, 9 cover under a
   quarter.
-- One section, one contributor and under a tenth of the video, as for *perfume!*: ten of the
-  first pages listed, among them Disclosure ft Sam Smith – *Latch*, Lil Wayne – *A Milli*,
+- One section, one contributor and under a tenth of the video, as for *perfume!*: for example
+  Disclosure ft Sam Smith – *Latch*, Lil Wayne – *A Milli*,
   Outkast – *So Fresh, So Clean* and fusq – *perfume!*.
 
 ## Key changes inside a section
