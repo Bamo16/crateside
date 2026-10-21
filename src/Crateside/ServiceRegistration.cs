@@ -167,9 +167,7 @@ public static class ServiceRegistration
         services.AddSingleton<FolderBrowser>();
         services.AddSingleton<PathOverrideStore>();
         services.AddSingleton<PauseStore>();
-        services.AddSingleton(sp => new DrainControl(
-            sp.GetRequiredService<PauseStore>().Read().Separation
-        ));
+        services.AddSingleton<DrainControl>();
         services.AddSingleton<SeparationDrainer>();
 
         services.AddSingleton<WorkingSet>();
@@ -188,16 +186,9 @@ public static class ServiceRegistration
         services.AddSingleton<EvidenceRunner>();
         services.AddSingleton<EvidenceDrainer>();
 
-        services.AddSingleton(sp => new VerdictControl(
-            sp.GetRequiredService<PauseStore>().Read().Judging
-        ));
+        services.AddSingleton<VerdictControl>();
         services.AddSingleton<QuotaGuard>();
-        services.AddSingleton(sp =>
-        {
-            var remembered = sp.GetRequiredService<PauseStore>().Read();
-
-            return new WindowRoll(remembered.Backfill, remembered.BackfillJudgedAt);
-        });
+        services.AddSingleton<WindowRoll>();
 
         services.AddSingleton<StageSignals>();
 

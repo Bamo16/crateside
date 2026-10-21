@@ -4,11 +4,11 @@ namespace Crateside.Core.Orchestration.Loop;
 /// Whether the workers are draining, and what they are doing right now. Shared between the
 /// background loop and the UI — for the stages that spend the GPU or quota (ADR 0024).
 /// </summary>
-public class DrainControl(bool startPaused = true) : DrainSignal
+public class DrainControl : DrainSignal
 {
     private readonly Lock _gate = new();
 
-    private bool _paused = startPaused;
+    private bool _paused;
     private string? _activity;
 
     /// <summary>Raised whenever the state changes, so a rendered page can catch up.</summary>
@@ -37,6 +37,12 @@ public class DrainControl(bool startPaused = true) : DrainSignal
     /// Stops new work being picked up. Does not interrupt a separation already running —
     /// that is what cancelling the loop does, and it is a heavier thing to ask for.
     /// </summary>
+    /// <summary>Separation's control, paused or not as the user last left it.</summary>
+    public DrainControl(PauseStore remembered)
+        : this(remembered.Read().Separation) { }
+
+    internal DrainControl(bool startPaused = true) => _paused = startPaused;
+
     public void Pause() => Set(paused: true);
 
     public void Resume() => Set(paused: false);
