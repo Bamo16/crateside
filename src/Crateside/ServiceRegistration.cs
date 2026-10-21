@@ -109,7 +109,7 @@ public static class ServiceRegistration
         services.AddSingleton<StagingReader>();
         services.AddSingleton(sp => new WarpTempoReader(
             sp.GetRequiredService<CratesidePaths>().TempoCache,
-            sp.GetRequiredService<WrittenWarps>().IsStarter
+            sp.GetRequiredService<WrittenWarps>()
         ));
         // hpss matched an AI drum stem on the instrumental, measured 2026-09-30 (#83).
         services.AddSingleton<KnownBuilds>();

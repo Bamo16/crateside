@@ -25,7 +25,7 @@ public sealed class StarterGateRealLibraryTests
         Assert.SkipUnless(Directory.Exists(Paths.LibraryFolder), "The library is not here.");
 
         var written = new WrittenWarps(WrittenWarps.DefaultPath);
-        var warps = new WarpTempoReader(isStarter: written.IsCratesides);
+        var warps = new WarpTempoReader();
         bool[] holds =
         [
             .. Directory
@@ -34,6 +34,7 @@ public sealed class StarterGateRealLibraryTests
                     Readings.Read(path)
                         is { Bpm: not null, TempoWander: { } wander, Segments: var segments }
                     && (wander >= WandersAt || segments.Count > 1)
+                    && !written.IsCratesides(path)
                     && warps.Read(path) is { Shape: TempoShape.Steady }
                 )
                 .Select(Holds)
