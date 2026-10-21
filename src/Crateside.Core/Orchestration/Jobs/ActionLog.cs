@@ -6,16 +6,16 @@ namespace Crateside.Core.Orchestration.Jobs;
 /// Everything the user did to a track, in <c>%APPDATA%\crateside\actions.jsonl</c>: the half of a
 /// track's activity that <c>jobs.jsonl</c> cannot say (#59).
 /// </summary>
-public sealed class ActionLog(string path, TimeProvider? time = null)
+public sealed class ActionLog(string? path = null, TimeProvider? time = null)
 {
+    private readonly string _path =
+        path
+        ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "actions.jsonl");
     private readonly TimeProvider _time = time ?? TimeProvider.System;
     private readonly Lock _gate = new();
 
     /// <summary>Records nothing, for a caller with nowhere to say it.</summary>
     public static ActionLog None { get; } = new(string.Empty);
-
-    public static ActionLog Default() =>
-        new(Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "actions.jsonl"));
 
     /// <param name="passFrom">The stage this action sends the track back to, if it starts a pass.</param>
     public void Record(
@@ -41,7 +41,7 @@ public sealed class ActionLog(string path, TimeProvider? time = null)
 
     public IReadOnlyList<UserAction> All()
     {
-        if (path.Length is 0 || !File.Exists(path))
+        if (_path.Length is 0 || !File.Exists(_path))
             return [];
 
         List<UserAction> actions = [];
@@ -49,7 +49,7 @@ public sealed class ActionLog(string path, TimeProvider? time = null)
         try
         {
             using var stream = new FileStream(
-                path,
+                _path,
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.ReadWrite | FileShare.Delete
@@ -76,16 +76,16 @@ public sealed class ActionLog(string path, TimeProvider? time = null)
 
     private void Append(UserAction action)
     {
-        if (path.Length is 0)
+        if (_path.Length is 0)
             return;
 
         try
         {
             lock (_gate)
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
                 File.AppendAllText(
-                    path,
+                    _path,
                     JsonSerializer.Serialize(action, JobsJsonContext.Default.UserAction)
                         + Environment.NewLine
                 );

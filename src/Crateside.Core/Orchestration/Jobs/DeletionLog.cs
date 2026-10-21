@@ -7,18 +7,16 @@ namespace Crateside.Core.Orchestration.Jobs;
 /// Every sample crateside sent to the recycle bin on its own initiative, in
 /// <c>%APPDATA%\crateside\deletions.jsonl</c>.
 /// </summary>
-public sealed class DeletionLog(string path, TimeProvider? time = null)
+public sealed class DeletionLog(string? path = null, TimeProvider? time = null)
 {
+    private readonly string _path =
+        path
+        ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "deletions.jsonl");
     private readonly TimeProvider _time = time ?? TimeProvider.System;
     private readonly Lock _gate = new();
 
     /// <summary>Recycles without recording, for a caller with nowhere to say it.</summary>
     public static DeletionLog None { get; } = new(string.Empty);
-
-    public static DeletionLog Default() =>
-        new(
-            Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "deletions.jsonl")
-        );
 
     /// <summary>
     /// Sends a sample to the recycle bin and records which upload it was of — read before it goes
@@ -46,7 +44,7 @@ public sealed class DeletionLog(string path, TimeProvider? time = null)
 
     public IReadOnlyList<Deletion> All()
     {
-        if (path.Length is 0 || !File.Exists(path))
+        if (_path.Length is 0 || !File.Exists(_path))
             return [];
 
         List<Deletion> deletions = [];
@@ -54,7 +52,7 @@ public sealed class DeletionLog(string path, TimeProvider? time = null)
         try
         {
             using var stream = new FileStream(
-                path,
+                _path,
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.ReadWrite | FileShare.Delete
@@ -81,16 +79,16 @@ public sealed class DeletionLog(string path, TimeProvider? time = null)
 
     private void Append(Deletion deletion)
     {
-        if (path.Length is 0)
+        if (_path.Length is 0)
             return;
 
         try
         {
             lock (_gate)
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
                 File.AppendAllText(
-                    path,
+                    _path,
                     JsonSerializer.Serialize(deletion, JobsJsonContext.Default.Deletion)
                         + Environment.NewLine
                 );

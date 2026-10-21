@@ -62,7 +62,7 @@ public static class ServiceRegistration
         builder.Services.Configure<PlaylistOptions>(
             builder.Configuration.GetSection(PlaylistOptions.SectionName)
         );
-        builder.Services.AddSingleton(_ => new JudgeSettingsStore());
+        builder.Services.AddSingleton<JudgeSettingsStore>();
         builder
             .Services.AddOptions<JudgeOptions>()
             .Bind(builder.Configuration.GetSection(JudgeOptions.SectionName))
@@ -76,7 +76,7 @@ public static class ServiceRegistration
         builder.Services.Configure<LoudnessOptions>(
             builder.Configuration.GetSection(LoudnessOptions.SectionName)
         );
-        builder.Services.AddSingleton(_ => new WarpSettingsStore());
+        builder.Services.AddSingleton<WarpSettingsStore>();
         builder
             .Services.AddOptions<WarpOptions>()
             .Bind(builder.Configuration.GetSection(WarpOptions.SectionName))
@@ -154,7 +154,7 @@ public static class ServiceRegistration
         services.AddSingleton<PlaylistRemover>();
         services.AddSingleton<IntakeStore>();
         services.AddSingleton<BumpedTrack>();
-        services.AddSingleton(_ => new PresetCatalogReader());
+        services.AddSingleton<PresetCatalogReader>();
 
         // Both trailing delegates and the catalog are passed by hand: the container resolves the
         // two ReadReopenedTracks parameters to the same registration, and they mean different
@@ -195,55 +195,38 @@ public static class ServiceRegistration
         return services;
     }
 
-    /// <summary>
-    /// Draining, registered by factory: the container cannot resolve a constructor default like
-    /// <c>maxStrikes</c>.
-    /// </summary>
+    /// <summary>Draining, and the stores and runners each stage reads and writes through.</summary>
     public static IServiceCollection AddCratesideOrchestration(this IServiceCollection services)
     {
         services.AddSingleton<StageHub>();
-        services.AddSingleton(sp => new JobStore(hub: sp.GetRequiredService<StageHub>()));
+        services.AddSingleton<JobStore>();
         services.AddSingleton<IProcessProbe, SystemProcessProbe>();
         services.AddSingleton<SeparationInterlock>();
-        services.AddSingleton(sp => new SeparationSelector(sp.GetRequiredService<JobStore>()));
-        services.AddSingleton(sp => new SeparationRunner(
-            sp.GetRequiredService<SeparationInterlock>(),
-            sp.GetRequiredService<WorkingSet>(),
-            sp.GetRequiredService<CratesidePaths>()
-        ));
+        services.AddSingleton<SeparationSelector>();
+        services.AddSingleton<SeparationRunner>();
         // Running unless the user paused it, and a pause of theirs outlives a restart.
         services.AddSingleton<FolderBrowser>();
-        services.AddSingleton(_ => new PathOverrideStore());
-        services.AddSingleton(_ => new PauseStore());
+        services.AddSingleton<PathOverrideStore>();
+        services.AddSingleton<PauseStore>();
         services.AddSingleton(sp => new DrainControl(
             sp.GetRequiredService<PauseStore>().Read().Separation
         ));
         services.AddSingleton<SeparationDrainer>();
 
-        services.AddSingleton(_ => new WorkingSet());
+        services.AddSingleton<WorkingSet>();
 
-        services.AddSingleton(_ => new DownloadRunner());
-        services.AddSingleton(sp => new DownloadSelector(
-            sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<WorkingSet>(),
-            sp.GetRequiredService<CratesidePaths>()
-        ));
+        services.AddSingleton<DownloadRunner>();
+        services.AddSingleton<DownloadSelector>();
         services.AddSingleton<DownloadDrainer>();
 
-        services.AddSingleton(sp => new EvidenceSelector(
-            sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<WorkingSet>()
-        ));
+        services.AddSingleton<EvidenceSelector>();
         services.AddSingleton(sp =>
             DetectorSet.For(
                 sp.GetRequiredService<IProcessRunner>(),
                 sp.GetRequiredService<CratesidePaths>().KeydetectFfmpeg
             )
         );
-        services.AddSingleton(sp => new EvidenceRunner(
-            sp.GetRequiredService<WorkingSet>(),
-            sp.GetRequiredService<DetectorSet>()
-        ));
+        services.AddSingleton<EvidenceRunner>();
         services.AddSingleton<EvidenceDrainer>();
 
         services.AddSingleton(sp => new VerdictControl(
@@ -262,10 +245,7 @@ public static class ServiceRegistration
             return new WindowRoll(remembered.Backfill, remembered.BackfillJudgedAt);
         });
 
-        services.AddSingleton(sp => new StageSignals(
-            sp.GetRequiredService<DrainControl>(),
-            sp.GetRequiredService<VerdictControl>()
-        ));
+        services.AddSingleton<StageSignals>();
 
         services.AddSingleton(sp => new VerdictSelector(
             sp.GetRequiredService<JobStore>(),
@@ -298,50 +278,28 @@ public static class ServiceRegistration
             sp.GetRequiredService<TimeProvider>()
         ));
         services.AddSingleton<VerdictDrainer>();
-        services.AddSingleton(sp => new BarJudging(
-            sp.GetRequiredService<VerdictDrainer>(),
-            sp.GetRequiredService<WorkingSet>(),
-            sp.GetRequiredService<DownloadRunner>(),
-            sp.GetRequiredService<TimeProvider>()
-        ));
+        services.AddSingleton<BarJudging>();
 
-        services.AddSingleton(sp => new HandoffSelector(
-            sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<CratesidePaths>()
-        ));
-        services.AddSingleton(_ => DeletionLog.Default());
-        services.AddSingleton(_ => ActionLog.Default());
-        services.AddSingleton(sp => new HandoffRunner(
-            sp.GetRequiredService<CratesidePaths>(),
-            sp.GetRequiredService<DeletionLog>()
-        ));
+        services.AddSingleton<HandoffSelector>();
+        services.AddSingleton<DeletionLog>();
+        services.AddSingleton<ActionLog>();
+        services.AddSingleton<HandoffRunner>();
         services.AddSingleton<HandoffDrainer>();
 
         services.AddSingleton<FolderInfoWriter>();
-        services.AddSingleton(sp => new TaggingSelector(
-            sp.GetRequiredService<JobStore>(),
-            sp.GetRequiredService<CratesidePaths>()
-        ));
-        services.AddSingleton(sp => new TaggingRunner(
-            sp.GetRequiredService<CratesidePaths>(),
-            sp.GetRequiredService<FolderInfoWriter>()
-        ));
+        services.AddSingleton<TaggingSelector>();
+        services.AddSingleton<TaggingRunner>();
         services.AddSingleton<TaggingDrainer>();
 
-        services.AddSingleton(sp => new BackingRunner(
-            sp.GetRequiredService<FolderInfoReader>(),
-            sp.GetRequiredService<FolderInfoWriter>()
-        ));
-        services.AddSingleton(_ => new KeyCorrections());
+        services.AddSingleton<BackingRunner>();
+        services.AddSingleton<KeyCorrections>();
         services.AddSingleton(sp => new TagStoreBackups(
             TagStoreBackups.DefaultRoot,
             sp.GetRequiredService<TimeProvider>()
         ));
 
-        // Factories for the same reason as the rest: the container will not apply the trailing
-        // optional path and executable-name defaults.
-        services.AddSingleton(_ => new ResolvedNameStore());
-        services.AddSingleton(_ => new NameResolver());
+        services.AddSingleton<ResolvedNameStore>();
+        services.AddSingleton<NameResolver>();
 
         // Not registered beside the pausable stages on purpose (ADR 0014): a name resolve spends
         // one metadata fetch and contends for nothing, so it runs unattended like detection.
@@ -367,13 +325,9 @@ public static class ServiceRegistration
             sp.GetRequiredService<LoudnessReader>(),
             () => sp.GetRequiredService<IOptionsMonitor<LoudnessOptions>>().CurrentValue
         ));
-        services.AddSingleton(sp => new SidecarWriter(
-            new FfmpegAudioDecoder(),
-            new OnsetDetector(),
-            sp.GetRequiredService<WrittenWarps>(),
-            sp.GetRequiredService<TransientOrigins>(),
-            sp.GetRequiredService<ClipGains>()
-        ));
+        services.AddSingleton<IAudioDecoder, FfmpegAudioDecoder>();
+        services.AddSingleton<ITransientDetector, OnsetDetector>();
+        services.AddSingleton<SidecarWriter>();
         services.AddSingleton(sp => new WarpLending(
             sp.GetRequiredService<CratesidePaths>(),
             sp.GetRequiredService<SidecarWriter>(),
@@ -428,13 +382,8 @@ public static class ServiceRegistration
 
         services.AddHostedService<WindowRollWorker>();
 
-        services.AddSingleton(_ => new SourceProbe());
-        services.AddSingleton(sp => new TrackAdd(
-            sp.GetRequiredService<LedgerStore>(),
-            sp.GetRequiredService<TrackInstructionStore>(),
-            sp.GetRequiredService<SourceProbe>(),
-            sp.GetRequiredService<ResolvedNameStore>()
-        ));
+        services.AddSingleton<SourceProbe>();
+        services.AddSingleton<TrackAdd>();
         services.AddSingleton(sp => new TrackRemoval(
             sp.GetRequiredService<TrackInstructionStore>(),
             sp.GetRequiredService<IntakeStore>(),
@@ -442,15 +391,8 @@ public static class ServiceRegistration
             StagedFiles(sp),
             sp.GetRequiredService<DeletionLog>()
         ));
-        services.AddSingleton(sp => new SampleAdoption(
-            sp.GetRequiredService<TrackInstructionStore>(),
-            sp.GetRequiredService<CratesidePaths>()
-        ));
-        services.AddSingleton(sp => new SourceAdd(
-            sp.GetRequiredService<LedgerStore>(),
-            sp.GetRequiredService<TrackInstructionStore>(),
-            sp.GetRequiredService<SourceProbe>()
-        ));
+        services.AddSingleton<SampleAdoption>();
+        services.AddSingleton<SourceAdd>();
 
         services.AddSingleton(sp => new StemRecut(
             sp.GetRequiredService<TrackInstructionStore>(),
@@ -475,10 +417,7 @@ public static class ServiceRegistration
                     ),
             sp.GetRequiredService<ISetLinks>()
         ));
-        services.AddSingleton(sp => new LookalikeAnswer(
-            sp.GetRequiredService<LedgerStore>(),
-            sp.GetRequiredService<TrackInstructionStore>()
-        ));
+        services.AddSingleton<LookalikeAnswer>();
 
         services.AddSingleton(sp => new TrackSwap(
             sp.GetRequiredService<LedgerStore>(),
@@ -488,15 +427,9 @@ public static class ServiceRegistration
             deletions: sp.GetRequiredService<DeletionLog>()
         ));
 
-        services.AddSingleton(_ => new SourceRetentionStore());
-        services.AddSingleton(sp => new SourceIndex(sp.GetRequiredService<WorkingSet>()));
-        services.AddSingleton(sp => new SourceBackfill(
-            sp.GetRequiredService<LedgerStore>(),
-            sp.GetRequiredService<WorkingSet>(),
-            sp.GetRequiredService<DownloadRunner>(),
-            sp.GetRequiredService<TimeProvider>(),
-            sp.GetRequiredService<CratesidePaths>()
-        ));
+        services.AddSingleton<SourceRetentionStore>();
+        services.AddSingleton<SourceIndex>();
+        services.AddSingleton<SourceBackfill>();
         services.AddSingleton(sp => new WorkingSetJanitor(
             sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<WorkingSet>(),
@@ -550,7 +483,7 @@ public static class ServiceRegistration
             })
             .SetHandlerLifetime(TimeSpan.FromMinutes(5));
 
-        services.AddSingleton(_ => new GenreStore());
+        services.AddSingleton<GenreStore>();
         services
             .AddHttpClient<GenreLookup>(client => client.Timeout = TimeSpan.FromSeconds(15))
             .SetHandlerLifetime(TimeSpan.FromMinutes(5));
@@ -567,7 +500,7 @@ public static class ServiceRegistration
             return store;
         });
 
-        services.AddSingleton(_ => new FamiliarityStore());
+        services.AddSingleton<FamiliarityStore>();
         services
             .AddHttpClient<FamiliarityLookup>(client => client.Timeout = TimeSpan.FromSeconds(15))
             .SetHandlerLifetime(TimeSpan.FromMinutes(5));
