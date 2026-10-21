@@ -78,6 +78,7 @@ when to search, the trusted sites and the verdict schema, to about sixty lines. 
 model is added only when that model is measured to need it. Two rules are fixed in it:
 - An authoritative source that states another key **caps the verdict at MEDIUM**, whatever the
   chord argument. Six HIGH verdicts overruled one.
+  (Amended by [ADR 0062](0062-a-thin-hooktheory-page-does-not-cap-a-verdict.md): a thin Hooktheory page does not trigger it.)
 - Algorithmic key sites (Tunebat, SongBPM and the like) are not sources. They matched the verdict
   less often than keydetect alone.
 
