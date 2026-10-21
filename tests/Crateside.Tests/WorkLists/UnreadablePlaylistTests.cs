@@ -31,7 +31,7 @@ public sealed class UnreadablePlaylistTests : IDisposable
     private string PathIn(string name) => Path.Combine(_directory, name);
 
     /// <summary>A service whose reader has no credential, so every read refuses.</summary>
-    private WorkListService Unreadable(IntakeStore intake)
+    private WorkListService Unreadable(IntakeStore intake, out CachedPlaylist playlist)
     {
         var options = Options.Create(new PlaylistOptions());
         var file = new QueueFile(options, PathIn("queue.json"));
@@ -42,6 +42,13 @@ public sealed class UnreadablePlaylistTests : IDisposable
                 PathIn("tokens")
             ),
             new PlaylistWriteAccess()
+        );
+        var settings = new PlaylistSettingsStore(file);
+        playlist = new CachedPlaylist(
+            new PlaylistReader(options),
+            settings,
+            new PlaylistRemover(authorizer),
+            TimeProvider.System
         );
 
         return new WorkListService(
@@ -55,13 +62,12 @@ public sealed class UnreadablePlaylistTests : IDisposable
                     StemsUnresolvedKey = PathIn("unresolved"),
                 }
             ),
-            new PlaylistSettingsStore(file),
+            settings,
             new TrackInstructionStore(file),
-            new PlaylistReader(options),
             authorizer,
-            new PlaylistRemover(authorizer),
             new BumpedTrack(),
-            intake
+            intake,
+            playlist
         );
     }
 
@@ -79,7 +85,7 @@ public sealed class UnreadablePlaylistTests : IDisposable
             },
         ]);
 
-        var view = await Unreadable(intake).ReadAsync(TestContext.Current.CancellationToken);
+        var view = await Unreadable(intake, out _).ReadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(Known, Assert.Single(view.Items).VideoId);
     }
@@ -87,21 +93,21 @@ public sealed class UnreadablePlaylistTests : IDisposable
     [Fact]
     public async Task The_refusal_is_reported_rather_than_thrown()
     {
-        var service = Unreadable(new IntakeStore(PathIn("intake.json")));
+        var service = Unreadable(new IntakeStore(PathIn("intake.json")), out var playlist);
 
         await service.ReadAsync(TestContext.Current.CancellationToken);
 
-        Assert.NotNull(service.PlaylistProblem);
+        Assert.NotNull(playlist.Problem);
     }
 
     [Fact]
     public async Task A_scan_that_could_not_read_reports_no_problem_once_it_can()
     {
-        var service = Unreadable(new IntakeStore(PathIn("intake.json")));
+        var service = Unreadable(new IntakeStore(PathIn("intake.json")), out var playlist);
 
         var scan = await service.ScanAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(service.PlaylistProblem, scan.PlaylistProblem);
+        Assert.Equal(playlist.Problem, scan.PlaylistProblem);
         Assert.NotNull(scan.PlaylistProblem);
     }
 }
