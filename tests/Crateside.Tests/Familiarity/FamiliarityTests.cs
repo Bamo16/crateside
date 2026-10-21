@@ -166,16 +166,18 @@ public sealed class FamiliarityLookupTests
     public async Task The_loudest_credited_artist_counts_featured_ones_included()
     {
         var lookup = new FamiliarityLookup(
-            new HttpClient(
-                new Deezer(
-                    new()
-                    {
-                        ["/search"] = Search,
-                        ["/track/2"] =
-                            """{"contributors":[{"id":10,"role":"Main"},{"id":11,"role":"Featured"}]}""",
-                        ["/artist/10"] = """{"name":"Estelle","nb_fan":117646}""",
-                        ["/artist/11"] = """{"name":"Kanye West","nb_fan":14000000}""",
-                    }
+            new FixedHttpClientFactory(
+                new HttpClient(
+                    new Deezer(
+                        new()
+                        {
+                            ["/search"] = Search,
+                            ["/track/2"] =
+                                """{"contributors":[{"id":10,"role":"Main"},{"id":11,"role":"Featured"}]}""",
+                            ["/artist/10"] = """{"name":"Estelle","nb_fan":117646}""",
+                            ["/artist/11"] = """{"name":"Kanye West","nb_fan":14000000}""",
+                        }
+                    )
                 )
             )
         );
@@ -193,11 +195,17 @@ public sealed class FamiliarityLookupTests
     public async Task A_song_deezer_does_not_have_reads_as_unknown_and_its_rate_limit_as_a_failure()
     {
         var missing = new FamiliarityLookup(
-            new HttpClient(new Deezer(new() { ["/search"] = """{"data":[]}""" }))
+            new FixedHttpClientFactory(
+                new HttpClient(new Deezer(new() { ["/search"] = """{"data":[]}""" }))
+            )
         );
         var limited = new FamiliarityLookup(
-            new HttpClient(
-                new Deezer(new() { ["/search"] = """{"error":{"type":"Exception","code":4}}""" })
+            new FixedHttpClientFactory(
+                new HttpClient(
+                    new Deezer(
+                        new() { ["/search"] = """{"error":{"type":"Exception","code":4}}""" }
+                    )
+                )
             )
         );
 

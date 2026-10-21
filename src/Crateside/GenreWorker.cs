@@ -10,7 +10,7 @@ namespace Crateside;
 public sealed class GenreWorker(
     TracksService tracks,
     GenreStore store,
-    IServiceProvider services,
+    GenreLookup lookup,
     ILogger<GenreWorker> logger
 ) : BackgroundService
 {
@@ -71,8 +71,6 @@ public sealed class GenreWorker(
             .DistinctBy(song => song.Song, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        // Resolved per tick: a typed HttpClient held for the life of the app outlives its handler.
-        var lookup = services.GetRequiredService<GenreLookup>();
         var suggested = 0;
 
         foreach (var (song, name) in unasked)

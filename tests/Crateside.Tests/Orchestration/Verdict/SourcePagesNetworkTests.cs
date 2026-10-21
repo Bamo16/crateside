@@ -1,3 +1,4 @@
+using Crateside.Core;
 using Crateside.Core.Orchestration.Verdict;
 
 namespace Crateside.Tests.Orchestration.Verdict;
@@ -16,7 +17,7 @@ public sealed class SourcePagesNetworkTests
 
             var client = new HttpClient();
 
-            client.DefaultRequestHeaders.UserAgent.ParseAdd(SourcePages.UserAgent);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(CratesideHttp.UserAgent);
 
             return new SourcePages(new FixedHttpClientFactory(client));
         }

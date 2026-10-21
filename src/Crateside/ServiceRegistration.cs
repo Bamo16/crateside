@@ -22,9 +22,7 @@ using Crateside.Core.Orchestration.Tagging;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Playlist;
 using Crateside.Core.Quota;
-using Crateside.Core.Samples;
 using Crateside.Core.Staging;
-using Crateside.Core.Tempo;
 using Crateside.Core.Tracks;
 using Crateside.Core.Warps;
 using Crateside.Core.Watching;
@@ -121,6 +119,15 @@ public static class ServiceRegistration
     private static IServiceCollection AddAppWide(this IServiceCollection services)
     {
         services.AddSingleton(TimeProvider.System);
+        services.ConfigureHttpClientDefaults(http =>
+        {
+            http.ConfigureHttpClient(client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(15);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd(CratesideHttp.UserAgent);
+            });
+            http.SetHandlerLifetime(TimeSpan.FromMinutes(5));
+        });
         services.AddSingleton<FolderBrowser>();
         services.AddSingleton<PathOverrideStore>();
         services.AddSingleton<FolderInfoReader>();
@@ -153,9 +160,7 @@ public static class ServiceRegistration
     private static IServiceCollection AddFamiliarity(this IServiceCollection services)
     {
         services.AddSingleton<FamiliarityStore>();
-        services
-            .AddHttpClient<FamiliarityLookup>(client => client.Timeout = TimeSpan.FromSeconds(15))
-            .SetHandlerLifetime(TimeSpan.FromMinutes(5));
+        services.AddSingleton<FamiliarityLookup>();
         services.AddHostedService<FamiliarityWorker>();
 
         return services;
@@ -164,9 +169,7 @@ public static class ServiceRegistration
     private static IServiceCollection AddGenres(this IServiceCollection services)
     {
         services.AddSingleton<GenreStore>();
-        services
-            .AddHttpClient<GenreLookup>(client => client.Timeout = TimeSpan.FromSeconds(15))
-            .SetHandlerLifetime(TimeSpan.FromMinutes(5));
+        services.AddSingleton<GenreLookup>();
         services.AddHostedService<GenreWorker>();
 
         return services;
@@ -255,14 +258,6 @@ public static class ServiceRegistration
 
         services.AddSingleton<VerdictControl>();
         services.AddSingleton<VerdictSelector>();
-        services.AddHttpClient(
-            SourcePages.ClientName,
-            client =>
-            {
-                client.Timeout = TimeSpan.FromSeconds(15);
-                client.DefaultRequestHeaders.UserAgent.ParseAdd(SourcePages.UserAgent);
-            }
-        );
         services.AddSingleton<ISourcePages, SourcePages>();
         services.AddSingleton<VerdictRunner>();
         services.AddSingleton<VerdictDrainer>();
@@ -333,16 +328,14 @@ public static class ServiceRegistration
     {
         // QuotaReader sets its own authorization and beta headers per call; this configures
         // transport only.
-        services
-            .AddHttpClient(
-                QuotaReader.ClientName,
-                client =>
-                {
-                    client.BaseAddress = new Uri("https://api.anthropic.com");
-                    client.Timeout = TimeSpan.FromSeconds(5);
-                }
-            )
-            .SetHandlerLifetime(TimeSpan.FromMinutes(5));
+        services.AddHttpClient(
+            QuotaReader.ClientName,
+            client =>
+            {
+                client.BaseAddress = new Uri("https://api.anthropic.com");
+                client.Timeout = TimeSpan.FromSeconds(5);
+            }
+        );
         services.AddSingleton<IQuotaReader, QuotaReader>();
         services.AddSingleton<QuotaGuard>();
         services.AddSingleton<WindowRoll>();
