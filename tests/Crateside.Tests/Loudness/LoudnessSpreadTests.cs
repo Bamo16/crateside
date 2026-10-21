@@ -57,6 +57,34 @@ public sealed class LoudnessSpreadTests : IDisposable
     }
 
     [Fact]
+    public async Task A_sample_is_named_as_its_file_is_not_with_its_artist_added_again()
+    {
+        const string name = "Harry Nilsson - Without You (Instrumental - Full).flac";
+        var reader = new LoudnessReader(new FakeEbur128(_ => -21));
+        var path = Path.Combine(_root, name);
+
+        File.Copy(Fixture, path);
+
+        using (var file = TagLib.File.Create(path))
+        {
+            file.Tag.Title = "Harry Nilsson - Without You";
+            file.Tag.Performers = ["Harry Nilsson"];
+            file.Tag.Comment =
+                "stemforge/0.3.1.0 | preset: Instrumental - Full | source: https://www.youtube.com/watch?v=aaaaaaaaaaa";
+            file.Save();
+        }
+
+        await reader.MeasureAsync(path, TestContext.Current.CancellationToken);
+
+        var spread = LoudnessSpread.From([path], reader, new ClipGains(reader, () => _options));
+
+        Assert.Equal(
+            "Harry Nilsson - Without You (Instrumental - Full)",
+            Assert.Single(spread.Instrumentals.Boosts).Name
+        );
+    }
+
+    [Fact]
     public async Task A_sample_below_the_floor_or_unread_is_counted_apart_from_the_histogram()
     {
         var path = Path.Combine(_root, "Quiet (Vocal - Full).flac");
