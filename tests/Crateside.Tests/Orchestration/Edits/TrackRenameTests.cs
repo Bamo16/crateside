@@ -63,7 +63,7 @@ public sealed class TrackRenameTests : IDisposable
             new ListedStagedFiles(() => _staged),
             _writer,
             _paths,
-            _ => _library,
+            new FilesInLibrary(_library),
             _sets
         );
 
@@ -563,4 +563,9 @@ internal sealed class FakeSets : ISetLinks
 
         return new SetRelink([.. Users.Except(Failing)], Failing);
     }
+}
+
+internal sealed class FilesInLibrary(List<string> files) : ILibraryFiles
+{
+    public IReadOnlyList<string> Of(string videoId) => files;
 }
