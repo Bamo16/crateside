@@ -177,12 +177,7 @@ public static class ServiceRegistration
         services.AddSingleton<DownloadDrainer>();
 
         services.AddSingleton<EvidenceSelector>();
-        services.AddSingleton(sp =>
-            DetectorSet.For(
-                sp.GetRequiredService<IProcessRunner>(),
-                sp.GetRequiredService<CratesidePaths>().KeydetectFfmpeg
-            )
-        );
+        services.AddSingleton<DetectorSet>();
         services.AddSingleton<EvidenceRunner>();
         services.AddSingleton<EvidenceDrainer>();
 
@@ -268,14 +263,11 @@ public static class ServiceRegistration
 
         services.AddHostedService<DrainWorker>();
 
-        // AddSingleton<IHostedService> rather than AddHostedService: the latter routes through
-        // TryAddEnumerable, which de-duplicates by implementation type and would silently
-        // discard the second StageWorker.
-        services.AddSingleton<IHostedService>(sp => Worker<DownloadDrainer>(sp));
-        services.AddSingleton<IHostedService>(sp => Worker<EvidenceDrainer>(sp));
-        services.AddSingleton<IHostedService>(sp => Worker<VerdictDrainer>(sp));
-        services.AddSingleton<IHostedService>(sp => Worker<HandoffDrainer>(sp));
-        services.AddSingleton<IHostedService>(sp => Worker<TaggingDrainer>(sp));
+        services.AddHostedService<StageWorker<DownloadDrainer>>();
+        services.AddHostedService<StageWorker<EvidenceDrainer>>();
+        services.AddHostedService<StageWorker<VerdictDrainer>>();
+        services.AddHostedService<StageWorker<HandoffDrainer>>();
+        services.AddHostedService<StageWorker<TaggingDrainer>>();
 
         services.AddHostedService<WindowRollWorker>();
 
@@ -300,15 +292,6 @@ public static class ServiceRegistration
         services.AddHostedService<JanitorWorker>();
         return services;
     }
-
-    private static StageWorker Worker<TDrainer>(IServiceProvider services)
-        where TDrainer : notnull, IStageDrainer =>
-        new(
-            services.GetRequiredService<TDrainer>(),
-            services.GetRequiredService<JobStore>(),
-            services.GetRequiredService<ILogger<StageWorker>>(),
-            services.GetRequiredService<StageSignals>()
-        );
 
     /// <summary>
     /// The Tracks page's view of everything, and the cache that keeps it affordable.
@@ -338,13 +321,7 @@ public static class ServiceRegistration
         services.AddSingleton<FileChanges>();
         services.AddHostedService<FileWatchService>();
 
-        services.AddSingleton(sp =>
-        {
-            var store = new TrackMarkStore();
-            store.Changed += sp.GetRequiredService<FileChanges>().Notify;
-
-            return store;
-        });
+        services.AddSingleton<TrackMarkStore>();
 
         services.AddSingleton<FamiliarityStore>();
         services
