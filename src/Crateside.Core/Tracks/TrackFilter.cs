@@ -37,17 +37,6 @@ public enum TrackFilter
 
 public static class TrackFilters
 {
-    /// <summary>
-    /// The filters that name somewhere a track *is*, as against a set that merely contains it.
-    /// Every state but <see cref="TrackState.Done"/> falls in exactly one of them.
-    /// </summary>
-    private static readonly TrackFilter[] Named =
-    [
-        TrackFilter.InStaging,
-        TrackFilter.InFlight,
-        TrackFilter.NeedsAttention,
-    ];
-
     /// <summary>Not a partition: a row can be in two views at once.</summary>
     public static bool Matches(this TrackRow row, TrackFilter filter) =>
         filter switch
@@ -77,6 +66,10 @@ public static class TrackFilters
             _ => false,
         };
 
+    /// <summary>Whether this row's familiarity, as it is tagged, is <paramref name="value"/>; every row when none is asked for.</summary>
+    public static bool HasFamiliarity(this TrackRow row, string? value) =>
+        value is null || row.Familiarity?.Written == value;
+
     /// <summary>How many rows are in each filter, over the whole list.</summary>
     public static int Count(this IEnumerable<TrackRow> rows, TrackFilter filter) =>
         rows.Count(row => row.Matches(filter));
@@ -91,25 +84,6 @@ public static class TrackFilters
         || Contains(row.Title, term)
         || Contains(row.Verdict?.Key, term)
         || Contains(row.VideoId, term);
-
-    /// <summary>
-    /// Where else a search would find something: the named views, else <see cref="TrackFilter.All"/>,
-    /// never <see cref="TrackFilter.Unfinished"/>.
-    /// </summary>
-    public static IReadOnlyList<TrackFilter> Holding(
-        this IEnumerable<TrackRow> rows,
-        string? search
-    )
-    {
-        var matched = rows.Where(row => row.Matches(search)).ToArray();
-
-        if (matched.Length is 0)
-            return [];
-
-        TrackFilter[] named = [.. Named.Where(filter => matched.Any(row => row.Matches(filter)))];
-
-        return named.Length > 0 ? named : [TrackFilter.All];
-    }
 
     private static bool Contains(string? value, string term) =>
         value?.Contains(term, StringComparison.OrdinalIgnoreCase) is true;
