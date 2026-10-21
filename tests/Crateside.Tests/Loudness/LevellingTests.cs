@@ -163,7 +163,7 @@ public sealed class LevellingTests : IDisposable
     private Levelling Levelling(Func<string, double> lufsOf)
     {
         var reader = new LoudnessReader(new FakeEbur128(lufsOf));
-        var gains = new ClipGains(reader, () => _options);
+        var gains = new ClipGains(reader, new CurrentOptions<LoudnessOptions>(() => _options));
 
         return new Levelling(
             _paths,

@@ -10,7 +10,10 @@ internal sealed class FakeEbur128(Func<string, double> lufsOf) : IProcessRunner
     public int Runs { get; private set; }
 
     public static ClipGains Gains(Func<string, double> lufsOf, LoudnessOptions? options = null) =>
-        new(new LoudnessReader(new FakeEbur128(lufsOf)), () => options ?? new());
+        new(
+            new LoudnessReader(new FakeEbur128(lufsOf)),
+            new CurrentOptions<LoudnessOptions>(() => options ?? new())
+        );
 
     public Task<ProcessOutcome> RunAsync(ProcessRequest request, CancellationToken ct = default)
     {
