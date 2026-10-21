@@ -1,15 +1,11 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.WorkLists;
-
-/// <summary>
-/// What the separator can make, and what it calls each one.
-/// </summary>
-public delegate Task<PresetCatalog> ReadPresetCatalog(CancellationToken ct);
 
 public sealed class WorkListService(
     LedgerStore store,
@@ -22,7 +18,7 @@ public sealed class WorkListService(
     BumpedTrack bumped,
     IntakeStore intake,
     IReopenedWork? reopened = null,
-    ReadPresetCatalog? presets = null,
+    PresetCatalogReader? presets = null,
     ActionLog? actions = null
 )
 {
@@ -213,7 +209,7 @@ public sealed class WorkListService(
 
         var byVideoId = instructions.Read().ToDictionary(t => t.VideoId, StringComparer.Ordinal);
 
-        var catalog = presets is null ? PresetCatalog.Empty : await presets(ct);
+        var catalog = presets is null ? PresetCatalog.Empty : await presets.ReadAsync(ct);
 
         return new QueueScan
         {

@@ -157,21 +157,7 @@ public static class ServiceRegistration
         services.AddSingleton<PresetCatalogReader>();
 
         services.AddSingleton<IReopenedWork, ReopenedWork>();
-        // The catalog is passed by hand: the container cannot fill a delegate.
-        services.AddSingleton(sp => new WorkListService(
-            sp.GetRequiredService<LedgerStore>(),
-            sp.GetRequiredService<IOptions<CratesidePaths>>(),
-            sp.GetRequiredService<PlaylistSettingsStore>(),
-            sp.GetRequiredService<TrackInstructionStore>(),
-            sp.GetRequiredService<PlaylistReader>(),
-            sp.GetRequiredService<PlaylistAuthorizer>(),
-            sp.GetRequiredService<PlaylistRemover>(),
-            sp.GetRequiredService<BumpedTrack>(),
-            sp.GetRequiredService<IntakeStore>(),
-            sp.GetRequiredService<IReopenedWork>(),
-            sp.GetRequiredService<PresetCatalogReader>().ReadAsync,
-            sp.GetRequiredService<ActionLog>()
-        ));
+        services.AddSingleton<WorkListService>();
         return services;
     }
 
