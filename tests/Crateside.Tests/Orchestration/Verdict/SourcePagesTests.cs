@@ -274,6 +274,22 @@ public sealed class SourcePagesTests
     }
 
     [Fact]
+    public void Musicnotes_tells_a_user_arrangement_from_a_licensed_edition_by_its_arranger()
+    {
+        var arrangement = SourcePages.MusicnotesPage(
+            "https://www.musicnotes.com/sheetmusic/francesco-parrino/piano-man/MN0232398",
+            Fixture("musicnotes-user-arrangement.html")
+        );
+        var licensed = SourcePages.MusicnotesPage(
+            "https://www.musicnotes.com/sheetmusic/daft-punk/around-the-world/MN0208575",
+            Fixture("musicnotes-around-the-world.html")
+        );
+
+        Assert.Equal("user arrangement by Parrino, Francesco", arrangement.Note);
+        Assert.Null(licensed.Note);
+    }
+
+    [Fact]
     public void Musicnotes_older_product_layout_gives_its_key_too()
     {
         var page = SourcePages.MusicnotesPage(

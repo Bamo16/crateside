@@ -311,6 +311,10 @@ public sealed partial class SourcePages(Func<HttpClient> client) : ISourcePages
                 is { Success: true, Value: var scoring }
                 ? scoring
                 : null,
+            Note = MusicnotesArranger.Match(page).Groups["Name"]
+                is { Success: true, Value: var arranger }
+                ? $"user arrangement by {WebUtility.HtmlDecode(arranger)}"
+                : null,
             Keys = MusicnotesKey.Match(page).Groups["Key"] is { Success: true, Value: var key }
                 ? [new PageKey(key.Trim(), "Original Published Key", null)]
                 : [],
@@ -416,6 +420,9 @@ public sealed partial class SourcePages(Func<HttpClient> client) : ISourcePages
         RegexOptions.ExplicitCapture
     )]
     private static partial Regex MusicnotesKey { get; }
+
+    [GeneratedRegex(@"DC\.Contributor\.namePersonal"" content=""(?<Name>[^""]+)""")]
+    private static partial Regex MusicnotesArranger { get; }
 
     [GeneratedRegex(@"""scoring"":""(?<Scoring>[^""]+)""")]
     private static partial Regex MusicnotesScoring { get; }
