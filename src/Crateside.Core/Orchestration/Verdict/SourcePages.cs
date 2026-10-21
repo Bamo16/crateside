@@ -87,27 +87,67 @@ public sealed partial class SourcePages(Func<HttpClient> client) : ISourcePages
     {
         var url = $"https://www.hooktheory.com/theorytab/view/{Slug(artist)}/{Slug(title)}";
 
-        return await GetAsync(url, ct) is { } page ? [HooktheoryPage(url, page)] : [];
+        if (await GetAsync(url, ct) is not { } page)
+            return [];
+
+        Dictionary<string, string> scores = [];
+
+        foreach (var section in HooktheoryPageReader.Read(page)?.Sections ?? [])
+        {
+            if (await SectionScoreAsync(section.Hash!, ct) is { } body)
+                scores[section.Hash!] = body;
+        }
+
+        return [HooktheoryPage(url, page, scores)];
     }
 
-    internal static FetchedPage HooktheoryPage(string url, string page) =>
-        new()
+    internal static FetchedPage HooktheoryPage(
+        string url,
+        string page,
+        IReadOnlyDictionary<string, string>? scores = null
+    )
+    {
+        var song = HooktheoryPageReader.Read(page);
+
+        return new()
         {
             Site = "Hooktheory",
             Url = url,
             Heading = PageTitle(page),
             Keys =
             [
-                .. HooktheoryPageReader
-                    .Sections(page)
-                    .Select(section => new PageKey(
-                        $"{section.Key} {section.Scale}",
-                        section.Name,
-                        section.Tempo
-                    )),
+                .. (song?.Sections ?? []).Select(section => new PageKey(
+                    $"{section.Key} {section.Scale}",
+                    section.Name,
+                    section.Tempo
+                )),
             ],
-            Tab = HooktheoryPageReader.Read(page),
+            Tab = HooktheoryPageReader.Tab(song, scores),
         };
+    }
+
+    /// <summary>A section's score from the unauthenticated API, or null when it did not answer.</summary>
+    private async Task<string?> SectionScoreAsync(string hash, CancellationToken ct)
+    {
+        try
+        {
+            return await GetAsync(
+                $"https://api.hooktheory.com/v1/songs/public/{hash}?fields=ID,xmlData,song,jsonData",
+                ct
+            );
+        }
+        catch (Exception ex)
+            when (ex
+                    is HttpRequestException
+                        or TaskCanceledException
+                        {
+                            CancellationToken.IsCancellationRequested: false
+                        }
+            )
+        {
+            return null;
+        }
+    }
 
     private async Task<IReadOnlyList<FetchedPage>> MusicnotesAsync(
         string artist,
