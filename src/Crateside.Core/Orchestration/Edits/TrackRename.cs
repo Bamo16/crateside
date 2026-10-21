@@ -9,9 +9,6 @@ using Humanizer;
 
 namespace Crateside.Core.Orchestration.Edits;
 
-/// <summary>A track's files in the library, by the upload they were cut from.</summary>
-public delegate IReadOnlyList<string> ReadLibraryFiles(string videoId);
-
 /// <summary>
 /// Puts the user's own name on a track, on its files in <c>Staging</c> and
 /// the library, and in the sets that use them (ADR 0039, ADR 0040).
@@ -21,7 +18,7 @@ public sealed class TrackRename(
     IStagedFiles staged,
     FolderInfoWriter writer,
     CratesidePaths paths,
-    ReadLibraryFiles? library = null,
+    ILibraryFiles? library = null,
     ISetLinks? sets = null
 )
 {
@@ -247,7 +244,7 @@ public sealed class TrackRename(
     private IEnumerable<(string Path, string Root)> Files(string videoId) =>
         [
             .. staged.Of(videoId).Select(stem => (stem.Path, paths.StagingFolder)),
-            .. (library?.Invoke(videoId) ?? []).Select(path => (path, paths.LibraryFolder)),
+            .. (library?.Of(videoId) ?? []).Select(path => (path, paths.LibraryFolder)),
         ];
 
     private string RootOf(string path) =>

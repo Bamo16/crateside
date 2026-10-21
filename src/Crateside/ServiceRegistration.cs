@@ -343,23 +343,8 @@ public static class ServiceRegistration
         services.AddSingleton<SourceAdd>();
 
         services.AddSingleton<StemRecut>();
-        services.AddSingleton(sp => new TrackRename(
-            sp.GetRequiredService<TrackInstructionStore>(),
-            sp.GetRequiredService<IStagedFiles>(),
-            sp.GetRequiredService<FolderInfoWriter>(),
-            sp.GetRequiredService<CratesidePaths>(),
-            videoId =>
-                SourcelessSongs.IsKey(videoId)
-                    ? SourcelessSongs.FilesOf(
-                        sp.GetRequiredService<CratesidePaths>().LibraryFolder,
-                        videoId
-                    )
-                    : StemTagReader.FilesCutFrom(
-                        sp.GetRequiredService<CratesidePaths>().LibraryFolder,
-                        videoId
-                    ),
-            sp.GetRequiredService<ISetLinks>()
-        ));
+        services.AddSingleton<ILibraryFiles, LibraryFiles>();
+        services.AddSingleton<TrackRename>();
         services.AddSingleton<LookalikeAnswer>();
 
         services.AddSingleton<TrackSwap>();
