@@ -17,7 +17,8 @@
 @using Humanizer
 @using Microsoft.Extensions.Options
 
-@inject WorkListService Playlist
+@inject WorkListService WorkLists
+@inject CachedPlaylist Playlist
 @inject PlaylistAuthorizer Authorizer
 @inject PlaylistSettingsStore PlaylistStore
 @inject IntakeStore Intake
@@ -955,7 +956,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
         try
         {
-            _removals = await Playlist.RemoveProcessedAsync();
+            _removals = await WorkLists.RemoveProcessedAsync();
             _confirming = false;
 
             await Load();
@@ -978,7 +979,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
         try
         {
-            _processed = (await Playlist.ReadAsync()).FullyProcessed.Count;
+            _processed = (await WorkLists.ReadAsync()).FullyProcessed.Count;
 
             if (Authorizer.IsAuthorized)
                 _channel = await Authorizer.GetAuthorizedChannelAsync();

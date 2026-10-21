@@ -12,115 +12,16 @@ public sealed class WorkListService(
     IOptions<CratesidePaths> paths,
     PlaylistSettingsStore settings,
     TrackInstructionStore instructions,
-    PlaylistReader reader,
     PlaylistAuthorizer authorizer,
-    PlaylistRemover remover,
     BumpedTrack bumped,
     IntakeStore intake,
+    CachedPlaylist playlist,
     IReopenedWork? reopened = null,
     PresetCatalogReader? presets = null,
     ActionLog? actions = null
 )
 {
-    /// <summary>How long a playlist read is reused before going back to the API.</summary>
-    private static readonly TimeSpan CacheFor = TimeSpan.FromMinutes(2);
-
     private readonly CratesidePaths _paths = paths.Value;
-    private readonly SemaphoreSlim _readGate = new(1, 1);
-
-    private IReadOnlyList<WorkItem>? _cachedItems;
-    private DateTimeOffset _cachedAt;
-
-    /// <summary>
-    /// When the playlist was last fetched from the API — not when the disk was last scanned — or
-    /// null if it never has been.
-    /// </summary>
-    public DateTimeOffset? PlaylistReadAt => _cachedItems is null ? null : _cachedAt;
-
-    /// <summary>
-    /// Why the playlist could not be read, or null when the last read worked. A report, not a
-    /// failure: the rows are still built from what crateside has already taken on.
-    /// </summary>
-    public string? PlaylistProblem { get; private set; }
-
-    /// <summary>Whether an API key is available. Without one, nothing can be read.</summary>
-    public bool HasCredential => reader.HasCredential;
-
-    /// <summary>The playlist currently being read, or null if none is set yet.</summary>
-    public string? PlaylistId => settings.Read().PlaylistId;
-
-    public bool IsConfigured => HasCredential && PlaylistId is { Length: > 0 };
-
-    /// <summary>
-    /// Points the Queue at a different playlist. Accepts a bare ID or a pasted URL, and
-    /// persists outside the working tree.
-    /// </summary>
-    public void SetPlaylist(string? playlistIdOrUrl)
-    {
-        settings.SavePlaylistId(playlistIdOrUrl);
-
-        // A different playlist entirely, so the cached one is not merely stale but wrong.
-        Invalidate();
-    }
-
-    /// <summary>Forgets the cached playlist, so the next read goes to the API.</summary>
-    public void Invalidate()
-    {
-        _readGate.Wait();
-
-        try
-        {
-            _cachedItems = null;
-        }
-        finally
-        {
-            _readGate.Release();
-        }
-    }
-
-    /// <summary>
-    /// The playlist, from the API or from the last read; readers arriving together share one call.
-    /// </summary>
-    private async Task<IReadOnlyList<WorkItem>> ItemsAsync(CancellationToken ct)
-    {
-        await _readGate.WaitAsync(ct);
-
-        try
-        {
-            if (_cachedItems is { } cached && DateTimeOffset.UtcNow - _cachedAt < CacheFor)
-                return cached;
-
-            try
-            {
-                // Oldest-added first: the only ordering that means the same thing regardless of
-                // whether the playlist adds new videos to the top.
-                _cachedItems =
-                [
-                    .. (await reader.ListAsync(PlaylistId ?? string.Empty, ct)).OrderBy(item =>
-                        item.AddedAt ?? DateTimeOffset.MaxValue
-                    ),
-                ];
-                _cachedAt = DateTimeOffset.UtcNow;
-                PlaylistProblem = null;
-
-                return _cachedItems;
-            }
-            catch (PlaylistUnavailableException ex)
-            {
-                // A playlist that cannot be read means no new arrivals, not no queue (ADR 0021).
-                // Everything already taken on is on disk, in the ledger and in the intake, and
-                // none of it needs the network — so failing the scan here stopped crateside
-                // working on tracks it had fully recorded. A spent daily quota did exactly that.
-                PlaylistProblem = ex.Message;
-
-                return _cachedItems ?? [];
-            }
-        }
-        finally
-        {
-            _readGate.Release();
-        }
-    }
 
     /// <summary>
     /// Reads the queue and keeps everything the read produced. The most expensive thing in the
@@ -128,10 +29,10 @@ public sealed class WorkListService(
     /// </summary>
     public async Task<QueueScan> ScanAsync(CancellationToken ct = default)
     {
-        var held = Pasted(await ItemsAsync(ct));
+        var held = Pasted(await playlist.ReadAsync(ct));
         var (items, arrivals) = TakenOn(held);
 
-        if (PlaylistProblem is null)
+        if (playlist.Problem is null)
             intake.ForgetRemovalFailures(
                 intake
                     .LeftInPlaylist.Select(record => record.VideoId)
@@ -173,19 +74,19 @@ public sealed class WorkListService(
             Ledger = ledger,
             Processed = processed,
             Instructions = byVideoId,
-            ReadAt = PlaylistReadAt,
-            PlaylistProblem = PlaylistProblem,
+            ReadAt = playlist.ReadAt,
+            PlaylistProblem = playlist.Problem,
         };
     }
 
     /// <summary>The playlist, plus the tracks the user pasted in (ADR 0010).</summary>
-    private IReadOnlyList<WorkItem> Pasted(IReadOnlyList<WorkItem> playlist)
+    private IReadOnlyList<WorkItem> Pasted(IReadOnlyList<WorkItem> listed)
     {
-        var held = playlist.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
+        var held = listed.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
 
         return
         [
-            .. playlist,
+            .. listed,
             .. instructions
                 .Read()
                 .Where(track => track.AddedByUrl && !held.Contains(track.VideoId))
@@ -304,7 +205,7 @@ public sealed class WorkListService(
             !settings.Read().ConsumeOnArrival
             || !authorizer.IsAuthorized
             || !intake.IsDurable
-            || PlaylistProblem is not null
+            || playlist.Problem is not null
         )
             return;
 
@@ -320,7 +221,7 @@ public sealed class WorkListService(
 
         try
         {
-            var results = await RemoveAsync(entries, ct);
+            var results = await playlist.RemoveAsync(entries, ct);
             var videoIdOf = entries.ToDictionary(
                 item => item.PlaylistItemId!,
                 item => item.VideoId,
@@ -439,25 +340,7 @@ public sealed class WorkListService(
     {
         var view = await ReadAsync(ct);
 
-        return await RemoveAsync(view.FullyProcessed, ct);
-    }
-
-    /// <summary>
-    /// Removes specific items the user picked by hand, whatever the automatic predicate would
-    /// claim.
-    /// </summary>
-    public async Task<IReadOnlyList<RemovalResult>> RemoveAsync(
-        IReadOnlyList<WorkItem> items,
-        CancellationToken ct = default
-    )
-    {
-        var results = await remover.RemoveAsync(items, ct);
-
-        // The playlist just changed underneath the cache, so holding the old one would show
-        // removed tracks as still queued — and a drain loop would pick one.
-        Invalidate();
-
-        return results;
+        return await playlist.RemoveAsync(view.FullyProcessed, ct);
     }
 }
 

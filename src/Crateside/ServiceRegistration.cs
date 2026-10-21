@@ -157,6 +157,7 @@ public static class ServiceRegistration
         services.AddSingleton<PresetCatalogReader>();
 
         services.AddSingleton<IReopenedWork, ReopenedWork>();
+        services.AddSingleton<CachedPlaylist>();
         services.AddSingleton<WorkListService>();
         return services;
     }
