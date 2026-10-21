@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Core.Beats;
 
@@ -20,7 +20,7 @@ public abstract record BuildAddOutcome
 /// The beatdetect builds crateside knows and the one it pins for beatdetect alone; the ffmpeg on
 /// PATH is untouched (#102). Kept across restarts.
 /// </summary>
-public sealed class KnownBuilds(CratesidePaths paths)
+public sealed class KnownBuilds(IProcessRunner processes, CratesidePaths paths)
 {
     private readonly Lock _gate = new();
     private KnownBuildsFile _state = Load(paths.KnownBuildsFile);
@@ -60,7 +60,7 @@ public sealed class KnownBuilds(CratesidePaths paths)
     {
         if (
             Path.GetFullPath(executable) is var full
-            && await FfmpegBuild.IdentifyAsync(full, ct) is not { } build
+            && await FfmpegBuild.IdentifyAsync(processes, full, ct) is not { } build
         )
             return new BuildAddOutcome.NotFfmpeg(executable);
 

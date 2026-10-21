@@ -2,6 +2,7 @@ using AbleKit.Analysis;
 using Crateside.Core;
 using Crateside.Core.Beats;
 using Crateside.Core.Orchestration.Handoff;
+using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Warps;
 using Microsoft.Extensions.Options;
 
@@ -62,7 +63,7 @@ public sealed class HandoffSidecarsTests : IDisposable
         var sidecars = new HandoffSidecars(
             _paths,
             writer,
-            new BeatReader(),
+            new BeatReader(new ProcessRunner()),
             Options.Create(new WarpOptions { StarterWarps = StarterWarps.OnTheGrid })
         );
 

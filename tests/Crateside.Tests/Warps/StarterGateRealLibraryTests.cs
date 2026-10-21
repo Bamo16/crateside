@@ -2,6 +2,7 @@ using AbleKit.Analysis;
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
+using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Samples;
 using Crateside.Core.Tempo;
 using Crateside.Core.Warps;
@@ -16,6 +17,7 @@ public sealed class StarterGateRealLibraryTests
 
     private static readonly CratesidePaths Paths = new();
     private static readonly BeatReader Readings = new(
+        new ProcessRunner(),
         Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "beats.json")
     );
 

@@ -4,6 +4,7 @@ using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
 using Crateside.Core.Library;
+using Crateside.Core.Orchestration.Loop;
 using Crateside.Tests.Ableton;
 
 namespace Crateside.Tests.Beats;
@@ -231,7 +232,7 @@ public sealed class BeatReadingTests
         );
         Assert.SkipUnless(File.Exists(audio), $"{audio} not present on this machine.");
 
-        var reader = new BeatReader();
+        var reader = new BeatReader(new ProcessRunner());
         Assert.NotNull(await reader.RefreshBuildAsync(TestContext.Current.CancellationToken));
 
         var reading = await reader.MeasureAsync(audio, TestContext.Current.CancellationToken);

@@ -2,21 +2,19 @@ using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Tests.Orchestration.Loop;
 
-public sealed class ExternalProcessTests
+public sealed class ProcessRunnerTests
 {
     [Fact]
     public async Task A_failing_command_is_returned_with_what_it_said_rather_than_thrown()
     {
         var outcome = OperatingSystem.IsWindows()
-            ? await ExternalProcess.RunAsync(
-                "cmd",
-                ["/c", "echo out& echo err 1>&2& exit /b 3"],
-                ct: TestContext.Current.CancellationToken
+            ? await new ProcessRunner().RunAsync(
+                new ProcessRequest("cmd", ["/c", "echo out& echo err 1>&2& exit /b 3"]),
+                TestContext.Current.CancellationToken
             )
-            : await ExternalProcess.RunAsync(
-                "sh",
-                ["-c", "echo out; echo err 1>&2; exit 3"],
-                ct: TestContext.Current.CancellationToken
+            : await new ProcessRunner().RunAsync(
+                new ProcessRequest("sh", ["-c", "echo out; echo err 1>&2; exit 3"]),
+                TestContext.Current.CancellationToken
             );
 
         Assert.Equal(3, outcome.ExitCode);
@@ -31,12 +29,14 @@ public sealed class ExternalProcessTests
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             OperatingSystem.IsWindows()
-                ? ExternalProcess.RunAsync(
-                    "ping",
-                    ["-n", "30", "127.0.0.1"],
-                    ct: cancellation.Token
+                ? new ProcessRunner().RunAsync(
+                    new ProcessRequest("ping", ["-n", "30", "127.0.0.1"]),
+                    cancellation.Token
                 )
-                : ExternalProcess.RunAsync("sleep", ["30"], ct: cancellation.Token)
+                : new ProcessRunner().RunAsync(
+                    new ProcessRequest("sleep", ["30"]),
+                    cancellation.Token
+                )
         );
     }
 }

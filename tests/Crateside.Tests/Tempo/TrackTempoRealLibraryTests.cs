@@ -1,6 +1,7 @@
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
+using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Tempo;
 
 namespace Crateside.Tests.Tempo;
@@ -11,6 +12,7 @@ public sealed class TrackTempoRealLibraryTests
     private static readonly CratesidePaths Paths = new();
     private static readonly WarpTempoReader Warps = new();
     private static readonly BeatReader Readings = new(
+        new ProcessRunner(),
         Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "beats.json")
     );
 

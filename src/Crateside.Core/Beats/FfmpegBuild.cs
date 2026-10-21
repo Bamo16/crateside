@@ -29,15 +29,18 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
         };
 
     /// <summary>Asks the executable for its beatdetect filter; null when it cannot be run or has none.</summary>
-    public static async Task<FfmpegBuild?> IdentifyAsync(string fileName, CancellationToken ct)
+    public static async Task<FfmpegBuild?> IdentifyAsync(
+        IProcessRunner processes,
+        string fileName,
+        CancellationToken ct
+    )
     {
         ProcessOutcome outcome;
         try
         {
-            outcome = await ExternalProcess.RunAsync(
-                fileName,
-                ["-hide_banner", "-h", "filter=beatdetect"],
-                ct: ct
+            outcome = await processes.RunAsync(
+                new ProcessRequest(fileName, ["-hide_banner", "-h", "filter=beatdetect"]),
+                ct
             );
         }
         catch (Win32Exception)

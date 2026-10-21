@@ -7,7 +7,7 @@ namespace Crateside.Core.Orchestration.Download;
 /// Fetches one source through <c>stemforge-cli download</c>, which writes the provenance every
 /// reader joins on (ADR 0005 §4).
 /// </summary>
-public sealed class DownloadRunner(string stemforge = "stemforge-cli")
+public sealed class DownloadRunner(IProcessRunner processes, string stemforge = "stemforge-cli")
 {
     /// <param name="into">
     /// Where the file lands: the working set for a detection source, the stems output for an
@@ -24,10 +24,11 @@ public sealed class DownloadRunner(string stemforge = "stemforge-cli")
 
         try
         {
-            outcome = await ExternalProcess.RunAsync(
-                stemforge,
-                ["download", url, "--json", "--format", format, "--output", into],
-                workingDirectory: null,
+            outcome = await processes.RunAsync(
+                new ProcessRequest(
+                    stemforge,
+                    ["download", url, "--json", "--format", format, "--output", into]
+                ),
                 ct
             );
         }
@@ -38,8 +39,7 @@ public sealed class DownloadRunner(string stemforge = "stemforge-cli")
 
         if (!outcome.Succeeded)
             return DownloadResult.Failed(
-                ExternalProcess.Describe(outcome.StandardError, outcome.StandardOutput)
-                    ?? $"stemforge-cli download exited with {outcome.ExitCode}"
+                outcome.LastLine ?? $"stemforge-cli download exited with {outcome.ExitCode}"
             );
 
         // A zero exit still has to be checked: the CLI reports per-input failures inside its

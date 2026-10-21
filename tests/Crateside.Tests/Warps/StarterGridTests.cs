@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Crateside.Core.Beats;
+using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Warps;
@@ -89,7 +90,7 @@ public sealed class StarterGridTests
     }
 
     private static Task<BeatReading> ReadAsync(CorpusTrack track) =>
-        new BeatReader(fileName: Pinned).MeasureAsync(
+        new BeatReader(new ProcessRunner(), fileName: Pinned).MeasureAsync(
             track.Audio,
             TestContext.Current.CancellationToken
         );

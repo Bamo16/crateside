@@ -48,8 +48,7 @@ public sealed class PcmDecoder(IProcessRunner runner, string ffmpeg)
 
             if (!outcome.Succeeded)
                 return new DecodeOutcome.Failed(
-                    ExternalProcess.Describe(outcome.StandardError, outcome.StandardOutput)
-                        ?? $"ffmpeg exited with {outcome.ExitCode} decoding the audio"
+                    outcome.LastLine ?? $"ffmpeg exited with {outcome.ExitCode} decoding the audio"
                 );
 
             var bytes = await File.ReadAllBytesAsync(output, ct);

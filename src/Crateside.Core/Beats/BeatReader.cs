@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Globalization;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using AbleKit.Tags;
@@ -22,6 +21,7 @@ public sealed partial class BeatReader
 
     private static readonly TimeSpan RunLimit = TimeSpan.FromMinutes(10);
 
+    private readonly IProcessRunner _processes;
     private readonly string? _path;
     private readonly string _fileName;
     private readonly string _filter;
@@ -37,17 +37,19 @@ public sealed partial class BeatReader
     private static partial Regex MetadataLine { get; }
 
     // hpss matched an AI drum stem on the instrumental, measured 2026-09-30 (#83).
-    public BeatReader(CratesidePaths paths, KnownBuilds builds)
-        : this(paths.BeatCache, paths.BeatdetectFfmpeg, "beatdetect=hpss=1", builds) { }
+    public BeatReader(IProcessRunner processes, CratesidePaths paths, KnownBuilds builds)
+        : this(processes, paths.BeatCache, paths.BeatdetectFfmpeg, "beatdetect=hpss=1", builds) { }
 
     /// <summary>Keeps nothing on disk when <paramref name="path"/> is null.</summary>
     internal BeatReader(
+        IProcessRunner processes,
         string? path = null,
         string fileName = "ffmpeg",
         string filter = "beatdetect",
         KnownBuilds? builds = null
     )
     {
+        _processes = processes;
         _path = path;
         _fileName = fileName;
         _filter = filter;
@@ -102,7 +104,7 @@ public sealed partial class BeatReader
         if (_builds is not null)
             await _builds.SeedAsync(ct);
 
-        return _build = await FfmpegBuild.IdentifyAsync(PinnedFileName, ct);
+        return _build = await FfmpegBuild.IdentifyAsync(_processes, PinnedFileName, ct);
     }
 
     /// <summary>Reads the whole file, then each full 30 s of it; a file ffmpeg cannot read keeps an empty reading.</summary>
@@ -287,22 +289,24 @@ public sealed partial class BeatReader
 
         try
         {
-            var outcome = await ExternalProcess.RunAsync(
-                PinnedFileName,
-                [
-                    "-hide_banner",
-                    "-nostats",
-                    .. window,
-                    "-i",
-                    audioPath,
-                    "-vn",
-                    "-af",
-                    $"{_filter},ametadata=mode=print:file=-",
-                    "-f",
-                    "null",
-                    "-",
-                ],
-                ct: limit.Token
+            var outcome = await _processes.RunAsync(
+                new ProcessRequest(
+                    PinnedFileName,
+                    [
+                        "-hide_banner",
+                        "-nostats",
+                        .. window,
+                        "-i",
+                        audioPath,
+                        "-vn",
+                        "-af",
+                        $"{_filter},ametadata=mode=print:file=-",
+                        "-f",
+                        "null",
+                        "-",
+                    ]
+                ),
+                limit.Token
             );
 
             return Parse(outcome.StandardOutput);

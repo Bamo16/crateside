@@ -8,7 +8,7 @@ namespace Crateside.Core.Naming;
 /// Asks StemForge what it will call a track's files, before any work runs. Never rebuild either
 /// name from parts (ADR 0014).
 /// </summary>
-public sealed class NameResolver(string stemforge = "stemforge-cli")
+public sealed class NameResolver(IProcessRunner processes, string stemforge = "stemforge-cli")
 {
     /// <summary>
     /// What the files will be called, or null when the upload could not be resolved. Never
@@ -20,10 +20,8 @@ public sealed class NameResolver(string stemforge = "stemforge-cli")
 
         try
         {
-            outcome = await ExternalProcess.RunAsync(
-                stemforge,
-                ["download", sourceUrl, "--list-formats", "--json"],
-                workingDirectory: null,
+            outcome = await processes.RunAsync(
+                new ProcessRequest(stemforge, ["download", sourceUrl, "--list-formats", "--json"]),
                 ct
             );
         }
