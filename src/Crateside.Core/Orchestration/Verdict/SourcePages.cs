@@ -25,7 +25,6 @@ public interface ISourcePages
 public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePages
 {
     public const string ClientName = "source-pages";
-    public const string UserAgent = "crateside/1.0 ( https://github.com/Bamo16/crateside )";
 
     private const int UltimateGuitarTabs = 3;
     private const int HooktheoryPagesPerSong = 4;

@@ -6,9 +6,9 @@ namespace Crateside.Core.Genres;
 /// Asks free sources what genre a song is: MusicBrainz's community tags, which know drum and bass
 /// from dance, then iTunes's one storefront genre (#4). Needs no key.
 /// </summary>
-public sealed class GenreLookup(HttpClient client)
+public sealed class GenreLookup(IHttpClientFactory clients)
 {
-    public const string UserAgent = "crateside/1.0 ( https://github.com/Bamo16/crateside )";
+    public const string ClientName = "genre-lookup";
 
     /// <summary>MusicBrainz allows one request a second from a client like this.</summary>
     private static readonly TimeSpan MusicBrainzPace = TimeSpan.FromSeconds(1.1);
@@ -117,11 +117,7 @@ public sealed class GenreLookup(HttpClient client)
 
     private async Task<JsonDocument> GetAsync(string url, CancellationToken ct)
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-
-        request.Headers.UserAgent.ParseAdd(UserAgent);
-
-        using var response = await client.SendAsync(request, ct);
+        using var response = await clients.CreateClient(ClientName).GetAsync(url, ct);
 
         response.EnsureSuccessStatusCode();
 

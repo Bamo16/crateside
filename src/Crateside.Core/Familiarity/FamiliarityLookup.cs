@@ -10,8 +10,10 @@ namespace Crateside.Core.Familiarity;
 /// Asks Deezer's public API, which needs no key, how far a song reaches: the song's own rank and
 /// the fans of the most-followed artist credited on it, featured artists included (#52).
 /// </summary>
-public sealed partial class FamiliarityLookup(HttpClient client)
+public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
 {
+    public const string ClientName = "familiarity-lookup";
+
     /// <summary>Raised whenever matching changes, so songs an older lookup missed are asked again.</summary>
     public const int Version = 2;
 
@@ -170,7 +172,7 @@ public sealed partial class FamiliarityLookup(HttpClient client)
     /// </summary>
     private async Task<JsonDocument?> GetAsync(string url, CancellationToken ct)
     {
-        using var response = await client.GetAsync(url, ct);
+        using var response = await clients.CreateClient(ClientName).GetAsync(url, ct);
 
         response.EnsureSuccessStatusCode();
 

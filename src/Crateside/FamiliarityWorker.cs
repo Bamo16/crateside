@@ -10,7 +10,7 @@ namespace Crateside;
 public sealed class FamiliarityWorker(
     TracksService tracks,
     FamiliarityStore store,
-    IServiceProvider services,
+    FamiliarityLookup lookup,
     ILogger<FamiliarityWorker> logger
 ) : BackgroundService
 {
@@ -73,8 +73,6 @@ public sealed class FamiliarityWorker(
             .DistinctBy(song => song.Song, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        // Resolved per tick: a typed HttpClient held for the life of the app outlives its handler.
-        var lookup = services.GetRequiredService<FamiliarityLookup>();
         var measured = 0;
 
         foreach (var (song, name) in unasked)
