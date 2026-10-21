@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Ledger;
 

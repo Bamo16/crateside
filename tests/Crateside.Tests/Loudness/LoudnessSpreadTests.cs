@@ -1,4 +1,3 @@
-using Crateside.Core;
 using Crateside.Core.Loudness;
 
 namespace Crateside.Tests.Loudness;

@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using Crateside.Core.Plans;
-using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.WorkLists;
 
