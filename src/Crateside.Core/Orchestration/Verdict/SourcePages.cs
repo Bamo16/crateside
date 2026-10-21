@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -27,6 +28,12 @@ public sealed partial class SourcePages(Func<HttpClient> client) : ISourcePages
     public const string UserAgent = "crateside/1.0 ( https://github.com/Bamo16/crateside )";
 
     private const int UltimateGuitarTabs = 3;
+    private const int HooktheoryPagesPerSong = 4;
+    private const string HooktheoryTabs = "https://www.hooktheory.com/theorytab/view/";
+    private const string HooktheorySearchScript =
+        "https://www.hooktheory.com/js/meilisearch/meilisearchAppDashboard.js";
+    private const string HooktheorySearchUrl =
+        "https://www.hooktheory.com/meili/indexes/theorytabs/search";
 
     public async Task<IReadOnlyList<SiteLookup>> FetchAsync(
         string artist,
@@ -85,21 +92,135 @@ public sealed partial class SourcePages(Func<HttpClient> client) : ISourcePages
         CancellationToken ct
     )
     {
-        var url = $"https://www.hooktheory.com/theorytab/view/{Slug(artist)}/{Slug(title)}";
+        List<FetchedPage> pages = [];
 
-        if (await GetAsync(url, ct) is not { } page)
-            return [];
-
-        Dictionary<string, string> scores = [];
-
-        foreach (var section in HooktheoryPageReader.Read(page)?.Sections ?? [])
+        foreach (var url in await HooktheoryUrlsAsync(artist, title, ct))
         {
-            if (await SectionScoreAsync(section.Hash!, ct) is { } body)
-                scores[section.Hash!] = body;
+            if (await GetAsync(url, ct) is not { } page)
+                continue;
+
+            Dictionary<string, string> scores = [];
+
+            foreach (var section in HooktheoryPageReader.Read(page)?.Sections ?? [])
+            {
+                if (await SectionScoreAsync(section.Hash!, ct) is { } body)
+                    scores[section.Hash!] = body;
+            }
+
+            pages.Add(HooktheoryPage(url, page, scores));
         }
 
-        return [HooktheoryPage(url, page, scores)];
+        return pages;
     }
+
+    /// <summary>The slug the artist and title spell, then every other TheoryTab the site's search files under them.</summary>
+    private async Task<IReadOnlyList<string>> HooktheoryUrlsAsync(
+        string artist,
+        string title,
+        CancellationToken ct
+    )
+    {
+        List<string> urls = [$"{HooktheoryTabs}{Slug(artist)}/{Slug(title)}"];
+
+        foreach (var found in await HooktheorySearchAsync(artist, title, ct))
+        {
+            if (!urls.Contains(found, StringComparer.OrdinalIgnoreCase))
+                urls.Add(found);
+        }
+
+        return [.. urls.Take(HooktheoryPagesPerSong)];
+    }
+
+    private async Task<IReadOnlyList<string>> HooktheorySearchAsync(
+        string artist,
+        string title,
+        CancellationToken ct
+    )
+    {
+        try
+        {
+            if (
+                await GetAsync(HooktheorySearchScript, ct) is not { } script
+                || HooktheorySearchKey.Match(script).Groups["Key"]
+                    is not { Success: true, Value: var key }
+            )
+                return [];
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, HooktheorySearchUrl)
+            {
+                Content = JsonContent.Create(
+                    new HooktheorySearchQuery($"{artist} {title}"),
+                    HooktheoryJsonContext.Default.HooktheorySearchQuery
+                ),
+            };
+
+            request.Headers.Authorization = new("Bearer", key);
+
+            using var response = await client().SendAsync(request, ct);
+
+            return response.IsSuccessStatusCode
+                ? HooktheoryTabUrls(await response.Content.ReadAsStringAsync(ct), artist, title)
+                : [];
+        }
+        catch (Exception ex)
+            when (ex
+                    is HttpRequestException
+                        or TaskCanceledException
+                        {
+                            CancellationToken.IsCancellationRequested: false
+                        }
+            )
+        {
+            return [];
+        }
+    }
+
+    /// <summary>The tabs the search lists for this song under this artist, or the same artist with a feature credit, in the order it ranks them.</summary>
+    internal static IReadOnlyList<string> HooktheoryTabUrls(
+        string search,
+        string artist,
+        string title
+    )
+    {
+        try
+        {
+            return
+            [
+                .. (
+                    JsonSerializer
+                        .Deserialize(search, HooktheoryJsonContext.Default.HooktheorySearchResponse)
+                        ?.Hits
+                    ?? []
+                )
+                    .Where(hit =>
+                        hit
+                            is {
+                                Artist.Length: > 0,
+                                Song.Length: > 0,
+                                ArtistSlug.Length: > 0,
+                                SongSlug.Length: > 0,
+                            }
+                        && Slug(hit.Song) == Slug(title)
+                        && SameArtist(Slug(hit.Artist), Slug(artist))
+                    )
+                    .Select(hit =>
+                        $"{HooktheoryTabs}{Uri.EscapeDataString(Uri.UnescapeDataString(hit.ArtistSlug!))}/{Uri.EscapeDataString(Uri.UnescapeDataString(hit.SongSlug!))}"
+                    )
+                    .Distinct(StringComparer.OrdinalIgnoreCase),
+            ];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>The same slug, one with a credit added (<c>disclosure</c> and <c>disclosure-ft-sam-smith</c>), or spelled without hyphens (<c>billyjoel</c>).</summary>
+    private static bool SameArtist(string hit, string wanted) =>
+        hit == wanted
+        || hit.StartsWith($"{wanted}-", StringComparison.Ordinal)
+        || wanted.StartsWith($"{hit}-", StringComparison.Ordinal)
+        || hit.Replace("-", string.Empty) == wanted.Replace("-", string.Empty);
 
     internal static FetchedPage HooktheoryPage(
         string url,
@@ -283,6 +404,9 @@ public sealed partial class SourcePages(Func<HttpClient> client) : ISourcePages
         TitleTag.Match(page).Groups["Title"] is { Success: true, Value: var title }
             ? WebUtility.HtmlDecode(title).Trim()
             : null;
+
+    [GeneratedRegex(@"searchKey:\s*""(?<Key>[^""]+)""")]
+    private static partial Regex HooktheorySearchKey { get; }
 
     [GeneratedRegex(@"/sheetmusic/(?<Artist>[^""/]+)/(?<Title>[^""/]+)/MN\d+")]
     private static partial Regex MusicnotesLink { get; }

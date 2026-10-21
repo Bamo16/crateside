@@ -37,4 +37,22 @@ public sealed class SourcePagesNetworkTests
         Assert.Equal([1, 2], tab.Sections.Select(section => section.Keys.Count));
         Assert.InRange(tab.Coverage!.Value, 0.05, 0.08);
     }
+
+    [Fact]
+    public async Task Hooktheory_latch_has_both_its_tabs()
+    {
+        var lookups = await Pages.FetchAsync(
+            "Disclosure",
+            "Latch",
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(
+            [
+                "https://www.hooktheory.com/theorytab/view/disclosure/latch",
+                "https://www.hooktheory.com/theorytab/view/disclosure-ft-sam-smith/latch",
+            ],
+            lookups[0].Pages.Select(page => page.Url)
+        );
+    }
 }
