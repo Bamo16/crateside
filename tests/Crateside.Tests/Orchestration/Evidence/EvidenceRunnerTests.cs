@@ -20,6 +20,9 @@ public sealed class EvidenceRunnerTests : IDisposable
         [Parsed_keydetect_0 @ 0000025c7e797d00] t=6.80 key=A (r=0.81)
         lavfi.keydetect.key=A
         lavfi.keydetect.key_confidence=0.812
+        lavfi.keydetect.key_alt=F#m
+        lavfi.keydetect.key_alt_confidence=0.703
+        lavfi.keydetect.key_reranked=1
         lavfi.keydetect.chords=A-A-E-F#m-D-A
         """;
 
@@ -87,6 +90,9 @@ public sealed class EvidenceRunnerTests : IDisposable
         );
         Assert.Equal("A major", evidence.Algorithms!.FfmpegKeydetect!.Key);
         Assert.Equal(0.812, evidence.Algorithms.FfmpegKeydetect.R);
+        Assert.Equal("F# minor", evidence.Algorithms.FfmpegKeydetect.KeyAlt);
+        Assert.Equal(0.703, evidence.Algorithms.FfmpegKeydetect.KeyAltConfidence);
+        Assert.True(evidence.Algorithms.FfmpegKeydetect.KeyReranked);
         Assert.Equal("A major", evidence.Algorithms.EssentiaEdma!.Key);
         Assert.NotNull(evidence.Algorithms.Madmom!.Key);
         Assert.Equal(["A", "E", "F#m", "D", "A"], evidence.Chords);

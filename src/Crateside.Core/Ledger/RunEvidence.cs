@@ -405,6 +405,12 @@ public sealed record AlgorithmResult
 
     public double? RunnerUpRatio { get; init; }
 
+    /// <summary>keydetect's correlation for its runner-up.</summary>
+    public double? RunnerUpConfidence { get; init; }
+
+    /// <summary>Whether keydetect's chord rerank changed its answer.</summary>
+    public bool? Reranked { get; init; }
+
     /// <summary>ffmpeg's banding on its correlation: below 0.70 distrust, above 0.75 usually right.</summary>
     public string? Flag { get; init; }
 
@@ -444,6 +450,9 @@ public sealed record AlgorithmResult
                             Key = keydetect.Key,
                             Confidence = keydetect.R,
                             Flag = keydetect.RFlag,
+                            RunnerUpKey = keydetect.KeyAlt,
+                            RunnerUpConfidence = keydetect.KeyAltConfidence,
+                            Reranked = keydetect.KeyReranked,
                             Error = keydetect.Error,
                         }
                         : null,
@@ -600,6 +609,12 @@ internal sealed record AlgorithmsDto
         public double? R { get; init; }
 
         public string? RFlag { get; init; }
+
+        public string? KeyAlt { get; init; }
+
+        public double? KeyAltConfidence { get; init; }
+
+        public bool? KeyReranked { get; init; }
 
         public string? Error { get; init; }
     }
