@@ -23,6 +23,24 @@ public sealed class KeyDetectorCountsTests
     ) => Assert.Equal(miss, KeyMisses.Of(MusicKey.FromString(read), MusicKey.FromString(verdict)!));
 
     [Fact]
+    public void A_detector_is_read_on_the_songs_it_gave_a_reading_for()
+    {
+        var tally = new KeyDetectorTally(
+            "madmom",
+            "CNN, ONNX",
+            new Dictionary<KeyMiss, int>
+            {
+                [KeyMiss.Right] = 9,
+                [KeyMiss.Relative] = 2,
+                [KeyMiss.Other] = 1,
+                [KeyMiss.NoReading] = 485,
+            }
+        );
+
+        Assert.Equal(12, tally.Read);
+    }
+
+    [Fact]
     public void The_ledger_gives_keydetect_the_lead_and_every_song_one_place_per_detector()
     {
         Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
