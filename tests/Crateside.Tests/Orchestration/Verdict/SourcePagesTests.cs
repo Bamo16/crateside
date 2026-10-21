@@ -164,6 +164,77 @@ public sealed class SourcePagesTests
         Assert.Empty(tab.Sections[1].Keys);
     }
 
+    [Theory]
+    [InlineData(
+        "Disclosure",
+        "Latch",
+        "hooktheory-search-disclosure-latch.json",
+        new[] { "disclosure/latch", "disclosure-ft-sam-smith/latch" }
+    )]
+    [InlineData(
+        "Billy Joel",
+        "Piano Man",
+        "hooktheory-search-billy-joel-piano-man.json",
+        new[] { "billy-joel/piano-man", "billyjoel/piano-man" }
+    )]
+    [InlineData(
+        "Disclosure ft Sam Smith",
+        "Latch",
+        "hooktheory-search-disclosure-latch.json",
+        new[] { "disclosure/latch", "disclosure-ft-sam-smith/latch" }
+    )]
+    public void Every_tab_the_search_files_under_the_song_is_found_but_not_its_remixes_or_other_songs(
+        string artist,
+        string title,
+        string fixture,
+        string[] tabs
+    ) =>
+        Assert.Equal(
+            tabs.Select(tab => $"https://www.hooktheory.com/theorytab/view/{tab}"),
+            SourcePages.HooktheoryTabUrls(Fixture(fixture), artist, title)
+        );
+
+    [Fact]
+    public void A_search_answer_that_is_not_json_finds_no_tabs() =>
+        Assert.Empty(SourcePages.HooktheoryTabUrls("<html>blocked</html>", "Disclosure", "Latch"));
+
+    [Fact]
+    public async Task Both_tabs_of_a_song_are_read_each_with_its_own_sections()
+    {
+        var handler = new RecordedSites(
+            new()
+            {
+                ["www.hooktheory.com/js/meilisearch"] = Fixture("hooktheory-search-script.js"),
+                ["www.hooktheory.com/meili"] = Fixture("hooktheory-search-disclosure-latch.json"),
+                ["www.hooktheory.com/theorytab/view/disclosure/latch"] = Fixture(
+                    "hooktheory-money.html"
+                ),
+                ["www.hooktheory.com/theorytab/view/disclosure-ft-sam-smith/latch"] = Fixture(
+                    "hooktheory-piano-man.html"
+                ),
+                [$"api.hooktheory.com/v1/songs/public/{MoneyVerse}"] = Fixture(
+                    $"hooktheory-api-{MoneyVerse}.json"
+                ),
+            }
+        );
+
+        var lookups = await new SourcePages(() => new HttpClient(handler)).FetchAsync(
+            "Disclosure",
+            "Latch",
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(
+            [
+                "https://www.hooktheory.com/theorytab/view/disclosure/latch",
+                "https://www.hooktheory.com/theorytab/view/disclosure-ft-sam-smith/latch",
+            ],
+            lookups[0].Pages.Select(page => page.Url)
+        );
+        Assert.Equal([2, 6], lookups[0].Pages.Select(page => page.Tab!.Sections.Count));
+        Assert.Equal(["test-search-key"], handler.Bearers);
+    }
+
     [Fact]
     public void A_hooktheory_page_without_a_song_payload_has_no_tab()
     {
@@ -243,7 +314,7 @@ public sealed class SourcePagesTests
         Assert.Equal(slug, SourcePages.Slug(name));
 
     [Fact]
-    public async Task Each_site_is_asked_once_and_a_missing_page_is_simply_absent()
+    public async Task Each_site_is_asked_for_its_page_and_a_missing_page_is_simply_absent()
     {
         var handler = new RecordedSites(
             new()
@@ -265,7 +336,16 @@ public sealed class SourcePagesTests
             [LookupStatus.NotFound, LookupStatus.Found, LookupStatus.NotFound],
             lookups.Select(lookup => lookup.Status)
         );
-        Assert.Equal(4, handler.Requests.Count);
+        Assert.Equal(
+            [
+                "www.hooktheory.com",
+                "www.hooktheory.com",
+                "www.musicnotes.com",
+                "www.musicnotes.com",
+                "www.ultimate-guitar.com",
+            ],
+            handler.Requests.Select(uri => uri.Host).Order()
+        );
     }
 
     [Fact]
@@ -296,6 +376,8 @@ public sealed class SourcePagesTests
     {
         public List<Uri> Requests { get; } = [];
 
+        public List<string> Bearers { get; } = [];
+
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken
@@ -304,6 +386,9 @@ public sealed class SourcePagesTests
             var uri = request.RequestUri!;
 
             Requests.Add(uri);
+
+            if (request.Headers.Authorization is { Parameter: { } bearer })
+                Bearers.Add(bearer);
 
             if (
                 uri.Host == failing

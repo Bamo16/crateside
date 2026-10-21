@@ -305,8 +305,26 @@ internal static partial class HooktheoryPageReader
     internal sealed record SectionStatsDto(IReadOnlyList<IReadOnlyList<string>>? AllKeys);
 }
 
+internal sealed record HooktheorySearchQuery(string Q)
+{
+    public int Limit => 50;
+
+    public string[] AttributesToRetrieve => ["artist", "song", "artistSlug", "songSlug"];
+}
+
+internal sealed record HooktheorySearchResponse(IReadOnlyList<HooktheorySearchHit>? Hits);
+
+internal sealed record HooktheorySearchHit(
+    string? Artist,
+    string? Song,
+    string? ArtistSlug,
+    string? SongSlug
+);
+
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(HooktheoryPageReader.SongDto))]
 [JsonSerializable(typeof(HooktheoryPageReader.ApiResponseDto))]
 [JsonSerializable(typeof(HooktheoryPageReader.ScoreDto))]
+[JsonSerializable(typeof(HooktheorySearchQuery))]
+[JsonSerializable(typeof(HooktheorySearchResponse))]
 internal sealed partial class HooktheoryJsonContext : JsonSerializerContext { }
