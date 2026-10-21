@@ -52,7 +52,8 @@ detected over are kept with the run, and their evidence inside the run's evidenc
 **Judging from these bars** (#116). On a track's page the user gives windows themselves: bar
 ranges from their warp (converted to seconds through the warp of the sample Ableton shows), or
 minutes and seconds where there is no warp, each with an optional label, plus a note to the judge
-and what they hear. crateside detects over each window before the first session, so the work
+and what they hear. A track with no stems has no warp view, so the same form shows on its page in
+minutes and seconds, and left empty it judges the whole track again. crateside detects over each window before the first session, so the work
 order carries them with their evidence and asks for one section per window; no resume is needed
 for them. The windows are recorded with `AskedBy = User` and their bars, the note as the run's
 `Direction`, and what they hear as a source of kind `ear` that crateside writes itself, noting how

@@ -22,7 +22,7 @@
 @inject IOptions<JudgeOptions> Judge
 @inject IJSRuntime Js
 
-@if (_group is { Stems.Count: > 0 } group)
+@if (_group is { } group && (group.Stems.Count > 0 || Row.HasUpload))
 {
     var wording = Wording(group);
     var (from, to) = View(group);
@@ -30,8 +30,11 @@
 
     <section class="warp" id="warp-view" @ref="_section">
         <div class="head">
-            <span class="section-label">Warp</span>
-            <span class="group-line @(group.OnTheirOwn.Any() ? "loud" : null)">@GroupLine(group, wording)</span>
+            <span class="section-label">@(group.Stems.Count > 0 ? "Warp" : "Judge")</span>
+            @if (group.Stems.Count > 0)
+            {
+                <span class="group-line @(group.OnTheirOwn.Any() ? "loud" : null)">@GroupLine(group, wording)</span>
+            }
             @if (Row.HasUpload && _form is null && BarRun is not { IsRunning: true })
             {
                 <button class="outline small" @onclick="() => Open(group)">Judge again</button>
@@ -88,7 +91,7 @@
                 }
                 <div class="range-row add">
                     <span></span>
-                    <button class="add-line" @onclick="form.Add">+ another range <span class="faint">· or drag on the ruler below</span></button>
+                    <button class="add-line" @onclick="form.Add">+ another range <span class="faint">@(group.Stems.Count > 0 ? "· or drag on the ruler below" : null)</span></button>
                 </div>
                 <div class="hear">
                     <span></span>
@@ -159,355 +162,358 @@
             }
         }
 
-        <div class="grid">
-            @if (_zoom is not Zoom.Whole && group.Stems.FirstOrDefault(stem => stem.Sidecar is not null) is { } whole)
-            {
-                <span class="gutter faint">Whole track · click to move</span>
-                <div class="strip">
-                    <svg viewBox="0 0 @Columns 20" preserveAspectRatio="none">
-                        <path d="@Wave(whole, 0, group.Seconds, 20, mono: true)" />
-                    </svg>
-                    <div class="view-box" style="left: @P(from / group.Seconds * 100)%; width: @P((to - from) / group.Seconds * 100)%"></div>
-                    <div class="strip-hits">
-                        @for (var i = 0; i < StripColumns; i++)
-                        {
-                            var at = (i + 0.5) / StripColumns * group.Seconds;
-                            <span @onpointerdown="() => CentreOn(group, at)" @onpointerenter="pointer => Drag(group, at, pointer)"></span>
-                        }
-                    </div>
-                </div>
-            }
-
-            @{ var bands = Bands(group); }
-            <span class="gutter faint ruler-gutter">
-                <span>@(group.Lender is null ? "Time" : "Bar")</span>
-                @if (_form is not null)
+        @if (group.Stems.Count > 0)
+        {
+            <div class="grid">
+                @if (_zoom is not Zoom.Whole && group.Stems.FirstOrDefault(stem => stem.Sidecar is not null) is { } whole)
                 {
-                    <span class="drag-hint">drag here to add a range</span>
-                }
-            </span>
-            <div class="ruler @(bands.Count > 0 || _form is not null ? "tall" : null) @(_form is not null ? "dragging" : null)"
-                 data-snaps="@(_form is null ? null : string.Join(',', SnapBounds(group, from, to).Select(F)))">
-                @if (group.Lender is null)
-                {
-                    @foreach (var at in TimeTicks(from, to))
-                    {
-                        <span class="tick numbered" style="left: @P(X(at, from, to))%"></span>
-                        <span class="mono bar-number" style="left: @P(X(at, from, to))%">@TempoFormat.Clock(at)</span>
-                    }
-                }
-                @BandsIn(bands, from, to, tags: true)
-                @if (group.Lender?.Loop is { } loop)
-                {
-                    var (loopLeft, loopRight) = (Math.Clamp(X(loop.Start, from, to), 0, 100), Math.Clamp(X(loop.End, from, to), 0, 100));
-                    @if (loopRight > loopLeft)
-                    {
-                        <div class="loop @(loop.On ? "on" : null) @(X(loop.Start, from, to) < 0 ? "open-left" : null) @(X(loop.End, from, to) > 100 ? "open-right" : null)"
-                             style="left: @P(loopLeft)%; width: @P(loopRight - loopLeft)%"
-                             title="@LoopTitle(loop)"></div>
-                    }
-                    @if (X(loop.End, from, to) is >= 0 and <= 92)
-                    {
-                        <span class="mono loop-word" style="left: calc(@P(X(loop.End, from, to))% + 4px)">@(loop.On ? "loop" : "loop off")</span>
-                    }
-                }
-                @foreach (var (at, bar, numbered, beat) in BarTicks(group, from, to))
-                {
-                    <span class="tick @(numbered ? "numbered" : null) @(beat ? "beat" : null)" style="left: @P(X(at, from, to))%"></span>
-                    @if (numbered)
-                    {
-                        <span class="mono bar-number" style="left: @P(X(at, from, to))%">@bar</span>
-                    }
-                }
-                @if (group.Lender is { } lender)
-                {
-                    var clipStart = lender.Clip.Start;
-                    <span class="notch" style="left: @P(X(clipStart, from, to))%"
-                          title="Clip start · @WarpWording.Time(clipStart) · bar 1.1"></span>
-                }
-                @if (_form is { } dragged)
-                {
-                    @foreach (var (line, index) in dragged.Lines.Select((line, index) => (line, index)))
-                    {
-                        @if (dragged.Window(line, group) is { } window)
-                        {
-                            var (left, right) = (X(window.Start, from, to), X(window.End, from, to));
-                            @if (left is >= 0 and <= 100)
+                    <span class="gutter faint">Whole track · click to move</span>
+                    <div class="strip">
+                        <svg viewBox="0 0 @Columns 20" preserveAspectRatio="none">
+                            <path d="@Wave(whole, 0, group.Seconds, 20, mono: true)" />
+                        </svg>
+                        <div class="view-box" style="left: @P(from / group.Seconds * 100)%; width: @P((to - from) / group.Seconds * 100)%"></div>
+                        <div class="strip-hits">
+                            @for (var i = 0; i < StripColumns; i++)
                             {
-                                <span class="edge" style="left: @P(left)%" data-line="@index" data-side="start" data-fixed="@F(right / 100)"></span>
+                                var at = (i + 0.5) / StripColumns * group.Seconds;
+                                <span @onpointerdown="() => CentreOn(group, at)" @onpointerenter="pointer => Drag(group, at, pointer)"></span>
                             }
-                            @if (right is >= 0 and <= 100)
-                            {
-                                <span class="edge" style="left: @P(right)%" data-line="@index" data-side="end" data-fixed="@F(left / 100)"></span>
-                            }
-                        }
-                    }
-                }
-            </div>
-
-            @if (group.SharedAllMarkers is { Count: > 1 })
-            {
-                var (figure, low, high, drifts) = TempoScale(group);
-                <span class="gutter tempo-gutter">
-                    <span class="faint">Tempo from the markers</span>
-                    @if (Headline is { } headline)
-                    {
-                        <span><span class="mono figure">@headline.Text</span> <span class="note">@headline.Brief</span></span>
-                    }
-                </span>
-                <div class="tempo-line" title="@("marker".ToQuantity(group.SharedMarkers.Count)) · @Headline?.Note">
-                    <svg viewBox="0 0 @Columns 40" preserveAspectRatio="none">
-                        <line class="dashed" x1="0" x2="@Columns" y1="@P(Y(figure, low, high))" y2="@P(Y(figure, low, high))" />
-                        <path d="@TempoPath(group, from, to, low, high)" />
-                    </svg>
-                    @if (drifts)
-                    {
-                        <span class="mono range high">@((int)high)</span>
-                        <span class="mono range low">@((int)low)</span>
-                    }
-                    @BandsIn(bands, from, to, tags: false)
-                </div>
-            }
-
-            @if (OffGrid(group) is { } off)
-            {
-                <span class="gutter off-gutter">
-                    <span class="off-head">
-                        <span class="off-title">Off the grid</span>
-                        @if (off.CanTrueUp && _confirming is Confirming.None && _working is null && _trueUp is { Plan: TrueUpPlan.Retype })
-                        {
-                            <button class="outline small" @onclick="() => _confirming = Confirming.TrueUp">True up</button>
-                        }
-                    </span>
-                    <span class="mono off-figure">@off.Figure</span>
-                    @if (off.Runs is { } runs)
-                    {
-                        <span class="off-runs">@runs</span>
-                    }
-                </span>
-                <div class="off-line">
-                    <svg viewBox="0 0 @Columns 72" preserveAspectRatio="none">
-                        <line class="dashed" x1="0" x2="@Columns" y1="36" y2="36" />
-                        @if (off.Points(from, to) is { Count: > 1 } points)
-                        {
-                            <polyline points="@string.Join(' ', points.Select(point => $"{P(point.X / 100 * Columns)},{P(point.Y / 100 * 72)}"))" />
-                        }
-                    </svg>
-                    @foreach (var point in off.Points(from, to))
-                    {
-                        <span class="off-dot" style="left: @P(point.X)%; top: @P(point.Y)%"></span>
-                    }
-                    <span class="mono off-label top">audio early +30 ms</span>
-                    <span class="mono off-label bottom">late −30 ms</span>
-                    @BandsIn(bands, from, to, tags: false)
-                </div>
-                @if (off.CanTrueUp && Row.Bpm is { } tempo && group.Lender is { } canonical)
-                {
-                    <div class="off-status">
-                        @if (Working(canonical))
-                        {
-                            <span class="working"><span class="dot"></span>@(_trueUp is { Plan: TrueUpPlan.Retype working } ? WarpWording.TrueUpWorking(working) : "Retyping the warp…")</span>
-                        }
-                        else if (_confirming is Confirming.TrueUp && _trueUp is { Plan: TrueUpPlan.Retype plan, Siblings: var siblings })
-                        {
-                            <div class="confirm">
-                                <span class="control-label asking">True up the warp</span>
-                                <span class="status">@wording.TrueUpQuestion(plan)</span>
-                                <span class="actions">
-                                    <button class="danger" @onclick="() => TrueUpAsync(canonical, plan, siblings)">True up my warp</button>
-                                    <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
-                                </span>
-                            </div>
-                        }
-                        else if (Done(canonical, Confirming.TrueUp) is { } done)
-                        {
-                            <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
-                        }
-                        else
-                        {
-                            <span class="status @(_working is null && _trueUp is { Plan: TrueUpPlan.Retype } ? null : "faint")">
-                                @(_working is not null
-                                    ? "Not while a change is under way."
-                                    : _trueUp switch
-                                    {
-                                        null => "Checking the warp against the audio…",
-                                        { Plan: TrueUpPlan.Retype ready } => wording.TrueUpStatus(tempo, ready),
-                                        { Plan: var refused } => WarpWording.TrueUpRefusal(refused),
-                                    })
-                            </span>
-                        }
+                        </div>
                     </div>
                 }
-            }
 
-            @foreach (var stem in group.Stems)
-            {
-                var chip = Working(stem) ? new WarpChip("Writing", ChipStyle.Teal) : wording.Chip(stem);
-                var isSelected = stem == selected;
-                var parts = group.PartsFrom(stem);
-
-                <div class="lane @(isSelected ? "selected" : null)" @onclick="() => Select(stem)">
-                    <span class="gutter lane-gutter">
-                        <span class="name">@NameOf(stem.Path)</span>
-                        <span class="wchip @Style(chip.Style)">@chip.Label</span>
-                        <span class="sub">@(Working(stem) ? $"writing {wording.Name(group.Lender!.Path)}'s warp" : wording.Sub(stem))</span>
-                    </span>
-                    <div class="plot">
-                        @if (stem.Sidecar is null)
+                @{ var bands = Bands(group); }
+                <span class="gutter faint ruler-gutter">
+                    <span>@(group.Lender is null ? "Time" : "Bar")</span>
+                    @if (_form is not null)
+                    {
+                        <span class="drag-hint">drag here to add a range</span>
+                    }
+                </span>
+                <div class="ruler @(bands.Count > 0 || _form is not null ? "tall" : null) @(_form is not null ? "dragging" : null)"
+                     data-snaps="@(_form is null ? null : string.Join(',', SnapBounds(group, from, to).Select(F)))">
+                    @if (group.Lender is null)
+                    {
+                        @foreach (var at in TimeTicks(from, to))
                         {
-                            <div class="empty @(stem.Owner is WarpOwner.WaitingForLive ? "waiting" : null)">
-                                @(stem.Owner is WarpOwner.WaitingForLive ? "No warp · waiting for Live to open it" : "No overview · Live has not opened this file")
-                            </div>
+                            <span class="tick numbered" style="left: @P(X(at, from, to))%"></span>
+                            <span class="mono bar-number" style="left: @P(X(at, from, to))%">@TempoFormat.Clock(at)</span>
                         }
-                        else
+                    }
+                    @BandsIn(bands, from, to, tags: true)
+                    @if (group.Lender?.Loop is { } loop)
+                    {
+                        var (loopLeft, loopRight) = (Math.Clamp(X(loop.Start, from, to), 0, 100), Math.Clamp(X(loop.End, from, to), 0, 100));
+                        @if (loopRight > loopLeft)
                         {
-                            <svg class="overview" viewBox="0 0 @Columns 45" preserveAspectRatio="none">
-                                <path d="@Wave(stem, from, to, 45, mono: false)" />
-                            </svg>
-
-                            var markers = stem.Markers;
-                            var flags = FlagsFit(markers, from, to);
-                            @for (var i = 0; i < markers.Count; i++)
+                            <div class="loop @(loop.On ? "on" : null) @(X(loop.Start, from, to) < 0 ? "open-left" : null) @(X(loop.End, from, to) > 100 ? "open-right" : null)"
+                                 style="left: @P(loopLeft)%; width: @P(loopRight - loopLeft)%"
+                                 title="@LoopTitle(loop)"></div>
+                        }
+                        @if (X(loop.End, from, to) is >= 0 and <= 92)
+                        {
+                            <span class="mono loop-word" style="left: calc(@P(X(loop.End, from, to))% + 4px)">@(loop.On ? "loop" : "loop off")</span>
+                        }
+                    }
+                    @foreach (var (at, bar, numbered, beat) in BarTicks(group, from, to))
+                    {
+                        <span class="tick @(numbered ? "numbered" : null) @(beat ? "beat" : null)" style="left: @P(X(at, from, to))%"></span>
+                        @if (numbered)
+                        {
+                            <span class="mono bar-number" style="left: @P(X(at, from, to))%">@bar</span>
+                        }
+                    }
+                    @if (group.Lender is { } lender)
+                    {
+                        var clipStart = lender.Clip.Start;
+                        <span class="notch" style="left: @P(X(clipStart, from, to))%"
+                              title="Clip start · @WarpWording.Time(clipStart) · bar 1.1"></span>
+                    }
+                    @if (_form is { } dragged)
+                    {
+                        @foreach (var (line, index) in dragged.Lines.Select((line, index) => (line, index)))
+                        {
+                            @if (dragged.Window(line, group) is { } window)
                             {
-                                var marker = markers[i];
-                                var x = X(marker.Seconds, from, to);
-                                if (x is < 0 or > 100)
-                                    continue;
-                                <span class="marker-line @(flags ? null : "dense")" style="left: @P(x)%"></span>
-                                <span class="@(flags ? "flag" : "flag-tick")" style="left: @P(x)%" title="@MarkerTitle(stem, i)"></span>
-                            }
-
-                            @if (_zoom is not Zoom.Whole)
-                            {
-                                @foreach (var at in stem.TransientTimes)
+                                var (left, right) = (X(window.Start, from, to), X(window.End, from, to));
+                                @if (left is >= 0 and <= 100)
                                 {
-                                    var x = X(at, from, to);
-                                    if (x is < 0 or > 100)
-                                        continue;
-                                    <span class="transient" style="left: @P(x)%"></span>
+                                    <span class="edge" style="left: @P(left)%" data-line="@index" data-side="start" data-fixed="@F(right / 100)"></span>
+                                }
+                                @if (right is >= 0 and <= 100)
+                                {
+                                    <span class="edge" style="left: @P(right)%" data-line="@index" data-side="end" data-fixed="@F(left / 100)"></span>
                                 }
                             }
-
-                            var (clipStart, clipEnd) = stem.Clip;
-                            @if (X(clipStart, from, to) > 0)
-                            {
-                                <div class="outside" style="left: 0; width: @P(Math.Min(100, X(clipStart, from, to)))%"></div>
-                            }
-                            @if (X(clipEnd, from, to) < 100)
-                            {
-                                <div class="outside" style="left: @P(Math.Max(0, X(clipEnd, from, to)))%; right: 0"></div>
-                            }
                         }
-                        @if (parts is { } parting && wording.Name(group.Lender!.Path) is var sibling)
+                    }
+                </div>
+
+                @if (group.SharedAllMarkers is { Count: > 1 })
+                {
+                    var (figure, low, high, drifts) = TempoScale(group);
+                    <span class="gutter tempo-gutter">
+                        <span class="faint">Tempo from the markers</span>
+                        @if (Headline is { } headline)
                         {
-                            <div class="differs" style="left: @P(Math.Max(0, X(parting, from, to)))%"
-                                 title="Differs from @sibling from @TempoFormat.Clock(parting)"></div>
+                            <span><span class="mono figure">@headline.Text</span> <span class="note">@headline.Brief</span></span>
+                        }
+                    </span>
+                    <div class="tempo-line" title="@("marker".ToQuantity(group.SharedMarkers.Count)) · @Headline?.Note">
+                        <svg viewBox="0 0 @Columns 40" preserveAspectRatio="none">
+                            <line class="dashed" x1="0" x2="@Columns" y1="@P(Y(figure, low, high))" y2="@P(Y(figure, low, high))" />
+                            <path d="@TempoPath(group, from, to, low, high)" />
+                        </svg>
+                        @if (drifts)
+                        {
+                            <span class="mono range high">@((int)high)</span>
+                            <span class="mono range low">@((int)low)</span>
                         }
                         @BandsIn(bands, from, to, tags: false)
                     </div>
-                </div>
-            }
-
-            <span class="gutter"></span>
-            <div class="axis">
-                @foreach (var at in TimeTicks(from, to))
-                {
-                    <span class="mono" style="left: @P(X(at, from, to))%">@TempoFormat.Clock(at)</span>
                 }
-            </div>
-        </div>
 
-        @if (selected is not null)
-        {
-            var chip = Working(selected) ? new WarpChip("Writing", ChipStyle.Teal) : wording.Chip(selected);
-            var sample = Row.Samples.FirstOrDefault(sample => sample.Path == selected.Path);
-
-            <div class="detail">
-                <div class="detail-head">
-                    <span class="file">@Path.GetFileName(selected.Path)</span>
-                    <span class="wchip @Style(chip.Style)">@chip.Label</span>
-                </div>
-
-                <div class="facts">
-                    @foreach (var (label, value, note, tone) in Facts(selected, sample, wording, group))
+                @if (OffGrid(group) is { } off)
+                {
+                    <span class="gutter off-gutter">
+                        <span class="off-head">
+                            <span class="off-title">Off the grid</span>
+                            @if (off.CanTrueUp && _confirming is Confirming.None && _working is null && _trueUp is { Plan: TrueUpPlan.Retype })
+                            {
+                                <button class="outline small" @onclick="() => _confirming = Confirming.TrueUp">True up</button>
+                            }
+                        </span>
+                        <span class="mono off-figure">@off.Figure</span>
+                        @if (off.Runs is { } runs)
+                        {
+                            <span class="off-runs">@runs</span>
+                        }
+                    </span>
+                    <div class="off-line">
+                        <svg viewBox="0 0 @Columns 72" preserveAspectRatio="none">
+                            <line class="dashed" x1="0" x2="@Columns" y1="36" y2="36" />
+                            @if (off.Points(from, to) is { Count: > 1 } points)
+                            {
+                                <polyline points="@string.Join(' ', points.Select(point => $"{P(point.X / 100 * Columns)},{P(point.Y / 100 * 72)}"))" />
+                            }
+                        </svg>
+                        @foreach (var point in off.Points(from, to))
+                        {
+                            <span class="off-dot" style="left: @P(point.X)%; top: @P(point.Y)%"></span>
+                        }
+                        <span class="mono off-label top">audio early +30 ms</span>
+                        <span class="mono off-label bottom">late −30 ms</span>
+                        @BandsIn(bands, from, to, tags: false)
+                    </div>
+                    @if (off.CanTrueUp && Row.Bpm is { } tempo && group.Lender is { } canonical)
                     {
-                        <div class="fact">
-                            <span class="fact-label">@label</span>
-                            <span class="mono fact-value @tone">@value</span>
-                            <span class="fact-note">@note</span>
+                        <div class="off-status">
+                            @if (Working(canonical))
+                            {
+                                <span class="working"><span class="dot"></span>@(_trueUp is { Plan: TrueUpPlan.Retype working } ? WarpWording.TrueUpWorking(working) : "Retyping the warp…")</span>
+                            }
+                            else if (_confirming is Confirming.TrueUp && _trueUp is { Plan: TrueUpPlan.Retype plan, Siblings: var siblings })
+                            {
+                                <div class="confirm">
+                                    <span class="control-label asking">True up the warp</span>
+                                    <span class="status">@wording.TrueUpQuestion(plan)</span>
+                                    <span class="actions">
+                                        <button class="danger" @onclick="() => TrueUpAsync(canonical, plan, siblings)">True up my warp</button>
+                                        <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
+                                    </span>
+                                </div>
+                            }
+                            else if (Done(canonical, Confirming.TrueUp) is { } done)
+                            {
+                                <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
+                            }
+                            else
+                            {
+                                <span class="status @(_working is null && _trueUp is { Plan: TrueUpPlan.Retype } ? null : "faint")">
+                                    @(_working is not null
+                                        ? "Not while a change is under way."
+                                        : _trueUp switch
+                                        {
+                                            null => "Checking the warp against the audio…",
+                                            { Plan: TrueUpPlan.Retype ready } => wording.TrueUpStatus(tempo, ready),
+                                            { Plan: var refused } => WarpWording.TrueUpRefusal(refused),
+                                        })
+                                </span>
+                            }
                         </div>
                     }
-                </div>
+                }
 
-                <p class="provenance">@wording.Sentence(selected)</p>
+                @foreach (var stem in group.Stems)
+                {
+                    var chip = Working(stem) ? new WarpChip("Writing", ChipStyle.Teal) : wording.Chip(stem);
+                    var isSelected = stem == selected;
+                    var parts = group.PartsFrom(stem);
 
-                <div class="controls">
-                    <div class="control">
-                        <div class="label-line">
-                            <span class="control-label @(_confirming is Confirming.Reapply ? "asking" : null)">Re-apply crateside's warp</span>
-                            @if (wording.CanReapply(selected) && _confirming is Confirming.None && _working is null)
+                    <div class="lane @(isSelected ? "selected" : null)" @onclick="() => Select(stem)">
+                        <span class="gutter lane-gutter">
+                            <span class="name">@NameOf(stem.Path)</span>
+                            <span class="wchip @Style(chip.Style)">@chip.Label</span>
+                            <span class="sub">@(Working(stem) ? $"writing {wording.Name(group.Lender!.Path)}'s warp" : wording.Sub(stem))</span>
+                        </span>
+                        <div class="plot">
+                            @if (stem.Sidecar is null)
                             {
-                                <button class="outline" @onclick="() => _confirming = Confirming.Reapply">Re-apply</button>
+                                <div class="empty @(stem.Owner is WarpOwner.WaitingForLive ? "waiting" : null)">
+                                    @(stem.Owner is WarpOwner.WaitingForLive ? "No warp · waiting for Live to open it" : "No overview · Live has not opened this file")
+                                </div>
                             }
-                        </div>
-                        @if (Working(selected))
-                        {
-                            <span class="working"><span class="dot"></span>Writing @wording.Name(group.Lender!.Path)'s warp…</span>
-                            <span class="status">Your warp is backed up.</span>
-                        }
-                        else if (_confirming is Confirming.Reapply)
-                        {
-                            <span class="status">@wording.ReapplyQuestion(selected)</span>
-                            <span class="actions">
-                                <button class="danger" @onclick="() => ReapplyAsync(selected)">@wording.ReapplyConfirm(selected)</button>
-                                <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
-                            </span>
-                        }
-                        else if (Done(selected, Confirming.Reapply) is { } done)
-                        {
-                            <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
-                        }
-                        else
-                        {
-                            <span class="status @(wording.CanReapply(selected) && _working is null ? null : "faint")">
-                                @(_working is not null ? "Not while a change is under way." : wording.ReapplyStatus(selected))
-                            </span>
-                        }
-                    </div>
-
-                    <div class="control">
-                        <div class="label-line">
-                            <span class="control-label @(_confirming is Confirming.LetLive || selected.Owner is WarpOwner.WaitingForLive ? "asking" : null)">Let Live analyse</span>
-                            @if (WarpWording.CanLetLiveAnalyse(selected) && _confirming is Confirming.None && _working is null)
+                            else
                             {
-                                <button class="outline" @onclick="() => _confirming = Confirming.LetLive">Let Live analyse</button>
+                                <svg class="overview" viewBox="0 0 @Columns 45" preserveAspectRatio="none">
+                                    <path d="@Wave(stem, from, to, 45, mono: false)" />
+                                </svg>
+
+                                var markers = stem.Markers;
+                                var flags = FlagsFit(markers, from, to);
+                                @for (var i = 0; i < markers.Count; i++)
+                                {
+                                    var marker = markers[i];
+                                    var x = X(marker.Seconds, from, to);
+                                    if (x is < 0 or > 100)
+                                        continue;
+                                    <span class="marker-line @(flags ? null : "dense")" style="left: @P(x)%"></span>
+                                    <span class="@(flags ? "flag" : "flag-tick")" style="left: @P(x)%" title="@MarkerTitle(stem, i)"></span>
+                                }
+
+                                @if (_zoom is not Zoom.Whole)
+                                {
+                                    @foreach (var at in stem.TransientTimes)
+                                    {
+                                        var x = X(at, from, to);
+                                        if (x is < 0 or > 100)
+                                            continue;
+                                        <span class="transient" style="left: @P(x)%"></span>
+                                    }
+                                }
+
+                                var (clipStart, clipEnd) = stem.Clip;
+                                @if (X(clipStart, from, to) > 0)
+                                {
+                                    <div class="outside" style="left: 0; width: @P(Math.Min(100, X(clipStart, from, to)))%"></div>
+                                }
+                                @if (X(clipEnd, from, to) < 100)
+                                {
+                                    <div class="outside" style="left: @P(Math.Max(0, X(clipEnd, from, to)))%; right: 0"></div>
+                                }
                             }
+                            @if (parts is { } parting && wording.Name(group.Lender!.Path) is var sibling)
+                            {
+                                <div class="differs" style="left: @P(Math.Max(0, X(parting, from, to)))%"
+                                     title="Differs from @sibling from @TempoFormat.Clock(parting)"></div>
+                            }
+                            @BandsIn(bands, from, to, tags: false)
                         </div>
-                        @if (_confirming is Confirming.LetLive)
-                        {
-                            <span class="status">@wording.LetLiveQuestion(selected)</span>
-                            <span class="actions">
-                                <button class="danger" @onclick="() => LetLiveAnalyse(selected)">Send to Recycle Bin</button>
-                                <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
-                            </span>
-                        }
-                        else if (selected.Owner is WarpOwner.PuttingBack)
-                        {
-                            <span class="working"><span class="dot"></span>@wording.LetLiveStatus(selected, Folder(selected))</span>
-                        }
-                        else if (Done(selected, Confirming.LetLive) is { } done)
-                        {
-                            <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
-                        }
-                        else
-                        {
-                            <span class="status @(selected.Owner is WarpOwner.WaitingForLive ? "now" : WarpWording.CanLetLiveAnalyse(selected) && _working is null ? null : "faint")">
-                                @(_working is not null && selected.Owner is not WarpOwner.WaitingForLive ? "Not while a change is under way." : wording.LetLiveStatus(selected, Folder(selected)))
-                            </span>
-                        }
                     </div>
+                }
+
+                <span class="gutter"></span>
+                <div class="axis">
+                    @foreach (var at in TimeTicks(from, to))
+                    {
+                        <span class="mono" style="left: @P(X(at, from, to))%">@TempoFormat.Clock(at)</span>
+                    }
                 </div>
             </div>
+
+            @if (selected is not null)
+            {
+                var chip = Working(selected) ? new WarpChip("Writing", ChipStyle.Teal) : wording.Chip(selected);
+                var sample = Row.Samples.FirstOrDefault(sample => sample.Path == selected.Path);
+
+                <div class="detail">
+                    <div class="detail-head">
+                        <span class="file">@Path.GetFileName(selected.Path)</span>
+                        <span class="wchip @Style(chip.Style)">@chip.Label</span>
+                    </div>
+
+                    <div class="facts">
+                        @foreach (var (label, value, note, tone) in Facts(selected, sample, wording, group))
+                        {
+                            <div class="fact">
+                                <span class="fact-label">@label</span>
+                                <span class="mono fact-value @tone">@value</span>
+                                <span class="fact-note">@note</span>
+                            </div>
+                        }
+                    </div>
+
+                    <p class="provenance">@wording.Sentence(selected)</p>
+
+                    <div class="controls">
+                        <div class="control">
+                            <div class="label-line">
+                                <span class="control-label @(_confirming is Confirming.Reapply ? "asking" : null)">Re-apply crateside's warp</span>
+                                @if (wording.CanReapply(selected) && _confirming is Confirming.None && _working is null)
+                                {
+                                    <button class="outline" @onclick="() => _confirming = Confirming.Reapply">Re-apply</button>
+                                }
+                            </div>
+                            @if (Working(selected))
+                            {
+                                <span class="working"><span class="dot"></span>Writing @wording.Name(group.Lender!.Path)'s warp…</span>
+                                <span class="status">Your warp is backed up.</span>
+                            }
+                            else if (_confirming is Confirming.Reapply)
+                            {
+                                <span class="status">@wording.ReapplyQuestion(selected)</span>
+                                <span class="actions">
+                                    <button class="danger" @onclick="() => ReapplyAsync(selected)">@wording.ReapplyConfirm(selected)</button>
+                                    <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
+                                </span>
+                            }
+                            else if (Done(selected, Confirming.Reapply) is { } done)
+                            {
+                                <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
+                            }
+                            else
+                            {
+                                <span class="status @(wording.CanReapply(selected) && _working is null ? null : "faint")">
+                                    @(_working is not null ? "Not while a change is under way." : wording.ReapplyStatus(selected))
+                                </span>
+                            }
+                        </div>
+
+                        <div class="control">
+                            <div class="label-line">
+                                <span class="control-label @(_confirming is Confirming.LetLive || selected.Owner is WarpOwner.WaitingForLive ? "asking" : null)">Let Live analyse</span>
+                                @if (WarpWording.CanLetLiveAnalyse(selected) && _confirming is Confirming.None && _working is null)
+                                {
+                                    <button class="outline" @onclick="() => _confirming = Confirming.LetLive">Let Live analyse</button>
+                                }
+                            </div>
+                            @if (_confirming is Confirming.LetLive)
+                            {
+                                <span class="status">@wording.LetLiveQuestion(selected)</span>
+                                <span class="actions">
+                                    <button class="danger" @onclick="() => LetLiveAnalyse(selected)">Send to Recycle Bin</button>
+                                    <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
+                                </span>
+                            }
+                            else if (selected.Owner is WarpOwner.PuttingBack)
+                            {
+                                <span class="working"><span class="dot"></span>@wording.LetLiveStatus(selected, Folder(selected))</span>
+                            }
+                            else if (Done(selected, Confirming.LetLive) is { } done)
+                            {
+                                <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
+                            }
+                            else
+                            {
+                                <span class="status @(selected.Owner is WarpOwner.WaitingForLive ? "now" : WarpWording.CanLetLiveAnalyse(selected) && _working is null ? null : "faint")">
+                                    @(_working is not null && selected.Owner is not WarpOwner.WaitingForLive ? "Not while a change is under way." : wording.LetLiveStatus(selected, Folder(selected)))
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
         }
     </section>
 }

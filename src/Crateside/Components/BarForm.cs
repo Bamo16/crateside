@@ -53,10 +53,16 @@ public sealed class BarForm(bool inBars)
                 ? JudgeRanges.Window(group, bars, label)
                 : null;
 
+        // A track with no stems has no length to check a range against.
         return
             JudgeRanges.TryParseTimes(line.Range, out var start, out var end)
-            && end <= group.Seconds + 1
-            ? new RunWindow(start, Math.Min(end, group.Seconds), label, WindowAsker.User)
+            && (group.Seconds is 0 || end <= group.Seconds + 1)
+            ? new RunWindow(
+                start,
+                group.Seconds is 0 ? end : Math.Min(end, group.Seconds),
+                label,
+                WindowAsker.User
+            )
             : null;
     }
 
