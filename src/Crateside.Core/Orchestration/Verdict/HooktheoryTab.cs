@@ -21,6 +21,9 @@ public sealed record HooktheoryTab
 
     /// <summary>The share of the synced video, 0 to 1, that the sections synced to it span together; null when none is.</summary>
     public double? Coverage { get; init; }
+
+    /// <summary>One contributor and one or two sections; Rule 1 of the judge's prompt does not cap on such a page (ADR 0062).</summary>
+    public bool IsThin => Contributors is [_] && Sections.Count is 1 or 2;
 }
 
 /// <summary>One section of a TheoryTab; the percentages say how much of it is filled in.</summary>

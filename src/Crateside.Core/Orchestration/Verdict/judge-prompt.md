@@ -42,7 +42,7 @@ Anything else, read the page itself: a search snippet can give one section's key
 
 ## Two fixed rules
 
-1. An authoritative source that states another key caps the verdict at MEDIUM, however strong the chord argument. Record its key in `statesKey` and how you weighed it in `note`.
+1. An authoritative source that states another key caps the verdict at MEDIUM, however strong the chord argument. Record its key in `statesKey` and how you weighed it in `note`. This does not apply to a Hooktheory page the work order marks `THIN PAGE` (one contributor, one or two sections): weigh it like any evidence, record it, and it may still lead you to MEDIUM by your own reasoning, but it is not a mandatory cap. Musicnotes and Ultimate Guitar keep the rule.
 2. Tunebat, SongBPM, GetSongBPM, Spotify-derived keys and every site like them are detectors like ours, right less often than keydetect alone. They are not sources: leave them out.
 
 ## Confidence

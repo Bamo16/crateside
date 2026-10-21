@@ -294,6 +294,9 @@ public sealed partial class VerdictRunner(
             : $"{"contributor".ToQuantity(tab.Contributors.Count)} ({string.Join(", ", tab.Contributors)}); "
                 + $"{"section".ToQuantity(tab.Sections.Count)} ({sections}){wholeSong}";
 
+        if (tab.IsThin)
+            yield return "THIN PAGE: one contributor and one or two sections";
+
         var other = tab.Sections.Count(section => section.VideoId is not null);
         var synced = tab.SyncedVideoId is { } video
             ? $"synced to YouTube {video}"
