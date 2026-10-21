@@ -4,13 +4,21 @@ using Crateside.Core.Samples;
 namespace Crateside.Core.Warps;
 
 /// <summary>Samples whose sidecar went to the Recycle Bin so Live analyses them afresh, and the warp to put back once it has (#97).</summary>
-public sealed class LiveAnalyses(string? path = null)
+public sealed class LiveAnalyses
 {
     private readonly Lock _lock = new();
-    private readonly Dictionary<string, AwaitedAnalysis> _entries = Load(path);
+    private readonly string? _path;
+    private readonly Dictionary<string, AwaitedAnalysis> _entries;
 
-    public static string DefaultPath { get; } =
-        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "live-analyses.json");
+    public LiveAnalyses(CratesidePaths paths)
+        : this(paths.LiveAnalysesFile) { }
+
+    /// <summary>Keeps nothing on disk when <paramref name="path"/> is null.</summary>
+    internal LiveAnalyses(string? path = null)
+    {
+        _path = path;
+        _entries = Load(path);
+    }
 
     public AwaitedAnalysis? Of(string audioPath)
     {
@@ -40,9 +48,9 @@ public sealed class LiveAnalyses(string? path = null)
         {
             change(_entries);
 
-            if (path is not null)
+            if (_path is not null)
                 LiveAnalysesJsonContext.Default.DictionaryStringAwaitedAnalysis.WriteFile(
-                    path,
+                    _path,
                     _entries
                 );
         }
@@ -78,19 +86,28 @@ public sealed record AwaitedAnalysis(
 internal sealed partial class LiveAnalysesJsonContext : JsonSerializerContext { }
 
 /// <summary>Copies a sidecar aside before crateside replaces or recycles it.</summary>
-public sealed class SidecarBackups(string root, TimeProvider time)
+public sealed class SidecarBackups
 {
-    public static string DefaultRoot { get; } =
-        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "backups", "warps");
+    private readonly string _root;
+    private readonly TimeProvider _time;
+
+    public SidecarBackups(CratesidePaths paths, TimeProvider time)
+        : this(paths.WarpBackups, time) { }
+
+    internal SidecarBackups(string root, TimeProvider time)
+    {
+        _root = root;
+        _time = time;
+    }
 
     /// <summary>The backup's path.</summary>
     public string Keep(string sidecarPath)
     {
-        Directory.CreateDirectory(root);
+        Directory.CreateDirectory(_root);
 
         var backup = Path.Combine(
-            root,
-            $"{time.GetLocalNow():yyyy-MM-dd HHmmss} {Path.GetFileName(sidecarPath)}"
+            _root,
+            $"{_time.GetLocalNow():yyyy-MM-dd HHmmss} {Path.GetFileName(sidecarPath)}"
         );
         File.Copy(sidecarPath, backup, overwrite: true);
 

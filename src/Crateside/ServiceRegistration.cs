@@ -107,18 +107,9 @@ public static class ServiceRegistration
         services.AddSingleton<LibraryKeyReader>();
         services.AddSingleton<LibrarySummary>();
         services.AddSingleton<StagingReader>();
-        services.AddSingleton(sp => new WarpTempoReader(
-            sp.GetRequiredService<CratesidePaths>().TempoCache,
-            sp.GetRequiredService<WrittenWarps>()
-        ));
-        // hpss matched an AI drum stem on the instrumental, measured 2026-09-30 (#83).
+        services.AddSingleton<WarpTempoReader>();
         services.AddSingleton<KnownBuilds>();
-        services.AddSingleton(sp => new BeatReader(
-            sp.GetRequiredService<CratesidePaths>().BeatCache,
-            sp.GetRequiredService<CratesidePaths>().BeatdetectFfmpeg,
-            "beatdetect=hpss=1",
-            sp.GetRequiredService<KnownBuilds>()
-        ));
+        services.AddSingleton<BeatReader>();
         services.AddSingleton<ISetLinks, AbletonSetLinks>();
         services.AddSingleton<PlaylistReader>();
         services.AddSingleton<QueueFile>();
@@ -239,10 +230,7 @@ public static class ServiceRegistration
 
         services.AddSingleton<BackingRunner>();
         services.AddSingleton<KeyCorrections>();
-        services.AddSingleton(sp => new TagStoreBackups(
-            TagStoreBackups.DefaultRoot,
-            sp.GetRequiredService<TimeProvider>()
-        ));
+        services.AddSingleton<TagStoreBackups>();
 
         services.AddSingleton<ResolvedNameStore>();
         services.AddSingleton<NameResolver>();
@@ -259,34 +247,20 @@ public static class ServiceRegistration
         services.AddHostedService<BeatWorker>();
 
         // Unattended for the same reason: writing a sidecar decodes on the CPU (ADR 0043, 0047).
-        services.AddSingleton(_ => new WrittenWarps(WrittenWarps.DefaultPath));
-        services.AddSingleton(_ => new TransientOrigins(TransientOrigins.DefaultPath));
-        services.AddSingleton(_ => new LiveAnalyses(LiveAnalyses.DefaultPath));
-        services.AddSingleton(sp => new LoudnessReader(
-            sp.GetRequiredService<IProcessRunner>(),
-            LoudnessReader.DefaultPath
-        ));
+        services.AddSingleton<WrittenWarps>();
+        services.AddSingleton<TransientOrigins>();
+        services.AddSingleton<LiveAnalyses>();
+        services.AddSingleton<LoudnessReader>();
         services.AddSingleton<ClipGains>();
         services.AddSingleton<IAudioDecoder, FfmpegAudioDecoder>();
         services.AddSingleton<ITransientDetector, OnsetDetector>();
         services.AddSingleton<SidecarWriter>();
         services.AddSingleton<IStarterGrids, StarterGrids>();
         services.AddSingleton<WarpLending>();
-        services.AddSingleton(sp => new WarpActions(
-            sp.GetRequiredService<SidecarWriter>(),
-            sp.GetRequiredService<WrittenWarps>(),
-            sp.GetRequiredService<LiveAnalyses>(),
-            new SidecarBackups(SidecarBackups.DefaultRoot, sp.GetRequiredService<TimeProvider>()),
-            sp.GetRequiredService<TimeProvider>()
-        ));
-        services.AddSingleton(_ => new RetypedWarps(RetypedWarps.DefaultPath));
-        services.AddSingleton(sp => new WarpTrueUp(
-            sp.GetRequiredService<RetypedWarps>(),
-            sp.GetRequiredService<WrittenWarps>(),
-            new SidecarBackups(SidecarBackups.DefaultRoot, sp.GetRequiredService<TimeProvider>()),
-            sp.GetRequiredService<WarpActions>(),
-            sp.GetRequiredService<TimeProvider>()
-        ));
+        services.AddSingleton<SidecarBackups>();
+        services.AddSingleton<WarpActions>();
+        services.AddSingleton<RetypedWarps>();
+        services.AddSingleton<WarpTrueUp>();
         services.AddSingleton<TrueUpAll>();
         services.AddSingleton<StemWarpReader>();
         services.AddSingleton<StagingMarks>();

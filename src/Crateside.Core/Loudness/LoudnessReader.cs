@@ -11,32 +11,37 @@ namespace Crateside.Core.Loudness;
 /// Reads a file's integrated loudness (EBU R128, whole file) with ffmpeg's <c>ebur128</c>, and keeps
 /// it until the file changes (ADR 0059). Kept across restarts when given a path.
 /// </summary>
-public sealed partial class LoudnessReader(
-    IProcessRunner runner,
-    string? path = null,
-    string fileName = "ffmpeg"
-)
+public sealed partial class LoudnessReader
 {
     // Bump when MeasureAsync changes what it runs, or a kept reading outlives the method that made it.
     private const int Version = 1;
 
     private static readonly TimeSpan RunLimit = TimeSpan.FromMinutes(5);
 
-    private readonly ConcurrentDictionary<string, LoudnessEntry> _read = new(
-        Load(path),
-        StringComparer.OrdinalIgnoreCase
-    );
+    private readonly IProcessRunner _runner;
+    private readonly string? _path;
+    private readonly string _fileName;
+    private readonly ConcurrentDictionary<string, LoudnessEntry> _read;
     private readonly Lock _saving = new();
     private volatile bool _changed;
-
-    public static string DefaultPath { get; } =
-        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "loudness.json");
 
     [GeneratedRegex(
         @"Integrated\ loudness:\s+I:\s+(?<Lufs>-?\d+(\.\d+)?)\ LUFS",
         RegexOptions.ExplicitCapture
     )]
     private static partial Regex Integrated { get; }
+
+    public LoudnessReader(IProcessRunner runner, CratesidePaths paths)
+        : this(runner, paths.LoudnessCache) { }
+
+    /// <summary>Keeps nothing on disk when <paramref name="path"/> is null.</summary>
+    internal LoudnessReader(IProcessRunner runner, string? path = null, string fileName = "ffmpeg")
+    {
+        _runner = runner;
+        _path = path;
+        _fileName = fileName;
+        _read = new(Load(path), StringComparer.OrdinalIgnoreCase);
+    }
 
     /// <summary>The kept reading, or null when there is none or the file changed since.</summary>
     public LoudnessReading? Read(string audioPath) =>
@@ -62,9 +67,9 @@ public sealed partial class LoudnessReader(
 
         try
         {
-            outcome = await runner.RunAsync(
+            outcome = await _runner.RunAsync(
                 new ProcessRequest(
-                    fileName,
+                    _fileName,
                     [
                         "-hide_banner",
                         "-nostats",
@@ -106,7 +111,7 @@ public sealed partial class LoudnessReader(
     /// <summary>Writes what was read since the last save, leaving out files that are gone.</summary>
     public void Save()
     {
-        if (path is null || !_changed)
+        if (_path is null || !_changed)
             return;
 
         lock (_saving)
@@ -122,7 +127,7 @@ public sealed partial class LoudnessReader(
 
             try
             {
-                LoudnessJsonContext.Default.LoudnessFile.WriteFile(path, kept);
+                LoudnessJsonContext.Default.LoudnessFile.WriteFile(_path, kept);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {

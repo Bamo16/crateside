@@ -24,7 +24,7 @@ public sealed class StarterGateRealLibraryTests
     {
         Assert.SkipUnless(Directory.Exists(Paths.LibraryFolder), "The library is not here.");
 
-        var written = new WrittenWarps(WrittenWarps.DefaultPath);
+        var written = new WrittenWarps(Paths);
         var warps = new WarpTempoReader();
         bool[] holds =
         [

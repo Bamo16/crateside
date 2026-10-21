@@ -9,13 +9,21 @@ namespace Crateside.Core.Warps;
 /// Every transient list crateside wrote into a sidecar, by fingerprint, so it is never taken for
 /// Live's, even after Live saves over the warp or the file is moved or renamed (ADR 0047).
 /// </summary>
-public sealed class TransientOrigins(string? path = null)
+public sealed class TransientOrigins
 {
     private readonly Lock _lock = new();
-    private readonly Dictionary<string, List<TransientOrigin>> _entries = Load(path);
+    private readonly string? _path;
+    private readonly Dictionary<string, List<TransientOrigin>> _entries;
 
-    public static string DefaultPath { get; } =
-        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "transients.json");
+    public TransientOrigins(CratesidePaths paths)
+        : this(paths.TransientOriginsFile) { }
+
+    /// <summary>Keeps nothing on disk when <paramref name="path"/> is null.</summary>
+    internal TransientOrigins(string? path = null)
+    {
+        _path = path;
+        _entries = Load(path);
+    }
 
     /// <summary>Where crateside got these transients, or null if it never wrote them: Live's own.</summary>
     /// <param name="audioPath">The sample whose sidecar holds them; a copy of Live's counts only on the file it was written to.</param>
@@ -66,9 +74,9 @@ public sealed class TransientOrigins(string? path = null)
 
             origins.Add(origin);
 
-            if (path is not null)
+            if (_path is not null)
                 TransientOriginsJsonContext.Default.DictionaryStringListTransientOrigin.WriteFile(
-                    path,
+                    _path,
                     _entries
                 );
         }
