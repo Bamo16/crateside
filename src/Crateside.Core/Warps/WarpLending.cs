@@ -8,13 +8,12 @@ namespace Crateside.Core.Warps;
 /// measured tempo when nothing of its upload is warped (#77, ADR 0047, ADR 0048), else a clip with
 /// Warp off so it still arrives at its gain and colour (ADR 0059).
 /// </summary>
-/// <param name="starterGrid">What a starter takes from an audio file's reading, or null before it is read or when it drifts.</param>
 /// <param name="waiting">Stems left for Live to analyse, which nothing is written to meanwhile (#97).</param>
 public sealed class WarpLending(
     CratesidePaths paths,
     SidecarWriter writer,
     IOptions<WarpOptions> options,
-    Func<string, StarterGrid?>? starterGrid = null,
+    IStarterGrids? starterGrids = null,
     LiveAnalyses? waiting = null
 )
 {
@@ -69,7 +68,7 @@ public sealed class WarpLending(
     private (StarterGrid Grid, string From)? TempoOf(IEnumerable<SiblingFile> cuts) =>
         WarpSiblings
             .TempoSources(cuts)
-            .Select(cut => (Grid: starterGrid?.Invoke(cut.Path), From: cut.Path))
+            .Select(cut => (Grid: starterGrids?.Of(cut.Path), From: cut.Path))
             .FirstOrDefault(source => source.Grid is not null)
             is { Grid: { } grid } source
             ? (grid, source.From)

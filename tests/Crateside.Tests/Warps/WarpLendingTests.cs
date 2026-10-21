@@ -199,7 +199,7 @@ public sealed class WarpLendingTests : IDisposable
                 new TransientOrigins()
             ),
             Options.Create(options),
-            _ => bpm is { } tempo ? new StarterGrid(tempo, null) : null
+            new Grids(bpm is { } tempo ? new StarterGrid(tempo, null) : null)
         );
 
     private static string Stem(string root, string name, string preset)
@@ -237,5 +237,10 @@ public sealed class WarpLendingTests : IDisposable
     {
         public Task<DecodedAudio?> DecodeAsync(string path, CancellationToken ct = default) =>
             Task.FromResult<DecodedAudio?>(new DecodedAudio(new float[Frames * 2], 2, 44_100));
+    }
+
+    private sealed class Grids(StarterGrid? grid) : IStarterGrids
+    {
+        public StarterGrid? Of(string audioPath) => grid;
     }
 }
