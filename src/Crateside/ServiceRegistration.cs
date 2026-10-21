@@ -270,13 +270,8 @@ public static class ServiceRegistration
         services.AddSingleton<IAudioDecoder, FfmpegAudioDecoder>();
         services.AddSingleton<ITransientDetector, OnsetDetector>();
         services.AddSingleton<SidecarWriter>();
-        services.AddSingleton(sp => new WarpLending(
-            sp.GetRequiredService<CratesidePaths>(),
-            sp.GetRequiredService<SidecarWriter>(),
-            sp.GetRequiredService<IOptions<WarpOptions>>(),
-            path => StarterGrid.Of(sp.GetRequiredService<BeatReader>().Read(path)),
-            sp.GetRequiredService<LiveAnalyses>()
-        ));
+        services.AddSingleton<IStarterGrids, StarterGrids>();
+        services.AddSingleton<WarpLending>();
         services.AddSingleton(sp => new WarpActions(
             sp.GetRequiredService<SidecarWriter>(),
             sp.GetRequiredService<WrittenWarps>(),
