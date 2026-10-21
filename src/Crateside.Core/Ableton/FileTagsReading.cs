@@ -38,6 +38,9 @@ public static class FileTagsReading
 
         foreach (var value in Values(keywords, KeyCategory))
         {
+            if (ModeTags.IsModal(value))
+                continue;
+
             if (IsMode(value))
                 mode ??= value.ToLowerInvariant();
             else

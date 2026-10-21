@@ -150,17 +150,20 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
                         file.NeedsKey,
                         file.CorrectTo
                     );
-                    var merged = Merged(file.Existing, keywords, correcting: corrects);
+                    var merged = WithMode(
+                        Merged(file.Existing, keywords, correcting: corrects),
+                        file.Existing,
+                        provenance,
+                        ledger,
+                        keyWritten: file.NeedsKey || corrects
+                    );
                     // A write that changes nothing is not worth a reconcile — and one whose whole
                     // key the user had taken off changes nothing.
-                    var changes =
-                        keywords.Count > 0
-                        && (
-                            file.Existing is null
-                            || !merged
-                                .ToHashSet(StringComparer.Ordinal)
-                                .SetEquals(file.Existing.Keywords)
-                        );
+                    var changes = file.Existing is null
+                        ? keywords.Count > 0
+                        : !merged
+                            .ToHashSet(StringComparer.Ordinal)
+                            .SetEquals(file.Existing.Keywords);
                     // An entry written without a key would make Live drop the one the index holds.
                     var keyed = keywords.Count > 0 || CanTakeOwnedTags(file.Existing);
 
@@ -291,6 +294,40 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
             ];
 
         return [.. kept, .. owned];
+    }
+
+    /// <summary>Gives a keyed entry the mode tag its verdict calls for and takes off any other (#127).</summary>
+    private static IReadOnlyList<string> WithMode(
+        IReadOnlyList<string> merged,
+        FileTags? existing,
+        StemProvenance? provenance,
+        KeyLedger ledger,
+        bool keyWritten
+    )
+    {
+        if (
+            provenance is not { SourceVideoId: { } videoId }
+            || !ledger.TryGetLatestByVideoId(videoId, out var run)
+            || run is not { HasTaggableKey: true, Key: { } verdict }
+            || !verdict.Equals(
+                keyWritten ? verdict : existing?.Key,
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
+            return merged;
+
+        var wanted = ModeTags.KeywordFor(run.Centre);
+        var hidden = existing?.HiddenKeywords ?? [];
+
+        return
+        [
+            .. merged.Where(keyword => !ModeTags.IsKeyword(keyword) || keyword == wanted),
+            .. wanted is { } tag
+            && !merged.Contains(tag)
+            && !hidden.Contains(tag, StringComparer.Ordinal)
+                ? [tag]
+                : Array.Empty<string>(),
+        ];
     }
 
     private static bool IsKey(string keyword) =>

@@ -290,6 +290,64 @@ public sealed class BackingRunnerTests : IDisposable
         Assert.Empty(Runner().Unbacked(_root, Ledger("LOW")));
     }
 
+    [Fact]
+    public void A_modal_verdict_gets_its_mode_beside_the_collapse()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [new() { RelativePath = Path.GetFileName(stem), Keywords = ["Key|A", "Key|Minor"] }]
+        );
+
+        var assignment = Assert.Single(
+            Runner().Unbacked(_root, Ledger("HIGH", "dorian"), ownedOf: _ => [])
+        );
+
+        Assert.Equal(["Key|A", "Key|Minor", "Key|Dorian"], assignment.Keywords);
+    }
+
+    [Fact]
+    public void A_plain_verdict_takes_an_old_mode_tag_off()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|A", "Key|Minor", "Key|Dorian"],
+                },
+            ]
+        );
+
+        var assignment = Assert.Single(Runner().Unbacked(_root, Ledger("HIGH"), ownedOf: _ => []));
+
+        Assert.Equal(["Key|A", "Key|Minor"], assignment.Keywords);
+    }
+
+    [Fact]
+    public void A_changed_mode_replaces_the_old_mode_tag()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|A", "Key|Minor", "Key|Dorian"],
+                },
+            ]
+        );
+
+        var assignment = Assert.Single(
+            Runner().Unbacked(_root, Ledger("HIGH", "phrygian"), ownedOf: _ => [])
+        );
+
+        Assert.Equal(["Key|A", "Key|Minor", "Key|Phrygian"], assignment.Keywords);
+    }
+
     private static BackingRunner Runner() => new(new FolderInfoReader(), new FolderInfoWriter());
 
     private string LibraryStem()
@@ -306,7 +364,7 @@ public sealed class BackingRunnerTests : IDisposable
         return path;
     }
 
-    private KeyLedger Ledger(string confidence)
+    private KeyLedger Ledger(string confidence, string mode = "aeolian")
     {
         var jsonl = Path.Combine(_root, "ledger.jsonl");
         File.WriteAllText(
@@ -319,7 +377,12 @@ public sealed class BackingRunnerTests : IDisposable
                     artist = "A",
                     title = "T",
                     source_url = Upload,
-                    verdict = new { key = "A minor", confidence },
+                    verdict = new
+                    {
+                        key = "A minor",
+                        confidence,
+                        mode,
+                    },
                 }
             )
         );
