@@ -37,10 +37,27 @@ public sealed class BackingWorker(
 
     private readonly CratesidePaths _paths = paths.Value;
 
+    private TaskCompletionSource _marked = NewSignal();
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        trackMarks.Changed += OnMarked;
+
+        try
+        {
+            await RunAsync(stoppingToken);
+        }
+        finally
+        {
+            trackMarks.Changed -= OnMarked;
+        }
+    }
+
+    private async Task RunAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            var marked = Interlocked.Exchange(ref _marked, NewSignal()).Task;
             TimeSpan delay;
             try
             {
@@ -57,10 +74,31 @@ public sealed class BackingWorker(
                 delay = AfterFailure;
             }
 
-            // An approval cuts the wait short, so a correction lands while the user is looking.
-            await corrections.WaitAsync(delay, stoppingToken);
+            // An approval or a mark cuts the wait short, so it lands while the user is looking.
+            await WaitAsync(delay, marked, stoppingToken);
         }
     }
+
+    private async Task WaitAsync(TimeSpan delay, Task marked, CancellationToken stoppingToken)
+    {
+        using var cut = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+        var approved = corrections.WaitAsync(delay, cut.Token);
+
+        // Cancelled rather than abandoned, so the wait cannot swallow a later approval.
+        if (await Task.WhenAny(approved, marked) == marked)
+            await cut.CancelAsync();
+
+        try
+        {
+            await approved;
+        }
+        catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested) { }
+    }
+
+    private void OnMarked() => Volatile.Read(ref _marked).TrySetResult();
+
+    private static TaskCompletionSource NewSignal() =>
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     private TimeSpan Tick()
     {

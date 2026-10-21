@@ -1,6 +1,6 @@
 # 0060 — The file workers wake on a change, and the timer is the net
 
-- Status: Accepted
+- Status: Accepted; amended 2026-10-21 (below): a mark also wakes the backing worker
 - Date: 2026-10-20
 - Builds [#132](https://github.com/Bamo16/crateside/issues/132).
 
@@ -32,6 +32,11 @@ keeps its scan exactly as it was and ends its wait early.
   `FileChanges`, so its Collection is written within seconds, not at the next timer.
 - **The backing worker is not woken**: it keeps its own five minutes, and the library's Collections
   reach Live at its next pass.
+
+**Amended 2026-10-21: setting a mark also wakes the backing worker.** The maintainer marked a
+library track and waited for the next pass, up to five minutes, for no reason: a mark is a
+deliberate click, rare, and its Collection is known to be wanted. The backing worker still ignores
+file changes and keeps its five minutes otherwise.
 
 ## Consequences
 
