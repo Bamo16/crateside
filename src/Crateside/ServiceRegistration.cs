@@ -200,12 +200,7 @@ public static class ServiceRegistration
         services.AddSingleton(sp => new VerdictControl(
             sp.GetRequiredService<PauseStore>().Read().Judging
         ));
-        // The reader is resolved per reading: a typed HttpClient held for the life of the app
-        // outlives its handler.
-        services.AddSingleton(sp => new QuotaGuard(
-            ct => sp.GetRequiredService<QuotaReader>().ReadAsync(ct),
-            sp.GetRequiredService<TimeProvider>()
-        ));
+        services.AddSingleton<QuotaGuard>();
         services.AddSingleton(sp =>
         {
             var remembered = sp.GetRequiredService<PauseStore>().Read();
@@ -442,12 +437,16 @@ public static class ServiceRegistration
         // QuotaReader sets its own authorization and beta headers per call; this configures
         // transport only.
         services
-            .AddHttpClient<QuotaReader>(client =>
-            {
-                client.BaseAddress = new Uri("https://api.anthropic.com");
-                client.Timeout = TimeSpan.FromSeconds(5);
-            })
+            .AddHttpClient(
+                QuotaReader.ClientName,
+                client =>
+                {
+                    client.BaseAddress = new Uri("https://api.anthropic.com");
+                    client.Timeout = TimeSpan.FromSeconds(5);
+                }
+            )
             .SetHandlerLifetime(TimeSpan.FromMinutes(5));
+        services.AddSingleton<IQuotaReader, QuotaReader>();
 
         services.AddSingleton<GenreStore>();
         services

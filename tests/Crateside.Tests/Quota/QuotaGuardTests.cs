@@ -51,7 +51,7 @@ public sealed class QuotaGuardTests
     public async Task The_hold_lifts_when_a_later_reading_drops_below_the_limit()
     {
         var readings = new Queue<QuotaSnapshot>([Weekly(90), Weekly(20)]);
-        QuotaGuard guard = new(_ => Task.FromResult(readings.Dequeue()), _time);
+        QuotaGuard guard = new(new Readings(readings.Dequeue), _time);
 
         Assert.NotNull(await guard.CheckAsync(TestContext.Current.CancellationToken));
 
@@ -64,7 +64,7 @@ public sealed class QuotaGuardTests
     public async Task A_reading_that_fails_leaves_the_hold_standing()
     {
         var readings = new Queue<QuotaSnapshot>([Weekly(90), QuotaSnapshot.Unknown]);
-        QuotaGuard guard = new(_ => Task.FromResult(readings.Dequeue()), _time);
+        QuotaGuard guard = new(new Readings(readings.Dequeue), _time);
 
         await guard.CheckAsync(TestContext.Current.CancellationToken);
         _time.Advance(TimeSpan.FromMinutes(6));
@@ -77,12 +77,12 @@ public sealed class QuotaGuardTests
     {
         var reads = 0;
         QuotaGuard guard = new(
-            _ =>
+            new Readings(() =>
             {
                 reads++;
 
-                return Task.FromResult(Weekly(10));
-            },
+                return Weekly(10);
+            }),
             _time
         );
 
@@ -96,7 +96,7 @@ public sealed class QuotaGuardTests
     [Fact]
     public void A_pass_names_one_track_and_a_second_replaces_it()
     {
-        QuotaGuard guard = new(_ => Task.FromResult(Weekly(90)), _time);
+        QuotaGuard guard = new(new Readings(() => Weekly(90)), _time);
 
         guard.Pass("first");
         guard.Pass("second");
@@ -112,12 +112,18 @@ public sealed class QuotaGuardTests
     public async Task Judging_is_held_until_a_reading_has_succeeded()
     {
         var readings = new Queue<QuotaSnapshot>([QuotaSnapshot.Unknown, Weekly(20)]);
-        QuotaGuard guard = new(_ => Task.FromResult(readings.Dequeue()), _time);
+        QuotaGuard guard = new(new Readings(readings.Dequeue), _time);
 
         Assert.NotNull(await guard.CheckAsync(TestContext.Current.CancellationToken));
 
         _time.Advance(TimeSpan.FromMinutes(6));
 
         Assert.Null(await guard.CheckAsync(TestContext.Current.CancellationToken));
+    }
+
+    private sealed class Readings(Func<QuotaSnapshot> next) : IQuotaReader
+    {
+        public Task<QuotaSnapshot> ReadAsync(CancellationToken ct = default) =>
+            Task.FromResult(next());
     }
 }

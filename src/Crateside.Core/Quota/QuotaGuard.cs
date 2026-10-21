@@ -4,7 +4,7 @@ namespace Crateside.Core.Quota;
 /// Holds judging back while the weekly Claude limit is nearly spent, and lets go by itself once
 /// the reading drops or the reset passes. Not the user's pause, which persists (ADR 0053).
 /// </summary>
-public sealed class QuotaGuard(Func<CancellationToken, Task<QuotaSnapshot>> read, TimeProvider time)
+public sealed class QuotaGuard(IQuotaReader reader, TimeProvider time)
 {
     /// <summary>Weekly use, as a percentage, at which judging stops.</summary>
     public const double WeeklyLimit = 85;
@@ -66,7 +66,7 @@ public sealed class QuotaGuard(Func<CancellationToken, Task<QuotaSnapshot>> read
         {
             if (time.GetUtcNow() - _readAt >= MaxAge)
             {
-                var quota = await read(ct);
+                var quota = await reader.ReadAsync(ct);
 
                 if (quota.IsKnown)
                     _last = quota;
