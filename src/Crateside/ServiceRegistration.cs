@@ -335,27 +335,17 @@ public static class ServiceRegistration
 
         services.AddHostedService<WindowRollWorker>();
 
+        services.AddSingleton<IStagedFiles, StagedFiles>();
         services.AddSingleton<SourceProbe>();
         services.AddSingleton<TrackAdd>();
-        services.AddSingleton(sp => new TrackRemoval(
-            sp.GetRequiredService<TrackInstructionStore>(),
-            sp.GetRequiredService<IntakeStore>(),
-            sp.GetRequiredService<WorkingSet>(),
-            StagedFiles(sp),
-            sp.GetRequiredService<DeletionLog>()
-        ));
+        services.AddSingleton<TrackRemoval>();
         services.AddSingleton<SampleAdoption>();
         services.AddSingleton<SourceAdd>();
 
-        services.AddSingleton(sp => new StemRecut(
-            sp.GetRequiredService<TrackInstructionStore>(),
-            sp.GetRequiredService<WorkingSet>(),
-            StagedFiles(sp),
-            sp.GetRequiredService<DeletionLog>()
-        ));
+        services.AddSingleton<StemRecut>();
         services.AddSingleton(sp => new TrackRename(
             sp.GetRequiredService<TrackInstructionStore>(),
-            StagedFiles(sp),
+            sp.GetRequiredService<IStagedFiles>(),
             sp.GetRequiredService<FolderInfoWriter>(),
             sp.GetRequiredService<CratesidePaths>(),
             videoId =>
@@ -372,13 +362,7 @@ public static class ServiceRegistration
         ));
         services.AddSingleton<LookalikeAnswer>();
 
-        services.AddSingleton(sp => new TrackSwap(
-            sp.GetRequiredService<LedgerStore>(),
-            sp.GetRequiredService<TrackInstructionStore>(),
-            sp.GetRequiredService<WorkingSet>(),
-            StagedFiles(sp),
-            deletions: sp.GetRequiredService<DeletionLog>()
-        ));
+        services.AddSingleton<TrackSwap>();
 
         services.AddSingleton<SourceRetentionStore>();
         services.AddSingleton<SourceIndex>();
@@ -410,16 +394,6 @@ public static class ServiceRegistration
             services.GetRequiredService<ILogger<StageWorker>>(),
             services.GetRequiredService<StageSignals>()
         );
-
-    /// <summary>One track's files as they currently sit in staging, read fresh on every call.</summary>
-    private static ReadStagedFiles StagedFiles(IServiceProvider services) =>
-        videoId =>
-            services
-                .GetRequiredService<StagingReader>()
-                .Read(services.GetRequiredService<CratesidePaths>())
-                .FirstOrDefault(song => song.SourceVideoId == videoId)
-                ?.Stems
-            ?? [];
 
     /// <summary>
     /// The Tracks page's view of everything, and the cache that keeps it affordable.

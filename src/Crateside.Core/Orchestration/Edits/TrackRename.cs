@@ -18,7 +18,7 @@ public delegate IReadOnlyList<string> ReadLibraryFiles(string videoId);
 /// </summary>
 public sealed class TrackRename(
     TrackInstructionStore instructions,
-    ReadStagedFiles staged,
+    IStagedFiles staged,
     FolderInfoWriter writer,
     CratesidePaths paths,
     ReadLibraryFiles? library = null,
@@ -246,7 +246,7 @@ public sealed class TrackRename(
 
     private IEnumerable<(string Path, string Root)> Files(string videoId) =>
         [
-            .. staged(videoId).Select(stem => (stem.Path, paths.StagingFolder)),
+            .. staged.Of(videoId).Select(stem => (stem.Path, paths.StagingFolder)),
             .. (library?.Invoke(videoId) ?? []).Select(path => (path, paths.LibraryFolder)),
         ];
 

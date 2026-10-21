@@ -14,7 +14,7 @@ public sealed class TrackSwap(
     LedgerStore store,
     TrackInstructionStore instructions,
     WorkingSet workingSet,
-    ReadStagedFiles staged,
+    IStagedFiles staged,
     DeletionLog? deletions = null
 )
 {
@@ -37,7 +37,7 @@ public sealed class TrackSwap(
             {
                 NewVideoId = newVideoId,
                 Url = $"https://music.youtube.com/watch?v={newVideoId}",
-                Removing = staged(videoId),
+                Removing = staged.Of(videoId),
                 CarriesVerdict = judged,
             },
         };

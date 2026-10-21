@@ -73,7 +73,7 @@ public sealed class StemRecutTests : IDisposable
 
     private readonly List<StagedFile> _staged = [];
 
-    private ReadStagedFiles Staged() => _ => _staged;
+    private ListedStagedFiles Staged() => new(() => _staged);
 
     private string Stage(string preset = "")
     {
