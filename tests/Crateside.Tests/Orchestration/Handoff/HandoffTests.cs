@@ -52,19 +52,13 @@ public sealed class HandoffTests : IDisposable
     /// <summary>A stem in the cut root carrying a given video ID in its StemForge provenance.</summary>
     private void Provenanced(string fileName, string videoId)
     {
-        var source = Directory
-            .EnumerateFiles(
-                @"P:\RYAN\Ableton\Sample Staging",
-                "*.flac",
-                SearchOption.TopDirectoryOnly
-            )
-            .FirstOrDefault();
-
-        Assert.SkipWhen(source is null, "no real staged stem to copy provenance from");
-
         var path = Path.Combine(_paths.StemsKeyIdentified, fileName);
 
-        File.Copy(source!, path, overwrite: true);
+        File.Copy(
+            Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"),
+            path,
+            overwrite: true
+        );
 
         using var file = TagLib.File.Create(path);
 

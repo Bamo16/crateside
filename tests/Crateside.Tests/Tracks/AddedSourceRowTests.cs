@@ -16,7 +16,10 @@ public sealed class AddedSourceRowTests : IDisposable
 {
     private const string Track = "aaaaaaaaaaa";
     private const string Attached = "bbbbbbbbbbb";
-    private const string FinishedRoot = @"P:\RYAN\Ableton\Mashup Samples";
+    private static readonly string FinishedRoot = Path.Combine(
+        Path.GetTempPath(),
+        "Mashup Samples"
+    );
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),

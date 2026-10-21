@@ -186,6 +186,11 @@ public sealed class WarpTrueUpTests : IDisposable
     [Fact]
     public async Task A_write_that_fails_part_way_puts_back_what_it_had_written()
     {
+        Assert.SkipUnless(
+            OperatingSystem.IsWindows(),
+            "Only Windows stops a write to a read-only file for every user."
+        );
+
         await Setup(warpBpm: 119.99, trackBpm: 120);
         var karaoke = Path.Combine(_root, "Song (Karaoke).flac");
         Stem(karaoke, "Karaoke");
