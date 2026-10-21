@@ -28,18 +28,7 @@ public sealed class LoudnessSpreadTests : IDisposable
 
         Assert.Equal(3, spread.Vocals.Count);
         Assert.Equal(
-            [
-                (-4, 1),
-                (-3, 0),
-                (-2, 0),
-                (-1, 0),
-                (0, 0),
-                (1, 0),
-                (2, 0),
-                (3, 0),
-                (4, 0),
-                (5, 2),
-            ],
+            [(-4, 1), (-3, 0), (-2, 0), (-1, 0), (0, 0), (1, 0), (2, 0), (3, 0), (4, 0), (5, 2)],
             spread.Vocals.Bins.Select(bin => (bin.FromDb, bin.Count)).ToArray()
         );
     }
