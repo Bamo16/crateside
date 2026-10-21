@@ -1,0 +1,86 @@
+@using System.Globalization
+@using Crateside.Core.Loudness
+
+<section id="p-loud" class="loud">
+    <div class="head">
+        <h3>Loudness adjustments</h3>
+        <span class="gist">
+            clip gain to <span class="mono">@Format(Spread.Options.TargetLufs) LUFS</span>, samples under
+            <span class="mono">@Format(Spread.Options.FloorLufs) LUFS</span> left at 0 dB, drums never levelled
+        </span>
+    </div>
+
+    <div class="kinds">
+        @Kind("Instrumentals", Spread.Instrumentals)
+        @Kind("Vocals", Spread.Vocals)
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public required LoudnessSpread Spread { get; set; }
+
+    private RenderFragment Kind(string title, LoudnessGroup group) =>
+        @<div class="kind">
+            <h4>@title</h4>
+
+            @if (group.Count > 0)
+            {
+                var tallest = group.Bins.Max(bin => bin.Count);
+
+                <p class="figures">
+                    <span class="mono">@group.Count</span> counted ·
+                    median <span class="mono">@Db(group.Median)</span> ·
+                    5th <span class="mono">@Db(group.Low)</span>, 95th <span class="mono">@Db(group.High)</span> ·
+                    beyond ±3 dB <span class="mono">@group.Beyond(3)</span>,
+                    beyond ±6 dB <span class="mono">@group.Beyond(6)</span>
+                </p>
+
+                <div class="histogram">
+                    @foreach (var bin in group.Bins)
+                    {
+                        <div class="bin @(bin.FromDb is 0 ? "zero" : null)" title="@bin.FromDb to @(bin.FromDb + 1) dB: @bin.Count">
+                            <span class="column" style="height: @Height(bin.Count, tallest)"></span>
+                            <span class="mono label">@(bin.FromDb % 3 is 0 ? bin.FromDb.ToString(CultureInfo.InvariantCulture) : string.Empty)</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            <p class="left">
+                At 0 dB, not in the histogram: <span class="mono">@group.BelowFloor</span> below the floor,
+                <span class="mono">@group.Unreadable</span> unread by ffmpeg
+                @if (group.NotRead > 0)
+                {
+                    <text>· <span class="mono">@group.NotRead</span> not read yet</text>
+                }
+            </p>
+
+            @if (group.Boosts.Count + group.Cuts.Count > 0)
+            {
+                <div class="extremes">
+                    @Extremes("Biggest boosts", group.Boosts)
+                    @Extremes("Biggest cuts", group.Cuts)
+                </div>
+            }
+        </div>;
+
+    private static RenderFragment Extremes(string title, IReadOnlyList<LoudnessSample> samples) =>
+        @<div>
+            <span class="extremes-title">@title</span>
+            <ul>
+                @foreach (var sample in samples)
+                {
+                    <li><span class="mono db">@Db(sample.GainDb)</span> @sample.Name</li>
+                }
+            </ul>
+        </div>;
+
+    private static string Db(double? db) =>
+        db is { } value ? $"{value.ToString("+0.0;−0.0;0.0", CultureInfo.InvariantCulture)} dB" : "—";
+
+    private static string Format(double value) => value.ToString("0.#", CultureInfo.InvariantCulture);
+
+    private static string Height(int count, int tallest) =>
+        $"{(tallest is 0 ? 0 : count * 100.0 / tallest).ToString("0.#", CultureInfo.InvariantCulture)}%";
+}
