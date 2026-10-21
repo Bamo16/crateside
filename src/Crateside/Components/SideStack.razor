@@ -1,15 +1,16 @@
 @using Crateside.Core.Marks
+@using Crateside.Core.Playlist
 @using Crateside.Core.Tracks
 @using Crateside.Core.WorkLists
 @implements IDisposable
-@inject WorkListService Playlist
+@inject PlaylistAuthorizer Authorizer
 
 @{
     var confirming = Editor.IsConfirming(Row);
     var renaming = _editing.Open is TrackEdit.Rename;
     var swapping = _editing.Open is TrackEdit.Swap;
     var hasSource = TrackEdits.HasSource(Row);
-    var hasRemove = TrackActions.HasRemove(Row, Playlist);
+    var hasRemove = TrackActions.HasRemove(Row, Authorizer);
     var beside = PicksBeside && IsPickingBeside(Editor, Row);
     var holding = confirming && !PicksBeside;
 }

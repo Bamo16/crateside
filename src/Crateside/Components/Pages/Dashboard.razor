@@ -21,6 +21,7 @@
 @using Crateside.Core.Orchestration.Jobs
 @using Crateside.Core.Orchestration.Loop
 @using Crateside.Core.Orchestration.Verdict
+@using Crateside.Core.Playlist
 @using Crateside.Core.Quota
 @using Crateside.Core.Tracks
 @using Crateside.Core.WorkLists
@@ -34,6 +35,7 @@
 @inject BeatReader Beats
 @inject TrackAdd Adding
 @inject WorkListService Playlist
+@inject IntakeStore Intake
 @inject JobStore Jobs
 @inject DrainControl Separation
 @inject VerdictControl Judging
@@ -816,7 +818,7 @@
             new("Needs attention", _rows.Count(TrackFilter.NeedsAttention), "stopped, parked, or with a finding", "Tracks · Needs attention", "tracks?filter=NeedsAttention") { Short = "need attention" },
             new("Tags to answer", _rows.Count(TrackFilter.TagsToAnswer), "a genre or a familiarity", "Tracks · Tags to answer", "tracks?filter=TagsToAnswer"),
             new("Tempo drifts", _rows.Count(TrackFilter.TempoDrifts), "not warped yet: expect a hard warp", "Tracks · Tempo drifts", "tracks?filter=TempoDrifts"),
-            new("Left in the playlist", Playlist.LeftInPlaylist.Count, "removals that failed", "Settings · Emptying the playlist", "settings"),
+            new("Left in the playlist", Intake.LeftInPlaylist.Count, "removals that failed", "Settings · Emptying the playlist", "settings"),
             new("Gave up", _rows.Count(row => row.State is TrackState.GaveUp), "out of strikes at a stage", "Tracks · Needs attention", "tracks?filter=NeedsAttention"),
         ];
     }

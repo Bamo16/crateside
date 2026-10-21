@@ -43,21 +43,6 @@ public sealed class WorkListService(
     /// </summary>
     public string? PlaylistProblem { get; private set; }
 
-    /// <summary>Whether an OAuth client exists, so deletion is possible at all.</summary>
-    public bool CanAuthorize => authorizer.IsConfigured;
-
-    /// <summary>Whether consent is currently held. False is an ordinary state, not an error.</summary>
-    public bool IsAuthorized => authorizer.IsConfigured && authorizer.HasStoredToken;
-
-    /// <summary>Runs the interactive consent flow. Only from an explicit user action.</summary>
-    public Task ConsentAsync(CancellationToken ct = default) => authorizer.ConsentAsync(ct);
-
-    /// <summary>Which channel the stored consent belongs to, or null if unknown.</summary>
-    public Task<string?> GetAuthorizedChannelAsync(CancellationToken ct = default) =>
-        authorizer.GetAuthorizedChannelAsync(ct);
-
-    public Task SignOutAsync() => authorizer.SignOutAsync();
-
     /// <summary>Whether an API key is available. Without one, nothing can be read.</summary>
     public bool HasCredential => reader.HasCredential;
 
@@ -77,48 +62,6 @@ public sealed class WorkListService(
         // A different playlist entirely, so the cached one is not merely stale but wrong.
         Invalidate();
     }
-
-    /// <summary>How often crateside looks at the playlist unprompted.</summary>
-    public int RefreshMinutes =>
-        settings.Read().RefreshMinutes ?? PlaylistSettings.DefaultRefreshMinutes;
-
-    /// <summary>Sets it. Zero turns it off.</summary>
-    public void SetRefreshMinutes(int minutes) => settings.SaveRefreshMinutes(minutes);
-
-    /// <summary>Whether crateside empties the playlist as it takes tracks on (ADR 0021).</summary>
-    public bool ConsumeOnArrival => settings.Read().ConsumeOnArrival;
-
-    /// <summary>Sets it. The first scan after turning it on removes everything already known.</summary>
-    public void SetConsumeOnArrival(bool consume) => settings.SaveConsumeOnArrival(consume);
-
-    /// <summary>Puts a track at the front of the work lists a stage picks from.</summary>
-    public void Bump(string videoId) => bumped.Bump(videoId);
-
-    /// <summary>Gives up the bump, putting the queue back in the playlist's own order.</summary>
-    public void ClearBump() => bumped.Clear();
-
-    /// <summary>The track the user asked for next, or null if nobody has.</summary>
-    public string? BumpedVideoId => bumped.VideoId;
-
-    /// <summary>Records that the user takes this upload's audio as it comes (#31).</summary>
-    public void AcceptUpload(string videoId, string upload) =>
-        instructions.AcceptUpload(videoId, upload);
-
-    /// <summary>Records which files the user wants made for a track.</summary>
-    public void SetPlan(string videoId, StemPlan? plan) => instructions.SetPlan(videoId, plan);
-
-    /// <summary>Entries crateside tried to empty from the playlist and could not.</summary>
-    public IReadOnlyList<IntakeRecord> LeftInPlaylist =>
-        [.. intake.Read().Where(record => record.RemovalFailure is not null)];
-
-    /// <summary>Offers an entry back on the next scan, spending another removal on it.</summary>
-    public void RetryRemoval(string videoId) => intake.ClearRemovalAttempted([videoId]);
-
-    /// <summary>The standing instruction for a track, or null when there is none.</summary>
-    public TrackInstruction? InstructionFor(string videoId) =>
-        instructions
-            .Read()
-            .FirstOrDefault(t => t.VideoId.Equals(videoId, StringComparison.Ordinal));
 
     /// <summary>Forgets the cached playlist, so the next read goes to the API.</summary>
     public void Invalidate()
@@ -190,8 +133,8 @@ public sealed class WorkListService(
 
         if (PlaylistProblem is null)
             intake.ForgetRemovalFailures(
-                LeftInPlaylist
-                    .Select(record => record.VideoId)
+                intake
+                    .LeftInPlaylist.Select(record => record.VideoId)
                     .Except(held.Select(item => item.VideoId), StringComparer.Ordinal)
             );
 
@@ -359,7 +302,7 @@ public sealed class WorkListService(
         // back is offered only once.
         if (
             !settings.Read().ConsumeOnArrival
-            || !IsAuthorized
+            || !authorizer.IsAuthorized
             || !intake.IsDurable
             || PlaylistProblem is not null
         )

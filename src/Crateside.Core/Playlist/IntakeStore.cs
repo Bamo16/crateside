@@ -38,6 +38,10 @@ public sealed class IntakeStore(string? path = null)
             return _cached ??= TryReadFile() ?? [];
     }
 
+    /// <summary>Entries crateside tried to empty from the playlist and could not.</summary>
+    public IReadOnlyList<IntakeRecord> LeftInPlaylist =>
+        [.. Read().Where(record => record.RemovalFailure is not null)];
+
     /// <summary>
     /// Remembers every track it has not seen before, and returns the ones it added. Existing
     /// records are never refreshed.

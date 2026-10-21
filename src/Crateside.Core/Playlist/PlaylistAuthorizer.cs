@@ -31,6 +31,9 @@ public sealed class PlaylistAuthorizer(
     /// <summary>Whether consent has ever been given and a token stored.</summary>
     public bool HasStoredToken => tokenStore.HasStoredToken;
 
+    /// <summary>Whether consent is currently held. False is an ordinary state, not an error.</summary>
+    public bool IsAuthorized => IsConfigured && HasStoredToken;
+
     /// <summary>Whether writing still works, and what happened when it last did not.</summary>
     public PlaylistWriteAccess WriteAccess => access;
 
