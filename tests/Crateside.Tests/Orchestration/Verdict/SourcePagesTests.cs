@@ -72,6 +72,98 @@ public sealed class SourcePagesTests
         Assert.Equal(46.360126, verse.PercentMelody);
     }
 
+    private const string MoneyVerse = "jDgX__kw_mK";
+    private const string MoneyChorus = "VMgJXXWOKoq";
+
+    private static Dictionary<string, string> MoneyScores =>
+        new()
+        {
+            [MoneyVerse] = Fixture($"hooktheory-api-{MoneyVerse}.json"),
+            [MoneyChorus] = Fixture($"hooktheory-api-{MoneyChorus}.json"),
+        };
+
+    private static HooktheoryTab Money(Dictionary<string, string>? scores = null) =>
+        SourcePages
+            .HooktheoryPage(
+                "https://www.hooktheory.com/theorytab/view/pink-floyd/money",
+                Fixture("hooktheory-money.html"),
+                scores ?? MoneyScores
+            )
+            .Tab!;
+
+    [Fact]
+    public void A_key_change_inside_a_section_is_kept_with_its_beat()
+    {
+        var tab = Money();
+
+        Assert.Equal([new TabKey(1, "B dorian")], tab.Sections[0].Keys);
+        Assert.Equal([new TabKey(1, "B minor"), new TabKey(15, "B dorian")], tab.Sections[1].Keys);
+        Assert.Equal([29, 13], tab.Sections.Select(section => section.Chords));
+    }
+
+    [Fact]
+    public void Coverage_is_the_share_of_the_synced_video_the_sections_span()
+    {
+        var tab = Money();
+
+        Assert.Equal(0.0628, Assert.NotNull(tab.Coverage), 4);
+        Assert.Equal(0.1057, Assert.NotNull(tab.Sections[0].SyncStart), 4);
+        Assert.Equal(0.1420, Assert.NotNull(tab.Sections[0].SyncEnd), 4);
+    }
+
+    [Fact]
+    public void A_section_synced_to_another_video_does_not_count_towards_coverage()
+    {
+        var scores = MoneyScores;
+
+        scores[MoneyChorus] = scores[MoneyChorus].Replace("2aW7HweAf3o", "another-video");
+
+        var tab = Money(scores);
+
+        Assert.Equal(0.0363, Assert.NotNull(tab.Coverage), 4);
+        Assert.Equal("another-video", tab.Sections[1].VideoId);
+        Assert.Null(tab.Sections[0].VideoId);
+    }
+
+    [Fact]
+    public void A_tab_whose_sections_did_not_answer_still_lists_them_without_coverage()
+    {
+        var tab = Money([]);
+
+        Assert.Equal(["Verse", "Chorus"], tab.Sections.Select(section => section.Name));
+        Assert.Null(tab.Coverage);
+        Assert.All(tab.Sections, section => Assert.Empty(section.Keys));
+    }
+
+    [Fact]
+    public async Task Each_section_is_asked_of_the_api_once_and_one_that_fails_is_left_unread()
+    {
+        var handler = new RecordedSites(
+            new()
+            {
+                ["www.hooktheory.com"] = Fixture("hooktheory-money.html"),
+                [$"api.hooktheory.com/v1/songs/public/{MoneyVerse}"] = Fixture(
+                    $"hooktheory-api-{MoneyVerse}.json"
+                ),
+            },
+            failing: "api.hooktheory.com",
+            failingPath: MoneyChorus
+        );
+
+        var lookups = await new SourcePages(() => new HttpClient(handler)).FetchAsync(
+            "Pink Floyd",
+            "Money",
+            TestContext.Current.CancellationToken
+        );
+
+        var tab = Assert.Single(lookups[0].Pages).Tab!;
+
+        Assert.Equal(LookupStatus.Found, lookups[0].Status);
+        Assert.Equal(2, handler.Requests.Count(uri => uri.Host == "api.hooktheory.com"));
+        Assert.Equal(0.0363, Assert.NotNull(tab.Coverage), 4);
+        Assert.Empty(tab.Sections[1].Keys);
+    }
+
     [Fact]
     public void A_hooktheory_page_without_a_song_payload_has_no_tab()
     {
@@ -196,8 +288,11 @@ public sealed class SourcePagesTests
     }
 
     /// <summary>Serves a page by host and path prefix; null is a 404, and an unlisted site 404s too.</summary>
-    private sealed class RecordedSites(Dictionary<string, string?> pages, string? failing = null)
-        : HttpMessageHandler
+    private sealed class RecordedSites(
+        Dictionary<string, string?> pages,
+        string? failing = null,
+        string? failingPath = null
+    ) : HttpMessageHandler
     {
         public List<Uri> Requests { get; } = [];
 
@@ -210,7 +305,10 @@ public sealed class SourcePagesTests
 
             Requests.Add(uri);
 
-            if (uri.Host == failing)
+            if (
+                uri.Host == failing
+                && (failingPath is null || uri.AbsolutePath.Contains(failingPath))
+            )
                 throw new HttpRequestException("connection refused");
 
             var page = pages

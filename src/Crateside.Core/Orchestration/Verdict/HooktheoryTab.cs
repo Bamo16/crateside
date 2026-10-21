@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Crateside.Core.Orchestration.Verdict;
 
-/// <summary>What a TheoryTab page says beyond each section's first key (#124).</summary>
+/// <summary>What a TheoryTab says beyond each section's first key (#124).</summary>
 public sealed record HooktheoryTab
 {
     /// <summary>The analysts, without the site's own account and deleted users.</summary>
@@ -18,6 +18,9 @@ public sealed record HooktheoryTab
 
     /// <summary>The YouTube video the sections are synced to, often not the recording being judged.</summary>
     public string? SyncedVideoId { get; init; }
+
+    /// <summary>The share of the synced video, 0 to 1, that the sections synced to it span together; null when none is.</summary>
+    public double? Coverage { get; init; }
 }
 
 /// <summary>One section of a TheoryTab; the percentages say how much of it is filled in.</summary>
@@ -26,45 +29,131 @@ public sealed record TabSection(
     string? Progression,
     double? PercentChord,
     double? PercentMelody
-);
+)
+{
+    /// <summary>Every key the section is in, with the beat it starts at; more than one means it modulates inside the section.</summary>
+    public IReadOnlyList<TabKey> Keys { get; init; } = [];
+
+    public int? Chords { get; init; }
+
+    /// <summary>The video the section is synced to, when it is not the song's.</summary>
+    public string? VideoId { get; init; }
+
+    /// <summary>Where the section starts and ends in its video, as fractions of the video's length.</summary>
+    public double? SyncStart { get; init; }
+
+    public double? SyncEnd { get; init; }
+}
+
+public sealed record TabKey(double Beat, string Key);
 
 internal static partial class HooktheoryPageReader
 {
     private static readonly string[] SiteAccounts = ["Hooktheory", "[deleted user]"];
 
-    public static HooktheoryTab? Read(string page) =>
-        SongObject(Flight(page)) is { } json && Parse(json) is { Sections.Count: > 0 } song
-            ? new HooktheoryTab
-            {
-                Contributors =
-                [
-                    .. (song.Contributors?.Names ?? []).Where(name =>
-                        !SiteAccounts.Contains(name, StringComparer.OrdinalIgnoreCase)
-                    ),
-                ],
-                Sections =
-                [
-                    .. song.Sections.Select(section => new TabSection(
-                        section.Name!,
-                        section.Rel,
-                        section.PctChord,
-                        section.PctMelody
-                    )),
-                ],
-                AllKeys =
-                    song.SectionStats is { } stats && stats.TryGetValue("all", out var all)
-                        ? string.Join(
-                            ", ",
-                            (all.AllKeys ?? []).Select(key => string.Join(' ', key))
-                        )
-                        : null,
-                SyncedVideoId = song.YouTubeId,
-            }
-            : null;
+    /// <summary>The song object in the page's payload, or null for a page that has none.</summary>
+    public static SongDto? Read(string page) => Parse(SongObject(Flight(page)));
 
-    /// <summary>The song's sections that carry a name and a hash, once each; the page also lists a bare stub.</summary>
-    internal static IReadOnlyList<SectionDto> Sections(string page) =>
-        Parse(SongObject(Flight(page)))?.Sections ?? [];
+    /// <summary>The tab, with each section's own score where its hash is in <paramref name="scores"/>.</summary>
+    public static HooktheoryTab? Tab(SongDto? song, IReadOnlyDictionary<string, string>? scores)
+    {
+        if (song is not { Sections.Count: > 0 })
+            return null;
+
+        var sections = song
+            .Sections.Select(section =>
+                new TabSection(section.Name!, section.Rel, section.PctChord, section.PctMelody)
+                    is var tab
+                && scores?.GetValueOrDefault(section.Hash!) is { } body
+                && ReadScore(body) is { } score
+                    ? tab with
+                    {
+                        Keys =
+                        [
+                            .. (score.Keys ?? []).Select(key => new TabKey(
+                                key.Beat,
+                                $"{key.Tonic} {key.Scale}"
+                            )),
+                        ],
+                        Chords = score.Chords?.Count(chord => chord.IsRest is not true),
+                        VideoId = score.Youtube?.Id is { } id && id != song.YouTubeId ? id : null,
+                        SyncStart =
+                            score.Youtube is { SyncStart: { } start, SyncEnd: { } end }
+                            && end > start
+                                ? start
+                                : null,
+                        SyncEnd =
+                            score.Youtube is { SyncStart: { } from, SyncEnd: { } to } && to > from
+                                ? to
+                                : null,
+                    }
+                    : tab
+            )
+            .ToList();
+
+        return new HooktheoryTab
+        {
+            Contributors =
+            [
+                .. (song.Contributors?.Names ?? []).Where(name =>
+                    !SiteAccounts.Contains(name, StringComparer.OrdinalIgnoreCase)
+                ),
+            ],
+            Sections = sections,
+            AllKeys =
+                song.SectionStats is { } stats && stats.TryGetValue("all", out var all)
+                    ? string.Join(", ", (all.AllKeys ?? []).Select(key => string.Join(' ', key)))
+                    : null,
+            SyncedVideoId = song.YouTubeId,
+            Coverage = Coverage(sections),
+        };
+    }
+
+    /// <summary>The sections synced to the song's own video, merged where they overlap.</summary>
+    private static double? Coverage(IReadOnlyList<TabSection> sections)
+    {
+        var spans = sections
+            .Where(section => section is { VideoId: null, SyncStart: not null, SyncEnd: not null })
+            .OrderBy(section => section.SyncStart)
+            .ToList();
+
+        if (spans is [])
+            return null;
+
+        var covered = 0.0;
+        var reached = 0.0;
+
+        foreach (var span in spans)
+        {
+            var (start, end) = (Math.Max(span.SyncStart!.Value, reached), span.SyncEnd!.Value);
+
+            if (end > start)
+            {
+                covered += end - start;
+                reached = end;
+            }
+        }
+
+        return covered;
+    }
+
+    private static ScoreDto? ReadScore(string body)
+    {
+        try
+        {
+            return
+                JsonSerializer
+                    .Deserialize(body, HooktheoryJsonContext.Default.ApiResponseDto)
+                    ?.JsonData
+                    is { Length: > 0 } json
+                ? JsonSerializer.Deserialize(json, HooktheoryJsonContext.Default.ScoreDto)
+                : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
 
     private static SongDto? Parse(string? json)
     {
@@ -196,6 +285,21 @@ internal static partial class HooktheoryPageReader
         public double? PctMelody { get; init; }
     }
 
+    internal sealed record ApiResponseDto(string? JsonData);
+
+    internal sealed record ScoreDto
+    {
+        public IReadOnlyList<ScoreKeyDto>? Keys { get; init; }
+        public IReadOnlyList<ScoreChordDto>? Chords { get; init; }
+        public YoutubeDto? Youtube { get; init; }
+    }
+
+    internal sealed record ScoreKeyDto(double Beat, string Tonic, string Scale);
+
+    internal sealed record ScoreChordDto(bool? IsRest);
+
+    internal sealed record YoutubeDto(string? Id, double? SyncStart, double? SyncEnd);
+
     internal sealed record ContributorsDto(IReadOnlyList<string>? Names);
 
     internal sealed record SectionStatsDto(IReadOnlyList<IReadOnlyList<string>>? AllKeys);
@@ -203,4 +307,6 @@ internal static partial class HooktheoryPageReader
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(HooktheoryPageReader.SongDto))]
+[JsonSerializable(typeof(HooktheoryPageReader.ApiResponseDto))]
+[JsonSerializable(typeof(HooktheoryPageReader.ScoreDto))]
 internal sealed partial class HooktheoryJsonContext : JsonSerializerContext { }
