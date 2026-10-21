@@ -121,6 +121,13 @@
         @if (Run.Readings.Count > 0)
         {
             <h3>Windows</h3>
+            @if (SharedWhy is { } shared)
+            {
+                <details class="source-prose">
+                    <summary>Why the judge asked for these windows</summary>
+                    <p>“@shared”</p>
+                </details>
+            }
             @foreach (var reading in Run.Readings)
             {
                 var yours = reading.Window.AskedBy is WindowAsker.User;
@@ -135,7 +142,7 @@
                         <span class="why">
                             @(yours
                                 ? "Given by you."
-                                : reading.Window.Why is { Length: > 0 } why
+                                : SharedWhy is null && reading.Window.Why is { Length: > 0 } why
                                     ? $"The judge asked for it: “{why}” crateside ran it unattended."
                                     : "The judge asked for it, and crateside ran it unattended.")
                         </span>
@@ -201,6 +208,15 @@
     public TrackTempo? Tempo { get; set; }
 
     /// <summary>What the user said they hear, recorded as a source of its own kind.</summary>
+    /// <summary>The judge's one reason for asking, when every window it asked for carries the same one.</summary>
+    private string? SharedWhy =>
+        Run.Readings.Where(reading => reading.Window.AskedBy is not WindowAsker.User)
+            .Select(reading => reading.Window.Why)
+            .ToList() is [_, _, ..] whys
+        && whys.Distinct().ToList() is [{ Length: > 0 } why]
+            ? why
+            : null;
+
     private EvidenceSource? Ear => Run.Sources.FirstOrDefault(source => source.Kind is SourceKind.Ear);
 
     private static string WindowSpan(RunWindow window) =>
