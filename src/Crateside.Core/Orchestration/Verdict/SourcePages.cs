@@ -22,7 +22,7 @@ public interface ISourcePages
 /// Hooktheory, Musicnotes and Ultimate Guitar by artist and title: one request a site, two for
 /// Musicnotes, whose search carries no key.
 /// </summary>
-public sealed partial class SourcePages(Func<HttpClient> client) : ISourcePages
+public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePages
 {
     public const string ClientName = "source-pages";
     public const string UserAgent = "crateside/1.0 ( https://github.com/Bamo16/crateside )";
@@ -156,7 +156,7 @@ public sealed partial class SourcePages(Func<HttpClient> client) : ISourcePages
 
             request.Headers.Authorization = new("Bearer", key);
 
-            using var response = await client().SendAsync(request, ct);
+            using var response = await clients.CreateClient(ClientName).SendAsync(request, ct);
 
             return response.IsSuccessStatusCode
                 ? HooktheoryTabUrls(await response.Content.ReadAsStringAsync(ct), artist, title)
@@ -394,7 +394,7 @@ public sealed partial class SourcePages(Func<HttpClient> client) : ISourcePages
     /// <summary>The page, or null for a page that is not there.</summary>
     private async Task<string?> GetAsync(string url, CancellationToken ct)
     {
-        using var response = await client().GetAsync(url, ct);
+        using var response = await clients.CreateClient(ClientName).GetAsync(url, ct);
 
         if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Gone)
             return null;

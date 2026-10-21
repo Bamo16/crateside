@@ -233,9 +233,7 @@ public static class ServiceRegistration
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(SourcePages.UserAgent);
             }
         );
-        services.AddSingleton<ISourcePages>(sp => new SourcePages(() =>
-            sp.GetRequiredService<IHttpClientFactory>().CreateClient(SourcePages.ClientName)
-        ));
+        services.AddSingleton<ISourcePages, SourcePages>();
         services.AddSingleton(sp => new VerdictRunner(
             sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<WorkingSet>(),

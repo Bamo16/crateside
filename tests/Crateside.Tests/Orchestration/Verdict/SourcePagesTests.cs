@@ -150,11 +150,9 @@ public sealed class SourcePagesTests
             failingPath: MoneyChorus
         );
 
-        var lookups = await new SourcePages(() => new HttpClient(handler)).FetchAsync(
-            "Pink Floyd",
-            "Money",
-            TestContext.Current.CancellationToken
-        );
+        var lookups = await new SourcePages(
+            new FixedHttpClientFactory(new HttpClient(handler))
+        ).FetchAsync("Pink Floyd", "Money", TestContext.Current.CancellationToken);
 
         var tab = Assert.Single(lookups[0].Pages).Tab!;
 
@@ -218,11 +216,9 @@ public sealed class SourcePagesTests
             }
         );
 
-        var lookups = await new SourcePages(() => new HttpClient(handler)).FetchAsync(
-            "Disclosure",
-            "Latch",
-            TestContext.Current.CancellationToken
-        );
+        var lookups = await new SourcePages(
+            new FixedHttpClientFactory(new HttpClient(handler))
+        ).FetchAsync("Disclosure", "Latch", TestContext.Current.CancellationToken);
 
         Assert.Equal(
             [
@@ -342,11 +338,9 @@ public sealed class SourcePagesTests
             }
         );
 
-        var lookups = await new SourcePages(() => new HttpClient(handler)).FetchAsync(
-            "Daft Punk",
-            "Around the World",
-            TestContext.Current.CancellationToken
-        );
+        var lookups = await new SourcePages(
+            new FixedHttpClientFactory(new HttpClient(handler))
+        ).FetchAsync("Daft Punk", "Around the World", TestContext.Current.CancellationToken);
 
         Assert.Equal(
             [LookupStatus.NotFound, LookupStatus.Found, LookupStatus.NotFound],
@@ -372,11 +366,9 @@ public sealed class SourcePagesTests
             failing: "www.hooktheory.com"
         );
 
-        var lookups = await new SourcePages(() => new HttpClient(handler)).FetchAsync(
-            "Daft Punk",
-            "Around the World",
-            TestContext.Current.CancellationToken
-        );
+        var lookups = await new SourcePages(
+            new FixedHttpClientFactory(new HttpClient(handler))
+        ).FetchAsync("Daft Punk", "Around the World", TestContext.Current.CancellationToken);
 
         Assert.Equal(LookupStatus.Unreachable, lookups[0].Status);
         Assert.NotNull(lookups[0].Error);
