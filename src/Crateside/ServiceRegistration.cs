@@ -158,6 +158,7 @@ public static class ServiceRegistration
 
         services.AddSingleton<IReopenedWork, ReopenedWork>();
         services.AddSingleton<CachedPlaylist>();
+        services.AddSingleton<PlaylistConsumer>();
         services.AddSingleton<WorkListService>();
         return services;
     }

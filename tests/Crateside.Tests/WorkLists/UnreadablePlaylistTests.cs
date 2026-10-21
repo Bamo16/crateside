@@ -62,12 +62,11 @@ public sealed class UnreadablePlaylistTests : IDisposable
                     StemsUnresolvedKey = PathIn("unresolved"),
                 }
             ),
-            settings,
             new TrackInstructionStore(file),
-            authorizer,
             new BumpedTrack(),
             intake,
-            playlist
+            playlist,
+            new PlaylistConsumer(playlist, settings, authorizer, intake, TimeProvider.System)
         );
     }
 

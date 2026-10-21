@@ -27,7 +27,7 @@ public sealed class RemovalFailuresByVideoTests
             },
         ];
 
-        var failures = WorkListService.FailuresByVideo(results, videoIdOf);
+        var failures = PlaylistConsumer.FailuresByVideo(results, videoIdOf);
 
         Assert.Equal("forbidden", Assert.Single(failures).Value.Reason);
     }
@@ -46,6 +46,6 @@ public sealed class RemovalFailuresByVideoTests
             },
         ];
 
-        Assert.Empty(WorkListService.FailuresByVideo(results, videoIdOf));
+        Assert.Empty(PlaylistConsumer.FailuresByVideo(results, videoIdOf));
     }
 }
