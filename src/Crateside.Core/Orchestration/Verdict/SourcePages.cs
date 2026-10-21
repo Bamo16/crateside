@@ -98,21 +98,15 @@ public sealed partial class SourcePages(Func<HttpClient> client) : ISourcePages
             Heading = PageTitle(page),
             Keys =
             [
-                .. HooktheorySection
-                    .Matches(page)
-                    .DistinctBy(section => section.Groups["Name"].Value)
+                .. HooktheoryPageReader
+                    .Sections(page)
                     .Select(section => new PageKey(
-                        $"{section.Groups["Key"].Value} {section.Groups["Scale"].Value}",
-                        section.Groups["Name"].Value,
-                        double.TryParse(
-                            section.Groups["Tempo"].Value,
-                            CultureInfo.InvariantCulture,
-                            out var tempo
-                        )
-                            ? tempo
-                            : null
+                        $"{section.Key} {section.Scale}",
+                        section.Name,
+                        section.Tempo
                     )),
             ],
+            Tab = HooktheoryPageReader.Read(page),
         };
 
     private async Task<IReadOnlyList<FetchedPage>> MusicnotesAsync(
@@ -250,11 +244,6 @@ public sealed partial class SourcePages(Func<HttpClient> client) : ISourcePages
             ? WebUtility.HtmlDecode(title).Trim()
             : null;
 
-    [GeneratedRegex(
-        @"\\""name\\"":\\""(?<Name>[^\\]+)\\"",\\""url\\"":\\""[^\\]*\\"",\\""hash\\"":\\""[^\\]*\\"",\\""key\\"":\\""(?<Key>[^\\]+)\\"",\\""scale\\"":\\""(?<Scale>[^\\]+)\\"",\\""tempo\\"":(?<Tempo>[\d.]+)"
-    )]
-    private static partial Regex HooktheorySection { get; }
-
     [GeneratedRegex(@"/sheetmusic/(?<Artist>[^""/]+)/(?<Title>[^""/]+)/MN\d+")]
     private static partial Regex MusicnotesLink { get; }
 
@@ -305,6 +294,9 @@ public sealed record FetchedPage
     public string? Arrangement { get; init; }
     public IReadOnlyList<PageKey> Keys { get; init; } = [];
     public string? Note { get; init; }
+
+    /// <summary>A TheoryTab's contributors, sections and sync, where the page is one.</summary>
+    public HooktheoryTab? Tab { get; init; }
 }
 
 /// <summary>A key as the page writes it, with the section it covers where the page says.</summary>

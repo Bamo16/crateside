@@ -30,6 +30,61 @@ public sealed class SourcePagesTests
     }
 
     [Fact]
+    public void Hooktheory_leaves_the_sites_own_account_out_of_the_contributors()
+    {
+        var tab = SourcePages
+            .HooktheoryPage(
+                "https://www.hooktheory.com/theorytab/view/billy-joel/piano-man",
+                Fixture("hooktheory-piano-man.html")
+            )
+            .Tab;
+
+        Assert.NotNull(tab);
+        Assert.Equal(18, tab.Contributors.Count);
+        Assert.DoesNotContain("Hooktheory", tab.Contributors);
+        Assert.Contains("socsy", tab.Contributors);
+        Assert.Equal(
+            ["Instrumental Intro", "Intro", "Verse", "Pre-Chorus", "Chorus", "Instrumental"],
+            tab.Sections.Select(section => section.Name)
+        );
+        Assert.Equal("gxEPV4kolz0", tab.SyncedVideoId);
+        Assert.Equal("C major", tab.AllKeys);
+    }
+
+    [Fact]
+    public void Hooktheory_gives_each_sections_progression_and_how_much_of_it_is_filled_in()
+    {
+        var tab = SourcePages
+            .HooktheoryPage(
+                "https://www.hooktheory.com/theorytab/view/pink-floyd/money",
+                Fixture("hooktheory-money.html")
+            )
+            .Tab;
+
+        Assert.NotNull(tab);
+        Assert.Equal(["Artman", "JerichoScott", "Baraniscool"], tab.Contributors);
+        Assert.Equal("B dorian, B minor", tab.AllKeys);
+
+        var verse = tab.Sections[0];
+
+        Assert.StartsWith("i7 i43 i7 i64 i42 i IV42", verse.Progression);
+        Assert.Equal(84.88517, verse.PercentChord);
+        Assert.Equal(46.360126, verse.PercentMelody);
+    }
+
+    [Fact]
+    public void A_hooktheory_page_without_a_song_payload_has_no_tab()
+    {
+        var page = SourcePages.HooktheoryPage(
+            "https://www.hooktheory.com/theorytab/view/a/b",
+            "<html><head><title>x</title></head><body>nothing</body></html>"
+        );
+
+        Assert.Null(page.Tab);
+        Assert.Empty(page.Keys);
+    }
+
+    [Fact]
     public void Musicnotes_is_read_from_the_original_artists_product_not_a_cover()
     {
         var product = SourcePages.MusicnotesProduct(
