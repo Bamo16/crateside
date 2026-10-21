@@ -1,10 +1,14 @@
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
+using Crateside.Core.Playlist;
 
 namespace Crateside.Core.Tracks;
 
 /// <summary>Produces a fresh <see cref="TracksView"/>. The expensive part, behind a name.</summary>
-public delegate Task<TracksView> ReadTracks(CancellationToken ct);
+public interface ITracksReader
+{
+    Task<TracksView> ReadAsync(CancellationToken ct = default);
+}
 
 /// <summary>Holds the composed rows, and decides when they are worth rebuilding.</summary>
 public sealed class TracksService : IDisposable
@@ -18,8 +22,8 @@ public sealed class TracksService : IDisposable
     /// <summary>Tracks already announced as ready to warp, so each is announced once.</summary>
     private readonly HashSet<string> _announced = new(StringComparer.Ordinal);
 
-    private readonly ReadTracks _read;
-    private readonly Func<TimeSpan> _freshness;
+    private readonly ITracksReader _reader;
+    private readonly PlaylistSettingsStore? _settings;
     private readonly StageHub _hub;
     private readonly TimeProvider _time;
     private readonly ITimer _timer;
@@ -31,20 +35,18 @@ public sealed class TracksService : IDisposable
     private readonly ActionLog? _actions;
     private DateTimeOffset _filedSince;
 
-    /// <param name="freshness">
-    /// How stale the rows may get with nothing announced. Zero turns the poll off.
-    /// </param>
+    /// <param name="settings">How stale the rows may get with nothing announced; without it the poll is off.</param>
     public TracksService(
-        ReadTracks read,
+        ITracksReader reader,
         StageHub hub,
         TimeProvider? time = null,
-        Func<TimeSpan>? freshness = null,
+        PlaylistSettingsStore? settings = null,
         ActionLog? actions = null
     )
     {
-        _read = read;
+        _reader = reader;
         _actions = actions;
-        _freshness = freshness ?? (() => TimeSpan.Zero);
+        _settings = settings;
         _hub = hub;
         _time = time ?? TimeProvider.System;
         _filedSince = _time.GetUtcNow();
@@ -97,7 +99,7 @@ public sealed class TracksService : IDisposable
     {
         try
         {
-            Current = await _read(ct);
+            Current = await _reader.ReadAsync(ct);
             LastError = null;
         }
         catch (OperationCanceledException)
@@ -178,7 +180,9 @@ public sealed class TracksService : IDisposable
     }
 
     private Task PollAsync() =>
-        _freshness() is { Ticks: > 0 } freshness ? EnsureFreshAsync(freshness) : Task.CompletedTask;
+        _settings?.Read().RefreshInterval is { Ticks: > 0 } freshness
+            ? EnsureFreshAsync(freshness)
+            : Task.CompletedTask;
 
     /// <summary>Restarts the quiet period, so a burst of announcements costs one rebuild.</summary>
     private void OnStageChanged(StageChange change) =>

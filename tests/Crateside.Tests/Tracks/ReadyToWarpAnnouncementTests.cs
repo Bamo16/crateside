@@ -25,7 +25,7 @@ public sealed class ReadyToWarpAnnouncementTests
         var read = 0;
 
         return new TracksService(
-            _ => Task.FromResult(views[Math.Min(read++, views.Length - 1)]),
+            new TracksReads(() => views[Math.Min(read++, views.Length - 1)]),
             new StageHub(),
             new FakeTimeProvider()
         );
@@ -95,7 +95,7 @@ public sealed class ReadyToWarpAnnouncementTests
     {
         // A first read that threw said nothing, so the next successful one is still the first.
         using var service = new TracksService(
-            _ => throw new IOException("the library is not mounted"),
+            new TracksReads(() => throw new IOException("the library is not mounted")),
             new StageHub(),
             new FakeTimeProvider()
         );
