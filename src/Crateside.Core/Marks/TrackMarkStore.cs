@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Crateside.Core.Watching;
 
 namespace Crateside.Core.Marks;
 
@@ -6,17 +7,21 @@ namespace Crateside.Core.Marks;
 /// The marks the maintainer has set, kept in <c>%APPDATA%\crateside\track-marks.json</c> by song
 /// identity, as genre and familiarity are.
 /// </summary>
-public sealed class TrackMarkStore(string? path = null)
+public sealed class TrackMarkStore
 {
-    private readonly string _path =
-        path
-        ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "track-marks.json");
+    private readonly string _path;
     private readonly Lock _gate = new();
 
     private Dictionary<string, TrackMarkRecord>? _cached;
 
     /// <summary>Raised after a mark is set or cleared.</summary>
     public event Action? Changed;
+
+    /// <summary>A mark set or cleared counts as a change to the files the rows are built from.</summary>
+    public TrackMarkStore(CratesidePaths paths, FileChanges changes)
+        : this(paths.TrackMarksFile) => Changed += changes.Notify;
+
+    internal TrackMarkStore(string path) => _path = path;
 
     /// <summary>Every song with a mark, by song identity. Never throws: an unreadable file reads as empty.</summary>
     public IReadOnlyDictionary<string, TrackMarkRecord> Read()

@@ -7,12 +7,13 @@ namespace Crateside;
 /// The loop that keeps one stage draining. Deliberately thin — the decisions belong to a drainer
 /// or a selector.
 /// </summary>
-public sealed class StageWorker(
-    IStageDrainer drainer,
+public sealed class StageWorker<TDrainer>(
+    TDrainer drainer,
     JobStore jobs,
-    ILogger<StageWorker> logger,
+    ILogger<StageWorker<TDrainer>> logger,
     StageSignals signals
 ) : BackgroundService
+    where TDrainer : IStageDrainer
 {
     private static readonly TimeSpan IdleDelay = TimeSpan.FromMinutes(2);
 

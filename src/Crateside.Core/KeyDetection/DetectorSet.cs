@@ -26,6 +26,14 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             }.GetTypeInfo(typeof(MachineDto));
 
+    /// <summary>All three through the configured keydetect ffmpeg.</summary>
+    public DetectorSet(IProcessRunner runner, CratesidePaths paths)
+        : this(
+            new PcmDecoder(runner, paths.KeydetectFfmpeg),
+            new KeydetectFilter(runner, paths.KeydetectFfmpeg),
+            new MadmomKeyCnn()
+        ) { }
+
     /// <summary>All three through one ffmpeg, which must be a build with <c>keydetect</c>.</summary>
     public static DetectorSet For(IProcessRunner runner, string ffmpeg) =>
         new(

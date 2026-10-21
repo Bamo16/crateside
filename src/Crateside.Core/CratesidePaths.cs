@@ -53,6 +53,10 @@ public sealed class CratesidePaths
     public string TempoCache { get; set; } =
         Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "tempos.json");
 
+    /// <summary>The marks the user has put on songs.</summary>
+    public string TrackMarksFile { get; set; } =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "track-marks.json");
+
     /// <summary>The loudness ffmpeg has read, kept across restarts.</summary>
     public string LoudnessCache { get; set; } =
         Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "loudness.json");
