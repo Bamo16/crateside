@@ -124,6 +124,9 @@ public sealed record KeyDetectorTally(
     public int RightOrClose =>
         Count(KeyMiss.Right) + Count(KeyMiss.Fifth) + Count(KeyMiss.Relative);
 
+    public int Read =>
+        ByMiss.Where(pair => pair.Key is not KeyMiss.NoReading).Sum(pair => pair.Value);
+
     public int Misses =>
         ByMiss.Where(pair => pair.Key is not KeyMiss.Right).Sum(pair => pair.Value);
 }

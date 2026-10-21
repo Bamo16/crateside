@@ -24,14 +24,14 @@
         <p class="lead">
             @if (_highOnly)
             {
-                <text>On the <span class="mono">@Shown.Songs</span> HIGH verdicts, @lead.Name is right on <span class="mono">@Percent(lead.Count(KeyMiss.Right))</span>.</text>
+                <text>On the <span class="mono">@Shown.Songs</span> HIGH verdicts, @lead.Name is right on <span class="mono">@Percent(lead, lead.Count(KeyMiss.Right))</span>.</text>
             }
             else
             {
                 <text>
                     On <span class="mono">@Shown.Songs</span> HIGH or MEDIUM verdicts, @lead.Name is right on
-                    <span class="mono">@Percent(lead.Count(KeyMiss.Right))</span>, and right or a near miss (a fifth
-                    or the relative key) on <span class="mono">@Percent(lead.RightOrClose)</span>. The pale part of a
+                    <span class="mono">@Percent(lead, lead.Count(KeyMiss.Right))</span>, and right or a near miss (a fifth
+                    or the relative key) on <span class="mono">@Percent(lead, lead.RightOrClose)</span>. The pale part of a
                     bar is those near misses, which still pair fine for a mashup.
                 </text>
             }
@@ -55,15 +55,15 @@
                         <tr>
                             <td>
                                 <span class="mono name">@tally.Name</span>
-                                <span class="who">@tally.Who</span>
+                                <span class="who">@tally.Who@(tally.Read < Shown.Songs ? $" · read on {tally.Read}" : null)</span>
                             </td>
                             <td class="bar-cell">
-                                <span class="split" style="width: @Width(_highOnly ? tally.Count(KeyMiss.Right) : tally.RightOrClose)">
+                                <span class="split" style="width: @Width(_highOnly ? tally.Count(KeyMiss.Right) : tally.RightOrClose, tally.Read)">
                                     <span style="width: @Width(tally.Count(KeyMiss.Right), _highOnly ? tally.Count(KeyMiss.Right) : tally.RightOrClose)"></span>
                                 </span>
                             </td>
-                            <td class="numeric mono strong">@Percent(tally.Count(KeyMiss.Right))</td>
-                            <td class="numeric mono quiet">@(_highOnly ? "—" : Percent(tally.RightOrClose))</td>
+                            <td class="numeric mono strong">@Percent(tally, tally.Count(KeyMiss.Right))</td>
+                            <td class="numeric mono quiet">@(_highOnly ? "—" : Percent(tally, tally.RightOrClose))</td>
                         </tr>
                     }
                 </tbody>
@@ -199,10 +199,9 @@
     private int[] Counts(params KeyMiss[] misses) =>
         [.. Both.Detectors.Select(tally => misses.Sum(tally.Count))];
 
-    private string Percent(int count) =>
-        Shown.Songs is 0 ? "—" : $"{count * 100.0 / Shown.Songs:0} %";
-
-    private string Width(int count) => Width(count, Shown.Songs);
+    /// <summary>Out of the songs the detector read, so one it never ran on does not count against it.</summary>
+    private static string Percent(KeyDetectorTally tally, int count) =>
+        tally.Read is 0 ? "—" : $"{count * 100.0 / tally.Read:0} %";
 
     private static string Width(int part, int whole) =>
         $"{(whole is 0 ? 0 : part * 100.0 / whole).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)}%";
