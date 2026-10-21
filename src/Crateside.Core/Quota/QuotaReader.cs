@@ -3,11 +3,20 @@ using System.Text.Json;
 
 namespace Crateside.Core.Quota;
 
+/// <summary>Reads the user's Claude usage windows.</summary>
+public interface IQuotaReader
+{
+    /// <summary>The current windows, or <see cref="QuotaSnapshot.Unknown"/> if they cannot be read.</summary>
+    Task<QuotaSnapshot> ReadAsync(CancellationToken ct = default);
+}
+
 /// <summary>
 /// Reads the user's five-hour Claude window from Anthropic's usage endpoint, which is undocumented.
 /// </summary>
-public sealed class QuotaReader(HttpClient client)
+public sealed class QuotaReader(IHttpClientFactory clients) : IQuotaReader
 {
+    public const string ClientName = "anthropic-usage";
+
     private const string UsagePath = "/api/oauth/usage";
 
     /// <summary>The beta opt-in the endpoint requires.</summary>
@@ -32,7 +41,7 @@ public sealed class QuotaReader(HttpClient client)
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             request.Headers.Add("anthropic-beta", BetaHeader);
 
-            using var response = await client.SendAsync(request, ct);
+            using var response = await clients.CreateClient(ClientName).SendAsync(request, ct);
 
             if (!response.IsSuccessStatusCode)
                 return QuotaSnapshot.Unknown;

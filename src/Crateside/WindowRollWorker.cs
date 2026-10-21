@@ -12,7 +12,7 @@ public sealed class WindowRollWorker(
     WindowRoll roll,
     PauseStore remembered,
     VerdictDrainer drainer,
-    IServiceProvider services,
+    IQuotaReader quota,
     ILogger<WindowRollWorker> logger
 ) : BackgroundService
 {
@@ -45,9 +45,6 @@ public sealed class WindowRollWorker(
             return;
 
         var now = DateTimeOffset.UtcNow;
-
-        // Resolved per check: a typed HttpClient held for the life of the app outlives its handler.
-        var quota = services.GetRequiredService<QuotaReader>();
 
         if (!roll.ShouldRoll(await quota.ReadAsync(stoppingToken), now))
             return;

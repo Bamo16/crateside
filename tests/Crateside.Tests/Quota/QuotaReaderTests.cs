@@ -153,7 +153,9 @@ public sealed class QuotaReaderTests : IDisposable
         var handler = new CapturingHandler(HttpStatusCode.OK, RealisticPayload);
 
         var reader = new QuotaReader(
-            new HttpClient(handler) { BaseAddress = new Uri("https://api.anthropic.com") }
+            new FixedHttpClientFactory(
+                new HttpClient(handler) { BaseAddress = new Uri("https://api.anthropic.com") }
+            )
         )
         {
             CredentialsPath = Path.Combine(_root, "nothing-here.json"),
@@ -168,7 +170,9 @@ public sealed class QuotaReaderTests : IDisposable
         handler = new CapturingHandler(status, payload);
 
         return new QuotaReader(
-            new HttpClient(handler) { BaseAddress = new Uri("https://api.anthropic.com") }
+            new FixedHttpClientFactory(
+                new HttpClient(handler) { BaseAddress = new Uri("https://api.anthropic.com") }
+            )
         )
         {
             CredentialsPath = CredentialsWith("token-value"),
