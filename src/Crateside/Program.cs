@@ -6,10 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
 builder.AddCratesideConfiguration();
-builder.Services.AddCratesideReaders();
-builder.Services.AddCratesideQueue();
-builder.Services.AddCratesideOrchestration();
-builder.Services.AddCratesideTracks();
+builder.Services.AddCrateside();
 builder.Services.AddSingleton<ToolsMemory>();
 
 var app = builder.Build();

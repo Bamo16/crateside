@@ -95,33 +95,210 @@ public static class ServiceRegistration
         return builder;
     }
 
-    /// <summary>Stateless readers over files crateside does not own; safe to share.</summary>
-    public static IServiceCollection AddCratesideReaders(this IServiceCollection services)
+    /// <summary>Every service crateside runs, grouped by the domain folder each belongs to.</summary>
+    public static IServiceCollection AddCrateside(this IServiceCollection services) =>
+        services
+            .AddAppWide()
+            .AddAbleton()
+            .AddBeats()
+            .AddFamiliarity()
+            .AddGenres()
+            .AddKeyDetection()
+            .AddLedger()
+            .AddLibrary()
+            .AddLoudness()
+            .AddMarks()
+            .AddNaming()
+            .AddOrchestration()
+            .AddPlaylist()
+            .AddQuota()
+            .AddStaging()
+            .AddTracks()
+            .AddWarps()
+            .AddWatching()
+            .AddWorkLists();
+
+    private static IServiceCollection AddAppWide(this IServiceCollection services)
     {
         services.AddSingleton(TimeProvider.System);
-        services.AddSingleton<LedgerStore>();
+        services.AddSingleton<FolderBrowser>();
+        services.AddSingleton<PathOverrideStore>();
         services.AddSingleton<FolderInfoReader>();
+        services.AddSingleton<FolderInfoWriter>();
         services.AddSingleton(sp => new FileIndexReader(
             sp.GetRequiredService<IOptions<CratesidePaths>>().Value.AbletonIndex
         ));
-        services.AddSingleton<LibraryKeyReader>();
-        services.AddSingleton<LibrarySummary>();
-        services.AddSingleton<StagingReader>();
-        services.AddSingleton<WarpTempoReader>();
-        services.AddSingleton<KnownBuilds>();
-        services.AddSingleton<BeatReader>();
-        services.AddSingleton<ISetLinks, AbletonSetLinks>();
-        services.AddSingleton<PlaylistReader>();
-        services.AddSingleton<QueueFile>();
-        services.AddSingleton<PlaylistSettingsStore>();
-        services.AddSingleton<TrackInstructionStore>();
+
         return services;
     }
 
-    /// <summary>
-    /// The YouTube queue, and the encrypted store its credential lives in.
-    /// </summary>
-    public static IServiceCollection AddCratesideQueue(this IServiceCollection services)
+    private static IServiceCollection AddAbleton(this IServiceCollection services)
+    {
+        services.AddSingleton<ISetLinks, AbletonSetLinks>();
+        services.AddSingleton<WarpTempoReader>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddBeats(this IServiceCollection services)
+    {
+        services.AddSingleton<KnownBuilds>();
+        services.AddSingleton<BeatReader>();
+        // Unattended: beatdetect runs on the CPU and contends for nothing (#75, #76).
+        services.AddHostedService<BeatWorker>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddFamiliarity(this IServiceCollection services)
+    {
+        services.AddSingleton<FamiliarityStore>();
+        services
+            .AddHttpClient<FamiliarityLookup>(client => client.Timeout = TimeSpan.FromSeconds(15))
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5));
+        services.AddHostedService<FamiliarityWorker>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddGenres(this IServiceCollection services)
+    {
+        services.AddSingleton<GenreStore>();
+        services
+            .AddHttpClient<GenreLookup>(client => client.Timeout = TimeSpan.FromSeconds(15))
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5));
+        services.AddHostedService<GenreWorker>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddKeyDetection(this IServiceCollection services) =>
+        services.AddSingleton<DetectorSet>();
+
+    private static IServiceCollection AddLedger(this IServiceCollection services) =>
+        services.AddSingleton<LedgerStore>();
+
+    private static IServiceCollection AddLibrary(this IServiceCollection services)
+    {
+        services.AddSingleton<LibraryKeyReader>();
+        services.AddSingleton<LibrarySummary>();
+        services.AddSingleton<ILibraryFiles, LibraryFiles>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddLoudness(this IServiceCollection services)
+    {
+        services.AddSingleton<LoudnessReader>();
+        services.AddSingleton<ClipGains>();
+        services.AddSingleton<Levelling>();
+        // Unattended: reading loudness is ffmpeg on the CPU (ADR 0059).
+        services.AddHostedService<LoudnessWorker>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddMarks(this IServiceCollection services) =>
+        services.AddSingleton<TrackMarkStore>();
+
+    private static IServiceCollection AddNaming(this IServiceCollection services)
+    {
+        services.AddSingleton<ResolvedNameStore>();
+        services.AddSingleton<NameResolver>();
+        // Not beside the pausable stages on purpose (ADR 0014): a name resolve spends one
+        // metadata fetch and contends for nothing, so it runs unattended like detection.
+        services.AddHostedService<NameWorker>();
+
+        return services;
+    }
+
+    /// <summary>What the stages share, then each stage in pipeline order, then the track edits.</summary>
+    private static IServiceCollection AddOrchestration(this IServiceCollection services)
+    {
+        services.AddSingleton<WorkingSet>();
+        services.AddSingleton<SourceRetentionStore>();
+        services.AddSingleton<SourceIndex>();
+        services.AddSingleton<SourceBackfill>();
+        services.AddSingleton<WorkingSetJanitor>();
+        services.AddHostedService<JanitorWorker>();
+
+        services.AddSingleton<JobStore>();
+        services.AddSingleton<IReopenedWork, ReopenedWork>();
+        services.AddSingleton<DeletionLog>();
+        services.AddSingleton<ActionLog>();
+
+        services.AddSingleton<StageHub>();
+        services.AddSingleton<StageSignals>();
+        services.AddSingleton<PauseStore>();
+        services.AddSingleton<IProcessRunner, ProcessRunner>();
+        services.AddHostedService<DrainWorker>();
+
+        services.AddSingleton<SourceProbe>();
+        services.AddSingleton<DownloadRunner>();
+        services.AddSingleton<DownloadSelector>();
+        services.AddSingleton<DownloadDrainer>();
+        services.AddHostedService<StageWorker<DownloadDrainer>>();
+
+        services.AddSingleton<PresetCatalogReader>();
+        services.AddSingleton<IProcessProbe, SystemProcessProbe>();
+        services.AddSingleton<SeparationInterlock>();
+        services.AddSingleton<SeparationSelector>();
+        services.AddSingleton<SeparationRunner>();
+        services.AddSingleton<DrainControl>();
+        services.AddSingleton<SeparationDrainer>();
+
+        services.AddSingleton<EvidenceSelector>();
+        services.AddSingleton<EvidenceRunner>();
+        services.AddSingleton<IWindowDetector, EvidenceRunner>();
+        services.AddSingleton<EvidenceDrainer>();
+        services.AddHostedService<StageWorker<EvidenceDrainer>>();
+
+        services.AddSingleton<VerdictControl>();
+        services.AddSingleton<VerdictSelector>();
+        services.AddHttpClient(
+            SourcePages.ClientName,
+            client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(15);
+                client.DefaultRequestHeaders.UserAgent.ParseAdd(SourcePages.UserAgent);
+            }
+        );
+        services.AddSingleton<ISourcePages, SourcePages>();
+        services.AddSingleton<VerdictRunner>();
+        services.AddSingleton<VerdictDrainer>();
+        services.AddSingleton<BarJudging>();
+        services.AddSingleton<LookalikeAnswer>();
+        services.AddHostedService<StageWorker<VerdictDrainer>>();
+
+        services.AddSingleton<HandoffSelector>();
+        services.AddSingleton<HandoffRunner>();
+        services.AddSingleton<HandoffDrainer>();
+        services.AddSingleton<TagStoreBackups>();
+        services.AddSingleton<KeyCorrections>();
+        services.AddSingleton<BackingRunner>();
+        services.AddHostedService<StageWorker<HandoffDrainer>>();
+        // Unattended: the gap opens on every import and is collected by an ordinary
+        // hand-applied tag (ADR 0023).
+        services.AddHostedService<BackingWorker>();
+
+        services.AddSingleton<TaggingSelector>();
+        services.AddSingleton<TaggingRunner>();
+        services.AddSingleton<TaggingDrainer>();
+        services.AddHostedService<StageWorker<TaggingDrainer>>();
+
+        services.AddSingleton<TrackAdd>();
+        services.AddSingleton<TrackRemoval>();
+        services.AddSingleton<SampleAdoption>();
+        services.AddSingleton<SourceAdd>();
+        services.AddSingleton<StemRecut>();
+        services.AddSingleton<TrackRename>();
+        services.AddSingleton<TrackSwap>();
+
+        return services;
+    }
+
+    /// <summary>The YouTube playlist, and the encrypted store its credential lives in.</summary>
+    private static IServiceCollection AddPlaylist(this IServiceCollection services)
     {
         // The key ring is sealed to the current Windows user (docs/secrets.md).
         var dataProtection = services
@@ -142,161 +319,17 @@ public static class ServiceRegistration
         services.AddSingleton<ProtectedTokenStore>();
         services.AddSingleton<PlaylistWriteAccess>();
         services.AddSingleton<PlaylistAuthorizer>();
+        services.AddSingleton<PlaylistReader>();
         services.AddSingleton<PlaylistRemover>();
+        services.AddSingleton<PlaylistSettingsStore>();
         services.AddSingleton<IntakeStore>();
-        services.AddSingleton<BumpedTrack>();
-        services.AddSingleton<PresetCatalogReader>();
-
-        services.AddSingleton<IReopenedWork, ReopenedWork>();
         services.AddSingleton<CachedPlaylist>();
         services.AddSingleton<PlaylistConsumer>();
-        services.AddSingleton<WorkListService>();
+
         return services;
     }
 
-    /// <summary>Draining, and the stores and runners each stage reads and writes through.</summary>
-    public static IServiceCollection AddCratesideOrchestration(this IServiceCollection services)
-    {
-        services.AddSingleton<StageHub>();
-        services.AddSingleton<JobStore>();
-        services.AddSingleton<IProcessProbe, SystemProcessProbe>();
-        services.AddSingleton<SeparationInterlock>();
-        services.AddSingleton<SeparationSelector>();
-        services.AddSingleton<SeparationRunner>();
-        // Running unless the user paused it, and a pause of theirs outlives a restart.
-        services.AddSingleton<FolderBrowser>();
-        services.AddSingleton<PathOverrideStore>();
-        services.AddSingleton<PauseStore>();
-        services.AddSingleton<DrainControl>();
-        services.AddSingleton<SeparationDrainer>();
-
-        services.AddSingleton<WorkingSet>();
-
-        services.AddSingleton<DownloadRunner>();
-        services.AddSingleton<DownloadSelector>();
-        services.AddSingleton<DownloadDrainer>();
-
-        services.AddSingleton<EvidenceSelector>();
-        services.AddSingleton<DetectorSet>();
-        services.AddSingleton<EvidenceRunner>();
-        services.AddSingleton<EvidenceDrainer>();
-
-        services.AddSingleton<VerdictControl>();
-        services.AddSingleton<QuotaGuard>();
-        services.AddSingleton<WindowRoll>();
-
-        services.AddSingleton<StageSignals>();
-
-        services.AddSingleton<VerdictSelector>();
-        services.AddSingleton<IProcessRunner, ProcessRunner>();
-        services.AddHttpClient(
-            SourcePages.ClientName,
-            client =>
-            {
-                client.Timeout = TimeSpan.FromSeconds(15);
-                client.DefaultRequestHeaders.UserAgent.ParseAdd(SourcePages.UserAgent);
-            }
-        );
-        services.AddSingleton<ISourcePages, SourcePages>();
-        services.AddSingleton<IWindowDetector, EvidenceRunner>();
-        services.AddSingleton<VerdictRunner>();
-        services.AddSingleton<VerdictDrainer>();
-        services.AddSingleton<BarJudging>();
-
-        services.AddSingleton<HandoffSelector>();
-        services.AddSingleton<DeletionLog>();
-        services.AddSingleton<ActionLog>();
-        services.AddSingleton<HandoffRunner>();
-        services.AddSingleton<HandoffDrainer>();
-
-        services.AddSingleton<FolderInfoWriter>();
-        services.AddSingleton<TaggingSelector>();
-        services.AddSingleton<TaggingRunner>();
-        services.AddSingleton<TaggingDrainer>();
-
-        services.AddSingleton<BackingRunner>();
-        services.AddSingleton<KeyCorrections>();
-        services.AddSingleton<TagStoreBackups>();
-
-        services.AddSingleton<ResolvedNameStore>();
-        services.AddSingleton<NameResolver>();
-
-        // Not registered beside the pausable stages on purpose (ADR 0014): a name resolve spends
-        // one metadata fetch and contends for nothing, so it runs unattended like detection.
-        services.AddHostedService<NameWorker>();
-
-        // Unattended for the same reason, and it has to be: the gap opens on every import and is
-        // collected by an ordinary hand-applied tag (ADR 0023).
-        services.AddHostedService<BackingWorker>();
-
-        // Unattended too: beatdetect runs on the CPU and contends for nothing (#75, #76).
-        services.AddHostedService<BeatWorker>();
-
-        // Unattended for the same reason: writing a sidecar decodes on the CPU (ADR 0043, 0047).
-        services.AddSingleton<WrittenWarps>();
-        services.AddSingleton<TransientOrigins>();
-        services.AddSingleton<LiveAnalyses>();
-        services.AddSingleton<LoudnessReader>();
-        services.AddSingleton<ClipGains>();
-        services.AddSingleton<IAudioDecoder, FfmpegAudioDecoder>();
-        services.AddSingleton<ITransientDetector, OnsetDetector>();
-        services.AddSingleton<SidecarWriter>();
-        services.AddSingleton<IStarterGrids, StarterGrids>();
-        services.AddSingleton<WarpLending>();
-        services.AddSingleton<SidecarBackups>();
-        services.AddSingleton<WarpActions>();
-        services.AddSingleton<RetypedWarps>();
-        services.AddSingleton<WarpTrueUp>();
-        services.AddSingleton<TrueUpAll>();
-        services.AddSingleton<StemWarpReader>();
-        services.AddSingleton<StagingMarks>();
-        services.AddSingleton<HandoffSidecars>();
-        services.AddHostedService<WarpWorker>();
-
-        // Unattended too: reading loudness is ffmpeg on the CPU (ADR 0059).
-        services.AddSingleton<Levelling>();
-        services.AddHostedService<LoudnessWorker>();
-
-        // Unattended too: keeping a filed track's warp guide is a file move (ADR 0046).
-        services.AddSingleton<WarpGuideKeeper>();
-        services.AddHostedService<WarpGuideWorker>();
-
-        services.AddHostedService<DrainWorker>();
-
-        services.AddHostedService<StageWorker<DownloadDrainer>>();
-        services.AddHostedService<StageWorker<EvidenceDrainer>>();
-        services.AddHostedService<StageWorker<VerdictDrainer>>();
-        services.AddHostedService<StageWorker<HandoffDrainer>>();
-        services.AddHostedService<StageWorker<TaggingDrainer>>();
-
-        services.AddHostedService<WindowRollWorker>();
-
-        services.AddSingleton<IStagedFiles, StagedFiles>();
-        services.AddSingleton<SourceProbe>();
-        services.AddSingleton<TrackAdd>();
-        services.AddSingleton<TrackRemoval>();
-        services.AddSingleton<SampleAdoption>();
-        services.AddSingleton<SourceAdd>();
-
-        services.AddSingleton<StemRecut>();
-        services.AddSingleton<ILibraryFiles, LibraryFiles>();
-        services.AddSingleton<TrackRename>();
-        services.AddSingleton<LookalikeAnswer>();
-
-        services.AddSingleton<TrackSwap>();
-
-        services.AddSingleton<SourceRetentionStore>();
-        services.AddSingleton<SourceIndex>();
-        services.AddSingleton<SourceBackfill>();
-        services.AddSingleton<WorkingSetJanitor>();
-        services.AddHostedService<JanitorWorker>();
-        return services;
-    }
-
-    /// <summary>
-    /// The Tracks page's view of everything, and the cache that keeps it affordable.
-    /// </summary>
-    public static IServiceCollection AddCratesideTracks(this IServiceCollection services)
+    private static IServiceCollection AddQuota(this IServiceCollection services)
     {
         // QuotaReader sets its own authorization and beta headers per call; this configures
         // transport only.
@@ -311,26 +344,71 @@ public static class ServiceRegistration
             )
             .SetHandlerLifetime(TimeSpan.FromMinutes(5));
         services.AddSingleton<IQuotaReader, QuotaReader>();
+        services.AddSingleton<QuotaGuard>();
+        services.AddSingleton<WindowRoll>();
+        services.AddHostedService<WindowRollWorker>();
 
-        services.AddSingleton<GenreStore>();
-        services
-            .AddHttpClient<GenreLookup>(client => client.Timeout = TimeSpan.FromSeconds(15))
-            .SetHandlerLifetime(TimeSpan.FromMinutes(5));
-        services.AddHostedService<GenreWorker>();
+        return services;
+    }
 
+    private static IServiceCollection AddStaging(this IServiceCollection services)
+    {
+        services.AddSingleton<StagingReader>();
+        services.AddSingleton<IStagedFiles, StagedFiles>();
+        services.AddSingleton<StagingMarks>();
+        services.AddSingleton<WarpGuideKeeper>();
+        // Unattended: keeping a filed track's warp guide is a file move (ADR 0046).
+        services.AddHostedService<WarpGuideWorker>();
+
+        return services;
+    }
+
+    /// <summary>The Tracks page's view of everything, and the cache that keeps it affordable.</summary>
+    private static IServiceCollection AddTracks(this IServiceCollection services)
+    {
+        services.AddSingleton<ITracksReader, TracksReader>();
+        services.AddSingleton<TracksService>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddWarps(this IServiceCollection services)
+    {
+        services.AddSingleton<WrittenWarps>();
+        services.AddSingleton<TransientOrigins>();
+        services.AddSingleton<LiveAnalyses>();
+        services.AddSingleton<RetypedWarps>();
+        services.AddSingleton<SidecarBackups>();
+        services.AddSingleton<IAudioDecoder, FfmpegAudioDecoder>();
+        services.AddSingleton<ITransientDetector, OnsetDetector>();
+        services.AddSingleton<SidecarWriter>();
+        services.AddSingleton<IStarterGrids, StarterGrids>();
+        services.AddSingleton<WarpLending>();
+        services.AddSingleton<WarpActions>();
+        services.AddSingleton<WarpTrueUp>();
+        services.AddSingleton<TrueUpAll>();
+        services.AddSingleton<StemWarpReader>();
+        services.AddSingleton<HandoffSidecars>();
+        // Unattended: writing a sidecar decodes on the CPU (ADR 0043, 0047).
+        services.AddHostedService<WarpWorker>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddWatching(this IServiceCollection services)
+    {
         services.AddSingleton<FileChanges>();
         services.AddHostedService<FileWatchService>();
 
-        services.AddSingleton<TrackMarkStore>();
+        return services;
+    }
 
-        services.AddSingleton<FamiliarityStore>();
-        services
-            .AddHttpClient<FamiliarityLookup>(client => client.Timeout = TimeSpan.FromSeconds(15))
-            .SetHandlerLifetime(TimeSpan.FromMinutes(5));
-        services.AddHostedService<FamiliarityWorker>();
-
-        services.AddSingleton<ITracksReader, TracksReader>();
-        services.AddSingleton<TracksService>();
+    private static IServiceCollection AddWorkLists(this IServiceCollection services)
+    {
+        services.AddSingleton<QueueFile>();
+        services.AddSingleton<TrackInstructionStore>();
+        services.AddSingleton<BumpedTrack>();
+        services.AddSingleton<WorkListService>();
 
         return services;
     }
