@@ -15,6 +15,7 @@
 @using Crateside.Core.Genres
 @using Crateside.Core.Ledger
 @using Crateside.Core.Library
+@using Crateside.Core.Loudness
 @using Crateside.Core.Orchestration.Edits
 @using Crateside.Core.Orchestration.Handoff
 @using Crateside.Core.Orchestration.Jobs
@@ -41,6 +42,7 @@
 @inject StageSignals Signals
 @inject CratesidePaths Paths
 @inject KeyCorrections Corrections
+@inject Levelling Levels
 @inject IJSRuntime Js
 
 <PageTitle>Dashboard · crateside</PageTitle>
@@ -227,6 +229,11 @@
 
                         <div class="library">
                             <KeyDetectors Both="_keysBoth" High="_keysHigh" />
+
+                            @if (_loudness is not null)
+                            {
+                                <ClipGainSpread Spread="_loudness" />
+                            }
 
                             <section id="p-key">
                                 <h3>By key</h3>
@@ -644,6 +651,7 @@
     private IReadOnlyList<(string? Value, int Songs)> _familiarity = [];
     private KeyDetectorCounts _keysBoth = new(0, [], []);
     private KeyDetectorCounts _keysHigh = new(0, [], []);
+    private LoudnessSpread? _loudness;
 
     private IReadOnlyList<TrackRow> _rows = [];
     private IReadOnlyList<TurnTile> _tiles = [];
@@ -685,6 +693,8 @@
     private IEnumerable<KeyCount> Ordered =>
         _distribution.Counts.OrderByDescending(c => c.Tracks).ThenBy(c => c.Key);
 
+    private int LoudnessCounted => (_loudness?.Instrumentals.Count ?? 0) + (_loudness?.Vocals.Count ?? 0);
+
     private int Represented => _distribution.Counts.Count(c => c.Tracks > 0);
 
     private int GenreLargest => _distribution.Genres.Select(g => g.Tracks).DefaultIfEmpty().Max();
@@ -711,6 +721,7 @@
             new(LibraryId, "The library", _distribution.TrackCount),
             _keysBoth.Songs > 0 ? new("p-kdet", "Key detectors", _keysBoth.Songs, IsPanel: true) : null,
             new("p-key", "By key", Represented, IsPanel: true),
+            LoudnessCounted > 0 ? new("p-loud", "Loudness adjustments", LoudnessCounted, IsPanel: true) : null,
             _tempo.Warped > 0 ? new("p-tempo", "By tempo", _tempo.Warped, IsPanel: true) : null,
             _detectors.Songs > 0 ? new("p-bpm", "BPM detectors", _detectors.Songs, IsPanel: true) : null,
             new("p-genre", "By genre", _distribution.Genres.Count(g => g.Tracks > 0), IsPanel: true),
@@ -732,6 +743,7 @@
         Roll.Changed += OnChanged;
 
         Count(Summary.Current);
+        _loudness = await Task.Run(Levels.Spread);
         await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
         Follow();
 
@@ -899,6 +911,7 @@
         _reading = true;
 
         Count(await Task.Run(Summary.Refresh));
+        _loudness = await Task.Run(Levels.Spread);
 
         _reading = false;
     }

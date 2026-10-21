@@ -64,6 +64,8 @@ public sealed class Levelling(
         return levelled;
     }
 
+    public LoudnessSpread Spread() => LoudnessSpread.From(Samples(), reader, gains);
+
     private IEnumerable<string> Samples() =>
         Audio(paths.StagingFolder, SearchOption.TopDirectoryOnly)
             .Concat(Audio(paths.LibraryFolder, SearchOption.AllDirectories));

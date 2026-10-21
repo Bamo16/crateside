@@ -9,6 +9,8 @@ public sealed class ClipGains(LoudnessReader reader, Func<LoudnessOptions> optio
     /// <summary>A gain this close to the one wanted, in dB, is on target, so float rounding never rewrites a sidecar.</summary>
     private const double ToleranceDb = 0.05;
 
+    public LoudnessOptions Options => options();
+
     /// <summary>Null until the file is read, or when ffmpeg found no loudness in it.</summary>
     public float? For(string audioPath) =>
         reader.Read(audioPath) is { } reading ? Wanted(audioPath, reading, options()) : null;
