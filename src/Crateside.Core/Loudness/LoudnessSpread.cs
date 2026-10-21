@@ -51,7 +51,7 @@ public sealed record LoudnessSpread(
                 default:
                     if (gains.For(path) is { } gain)
                         tally.Levelled.Add(
-                            new LoudnessSample(NameOf(path, preset ?? kind), 20 * Math.Log10(gain))
+                            new LoudnessSample(NameOf(path, preset, kind), 20 * Math.Log10(gain))
                         );
                     break;
             }
@@ -64,8 +64,17 @@ public sealed record LoudnessSpread(
         );
     }
 
-    private static string NameOf(string path, string label) =>
-        $"{StemFileName.WithoutPreset(path)} ({label})";
+    /// <summary>
+    /// The song alone for its kind's usual preset, the preset beside any other, and an added source
+    /// by its whole file name, which carries its label.
+    /// </summary>
+    private static string NameOf(string path, string? preset, string kind) =>
+        preset switch
+        {
+            null => Path.GetFileNameWithoutExtension(path),
+            _ when preset == $"{kind} - Full" => StemFileName.WithoutPreset(path),
+            _ => $"{StemFileName.WithoutPreset(path)} ({preset})",
+        };
 
     private sealed class Tally
     {
