@@ -15,24 +15,14 @@ public delegate FolderInfo ReadTagState(AuditRoot root);
 /// </summary>
 public static class TagAudit
 {
-    /// <param name="tagState">
-    /// Where each root's tags are read from. The default is the rule, not a convenience — see
-    /// <see cref="AuditRoot.ReadsTheIndex"/>.
-    /// </param>
+    /// <param name="tagState">Where each root's tags are read from: <see cref="Using"/>, which follows <see cref="AuditRoot.ReadsTheIndex"/>.</param>
     public static TagAuditReport Run(
         KeyLedger ledger,
         IEnumerable<AuditRoot> roots,
-        ReadTagState? tagState = null
-    ) => new(Scan(ledger, roots, tagState ?? FromEitherStore));
+        ReadTagState tagState
+    ) => new(Scan(ledger, roots, tagState));
 
-    /// <summary>
-    /// Reads the store this root's tags live in — its XMP where whole, else Ableton's index at the
-    /// default location; <see cref="Using"/> takes configured paths (ADR 0017).
-    /// </summary>
-    public static FolderInfo FromEitherStore(AuditRoot root) =>
-        Using(new FileIndexReader(new CratesidePaths().AbletonIndex))(root);
-
-    /// <summary>The same rule, against readers the caller already has.</summary>
+    /// <summary>Reads each root from its XMP where whole, else Ableton's index (ADR 0017).</summary>
     public static ReadTagState Using(FileIndexReader index, FolderInfoReader? folderInfo = null) =>
         root =>
             AbletonReads.TagsOrEmpty(

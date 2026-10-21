@@ -1,3 +1,4 @@
+using AbleKit.Tags;
 using Crateside.Core.Audit;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
@@ -10,6 +11,8 @@ namespace Crateside.Core.Orchestration.Tagging;
 public sealed class TaggingSelector(
     JobStore jobs,
     CratesidePaths paths,
+    FileIndexReader index,
+    FolderInfoReader folderInfo,
     int maxStrikes = TaggingSelector.DefaultMaxStrikes
 )
 {
@@ -29,7 +32,11 @@ public sealed class TaggingSelector(
         stems = [];
 
         var next = TagAudit
-            .Run(ledger, [AuditRoot.Written(paths.StagingFolder)])
+            .Run(
+                ledger,
+                [AuditRoot.Written(paths.StagingFolder)],
+                TagAudit.Using(index, folderInfo)
+            )
             .Untagged.GroupBy(s => s.SourceVideoId, StringComparer.Ordinal)
             .FirstOrDefault(g => IsEligible(g.Key));
 
