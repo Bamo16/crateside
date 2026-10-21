@@ -1,5 +1,3 @@
-using Crateside.Core;
-using Crateside.Core.Ledger;
 using Crateside.Core.Library;
 using Crateside.Core.Pairing;
 using Crateside.Tests.Ledger;

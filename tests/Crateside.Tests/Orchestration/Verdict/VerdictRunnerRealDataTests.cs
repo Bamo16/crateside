@@ -1,6 +1,5 @@
 using Crateside.Core;
 using Crateside.Core.KeyDetection;
-using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Loop;
