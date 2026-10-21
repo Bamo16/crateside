@@ -3,7 +3,7 @@ using Crateside.Core.Samples;
 namespace Crateside.Core.Watching;
 
 /// <summary>
-/// Watches Staging's top level and the whole library for audio, sidecars and folders appearing,
+/// Watches Staging's and the kept warp guides' top level and the whole library for audio, sidecars and folders appearing,
 /// moving or going, and says so to <see cref="FileChanges"/>. A wake-up only: events are dropped
 /// under load and while crateside is down, so every worker keeps its timer (#132).
 /// </summary>
@@ -15,6 +15,7 @@ public sealed class FileWatchers : IDisposable
     {
         Watch(paths.StagingFolder, includeSubdirectories: false, changes);
         Watch(paths.LibraryFolder, includeSubdirectories: true, changes);
+        Watch(paths.KeptWarpGuides, includeSubdirectories: false, changes);
     }
 
     public void Dispose()

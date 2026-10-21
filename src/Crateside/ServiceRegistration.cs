@@ -374,6 +374,7 @@ public static class ServiceRegistration
         services.AddSingleton<StagingReader>();
         services.AddSingleton<IStagedFiles, StagedFiles>();
         services.AddSingleton<StagingMarks>();
+        services.AddSingleton<KeptStemMarks>();
         services.AddSingleton<WarpGuideKeeper>();
         // Unattended: keeping a filed track's warp guide is a file move (ADR 0046).
         services.AddHostedService<WarpGuideWorker>();
