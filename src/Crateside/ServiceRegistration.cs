@@ -98,9 +98,10 @@ public static class ServiceRegistration
     /// <summary>Stateless readers over files crateside does not own; safe to share.</summary>
     public static IServiceCollection AddCratesideReaders(this IServiceCollection services)
     {
+        services.AddSingleton(TimeProvider.System);
         services.AddSingleton(sp => new LedgerStore(
             sp.GetRequiredService<CratesidePaths>().LedgerDatabase,
-            TimeProvider.System
+            sp.GetRequiredService<TimeProvider>()
         ));
         services.AddSingleton<FolderInfoReader>();
         services.AddSingleton(sp => new FileIndexReader(
@@ -124,10 +125,7 @@ public static class ServiceRegistration
             "beatdetect=hpss=1",
             sp.GetRequiredService<KnownBuilds>()
         ));
-        services.AddSingleton<ISetLinks>(sp => new AbletonSetLinks(
-            sp.GetRequiredService<CratesidePaths>(),
-            TimeProvider.System
-        ));
+        services.AddSingleton<ISetLinks, AbletonSetLinks>();
         services.AddSingleton<PlaylistReader>();
         services.AddSingleton<QueueFile>();
         services.AddSingleton<PlaylistSettingsStore>();
@@ -261,7 +259,7 @@ public static class ServiceRegistration
         // outlives its handler.
         services.AddSingleton(sp => new QuotaGuard(
             ct => sp.GetRequiredService<QuotaReader>().ReadAsync(ct),
-            TimeProvider.System
+            sp.GetRequiredService<TimeProvider>()
         ));
         services.AddSingleton(sp =>
         {
@@ -303,14 +301,14 @@ public static class ServiceRegistration
             sp.GetRequiredService<EvidenceRunner>(),
             sp.GetRequiredService<ISourcePages>(),
             sp.GetRequiredService<IOptions<JudgeOptions>>().Value,
-            TimeProvider.System
+            sp.GetRequiredService<TimeProvider>()
         ));
         services.AddSingleton<VerdictDrainer>();
         services.AddSingleton(sp => new BarJudging(
             sp.GetRequiredService<VerdictDrainer>(),
             sp.GetRequiredService<WorkingSet>(),
             sp.GetRequiredService<DownloadRunner>(),
-            TimeProvider.System
+            sp.GetRequiredService<TimeProvider>()
         ));
 
         services.AddSingleton(sp => new HandoffSelector(
@@ -341,9 +339,9 @@ public static class ServiceRegistration
             sp.GetRequiredService<FolderInfoWriter>()
         ));
         services.AddSingleton(_ => new KeyCorrections());
-        services.AddSingleton(_ => new TagStoreBackups(
+        services.AddSingleton(sp => new TagStoreBackups(
             TagStoreBackups.DefaultRoot,
-            TimeProvider.System
+            sp.GetRequiredService<TimeProvider>()
         ));
 
         // Factories for the same reason as the rest: the container will not apply the trailing
@@ -393,16 +391,16 @@ public static class ServiceRegistration
             sp.GetRequiredService<SidecarWriter>(),
             sp.GetRequiredService<WrittenWarps>(),
             sp.GetRequiredService<LiveAnalyses>(),
-            new SidecarBackups(SidecarBackups.DefaultRoot, TimeProvider.System),
-            TimeProvider.System
+            new SidecarBackups(SidecarBackups.DefaultRoot, sp.GetRequiredService<TimeProvider>()),
+            sp.GetRequiredService<TimeProvider>()
         ));
         services.AddSingleton(_ => new RetypedWarps(RetypedWarps.DefaultPath));
         services.AddSingleton(sp => new WarpTrueUp(
             sp.GetRequiredService<RetypedWarps>(),
             sp.GetRequiredService<WrittenWarps>(),
-            new SidecarBackups(SidecarBackups.DefaultRoot, TimeProvider.System),
+            new SidecarBackups(SidecarBackups.DefaultRoot, sp.GetRequiredService<TimeProvider>()),
             sp.GetRequiredService<WarpActions>(),
-            TimeProvider.System
+            sp.GetRequiredService<TimeProvider>()
         ));
         services.AddSingleton<TrueUpAll>();
         services.AddSingleton<StemWarpReader>();
@@ -420,10 +418,7 @@ public static class ServiceRegistration
         services.AddHostedService<LoudnessWorker>();
 
         // Unattended too: keeping a filed track's warp guide is a file move (ADR 0046).
-        services.AddSingleton(sp => new WarpGuideKeeper(
-            sp.GetRequiredService<CratesidePaths>(),
-            TimeProvider.System
-        ));
+        services.AddSingleton<WarpGuideKeeper>();
         services.AddHostedService<WarpGuideWorker>();
 
         services.AddHostedService<DrainWorker>();
@@ -505,7 +500,7 @@ public static class ServiceRegistration
             sp.GetRequiredService<LedgerStore>(),
             sp.GetRequiredService<WorkingSet>(),
             sp.GetRequiredService<DownloadRunner>(),
-            TimeProvider.System,
+            sp.GetRequiredService<TimeProvider>(),
             sp.GetRequiredService<CratesidePaths>()
         ));
         services.AddSingleton(sp => new WorkingSetJanitor(
@@ -514,7 +509,7 @@ public static class ServiceRegistration
             sp.GetRequiredService<JobStore>(),
             sp.GetRequiredService<IOptions<CratesidePaths>>(),
             sp.GetRequiredService<SourceRetentionStore>(),
-            TimeProvider.System,
+            sp.GetRequiredService<TimeProvider>(),
             videoId =>
                 sp.GetRequiredService<TrackInstructionStore>()
                     .Read()
@@ -567,7 +562,7 @@ public static class ServiceRegistration
             .SetHandlerLifetime(TimeSpan.FromMinutes(5));
         services.AddHostedService<GenreWorker>();
 
-        services.AddSingleton(_ => new FileChanges(TimeProvider.System));
+        services.AddSingleton<FileChanges>();
         services.AddHostedService<FileWatchService>();
 
         services.AddSingleton(sp =>
