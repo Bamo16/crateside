@@ -9,7 +9,6 @@ namespace Crateside.Core.Orchestration;
 /// Throws away the working set of every track that has been <strong>imported</strong>, once its
 /// source has been kept for the retention the user set (#133).
 /// </summary>
-/// <param name="requestedAt">When a re-cut or swap was last asked for a track, or null (#50).</param>
 public sealed class WorkingSetJanitor(
     LedgerStore store,
     WorkingSet workingSet,
@@ -17,7 +16,7 @@ public sealed class WorkingSetJanitor(
     IOptions<CratesidePaths> paths,
     SourceRetentionStore retention,
     TimeProvider time,
-    Func<string, DateTimeOffset?>? requestedAt = null
+    TrackInstructionStore? instructions = null
 )
 {
     private readonly CratesidePaths _paths = paths.Value;
@@ -97,7 +96,10 @@ public sealed class WorkingSetJanitor(
 
     private bool IsSettled(string videoId) =>
         CutRequests.IsSettled(
-            requestedAt?.Invoke(videoId),
+            instructions
+                ?.Read()
+                .FirstOrDefault(track => track.VideoId.Equals(videoId, StringComparison.Ordinal))
+                ?.CutRequestedAt,
             jobs.TryGet(videoId, JobStage.Handoff, out var handoff) ? handoff : null
         );
 

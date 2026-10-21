@@ -1,6 +1,8 @@
 using Crateside.Core;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Playlist;
+using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -27,7 +29,13 @@ public sealed class WorkingSetJanitorTests : IDisposable
     private SourceRetentionStore Retention =>
         field ??= new SourceRetentionStore(Path.Combine(_directory, "retention.json"));
 
-    private DateTimeOffset? _requested;
+    private TrackInstructionStore Instructions =>
+        field ??= new TrackInstructionStore(
+            new QueueFile(
+                Options.Create(new PlaylistOptions()),
+                Path.Combine(_directory, "queue.json")
+            )
+        );
 
     private WorkingSetJanitor Janitor =>
         field ??= new WorkingSetJanitor(
@@ -37,7 +45,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
             Options.Create(new CratesidePaths { StagingFolder = Staging, LibraryFolder = Library }),
             Retention,
             _time,
-            _ => _requested
+            Instructions
         );
 
     public WorkingSetJanitorTests() => Directory.CreateDirectory(Staging);
@@ -140,7 +148,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
     {
         GiveWorkingSet();
         Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
-        _requested = DateTimeOffset.UtcNow.AddMinutes(1);
+        Instructions.RequestCut(VideoId, DateTimeOffset.UtcNow.AddMinutes(1));
 
         Assert.Equal(0, Janitor.Sweep());
         Assert.Single(Set.VideoIds);
