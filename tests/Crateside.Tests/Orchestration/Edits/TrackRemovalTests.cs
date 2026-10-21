@@ -109,7 +109,12 @@ public sealed class TrackRemovalTests : IDisposable
     }
 
     private TrackRemoval Removal(TrackInstructionStore settings, IntakeStore? intake = null) =>
-        new(settings, intake ?? Intake(), new WorkingSet(_working), _ => _staged);
+        new(
+            settings,
+            intake ?? Intake(),
+            new WorkingSet(_working),
+            new ListedStagedFiles(() => _staged)
+        );
 
     private TrackInstructionStore Settings() =>
         new(

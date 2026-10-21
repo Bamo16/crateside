@@ -255,8 +255,8 @@ public sealed class TrackSwapTests : IDisposable
 
     private JobStore Jobs() => new(Path.Combine(_root, "jobs.jsonl"));
 
-    private ReadStagedFiles Staged() =>
-        _ =>
+    private ListedStagedFiles Staged() =>
+        new(() =>
             [
                 .. Directory
                     .EnumerateFiles(StagingRoot, "*.flac")
@@ -265,7 +265,8 @@ public sealed class TrackSwapTests : IDisposable
                         Path = path,
                         FileName = Path.GetFileName(path),
                     }),
-            ];
+            ]
+        );
 
     private string Stage(string fileName)
     {

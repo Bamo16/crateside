@@ -58,7 +58,14 @@ public sealed class TrackRenameTests : IDisposable
         );
 
     private TrackRename Renamer(TrackInstructionStore? settings = null) =>
-        new(settings ?? Settings(), _ => _staged, _writer, _paths, _ => _library, _sets);
+        new(
+            settings ?? Settings(),
+            new ListedStagedFiles(() => _staged),
+            _writer,
+            _paths,
+            _ => _library,
+            _sets
+        );
 
     private string InLibrary(string name)
     {

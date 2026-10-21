@@ -7,17 +7,12 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Core.Orchestration.Edits;
 
 /// <summary>
-/// A track's files as they currently sit in <c>Staging</c>.
-/// </summary>
-public delegate IReadOnlyList<StagedFile> ReadStagedFiles(string videoId);
-
-/// <summary>
 /// Changes which files a track has, without judging it again (ADR 0018).
 /// </summary>
 public sealed class StemRecut(
     TrackInstructionStore instructions,
     WorkingSet workingSet,
-    ReadStagedFiles staged,
+    IStagedFiles staged,
     DeletionLog? deletions = null
 )
 {
@@ -36,7 +31,7 @@ public sealed class StemRecut(
         StemInventory? known = null
     )
     {
-        var files = staged(videoId);
+        var files = staged.Of(videoId);
         var stagedInventory = StemInventory.Of(files.Select(AsOnDisk), catalog);
 
         // Everywhere the track's files could be, so a preset already sitting in the library

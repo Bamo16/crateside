@@ -14,7 +14,7 @@ public sealed class TrackRemoval(
     TrackInstructionStore instructions,
     IntakeStore intake,
     WorkingSet workingSet,
-    ReadStagedFiles staged,
+    IStagedFiles staged,
     DeletionLog? deletions = null
 )
 {
@@ -25,7 +25,7 @@ public sealed class TrackRemoval(
         [
             .. uploads
                 .Distinct(StringComparer.Ordinal)
-                .SelectMany(upload => staged(upload))
+                .SelectMany(staged.Of)
                 .Where(stem => !stem.IsAdopted),
         ];
 
