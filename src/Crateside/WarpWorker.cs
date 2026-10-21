@@ -18,6 +18,7 @@ public sealed class WarpWorker(
     WarpLending lending,
     WarpActions actions,
     StagingMarks marks,
+    KeptStemMarks keptMarks,
     FileChanges changes,
     IOptions<WarpOptions> options,
     ILogger<WarpWorker> logger
@@ -82,7 +83,13 @@ public sealed class WarpWorker(
         foreach (var recoloured in marks.Recolour())
             logger.LogInformation("Gave {Target} its clip colour", Path.GetFileName(recoloured));
 
-        switch (marks.Collect())
+        Report(marks.Collect(), "staged file");
+        Report(keptMarks.Collect(), "kept warp guide");
+    }
+
+    private void Report(TagWriteOutcome outcome, string what)
+    {
+        switch (outcome)
         {
             case TagWriteOutcome.Written(0):
                 break;
@@ -90,7 +97,7 @@ public sealed class WarpWorker(
             case TagWriteOutcome.Written(var moved):
                 logger.LogInformation(
                     "Moved {Moved} between Live's Collections",
-                    "staged file".ToQuantity(moved)
+                    what.ToQuantity(moved)
                 );
 
                 break;
@@ -100,7 +107,7 @@ public sealed class WarpWorker(
                 break;
 
             case TagWriteOutcome.Rejected(var error):
-                logger.LogWarning("Could not put staged stems in Collections: {Error}", error);
+                logger.LogWarning("Could not put {What}s in Collections: {Error}", what, error);
 
                 break;
 
