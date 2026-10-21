@@ -97,7 +97,7 @@ public sealed class StemRecutTests : IDisposable
     }
 
     private StemRecut Recut(TrackInstructionStore? settings = null) =>
-        new(settings ?? Settings(), WorkingSetWithSource(), Staged());
+        new(settings ?? Settings(), WorkingSetWithSource(), Staged(), TimeProvider.System);
 
     [Fact]
     public void It_refuses_when_nothing_of_the_track_is_staged()
@@ -224,7 +224,12 @@ public sealed class StemRecutTests : IDisposable
     {
         Stage();
 
-        var recut = new StemRecut(Settings(), new WorkingSet(_working), Staged());
+        var recut = new StemRecut(
+            Settings(),
+            new WorkingSet(_working),
+            Staged(),
+            TimeProvider.System
+        );
 
         var plan = recut.PlanFor(Video, StemPlan.Default, Catalog);
 

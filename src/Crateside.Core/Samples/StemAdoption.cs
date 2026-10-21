@@ -32,6 +32,7 @@ public static class StemAdoption
         string videoId,
         string label,
         SampleType type,
+        TimeProvider time,
         [NotNullWhen(false)] out string? problem
     )
     {
@@ -64,7 +65,7 @@ public static class StemAdoption
                 videoId,
                 label,
                 type,
-                DateOnly.FromDateTime(DateTime.UtcNow)
+                DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime)
             );
             file.Save();
         }

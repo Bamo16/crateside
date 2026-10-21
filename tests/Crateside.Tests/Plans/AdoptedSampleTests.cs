@@ -136,6 +136,7 @@ public sealed class AdoptedSampleTests
                     VideoId,
                     Label,
                     SampleType.Instrumental,
+                    TimeProvider.System,
                     out var problem
                 )
             );
@@ -156,6 +157,7 @@ public sealed class AdoptedSampleTests
                 VideoId,
                 Label,
                 SampleType.Instrumental,
+                TimeProvider.System,
                 out _
             )
         );
@@ -165,6 +167,7 @@ public sealed class AdoptedSampleTests
                 VideoId,
                 "  ",
                 SampleType.Instrumental,
+                TimeProvider.System,
                 out _
             )
         );

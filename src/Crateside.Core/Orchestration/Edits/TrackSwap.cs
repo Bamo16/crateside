@@ -1,6 +1,5 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
-using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
 using Crateside.Core.WorkLists;
@@ -15,6 +14,7 @@ public sealed class TrackSwap(
     TrackInstructionStore instructions,
     WorkingSet workingSet,
     IStagedFiles staged,
+    TimeProvider time,
     DeletionLog? deletions = null
 )
 {
@@ -87,7 +87,7 @@ public sealed class TrackSwap(
         // The retained download is the old upload, and separation prefers it over the URL.
         workingSet.Discard(videoId);
 
-        instructions.RequestCut(videoId, DateTimeOffset.UtcNow);
+        instructions.RequestCut(videoId, time.GetUtcNow());
 
         return new SwapOutcome { NewVideoId = plan.NewVideoId, Removed = removed };
     }

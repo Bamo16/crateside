@@ -102,7 +102,8 @@ public sealed class LibrarySummaryTests : IDisposable
                 new FileIndexReader(paths.Value.AbletonIndex),
                 new FolderInfoReader(),
                 new WarpTempoReader()
-            )
+            ),
+            TimeProvider.System
         );
     }
 
