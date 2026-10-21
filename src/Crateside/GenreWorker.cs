@@ -11,6 +11,7 @@ public sealed class GenreWorker(
     TracksService tracks,
     GenreStore store,
     GenreLookup lookup,
+    TimeProvider time,
     ILogger<GenreWorker> logger
 ) : BackgroundService
 {
@@ -81,7 +82,7 @@ public sealed class GenreWorker(
             if (await lookup.HearAsync(artist, title, stoppingToken) is not { } heard)
                 return AfterFailure;
 
-            store.Suggest(song, heard, DateTimeOffset.UtcNow);
+            store.Suggest(song, heard, time.GetUtcNow());
             suggested++;
         }
 

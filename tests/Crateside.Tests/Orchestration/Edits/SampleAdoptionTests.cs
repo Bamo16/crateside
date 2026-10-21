@@ -45,7 +45,7 @@ public sealed class SampleAdoptionTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private SampleAdoption Adoption() => new(_settings, _paths);
+    private SampleAdoption Adoption() => new(_settings, _paths, TimeProvider.System);
 
     private static TrackRowFacts Facts(StemPlan? plan = null) =>
         new()

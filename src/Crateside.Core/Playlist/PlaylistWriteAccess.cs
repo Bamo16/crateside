@@ -4,7 +4,7 @@ namespace Crateside.Core.Playlist;
 /// Whether crateside can still write to the playlist, and what happened when it last tried. Only
 /// the user can renew a lapse, so it is reported until they do.
 /// </summary>
-public sealed class PlaylistWriteAccess
+public sealed class PlaylistWriteAccess(TimeProvider time)
 {
     private readonly Lock _gate = new();
 
@@ -51,7 +51,7 @@ public sealed class PlaylistWriteAccess
         {
             // Kept from the first report: how long it has been lapsed is the useful figure, and
             // every later attempt fails the same way.
-            _lapsedAt ??= DateTimeOffset.UtcNow;
+            _lapsedAt ??= time.GetUtcNow();
             _reason = reason;
         }
 
@@ -85,7 +85,7 @@ public sealed class PlaylistWriteAccess
             if (_lapsedAt is null)
                 return false;
 
-            var now = DateTimeOffset.UtcNow;
+            var now = time.GetUtcNow();
 
             if (_toldAt is { } told && now - told < every)
                 return false;

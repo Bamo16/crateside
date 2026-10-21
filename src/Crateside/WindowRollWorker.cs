@@ -13,6 +13,7 @@ public sealed class WindowRollWorker(
     PauseStore remembered,
     VerdictDrainer drainer,
     IQuotaReader quota,
+    TimeProvider time,
     ILogger<WindowRollWorker> logger
 ) : BackgroundService
 {
@@ -44,7 +45,7 @@ public sealed class WindowRollWorker(
         if (!roll.IsEnabled)
             return;
 
-        var now = DateTimeOffset.UtcNow;
+        var now = time.GetUtcNow();
 
         if (!roll.ShouldRoll(await quota.ReadAsync(stoppingToken), now))
             return;

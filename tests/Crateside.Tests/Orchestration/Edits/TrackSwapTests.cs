@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Crateside.Core;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
@@ -243,7 +242,13 @@ public sealed class TrackSwapTests : IDisposable
     }
 
     private TrackSwap Swap(TrackInstructionStore? settings = null, WorkingSet? workingSet = null) =>
-        new(Ledger, settings ?? Settings(), workingSet ?? new WorkingSet(WorkingRoot), Staged());
+        new(
+            Ledger,
+            settings ?? Settings(),
+            workingSet ?? new WorkingSet(WorkingRoot),
+            Staged(),
+            TimeProvider.System
+        );
 
     private TrackInstructionStore Settings() =>
         new(

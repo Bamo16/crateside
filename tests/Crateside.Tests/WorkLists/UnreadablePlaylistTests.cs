@@ -41,7 +41,7 @@ public sealed class UnreadablePlaylistTests : IDisposable
                 DataProtectionProvider.Create("crateside-tests"),
                 PathIn("tokens")
             ),
-            new PlaylistWriteAccess()
+            new PlaylistWriteAccess(TimeProvider.System)
         );
         var settings = new PlaylistSettingsStore(file);
         playlist = new CachedPlaylist(

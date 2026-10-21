@@ -4,7 +4,7 @@ namespace Crateside.Core.Library;
 /// Holds the last distribution read, with no expiry, so the page does not re-scan the library to
 /// render.
 /// </summary>
-public sealed class LibrarySummary(LibraryKeyReader reader)
+public sealed class LibrarySummary(LibraryKeyReader reader, TimeProvider time)
 {
     private readonly Lock _gate = new();
 
@@ -22,7 +22,7 @@ public sealed class LibrarySummary(LibraryKeyReader reader)
                 if (_current is null)
                 {
                     _current = reader.Read();
-                    ReadAt = DateTimeOffset.Now;
+                    ReadAt = time.GetUtcNow();
                 }
 
                 return _current;
@@ -36,7 +36,7 @@ public sealed class LibrarySummary(LibraryKeyReader reader)
 
         lock (_gate)
         {
-            ReadAt = DateTimeOffset.Now;
+            ReadAt = time.GetUtcNow();
 
             return _current = read;
         }

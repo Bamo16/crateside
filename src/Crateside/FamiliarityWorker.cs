@@ -11,6 +11,7 @@ public sealed class FamiliarityWorker(
     TracksService tracks,
     FamiliarityStore store,
     FamiliarityLookup lookup,
+    TimeProvider time,
     ILogger<FamiliarityWorker> logger
 ) : BackgroundService
 {
@@ -83,7 +84,7 @@ public sealed class FamiliarityWorker(
             if (await lookup.ReadAsync(artist, title, stoppingToken) is not { } reading)
                 return AfterFailure;
 
-            store.Measure(song, reading, DateTimeOffset.UtcNow, FamiliarityLookup.Version);
+            store.Measure(song, reading, time.GetUtcNow(), FamiliarityLookup.Version);
             measured++;
         }
 

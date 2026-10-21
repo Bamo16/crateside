@@ -13,6 +13,7 @@ public sealed class StemRecut(
     TrackInstructionStore instructions,
     WorkingSet workingSet,
     IStagedFiles staged,
+    TimeProvider time,
     DeletionLog? deletions = null
 )
 {
@@ -105,7 +106,7 @@ public sealed class StemRecut(
 
         // A change that only drops files asks for nothing to be made.
         if (plan.MakesSomething)
-            instructions.RequestCut(videoId, DateTimeOffset.UtcNow);
+            instructions.RequestCut(videoId, time.GetUtcNow());
 
         return new RecutOutcome { Removed = removed, Recipe = plan.Recipe };
     }
