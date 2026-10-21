@@ -28,6 +28,15 @@ public sealed class FileChanges(TimeProvider time)
         }
     }
 
+    /// <summary>Wakes the workers at once, for one deliberate change rather than a burst of file events.</summary>
+    public void NotifyNow()
+    {
+        lock (_gate)
+            _timer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+
+        Fire();
+    }
+
     private void Fire()
     {
         lock (_gate)

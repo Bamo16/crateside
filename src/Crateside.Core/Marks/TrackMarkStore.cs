@@ -14,12 +14,12 @@ public sealed class TrackMarkStore
 
     private Dictionary<string, TrackMarkRecord>? _cached;
 
-    /// <summary>Raised after a mark is set or cleared.</summary>
-    public event Action? Changed;
+    /// <summary>Raised after a mark is set or cleared, with the song it was set on.</summary>
+    public event Action<string>? Changed;
 
     /// <summary>A mark set or cleared counts as a change to the files the rows are built from.</summary>
     public TrackMarkStore(CratesidePaths paths, FileChanges changes)
-        : this(paths.TrackMarksFile) => Changed += changes.Notify;
+        : this(paths.TrackMarksFile) => Changed += _ => changes.NotifyNow();
 
     internal TrackMarkStore(string path) => _path = path;
 
@@ -62,7 +62,7 @@ public sealed class TrackMarkStore
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
 
-        Changed?.Invoke();
+        Changed?.Invoke(song);
     }
 
     private Dictionary<string, TrackMarkRecord> TryReadFile() =>

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using AbleKit.Tags;
 using Crateside.Core;
@@ -39,6 +40,8 @@ public sealed class BackingWorker(
 
     private TaskCompletionSource _marked = NewSignal();
 
+    private readonly ConcurrentQueue<string> _markedSongs = [];
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         trackMarks.Changed += OnMarked;
@@ -61,7 +64,10 @@ public sealed class BackingWorker(
             TimeSpan delay;
             try
             {
-                delay = Tick();
+                var afterMarks = BackMarked();
+                var afterPass = Tick();
+
+                delay = afterMarks < afterPass ? afterMarks : afterPass;
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -95,7 +101,11 @@ public sealed class BackingWorker(
         catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested) { }
     }
 
-    private void OnMarked() => Volatile.Read(ref _marked).TrySetResult();
+    private void OnMarked(string song)
+    {
+        _markedSongs.Enqueue(song);
+        Volatile.Read(ref _marked).TrySetResult();
+    }
 
     private static TaskCompletionSource NewSignal() =>
         new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -121,17 +131,8 @@ public sealed class BackingWorker(
             ];
         }
 
-        // Null when it cannot be read: read as empty, an imported file would lose its Collections.
-        FolderInfo? libraryIndex;
-
-        try
-        {
-            libraryIndex = index.Read(_paths.LibraryFolder);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            libraryIndex = null;
-        }
+        var libraryIndex = ReadLibraryIndex();
+        var started = Stopwatch.GetTimestamp();
 
         var library = Report(
             runner.Run(
@@ -143,7 +144,8 @@ public sealed class BackingWorker(
                 marksOf: trackMarks.Of,
                 beforeWrite: backups.Save
             ),
-            "the library"
+            "the library",
+            started
         );
 
         // From the index, which the write above reaches minutes later: an approval stays until
@@ -155,15 +157,61 @@ public sealed class BackingWorker(
                 libraryIndex ?? FolderInfo.Empty(_paths.LibraryFolder)
             )
         );
+        started = Stopwatch.GetTimestamp();
+
         var staging = Report(
             runner.Run(_paths.StagingFolder, ledger, OwnedOf, backKeys: false),
-            "Staging"
+            "Staging",
+            started
         );
 
         return library < staging ? library : staging;
     }
 
-    private TimeSpan Report(TagWriteOutcome outcome, string root)
+    /// <summary>Writes the Collections of each song marked since the last pass, ahead of the whole pass (#144).</summary>
+    private TimeSpan BackMarked()
+    {
+        var delay = IdleDelay;
+
+        if (_markedSongs.IsEmpty || ReadLibraryIndex() is not { } libraryIndex)
+            return delay;
+
+        var ledger = store.Read();
+
+        while (_markedSongs.TryDequeue(out var song))
+        {
+            var started = Stopwatch.GetTimestamp();
+            var outcome = runner.Run(
+                _paths.LibraryFolder,
+                ledger,
+                index: libraryIndex,
+                marksOf: trackMarks.Of,
+                beforeWrite: backups.Save,
+                song: song
+            );
+            var next = Report(outcome, "the library", started);
+
+            if (next < delay)
+                delay = next;
+        }
+
+        return delay;
+    }
+
+    // Null when it cannot be read: read as empty, an imported file would lose its Collections.
+    private FolderInfo? ReadLibraryIndex()
+    {
+        try
+        {
+            return index.Read(_paths.LibraryFolder);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    private TimeSpan Report(TagWriteOutcome outcome, string root, long started)
     {
         switch (outcome)
         {
@@ -172,9 +220,10 @@ public sealed class BackingWorker(
 
             case TagWriteOutcome.Written(var applied):
                 logger.LogInformation(
-                    "Backed {Applied} entries in {Root} against the tag store",
+                    "Backed {Applied} entries in {Root} against the tag store in {Elapsed} ms",
                     applied,
-                    root
+                    root,
+                    (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds
                 );
 
                 return IdleDelay;

@@ -35,6 +35,18 @@ public sealed class TrackMarkStoreTests : IDisposable
     }
 
     [Fact]
+    public void A_mark_announces_the_song_it_was_set_on()
+    {
+        var store = new TrackMarkStore(StorePath);
+        var announced = new List<string>();
+        store.Changed += announced.Add;
+
+        store.Set("artist - title", TrackMark.OddBars, true);
+
+        Assert.Equal(["artist - title"], announced);
+    }
+
+    [Fact]
     public void Clearing_the_last_mark_forgets_the_song()
     {
         var store = new TrackMarkStore(StorePath);

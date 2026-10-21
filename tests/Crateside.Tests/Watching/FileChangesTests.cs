@@ -60,6 +60,19 @@ public sealed class FileChangesTests
     }
 
     [Fact]
+    public async Task A_deliberate_change_wakes_the_listener_without_waiting_out_the_quiet()
+    {
+        var changes = new FileChanges(_time);
+        var wait = changes.Listen().WaitAsync(Timer, CancellationToken.None);
+
+        changes.NotifyNow();
+
+        await wait;
+
+        Assert.True(wait.IsCompletedSuccessfully);
+    }
+
+    [Fact]
     public async Task Every_listener_is_woken_by_the_same_change()
     {
         var changes = new FileChanges(_time);

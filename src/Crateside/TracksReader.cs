@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AbleKit.Tags;
 using Crateside.Core;
 using Crateside.Core.Ableton;
@@ -40,6 +41,8 @@ public sealed class TracksReader(
 {
     public async Task<TracksView> ReadAsync(CancellationToken ct = default)
     {
+        var started = Stopwatch.GetTimestamp();
+
         try
         {
             var scan = await workLists.ScanAsync(ct);
@@ -68,6 +71,12 @@ public sealed class TracksReader(
 
             warpTempos.Save();
             sources.Refresh(scan.Processed, scan.Ledger);
+
+            if (Stopwatch.GetElapsedTime(started) is { TotalSeconds: >= 1 } took)
+                logger.LogInformation(
+                    "Reading the Tracks rows took {Elapsed} ms",
+                    (long)took.TotalMilliseconds
+                );
 
             return view with
             {
