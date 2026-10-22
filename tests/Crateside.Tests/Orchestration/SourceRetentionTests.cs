@@ -98,6 +98,36 @@ public sealed class SourceRetentionTests : IDisposable
     }
 
     [Fact]
+    public void A_library_track_the_ledger_never_judged_still_counts_as_missing_its_source()
+    {
+        var library = Path.Combine(_directory, "Library");
+        Directory.CreateDirectory(library);
+        var stem = Path.Combine(library, "Song (Vocal - Full).flac");
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), stem);
+
+        using (var file = TagLib.File.Create(stem))
+        {
+            file.Tag.Comment =
+                "stemforge/0.4.0.0 | preset: Vocal - Full | source: https://www.youtube.com/watch?v=dQw4w9WgXcQ";
+            file.Save();
+        }
+
+        var backfill = new SourceBackfill(
+            TestLedger.Store(),
+            new WorkingSet(Path.Combine(_directory, "working")),
+            new DownloadRunner(new ProcessRunner()),
+            TimeProvider.System,
+            new CratesidePaths
+            {
+                StagingFolder = Path.Combine(_directory, "Staging"),
+                LibraryFolder = library,
+            }
+        );
+
+        Assert.Equal(["dQw4w9WgXcQ"], backfill.Missing());
+    }
+
+    [Fact]
     public void The_index_lists_a_held_source_and_is_rewritten_only_when_it_changes()
     {
         var set = new WorkingSet(Path.Combine(_directory, "working"));
