@@ -43,9 +43,21 @@ public static class StemTagReader
     }
 
     /// <summary>The preset the stem was cut with: its provenance's, else its file name's.</summary>
-    // A kept source's name can hold a parenthetical that is not a preset.
+    // A kept source's name can hold a parenthetical that is not a preset, so an older stem's comment
+    // that names none yields to its file name only where the name says Vocal or Instrumental.
     public static string? PresetOf(string path) =>
-        Read(path)?.Provenance is { } provenance ? provenance.Preset : StemFileName.PresetOf(path);
+        Read(path)?.Provenance is { } provenance
+            ? provenance.Preset
+                ?? (
+                    StemFileName.PresetOf(path) is { } named
+                    && (
+                        named.StartsWith("Vocal - ", StringComparison.Ordinal)
+                        || named.StartsWith("Instrumental - ", StringComparison.Ordinal)
+                    )
+                        ? named
+                        : null
+                )
+            : StemFileName.PresetOf(path);
 
     private static StemTags? ReadFromDisk(string path)
     {
