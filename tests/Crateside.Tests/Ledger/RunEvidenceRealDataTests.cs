@@ -85,7 +85,7 @@ public sealed class RunEvidenceRealDataTests
                     return;
 
                 // Runs from before #139 hold the three original readings; backfilled ones add madmom and edma.
-                Assert.Contains(e.Algorithms.Count, [3, 5]);
+                Assert.Contains(e.Algorithms.Count, (int[])[3, 5]);
                 Assert.Equal(3, e.Agreement.Count);
                 Assert.All(
                     e.Agreement,
