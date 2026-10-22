@@ -38,7 +38,7 @@ public sealed class BackingWorker(
 
     private readonly CratesidePaths _paths = paths.Value;
 
-    private TaskCompletionSource _marked = NewSignal();
+    private readonly WakeSignal _marked = new();
 
     private readonly ConcurrentQueue<string> _markedSongs = [];
 
@@ -60,7 +60,7 @@ public sealed class BackingWorker(
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var marked = Interlocked.Exchange(ref _marked, NewSignal()).Task;
+            var marked = _marked.Arm();
             TimeSpan delay;
             try
             {
@@ -104,11 +104,8 @@ public sealed class BackingWorker(
     private void OnMarked(string song)
     {
         _markedSongs.Enqueue(song);
-        Volatile.Read(ref _marked).TrySetResult();
+        _marked.Set();
     }
-
-    private static TaskCompletionSource NewSignal() =>
-        new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     private TimeSpan Tick()
     {
