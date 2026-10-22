@@ -152,8 +152,10 @@ public sealed class TracksViewCompositionTests : IDisposable
                 FinishedRoot,
                 jobs ?? Jobs(),
                 instructions.ToDictionary(t => t.VideoId, StringComparer.Ordinal),
-                resolvedNames: null,
-                acquisitions
+                new TrackAnnotations
+                {
+                    Acquisitions = acquisitions ?? TrackAnnotations.None.Acquisitions,
+                }
             )
             .Rows;
 
@@ -193,16 +195,19 @@ public sealed class TracksViewCompositionTests : IDisposable
                     FinishedRoot,
                     Jobs(),
                     new Dictionary<string, TrackInstruction>(),
-                    deletions:
-                    [
-                        new Deletion
-                        {
-                            At = DateTimeOffset.Parse("2026-09-24T12:00:00+00:00"),
-                            VideoId = Old,
-                            FileName = "Rob Dougan - Furious Angels (Vocal - Full).flac",
-                            Reason = "superseded by a source swap",
-                        },
-                    ]
+                    new TrackAnnotations
+                    {
+                        Deletions =
+                        [
+                            new Deletion
+                            {
+                                At = DateTimeOffset.Parse("2026-09-24T12:00:00+00:00"),
+                                VideoId = Old,
+                                FileName = "Rob Dougan - Furious Angels (Vocal - Full).flac",
+                                Reason = "superseded by a source swap",
+                            },
+                        ],
+                    }
                 )
                 .Rows
         );

@@ -13,6 +13,7 @@ builder.Services.AddSingleton<ToolsMemory>();
 var app = builder.Build();
 
 app.Services.GetRequiredService<Crateside.Core.Ledger.LedgerStore>().Start();
+app.Services.GetRequiredService<Crateside.Core.Tracks.CacheKeeper>();
 
 if (!app.Environment.IsDevelopment())
 {

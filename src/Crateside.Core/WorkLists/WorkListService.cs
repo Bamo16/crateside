@@ -22,6 +22,9 @@ public sealed class WorkListService(
 {
     private readonly CratesidePaths _paths = paths.Value;
 
+    /// <summary>Raised at the end of every scan, on the thread that ran it.</summary>
+    public event Action<QueueScan>? Scanned;
+
     /// <summary>
     /// Reads the queue and keeps everything the read produced. The most expensive thing in the
     /// app — it opens every audio file under three roots — so it must not run per event.
@@ -54,7 +57,7 @@ public sealed class WorkListService(
 
         var catalog = presets is null ? PresetCatalog.Empty : await presets.ReadAsync(ct);
 
-        return new QueueScan
+        var scan = new QueueScan
         {
             View = WorkListsView.Compose(
                 items,
@@ -76,6 +79,10 @@ public sealed class WorkListService(
             ReadAt = playlist.ReadAt,
             PlaylistProblem = playlist.Problem,
         };
+
+        Scanned?.Invoke(scan);
+
+        return scan;
     }
 
     /// <summary>The playlist, plus the tracks the user pasted in (ADR 0010).</summary>

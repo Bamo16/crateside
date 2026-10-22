@@ -49,9 +49,6 @@ public sealed record TracksView
     /// <param name="finishedRoot">
     /// The folder that means the user is done with a file — the library.
     /// </param>
-    /// <param name="acquisitions">
-    /// How each retained download turned out, by video ID — what a row is parked over.
-    /// </param>
     public static TracksView Compose(
         WorkListsView view,
         KeyLedger ledger,
@@ -60,29 +57,19 @@ public sealed record TracksView
         string finishedRoot,
         JobStore jobs,
         IReadOnlyDictionary<string, TrackInstruction> instructions,
-        IReadOnlyDictionary<string, ResolvedName>? resolvedNames = null,
-        IReadOnlyDictionary<string, Acquisition>? acquisitions = null,
-        PresetCatalog? presets = null,
-        FolderInfo? libraryTags = null,
-        IReadOnlyList<Deletion>? deletions = null,
-        IReadOnlyDictionary<string, GenreRecord>? genres = null,
-        IReadOnlyDictionary<string, FamiliarityRecord>? familiarity = null,
-        Func<string, WarpTempo?>? tempoOf = null,
-        Func<string, BeatReading?>? beatsOf = null,
-        Func<string, WrittenWarp?>? writtenWarp = null,
-        IReadOnlyDictionary<string, TrackMarkRecord>? marks = null
+        TrackAnnotations? annotations = null,
+        SampleReadings? readings = null
     )
     {
-        var resolved = resolvedNames ?? new Dictionary<string, ResolvedName>();
-        var catalog = presets ?? PresetCatalog.Empty;
-        var acquired = acquisitions ?? new Dictionary<string, Acquisition>();
+        var known = annotations ?? TrackAnnotations.None;
+        var read = readings ?? SampleReadings.None;
 
         var parked = VideoIdsOf(view.AwaitingKey);
         var unjudged = VideoIdsOf(view.Outstanding);
 
         // By song, not upload: a swap's old upload stops being a member once its files are gone.
-        var deletedBySong = (deletions ?? [])
-            .Where(deletion => deletion.VideoId is not null)
+        var deletedBySong = known
+            .Deletions.Where(deletion => deletion.VideoId is not null)
             .GroupBy(
                 deletion => ledger.SongFor(deletion.VideoId!) ?? deletion.VideoId!,
                 StringComparer.Ordinal
@@ -203,10 +190,10 @@ public sealed record TracksView
             // own acquisition had been discarded with its working set, which is every finished
             // track — so attaching a source to one put a shortfall banner across the whole row.
             var acquisition =
-                acquired.GetValueOrDefault(primary.VideoId)
+                known.Acquisitions.GetValueOrDefault(primary.VideoId)
                 ?? members
                     .Where(seed => !added.Contains(seed.VideoId))
-                    .Select(seed => acquired.GetValueOrDefault(seed.VideoId))
+                    .Select(seed => known.Acquisitions.GetValueOrDefault(seed.VideoId))
                     .OfType<Acquisition>()
                     .FirstOrDefault();
 
@@ -218,7 +205,9 @@ public sealed record TracksView
                 NameFromFiles(songs, files),
                 verdict,
                 members
-                    .Select(seed => resolved.GetValueOrDefault(seed.VideoId)?.DisplayTitle)
+                    .Select(seed =>
+                        known.ResolvedNames.GetValueOrDefault(seed.VideoId)?.DisplayTitle
+                    )
                     .FirstOrDefault(name => name is { Length: > 0 })
             );
 
@@ -234,15 +223,16 @@ public sealed record TracksView
                 StatedSourceUrl = instruction?.SourceUrl,
                 AwaitingRename = songs.Sum(song => AwaitingRenameIn(song, stated)),
                 Verdict = verdict,
-                Genre = genres?.GetValueOrDefault(verdict?.Song ?? primary.VideoId),
-                Familiarity = familiarity?.GetValueOrDefault(verdict?.Song ?? primary.VideoId),
-                Marks = marks?.GetValueOrDefault(verdict?.Song ?? primary.VideoId)?.Marks ?? [],
+                Genre = known.Genres.GetValueOrDefault(verdict?.Song ?? primary.VideoId),
+                Familiarity = known.Familiarity.GetValueOrDefault(verdict?.Song ?? primary.VideoId),
+                Marks =
+                    known.Marks.GetValueOrDefault(verdict?.Song ?? primary.VideoId)?.Marks ?? [],
                 Lookalike =
                     verdict is null && primary.Item is { } item
                         ? VerdictSelector.LookalikeOf(
                             item,
                             ledger,
-                            resolved.GetValueOrDefault(item.VideoId)?.DisplayTitle
+                            known.ResolvedNames.GetValueOrDefault(item.VideoId)?.DisplayTitle
                         )
                         : null,
                 // The work list covers the queue item; the instruction covers everything after it
@@ -285,11 +275,7 @@ public sealed record TracksView
                             onDisk.GetValueOrDefault(seed.VideoId) ?? [],
                             finishedRoot,
                             seed.VideoId,
-                            catalog,
-                            libraryTags,
-                            tempoOf,
-                            beatsOf,
-                            writtenWarp
+                            read
                         )
                     ),
                 ],
@@ -302,7 +288,7 @@ public sealed record TracksView
                 IsLibraryOnly = members.All(seed => seed.IsLibraryOnly),
                 IsAddedByUrl = instruction?.AddedByUrl is true,
                 IsBackfill = instruction?.Backfill is true,
-                Inventory = StemInventory.Of(files, catalog, finishedRoot),
+                Inventory = StemInventory.Of(files, read.Presets, finishedRoot),
             };
         }
     }
@@ -401,22 +387,20 @@ public sealed record TracksView
         IReadOnlyList<StemOnDisk> onDisk,
         string finishedRoot,
         string sourceVideoId,
-        PresetCatalog catalog,
-        FolderInfo? libraryTags,
-        Func<string, WarpTempo?>? tempoOf,
-        Func<string, BeatReading?>? beatsOf,
-        Func<string, WrittenWarp?>? writtenWarp
+        SampleReadings readings
     ) =>
         [
             .. staged
                 ?.Samples.Select(sample =>
                     (
                         sample,
-                        written: sample.HasDefaultClip ? writtenWarp?.Invoke(sample.Path) : null
+                        written: sample.HasDefaultClip
+                            ? readings.WrittenWarp?.Invoke(sample.Path)
+                            : null
                     )
                 )
                 .Select(staged =>
-                    Sample(StemOnDisk.Of(staged.sample), catalog, sourceVideoId) with
+                    Sample(StemOnDisk.Of(staged.sample), readings.Presets, sourceVideoId) with
                     {
                         AbletonKey = staged.sample.AbletonKey,
                         // A starter warp is crateside's guess at the tempo, not a warp (#77), and a
@@ -428,10 +412,10 @@ public sealed record TracksView
                                     written: null or { IsStarter: false, IsUnwarped: false },
                                 },
                         Tempo = staged.sample.HasDefaultClip
-                            ? tempoOf?.Invoke(staged.sample.Path)
+                            ? readings.TempoOf?.Invoke(staged.sample.Path)
                             : null,
                         WarpBorrowedFrom = staged.written?.From,
-                        Beats = beatsOf?.Invoke(staged.sample.Path),
+                        Beats = readings.BeatsOf?.Invoke(staged.sample.Path),
                     }
                 )
                 ?? [],
@@ -441,12 +425,12 @@ public sealed record TracksView
                     && !StagedFile.IsWarpGuidePreset(file.Preset)
                 )
                 .Select(file =>
-                    Sample(file, catalog, sourceVideoId) with
+                    Sample(file, readings.Presets, sourceVideoId) with
                     {
                         IsInLibrary = true,
-                        AbletonKey = KeyIn(libraryTags, file.Path),
-                        Tempo = tempoOf?.Invoke(file.Path),
-                        Beats = beatsOf?.Invoke(file.Path),
+                        AbletonKey = KeyIn(readings.LibraryTags, file.Path),
+                        Tempo = readings.TempoOf?.Invoke(file.Path),
+                        Beats = readings.BeatsOf?.Invoke(file.Path),
                     }
                 ),
         ];

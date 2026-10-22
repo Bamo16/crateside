@@ -88,7 +88,7 @@ public sealed class StarterWarpRowTests : IDisposable
                 @"P:\RYAN\Ableton\Mashup Samples",
                 new JobStore(Path.Combine(_root, "jobs.jsonl")),
                 new Dictionary<string, TrackInstruction>(),
-                writtenWarp: writtenWarp
+                readings: new SampleReadings { WrittenWarp = writtenWarp }
             )
             .Rows.Single();
 
