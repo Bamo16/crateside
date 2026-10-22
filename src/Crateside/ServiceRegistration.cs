@@ -391,6 +391,9 @@ public static class ServiceRegistration
     {
         services.AddSingleton<ITracksReader, TracksReader>();
         services.AddSingleton<TracksService>();
+        services.AddSingleton<TrackAnnotationReader>();
+        services.AddSingleton<SampleReadingsReader>();
+        services.AddSingleton<CacheKeeper>();
 
         return services;
     }

@@ -97,10 +97,11 @@ public sealed class AddedSourceRowTests : IDisposable
                     FinishedRoot,
                     Jobs(),
                     new Dictionary<string, TrackInstruction> { [Track] = instruction },
-                    resolvedNames: null,
-                    acquisitions,
-                    presets: null,
-                    libraryTags
+                    new TrackAnnotations
+                    {
+                        Acquisitions = acquisitions ?? TrackAnnotations.None.Acquisitions,
+                    },
+                    new SampleReadings { LibraryTags = libraryTags }
                 )
                 .Rows
         );
