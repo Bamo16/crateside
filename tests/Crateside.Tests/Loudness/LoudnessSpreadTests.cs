@@ -88,6 +88,35 @@ public sealed class LoudnessSpreadTests : IDisposable
     }
 
     [Fact]
+    public async Task A_stem_whose_comment_names_no_preset_is_still_named_by_its_song_alone()
+    {
+        const string name = "Warren G, Nate Dogg - Regulate (Vocal - Full).flac";
+        var reader = new LoudnessReader(new FakeEbur128(_ => -21));
+        var path = Path.Combine(_root, name);
+
+        File.Copy(Fixture, path);
+
+        using (var file = TagLib.File.Create(path))
+        {
+            file.Tag.Title = "Warren G, Nate Dogg - Regulate";
+            file.Tag.Performers = ["Warren G", "Nate Dogg"];
+            file.Tag.Comment =
+                "stemforge/0.1.0.0 | model: BuiltinPreset:vocal_full, BuiltinPreset:instrumental_full | date: 2026-05-29";
+            file.Save();
+        }
+
+        await reader.MeasureAsync(path, TestContext.Current.CancellationToken);
+
+        var spread = LoudnessSpread.From(
+            [path],
+            reader,
+            new ClipGains(reader, new CurrentOptions<LoudnessOptions>(() => _options))
+        );
+
+        Assert.Equal("Warren G, Nate Dogg - Regulate", Assert.Single(spread.Vocals.Boosts).Name);
+    }
+
+    [Fact]
     public async Task A_sample_below_the_floor_or_unread_is_counted_apart_from_the_histogram()
     {
         var path = Path.Combine(_root, "Quiet (Vocal - Full).flac");

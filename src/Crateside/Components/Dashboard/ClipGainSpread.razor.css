@@ -116,7 +116,9 @@ ul {
 li {
     padding: 3px 0;
     border-bottom: 1px solid var(--line);
-    overflow-wrap: anywhere;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .db {
