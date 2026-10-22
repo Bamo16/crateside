@@ -36,7 +36,7 @@ public sealed class SourceBackfillRealLibraryTests
             missing,
             videoId =>
             {
-                Assert.DoesNotContain(videoId, set.VideoIds);
+                Assert.False(set.TryGetSource(videoId, out _));
                 Assert.DoesNotContain(processed.StemsFor(videoId), stem => stem.IsVerbatimSource);
                 Assert.Contains(
                     processed.StemsFor(videoId),

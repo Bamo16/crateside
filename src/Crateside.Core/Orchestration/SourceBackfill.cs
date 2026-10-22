@@ -26,7 +26,9 @@ public sealed class SourceBackfill(
             store.Read(),
             [paths.StagingFolder, paths.LibraryFolder]
         );
-        var held = workingSet.VideoIds.ToHashSet(StringComparer.Ordinal);
+        var held = workingSet
+            .VideoIds.Where(videoId => workingSet.TryGetSource(videoId, out _))
+            .ToHashSet(StringComparer.Ordinal);
 
         return
         [

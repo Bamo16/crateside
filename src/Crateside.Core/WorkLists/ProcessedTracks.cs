@@ -91,6 +91,7 @@ public sealed class ProcessedTracks
                         Path = path,
                         Root = root,
                         Preset = p.Preset,
+                        IsCut = p.Model is not null,
                         Label = p.Label,
                         IsAdopted = p.IsAdopted,
                         IsPremium = p.IsPremium,
@@ -133,7 +134,10 @@ public sealed record StemOnDisk
     public string? Preset { get; init; }
 
     /// <summary>A verbatim copy of the download, which is how a kept source reads.</summary>
-    public bool IsVerbatimSource => Preset is null && !IsAdopted;
+    public bool IsVerbatimSource => Preset is null && !IsCut && !IsAdopted;
+
+    /// <summary>An early stem names the models that cut it where a later one names a preset.</summary>
+    public bool IsCut { get; init; }
 
     /// <summary>What the user calls an adopted sample. Null for anything crateside made.</summary>
     public string? Label { get; init; }

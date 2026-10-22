@@ -72,7 +72,7 @@ public static class StemTagReader
                 Artist = NullIfBlank(file.Tag.FirstPerformer),
                 Duration =
                     file.Properties.Duration > TimeSpan.Zero ? file.Properties.Duration : null,
-                Provenance = StemProvenance.Parse(file.Tag.Comment),
+                Provenance = StemProvenance.Parse(CommentOf(file)),
             };
         }
         catch (Exception)
@@ -80,6 +80,13 @@ public static class StemTagReader
             return null;
         }
     }
+
+    // Early stemforge runs wrote the provenance to DESCRIPTION, which TagLib does not map to Comment.
+    private static string? CommentOf(TagLib.File file) =>
+        file.Tag.Comment is { Length: > 0 } comment ? comment
+        : file.GetTag(TagLib.TagTypes.Xiph) is TagLib.Ogg.XiphComment xiph
+            ? xiph.GetFirstField("DESCRIPTION")
+        : null;
 
     private static string? NullIfBlank(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value;
