@@ -19,7 +19,7 @@ public sealed class SourceBackfill(
     /// <summary>GUESSED from 68 downloads at 3.0 GB (#133), not measured on the library.</summary>
     public const long GuessedBytesPerSource = 45_000_000;
 
-    /// <summary>Video IDs of library tracks with no source held and none kept as a sample.</summary>
+    /// <summary>Video IDs of library tracks, judged by the ledger or not, with no source held or kept.</summary>
     public IReadOnlyList<string> Missing()
     {
         var processed = ProcessedTracks.Scan(
@@ -31,7 +31,7 @@ public sealed class SourceBackfill(
         return
         [
             .. processed
-                .FullyProcessed.Where(videoId =>
+                .StemsByVideoId.Keys.Where(videoId =>
                     !held.Contains(videoId)
                     && processed
                         .StemsFor(videoId)
