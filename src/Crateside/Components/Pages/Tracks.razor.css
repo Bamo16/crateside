@@ -199,8 +199,9 @@
     margin-left: auto;
     display: flex;
     align-items: center;
-    flex: 0 1 15rem;
-    min-width: 6rem;
+    flex: 1 1 18rem;
+    min-width: 10rem;
+    max-width: 24rem;
 }
 
 .search input {
