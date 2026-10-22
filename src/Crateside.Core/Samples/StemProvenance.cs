@@ -28,6 +28,9 @@ public sealed record StemProvenance
     /// <summary>The separation preset, e.g. <c>Vocal - Full</c>. Absent on older stems.</summary>
     public string? Preset { get; init; }
 
+    /// <summary>The models that cut it, as an early stem names them instead of a preset; null on a download.</summary>
+    public string? Model { get; init; }
+
     /// <summary>The YouTube format StemForge downloaded, e.g. <c>141</c>. Absent before 2026-06-01.</summary>
     public string? FormatId { get; init; }
 
@@ -74,6 +77,7 @@ public sealed record StemProvenance
         string? sourceUrl = null;
         SampleType? type = null;
         string? formatId = null;
+        string? model = null;
 
         // BuildProvenance joins with " | "; the first part is always the tool version.
         var parts = comment.Split(" | ");
@@ -86,6 +90,8 @@ public sealed record StemProvenance
                 label = l;
             else if (Value(part, "date: ") is { } d && DateOnly.TryParse(d, out var parsed))
                 separatedOn = parsed;
+            else if (Value(part, "model: ") is { } m)
+                model = m;
             else if (Value(part, "source: ") is { } s)
                 sourceUrl = s;
             else if (Value(part, "format-id: ") is { } f)
@@ -101,6 +107,7 @@ public sealed record StemProvenance
         {
             ToolVersion = parts[0],
             Preset = preset,
+            Model = model,
             Label = label,
             SeparatedOn = separatedOn,
             SourceUrl = sourceUrl,

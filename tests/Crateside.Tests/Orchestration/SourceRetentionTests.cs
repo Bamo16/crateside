@@ -17,6 +17,33 @@ public sealed class SourceRetentionTests : IDisposable
         Guid.NewGuid().ToString("n")
     );
 
+    private string LibraryWithStem(string fileName, string comment)
+    {
+        var library = Path.Combine(_directory, "Library");
+        Directory.CreateDirectory(library);
+        var stem = Path.Combine(library, fileName);
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), stem);
+
+        using var file = TagLib.File.Create(stem);
+        file.Tag.Comment = comment;
+        file.Save();
+
+        return library;
+    }
+
+    private SourceBackfill BackfillOver(WorkingSet set, string library) =>
+        new(
+            TestLedger.Store(),
+            set,
+            new DownloadRunner(new ProcessRunner()),
+            TimeProvider.System,
+            new CratesidePaths
+            {
+                StagingFolder = Path.Combine(_directory, "Staging"),
+                LibraryFolder = library,
+            }
+        );
+
     public void Dispose()
     {
         if (Directory.Exists(_directory))
@@ -125,6 +152,56 @@ public sealed class SourceRetentionTests : IDisposable
         );
 
         Assert.Equal(["dQw4w9WgXcQ"], backfill.Missing());
+    }
+
+    [Fact]
+    public void A_working_folder_with_no_source_file_in_it_does_not_hold_the_source()
+    {
+        var library = LibraryWithStem(
+            "Song (Vocal - Full).flac",
+            "stemforge/0.4.0.0 | preset: Vocal - Full | source: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        );
+        var set = new WorkingSet(Path.Combine(_directory, "working"));
+        set.Prepare("dQw4w9WgXcQ");
+
+        Assert.Equal(["dQw4w9WgXcQ"], BackfillOver(set, library).Missing());
+    }
+
+    [Fact]
+    public void An_early_stem_that_names_models_not_a_preset_is_not_a_kept_source()
+    {
+        var library = LibraryWithStem(
+            "Song (Instrumental - Full).flac",
+            "stemforge/0.1.1.0 | model: BuiltinPreset:vocal_full, BuiltinPreset:instrumental_full | date: 2026-06-02 | source: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        );
+
+        Assert.Equal(
+            ["dQw4w9WgXcQ"],
+            BackfillOver(new WorkingSet(Path.Combine(_directory, "working")), library).Missing()
+        );
+    }
+
+    [Fact]
+    public void A_stem_whose_provenance_sits_in_the_DESCRIPTION_field_is_joined_to_its_video()
+    {
+        var library = Path.Combine(_directory, "Library");
+        Directory.CreateDirectory(library);
+        var stem = Path.Combine(library, "Song (Vocal - Full).flac");
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), stem);
+
+        using (var file = TagLib.File.Create(stem))
+        {
+            file.Tag.Comment = null;
+            var xiph = (TagLib.Ogg.XiphComment)file.GetTag(TagLib.TagTypes.Xiph, true);
+            xiph.RemoveField("COMMENT");
+            xiph.SetField(
+                "DESCRIPTION",
+                "stemforge/0.1.0.0 | model: BuiltinPreset:vocal_full | date: 2026-05-28 | source: https://www.youtube.com/watch?v=w-p4B1Si31s"
+            );
+            file.Save();
+        }
+
+        Assert.Equal("w-p4B1Si31s", Crateside.Core.Samples.StemTagReader.Read(stem)?.SourceVideoId);
     }
 
     [Fact]
