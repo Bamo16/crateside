@@ -30,6 +30,7 @@ using Crateside.Core.WorkLists;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 using Serilog;
+using Serilog.Events;
 
 namespace Crateside;
 
@@ -48,7 +49,10 @@ public static class ServiceRegistration
             ?? new CratesidePaths().LogsFolder;
 
         var fileLogger = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
+            .MinimumLevel.Information()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+            .MinimumLevel.Override("System", LogEventLevel.Warning)
             .WriteTo.File(
                 Path.Combine(logsFolder, "crateside-.log"),
                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3} {SourceContext}: {Message:lj}{NewLine}{Exception}",
