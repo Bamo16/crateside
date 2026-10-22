@@ -26,6 +26,10 @@ one, use `stemforge-cli download <url> --format flac --output <dir>`, never `yt-
 fetches the Premium format the stems were cut from, and gives the identical file. Plain `yt-dlp`
 fetched a free format whose audio started 36 ms off (#133).
 
+**A detector runs on the source**, the full mix from the source index. Run it on a stem (instrumental,
+drums) only when the question is how that detector does on that stem, and say so. A measurement on a
+stem standing in for the source is a shortcut that a filter's author cannot repeat like-for-like.
+
 Many tests **assert against the real library** — the Ableton roots under `P:\RYAN\Ableton`, the
 ledger, this machine's working sets — and skip when those are absent. That has caught
 things fixtures could not, repeatedly. Prefer a real-data test over a mock when the question is
