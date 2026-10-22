@@ -23,7 +23,7 @@ and puts what it finds in the work order:
 
 | site | requests | what is kept |
 |---|---|---|
-| Hooktheory | the TheoryTab page at `theorytab/view/<artist>/<title>` | each section's key, mode and tempo |
+| Hooktheory | the TheoryTab at `theorytab/view/<artist>/<title>`, then up to three more the site's search files under the artist and title; each section's score from the site's API | each section's key, mode, tempo and Roman numerals; the contributors and how much of the synced video the sections span; from each score, its key changes. A section that changes key shows its chords by name, read by the key in force, since the page's numerals stay in the section's first key |
 | Musicnotes | the search, then the first product filed under the artist and title themselves | the Original Published Key and the arrangement |
 | Ultimate Guitar | the search | up to three of the song's tabs: those that state a key, then the most-voted chord charts |
 
