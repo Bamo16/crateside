@@ -192,8 +192,6 @@
     opacity: 0.65;
 }
 
-/* A button, but drawn as the status line it replaced: pressing it is a refinement of reading it,
-   not a separate control competing with the filter pills. */
 /* The search takes the free space so it sits away from the pills, and the status stays at the
    far right where it was. */
 .search {
@@ -205,10 +203,15 @@
     min-width: 6rem;
 }
 
-%;
-    padding: 5px 22px 5px 10px;
+.search input {
+    appearance: none;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 6px 24px 6px 12px;
     font: inherit;
     font-size: 12px;
+    font-weight: 500;
     color: var(--text);
     background: var(--bg);
     border: 1px solid rgba(255, 255, 255, 0.1);
