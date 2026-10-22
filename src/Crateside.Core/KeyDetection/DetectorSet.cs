@@ -16,6 +16,7 @@ namespace Crateside.Core.KeyDetection;
 /// Essentia's <c>edma</c> as its backers.
 /// </summary>
 public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, MadmomKeyCnn madmom)
+    : IDetectorSet
 {
     /// <summary>Without the escaping meant for HTML, so a title's own script and a pair's <c>+</c> stay readable.</summary>
     private static readonly JsonTypeInfo<MachineDto> Written =
@@ -54,18 +55,7 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
             return new DetectionOutcome.Failed($"no audio at {audioPath}");
 
         var filter = keydetect.ReadAsync(audioPath, window, ct);
-        var (cnn, edma) = await decoder.DecodeAsync(audioPath, window, ct) switch
-        {
-            DecodeOutcome.Decoded(var samples) => await Task.Run(
-                () => (madmom.Read(samples), EdmaKeyEstimator.Read(samples)),
-                ct
-            ),
-            DecodeOutcome.Failed(var error) => (
-                new KeyReading.Failed(error),
-                new KeyReading.Failed(error)
-            ),
-            _ => throw new UnreachableException(),
-        };
+        var (cnn, edma) = await ReadBackersAsync(audioPath, window, ct);
 
         var (ffmpeg, sha256) = await keydetect.IdentifyAsync(ct);
         var evidence = Evidence(audioPath, window, await filter, cnn, edma) with
@@ -91,6 +81,25 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
 
         return new DetectionOutcome.Written(evidencePath);
     }
+
+    /// <summary>madmom and edma over the audio, or one window of it, on the CPU alone.</summary>
+    public async Task<(KeyReading Madmom, KeyReading Edma)> ReadBackersAsync(
+        string audioPath,
+        RunWindow? window,
+        CancellationToken ct = default
+    ) =>
+        await decoder.DecodeAsync(audioPath, window, ct) switch
+        {
+            DecodeOutcome.Decoded(var samples) => await Task.Run(
+                () => (madmom.Read(samples), EdmaKeyEstimator.Read(samples)),
+                ct
+            ),
+            DecodeOutcome.Failed(var error) => (
+                new KeyReading.Failed(error),
+                new KeyReading.Failed(error)
+            ),
+            _ => throw new UnreachableException(),
+        };
 
     internal static MachineDto Evidence(
         string audioPath,
