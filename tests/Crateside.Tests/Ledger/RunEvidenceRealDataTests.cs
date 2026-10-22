@@ -84,7 +84,8 @@ public sealed class RunEvidenceRealDataTests
                 if (e.Algorithms.Count is 0)
                     return;
 
-                Assert.Equal(3, e.Algorithms.Count);
+                // Runs from before #139 hold the three original readings; backfilled ones add madmom and edma.
+                Assert.Contains(e.Algorithms.Count, [3, 5]);
                 Assert.Equal(3, e.Agreement.Count);
                 Assert.All(
                     e.Agreement,

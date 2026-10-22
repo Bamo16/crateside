@@ -55,7 +55,7 @@ public sealed class KeyDetectorCountsTests
             tally => Assert.Equal(counts.Songs, tally.ByMiss.Values.Sum())
         );
         Assert.Equal(
-            ["keydetect", "crema", "librosa"],
+            ["keydetect", "madmom", "edma"],
             counts
                 .Detectors.OrderByDescending(tally => tally.Count(KeyMiss.Right))
                 .Select(tally => tally.Name)
