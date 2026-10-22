@@ -205,7 +205,7 @@ public static class ServiceRegistration
     }
 
     private static IServiceCollection AddKeyDetection(this IServiceCollection services) =>
-        services.AddSingleton<DetectorSet>();
+        services.AddSingleton<IDetectorSet, DetectorSet>();
 
     private static IServiceCollection AddLedger(this IServiceCollection services) =>
         services.AddSingleton<LedgerStore>();
@@ -251,6 +251,7 @@ public static class ServiceRegistration
         services.AddSingleton<SourceRetentionStore>();
         services.AddSingleton<SourceIndex>();
         services.AddSingleton<SourceBackfill>();
+        services.AddSingleton<DetectorBackfill>();
         services.AddSingleton<WorkingSetJanitor>();
         services.AddHostedService<JanitorWorker>();
 

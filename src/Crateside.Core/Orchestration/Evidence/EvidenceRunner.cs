@@ -26,7 +26,7 @@ public interface IWindowDetector
 /// Produces the evidence for one track: runs the detectors over audio crateside already holds
 /// (ADR 0019).
 /// </summary>
-public sealed class EvidenceRunner(WorkingSet workingSet, DetectorSet detectors) : IWindowDetector
+public sealed class EvidenceRunner(WorkingSet workingSet, IDetectorSet detectors) : IWindowDetector
 {
     public async Task<EvidenceResult> RunAsync(WorkOrder order, CancellationToken ct = default)
     {

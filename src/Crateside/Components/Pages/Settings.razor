@@ -7,6 +7,7 @@
 @using System.Diagnostics
 @using Crateside.Core
 @using Crateside.Core.Orchestration
+@using Crateside.Core.Orchestration.Evidence
 @using Crateside.Core.Orchestration.Loop
 @using Crateside.Core.Orchestration.Verdict
 @using Crateside.Core.Playlist
@@ -34,6 +35,7 @@
 @inject TrueUpAll TrueUps
 @inject SourceRetentionStore RetentionStore
 @inject SourceBackfill SourceFill
+@inject DetectorBackfill BackerFill
 
 <PageTitle>Settings · crateside</PageTitle>
 
@@ -425,6 +427,63 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                     }
                 </div>
             </div>
+            <div class="row">
+                <div class="name">
+                    <span>Read madmom and edma on judged songs</span>
+                    <span class="gist">
+                        Adds the two readings to the evidence of every judged song that lacks them and
+                        has a source on disk. CPU only, no GPU, no Claude quota: nothing is judged again.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="line">
+                        <span class="state">
+                            @if (_backers is { } backers)
+                            {
+                                <text><span class="mono value">@backers.Count</span> @("song".ToQuantity(backers.Count, ShowQuantityAs.None)) to read</text>
+                            }
+                            else
+                            {
+                                <text>@(_backersWorking ? "Counting…" : "Not counted yet")</text>
+                            }
+                        </span>
+                        <button class="outline" @onclick="CountBackersAsync"
+                                disabled="@(_backersWorking || _reading)">Count them</button>
+                    </div>
+
+                    @if (_backers is { Count: > 0 } toRead && !_reading)
+                    {
+                        <div class="confirm">
+                            <span>Read <span class="mono value">@toRead.Count</span> @("song".ToQuantity(toRead.Count, ShowQuantityAs.None))?</span>
+                            <div class="actions">
+                                <button class="primary" @onclick="() => ReadBackersAsync(toRead)">Read them</button>
+                                <button class="outline" @onclick="() => _backers = null">Cancel</button>
+                            </div>
+                        </div>
+                    }
+
+                    @if (_reading)
+                    {
+                        <div class="actions">
+                            <span class="status">
+                                Read <span class="mono">@_read</span> of <span class="mono">@_readTotal</span>…
+                            </span>
+                            <button class="outline" @onclick="() => _readCancel?.Cancel()">Stop</button>
+                        </div>
+                    }
+                    else if (_readFailures is { } readFailures)
+                    {
+                        <span class="status">
+                            Read <span class="mono">@_read</span>; <span class="mono">@readFailures.Count</span> failed.
+                        </span>
+
+                        @foreach (var failure in readFailures)
+                        {
+                            <span class="status problem">@failure.Song: @failure.Error</span>
+                        }
+                    }
+                </div>
+            </div>
         </section>
 
         <section>
@@ -693,6 +752,58 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             _missing = null;
             _fillCancel.Dispose();
             _fillCancel = null;
+        }
+    }
+
+    private IReadOnlyList<BackerTarget>? _backers;
+    private bool _backersWorking;
+    private bool _reading;
+    private int _read;
+    private int _readTotal;
+    private IReadOnlyList<BackerResult>? _readFailures;
+    private CancellationTokenSource? _readCancel;
+
+    private async Task CountBackersAsync()
+    {
+        (_backersWorking, _backers, _readFailures) = (true, null, null);
+
+        try
+        {
+            _backers = await Task.Run(BackerFill.Missing);
+        }
+        finally
+        {
+            _backersWorking = false;
+        }
+    }
+
+    private async Task ReadBackersAsync(IReadOnlyList<BackerTarget> targets)
+    {
+        (_reading, _read, _readTotal, _readFailures) = (true, 0, targets.Count, null);
+        _readCancel = new CancellationTokenSource();
+
+        try
+        {
+            var results = await BackerFill.RunAsync(
+                targets,
+                result =>
+                {
+                    if (result.Error is null)
+                        _read++;
+
+                    _ = InvokeAsync(StateHasChanged);
+                },
+                _readCancel.Token
+            );
+
+            _readFailures = [.. results.Where(result => result.Error is not null)];
+        }
+        finally
+        {
+            _reading = false;
+            _backers = null;
+            _readCancel.Dispose();
+            _readCancel = null;
         }
     }
 

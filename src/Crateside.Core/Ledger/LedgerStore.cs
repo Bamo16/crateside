@@ -124,6 +124,58 @@ public sealed class LedgerStore : IDisposable
         }
     }
 
+    /// <summary>The detectors' JSON behind every song's latest run that has any, keyed by song identity.</summary>
+    public IReadOnlyDictionary<string, string> LatestEvidenceJson()
+    {
+        lock (_gate)
+        {
+            using var context = Context();
+
+            return context
+                .Runs.AsNoTracking()
+                .Select(run => new
+                {
+                    run.Song,
+                    run.RecordedAt,
+                    run.Evidence,
+                })
+                .AsEnumerable()
+                .GroupBy(run => run.Song, StringComparer.OrdinalIgnoreCase)
+                .Select(song => song.OrderBy(run => run.RecordedAt).Last())
+                .Where(run => run.Evidence is not null)
+                .ToDictionary(
+                    run => run.Song,
+                    run => run.Evidence!,
+                    StringComparer.OrdinalIgnoreCase
+                );
+        }
+    }
+
+    /// <summary>
+    /// Rewrites the evidence of a song's latest run in place, without recording a run: the verdict, its
+    /// time and its judging are untouched. False when the song has no such run or <paramref name="edit"/> returns null.
+    /// </summary>
+    public bool EditLatestEvidence(string song, Func<string, string?> edit)
+    {
+        lock (_gate)
+        {
+            using var context = Context();
+
+            var latest = context
+                .Runs.Where(run => run.Song == song)
+                .OrderByDescending(run => run.RecordedAt)
+                .FirstOrDefault();
+
+            if (latest is not { Evidence: { } json } || edit(json) is not { } edited)
+                return false;
+
+            latest.Evidence = edited;
+            context.SaveChanges();
+
+            return true;
+        }
+    }
+
     /// <summary>Validates and stores a run, or says which field was refused and why.</summary>
     public RecordOutcome Record(RunRecord run)
     {

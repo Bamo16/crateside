@@ -21,10 +21,8 @@ public sealed class SourceIndex(WorkingSet workingSet, string? path = null)
     private readonly Lock _gate = new();
     private string? _written;
 
-    /// <summary>Rewrites the file when what it lists has changed.</summary>
-    public void Refresh(ProcessedTracks processed, KeyLedger ledger)
-    {
-        List<SourceEntry> entries =
+    /// <summary>Every source on disk: the working set's downloads first, then the samples kept.</summary>
+    public IReadOnlyList<SourceEntry> Entries(ProcessedTracks processed, KeyLedger ledger) =>
         [
             .. workingSet
                 .VideoIds.Where(videoId => workingSet.TryGetSource(videoId, out _))
@@ -51,8 +49,14 @@ public sealed class SourceIndex(WorkingSet workingSet, string? path = null)
                 )),
         ];
 
+    /// <summary>Rewrites the file when what it lists has changed.</summary>
+    public void Refresh(ProcessedTracks processed, KeyLedger ledger)
+    {
         var json = JsonSerializer.Serialize(
-            entries.OrderBy(entry => entry.Song).ThenBy(entry => entry.VideoId).ToList(),
+            Entries(processed, ledger)
+                .OrderBy(entry => entry.Song)
+                .ThenBy(entry => entry.VideoId)
+                .ToList(),
             SourceIndexJsonContext.Default.ListSourceEntry
         );
 
