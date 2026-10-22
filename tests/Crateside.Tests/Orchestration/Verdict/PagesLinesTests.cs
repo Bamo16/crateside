@@ -73,6 +73,27 @@ public sealed class PagesLinesTests
     }
 
     [Fact]
+    public void Moneys_chorus_names_its_dorian_iv_as_major_where_the_page_writes_it_minor()
+    {
+        var lines = MoneyLines(MoneyScores);
+
+        Assert.Contains(
+            lines,
+            line =>
+                line.StartsWith("  - Chorus, its chords by its score", StringComparison.Ordinal)
+                && line.Contains(
+                    "B minor from beat 1: F#:min F:min E:min G:maj/3 G:maj/5 | "
+                        + "B dorian from beat 15: B:min B:min/5 B:min E:maj/5 B:min/5 B:min7/b7 B:min E:7/b7",
+                    StringComparison.Ordinal
+                )
+        );
+        Assert.DoesNotContain(
+            lines,
+            line => line.StartsWith("  - Chorus: v vii", StringComparison.Ordinal)
+        );
+    }
+
+    [Fact]
     public void A_tab_whose_scores_could_not_be_read_says_its_sync_is_unknown()
     {
         var lines = MoneyLines([]);

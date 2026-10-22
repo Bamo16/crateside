@@ -45,6 +45,14 @@ checkout (decided 2026-10-03). Library changes are committed there, on `main`, w
 of Live's data (key spelling, genre, the keyword whitelist) stays in `src/Crateside.Core/Ableton/`.
 Nothing goes public with the user's surname on it: see memory `keep-real-name-off-public-work`.
 
+## Hooktheory is read here first
+
+crateside's C# owns fetching and parsing Hooktheory (`HooktheoryTab.cs`, `SourcePages.cs`,
+`HookpadChord.cs` in `Orchestration/Verdict/`). keydetect-harness mirrors it in Python
+(`hooktheory.py`, `chord_truth.py`) so it runs without .NET. A change to what is read or how a
+chord is named starts here; then update `Fixtures/SourcePages/hookpad-labels.json` and its identical
+copy in the harness (`chords/mirror/`), and make the harness's `scripts/check_mirror.py` pass.
+
 ## Do not run the app while editing it
 
 **Never start `watch` (or leave it running) during a series of edits.** It is not autostarted,

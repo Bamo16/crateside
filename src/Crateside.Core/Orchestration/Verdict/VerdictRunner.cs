@@ -323,7 +323,10 @@ public sealed partial class VerdictRunner(
                 _ => string.Empty,
             };
 
-            if (section.Progression is { Length: > 0 } progression)
+            if (section is { Keys.Count: > 1, Harmony: [_, ..] })
+                yield return $"{section.Name}, its chords by its score, since the page's numerals stay in its first key: "
+                    + $"{HarmonyByKey(section)}{filled}";
+            else if (section.Progression is { Length: > 0 } progression)
                 yield return $"{section.Name}: {progression}{filled}";
 
             if (section.Keys is { Count: > 1 } changes)
@@ -339,6 +342,39 @@ public sealed partial class VerdictRunner(
                     );
         }
     }
+
+    /// <summary><c>E major from beat 1: E:maj B:maj | E minor from beat 9: C:maj D:maj E:min</c>, repeats collapsed as the page collapses them.</summary>
+    private static string HarmonyByKey(TabSection section)
+    {
+        var keys = section.Keys.OrderBy(key => key.Beat).ToList();
+        List<string> segments = [];
+
+        foreach (var (key, index) in keys.Select((key, index) => (key, index)))
+        {
+            List<string> labels =
+            [
+                .. section
+                    .Harmony.Where(chord =>
+                        (index == 0 || chord.Beat >= key.Beat)
+                        && (index == keys.Count - 1 || chord.Beat < keys[index + 1].Beat)
+                    )
+                    .Select(chord => chord.Label),
+            ];
+
+            if (labels is not [])
+                segments.Add(
+                    string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"{key.Key} from beat {key.Beat}: {string.Join(' ', Collapsed(labels))}"
+                    )
+                );
+        }
+
+        return string.Join(" | ", segments);
+    }
+
+    private static IEnumerable<string> Collapsed(List<string> labels) =>
+        labels.Where((label, index) => index == 0 || labels[index - 1] != label);
 
     internal static string EarLine(EarWeight ear) =>
         ear switch

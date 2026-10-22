@@ -39,6 +39,9 @@ public sealed record TabSection(
 
     public int? Chords { get; init; }
 
+    /// <summary>The chords as its score names them, by the key in force at each beat; the page's numerals stay in the section's first key.</summary>
+    public IReadOnlyList<TabChord> Harmony { get; init; } = [];
+
     /// <summary>The video the section is synced to, when it is not the song's.</summary>
     public string? VideoId { get; init; }
 
@@ -49,6 +52,9 @@ public sealed record TabSection(
 }
 
 public sealed record TabKey(double Beat, string Key);
+
+/// <summary>A chord of a section's score, as a Harte label such as <c>C:maj7/3</c>.</summary>
+public sealed record TabChord(double Beat, string Label);
 
 internal static partial class HooktheoryPageReader
 {
@@ -79,6 +85,7 @@ internal static partial class HooktheoryPageReader
                             )),
                         ],
                         Chords = score.Chords?.Count(chord => chord.IsRest is not true),
+                        Harmony = HookpadChord.Read(score),
                         VideoId = score.Youtube?.Id is { } id && id != song.YouTubeId ? id : null,
                         SyncStart =
                             score.Youtube is { SyncStart: { } start, SyncEnd: { } end }
@@ -299,7 +306,26 @@ internal static partial class HooktheoryPageReader
 
     internal sealed record ScoreKeyDto(double Beat, string Tonic, string Scale);
 
-    internal sealed record ScoreChordDto(bool? IsRest);
+    internal sealed record ScoreChordDto
+    {
+        public double Beat { get; init; }
+        public int Root { get; init; }
+        public int Type { get; init; }
+        public int? Inversion { get; init; }
+
+        /// <summary>The degree of the target's major scale; the target is <see cref="Root"/>.</summary>
+        public int? Applied { get; init; }
+
+        /// <summary>A mode name or seven semitone offsets that replace the key's mode; empty or null for none.</summary>
+        public JsonElement Borrowed { get; init; }
+
+        public IReadOnlyList<int>? Adds { get; init; }
+        public IReadOnlyList<int>? Omits { get; init; }
+        public IReadOnlyList<int>? Suspensions { get; init; }
+        public IReadOnlyList<string>? Alterations { get; init; }
+        public IReadOnlyList<string>? Substitutions { get; init; }
+        public bool? IsRest { get; init; }
+    }
 
     internal sealed record YoutubeDto(string? Id, double? SyncStart, double? SyncEnd);
 
