@@ -254,7 +254,6 @@ public static class ServiceRegistration
         services.AddSingleton<UnavailableSources>();
         services.AddSingleton<SourceAvailability>();
         services.AddHttpClient(SourceAvailability.ClientName);
-        services.AddSingleton<DetectorBackfill>();
         services.AddSingleton<WorkingSetJanitor>();
         services.AddHostedService<JanitorWorker>();
 
@@ -286,6 +285,7 @@ public static class ServiceRegistration
         services.AddSingleton<EvidenceSelector>();
         services.AddSingleton<EvidenceRunner>();
         services.AddSingleton<IWindowDetector, EvidenceRunner>();
+        services.AddSingleton<DetectorBackfill>();
         services.AddSingleton<EvidenceDrainer>();
         services.AddHostedService<StageWorker<EvidenceDrainer>>();
 

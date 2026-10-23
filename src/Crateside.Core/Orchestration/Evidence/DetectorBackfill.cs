@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -9,9 +8,7 @@ using Crateside.Core.WorkLists;
 namespace Crateside.Core.Orchestration.Evidence;
 
 /// <summary>
-/// Reads madmom and edma over the source of every judged song whose latest run has no reading from
-/// them, and adds the readings to that run's evidence (#139). CPU only; it never records a run, so
-/// nothing is judged again and no Claude quota is spent.
+/// Adds the readings a judged song's latest run lacks, read over its source on disk; no new run, no re-judging (#139).
 /// </summary>
 public sealed class DetectorBackfill(
     LedgerStore store,
@@ -20,108 +17,161 @@ public sealed class DetectorBackfill(
     CratesidePaths paths
 )
 {
-    /// <summary>One source per song that has a run with evidence lacking madmom or edma, the working set's download before a kept sample.</summary>
-    public IReadOnlyList<BackerTarget> Missing()
+    private static readonly string[] Current =
+    [
+        KeydetectFilter.Name,
+        MadmomKeyCnn.Name,
+        EdmaKeyEstimator.Name,
+    ];
+
+    private readonly HashSet<string> _failed = [];
+
+    /// <summary>The first judged song, by name, that lacks a reading and has a source on disk, the working set's download before a kept sample.</summary>
+    public BackfillTarget? Next()
     {
+        var lacking = store
+            .LatestEvidenceJson()
+            .Select(held => (Song: held.Key, Lacks: Lacking(held.Value)))
+            .Where(held => held.Lacks.Count > 0)
+            .ToDictionary(held => held.Song, held => held.Lacks, StringComparer.OrdinalIgnoreCase);
+
+        if (lacking.Count is 0)
+            return null;
+
         var ledger = store.Read();
-        var held = store.LatestEvidenceJson();
         var entries = sources.Entries(
             ProcessedTracks.Scan(ledger, [paths.StagingFolder, paths.LibraryFolder]),
             ledger
         );
 
-        return
-        [
-            .. entries
-                .Select(entry => (Entry: entry, Song: ledger.SongFor(entry.VideoId)))
-                .Where(found =>
-                    found is { Song: { } song }
-                    && held.TryGetValue(song, out var json)
-                    && LacksReadings(json)
-                )
-                .DistinctBy(found => found.Song, StringComparer.OrdinalIgnoreCase)
-                .Select(found => new BackerTarget(found.Song!, found.Entry.Path))
-                .OrderBy(target => target.Song, StringComparer.Ordinal),
-        ];
+        return entries
+            .Select(entry => (Entry: entry, Song: ledger.SongFor(entry.VideoId)))
+            .Where(found => found.Song is not null && lacking.ContainsKey(found.Song))
+            .OrderBy(found => found.Song, StringComparer.Ordinal)
+            .Select(found => new BackfillTarget(
+                found.Song!,
+                found.Entry.Path,
+                [
+                    .. lacking[found.Song!]
+                        .Where(detector =>
+                            !_failed.Contains(FailureKey(found.Song!, found.Entry.Path, detector))
+                        ),
+                ]
+            ))
+            .FirstOrDefault(target => target.Detectors.Count > 0);
     }
 
-    /// <summary>Reads each in turn, stopping when cancelled; <paramref name="onEach"/> hears every result.</summary>
-    public async Task<IReadOnlyList<BackerResult>> RunAsync(
-        IReadOnlyList<BackerTarget> targets,
-        Action<BackerResult>? onEach = null,
-        CancellationToken ct = default
-    )
+    /// <summary>Reads what the target lacks and adds it; a reading that fails is remembered and left out.</summary>
+    public async Task<BackfillResult> ReadAsync(BackfillTarget target, CancellationToken ct)
     {
-        List<BackerResult> results = [];
+        Dictionary<string, string> failures = [];
+        KeyReading? madmom = null;
+        KeyReading? edma = null;
+        KeydetectReading? keydetect = null;
 
-        foreach (var target in targets)
+        if (!File.Exists(target.AudioPath))
+            failures = target.Detectors.ToDictionary(detector => detector, _ => "no audio on disk");
+        else
         {
-            if (ct.IsCancellationRequested)
-                break;
+            if (
+                target.Detectors.Contains(MadmomKeyCnn.Name)
+                || target.Detectors.Contains(EdmaKeyEstimator.Name)
+            )
+                (madmom, edma) = await detectors.ReadBackersAsync(target.AudioPath, null, ct);
 
-            var result = await ReadAsync(target, ct);
-
-            results.Add(result);
-            onEach?.Invoke(result);
+            if (target.Detectors.Contains(KeydetectFilter.Name))
+                keydetect = await detectors.ReadKeydetectAsync(target.AudioPath, null, ct);
         }
 
-        store.Export();
+        List<string> added = [];
 
-        return results;
+        Settle(
+            KeydetectFilter.Name,
+            keydetect is KeydetectReading.Failed(var kError) ? kError : null
+        );
+        Settle(MadmomKeyCnn.Name, (madmom as KeyReading.Failed)?.Error);
+        Settle(EdmaKeyEstimator.Name, (edma as KeyReading.Failed)?.Error);
+
+        if (added.Count > 0)
+        {
+            var part = DetectorSet.Part(
+                added.Contains(KeydetectFilter.Name) ? keydetect : null,
+                added.Contains(MadmomKeyCnn.Name) ? madmom : null,
+                added.Contains(EdmaKeyEstimator.Name) ? edma : null
+            );
+
+            if (store.EditLatestEvidence(target.Song, json => Attach(json, part)))
+                store.Export();
+            else
+                foreach (var detector in added.ToList())
+                {
+                    failures[detector] = "the song has no run with evidence to attach to";
+                    added.Remove(detector);
+                }
+        }
+
+        foreach (var detector in failures.Keys)
+            _failed.Add(FailureKey(target.Song, target.AudioPath, detector));
+
+        return new BackfillResult(target.Song, added, failures);
+
+        void Settle(string detector, string? error)
+        {
+            if (!target.Detectors.Contains(detector) || failures.ContainsKey(detector))
+                return;
+
+            if (error is null)
+                added.Add(detector);
+            else
+                failures[detector] = error;
+        }
     }
 
-    private async Task<BackerResult> ReadAsync(BackerTarget target, CancellationToken ct)
-    {
-        if (!File.Exists(target.AudioPath))
-            return new BackerResult(target.Song, $"no audio at {target.AudioPath}");
-
-        var (madmom, edma) = await detectors.ReadBackersAsync(target.AudioPath, null, ct);
-
-        return store.EditLatestEvidence(target.Song, json => Attach(json, madmom, edma))
-            ? new BackerResult(
-                target.Song,
-                (madmom as KeyReading.Failed)?.Error ?? (edma as KeyReading.Failed)?.Error
-            )
-            : new BackerResult(target.Song, "the song has no run with evidence to attach to");
-    }
-
-    /// <summary>The evidence with the two readings added where it has none; every other field is kept as it was.</summary>
-    internal static string? Attach(string json, KeyReading madmom, KeyReading edma)
+    /// <summary>The evidence with the readings in <paramref name="part"/> added where it has none; every other field is kept as it was.</summary>
+    internal static string? Attach(string json, JsonObject part)
     {
         if (JsonNode.Parse(json) is not JsonObject { } evidence)
             return null;
 
-        var algorithms = evidence["algorithms"] as JsonObject ?? [];
+        foreach (var (name, value) in part.ToList())
+        {
+            part.Remove(name);
 
-        evidence["algorithms"] = algorithms;
-        algorithms["madmom"] ??= Reading(madmom);
-        algorithms["essentia_edma"] ??= Reading(edma);
+            if (name is "algorithms" && value is JsonObject added)
+            {
+                var algorithms = evidence["algorithms"] as JsonObject ?? [];
+
+                evidence["algorithms"] = algorithms;
+
+                foreach (var (detector, reading) in added.ToList())
+                {
+                    added.Remove(detector);
+                    algorithms[detector] ??= reading;
+                }
+            }
+            else if (evidence[name] is null or JsonArray { Count: 0 })
+                evidence[name] = value;
+        }
 
         return evidence.ToJsonString(
             new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }
         );
     }
 
-    private static bool LacksReadings(string json) =>
+    private static List<string> Lacking(string json) =>
         JsonNode.Parse(json) is JsonObject { } evidence
-        && evidence["algorithms"] is JsonObject algorithms
-        && (algorithms["madmom"] is null || algorithms["essentia_edma"] is null);
+            ? [.. Current.Where(detector => evidence["algorithms"]?[detector] is null)]
+            : [];
 
-    private static JsonObject Reading(KeyReading reading) =>
-        reading switch
-        {
-            KeyReading.Read(var key, var confidence) => new()
-            {
-                ["key"] = key.LedgerName,
-                ["confidence"] = Math.Round(confidence, 4),
-            },
-            KeyReading.Failed(var error) => new() { ["error"] = error },
-            _ => throw new UnreachableException(),
-        };
+    private static string FailureKey(string song, string audioPath, string detector) =>
+        $"{song}|{audioPath}|{File.GetLastWriteTimeUtc(audioPath).Ticks}|{detector}";
 }
 
-/// <summary>A judged song and the source to read over.</summary>
-public sealed record BackerTarget(string Song, string AudioPath);
+/// <summary>A judged song, the source to read over, and the detectors its evidence lacks.</summary>
+public sealed record BackfillTarget(string Song, string AudioPath, IReadOnlyList<string> Detectors);
 
-/// <param name="Error">Null when both readings were attached; a reading that failed is attached as its error.</param>
-public sealed record BackerResult(string Song, string? Error);
+public sealed record BackfillResult(
+    string Song,
+    IReadOnlyList<string> Added,
+    IReadOnlyDictionary<string, string> Failed
+);

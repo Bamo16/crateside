@@ -18,4 +18,11 @@ public interface IDetectorSet
         RunWindow? window,
         CancellationToken ct = default
     );
+
+    /// <summary>keydetect alone, through the configured ffmpeg.</summary>
+    Task<KeydetectReading> ReadKeydetectAsync(
+        string audioPath,
+        RunWindow? window,
+        CancellationToken ct = default
+    );
 }

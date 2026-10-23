@@ -91,7 +91,8 @@ public sealed class StageWorker<TDrainer>(
                     );
 
                     // A failure made nothing for anyone downstream, so only success broadcasts.
-                    signals.WakeAllBut(drainer.Stage);
+                    if (tick.WakesOthers)
+                        signals.WakeAllBut(drainer.Stage);
                 }
                 else
                     logger.LogWarning(
