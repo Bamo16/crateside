@@ -39,6 +39,9 @@ public sealed record StageTick
     /// </summary>
     public string? Note { get; init; }
 
+    /// <summary>False for a pass that made nothing for any other stage.</summary>
+    public bool WakesOthers { get; init; } = true;
+
     public static StageTick Ran(WorkOrder order, bool isSuccess, string? error) =>
         new()
         {
@@ -54,7 +57,8 @@ public sealed record StageTick
         string subject,
         bool isSuccess,
         string? error,
-        string? note = null
+        string? note = null,
+        bool wakesOthers = true
     ) =>
         new()
         {
@@ -63,6 +67,7 @@ public sealed record StageTick
             IsSuccess = isSuccess,
             Error = error,
             Note = note,
+            WakesOthers = wakesOthers,
         };
 
     public static StageTick Unavailable(string error) =>

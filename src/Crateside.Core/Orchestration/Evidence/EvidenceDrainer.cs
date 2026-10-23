@@ -15,6 +15,7 @@ public sealed class EvidenceDrainer(
     WorkListService queue,
     EvidenceRunner runner,
     EvidenceSelector selector,
+    DetectorBackfill backfill,
     JobStore jobs,
     IOptions<CratesidePaths> paths
 ) : IStageDrainer
@@ -23,7 +24,10 @@ public sealed class EvidenceDrainer(
 
     public JobStage Stage => JobStage.Evidence;
 
-    /// <summary>Detects the next undetected track, if there is one.</summary>
+    /// <summary>
+    /// Detects the next undetected track; with none queued, fills one judged song's missing readings
+    /// instead (#139).
+    /// </summary>
     public async Task<StageTick> DrainOnceAsync(CancellationToken ct = default)
     {
         WorkListsView view;
@@ -37,8 +41,13 @@ public sealed class EvidenceDrainer(
             return StageTick.Unavailable(ex.Message);
         }
 
+        return await DrainAsync(view, ct);
+    }
+
+    internal async Task<StageTick> DrainAsync(WorkListsView view, CancellationToken ct)
+    {
         if (!selector.TryPickNext(view, out var item))
-            return StageTick.Idle;
+            return await BackfillOnceAsync(ct);
 
         var order = WorkOrder.Compose(item, store.Read());
 
@@ -56,5 +65,26 @@ public sealed class EvidenceDrainer(
         );
 
         return StageTick.Ran(order, result.IsSuccess, result.Error);
+    }
+
+    private async Task<StageTick> BackfillOnceAsync(CancellationToken ct)
+    {
+        if (backfill.Next() is not { } target)
+            return StageTick.Idle;
+
+        var result = await backfill.ReadAsync(target, ct);
+
+        return StageTick.Ran(
+            result.Song,
+            result.Failed.Count is 0,
+            result.Failed.Count is 0
+                ? null
+                : string.Join(
+                    "; ",
+                    result.Failed.Select(failed => $"{failed.Key}: {failed.Value}")
+                ),
+            result.Added.Count is 0 ? null : $"added {string.Join(", ", result.Added)}",
+            wakesOthers: false
+        );
     }
 }

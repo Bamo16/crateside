@@ -40,6 +40,13 @@ public sealed class DetectorBackfillTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    private CratesidePaths Paths =>
+        new()
+        {
+            StagingFolder = Path.Combine(_root, "staging"),
+            LibraryFolder = Path.Combine(_root, "library"),
+        };
+
     private DetectorBackfill Backfill()
     {
         WorkingSet set = new(Path.Combine(_root, "working"));
@@ -50,11 +57,7 @@ public sealed class DetectorBackfillTests : IDisposable
             _store,
             new SourceIndex(set, Path.Combine(_root, "source-index.json")),
             _detectors,
-            new CratesidePaths
-            {
-                StagingFolder = Path.Combine(_root, "staging"),
-                LibraryFolder = Path.Combine(_root, "library"),
-            }
+            Paths
         );
     }
 
@@ -79,10 +82,13 @@ public sealed class DetectorBackfillTests : IDisposable
         Judge(Before);
 
         var backfill = Backfill();
-        var targets = backfill.Missing();
-        var results = await backfill.RunAsync(targets, ct: TestContext.Current.CancellationToken);
+        var result = await backfill.ReadAsync(
+            backfill.Next()!,
+            TestContext.Current.CancellationToken
+        );
 
-        Assert.Null(Assert.Single(results).Error);
+        Assert.Equal([MadmomKeyCnn.Name, EdmaKeyEstimator.Name], result.Added);
+        Assert.Empty(result.Failed);
         Assert.Single(_store.Read().Runs);
         Assert.Equal(
             DateTimeOffset.Parse("2026-10-01T00:00:00+00:00"),
@@ -98,62 +104,105 @@ public sealed class DetectorBackfillTests : IDisposable
         Assert.Equal("A minor", evidence.Algorithms[0].Key);
         Assert.Equal("A minor", evidence.Algorithms[1].Key);
         Assert.Equal("C major", evidence.Algorithms[2].Key);
-        Assert.Empty(backfill.Missing());
+        Assert.Null(backfill.Next());
     }
 
     [Fact]
-    public void A_song_that_has_both_readings_is_left_alone()
+    public void A_song_missing_a_detector_is_picked_with_what_it_lacks()
+    {
+        Judge(Before);
+
+        var target = Backfill().Next()!;
+
+        Assert.Equal(Song, target.Song);
+        Assert.Equal([MadmomKeyCnn.Name, EdmaKeyEstimator.Name], target.Detectors);
+    }
+
+    [Fact]
+    public async Task A_song_missing_keydetect_gets_its_reading_and_chords()
+    {
+        Judge("""{"algorithms":{"madmom":{"key":"A minor"},"essentia_edma":{"key":"A minor"}}}""");
+
+        var backfill = Backfill();
+        var result = await backfill.ReadAsync(
+            backfill.Next()!,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal([KeydetectFilter.Name], result.Added);
+
+        var evidence = _store.EvidenceFor(Song)!;
+
+        Assert.Equal(
+            "A minor",
+            evidence.Algorithms.Single(algorithm => algorithm.Name == "ffmpeg keydetect").Key
+        );
+        Assert.Equal(["Am", "G"], evidence.Chords);
+    }
+
+    [Fact]
+    public void A_song_that_has_every_reading_is_left_alone()
     {
         Judge(Complete);
 
-        Assert.Empty(Backfill().Missing());
+        Assert.Null(Backfill().Next());
     }
 
     [Fact]
-    public void A_song_with_no_source_on_disk_is_not_listed()
+    public void A_song_with_no_source_on_disk_is_skipped()
     {
         Judge(Before);
-        _store.Dispose();
 
-        using var other = new LedgerStore(LedgerStore.InMemory, new FakeTimeProvider());
         var backfill = new DetectorBackfill(
-            other,
+            _store,
             new SourceIndex(
                 new WorkingSet(Path.Combine(_root, "empty")),
                 Path.Combine(_root, "i.json")
             ),
             _detectors,
-            new CratesidePaths
-            {
-                StagingFolder = Path.Combine(_root, "staging"),
-                LibraryFolder = Path.Combine(_root, "library"),
-            }
+            Paths
         );
 
-        Assert.Empty(backfill.Missing());
+        Assert.Null(backfill.Next());
     }
 
     [Fact]
-    public async Task A_reading_that_fails_is_kept_as_its_error_and_not_retried()
+    public async Task A_reading_that_fails_is_not_retried_until_the_app_restarts()
     {
         Judge(Before);
         _detectors.Fail = true;
 
         var backfill = Backfill();
-        var results = await backfill.RunAsync(
-            backfill.Missing(),
-            ct: TestContext.Current.CancellationToken
+        var result = await backfill.ReadAsync(
+            backfill.Next()!,
+            TestContext.Current.CancellationToken
         );
 
-        Assert.Equal("too short", Assert.Single(results).Error);
-        Assert.Equal(
-            "too short",
-            _store
-                .EvidenceFor(Song)!
-                .Algorithms.Single(algorithm => algorithm.Name == "madmom")
-                .Error
+        Assert.Equal("too short", result.Failed[MadmomKeyCnn.Name]);
+        Assert.Empty(result.Added);
+        Assert.Null(backfill.Next());
+        Assert.DoesNotContain(
+            _store.EvidenceFor(Song)!.Algorithms,
+            algorithm => algorithm.Name == "madmom"
         );
-        Assert.Empty(backfill.Missing());
+        Assert.NotNull(Backfill().Next());
+    }
+
+    [Fact]
+    public async Task A_changed_source_is_tried_again_after_a_failure()
+    {
+        Judge(Before);
+        _detectors.Fail = true;
+
+        var backfill = Backfill();
+
+        await backfill.ReadAsync(backfill.Next()!, TestContext.Current.CancellationToken);
+        File.SetLastWriteTimeUtc(
+            Path.Combine(_root, "working", VideoId, "source.flac"),
+            DateTime.UtcNow.AddHours(1)
+        );
+
+        Assert.NotNull(backfill.Next());
     }
 
     [Fact]
@@ -161,8 +210,11 @@ public sealed class DetectorBackfillTests : IDisposable
     {
         var edited = DetectorBackfill.Attach(
             """{"input":"a.flac","chords":["A"],"algorithms":{"madmom":{"key":"D major"}}}""",
-            new KeyReading.Read(MusicKey.FromString("A minor")!, 0.5),
-            new KeyReading.Read(MusicKey.FromString("C major")!, 0.4)
+            DetectorSet.Part(
+                null,
+                new KeyReading.Read(MusicKey.FromString("A minor")!, 0.5),
+                new KeyReading.Read(MusicKey.FromString("C major")!, 0.4)
+            )
         );
 
         Assert.Contains("\"input\":\"a.flac\"", edited);
@@ -186,6 +238,22 @@ public sealed class DetectorBackfillTests : IDisposable
                     : (
                         new KeyReading.Read(MusicKey.FromString("A minor")!, 0.9),
                         new KeyReading.Read(MusicKey.FromString("C major")!, 0.7)
+                    )
+            );
+
+        public Task<KeydetectReading> ReadKeydetectAsync(
+            string audioPath,
+            RunWindow? window,
+            CancellationToken ct = default
+        ) =>
+            Task.FromResult<KeydetectReading>(
+                Fail
+                    ? new KeydetectReading.Failed("too short")
+                    : new KeydetectReading.Read(
+                        MusicKey.FromString("A minor")!,
+                        0.8,
+                        ["Am", "G"],
+                        []
                     )
             );
 

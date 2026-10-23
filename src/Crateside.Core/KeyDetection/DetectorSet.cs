@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Crateside.Core.Ledger;
@@ -101,6 +102,64 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
             _ => throw new UnreachableException(),
         };
 
+    /// <summary>keydetect over the audio, or one window of it.</summary>
+    public Task<KeydetectReading> ReadKeydetectAsync(
+        string audioPath,
+        RunWindow? window,
+        CancellationToken ct = default
+    ) => keydetect.ReadAsync(audioPath, window, ct);
+
+    /// <summary>The evidence's own shape holding only the readings given, for adding to a run that lacks them.</summary>
+    internal static JsonObject Part(
+        KeydetectReading? keydetect,
+        KeyReading? madmom,
+        KeyReading? edma
+    ) =>
+        JsonSerializer.SerializeToNode(
+            new MachineDto
+            {
+                Algorithms = new()
+                {
+                    FfmpegKeydetect = keydetect is null ? null : FfmpegOf(keydetect),
+                    Madmom = madmom is null ? null : Simple(madmom),
+                    EssentiaEdma = edma is null ? null : Simple(edma),
+                },
+                Chords = keydetect is KeydetectReading.Read { Chords: var chords } ? chords : null,
+                KeyEvents = keydetect is KeydetectReading.Read ? KeyEventsOf(keydetect) : null,
+            },
+            Written
+        ) as JsonObject
+        ?? throw new UnreachableException();
+
+    private static AlgorithmsDto.FfmpegDto FfmpegOf(KeydetectReading keydetect) =>
+        keydetect switch
+        {
+            KeydetectReading.Read read => new()
+            {
+                Key = read.Key.LedgerName,
+                R = read.R,
+                RFlag = TrustBand(read.R),
+                KeyAlt = read.RunnerUp?.LedgerName,
+                KeyAltConfidence = read.RunnerUpR,
+                KeyReranked = read.Reranked,
+            },
+            KeydetectReading.Failed(var error) => new() { Error = error },
+            _ => throw new UnreachableException(),
+        };
+
+    private static IReadOnlyList<MachineDto.KeyEventDto> KeyEventsOf(KeydetectReading keydetect) =>
+        keydetect is KeydetectReading.Read { KeyEvents: var events }
+            ?
+            [
+                .. events.Select(change => new MachineDto.KeyEventDto
+                {
+                    T = change.Seconds,
+                    Key = change.Key,
+                    R = change.R,
+                }),
+            ]
+            : [];
+
     internal static MachineDto Evidence(
         string audioPath,
         RunWindow? window,
@@ -122,20 +181,7 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
             Segment = window is { Start: var start, End: var end } ? [start, end] : null,
             Algorithms = new()
             {
-                FfmpegKeydetect = keydetect switch
-                {
-                    KeydetectReading.Read read => new()
-                    {
-                        Key = read.Key.LedgerName,
-                        R = read.R,
-                        RFlag = TrustBand(read.R),
-                        KeyAlt = read.RunnerUp?.LedgerName,
-                        KeyAltConfidence = read.RunnerUpR,
-                        KeyReranked = read.Reranked,
-                    },
-                    KeydetectReading.Failed(var error) => new() { Error = error },
-                    _ => throw new UnreachableException(),
-                },
+                FfmpegKeydetect = FfmpegOf(keydetect),
                 Madmom = Simple(madmom),
                 EssentiaEdma = Simple(edma),
             },
@@ -154,17 +200,7 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
                 Pair("madmom+edma", KeyOf(madmom), KeyOf(edma)),
             ],
             Chords = keydetect is KeydetectReading.Read { Chords: var chords } ? chords : [],
-            KeyEvents = keydetect is KeydetectReading.Read { KeyEvents: var events }
-                ?
-                [
-                    .. events.Select(change => new MachineDto.KeyEventDto
-                    {
-                        T = change.Seconds,
-                        Key = change.Key,
-                        R = change.R,
-                    }),
-                ]
-                : [],
+            KeyEvents = KeyEventsOf(keydetect),
         };
     }
 
