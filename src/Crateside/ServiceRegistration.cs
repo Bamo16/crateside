@@ -251,6 +251,9 @@ public static class ServiceRegistration
         services.AddSingleton<SourceRetentionStore>();
         services.AddSingleton<SourceIndex>();
         services.AddSingleton<SourceBackfill>();
+        services.AddSingleton<UnavailableSources>();
+        services.AddSingleton<SourceAvailability>();
+        services.AddHttpClient(SourceAvailability.ClientName);
         services.AddSingleton<DetectorBackfill>();
         services.AddSingleton<WorkingSetJanitor>();
         services.AddHostedService<JanitorWorker>();

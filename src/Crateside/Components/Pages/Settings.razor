@@ -35,6 +35,7 @@
 @inject TrueUpAll TrueUps
 @inject SourceRetentionStore RetentionStore
 @inject SourceBackfill SourceFill
+@inject SourceAvailability Availability
 @inject DetectorBackfill BackerFill
 
 <PageTitle>Settings · crateside</PageTitle>
@@ -382,9 +383,31 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                                 <text>@(_missingWorking ? "Counting…" : "Not counted yet")</text>
                             }
                         </span>
-                        <button class="outline" @onclick="CountMissingAsync"
+                        <button class="outline" @onclick="() => CountMissingAsync()"
                                 disabled="@(_missingWorking || _filling)">Count them</button>
                     </div>
+
+                    @if (_unavailable is { Count: > 0 } gone)
+                    {
+                        <div class="line">
+                            <span class="state">
+                                <span class="mono value">@gone.Count</span>
+                                unavailable since @gone.Min(source => source.FirstSeen).ToLocalTime().ToString("d MMM yyyy"),
+                                left out of the count
+                            </span>
+                            <button class="outline" @onclick="() => _showUnavailable = !_showUnavailable">@(_showUnavailable ? "Hide" : "Which")</button>
+                            <button class="outline" @onclick="() => CountMissingAsync(true)"
+                                    disabled="@(_missingWorking || _filling)">Check again</button>
+                        </div>
+
+                        @if (_showUnavailable)
+                        {
+                            @foreach (var source in gone)
+                            {
+                                <span class="status">@source.Song: @(source.Reason is UnavailableReason.Private ? "private or embedding blocked" : "removed")</span>
+                            }
+                        }
+                    }
 
                     @if (_missing is { Count: > 0 } toFetch && !_filling)
                     {
@@ -686,6 +709,8 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     private int _days;
     private IReadOnlyList<string>? _missing;
     private bool _missingWorking;
+    private IReadOnlyList<UnavailableSource>? _unavailable;
+    private bool _showUnavailable;
     private bool _filling;
     private int _filled;
     private int _fillTotal;
@@ -711,13 +736,18 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         _days = _retention.Days;
     }
 
-    private async Task CountMissingAsync()
+    private async Task CountMissingAsync(bool recheckAll = false)
     {
-        (_missingWorking, _missing, _fillFailures) = (true, null, null);
+        (_missingWorking, _missing, _unavailable, _fillFailures) = (true, null, null, null);
 
         try
         {
-            _missing = await Task.Run(SourceFill.Missing);
+            var report = await Availability.SplitAsync(
+                await Task.Run(SourceFill.Missing),
+                recheckAll
+            );
+
+            (_missing, _unavailable) = (report.Downloadable, report.Unavailable);
         }
         finally
         {
