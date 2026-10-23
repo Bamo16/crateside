@@ -236,6 +236,7 @@
             SpendDownState.Waiting(var opens, _) => $"On · opens {opens.ToLocalTime():ddd h:mm tt}",
             SpendDownState.Open(_, var resets) => $"Spending down until {resets.ToLocalTime():ddd h:mm tt}",
             SpendDownState.Spent(var weekly, _) => $"Spent down to {weekly:N0}%",
+            SpendDownState.CutOff(var resumes) => $"Waiting · limit hit, resumes {resumes.ToLocalTime():ddd h:mm tt}",
             SpendDownState.SessionFull(var session, _) => $"Waiting · 5-hour window at {session:N0}%",
             SpendDownState.Unread => "On · Claude use not read yet",
             _ => Spend.IsEnabled ? "On · not checked yet" : "Off",

@@ -104,5 +104,5 @@ A backend is trusted only after its own agreement check against verdicts already
 Each session and each resume spends Claude quota, about 37k tokens of start-up per track, and
 is capped at $2 by `--max-budget-usd`. The quota guard stops background judging at 85% of the
 week ([ADR 0053](adr/0053-judging-stops-at-85-percent-of-the-weekly-limit.md)), except in the
-weekly spend-down, which judges the backlog to its own ceiling, 98% by default, in the hours
+weekly spend-down, which judges the backlog to its own ceiling, 100% by default, in the last three hours
 before the reset ([ADR 0063](adr/0063-the-backlog-is-judged-in-a-weekly-spend-down.md)).

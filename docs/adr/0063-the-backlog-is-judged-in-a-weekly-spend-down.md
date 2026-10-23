@@ -49,3 +49,30 @@ not judged.
   retried in a loop through the night.
 - With whole-percent readings, a single track's delta is often 0 or 1; the rate comes from a
   night's lines together, not from one.
+
+## Amendment, 2026-10-23 — spend all of it, as late as possible
+
+The maintainer's aim is to spend every drop of quota that would otherwise expire at the reset, as
+late as possible so it does not compete with the user. The **Settings** line above is changed:
+
+- **Window 3 hours** (was 6), weekly ceiling **100%** (was 98%), five-hour ceiling **100%** (was
+  90%). All still **chosen**, still settings, so another user can hold some back. Quota unused at
+  the reset is lost, so a track the usage limit cuts off partway costs nothing that would
+  otherwise have been kept; the spend-down therefore keeps starting tracks until the usage source
+  refuses (a ceiling of 100% is reached at a reading of 100).
+- **A cut-off is harmless, and checked.** When the limit stops the claude session, the runner
+  finds `api_error_status` 429 or "hit your limit" in its output (the check ADR 0055's runner
+  already made for the ordinary stage) and returns *agent unavailable* before it looks at any
+  withheld verdict, so nothing reaches the ledger. The job is recorded `Cancelled`, which carries
+  no strike, and the song stays owed: a re-judge leaves the queue only when the ledger holds a
+  run from its cutoff on, and a backfill track stays outstanding until the ledger has a run for
+  it. Covered by `VerdictRunnerTests`, including a limit hit on the resume after a withheld
+  verdict.
+- **The spend-down holds itself after a cut-off.** The ordinary stage pauses judging on
+  *agent unavailable*; the spend-down does not (that would also stop intake after the window), and
+  instead takes no new track until the five-hour window's reset the last reading reported (an hour
+  if it gave none), then resumes if the weekly reset is still ahead. Without this a cut-off would
+  be retried every five minutes with the reading still at its ceiling. The hold also covers a
+  weekly limit hit before the reading shows 100%: one cheap failed attempt per five-hour window.
+- Not measured: how the CLI words the limit message beyond the two phrases above, and how far the
+  usage reading lags the real limit.

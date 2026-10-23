@@ -295,6 +295,24 @@ public sealed class VerdictRunnerTests : IDisposable
 
         Assert.True(result.IsAgentUnavailable);
         Assert.Single(Sessions.Requests);
+        Assert.Empty(Ledger.Read().Runs);
+    }
+
+    [Fact]
+    public async Task A_limit_hit_on_the_resume_after_a_withheld_verdict_records_nothing()
+    {
+        GiveEvidence();
+        GiveAudio();
+        Session(AsksForWindows);
+        Session(
+            writes: null,
+            stdout: """{"is_error":true,"api_error_status":429,"result":"hit your limit"}"""
+        );
+
+        var result = await RunAsync();
+
+        Assert.True(result.IsAgentUnavailable);
+        Assert.Empty(Ledger.Read().Runs);
     }
 
     [Fact]

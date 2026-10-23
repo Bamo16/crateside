@@ -36,5 +36,5 @@ still leaves that one standing. The per-track pass can let a track through an un
 
 The first bullet no longer covers the backlog. In the weekly spend-down, re-judges and the
 library backfill (and any intake it picks first) are judged up to the spend-down's own ceiling,
-98% by default, instead of stopping at 85% ([ADR 0063](0063-the-backlog-is-judged-in-a-weekly-spend-down.md)).
+100% by default, instead of stopping at 85% ([ADR 0063](0063-the-backlog-is-judged-in-a-weekly-spend-down.md)).
 The ordinary verdict stage still stops at 85%.
