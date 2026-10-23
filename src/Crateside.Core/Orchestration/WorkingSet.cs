@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Crateside.Core.Orchestration.Download;
 
 namespace Crateside.Core.Orchestration;
@@ -16,6 +17,11 @@ public sealed class WorkingSet(string? root = null)
 
     /// <summary>When the track's last stem left staging, which starts the source's retention clock (#133).</summary>
     public const string LeftStagingFileName = "left-staging.json";
+
+    private readonly ConcurrentDictionary<
+        string,
+        (DateTime Written, Acquisition? Acquisition)
+    > _acquisitions = new(StringComparer.Ordinal);
 
     /// <summary>The largest evidence file worth carrying rather than pointing at.</summary>
     private const long MaxInlineBytes = 32 * 1024;
@@ -85,16 +91,42 @@ public sealed class WorkingSet(string? root = null)
     public Acquisition? AcquisitionFor(string videoId) =>
         WorkingSetJsonContext.Default.Acquisition.ReadFileOrDefault(AcquisitionPathFor(videoId));
 
-    /// <summary>Every recorded acquisition, by video ID â€” what the rows are drawn from.</summary>
-    public IReadOnlyDictionary<string, Acquisition> Acquisitions() =>
-        VideoIds
-            .Select(videoId => (videoId, acquisition: AcquisitionFor(videoId)))
-            .Where(entry => entry.acquisition is not null)
-            .ToDictionary(
-                entry => entry.videoId,
-                entry => entry.acquisition!,
-                StringComparer.Ordinal
-            );
+    /// <summary>
+    /// Every recorded acquisition, by video ID — what the rows are drawn from. A folder's is read
+    /// again only when the folder's modified time moves, because a stat per folder costs as much
+    /// as the read and every write goes through a temporary file that moves it.
+    /// </summary>
+    public IReadOnlyDictionary<string, Acquisition> Acquisitions()
+    {
+        var found = new Dictionary<string, Acquisition>(StringComparer.Ordinal);
+
+        if (!Directory.Exists(_root))
+            return found;
+
+        foreach (var directory in new DirectoryInfo(_root).EnumerateDirectories())
+        {
+            var videoId = directory.Name;
+            var written = directory.LastWriteTimeUtc;
+
+            if (_acquisitions.TryGetValue(videoId, out var kept) && kept.Written == written)
+            {
+                if (kept.Acquisition is { } acquisition)
+                    found[videoId] = acquisition;
+
+                continue;
+            }
+
+            var read = AcquisitionFor(videoId);
+
+            if (read is not null || !File.Exists(AcquisitionPathFor(videoId)))
+                _acquisitions[videoId] = (written, read);
+
+            if (read is not null)
+                found[videoId] = read;
+        }
+
+        return found;
+    }
 
     /// <summary>Writes down how the download went, replacing whatever was there.</summary>
     public void SaveAcquisition(string videoId, Acquisition acquisition)

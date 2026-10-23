@@ -1,3 +1,4 @@
+using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Loop;
@@ -41,7 +42,8 @@ public sealed class CacheKeeperTests : IDisposable
             workLists,
             Tracks(),
             new SourceIndex(set, index),
-            new WarpTempoReader()
+            new WarpTempoReader(),
+            Paths()
         );
 
         await workLists.ScanAsync(TestContext.Current.CancellationToken);
@@ -69,7 +71,8 @@ public sealed class CacheKeeperTests : IDisposable
             workLists,
             tracks,
             new SourceIndex(set, Path.Combine(_directory, "source-index.json")),
-            tempos
+            tempos,
+            Paths()
         );
 
         tempos.Read(audio);
@@ -80,6 +83,9 @@ public sealed class CacheKeeperTests : IDisposable
 
         Assert.Equal(120, new WarpTempoReader(cache).Read(audio)!.Bpm, 4);
     }
+
+    private CratesidePaths Paths() =>
+        new() { StemTagCache = Path.Combine(_directory, "stem-tags.json") };
 
     private static TracksService Tracks() =>
         new(new TracksReads(() => new TracksView { Rows = [] }), new StageHub());

@@ -47,11 +47,11 @@ public sealed class ProcessedTracks
     /// When a file arrived, or null where the filesystem will not say — which Windows reports as
     /// 1601-01-01.
     /// </summary>
-    private static DateTimeOffset? CreationTimeOf(string path)
+    private static DateTimeOffset? CreationTimeOf(FileInfo file)
     {
         try
         {
-            var created = File.GetCreationTimeUtc(path);
+            var created = file.CreationTimeUtc;
 
             return created.Year > 1601 ? new DateTimeOffset(created, TimeSpan.Zero) : null;
         }
@@ -74,12 +74,14 @@ public sealed class ProcessedTracks
 
         foreach (var root in stemRoots.Where(Directory.Exists))
         {
-            foreach (var path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+            foreach (
+                var file in new DirectoryInfo(root).EnumerateFiles("*", SearchOption.AllDirectories)
+            )
             {
-                if (!SampleFiles.IsAudio(path))
+                if (!SampleFiles.IsAudio(file.Name))
                     continue;
 
-                if (StemTagReader.Read(path)?.Provenance is not { SourceVideoId: { } videoId } p)
+                if (StemTagReader.Read(file)?.Provenance is not { SourceVideoId: { } videoId } p)
                     continue;
 
                 if (!stemsByVideoId.TryGetValue(videoId, out var found))
@@ -88,7 +90,7 @@ public sealed class ProcessedTracks
                 found.Add(
                     new StemOnDisk
                     {
-                        Path = path,
+                        Path = file.FullName,
                         Root = root,
                         Preset = p.Preset,
                         IsCut = p.Model is not null,
@@ -96,7 +98,7 @@ public sealed class ProcessedTracks
                         IsAdopted = p.IsAdopted,
                         IsPremium = p.IsPremium,
                         SourceVideoId = videoId,
-                        CreatedAt = CreationTimeOf(path),
+                        CreatedAt = CreationTimeOf(file),
                     }
                 );
             }
