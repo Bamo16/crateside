@@ -468,11 +468,12 @@ it. The two run types below are named after which of **evidence** and **verdict*
   judging and separation take it before anything else they are due to pick, and asking
   for another replaces it. Held in
   memory, so a restart forgets it (ADR 0015). The one way a **library backfill** track is
-  judged outside an **idle window**.
-- **Weekly hold** — judging, backfill included, not starting a track while weekly Claude use
-  is at or above 85%. Not the user's pause: it is not remembered, and lifts by itself when the
-  figure drops or the weekly reset passes
-  ([ADR 0053](docs/adr/0053-judging-stops-at-85-percent-of-the-weekly-limit.md)).
+  judged outside the **spend-down**.
+- **Weekly hold** — the verdict stage not starting a track while weekly Claude use is at or
+  above 85%. Not the user's pause: it is not remembered, and lifts by itself when the figure
+  drops or the weekly reset passes
+  ([ADR 0053](docs/adr/0053-judging-stops-at-85-percent-of-the-weekly-limit.md)). The
+  **spend-down** has its own ceiling instead.
 - **Draining** — working the **work lists** down continuously, one track at a time,
   for as long as there is anything outstanding. The normal state of the system rather than
   an action someone takes: what limits separation is that two at once are ruinous,
@@ -491,16 +492,18 @@ it. The two run types below are named after which of **evidence** and **verdict*
 - **Library backfill** — library tracks tagged by hand before crateside, queued
   from the Library page to be judged and never cut. Marked when queued, so a track
   stays backfill after its download makes it stop being library-only. Judged only in
-  an **idle window**, never by the ordinary verdict stage, unless the user asks for
+  the **spend-down**, never by the ordinary verdict stage, unless the user asks for
   one first ([ADR 0035](docs/adr/0035-the-library-backfill-is-judged-only-in-idle-windows.md)).
 - **Sourceless song** — a library song StemForge cut before it recorded a source (about
   June 2026), so no video ID names it. Its row is library-only and keyed `name:` plus the
   file name without the preset, the identity the Library page already uses; renaming the
   files changes the key, and the song page follows. It has no upload, so nothing that needs
   one is offered, and it is never queued for backfill (#94).
-- **Idle window** — a five-hour Claude window that has read 0% for fifteen minutes.
-  One verdict spends it, then none for five hours
-  ([ADR 0029](docs/adr/0029-an-idle-window-is-opened-by-one-verdict.md)).
+- **Spend-down** — the hours before the weekly Claude reset (six by default), in which the
+  backlog is judged track after track until weekly use reaches its ceiling (98% by default),
+  pausing while the five-hour window is near its limit. Re-judges go before the **library
+  backfill** ([ADR 0063](docs/adr/0063-the-backlog-is-judged-in-a-weekly-spend-down.md)).
+  _Avoid_ "idle window": the roll it named is gone.
 
 ## Flagged ambiguities
 

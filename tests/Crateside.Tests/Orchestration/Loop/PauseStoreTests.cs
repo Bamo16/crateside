@@ -47,7 +47,7 @@ public sealed class PauseStoreTests : IDisposable
     }
 
     [Fact]
-    public void Judging_the_backfill_in_idle_windows_survives_a_restart_without_pausing_anything()
+    public void The_spend_down_switch_survives_a_restart_without_pausing_anything()
     {
         new PauseStore(StorePath).RememberBackfill(on: true);
 
@@ -55,16 +55,6 @@ public sealed class PauseStoreTests : IDisposable
 
         Assert.True(restarted.Backfill);
         Assert.False(restarted.Judging);
-    }
-
-    [Fact]
-    public void When_an_idle_window_last_judged_survives_a_restart()
-    {
-        var at = new DateTimeOffset(2026, 9, 26, 4, 0, 0, TimeSpan.Zero);
-
-        new PauseStore(StorePath).RememberBackfillJudged(at);
-
-        Assert.Equal(at, new PauseStore(StorePath).Read().BackfillJudgedAt);
     }
 
     [Fact]

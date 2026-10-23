@@ -10,7 +10,7 @@
 @inject DrainControl Separation
 @inject VerdictControl Judging
 @inject PauseStore Paused
-@inject WindowRoll Roll
+@inject SpendDown Spend
 @inject RejudgeQueue Rejudges
 @inject LedgerStore Ledger
 @inject BeatReader Beats
@@ -111,7 +111,7 @@
                 {
                     <text>resets <span class="mono">@weekResets.ToLocalTime().ToString("ddd t")</span> · </text>
                 }
-                judging stops at @QuotaGuard.WeeklyLimit.ToString("N0")%
+                judging stops at @QuotaGuard.WeeklyLimit.ToString("N0")%, the spend-down at @Spend.Settings.WeeklyCeiling%
             </span>
         </div>
         <div class="meter">
@@ -230,12 +230,15 @@
         Settings.Read().RefreshInterval is { TotalMinutes: > 0 } every ? (int)(MinutesPerDay / every.TotalMinutes) : null;
 
     private string Backfill =>
-        (Roll.IsEnabled, Roll.RolledAt) switch
+        Spend.State switch
         {
-            (false, _) => "Off",
-            (true, { } rolled) when DateTimeOffset.UtcNow - rolled < WindowRoll.Window =>
-                $"On · next in {Minutes(rolled + WindowRoll.Window - DateTimeOffset.UtcNow)}",
-            _ => "On · next once a window sits idle",
+            SpendDownState.Off => "Off",
+            SpendDownState.Waiting(var opens, _) => $"On · opens {opens.ToLocalTime():ddd h:mm tt}",
+            SpendDownState.Open(_, var resets) => $"Spending down until {resets.ToLocalTime():ddd h:mm tt}",
+            SpendDownState.Spent(var weekly, _) => $"Spent down to {weekly:N0}%",
+            SpendDownState.SessionFull(var session, _) => $"Waiting · 5-hour window at {session:N0}%",
+            SpendDownState.Unread => "On · Claude use not read yet",
+            _ => Spend.IsEnabled ? "On · not checked yet" : "Off",
         };
 
     /// <summary>The track a stage is working on, or idle.</summary>

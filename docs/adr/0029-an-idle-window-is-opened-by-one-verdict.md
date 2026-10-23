@@ -64,3 +64,8 @@ window.
 What a roll judges and when it may run are replaced by [ADR 0035](0035-the-library-backfill-is-judged-only-in-idle-windows.md):
 an idle window judges only the library backfill, whether judging is paused or not, and the toggle
 moved to Settings.
+
+## Amendment, 2026-10-23 — superseded by the weekly spend-down
+
+The idle-window roll is gone. The backlog is judged in the hours before the weekly reset, until
+weekly use reaches a ceiling ([ADR 0063](0063-the-backlog-is-judged-in-a-weekly-spend-down.md)).

@@ -65,8 +65,8 @@ public sealed class TrackAdd(
         );
 
     /// <summary>
-    /// Queues every library upload nothing ever judged, to be judged one per idle window and never
-    /// cut (#47, ADR 0035). Their audio is taken as it comes: the library already uses those files.
+    /// Queues every library upload nothing ever judged, to be judged in the weekly spend-down and
+    /// never cut (#47, ADR 0063). Their audio is taken as it comes: the library already uses those files.
     /// </summary>
     public int QueueUnjudged(IReadOnlyList<TrackRowFacts> known)
     {

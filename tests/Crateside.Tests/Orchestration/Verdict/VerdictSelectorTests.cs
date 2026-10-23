@@ -330,7 +330,7 @@ public sealed class VerdictSelectorTests : IDisposable
     }
 
     [Fact]
-    public void The_library_backfill_is_left_to_the_idle_window()
+    public void The_library_backfill_is_left_to_the_spend_down()
     {
         GiveEvidence("aaaaaaaaaaa");
         GiveEvidence("bbbbbbbbbbb");
@@ -362,7 +362,7 @@ public sealed class VerdictSelectorTests : IDisposable
     }
 
     [Fact]
-    public void An_idle_window_judges_only_the_backfill()
+    public void A_backfill_pick_takes_only_the_backfill()
     {
         GiveEvidence("aaaaaaaaaaa");
         GiveEvidence("bbbbbbbbbbb");
@@ -377,7 +377,7 @@ public sealed class VerdictSelectorTests : IDisposable
     }
 
     [Fact]
-    public void An_idle_window_with_no_backfill_waiting_judges_nothing()
+    public void A_backfill_pick_with_no_backfill_waiting_takes_nothing()
     {
         GiveEvidence("aaaaaaaaaaa");
 

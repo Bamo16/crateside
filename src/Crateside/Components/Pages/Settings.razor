@@ -24,10 +24,9 @@
 @inject PlaylistSettingsStore PlaylistStore
 @inject IntakeStore Intake
 @inject TracksService Tracks
-@inject WindowRoll Roll
+@inject SpendDown Spend
 @inject RejudgeQueue Rejudges
 @inject LedgerStore Ledger
-@inject PauseStore Remembered
 @inject CratesidePaths Paths
 @inject PathOverrideStore Overrides
 @inject IOptions<WarpOptions> Warps
@@ -185,16 +184,25 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                 <div class="name">
                     <span>Library backfill</span>
                     <span class="gist">
-                        Judges hand-tagged library tracks, one per idle Claude window (0% for 15
-                        minutes), then 5 hours off.
+                        Judges the backlog (re-judges, then hand-tagged library tracks) in the hours
+                        before the weekly Claude reset, until weekly use reaches the ceiling. Waits
+                        while the 5-hour window is near its limit, so new tracks still get judged.
                     </span>
                 </div>
                 <div class="control">
                     <div class="pills">
-                        <button class="pill @(Roll.IsEnabled ? "on plain" : "off")"
-                                @onclick="() => SetBackfill(true)">On</button>
-                        <button class="pill @(Roll.IsEnabled ? "off" : "on plain")"
-                                @onclick="() => SetBackfill(false)">Off</button>
+                        <button class="pill @(Spend.IsEnabled ? "on plain" : "off")"
+                                @onclick="() => Spend.SetEnabled(true)">On</button>
+                        <button class="pill @(Spend.IsEnabled ? "off" : "on plain")"
+                                @onclick="() => Spend.SetEnabled(false)">Off</button>
+                    </div>
+
+                    <div class="field">
+                        <label>Hours before the reset <input type="number" min="1" max="168" @bind="_spendHours" /></label>
+                        <label>Weekly ceiling % <input type="number" min="1" max="100" @bind="_spendWeekly" /></label>
+                        <label>5-hour ceiling % <input type="number" min="1" max="100" @bind="_spendSession" /></label>
+                        <button class="primary" @onclick="SaveSpendDown"
+                                disabled="@(PendingSpendDown == Spend.Settings)">Save</button>
                     </div>
 
                     <div class="counts">
@@ -211,7 +219,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                         </span>
                     </div>
 
-                    <span class="status">@NextWindow</span>
+                    <span class="status">@SpendDownNote</span>
                 </div>
             </div>
 
@@ -831,14 +839,48 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
     private int NotQueued => Rows.Count(row => row is { IsLibraryOnly: true, Verdict: null, IsAddedByUrl: false, HasUpload: true });
 
-    private string NextWindow =>
-        (Roll.IsEnabled, Roll.RolledAt) switch
+    private int _spendHours;
+    private int _spendWeekly;
+    private int _spendSession;
+
+    private SpendDownSettings PendingSpendDown =>
+        new()
         {
-            (false, _) => "Off, so the backfill waits.",
-            (true, { } rolled) when DateTimeOffset.UtcNow - rolled < WindowRoll.Window =>
-                $"Last judged one at {rolled.ToLocalTime():h:mm tt}; the next goes after {(rolled + WindowRoll.Window).ToLocalTime():h:mm tt}, once a window sits idle.",
-            _ => "The next goes as soon as a window sits at 0% for fifteen minutes.",
+            WindowHours = _spendHours,
+            WeeklyCeiling = _spendWeekly,
+            SessionCeiling = _spendSession,
         };
+
+    private string SpendDownNote =>
+        Spend.State switch
+        {
+            SpendDownState.Off => "Off, so the backlog waits.",
+            SpendDownState.Waiting(var opens, var resets) =>
+                $"Opens {opens.ToLocalTime():ddd h:mm tt}, {"hour".ToQuantity(Spend.Settings.WindowHours)} before the weekly reset at {resets.ToLocalTime():ddd h:mm tt}.",
+            SpendDownState.Open(var weekly, var resets) =>
+                $"Open: weekly use at {weekly:N0}%, judging until {Spend.Settings.WeeklyCeiling}% or the reset at {resets.ToLocalTime():ddd h:mm tt}.",
+            SpendDownState.Spent(var weekly, var resets) =>
+                $"Weekly use at {weekly:N0}%, the ceiling reached; nothing more until the reset at {resets.ToLocalTime():ddd h:mm tt}.",
+            SpendDownState.SessionFull(var session, { } resets) =>
+                $"The 5-hour window is at {session:N0}%; the spend-down waits for it to reset at {resets.ToLocalTime():h:mm tt}.",
+            SpendDownState.SessionFull(var session, _) =>
+                $"The 5-hour window is at {session:N0}%; the spend-down waits for it to reset.",
+            SpendDownState.Unread => "On, but Claude use or the weekly reset could not be read, so nothing is judged.",
+            _ => "On; the first check comes within five minutes of starting.",
+        };
+
+    private void SaveSpendDown()
+    {
+        Spend.Remember(PendingSpendDown);
+        LoadSpendDown();
+    }
+
+    private void LoadSpendDown() =>
+        (_spendHours, _spendWeekly, _spendSession) = (
+            Spend.Settings.WindowHours,
+            Spend.Settings.WeeklyCeiling,
+            Spend.Settings.SessionCeiling
+        );
 
     private IEnumerable<Folder> Folders =>
     [
@@ -854,13 +896,13 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     public void Dispose()
     {
         Tracks.Changed -= OnChanged;
-        Roll.Changed -= OnChanged;
+        Spend.Changed -= OnChanged;
     }
 
     protected override async Task OnInitializedAsync()
     {
         Tracks.Changed += OnChanged;
-        Roll.Changed += OnChanged;
+        Spend.Changed += OnChanged;
 
         await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
 
@@ -873,22 +915,13 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         _consume = saved.ConsumeOnArrival;
         _retention = RetentionStore.Read();
         _days = _retention.Days;
+        LoadSpendDown();
 
         await Load();
     }
 
     // Raised on a worker thread, never the circuit's, so the render is marshalled back.
     private void OnChanged() => _ = InvokeAsync(StateHasChanged);
-
-    private void SetBackfill(bool enabled)
-    {
-        if (enabled)
-            Roll.Enable();
-        else
-            Roll.Disable();
-
-        Remembered.RememberBackfill(Roll.IsEnabled);
-    }
 
     // Takes effect on the next poll, not at the next restart.
     private void SaveRefresh(int minutes)

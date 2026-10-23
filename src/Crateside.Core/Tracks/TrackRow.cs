@@ -199,7 +199,7 @@ public sealed record TrackRow
     /// <summary>The user pasted this track in rather than adding it to the playlist (ADR 0010).</summary>
     public bool IsAddedByUrl { get; init; }
 
-    /// <summary>Queued from the Library to be judged one per idle Claude window (ADR 0035).</summary>
+    /// <summary>Queued from the Library to be judged in the weekly spend-down (ADR 0035, ADR 0063).</summary>
     public bool IsBackfill { get; init; }
 
     /// <summary>Whether Remove can take this track out of crateside (ADR 0027).</summary>
@@ -379,9 +379,9 @@ public sealed record TrackRow
         {
             TrackState.Queued when Lookalike is { } like =>
                 $"is this {like.DisplayName}? judging waits for your answer",
-            TrackState.Queued when IsBackfill => "waiting for an idle Claude window",
+            TrackState.Queued when IsBackfill => "waiting for the weekly spend-down",
             TrackState.Downloading or TrackState.Detecting when IsBackfill =>
-                "then judged in an idle Claude window",
+                "then judged in the weekly spend-down",
             TrackState.Downloading => "then judging",
             TrackState.Detecting => "then judging",
             TrackState.Judging => "verdict in about a minute",

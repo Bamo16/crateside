@@ -39,7 +39,7 @@ public sealed class TrackInstructionStore(QueueFile file)
     public void AddByUrl(string videoId) =>
         Upsert(videoId, track => track with { AddedByUrl = true });
 
-    /// <summary>Leaves the track's verdict to an idle Claude window rather than the judging stage (ADR 0035).</summary>
+    /// <summary>Leaves the track's verdict to the weekly spend-down rather than the judging stage (ADR 0063).</summary>
     public void MarkBackfill(string videoId) =>
         Upsert(videoId, track => track with { Backfill = true });
 
