@@ -19,6 +19,8 @@ public sealed class VerdictDrainer(
     JobStore jobs,
     VerdictControl control,
     QuotaGuard guard,
+    RejudgeQueue rejudges,
+    WorkingSet workingSet,
     IOptions<CratesidePaths> paths
 ) : IStageDrainer
 {
@@ -43,7 +45,8 @@ public sealed class VerdictDrainer(
     }
 
     /// <summary>
-    /// Judges one library backfill track, paused or not: what an idle window spends (ADR 0035).
+    /// Judges one track an idle window spends itself on, paused or not: new intake, then a song
+    /// owed a re-judge, then a library backfill track (ADR 0035).
     /// </summary>
     public async Task<StageTick> JudgeBackfillAsync(CancellationToken ct = default)
     {
@@ -104,6 +107,45 @@ public sealed class VerdictDrainer(
         }
     }
 
+    /// <summary>The songs owed a re-judge whose evidence the working set holds or the ledger can give back.</summary>
+    private IReadOnlyList<LedgerRun> WithEvidence(IReadOnlyList<LedgerRun> owed)
+    {
+        if (owed.All(HasWorkingEvidence))
+            return owed;
+
+        var held = store.LatestEvidenceJson();
+
+        return [.. owed.Where(run => HasWorkingEvidence(run) || held.ContainsKey(run.Song))];
+    }
+
+    private bool HasWorkingEvidence(LedgerRun run) =>
+        run is { SourceVideoId: { } videoId } && workingSet.HasEvidence(videoId);
+
+    /// <summary>
+    /// Puts back the evidence the janitor cleared and drops the cached source pages, so the new
+    /// session reads them afresh; the run keeps the upload the last one was judged from.
+    /// </summary>
+    private WorkOrder PrepareRejudge(WorkOrder order, KeyLedger ledger)
+    {
+        var folder = workingSet.Prepare(order.VideoId);
+
+        if (
+            !workingSet.HasEvidence(order.VideoId)
+            && ledger.SongFor(order.VideoId) is { } song
+            && store.LatestEvidenceJson().TryGetValue(song, out var evidence)
+        )
+            File.WriteAllText(workingSet.EvidencePathFor(order.VideoId), evidence);
+
+        File.Delete(Path.Combine(folder, VerdictRunner.SourcesFileName));
+
+        return ledger.TryGetLatestByVideoId(order.VideoId, out var run) && run.SourceUrl is { } url
+            ? order with
+            {
+                SourceUrl = url,
+            }
+            : order;
+    }
+
     private async Task<StageTick> JudgeNextAsync(bool backfill, CancellationToken ct)
     {
         var hold = await guard.CheckAsync(ct);
@@ -129,10 +171,18 @@ public sealed class VerdictDrainer(
         var ledger = store.Read();
 
         WorkItem item;
+        var isRejudge = false;
 
         var picked = (backfill, hold, guard.PassedVideoId) switch
         {
-            (true, _, _) => selector.TryPickBackfill(view, ledger, out item),
+            (true, _, _) => selector.TryPickIdle(
+                view,
+                ledger,
+                WithEvidence(rejudges.Pending(ledger)),
+                includeIntake: !control.IsPaused,
+                out item,
+                out isRejudge
+            ),
             // Held, so only the track the user let through is judged
             (_, not null, { } passed) => selector.TryPick(view, ledger, passed, out item),
             _ => selector.TryPickNext(view, ledger, out item),
@@ -145,6 +195,9 @@ public sealed class VerdictDrainer(
             guard.ClearPass();
 
         var order = WorkOrder.Compose(item, ledger);
+
+        if (isRejudge)
+            order = PrepareRejudge(order, ledger);
 
         jobs.Record(item.VideoId, JobStage.Verdict, JobStatus.Running);
         control.Report($"Judging {order.Title}");

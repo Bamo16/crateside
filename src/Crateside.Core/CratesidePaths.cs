@@ -64,6 +64,10 @@ public sealed class CratesidePaths
             "unavailable-sources.json"
         );
 
+    /// <summary>The songs owed a fresh judgment.</summary>
+    public string RejudgeFile { get; set; } =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "rejudge.json");
+
     /// <summary>The marks the user has put on songs.</summary>
     public string TrackMarksFile { get; set; } =
         Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "track-marks.json");

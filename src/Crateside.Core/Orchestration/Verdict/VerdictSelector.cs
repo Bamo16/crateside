@@ -48,6 +48,55 @@ public sealed class VerdictSelector(
         return next is not null;
     }
 
+    /// <summary>
+    /// What an idle window judges: new intake first (unless judging is paused), then a song owed a
+    /// re-judge, then the library backfill.
+    /// </summary>
+    public bool TryPickIdle(
+        WorkListsView view,
+        KeyLedger ledger,
+        IReadOnlyList<LedgerRun> owed,
+        bool includeIntake,
+        out WorkItem next,
+        out bool isRejudge
+    )
+    {
+        isRejudge = false;
+
+        if (includeIntake && TryPickNext(view, ledger, out next))
+            return true;
+
+        if (TryPickRejudge(owed, out next))
+        {
+            isRejudge = true;
+
+            return true;
+        }
+
+        return TryPickBackfill(view, ledger, out next);
+    }
+
+    private bool TryPickRejudge(IReadOnlyList<LedgerRun> owed, out WorkItem next)
+    {
+        next = owed.Select(run => new WorkItem
+            {
+                VideoId = run.SourceVideoId ?? string.Empty,
+                Title = run.DisplayName,
+            })
+            .FirstOrDefault(item =>
+                item.VideoId is not ""
+                && StageEligibility.Allows(
+                    jobs,
+                    item.VideoId,
+                    JobStage.Verdict,
+                    maxStrikes,
+                    retrySucceeded: true
+                )
+            )!;
+
+        return next is not null;
+    }
+
     private bool IsJudgeable(WorkItem i, KeyLedger ledger) =>
         !i.IsUnavailable
         && workingSet.HasEvidence(i.VideoId)
