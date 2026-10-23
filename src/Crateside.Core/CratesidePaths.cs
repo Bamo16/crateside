@@ -53,6 +53,10 @@ public sealed class CratesidePaths
     public string TempoCache { get; set; } =
         Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "tempos.json");
 
+    /// <summary>The tags read off stem files, kept across restarts so a start does not open every file again.</summary>
+    public string StemTagCache { get; set; } =
+        Environment.SpecialFolder.LocalApplicationData.GetFolderPath("crateside", "stem-tags.json");
+
     /// <summary>The marks the user has put on songs.</summary>
     public string TrackMarksFile { get; set; } =
         Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "track-marks.json");

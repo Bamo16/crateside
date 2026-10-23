@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using AbleKit.Tags;
 using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
@@ -13,6 +14,11 @@ public sealed class StagingReader(LedgerStore store, FolderInfoReader? folderInf
 {
     private readonly FolderInfoReader _folderInfoReader =
         folderInfoReader ?? new FolderInfoReader();
+
+    private readonly ConcurrentDictionary<
+        string,
+        ((long Length, DateTime Written) Stamp, bool Has)
+    > _defaultClips = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Reads the staging folder and rolls its stems up into songs, newest-looking first.
@@ -55,7 +61,7 @@ public sealed class StagingReader(LedgerStore store, FolderInfoReader? folderInf
         ];
     }
 
-    private static StagedSong BuildSong(
+    private StagedSong BuildSong(
         string groupKey,
         IReadOnlyList<(string Path, StemTags? Tags)> group,
         FolderInfo folderInfo,
@@ -82,7 +88,30 @@ public sealed class StagingReader(LedgerStore store, FolderInfoReader? folderInf
         };
     }
 
-    private static StagedFile BuildStem(
+    private bool HasDefaultClip(string path)
+    {
+        var sidecar = $"{path}.asd";
+
+        if (new FileInfo(sidecar) is not { Exists: true } file)
+            return false;
+
+        var stamp = (file.Length, file.LastWriteTimeUtc);
+
+        if (_defaultClips.TryGetValue(sidecar, out var kept) && kept.Stamp == stamp)
+            return kept.Has;
+
+        // A sidecar that could not be read is not remembered: Live may have it open.
+        if (!AbletonReads.TryReadAnalysis(sidecar, out var analysis))
+            return false;
+
+        var has = analysis is { DefaultClip: not null };
+
+        _defaultClips[sidecar] = (stamp, has);
+
+        return has;
+    }
+
+    private StagedFile BuildStem(
         string path,
         StemTags? tags,
         FolderInfo folderInfo,
@@ -104,9 +133,7 @@ public sealed class StagingReader(LedgerStore store, FolderInfoReader? folderInf
                 : null,
             AbletonKey = abletonKey,
             HasPartialKey = abletonTags?.HasPartialKey ?? false,
-            HasDefaultClip =
-                AbletonReads.TryReadAnalysis($"{path}.asd", out var analysis)
-                && analysis is { DefaultClip: not null },
+            HasDefaultClip = HasDefaultClip(path),
             KeyDisagreesWithVerdict =
                 abletonKey is not null
                 && verdict?.Key is { } verdictKey

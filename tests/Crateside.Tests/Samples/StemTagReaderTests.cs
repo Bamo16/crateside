@@ -44,6 +44,59 @@ public sealed class StemTagReaderTests : IDisposable
         Assert.Null(StemTagReader.Read(_path));
     }
 
+    [Fact]
+    public void Saved_tags_are_used_after_a_restart_while_the_file_is_unchanged()
+    {
+        var cache = Path.Combine(Path.GetDirectoryName(_path)!, "stem-tags.json");
+        Title("Real");
+        var info = new FileInfo(_path);
+        File.WriteAllText(
+            cache,
+            $$"""
+            {"entries":[{"path":{{System.Text.Json.JsonSerializer.Serialize(
+                _path
+            )}},"length":{{info.Length}},"written":"{{info.LastWriteTimeUtc:O}}","title":"Kept","comment":"stemforge/0.3.1.0 | preset: Drums | source: https://www.youtube.com/watch?v=dQw4w9WgXcQ"}]}
+            """
+        );
+
+        StemTagReader.Load(cache);
+
+        Assert.Equal("Kept", StemTagReader.Read(_path)?.Title);
+        Assert.Equal("dQw4w9WgXcQ", StemTagReader.Read(_path)?.SourceVideoId);
+    }
+
+    [Fact]
+    public void Saved_tags_of_a_file_that_changed_since_are_read_again()
+    {
+        var cache = Path.Combine(Path.GetDirectoryName(_path)!, "stem-tags.json");
+        Title("Real");
+        var info = new FileInfo(_path);
+        File.WriteAllText(
+            cache,
+            $$"""
+            {"entries":[{"path":{{System.Text.Json.JsonSerializer.Serialize(
+                _path
+            )}},"length":{{info.Length}},"written":"{{info.LastWriteTimeUtc:O}}","title":"Kept"}]}
+            """
+        );
+        StemTagReader.Load(cache);
+        Title("Newer");
+
+        Assert.Equal("Newer", StemTagReader.Read(_path)?.Title);
+    }
+
+    [Fact]
+    public void Tags_read_are_saved_for_the_next_start()
+    {
+        var cache = Path.Combine(Path.GetDirectoryName(_path)!, "stem-tags.json");
+        Title("Saved");
+        Assert.Equal("Saved", StemTagReader.Read(_path)?.Title);
+
+        StemTagReader.Save(cache);
+
+        Assert.Contains("Saved", File.ReadAllText(cache));
+    }
+
     private void Title(string title)
     {
         using var file = TagLib.File.Create(_path);

@@ -22,6 +22,7 @@ public sealed class TracksService : IDisposable
     /// <summary>Tracks already announced as ready to warp, so each is announced once.</summary>
     private readonly HashSet<string> _announced = new(StringComparer.Ordinal);
 
+    private readonly Lock _gate = new();
     private readonly ITracksReader _reader;
     private readonly PlaylistSettingsStore? _settings;
     private readonly StageHub _hub;
@@ -31,6 +32,10 @@ public sealed class TracksService : IDisposable
 
     /// <summary>Whether a read has landed yet, which is what makes the first one different.</summary>
     private bool _seeded;
+
+    private TaskCompletionSource? _running;
+    private TaskCompletionSource? _next;
+    private DateTimeOffset _runningSince;
 
     private readonly ActionLog? _actions;
     private DateTimeOffset _filedSince;
@@ -78,11 +83,18 @@ public sealed class TracksService : IDisposable
     /// <summary>When the rows were last rebuilt, whether or not that rebuild succeeded.</summary>
     public DateTimeOffset? LastReadAt { get; private set; }
 
-    /// <summary>Rebuilds if the rows are older than <paramref name="maxAge"/>.</summary>
-    public Task EnsureFreshAsync(TimeSpan maxAge, CancellationToken ct = default) =>
-        Current is not null && LastReadAt is { } read && _time.GetUtcNow() - read < maxAge
-            ? Task.CompletedTask
-            : RefreshAsync(ct);
+    /// <summary>Rebuilds if the rows are older than <paramref name="maxAge"/>, joining a read already in flight that began within it.</summary>
+    public Task EnsureFreshAsync(TimeSpan maxAge, CancellationToken ct = default)
+    {
+        if (Current is not null && LastReadAt is { } read && _time.GetUtcNow() - read < maxAge)
+            return Task.CompletedTask;
+
+        lock (_gate)
+            if (_running is { } running && _time.GetUtcNow() - _runningSince < maxAge)
+                return Settled(running.Task, ct);
+
+        return RefreshAsync(ct);
+    }
 
     /// <summary>Why the last rebuild failed, or null if it did not.</summary>
     public string? LastError { get; private set; }
@@ -94,12 +106,78 @@ public sealed class TracksService : IDisposable
         _poll.Dispose();
     }
 
-    /// <summary>Rebuilds now, whatever the timer was going to do.</summary>
-    public async Task RefreshAsync(CancellationToken ct = default)
+    /// <summary>
+    /// Rebuilds now, whatever the timer was going to do. A call that arrives mid-read waits for one
+    /// follow-up read, which all such callers share, since the read in flight may predate their change.
+    /// </summary>
+    public Task RefreshAsync(CancellationToken ct = default)
+    {
+        lock (_gate)
+        {
+            if (_running is null)
+            {
+                _running = NewRead();
+                _runningSince = _time.GetUtcNow();
+                _ = Task.Run(ReadUntilIdleAsync, CancellationToken.None);
+
+                return Settled(_running.Task, ct);
+            }
+
+            return Settled((_next ??= NewRead()).Task, ct);
+        }
+    }
+
+    private static TaskCompletionSource NewRead() =>
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>A caller giving up stops waiting; the shared read carries on for the others.</summary>
+    private static async Task Settled(Task read, CancellationToken ct)
     {
         try
         {
-            Current = await _reader.ReadAsync(ct);
+            await read.WaitAsync(ct);
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task ReadUntilIdleAsync()
+    {
+        while (true)
+        {
+            try
+            {
+                await ReadOnceAsync();
+            }
+            catch (Exception ex)
+            {
+                // A handler of Changed threw; the waiters must still be released.
+                LastError = ex.Message;
+            }
+
+            TaskCompletionSource done;
+            bool again;
+
+            lock (_gate)
+            {
+                done = _running!;
+                again = _next is not null;
+                _running = _next;
+                _next = null;
+                _runningSince = _time.GetUtcNow();
+            }
+
+            done.SetResult();
+
+            if (!again)
+                return;
+        }
+    }
+
+    private async Task ReadOnceAsync()
+    {
+        try
+        {
+            Current = await _reader.ReadAsync();
             LastError = null;
         }
         catch (OperationCanceledException)
