@@ -207,9 +207,8 @@ public sealed class VerdictDrainer(
             var result = await runner.RunAsync(order, ct);
 
             // Cancelled, not Failed: a session that never ran is not this track's fault, and
-            // Cancelled carries no strike. Then paused, since a further attempt would return
-            // instantly and spend a strike for nothing — on every track in the queue, not just
-            // this one.
+            // Cancelled carries no strike. The ordinary stage then pauses, since a further attempt
+            // would return instantly on every track in the queue; the spend-down holds itself.
             if (result.IsAgentUnavailable)
             {
                 jobs.Record(
@@ -218,9 +217,11 @@ public sealed class VerdictDrainer(
                     JobStatus.Cancelled,
                     error: result.Error
                 );
-                control.Pause();
 
-                return StageTick.Ran(order, isSuccess: false, result.Error);
+                if (!backfill)
+                    control.Pause();
+
+                return StageTick.AgentUnavailable(order, result.Error);
             }
 
             jobs.Record(

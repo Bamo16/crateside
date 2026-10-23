@@ -6,13 +6,13 @@ namespace Crateside.Core.Quota;
 public sealed record SpendDownSettings
 {
     /// <summary>How many hours before the weekly reset the spend-down opens.</summary>
-    public int WindowHours { get; init; } = 6;
+    public int WindowHours { get; init; } = 3;
 
     /// <summary>Weekly use, as a percentage, at which the spend-down stops.</summary>
-    public int WeeklyCeiling { get; init; } = 98;
+    public int WeeklyCeiling { get; init; } = 100;
 
     /// <summary>Five-hour use, as a percentage, at which the spend-down waits for the window to reset.</summary>
-    public int SessionCeiling { get; init; } = 90;
+    public int SessionCeiling { get; init; } = 100;
 }
 
 /// <summary>The spend-down the user chose in Settings, kept in <c>%APPDATA%\crateside\spend-down.json</c>.</summary>

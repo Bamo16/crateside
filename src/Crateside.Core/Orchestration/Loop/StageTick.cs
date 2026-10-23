@@ -33,6 +33,9 @@ public sealed record StageTick
     public bool IsSuccess { get; init; }
     public string? Error { get; init; }
 
+    /// <summary>The agent could not run (allowance spent, or not logged in), which says nothing about the track.</summary>
+    public bool IsAgentUnavailable { get; init; }
+
     /// <summary>
     /// Something a successful pass did that the user would want to know about — a deletion, say.
     /// Not an error, and not every pass has one.
@@ -50,6 +53,12 @@ public sealed record StageTick
             Subject = order.Title,
             IsSuccess = isSuccess,
             Error = error,
+        };
+
+    public static StageTick AgentUnavailable(WorkOrder order, string? error) =>
+        Ran(order, isSuccess: false, error) with
+        {
+            IsAgentUnavailable = true,
         };
 
     /// <summary>For a stage whose work is not described by a <see cref="WorkOrder"/>.</summary>

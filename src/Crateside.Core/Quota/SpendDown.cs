@@ -20,8 +20,11 @@ public sealed class SpendDown(
     TimeProvider time
 )
 {
+    private static readonly TimeSpan CutOffFallback = TimeSpan.FromHours(1);
+
     private readonly Lock _gate = new();
 
+    private DateTimeOffset? _cutOffUntil;
     private bool _enabled = remembered.Read().Backfill;
     private SpendDownSettings _settings = store.Read();
     private QuotaSnapshot _last = QuotaSnapshot.Unknown;
@@ -61,7 +64,8 @@ public sealed class SpendDown(
     public static SpendDownState Decide(
         QuotaSnapshot quota,
         SpendDownSettings chosen,
-        DateTimeOffset now
+        DateTimeOffset now,
+        DateTimeOffset? cutOffUntil = null
     )
     {
         if (
@@ -77,6 +81,9 @@ public sealed class SpendDown(
 
         if (weekly >= chosen.WeeklyCeiling)
             return new SpendDownState.Spent(weekly, resets);
+
+        if (cutOffUntil is { } until && now < until)
+            return new SpendDownState.CutOff(until);
 
         if (quota.Utilization is not { } session)
             return new SpendDownState.Unread();
@@ -130,6 +137,19 @@ public sealed class SpendDown(
         if (tick.Outcome is not StageOutcome.Ran)
             return null;
 
+        if (tick.IsAgentUnavailable)
+        {
+            lock (_gate)
+                _cutOffUntil =
+                    before.ResetsAt is { } rolls && rolls > time.GetUtcNow()
+                        ? rolls
+                        : time.GetUtcNow() + CutOffFallback;
+
+            Settle(before);
+
+            return new SpendDownPass(tick, weeklyBefore, WeeklyAfter: null);
+        }
+
         var after = await ReadAsync(ct);
 
         Settle(after);
@@ -163,7 +183,7 @@ public sealed class SpendDown(
 
         lock (_gate)
             _state = state = _enabled
-                ? Decide(quota, _settings, time.GetUtcNow())
+                ? Decide(quota, _settings, time.GetUtcNow(), _cutOffUntil)
                 : new SpendDownState.Off();
 
         Changed?.Invoke();
@@ -187,6 +207,9 @@ public abstract record SpendDownState
 
     /// <summary>Weekly use has reached the ceiling, so nothing more is judged before the reset.</summary>
     public sealed record Spent(double Weekly, DateTimeOffset ResetsAt) : SpendDownState;
+
+    /// <summary>A track was cut off by the usage limit, so nothing more starts until the five-hour window rolls.</summary>
+    public sealed record CutOff(DateTimeOffset ResumesAt) : SpendDownState;
 
     public sealed record SessionFull(double Session, DateTimeOffset? ResetsAt) : SpendDownState;
 }

@@ -499,8 +499,8 @@ it. The two run types below are named after which of **evidence** and **verdict*
   file name without the preset, the identity the Library page already uses; renaming the
   files changes the key, and the song page follows. It has no upload, so nothing that needs
   one is offered, and it is never queued for backfill (#94).
-- **Spend-down** — the hours before the weekly Claude reset (six by default), in which the
-  backlog is judged track after track until weekly use reaches its ceiling (98% by default),
+- **Spend-down** — the hours before the weekly Claude reset (three by default), in which the
+  backlog is judged track after track until weekly use reaches its ceiling (100% by default, so every drop that would expire at the reset is spent),
   pausing while the five-hour window is near its limit. Re-judges go before the **library
   backfill** ([ADR 0063](docs/adr/0063-the-backlog-is-judged-in-a-weekly-spend-down.md)).
   _Avoid_ "idle window": the roll it named is gone.

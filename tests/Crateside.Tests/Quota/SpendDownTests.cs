@@ -61,12 +61,12 @@ public sealed class SpendDownTests : IDisposable
     [Fact]
     public async Task Outside_the_window_nothing_is_judged()
     {
-        _time = new(Reset - TimeSpan.FromHours(7));
+        _time = new(Reset - TimeSpan.FromHours(4));
         var spend = Spend();
 
         Assert.Null(await spend.RunOnceAsync(TestContext.Current.CancellationToken));
         Assert.Equal(0, _judge.Calls);
-        Assert.Equal(new SpendDownState.Waiting(Reset - TimeSpan.FromHours(6), Reset), spend.State);
+        Assert.Equal(new SpendDownState.Waiting(Reset - TimeSpan.FromHours(3), Reset), spend.State);
     }
 
     [Fact]
@@ -77,9 +77,9 @@ public sealed class SpendDownTests : IDisposable
 
         var passes = await RunUntilNothingAsync(spend);
 
-        Assert.Equal(3, passes);
-        Assert.Equal(98, _usage.Weekly);
-        Assert.Equal(new SpendDownState.Spent(98, Reset), spend.State);
+        Assert.Equal(5, passes);
+        Assert.Equal(100, _usage.Weekly);
+        Assert.Equal(new SpendDownState.Spent(100, Reset), spend.State);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public sealed class SpendDownTests : IDisposable
     [Fact]
     public async Task A_weekly_reading_at_the_ceiling_judges_nothing()
     {
-        _usage.Weekly = 98;
+        _usage.Weekly = 100;
 
         Assert.Null(await Spend().RunOnceAsync(TestContext.Current.CancellationToken));
         Assert.Equal(0, _judge.Calls);
@@ -116,7 +116,7 @@ public sealed class SpendDownTests : IDisposable
     public async Task A_five_hour_window_near_its_limit_holds_the_spend_down()
     {
         _usage.Weekly = 50;
-        _usage.Session = 90;
+        _usage.Session = 100;
         var spend = Spend();
 
         Assert.Null(await spend.RunOnceAsync(TestContext.Current.CancellationToken));
@@ -130,8 +130,10 @@ public sealed class SpendDownTests : IDisposable
         _usage.Weekly = 50;
         _usage.Session = 85;
         _judge.SessionPerTrack = 3;
+        var spend = Spend();
+        spend.Remember(spend.Settings with { SessionCeiling = 90 });
 
-        Assert.Equal(2, await RunUntilNothingAsync(Spend()));
+        Assert.Equal(2, await RunUntilNothingAsync(spend));
         Assert.Equal(91, _usage.Session);
     }
 
@@ -242,6 +244,29 @@ public sealed class SpendDownTests : IDisposable
         );
     }
 
+    [Fact]
+    public async Task A_track_cut_off_by_the_limit_holds_the_spend_down_until_the_five_hour_window_rolls()
+    {
+        _judge.Unavailable = true;
+        var spend = Spend();
+
+        var cutOff = await spend.RunOnceAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(cutOff?.Tick.IsAgentUnavailable);
+        Assert.Equal(new SpendDownState.CutOff(Reset - TimeSpan.FromHours(1)), spend.State);
+
+        _time.Advance(TimeSpan.FromMinutes(30));
+        _judge.Unavailable = false;
+
+        Assert.Null(await spend.RunOnceAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(1, _judge.Calls);
+
+        _time.SetUtcNow(Reset - TimeSpan.FromMinutes(59));
+
+        Assert.NotNull(await spend.RunOnceAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(2, _judge.Calls);
+    }
+
     private sealed class Usage : IQuotaReader
     {
         public double Weekly { get; set; } = 50;
@@ -273,11 +298,24 @@ public sealed class SpendDownTests : IDisposable
     {
         public Usage Usage { get; set; } = null!;
         public double SessionPerTrack { get; set; }
+        public bool Unavailable { get; set; }
         public int Calls { get; private set; }
 
         public Task<StageTick> JudgeBackfillAsync(CancellationToken ct = default)
         {
             Calls++;
+
+            if (Unavailable)
+                return Task.FromResult(
+                    new StageTick
+                    {
+                        Outcome = StageOutcome.Ran,
+                        Subject = $"Track {Calls}",
+                        IsAgentUnavailable = true,
+                        Error = "the Claude allowance is spent",
+                    }
+                );
+
             Usage.Weekly += 1;
             Usage.Session += SessionPerTrack;
 
