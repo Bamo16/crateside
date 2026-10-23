@@ -19,7 +19,7 @@ public sealed class VerdictSelector(
     /// <summary>
     /// The next track to judge, oldest-added first, skipping anything the ledger (not the view)
     /// has judged, undetected, in flight, given up on, parked, or looking like a judged song.
-    /// The library backfill waits for an idle window unless the user asked for it (ADR 0035).
+    /// The library backfill waits for the weekly spend-down unless the user asked for it (ADR 0063).
     /// </summary>
     public bool TryPickNext(WorkListsView view, KeyLedger ledger, out WorkItem next)
     {
@@ -40,7 +40,7 @@ public sealed class VerdictSelector(
         return next is not null;
     }
 
-    /// <summary>The next library backfill track, for an idle window to judge; never anything else.</summary>
+    /// <summary>The next library backfill track, for the spend-down to judge; never anything else.</summary>
     public bool TryPickBackfill(WorkListsView view, KeyLedger ledger, out WorkItem next)
     {
         next = view.Outstanding.FirstOrDefault(i => i.IsBackfill && IsJudgeable(i, ledger))!;
@@ -49,7 +49,7 @@ public sealed class VerdictSelector(
     }
 
     /// <summary>
-    /// What an idle window judges: new intake first (unless judging is paused), then a song owed a
+    /// What the spend-down judges: new intake first (unless judging is paused), then a song owed a
     /// re-judge, then the library backfill.
     /// </summary>
     public bool TryPickIdle(

@@ -22,7 +22,7 @@ public sealed class VerdictDrainer(
     RejudgeQueue rejudges,
     WorkingSet workingSet,
     IOptions<CratesidePaths> paths
-) : IStageDrainer
+) : IStageDrainer, IBackfillJudge
 {
     private readonly CratesidePaths _paths = paths.Value;
     private readonly SemaphoreSlim _oneAtATime = new(1, 1);
@@ -45,8 +45,8 @@ public sealed class VerdictDrainer(
     }
 
     /// <summary>
-    /// Judges one track an idle window spends itself on, paused or not: new intake, then a song
-    /// owed a re-judge, then a library backfill track (ADR 0035).
+    /// Judges one track for the weekly spend-down, paused or not: new intake, then a song owed a
+    /// re-judge, then a library backfill track. The spend-down's ceiling replaces the weekly hold (ADR 0063).
     /// </summary>
     public async Task<StageTick> JudgeBackfillAsync(CancellationToken ct = default)
     {
@@ -148,12 +148,12 @@ public sealed class VerdictDrainer(
 
     private async Task<StageTick> JudgeNextAsync(bool backfill, CancellationToken ct)
     {
-        var hold = await guard.CheckAsync(ct);
+        var hold = backfill ? null : await guard.CheckAsync(ct);
 
-        if (hold is null)
+        if (!backfill && hold is null)
             guard.ClearPass();
 
-        if (hold is not null && (backfill || guard.PassedVideoId is null))
+        if (hold is not null && guard.PassedVideoId is null)
             return StageTick.Held(hold.Reason);
 
         WorkListsView view;

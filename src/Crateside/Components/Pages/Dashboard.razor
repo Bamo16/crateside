@@ -39,7 +39,7 @@
 @inject JobStore Jobs
 @inject DrainControl Separation
 @inject VerdictControl Judging
-@inject WindowRoll Roll
+@inject SpendDown Spend
 @inject IQuotaReader Quota
 @inject StageSignals Signals
 @inject CratesidePaths Paths
@@ -184,8 +184,8 @@
                                 </span>
                                 <p class="band-status">
                                     The audit cannot check their keys. Queuing cuts nothing: each is fetched and
-                                    detected, about 44 MB apiece until judged, one per idle Claude window when
-                                    Settings has that on.
+                                    detected, about 44 MB apiece until judged, in the hours before the weekly
+                                    Claude reset when Settings has the spend-down on.
                                 </p>
                             </div>
                         }
@@ -742,7 +742,7 @@
         Tracks.Changed += OnChanged;
         Separation.Changed += OnChanged;
         Judging.Changed += OnChanged;
-        Roll.Changed += OnChanged;
+        Spend.Changed += OnChanged;
 
         Count(Summary.Current);
         _loudness = await Task.Run(Levels.Spread);
@@ -769,7 +769,7 @@
         Tracks.Changed -= OnChanged;
         Separation.Changed -= OnChanged;
         Judging.Changed -= OnChanged;
-        Roll.Changed -= OnChanged;
+        Spend.Changed -= OnChanged;
 
         await _circuit.CancelAsync();
         _clock?.Dispose();

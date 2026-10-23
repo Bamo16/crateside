@@ -3,13 +3,10 @@ using Crateside.Core;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Jobs;
-using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Verdict;
-using Crateside.Core.Quota;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Time.Testing;
 
 namespace Crateside.Tests.Orchestration.Verdict;
 
@@ -281,43 +278,5 @@ public sealed class RejudgeTests : IDisposable
                 out _
             )
         );
-    }
-
-    [Fact]
-    public async Task A_re_judge_is_held_by_the_quota_guard_like_any_backfill_judgment()
-    {
-        var owing = Queue(Owing);
-        var ledger = TestLedger.Store();
-        QuotaGuard guard = new(new SpentWeek(), new FakeTimeProvider());
-        // The hold returns before the queue or the runner is reached, so neither is needed.
-        VerdictDrainer drainer = new(
-            ledger,
-            queue: null!,
-            runner: null!,
-            new VerdictSelector(Jobs, Set),
-            Jobs,
-            new VerdictControl(startPaused: false),
-            guard,
-            owing,
-            Set,
-            Options.Create(new CratesidePaths())
-        );
-
-        var tick = await drainer.JudgeBackfillAsync(TestContext.Current.CancellationToken);
-
-        Assert.Equal(StageOutcome.Held, tick.Outcome);
-    }
-
-    private sealed class SpentWeek : IQuotaReader
-    {
-        public Task<QuotaSnapshot> ReadAsync(CancellationToken ct = default) =>
-            Task.FromResult(
-                new QuotaSnapshot
-                {
-                    Utilization = 0,
-                    WeeklyUtilization = QuotaGuard.WeeklyLimit + 5,
-                    WeeklyResetsAt = DateTimeOffset.Parse("2026-10-30T00:00:00+00:00"),
-                }
-            );
     }
 }

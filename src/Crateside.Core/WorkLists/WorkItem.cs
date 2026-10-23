@@ -73,7 +73,7 @@ public sealed record WorkItem
     /// <summary>When the user last asked for this track's files to be made again (#50).</summary>
     public DateTimeOffset? CutRequestedAt { get; init; }
 
-    /// <summary>Judged only in an idle Claude window, unless the user asks for it first (ADR 0035).</summary>
+    /// <summary>Judged only in the weekly spend-down, unless the user asks for it first (ADR 0063).</summary>
     public bool IsBackfill { get; init; }
 
     public string WatchUrl => $"https://www.youtube.com/watch?v={VideoId}";

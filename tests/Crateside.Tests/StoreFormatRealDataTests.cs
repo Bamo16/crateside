@@ -91,15 +91,7 @@ public partial class StoreFormatRealDataTests
         {
             var read = new PauseStore(path).Read();
 
-            Assert.Equal(
-                new PausedStages
-                {
-                    Separation = true,
-                    Backfill = true,
-                    BackfillJudgedAt = DateTimeOffset.Parse("2026-09-27T12:19:00+00:00"),
-                },
-                read
-            );
+            Assert.Equal(new PausedStages { Separation = true, Backfill = true }, read);
         }
         finally
         {

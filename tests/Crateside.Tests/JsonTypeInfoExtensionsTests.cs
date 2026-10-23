@@ -39,11 +39,7 @@ public sealed class JsonTypeInfoExtensionsTests : IDisposable
     public void A_write_round_trips_and_leaves_no_temporary_file()
     {
         var path = PathOf("nested/paused.json");
-        var stages = new PausedStages
-        {
-            Judging = true,
-            BackfillJudgedAt = DateTimeOffset.UnixEpoch,
-        };
+        var stages = new PausedStages { Judging = true, Backfill = true };
 
         PauseJsonContext.Default.PausedStages.WriteFile(path, stages);
 

@@ -61,7 +61,7 @@ public sealed record TrackInstruction
     /// </summary>
     public DateTimeOffset? CutRequestedAt { get; init; }
 
-    /// <summary>Queued from the Library to be judged, one per idle Claude window (ADR 0035).</summary>
+    /// <summary>Queued from the Library to be judged in the weekly spend-down (ADR 0035, ADR 0063).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool Backfill { get; init; }
 

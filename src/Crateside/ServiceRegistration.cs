@@ -372,8 +372,11 @@ public static class ServiceRegistration
         );
         services.AddSingleton<IQuotaReader, QuotaReader>();
         services.AddSingleton<QuotaGuard>();
-        services.AddSingleton<WindowRoll>();
-        services.AddHostedService<WindowRollWorker>();
+        // The drainer's own instance, so a spend-down pass and the verdict stage share its one-at-a-time gate.
+        services.AddSingleton<IBackfillJudge>(sp => sp.GetRequiredService<VerdictDrainer>());
+        services.AddSingleton<SpendDownStore>();
+        services.AddSingleton<SpendDown>();
+        services.AddHostedService<SpendDownWorker>();
 
         return services;
     }

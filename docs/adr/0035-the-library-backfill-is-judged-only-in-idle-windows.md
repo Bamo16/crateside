@@ -59,3 +59,8 @@ The last bullet above no longer holds. When an idle window judges a backfill tra
 kept in `paused.json` (`BackfillJudgedAt`) and read back at start, so a restart keeps the five
 hours. Done unasked, overnight, because restarts are frequent and each one could otherwise spend a
 second verdict early.
+
+## Amendment, 2026-10-23 — superseded by the weekly spend-down
+
+The idle-window roll is gone. The backlog is judged in the hours before the weekly reset, until
+weekly use reaches a ceiling ([ADR 0063](0063-the-backlog-is-judged-in-a-weekly-spend-down.md)).
