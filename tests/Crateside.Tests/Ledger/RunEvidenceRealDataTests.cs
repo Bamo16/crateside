@@ -6,6 +6,14 @@ namespace Crateside.Tests.Ledger;
 
 public sealed class RunEvidenceRealDataTests
 {
+    /// <summary>The current three (ADR 0055), the retired bake-off's three, and those with madmom and edma backfilled (#139).</summary>
+    private static readonly string[] DetectorSets =
+    [
+        "Essentia edma, ffmpeg keydetect, madmom",
+        "CREMA, ffmpeg keydetect, librosa (K-S)",
+        "CREMA, Essentia edma, ffmpeg keydetect, librosa (K-S), madmom",
+    ];
+
     private static bool Available => TestLedger.HasReal;
 
     private static readonly Lazy<IReadOnlyList<RunEvidence>> Evidence = new(() =>
@@ -84,8 +92,13 @@ public sealed class RunEvidenceRealDataTests
                 if (e.Algorithms.Count is 0)
                     return;
 
-                // Runs from before #139 hold the three original readings; backfilled ones add madmom and edma.
-                Assert.Contains(e.Algorithms.Count, (int[])[3, 5]);
+                Assert.Contains(
+                    string.Join(
+                        ", ",
+                        e.Algorithms.Select(result => result.Name).Order(StringComparer.Ordinal)
+                    ),
+                    DetectorSets
+                );
                 Assert.Equal(3, e.Agreement.Count);
                 Assert.All(
                     e.Agreement,
