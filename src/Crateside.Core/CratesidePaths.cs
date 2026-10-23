@@ -57,6 +57,13 @@ public sealed class CratesidePaths
     public string StemTagCache { get; set; } =
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("crateside", "stem-tags.json");
 
+    /// <summary>Videos YouTube reports gone or private, so their tracks stop counting as missing sources.</summary>
+    public string UnavailableSourcesFile { get; set; } =
+        Environment.SpecialFolder.LocalApplicationData.GetFolderPath(
+            "crateside",
+            "unavailable-sources.json"
+        );
+
     /// <summary>The marks the user has put on songs.</summary>
     public string TrackMarksFile { get; set; } =
         Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "track-marks.json");
