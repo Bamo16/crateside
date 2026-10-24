@@ -21,7 +21,7 @@ public sealed class SampleReadingsReader(
             Presets = await presets.ReadAsync(ct),
             LibraryTags = AbletonReads.TagsOrEmpty(fileIndex.Read, paths.LibraryFolder),
             TempoOf = warpTempos.Read,
-            BeatsOf = beats.Read,
+            BeatsOf = beats.ReadFor,
             WrittenWarp = written.Of,
         };
 }

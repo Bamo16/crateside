@@ -9,7 +9,7 @@ namespace Crateside.Core.Orchestration;
 /// Keeps <c>%LOCALAPPDATA%\crateside\source-index.json</c> current: every track's source audio on
 /// disk, held in the working set or kept as a sample, found by video ID or song (#133).
 /// </summary>
-public sealed class SourceIndex(WorkingSet workingSet, string? path = null)
+public sealed class SourceIndex(WorkingSet workingSet, string? path = null) : ISourceLocator
 {
     private readonly string _path =
         path
@@ -20,6 +20,11 @@ public sealed class SourceIndex(WorkingSet workingSet, string? path = null)
 
     private readonly Lock _gate = new();
     private string? _written;
+    private volatile IReadOnlyDictionary<string, string>? _known;
+
+    public string? PathOf(string videoId) =>
+        (_known ??= KnownFromFile()).GetValueOrDefault(videoId)
+        ?? (workingSet.TryGetSource(videoId, out var held) ? held : null);
 
     /// <summary>Every source on disk: the working set's downloads first, then the samples kept.</summary>
     public IReadOnlyList<SourceEntry> Entries(ProcessedTracks processed, KeyLedger ledger) =>
@@ -52,11 +57,12 @@ public sealed class SourceIndex(WorkingSet workingSet, string? path = null)
     /// <summary>Rewrites the file when what it lists has changed.</summary>
     public void Refresh(ProcessedTracks processed, KeyLedger ledger)
     {
+        var entries = Entries(processed, ledger);
+
+        _known = ByVideoId(entries);
+
         var json = JsonSerializer.Serialize(
-            Entries(processed, ledger)
-                .OrderBy(entry => entry.Song)
-                .ThenBy(entry => entry.VideoId)
-                .ToList(),
+            entries.OrderBy(entry => entry.Song).ThenBy(entry => entry.VideoId).ToList(),
             SourceIndexJsonContext.Default.ListSourceEntry
         );
 
@@ -75,6 +81,23 @@ public sealed class SourceIndex(WorkingSet workingSet, string? path = null)
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
     }
+
+    private static Dictionary<string, string> ByVideoId(IEnumerable<SourceEntry> entries) =>
+        entries
+            .GroupBy(entry => entry.VideoId)
+            .ToDictionary(group => group.Key, group => group.First().Path);
+
+    private Dictionary<string, string> KnownFromFile() =>
+        SourceIndexJsonContext.Default.ListSourceEntry.ReadFileOrDefault(_path) is { } listed
+            ? ByVideoId(listed)
+            : [];
+}
+
+/// <summary>Where an upload's source audio is, if crateside holds it.</summary>
+public interface ISourceLocator
+{
+    /// <summary>The working set's download, else the sample kept, as last indexed; null when neither is known.</summary>
+    string? PathOf(string videoId);
 }
 
 /// <summary>One source on disk: <paramref name="Path"/> is the file itself.</summary>

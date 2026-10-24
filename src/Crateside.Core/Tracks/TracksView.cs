@@ -415,7 +415,10 @@ public sealed record TracksView
                             ? readings.TempoOf?.Invoke(staged.sample.Path)
                             : null,
                         WarpBorrowedFrom = staged.written?.From,
-                        Beats = readings.BeatsOf?.Invoke(staged.sample.Path),
+                        Beats = readings.BeatsOf?.Invoke(
+                            StemOnDisk.Of(staged.sample).SourceVideoId ?? sourceVideoId,
+                            staged.sample.Path
+                        ),
                     }
                 )
                 ?? [],
@@ -430,7 +433,10 @@ public sealed record TracksView
                         IsInLibrary = true,
                         AbletonKey = KeyIn(readings.LibraryTags, file.Path),
                         Tempo = readings.TempoOf?.Invoke(file.Path),
-                        Beats = readings.BeatsOf?.Invoke(file.Path),
+                        Beats = readings.BeatsOf?.Invoke(
+                            file.SourceVideoId ?? sourceVideoId,
+                            file.Path
+                        ),
                     }
                 ),
         ];

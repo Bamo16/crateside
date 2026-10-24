@@ -17,7 +17,7 @@ public sealed record SampleReadings
 
     public Func<string, WarpTempo?>? TempoOf { get; init; }
 
-    public Func<string, BeatReading?>? BeatsOf { get; init; }
+    public Func<string?, string, BeatReading?>? BeatsOf { get; init; }
 
     public Func<string, WrittenWarp?>? WrittenWarp { get; init; }
 }

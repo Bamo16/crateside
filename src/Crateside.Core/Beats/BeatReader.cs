@@ -4,15 +4,16 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using AbleKit.Tags;
 using Crateside.Core.Ableton;
+using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Samples;
 
 namespace Crateside.Core.Beats;
 
 /// <summary>
-/// Runs <c>beatdetect</c> with the pinned build on an instrumental and keeps the reading until the
-/// file changes (#76, #102). A reading outlives a change of pin, marked as from an older build.
-/// Kept across restarts when given a path.
+/// Runs <c>beatdetect</c> with the pinned build on an upload's reference file, its source on disk
+/// else an instrumental, and keeps each file's reading until that file changes (#76, #102, ADR 0065).
+/// A reading outlives a change of pin, marked as from an older build. Kept across restarts when given a path.
 /// </summary>
 public sealed partial class BeatReader
 {
@@ -26,6 +27,7 @@ public sealed partial class BeatReader
     private readonly string _fileName;
     private readonly string _filter;
     private readonly KnownBuilds? _builds;
+    private readonly ISourceLocator? _sources;
     private readonly ConcurrentDictionary<string, BeatEntry> _read;
     private readonly Lock _saving = new();
     private volatile bool _changed;
@@ -37,8 +39,20 @@ public sealed partial class BeatReader
     private static partial Regex MetadataLine { get; }
 
     // hpss matched an AI drum stem on the instrumental, measured 2026-09-30 (#83).
-    public BeatReader(IProcessRunner processes, CratesidePaths paths, KnownBuilds builds)
-        : this(processes, paths.BeatCache, paths.BeatdetectFfmpeg, "beatdetect=hpss=1", builds) { }
+    public BeatReader(
+        IProcessRunner processes,
+        CratesidePaths paths,
+        KnownBuilds builds,
+        SourceIndex sources
+    )
+        : this(
+            processes,
+            paths.BeatCache,
+            paths.BeatdetectFfmpeg,
+            "beatdetect=hpss=1",
+            builds,
+            sources
+        ) { }
 
     /// <summary>Keeps nothing on disk when <paramref name="path"/> is null.</summary>
     internal BeatReader(
@@ -46,7 +60,8 @@ public sealed partial class BeatReader
         string? path = null,
         string fileName = "ffmpeg",
         string filter = "beatdetect",
-        KnownBuilds? builds = null
+        KnownBuilds? builds = null,
+        ISourceLocator? sources = null
     )
     {
         _processes = processes;
@@ -54,27 +69,44 @@ public sealed partial class BeatReader
         _fileName = fileName;
         _filter = filter;
         _builds = builds;
+        _sources = sources;
         _read = new(Load(path), StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>The pinned build new readings are made with, or null until <see cref="RefreshBuildAsync"/> finds one.</summary>
     public FfmpegBuild? Build => _build;
 
-    /// <summary>How far the current pass has got, as instrumentals read of those it set out to read.</summary>
+    /// <summary>How far the current pass has got, as files read of those it set out to read.</summary>
     public (int Read, int Of) Progress => (_readSoFar, _toRead);
 
-    /// <summary>Starts counting a pass over this many instrumentals.</summary>
+    /// <summary>Starts counting a pass over this many files.</summary>
     public void Begin(int toRead)
     {
         _toRead = toRead;
         _readSoFar = 0;
     }
 
-    /// <summary>The instrumentals with no reading, then those whose reading is from an older build than the pin, each in the order given.</summary>
-    public IEnumerable<string> ToRead(IReadOnlyList<string> instrumentals) =>
-        instrumentals
-            .Where(file => Read(file) is null)
-            .Concat(instrumentals.Where(IsFromOlderBuild));
+    /// <summary>The files with no reading, then those whose reading is from an older build than the pin, each in the order given.</summary>
+    public IEnumerable<string> ToRead(IReadOnlyList<string> files) =>
+        files.Where(file => Read(file) is null).Concat(files.Where(IsFromOlderBuild));
+
+    /// <summary>The file an upload's beats are read from: its source on disk, else <paramref name="stemPath"/>.</summary>
+    public string ReferenceFor(string? videoId, string stemPath) =>
+        videoId is not null && _sources?.PathOf(videoId) is { } source && File.Exists(source)
+            ? source
+            : stemPath;
+
+    /// <summary>The upload's reference file for each stem, once each, in the order given.</summary>
+    public IEnumerable<string> ReferencesOf(IEnumerable<string> stemPaths) =>
+        stemPaths
+            .Select(stem => ReferenceFor(StemTagReader.Read(stem)?.Provenance?.SourceVideoId, stem))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The reference file's reading; until that is read, the stem's own, which belongs to the stem.
+    /// </summary>
+    public BeatReading? ReadFor(string? videoId, string stemPath) =>
+        Read(ReferenceFor(videoId, stemPath)) ?? Read(stemPath);
 
     /// <summary>The kept reading, whichever build made it, or null when the file changed since.</summary>
     public BeatReading? Read(string audioPath) => Kept(audioPath)?.Reading;

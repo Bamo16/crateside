@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Crateside.Core.Beats;
 
-/// <summary>What ffmpeg's <c>beatdetect</c> reads on one instrumental: the whole file, and each 30 s of it.</summary>
+/// <summary>What ffmpeg's <c>beatdetect</c> reads on one file, an upload's source or instrumental: the whole file, and each 30 s of it.</summary>
 public sealed record BeatReading
 {
     /// <summary>The windows' spread, in percent, at which the tempo reads as drifting (#75).</summary>

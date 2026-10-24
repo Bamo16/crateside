@@ -201,7 +201,7 @@ public enum TempoSource
     /// <summary>The user's warp, the instrumental's where there is one (ADR 0038).</summary>
     Warp,
 
-    /// <summary>crateside's whole-file beatdetect reading of the instrumental.</summary>
+    /// <summary>crateside's whole-file beatdetect reading of the upload's source, else of its instrumental.</summary>
     Reading,
 
     /// <summary>The ledger's estimate, shown only while there is neither of the others.</summary>

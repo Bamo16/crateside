@@ -68,7 +68,7 @@ public sealed class WarpLending(
     private (StarterGrid Grid, string From)? TempoOf(IEnumerable<SiblingFile> cuts) =>
         WarpSiblings
             .TempoSources(cuts)
-            .Select(cut => (Grid: starterGrids?.Of(cut.Path), From: cut.Path))
+            .Select(cut => (Grid: starterGrids?.Of(cut), From: cut.Path))
             .FirstOrDefault(source => source.Grid is not null)
             is { Grid: { } grid } source
             ? (grid, source.From)

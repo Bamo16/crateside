@@ -80,17 +80,18 @@ public sealed class HandoffSidecars(
         return prepared.TryGetValue(from, out var sidecar) ? writer.Commit(sidecar, to) : null;
     }
 
-    /// <summary>The starter grid of the batch's instrumental when its tempo holds steady; a drifting one gets Warp off instead of a starter.</summary>
+    /// <summary>The starter grid of the upload's reference file when its tempo holds steady; a drifting one gets Warp off instead of a starter.</summary>
     private async Task<StarterGrid?> StarterGridAsync(List<SiblingFile> cuts, CancellationToken ct)
     {
-        if (WarpSiblings.TempoSources(cuts).FirstOrDefault() is not { } instrumental)
+        if (WarpSiblings.TempoSources(cuts).FirstOrDefault() is not { } stem)
             return null;
 
         if (beats.Build is null)
             await beats.RefreshBuildAsync(ct);
 
         var reading =
-            beats.Read(instrumental.Path) ?? await beats.MeasureAsync(instrumental.Path, ct);
+            beats.ReadFor(stem.SourceVideoId, stem.Path)
+            ?? await beats.MeasureAsync(beats.ReferenceFor(stem.SourceVideoId, stem.Path), ct);
 
         return StarterGrid.Of(reading);
     }

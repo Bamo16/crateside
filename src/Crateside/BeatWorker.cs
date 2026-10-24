@@ -7,9 +7,9 @@ using Humanizer;
 namespace Crateside;
 
 /// <summary>
-/// Reads <c>beatdetect</c> on every instrumental without a current reading, then again on those read
-/// by an older build than the pin, staging before the library. Never paused: it runs on the CPU and
-/// contends for nothing, like detection (#75, #76).
+/// Reads <c>beatdetect</c> on each upload's reference file, its source else its instrumental, when it
+/// has no current reading, then again on those read by an older build than the pin, staging before
+/// the library. Never paused: it runs on the CPU and contends for nothing, like detection (#75, #76, ADR 0065).
 /// </summary>
 public sealed class BeatWorker(
     BeatReader reader,
@@ -82,17 +82,17 @@ public sealed class BeatWorker(
             return AfterFailure;
         }
 
-        string[] toRead = [.. reader.ToRead([.. BeatReader.Instrumentals(paths, folderInfo)])];
+        string[] toRead =
+        [
+            .. reader.ToRead([.. reader.ReferencesOf(BeatReader.Instrumentals(paths, folderInfo))]),
+        ];
 
         reader.Begin(toRead.Length);
 
         if (toRead.Length is 0)
             return IdleDelay;
 
-        logger.LogInformation(
-            "Reading beatdetect on {Count}",
-            "instrumental".ToQuantity(toRead.Length)
-        );
+        logger.LogInformation("Reading beatdetect on {Count}", "file".ToQuantity(toRead.Length));
 
         await Parallel.ForEachAsync(
             toRead,
@@ -108,10 +108,7 @@ public sealed class BeatWorker(
             }
         );
 
-        logger.LogInformation(
-            "Read beatdetect on {Count}",
-            "instrumental".ToQuantity(toRead.Length)
-        );
+        logger.LogInformation("Read beatdetect on {Count}", "file".ToQuantity(toRead.Length));
 
         return IdleDelay;
     }
