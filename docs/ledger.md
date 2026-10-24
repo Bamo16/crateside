@@ -29,7 +29,7 @@ start. Enums are stored by name (`Dorian`, `ChordRecogniser`); times as round-tr
   null only with `LocalSource`. `WithheldReasoning` is the reasoning of the first pass when it asked for windows, kept once here. `Direction` is the user's note sent with windows. `Evidence`
   is the detectors' report as JSON. `OldBpm*` are the old estimates of imported history, never
   written again.
-- **Sections**: a run's sections, each a `Label` with its own `Tonic` and `Mode`.
+- **Sections**: a run's sections, each a `Label` with its own `Tonic` and `Mode`, and a `Start` in seconds into the track (null on runs recorded before ADR 0064).
 - **Sources**: what the judge consulted. `Kind` is `Authoritative`, `Corroborating`,
   `Algorithmic`, `ChordRecogniser` or `Ear` (the user's own reading). `StatesKey` is what
   the source said as a 24-key name, `StatesMode` the mode it named, `Sections` the labels

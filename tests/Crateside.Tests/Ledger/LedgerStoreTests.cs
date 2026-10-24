@@ -92,6 +92,34 @@ public sealed class LedgerStoreTests : IDisposable
     }
 
     [Fact]
+    public void A_section_start_comes_back_and_a_missing_one_stays_missing()
+    {
+        var chorus = new TonalCentre("E", DiatonicMode.Aeolian);
+
+        Store.Record(Run() with { Sections = [new("Verse", chorus), new("Chorus", chorus, 62.5)] });
+
+        Assert.Equal(
+            [null, 62.5],
+            Store.EvidenceFor(Song)!.Sections.Select(section => section.Start)
+        );
+    }
+
+    [Fact]
+    public void A_section_starting_before_the_track_is_refused()
+    {
+        var refused = Assert.IsType<RecordOutcome.Refused>(
+            Store.Record(
+                Run() with
+                {
+                    Sections = [new("Verse", new TonalCentre("E", DiatonicMode.Aeolian), -1)],
+                }
+            )
+        );
+
+        Assert.Equal("sections", refused.Field);
+    }
+
+    [Fact]
     public void A_name_that_cannot_be_repaired_is_refused()
     {
         var refused = Assert.IsType<RecordOutcome.Refused>(

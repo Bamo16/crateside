@@ -49,6 +49,8 @@ then. If nothing usable follows, the WITHHELD verdict is recorded as it was. The
 detected over are kept with the run, and their evidence inside the run's evidence under
 `windows`. A window the judge asked for keeps its own one-sentence `why`, and the pass's reasoning is kept once on the run that follows it as `WithheldReasoning`.
 
+**Section times.** Each section gives a `start`, in seconds into the track, read from the times of keydetect's key events (ADR 0064). A section without one is logged and kept; a negative one is refused. Verdicts from before it have none.
+
 **The text fields** have one job each (ADR 0064): `tonicCheck` is what the music does (at most 70 words), `reasoning` what the evidence is worth (at most 100 words in at most 2 paragraphs), `candidates` the 0 to 3 other keys weighed, each with a sentence, and a window's `why` one sentence. They are plain text with a blank line between paragraphs. An overrun is logged by the verdict run and never refused, since resuming a session to shorten it costs its start-up; a candidate equal to the verdict's key is dropped and logged. The screen typesets the text when it renders (`JudgeProse`), so old verdicts read the same way without being judged again.
 
 **Judging from these bars** (#116). On a track's page the user gives windows themselves: bar

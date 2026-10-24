@@ -176,6 +176,9 @@ namespace Crateside.Core.Ledger.Migrations
                                 .IsRequired()
                                 .HasColumnType("TEXT");
 
+                            b1.Property<double?>("Start")
+                                .HasColumnType("REAL");
+
                             b1.Property<string>("Tonic")
                                 .IsRequired()
                                 .HasColumnType("TEXT");

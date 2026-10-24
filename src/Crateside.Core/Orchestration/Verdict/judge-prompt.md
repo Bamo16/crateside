@@ -56,6 +56,8 @@ Anything else, read the page itself: a search snippet can give one section's key
 
 A tonal centre is a tonic (C, C#, D … B) and one of the seven diatonic modes: ionian (plain major), dorian, phrygian, lydian, mixolydian, aeolian (plain minor), locrian. For a song that moves, give `sections`, each with its own centre, and put the primary one in `centre`. Set `mixed` for two modes on one tonic, such as a major melody over aeolian harmony; `centre` is then the harmony's.
 
+Give each section a `start`, in seconds into the track, read from the times of keydetect's `key_events` where the key changes. Leave it out only when the events do not show where the section begins.
+
 Write UTF-8 JSON to the path the work order names, in this shape, leaving out what you do not have:
 
 ```json
@@ -65,7 +67,7 @@ Write UTF-8 JSON to the path the work order names, in this shape, leaving out wh
   "confidence": "HIGH",
   "centre": { "tonic": "E", "mode": "aeolian" },
   "mixed": false,
-  "sections": [{ "label": "Verse", "tonic": "A", "mode": "dorian" }, { "label": "Chorus", "tonic": "E", "mode": "aeolian" }],
+  "sections": [{ "label": "Verse", "tonic": "A", "mode": "dorian", "start": 0 }, { "label": "Chorus", "tonic": "E", "mode": "aeolian", "start": 62.5 }],
   "sources": [{ "url": "https://www.hooktheory.com/theorytab/view/daft-punk/around-the-world", "kind": "authoritative", "states": "A Dorian (verse), E minor (chorus)", "statesKey": "E minor", "statesMode": "aeolian", "sections": ["Verse", "Chorus"], "note": "two contributors" }],
   "tonicCheck": "The chorus loop resolves B7 (V) → Em (i); nothing pulls towards G.",
   "reasoning": "Backed by madmom and Essentia, and Hooktheory agrees on the chorus.\n\nkeydetect's r is 0.84, so HIGH.",
