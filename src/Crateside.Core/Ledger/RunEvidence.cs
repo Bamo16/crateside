@@ -50,6 +50,12 @@ public sealed record RunEvidence
     /// <summary>The confidence rationale, and anything else the agent thought worth saying.</summary>
     public string? Reasoning { get; init; }
 
+    /// <summary>The keys the judge weighed besides the verdict's. Empty on runs judged before ADR 0064.</summary>
+    public IReadOnlyList<RunCandidate> Candidates { get; init; } = [];
+
+    /// <summary>The reasoning of the first pass, which asked for windows; null on older runs, whose windows carry copies of it.</summary>
+    public string? WithheldReasoning { get; init; }
+
     /// <summary>
     /// Which file was analysed and what kind it was. Worth showing: a verdict reached on an
     /// instrumental is weaker, because the vocal anchors the tonic.
@@ -105,6 +111,8 @@ public sealed record RunEvidence
             Readings = WindowReading.Of(run, machine?.Windows ?? []),
             TonicCheck = run.TonicCheck,
             Reasoning = run.Reasoning,
+            Candidates = run.Candidates,
+            WithheldReasoning = run.WithheldReasoning,
             InputKind = run.InputKind,
             Sources =
             [

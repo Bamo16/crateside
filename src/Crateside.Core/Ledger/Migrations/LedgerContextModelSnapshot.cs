@@ -110,6 +110,9 @@ namespace Crateside.Core.Ledger.Migrations
                     b.Property<string>("TonicCheck")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("WithheldReasoning")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Song", "RecordedAt");
@@ -133,6 +136,30 @@ namespace Crateside.Core.Ledger.Migrations
 
             modelBuilder.Entity("Crateside.Core.Ledger.RunRow", b =>
                 {
+                    b.OwnsMany("Crateside.Core.Ledger.CandidateRow", "Candidates", b1 =>
+                        {
+                            b1.Property<long>("RunId")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<int>("Position")
+                                .HasColumnType("INTEGER");
+
+                            b1.Property<string>("Key")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("Why")
+                                .IsRequired()
+                                .HasColumnType("TEXT");
+
+                            b1.HasKey("RunId", "Position");
+
+                            b1.ToTable("Candidates", (string)null);
+
+                            b1.WithOwner()
+                                .HasForeignKey("RunId");
+                        });
+
                     b.OwnsMany("Crateside.Core.Ledger.SectionRow", "Sections", b1 =>
                         {
                             b1.Property<long>("RunId")
@@ -238,6 +265,8 @@ namespace Crateside.Core.Ledger.Migrations
                             b1.WithOwner()
                                 .HasForeignKey("RunId");
                         });
+
+                    b.Navigation("Candidates");
 
                     b.Navigation("Sections");
 

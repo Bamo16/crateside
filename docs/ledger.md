@@ -26,7 +26,7 @@ start. Enums are stored by name (`Dorian`, `ChordRecogniser`); times as round-tr
   `Low`, `Withheld`) and a tonal centre, `Tonic` (sharps only: `C#`, never `Db`) and `Mode`
   (one of the seven diatonic modes), both null only when withheld. `Mixed` marks two modes on
   one tonic, the centre being the harmony's. `SourceUrl` is the upload the audio came from,
-  null only with `LocalSource`. `Direction` is the user's note sent with windows. `Evidence`
+  null only with `LocalSource`. `WithheldReasoning` is the reasoning of the first pass when it asked for windows, kept once here. `Direction` is the user's note sent with windows. `Evidence`
   is the detectors' report as JSON. `OldBpm*` are the old estimates of imported history, never
   written again.
 - **Sections**: a run's sections, each a `Label` with its own `Tonic` and `Mode`.
@@ -37,7 +37,8 @@ start. Enums are stored by name (`Dorian`, `ChordRecogniser`); times as round-tr
 - **Windows**: stretches detected on their own, `Start` and `End` in seconds, with an
   optional `Label` and who asked (`User` or `Judge`; null on windows imported from history).
   `FirstBar` and `LastBar` are the bars the user gave, both included, where they gave bars;
-  `Why` is the judge's reason for asking.
+  `Why` is the one sentence the judge gave for asking; on windows recorded before ADR 0064 it is a copy of the first pass's whole reasoning.
+- **Candidates**: the keys the judge weighed besides the verdict's, each a `Key` as written and a `Why` of one sentence, in `Position` order.
 - **Restatements**: "this upload is that song": a `SourceUrl` and the `RunId` whose verdict
   it carries over. It never changes an answer; the song's latest run is still its verdict.
 

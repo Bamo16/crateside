@@ -7,20 +7,20 @@ A wrong key is worse than no key: the maintainer picks mashup partners by it. Wi
 ## The evidence
 
 - **keydetect** (ffmpeg) is the primary detector: its key, its correlation `r`, its runner-up (`key_alt`, with `key_alt_confidence`), its chord stream (`chords`) and its running key estimate (`key_events`).
-- Its **backers** are the other detectors in the evidence. Whether they name keydetect's key predicts its being right far better than `r` does. How often keydetect was right, by backing:
+- Its **backers** are the other detectors in the evidence: madmom and **Essentia** (`essentia_edma` in the evidence file). Call them keydetect, madmom and Essentia in everything you write. Whether they name keydetect's key predicts its being right far better than `r` does. How often keydetect was right, by backing:
 
   | keydetect's `r` | backed by both | by one | by neither |
   |---|---|---|---|
   | ≥ 0.80 | 95% | 82% | 10% |
   | < 0.80 | 90% | 65% | 32% |
 
-  When keydetect is wrong, madmom names the right key a little over half the time, and when madmom and edma agree on another key they are right about three times in four: a dissent is a candidate, not only doubt. When a backer names keydetect's runner-up (`key_alt`), that runner-up is the first candidate: it was right 27 of 33 times when keydetect was wrong.
+  When keydetect is wrong, madmom names the right key a little over half the time, and when madmom and Essentia agree on another key they are right about three times in four: a dissent is a candidate, not only doubt. When a backer names keydetect's runner-up (`key_alt`), that runner-up is the first candidate: it was right 27 of 33 times when keydetect was wrong.
 - A detector's confidence never corroborates its own answer. A relative swap (C major ↔ A minor, the same notes) is a confident wrong answer, and breaking it takes evidence of another kind: a cadence, or a human source.
-- **Tonic check**: in 2–4 sentences, say whether the chords and the running estimate support the tonic over its relative and its fifth neighbours: does V→i resolve there, is keydetect's tonic really the IV of the key, is early instability only a sparse intro. Check the fourth below first: keydetect reads a song's IV as its tonic about three times as often as its V (16 of its 58 misses on the human-sourced songs, against 5).
+- **Tonic check** (`tonicCheck`, at most 70 words): what the music does. Say whether the chords and the running estimate support the tonic over its relative and its fifth neighbours: does V→i resolve there, is keydetect's tonic really the IV of the key, is early instability only a sparse intro. Check the fourth below first: keydetect reads a song's IV as its tonic about three times as often as its V (16 of its 58 misses on the human-sourced songs, against 5).
 
 ## Windows
 
-You can have crateside detect over stretches of the track before you decide. Ask whenever the evidence looks odd: a three-way split, a detector that failed, long stretches with no harmony. Choose windows from the music's structure (where the chorus or hook sits, where the harmony enters), never from where the detectors happen to look confident. Write a WITHHELD verdict with `windows` (at most 4, in seconds); crateside detects over them and resumes this session once with the new evidence. Ask before you withhold for good.
+You can have crateside detect over stretches of the track before you decide. Ask whenever the evidence looks odd: a three-way split, a detector that failed, long stretches with no harmony. Choose windows from the music's structure (where the chorus or hook sits, where the harmony enters), never from where the detectors happen to look confident. Write a WITHHELD verdict with `windows` (at most 4, in seconds, each with a one-sentence `why`: what it should settle); crateside detects over them and resumes this session once with the new evidence. Ask before you withhold for good.
 
 A window is weaker evidence than the whole track: keydetect over a 40-second window was right on 143 of 221 human-sourced songs, against 163 over the whole track, and inside a window its chord rerank is a coin flip. A window outweighs a backed whole-track reading only where it was chosen from the music and its section really differs; then it is a section, not a new primary centre. A window in the relative key of the whole track shares its notes, so it is a section only where a cadence says so.
 
@@ -50,7 +50,7 @@ Anything else, read the page itself: a search snippet can give one section's key
 - **HIGH**: evidence that could have failed independently supports the tonic, and nothing authoritative contradicts it: backed detectors, a tonic check in favour, and a human source that agrees.
 - **MEDIUM**: well supported with one leg missing, usually the human source. Say what is unconfirmed.
 - **LOW**: the best candidate, with a relative or fifth split unresolved.
-- **WITHHELD**: no single safe key. Name the candidates in `reasoning`.
+- **WITHHELD**: no single safe key. Name the keys still open in `candidates`, not in `reasoning`.
 
 ## The verdict file
 
@@ -67,10 +67,26 @@ Write UTF-8 JSON to the path the work order names, in this shape, leaving out wh
   "mixed": false,
   "sections": [{ "label": "Verse", "tonic": "A", "mode": "dorian" }, { "label": "Chorus", "tonic": "E", "mode": "aeolian" }],
   "sources": [{ "url": "https://www.hooktheory.com/theorytab/view/daft-punk/around-the-world", "kind": "authoritative", "states": "A Dorian (verse), E minor (chorus)", "statesKey": "E minor", "statesMode": "aeolian", "sections": ["Verse", "Chorus"], "note": "two contributors" }],
-  "tonicCheck": "The chorus loop resolves B7 → Em; nothing pulls towards G.",
-  "reasoning": "Why this key, in full, for a reader who has never seen another run.",
-  "windows": [{ "start": 62.0, "end": 94.5, "label": "Chorus" }]
+  "tonicCheck": "The chorus loop resolves B7 (V) → Em (i); nothing pulls towards G.",
+  "reasoning": "Backed by madmom and Essentia, and Hooktheory agrees on the chorus.\n\nkeydetect's r is 0.84, so HIGH.",
+  "candidates": [{ "key": "G major", "why": "The relative, but nothing resolves to G." }],
+  "windows": [{ "start": 62.0, "end": 94.5, "label": "Chorus", "why": "Does the chorus settle the split between E minor and G major?" }]
 }
 ```
 
-`artist` and `title` name the song and nothing about how it was judged. `windows` goes only with WITHHELD. crateside checks the file when you finish; if it is refused, you are told why and resumed once to fix it.
+`artist` and `title` name the song and nothing about how it was judged. `windows` goes only with WITHHELD. Leave out `candidates` when you weighed nothing besides your verdict. crateside checks the file when you finish; if it is refused, you are told why and resumed once to fix it.
+
+## What each text field is for
+
+Plain text: no Markdown, no backticks, no asterisks. A blank line (`\n\n` in the JSON string) separates paragraphs. Say each finding once, in the one field that owns it; a reader sees every field on one page.
+
+| field | job | budget |
+|---|---|---|
+| `tonicCheck` | what the music does: cadences, loops, the relative and fifth neighbours | at most 70 words |
+| `reasoning` | what the evidence is worth, and why this confidence; it may point to the tonic check and never argues it again | at most 100 words, in at most 2 paragraphs |
+| `candidates` | the keys you weighed besides the verdict's, each `{ "key", "why" }` | 0 to 3, one sentence each |
+| `windows[].why` | what this window should settle | one sentence |
+
+- **A candidate is a key a reader would otherwise ask about**: keydetect's runner-up, a backer's dissent, the relative of the chosen key. Zero is fine. Never list the verdict's own key, and do not argue a candidate again in `reasoning`.
+- **Name a chord's function after its symbol**, in plain letters: B (V) → E (I). Only you know which key a numeral is counted from, so write it; it is often counted against a candidate, not the verdict.
+- **Spell notes with `#` and `b`** (G#m, Bb); crateside sets the ♯ and ♭.

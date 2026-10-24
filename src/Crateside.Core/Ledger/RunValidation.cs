@@ -1,9 +1,16 @@
+using System.Text.RegularExpressions;
+
 namespace Crateside.Core.Ledger;
 
 /// <summary>The contract for a run: what is repaired on the way in, and what is refused.</summary>
-internal static class RunValidation
+internal static partial class RunValidation
 {
     private static readonly HashSet<string> ChordRecogniserHosts = ["chordify.net", "chordu.com"];
+
+    private const int TonicCheckWords = 70;
+    private const int ReasoningWords = 100;
+    private const int ReasoningParagraphs = 2;
+    private const int MaxCandidates = 3;
 
     private static readonly HashSet<string> InputKinds = ["full_mix", "instrumental", "vocal"];
 
@@ -23,7 +30,39 @@ internal static class RunValidation
             Direction = Blank(run.Direction),
             TonicCheck = Blank(run.TonicCheck),
             Reasoning = Blank(run.Reasoning),
+            WithheldReasoning = Blank(run.WithheldReasoning),
+            Candidates =
+            [
+                .. run.Candidates.Where(candidate => !IsVerdictKey(candidate, run.Centre)),
+            ],
         };
+
+    /// <summary>What the judge's text overran or repeated, one line each, for the log; nothing here refuses the run (ADR 0064).</summary>
+    public static IEnumerable<string> Notes(RunRecord run)
+    {
+        if (Words(run.TonicCheck) is > TonicCheckWords and var tonicWords)
+            yield return $"tonicCheck is {tonicWords} words; the budget is {TonicCheckWords}";
+
+        if (Words(run.Reasoning) is > ReasoningWords and var reasoningWords)
+            yield return $"reasoning is {reasoningWords} words; the budget is {ReasoningWords}";
+
+        if (Paragraphs(run.Reasoning) is > ReasoningParagraphs and var paragraphs)
+            yield return $"reasoning is {paragraphs} paragraphs; the budget is {ReasoningParagraphs}";
+
+        if (run.Candidates.Count > MaxCandidates)
+            yield return $"{run.Candidates.Count} candidates; the budget is {MaxCandidates}";
+
+        foreach (var candidate in run.Candidates)
+        {
+            if (IsVerdictKey(candidate, run.Centre))
+                yield return $"candidate {candidate.Key} is the verdict's own key; dropped";
+            else if (Sentences(candidate.Why) > 1)
+                yield return $"candidate {candidate.Key} takes more than one sentence";
+        }
+
+        foreach (var window in run.Windows.Where(window => Sentences(window.Why) > 1))
+            yield return $"window {window.Name} has a why of more than one sentence";
+    }
 
     /// <summary>Why the run cannot be stored, or null. Refused only where a wrong value is worse than no run.</summary>
     public static RecordOutcome.Refused? Refusal(RunRecord run)
@@ -93,6 +132,34 @@ internal static class RunValidation
 
     public static bool IsHttp(string url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var link) && link.Scheme is "http" or "https";
+
+    private static bool IsVerdictKey(RunCandidate candidate, TonalCentre? centre) =>
+        centre is not null
+        && (
+            centre.IsModal
+                ? candidate.Key.Replace('♯', '#').Trim()
+                : LedgerVocabulary.NormalizeKey(candidate.Key)
+        )?.Equals(centre.Name, StringComparison.OrdinalIgnoreCase)
+            is true;
+
+    private static int Words(string? text) =>
+        text?.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length ?? 0;
+
+    private static int Paragraphs(string? text) =>
+        text is null ? 0 : ParagraphBreak.Split(text.Trim()).Length;
+
+    private static int Sentences(string? text) =>
+        text is null ? 0 : SentenceBreak.Split(text.Trim()).Length;
+
+    [GeneratedRegex(
+        @"
+s*
+"
+    )]
+    private static partial Regex ParagraphBreak { get; }
+
+    [GeneratedRegex(@"(?<=[.!?])s+(?=[A-Z])")]
+    private static partial Regex SentenceBreak { get; }
 
     private static RunSource Normalize(RunSource source)
     {

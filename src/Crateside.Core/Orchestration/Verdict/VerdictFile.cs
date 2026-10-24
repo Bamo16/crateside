@@ -20,6 +20,8 @@ public sealed record VerdictFile
     public string? TonicCheck { get; init; }
     public string? Reasoning { get; init; }
 
+    public IReadOnlyList<CandidateDto>? Candidates { get; init; }
+
     /// <summary>Stretches to detect over before judging again; only with WITHHELD.</summary>
     public IReadOnlyList<WindowDto>? Windows { get; init; }
 
@@ -117,6 +119,7 @@ public sealed record VerdictFile
             Sources = sources,
             TonicCheck = TonicCheck,
             Reasoning = Reasoning,
+            Candidates = [.. (Candidates ?? []).Select(CandidateOf).OfType<RunCandidate>()],
         };
 
         if (Windows is not { Count: > 0 } windows)
@@ -136,7 +139,10 @@ public sealed record VerdictFile
                 window.End,
                 window.Label,
                 WindowAsker.Judge
-            ))
+            )
+            {
+                Why = window.Why?.Trim() is { Length: > 0 } why ? why : null,
+            })
             .ToList();
 
         return
@@ -147,6 +153,11 @@ public sealed record VerdictFile
             )
             : new VerdictCheck.WindowsAsked(asked, run);
     }
+
+    private static RunCandidate? CandidateOf(CandidateDto candidate) =>
+        candidate is { Key: { Length: > 0 } key, Why: { Length: > 0 } why }
+            ? new(key.Trim(), why.Trim())
+            : null;
 
     private static bool TryRead(
         string? tonic,
@@ -193,7 +204,9 @@ public sealed record VerdictFile
         public string? Note { get; init; }
     }
 
-    public sealed record WindowDto(double Start, double End, string? Label);
+    public sealed record WindowDto(double Start, double End, string? Label, string? Why = null);
+
+    public sealed record CandidateDto(string? Key, string? Why);
 }
 
 /// <summary>A verdict file read against the ledger's rules, before crateside fills in what the session cannot know.</summary>
