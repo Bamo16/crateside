@@ -38,8 +38,10 @@ works this way is in the ADRs listed at the end.
   written as its stem lands in staging, so a stem never sits there unanalysed.
 - **Over staging when Staging or the library changes, and every ten minutes besides**
   (`WarpLending`, [ADR 0060](adr/0060-the-file-workers-wake-on-a-change-and-the-timer-is-the-net.md)), for what changes later: a sibling saved, the
-  setting changed, a stem put in staging by hand. A stem is looked at again only when its files,
-  its siblings' sidecars, or the tempo or downbeat it would be given changed.
+  setting changed, a stem put in staging by hand. Within a run, a stem is looked at again only
+  when its files, its siblings' sidecars, or the tempo or downbeat it would be given changed;
+  after a restart every stem is looked at again. Either way a stem that already holds the warp it
+  would be lent, from the same sibling, or a starter with the same marker, is left as it is.
 - **Never while Live is analysing a stem** whose sidecar was recycled from the warp view
   (#97, showing each stem's warp in Track details).
 
