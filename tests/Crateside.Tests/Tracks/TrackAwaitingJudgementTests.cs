@@ -51,6 +51,6 @@ public sealed class TrackAwaitingJudgementTests
         var row = Row() with { IsBackfill = true };
 
         Assert.False(row.IsAwaitingJudgement);
-        Assert.Equal("waiting for the weekly spend-down", row.Next);
+        Assert.Equal("waiting for Library backfill", row.Next);
     }
 }

@@ -379,9 +379,9 @@ public sealed record TrackRow
         {
             TrackState.Queued when Lookalike is { } like =>
                 $"is this {like.DisplayName}? judging waits for your answer",
-            TrackState.Queued when IsBackfill => "waiting for the weekly spend-down",
+            TrackState.Queued when IsBackfill => "waiting for Library backfill",
             TrackState.Downloading or TrackState.Detecting when IsBackfill =>
-                "then judged in the weekly spend-down",
+                "then judged by Library backfill",
             TrackState.Downloading => "then judging",
             TrackState.Detecting => "then judging",
             TrackState.Judging => "verdict in about a minute",
