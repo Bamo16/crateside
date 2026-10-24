@@ -136,6 +136,17 @@ public sealed class JudgeProseTests
             )
         );
 
+    [Theory]
+    [InlineData("backing F# minor", "backing F♯ minor")]
+    [InlineData("G#", "G♯")]
+    [InlineData("D#m", "D♯m")]
+    [InlineData("Bb major", "B♭ major")]
+    [InlineData("Chorus", "Chorus")]
+    public void A_label_or_a_flicker_key_is_spelled_with_sharps_and_flats(
+        string written,
+        string spelled
+    ) => Assert.Equal(spelled, JudgeProse.Inline(written).ToString());
+
     [Fact]
     public void A_missing_text_has_no_paragraphs() => Assert.Empty(JudgeProse.Paragraphs(null));
 }

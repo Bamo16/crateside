@@ -55,13 +55,13 @@
                         @foreach (var part in others)
                         {
                             <li>
-                                <span class="section-label">@part.Label</span>
+                                <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
                                 <span class="mono section-key">@(ModeText.Arrow(part.Centre, false) ?? ModeText.Tag(part.Centre))</span>
                             </li>
                         }
                     </ul>
                 }
-                <span class="sub">@KeyNote</span>
+                <span class="sub"><ProseText Text="@KeyNote" Inline="true" /></span>
             </div>
             <div class="cell">
                 <span class="label">Confidence</span>
