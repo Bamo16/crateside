@@ -116,10 +116,7 @@ public sealed class JudgeProseTests
 
     [Fact]
     public void A_word_that_only_looks_like_a_note_is_left_alone() =>
-        Assert.Equal(
-            "A bad Bbird beat the Abacus odd",
-            Marked("A bad Bbird beat the Abacus odd")
-        );
+        Assert.Equal("A bad Bbird beat the Abacus odd", Marked("A bad Bbird beat the Abacus odd"));
 
     [Fact]
     public void Starry_Eyed_Surprise_reads_in_full_keys_and_canonical_names() =>
