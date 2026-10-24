@@ -100,7 +100,9 @@ public sealed class SidecarWriter(
     {
         try
         {
-            if (!replacing && Own(target) is { IsUsers: true })
+            var own = Own(target);
+
+            if (!replacing && own is { IsUsers: true })
                 return Refuse(new WarpOutcome.AlreadyWarped());
 
             var saved = SavedAmong(sameKind) is { Count: > 0 } ownKind
@@ -114,6 +116,15 @@ public sealed class SidecarWriter(
                 return Refuse(new WarpOutcome.SiblingsDisagree([.. saved.Select(s => s.Path)]));
 
             var (from, warp) = saved[0];
+
+            if (
+                !replacing
+                && own is { Analysis: var held }
+                && written.BorrowedFrom(target) is { } lentFrom
+                && Same(lentFrom, from)
+                && SameWarp(held, warp)
+            )
+                return Refuse(new WarpOutcome.AlreadyWarped());
 
             if (await decoder.DecodeAsync(target, ct) is not { } audio)
                 return Refuse(Undecodable(target));

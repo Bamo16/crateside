@@ -118,6 +118,25 @@ public sealed class WarpLendingTests : IDisposable
     }
 
     [Fact]
+    public async Task A_lent_warp_is_not_written_again_after_a_restart()
+    {
+        Saved(Stem(_paths.LibraryFolder, "Song (Instrumental - Full).flac", "Instrumental - Full"));
+        var vocal = Stem(_paths.StagingFolder, "Song (Vocal - Full).flac", "Vocal - Full");
+        var record = Path.Combine(_root, "written-warps.json");
+        var options = new WarpOptions { LendAutomatically = true };
+
+        await Lending(options, written: new WrittenWarps(record))
+            .LendAsync(TestContext.Current.CancellationToken);
+        var lent = File.GetLastWriteTimeUtc($"{vocal}.asd");
+
+        var again = await Lending(options, written: new WrittenWarps(record))
+            .LendAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(new WarpLoan(vocal, new WarpOutcome.AlreadyWarped()), Assert.Single(again));
+        Assert.Equal(lent, File.GetLastWriteTimeUtc($"{vocal}.asd"));
+    }
+
+    [Fact]
     public async Task Stems_of_an_upload_nothing_is_warped_on_get_starter_warps_at_the_measured_tempo()
     {
         var vocal = Stem(_paths.StagingFolder, "Song (Vocal - Full).flac", "Vocal - Full");
@@ -189,13 +208,18 @@ public sealed class WarpLendingTests : IDisposable
         Assert.False(File.Exists($"{recut}.asd"));
     }
 
-    private WarpLending Lending(WarpOptions options, double? bpm = null, bool steady = false) =>
+    private WarpLending Lending(
+        WarpOptions options,
+        double? bpm = null,
+        bool steady = false,
+        WrittenWarps? written = null
+    ) =>
         new(
             _paths,
             new SidecarWriter(
                 steady ? SteadyHits.Decoder : new SilenceDecoder(),
                 steady ? SteadyHits.Detector() : new NoTransients(),
-                new WrittenWarps(),
+                written ?? new WrittenWarps(),
                 new TransientOrigins()
             ),
             Options.Create(options),
