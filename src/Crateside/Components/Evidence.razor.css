@@ -34,8 +34,12 @@
 
 .reasoning {
     margin: 0;
+}
+
+.considered {
+    margin: 0;
+    padding-left: 1rem;
     max-width: 70ch;
-    white-space: pre-wrap;
 }
 
 .muted {
@@ -237,8 +241,9 @@
     margin-left: 0.4rem;
     padding: 0.02rem 0.35rem;
     border-radius: 3px;
+    font-family: var(--font-mono);
     font-size: 0.7rem;
-    text-transform: uppercase;
+    white-space: nowrap;
     background: var(--line);
 }
 
@@ -278,7 +283,7 @@
 
 .chords {
     margin: 0;
-    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    font-family: var(--font-mono);
     font-size: 0.9rem;
     line-height: 1.7;
 }

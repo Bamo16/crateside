@@ -6,11 +6,34 @@
         <h3>Why this key</h3>
         @if (Run.Reasoning is { Length: > 0 } reasoning)
         {
-            <p class="reasoning">@reasoning</p>
+            <div class="reasoning"><ProseText Text="@reasoning" /></div>
         }
         else
         {
             <p class="muted">No reasoning was recorded for this run.</p>
+        }
+
+        @if (Run.Candidates.Count > 0)
+        {
+            <h4>Considered</h4>
+            <ul class="considered">
+                @foreach (var candidate in Run.Candidates)
+                {
+                    <li>
+                        <ProseText Text="@candidate.Key" Inline="true" />
+                        <span class="muted"> — </span>
+                        <ProseText Text="@candidate.Why" Inline="true" />
+                    </li>
+                }
+            </ul>
+        }
+
+        @if (FirstPass is { } firstPass)
+        {
+            <details class="source-prose">
+                <summary>First pass: withheld</summary>
+                <ProseText Text="@firstPass" />
+            </details>
         }
 
         @if (Run.Sections.Count > 1 && Run.Centre is { } primary)
@@ -121,13 +144,6 @@
         @if (Run.Readings.Count > 0)
         {
             <h3>Windows</h3>
-            @if (SharedWhy is { } shared)
-            {
-                <details class="source-prose">
-                    <summary>Why the judge asked for these windows</summary>
-                    <p>“@shared”</p>
-                </details>
-            }
             @foreach (var reading in Run.Readings)
             {
                 var yours = reading.Window.AskedBy is WindowAsker.User;
@@ -140,11 +156,18 @@
                         </span>
                         <span class="mono span">@WindowSpan(reading.Window)</span>
                         <span class="why">
-                            @(yours
-                                ? "Given by you."
-                                : SharedWhy is null && reading.Window.Why is { Length: > 0 } why
-                                    ? $"The judge asked for it: “{why}” crateside ran it unattended."
-                                    : "The judge asked for it, and crateside ran it unattended.")
+                            @if (yours)
+                            {
+                                <text>Given by you.</text>
+                            }
+                            else if (SharedWhy is null && reading.Window.Why is { Length: > 0 } why)
+                            {
+                                <text>The judge asked for it: “</text><ProseText Text="@why" Inline="true" /><text>” crateside ran it unattended.</text>
+                            }
+                            else
+                            {
+                                <text>The judge asked for it, and crateside ran it unattended.</text>
+                            }
                         </span>
                     </div>
                     <div class="window-readings">
@@ -153,7 +176,7 @@
                                 @foreach (var algorithm in reading.Algorithms)
                                 {
                                     <tr>
-                                        <th>@algorithm.Name</th>
+                                        <th title="@algorithm.Name">@algorithm.Label</th>
                                         <td class="algo-key">@(algorithm.Key ?? "—")</td>
                                         <td class="detail">
                                             @if (algorithm.Error is { Length: > 0 } error)
@@ -194,7 +217,7 @@
 </div>
 
 @code {
-    private const int CompactChordLimit = 24;
+    private const int CompactSegmentLimit = 12;
 
     [Parameter, EditorRequired]
     public required RunEvidence Run { get; set; }
@@ -207,16 +230,20 @@
     [Parameter]
     public TrackTempo? Tempo { get; set; }
 
-    /// <summary>What the user said they hear, recorded as a source of its own kind.</summary>
-    /// <summary>The judge's one reason for asking, when every window it asked for carries the same one.</summary>
+    /// <summary>The first pass's reasoning, once: kept on the run, or copied into every window by runs recorded before ADR 0064.</summary>
+    private string? FirstPass => Run.WithheldReasoning ?? SharedWhy;
+
+    /// <summary>The one reason every window the judge asked for carries, on a run recorded before the first pass was kept apart.</summary>
     private string? SharedWhy =>
-        Run.Readings.Where(reading => reading.Window.AskedBy is not WindowAsker.User)
+        Run.WithheldReasoning is null
+        && Run.Readings.Where(reading => reading.Window.AskedBy is not WindowAsker.User)
             .Select(reading => reading.Window.Why)
             .ToList() is [_, _, ..] whys
         && whys.Distinct().ToList() is [{ Length: > 0 } why]
             ? why
             : null;
 
+    /// <summary>What the user said they hear, recorded as a source of its own kind.</summary>
     private EvidenceSource? Ear => Run.Sources.FirstOrDefault(source => source.Kind is SourceKind.Ear);
 
     private static string WindowSpan(RunWindow window) =>
@@ -242,7 +269,7 @@
                 @foreach (var algorithm in Run.Algorithms)
                 {
                     <tr>
-                        <th>@algorithm.Name</th>
+                        <th title="@algorithm.Name">@algorithm.Label</th>
                         <td class="algo-key">@(algorithm.Key ?? "—")</td>
                         <td class="detail">
                             @if (algorithm.Error is { Length: > 0 } error)
@@ -254,9 +281,9 @@
                                 @if (algorithm.Confidence is { } confidence)
                                 {
                                     <span>@confidence.ToString("F3")</span>
-                                    @if (algorithm.Flag is { Length: > 0 } flag)
+                                    @if (algorithm.Flag is { Length: > 0 } flag && algorithm.FlagChip is { } chip)
                                     {
-                                        <span class="flag @flag.ToLowerInvariant()">@flag</span>
+                                        <span class="flag @FlagTone(flag)" title="@chip.Tooltip">@chip.Text</span>
                                     }
                                 }
                                 @if (algorithm.RunnerUpKey is { } runnerUp)
@@ -282,9 +309,9 @@
                 keydetect is backed by
                 @(backers switch
                 {
-                    [] => "neither madmom nor edma",
+                    [] => "neither madmom nor Essentia",
                     [var one] => $"{Shown(one)} only",
-                    _ => "both madmom and edma",
+                    _ => "both madmom and Essentia",
                 })
             </p>
         }
@@ -302,17 +329,31 @@
         @if (Run.TonicCheck is { Length: > 0 } tonicCheck)
         {
             <h4>Tonic check</h4>
-            <p class="tonic-check">@tonicCheck</p>
+            <div class="tonic-check"><ProseText Text="@tonicCheck" /></div>
         }
 
         @if (Run.Chords.Count > 0)
         {
             <h4>Chord progression</h4>
+            var progression = Progression.Fold(Run.Chords);
+            var shown = Compact ? progression.Take(CompactSegmentLimit).ToList() : progression;
+
             <p class="chords">
-                @string.Join(" → ", Compact ? Run.Chords.Take(CompactChordLimit) : Run.Chords)
-                @if (Compact && Run.Chords.Count > CompactChordLimit)
+                @foreach (var (segment, index) in shown.Select((segment, index) => (segment, index)))
                 {
-                    <span class="muted"> (+@(Run.Chords.Count - CompactChordLimit) more)</span>
+                    @if (index > 0)
+                    {
+                        <span class="muted"> · </span>
+                    }
+                    <span>@segment.Arrowed</span>
+                    @if (segment.IsLoop)
+                    {
+                        <span class="muted"> ×@segment.Repeats</span>
+                    }
+                }
+                @if (shown.Count < progression.Count)
+                {
+                    <span class="muted"> (+@(progression.Count - shown.Count) more)</span>
                 }
             </p>
         }
@@ -363,11 +404,15 @@
         </p>
         </div>;
 
+    /// <summary>The band's tone, from the first word of keydetect's flag (<c>DISTRUST</c>, <c>gray zone</c>, <c>trust band</c>).</summary>
+    private static string FlagTone(string flag) =>
+        flag.Split(' ')[0].ToLowerInvariant();
+
     /// <summary>A backer as the detector table names it.</summary>
     private static string Shown(string backer) =>
         backer switch
         {
-            "essentia_edma" => "edma",
+            "essentia_edma" => "Essentia",
             _ => backer,
         };
 
