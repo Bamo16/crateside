@@ -108,7 +108,8 @@ folders, so nothing falls out of sync.
 
 Requirements: Windows, .NET 10 SDK, Ableton Live with a Staging folder and
 a library folder as watched roots (both set in Settings), StemForge checked out as a sibling, an
-ffmpeg build with FiLL's `keydetect` filter on `PATH` (or named by `Paths:KeydetectFfmpeg`), a GPU
+ffmpeg build with FiLL's `keydetect` filter on `PATH` (or named by `Paths:KeydetectFfmpeg`; the first
+start pins it for keydetect in `%APPDATA%\crateside\builds.json`, ADR 0066), a GPU
 for separation, and a Claude subscription for judging.
 
 ```
