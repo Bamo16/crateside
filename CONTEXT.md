@@ -499,6 +499,9 @@ it. The two run types below are named after which of **evidence** and **verdict*
   stays backfill after its download makes it stop being library-only. Judged only in
   the **spend-down**, never by the ordinary verdict stage, unless the user asks for
   one first ([ADR 0035](docs/adr/0035-the-library-backfill-is-judged-only-in-idle-windows.md)).
+  On screen the **spend-down**'s switch, ceilings and states are all called *Library backfill*
+  (Settings, the Dashboard, a track's *Next*); *spend-down* is the code's and the docs' name for
+  the weekly window it runs in.
 - **Sourceless song** — a library song StemForge cut before it recorded a source (about
   June 2026), so no video ID names it. Its row is library-only and keyed `name:` plus the
   file name without the preset, the identity the Library page already uses; renaming the

@@ -197,10 +197,17 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                                 @onclick="() => Spend.SetEnabled(false)">Off</button>
                     </div>
 
+                    <label class="status" for="spend-hours">Hours before the reset</label>
                     <div class="field">
-                        <label>Hours before the reset <input type="number" min="1" max="168" @bind="_spendHours" /></label>
-                        <label>Weekly ceiling % <input type="number" min="1" max="100" @bind="_spendWeekly" /></label>
-                        <label>5-hour ceiling % <input type="number" min="1" max="100" @bind="_spendSession" /></label>
+                        <input id="spend-hours" type="number" min="1" max="168" @bind="_spendHours" />
+                    </div>
+                    <label class="status" for="spend-weekly">Weekly ceiling %</label>
+                    <div class="field">
+                        <input id="spend-weekly" type="number" min="1" max="100" @bind="_spendWeekly" />
+                    </div>
+                    <label class="status" for="spend-session">5-hour ceiling %</label>
+                    <div class="field">
+                        <input id="spend-session" type="number" min="1" max="100" @bind="_spendSession" />
                         <button class="primary" @onclick="SaveSpendDown"
                                 disabled="@(PendingSpendDown == Spend.Settings)">Save</button>
                     </div>
@@ -862,11 +869,11 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             SpendDownState.Spent(var weekly, var resets) =>
                 $"Weekly use at {weekly:N0}%, the ceiling reached; nothing more until the reset at {resets.ToLocalTime():ddd h:mm tt}.",
             SpendDownState.CutOff(var resumes) =>
-                $"A track was cut off by the usage limit; the spend-down resumes when the 5-hour window rolls at {resumes.ToLocalTime():ddd h:mm tt}.",
+                $"A track was cut off by the usage limit; Library backfill resumes when the 5-hour window rolls at {resumes.ToLocalTime():ddd h:mm tt}.",
             SpendDownState.SessionFull(var session, { } resets) =>
-                $"The 5-hour window is at {session:N0}%; the spend-down waits for it to reset at {resets.ToLocalTime():h:mm tt}.",
+                $"The 5-hour window is at {session:N0}%; Library backfill waits for it to reset at {resets.ToLocalTime():h:mm tt}.",
             SpendDownState.SessionFull(var session, _) =>
-                $"The 5-hour window is at {session:N0}%; the spend-down waits for it to reset.",
+                $"The 5-hour window is at {session:N0}%; Library backfill waits for it to reset.",
             SpendDownState.Unread => "On, but Claude use or the weekly reset could not be read, so nothing is judged.",
             _ => "On; the first check comes within five minutes of starting.",
         };
