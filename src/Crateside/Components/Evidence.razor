@@ -177,7 +177,7 @@
                                 {
                                     <tr>
                                         <th title="@algorithm.Name">@algorithm.Label</th>
-                                        <td class="algo-key">@(algorithm.Key ?? "—")</td>
+                                        <td class="algo-key">@if (algorithm.Key is { } algorithmKey) { <ProseText Text="@algorithmKey" Inline="true" /> } else { <text>—</text> }</td>
                                         <td class="detail">
                                             @if (algorithm.Error is { Length: > 0 } error)
                                             {
@@ -270,7 +270,7 @@
                 {
                     <tr>
                         <th title="@algorithm.Name">@algorithm.Label</th>
-                        <td class="algo-key">@(algorithm.Key ?? "—")</td>
+                        <td class="algo-key">@if (algorithm.Key is { } algorithmKey) { <ProseText Text="@algorithmKey" Inline="true" /> } else { <text>—</text> }</td>
                         <td class="detail">
                             @if (algorithm.Error is { Length: > 0 } error)
                             {
