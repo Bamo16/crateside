@@ -197,17 +197,19 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                                 @onclick="() => Spend.SetEnabled(false)">Off</button>
                     </div>
 
-                    <label class="status" for="spend-hours">Hours before the reset</label>
-                    <div class="field">
-                        <input id="spend-hours" type="number" min="1" max="168" @bind="_spendHours" />
-                    </div>
-                    <label class="status" for="spend-weekly">Weekly ceiling %</label>
-                    <div class="field">
-                        <input id="spend-weekly" type="number" min="1" max="100" @bind="_spendWeekly" />
-                    </div>
-                    <label class="status" for="spend-session">5-hour ceiling %</label>
-                    <div class="field">
-                        <input id="spend-session" type="number" min="1" max="100" @bind="_spendSession" />
+                    <div class="numbers">
+                        <label class="status">
+                            Hours before the reset
+                            <input type="number" min="1" max="168" @bind="_spendHours" />
+                        </label>
+                        <label class="status">
+                            Weekly ceiling %
+                            <input type="number" min="1" max="100" @bind="_spendWeekly" />
+                        </label>
+                        <label class="status">
+                            5-hour ceiling %
+                            <input type="number" min="1" max="100" @bind="_spendSession" />
+                        </label>
                         <button class="primary" @onclick="SaveSpendDown"
                                 disabled="@(PendingSpendDown == Spend.Settings)">Save</button>
                     </div>
@@ -908,12 +910,10 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         Spend.Changed -= OnChanged;
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         Tracks.Changed += OnChanged;
         Spend.Changed += OnChanged;
-
-        await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
 
         _staging = Paths.StagingFolder;
         _library = Paths.LibraryFolder;
@@ -925,8 +925,17 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         _retention = RetentionStore.Read();
         _days = _retention.Days;
         LoadSpendDown();
+    }
 
+    // After the first paint, so the page opens before the playlist and channel are read from YouTube.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
         await Load();
+        StateHasChanged();
     }
 
     // Raised on a worker thread, never the circuit's, so the render is marshalled back.

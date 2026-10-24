@@ -80,6 +80,24 @@ input {
     padding: 7px 10px;
 }
 
+.numbers {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.numbers label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.numbers input {
+    flex: none;
+    width: 8ch;
+}
+
 input:focus {
     outline: none;
     border-color: rgba(255, 255, 255, 0.4);
