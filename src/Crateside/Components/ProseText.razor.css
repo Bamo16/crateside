@@ -1,0 +1,16 @@
+.prose {
+    max-width: 70ch;
+}
+
+.prose p {
+    margin: 0;
+}
+
+.prose p + p {
+    margin-top: 0.6rem;
+}
+
+.confidence {
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.04em;
+}

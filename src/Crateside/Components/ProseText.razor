@@ -1,0 +1,42 @@
+@using Crateside.Core.Ledger
+
+@if (Inline)
+{
+    @Spans(JudgeProse.Inline(Text))
+}
+else
+{
+    <div class="prose">
+        @foreach (var paragraph in JudgeProse.Paragraphs(Text))
+        {
+            <p>@Spans(paragraph)</p>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>The judge's text, as written; it is typeset here.</summary>
+    [Parameter, EditorRequired]
+    public string? Text { get; set; }
+
+    /// <summary>One run of spans with no paragraph around it, for a clause inside a sentence or a list row.</summary>
+    [Parameter]
+    public bool Inline { get; set; }
+
+    private static RenderFragment Spans(ProseParagraph paragraph) =>
+        @<text>@foreach (var span in paragraph.Spans)
+        {
+            switch (span.Kind)
+            {
+                case ProseKind.Plain:
+                    @span.Text
+                    break;
+                case ProseKind.Confidence:
+                    <span class="confidence">@span.Text</span>
+                    break;
+                default:
+                    <span class="mono">@span.Text</span>
+                    break;
+            }
+        }</text>;
+}
