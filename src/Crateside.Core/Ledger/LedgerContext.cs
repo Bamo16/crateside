@@ -181,6 +181,7 @@ internal sealed class RunRow
                             Label = section.Label,
                             Tonic = section.Centre.Tonic,
                             Mode = section.Centre.Mode,
+                            Start = section.Start,
                         }
                 ),
             ],
@@ -268,7 +269,8 @@ internal sealed class RunRow
                     .OrderBy(section => section.Position)
                     .Select(section => new Section(
                         section.Label,
-                        new(section.Tonic, section.Mode)
+                        new(section.Tonic, section.Mode),
+                        section.Start
                     )),
             ],
             Sources =
@@ -313,6 +315,7 @@ internal sealed class SectionRow
     public string Label { get; set; } = string.Empty;
     public string Tonic { get; set; } = string.Empty;
     public DiatonicMode Mode { get; set; }
+    public double? Start { get; set; }
 }
 
 internal sealed class SourceRow

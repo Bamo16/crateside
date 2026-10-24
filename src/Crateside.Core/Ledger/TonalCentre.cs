@@ -74,5 +74,5 @@ public enum DiatonicMode
     Locrian,
 }
 
-/// <summary>A part of a song with its own tonal centre.</summary>
-public sealed record Section(string Label, TonalCentre Centre);
+/// <summary>A part of a song with its own tonal centre; <c>Start</c> is seconds into the track, null on verdicts from before ADR 0064.</summary>
+public sealed record Section(string Label, TonalCentre Centre, double? Start = null);

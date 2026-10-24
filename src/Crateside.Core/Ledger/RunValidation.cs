@@ -52,6 +52,9 @@ internal static partial class RunValidation
         if (run.Candidates.Count > MaxCandidates)
             yield return $"{run.Candidates.Count} candidates; the budget is {MaxCandidates}";
 
+        foreach (var section in run.Sections.Where(section => section.Start is null))
+            yield return $"section {section.Label} has no start time; kept without one";
+
         foreach (var candidate in run.Candidates)
         {
             if (IsVerdictKey(candidate, run.Centre))
@@ -104,6 +107,12 @@ internal static partial class RunValidation
         {
             if (section.Label.Length is 0)
                 return new("sections", "every section needs a label");
+
+            if (section is { Start: < 0 })
+                return new(
+                    "sections",
+                    $"{section.Label}: a start of {section.Start} s is before the track"
+                );
 
             if (!TonalCentre.Tonics.Contains(section.Centre.Tonic))
                 return new(

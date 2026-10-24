@@ -62,7 +62,7 @@ the views, and running the workflow.
   | Aeolian (minor), Dorian, Phrygian, Locrian | minor |
 
 - **Section** — a part of a song with its own tonal centre: *A Dorian (verse), E minor
-  (chorus)*. A source's key covers the sections it analysed, not necessarily the song.
+  (chorus)*. A source's key covers the sections it analysed, not necessarily the song. The judge gives each a start time in seconds; older verdicts have none.
 - **Mixed** — two modes on one tonic at once, such as a major melody over minor harmony. Its
   collapse follows the harmony.
 - **Collapse** — reducing a tonal centre to one of the 24 major and minor keys Ableton's Key

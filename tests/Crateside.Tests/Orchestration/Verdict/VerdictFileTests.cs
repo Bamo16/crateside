@@ -51,6 +51,28 @@ public sealed class VerdictFileTests : IDisposable
     }
 
     [Fact]
+    public void A_sections_start_is_read_and_a_missing_one_is_left_null()
+    {
+        var run = Assert
+            .IsType<VerdictCheck.Recordable>(
+                Check(
+                    Verdict(
+                        """
+                        , "centre": { "tonic": "C#", "mode": "ionian" },
+                          "sections": [
+                            { "label": "Verse", "tonic": "C#", "mode": "ionian" },
+                            { "label": "Chorus", "tonic": "A#", "mode": "aeolian", "start": 62.5 }
+                          ]
+                        """
+                    )
+                )
+            )
+            .Run;
+
+        Assert.Equal([null, 62.5], run.Sections.Select(section => section.Start));
+    }
+
+    [Fact]
     public void Sections_and_the_sections_a_source_covered_are_kept()
     {
         var run = Assert

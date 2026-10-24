@@ -399,7 +399,8 @@ public sealed class LedgerStore : IDisposable
                             .Sections.OrderBy(section => section.Position)
                             .Select(section => new Section(
                                 section.Label,
-                                new(section.Tonic, section.Mode)
+                                new(section.Tonic, section.Mode),
+                                section.Start
                             )),
                     ],
                 }

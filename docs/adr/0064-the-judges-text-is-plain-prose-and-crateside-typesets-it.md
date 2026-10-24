@@ -104,6 +104,10 @@ show once, as *First pass: withheld*. **Nothing in the ledger is rewritten**: a 
 music-theory argument cannot be checked at scale, and one that drifts misstates what the judge
 reasoned. Verdicts are replaced as songs are judged again.
 
+### Section times
+
+Decided 2026-10-24. The judge gives each section a `start`, in seconds into the track, read from the times of keydetect's key events, which the evidence already carries. That is a time the whole-file evidence has, unlike a cadence time: the judge's times for a cadence would be relative to a window, and the chord stream has none. A section without a start is logged and kept; a negative one is refused. The ledger's `Sections` gain a nullable `Start`, and older sections keep none.
+
 ### Not decided here
 
 No timestamped cadence field. The judge's times are relative to a window and the whole-file chord

@@ -79,7 +79,7 @@ public sealed record VerdictFile
             )
                 return new VerdictCheck.Unusable($"sections, {section.Label}: {sectionProblem}");
 
-            sections.Add(new(section.Label ?? string.Empty, sectionCentre));
+            sections.Add(new(section.Label ?? string.Empty, sectionCentre, section.Start));
         }
 
         List<RunSource> sources = [];
@@ -191,7 +191,12 @@ public sealed record VerdictFile
 
     public sealed record CentreDto(string? Tonic, string? Mode);
 
-    public sealed record SectionDto(string? Label, string? Tonic, string? Mode);
+    public sealed record SectionDto(
+        string? Label,
+        string? Tonic,
+        string? Mode,
+        double? Start = null
+    );
 
     public sealed record SourceDto
     {
