@@ -97,6 +97,8 @@ the views, and running the workflow.
   does; the **reasoning** says what the evidence is worth (ADR 0064).
 - **Candidate** — a key the judge weighed besides the verdict's: one it turned down, or for a
   WITHHELD, one still open. Shown on Track details as *Considered*.
+- **First pass** — the judge session that asked for windows by withholding. Its reasoning is kept
+  once on the run that follows, and Track details shows it folded as *First pass: withheld*.
 - **Supersede** — how a re-run replaces an earlier verdict: filed under the same **song
   identity**, the latest run wins, so each run's prose stands on its own.
 - **Restatement** — the ledger's record that another upload is a song already judged. It
