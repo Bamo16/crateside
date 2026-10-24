@@ -400,6 +400,16 @@ public enum SourceKind
 public sealed record AlgorithmResult
 {
     public required string Name { get; init; }
+
+    /// <summary>The name on screen: keydetect, madmom, Essentia. <see cref="Name"/> goes in the row's tooltip.</summary>
+    public string Label =>
+        Name switch
+        {
+            "ffmpeg keydetect" => "keydetect",
+            "Essentia edma" => "Essentia",
+            _ => Name,
+        };
+
     public string? Key { get; init; }
 
     /// <summary>The algorithm's own confidence, where it reports a meaningful one.</summary>
@@ -421,6 +431,8 @@ public sealed record AlgorithmResult
 
     /// <summary>ffmpeg's banding on its correlation: below 0.70 distrust, above 0.75 usually right.</summary>
     public string? Flag { get; init; }
+
+    public FlagChip? FlagChip => FlagChip.Of(Flag);
 
     public string? Error { get; init; }
 
