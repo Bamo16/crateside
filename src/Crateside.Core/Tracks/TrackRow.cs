@@ -154,7 +154,7 @@ public sealed record TrackRow
             .Select(sample => sample.Tempo)
             .FirstOrDefault();
 
-    /// <summary>beatdetect's reading of the instrumental, once the worker has read it.</summary>
+    /// <summary>beatdetect's reading of the upload's source, else of its instrumental, once the worker has read it.</summary>
     public BeatReading? Beats =>
         Samples.Select(sample => sample.Beats).FirstOrDefault(reading => reading is not null);
 
@@ -565,7 +565,7 @@ public sealed record TrackSample
     /// <summary>The tempo its warp holds, once its default clip is saved (ADR 0038).</summary>
     public WarpTempo? Tempo { get; init; }
 
-    /// <summary>beatdetect's reading, kept for instrumentals only.</summary>
+    /// <summary>beatdetect's reading of the upload's reference file, its source else this file when it is the instrumental.</summary>
     public BeatReading? Beats { get; init; }
 
     /// <summary>

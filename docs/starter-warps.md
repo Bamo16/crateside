@@ -50,12 +50,16 @@ replaces a lent warp or the maintainer's own.
 
 ## The steps
 
-1. **Pick the reference stem.** The upload's instrumental, else its kept source, else its karaoke
-   (`WarpSiblings.TempoSources`). Every stem of the upload is timed from this one stem, so all get
-   the same tempo and marker, and Live can edit them together. No such stem: no starter.
-2. **Read its tempo with beatdetect.** The pinned build (`BeatdetectFfmpeg`, today
+1. **Pick the reference.** The stem is the upload's instrumental, else its kept source, else its
+   karaoke (`WarpSiblings.TempoSources`); every stem of the upload is timed from this one stem, so
+   all get the same tempo and marker, and Live can edit them together. No such stem: no starter.
+   The beats are read on the upload's source on disk (the working set's download or the kept
+   sample, from `source-index.json`) when there is one, else on that stem
+   (`BeatReader.ReferenceFor`, [ADR 0065](adr/0065-the-starter-warps-beats-are-read-on-the-source.md)).
+2. **Read the reference's tempo with beatdetect.** The pinned build (`BeatdetectFfmpeg`, today
    `1.3.1-48ba578`, the v1.3.1 release's code) runs `beatdetect=hpss=1` over the whole file, then over each full 30 s of it
-   (`BeatReader`). The reading is kept until the file changes. A reading from an older build than
+   (`BeatReader`). Each file's reading is kept until that file changes, so a new reference (a source
+   where the instrumental was) is read once, and one that falls back is read by its own. A reading from an older build than
    the pin is used until the beat worker reads the file again, which it does once every file with
    no reading has one (`BeatReader.ToRead`).
 3. **Gate on the reading** (`TrackTempo.StarterBpm`). No starter when:
@@ -104,7 +108,7 @@ replaces a lent warp or the maintainer's own.
 |---|---|
 | `StarterWarps` is *Off* | nothing; Live analyses it |
 | a sibling holds a saved warp | the lent warp, or nothing if lending is off |
-| no instrumental, kept source or karaoke | Warp off |
+| no instrumental, kept source or karaoke stem | Warp off |
 | no reading yet | Warp off, until a reading arrives |
 | the windows drift | Warp off |
 | one tempo does not hold within 10 ms, or has a step | Warp off |
@@ -118,7 +122,7 @@ pass it (MEASURED, ADR 0048).
 
 - **A third of steady tracks still get the wrong beat of the bar**: the downbeat is a guess under
   confidence 0.03, and wrong on one in five above it. The marker's beat is then changed by hand.
-- **The downbeat comes from the instrumental.** The drum stem gave a surer one on GYARI –
+- **The downbeat comes from the source, else the instrumental.** The drum stem gave a surer one on GYARI –
   *アカリがやってきたぞっ* (*Akari ga Yattekita zo*) (0.078 against 0.002), but over 42 kept drum
   stems it was less sure and no more often right (ADR 0054).
 - **A clip that starts before the audio** has not yet been opened in Live from a starter. The first
@@ -135,3 +139,5 @@ pass it (MEASURED, ADR 0048).
 - [ADR 0058](adr/0058-a-staged-stem-shows-its-state-in-live.md): Collections
 - [ADR 0059](adr/0059-a-sample-arrives-at-one-loudness.md): clip gain, and Warp off when there is
   no starter
+- [ADR 0065](adr/0065-the-starter-warps-beats-are-read-on-the-source.md): beatdetect reads the
+  source, else the instrumental

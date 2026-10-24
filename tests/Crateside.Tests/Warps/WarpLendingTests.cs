@@ -241,6 +241,6 @@ public sealed class WarpLendingTests : IDisposable
 
     private sealed class Grids(StarterGrid? grid) : IStarterGrids
     {
-        public StarterGrid? Of(string audioPath) => grid;
+        public StarterGrid? Of(SiblingFile cut) => grid;
     }
 }
