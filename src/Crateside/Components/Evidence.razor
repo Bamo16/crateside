@@ -43,7 +43,7 @@
                 @foreach (var part in Run.Sections)
                 {
                     <li>
-                        <span class="section-label">@part.Label</span>
+                        <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
                         <span class="mono centre-key">@(ModeText.Arrow(part.Centre, false) ?? ModeText.Tag(part.Centre))</span>
                         <span class="muted">@(part.Centre == primary ? "primary · the tag follows it" : null)</span>
                     </li>
@@ -82,22 +82,22 @@
                                     <span class="problem" title="@HostMismatchTitle(source)">kind ≠ host</span>
                                 }
                             </span>
-                            <span class="covers">@source.Covers</span>
+                            <span class="covers"><ProseText Text="@source.Covers" Inline="true" /></span>
                             @if (source.StatesKey is { Length: > 0 } stated)
                             {
-                                <span class="states-key">@ModeText.Stated(stated, source.StatesMode)</span>
+                                <span class="states-key"><ProseText Text="@ModeText.Stated(stated, source.StatesMode)" Inline="true" /></span>
                                 @if (source.Relation is { } relation)
                                 {
-                                    <span class="relation">@relation</span>
+                                    <span class="relation"><ProseText Text="@relation" Inline="true" /></span>
                                 }
                             }
                             else if (source.States is { Length: > 0 } states)
                             {
-                                <span class="states">@states</span>
+                                <span class="states"><ProseText Text="@states" Inline="true" /></span>
                             }
                             @if (source.Note is { Length: > 0 } note)
                             {
-                                <span class="note" title="The agent's note on this source.">@note</span>
+                                <span class="note" title="The agent's note on this source."><ProseText Text="@note" Inline="true" /></span>
                             }
                         </span>
                     </li>
@@ -110,7 +110,7 @@
                     <ul>
                         @foreach (var source in Run.Sources.Where(s => s.States is { Length: > 0 }))
                         {
-                            <li><span class="host">@(source.Host ?? source.Via ?? "source")</span> @source.States</li>
+                            <li><span class="host">@(source.Host ?? source.Via ?? "source")</span> <ProseText Text="@source.States" Inline="true" /></li>
                         }
                     </ul>
                 </details>
@@ -130,10 +130,10 @@
                 @if (Ear is { } ear)
                 {
                     <p class="ear-line">
-                        Your ear: <span class="mono">@(ModeText.Stated(ear.StatesKey, ear.StatesMode) ?? ear.States)</span>
+                        Your ear: <span class="mono"><ProseText Text="@(ModeText.Stated(ear.StatesKey, ear.StatesMode) ?? ear.States)" Inline="true" /></span>
                         @if (ear.Note is { Length: > 0 } weight)
                         {
-                            <text> · @weight</text>
+                            <text> · </text><ProseText Text="@weight" Inline="true" />
                         }
                         · run of @Run.Timestamp.ToLocalTime().ToString("d MMM, h:mm tt")
                     </p>
@@ -152,7 +152,7 @@
                     <div class="window-who">
                         <span class="who-line">
                             <span class="who">@(yours ? "yours" : "judge")</span>
-                            <span class="window-label">@(reading.Window.Label ?? (yours ? "Window" : "Asked for"))</span>
+                            <span class="window-label"><ProseText Text="@(reading.Window.Label ?? (yours ? "Window" : "Asked for"))" Inline="true" /></span>
                         </span>
                         <span class="mono span">@WindowSpan(reading.Window)</span>
                         <span class="why">
@@ -193,9 +193,7 @@
                             </tbody>
                         </table>
                         <span class="became">
-                            @(reading.Section is { } section
-                                ? $"→ section {section.Label}: {ModeText.Named(section.Centre)}"
-                                : "→ no section: the judge did not place this window as a centre of its own")
+                            <ProseText Text="@Became(reading)" Inline="true" />
                         </span>
                     </div>
                 </div>
@@ -246,6 +244,11 @@
     /// <summary>What the user said they hear, recorded as a source of its own kind.</summary>
     private EvidenceSource? Ear => Run.Sources.FirstOrDefault(source => source.Kind is SourceKind.Ear);
 
+    private static string Became(WindowReading reading) =>
+        reading.Section is { } section
+            ? $"→ section {section.Label}: {ModeText.Named(section.Centre)}"
+            : "→ no section: the judge did not place this window as a centre of its own";
+
     private static string WindowSpan(RunWindow window) =>
         window.Bars is { } bars
             ? $"bars {bars.First}–{bars.Last} · {JudgeText.Time(window)}"
@@ -289,7 +292,7 @@
                                 @if (algorithm.RunnerUpKey is { } runnerUp)
                                 {
                                     <span title="How close second place was.">
-                                        runner-up @runnerUp @((algorithm.RunnerUpRatio ?? algorithm.RunnerUpConfidence) is { } r ? $"({r:F3})" : null)
+                                        runner-up <ProseText Text="@runnerUp" Inline="true" /> @((algorithm.RunnerUpRatio ?? algorithm.RunnerUpConfidence) is { } r ? $"({r:F3})" : null)
                                     </span>
                                 }
                                 @if (algorithm.Reranked is true)
@@ -365,7 +368,7 @@
                 <ul class="flicker">
                     @foreach (var e in Run.KeyEvents)
                     {
-                        <li><span class="t">@e.Seconds.ToString("F2")s</span> @e.Key <span class="r">r=@e.R.ToString("F2")</span></li>
+                        <li><span class="t">@e.Seconds.ToString("F2")s</span> <ProseText Text="@e.Key" Inline="true" /> <span class="r">r=@e.R.ToString("F2")</span></li>
                     }
                 </ul>
             </details>
