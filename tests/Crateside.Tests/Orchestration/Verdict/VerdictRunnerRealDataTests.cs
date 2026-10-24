@@ -6,6 +6,7 @@ using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Verdict;
@@ -29,7 +30,8 @@ public sealed class VerdictRunnerRealDataTests
             ),
             new SourcePages(new FixedHttpClientFactory(new HttpClient())),
             Options.Create(new JudgeOptions()),
-            TimeProvider.System
+            TimeProvider.System,
+            NullLogger<VerdictRunner>.Instance
         );
 
     private static WorkOrder Order(string videoId) =>

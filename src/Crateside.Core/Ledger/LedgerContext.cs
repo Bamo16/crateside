@@ -60,6 +60,16 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
                 }
             );
             run.OwnsMany(
+                row => row.Candidates,
+                candidate =>
+                {
+                    candidate.ToTable("Candidates");
+                    candidate.WithOwner().HasForeignKey("RunId");
+                    candidate.HasKey("RunId", nameof(CandidateRow.Position));
+                    candidate.Property(row => row.Position).ValueGeneratedNever();
+                }
+            );
+            run.OwnsMany(
                 row => row.Windows,
                 window =>
                 {
@@ -121,6 +131,7 @@ internal sealed class RunRow
     public string? Direction { get; set; }
     public string? TonicCheck { get; set; }
     public string? Reasoning { get; set; }
+    public string? WithheldReasoning { get; set; }
 
     /// <summary>The detectors' report, as JSON.</summary>
     public string? Evidence { get; set; }
@@ -131,6 +142,7 @@ internal sealed class RunRow
 
     public List<SectionRow> Sections { get; set; } = [];
     public List<SourceRow> Sources { get; set; } = [];
+    public List<CandidateRow> Candidates { get; set; } = [];
     public List<WindowRow> Windows { get; set; } = [];
 
     public TonalCentre? Centre => Tonic is not null && Mode is { } mode ? new(Tonic, mode) : null;
@@ -154,6 +166,7 @@ internal sealed class RunRow
             Direction = run.Direction,
             TonicCheck = run.TonicCheck,
             Reasoning = run.Reasoning,
+            WithheldReasoning = run.WithheldReasoning,
             Evidence = run.Evidence,
             OldBpm = run.OldBpm?.Value,
             OldBpmSource = run.OldBpm?.Source,
@@ -186,6 +199,18 @@ internal sealed class RunRow
                             StatesMode = source.StatesMode,
                             Note = source.Note,
                             Sections = source.Sections is { } labels ? [.. labels] : null,
+                        }
+                ),
+            ],
+            Candidates =
+            [
+                .. run.Candidates.Select(
+                    (candidate, index) =>
+                        new CandidateRow
+                        {
+                            Position = index,
+                            Key = candidate.Key,
+                            Why = candidate.Why,
                         }
                 ),
             ],
@@ -226,6 +251,13 @@ internal sealed class RunRow
             Direction = Direction,
             TonicCheck = TonicCheck,
             Reasoning = Reasoning,
+            WithheldReasoning = WithheldReasoning,
+            Candidates =
+            [
+                .. Candidates
+                    .OrderBy(candidate => candidate.Position)
+                    .Select(candidate => new RunCandidate(candidate.Key, candidate.Why)),
+            ],
             Evidence = Evidence,
             OldBpm = (OldBpm, OldBpmSource, OldBpmBeatdetect) is (null, null, null)
                 ? null
@@ -296,6 +328,13 @@ internal sealed class SourceRow
 
     /// <summary>The labels of the sections the source covered; null when it did not say.</summary>
     public List<string>? Sections { get; set; }
+}
+
+internal sealed class CandidateRow
+{
+    public int Position { get; set; }
+    public string Key { get; set; } = string.Empty;
+    public string Why { get; set; } = string.Empty;
 }
 
 internal sealed class WindowRow

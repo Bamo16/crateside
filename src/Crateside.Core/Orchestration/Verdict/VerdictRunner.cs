@@ -6,6 +6,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Loop;
 using Humanizer;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Orchestration.Verdict;
@@ -22,6 +23,7 @@ public sealed partial class VerdictRunner(
     ISourcePages sourcePages,
     IOptions<JudgeOptions> options,
     TimeProvider time,
+    ILogger<VerdictRunner> log,
     string fileName = "claude"
 )
 {
@@ -109,17 +111,22 @@ public sealed partial class VerdictRunner(
             switch (Assess(VerdictFile.Check(verdictPath), order, direction, audio, detected))
             {
                 case VerdictCheck.Recordable(var run):
-                    return Record(Complete(run, order, direction, audio, detected), order);
+                    LogNotes(run, order);
+
+                    return Record(
+                        Complete(run, order, direction, audio, detected) with
+                        {
+                            WithheldReasoning = withheld?.Reasoning,
+                        },
+                        order
+                    );
 
                 case VerdictCheck.WindowsAsked(var windows, var run)
                     when !resumedWithWindows && audio is not null:
                     resumedWithWindows = true;
-                    List<RunWindow> asked =
-                    [
-                        .. windows.Select(window => window with { Why = run.Reasoning }),
-                    ];
-                    step(new JudgeStep.JudgeAsked(asked));
-                    var judged = await DetectAsync(audio, folder, asked, step, ct, given.Count);
+                    LogNotes(run with { Windows = windows }, order);
+                    step(new JudgeStep.JudgeAsked(windows));
+                    var judged = await DetectAsync(audio, folder, windows, step, ct, given.Count);
                     detected = [.. given, .. judged];
                     withheld = Complete(run, order, direction, audio, detected);
                     prompt = WindowsPrompt(judged, verdictPath);
@@ -127,7 +134,15 @@ public sealed partial class VerdictRunner(
                     break;
 
                 case VerdictCheck.WindowsAsked(_, var run):
-                    return Record(Complete(run, order, direction, audio, detected), order);
+                    LogNotes(run, order);
+
+                    return Record(
+                        Complete(run, order, direction, audio, detected) with
+                        {
+                            WithheldReasoning = withheld?.Reasoning,
+                        },
+                        order
+                    );
 
                 case VerdictCheck.Unusable when AgentUnavailableReason(outcome) is { } reason:
                     return VerdictResult.AgentUnavailable(reason);
@@ -623,6 +638,12 @@ public sealed partial class VerdictRunner(
                 ? swapped
             : ledger.TryGetLatestByVideoId(order.VideoId, out var held) ? held
             : null;
+    }
+
+    private void LogNotes(RunRecord run, WorkOrder order)
+    {
+        foreach (var note in RunValidation.Notes(run))
+            log.LogWarning("Verdict for {VideoId}: {Note}", order.VideoId, note);
     }
 
     private VerdictResult Record(RunRecord run, WorkOrder order)

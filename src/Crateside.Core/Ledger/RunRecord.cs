@@ -47,6 +47,12 @@ public sealed record RunRecord
     public string? TonicCheck { get; init; }
     public string? Reasoning { get; init; }
 
+    /// <summary>The keys the judge weighed besides the verdict's; for a WITHHELD, the ones still open.</summary>
+    public IReadOnlyList<RunCandidate> Candidates { get; init; } = [];
+
+    /// <summary>The reasoning of the pass that asked for windows, kept once for the run that followed it.</summary>
+    public string? WithheldReasoning { get; init; }
+
     /// <summary>The detectors' report, as JSON.</summary>
     public string? Evidence { get; init; }
 
@@ -75,13 +81,16 @@ public sealed record RunSource
     public IReadOnlyList<string>? Sections { get; init; }
 }
 
+/// <summary>A key the judge weighed besides the verdict's, and why in one sentence.</summary>
+public sealed record RunCandidate(string Key, string Why);
+
 /// <summary>A stretch of the track detected on its own, in seconds.</summary>
 public sealed record RunWindow(double Start, double End, string? Label, WindowAsker? AskedBy)
 {
     /// <summary>The bars the user gave, as Live counts them; null when given in time or asked for by the judge.</summary>
     public BarSpan? Bars { get; init; }
 
-    /// <summary>Why the judge asked for it, in its own words.</summary>
+    /// <summary>What the judge wanted the window to settle, in one sentence.</summary>
     public string? Why { get; init; }
 
     /// <summary>What the window's section is called: its label, else its span.</summary>

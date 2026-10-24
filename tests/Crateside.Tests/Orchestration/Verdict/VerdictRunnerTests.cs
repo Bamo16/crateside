@@ -7,6 +7,7 @@ using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Plans;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
@@ -25,7 +26,11 @@ public sealed class VerdictRunnerTests : IDisposable
           "centre": { "tonic": "A", "mode": "aeolian" },
           "sources": [{ "url": "https://www.hooktheory.com/theorytab/view/yes/owner-of-a-lonely-heart", "kind": "authoritative", "statesKey": "A minor", "sections": ["Chorus"] }],
           "tonicCheck": "E7 resolves to Am.",
-          "reasoning": "Backed by both, and Hooktheory agrees."
+          "reasoning": "Backed by both, and Hooktheory agrees.",
+          "candidates": [
+            { "key": "A minor", "why": "The verdict itself, listed by mistake." },
+            { "key": "C major", "why": "The relative; nothing resolves to it." }
+          ]
         }
         """;
 
@@ -35,7 +40,7 @@ public sealed class VerdictRunnerTests : IDisposable
           "title": "Owner of a Lonely Heart",
           "confidence": "WITHHELD",
           "reasoning": "A three-way split; the intro is drums only.",
-          "windows": [{ "start": 62, "end": 94.5, "label": "Chorus" }]
+          "windows": [{ "start": 62, "end": 94.5, "label": "Chorus", "why": "Does the chorus settle the three-way split?" }]
         }
         """;
 
@@ -44,6 +49,8 @@ public sealed class VerdictRunnerTests : IDisposable
         "crateside-tests",
         Guid.NewGuid().ToString("n")
     );
+
+    private readonly ListLogger _log = new();
 
     private readonly FakeTimeProvider _time = new(
         DateTimeOffset.Parse("2026-10-16T12:00:00+00:00")
@@ -72,7 +79,7 @@ public sealed class VerdictRunnerTests : IDisposable
     }
 
     private VerdictRunner Runner =>
-        new(Ledger, Set, Sessions, Detector, Pages, Options.Create(Judge), _time);
+        new(Ledger, Set, Sessions, Detector, Pages, Options.Create(Judge), _time, _log);
 
     private static WorkOrder Order(bool instrumentalRelease = false, string? statedSource = null) =>
         WorkOrder.Compose(
@@ -140,6 +147,42 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.Equal("full_mix", evidence.InputKind);
         Assert.Equal(["Chorus"], Assert.Single(evidence.Sources).Sections);
         Assert.Single(Sessions.Requests);
+    }
+
+    [Fact]
+    public async Task A_candidate_equal_to_the_verdicts_key_is_dropped_and_logged_while_the_others_are_kept()
+    {
+        GiveEvidence();
+        GiveAudio();
+        Session(Verdict);
+
+        await RunAsync();
+
+        var evidence = Ledger.EvidenceFor("yes - owner of a lonely heart")!;
+
+        Assert.Equal(
+            new RunCandidate("C major", "The relative; nothing resolves to it."),
+            Assert.Single(evidence.Candidates)
+        );
+        Assert.Contains(_log.Lines, line => line.Contains("candidate A minor is the verdict"));
+    }
+
+    [Fact]
+    public async Task A_reasoning_over_its_budget_is_logged_and_still_recorded()
+    {
+        GiveEvidence();
+        GiveAudio();
+        Session(
+            Verdict.Replace(
+                "Backed by both, and Hooktheory agrees.",
+                string.Join(' ', Enumerable.Repeat("word", 120))
+            )
+        );
+
+        var result = await RunAsync();
+
+        Assert.True(result.IsSuccess, result.Error);
+        Assert.Contains(_log.Lines, line => line.Contains("reasoning is 120 words"));
     }
 
     [Fact]
@@ -219,11 +262,12 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.Equal(
             new RunWindow(62, 94.5, "Chorus", WindowAsker.Judge)
             {
-                Why = "A three-way split; the intro is drums only.",
+                Why = "Does the chorus settle the three-way split?",
             },
             Assert.Single(evidence.Windows)
         );
         Assert.Equal(KeyConfidence.High, Assert.Single(Ledger.Read().Runs).Confidence);
+        Assert.Equal("A three-way split; the intro is drums only.", evidence.WithheldReasoning);
     }
 
     [Fact]
@@ -662,7 +706,7 @@ public sealed class VerdictRunnerTests : IDisposable
             [WindowAsker.User, WindowAsker.User, WindowAsker.Judge],
             windows.Select(window => window.AskedBy)
         );
-        Assert.Equal("A three-way split; the intro is drums only.", windows[2].Why);
+        Assert.Equal("Does the chorus settle the three-way split?", windows[2].Why);
     }
 
     [Fact]
@@ -692,6 +736,24 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.Empty(Detector.Asked);
         Assert.Contains("judged again, over the whole track", Sessions.Requests[0].StandardInput);
         Assert.Empty(Ledger.EvidenceFor("yes - owner of a lonely heart")!.Windows);
+    }
+
+    private sealed class ListLogger : ILogger<VerdictRunner>
+    {
+        public List<string> Lines { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter
+        ) => Lines.Add(formatter(state, exception));
     }
 
     private sealed class FakeSessions : IProcessRunner
