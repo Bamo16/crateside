@@ -229,10 +229,13 @@ by hand; everything below describes candidates against it.
   saves over the file
   ([ADR 0043](docs/adr/0043-a-borrowed-warp-is-finished-and-says-where-it-came-from.md),
   [ADR 0045](docs/adr/0045-a-recut-takes-its-warp-from-its-own-kind-first.md)).
-- **Pinned build** — the one beatdetect build, of those crateside knows (#102), that makes new
-  readings; the ffmpeg on PATH is not involved. A reading keeps the build that made it. One from an
-  older build than the pin stays in use until the beat worker has read the file again, after every
-  file with no reading.
+- **Pinned build** — for each of beatdetect and keydetect, the one build of those crateside knows
+  for that filter (#102) that makes new readings; the ffmpeg on PATH is not involved. A beatdetect
+  reading keeps the build that made it, and one from an older build than the pin stays in use until
+  the beat worker has read the file again, after every file with no reading. A judged song's
+  evidence that another keydetect build read is read again, all three detectors, when the evidence
+  stage has nothing else to do; its verdict is left as it was
+  ([ADR 0066](docs/adr/0066-keydetect-has-its-own-pinned-build.md)).
 - **Starter warp** — a one-marker warp crateside writes, at its own steady beatdetect reading of the
   instrumental, onto each stem of an upload nothing is warped on yet as it lands in staging, so the
   group dragged into an empty set sets its tempo. It is written only where that one tempo keeps the

@@ -28,11 +28,11 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             }.GetTypeInfo(typeof(MachineDto));
 
-    /// <summary>All three through the configured keydetect ffmpeg.</summary>
-    public DetectorSet(IProcessRunner runner, CratesidePaths paths)
+    /// <summary>keydetect through its pinned build as it stood at start-up, decoding through the configured ffmpeg (ADR 0066).</summary>
+    public DetectorSet(IProcessRunner runner, CratesidePaths paths, KnownBuilds builds)
         : this(
             new PcmDecoder(runner, paths.KeydetectFfmpeg),
-            new KeydetectFilter(runner, paths.KeydetectFfmpeg),
+            new KeydetectFilter(runner, builds.FileNameFor(FfmpegFilter.Keydetect)),
             new MadmomKeyCnn()
         ) { }
 
@@ -52,36 +52,28 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
         CancellationToken ct = default
     )
     {
-        if (!File.Exists(audioPath))
-            return new DetectionOutcome.Failed($"no audio at {audioPath}");
-
-        var filter = keydetect.ReadAsync(audioPath, window, ct);
-        var (cnn, edma) = await ReadBackersAsync(audioPath, window, ct);
-
-        var (ffmpeg, sha256) = await keydetect.IdentifyAsync(ct);
-        var evidence = Evidence(audioPath, window, await filter, cnn, edma) with
+        switch (await ReadAsync(audioPath, window, ct))
         {
-            Versions = new Dictionary<string, string?>
-            {
-                ["ffmpeg"] = ffmpeg,
-                ["ffmpeg_sha256"] = sha256,
-                ["onnxruntime"] = typeof(InferenceSession).Assembly.GetName().Version?.ToString(),
-                ["madmom_model"] = "key_cnn 2018 (madmom_models), as ONNX",
-            },
-        };
+            case EvidenceReading.Read(var json):
+                await File.WriteAllTextAsync(evidencePath, json, ct);
 
-        if (
-            evidence.Algorithms is
-            { FfmpegKeydetect.Key: null, Madmom.Key: null, EssentiaEdma.Key: null }
-        )
-            return new DetectionOutcome.Failed(
-                $"no detector read a key: {evidence.Algorithms.FfmpegKeydetect.Error}"
-            );
-
-        await File.WriteAllTextAsync(evidencePath, JsonSerializer.Serialize(evidence, Written), ct);
-
-        return new DetectionOutcome.Written(evidencePath);
+                return new DetectionOutcome.Written(evidencePath);
+            case EvidenceReading.Failed(var error):
+                return new DetectionOutcome.Failed(error);
+            default:
+                throw new UnreachableException();
+        }
     }
+
+    /// <summary>The evidence <see cref="DetectAsync"/> would write over the whole audio, without writing it.</summary>
+    public Task<EvidenceReading> ReadEvidenceAsync(
+        string audioPath,
+        CancellationToken ct = default
+    ) => ReadAsync(audioPath, null, ct);
+
+    /// <summary>The hash of the executable keydetect runs on, as the evidence records it.</summary>
+    public async Task<string?> KeydetectSha256Async(CancellationToken ct = default) =>
+        (await keydetect.IdentifyAsync(ct)).Sha256;
 
     /// <summary>madmom and edma over the audio, or one window of it, on the CPU alone.</summary>
     public async Task<(KeyReading Madmom, KeyReading Edma)> ReadBackersAsync(
@@ -130,6 +122,39 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
             Written
         ) as JsonObject
         ?? throw new UnreachableException();
+
+    private async Task<EvidenceReading> ReadAsync(
+        string audioPath,
+        RunWindow? window,
+        CancellationToken ct
+    )
+    {
+        if (!File.Exists(audioPath))
+            return new EvidenceReading.Failed($"no audio at {audioPath}");
+
+        var filter = keydetect.ReadAsync(audioPath, window, ct);
+        var (cnn, edma) = await ReadBackersAsync(audioPath, window, ct);
+
+        var (ffmpeg, sha256) = await keydetect.IdentifyAsync(ct);
+        var evidence = Evidence(audioPath, window, await filter, cnn, edma) with
+        {
+            Versions = new Dictionary<string, string?>
+            {
+                ["ffmpeg"] = ffmpeg,
+                ["ffmpeg_sha256"] = sha256,
+                ["onnxruntime"] = typeof(InferenceSession).Assembly.GetName().Version?.ToString(),
+                ["madmom_model"] = "key_cnn 2018 (madmom_models), as ONNX",
+            },
+        };
+
+        return
+            evidence.Algorithms
+                is { FfmpegKeydetect.Key: null, Madmom.Key: null, EssentiaEdma.Key: null }
+            ? new EvidenceReading.Failed(
+                $"no detector read a key: {evidence.Algorithms.FfmpegKeydetect.Error}"
+            )
+            : new EvidenceReading.Read(JsonSerializer.Serialize(evidence, Written));
+    }
 
     private static AlgorithmsDto.FfmpegDto FfmpegOf(KeydetectReading keydetect) =>
         keydetect switch
@@ -205,7 +230,7 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
     }
 
     /// <summary>
-    /// The bands for <c>r</c>, from the 2026-07-19 corpus evaluation of the 8.1.2 build; they
+    /// The bands for <c>r</c>, from the 2026-07-19 corpus evaluation of the 8.1.2 build and held for 1.2.1; they
     /// shift with the build, so the evidence records which ffmpeg read it.
     /// </summary>
     private static string TrustBand(double r) =>
@@ -269,4 +294,13 @@ public abstract record DetectionOutcome
     public sealed record Written(string EvidencePath) : DetectionOutcome;
 
     public sealed record Failed(string Error) : DetectionOutcome;
+}
+
+public abstract record EvidenceReading
+{
+    private EvidenceReading() { }
+
+    public sealed record Read(string Json) : EvidenceReading;
+
+    public sealed record Failed(string Error) : EvidenceReading;
 }

@@ -130,6 +130,14 @@ public sealed class EvidenceDrainerTests : IDisposable
 
     private sealed class WritingDetectors : IDetectorSet
     {
+        public Task<string?> KeydetectSha256Async(CancellationToken ct = default) =>
+            Task.FromResult<string?>(null);
+
+        public Task<EvidenceReading> ReadEvidenceAsync(
+            string audioPath,
+            CancellationToken ct = default
+        ) => throw new NotSupportedException();
+
         public Task<(KeyReading Madmom, KeyReading Edma)> ReadBackersAsync(
             string audioPath,
             RunWindow? window,

@@ -2,7 +2,7 @@ using Crateside.Core;
 using Crateside.Core.Beats;
 using Crateside.Core.Orchestration.Loop;
 
-namespace Crateside.Tests.Beats;
+namespace Crateside.Tests;
 
 public sealed class KnownBuildsTests : IDisposable
 {
@@ -16,8 +16,16 @@ public sealed class KnownBuildsTests : IDisposable
 
     private string StatePath => Path.Combine(_folder, "builds.json");
 
-    private CratesidePaths Paths(string? seed = null) =>
-        new() { KnownBuildsFile = StatePath, BeatdetectFfmpeg = seed ?? string.Empty };
+    private const string KeydetectBuild =
+        @"V:\Repos\keydetect-harness\builds\ffmpeg-keydetect-1.2.1.exe";
+
+    private CratesidePaths Paths(string? seed = null, string? keydetectSeed = null) =>
+        new()
+        {
+            KnownBuildsFile = StatePath,
+            BeatdetectFfmpeg = seed ?? string.Empty,
+            KeydetectFfmpeg = keydetectSeed ?? string.Empty,
+        };
 
     public void Dispose() => Directory.Delete(_folder, recursive: true);
 
@@ -27,13 +35,14 @@ public sealed class KnownBuildsTests : IDisposable
         var builds = new KnownBuilds(new ProcessRunner(), Paths());
 
         var outcome = await builds.AddAsync(
+            FfmpegFilter.Beatdetect,
             Path.Combine(_folder, "nothing.exe"),
             TestContext.Current.CancellationToken
         );
 
         Assert.IsType<BuildAddOutcome.NotFfmpeg>(outcome);
-        Assert.Empty(builds.All);
-        Assert.Null(builds.Pinned);
+        Assert.Empty(builds.All(FfmpegFilter.Beatdetect));
+        Assert.Null(builds.Pinned(FfmpegFilter.Beatdetect));
     }
 
     [Fact]
@@ -44,11 +53,19 @@ public sealed class KnownBuildsTests : IDisposable
 
         var builds = new KnownBuilds(new ProcessRunner(), Paths());
 
-        await builds.AddAsync(Newest, TestContext.Current.CancellationToken);
-        await builds.AddAsync(Older, TestContext.Current.CancellationToken);
+        await builds.AddAsync(
+            FfmpegFilter.Beatdetect,
+            Newest,
+            TestContext.Current.CancellationToken
+        );
+        await builds.AddAsync(
+            FfmpegFilter.Beatdetect,
+            Older,
+            TestContext.Current.CancellationToken
+        );
 
-        Assert.Equal(2, builds.All.Count);
-        Assert.Equal("1.3.0-1e57fec", builds.Pinned?.Build.Label);
+        Assert.Equal(2, builds.All(FfmpegFilter.Beatdetect).Count);
+        Assert.Equal("1.3.0-1e57fec", builds.Pinned(FfmpegFilter.Beatdetect)?.Build.Label);
     }
 
     [Fact]
@@ -59,11 +76,19 @@ public sealed class KnownBuildsTests : IDisposable
 
         var builds = new KnownBuilds(new ProcessRunner(), Paths());
 
-        await builds.AddAsync(Newest, TestContext.Current.CancellationToken);
-        var again = await builds.AddAsync(Newest, TestContext.Current.CancellationToken);
+        await builds.AddAsync(
+            FfmpegFilter.Beatdetect,
+            Newest,
+            TestContext.Current.CancellationToken
+        );
+        var again = await builds.AddAsync(
+            FfmpegFilter.Beatdetect,
+            Newest,
+            TestContext.Current.CancellationToken
+        );
 
         Assert.IsType<BuildAddOutcome.AlreadyKnown>(again);
-        Assert.Single(builds.All);
+        Assert.Single(builds.All(FfmpegFilter.Beatdetect));
     }
 
     [Fact]
@@ -73,17 +98,28 @@ public sealed class KnownBuildsTests : IDisposable
             return;
 
         var builds = new KnownBuilds(new ProcessRunner(), Paths());
-        await builds.AddAsync(Newest, TestContext.Current.CancellationToken);
+        await builds.AddAsync(
+            FfmpegFilter.Beatdetect,
+            Newest,
+            TestContext.Current.CancellationToken
+        );
         var older = Assert.IsType<BuildAddOutcome.Added>(
-            await builds.AddAsync(Older, TestContext.Current.CancellationToken)
+            await builds.AddAsync(
+                FfmpegFilter.Beatdetect,
+                Older,
+                TestContext.Current.CancellationToken
+            )
         );
 
-        Assert.True(builds.Pin(older.Known.Build.Sha256));
+        Assert.True(builds.Pin(FfmpegFilter.Beatdetect, older.Known.Build.Sha256));
 
         var restarted = new KnownBuilds(new ProcessRunner(), Paths());
 
-        Assert.Equal(2, restarted.All.Count);
-        Assert.Equal(older.Known.Build.Label, restarted.Pinned?.Build.Label);
+        Assert.Equal(2, restarted.All(FfmpegFilter.Beatdetect).Count);
+        Assert.Equal(
+            older.Known.Build.Label,
+            restarted.Pinned(FfmpegFilter.Beatdetect)?.Build.Label
+        );
     }
 
     [Fact]
@@ -94,12 +130,16 @@ public sealed class KnownBuildsTests : IDisposable
 
         var builds = new KnownBuilds(new ProcessRunner(), Paths());
         var added = Assert.IsType<BuildAddOutcome.Added>(
-            await builds.AddAsync(Newest, TestContext.Current.CancellationToken)
+            await builds.AddAsync(
+                FfmpegFilter.Beatdetect,
+                Newest,
+                TestContext.Current.CancellationToken
+            )
         );
 
-        Assert.False(builds.Remove(added.Known.Build.Sha256));
-        Assert.False(builds.Pin("0000"));
-        Assert.Single(builds.All);
+        Assert.False(builds.Remove(FfmpegFilter.Beatdetect, added.Known.Build.Sha256));
+        Assert.False(builds.Pin(FfmpegFilter.Beatdetect, "0000"));
+        Assert.Single(builds.All(FfmpegFilter.Beatdetect));
     }
 
     [Fact]
@@ -113,8 +153,8 @@ public sealed class KnownBuildsTests : IDisposable
         await builds.SeedAsync(TestContext.Current.CancellationToken);
         await builds.SeedAsync(TestContext.Current.CancellationToken);
 
-        Assert.Single(builds.All);
-        Assert.Equal("1.3.0-1e57fec", builds.Pinned?.Build.Label);
+        Assert.Single(builds.All(FfmpegFilter.Beatdetect));
+        Assert.Equal("1.3.0-1e57fec", builds.Pinned(FfmpegFilter.Beatdetect)?.Build.Label);
     }
 
     [Fact]
@@ -126,9 +166,17 @@ public sealed class KnownBuildsTests : IDisposable
         var audio = Path.Combine(_folder, "tone.wav");
         WriteSilence(audio);
         var builds = new KnownBuilds(new ProcessRunner(), Paths());
-        await builds.AddAsync(Older, TestContext.Current.CancellationToken);
+        await builds.AddAsync(
+            FfmpegFilter.Beatdetect,
+            Older,
+            TestContext.Current.CancellationToken
+        );
         var newer = Assert.IsType<BuildAddOutcome.Added>(
-            await builds.AddAsync(Newest, TestContext.Current.CancellationToken)
+            await builds.AddAsync(
+                FfmpegFilter.Beatdetect,
+                Newest,
+                TestContext.Current.CancellationToken
+            )
         );
         var reader = new BeatReader(
             new ProcessRunner(),
@@ -141,7 +189,7 @@ public sealed class KnownBuildsTests : IDisposable
 
         Assert.False(reader.IsFromOlderBuild(audio));
 
-        builds.Pin(newer.Known.Build.Sha256);
+        builds.Pin(FfmpegFilter.Beatdetect, newer.Known.Build.Sha256);
         await reader.RefreshBuildAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(reader.Read(audio));
@@ -159,9 +207,17 @@ public sealed class KnownBuildsTests : IDisposable
         WriteSilence(old);
         WriteSilence(fresh);
         var builds = new KnownBuilds(new ProcessRunner(), Paths());
-        await builds.AddAsync(Older, TestContext.Current.CancellationToken);
+        await builds.AddAsync(
+            FfmpegFilter.Beatdetect,
+            Older,
+            TestContext.Current.CancellationToken
+        );
         var newer = Assert.IsType<BuildAddOutcome.Added>(
-            await builds.AddAsync(Newest, TestContext.Current.CancellationToken)
+            await builds.AddAsync(
+                FfmpegFilter.Beatdetect,
+                Newest,
+                TestContext.Current.CancellationToken
+            )
         );
         var reader = new BeatReader(
             new ProcessRunner(),
@@ -171,7 +227,7 @@ public sealed class KnownBuildsTests : IDisposable
         await reader.RefreshBuildAsync(TestContext.Current.CancellationToken);
         await reader.MeasureAsync(old, TestContext.Current.CancellationToken);
 
-        builds.Pin(newer.Known.Build.Sha256);
+        builds.Pin(FfmpegFilter.Beatdetect, newer.Known.Build.Sha256);
         await reader.RefreshBuildAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal([fresh, old], reader.ToRead([old, fresh]));
@@ -192,12 +248,20 @@ public sealed class KnownBuildsTests : IDisposable
         WriteSilence(audio);
         var builds = new KnownBuilds(new ProcessRunner(), Paths());
         var older = Assert.IsType<BuildAddOutcome.Added>(
-            await builds.AddAsync(Older, TestContext.Current.CancellationToken)
+            await builds.AddAsync(
+                FfmpegFilter.Beatdetect,
+                Older,
+                TestContext.Current.CancellationToken
+            )
         );
         var newer = Assert.IsType<BuildAddOutcome.Added>(
-            await builds.AddAsync(Newest, TestContext.Current.CancellationToken)
+            await builds.AddAsync(
+                FfmpegFilter.Beatdetect,
+                Newest,
+                TestContext.Current.CancellationToken
+            )
         );
-        builds.Pin(newer.Known.Build.Sha256);
+        builds.Pin(FfmpegFilter.Beatdetect, newer.Known.Build.Sha256);
         var reader = new BeatReader(
             new ProcessRunner(),
             Path.Combine(_folder, "beats.json"),
@@ -206,10 +270,76 @@ public sealed class KnownBuildsTests : IDisposable
         await reader.RefreshBuildAsync(TestContext.Current.CancellationToken);
         await reader.MeasureAsync(audio, TestContext.Current.CancellationToken);
 
-        builds.Pin(older.Known.Build.Sha256);
+        builds.Pin(FfmpegFilter.Beatdetect, older.Known.Build.Sha256);
         await reader.RefreshBuildAsync(TestContext.Current.CancellationToken);
 
         Assert.Empty(reader.ToRead([audio]));
+    }
+
+    [Fact]
+    public void A_file_from_before_keydetect_had_a_pin_keeps_beatdetects_builds_and_pin()
+    {
+        File.WriteAllText(
+            StatePath,
+            """
+            {"builds":[
+              {"path":"C:\\a\\ffmpeg.exe","build":{"version":"1.3.1","sha256":"aa","commit":null}},
+              {"path":"C:\\b\\ffmpeg.exe","build":{"version":"1.3.0","sha256":"bb","commit":null}}
+            ],"pinned":"aa"}
+            """
+        );
+
+        var builds = new KnownBuilds(new ProcessRunner(), Paths());
+
+        Assert.Equal("1.3.1", builds.Pinned(FfmpegFilter.Beatdetect)?.Build.Label);
+        Assert.Empty(builds.All(FfmpegFilter.Keydetect));
+        Assert.True(builds.Remove(FfmpegFilter.Beatdetect, "bb"));
+
+        var restarted = new KnownBuilds(new ProcessRunner(), Paths());
+
+        Assert.Equal("1.3.1", restarted.Pinned(FfmpegFilter.Beatdetect)?.Build.Label);
+        Assert.Single(restarted.All(FfmpegFilter.Beatdetect));
+        Assert.Contains("\"filters\"", File.ReadAllText(StatePath));
+    }
+
+    [Fact]
+    public void A_filter_with_no_pin_runs_on_its_configured_executable()
+    {
+        var builds = new KnownBuilds(new ProcessRunner(), Paths(keydetectSeed: "ffmpeg"));
+
+        Assert.Equal("ffmpeg", builds.FileNameFor(FfmpegFilter.Keydetect));
+    }
+
+    [Fact]
+    public async Task Each_filter_keeps_its_own_pin_and_a_build_without_the_filter_is_refused()
+    {
+        if (!SkipUnlessHarness())
+            return;
+
+        if (!File.Exists(KeydetectBuild))
+        {
+            Assert.Skip("The keydetect 1.2.1 build is not on this machine");
+
+            return;
+        }
+
+        var builds = new KnownBuilds(new ProcessRunner(), Paths(Newest, KeydetectBuild));
+
+        await builds.SeedAsync(TestContext.Current.CancellationToken);
+
+        Assert.IsType<BuildAddOutcome.NotFfmpeg>(
+            await builds.AddAsync(
+                FfmpegFilter.Beatdetect,
+                KeydetectBuild,
+                TestContext.Current.CancellationToken
+            )
+        );
+
+        var restarted = new KnownBuilds(new ProcessRunner(), Paths());
+
+        Assert.Equal("1.3.0-1e57fec", restarted.Pinned(FfmpegFilter.Beatdetect)?.Build.Label);
+        Assert.Equal("1.2.1", restarted.Pinned(FfmpegFilter.Keydetect)?.Build.Label);
+        Assert.Equal(KeydetectBuild, restarted.FileNameFor(FfmpegFilter.Keydetect));
     }
 
     private static bool SkipUnlessHarness()

@@ -34,14 +34,14 @@ public sealed class CratesidePaths
     public string AbletonIndex { get; set; } =
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("Ableton", "Live Database");
 
-    /// <summary>The ffmpeg that detects keys and decodes for the other detectors: a build with FiLL's <c>keydetect</c>.</summary>
+    /// <summary>The ffmpeg that decodes for madmom and edma, and the keydetect build a machine knowing none starts on.</summary>
     public string KeydetectFfmpeg { get; set; } = "ffmpeg";
 
     /// <summary>crateside's ledger of key verdicts, a SQLite file (docs/ledger.md).</summary>
     public string LedgerDatabase { get; set; } =
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("crateside", "ledger.db");
 
-    /// <summary>The beatdetect builds crateside knows, and the one it pins.</summary>
+    /// <summary>The ffmpeg builds crateside knows for each filter, and the one it pins for each.</summary>
     public string KnownBuildsFile { get; set; } =
         Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "builds.json");
 

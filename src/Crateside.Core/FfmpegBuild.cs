@@ -1,17 +1,25 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Crateside.Core.Orchestration.Loop;
 
-namespace Crateside.Core.Beats;
+namespace Crateside.Core;
 
-/// <summary>Which ffmpeg read a file: its version and the executable's hash, with the commit when a <c>build.json</c> beside it vouches for that hash.</summary>
+/// <summary>The ffmpeg filters crateside pins a build for, each on its own (#102, ADR 0066).</summary>
+public enum FfmpegFilter
+{
+    Beatdetect,
+    Keydetect,
+}
+
+/// <summary>Which ffmpeg read a file: its filter's version and the executable's hash, with the commit when a <c>build.json</c> beside it vouches for that hash.</summary>
 public sealed partial record FfmpegBuild(string Version, string Sha256, string? Commit)
 {
     public string Label => Commit is { Length: >= 7 } ? $"{Version}-{Commit[..7]}" : Version;
 
     [GeneratedRegex(
-        @"^Filter beatdetect\r?\n(.*\(beatdetect (?<Version>[^)\s]+)\))?",
+        @"^Filter (?<Filter>\w+)\r?\n(.*\((?<Reporter>\w+) (?<Version>[^)\s]+)\))?",
         RegexOptions.Multiline
     )]
     private static partial Regex FilterHelp { get; }
@@ -28,18 +36,29 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
             _ => false,
         };
 
-    /// <summary>Asks the executable for its beatdetect filter; null when it cannot be run or has none.</summary>
+    /// <summary>The filter's name on ffmpeg's command line.</summary>
+    public static string NameOf(FfmpegFilter filter) =>
+        filter switch
+        {
+            FfmpegFilter.Beatdetect => "beatdetect",
+            FfmpegFilter.Keydetect => "keydetect",
+            _ => throw new UnreachableException(),
+        };
+
+    /// <summary>Asks the executable for the filter; null when it cannot be run or has no such filter.</summary>
     public static async Task<FfmpegBuild?> IdentifyAsync(
         IProcessRunner processes,
         string fileName,
+        FfmpegFilter filter,
         CancellationToken ct
     )
     {
+        var name = NameOf(filter);
         ProcessOutcome outcome;
         try
         {
             outcome = await processes.RunAsync(
-                new ProcessRequest(fileName, ["-hide_banner", "-h", "filter=beatdetect"]),
+                new ProcessRequest(fileName, ["-hide_banner", "-h", $"filter={name}"]),
                 ct
             );
         }
@@ -51,6 +70,7 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
         if (
             outcome is not { Succeeded: true, StandardOutput: { } stdOut }
             || FilterHelp.Match(stdOut) is not { Success: true } line
+            || line.Groups["Filter"].Value != name
             || Located(fileName) is not { Exists: true } executable
         )
             return null;
@@ -60,16 +80,18 @@ public sealed partial record FfmpegBuild(string Version, string Sha256, string? 
 
         // A build.json vouches for the commit only when it records this binary's hash.
         var commit =
-            BeatJsonContext.Default.BuildInfo.ReadFileOrDefault(buildJson)
+            BuildsJsonContext.Default.BuildInfo.ReadFileOrDefault(buildJson)
                 is { Sha256: { } recorded, Commit: { } recordedCommit }
             && recorded.Equals(sha256, StringComparison.OrdinalIgnoreCase)
                 ? recordedCommit
                 : null;
 
         // The filter reports its own version; builds before versioning say none.
-        var version = line.Groups["Version"] is { Success: true, Value: var reported }
-            ? reported
-            : "unversioned";
+        var version =
+            line.Groups["Reporter"].Value == name
+            && line.Groups["Version"] is { Success: true, Value: var reported }
+                ? reported
+                : "unversioned";
 
         return new FfmpegBuild(version, sha256, commit);
     }

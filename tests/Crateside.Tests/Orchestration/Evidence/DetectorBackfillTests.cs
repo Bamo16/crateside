@@ -83,7 +83,7 @@ public sealed class DetectorBackfillTests : IDisposable
 
         var backfill = Backfill();
         var result = await backfill.ReadAsync(
-            backfill.Next()!,
+            (await backfill.NextAsync(TestContext.Current.CancellationToken))!,
             TestContext.Current.CancellationToken
         );
 
@@ -104,15 +104,15 @@ public sealed class DetectorBackfillTests : IDisposable
         Assert.Equal("A minor", evidence.Algorithms[0].Key);
         Assert.Equal("A minor", evidence.Algorithms[1].Key);
         Assert.Equal("C major", evidence.Algorithms[2].Key);
-        Assert.Null(backfill.Next());
+        Assert.Null(await backfill.NextAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
-    public void A_song_missing_a_detector_is_picked_with_what_it_lacks()
+    public async Task A_song_missing_a_detector_is_picked_with_what_it_lacks()
     {
         Judge(Before);
 
-        var target = Backfill().Next()!;
+        var target = (await Backfill().NextAsync(TestContext.Current.CancellationToken))!;
 
         Assert.Equal(Song, target.Song);
         Assert.Equal([MadmomKeyCnn.Name, EdmaKeyEstimator.Name], target.Detectors);
@@ -125,7 +125,7 @@ public sealed class DetectorBackfillTests : IDisposable
 
         var backfill = Backfill();
         var result = await backfill.ReadAsync(
-            backfill.Next()!,
+            (await backfill.NextAsync(TestContext.Current.CancellationToken))!,
             TestContext.Current.CancellationToken
         );
 
@@ -141,15 +141,15 @@ public sealed class DetectorBackfillTests : IDisposable
     }
 
     [Fact]
-    public void A_song_that_has_every_reading_is_left_alone()
+    public async Task A_song_that_has_every_reading_is_left_alone()
     {
         Judge(Complete);
 
-        Assert.Null(Backfill().Next());
+        Assert.Null(await Backfill().NextAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
-    public void A_song_with_no_source_on_disk_is_skipped()
+    public async Task A_song_with_no_source_on_disk_is_skipped()
     {
         Judge(Before);
 
@@ -163,7 +163,7 @@ public sealed class DetectorBackfillTests : IDisposable
             Paths
         );
 
-        Assert.Null(backfill.Next());
+        Assert.Null(await backfill.NextAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -174,18 +174,18 @@ public sealed class DetectorBackfillTests : IDisposable
 
         var backfill = Backfill();
         var result = await backfill.ReadAsync(
-            backfill.Next()!,
+            (await backfill.NextAsync(TestContext.Current.CancellationToken))!,
             TestContext.Current.CancellationToken
         );
 
         Assert.Equal("too short", result.Failed[MadmomKeyCnn.Name]);
         Assert.Empty(result.Added);
-        Assert.Null(backfill.Next());
+        Assert.Null(await backfill.NextAsync(TestContext.Current.CancellationToken));
         Assert.DoesNotContain(
             _store.EvidenceFor(Song)!.Algorithms,
             algorithm => algorithm.Name == "madmom"
         );
-        Assert.NotNull(Backfill().Next());
+        Assert.NotNull(await Backfill().NextAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -196,13 +196,16 @@ public sealed class DetectorBackfillTests : IDisposable
 
         var backfill = Backfill();
 
-        await backfill.ReadAsync(backfill.Next()!, TestContext.Current.CancellationToken);
+        await backfill.ReadAsync(
+            (await backfill.NextAsync(TestContext.Current.CancellationToken))!,
+            TestContext.Current.CancellationToken
+        );
         File.SetLastWriteTimeUtc(
             Path.Combine(_root, "working", VideoId, "source.flac"),
             DateTime.UtcNow.AddHours(1)
         );
 
-        Assert.NotNull(backfill.Next());
+        Assert.NotNull(await backfill.NextAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -223,9 +226,135 @@ public sealed class DetectorBackfillTests : IDisposable
         Assert.Contains("\"essentia_edma\":{\"key\":\"C major\",\"confidence\":0.4}", edited);
     }
 
+    [Fact]
+    public async Task Evidence_another_build_read_is_picked_to_re_read_all_three()
+    {
+        Judge(ReadBy("old"));
+        _detectors.Sha256 = "new";
+
+        var target = (await Backfill().NextAsync(TestContext.Current.CancellationToken))!;
+
+        Assert.True(target.Rereads);
+        Assert.Equal(
+            [KeydetectFilter.Name, MadmomKeyCnn.Name, EdmaKeyEstimator.Name],
+            target.Detectors
+        );
+    }
+
+    [Fact]
+    public async Task Evidence_the_current_build_read_is_left_alone()
+    {
+        Judge(ReadBy("NEW"));
+        _detectors.Sha256 = "new";
+
+        Assert.Null(await Backfill().NextAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task A_missing_reading_is_added_before_the_evidence_is_re_read()
+    {
+        Judge(Before);
+        _detectors.Sha256 = "new";
+
+        var target = (await Backfill().NextAsync(TestContext.Current.CancellationToken))!;
+
+        Assert.False(target.Rereads);
+    }
+
+    [Fact]
+    public async Task A_re_read_replaces_the_readings_and_keeps_the_run_and_its_verdict()
+    {
+        Judge(ReadBy("old"));
+        _detectors.Sha256 = "new";
+        _detectors.Fresh = ReadBy("new", key: "C major", chords: """["C","G"]""");
+
+        var backfill = Backfill();
+        var result = await backfill.ReadAsync(
+            (await backfill.NextAsync(TestContext.Current.CancellationToken))!,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Empty(result.Failed);
+        Assert.Equal(3, result.Added.Count);
+
+        var run = Assert.Single(_store.Read().Runs);
+        var evidence = _store.EvidenceFor(Song)!;
+
+        Assert.Equal(DateTimeOffset.Parse("2026-10-01T00:00:00+00:00"), run.Timestamp);
+        Assert.Equal(KeyConfidence.High, run.Confidence);
+        Assert.Equal(
+            "C major",
+            evidence.Algorithms.Single(algorithm => algorithm.Name == "ffmpeg keydetect").Key
+        );
+        Assert.Equal(["C", "G"], evidence.Chords);
+        Assert.Null(await backfill.NextAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task A_re_read_where_a_detector_reads_no_key_keeps_the_earlier_readings()
+    {
+        Judge(ReadBy("old"));
+        _detectors.Sha256 = "new";
+        _detectors.Fresh =
+            """{"algorithms":{"ffmpeg_keydetect":{"error":"silent"},"madmom":{"key":"C major"}},"versions":{"ffmpeg_sha256":"new"}}""";
+
+        var backfill = Backfill();
+        var result = await backfill.ReadAsync(
+            (await backfill.NextAsync(TestContext.Current.CancellationToken))!,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Empty(result.Added);
+        Assert.Single(result.Failed);
+        Assert.Equal(
+            "A minor",
+            _store
+                .EvidenceFor(Song)!
+                .Algorithms.Single(algorithm => algorithm.Name == "ffmpeg keydetect")
+                .Key
+        );
+        Assert.Null(await backfill.NextAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public void Refreshing_replaces_each_fresh_reading_and_keeps_every_other_field()
+    {
+        var refreshed = DetectorBackfill.Refreshed(
+            """{"bpm_rough":120,"chords":["A"],"algorithms":{"crema":{"key":"A minor"},"madmom":{"key":"A minor"}},"versions":{"ffmpeg_sha256":"old"}}""",
+            """{"chords":["C"],"algorithms":{"madmom":{"key":"C major"}},"versions":{"ffmpeg_sha256":"new"}}"""
+        );
+
+        Assert.Equal(
+            """{"bpm_rough":120,"chords":["C"],"algorithms":{"crema":{"key":"A minor"},"madmom":{"key":"C major"}},"versions":{"ffmpeg_sha256":"new"}}""",
+            refreshed
+        );
+    }
+
+    private static string ReadBy(
+        string sha256,
+        string key = "A minor",
+        string chords = """["Am"]"""
+    ) =>
+        $$$"""{"algorithms":{"ffmpeg_keydetect":{"key":"{{{key}}}"},"madmom":{"key":"A minor"},"essentia_edma":{"key":"A minor"}},"chords":{{{chords}}},"versions":{"ffmpeg_sha256":"{{{sha256}}}"}}""";
+
     private sealed class FakeDetectors : IDetectorSet
     {
         public bool Fail { get; set; }
+
+        public string? Sha256 { get; set; }
+
+        public string? Fresh { get; set; }
+
+        public Task<string?> KeydetectSha256Async(CancellationToken ct = default) =>
+            Task.FromResult(Sha256);
+
+        public Task<EvidenceReading> ReadEvidenceAsync(
+            string audioPath,
+            CancellationToken ct = default
+        ) =>
+            Task.FromResult<EvidenceReading>(
+                Fail ? new EvidenceReading.Failed("too short") : new EvidenceReading.Read(Fresh!)
+            );
 
         public Task<(KeyReading Madmom, KeyReading Edma)> ReadBackersAsync(
             string audioPath,

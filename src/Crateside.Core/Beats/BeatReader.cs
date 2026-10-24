@@ -136,7 +136,12 @@ public sealed partial class BeatReader
         if (_builds is not null)
             await _builds.SeedAsync(ct);
 
-        return _build = await FfmpegBuild.IdentifyAsync(_processes, PinnedFileName, ct);
+        return _build = await FfmpegBuild.IdentifyAsync(
+            _processes,
+            PinnedFileName,
+            FfmpegFilter.Beatdetect,
+            ct
+        );
     }
 
     /// <summary>Reads the whole file, then each full 30 s of it; a file ffmpeg cannot read keeps an empty reading.</summary>
@@ -295,7 +300,7 @@ public sealed partial class BeatReader
             .OrderBy(line => int.Parse(line.Groups["Index"].Value, CultureInfo.InvariantCulture))
             .Select(line => line.Groups["Value"].Value);
 
-    private string PinnedFileName => _builds?.Pinned?.Path ?? _fileName;
+    private string PinnedFileName => _builds?.Pinned(FfmpegFilter.Beatdetect)?.Path ?? _fileName;
 
     private BeatEntry? Kept(string audioPath) =>
         new FileInfo(audioPath) is { Exists: true } file
@@ -420,6 +425,4 @@ internal sealed record BeatFile(int Version, Dictionary<string, BeatEntry> Entri
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
 )]
 [JsonSerializable(typeof(BeatFile))]
-[JsonSerializable(typeof(BuildInfo))]
-[JsonSerializable(typeof(KnownBuildsFile))]
 internal sealed partial class BeatJsonContext : JsonSerializerContext { }

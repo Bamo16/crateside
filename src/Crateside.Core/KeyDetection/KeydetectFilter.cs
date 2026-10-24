@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.Text.RegularExpressions;
-using Crateside.Core.Beats;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Pairing;
