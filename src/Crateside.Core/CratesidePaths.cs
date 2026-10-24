@@ -16,7 +16,7 @@ public sealed class CratesidePaths
 
     /// <summary>The beatdetect build a machine knowing none starts on: the newest the harness has scored.</summary>
     public string BeatdetectFfmpeg { get; set; } =
-        @"V:\Repos\beatdetect-harness\builds\1.3.0-1e57fec\ffmpeg.exe";
+        @"V:\Repos\beatdetect-harness\builds\1.3.1-48ba578\ffmpeg.exe";
 
     /// <summary>Where freshly separated stems land, awaiting the human-limited steps.</summary>
     public string StagingFolder { get; set; } = @"P:\RYAN\Ableton\Sample Staging";
