@@ -54,7 +54,7 @@ replaces a lent warp or the maintainer's own.
    (`WarpSiblings.TempoSources`). Every stem of the upload is timed from this one stem, so all get
    the same tempo and marker, and Live can edit them together. No such stem: no starter.
 2. **Read its tempo with beatdetect.** The pinned build (`BeatdetectFfmpeg`, today
-   `1.3.0-1e57fec`) runs `beatdetect=hpss=1` over the whole file, then over each full 30 s of it
+   `1.3.1-48ba578`, the v1.3.1 release's code) runs `beatdetect=hpss=1` over the whole file, then over each full 30 s of it
    (`BeatReader`). The reading is kept until the file changes. A reading from an older build than
    the pin is used until the beat worker reads the file again, which it does once every file with
    no reading has one (`BeatReader.ToRead`).
