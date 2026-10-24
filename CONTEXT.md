@@ -93,7 +93,10 @@ the views, and running the workflow.
   by human sources. Governs whether a tag is recommended.
 - **Tonic check** — the argument, against the chord progression and key flicker, for why the
   verdict's tonic is the tonic and not its relative. Owed on every run, and recorded apart from
-  the reasoning because it is read against the chords it argues about.
+  the reasoning because it is read against the chords it argues about. It says what the music
+  does; the **reasoning** says what the evidence is worth (ADR 0064).
+- **Candidate** — a key the judge weighed besides the verdict's: one it turned down, or for a
+  WITHHELD, one still open. Shown on Track details as *Considered*.
 - **Supersede** — how a re-run replaces an earlier verdict: filed under the same **song
   identity**, the latest run wins, so each run's prose stands on its own.
 - **Restatement** — the ledger's record that another upload is a song already judged. It
