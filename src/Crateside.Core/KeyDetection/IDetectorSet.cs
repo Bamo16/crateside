@@ -12,6 +12,12 @@ public interface IDetectorSet
         CancellationToken ct = default
     );
 
+    /// <summary>The evidence <see cref="DetectAsync"/> would write over the whole audio, without writing it.</summary>
+    Task<EvidenceReading> ReadEvidenceAsync(string audioPath, CancellationToken ct = default);
+
+    /// <summary>The hash of the executable keydetect runs on, as the evidence records it.</summary>
+    Task<string?> KeydetectSha256Async(CancellationToken ct = default);
+
     /// <summary>madmom and edma alone, on the CPU.</summary>
     Task<(KeyReading Madmom, KeyReading Edma)> ReadBackersAsync(
         string audioPath,

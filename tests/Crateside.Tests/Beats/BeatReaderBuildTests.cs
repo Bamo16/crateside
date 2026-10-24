@@ -1,3 +1,4 @@
+using Crateside.Core;
 using Crateside.Core.Beats;
 using Crateside.Core.Orchestration.Loop;
 
@@ -54,6 +55,7 @@ public class BeatReaderBuildTests
         var build = await FfmpegBuild.IdentifyAsync(
             new ProcessRunner(),
             executable,
+            FfmpegFilter.Beatdetect,
             TestContext.Current.CancellationToken
         );
 

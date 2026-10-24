@@ -69,10 +69,11 @@ public sealed class EvidenceDrainer(
 
     private async Task<StageTick> BackfillOnceAsync(CancellationToken ct)
     {
-        if (backfill.Next() is not { } target)
+        if (await backfill.NextAsync(ct) is not { } target)
             return StageTick.Idle;
 
         var result = await backfill.ReadAsync(target, ct);
+        var verb = target.Rereads ? "re-read on keydetect's pinned build" : "added";
 
         return StageTick.Ran(
             result.Song,
@@ -83,7 +84,7 @@ public sealed class EvidenceDrainer(
                     "; ",
                     result.Failed.Select(failed => $"{failed.Key}: {failed.Value}")
                 ),
-            result.Added.Count is 0 ? null : $"added {string.Join(", ", result.Added)}",
+            result.Added.Count is 0 ? null : $"{verb} {string.Join(", ", result.Added)}",
             wakesOthers: false
         );
     }
