@@ -28,7 +28,7 @@
     var (from, to) = View(group);
     var selected = Selected(group);
 
-    <section class="warp" id="warp-view" @ref="_section">
+    <section class="warp" id="warp-view" @ref="_section" @onkeydown="OnKey">
         <div class="head">
             <span class="section-label">@(group.Stems.Count > 0 ? "Warp" : "Judge")</span>
             @if (group.Stems.Count > 0)
@@ -413,6 +413,11 @@
                     </div>
                 }
 
+                @if (Run is not null)
+                {
+                    <KeyLane Run="Run" Seconds="group.Seconds" From="from" To="to" Bands="BandsIn(bands, from, to, tags: false)" />
+                }
+
                 <span class="gutter"></span>
                 <div class="axis">
                     @foreach (var at in TimeTicks(from, to))
@@ -421,6 +426,12 @@
                     }
                 </div>
             </div>
+
+            @if (OpenReading is { } open)
+            {
+                <WindowDrawer Run="Run!" Reading="open.Reading" Index="open.Index" Span="@DrawerSpan(group, open.Reading.Window)"
+                              At="WindowCentre(group, open.Reading.Window)" OnClose="() => _openWindow = null" OnStep="StepWindow" />
+            }
 
             @if (selected is not null)
             {
@@ -546,6 +557,7 @@
     public int OpenRequests { get; set; }
 
     private BarForm? _form;
+    private int? _openWindow;
     private ElementReference _section;
     private IJSObjectReference? _drag;
     private DotNetObjectReference<WarpView>? _self;
@@ -562,9 +574,43 @@
             : "weighed as a hint, never raises confidence";
 
     /// <param name="Line">The form's line the band is drawn for, which a drag on the ruler moves.</param>
-    private sealed record Band(double Start, double End, string Tag, string Style, int? Line = null);
+    /// <param name="Window">The recorded window the band is drawn for, whose tag opens its drawer.</param>
+    private sealed record Band(double Start, double End, string Tag, string Style, int? Line = null, int? Window = null);
 
-    private void Open(WarpGroup group) => _form = new BarForm(group.Lender is not null);
+    private (WindowReading Reading, int Index)? OpenReading =>
+        _form is null && _openWindow is { } index && Run?.Readings is { } readings && index < readings.Count
+            ? (readings[index], index)
+            : null;
+
+    private void ToggleWindow(int index) => _openWindow = _openWindow == index ? null : index;
+
+    private void StepWindow(int by) =>
+        _openWindow = Math.Clamp((_openWindow ?? 0) + by, 0, Math.Max((Run?.Readings.Count ?? 1) - 1, 0));
+
+    private void OnKey(KeyboardEventArgs key)
+    {
+        if (key.Key is "Escape")
+            _openWindow = null;
+    }
+
+    private static string DrawerSpan(WarpGroup group, RunWindow window) =>
+        (window.Bars ?? JudgeRanges.BarsOf(group, window.Start, window.End)) is { } bars
+            ? $"bars {bars.First}–{bars.Last} · {JudgeText.Time(window)}"
+            : JudgeText.Time(window);
+
+    /// <summary>The middle of a window in the view, as a percentage of the plot, for the drawer's caret.</summary>
+    private double WindowCentre(WarpGroup group, RunWindow window)
+    {
+        var (from, to) = View(group);
+
+        return (Math.Clamp(X(window.Start, from, to), 0, 100) + Math.Clamp(X(window.End, from, to), 0, 100)) / 2;
+    }
+
+    private void Open(WarpGroup group)
+    {
+        _openWindow = null;
+        _form = new BarForm(group.Lender is not null);
+    }
 
     private static void AddOnEnter(KeyboardEventArgs key, BarForm form, int index)
     {
@@ -702,14 +748,14 @@
 
         return
         [
-            .. Run?.Readings.Select(reading =>
+            .. Run?.Readings.Select((reading, index) =>
                 reading switch
                 {
                     { Window.AskedBy: WindowAsker.User, Section: { } section } =>
-                        new Band(reading.Window.Start, reading.Window.End, $"{section.Label} · {ModeText.Tag(section.Centre)}", "yours"),
+                        new Band(reading.Window.Start, reading.Window.End, $"{section.Label} · {ModeText.Tag(section.Centre)}", "yours", Window: index),
                     { Window.AskedBy: WindowAsker.User } =>
-                        new Band(reading.Window.Start, reading.Window.End, reading.Window.Name, "yours"),
-                    _ => new Band(reading.Window.Start, reading.Window.End, $"judge · {Span(group, reading.Window)}", "judge"),
+                        new Band(reading.Window.Start, reading.Window.End, reading.Window.Name, "yours", Window: index),
+                    _ => new Band(reading.Window.Start, reading.Window.End, $"judge · {Span(group, reading.Window)}", "judge", Window: index),
                 }
             ) ?? [],
         ];
@@ -722,8 +768,12 @@
                 var (left, right) = (Math.Clamp(X(band.Start, from, to), 0, 100), Math.Clamp(X(band.End, from, to), 0, 100));
                 @if (right > left)
                 {
-                    <div class="jband @band.Style" style="left: @P(left)%; width: @P(right - left)%" data-line="@band.Line">
-                        @if (tags)
+                    <div class="jband @band.Style @(band.Window is { } window && window == _openWindow ? "open" : null)" style="left: @P(left)%; width: @P(right - left)%" data-line="@band.Line">
+                        @if (tags && band.Window is { } opens)
+                        {
+                            <button class="mono jtag" aria-expanded="@(opens == _openWindow ? "true" : "false")" title="@(opens == _openWindow ? "Close this window" : "What this window settled")" @onclick="() => ToggleWindow(opens)">@band.Tag</button>
+                        }
+                        else if (tags)
                         {
                             <span class="mono jtag">@band.Tag</span>
                         }
@@ -857,6 +907,9 @@
 
     protected override void OnParametersSet()
     {
+        if (_openWindow >= (Run?.Readings.Count ?? 0))
+            _openWindow = null;
+
         Reload(force: false);
         EnsureTrueUp();
 
