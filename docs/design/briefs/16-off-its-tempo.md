@@ -30,7 +30,7 @@ Today the new state uses only existing pieces:
 - **The Tracks flag** beside the title is the existing neutral chip: `off its tempo` with `0.017
   fast` in mono where *drifts* puts its percentage.
 - **In Track details' warp view** the selected stem gets a third row in the controls, beside
-  *Re-apply* and *Let Live analyse*: **True up the warp**, with the button *True up*, a status line
+  *Re-apply* and *Let Live analyze*: **True up the warp**, with the button *True up*, a status line
   (`Runs 0.017 fast and drifts 23 ms over the track. Retypes it to 179.983 and lines it up with
   the drums. Yours is backed up first.`), and the same confirm and done lines the other two use.
 

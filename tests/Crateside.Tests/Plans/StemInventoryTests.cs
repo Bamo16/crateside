@@ -39,7 +39,7 @@ public sealed class StemInventoryTests
 
         Assert.Equal(["instrumental_full", "vocal_full"], inventory.Presets.Order());
         Assert.False(inventory.HasSource);
-        Assert.Empty(inventory.Unrecognised);
+        Assert.Empty(inventory.Unrecognized);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed class StemInventoryTests
     }
 
     [Theory]
-    // A kept source with nothing parenthesised at all.
+    // A kept source with nothing parenthesized at all.
     [InlineData("Chris Rinox - Burst Mode.flac")]
     // Kept sources whose own title ends in brackets — the trap the name-reading fallback sets.
     [InlineData("Ayatsuno Yuni - SUPADOPA (Official Instrumental).flac")]
@@ -68,7 +68,7 @@ public sealed class StemInventoryTests
 
         Assert.True(inventory.HasSource);
         Assert.Empty(inventory.Presets);
-        Assert.Empty(inventory.Unrecognised);
+        Assert.Empty(inventory.Unrecognized);
     }
 
     [Fact]
@@ -81,7 +81,7 @@ public sealed class StemInventoryTests
 
         Assert.True(inventory.HasWarpGuide);
         Assert.Empty(inventory.Presets);
-        Assert.Empty(inventory.Unrecognised);
+        Assert.Empty(inventory.Unrecognized);
     }
 
     [Fact]
@@ -94,7 +94,7 @@ public sealed class StemInventoryTests
 
         Assert.False(inventory.HasSource);
         Assert.Empty(inventory.Presets);
-        Assert.Equal("Vocal - Balanced", Assert.Single(inventory.Unrecognised).DisplayName);
+        Assert.Equal("Vocal - Balanced", Assert.Single(inventory.Unrecognized).DisplayName);
     }
 
     [Fact]
@@ -163,7 +163,7 @@ public sealed class StemInventoryTests
     }
 
     [Fact]
-    public void An_unrecognised_stem_is_not_swept_away_by_a_plan_that_cannot_name_it()
+    public void An_unrecognized_stem_is_not_swept_away_by_a_plan_that_cannot_name_it()
     {
         var inventory = StemInventory.Of(
             [File("x (Vocal - Balanced).flac", "Vocal - Balanced")],
@@ -174,7 +174,7 @@ public sealed class StemInventoryTests
     }
 
     [Fact]
-    public void With_no_catalog_every_stem_reads_as_unrecognised_rather_than_as_a_source()
+    public void With_no_catalog_every_stem_reads_as_unrecognized_rather_than_as_a_source()
     {
         // The separator could not be asked.
         var inventory = StemInventory.Of(
@@ -183,7 +183,7 @@ public sealed class StemInventoryTests
         );
 
         Assert.Empty(inventory.Presets);
-        Assert.Single(inventory.Unrecognised);
+        Assert.Single(inventory.Unrecognized);
         Assert.True(inventory.HasSource);
     }
 }

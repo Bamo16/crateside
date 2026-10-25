@@ -12,7 +12,7 @@ public sealed class PartnersTests
     [Fact]
     public void A_plain_key_lists_brief_19s_rows_at_shift_0()
     {
-        var rows = Partners.For(Centre("C", DiatonicMode.Ionian));
+        var rows = Partners.For(Center("C", DiatonicMode.Ionian));
 
         (string, int, Relationship?)[] expected =
         [
@@ -34,7 +34,7 @@ public sealed class PartnersTests
     [Fact]
     public void A_dorian_lists_brief_19s_rows_at_shift_0()
     {
-        var rows = Partners.For(Centre("A", DiatonicMode.Dorian));
+        var rows = Partners.For(Center("A", DiatonicMode.Dorian));
 
         (string, int, Relationship?)[] expected =
         [
@@ -64,14 +64,14 @@ public sealed class PartnersTests
     [InlineData(DiatonicMode.Mixolydian, "D major", "B minor")]
     [InlineData(DiatonicMode.Aeolian, "C major")]
     [InlineData(DiatonicMode.Locrian, "A# major", "G minor")]
-    public void Every_same_notes_key_is_at_shift_0_and_labelled(
+    public void Every_same_notes_key_is_at_shift_0_and_labeled(
         DiatonicMode mode,
         params string[] sameNotes
     ) =>
         Assert.Equal(
             sameNotes,
             Partners
-                .For(Centre("A", mode))
+                .For(Center("A", mode))
                 .Where(row => row.Relationship is Relationship.SameNotes)
                 .Select(row => row.Key.Name)
         );
@@ -80,7 +80,7 @@ public sealed class PartnersTests
     [MemberData(nameof(Modes))]
     public void A_source_is_its_own_first_row(DiatonicMode mode)
     {
-        var source = Centre("A", mode);
+        var source = Center("A", mode);
 
         Assert.Equal(
             (source, 0, 7, Relationship.SameKey),
@@ -93,14 +93,14 @@ public sealed class PartnersTests
     [Fact]
     public void A_plain_key_keeps_the_shift_rule_on_all_24_keys()
     {
-        foreach (var source in MusicKey.AllKeys.Select(MusicKey.CentreOf))
+        foreach (var source in MusicKey.AllKeys.Select(MusicKey.CenterOf))
         {
             foreach (
                 var partner in Partners.For(source, -Partners.FarthestShift, Partners.FarthestShift)
             )
             {
                 var landed = (partner.Key.Chromatic + partner.Shift - source.Chromatic + 12) % 12;
-                var relative = partner.Key == MusicKey.CentreOf(MusicKey.Of(source).Relative);
+                var relative = partner.Key == MusicKey.CenterOf(MusicKey.Of(source).Relative);
 
                 Assert.True(
                     relative ? partner.Shift is 0 : landed is 0 or 5 or 7,
@@ -113,7 +113,7 @@ public sealed class PartnersTests
     [Fact]
     public void The_widest_shift_is_the_least_that_reaches_every_key_from_every_key()
     {
-        foreach (var source in MusicKey.AllKeys.Select(MusicKey.CentreOf))
+        foreach (var source in MusicKey.AllKeys.Select(MusicKey.CenterOf))
         {
             Assert.Equal(
                 24,
@@ -129,7 +129,7 @@ public sealed class PartnersTests
     [Fact]
     public void A_span_away_from_0_lists_keys_at_their_alt_shifts()
     {
-        var rows = Partners.For(Centre("A", DiatonicMode.Dorian), 3, 5);
+        var rows = Partners.For(Center("A", DiatonicMode.Dorian), 3, 5);
 
         Assert.NotEmpty(rows);
         Assert.All(rows, row => Assert.InRange(row.Shift, 3, 5));
@@ -140,7 +140,7 @@ public sealed class PartnersTests
     [Fact]
     public void A_key_is_listed_at_its_in_range_shift_closest_to_0()
     {
-        foreach (var row in Partners.For(Centre("C", DiatonicMode.Ionian), -1, 3))
+        foreach (var row in Partners.For(Center("C", DiatonicMode.Ionian), -1, 3))
         {
             Assert.InRange(row.Shift, -1, 3);
             Assert.All(
@@ -153,7 +153,7 @@ public sealed class PartnersTests
     [Fact]
     public void Alt_shifts_are_a_fifth_either_way_and_exclude_the_listed_one()
     {
-        foreach (var partner in Partners.For(Centre("D#", DiatonicMode.Ionian), -6, 6))
+        foreach (var partner in Partners.For(Center("D#", DiatonicMode.Ionian), -6, 6))
         {
             Assert.DoesNotContain(partner.Shift, partner.AltShifts);
             Assert.All(partner.AltShifts, alt => Assert.InRange(alt, -6, 6));
@@ -163,9 +163,9 @@ public sealed class PartnersTests
     [Fact]
     public void A_mixed_verdict_pairs_as_its_collapse()
     {
-        var basis = Partners.Basis(Centre("A", DiatonicMode.Dorian), mixed: true);
+        var basis = Partners.Basis(Center("A", DiatonicMode.Dorian), mixed: true);
 
-        Assert.Equal(Centre("A", DiatonicMode.Aeolian), basis);
+        Assert.Equal(Center("A", DiatonicMode.Aeolian), basis);
         Assert.Equal(
             ["A minor", "C major"],
             Partners.For(basis).Where(row => row.NotesShared is 7).Select(row => row.Key.Name)
@@ -178,11 +178,11 @@ public sealed class PartnersTests
     [InlineData(2, 1)]
     public void A_range_outside_6_or_upside_down_is_rejected(int lowest, int highest) =>
         Assert.Throws<ArgumentOutOfRangeException>(() =>
-            Partners.For(Centre("C", DiatonicMode.Ionian), lowest, highest)
+            Partners.For(Center("C", DiatonicMode.Ionian), lowest, highest)
         );
 
     [Fact]
-    public void A_picked_modal_track_pairs_from_its_centre()
+    public void A_picked_modal_track_pairs_from_its_center()
     {
         Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
 
@@ -199,15 +199,15 @@ public sealed class PartnersTests
             {
                 Song = run.Song,
                 Name = run.DisplayName,
-                Key = MusicKey.Of(run.Centre!),
+                Key = MusicKey.Of(run.Center!),
                 Run = run,
             };
 
-            Assert.Equal(run.Centre, Partners.For(song.Centre!)[0].Key);
+            Assert.Equal(run.Center, Partners.For(song.Center!)[0].Key);
         }
     }
 
-    private static TonalCentre Centre(string tonic, DiatonicMode mode) => new(tonic, mode);
+    private static TonalCenter Center(string tonic, DiatonicMode mode) => new(tonic, mode);
 }
 
 public sealed class MusicKeyTests
@@ -244,17 +244,17 @@ public sealed class MusicKeyTests
     }
 
     [Fact]
-    public void A_key_round_trips_through_a_centre()
+    public void A_key_round_trips_through_a_center()
     {
         foreach (var key in MusicKey.AllKeys)
-            Assert.Equal(key, MusicKey.Of(MusicKey.CentreOf(key)));
+            Assert.Equal(key, MusicKey.Of(MusicKey.CenterOf(key)));
     }
 
     [Fact]
-    public void A_modal_centre_is_tagged_by_its_collapse() =>
+    public void A_modal_center_is_tagged_by_its_collapse() =>
         Assert.Equal(
             MusicKey.FromString("A minor"),
-            MusicKey.Of(new TonalCentre("A", DiatonicMode.Dorian))
+            MusicKey.Of(new TonalCenter("A", DiatonicMode.Dorian))
         );
 
     [Fact]

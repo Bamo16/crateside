@@ -92,7 +92,7 @@ public sealed class CratesidePaths
     public string TransientOriginsFile { get; set; } =
         Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "transients.json");
 
-    /// <summary>Samples waiting for Live to analyse them afresh.</summary>
+    /// <summary>Samples waiting for Live to analyze them afresh.</summary>
     public string LiveAnalysesFile { get; set; } =
         Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "live-analyses.json");
 

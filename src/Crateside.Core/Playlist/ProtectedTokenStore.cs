@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.DataProtection;
 namespace Crateside.Core.Playlist;
 
 /// <summary>
-/// Google's token store, encrypted at rest with Windows DPAPI — no defence against anything
+/// Google's token store, encrypted at rest with Windows DPAPI — no defense against anything
 /// running as this user (<c>docs/secrets.md</c>).
 /// </summary>
 public sealed class ProtectedTokenStore(IDataProtectionProvider provider, string? directory = null)

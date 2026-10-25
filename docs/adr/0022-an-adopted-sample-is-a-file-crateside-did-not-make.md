@@ -32,7 +32,7 @@ matters: **nothing can make it again.**
 That single fact settles the rest.
 
 - **It is identified by a label, not an upload.** The label is the user's word for it and the
-  file's parenthesised suffix. An added source is identified by its video ID because it came from
+  file's parenthesized suffix. An added source is identified by its video ID because it came from
   one; an adopted sample came from nowhere, so the label is all there is.
 - **It is never outstanding.** A plan can ask for a preset that is missing and separation will
   make it. A plan naming an adopted sample whose file has gone is asking for something no stage
@@ -126,6 +126,6 @@ calls below were taken as defaults and are for their review:
 - **Backing is not triggered.** Once the file carries provenance and its track has a verdict,
   the next backing pass keys it.
 
-Fixing a misspelt name at the same time, which #44 suggested for the High Contrast file, is not
+Fixing a misspelled name at the same time, which #44 suggested for the High Contrast file, is not
 done. crateside's rename reaches only `Sample Staging`, so a file already in `Mashup Samples`
 has to be renamed by hand.

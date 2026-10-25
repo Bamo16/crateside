@@ -53,7 +53,7 @@ library and staging (2026-10-02).
 | **Saved or not** | whether *Save Default Clip* was pressed. Without it, Live ignores the warp | |
 
 A stem may also have **no sidecar**: Live has never opened it, or the user just chose *Let Live
-analyse* and Live has not opened it since.
+analyze* and Live has not opened it since.
 
 ## Whose warp it is
 
@@ -76,13 +76,13 @@ matters only when the user wonders why a snap point is where it is.
 - **Re-apply crateside's warp.** Writes the sibling's warp again, after the user or Live changed
   it. It replaces a saved warp, so it needs a confirm step (DESIGN.md, *Side stack*: destructive is
   set apart by position, `.danger` only at the confirm). The old sidecar is backed up.
-- **Let Live analyse.** Moves the sidecar to the Recycle Bin. Live writes a fresh one the next time
+- **Let Live analyze.** Moves the sidecar to the Recycle Bin. Live writes a fresh one the next time
   the stem is previewed or loaded, with its own transients. crateside then puts the warp back into
   Live's fresh file, keeping Live's transients. In between, the stem has **no warp**: the state
   needs to say *waiting for Live to open it*, and what the user should do (preview it in Live's
   browser).
 
-Neither applies to every state: Re-apply only where crateside has a warp to lend, Let Live analyse
+Neither applies to every state: Re-apply only where crateside has a warp to lend, Let Live analyze
 only where a sidecar exists. Show when each is not available, or leave it out; your call.
 
 ## What to design
@@ -94,9 +94,9 @@ only where a sidecar exists. Show when each is not available, or leave it out; y
    side stack are already on the page; decide whether this joins the sample list, sits beside it,
    or opens from it.
 2. **One stem's warp**: the overview, markers, transients, clip and loop, mode and tempo, as a
-   reader of Live's clip view would recognise it. Live draws markers as yellow flags above the
-   waveform and transients as small grey ticks, and the loop as a bar along the top; use
-   crateside's palette (*Colour means state*) rather than copying Live's colours.
+   reader of Live's clip view would recognize it. Live draws markers as yellow flags above the
+   waveform and transients as small gray ticks, and the loop as a bar along the top; use
+   crateside's palette (*Color means state*) rather than copying Live's colors.
 3. **Two markers and 598.** Most warps are a plain line at one tempo; a few are dense. Both read
    at a glance.
 4. **Provenance** for each state in the table, with wording, and the two controls with their
@@ -116,7 +116,7 @@ only where a sidecar exists. Show when each is not available, or leave it out; y
 
 - **Existing tokens, chips and shared controls first** (`docs/design/DESIGN.md`). The tempo figure
   and its note come from `TempoFormat`; don't restyle them.
-- **A maximised Chrome window on a 1440p or 4K monitor.** Track details' table cap is
+- **A maximized Chrome window on a 1440p or 4K monitor.** Track details' table cap is
   `--table-tracks` (92rem), with the 19rem rail beside.
 - **Drawn from data, nothing fetched**: the overview is the sidecar's own, so no audio is decoded to
   draw the page. Playback is out of scope.

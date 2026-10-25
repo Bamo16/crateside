@@ -54,7 +54,7 @@ public sealed class ReopenedTracksTests
     }
 
     [Theory]
-    [InlineData(JobStatus.Cancelled)]
+    [InlineData(JobStatus.Canceled)]
     [InlineData(JobStatus.Queued)]
     [InlineData(JobStatus.Running)]
     public void The_states_that_already_owed_work_still_do(JobStatus status)

@@ -57,7 +57,7 @@ public sealed record JobHistory(
                         update.Stage == stage && update.Status is JobStatus.Failed
                     ),
                     updates.Count(update =>
-                        update.Stage == stage && update.Status is JobStatus.Cancelled
+                        update.Stage == stage && update.Status is JobStatus.Canceled
                     )
                 )),
             ],
@@ -120,4 +120,4 @@ public sealed record JobHistory(
 
 public sealed record WeekFinished(int Week, int Tracks, bool IsCurrent);
 
-public sealed record StageTotal(JobStage Stage, int Done, int Failed, int Cancelled);
+public sealed record StageTotal(JobStage Stage, int Done, int Failed, int Canceled);

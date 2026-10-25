@@ -5,7 +5,7 @@ Canvas: `Crateside Settings Page.dc.html` (1a everyday, 1b first run, 1c removal
 failures).
 
 The canvas is a design reference in HTML. Port it to `Pages/Settings.razor` and its `.razor.css`.
-No new tokens and nothing newly coloured. Buttons are `.outline` / `.primary` / `.danger`, and
+No new tokens and nothing newly colored. Buttons are `.outline` / `.primary` / `.danger`, and
 choices are `.pill` chips. The header stays `Flush`. The playlist ID, channel name, counts and
 times on the canvas are illustrative.
 

@@ -48,7 +48,7 @@
     white-space: nowrap;
 }
 
-/* Every stage in its state's colour; the one happening now is the only filled chip, and bold. */
+/* Every stage in its state's color; the one happening now is the only filled chip, and bold. */
 .chip.done {
     color: var(--green);
     border-color: rgba(127, 207, 154, 0.3);

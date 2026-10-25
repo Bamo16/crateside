@@ -628,7 +628,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                 <FolderChooser Title="@($"Choose the {place} folder")"
                                Start="@(place is Place.Staging ? _staging : _library)"
                                Chosen="folder => Chosen(place, folder)"
-                               Cancelled="() => _choosing = null" />
+                               Canceled="() => _choosing = null" />
             }
 
             @if (_folderProblem is { } folderProblem)
@@ -808,7 +808,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         mode switch
         {
             StarterWarps.Off =>
-                "Nothing is written, so Live analyses each stem itself, with its own transients.",
+                "Nothing is written, so Live analyzes each stem itself, with its own transients.",
             _ =>
                 "One marker at crateside's tempo reading, on a beat the transients place, and the clip starting on it. A stem whose beat cannot be placed arrives with Warp off. About one track in eleven lands half a beat off.",
         };

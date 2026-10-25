@@ -69,7 +69,7 @@
         <div class="cell activity">
             <div class="label-row">
                 <span class="label">Judging</span>
-                <span class="mono waiting">@Rows.Count(row => row.IsAwaitingJudgement) waiting</span>
+                <span class="mono waiting">@Rows.Count(row => row.IsAwaitingJudgment) waiting</span>
             </div>
             @{
                 var judging = RowIn(TrackState.Judging);
@@ -498,8 +498,8 @@
     private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
 
     private static string? ModeBadge(TrackRow row) =>
-        row is { Key: not null, Verdict: { Centre: { } centre, Mixed: var mixed } }
-            ? ModeText.Abbreviation(centre, mixed)
+        row is { Key: not null, Verdict: { Center: { } center, Mixed: var mixed } }
+            ? ModeText.Abbreviation(center, mixed)
             : null;
 
     private static string? KeyTitle(TrackRow row) =>

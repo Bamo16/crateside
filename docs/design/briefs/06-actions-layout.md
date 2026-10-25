@@ -81,7 +81,7 @@ players, `GenreStrip`, `FamiliarityStrip`. The confirm of a picker change also a
 
 ## Constraints
 
-- No new tokens and nothing newly coloured (DESIGN.md). Amber is still only *your turn*, red only
+- No new tokens and nothing newly colored (DESIGN.md). Amber is still only *your turn*, red only
   *needs attention*.
 - Buttons are the existing `.outline` / `.primary` / `.danger`, global in `app.css`.
 - Every component above must stay one component mounted twice. Say what differs by context (the

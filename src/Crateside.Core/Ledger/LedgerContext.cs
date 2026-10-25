@@ -36,7 +36,7 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
                     );
                 }
             );
-            run.Ignore(row => row.Centre);
+            run.Ignore(row => row.Center);
             run.Property(row => row.Song).UseCollation("NOCASE");
             run.HasIndex(row => new { row.Song, row.RecordedAt });
             run.OwnsMany(
@@ -145,7 +145,7 @@ internal sealed class RunRow
     public List<CandidateRow> Candidates { get; set; } = [];
     public List<WindowRow> Windows { get; set; } = [];
 
-    public TonalCentre? Centre => Tonic is not null && Mode is { } mode ? new(Tonic, mode) : null;
+    public TonalCenter? Center => Tonic is not null && Mode is { } mode ? new(Tonic, mode) : null;
 
     public static RunRow From(RunRecord run) =>
         new()
@@ -160,8 +160,8 @@ internal sealed class RunRow
             InputKind = run.InputKind,
             HasVocals = run.HasVocals,
             Confidence = run.Confidence,
-            Tonic = run.Centre?.Tonic,
-            Mode = run.Centre?.Mode,
+            Tonic = run.Center?.Tonic,
+            Mode = run.Center?.Mode,
             Mixed = run.Mixed,
             Direction = run.Direction,
             TonicCheck = run.TonicCheck,
@@ -179,8 +179,8 @@ internal sealed class RunRow
                         {
                             Position = index,
                             Label = section.Label,
-                            Tonic = section.Centre.Tonic,
-                            Mode = section.Centre.Mode,
+                            Tonic = section.Center.Tonic,
+                            Mode = section.Center.Mode,
                             Start = section.Start,
                         }
                 ),
@@ -247,7 +247,7 @@ internal sealed class RunRow
             InputKind = InputKind,
             HasVocals = HasVocals,
             Confidence = Confidence,
-            Centre = Centre,
+            Center = Center,
             Mixed = Mixed,
             Direction = Direction,
             TonicCheck = TonicCheck,

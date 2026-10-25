@@ -136,7 +136,7 @@ public sealed class DownloadSelectorTests : IDisposable
     {
         // What a source-only re-cut leaves: the separation that already ran, and a handoff owed.
         Jobs.Record(Finished, JobStage.Separation, JobStatus.Succeeded);
-        Jobs.Record(Finished, JobStage.Handoff, JobStatus.Cancelled, error: "re-cut requested");
+        Jobs.Record(Finished, JobStage.Handoff, JobStatus.Canceled, error: "re-cut requested");
 
         Assert.True(Selector().TryPickNext(FinishedWith(KeepingTheSource), out var next));
 
@@ -193,7 +193,7 @@ public sealed class DownloadSelectorTests : IDisposable
     public void A_track_put_back_in_line_still_gets_its_audio()
     {
         Jobs.Record(Fresh, JobStage.Separation, JobStatus.Succeeded);
-        Jobs.Record(Fresh, JobStage.Separation, JobStatus.Cancelled);
+        Jobs.Record(Fresh, JobStage.Separation, JobStatus.Canceled);
 
         Assert.True(Selector().TryPickNext(View(Held(Fresh)), out var next));
         Assert.Equal(Fresh, next.VideoId);

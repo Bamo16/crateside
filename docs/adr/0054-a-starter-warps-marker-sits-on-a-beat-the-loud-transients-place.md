@@ -101,7 +101,7 @@ as no choice made, so appsettings applies. The maintainer may bring the mode bac
 - The filter's own beat offset is not used for placement. `StarterGrid`, which reads it, is not
   wired into the writer; it stays for the downbeat, its confidence gate and the moving flags.
 - **It is a setting, not a given** (2026-10-14; *Tempo only* removed 2026-10-19, above). `Warps:StarterWarps` replaces `WriteStarterWarps` and
-  has three values: *Off* (nothing is written, so Live analyses the stem with its own transients,
+  has three values: *Off* (nothing is written, so Live analyzes the stem with its own transients,
   which the beatdetect harness needs), *Tempo only* (the marker and clip at the start of the audio,
   ADR 0047's starter, with the group's shared tempo) and *On the grid* (this ADR). Settings changes it
   while crateside runs and keeps the choice in `warp-settings.json`, which wins over appsettings. The

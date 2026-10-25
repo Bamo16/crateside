@@ -74,7 +74,7 @@ uploads. The description marker correctly declines to fire on it.
 
 ## What would actually settle it: the Song/Video link
 
-YouTube Music's player has a **Song/Video toggle**, and which side is available (or greyed
+YouTube Music's player has a **Song/Video toggle**, and which side is available (or grayed
 out) is a direct statement about whether a canonical track exists for a given video. That is
 the signal worth having, and it would allow *correcting* a bad queue entry rather than merely
 flagging it.

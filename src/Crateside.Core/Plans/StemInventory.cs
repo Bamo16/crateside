@@ -41,8 +41,8 @@ public sealed record StemInventory
     /// Files carrying a preset the separator no longer offers, which can be removed but never
     /// asked for again.
     /// </summary>
-    public IReadOnlyList<ClassifiedStem> Unrecognised =>
-        [.. Files.Where(file => file.Kind is StemKind.Unrecognised)];
+    public IReadOnlyList<ClassifiedStem> Unrecognized =>
+        [.. Files.Where(file => file.Kind is StemKind.Unrecognized)];
 
     /// <summary>
     /// What <paramref name="wanted"/> asks for that is not here yet; a preset on disk is never cut
@@ -99,7 +99,7 @@ public sealed record StemInventory
 
     /// <summary>
     /// Matched on the upload, never the label: a source download whose title ends in brackets
-    /// reads as labelled.
+    /// reads as labeled.
     /// </summary>
     private static bool IsDropped(ClassifiedStem file, StemPlan wanted, StemPlan stored) =>
         file.File.SourceVideoId is { } upload
@@ -166,7 +166,7 @@ public sealed record ClassifiedStem
                     Kind = StemKind.Preset,
                     PresetId = id,
                 }
-                : new() { File = file, Kind = StemKind.Unrecognised },
+                : new() { File = file, Kind = StemKind.Unrecognized },
             _ when catalog.TryGetId(StemFileName.PresetOf(file.Path), out var named) => new()
             {
                 File = file,
@@ -190,7 +190,7 @@ public enum StemKind
     WarpGuide,
 
     /// <summary>A stem carrying a preset the separator no longer offers.</summary>
-    Unrecognised,
+    Unrecognized,
 
     /// <summary>A file crateside took into the track rather than made (ADR 0022).</summary>
     Adopted,

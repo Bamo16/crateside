@@ -6,16 +6,16 @@ For a Claude Design session. The implementing agent ports your design to Blazor,
 and states, not code.
 
 Built against the commit that adds this brief. The rules as built are in `docs/design/DESIGN.md`
-(Tracks table, Side stack, Colour means state, Type), and your canvases are in
+(Tracks table, Side stack, Color means state, Type), and your canvases are in
 `docs/design/canvases/`; *Crateside Track Page* is Track details and *Crateside Unified Page* is
-the Tracks table. The terms (tonal centre, mode, section, mixed, collapse) are in `CONTEXT.md`
+the Tracks table. The terms (tonal center, mode, section, mixed, collapse) are in `CONTEXT.md`
 under *Keys*; ADR 0055 is the decision behind them. Nothing below is built yet.
 
 ---
 
 ## Where it stands
 
-A verdict used to be a key: `A minor`. It is now a **tonal centre**, a tonic and one of the seven
+A verdict used to be a key: `A minor`. It is now a **tonal center**, a tonic and one of the seven
 diatonic modes (*A Dorian*), and the 24-key tag Ableton is written with is **computed from it** by
 the *collapse*, which keeps the tonic: A Dorian is tagged **A minor**, G Mixolydian **G major**.
 The tag is never stored as the truth. The maintainer does not keep the mode-to-quality table in
@@ -53,8 +53,8 @@ The tag is spelled `A♯ min` / `E♭ maj` on screen (`KeyText.Spell`), in IBM P
 
 | | |
 |---|---|
-| **Tonal centre** | tonic + mode: *A Dorian*, *E minor*. The tag is its collapse |
-| **Sections** | optional; each a label with its own centre: *A Dorian (verse), E minor (chorus)*. The verdict's primary centre is the one the tag follows |
+| **Tonal center** | tonic + mode: *A Dorian*, *E minor*. The tag is its collapse |
+| **Sections** | optional; each a label with its own center: *A Dorian (verse), E minor (chorus)*. The verdict's primary center is the one the tag follows |
 | **Mixed** | two modes on one tonic at once, such as a major melody over minor harmony. The tag follows the harmony |
 | **Sources** | each states a key, optionally a mode, and optionally the sections it covered ("Chorus only") |
 
@@ -78,7 +78,7 @@ The tag is spelled `A♯ min` / `E♭ maj` on screen (`KeyText.Spell`), in IBM P
   | Phrygian | A minor | F major | 8A → 7B |
   | Locrian | A minor | B♭ major | 8A → 6B |
 
-- **Find the other centres of a song with sections.** The primary shows where the key always
+- **Find the other centers of a song with sections.** The primary shows where the key always
   shows; the others are reachable on the track (Track details), each with its label.
 - **Be told when a song is mixed**, and that the tag follows the harmony: *Major melody over minor
   harmony; tagged by the harmony.*
@@ -91,16 +91,16 @@ The tag is spelled `A♯ min` / `E♭ maj` on screen (`KeyText.Spell`), in IBM P
 - **The Tracks row.** The *Key* column is narrow and the row is dense. Does a modal verdict add the
   mode beside the tag (a longer cell for 4% of rows), mark the tag (a small glyph, detail on
   hover), or something else? The mode must be findable without opening the row.
-- **How loud is it?** Colour means state, so the mode is monochrome. Is weight, a rule, or a
+- **How loud is it?** Color means state, so the mode is monochrome. Is weight, a rule, or a
   prefix enough to say *this key is not what it looks like*?
 - **Track details' band.** The *Key* cell's value is the large mono figure with a sub-line. Does
   the arrow form (*A Dorian → A minor*) replace the figure, or does the tag stay large with the
   mode above or below it?
-- **Sections.** A song with three centres: what does the Track details band show of them, and what
-  does the evidence section show? A section list with labels, or the centres laid on the track's
+- **Sections.** A song with three centers: what does the Track details band show of them, and what
+  does the evidence section show? A section list with labels, or the centers laid on the track's
   time axis the way the warp view lays lanes?
-- **Sources and sections.** A source that analysed only the chorus should not read as a dissent
-  from a verdict whose primary centre is the verse. How does *Why this key* show which sections
+- **Sources and sections.** A source that analyzed only the chorus should not read as a dissent
+  from a verdict whose primary center is the verse. How does *Why this key* show which sections
   each source covered, and when one source disagrees with a section, not the song?
 - **Mixed.** One line, or a mark on the figure? It is rare and subtle.
 - **Partners and the wheel.** Partners works from the tag. For a modal verdict, is the tag all the
@@ -110,5 +110,5 @@ The tag is spelled `A♯ min` / `E♭ maj` on screen (`KeyText.Spell`), in IBM P
 ## Leave room for
 
 - A mode shown on the Dashboard's tallies later; nothing to design for it now.
-- A fourth verdict shape: *no tonal centre* (atonal, drone, percussion-only). Not in the model
+- A fourth verdict shape: *no tonal center* (atonal, drone, percussion-only). Not in the model
   yet, and not wanted in this design, but do not box it out.

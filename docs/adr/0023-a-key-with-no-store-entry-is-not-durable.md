@@ -108,7 +108,7 @@ and neither invents a keyword Ableton does not already know.
 
 A backing write is still subject to the same staleness check as any other — the store's timestamp
 is re-read immediately before the swap — so a pass that races Ableton loses and retries, which is
-the existing behaviour and needs no change.
+the existing behavior and needs no change.
 
 ## Deliberately not done
 
@@ -120,7 +120,7 @@ itself, and a hand tag applied there lands in the store the same way. The pass i
 a root rather than hardcoded, so pointing it at another one later is configuration, not a rewrite.
 
 **Repairing disagreements.** The audit reports them and a human decides, which is ADR 0011's
-instinct and still right. Nothing here automates a judgement call.
+instinct and still right. Nothing here automates a judgment call.
 
 ## Amendment, 2026-09-24 — a backing pass may add one genre to an entry that exists
 

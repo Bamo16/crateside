@@ -18,7 +18,7 @@ So the brief goes out through the repo, and the result comes back as a commit.
    that cannot read issues can still work from it.
 2. Point it at what already exists: `docs/design/DESIGN.md` (the rules as built) and the canvases
    in `docs/design/canvases/`.
-3. Track the work on an issue labelled `needs-design`, linking the brief. Do not build before the
+3. Track the work on an issue labeled `needs-design`, linking the brief. Do not build before the
    result arrives.
 
 ## Back: the result

@@ -5,7 +5,7 @@ Canvas: `Crateside Tools Page.dc.html` (1a Partners in the new frame, 1b–1d Re
 alternative).
 
 The canvas is a design reference in HTML. Port it to Blazor. No new tokens, nothing newly
-coloured, buttons stay `.outline` / `.primary` / `.danger`. Song names, Partners rows and picker
+colored, buttons stay `.outline` / `.primary` / `.danger`. Song names, Partners rows and picker
 BPMs are illustrative; the Re-Pitch ladders are computed.
 
 ## 1. Name and navigation
@@ -16,7 +16,7 @@ BPMs are illustrative; the Re-Pitch ladders are computed.
 - **Sub-tabs** under the title, one per tool: **Partners · Re-Pitch**. Plain text 14px/500,
   `--text-60`; the current one `--text` with a 2px `--text` underline sitting on the row's 1px
   `--line-strong` bottom rule. Gap 24px. The header's tabs are 12px with an amber underline, so
-  the two levels read apart by size and colour.
+  the two levels read apart by size and color.
 - Each tool has its own route and `PageTitle`:
   `/tools/partners` (`Partners · crateside`), `/tools/repitch` (`Re-Pitch · crateside`).
   `/tools` goes to the last tool used (default Partners). Keep `/partners?key=` working as a

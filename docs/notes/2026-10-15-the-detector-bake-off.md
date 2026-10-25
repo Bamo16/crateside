@@ -118,15 +118,15 @@ needs a windowing option of its own, so the port accepts a window by decoding on
 
 ## Whether each can run in .NET
 
-| detector | licence | route |
+| detector | license | route |
 |---|---|---|
 | ffmpeg `keydetect` | FiLL's, in the NoMercy build | already an ffmpeg call; nothing to port |
 | madmom CNN | code BSD; **model files CC BY-NC-SA 4.0** | ONNX. The net is plain: nine convolutions (one 5×5, seven 3×3, a 1×1 last), batch norm, 3 max-pools, averaged over frames; 2.7 MB of weights. Its input is a 24-bands-per-octave log spectrogram (8192-sample frames, 5 per second, 65–2100 Hz, `log(x+1)`). A converter exists (the `madmom-onnx` fork) |
-| Essentia `edma` / `bgate` | **AGPL-3.0** (commercial licence on request) | native C#: HPCP from spectral peaks, correlated against a profile. No .NET binding exists, and essentia.js has no KeyExtractor that I could confirm |
+| Essentia `edma` / `bgate` | **AGPL-3.0** (commercial license on request) | native C#: HPCP from spectral peaks, correlated against a profile. No .NET binding exists, and essentia.js has no KeyExtractor that I could confirm |
 | libKeyFinder | **GPL-3.0** | a P/Invoke to a native build with FFTW is possible, or a third-party NuGet (`LibKeyFinderDotNet`, unlisted); not needed |
 | CREMA, librosa K-S | ISC | TensorFlow and a Python venv today; not worth porting given the above |
 
-The weights' licence and Essentia's both bear on making crateside public
+The weights' license and Essentia's both bear on making crateside public
 ([#107](https://github.com/Bamo16/crateside/issues/107)); ADR 0055's addendum says how.
 
 ## Not measured

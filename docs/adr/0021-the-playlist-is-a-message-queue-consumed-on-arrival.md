@@ -78,7 +78,7 @@ Two things the proposal got wrong, both in the safe direction:
   audio to be in the working set — which the janitor discards once separation has succeeded and
   staging is empty — and `VerdictSelector` requires the ledger to have no run for the track.
   Either refuses a finished track on its own. `QuotaGuardTests` pins both, and was written and
-  run *before* the change so that it pinned existing behaviour rather than new.
+  run *before* the change so that it pinned existing behavior rather than new.
 
 **The download stage now takes a kept or attached source before audio.** Audio had been first
 since ADR 0019, and the audio list refills from the playlist while the other two are bounded by
@@ -151,7 +151,7 @@ have.
 `ConsumeAsync` re-offered every recorded entry the playlist still held on **every** scan, and a
 scan runs on each page read and each stage worker's two-minute loop. A `playlistItems.delete`
 costs fifty quota units against a daily ten thousand. The removals were evidently failing — a 403
-from a playlist the authorised channel does not own would do it — and the result checked nothing,
+from a playlist the authorized channel does not own would do it — and the result checked nothing,
 so they were retried until the quota was gone.
 
 Every other stage in this repo goes through `StageEligibility` and strikes out. This one was

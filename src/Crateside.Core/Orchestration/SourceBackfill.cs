@@ -49,7 +49,7 @@ public sealed class SourceBackfill(
         ];
     }
 
-    /// <summary>Downloads each in turn, stopping when cancelled; <paramref name="onEach"/> hears every result.</summary>
+    /// <summary>Downloads each in turn, stopping when canceled; <paramref name="onEach"/> hears every result.</summary>
     public async Task<IReadOnlyList<BackfillResult>> RunAsync(
         IReadOnlyList<string> videoIds,
         Action<BackfillResult>? onEach = null,

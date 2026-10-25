@@ -205,7 +205,7 @@ public sealed class TrackRename(
                 markersLost.Count is 0
                     ? null
                     : $"Ableton's warp markers did not follow {"file".ToQuantity(markersLost.Count)}; "
-                        + "they will be analysed again.",
+                        + "they will be analyzed again.",
                 setsLeft.Count is 0
                     ? null
                     : $"{string.Join(", ", setsLeft)} could not be updated; relink "

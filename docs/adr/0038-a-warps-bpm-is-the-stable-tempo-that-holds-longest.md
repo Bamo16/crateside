@@ -34,7 +34,7 @@ Measured across the 844 saved library sidecars on 2026-09-26:
 
 - **A stable run** is a stretch of at least 8 bars that one tempo fits, judged by how far the
   markers stray from a straight line in milliseconds rather than by bar-to-bar BPM. Silent bars, read
-  from the sidecar's waveform overview, do not count towards a run. The tolerance is set against
+  from the sidecar's waveform overview, do not count toward a run. The tolerance is set against
   the library when built.
 - **The BPM** is the tempo of the stable runs that together cover the most bars.
 - **Every warp is one of three kinds:**

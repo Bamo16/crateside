@@ -78,7 +78,7 @@ snares, which the drum stem could give.
 
 ## What this does not show
 
-- **It used Live's transients, which exist only after Ableton analyses the file.** The method has to
+- **It used Live's transients, which exist only after Ableton analyzes the file.** The method has to
   run on crateside's own detector (`OnsetDetector`), at the stage the starter warp is written. That
   detector's recall on instrumentals is 90.7% with a median offset of 1.2 ms
   ([transients note](2026-10-02-transients-against-lives.md)), so *guessed*: close to Live's, not

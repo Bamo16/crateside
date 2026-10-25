@@ -18,7 +18,7 @@
   <header style="display:flex;flex-direction:column;gap:10px;max-width:980px">
     <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Brief 14 · turn 1 · #97</div>
     <h1 style="margin:0;font:600 28px 'IBM Plex Sans',sans-serif">Each stem's warp, on Track details</h1>
-    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty"><strong style="color:#ece7dc;font-weight:500">One time axis for the group</strong>, under the sample list: a lane per stem, with Live's clip-view parts drawn in place. Flags above the waveform for markers, grey ticks under it for transients, a bar along the top for the loop, and everything outside the clip dimmed. Above the lanes, a <strong style="color:#ece7dc;font-weight:500">tempo line</strong> read from the markers. It is a flat line for a two-marker warp and a steady wobble for a dense one, so both read at a glance. The lanes share one axis, so stems that agree line up, and a stem warped on its own shows where it parts from the rest. Click a lane to see its details, where it came from, and the two controls. Everything is monochrome except state: amber for <em>waiting for Live</em> (your turn), teal while crateside writes.</p>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty"><strong style="color:#ece7dc;font-weight:500">One time axis for the group</strong>, under the sample list: a lane per stem, with Live's clip-view parts drawn in place. Flags above the waveform for markers, gray ticks under it for transients, a bar along the top for the loop, and everything outside the clip dimmed. Above the lanes, a <strong style="color:#ece7dc;font-weight:500">tempo line</strong> read from the markers. It is a flat line for a two-marker warp and a steady wobble for a dense one, so both read at a glance. The lanes share one axis, so stems that agree line up, and a stem warped on its own shows where it parts from the rest. Click a lane to see its details, where it came from, and the two controls. Everything is monochrome except state: amber for <em>waiting for Live</em> (your turn), teal while crateside writes.</p>
     <p style="margin:0;font:400 12.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Waveforms, markers and dates are made up. <em>Rapper's Delight</em>'s range is the one DESIGN.md records. The lanes, pills and controls are live: click them.</p>
   </header>
 
@@ -168,7 +168,7 @@
   <div id="1d" style="display:flex;flex-direction:column;gap:12px;scroll-margin-top:24px">
     <div style="display:flex;align-items:baseline;gap:10px"><a href="#1d" style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1d</a><span style="font:500 14px 'IBM Plex Sans',sans-serif">Whose warp it is: every state</span><span style="font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.55)">The lane's gutter, its drawing, the detail line, and which control is offered. Chips follow the evidence badges: filled for the user's, outlined for borrowed, dashed for crateside's or Live's own guess.</span></div>
     <div style="width:1472px;background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:8px 28px 14px;box-sizing:border-box">
-      <div style="display:grid;grid-template-columns:210px 340px minmax(0,1fr) 150px 150px;gap:22px;padding:12px 0 8px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);border-bottom:1px solid rgba(255,255,255,.08)"><span>Gutter</span><span>Lane</span><span>Detail line</span><span>Re-apply</span><span>Let Live analyse</span></div>
+      <div style="display:grid;grid-template-columns:210px 340px minmax(0,1fr) 150px 150px;gap:22px;padding:12px 0 8px;font:500 10.5px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4);border-bottom:1px solid rgba(255,255,255,.08)"><span>Gutter</span><span>Lane</span><span>Detail line</span><span>Re-apply</span><span>Let Live analyze</span></div>
       <sc-for list="{{ states }}" as="s" hint-placeholder-count="7">
         <div style="display:grid;grid-template-columns:210px 340px minmax(0,1fr) 150px 150px;gap:22px;align-items:center;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
           <div style="display:flex;flex-direction:column;gap:5px"><span style="font:500 13px 'IBM Plex Sans',sans-serif">Vocal - Full</span><span style="display:inline-flex;width:fit-content;font:500 11px/1.25 'IBM Plex Sans',sans-serif;padding:2px 8px;border-radius:999px;background:{{ s.chip.bg }};color:{{ s.chip.fg }};border:1px {{ s.chip.bs }} {{ s.chip.bc }}">{{ s.chip.label }}</span><span style="font:400 11.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">{{ s.sub }}</span></div>
@@ -213,7 +213,7 @@
     <div style="display:flex;flex-direction:column;gap:8px;font:400 13px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.72);text-wrap:pretty">
       <p style="margin:0"><strong style="color:#ece7dc;font-weight:500">Zoom earns its place</strong>, as three fixed steps: <em>Whole track</em>, <em>32 bars</em> and <em>8 bars</em>, counted from the shared warp. Zoomed, a strip of the whole track appears above the ruler with the view boxed in it: click to move, or use ‹ ›. Transients are drawn only from 32 bars, where they sit 3px or more apart. Markers are drawn as flags wherever two are at least 9px apart. Closer than that, they become ticks in the flag row with faint lines through the lane, so a dense warp reads as a texture and its bunching still shows. See <a href="#1b" style="text-decoration:underline">1b</a> whole and <a href="#1c" style="text-decoration:underline">1c</a> at 8 bars.</p>
       <p style="margin:0"><strong style="color:#ece7dc;font-weight:500">Editing, later.</strong> The flags are already the handles: in an editing version they drag along their lane, a click in the flag row adds one, and the clip-start notch in the ruler drags to bar 1 of the first verse. Edits would apply to the group, with a stem warped on its own edited on its own lane. 8 bars is the zoom an edit would need.</p>
-      <p style="margin:0"><strong style="color:#ece7dc;font-weight:500">Off the grid, #96.</strong> The 10 s offsets get a lane of their own between the tempo line and the stems: <em>Off the grid</em>, milliseconds either side of a centre line, on the same axis. A step like the 50 ms one at 4:40 would show directly above the markers that absorbed it, and the offer to correct it would sit in the detail, beside the two controls.</p>
+      <p style="margin:0"><strong style="color:#ece7dc;font-weight:500">Off the grid, #96.</strong> The 10 s offsets get a lane of their own between the tempo line and the stems: <em>Off the grid</em>, milliseconds either side of a center line, on the same axis. A step like the 50 ms one at 4:40 would show directly above the markers that absorbed it, and the offer to correct it would sit in the detail, beside the two controls.</p>
     </div>
   </div>
 </section>
@@ -384,7 +384,7 @@ const INK = { label: 'rgba(236,231,220,.4)', amber: '#e8b45a', status: 'rgba(236
 
 function ctrlsFor(s, step, h) {
   const ra = { label: "Re-apply crateside's warp", labelFg: INK.label, hasBtn: false, statusFg: INK.status };
-  const la = { label: 'Let Live analyse', labelFg: INK.label, hasBtn: false, statusFg: INK.status };
+  const la = { label: 'Let Live analyze', labelFg: INK.label, hasBtn: false, statusFg: INK.status };
   const p = s.prov;
   if (p === 'yours') { ra.status = s.lendsTo && s.lendsTo.length ? 'Nothing to re-apply: this is the warp crateside lends.' : 'Nothing to re-apply: crateside has lent this stem nothing.'; ra.statusFg = INK.quiet; }
   else if (p === 'borrowed') { ra.status = 'Nothing to re-apply: it is still ' + s.from + '\'s warp, unchanged.'; ra.statusFg = INK.quiet; }
@@ -393,7 +393,7 @@ function ctrlsFor(s, step, h) {
   else if (p === 'none') { ra.status = 'Nothing to re-apply.'; ra.statusFg = INK.quiet; }
   else { ra.status = 'Not while a change is under way.'; ra.statusFg = INK.quiet; }
 
-  if (['yours', 'borrowed', 'yoursWasBorrowed', 'starter', 'analysis'].includes(p)) { la.hasBtn = true; la.btn = 'Let Live analyse'; la.status = 'Sends this stem\'s warp file to the Recycle Bin, so Live analyses it afresh with its own transients. crateside then puts the warp back.'; }
+  if (['yours', 'borrowed', 'yoursWasBorrowed', 'starter', 'analysis'].includes(p)) { la.hasBtn = true; la.btn = 'Let Live analyze'; la.status = 'Sends this stem\'s warp file to the Recycle Bin, so Live analyzes it afresh with its own transients. crateside then puts the warp back.'; }
   else if (p === 'none') { la.status = 'No warp file yet: Live has not opened this stem.'; la.statusFg = INK.quiet; }
   else if (p === 'waiting') { la.labelFg = INK.amber; la.status = 'Preview ' + s.short + ' in Live\'s browser (Sample Staging). Live writes a fresh file, and crateside puts the warp back within a minute.'; la.statusFg = '#ece7dc'; la.helper = true; }
   else { la.status = 'Not while a change is under way.'; la.statusFg = INK.quiet; }
@@ -555,14 +555,14 @@ class Component extends DCLogic {
         emptyBd: prov === 'waiting' ? 'rgba(232,180,90,.55)' : 'rgba(255,255,255,.14)', emptyFg: prov === 'waiting' ? '#e8b45a' : 'rgba(236,231,220,.4)',
         ra: ra[0], raFg: ra[1] ? yes : no, la: la[0], laFg: la[1] ? yes : no };
     };
-    const yoursS = mk('yours', {}, ['— nothing lent', false], ['Let Live analyse', true]);
+    const yoursS = mk('yours', {}, ['— nothing lent', false], ['Let Live analyze', true]);
     yoursS.sub = 'saved 2 Oct'; yoursS.prov = 'Saved in Live on 2 Oct.';
     return [
       yoursS,
-      mk('borrowed', { lent: '2 Oct' }, ['— unchanged', false], ['Let Live analyse', true]),
-      mk('yoursWasBorrowed', { lent: '29 Sep', differsFrom: null }, ['Re-apply', true], ['Let Live analyse', true]),
-      mk('starter', {}, ['— nothing to lend', false], ['Let Live analyse', true]),
-      mk('analysis', {}, ['Re-apply, if a sibling has a saved warp', true], ['Let Live analyse', true]),
+      mk('borrowed', { lent: '2 Oct' }, ['— unchanged', false], ['Let Live analyze', true]),
+      mk('yoursWasBorrowed', { lent: '29 Sep', differsFrom: null }, ['Re-apply', true], ['Let Live analyze', true]),
+      mk('starter', {}, ['— nothing to lend', false], ['Let Live analyze', true]),
+      mk('analysis', {}, ['Re-apply, if a sibling has a saved warp', true], ['Let Live analyze', true]),
       mk('none', {}, ['—', false], ['— no file yet', false]),
       mk('waiting', {}, ['—', false], ['waiting; see 1e', false]),
     ];
@@ -585,7 +585,7 @@ class Component extends DCLogic {
       { n: '5 · done', chip: CHIP.borrowed(s), c: C('borrowed', null, { doneWhich: 'la', doneNote: 'Warp put back just now, into Live\'s fresh file. Transients are Live\'s.' })[1] },
     ];
     return [{ title: "Re-apply crateside's warp · only where a sibling has a saved warp and this stem's differs from it", steps: ra },
-            { title: 'Let Live analyse · wherever a warp file exists', steps: la }];
+            { title: 'Let Live analyze · wherever a warp file exists', steps: la }];
   }
 
   renderVals() {

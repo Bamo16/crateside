@@ -130,7 +130,7 @@ public sealed class StageProgressTests : IDisposable
     [Fact]
     public void Putting_a_track_back_in_line_undoes_giving_up()
     {
-        // Strikes never decrease; every selector reads Cancelled as eligible again.
+        // Strikes never decrease; every selector reads Canceled as eligible again.
         var jobs = Store();
 
         for (var attempt = 0; attempt < SeparationSelector.DefaultMaxStrikes; attempt++)

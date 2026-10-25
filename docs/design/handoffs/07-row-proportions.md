@@ -4,7 +4,7 @@ Issue: #65 · answers `briefs/07-row-proportions.md` · built against `c9c5e4b`
 Canvas: `Crateside Row Proportions.dc.html` (1a–1g, 2a–2b), which mounts `Crateside Row Stack.dc.html`.
 
 The canvas is a design reference in HTML. Port it to the Blazor components named below. No new
-tokens, nothing newly coloured, and buttons stay `.outline` / `.primary` / `.danger`.
+tokens, nothing newly colored, and buttons stay `.outline` / `.primary` / `.danger`.
 Song names, keys, BPMs and "heard" notes on the canvas are illustrative. Preset names come from
 the test catalogs; the real ones come from the StemForge catalog.
 

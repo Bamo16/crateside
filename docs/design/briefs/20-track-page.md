@@ -55,7 +55,7 @@ Design for text of this shape; old verdicts keep their longer prose and must sti
 - **First pass: withheld**: the reasoning of the pass that asked for windows, shown once, folded.
   Today it is repeated as *Why the judge asked for these windows*.
 - **Typesetting**: keys, chords and r values in Plex Mono (*G♯ minor*, *B (V) → E (I)*, *r 0.837*);
-  HIGH/MEDIUM/LOW in small caps, uncoloured. Nothing else is styled. Keys are spelled in full in
+  HIGH/MEDIUM/LOW in small caps, uncolored. Nothing else is styled. Keys are spelled in full in
   prose and short in tight places (the verdict band, the Tracks row, the sample list).
 - **The detectors are keydetect, madmom and Essentia** (today *ffmpeg keydetect* and *Essentia
   edma*).
@@ -86,8 +86,8 @@ candidates.
 
 A lane under the waveform lanes, on the Warp view's time axis, replacing the *Key flicker* fold:
 
-- **The verdict's sections as bands**, each labelled with its key (short form). One band across the
-  track when the verdict has a single centre. This is the "real key change" a person reads.
+- **The verdict's sections as bands**, each labeled with its key (short form). One band across the
+  track when the verdict has a single center. This is the "real key change" a person reads.
 - **The raw running-estimate changes as a faint underlay**, shaded by r, for the judge's eye and
   anyone curious. It must not compete with the bands.
 - It follows the zoom pills like the other rows.
@@ -127,5 +127,5 @@ palette or a lighter one of its own; say which and why.
 
 - The upper half of Track details (verdict band, stage flow, sample list, side stack), except
   where the share control sits.
-- The chord lane's content and playback's behaviour; only their room.
+- The chord lane's content and playback's behavior; only their room.
 - The text rules themselves: ADR 0064 settles them. Comment on #150 if one makes the layout worse.

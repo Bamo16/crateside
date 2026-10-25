@@ -214,7 +214,7 @@ select:focus {
     font-weight: 400;
 }
 
-/* An unreadable BPM needs attention, and says so by colour alone. */
+/* An unreadable BPM needs attention, and says so by color alone. */
 .bpm.unreadable {
     border-color: var(--red);
 }

@@ -22,7 +22,7 @@ The comparison is agreement, not accuracy.
 - **Confidence dropped on GYARI** because the recorded HIGH rested on a ChordWiki page the new
   session could not open, and the prompt counts only pages it read (*measured*).
 - **Neither run named Dorian as the primary mode.** On Hot In Herre the Dorian verse became a
-  section, as Hooktheory analyses it (*measured*).
+  section, as Hooktheory analyzes it (*measured*).
 - On Nineteen keydetect now reads A# minor (r 0.676, no backer), where the old evidence agreed
   with the verdict. The judge overruled it from the cadence and `edma` (*measured*).
 

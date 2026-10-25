@@ -196,7 +196,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
     private bool IsPassed => Quota.PassedVideoId == Row.VideoId;
 
     /// <summary>Only while weekly use holds judging back, and only for a track headed for it.</summary>
-    private bool CanPass => Row.IsAwaitingJudgement && Quota.Hold is not null;
+    private bool CanPass => Row.IsAwaitingJudgment && Quota.Hold is not null;
 
     private bool HasQueueButtons =>
         Row is { GaveUpAt: not null } or { State: TrackState.Short } || IsBumped || CanBump || IsPassed || CanPass;

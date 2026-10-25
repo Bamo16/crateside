@@ -67,6 +67,6 @@
 
     private string Became =>
         Reading.Section is { } section
-            ? $"→ section {section.Label}: {ModeText.Named(section.Centre)}"
-            : "→ no section: the judge did not place this window as a centre of its own";
+            ? $"→ section {section.Label}: {ModeText.Named(section.Center)}"
+            : "→ no section: the judge did not place this window as a center of its own";
 }

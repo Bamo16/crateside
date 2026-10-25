@@ -56,7 +56,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             WarpOwner.Yours(var saved, _, _) => $"saved {Day(saved)}{Differs(stem)}",
             WarpOwner.Borrowed(_, var written) => $"unchanged since {Day(written)}",
             WarpOwner.Starter => "one marker · not finished",
-            WarpOwner.Unwarped => "gain and colour only · warp it by hand",
+            WarpOwner.Unwarped => "gain and color only · warp it by hand",
             WarpOwner.LiveAnalysis => "not saved, so Live ignores it",
             WarpOwner.WaitingForLive => "preview it in Live",
             WarpOwner.PuttingBack => "Live opened it",
@@ -77,7 +77,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             WarpOwner.Starter =>
                 $"One marker at crateside's reading{StarterTempo(stem)}, so dropping it into an empty set sets the set's tempo. Not a finished warp: warp it in Live and press Save Default Clip.",
             WarpOwner.Unwarped(var written) =>
-                $"crateside saved its clip with Warp off on {Day(written)}, so it comes in at the loudness target in its colour. One tempo does not hold on its beats, or it is not read yet, so it has no starter: warp it in Live and press Save Default Clip.",
+                $"crateside saved its clip with Warp off on {Day(written)}, so it comes in at the loudness target in its color. One tempo does not hold on its beats, or it is not read yet, so it has no starter: warp it in Live and press Save Default Clip.",
             WarpOwner.LiveAnalysis =>
                 "Live has opened it, but no warp is saved. Live ignores these markers until you press Save Default Clip.",
             WarpOwner.WaitingForLive =>
@@ -193,7 +193,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
     private static string Thousandths(double bpm) =>
         bpm.ToString("0.000", CultureInfo.InvariantCulture);
 
-    public static bool CanLetLiveAnalyse(StemWarp stem) =>
+    public static bool CanLetLiveAnalyze(StemWarp stem) =>
         stem.Sidecar is not null
         && stem.Owner is not (WarpOwner.WaitingForLive or WarpOwner.PuttingBack);
 
@@ -205,7 +205,7 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             WarpOwner.PuttingBack => "Live wrote a fresh file · putting the warp back…",
             _ when stem.Sidecar is null => "No warp file yet: Live has not opened this stem.",
             _ =>
-                "Sends this stem's warp file to the Recycle Bin, so Live analyses it afresh with its own transients. crateside then puts the warp back.",
+                "Sends this stem's warp file to the Recycle Bin, so Live analyzes it afresh with its own transients. crateside then puts the warp back.",
         };
 
     public string LetLiveQuestion(StemWarp stem) =>

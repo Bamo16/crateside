@@ -44,7 +44,7 @@ Each prose field has one job:
 
 | field | job | budget |
 |---|---|---|
-| `tonicCheck` | what the music does: cadences, loops, the relative and fifth neighbours | ≤ 70 words |
+| `tonicCheck` | what the music does: cadences, loops, the relative and fifth neighbors | ≤ 70 words |
 | `reasoning` | what the evidence is worth, and why this confidence; may point to the tonic check, never re-argues it | ≤ 100 words, ≤ 2 paragraphs |
 | `candidates` | new: the keys weighed besides the verdict's, as `{ "key", "why" }` | 0–3, one sentence each |
 | `windows[].why` | new: what this window should settle | one sentence |
@@ -68,7 +68,7 @@ Each prose field has one job:
 ### The formatter
 
 Text from the judge is formatted in C# at render time, so old verdicts benefit without being
-judged again. It changes only what it recognises with certainty:
+judged again. It changes only what it recognizes with certainty:
 
 - **Inline Markdown markers are removed** (backticks, `*`, `**`, `_`, `__`), keeping the words.
   A permanent guard, since a future judge can ignore the prompt.
@@ -76,13 +76,13 @@ judged again. It changes only what it recognises with certainty:
 - **Accidentals become ♯ and ♭ only inside a note or chord token.** A `b` in a word is never one.
 - **Keys** (a note and a mode word: *major, maj, maj., minor, min*, or a
   mode name) are spelled in full in prose: *E major*, *G♯ minor*, *A Dorian*.
-- **Chords** with a quality or an accidental (*G♯m*, *B7*, *F♯maj7*) are recognised anywhere; a
+- **Chords** with a quality or an accidental (*G♯m*, *B7*, *F♯maj7*) are recognized anywhere; a
   bare letter only inside a progression, next to `→` or `–`.
 - **Roman numerals the judge wrote are typeset** (`bVII` → *♭VII*), never generated.
 - **Detector names are made canonical**: *ffmpeg keydetect, KeyDetect* → keydetect; *Essentia
   edma, edma, Edma* → Essentia.
 - **Styling is sparse**: keys, chords and r values in Plex Mono; HIGH, MEDIUM, LOW in small caps,
-  uncoloured, since colour means state and a word in a sentence is not state. Nothing else.
+  uncolored, since color means state and a word in a sentence is not state. Nothing else.
 
 The formatter also shapes detector data on the same page:
 

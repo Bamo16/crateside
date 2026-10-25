@@ -62,7 +62,7 @@ public sealed class StageWorker<TDrainer>(
             jobs.Record(
                 job.VideoId,
                 drainer.Stage,
-                JobStatus.Cancelled,
+                JobStatus.Canceled,
                 error: "did not survive a restart"
             );
 

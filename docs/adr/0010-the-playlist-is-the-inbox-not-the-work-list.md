@@ -8,7 +8,7 @@
 Re-cutting a track ([the feature](../../README.md), built 2026-09-06) deletes its staged files and
 reopens separation, handoff and tagging so a different recipe runs. The first real use of it, on
 `Groove Armada - At the River`, deleted the files and then **nothing happened**. The three stages
-sat `Cancelled` for hours and no separation ever started.
+sat `Canceled` for hours and no separation ever started.
 
 The cause was not in the re-cut. `SeparationSelector` reads `QueueView.AwaitingSeparation`, which
 is derived from the playlist's items — and At the River had left the playlist months earlier, the

@@ -4,7 +4,7 @@ using Crateside.Core.Ledger;
 namespace Crateside.Core.Pairing;
 
 /// <summary>
-/// "What else can I play over this?": the partner keys for a source centre, ranked; Ableton's
+/// "What else can I play over this?": the partner keys for a source center, ranked; Ableton's
 /// browser finds the files (ADR 0056).
 /// </summary>
 public static class Partners
@@ -17,7 +17,7 @@ public static class Partners
 
     /// <summary>Every partner with a shift in the range, by absolute shift, then notes shared.</summary>
     public static IReadOnlyList<MashupPartner> For(
-        TonalCentre source,
+        TonalCenter source,
         int lowest = 0,
         int highest = 0
     )
@@ -55,19 +55,19 @@ public static class Partners
     }
 
     /// <summary>One pairing at its smallest shift, without ranking anything.</summary>
-    public static MashupPartner Between(TonalCentre source, TonalCentre partner) =>
+    public static MashupPartner Between(TonalCenter source, TonalCenter partner) =>
         MashupPartner.TryCreate(source, partner, -FarthestShift, FarthestShift, out var found)
             ? found
             : throw new UnreachableException();
 
     /// <summary>What a verdict pairs as: a mixed one as its collapse, since its notes are two scales.</summary>
-    public static TonalCentre Basis(TonalCentre centre, bool mixed) =>
-        mixed ? centre.Plain : centre;
+    public static TonalCenter Basis(TonalCenter center, bool mixed) =>
+        mixed ? center.Plain : center;
 
-    private static IEnumerable<TonalCentre> Candidates(TonalCentre source) =>
+    private static IEnumerable<TonalCenter> Candidates(TonalCenter source) =>
         source.IsModal
-            ? MusicKey.AllKeys.Select(MusicKey.CentreOf).Prepend(source)
-            : MusicKey.AllKeys.Select(MusicKey.CentreOf);
+            ? MusicKey.AllKeys.Select(MusicKey.CenterOf).Prepend(source)
+            : MusicKey.AllKeys.Select(MusicKey.CenterOf);
 
     // Clockwise steps round the wheel from one key to another, 0–11.
     private static int Steps(MusicKey from, MusicKey to) =>

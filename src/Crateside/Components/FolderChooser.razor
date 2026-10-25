@@ -48,7 +48,7 @@
     public EventCallback<string> Chosen { get; set; }
 
     [Parameter, EditorRequired]
-    public EventCallback Cancelled { get; set; }
+    public EventCallback Canceled { get; set; }
 
     protected override void OnInitialized() => _listing = Browser.List(Start);
 
@@ -56,5 +56,5 @@
 
     private Task Choose() => Chosen.InvokeAsync(_listing.Path);
 
-    private Task Cancel() => Cancelled.InvokeAsync();
+    private Task Cancel() => Canceled.InvokeAsync();
 }

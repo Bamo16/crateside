@@ -3,13 +3,13 @@ using Crateside.Core.Ledger;
 
 namespace Crateside.Core.Pairing;
 
-/// <summary>A key that pairs with a source centre, at the shift that gets it there.</summary>
+/// <summary>A key that pairs with a source center, at the shift that gets it there.</summary>
 public sealed record MashupPartner
 {
-    public required TonalCentre Source { get; init; }
+    public required TonalCenter Source { get; init; }
 
-    /// <summary>One of the 24 keys, or a modal source's own centre.</summary>
-    public required TonalCentre Key { get; init; }
+    /// <summary>One of the 24 keys, or a modal source's own center.</summary>
+    public required TonalCenter Key { get; init; }
 
     /// <summary>Named only at shift 0; null for every other partner.</summary>
     public Relationship? Relationship { get; init; }
@@ -46,8 +46,8 @@ public sealed record MashupPartner
 
     /// <summary>The partner at its shift closest to 0 within the range; false when none of its shifts is in it.</summary>
     public static bool TryCreate(
-        TonalCentre source,
-        TonalCentre candidate,
+        TonalCenter source,
+        TonalCenter candidate,
         int lowest,
         int highest,
         [NotNullWhen(true)] out MashupPartner? partner

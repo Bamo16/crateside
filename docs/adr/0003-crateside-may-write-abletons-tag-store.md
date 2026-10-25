@@ -55,7 +55,7 @@ back after each.
    one, every tag not in the new file vanished from the browser's filters. Ableton did not
    defend its own earlier writes.
 6. **crateside can create the file from nothing** — directory included — for a file
-   Ableton had never indexed, and Ableton honoured it.
+   Ableton had never indexed, and Ableton honored it.
 7. **Quitting flushes nothing.** The file was byte-identical after shutdown.
 8. **A malformed keyword permanently pollutes the tag vocabulary.** A `Key|F#` written
    with ASCII `#` instead of U+266F was not rejected and did not fail — Ableton registered
@@ -84,7 +84,7 @@ back after each.
   writer, where an escaping bug would cost far more than the cosmetic difference it fixed.
   **The rules that are load-bearing are UTF-8, no BOM, no declaration, LF endings and a
   trailing newline** — all measured off the real file and all met. Finding 5 is what makes
-  the rest cosmetic: disk is authoritative and Ableton honoured a hand-written file, and by
+  the rest cosmetic: disk is authoritative and Ableton honored a hand-written file, and by
   finding 4 it reformats to its own style on its next merge anyway. The round-trip test
   asserts entries, order and keywords survive, plus those five byte-level rules.
 - **Read-modify-write**, preserving entries crateside did not create; create the directory
@@ -137,7 +137,7 @@ browser, which is where the filtering happens. Still worth doing one day; not a 
 
 - **Tagging leaves the "human-limited steps."** That term is defined in keytag's
   `CONTEXT.md` as warping, tagging and sometimes renaming, and it is part of what this
-  whole project is organised around. Warping remains, and the user still opens the stems in
+  whole project is organized around. Warping remains, and the user still opens the stems in
   Ableton, so the saving is the clicks and — more valuable — the elimination of a real
   error class. **keytag's `CONTEXT.md` needs amending**, along with ADR 0001 itself.
 - **crateside now writes into the library.** `CratesidePaths` documented that it writes
@@ -219,7 +219,7 @@ Moving a tagged one — `Alan Gomez - Mission 15 (Vocal - Full).flac`, carrying 
 *Not* unmeasured, though it was briefly written up here as if it were: **whether Ableton keeps
 watching a file that crateside replaces rather than edits in place.** Finding 5 already settles
 it — that test *deleted* the XMP and put a hand-written one in its place, which is a harder
-identity change than a rename-over, and Ableton honoured the new content. Confirmed again on
+identity change than a rename-over, and Ableton honored the new content. Confirmed again on
 2026-08-20 when the tag writer's first real run replaced the file (its id changed) and the tags
 appeared in a browser that was already open.
 

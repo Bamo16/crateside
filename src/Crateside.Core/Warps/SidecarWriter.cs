@@ -35,7 +35,7 @@ public sealed class SidecarWriter(
         StarterTiming
     > _timings = new();
 
-    // The warp worker and the levelling pass both rewrite sidecars; neither may undo the other.
+    // The warp worker and the leveling pass both rewrite sidecars; neither may undo the other.
     private readonly Lock _writing = new();
 
     /// <summary>Whether any of these siblings holds a saved warp the user made, which <see cref="BorrowAsync"/> would lend.</summary>
@@ -272,7 +272,7 @@ public sealed class SidecarWriter(
                 if (!replacing && Own(audioPath) is { IsUsers: true })
                     return new WarpOutcome.AlreadyWarped();
 
-                Coloured(sidecar.File, audioPath).Write(StemFileName.AnalysisFor(audioPath));
+                Colored(sidecar.File, audioPath).Write(StemFileName.AnalysisFor(audioPath));
 
                 if (sidecar.From is { } lender)
                     written.RecordBorrowed(audioPath, lender);
@@ -310,14 +310,14 @@ public sealed class SidecarWriter(
     }
 
     /// <summary>
-    /// Gives a saved sidecar its stem's clip colour, changing nothing else, even over a warp the user
+    /// Gives a saved sidecar its stem's clip color, changing nothing else, even over a warp the user
     /// saved; one crateside wrote stays crateside's. True when it was rewritten (#130).
     /// </summary>
-    public bool Recolour(string audioPath) =>
-        ClipColours.For(audioPath) is { } colour
-        && Rewrite(audioPath, clip => clip.Color == colour ? null : clip with { Color = colour });
+    public bool Recolor(string audioPath) =>
+        ClipColors.For(audioPath) is { } color
+        && Rewrite(audioPath, clip => clip.Color == color ? null : clip with { Color = color });
 
-    /// <summary>As <see cref="Recolour"/>, for the clip gain, linear: 1 is 0 dB (ADR 0059).</summary>
+    /// <summary>As <see cref="Recolor"/>, for the clip gain, linear: 1 is 0 dB (ADR 0059).</summary>
     public bool Level(string audioPath, float gain) =>
         Rewrite(
             audioPath,
@@ -363,11 +363,11 @@ public sealed class SidecarWriter(
         }
     }
 
-    private static AnalysisFile Coloured(AnalysisFile file, string audioPath) =>
-        ClipColours.For(audioPath) is { } colour && file.Clip.Color != colour
+    private static AnalysisFile Colored(AnalysisFile file, string audioPath) =>
+        ClipColors.For(audioPath) is { } color && file.Clip.Color != color
             ? file with
             {
-                Clip = file.Clip with { Color = colour },
+                Clip = file.Clip with { Color = color },
             }
             : file;
 
@@ -434,7 +434,7 @@ public sealed class SidecarWriter(
     }
 
     /// <summary>
-    /// A clip over the whole file with Warp off, which Live applies, gain and colour, then warps as a
+    /// A clip over the whole file with Warp off, which Live applies, gain and color, then warps as a
     /// sample never warped; it ignores a warped clip with no markers whole (ADR 0059).
     /// </summary>
     private static AnalysisFile Unwarped(double seconds, AudioAnalysis audio) =>
@@ -607,9 +607,9 @@ public sealed class SidecarWriter(
         int frames
     ) =>
         analysis.Audio
-            is { Transients: { Count: > 0 } transients, HeadTable: [.., var analysed] } audio
+            is { Transients: { Count: > 0 } transients, HeadTable: [.., var analyzed] } audio
         && audio.OriginalFileSize == size
-        && analysed == frames
+        && analyzed == frames
         && origins.Of(transients, audioPath) is null
             ? transients
             : null;
@@ -655,7 +655,7 @@ public abstract record WarpOutcome
     /// <summary>Two stems it could take a warp from hold different ones, which is the user's to settle (#54).</summary>
     public sealed record SiblingsDisagree(IReadOnlyList<string> Siblings) : WarpOutcome;
 
-    /// <param name="SiblingFrames">The sibling's length in sample frames when Live analysed it.</param>
+    /// <param name="SiblingFrames">The sibling's length in sample frames when Live analyzed it.</param>
     public sealed record LengthsDiffer(string Sibling, int SiblingFrames, int TargetFrames)
         : WarpOutcome;
 

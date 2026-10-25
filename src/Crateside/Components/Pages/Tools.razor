@@ -30,14 +30,14 @@
     <div class="columns">
         <div class="col working-col">
             <WorkingOn Track="_track" Songs="Warped" Familiarity="@TrackFamiliarity" DetailsHref="@DetailsHref"
-                       Centre="Picked" BpmText="@_bpmText"
-                       OnPick="Pick" OnCentre="PickCentre" OnBpm="TypeBpm" />
+                       Center="Picked" BpmText="@_bpmText"
+                       OnPick="Pick" OnCenter="PickCenter" OnBpm="TypeBpm" />
         </div>
 
         <div class="col tools-col">
             @if (_rePitchOpen)
             {
-                <RePitchTool Centre="Own" Tempo="Tempo" IsTrack="_track is not null"
+                <RePitchTool Center="Own" Tempo="Tempo" IsTrack="_track is not null"
                              Shift="_shift" OnShift="ChooseShift"
                              Max="_rePitchMax" OnMax="max => Change(() => { _rePitchMax = max; _shift = Math.Clamp(_shift, -max, max); })"
                              OnToggle="ToggleRePitch" />
@@ -65,8 +65,8 @@
                 </button>
             }
 
-            <PartnersTool Own="Own" Shift="_shift" Centre="Shown" Mixed="Mixed" IsTrack="_track is not null"
-                          HasVerdict="_track?.Run?.Centre is not null"
+            <PartnersTool Own="Own" Shift="_shift" Center="Shown" Mixed="Mixed" IsTrack="_track is not null"
+                          HasVerdict="_track?.Run?.Center is not null"
                           Sections="Sections" Primary="Primary" Section="_section"
                           OnSection="ChooseSection"
                           Partners="_partners" Lowest="_lowest" Highest="_highest"
@@ -86,7 +86,7 @@
                 <span><i class="swatch near"></i>mixes as is</span>
                 <span><i class="swatch far"></i>a shift away</span>
                 <span><i class="swatch own"></i>where you started</span>
-                <span class="note">Outer ring major (B), inner ring minor (A). A neighbour on the wheel is a fifth; straight in or out is the relative.</span>
+                <span class="note">Outer ring major (B), inner ring minor (A). A neighbor on the wheel is a fifth; straight in or out is the relative.</span>
             </div>
         </div>
     </div>
@@ -96,7 +96,7 @@
     private const string RePitchCookie = "crateside.tools.repitch";
 
     private LibrarySong? _track;
-    private TonalCentre? _hand;
+    private TonalCenter? _hand;
     private int? _section;
     private string _bpmText = string.Empty;
     private int _shift;
@@ -141,24 +141,24 @@
     private IReadOnlyList<Section> Sections => _track?.Run?.Sections ?? [];
 
     private int? Primary =>
-        _track?.Run?.Centre is { } centre
-        && Sections.ToList().FindIndex(section => section.Centre == centre) is var index and >= 0
+        _track?.Run?.Center is { } center
+        && Sections.ToList().FindIndex(section => section.Center == center) is var index and >= 0
             ? index
             : null;
 
-    /// <summary>The centre before any shift: the chosen section's, the track's, or the one picked.</summary>
-    private TonalCentre? Own =>
+    /// <summary>The center before any shift: the chosen section's, the track's, or the one picked.</summary>
+    private TonalCenter? Own =>
         _track is null ? _hand
-        : _section is { } index ? Sections[index].Centre
-        : _track.Centre;
+        : _section is { } index ? Sections[index].Center
+        : _track.Center;
 
     /// <summary>A mixed verdict's primary pairs as its collapse; a section has no mix of its own.</summary>
     private bool Mixed => _track?.Run is { Mixed: true } && _section is null;
 
-    private TonalCentre? Shown => Own?.Transposed(_shift);
+    private TonalCenter? Shown => Own?.Transposed(_shift);
 
-    /// <summary>What the key picker shows: the centre as it pairs.</summary>
-    private TonalCentre? Picked => Own is { } own ? Core.Pairing.Partners.Basis(own, Mixed) : null;
+    /// <summary>What the key picker shows: the center as it pairs.</summary>
+    private TonalCenter? Picked => Own is { } own ? Core.Pairing.Partners.Basis(own, Mixed) : null;
 
     private MusicKey? WheelWorking => Shown is { } shown ? MusicKey.Of(shown) : null;
 
@@ -197,7 +197,7 @@
         }
         else
         {
-            _hand = ParseCentre(KeyFromQuery);
+            _hand = ParseCenter(KeyFromQuery);
             _bpmText = BpmFromQuery ?? string.Empty;
         }
 
@@ -246,12 +246,12 @@
             _shift = 0;
         });
 
-    private Task PickCentre(TonalCentre? centre) =>
+    private Task PickCenter(TonalCenter? center) =>
         Change(() =>
         {
             _track = null;
             _section = null;
-            _hand = centre;
+            _hand = center;
             _shift = 0;
         });
 
@@ -302,9 +302,9 @@
             : [];
 
     /// <summary>A key from the address: <c>a-dorian</c>, or a 24-key name from before modes.</summary>
-    private static TonalCentre? ParseCentre(string? text) =>
+    private static TonalCenter? ParseCenter(string? text) =>
         text?.Split('-') is [var tonic, var mode]
-        && TonalCentre.Tonics.FirstOrDefault(known => known.Equals(tonic, StringComparison.OrdinalIgnoreCase)) is { } known
+        && TonalCenter.Tonics.FirstOrDefault(known => known.Equals(tonic, StringComparison.OrdinalIgnoreCase)) is { } known
             ? mode.ToLowerInvariant() switch
             {
                 "major" => new(known, DiatonicMode.Ionian),
@@ -312,10 +312,10 @@
                 _ when Enum.TryParse<DiatonicMode>(mode, ignoreCase: true, out var diatonic) => new(known, diatonic),
                 _ => null,
             }
-            : TonalCentre.FromKey(text);
+            : TonalCenter.FromKey(text);
 
-    private static string Slug(TonalCentre centre) =>
-        $"{centre.Tonic.ToLowerInvariant()}-{(centre.IsModal ? centre.Mode.ToString().ToLowerInvariant() : centre.Collapsed.Split(' ')[1])}";
+    private static string Slug(TonalCenter center) =>
+        $"{center.Tonic.ToLowerInvariant()}-{(center.IsModal ? center.Mode.ToString().ToLowerInvariant() : center.Collapsed.Split(' ')[1])}";
 
     private string Query()
     {

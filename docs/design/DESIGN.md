@@ -20,7 +20,7 @@ frozen copy the Design session delivered.
 - **Browser tab**: `favicon.svg`, a 32px PNG fallback, the 180px apple-touch icon, and
   `theme-color` `#1b1a15`. Titles read `{page} · crateside`.
 - **README**: the lockup on a dark GitHub theme, and `mark-tile.svg` on a light one (below).
-- The mark's amber is brand amber, not *your turn*, and is never recoloured by page or state.
+- The mark's amber is brand amber, not *your turn*, and is never recolored by page or state.
 
 ## Palette
 
@@ -37,7 +37,7 @@ Defined once in `src/Crateside/wwwroot/app.css`. One warm dark palette:
 Text tiers are alpha over `--text`: `--text-75`, `-60`, `-50` for prose; `-40`, `-35`, `-30` for
 labels and decoration only, never a sentence.
 
-## Colour means state, and nothing else is coloured
+## Color means state, and nothing else is colored
 
 - **Teal**: the machine is working.
 - **Amber**: it is the user's turn.
@@ -55,10 +55,10 @@ while waiting on Live, teal only while crateside writes.
 IBM Plex Sans for text. IBM Plex Mono for every number, key, timestamp and count. A tilde and
 weight 400 mark an approximate figure, and nothing else.
 
-**The judge's text is typeset, not coloured** (ADR 0064, handoff 20). In prose a key, a chord, a
+**The judge's text is typeset, not colored** (ADR 0064, handoff 20). In prose a key, a chord, a
 Roman numeral attached to a chord and an r value stay in the body face at weight 600 in `--text`;
 Plex Mono is for tables and the chord progression only. HIGH, MEDIUM, LOW and WITHHELD in prose are
-all-small-caps with `letter-spacing: .05em`, uncoloured. Nothing else in a sentence is styled.
+all-small-caps with `letter-spacing: .05em`, uncolored. Nothing else in a sentence is styled.
 `ProseText` does it; `Mono="true"` sets the same spans in Plex Mono for a table cell.
 
 ## Tempo
@@ -110,7 +110,7 @@ open, no fold, drawn when the track has samples.
 - **One time axis for the group**: the samples cut from the upload most of them share, in the
   sample list's order; the warp guide is left out. Grid of 200px gutter · 12px · the plot.
 - **Head line**: `WARP`, then `{n} stems · one warp · {markers} · {mode}`, or `{stem} warped on its
-  own` at `--text` (the only loud thing; not coloured). Zoom pills right: *Whole track · 32 bars ·
+  own` at `--text` (the only loud thing; not colored). Zoom pills right: *Whole track · 32 bars ·
   8 bars*; zoomed, `bars 61–68 · 2:10–2:27` and `‹ ›` move by half a view.
 - **Rows**: overview strip (zoomed only, click to move) · ruler (loop bar, bar ticks, clip-start
   notch; bars counted from the shared warp's clip start) · tempo line (step line from the shared
@@ -152,21 +152,21 @@ open, no fold, drawn when the track has samples.
   `<button>` (`aria-expanded`); clicking it fills the tag `--text` with `--ink` text and strokes
   the band in every row at `--text` 90% with a 7% fill, and opens one **drawer** under the time
   axis, 16px below, full width: `--surface`, 1px `--text` 16%, radius 8, with a 16×9 caret on its
-  top edge at the band's centre (kept 12px inside the plot). Three columns `250px 1fr auto`: who-chip,
+  top edge at the band's center (kept 12px inside the plot). Three columns `250px 1fr auto`: who-chip,
   label, span (`bars 28–36 · 1:53–2:20`), the window's why (`Given by you.` for yours) and what it
   became; the readings, in the evidence panel's detector row with its heads; × and `‹ 2 of 3 ›`.
   Clicking the tag again, ×, or Esc closes it. `WindowDrawer`.
 - **The key strip** (handoff 20): the last lane before the time axis, 52px, on the zoomed axis, with
-  a stronger top rule (`--text` 10%). The gutter says `Key` and a gist (`A Dorian, 3 centres, placed
+  a stronger top rule (`--text` 10%). The gutter says `Key` and a gist (`A Dorian, 3 centers, placed
   from your windows · faint: the running estimate, 27 changes`), then each section with no time in
-  mono: `bridge · C Lyd: no time given`. **Bands** are the verdict's centres, outlined (1px `--text`
+  mono: `bridge · C Lyd: no time given`. **Bands** are the verdict's centers, outlined (1px `--text`
   55%, radius 3, 44px), the short key in mono 11.5 where the band is 56px or wider (`verse · A
   Dor`), the title always carrying it; fill 3%, 7% where a window placed it. **Placement**
-  (`KeyStrip.Plan`): one centre is one band across the track; a section from a window takes the
-  window's span; a section with a `Start` runs from it to the next boundary; the primary centre
+  (`KeyStrip.Plan`): one center is one band across the track; a section from a window takes the
+  window's span; a section with a `Start` runs from it to the next boundary; the primary center
   fills everything else; a section with none of these is named in the gutter and never drawn. **The
   underlay** is the raw running estimate along the strip's foot (y 30–47): each change a block to the
-  next, filled `--text` at r × 0.22 with a 3px tick, labelled in mono 9.5 where 40px wide, its
+  next, filled `--text` at r × 0.22 with a 3px tick, labeled in mono 9.5 where 40px wide, its
   title `0:03.39 · E min · r 0.36`. `KeyLane`.
 - **The band invites it** only where the verdict is WITHHELD, or LOW with the whole-file detectors
   split: the Confidence cell adds the reason and an `.outline` *Judge from these bars ↓* that scrolls
@@ -190,7 +190,7 @@ one column below 56rem of panel (a container query).
   runs in mono 13/500 joined by `·` with the count in 400 `--text-50`, a run never breaking
   inside itself), **Tempo** and the *Recorded …* line.
 - **The band chip** is keydetect's flag as a fact, not a state: mono 10.5/500, 1px `--text` 30%,
-  radius 4, no colour, its tooltip the flag's own band (*unreliable band*, *the gray zone*, *usually
+  radius 4, no color, its tooltip the flag's own band (*unreliable band*, *the gray zone*, *usually
   right, but watch for a relative-key swap*).
 - **Gone from the panel**: the Windows block (they open from the timeline), *Why the judge asked
   for these windows*, the whole-file fold and *Key flicker* (the key strip's underlay).
@@ -247,7 +247,7 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
 - **Tags.** Settled is one line with **Change**; unsettled, or Change pressed, shows every chip, and a
   pick folds it again. Not looked up yet is one quiet line with no button. Familiarity counts a
   derived value as settled, since it is what gets written.
-- **Destructive.** Set apart by position and the stronger rule, not colour. Buttons stay `.outline`
+- **Destructive.** Set apart by position and the stronger rule, not color. Buttons stay `.outline`
   until the confirm step, which is `.danger`. Remove's confirm opens below its button.
 - **Editors.** Rename and swap replace their group's body; the label turns amber and the groups
   below dim (45%) and go `inert`. The whole stack does the same under StemConfirm.
@@ -365,14 +365,14 @@ link restores it, and the tab reopens where it was left until a restart.
   away puts it back. Under it, the key and BPM by hand; **editing any of them drops the track** and keeps
   what was picked. The key is **two selects**: *Tonic* (72px, mono, sharps as the rest of the app
   spells them) and *Mode* (`major`, `minor`, then an optgroup *Modes*: Dorian, Phrygian, Lydian,
-  Mixolydian, Locrian). The mode starts at the track's centre, or `major`.
+  Mixolydian, Locrian). The mode starts at the track's center, or `major`.
 - **Re-Pitch rows are selectable**: the chosen shift is 600 weight on `rgba(255,255,255,.08)` with
   a 1px inset `--text-35` ring and a *→ Partners* tag. **This is the house style for a chosen row
   in a tool table.** Clicking it again returns to 0. The BPM cell copies instead of selecting.
 - **Folded, Re-Pitch** is a dashed summary line above Partners, and its shift stays in force. The
   fold is remembered per browser, in a cookie so the first paint is already folded; the default
   is open.
-- **Partners' basis box** (handoff 19) says which centre it works from: caps *Working from*, then
+- **Partners' basis box** (handoff 19) says which center it works from: caps *Working from*, then
   for a mode the lead in mono 15/500 with `→` at `--text-60`, the tag 20/600 and its Camelot. Under
   it the source in one sentence (*The track's verdict.*, *The key you picked.*, *Re-Pitch −1 from
   the track's A Dorian.* with *Back to A Dorian*, or which section), and for a mode or a mixed
@@ -380,19 +380,19 @@ link restores it, and the tab reopens where it was left until a restart.
 - **Section pills** sit in the basis box under a hairline, one per section in ledger order
   (`verse A Dor primary`), when the verdict has sections. The chosen pill is the house *chosen*
   style for pills: `--text` at 14% fill, 50% border, 600. The primary is chosen by default; picking
-  a section makes its centre the source and returns Re-Pitch to 0.
+  a section makes its center the source and returns Re-Pitch to 0.
 - **Partners' table** has *Key · Camelot · Shift · Notes shared · Alt*, in two groups, *As is ·
   shift 0* and *A shift away · pitch the sample by Shift to land on {source}*; an empty group is not
   drawn. Rows sort by |shift|, then notes shared. At shift 0 only, a key carries one mark: **same
   key** (filled pill, `--text` 85%, `--ink` text) or **same notes** (the same pill outlined); a
-  modal source's tag row says *the tag* in plain `--text-50`. Neither is coloured: they are facts.
+  modal source's tag row says *the tag* in plain `--text-50`. Neither is colored: they are facts.
   A modal row's Camelot is its tag's, at `--text-40`. **Notes shared** is seven 8px pips (held
   filled `--text` 85%, the rest a 1px `--text-30` outline) and the figure `6 of 7` in mono, `7 of 7`
   at `--text`. Shifts carry a real minus.
 - **The wheel** is monochrome: working-from filled `--text` (a mode fills its tag's segment),
   mixes-as-is at 22%, a shift away dashed, and the track's own key ringed when a Re-Pitch shift is
   in force. Read-only.
-- **Re-Pitch's *Lands on*** names the centre, mode included (`G♯ Dorian`), with its tag's Camelot.
+- **Re-Pitch's *Lands on*** names the center, mode included (`G♯ Dorian`), with its tag's Camelot.
   It keeps its ±N slider: it lists every shift's BPM to pick one row, which a span would not help.
 - **Breakpoints**: four columns at ≥ 2200px; below, the wheel sits beside the basis box inside
   Partners; below 1700px *Working on* runs across the top; below 1100px one column with the wheel
@@ -450,7 +450,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 
 - **Keys are spelled with sharps** (`C♯ major`), in the table and the tonic select, as everywhere
   else in the app; the canvas spelled majors flat. The wheel keeps its own labels.
-- **The primary section is the one whose centre is the verdict's**, where the canvas took the
+- **The primary section is the one whose center is the verdict's**, where the canvas took the
   first. When no section holds it, none is marked primary and none is chosen until clicked.
 - **A track with no verdict** pairs from its samples' Key tag, and says so: *The track's Key tag:
   it has no verdict.*
@@ -460,10 +460,10 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 
 ### Mode beside its tag (handoff 17, #114)
 
-- **No time strip in *Why this key*.** The centres are the ruled lines with their labels; the strip
+- **No time strip in *Why this key*.** The centers are the ruled lines with their labels; the strip
   on the track's time axis waits for the judge to write section times (#111). The covers chip and
   the relation line are built.
-- **The sections in Track details list every other centre.** A centre equal to the primary is not
+- **The sections in Track details list every other center.** A center equal to the primary is not
   repeated, so a song whose sections all share the tag shows no sections block.
 - **The Off Its Tempo list keeps its 90px Key column and shows no abbreviation**, as it never showed
   more than the tag.
@@ -479,7 +479,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **Bands are drawn row by row**: each row draws the band's sides and fill, with no top or bottom
   edge, rather than one rectangle over the grid.
 - **Enter in the last field adds a line but does not move focus to it.**
-- **A window in another centre is named in the recorded line** (`Vocal: G major.`) rather than
+- **A window in another center is named in the recorded line** (`Vocal: G major.`) rather than
   counted as not agreeing, since it is a section of the song, not a dissent.
 - **Ruler tags run past a narrow band** rather than being cut to its width.
 - **The form runs with no ranges**, judging the whole track again, so a plain re-judge needs no
@@ -508,7 +508,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **Share is a disabled button**, with no menu, card or text export until #152.
 - **Not built, as the handoff says**: the chord lane, the transport and the playhead.
 - **Your note to the judge and your ear** keep their place, heading the right column, which the
-  canvas does not draw. The *Centres* lines stay above *Why this key*.
+  canvas does not draw. The *Centers* lines stay above *Why this key*.
 
 ### Warp view (handoff 14, #97)
 
@@ -527,7 +527,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 ### README (handoff 04)
 
 - **The lockup shows only on a dark GitHub theme.** Its ink is `#ece7dc` on transparent, which
-  vanishes on white, and the brand rules allow no other colours. On a light theme the README shows
+  vanishes on white, and the brand rules allow no other colors. On a light theme the README shows
   `mark-tile.svg` (the mark on its own dark tile) above the text heading instead. A lockup for
   light backgrounds would be a Design question.
 
@@ -540,14 +540,14 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 
 ### Tracks row and Track details (handoff 06, #62)
 
-- **Next keeps its colours**: the sentence is amber when ready to warp and full white when
+- **Next keeps its colors**: the sentence is amber when ready to warp and full white when
   stopped, as before, where the canvas draws it in plain prose.
 
 ### Track details (handoff 05, #21)
 
 - **Upload players show no still.** A still would be fetched from YouTube, so the box stays blank
   until pressed.
-- **Stage chips are all coloured by state** (done green, running teal, your turn amber, stopped red),
+- **Stage chips are all colored by state** (done green, running teal, your turn amber, stopped red),
   with the current stage the only filled, bold chip. **No timestamps** under them: the Activity log
   carries times. The user asked for both on 2026-09-25.
 

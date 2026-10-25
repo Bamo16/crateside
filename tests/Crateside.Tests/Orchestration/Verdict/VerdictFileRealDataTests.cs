@@ -43,7 +43,7 @@ public sealed class VerdictFileRealDataTests : IDisposable
             var run = Assert.IsType<VerdictCheck.Recordable>(VerdictFile.Check(_path)).Run;
 
             Assert.Equal(song, run.Song, ignoreCase: true);
-            Assert.Equal(evidence.Centre, run.Centre);
+            Assert.Equal(evidence.Center, run.Center);
             Assert.Equal(evidence.Sections, run.Sections);
             Assert.Null(
                 RunValidation.Refusal(
@@ -66,15 +66,15 @@ public sealed class VerdictFileRealDataTests : IDisposable
                 artist = evidence.Artist,
                 title = evidence.Title,
                 confidence = confidence.ToString().ToUpperInvariant(),
-                centre = evidence.Centre is { } centre
-                    ? new { tonic = centre.Tonic, mode = centre.Mode.ToString().ToLowerInvariant() }
+                centre = evidence.Center is { } center
+                    ? new { tonic = center.Tonic, mode = center.Mode.ToString().ToLowerInvariant() }
                     : null,
                 mixed = evidence.Mixed,
                 sections = evidence.Sections.Select(section => new
                 {
                     label = section.Label,
-                    tonic = section.Centre.Tonic,
-                    mode = section.Centre.Mode.ToString(),
+                    tonic = section.Center.Tonic,
+                    mode = section.Center.Mode.ToString(),
                 }),
                 sources = evidence.Sources.Select(source => new
                 {

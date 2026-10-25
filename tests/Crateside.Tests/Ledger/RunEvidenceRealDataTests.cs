@@ -183,7 +183,7 @@ public sealed class RunEvidenceRealDataTests
     }
 
     [Fact]
-    public void The_chord_recognisers_in_the_ledger_are_identified_as_such()
+    public void The_chord_recognizers_in_the_ledger_are_identified_as_such()
     {
         Assert.SkipUnless(Available, "The ledger must be present.");
 

@@ -46,15 +46,15 @@ beatdetect is the tempo source.
   A JSONL export exists for reading by eye.
 
 **A verdict records what the music is, not its tag.**
-- It holds a **tonal centre**: a tonic and one of the seven diatonic modes.
+- It holds a **tonal center**: a tonic and one of the seven diatonic modes.
 - Optionally it holds **sections**, each with a label, tonic and mode, for a song that moves.
 - It can be marked **mixed**, for two modes on one tonic.
 - The 24-key form Ableton is tagged with is computed by the **collapse**, keeping the tonic
   (A Dorian → A minor), and is never stored as the truth. A song with sections collapses from the
-  centre the judge names as primary; a mixed one from its harmony's mode, not its melody's.
+  center the judge names as primary; a mixed one from its harmony's mode, not its melody's.
 - Imported rows become tonic plus Ionian or Aeolian, or the mode they stated.
 - Wherever a key is shown and the verdict is not plain major or minor, the mode is written out
-  beside its tag ("A Dorian → A minor"), with the same-notes neighbour one Camelot step away as a
+  beside its tag ("A Dorian → A minor"), with the same-notes neighbor one Camelot step away as a
   hint. The page design goes to Claude Design.
 
 **The session writes a verdict file and nothing else.**
@@ -183,10 +183,10 @@ needs its own windowing.
 [the readings CSV](../notes/2026-10-15-the-detector-bake-off.csv) (`madmom`, `ess_edma` columns), or
 each difference is explained in the commit.
 
-**Licences, for #107.**
+**Licenses, for #107.**
 - madmom's model files are CC BY-NC-SA 4.0, and a converted ONNX file is derived from them. The
-  ONNX file is committed beside the code that loads it with its own licence file and a line in the
-  README saying crateside's use of it is non-commercial. Choosing crateside's own licence has to
+  ONNX file is committed beside the code that loads it with its own license file and a line in the
+  README saying crateside's use of it is non-commercial. Choosing crateside's own license has to
   account for that.
 - Essentia is AGPL-3.0. The `edma` port is written from the published algorithm (Gómez's HPCP;
   Faraldo et al.'s profiles, taken as data) and the parity check above, not by transcribing Essentia's
@@ -194,7 +194,7 @@ each difference is explained in the commit.
 
 ## Addendum, 2026-10-16: the same-notes key is not always one Camelot step away
 
-The first addendum's hint ("the same-notes neighbour one Camelot step away") holds only for Aeolian,
+The first addendum's hint ("the same-notes neighbor one Camelot step away") holds only for Aeolian,
 Lydian and Mixolydian. Worked for A: Dorian shares G major's notes (tag 8A, notes 9B), Phrygian F
 major's (8A, 7B) and Locrian B♭ major's (8A, 6B), none of them adjacent on the wheel. The hint names
 the same-notes key and its Camelot code; it does not claim a distance. Brief 17 carries the table.
@@ -222,7 +222,7 @@ Built in [#113](https://github.com/Bamo16/crateside/issues/113); how each port w
 [the porting note](../notes/2026-10-16-porting-the-key-detectors.md).
 
 - **madmom runs through ONNX Runtime on the CPU**, from a converted file embedded in crateside with
-  its CC BY-NC-SA 4.0 licence beside it. **`edma` is C#.** Both name the key their Python original
+  its CC BY-NC-SA 4.0 license beside it. **`edma` is C#.** Both name the key their Python original
   named on all 261 tracks of the bake-off's set.
 - **Essentia's arithmetic was measured, not read.** Its documentation does not give whitening's
   envelope or `KeyExtractor`'s internal settings, so they were fitted against its output; only the

@@ -425,7 +425,7 @@ public sealed class LedgerStore : IDisposable
                     Title = row.Title,
                     SourceUrl = row.SourceUrl,
                     Confidence = row.Confidence,
-                    Centre = row is { Tonic: { } tonic, Mode: { } mode } ? new(tonic, mode) : null,
+                    Center = row is { Tonic: { } tonic, Mode: { } mode } ? new(tonic, mode) : null,
                     Mixed = row.Mixed,
                     Bpm = row.OldBpm,
                     Sections =

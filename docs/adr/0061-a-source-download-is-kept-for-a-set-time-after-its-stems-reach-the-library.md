@@ -15,7 +15,7 @@ measured on an input other than the one a question is about is not wanted.
 ## Decision
 
 - **A retention setting**, in Settings and kept in `%APPDATA%\crateside\source-retention.json`: a
-  number of days, or *Forever*. The default is zero days, which is the old behaviour.
+  number of days, or *Forever*. The default is zero days, which is the old behavior.
 - **The clock starts when the last stem of the track leaves staging.** The janitor records that
   moment in `left-staging.json` in the working set when it first sees the track finished with, and
   does not infer it from file times. A track that left before this shipped has no record, so its

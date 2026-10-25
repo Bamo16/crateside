@@ -34,7 +34,7 @@ narrowed by `StemInventory.Outstanding` — so it reopens the stages and the tra
 the way. #38's own claim that "only the affordance is missing" was right.
 
 **#32's picker gate is a symptom, not the bug.** A plan change made during a separation is *erased*:
-`StemRecut.Apply` records `Separation → Cancelled` to reopen it, the running separation then finishes
+`StemRecut.Apply` records `Separation → Canceled` to reopen it, the running separation then finishes
 and `interlock.Release` records `Separation → Succeeded`, and the latest record wins. Opening the
 picker alone would have produced a gesture that appears to work and silently does nothing.
 

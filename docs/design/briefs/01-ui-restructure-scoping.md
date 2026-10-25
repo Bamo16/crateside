@@ -78,7 +78,7 @@ Two pages, plus a small third:
 
 ### The root cause
 
-**The UI is organised around crateside's internal scheduler, not around the user's tracks.**
+**The UI is organized around crateside's internal scheduler, not around the user's tracks.**
 Each stage needs a work list to pull from — that is a real internal need — but those work
 lists got rendered directly as page sections. So a track's *address on screen* changes every
 time its *state* changes.
@@ -91,7 +91,7 @@ One page. A frozen header, then one filterable list.
 
 ### Frozen header (always visible)
 
-Modelled on an Android notification shade — glanceable, never scrolled away. Nav tabs pinned
+Modeled on an Android notification shade — glanceable, never scrolled away. Nav tabs pinned
 alongside it.
 
 - **Separation**: what it is working on now, and how many are waiting.

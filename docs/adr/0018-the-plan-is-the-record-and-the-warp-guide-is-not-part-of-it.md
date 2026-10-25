@@ -37,7 +37,7 @@ which is the same statement in the picker's own vocabulary and needs no special 
 something the picker offers.
 
 **`has_vocals` is deprecated outright, and nothing infers a replacement.** It could have been kept
-alive by inferring `false` when no vocal preset is ticked and the source is kept, labelled in the
+alive by inferring `false` when no vocal preset is ticked and the source is kept, labeled in the
 ledger as an inference — but there is nothing to keep alive. The field is vestigial: keytag once
 ran the whole workflow and needed telling which stems to ask for, and
 [ADR 0001](0001-crateside-orchestrates-the-workflow.md) moved that to crateside long ago. The
@@ -66,7 +66,7 @@ the line stays pinned — the reason is retention, not how the file is produced.
 - **Infer `has_vocals` from the plan and label it an inference.** Rejected: nothing consumes it, so
   the only effect is a nullable field every future reader has to be told to ignore.
 - **Offer an "instrumental release" shortcut in the picker.** Rejected by the user: it reaches
-  today's behaviour with no special mode, and keeping the control simple is worth more.
+  today's behavior with no special mode, and keeping the control simple is worth more.
 
 ## Consequences
 

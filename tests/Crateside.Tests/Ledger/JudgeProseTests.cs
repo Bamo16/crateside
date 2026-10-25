@@ -68,7 +68,7 @@ public sealed class JudgeProseTests
     [InlineData("D#/Eb enharmonic", "<c>D♯/E♭</c> enharmonic")]
     [InlineData("G#3 median", "<c>G♯3</c> median")]
     [InlineData("Cm/Bm/F#/C list", "<c>Cm/Bm</c>/<c>F♯/C</c> list")]
-    public void A_chord_with_a_quality_or_an_accidental_is_recognised_anywhere(
+    public void A_chord_with_a_quality_or_an_accidental_is_recognized_anywhere(
         string text,
         string expected
     ) => Assert.Equal(expected, Marked(text));
@@ -121,9 +121,9 @@ public sealed class JudgeProseTests
     [Fact]
     public void Starry_Eyed_Surprise_reads_in_full_keys_and_canonical_names() =>
         Assert.Equal(
-            "keydetect names <k>E major</k> (<v>r 0.837</v>) and both backers, madmom (0.98) and Essentia (0.81), name <k>E major</k> too. The loop <c>G♯m</c>–<c>E</c> with a B turnaround could also be read as <c>G♯m</c> aeolian (i–VI–III) or <k>B major</k> (vi–IV–I), but the <c>B</c>→<c>E</c> motion favours <k>E major</k>.",
+            "keydetect names <k>E major</k> (<v>r 0.837</v>) and both backers, madmom (0.98) and Essentia (0.81), name <k>E major</k> too. The loop <c>G♯m</c>–<c>E</c> with a B turnaround could also be read as <c>G♯m</c> aeolian (i–VI–III) or <k>B major</k> (vi–IV–I), but the <c>B</c>→<c>E</c> motion favors <k>E major</k>.",
             Marked(
-                "keydetect names E major (r 0.837) and both backers, madmom (0.98) and essentia edma (0.81), name E major too. The loop G#m–E with a B turnaround could also be read as G#m aeolian (i–VI–III) or B major (vi–IV–I), but the B→E motion favours E major."
+                "keydetect names E major (r 0.837) and both backers, madmom (0.98) and essentia edma (0.81), name E major too. The loop G#m–E with a B turnaround could also be read as G#m aeolian (i–VI–III) or B major (vi–IV–I), but the B→E motion favors E major."
             )
         );
 

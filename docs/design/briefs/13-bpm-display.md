@@ -15,7 +15,7 @@ what each tempo state *means*. This brief asks how each one *reads*.
 ## Where it stands
 
 Every BPM crateside shows is rounded to a whole number: the BPM column on **Tracks**
-(`Components/Pages/Tracks.razor`), the BPM in the **song page** header with its grey note beneath
+(`Components/Pages/Tracks.razor`), the BPM in the **song page** header with its gray note beneath
 (`Components/Pages/Song.razor`), the evidence panel's keytag and beatdetect figures
 (`Components/Evidence.razor`), and on **Counts** the BPM histogram, the detector table and each
 artist's BPM range (`Components/Pages/Dashboard.razor`). **Tools** already fills a picked track's
@@ -50,14 +50,14 @@ Each comes with real tracks from his library, so the canvas can use true figures
 | **Drifting**: no tempo holds (live players, no click) | `~111`, marked as drifting; range where there is room | *The Sugarhill Gang – Rapper's Delight*, 110–112; *Cypress Hill – Hits from the Bong*, 91–94 |
 | **Mostly steady**: a main tempo plus a ramp or a drifting stretch | the main tempo as vouched, and a note that a part changes | a track with a free-time intro |
 | **Changes tempo**: two or more stable tempos | the main tempo and a note that it changes | *ReeK – Deity Mode*: 180, with 24 bars at 132 |
-| **keytag's estimate**: shown only before crateside has read the track | approximate, and labelled as keytag's | a track still being judged |
+| **keytag's estimate**: shown only before crateside has read the track | approximate, and labeled as keytag's | a track still being judged |
 
 The tilde is the ADR's working mark for "approximate". You may propose a different one, as long as
 "vouched for" and "approximate" can never be confused, and the mark means the same thing everywhere.
 
 **Where a figure came from** has three answers: *your warp*, *crateside's reading* (beatdetect on
 the instrumental), and *keytag's estimate*. The headline is always the strongest there is. Today the
-song page's grey note says "from your warp" or "keytag's estimate"; that is the place to say it.
+song page's gray note says "from your warp" or "keytag's estimate"; that is the place to say it.
 
 ## What to design
 
@@ -73,7 +73,7 @@ song page's grey note says "from your warp" or "keytag's estimate"; that is the 
    as the headline.
 4. **Counts.** The BPM histogram and the detector table use headline figures. The artist table
    shows a BPM range (`85–128`). Decide whether ranges and bins show hundredths or stay whole: they
-   summarise many tracks, so whole numbers may be honest there.
+   summarize many tracks, so whole numbers may be honest there.
 5. **Tools.** The picked track fills its BPM, and an arrangement BPM can be clicked to copy (the user
    pastes it into After Effects; Ableton itself is typed into). What the field shows, and what a
    copy puts on the clipboard, for an approximate or drifting track.
@@ -86,7 +86,7 @@ song page's grey note says "from your warp" or "keytag's estimate"; that is the 
   system, then show each place using it.
 - **Existing tokens and chips first** (`docs/design/DESIGN.md`). Add a token only if the states
   cannot be told apart without one.
-- **A maximised Chrome window on a 1440p or 4K monitor** is the norm; Tracks is a dense table.
+- **A maximized Chrome window on a 1440p or 4K monitor** is the norm; Tracks is a dense table.
 
 ## What to send back
 

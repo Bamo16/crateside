@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 namespace Crateside.Core;
 
 /// <summary>
-/// Reads and canonicalises YouTube references — the one place that knows the shape of a video
+/// Reads and canonicalizes YouTube references — the one place that knows the shape of a video
 /// ID, copied from StemForge's <c>YtUrlHelper</c>.
 /// </summary>
 public static partial class YouTubeUrl

@@ -331,7 +331,7 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
         )
             return merged;
 
-        var wanted = ModeTags.KeywordFor(run.Centre);
+        var wanted = ModeTags.KeywordFor(run.Center);
         var hidden = existing?.HiddenKeywords ?? [];
 
         return

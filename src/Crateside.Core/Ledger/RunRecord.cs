@@ -28,10 +28,10 @@ public sealed record RunRecord
 
     public required KeyConfidence Confidence { get; init; }
 
-    /// <summary>The primary tonal centre; null only when withheld.</summary>
-    public TonalCentre? Centre { get; init; }
+    /// <summary>The primary tonal center; null only when withheld.</summary>
+    public TonalCenter? Center { get; init; }
 
-    /// <summary>Two modes on one tonic; <see cref="Centre"/> is then the harmony's.</summary>
+    /// <summary>Two modes on one tonic; <see cref="Center"/> is then the harmony's.</summary>
     public bool Mixed { get; init; }
 
     public IReadOnlyList<Section> Sections { get; init; } = [];

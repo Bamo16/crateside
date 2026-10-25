@@ -7,25 +7,25 @@ namespace Crateside.Core.Ledger;
 public static class ModeText
 {
     /// <summary>The tag as the screen spells it: <c>A♯ min</c>.</summary>
-    public static string Tag(TonalCentre centre) =>
-        $"{Tonic(centre)} {(TonalCentre.IsMajor(centre.Mode) ? "maj" : "min")}";
+    public static string Tag(TonalCenter center) =>
+        $"{Tonic(center)} {(TonalCenter.IsMajor(center.Mode) ? "maj" : "min")}";
 
     /// <summary>The arrow's left half (<c>A Dorian</c>, <c>A mixed</c>), or null where the tag says it all.</summary>
-    public static string? Lead(TonalCentre centre, bool mixed) =>
-        (centre, mixed) switch
+    public static string? Lead(TonalCenter center, bool mixed) =>
+        (center, mixed) switch
         {
-            (_, true) => $"{Tonic(centre)} mixed",
-            ({ IsModal: true }, _) => $"{Tonic(centre)} {centre.Mode}",
+            (_, true) => $"{Tonic(center)} mixed",
+            ({ IsModal: true }, _) => $"{Tonic(center)} {center.Mode}",
             _ => null,
         };
 
     /// <summary><c>A Dorian → A min</c>, or null where the verdict is plain.</summary>
-    public static string? Arrow(TonalCentre centre, bool mixed) =>
-        Lead(centre, mixed) is { } lead ? $"{lead} → {Tag(centre)}" : null;
+    public static string? Arrow(TonalCenter center, bool mixed) =>
+        Lead(center, mixed) is { } lead ? $"{lead} → {Tag(center)}" : null;
 
     /// <summary>The abbreviation that sits after the tag on the Tracks row, or null where the verdict is plain.</summary>
-    public static string? Abbreviation(TonalCentre centre, bool mixed) =>
-        (centre.Mode, mixed) switch
+    public static string? Abbreviation(TonalCenter center, bool mixed) =>
+        (center.Mode, mixed) switch
         {
             (_, true) => "maj/min",
             (DiatonicMode.Dorian, _) => "Dor",
@@ -37,34 +37,34 @@ public static class ModeText
         };
 
     /// <summary>Why the tag says what it does, or null where the verdict is plain.</summary>
-    public static string? Reason(TonalCentre centre, bool mixed) =>
-        (centre, mixed) switch
+    public static string? Reason(TonalCenter center, bool mixed) =>
+        (center, mixed) switch
         {
-            (_, true) when TonalCentre.IsMajor(centre.Mode) =>
+            (_, true) when TonalCenter.IsMajor(center.Mode) =>
                 "Minor melody over major harmony; tagged by the harmony.",
             (_, true) => "Major melody over minor harmony; tagged by the harmony.",
             ({ IsModal: true }, _) =>
-                $"{centre.Mode} is a {(TonalCentre.IsMajor(centre.Mode) ? "major" : "minor")} mode, so it is tagged by its tonic. Same notes as {SameNotes(centre)}.",
+                $"{center.Mode} is a {(TonalCenter.IsMajor(center.Mode) ? "major" : "minor")} mode, so it is tagged by its tonic. Same notes as {SameNotes(center)}.",
             _ => null,
         };
 
     /// <summary>The major key with the same notes, named with its Camelot code: <c>G major (9B)</c>.</summary>
-    public static string SameNotes(TonalCentre centre) =>
-        MusicKey.FromString(centre.Collapsed) is { } tag
+    public static string SameNotes(TonalCenter center) =>
+        MusicKey.FromString(center.Collapsed) is { } tag
         && MusicKey.AllKeys.FirstOrDefault(key =>
             key.Mode is Mode.Major
-            && key.Chromatic == (tag.Chromatic + ToParentMajor(centre.Mode)) % 12
+            && key.Chromatic == (tag.Chromatic + ToParentMajor(center.Mode)) % 12
         )
             is { } parent
             ? $"{parent.ShortName} major ({parent.CamelotCode})"
-            : centre.Name;
+            : center.Name;
 
     /// <summary>A source's stated key in full: <c>G Mixolydian</c> where it named a mode, else the key as it came.</summary>
     public static string? Stated(string? statesKey, string? statesMode) =>
         (statesKey?.Split(' '), Enum.TryParse<DiatonicMode>(statesMode, true, out var mode)) switch
         {
-            ([var tonic, _], true) when new TonalCentre(tonic, mode) is { IsModal: true } centre =>
-                $"{Tonic(centre)} {mode}",
+            ([var tonic, _], true) when new TonalCenter(tonic, mode) is { IsModal: true } center =>
+                $"{Tonic(center)} {mode}",
             _ => statesKey,
         };
 
@@ -75,7 +75,7 @@ public static class ModeText
     public static SourceCoverage Coverage(
         IReadOnlyList<string>? covered,
         IReadOnlyList<Section> sections,
-        TonalCentre? verdict,
+        TonalCenter? verdict,
         string? statesKey
     )
     {
@@ -89,13 +89,13 @@ public static class ModeText
             return new("whole song", verdict?.Collapsed, null);
 
         var only = $"{string.Join(" and ", theirs.Select(section => section.Label))} only";
-        var against = theirs.Select(section => section.Centre.Collapsed).Distinct().ToList();
+        var against = theirs.Select(section => section.Center.Collapsed).Distinct().ToList();
 
         if (against is not [var key])
             return new(only, verdict?.Collapsed, null);
 
         var label = theirs[0].Label;
-        var inTheirs = theirs[0].Centre;
+        var inTheirs = theirs[0].Center;
         var relation = (
             statesKey is { Length: > 0 },
             inTheirs == verdict,
@@ -111,35 +111,35 @@ public static class ModeText
         return new(only, key, relation);
     }
 
-    /// <summary>A centre by name, spelled for the screen: <c>A♯ Dorian</c>, <c>E minor</c>.</summary>
-    public static string Named(TonalCentre centre) =>
-        $"{Tonic(centre)} {(centre.IsModal ? centre.Mode : centre.Collapsed.Split(' ')[1])}";
+    /// <summary>A center by name, spelled for the screen: <c>A♯ Dorian</c>, <c>E minor</c>.</summary>
+    public static string Named(TonalCenter center) =>
+        $"{Tonic(center)} {(center.IsModal ? center.Mode : center.Collapsed.Split(' ')[1])}";
 
     /// <summary>
-    /// What a hover on the Tracks row's key says: the arrow, the reason and the other centres.
+    /// What a hover on the Tracks row's key says: the arrow, the reason and the other centers.
     /// Null where there is nothing to add to the tag.
     /// </summary>
     public static string? Hover(LedgerRun run)
     {
-        if (run.Centre is not { } centre)
+        if (run.Center is not { } center)
             return null;
 
         var others = run
-            .Sections.Where(section => section.Centre != centre)
-            .Select(section => $"{Named(section.Centre)} ({section.Label})")
+            .Sections.Where(section => section.Center != center)
+            .Select(section => $"{Named(section.Center)} ({section.Label})")
             .ToList();
 
         string?[] parts =
         [
-            Arrow(centre, run.Mixed),
-            Reason(centre, run.Mixed),
+            Arrow(center, run.Mixed),
+            Reason(center, run.Mixed),
             others.Count > 0 ? $"Also {string.Join(", ", others)}." : null,
         ];
 
         return string.Join(' ', parts.OfType<string>()) is { Length: > 0 } hover ? hover : null;
     }
 
-    private static string Tonic(TonalCentre centre) => centre.Tonic.Replace('#', '♯');
+    private static string Tonic(TonalCenter center) => center.Tonic.Replace('#', '♯');
 
     // Semitones from a mode's tonic up to the tonic of the major scale it shares notes with.
     private static int ToParentMajor(DiatonicMode mode) =>

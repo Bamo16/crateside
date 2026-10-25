@@ -55,7 +55,7 @@ public sealed record StageProgress
             )
                 retrying = new StageFailure(stage, failures, job.Error);
 
-            // Cancelled never counts, whatever the strikes say — a track put back in line by
+            // Canceled never counts, whatever the strikes say — a track put back in line by
             // hand has not given up.
             if (StageEligibility.HasGivenUp(job))
             {

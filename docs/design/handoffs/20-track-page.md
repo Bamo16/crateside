@@ -17,8 +17,8 @@ tenth change and Starry Eyed's six changes are invented.
 
 **The rule:** the panel's left column holds the argument and its right column the evidence.
 Windows leave the panel for the timeline, where each one opens from its band. The key strip
-replaces *Key flicker*, drawing the verdict's centres as bands over a faint raw underlay. Share
-sits at the head of the panel and draws a card of its own. Nothing is newly coloured.
+replaces *Key flicker*, drawing the verdict's centers as bands over a faint raw underlay. Share
+sits at the head of the panel and draws a card of its own. Nothing is newly colored.
 
 ## 1. The evidence panel
 
@@ -63,7 +63,7 @@ Two equal columns (`1fr 1fr`, gap 44px) under the head:
 
 **Gone from the panel:** the *Windows* block and its cards, *Why the judge asked for these windows*,
 the *whole file* fold (the whole-file detectors simply are the right column now) and *Key flicker*.
-**Kept as built:** handoff 17's sections lines (every centre other than the primary), in the left
+**Kept as built:** handoff 17's sections lines (every center other than the primary), in the left
 column above *Why this key*. The canvas does not draw them. The key strip now shows where the
 placed ones fall.
 
@@ -82,7 +82,7 @@ keydetect's flag becomes a chip naming the band: mono 10.5/500, 0 6px, radius 4,
 
 The brief asked only for the distrust chip. I gave every band one, because *watch for a
 relative-key swap* mattered on Starry Eyed. If the build would rather show only the distrust
-band, drop the other two; the row keeps its 70px column either way. **No colour**: a band is a
+band, drop the other two; the row keeps its 70px column either way. **No color**: a band is a
 fact, not a state. Use whatever band names keydetect's flag actually carries; the middle band's
 label above is a guess.
 
@@ -90,7 +90,7 @@ label above is a guess.
 
 Keys, chords, Roman numerals attached to a chord (`B (V) → E (I)`) and r values in Plex Mono at
 **.92em** so they sit on the Sans x-height, at the paragraph's ink. HIGH/MEDIUM/LOW/WITHHELD in prose:
-`font-variant-caps: all-small-caps`, `letter-spacing: .05em`, uncoloured. Nothing else styled.
+`font-variant-caps: all-small-caps`, `letter-spacing: .05em`, uncolored. Nothing else styled.
 
 ## 2. The timeline: windows open from their bands
 
@@ -101,7 +101,7 @@ The warp view is unchanged above the lanes. Changes:
   in every row stroked at `--text` 90% with a 7% fill. Clicking it again, the drawer's ×, or Esc
   closes it. One drawer at a time.
 - **The drawer** sits under the time axis, 16px below, full panel width: `--surface`, 1px
-  `--text` 16%, radius 8, with a 16×9 caret on its top edge at the band's centre (clamped 12px
+  `--text` 16%, radius 8, with a 16×9 caret on its top edge at the band's center (clamped 12px
   inside the plot). Three columns, `250px 1fr auto`, gap 24:
   - left: the who-chip (*judge* dashed outline / *yours* filled, as handoff 18), the label 14/500,
     the span in mono 12 `--text-60` (`bars 28–36 · 1:53–2:20`), **the window's why** (13.5/1.5
@@ -122,22 +122,22 @@ follows the zoom pills and ‹ › like every row. It is 52px high with a strong
 10%), because it is about the song, not a stem.
 
 - **Gutter**: `Key` (12.5/500), then a gist in 10.5 `--text-45` → `--text-40`: `B minor, one
-  centre · faint: the running estimate, 27 changes`, or `A Dorian, with chorus sections from your
+  center · faint: the running estimate, 27 changes`, or `A Dorian, with chorus sections from your
   windows`. Any unplaced section follows in mono 10.5 `--text-60`: `bridge · C Lyd: no time given`.
-- **Bands: the verdict's centres.** Outlined boxes (1px `--text` 55%, radius 3, 3.5px from the
+- **Bands: the verdict's centers.** Outlined boxes (1px `--text` 55%, radius 3, 3.5px from the
   top, 44px tall) with the short key in mono 11.5/500 `--text` at the top left (`B min`,
   `verse · A Dor`, `chorus · E min`). A label is drawn only where the band is 56px or wider, and the
   band's `title` always carries it. Fill `--text` 3%, or 7% for a band placed from a window.
-- **Placement**, because a ledger `Section` has a label and a centre but **no times**:
-  - single centre: one band across the track;
+- **Placement**, because a ledger `Section` has a label and a center but **no times**:
+  - single center: one band across the track;
   - a section that came from a window takes **the window's span**;
-  - **the primary centre fills everything else**;
+  - **the primary center fills everything else**;
   - **a section with no time is not drawn**, only named in the gutter. Do not invent a placement.
   If section times arrive later (ADR 0064 leaves them undecided), the same bands take them.
 - **The underlay: the raw running estimate.** It is drawn under the bands along the strip's foot:
   y 30–47, 17px. Each change is a block from its time to the next, filled `--text` at
   **alpha r × 0.22** (at most about .18), with a 3px tick `--text` 30% where it starts. A block 40px
-  or wider is labelled in mono 9.5 `--text-42` → `--text-40` (`E min`). Each block's `title`:
+  or wider is labeled in mono 9.5 `--text-42` → `--text-40` (`E min`). Each block's `title`:
   `0:03.39 · E min · r 0.36`. Zoomed out it is texture; at 8 bars it reads change by change. Raw
   keys use the short form.
 - **Key flicker's fold goes.** The underlay is its replacement.
@@ -145,7 +145,7 @@ follows the zoom pills and ‹ › like every row. It is 52px high with a strong
 ## 4. Room for what comes next (not built now)
 
 - **Chord lane**: under the key strip, 40px, the same gutter shape (`Chords`, `with playback ·
-  #105`). Its blocks will be labelled like the key bands. On the canvas it is a dashed placeholder.
+  #105`). Its blocks will be labeled like the key bands. On the canvas it is a dashed placeholder.
 - **Transport**: in the **ruler's gutter**, the one empty cell at the top left, replacing the `Bar`
   label: a 28px round play button (1px `--text` 45%, `aria-label="Play"`), then `0:47.20 / 2:48`
   in mono 11.5 (the total at `--text-40`). The zoom pills stay where they are.
@@ -181,7 +181,7 @@ keys still open).
 ## 6. The card
 
 1200px wide, its height set by the content. It is its own layout, not a crop of the page, and uses
-**the app's dark palette**: it is a picture of the verdict as crateside shows it, the colour rule
+**the app's dark palette**: it is a picture of the verdict as crateside shows it, the color rule
 needs no second palette, and Discord's usual dark theme would make a light card glare. Ground
 `--bg` with a 1px `--text` 10% edge and radius 14, padded 56px 64px 44px, with sections 30px apart.
 
@@ -191,7 +191,7 @@ Top-weighted: **the first ~630px carry what a friend scans** in the preview.
    and the title at `--text`. Balanced wrap.
 2. **The three facts** as the band shows them (short forms): a `--surface` box, radius 12, cells
    `1.25fr 1fr 1fr` with hairline dividers, padding 22px 28px. Caps labels 15px `--text-45` →
-   `--text-40`. Key in mono 76/600 with the mode chip after it for a modal centre (`A min` `Dor`:
+   `--text-40`. Key in mono 76/600 with the mode chip after it for a modal center (`A min` `Dor`:
    mono 24, 2px `--text` 50% outline, radius 6), nowrap. Confidence in mono 64/500. BPM in mono 76/600
    with its note under it (19, `--text-60`). No tempo is `—` at `--text-30` with *not measured*.
 3. The subtitle: 24px `--text-75`.
@@ -208,7 +208,7 @@ Top-weighted: **the first ~630px carry what a friend scans** in the preview.
 7. **Considered** (or *Still open*): three equal cells in a row, each with a top hairline: the key
    in mono 23/600 over its sentence at 18.5/1.5 `--text-75`.
 8. Footer, under a hairline: the 30px mark, `crateside` (Sans 21/600), and `judged 24 Oct 2026` right
-   (mono 17 `--text-50`). The mark's amber is the only colour on the card.
+   (mono 17 `--text-50`). The mark's amber is the only color on the card.
 
 Left off on purpose: the stage flow, the sample list, links, the windows, the progression and the
 tempo sources. They mean nothing outside the app.
@@ -255,9 +255,9 @@ In text the key is spelled in full, since a reader there has no band to give it 
 1a: Starry Eyed (plain; Considered of two); Takyon (new texts, three Considered, First pass
 folded and open); old verdict (Takyon's recorded 370-word reasoning through the formatter, no
 tonic check, no candidates); WITHHELD (invented; *Still open* with three). Share menu open and
-the acknowledgement. Progression folded and open.
+the acknowledgment. Progression folded and open.
 1b: Takyon whole track (one band, the underlay showing E minor from 0:21 to 1:57 under the B minor
-band); a window open with its drawer; 8 bars over bars 29–36 (the underlay labelled change by
+band); a window open with its drawer; 8 bars over bars 29–36 (the underlay labeled change by
 change); Starry Eyed (one band, starter warps); sections (invented: verse A Dorian primary, two
 chorus windows placed as E minor, a bridge with no time named in the gutter); chords and
 playback room.

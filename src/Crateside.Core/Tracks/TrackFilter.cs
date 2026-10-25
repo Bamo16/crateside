@@ -89,7 +89,7 @@ public static class TrackFilters
         value?.Contains(term, StringComparison.OrdinalIgnoreCase) is true;
 }
 
-/// <summary>How a state chip is drawn. Four colours, each meaning one thing.</summary>
+/// <summary>How a state chip is drawn. Four colors, each meaning one thing.</summary>
 public enum TrackChipStyle
 {
     /// <summary>Nothing has happened yet.</summary>

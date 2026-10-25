@@ -7,7 +7,7 @@ namespace Crateside.Core.Orchestration.Verdict;
 public sealed record JudgeDirection(
     IReadOnlyList<RunWindow> Windows,
     string? Note,
-    TonalCentre? Ear,
+    TonalCenter? Ear,
     string? Audio
 );
 

@@ -80,8 +80,8 @@ public sealed class WarpWorker(
 
     private void Mark()
     {
-        foreach (var recoloured in marks.Recolour())
-            logger.LogInformation("Gave {Target} its clip colour", Path.GetFileName(recoloured));
+        foreach (var recolored in marks.Recolor())
+            logger.LogInformation("Gave {Target} its clip color", Path.GetFileName(recolored));
 
         Report(marks.Collect(), "staged file");
         Report(keptMarks.Collect(), "kept warp guide");

@@ -101,7 +101,7 @@ The tokenizer is compiled into Live and is not available to any third-party read
 
 - **No BPM or tempo.** Nothing. Ableton keeps warp and tempo in the per-file `.asd` sidecar, not in this index — consistent with [ADR 0002](../adr/0002-there-is-no-warped-signal.md).
 - **No date-added.** `mod_date` is the file's mtime and is the only date. [ADR 0008](../adr/0008-staged-since-is-the-files-creation-time.md) already had to solve this elsewhere; the index does not help.
-- **No rating, no comment, no user-set colour in use.** `files.colors` exists and is `1` for every file in both roots — Ableton's browser colour labels, which the user has never used. Available if that ever changes.
+- **No rating, no comment, no user-set color in use.** `files.colors` exists and is `1` for every file in both roots — Ableton's browser color labels, which the user has never used. Available if that ever changes.
 - **`Current Project`** is a place (kind 4) and holds **zero** rows, so it does not offer "what is in the set I have open".
 
 ---

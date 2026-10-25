@@ -2,7 +2,7 @@
 
 **Status:** reference. This is the workflow **as the user performs it by hand**, recorded so
 that anyone changing crateside knows what is being automated and what is being replaced. It is
-deliberately *not* the optimised or automated flow, and it will drift from what crateside does.
+deliberately *not* the optimized or automated flow, and it will drift from what crateside does.
 Where the two differ, this file describes the human one.
 
 Written from the user's own account, 2026-08-15.
@@ -11,7 +11,7 @@ Written from the user's own account, 2026-08-15.
 
 1. **Find something worth having** — usually while browsing YouTube or YouTube Music.
 2. **Land on the canonical version.** Several uploads of a song exist; one of them is the right
-   master. Picking it is a judgement, and getting it wrong is expensive later, because the
+   master. Picking it is a judgment, and getting it wrong is expensive later, because the
    verdict, the BPM and the stems are all downstream of it.
 3. **Add the URL to the `StemForge Queue` playlist**, to work through in a batch later.
 
@@ -94,5 +94,5 @@ Only the move is deliberate.
   the library.
 - **Official instrumentals and acapellas** — a release that *is* a stem without anyone having
   separated it (`SUPADOPA (Official Instrumental)`, `Gucci Gucci (Acapella)`). Same shape on disk
-  as a retained source: real audio, no StemForge preset. Not yet modelled as distinct from an
+  as a retained source: real audio, no StemForge preset. Not yet modeled as distinct from an
   instrumental release, and there are two of them, so it has not earned a distinction yet.

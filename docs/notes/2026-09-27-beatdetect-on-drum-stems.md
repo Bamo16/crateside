@@ -21,7 +21,7 @@ The octave is the user's call (ADR 0038, amended): *½ or ×2* is ambiguous, not
 | song | warped | full mix | drums, window | drums, whole | instrumental, window |
 |---|---|---|---|---|---|
 | Rob Zombie - Superbeast | 154.00 | 102.32 triplet/dotted | 153.78 exact | 102.32 triplet/dotted | 102.32 triplet/dotted |
-| NXONE'S FAVOURITE, Nakedleisure - NOT A DREAM | 167.00 | 110.31 triplet/dotted | 83.31 ½ or ×2 | 110.31 triplet/dotted | 110.31 triplet/dotted |
+| NXONE'S FAVORITE, Nakedleisure - NOT A DREAM | 167.00 | 110.31 triplet/dotted | 83.31 ½ or ×2 | 110.31 triplet/dotted | 110.31 triplet/dotted |
 | Porter Robinson - Language | 128.00 | 84.68 triplet/dotted | 96.79 triplet/dotted | 169.31 triplet/dotted | 84.68 triplet/dotted |
 | Will Atkinson, GURLI - Calling For You | 142.00 | 93.77 triplet/dotted | 93.77 triplet/dotted | 90.83 wrong | 94.44 triplet/dotted |
 | Creepy Nuts - Bling-Bang-Bang-Born | 157.00 | 103.66 triplet/dotted | 156.19 close | 156.19 close | 156.19 close |

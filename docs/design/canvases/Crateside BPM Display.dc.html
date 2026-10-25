@@ -98,7 +98,7 @@
   <header style="display:flex;flex-direction:column;gap:8px;max-width:960px">
     <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Brief 13 · issue #92 · ADR 0049 · built against 58a2dae</div>
     <h1 style="margin:0;font:600 28px 'IBM Plex Sans',sans-serif">How a BPM reads, everywhere one appears</h1>
-    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">Two marks, used the same way everywhere. <strong style="color:#ece7dc;font-weight:500">A bare figure in full weight</strong> is a tempo crateside can vouch for: <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:#ece7dc">128</span> means 128.00. <strong style="color:#ece7dc;font-weight:500">A tilde and a light weight</strong> mean approximate: <span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">~123</span>. It is always a whole number, so a tilde never appears next to hundredths. Everything else about a tempo (where it came from, whether it drifts or changes) is said in words: in the note on the song page, in a tooltip, and as a flag beside a title on Tracks. No new tokens or colours.</p>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">Two marks, used the same way everywhere. <strong style="color:#ece7dc;font-weight:500">A bare figure in full weight</strong> is a tempo crateside can vouch for: <span style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:#ece7dc">128</span> means 128.00. <strong style="color:#ece7dc;font-weight:500">A tilde and a light weight</strong> mean approximate: <span style="font-family:'IBM Plex Mono',monospace;color:#ece7dc">~123</span>. It is always a whole number, so a tilde never appears next to hundredths. Everything else about a tempo (where it came from, whether it drifts or changes) is said in words: in the note on the song page, in a tooltip, and as a flag beside a title on Tracks. No new tokens or colors.</p>
     <p style="margin:0;font:400 12.5px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">Song names and BPM figures come from the brief and ADR 0049. Keys, genres and the Dashboard counts are made up for illustration.</p>
   </header>
 
@@ -117,10 +117,10 @@
         </div>
       </sc-for>
       <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px;padding:18px 22px 20px;font:400 12.5px/1.55 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7)">
-        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Two marks for approximate, never one.</b> A tilde and a weight of 400, where a vouched figure is 600. Either one alone tells the two apart, so an amber row (where the colour already carries a meaning) or a copied screenshot still reads correctly.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Two marks for approximate, never one.</b> A tilde and a weight of 400, where a vouched figure is 600. Either one alone tells the two apart, so an amber row (where the color already carries a meaning) or a copied screenshot still reads correctly.</p>
         <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Where it came from</b> uses three phrases everywhere: <i>from your warp</i>, <i>crateside's reading</i>, <i>keytag's estimate</i>. keytag's figure is also drawn at <code style="font-size:12px">--text-50</code>, because it's the weakest source and only shows up before a reading exists.</p>
         <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Shape is said in words</b>, so the figure keeps its two meanings and nothing more. A drifting tempo is approximate, so it gets the tilde. A mostly-steady or changing tempo shows its main tempo as vouched, because that part is.</p>
-        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Summaries aren't tempos.</b> Bins, peaks and ranges summarise many tracks, so they are whole numbers with no mark. They still go through the same formatter (<code style="font-size:12px">Range</code>, <code style="font-size:12px">Bin</code>) so the no-hand-formatting test still covers them.</p>
+        <p style="margin:0;text-wrap:pretty"><b style="color:#ece7dc;font-weight:500">Summaries aren't tempos.</b> Bins, peaks and ranges summarize many tracks, so they are whole numbers with no mark. They still go through the same formatter (<code style="font-size:12px">Range</code>, <code style="font-size:12px">Bin</code>) so the no-hand-formatting test still covers them.</p>
       </div>
     </div>
   </div>
@@ -170,7 +170,7 @@
   </div>
 
   <div id="1d" style="display:flex;flex-direction:column;gap:12px">
-    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1d</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Evidence panel: the headline, then each source labelled underneath</span></div>
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1d</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Evidence panel: the headline, then each source labeled underneath</span></div>
     <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px">
       <sc-for list="{{ evid }}" as="e" hint-placeholder-count="3">
         <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:18px 22px;display:flex;flex-direction:column;gap:12px">

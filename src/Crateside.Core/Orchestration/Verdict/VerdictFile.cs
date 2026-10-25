@@ -13,7 +13,10 @@ public sealed record VerdictFile
     public string? Artist { get; init; }
     public string? Title { get; init; }
     public string? Confidence { get; init; }
-    public CentreDto? Centre { get; init; }
+
+    // The key the judging session writes, and the verdict files already on disk hold.
+    [JsonPropertyName("centre")]
+    public CenterDto? Center { get; init; }
     public bool Mixed { get; init; }
     public IReadOnlyList<SectionDto>? Sections { get; init; }
     public IReadOnlyList<SourceDto>? Sources { get; init; }
@@ -65,9 +68,9 @@ public sealed record VerdictFile
                 $"confidence must be one of {string.Join(", ", LedgerVocabulary.Confidences)}"
             );
 
-        TonalCentre? centre = null;
+        TonalCenter? center = null;
 
-        if (Centre is { } given && !TryRead(given.Tonic, given.Mode, out centre, out var problem))
+        if (Center is { } given && !TryRead(given.Tonic, given.Mode, out center, out var problem))
             return new VerdictCheck.Unusable($"centre: {problem}");
 
         List<Section> sections = [];
@@ -75,11 +78,11 @@ public sealed record VerdictFile
         foreach (var section in Sections ?? [])
         {
             if (
-                !TryRead(section.Tonic, section.Mode, out var sectionCentre, out var sectionProblem)
+                !TryRead(section.Tonic, section.Mode, out var sectionCenter, out var sectionProblem)
             )
                 return new VerdictCheck.Unusable($"sections, {section.Label}: {sectionProblem}");
 
-            sections.Add(new(section.Label ?? string.Empty, sectionCentre, section.Start));
+            sections.Add(new(section.Label ?? string.Empty, sectionCenter, section.Start));
         }
 
         List<RunSource> sources = [];
@@ -113,7 +116,7 @@ public sealed record VerdictFile
             Artist = Artist.Trim(),
             Title = LedgerVocabulary.WithoutStemSuffix(Title.Trim()),
             Confidence = confidence,
-            Centre = centre,
+            Center = center,
             Mixed = Mixed,
             Sections = sections,
             Sources = sources,
@@ -162,11 +165,11 @@ public sealed record VerdictFile
     private static bool TryRead(
         string? tonic,
         string? mode,
-        out TonalCentre centre,
+        out TonalCenter center,
         out string problem
     )
     {
-        centre = null!;
+        center = null!;
         problem = string.Empty;
 
         if (!LedgerVocabulary.TryNormalizeTonic(tonic, out var sharp))
@@ -184,12 +187,12 @@ public sealed record VerdictFile
             return false;
         }
 
-        centre = new(sharp, parsed);
+        center = new(sharp, parsed);
 
         return true;
     }
 
-    public sealed record CentreDto(string? Tonic, string? Mode);
+    public sealed record CenterDto(string? Tonic, string? Mode);
 
     public sealed record SectionDto(
         string? Label,

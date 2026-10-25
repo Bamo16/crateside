@@ -94,7 +94,7 @@ public static class GridCheck
             )
             : new GridReport([], []);
 
-    /// <summary>The transients against one steady tempo, phased to fit them all, so the offsets centre on 0.</summary>
+    /// <summary>The transients against one steady tempo, phased to fit them all, so the offsets center on 0.</summary>
     public static GridReport Against(IReadOnlyList<double> times, double bpm)
     {
         var phase = Phase(times.Select(time => time * bpm / 60));

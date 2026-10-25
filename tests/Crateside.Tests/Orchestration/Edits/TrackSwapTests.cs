@@ -178,7 +178,7 @@ public sealed class TrackSwapTests : IDisposable
     }
 
     [Fact]
-    public void A_bare_video_id_is_accepted_and_canonicalised()
+    public void A_bare_video_id_is_accepted_and_canonicalized()
     {
         // A run needs an http(s) URL.
         var plan = Swap().PlanFor(Video, "NSLYAT7sjAA");

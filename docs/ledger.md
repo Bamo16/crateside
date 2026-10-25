@@ -23,9 +23,9 @@ start. Enums are stored by name (`Dorian`, `ChordRecogniser`); times as round-tr
 
 - **Runs**: one verdict each. `Song` is the identity a later run supersedes (latest
   `RecordedAt` wins), compared without case. The verdict is `Confidence` (`High`, `Medium`,
-  `Low`, `Withheld`) and a tonal centre, `Tonic` (sharps only: `C#`, never `Db`) and `Mode`
+  `Low`, `Withheld`) and a tonal center, `Tonic` (sharps only: `C#`, never `Db`) and `Mode`
   (one of the seven diatonic modes), both null only when withheld. `Mixed` marks two modes on
-  one tonic, the centre being the harmony's. `SourceUrl` is the upload the audio came from,
+  one tonic, the center being the harmony's. `SourceUrl` is the upload the audio came from,
   null only with `LocalSource`. `WithheldReasoning` is the reasoning of the first pass when it asked for windows, kept once here. `Direction` is the user's note sent with windows. `Evidence`
   is the detectors' report as JSON. `OldBpm*` are the old estimates of imported history, never
   written again.
@@ -42,7 +42,7 @@ start. Enums are stored by name (`Dorian`, `ChordRecogniser`); times as round-tr
 - **Restatements**: "this upload is that song": a `SourceUrl` and the `RunId` whose verdict
   it carries over. It never changes an answer; the song's latest run is still its verdict.
 
-The 24-key tag is never stored. It is the **collapse** of the centre: the tonic kept, the
+The 24-key tag is never stored. It is the **collapse** of the center: the tonic kept, the
 mode reduced to major or minor (A Dorian is tagged A minor).
 
 ## What is refused
@@ -50,7 +50,7 @@ mode reduced to major or minor (A Dorian is tagged A minor).
 A run is refused only where a wrong value would be
 worse than no run:
 
-- a confidence outside the four, or a centre missing on a verdict that is not withheld;
+- a confidence outside the four, or a center missing on a verdict that is not withheld;
 - a tonic not in the sharp spelling, or a mode outside the seven;
 - no source URL without `LocalSource`, or a source URL that is not http(s);
 - a source kind outside the five;
@@ -60,7 +60,7 @@ worse than no run:
 - a window that ends before it starts.
 
 On the way in, a link is split from a trailing note (`… (via web search)`), a chord
-recogniser's host (Chordify, ChordU) overrides whatever kind was written, and a source's
+recognizer's host (Chordify, ChordU) overrides whatever kind was written, and a source's
 stated key is normalized to the 24-key spelling.
 
 A restatement is refused for an upload the ledger has never seen. One for an upload the song

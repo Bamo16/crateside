@@ -58,7 +58,7 @@ picked from a track rather than typed. Draw it only if it earns its place.
 
 ## Constraints
 
-- No new tokens, and nothing newly coloured (`DESIGN.md`).
+- No new tokens, and nothing newly colored (`DESIGN.md`).
 - Buttons are the existing `.outline` / `.primary` / `.danger`; the slider and select exist on
   Partners today.
 

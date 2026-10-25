@@ -1,6 +1,6 @@
 # 0043 — a borrowed warp is finished, and says where it came from
 
-- Status: Accepted; amended by [ADR 0044](0044-a-borrowed-warp-keeps-lives-transients-where-live-found-them.md), which takes Live's transients where Live found them and retires the reason lending ships off, and by [ADR 0045](0045-a-recut-takes-its-warp-from-its-own-kind-first.md), which has a recut take its warp from its own kind first, and by [ADR 0047](0047-a-starter-warp-and-where-transients-came-from.md), which renames the record and adds starter warps, and by [ADR 0058](0058-a-staged-stem-shows-its-state-in-live.md), which lets crateside set the colour of a sidecar the user saved, and nothing else on it
+- Status: Accepted; amended by [ADR 0044](0044-a-borrowed-warp-keeps-lives-transients-where-live-found-them.md), which takes Live's transients where Live found them and retires the reason lending ships off, and by [ADR 0045](0045-a-recut-takes-its-warp-from-its-own-kind-first.md), which has a recut take its warp from its own kind first, and by [ADR 0047](0047-a-starter-warp-and-where-transients-came-from.md), which renames the record and adds starter warps, and by [ADR 0058](0058-a-staged-stem-shows-its-state-in-live.md), which lets crateside set the color of a sidecar the user saved, and nothing else on it
 - Date: 2026-10-02
 - Amends [ADR 0037](0037-a-saved-default-clip-is-a-finished-warp.md). Builds
   [#54](https://github.com/Bamo16/crateside/issues/54).
@@ -33,11 +33,11 @@ Live saves over the file, the sidecar no longer matches the record, and the warp
 - **The same upload.** The sibling's provenance names the same video ID as the stem's, so the two
   were cut from one file and start together. Added sources never qualify.
 - **An instrumental, karaoke, or the kept source.** A vocal is sometimes re-warped on its own
-  afterwards, so its warp is not the track's. A kept source is recognised only by a name without
+  afterwards, so its warp is not the track's. A kept source is recognized only by a name without
   a parenthetical.
 - **Not adopted**, either way round, since an adopted file may be a render of a different length.
 - **Its default clip saved.** Without that, Live ignores the warp.
-- **The same length to the frame.** The sibling's head table records the frames Live analysed. On
+- **The same length to the frame.** The sibling's head table records the frames Live analyzed. On
   2026-10-02, 422 of 423 same-upload groups in the library matched to the frame. The exception
   differs by 44 s, so there is no tolerance.
 

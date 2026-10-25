@@ -56,7 +56,7 @@ on them. The evidence run becomes what its name says: run the detectors over aud
 ADR 0005 §4 survives intact. Its two load-bearing halves are *one download per track* and *it
 must be StemForge's* — the second because a file acquired any other way carries no provenance and
 every stem loses its join key. Neither requires the call to sit inside the evidence run, and the
-split formalises what is already true: `AcquireAsync` returns early when the working set holds
+split formalizes what is already true: `AcquireAsync` returns early when the working set holds
 the file, so a download that succeeded and a detection that failed already behave as two steps
 with a durable intermediate.
 
@@ -78,7 +78,7 @@ what the ledger says is the same song, so without it the file appears as a row o
 than as part of the track. `TrackSwap` already establishes the order — restate first, then work.
 
 **The label is required and unique per track.** It becomes the filename suffix, because
-`StemFileName.WithoutPreset` strips a trailing parenthesised group and a file without one reads
+`StemFileName.WithoutPreset` strips a trailing parenthesized group and a file without one reads
 as its whole name being the track's name. Two added sources sharing a label collide in staging,
 which `HandoffRunner` fails loudly rather than silently.
 

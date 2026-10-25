@@ -22,7 +22,7 @@ guessed.
 - **The artist is the primary one**, the first credited (`ArtistCredit.Primary`). This is the
   first use of the primary-artist idea left open by ADR 0032.
 - **Only the user's answers teach.** A learned genre (`GenreRecord.LearnedFrom`) never counts
-  towards learning another, so one answer cannot snowball.
+  toward learning another, so one answer cannot snowball.
 - **The user always wins.** Answering a learned song makes it their own, and a learned genre never
   replaces an answer.
 - **Never over the song's own sources.** A learned genre is not applied where the lookup suggests a

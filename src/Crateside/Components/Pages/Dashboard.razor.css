@@ -374,7 +374,7 @@ h4 {
     white-space: nowrap;
 }
 
-/* The key table tells minor from major by colour, the one bar table that does; new ones are
+/* The key table tells minor from major by color, the one bar table that does; new ones are
    teal only. */
 .bar {
     display: block;

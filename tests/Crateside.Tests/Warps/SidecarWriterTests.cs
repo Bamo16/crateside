@@ -483,7 +483,7 @@ public sealed class SidecarWriterTests : IDisposable
     {
         Audio(Target);
 
-        await Levelling(lufs: -20)
+        await Leveling(lufs: -20)
             .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
 
         Assert.Equal(PlusSixDb, AnalysisFile.Read($"{Target}.asd").Clip.SampleVolume, 4);
@@ -500,7 +500,7 @@ public sealed class SidecarWriterTests : IDisposable
             }
         ).Write($"{Sibling}.asd");
 
-        await Levelling(lufs: -20)
+        await Leveling(lufs: -20)
             .BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);
 
         Assert.Equal(PlusSixDb, AnalysisFile.Read($"{Target}.asd").Clip.SampleVolume, 4);
@@ -511,7 +511,7 @@ public sealed class SidecarWriterTests : IDisposable
     {
         Audio(Target);
 
-        var outcome = await Levelling(lufs: -20)
+        var outcome = await Leveling(lufs: -20)
             .UnwarpAsync(Target, [], TestContext.Current.CancellationToken);
 
         Assert.Equal(new WarpOutcome.Unwarped(null), outcome);
@@ -529,7 +529,7 @@ public sealed class SidecarWriterTests : IDisposable
                 written.Clip.LoopOn
             )
         );
-        Assert.Equal(ClipColours.For(Target), written.Clip.Color);
+        Assert.Equal(ClipColors.For(Target), written.Clip.Color);
         Assert.Equal(PlusSixDb, written.Clip.SampleVolume, 4);
         Assert.True(_written.Of(Target) is { IsUnwarped: true, IsStarter: false, From: null });
     }
@@ -623,7 +623,7 @@ public sealed class SidecarWriterTests : IDisposable
     private SidecarWriter Steady(double jumpAt = double.PositiveInfinity, double jumpSeconds = 0) =>
         new(SteadyHits.Decoder, SteadyHits.Detector(jumpAt, jumpSeconds), _written, _origins);
 
-    private SidecarWriter Levelling(double lufs) =>
+    private SidecarWriter Leveling(double lufs) =>
         new(
             new FixedDecoder(Samples(0.5f, Frames)),
             new FixedDetector(),

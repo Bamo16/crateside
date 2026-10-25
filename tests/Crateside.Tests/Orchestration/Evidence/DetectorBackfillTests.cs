@@ -71,7 +71,7 @@ public sealed class DetectorBackfillTests : IDisposable
                     Song = Song,
                     SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
                     Confidence = KeyConfidence.High,
-                    Centre = new TonalCentre("A", DiatonicMode.Aeolian),
+                    Center = new TonalCenter("A", DiatonicMode.Aeolian),
                     Evidence = evidence,
                 }
             )
@@ -368,7 +368,7 @@ public sealed class DetectorBackfillTests : IDisposable
                 Song = Song,
                 SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
                 Confidence = KeyConfidence.High,
-                Centre = new TonalCentre("A", DiatonicMode.Aeolian),
+                Center = new TonalCenter("A", DiatonicMode.Aeolian),
                 Evidence = ReadBy("new"),
             }
         );

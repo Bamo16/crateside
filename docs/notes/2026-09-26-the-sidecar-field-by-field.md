@@ -10,7 +10,7 @@ sidecars from [DBraun/AbletonParsing](https://github.com/DBraun/AbletonParsing)'
 but for the clip's Loop switch, parse the same way. That repo parses Live 9 and 10; only its
 descriptions of the clip fields were used, checked against its Live 12 pair.
 
-Each meaning below is labelled **measured** (established on real files here), **owned** (the user
+Each meaning below is labeled **measured** (established on real files here), **owned** (the user
 said so) or **guessed**.
 
 ## Layout
@@ -62,7 +62,7 @@ Spread is over the 845 library sidecars unless stated.
 | `IsWarped` | bool | the Warp switch; true on a sidecar nobody warped (earlier note) | true on all |
 | `SampleVolume` | float, linear | clip gain; *measured* as whole decibels | 1.0 on 841; −8, +1, −2, −1 dB on one each |
 | `VelocityAmount`, `PitchCoarse`, `PitchFine` | float | *guessed* by name | 0 on all |
-| `ColorIndex` | int32 | clip colour; −1 before the first save (*measured*) | 16 values; stems of one song share a colour in 10 of 405 songs |
+| `ColorIndex` | int32 | clip color; −1 before the first save (*measured*) | 16 values; stems of one song share a color in 10 of 405 songs |
 | `LaunchMode`, `LaunchQuantisation` | int32 enum | *guessed* by name | 0 on all (`LaunchQuantisation` 1 on the DBraun pair) |
 | `LoopOn` | bool | the Loop switch. *Measured* on the DBraun pair, the only field that differs between them | false on 844; true on the unsaved file, and on the Disconnect stem before its save |
 
@@ -113,7 +113,7 @@ The 14 are 8 songs, both stems for 6 of them. Against the warped tempo, the esti
 | field | type | meaning | spread |
 |---|---|---|---|
 | `ExtraLength` | int32 | | 0 on all |
-| `OriginalFileSize` | int32, bytes | the audio's size when analysed; exact on the Disconnect stem (*measured*) | matches on 828. Of the other 17, 15 hold the same number of samples as recorded. The *1991 – Jungle (Colin Hennerz Remix)* pair is 645 samples longer now than when Ableton analysed it, and was not re-analysed |
+| `OriginalFileSize` | int32, bytes | the audio's size when analyzed; exact on the Disconnect stem (*measured*) | matches on 828. Of the other 17, 15 hold the same number of samples as recorded. The *1991 – Jungle (Colin Hennerz Remix)* pair is 645 samples longer now than when Ableton analyzed it, and was not re-analyzed |
 | `OverView.OverViewLevels` | list of float16 arrays | **the waveform**: min and max per channel per bin, interleaved. *Measured* against decoded audio, within 0.0005 at every level | 4 levels; 3 on two 36-second files |
 | `OverView.SamplesPerBinLog2` | int32 | level *k*'s bin is 2^(this × (*k*+1)) samples | 7 up to 379 s; 8 from 387 s (13 files) |
 | `OverView.ChannelCount`, `.Version` | int32 | | 2, 2 on all |

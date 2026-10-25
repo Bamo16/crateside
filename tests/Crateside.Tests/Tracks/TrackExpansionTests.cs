@@ -24,7 +24,7 @@ public sealed class TrackExpansionTests
         {
             Timestamp = DateTimeOffset.Parse("2026-08-01T00:00:00+00:00"),
             Song = "rob dougan - furious angels",
-            Centre = TonalCentre.FromKey(key),
+            Center = TonalCenter.FromKey(key),
             Confidence = confidence,
         };
 

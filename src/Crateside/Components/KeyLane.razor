@@ -8,7 +8,7 @@
         <span class="gist">@Gist</span>
         @foreach (var unplaced in Plan.Unplaced)
         {
-            <span class="mono unplaced"><ProseText Text="@unplaced.Label" Inline="true" /> · @KeyStrip.Short(unplaced.Centre): no time given</span>
+            <span class="mono unplaced"><ProseText Text="@unplaced.Label" Inline="true" /> · @KeyStrip.Short(unplaced.Center): no time given</span>
         }
     </span>
     <div class="key-strip">
@@ -67,13 +67,13 @@
             " · ",
             new[]
             {
-                Run.Centre is { } centre
-                    ? Run.Sections.Select(section => section.Centre).Distinct().Count() switch
+                Run.Center is { } center
+                    ? Run.Sections.Select(section => section.Center).Distinct().Count() switch
                     {
-                        <= 1 => $"{ModeText.Named(centre)}, one centre",
-                        var centres when Plan.Bands.Any(band => band.FromWindow) =>
-                            $"{ModeText.Named(centre)}, {centres} centres, placed from your windows",
-                        var centres => $"{ModeText.Named(centre)}, {centres} centres",
+                        <= 1 => $"{ModeText.Named(center)}, one center",
+                        var centers when Plan.Bands.Any(band => band.FromWindow) =>
+                            $"{ModeText.Named(center)}, {centers} centers, placed from your windows",
+                        var centers => $"{ModeText.Named(center)}, {centers} centers",
                     }
                     : "no key",
                 Run.KeyEvents.Count > 0
@@ -103,7 +103,7 @@
     }
 
     private static string Title(KeyBand band) =>
-        $"{(band.Section is { Length: > 0 } named ? named + " · " : null)}{ModeText.Named(band.Centre)} · {WarpWording.Time(band.Start)}–{WarpWording.Time(band.End)}{(band.FromWindow ? " · from a window" : null)}";
+        $"{(band.Section is { Length: > 0 } named ? named + " · " : null)}{ModeText.Named(band.Center)} · {WarpWording.Time(band.Start)}–{WarpWording.Time(band.End)}{(band.FromWindow ? " · from a window" : null)}";
 
     private double X(double seconds) => (seconds - From) / (To - From) * 100;
 

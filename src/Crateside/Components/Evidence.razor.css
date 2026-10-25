@@ -210,13 +210,13 @@
     gap: 0.5rem;
 }
 
-.centres {
+.centers {
     list-style: none;
     margin: 0 0 1.5rem;
     padding: 0;
 }
 
-.centres li {
+.centers li {
     display: grid;
     grid-template-columns: 90px auto minmax(0, 1fr);
     gap: 0.6rem;
@@ -225,7 +225,7 @@
     border-top: 1px solid var(--line);
 }
 
-.centres li:first-child {
+.centers li:first-child {
     border-top: none;
 }
 
@@ -233,12 +233,12 @@
     color: var(--text-60);
 }
 
-.centre-key {
+.center-key {
     font-size: 13px;
     font-weight: 500;
 }
 
-/* What the source covered, neutral: a source is none of the states the colours mean. */
+/* What the source covered, neutral: a source is none of the states the colors mean. */
 .covers {
     align-self: flex-start;
     padding: 0 0.4rem;

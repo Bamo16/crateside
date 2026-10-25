@@ -8,7 +8,7 @@ and states, not code.
 This brief was written against the commit that adds it. The rules as built are in
 `docs/design/DESIGN.md` (*Tools*). The page today is *Crateside Tools Together* in
 `docs/design/canvases/` (handoff 12). The decision behind this brief is
-[ADR 0056](../../adr/0056-partners-pairs-by-notes.md), and the terms (tonal centre, section,
+[ADR 0056](../../adr/0056-partners-pairs-by-notes.md), and the terms (tonal center, section,
 mixed, collapse, same-notes key, notes shared, parallel) are in `CONTEXT.md`. Brief 17 and its
 handoff showed a verdict's mode beside its tag. This brief builds on them and replaces handoff 17's
 *1d Partners* proposal.
@@ -38,11 +38,11 @@ set on, and use Re-Pitch (speed and pitch together) occasionally.
   mood names go.
 - **Rows sort by shift, then notes shared.**
 - **The shift range defaults to 0** and can be asymmetric, such as −1 to +3.
-- **The source is the verdict's centre**, mode included. A key picked by hand is a **tonic and a
+- **The source is the verdict's center**, mode included. A key picked by hand is a **tonic and a
   mode**, replacing today's 24-entry dropdown of major and minor keys.
-- **A song with sections offers each section's centre as the source**, with the primary chosen by
+- **A song with sections offers each section's center as the source**, with the primary chosen by
   default. Sections are shown in the order the ledger holds them, since they have no times yet.
-- **A modal source's own centre is its same-key row**: *A Dorian*, 7 of 7, first. Live's browser
+- **A modal source's own center is its same-key row**: *A Dorian*, 7 of 7, first. Live's browser
   will find it once the mode is written as a Key tag (#127).
 - **A mixed verdict** pairs from its tag.
 
@@ -80,7 +80,7 @@ Measured on the crateside code with the rule above, at shift 0.
 
 ## Questions for the design
 
-- **The table.** What do the columns become once *Relationship* and *Score* are gone? Do labelled
+- **The table.** What do the columns become once *Relationship* and *Score* are gone? Do labeled
   rows stand apart, or is the label enough? `7 of 7` repeats on every row, so does it need a
   visual form (a bar, pips) or is the figure better?
 - **The tag's row on a modal source.** *A minor* is not A Dorian's key, but it is the tag most
@@ -98,7 +98,7 @@ Measured on the crateside code with the rule above, at shift 0.
 - **The key picker.** A tonic and a mode, or one list of 84 entries? The mode must default to
   major or minor, since modes are rare.
 - **The section selector.** Every section visible at once, the primary chosen, in the order held.
-  Each entry needs its label and its centre (`verse · A min`, `finale · A♯ min`; an invented
+  Each entry needs its label and its center (`verse · A min`, `finale · A♯ min`; an invented
   example). Where does it sit: in the basis box, or the *Working on* card?
 - **Mode beside the tag.** The basis line names the mode the way handoff 17 does
   (`A Dorian → A min`).
@@ -107,7 +107,7 @@ Measured on the crateside code with the rule above, at shift 0.
 
 - **Plain keys change least.** About 96% of songs are plain major or minor (brief 17's count). For
   them, the table loses its score and mood names, gains notes shared, and nothing else moves.
-- **Colour means state** (DESIGN.md). Notes shared is a fact, not a state.
+- **Color means state** (DESIGN.md). Notes shared is a fact, not a state.
 - **The Camelot wheel stays** read-only, as built.
 
 ## Not asked

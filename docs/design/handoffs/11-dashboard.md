@@ -5,7 +5,7 @@ Canvas: `Crateside Dashboard.dc.html` (1a the whole page at 2560px, 1b narrow at
 sections folded, 1c the all-three-wrong list opened and copied).
 
 The canvas is a design reference in HTML. Port it to `Pages/Counts.razor` (rename it
-`Dashboard.razor`) and its `.razor.css`. No new tokens and nothing newly coloured. Teal = the
+`Dashboard.razor`) and its `.razor.css`. No new tokens and nothing newly colored. Teal = the
 machine is working, amber = your turn. Buttons are `.outline`, choices `.pill`. The header stays
 `Bar`. Song names, live cards, stage failures, cancellations and activity rows are illustrative.
 The weekly totals and all key-detector figures are the brief's measured numbers.
@@ -80,7 +80,7 @@ label (10.5px `--text-40`) on its label line.
   waiting".
 - **Quotas.** Two lines, each a name and a value in mono, a 4px monochrome bar (`--text-50` on
   `--line`), and "resets at {hh:mm}". Claude: percent of the 5-hour window. YouTube: "{used} of
-  10,000" today. Quotas are neither working nor your turn, so no colour.
+  10,000" today. Quotas are neither working nor your turn, so no color.
 - **Background readers · unattended.** beatdetect with "{read} of {total}" and a teal bar, then
   genre lookups and familiarity lookups, each "{n} waiting" or *idle*.
 - **Library backfill.** Label line with "Settings →". Value: "On · next in {n} min" or "Off".
@@ -95,14 +95,14 @@ Three columns, `1fr 1fr 1.3fr`, gap 40px. Each has a caps label.
 
 - **Tracks finished, by ISO week.** A column chart, 200px tall, one column per week from W34.
   Columns teal and scaled to the tallest, with the count above in mono and the week label
-  below. **The current week** is teal 35% with a dashed teal border and labelled "W40 so far".
+  below. **The current week** is teal 35% with a dashed teal border and labeled "W40 so far".
   Once there are more than 12 weeks, show the last 12.
-- **Stages run.** A bar-table-style table without bars: Stage · Done · Failed · Cancelled for
+- **Stages run.** A bar-table-style table without bars: Stage · Done · Failed · Canceled for
   Separations, Verdicts, Handoffs. A non-zero Failed count opens those tracks on Tracks
   (*Needs attention*, filtered to that stage if the filter allows, or plain if not). Footnote:
   "About {lines} stage lines."
 - **Latest activity.** The last 8 `ActivityLog` events: time (mono `--text-50`) · event
-  (`--text-75`) · track, one line each and ellipsised. "The whole log →" opens the Activity log.
+  (`--text-75`) · track, one line each and ellipsized. "The whole log →" opens the Activity log.
 
 Folded summary: "{n} finished this week, {n} last week · last event {hh:mm} {event} {track}".
 
@@ -123,7 +123,7 @@ key under it), By artist. `grid-auto-flow: dense` lets row 2's two-column panel 
 Panels are unchanged from handoff 08 as built, apart from these:
 
 - **By tempo** keeps the shape line (*Steady · Mostly steady · Drifting*) and the beatdetect
-  line under it. The *Shared by 10 or more* column ellipsises at this width.
+  line under it. The *Shared by 10 or more* column ellipsizes at this width.
 - **Detectors against the warps** is renamed **BPM detectors against the warps**. At two columns
   the band table and the misses strip sit side by side (1fr 1fr), with the strip's label column
   at 110px.

@@ -7,7 +7,7 @@ state* pills above it switch between the brief's states, and the rows, pills, ca
 
 The canvas is a design reference in HTML. Port it to one page under `ToolsFrame` (it loses its
 sub-tabs), made from `Partners.razor` and `RePitch.razor` as components. No new tokens and nothing
-newly coloured. Buttons `.outline`, choices `.pill`, the existing slider and select. The header
+newly colored. Buttons `.outline`, choices `.pill`, the existing slider and select. The header
 stays `Bar`. Two decimals only for arrangement BPMs and the track's BPM field; whole numbers
 elsewhere. Partners' groups and scores on the canvas come from a simple Camelot model. **Keep the
 built calculation** and show its rows in the two groups below.
@@ -103,7 +103,7 @@ top. Each segment shows its code (mono 11px) and the key's short name (10px).
   the user can see where he started.
 - Everything else `--surface` with `--line` and `--text-40` labels.
 
-Monochrome, so nothing is newly coloured. A legend below, and one line: "A neighbour on the wheel
+Monochrome, so nothing is newly colored. A legend below, and one line: "A neighbor on the wheel
 is a fifth; straight in or out is the relative." **Read-only** in this pass. Clicking a segment
 to work from it is a possible later step.
 
@@ -114,7 +114,7 @@ to work from it is a possible later step.
 2. He clicks Re-Pitch's −1 row: 188.77 · A♯ minor. Partners now says **Working from A♯ minor 3A ·
    Re-Pitch −1 from the track's B minor**, and the wheel lights 3A with 10A ringed.
 3. Nothing fits, so he clicks **C♯ major · relative**. One click, with the reason line updated.
-4. He reads the wheel's lit neighbours and Partners' *a fifth up / down* rows for what else to try.
+4. He reads the wheel's lit neighbors and Partners' *a fifth up / down* rows for what else to try.
 
 ## 7. States (canvas state pills)
 

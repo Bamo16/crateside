@@ -21,7 +21,7 @@ original decision, which was right for what the file then was.
 
 - **Song identity + append-only supersede.** The whole join rests on it and it holds.
 - **`verdict`.** Every one of 127 runs spells the key as `<tonic> <major|minor>`, sharps
-  only, no exceptions — so it parses without defence.
+  only, no exceptions — so it parses without defense.
 - **`bpm` as a triple** (`value` / `source` / `beatdetect`). Keeping the runner's own
   estimate beside the recommendation is what makes a conflict detectable at all.
 - **`machine` carrying the raw runner output.** It is the bulk of every line and it is

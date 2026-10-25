@@ -1,9 +1,9 @@
 /* A single dark palette: this is a bench tool that sits open next to Ableton, which is dark.
-   Warm rather than the blue-grey it started as, because it is looked at for hours beside artwork
+   Warm rather than the blue-gray it started as, because it is looked at for hours beside artwork
    and waveforms and a cool UI competes with them.
 
    The palette is defined once here and the older semantic names alias onto it, so a page written
-   against --accent or --warn keeps working and picks up the new colours for free. */
+   against --accent or --warn keeps working and picks up the new colors for free. */
 :root {
     /* Surfaces, darkest first. --ink is for text *on* a filled chip, never for a background. */
     --bg: #141310;
@@ -13,7 +13,7 @@
 
     --text: #ece7dc;
 
-    /* The three colours that mean something, and nothing else is coloured:
+    /* The three colors that mean something, and nothing else is colored:
        teal = the machine is working, amber = it is the user's turn, red = needs attention.
        Green is only ever "done", which is a state the user has already left behind. */
     --teal: #6fc7d6;

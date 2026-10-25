@@ -105,7 +105,7 @@ public sealed class WarpTrueUp(
 
     /// <summary>
     /// How far later the retyped warp has to sit for the transients of the kept drum stem, else the
-    /// canonical stem, to centre on its grid; null when the grid then does not hold within 5 ms
+    /// canonical stem, to center on its grid; null when the grid then does not hold within 5 ms
     /// through every 30 s.
     /// </summary>
     private static (double Shift, string? From)? Phase(

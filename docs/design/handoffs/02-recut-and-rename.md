@@ -1,7 +1,7 @@
 # Handoff: re-cut stems and renaming — crateside Tracks page
 
 ## Overview
-Two additions to the built Tracks page, answering `brief.md`. Nothing on the page moves; both capabilities live inside the existing expanded panel and reuse the chip/flag vocabulary. No new colours.
+Two additions to the built Tracks page, answering `brief.md`. Nothing on the page moves; both capabilities live inside the existing expanded panel and reuse the chip/flag vocabulary. No new colors.
 
 ## About the design file
 `Crateside Unified Page.dc.html` opens in any browser. It is a **design reference**, not code to ship. Turn **2** (top of the canvas, artboards **2a–2d**) is this spec. Turn 1 below it is the earlier page design — already built, already diverged in the six ways `brief.md` lists; do not re-apply it.
@@ -41,7 +41,7 @@ Nothing runs until confirmed. The panel re-renders:
 ### Locked state
 Files in Mashup Samples: control is inert — text-50, 1px **dashed** `rgba(255,255,255,.18)`, no `▾`. Hint text-60: "N files are in Mashup Samples. Move them back to Sample Staging to change this."
 
-### Behaviour
+### Behavior
 - Preconditions: all staged files present in Sample Staging (guarantees original audio on disk).
 - On confirm: record the new fact, delete the listed files, re-run separation → staging → tagging using the **existing verdict** (key detection must not run).
 - Ready-to-warp toast fires again when re-staged.
@@ -73,7 +73,7 @@ Strip becomes a `1fr 340px` grid (gap 32):
 - Strip: name; text-50 "renamed by you · was **{derived}**"; right-aligned outline **Revert** and **Rename**.
 - Revert drops the override and renames files back to the derived name (same scope rules).
 
-### Behaviour
+### Behavior
 - The override is stored separately from the three derived sources and always wins (see question 2).
 - Rename touches every file named `<track name> (<preset>)`, the Ableton Folder Info XMP entry, and — before separation — the source audio's tags.
 

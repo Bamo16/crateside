@@ -44,7 +44,7 @@
 @inject StageSignals Signals
 @inject CratesidePaths Paths
 @inject KeyCorrections Corrections
-@inject Levelling Levels
+@inject Leveling Levels
 @inject IJSRuntime Js
 
 <PageTitle>Dashboard · crateside</PageTitle>
@@ -118,7 +118,7 @@
                         <text>Separation @(Separation.IsPaused ? "paused" : "idle")</text>
                     }
                     , <span class="mono">@_rows.Count(row => row.State is TrackState.JudgedInLine)</span> waiting ·
-                    Judging @JudgingState, <span class="mono">@(_rows.Count(row => row.IsAwaitingJudgement) + Judging.FormRunsWaiting)</span> waiting ·
+                    Judging @JudgingState, <span class="mono">@(_rows.Count(row => row.IsAwaitingJudgment) + Judging.FormRunsWaiting)</span> waiting ·
                     Claude <span class="mono">@(_quota.Utilization is { } used ? $"{used:N0} %" : "—")</span>
                     @if (Beats.Progress is { Of: > 0 } progress && progress.Read < progress.Of)
                     {

@@ -66,7 +66,7 @@ The briefs written by the implementing agent. #22's brief was pasted in chat and
 ## Design language, in one place
 The live definition is `src/Crateside/wwwroot/app.css`. The rules the canvases follow:
 - One warm dark palette: `--bg #141310`, `--surface #1b1a15`, `--raised #23211a`, `--text #ece7dc`, with alpha tiers for prose (75/60/50) and for labels only (40/35/30).
-- Colour means something, and nothing else is coloured. **Teal** = machine working, **amber** = your turn, **red** = needs attention, **green** = done, only ever done.
+- Color means something, and nothing else is colored. **Teal** = machine working, **amber** = your turn, **red** = needs attention, **green** = done, only ever done.
 - IBM Plex Sans for text; IBM Plex Mono for every number, key, timestamp and count.
 - State chips: neutral outline · teal filled with a dot · teal outline · amber filled · red outline · red filled · green outline · dashed.
 - Three page-header shapes (Bar, Flush, Shade), and a closed set of them.

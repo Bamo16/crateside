@@ -21,11 +21,11 @@ the column, 832px at the 92rem cap)**:
    - all stems on the shared warp: `{n} stems · one warp · {markers} markers · {mode}` at `--text-60`
      (`2 stems · one warp · 2 markers · Complex`);
    - any stem with its own markers: `{n} stems · {stem} warped on its own` at `--text`, plural
-     `{a}, {b} warped on their own`. This is the only place the group draws attention; it is not coloured.
+     `{a}, {b} warped on their own`. This is the only place the group draws attention; it is not colored.
    - right: zoom (below).
 2. **Overview strip** (zoomed only, 20px): the first stem's overview at whole-track scale,
    `--text-30`, with the view boxed (1px `--text-60`, fill 8%). Gutter: `Whole track · click to move`.
-   Click moves the view's centre there.
+   Click moves the view's center there.
 3. **Ruler** (30px, gutter `Bar`): the loop bar along the top, bar ticks and numbers along the bottom
    (mono 10.5, `--text-45`), and the clip-start notch (a 5px `--text` triangle) at bar 1.
    - Loop: 5px bar from loop start to end, 1px `--text-50` border, filled `--text-55` when on, empty when
@@ -35,7 +35,7 @@ the column, 832px at the 92rem cap)**:
 4. **Tempo line** (40px, gutter `Tempo from the markers` then the figure and the short note). The tempo
    between each pair of the shared warp's markers, drawn as a step line (1.5px `--text-75`), with a dashed
    `--text-35` line at the figure shown, as on the tempo strip. A two-marker warp is one flat line through
-   the dashed one. A drifting one is held between its rounded range, labelled at the right end (mono 10.5,
+   the dashed one. A drifting one is held between its rounded range, labeled at the right end (mono 10.5,
    `--text-40`); a steady one is drawn ±1 BPM around its figure, with no labels. Title
    `{markers} markers · {tempo note}`.
 5. **One lane per stem** (64px plot; gutter: short name 13px/500, provenance chip, a sub line 11.5px
@@ -69,7 +69,7 @@ Inside the 64px plot:
   `differs from 2:10` in its gutter sub line. "Parts" = the first marker that is not in the shared
   warp (time and beat within 1 ms / 0.001 beat).
 - **No sidecar** (None yet, Waiting for Live): no overview exists, so the plot is a 64px dashed box with
-  one centred line (see states).
+  one centerd line (see states).
 
 ## Zoom
 
@@ -100,7 +100,7 @@ the first stem warped on its own, else the first borrowed one, else the first la
    With no sidecar every value is `—` and notes are empty.
 3. **Provenance line** (13px `--text-75`, max 760px): the state's sentence (table below).
 4. **Controls**, under a stronger rule (`rgba(255,255,255,.16)`): two columns, **Re-apply crateside's
-   warp** · **Let Live analyse**, in the side stack's status + action shape: a label line (label left,
+   warp** · **Let Live analyze**, in the side stack's status + action shape: a label line (label left,
    `.outline` button right), then the status as one sentence. Both are always present. Where one does
    not apply, the button is left out and the status says why at `--text-40`. That way the user learns
    the control exists and what would make it apply.
@@ -111,7 +111,7 @@ tick style would show a difference that mostly isn't there.
 ## Whose warp it is (1d)
 
 Chips are monochrome, following the evidence badges: **filled** for the user's, **outlined** for
-borrowed, **dashed** for crateside's starter or Live's unsaved guess. Colour appears only for state:
+borrowed, **dashed** for crateside's starter or Live's unsaved guess. Color appears only for state:
 amber for waiting on the user, teal while crateside writes. Chip: 11px/500, padding 2px 8px, radius 999.
 
 | state | chip | gutter sub | provenance line |
@@ -141,7 +141,7 @@ warp, because it is now theirs; its history is carried by the sub line and the s
   - Starter / Live's analysis with no sibling warp: `Nothing to lend yet: no stem of this upload has a saved warp.`
   - None yet: `Nothing to re-apply.`
   - During either action: `Not while a change is under way.`
-- **Let Live analyse** is offered wherever a sidecar exists. None yet: `No warp file yet: Live has not opened this stem.`
+- **Let Live analyze** is offered wherever a sidecar exists. None yet: `No warp file yet: Live has not opened this stem.`
 
 **Re-apply crateside's warp**
 1. Offered: button `Re-apply`; status `Writes Instrumental - Clean's warp over yours again. Yours is
@@ -154,9 +154,9 @@ warp, because it is now theirs; its history is carried by the sub line and the s
 4. Done: state becomes *Borrowed*; the lane redraws on the shared markers; status at `--text` `Re-applied
    just now. Your previous warp is backed up.` (the time ages as relative time until the page is left).
 
-**Let Live analyse**
-1. Offered: button `Let Live analyse`; status `Sends this stem's warp file to the Recycle Bin, so Live
-   analyses it afresh with its own transients. crateside then puts the warp back.`
+**Let Live analyze**
+1. Offered: button `Let Live analyze`; status `Sends this stem's warp file to the Recycle Bin, so Live
+   analyzes it afresh with its own transients. crateside then puts the warp back.`
 2. Confirm: `Send Vocal - Full's warp file to the Recycle Bin? Until Live opens the stem again, it has no
    warp.` `.danger` **Send to Recycle Bin** · **Cancel**.
 3. Waiting for Live: chip amber; lane is the dashed amber box; label amber; status at `--text`
@@ -182,7 +182,7 @@ line selects its lane (no scroll, unless the lane is off-screen).
 - **Editing.** Flags are the handles: they drag along their lane, a click in the flag row adds one, the
   clip-start notch drags. Group edits apply to every stem on the shared warp. 8 bars is the edit zoom.
 - **#96, off the grid.** A lane of its own, `Off the grid`, between the tempo line and the stems: ms
-  offsets per 10 s window either side of a centre line, on the same axis. Offers to correct join the
+  offsets per 10 s window either side of a center line, on the same axis. Offers to correct join the
   detail's controls row as a third column.
 - The band's tempo strip and the tempo line say related things; if the warp view proves itself, the
   strip could go. Not in this round.
@@ -192,7 +192,7 @@ line selects its lane (no scroll, unless the lane is off-screen).
 - **Track details** (new subsection *Warp*): the section above, in short. One axis for the group,
   lanes, tempo line, flags-or-ticks at 9px, transients only zoomed, three zoom steps, the detail with
   seven facts, the two controls.
-- **Colour means state**: add the provenance chip set as the second monochrome example after the
+- **Color means state**: add the provenance chip set as the second monochrome example after the
   evidence badges: filled your warp · outlined borrowed · dashed starter / Live's analysis / none.
 - **Sample list**: *Where it is* is `Sample Staging · warped`; the source sibling is said by the warp lane.
 - **Tempo**: a marker's title tempo and the tempo line's labels go through `TempoFormat`.

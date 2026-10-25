@@ -41,7 +41,7 @@ domain where the boundary is a directory the user built.
 
 **`Warp guide` names the drum stem's role, and it is a role rather than a kind.** A stem
 produced to be looked at rather than heard, so warp markers can be placed against its
-transients, then deleted as a step of the workflow. Modelling it as "not a sample" was
+transients, then deleted as a step of the workflow. Modeling it as "not a sample" was
 considered and rejected: a drum stem is perfectly mixable, and the user can imagine keeping one.
 Calling it a non-sample would make that case a contradiction in the glossary instead of a
 deviation from it. **The distinguishing axis is retention, not role.**
@@ -60,7 +60,7 @@ release like this will never have one; writing `instrumental: true` on a track t
 have an `Instrumental - Full` file is the same overload this ADR exists to undo. It sits at the
 top level rather than inside `verdict`, because it is something the user says rather than
 something the agent concluded from evidence, and it is kept distinct from `input_kind`, which
-says *which file was analysed* — for one of these the analysed file genuinely is the full mix.
+says *which file was analyzed* — for one of these the analyzed file genuinely is the full mix.
 It records the **fact** rather than the plan ("separate drums only"), so it still explains itself
 when the workflow changes, and crateside derives the plan from it.
 
@@ -104,7 +104,7 @@ want: so the key reads sensibly on the rare occasion a drum stem is selected in 
 browser, and so the library is consistent. Never *mixed* still holds.
 
 Found by noticing `Rob Dougan - Furious Angels (Drums).flac` carrying `Key|C` and `Key|Minor`,
-and raised as a suspected bug. It was not one; the behaviour was already described in the
+and raised as a suspected bug. It was not one; the behavior was already described in the
 runner's own remarks. Recorded here because this ADR is where a reader would go to check, and it
 said the opposite.
 

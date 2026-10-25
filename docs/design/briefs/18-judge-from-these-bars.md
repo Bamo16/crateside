@@ -6,7 +6,7 @@ For a Claude Design session. The implementing agent ports your design to Blazor,
 and states, not code.
 
 Built against the commit that adds this brief. The rules as built are in `docs/design/DESIGN.md`
-(Warp view, Side stack, Settings, Colour means state, State chips), and your canvases are in
+(Warp view, Side stack, Settings, Color means state, State chips), and your canvases are in
 `docs/design/canvases/`; *Crateside Track Page* is Track details and the warp view's own brief is
 `14-warp-view.md`. The terms (window, direction, ear, section) are in `CONTEXT.md` under *Keys*; ADR
 0055 and its addenda are the decision. Nothing below is built yet.
@@ -31,7 +31,7 @@ A **window** is a stretch of the track detected on its own. Two kinds:
   detected*; crateside runs them unattended and resumes the judge once. The maintainer has not
   asked for those, and should be able to see that they happened and whose they were.
 
-Either way the windows become the verdict's **sections** (a label and its own tonal centre), and
+Either way the windows become the verdict's **sections** (a label and its own tonal center), and
 the direction is kept with the run.
 
 ## What the maintainer reads bars from
@@ -82,7 +82,7 @@ and the form says why.
   they are naming.
 - **Showing a range on the warp view.** A window is a bar span on the shared time axis. Does it
   appear on the ruler or as a band across the lanes, before, during and after the run? Should the
-  judge's windows look different from the maintainer's? (Colour means state, so likely by outline
+  judge's windows look different from the maintainer's? (Color means state, so likely by outline
   and fill, not by hue.)
 - **The cost.** How does the form say that this spends quota, once and plainly, without a modal?
   The side stack's pattern for destructive actions is a stronger rule and a `.danger` confirm; this

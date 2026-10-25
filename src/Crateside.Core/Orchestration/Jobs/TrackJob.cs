@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Crateside.Core.Orchestration.Jobs;
 
 /// <summary>
@@ -95,7 +97,9 @@ public enum JobStatus
     Failed,
 
     /// <summary>Stopped on purpose. Not a strike — the user's call is not the track's fault.</summary>
-    Cancelled,
+    // Written as it always was: the job files on disk say "Cancelled".
+    [JsonStringEnumMemberName("Cancelled")]
+    Canceled,
 }
 
 /// <summary>What a separation was launched to produce: how many files, and where.</summary>

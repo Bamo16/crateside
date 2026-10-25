@@ -169,8 +169,8 @@
     font-size: 11px;
 }
 
-/* The count keeps its meaning-colour only while the pill is not filled; on a filled pill it would
-   be colour on colour and unreadable. */
+/* The count keeps its meaning-color only while the pill is not filled; on a filled pill it would
+   be color on color and unreadable. */
 .pill.off .count.amber {
     color: var(--amber);
 }
@@ -419,7 +419,7 @@
     padding: 1px 6px;
 }
 
-/* A statement of fact rather than a finding, so it takes the same shape without the colour that
+/* A statement of fact rather than a finding, so it takes the same shape without the color that
    would put it in the same class as one. */
 .flag.neutral {
     color: var(--text-60);
@@ -442,7 +442,7 @@
     min-width: 0;
 }
 
-/* A modal verdict says so after its tag, outlined like a corroborating badge; no colour. */
+/* A modal verdict says so after its tag, outlined like a corroborating badge; no color. */
 .mode-badge {
     padding: 2px 4px 3px;
     border: 1px solid color-mix(in srgb, var(--text) 45%, transparent);

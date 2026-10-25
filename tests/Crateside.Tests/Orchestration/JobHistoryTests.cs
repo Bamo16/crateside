@@ -44,17 +44,17 @@ public sealed class JobHistoryTests
                 Update("a", JobStage.Separation, JobStatus.Running, Now.AddMinutes(-9)),
                 Update("a", JobStage.Separation, JobStatus.Failed, Now.AddMinutes(-8)),
                 Update("a", JobStage.Separation, JobStatus.Succeeded, Now.AddMinutes(-2)),
-                Update("a", JobStage.Handoff, JobStatus.Cancelled, Now.AddMinutes(-1)),
+                Update("a", JobStage.Handoff, JobStatus.Canceled, Now.AddMinutes(-1)),
             ],
             Now
         );
 
         Assert.Equal(
-            new StageTotal(JobStage.Separation, Done: 1, Failed: 1, Cancelled: 0),
+            new StageTotal(JobStage.Separation, Done: 1, Failed: 1, Canceled: 0),
             history.Stages[0]
         );
-        Assert.Equal(1, history.Stages.Single(stage => stage.Stage is JobStage.Handoff).Cancelled);
-        Assert.Equal("handoff cancelled", JobHistory.Describe(history.Latest[0]));
+        Assert.Equal(1, history.Stages.Single(stage => stage.Stage is JobStage.Handoff).Canceled);
+        Assert.Equal("handoff canceled", JobHistory.Describe(history.Latest[0]));
         Assert.Equal("separated", JobHistory.Describe(history.Latest[1]));
     }
 

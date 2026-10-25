@@ -1,7 +1,7 @@
 # Handoff 06: actions layout (row and Track details)
 
 Answers `docs/design/briefs/06-actions-layout.md`. Canvas: `Crateside Actions Layout.dc.html` (1a–1g).
-No new tokens, no new colours, only `.outline` / `.primary` / `.danger`.
+No new tokens, no new colors, only `.outline` / `.primary` / `.danger`.
 
 ## The decision
 
@@ -72,7 +72,7 @@ below dim and disable.
 
 ## Destructive (1c–1e)
 
-Start over is set apart by position and the stronger rule, not by colour. Its buttons are
+Start over is set apart by position and the stronger rule, not by color. Its buttons are
 `.outline` until the confirm step; the confirm is `.danger` (Swap source's confirm, Remove's
 confirm). The Remove confirm opens **below** its button in a bordered box (`1px rgba(255,255,255,.1)`,
 radius 8), sentence then `[Remove] [Keep]`.

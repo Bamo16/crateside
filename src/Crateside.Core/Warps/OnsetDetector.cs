@@ -43,9 +43,9 @@ public sealed class OnsetDetector(OnsetSettings? settings = null) : ITransientDe
 
         foreach (var peak in peaks)
         {
-            // The flux frame is centred on its window; the attack it saw starts before that.
-            var centre = peak * s.HopSize + s.WindowSize / 2;
-            var start = AttackStart(envelope, s.EnvelopeHop, centre, audio.SampleRate, s);
+            // The flux frame is centerd on its window; the attack it saw starts before that.
+            var center = peak * s.HopSize + s.WindowSize / 2;
+            var start = AttackStart(envelope, s.EnvelopeHop, center, audio.SampleRate, s);
             var position = Math.Clamp(start, 0, audio.Frames - 1);
 
             if (transients is [.., { Position: var lastPosition }] && position < lastPosition)
@@ -212,13 +212,13 @@ public sealed class OnsetDetector(OnsetSettings? settings = null) : ITransientDe
     private static int AttackStart(
         float[] envelope,
         int hop,
-        int centre,
+        int center,
         int sampleRate,
         OnsetSettings s
     )
     {
         var search = (int)(s.BacktrackSeconds * sampleRate / hop);
-        var around = Math.Clamp(centre / hop, 0, envelope.Length - 1);
+        var around = Math.Clamp(center / hop, 0, envelope.Length - 1);
         var peakFrom = around;
         var peakTo = Math.Min(
             envelope.Length - 1,

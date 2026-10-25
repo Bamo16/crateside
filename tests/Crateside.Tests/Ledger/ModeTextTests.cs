@@ -18,11 +18,11 @@ public sealed class ModeTextTests
         string sameNotes
     )
     {
-        var centre = new TonalCentre(tonic, mode);
+        var center = new TonalCenter(tonic, mode);
 
-        Assert.Equal($"{tonic} {mode} → {tag}", ModeText.Arrow(centre, false));
-        Assert.Equal(abbreviation, ModeText.Abbreviation(centre, false));
-        Assert.Contains($"Same notes as {sameNotes}.", ModeText.Reason(centre, false));
+        Assert.Equal($"{tonic} {mode} → {tag}", ModeText.Arrow(center, false));
+        Assert.Equal(abbreviation, ModeText.Abbreviation(center, false));
+        Assert.Contains($"Same notes as {sameNotes}.", ModeText.Reason(center, false));
     }
 
     [Theory]
@@ -30,12 +30,12 @@ public sealed class ModeTextTests
     [InlineData(DiatonicMode.Aeolian)]
     public void A_plain_verdict_adds_nothing_to_its_tag(DiatonicMode mode)
     {
-        var centre = new TonalCentre("A", mode);
+        var center = new TonalCenter("A", mode);
 
-        Assert.Null(ModeText.Lead(centre, false));
-        Assert.Null(ModeText.Arrow(centre, false));
-        Assert.Null(ModeText.Abbreviation(centre, false));
-        Assert.Null(ModeText.Reason(centre, false));
+        Assert.Null(ModeText.Lead(center, false));
+        Assert.Null(ModeText.Arrow(center, false));
+        Assert.Null(ModeText.Abbreviation(center, false));
+        Assert.Null(ModeText.Reason(center, false));
     }
 
     [Fact]
@@ -48,13 +48,13 @@ public sealed class ModeTextTests
     [Fact]
     public void A_mixed_verdict_is_tagged_by_its_harmony_and_says_so()
     {
-        var centre = new TonalCentre("A", DiatonicMode.Aeolian);
+        var center = new TonalCenter("A", DiatonicMode.Aeolian);
 
-        Assert.Equal("A mixed → A min", ModeText.Arrow(centre, true));
-        Assert.Equal("maj/min", ModeText.Abbreviation(centre, true));
+        Assert.Equal("A mixed → A min", ModeText.Arrow(center, true));
+        Assert.Equal("maj/min", ModeText.Abbreviation(center, true));
         Assert.Equal(
             "Major melody over minor harmony; tagged by the harmony.",
-            ModeText.Reason(centre, true)
+            ModeText.Reason(center, true)
         );
         Assert.Equal(
             "Minor melody over major harmony; tagged by the harmony.",
@@ -71,13 +71,13 @@ public sealed class ModeTextTests
     }
 
     [Fact]
-    public void The_hover_names_the_other_centres_by_section()
+    public void The_hover_names_the_other_centers_by_section()
     {
         var run = new LedgerRun
         {
             Timestamp = DateTimeOffset.UnixEpoch,
             Song = "a - b",
-            Centre = new("G", DiatonicMode.Mixolydian),
+            Center = new("G", DiatonicMode.Mixolydian),
             Sections =
             [
                 new("verse", new("G", DiatonicMode.Mixolydian)),
@@ -101,7 +101,7 @@ public sealed class ModeTextTests
                 {
                     Timestamp = DateTimeOffset.UnixEpoch,
                     Song = "a - b",
-                    Centre = new("A", DiatonicMode.Aeolian),
+                    Center = new("A", DiatonicMode.Aeolian),
                 }
             )
         );
@@ -117,7 +117,7 @@ public sealed class ModeTextTests
         var coverage = ModeText.Coverage(
             ["verse", "chorus"],
             [Verse, Chorus],
-            Verse.Centre,
+            Verse.Center,
             "G major"
         );
 
@@ -132,7 +132,7 @@ public sealed class ModeTextTests
         var coverage = ModeText.Coverage(
             ["verse"],
             [Verse, Chorus, Bridge],
-            Verse.Centre,
+            Verse.Center,
             "G major"
         );
 
@@ -147,7 +147,7 @@ public sealed class ModeTextTests
         var coverage = ModeText.Coverage(
             ["chorus"],
             [Verse, Chorus, Bridge],
-            Verse.Centre,
+            Verse.Center,
             "E minor"
         );
 
@@ -162,7 +162,7 @@ public sealed class ModeTextTests
         var coverage = ModeText.Coverage(
             ["bridge"],
             [Verse, Chorus, Bridge],
-            Verse.Centre,
+            Verse.Center,
             "C minor"
         );
 
@@ -191,7 +191,7 @@ public sealed class SourceCoverageTests
                 Song = "a - b",
                 SourceUrl = "https://music.youtube.com/watch?v=abcdefghijk",
                 Confidence = KeyConfidence.High,
-                Centre = new("G", DiatonicMode.Mixolydian),
+                Center = new("G", DiatonicMode.Mixolydian),
                 Sections =
                 [
                     new("verse", new("G", DiatonicMode.Mixolydian)),

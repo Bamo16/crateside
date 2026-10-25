@@ -47,13 +47,13 @@ the views, and running the workflow.
 ## Keys
 
 - **Verdict** — the judge's confidence-rated conclusion about a *song*'s key. It names a
-  **tonal centre**, and where the song moves, its **sections**; it may be **mixed**. A song-level
+  **tonal center**, and where the song moves, its **sections**; it may be **mixed**. A song-level
   fact: one verdict covers every stem of the song. Its tag is derived from it by the **collapse**
   and is never the verdict itself.
-- **Tonal centre** — a tonic and a **diatonic mode**: *A Dorian*, *E minor*. What the music
+- **Tonal center** — a tonic and a **diatonic mode**: *A Dorian*, *E minor*. What the music
   is, as a person transcribing it would name it.
 - **Diatonic mode** — one of the seven rotations of the major scale. A closed set; harmonic and
-  melodic minor are colour within Aeolian, not modes of their own. Only a human source can
+  melodic minor are color within Aeolian, not modes of their own. Only a human source can
   establish one, since every detector reports major or minor alone.
 
   | mode | quality |
@@ -61,15 +61,15 @@ the views, and running the workflow.
   | Ionian (major), Lydian, Mixolydian | major |
   | Aeolian (minor), Dorian, Phrygian, Locrian | minor |
 
-- **Section** — a part of a song with its own tonal centre: *A Dorian (verse), E minor
-  (chorus)*. A source's key covers the sections it analysed, not necessarily the song. The judge gives each a start time in seconds; older verdicts have none.
+- **Section** — a part of a song with its own tonal center: *A Dorian (verse), E minor
+  (chorus)*. A source's key covers the sections it analyzed, not necessarily the song. The judge gives each a start time in seconds; older verdicts have none.
 - **Mixed** — two modes on one tonic at once, such as a major melody over minor harmony. Its
   collapse follows the harmony.
-- **Collapse** — reducing a tonal centre to one of the 24 major and minor keys Ableton's Key
+- **Collapse** — reducing a tonal center to one of the 24 major and minor keys Ableton's Key
   tag admits, keeping the tonic: *A Dorian* → *A minor*, *G Mixolydian* → *G major*. Always
   shown beside the mode, never instead of it. The key with the same notes (*A Dorian* has
   *G major*'s) is next to the collapsed one on the **Camelot** wheel only for Aeolian, Lydian and
-  Mixolydian; for Dorian and Phrygian it is the relative major's neighbour (*A Dorian*: 8A → 9B;
+  Mixolydian; for Dorian and Phrygian it is the relative major's neighbor (*A Dorian*: 8A → 9B;
   *A Phrygian*: 8A → 7B), and for Locrian further off (*A Locrian*: 8A → 6B).
 - **Backer** — another detector that names the same key as keydetect. Whether keydetect has
   backers says more about its being right than its own confidence does.
@@ -87,7 +87,7 @@ the views, and running the workflow.
   above the judge's own interpretation.
 - **Source kind** — what an evidence source is worth on the tonic, a closed set:
   **authoritative** (human analysis, published sheet music), **corroborating** (human
-  transcription), **chord recogniser** (its chords are evidence, its key never is) and
+  transcription), **chord recognizer** (its chords are evidence, its key never is) and
   **algorithmic** (shares the detectors' failure modes, so corroboration only). A kind, not a rank.
 - **Confidence** — HIGH, MEDIUM or LOW on a verdict, from detector agreement plus corroboration
   by human sources. Governs whether a tag is recommended.
@@ -119,8 +119,8 @@ the views, and running the workflow.
 
 ## Pairing
 
-The domain of "what else can I play over this?". The **source** is the tonal centre of
-the thing the user already has in hand: its verdict's primary centre, a section's, or one picked
+The domain of "what else can I play over this?". The **source** is the tonal center of
+the thing the user already has in hand: its verdict's primary center, a section's, or one picked
 by hand; everything below describes candidates against it.
 
 - **Partner** — a key that pairs acceptably with the source key. Partnership is a
@@ -144,7 +144,7 @@ by hand; everything below describes candidates against it.
 - **Relationship** — what a partner *is* to the source, named only where it is one of two:
   **same key**, or **same notes** (a **same-notes key**, which for plain major and minor is the
   **relative**). Every other partner is described by its notes shared.
-- **Same-notes key** — a major or minor key whose seven notes are a tonal centre's, other than
+- **Same-notes key** — a major or minor key whose seven notes are a tonal center's, other than
   its collapse: *G major* and *E minor* for *A Dorian*. For Ionian and Aeolian it is the
   **relative**, and is called that. Shared with keydetect-harness.
 - **Relative** — the collapse's major or minor with the same notes: *C major* for *A minor*,
@@ -218,7 +218,7 @@ by hand; everything below describes candidates against it.
   positive is late. An **off-beat lock** is a grid about half a beat off, on the "and".
 - **Analysis file** — the `.asd` Ableton writes beside a sample; informally the **sidecar**,
   and `AnalysisFile` in code. Its *presence* means only that
-  Ableton analysed the file and says nothing about warping
+  Ableton analyzed the file and says nothing about warping
   ([ADR 0002](docs/adr/0002-there-is-no-warped-signal.md)); its **warp markers** are what
   describe the warp. Ableton writes the markers, and the **default clip**, only when *Save
   Default Clip* is pressed, so an analysis file with markers is a finished warp and one without is
@@ -257,7 +257,7 @@ by hand; everything below describes candidates against it.
   ([ADR 0046](docs/adr/0046-a-filed-tracks-warp-guide-is-kept-outside-ableton.md)).
 - **Ready to move** — a track whose staged samples all have their default clip saved: warped, with
   only the move to **the library** left.
-- **Clip colour** — the colour a staged stem's clip takes when dragged into a set, saved in its
+- **Clip color** — the color a staged stem's clip takes when dragged into a set, saved in its
   analysis file: its kind picks the family (drums, vocals, instrumentals) and its song the shade.
   It says nothing about the warp, which is the stem's **Collection**'s to say. crateside sets it on
   every saved analysis file in staging, the user's included
@@ -270,7 +270,7 @@ by hand; everything below describes candidates against it.
   ([ADR 0059](docs/adr/0059-a-sample-arrives-at-one-loudness.md)).
 - **Warp off clip** — the analysis file crateside writes for a staged stem that gets no **starter
   warp** (one tempo does not hold on its beats, or its tempo is not read yet): a saved clip over the
-  whole file with Warp off, carrying only its **clip colour** and **clip gain**. It is not a warp:
+  whole file with Warp off, carrying only its **clip color** and **clip gain**. It is not a warp:
   the stem still waits to be warped by hand, it never lends, a starter whose tempo holds or a lent
   warp replaces it, and it becomes the user's once Live saves over it
   ([ADR 0059](docs/adr/0059-a-sample-arrives-at-one-loudness.md),
@@ -278,7 +278,7 @@ by hand; everything below describes candidates against it.
 
 ## Tags
 
-- **Collection** — one of the seven coloured labels in Live's browser, numbered 1 to 7 and named
+- **Collection** — one of the seven colored labels in Live's browser, numbered 1 to 7 and named
   by the user. crateside puts each staged stem in the one for its warp state (*Check beat*,
   *Warped*, *Warp by hand*), taken away on import, and every stem of a track whose Key tag
   may mislead, or that the user marked as changing key, in *Key caveat*. *Mine* is the user's.
@@ -416,7 +416,7 @@ it. The two run types below are named after which of **evidence** and **verdict*
   ([ADR 0019](docs/adr/0019-a-track-has-many-sources-and-one-of-them-is-the-separation-source.md)).
 - **Evidence run** — the stage that produces the **evidence** for a track: running
   the detectors over the audio the download acquired. Deterministic, needs no
-  judgement, and contends for nothing scarce.
+  judgment, and contends for nothing scarce.
 - **Verdict run** — the stage that turns evidence into a **verdict**. The only
   stage that requires an agent, because weighing evidence and going to look for
   human corroboration is the only part of the workflow that genuinely needs one.

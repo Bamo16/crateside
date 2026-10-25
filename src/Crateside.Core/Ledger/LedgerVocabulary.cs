@@ -69,7 +69,7 @@ public static partial class LedgerVocabulary
         if (tonic?.Trim().Replace('♯', '#').Replace('♭', 'b') is not { Length: 1 or 2 } plain)
             return false;
 
-        var index = TonalCentre.Tonics.IndexOf(char.ToUpperInvariant(plain[0]).ToString());
+        var index = TonalCenter.Tonics.IndexOf(char.ToUpperInvariant(plain[0]).ToString());
 
         if (index < 0)
             return false;
@@ -85,7 +85,7 @@ public static partial class LedgerVocabulary
         if (index < 0)
             return false;
 
-        sharp = TonalCentre.Tonics[index % 12];
+        sharp = TonalCenter.Tonics[index % 12];
 
         return true;
     }
@@ -119,7 +119,7 @@ public static partial class LedgerVocabulary
         && ModeNamed.Match(text) is { Success: true } named
         && ParseMode(named.Groups["Mode"].Value) is { } mode
             ? NormalizeKey(
-                $"{named.Groups["Tonic"].Value} {(TonalCentre.IsMajor(mode) ? "major" : "minor")}"
+                $"{named.Groups["Tonic"].Value} {(TonalCenter.IsMajor(mode) ? "major" : "minor")}"
             )
             : null;
 

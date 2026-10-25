@@ -39,7 +39,7 @@ public sealed class YouTubeUrlTests
     [InlineData("vfBJjufAG1E")]
     [InlineData("https://youtu.be/vfBJjufAG1E")]
     [InlineData("https://www.youtube.com/watch?v=vfBJjufAG1E")]
-    public void A_youtube_reference_normalises_to_one_canonical_watch_url(string input)
+    public void A_youtube_reference_normalizes_to_one_canonical_watch_url(string input)
     {
         // The ledger refuses anything that is not an http(s) URL, so a bare ID has to become one
         // before it leaves crateside.

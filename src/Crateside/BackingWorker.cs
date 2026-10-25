@@ -90,7 +90,7 @@ public sealed class BackingWorker(
         using var cut = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
         var approved = corrections.WaitAsync(delay, cut.Token);
 
-        // Cancelled rather than abandoned, so the wait cannot swallow a later approval.
+        // Canceled rather than abandoned, so the wait cannot swallow a later approval.
         if (await Task.WhenAny(approved, marked) == marked)
             await cut.CancelAsync();
 

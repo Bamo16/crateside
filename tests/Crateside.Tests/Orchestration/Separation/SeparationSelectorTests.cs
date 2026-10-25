@@ -209,9 +209,9 @@ public sealed class SeparationSelectorTests : IDisposable
     }
 
     [Fact]
-    public void Cancelling_puts_a_track_back_in_line_rather_than_striking_it()
+    public void Canceling_puts_a_track_back_in_line_rather_than_striking_it()
     {
-        Jobs.Record("aaaaaaaaaaa", JobStage.Separation, JobStatus.Cancelled);
+        Jobs.Record("aaaaaaaaaaa", JobStage.Separation, JobStatus.Canceled);
 
         new SeparationSelector(Jobs).TryPickNext(
             View(Item("aaaaaaaaaaa")),
