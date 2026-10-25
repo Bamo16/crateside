@@ -1,0 +1,25 @@
+name: Feature
+description: Something crateside should do that it does not
+labels: [needs-triage]
+body:
+  - type: textarea
+    id: wanted
+    attributes:
+      label: What is wanted
+      description: What you want crateside to do, and the workflow it serves.
+    validations:
+      required: true
+  - type: textarea
+    id: seen
+    attributes:
+      label: How it was seen or measured
+      description: What you do by hand today, or the evidence that the need is real.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: What done looks like
+      description: What you could see or run to know it works.
+    validations:
+      required: true
