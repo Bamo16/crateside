@@ -55,6 +55,12 @@ while waiting on Live, teal only while crateside writes.
 IBM Plex Sans for text. IBM Plex Mono for every number, key, timestamp and count. A tilde and
 weight 400 mark an approximate figure, and nothing else.
 
+**The judge's text is typeset, not coloured** (ADR 0064, handoff 20). In prose a key, a chord, a
+Roman numeral attached to a chord and an r value stay in the body face at weight 600 in `--text`;
+Plex Mono is for tables and the chord progression only. HIGH, MEDIUM, LOW and WITHHELD in prose are
+all-small-caps with `letter-spacing: .05em`, uncoloured. Nothing else in a sentence is styled.
+`ProseText` does it; `Mono="true"` sets the same spans in Plex Mono for a table cell.
+
 ## Tempo
 
 Handoff 13, ADR 0049. Every BPM is a tempo and **one formatter writes it** (`TempoFormat`); a test
@@ -142,10 +148,54 @@ open, no fold, drawn when the track has samples.
   (`1 · 33–48`, `1 · read`, `Chorus · C♯ min`, `judge · bars 57–72`). Running, the form folds into
   a teal-bordered line: step chips, the step in teal, *You can leave…* right. Done, a neutral line
   says what was recorded; withheld again or failed reopens the form with its ranges.
+- **A window opens from its ruler tag** (handoff 20, #150): the tag of a recorded window is a
+  `<button>` (`aria-expanded`); clicking it fills the tag `--text` with `--ink` text and strokes
+  the band in every row at `--text` 90% with a 7% fill, and opens one **drawer** under the time
+  axis, 16px below, full width: `--surface`, 1px `--text` 16%, radius 8, with a 16×9 caret on its
+  top edge at the band's centre (kept 12px inside the plot). Three columns `250px 1fr auto`: who-chip,
+  label, span (`bars 28–36 · 1:53–2:20`), the window's why (`Given by you.` for yours) and what it
+  became; the readings, in the evidence panel's detector row with its heads; × and `‹ 2 of 3 ›`.
+  Clicking the tag again, ×, or Esc closes it. `WindowDrawer`.
+- **The key strip** (handoff 20): the last lane before the time axis, 52px, on the zoomed axis, with
+  a stronger top rule (`--text` 10%). The gutter says `Key` and a gist (`A Dorian, 3 centres, placed
+  from your windows · faint: the running estimate, 27 changes`), then each section with no time in
+  mono: `bridge · C Lyd: no time given`. **Bands** are the verdict's centres, outlined (1px `--text`
+  55%, radius 3, 44px), the short key in mono 11.5 where the band is 56px or wider (`verse · A
+  Dor`), the title always carrying it; fill 3%, 7% where a window placed it. **Placement**
+  (`KeyStrip.Plan`): one centre is one band across the track; a section from a window takes the
+  window's span; a section with a `Start` runs from it to the next boundary; the primary centre
+  fills everything else; a section with none of these is named in the gutter and never drawn. **The
+  underlay** is the raw running estimate along the strip's foot (y 30–47): each change a block to the
+  next, filled `--text` at r × 0.22 with a 3px tick, labelled in mono 9.5 where 40px wide, its
+  title `0:03.39 · E min · r 0.36`. `KeyLane`.
 - **The band invites it** only where the verdict is WITHHELD, or LOW with the whole-file detectors
   split: the Confidence cell adds the reason and an `.outline` *Judge from these bars ↓* that scrolls
   here and opens the form. Running, the cell holds the teal chip `● judging from bars` and
   `{spans} · {step} · started {time}`; recorded, `judged from bars 33–48, 82–96 · just now`.
+
+## Track details
+
+Handoff 20, `Evidence` (#150). The section's head is `Why {key in full}` (17/600; `Why no key` for a
+WITHHELD) over a 13px `--text-60` subtitle that ends `· 3 judge's windows on the timeline ↑`
+(underlined, scrolls to the warp view), with **Share** at the right. Two equal columns, gap 44px,
+one column below 56rem of panel (a container query).
+
+- **Left, the argument**: the sections lines, **Why this key** (14.5/1.62, max 62ch; an older verdict
+  gets a quiet line under the label), **Considered** (or **Still open** for a WITHHELD): a key in
+  mono in a 92px column, then its sentence at `--text-75`; **Human sources**; and **First pass:
+  withheld**, a fold under a `--line` rule, the text indented 18px and quieter than the verdict.
+- **Right, the evidence**: **What the detectors reported** with column heads (*Detector · Key ·
+  Score · Band · Runner-up*) and one line per detector (`DetectorRows`), the backer line, **Tonic
+  check**, **Chord progression** (`70 chords · loops folded`, `Show all 70` / `Fold the loops`; folded
+  runs in mono 13/500 joined by `·` with the count in 400 `--text-50`, a run never breaking
+  inside itself), **Tempo** and the *Recorded …* line.
+- **The band chip** is keydetect's flag as a fact, not a state: mono 10.5/500, 1px `--text` 30%,
+  radius 4, no colour, its tooltip the flag's own band (*unreliable band*, *the gray zone*, *usually
+  right, but watch for a relative-key swap*).
+- **Gone from the panel**: the Windows block (they open from the timeline), *Why the judge asked
+  for these windows*, the whole-file fold and *Key flicker* (the key strip's underlay).
+- **Share** sits in the head: `.outline`, a share icon, `Share ▾`. It is a disabled placeholder
+  until #152 builds the menu and the card.
 
 ## State chips
 
@@ -432,13 +482,29 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **A window in another centre is named in the recorded line** (`Vocal: G major.`) rather than
   counted as not agreeing, since it is a section of the song, not a dissent.
 - **Ruler tags run past a narrow band** rather than being cut to its width.
-- **Window blocks sit in the measurements column**, their left part 11rem rather than 250px, and
-  stack below 40rem. The whole file folds under them as a `<details>`.
 - **The form runs with no ranges**, judging the whole track again, so a plain re-judge needs no
   window.
 - **The form needs the full mix**: the working set's, else a source kept in the library. Without
   either, the cost line says crateside downloads it again first, without separating it, and the run
   shows a *Downloading* step.
+
+### Track details evidence (handoff 20, #150)
+
+- **Keys in prose are not mono.** The canvas sets them in Plex Mono at .92em; the maintainer wanted
+  prose to read as prose (Takyon's reasoning read like code), so they are the body face at 600 and
+  `--text`. Mono stays in tables, the Considered key column and the progression.
+- **The band chip's text and titles are the flag's own** (`r < 0.70`, `r 0.70–0.75`, `r > 0.75`;
+  *unreliable band*, *the gray zone*, *trust band*), not the canvas's guessed names. The Band column is
+  86px, not 70, for `r 0.70–0.75`.
+- **First pass: withheld has no date.** The ledger keeps the first pass's reasoning but not when it
+  ran, so the tail says only `asked for 3 windows`.
+- **A section with a `Start` runs to the next boundary** (the ledger has starts, not ends). Sections
+  with neither a start nor a window are named in the key strip's gutter, as designed; runs judged
+  before section times have only the windows' placements.
+- **Share is a disabled button**, with no menu, card or text export until #152.
+- **Not built, as the handoff says**: the chord lane, the transport and the playhead.
+- **Your note to the judge and your ear** keep their place, heading the right column, which the
+  canvas does not draw. The *Centres* lines stay above *Why this key*.
 
 ### Warp view (handoff 14, #97)
 
@@ -480,9 +546,6 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **Stage chips are all coloured by state** (done green, running teal, your turn amber, stopped red),
   with the current stage the only filled, bold chip. **No timestamps** under them: the Activity log
   carries times. The user asked for both on 2026-09-25.
-- **The evidence panel says who backs keydetect** (#113): a line under the detector table, *keydetect
-  is backed by both madmom and edma*, *by madmom only* or *by neither madmom nor edma*, in
-  `--text-75` at 0.88rem. Added without a design; a run detected before the port has no line.
 
 ### Tempo (handoff 13, #92)
 
