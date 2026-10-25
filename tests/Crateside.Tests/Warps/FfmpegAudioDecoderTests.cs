@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.ComponentModel;
 using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Warps;
@@ -31,10 +32,21 @@ public sealed class FfmpegAudioDecoderTests
     [Fact]
     public async Task Ffmpeg_decodes_a_flac_keeping_its_own_channels_and_rate()
     {
-        var audio = await new FfmpegAudioDecoder().DecodeAsync(
-            Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"),
-            TestContext.Current.CancellationToken
-        );
+        DecodedAudio? audio;
+
+        try
+        {
+            audio = await new FfmpegAudioDecoder().DecodeAsync(
+                Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"),
+                TestContext.Current.CancellationToken
+            );
+        }
+        catch (Win32Exception)
+        {
+            Assert.Skip("ffmpeg is not on PATH");
+
+            return;
+        }
 
         Assert.NotNull(audio);
         Assert.InRange(audio.Frames, 1, int.MaxValue);
