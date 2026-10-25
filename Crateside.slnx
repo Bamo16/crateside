@@ -1,11 +1,9 @@
 <Solution>
     <Folder Name="/src/">
-        <Project Path="../AbleKit/src/AbleKit/AbleKit.csproj" />
         <Project Path="src/Crateside.Core/Crateside.Core.csproj" />
         <Project Path="src/Crateside/Crateside.csproj" />
     </Folder>
     <Folder Name="/tests/">
-        <Project Path="../AbleKit/tests/AbleKit.Tests/AbleKit.Tests.csproj" />
         <Project Path="tests/Crateside.Tests/Crateside.Tests.csproj" />
     </Folder>
 </Solution>

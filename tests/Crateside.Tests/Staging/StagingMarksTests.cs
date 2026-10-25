@@ -165,7 +165,7 @@ public sealed class StagingMarksTests : IDisposable
         Assert.Empty(_marks.Recolour());
 
         var sidecar = AnalysisFile.Read($"{stem}.asd");
-        Assert.Equal(ClipColours.For(stem), sidecar.Clip.ColorIndex);
+        Assert.Equal(ClipColours.For(stem), sidecar.Clip.Color);
         Assert.False(_written.IsCratesides(stem));
     }
 
