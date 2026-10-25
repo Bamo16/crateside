@@ -141,9 +141,9 @@
                 @if (HasEvidenceSection)
                 {
                     <section id="evidence" class="evidence-section">
-                        <h2>Why @Verdicted</h2>
                         @if (_run is null)
                         {
+                            <h2>Why @Verdicted</h2>
                             <p class="summary">
                                 Judged @Verdict?.Timestamp.ToLocalTime().ToString("yyyy-MM-dd"), before crateside
                                 kept evidence. The verdict stands; its reasons were not saved.
@@ -151,8 +151,9 @@
                         }
                         else
                         {
-                            <p class="summary">@Summary(_run)</p>
-                            <Evidence Run="_run" Tempo="Tempo" />
+                            <Evidence Run="_run" Tempo="Tempo" Heading="@($"Why {HeadingKey}")" Summary="@Summary(_run)"
+                                      Withheld="Confidence is KeyConfidence.Withheld"
+                                      WarpViewLink="@(_row is null ? null : WarpViewLink)" />
                         }
                     </section>
                 }
@@ -195,6 +196,12 @@
 
     private string Verdicted =>
         Centre is { IsModal: true } modal ? ModeText.Named(modal) : KeyText.Spell(Key) ?? "this verdict";
+
+    /// <summary>The head of Why: the key in full, since the band keeps the short form beside it.</summary>
+    private string HeadingKey =>
+        Confidence is KeyConfidence.Withheld ? "no key"
+        : Centre is { } centre ? ModeText.Named(centre)
+        : Key?.Replace("#", "♯", StringComparison.Ordinal) ?? "this verdict";
 
     /// <summary>The verdict's tonal centre, where it is the one tagged.</summary>
     private TonalCentre? Centre =>
