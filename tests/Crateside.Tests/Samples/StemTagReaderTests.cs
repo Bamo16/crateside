@@ -29,10 +29,7 @@ public sealed class StemTagReaderTests : IDisposable
         Title("Before");
         Assert.Equal("Before", StemTagReader.Read(_path)?.Title);
 
-        // Same size on purpose, and a coarse disk clock can give the rewrite the same time, so
-        // move the time as a later rewrite would.
         Title("Afters");
-        File.SetLastWriteTimeUtc(_path, File.GetLastWriteTimeUtc(_path).AddMinutes(1));
         Assert.Equal("Afters", StemTagReader.Read(_path)?.Title);
     }
 
@@ -105,5 +102,9 @@ public sealed class StemTagReaderTests : IDisposable
         using var file = TagLib.File.Create(_path);
         file.Tag.Title = title;
         file.Save();
+
+        // The tags fit the file's padding, so its size never moves, and the clock ticks only every
+        // 15.6 ms on Windows: move the time as a later rewrite would.
+        File.SetLastWriteTimeUtc(_path, File.GetLastWriteTimeUtc(_path).AddMinutes(1));
     }
 }
