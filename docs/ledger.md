@@ -11,6 +11,7 @@ evidence behind it. A SQLite database, read and written only through `LedgerStor
 |---|---|
 | the database | `%LOCALAPPDATA%\crateside\ledger.db`, set by `Paths:LedgerDatabase` |
 | a backup per start, the last seven kept | `ledger-backups\ledger-<yyyyMMdd-HHmmss>.db` beside it |
+| a copy before a migration applies, never pruned | `ledger-backupsbefore-<migration>.db` |
 | the export, for reading by eye | `ledger.jsonl` beside it, rewritten after every change |
 
 None of it is in git. A backup is a whole database (SQLite's backup API), so restoring one is
@@ -19,7 +20,7 @@ copying it over `ledger.db` while crateside is stopped.
 ## The tables
 
 The schema is EF Core's, changed only by a migration in `Ledger/Migrations/` and applied at
-start. Enums are stored by name (`Dorian`, `ChordRecogniser`); times as round-trip text in UTC.
+start. Enums are stored by name (`Dorian`, `ChordRecognizer`); times as round-trip text in UTC.
 
 - **Runs**: one verdict each. `Song` is the identity a later run supersedes (latest
   `RecordedAt` wins), compared without case. The verdict is `Confidence` (`High`, `Medium`,
@@ -31,7 +32,7 @@ start. Enums are stored by name (`Dorian`, `ChordRecogniser`); times as round-tr
   written again.
 - **Sections**: a run's sections, each a `Label` with its own `Tonic` and `Mode`, and a `Start` in seconds into the track (null on runs recorded before ADR 0064).
 - **Sources**: what the judge consulted. `Kind` is `Authoritative`, `Corroborating`,
-  `Algorithmic`, `ChordRecogniser` or `Ear` (the user's own reading). `StatesKey` is what
+  `Algorithmic`, `ChordRecognizer` or `Ear` (the user's own reading). `StatesKey` is what
   the source said as a 24-key name, `StatesMode` the mode it named, `Sections` the labels
   it covered as a JSON list (null when it did not say).
 - **Windows**: stretches detected on their own, `Start` and `End` in seconds, with an

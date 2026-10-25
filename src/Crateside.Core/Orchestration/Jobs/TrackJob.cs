@@ -97,8 +97,6 @@ public enum JobStatus
     Failed,
 
     /// <summary>Stopped on purpose. Not a strike — the user's call is not the track's fault.</summary>
-    // Written as it always was: the job files on disk say "Cancelled".
-    [JsonStringEnumMemberName("Cancelled")]
     Canceled,
 }
 

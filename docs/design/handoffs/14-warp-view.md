@@ -69,7 +69,7 @@ Inside the 64px plot:
   `differs from 2:10` in its gutter sub line. "Parts" = the first marker that is not in the shared
   warp (time and beat within 1 ms / 0.001 beat).
 - **No sidecar** (None yet, Waiting for Live): no overview exists, so the plot is a 64px dashed box with
-  one centerd line (see states).
+  one centered line (see states).
 
 ## Zoom
 

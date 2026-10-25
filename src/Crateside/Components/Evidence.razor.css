@@ -192,7 +192,7 @@
 }
 
 .source.algorithmic .kind,
-.source.chordrecogniser .kind {
+.source.chordrecognizer .kind {
     border-style: dashed;
     color: var(--text-60);
 }

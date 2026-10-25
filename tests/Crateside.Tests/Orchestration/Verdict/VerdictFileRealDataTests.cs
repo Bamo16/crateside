@@ -66,7 +66,7 @@ public sealed class VerdictFileRealDataTests : IDisposable
                 artist = evidence.Artist,
                 title = evidence.Title,
                 confidence = confidence.ToString().ToUpperInvariant(),
-                centre = evidence.Center is { } center
+                center = evidence.Center is { } center
                     ? new { tonic = center.Tonic, mode = center.Mode.ToString().ToLowerInvariant() }
                     : null,
                 mixed = evidence.Mixed,

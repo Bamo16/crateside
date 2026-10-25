@@ -34,7 +34,7 @@ The trusted sites, with the `kind` to record:
 - **Musicnotes** (`authoritative` for the Original Published Key; `corroborating` for a transposed arrangement).
 - **Ultimate Guitar** (`corroborating`).
 - A **music-theory analysis** that argues from cadence or mode (`authoritative`), or only asserts (`corroborating`). A mode other than plain major or minor needs a source like this, or harmony that shows it.
-- **Chordify, ChordU** (`chord_recogniser`): their chords are evidence; their key is a machine's guess.
+- **Chordify, ChordU** (`chord_recognizer`): their chords are evidence; their key is a machine's guess.
 
 The work order may carry pages crateside found on these sites by artist and title, already read: each key and the section it covers is the page's own. Whether a page is this recording is your call; a remix, cover, live version or another song of the same name can sit in another key, and a tempo far from the track's is a sign. Search beyond them when they are missing, wrong or not enough.
 
@@ -54,7 +54,7 @@ Anything else, read the page itself: a search snippet can give one section's key
 
 ## The verdict file
 
-A tonal center is a tonic (C, C#, D … B) and one of the seven diatonic modes: ionian (plain major), dorian, phrygian, lydian, mixolydian, aeolian (plain minor), locrian. For a song that moves, give `sections`, each with its own center, and put the primary one in `centre`. Set `mixed` for two modes on one tonic, such as a major melody over aeolian harmony; `centre` is then the harmony's.
+A tonal center is a tonic (C, C#, D … B) and one of the seven diatonic modes: ionian (plain major), dorian, phrygian, lydian, mixolydian, aeolian (plain minor), locrian. For a song that moves, give `sections`, each with its own center, and put the primary one in `center`. Set `mixed` for two modes on one tonic, such as a major melody over aeolian harmony; `center` is then the harmony's.
 
 Give each section a `start`, in seconds into the track, read from the times of keydetect's `key_events` where the key changes. Leave it out only when the events do not show where the section begins.
 
@@ -65,7 +65,7 @@ Write UTF-8 JSON to the path the work order names, in this shape, leaving out wh
   "artist": "Daft Punk",
   "title": "Around the World",
   "confidence": "HIGH",
-  "centre": { "tonic": "E", "mode": "aeolian" },
+  "center": { "tonic": "E", "mode": "aeolian" },
   "mixed": false,
   "sections": [{ "label": "Verse", "tonic": "A", "mode": "dorian", "start": 0 }, { "label": "Chorus", "tonic": "E", "mode": "aeolian", "start": 62.5 }],
   "sources": [{ "url": "https://www.hooktheory.com/theorytab/view/daft-punk/around-the-world", "kind": "authoritative", "states": "A Dorian (verse), E minor (chorus)", "statesKey": "E minor", "statesMode": "aeolian", "sections": ["Verse", "Chorus"], "note": "two contributors" }],

@@ -75,7 +75,7 @@ public sealed class LedgerStoreTests : IDisposable
     public void Only_a_withheld_verdict_may_name_no_center()
     {
         Assert.Equal(
-            "centre",
+            "center",
             Assert.IsType<RecordOutcome.Refused>(Store.Record(Run() with { Center = null })).Field
         );
         Assert.IsType<RecordOutcome.Recorded>(
@@ -150,7 +150,7 @@ public sealed class LedgerStoreTests : IDisposable
 
         var source = Assert.Single(Store.EvidenceFor(Song)!.Sources);
 
-        Assert.Equal(SourceKind.ChordRecogniser, source.Kind);
+        Assert.Equal(SourceKind.ChordRecognizer, source.Kind);
         Assert.Equal("E major", source.StatesKey);
         Assert.Equal("mixolydian", source.StatesMode);
     }

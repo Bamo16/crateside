@@ -14,8 +14,6 @@ public sealed record VerdictFile
     public string? Title { get; init; }
     public string? Confidence { get; init; }
 
-    // The key the judging session writes, and the verdict files already on disk hold.
-    [JsonPropertyName("centre")]
     public CenterDto? Center { get; init; }
     public bool Mixed { get; init; }
     public IReadOnlyList<SectionDto>? Sections { get; init; }
@@ -71,7 +69,7 @@ public sealed record VerdictFile
         TonalCenter? center = null;
 
         if (Center is { } given && !TryRead(given.Tonic, given.Mode, out center, out var problem))
-            return new VerdictCheck.Unusable($"centre: {problem}");
+            return new VerdictCheck.Unusable($"center: {problem}");
 
         List<Section> sections = [];
 
@@ -92,7 +90,7 @@ public sealed record VerdictFile
             if (EvidenceSource.ParseKind(source.Kind) is not { } kind)
                 return new VerdictCheck.Unusable(
                     $"sources: kind \"{source.Kind}\" is not one of authoritative, corroborating, "
-                        + "chord_recogniser, algorithmic, ear"
+                        + "chord_recognizer, algorithmic, ear"
                 );
 
             sources.Add(

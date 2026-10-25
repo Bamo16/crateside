@@ -86,10 +86,10 @@ internal static partial class RunValidation
             );
 
         if (run is { Confidence: not KeyConfidence.Withheld, Center: null })
-            return new("centre", "a tonal center is required unless the verdict is WITHHELD");
+            return new("center", "a tonal center is required unless the verdict is WITHHELD");
 
         if (run is { Center: { } center } && !TonalCenter.Tonics.Contains(center.Tonic))
-            return new("centre.tonic", $"{center.Tonic} is not a tonic in the ledger's spelling");
+            return new("center.tonic", $"{center.Tonic} is not a tonic in the ledger's spelling");
 
         if (run is { SourceUrl: null, LocalSource: false })
             return new(
@@ -124,7 +124,7 @@ internal static partial class RunValidation
         if (run.Sources.Any(source => source.Kind is SourceKind.Unknown or SourceKind.Unclassified))
             return new(
                 "sources.kind",
-                "expected authoritative | corroborating | algorithmic | chord_recogniser | ear"
+                "expected authoritative | corroborating | algorithmic | chord_recognizer | ear"
             );
 
         foreach (var window in run.Windows)
@@ -182,7 +182,7 @@ s*
             // may never support a verdict.
             Kind =
                 Host(url) is { } host && ChordRecognizerHosts.Contains(host)
-                    ? SourceKind.ChordRecogniser
+                    ? SourceKind.ChordRecognizer
                     : source.Kind,
             StatesKey =
                 LedgerVocabulary.NormalizeKey(source.StatesKey)

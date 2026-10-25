@@ -258,6 +258,7 @@ public static class ServiceRegistration
         services.AddHostedService<JanitorWorker>();
 
         services.AddSingleton<JobStore>();
+        services.AddSingleton<JobStatusSpelling>();
         services.AddSingleton<IReopenedWork, ReopenedWork>();
         services.AddSingleton<DeletionLog>();
         services.AddSingleton<ActionLog>();
