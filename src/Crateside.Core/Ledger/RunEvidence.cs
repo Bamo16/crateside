@@ -56,6 +56,26 @@ public sealed record RunEvidence
     /// <summary>The reasoning of the first pass, which asked for windows; null on older runs, whose windows carry copies of it.</summary>
     public string? WithheldReasoning { get; init; }
 
+    /// <summary>The first pass's reasoning once: kept on the run, or the copy every judge-asked window carried before ADR 0064.</summary>
+    public string? FirstPass => WithheldReasoning ?? SharedWhy;
+
+    /// <summary>What the judge wanted <paramref name="window"/> to settle; null for yours, for one that never said, and for the first pass copied into each window of an older run.</summary>
+    public string? WhyOf(RunWindow window) =>
+        window is { AskedBy: not WindowAsker.User, Why: { Length: > 0 } why } && SharedWhy is null
+            ? why
+            : null;
+
+    private string? SharedWhy =>
+        WithheldReasoning is null
+        && Windows
+            .Where(window => window.AskedBy is not WindowAsker.User)
+            .Select(window => window.Why)
+            .ToList()
+            is [_, _, ..] whys
+        && whys.Distinct().ToList() is [{ Length: > 0 } why]
+            ? why
+            : null;
+
     /// <summary>
     /// Which file was analysed and what kind it was. Worth showing: a verdict reached on an
     /// instrumental is weaker, because the vocal anchors the tonic.

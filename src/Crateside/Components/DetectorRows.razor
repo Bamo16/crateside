@@ -1,0 +1,53 @@
+@using Crateside.Core.Ledger
+
+<div class="detectors">
+    @if (Heads)
+    {
+        <div class="row heads">
+            <span>Detector</span>
+            <span>Key</span>
+            <span class="score">Score</span>
+            <span>Band</span>
+            <span>Runner-up</span>
+        </div>
+    }
+    @foreach (var algorithm in Algorithms)
+    {
+        <div class="row">
+            <span class="name" title="@algorithm.Name">@algorithm.Label</span>
+            @if (algorithm.Error is { Length: > 0 } error)
+            {
+                <span class="problem wide">@error</span>
+            }
+            else
+            {
+                <span class="key">@if (algorithm.Key is { } key) { <ProseText Text="@key" Inline="true" Mono="true" /> } else { <text>—</text> }</span>
+                <span class="score">@algorithm.Confidence?.ToString("F3")</span>
+                <span>
+                    @if (algorithm.FlagChip is { } chip)
+                    {
+                        <span class="chip" title="@chip.Tooltip">@chip.Text</span>
+                    }
+                </span>
+                <span class="runner" title="@Runner(algorithm)">
+                    @if (algorithm.RunnerUpKey is { } runnerUp)
+                    {
+                        <ProseText Text="@runnerUp" Inline="true" Mono="true" />
+                        @((algorithm.RunnerUpRatio ?? algorithm.RunnerUpConfidence) is { } r ? $" {r:F3}" : null)
+                    }
+                </span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<AlgorithmResult> Algorithms { get; set; }
+
+    [Parameter]
+    public bool Heads { get; set; }
+
+    private static string? Runner(AlgorithmResult algorithm) =>
+        algorithm.Reranked is true ? "How close second place was. The chord rerank changed keydetect's answer." : "How close second place was.";
+}

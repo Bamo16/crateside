@@ -23,7 +23,11 @@ else
     [Parameter]
     public bool Inline { get; set; }
 
-    private static RenderFragment Spans(ProseParagraph paragraph) =>
+    /// <summary>Keys and chords in Plex Mono, for a table cell or the progression; prose sets them in the body face.</summary>
+    [Parameter]
+    public bool Mono { get; set; }
+
+    private RenderFragment Spans(ProseParagraph paragraph) =>
         @<text>@foreach (var span in paragraph.Spans)
         {
             switch (span.Kind)
@@ -35,7 +39,7 @@ else
                     <span class="confidence">@span.Text</span>
                     break;
                 default:
-                    <span class="mono">@span.Text</span>
+                    <span class="@(Mono ? "mono" : "token")">@span.Text</span>
                     break;
             }
         }</text>;

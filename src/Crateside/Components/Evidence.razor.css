@@ -1,45 +1,134 @@
-/* Two columns on a wide screen because the argument and the measurements are read for
-   different reasons — you read the argument, and you consult the numbers. Stacked below that,
-   argument first, so the reasoning is never buried under a table of correlations. */
+.panel {
+    container-type: inline-size;
+}
+
+/* The head: the question, what answers it, and Share. */
+.head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.head h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 13px;
+    color: var(--text-60);
+}
+
+.to-timeline {
+    color: var(--text-75);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.share {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+}
+
+.share:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.caret {
+    font-size: 10px;
+    color: var(--text-60);
+}
+
+/* The argument on the left, the evidence on the right. One column below ~56rem of panel. */
 .evidence {
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-    gap: 2rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 44px;
     padding: 1.25rem 0 0.5rem;
 }
 
-@media (max-width: 60rem) {
+@container (max-width: 56rem) {
     .evidence {
         grid-template-columns: minmax(0, 1fr);
         gap: 1.5rem;
     }
 }
 
-.evidence h3 {
+.evidence h3,
+.evidence h4 {
     margin: 0 0 0.6rem;
-    font-size: 0.8rem;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: var(--text-dim);
+    color: var(--text-60);
+    font-weight: 600;
 }
 
 .evidence h4 {
-    margin: 1.25rem 0 0.4rem;
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-dim);
-    font-weight: 600;
+    margin-top: 1.5rem;
+}
+
+.evidence h4.first {
+    margin-top: 0;
+}
+
+.argument > h3 {
+    margin-top: 1.5rem;
+}
+
+.argument > h3:first-child {
+    margin-top: 0;
 }
 
 .reasoning {
     margin: 0;
+    font-size: 14.5px;
+    line-height: 1.62;
 }
 
+.older {
+    margin: -0.25rem 0 0.6rem;
+    font-size: 12px;
+    color: var(--text-40);
+}
+
+.tonic-check {
+    font-size: 14.5px;
+    line-height: 1.62;
+}
+
+/* Considered: the key in a column, then why it was not the verdict. */
 .considered {
+    list-style: none;
     margin: 0;
-    padding-left: 1rem;
-    max-width: 70ch;
+    padding: 0;
+}
+
+.considered li {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 12px;
+    align-items: baseline;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--line);
+    font-size: 13.5px;
+    line-height: 1.55;
+}
+
+.candidate-key {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.candidate-why {
+    color: var(--text-75);
+    max-width: 62ch;
 }
 
 .muted {
@@ -123,7 +212,7 @@
 
 .centres {
     list-style: none;
-    margin: 0;
+    margin: 0 0 1.5rem;
     padding: 0;
 }
 
@@ -203,58 +292,50 @@
     margin-right: 0.4rem;
 }
 
-.tonic-check {
-    margin: 0 0 0.5rem;
+/* The first pass, superseded: quieter than the verdict, and folded. */
+.first-pass {
+    margin-top: 1.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--line);
 }
 
-
-/* Algorithms */
-.algorithms {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.algorithms th {
-    text-align: left;
+.first-pass summary {
+    cursor: pointer;
+    list-style: none;
+    font-size: 12.5px;
     font-weight: 500;
-    color: var(--text-dim);
-    padding: 0.3rem 0.75rem 0.3rem 0;
-    white-space: nowrap;
+    color: var(--text-75);
 }
 
-.algorithms td {
-    padding: 0.3rem 0.75rem 0.3rem 0;
+.first-pass summary::-webkit-details-marker {
+    display: none;
 }
 
-.algo-key {
-    font-weight: 600;
-    white-space: nowrap;
+.first-pass summary::before {
+    content: "▸ ";
 }
 
-.detail {
-    color: var(--text-dim);
-    font-size: 0.9rem;
-    width: 100%;
+.first-pass[open] summary::before {
+    content: "▾ ";
 }
 
-.flag {
-    margin-left: 0.4rem;
-    padding: 0.02rem 0.35rem;
-    border-radius: 3px;
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    white-space: nowrap;
-    background: var(--line);
+.tail {
+    font-weight: 400;
+    color: var(--text-50);
 }
 
-.flag.distrust {
-    color: var(--alert);
+.first-body {
+    margin: 0.6rem 0 0 18px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-60);
 }
 
-.flag.gray {
-    color: var(--warn);
+.first-body ::deep .token {
+    color: inherit;
 }
 
+/* The detectors' own words about themselves. */
 .backers {
     margin: 0.5rem 0 0;
     font-size: 0.88rem;
@@ -281,44 +362,61 @@
     font-size: 0.85rem;
 }
 
-.chords {
+/* The progression, folded to its loops: each run reads whole, then its count. */
+.chords-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 1.5rem;
+}
+
+.chords-head h4 {
     margin: 0;
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
-    line-height: 1.7;
 }
 
-.flicker-fold summary {
-    cursor: pointer;
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-dim);
-    font-weight: 600;
+.chords-count {
+    font-size: 12px;
+    color: var(--text-40);
 }
 
-.flicker-fold {
-    margin-top: 1.25rem;
-}
-
-.flicker {
-    list-style: none;
-    margin: 0.4rem 0 0;
+.link {
+    margin-left: auto;
     padding: 0;
-    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-    font-size: 0.82rem;
-    color: var(--text-dim);
-    max-height: 12rem;
-    overflow-y: auto;
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: 12px;
+    color: var(--text-75);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
 }
 
-.flicker .t {
-    display: inline-block;
-    min-width: 4.5rem;
+.chords {
+    margin: 0.5rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.8;
 }
 
-.flicker .r {
-    color: var(--muted);
+.chords .run {
+    white-space: nowrap;
+}
+
+.chords .repeats {
+    font-weight: 400;
+    color: var(--text-50);
+}
+
+.chords .sep {
+    color: var(--text-30);
+}
+
+.chords.all {
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--text-75);
 }
 
 .tempo {
@@ -397,16 +495,12 @@
     font-size: 0.8rem;
 }
 
-/* Judging from these bars (#116): the user's direction, then a block per window. */
+/* Judging from these bars (#116): the user's direction. */
 .direction {
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
-    margin-bottom: 1.25rem;
-}
-
-.direction h4 {
-    margin-top: 0;
+    margin-bottom: 1.5rem;
 }
 
 .note-to-judge {
@@ -425,99 +519,4 @@
 
 .ear-line .mono {
     color: rgba(236, 231, 220, 0.85);
-}
-
-/* Whose window it was is told by outline, as the warp view's bands are: yours solid, the judge's dashed. */
-.window {
-    display: grid;
-    grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
-    gap: 1.1rem;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-}
-
-.window.yours {
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    background: rgba(255, 255, 255, 0.025);
-}
-
-.window.judges {
-    border: 1px dashed rgba(255, 255, 255, 0.22);
-}
-
-@media (max-width: 40rem) {
-    .window {
-        grid-template-columns: minmax(0, 1fr);
-    }
-}
-
-.window-who {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.who-line {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.who {
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 1px 6px;
-    border-radius: 4px;
-}
-
-.yours .who {
-    color: var(--ink);
-    background: var(--text);
-    border: 1px solid var(--text);
-}
-
-.judges .who {
-    color: rgba(236, 231, 220, 0.85);
-    border: 1px dashed rgba(236, 231, 220, 0.45);
-}
-
-.window-label {
-    font-size: 13.5px;
-    font-weight: 500;
-}
-
-.window .span {
-    font-size: 12px;
-    color: var(--text-60);
-}
-
-.window .why {
-    font-size: 12.5px;
-    line-height: 1.45;
-    color: var(--text-60);
-}
-
-.window-readings {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.became {
-    font-size: 12.5px;
-    color: var(--text-75);
-}
-
-.whole-file {
-    margin-top: 0.75rem;
-}
-
-.whole-file > summary {
-    cursor: pointer;
-    font-size: 12.5px;
-    color: var(--text-60);
-    margin-bottom: 0.75rem;
 }
