@@ -9,7 +9,7 @@ namespace Crateside.Tests.Tempo;
 /// <summary>ADR 0049's consequences on the user's own warps and crateside's readings of them.</summary>
 public sealed class TrackTempoRealLibraryTests
 {
-    private static readonly CratesidePaths Paths = new();
+    private static readonly CratesidePaths Paths = RealPaths.Create();
     private static readonly WarpTempoReader Warps = new();
     private static readonly BeatReader Readings = new(
         new ProcessRunner(),

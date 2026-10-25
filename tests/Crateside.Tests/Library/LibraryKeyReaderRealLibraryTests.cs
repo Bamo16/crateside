@@ -12,7 +12,7 @@ namespace Crateside.Tests.Library;
 /// <summary>The key distribution over the real library.</summary>
 public sealed class LibraryKeyReaderRealLibraryTests
 {
-    private static readonly CratesidePaths Paths = new();
+    private static readonly CratesidePaths Paths = RealPaths.Create();
 
     [Fact]
     public void Every_track_is_counted_at_most_once()

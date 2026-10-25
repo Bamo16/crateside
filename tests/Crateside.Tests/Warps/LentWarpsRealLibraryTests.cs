@@ -5,7 +5,7 @@ namespace Crateside.Tests.Warps;
 
 public sealed class LentWarpsRealLibraryTests
 {
-    private static readonly CratesidePaths Paths = new();
+    private static readonly CratesidePaths Paths = RealPaths.Create();
 
     [Fact]
     public async Task A_staged_stem_still_holding_the_warp_crateside_lent_it_is_not_lent_it_again()

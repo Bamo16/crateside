@@ -111,7 +111,7 @@ public sealed class SourcelessSongsTests : IDisposable
     [Fact]
     public void Every_sourceless_song_in_the_real_library_gets_a_row()
     {
-        var paths = new CratesidePaths();
+        var paths = RealPaths.Create();
 
         Assert.SkipUnless(Directory.Exists(paths.LibraryFolder), "no library on this machine");
 

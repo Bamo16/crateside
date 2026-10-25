@@ -15,7 +15,7 @@ public sealed class StarterGateRealLibraryTests
     private const double WandersAt = 0.7;
     private const int MinToJudge = 20;
 
-    private static readonly CratesidePaths Paths = new();
+    private static readonly CratesidePaths Paths = RealPaths.Create();
     private static readonly BeatReader Readings = new(
         new ProcessRunner(),
         Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "beats.json")

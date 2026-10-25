@@ -7,7 +7,7 @@ namespace Crateside.Tests.Tempo;
 /// <summary>The retype decision against the warps in this machine's library (docs/notes/2026-10-13-retyping-warps-in-the-library.md).</summary>
 public sealed class TrueUpRealLibraryTests
 {
-    private static readonly CratesidePaths Paths = new();
+    private static readonly CratesidePaths Paths = RealPaths.Create();
 
     [Fact]
     public void A_warp_at_a_stable_tempo_between_whole_numbers_is_left()

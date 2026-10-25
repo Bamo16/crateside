@@ -76,7 +76,7 @@
         },
         {
             "label": "test",
-            "detail": "Run every test. The real-library tests assert against P:\\RYAN\\Ableton and the ledger, and skip if those are absent.",
+            "detail": "Run every test. The real-library tests assert against the Ableton folders chosen in Settings and the ledger, and skip if those are absent.",
             "type": "process",
             "command": "dotnet",
             "args": ["test", "--solution", "${workspaceFolder}/Crateside.slnx"],

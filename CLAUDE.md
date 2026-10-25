@@ -30,7 +30,7 @@ fetched a free format whose audio started 36 ms off (#133).
 drums) only when the question is how that detector does on that stem, and say so. A measurement on a
 stem standing in for the source is a shortcut that a filter's author cannot repeat like-for-like.
 
-Many tests **assert against the real library** — the Ableton roots under `P:\RYAN\Ableton`, the
+Many tests **assert against the real library** — the Ableton roots chosen in Settings, the
 ledger, this machine's working sets — and skip when those are absent. That has caught
 things fixtures could not, repeatedly. Prefer a real-data test over a mock when the question is
 "what is actually true on this machine".

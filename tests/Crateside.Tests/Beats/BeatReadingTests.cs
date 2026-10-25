@@ -190,7 +190,7 @@ public sealed class BeatReadingTests
     [Fact]
     public void A_kept_source_used_as_the_instrumental_is_read_too()
     {
-        var paths = new CratesidePaths();
+        var paths = RealPaths.Create();
         Assert.SkipUnless(
             Directory.Exists(paths.LibraryFolder),
             $"{paths.LibraryFolder} not present."

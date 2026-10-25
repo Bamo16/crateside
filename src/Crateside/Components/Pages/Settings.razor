@@ -610,13 +610,13 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                         <span>@folder.Name</span>
                         <span class="gist">@folder.Gist</span>
                     </div>
-                    <span class="path mono">@folder.Path</span>
+                    <span class="path mono">@(folder.Path is { Length: > 0 } path ? path : "Not set. Choose it with Change.")</span>
                     <div class="actions">
                         @if (folder.Place is not null)
                         {
                             <button class="outline" @onclick="() => _choosing = folder.Place">Change</button>
                         }
-                        <button class="outline" @onclick="() => Reveal(folder)">
+                        <button class="outline" disabled="@(folder.Path.Length is 0)" @onclick="() => Reveal(folder)">
                             @(folder.IsFile ? "Show in folder" : "Open")
                         </button>
                     </div>
