@@ -13,7 +13,7 @@ public sealed record HooktheoryTab
 
     public IReadOnlyList<TabSection> Sections { get; init; } = [];
 
-    /// <summary>The keys of the whole song as the site summarises them, such as <c>B dorian, B minor</c>.</summary>
+    /// <summary>The keys of the whole song as the site summarizes them, such as <c>B dorian, B minor</c>.</summary>
     public string? AllKeys { get; init; }
 
     /// <summary>The YouTube video the sections are synced to, often not the recording being judged.</summary>

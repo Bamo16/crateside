@@ -18,7 +18,7 @@ public class DrainSignal
         }
         catch (SemaphoreFullException)
         {
-            // Already signalled and not yet consumed — the worker is about to run anyway.
+            // Already signaled and not yet consumed — the worker is about to run anyway.
         }
     }
 

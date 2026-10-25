@@ -14,7 +14,7 @@ killed. It never fired: 5 of 5 interruptions were abandoned, 0 adopted. Measured
 - **`dotnet run`** holds the app in a Windows job. Measured again on 2026-09-28: its limit flags are
   `0x2000`, *kill on job close*, with neither breakaway flag, so no child can leave the job, and
   every process in it dies when `dotnet` exits. The built exe launched directly runs in no job.
-- **crateside's own graceful shutdown** killed the process tree and recorded `cancelled`, by design
+- **crateside's own graceful shutdown** killed the process tree and recorded `canceled`, by design
   ("quitting cleanly discards the work here").
 
 And one piece was missing: nothing released an adopted run. Its job stayed `Running` until the next

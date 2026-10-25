@@ -26,14 +26,14 @@ It shows only the key verdict's **evidence**:
   and an *Open on YouTube* link
 - **Why this key**: the judging agent's reasoning (prose), then a list of human sources (web pages,
   sheet music), each with a stance (agrees / dissents / says nothing), a kind (authoritative /
-  corroborating / chord recogniser / algorithmic), and what it stated
+  corroborating / chord recognizer / algorithmic), and what it stated
 - **What the detectors reported**: a small table of three key detectors (name, key, confidence or
   runner-up), a "relative split" warning when two of them landed on relative keys, a tonic check,
   the chord progression, and a key-events timeline
 
 ## What is wrong with it (the user's words, from #21)
 
-- **It reads as a recolour, not a design.** The visual language was applied to a layout that
+- **It reads as a recolor, not a design.** The visual language was applied to a layout that
   predates it.
 - **It buries its own answer.** The page exists because a key was decided. The **key**, the
   **confidence** and the **BPM** are the conclusion and should read as the conclusion. Today they
@@ -114,7 +114,7 @@ Defined in `src/Crateside/wwwroot/app.css`. The short version:
 - **One dark, warm palette.** `--bg #141310`, `--surface #1b1a15`, `--raised #23211a`, text
   `--text #ece7dc`, with alpha tiers `--text-75/60/50` for prose and `--text-40/30` for labels
   and decoration only (below AA).
-- **Colour means something, and nothing else is coloured.** Teal `#6fc7d6` = the machine is
+- **Color means something, and nothing else is colored.** Teal `#6fc7d6` = the machine is
   working. Amber `#e8b45a` = it is the user's turn. Red `#e07a6d` = needs attention. Green
   `#7fcf9a` = done, only ever done.
 - **IBM Plex Sans** for text, **IBM Plex Mono** for every number, key, timestamp and count (read as

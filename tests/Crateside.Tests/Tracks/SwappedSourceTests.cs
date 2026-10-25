@@ -94,8 +94,8 @@ public sealed class SwappedSourceTests : IDisposable
         TrackJob[] jobs =
         [
             Job(Original, JobStage.Separation, JobStatus.Succeeded, "00:37:49"),
-            Job(Original, JobStage.Handoff, JobStatus.Cancelled, "00:22:02"),
-            Job(Original, JobStage.Tagging, JobStatus.Cancelled, "00:22:02"),
+            Job(Original, JobStage.Handoff, JobStatus.Canceled, "00:22:02"),
+            Job(Original, JobStage.Tagging, JobStatus.Canceled, "00:22:02"),
             Job(Replacement, JobStage.Handoff, JobStatus.Succeeded, "00:39:43"),
             Job(Replacement, JobStage.Tagging, JobStatus.Succeeded, "02:43:36"),
         ];
@@ -109,7 +109,7 @@ public sealed class SwappedSourceTests : IDisposable
         TrackJob[] jobs =
         [
             Job(Original, JobStage.Separation, JobStatus.Succeeded, "00:37:49"),
-            Job(Original, JobStage.Handoff, JobStatus.Cancelled, "00:22:02"),
+            Job(Original, JobStage.Handoff, JobStatus.Canceled, "00:22:02"),
         ];
 
         Assert.Equal([Original], ReopenedTracks.From(jobs, Ledger()));
@@ -121,7 +121,7 @@ public sealed class SwappedSourceTests : IDisposable
         TrackJob[] jobs =
         [
             Job(Replacement, JobStage.Handoff, JobStatus.Succeeded, "00:39:43"),
-            Job(Original, JobStage.Handoff, JobStatus.Cancelled, "01:00:00"),
+            Job(Original, JobStage.Handoff, JobStatus.Canceled, "01:00:00"),
         ];
 
         Assert.Equal([Original], ReopenedTracks.From(jobs, Ledger()));
@@ -130,7 +130,7 @@ public sealed class SwappedSourceTests : IDisposable
     [Fact]
     public void A_track_the_ledger_does_not_know_is_still_judged_by_its_own_video_id()
     {
-        TrackJob[] jobs = [Job("zzzzzzzzzzz", JobStage.Handoff, JobStatus.Cancelled, "00:22:02")];
+        TrackJob[] jobs = [Job("zzzzzzzzzzz", JobStage.Handoff, JobStatus.Canceled, "00:22:02")];
 
         Assert.Equal(["zzzzzzzzzzz"], ReopenedTracks.From(jobs, Ledger()));
     }

@@ -19,7 +19,7 @@ public static class ModeTags
     public static bool IsKeyword(string keyword) =>
         keyword.Split('|') is ["Key", var value] && IsModal(value);
 
-    /// <summary><c>Key|Dorian</c> for a modal centre; null where the collapse says it all.</summary>
-    public static string? KeywordFor(TonalCentre? centre) =>
-        centre is { IsModal: true, Mode: var mode } ? $"Key|{mode}" : null;
+    /// <summary><c>Key|Dorian</c> for a modal center; null where the collapse says it all.</summary>
+    public static string? KeywordFor(TonalCenter? center) =>
+        center is { IsModal: true, Mode: var mode } ? $"Key|{mode}" : null;
 }

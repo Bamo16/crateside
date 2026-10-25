@@ -9,7 +9,7 @@ warped library instrumental, CPU only. The write-up for Fil is
 
 429 warped instrumentals: 370 steady (364 single-marker), 23 with changes, 36 unsteady, by
 `WarpTempo`. By the user's estimate (owned, not measured), a warp's offset is within 5–10 ms of the
-beat, occasionally ~25 ms, and its octave is a judgement, not a fact. So phase is reported in bands
+beat, occasionally ~25 ms, and its octave is a judgment, not a fact. So phase is reported in bands
 and half or double counts as right.
 
 **Ableton's transients agree with the warps** (measured). `OnSets.Positions` and

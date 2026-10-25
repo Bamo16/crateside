@@ -171,17 +171,17 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
         return null;
     }
 
-    /// <summary>A centre's tag as a key: its collapse.</summary>
-    public static MusicKey Of(TonalCentre centre) =>
+    /// <summary>A center's tag as a key: its collapse.</summary>
+    public static MusicKey Of(TonalCenter center) =>
         AllKeys.Single(key =>
-            key.Chromatic == centre.Chromatic
-            && key.Mode == (TonalCentre.IsMajor(centre.Mode) ? Mode.Major : Mode.Minor)
+            key.Chromatic == center.Chromatic
+            && key.Mode == (TonalCenter.IsMajor(center.Mode) ? Mode.Major : Mode.Minor)
         );
 
-    /// <summary>The key as a centre on Ionian or Aeolian.</summary>
-    public static TonalCentre CentreOf(MusicKey key) =>
+    /// <summary>The key as a center on Ionian or Aeolian.</summary>
+    public static TonalCenter CenterOf(MusicKey key) =>
         new(
-            TonalCentre.Tonics[key.Chromatic],
+            TonalCenter.Tonics[key.Chromatic],
             key.Mode is Mode.Major ? DiatonicMode.Ionian : DiatonicMode.Aeolian
         );
 

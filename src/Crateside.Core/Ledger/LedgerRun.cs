@@ -39,23 +39,23 @@ public sealed record LedgerRun
     /// </summary>
     public string? SourceVideoId { get; private init; }
 
-    /// <summary>The verdict's primary tonal centre, or null when withheld.</summary>
-    public TonalCentre? Centre { get; init; }
+    /// <summary>The verdict's primary tonal center, or null when withheld.</summary>
+    public TonalCenter? Center { get; init; }
 
     public bool Mixed { get; init; }
 
     public IReadOnlyList<Section> Sections { get; init; } = [];
 
-    /// <summary>The tagged key in ASCII spelling (<c>G# major</c>): the collapse of <see cref="Centre"/>.</summary>
-    public string? Key => Centre?.Collapsed;
+    /// <summary>The tagged key in ASCII spelling (<c>G# major</c>): the collapse of <see cref="Center"/>.</summary>
+    public string? Key => Center?.Collapsed;
 
-    public DiatonicMode? Mode => Centre?.Mode;
+    public DiatonicMode? Mode => Center?.Mode;
 
     /// <summary>True when the tagged key loses the mode: the track is modal, and <see cref="Key"/> keeps only its tonic.</summary>
-    public bool IsCollapsed => Centre is { IsModal: true };
+    public bool IsCollapsed => Center is { IsModal: true };
 
     /// <summary>The key as the song actually plays it (<c>D Dorian</c>), when it is modal.</summary>
-    public string? ModalKey => Centre is { IsModal: true, Name: var name } ? name : null;
+    public string? ModalKey => Center is { IsModal: true, Name: var name } ? name : null;
 
     public KeyConfidence Confidence { get; init; }
 

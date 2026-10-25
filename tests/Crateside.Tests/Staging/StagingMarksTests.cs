@@ -156,27 +156,27 @@ public sealed class StagingMarksTests : IDisposable
     }
 
     [Fact]
-    public void A_saved_warp_takes_its_stems_colour_and_stays_the_users()
+    public void A_saved_warp_takes_its_stems_color_and_stays_the_users()
     {
         var stem = Stem("Song (Drums).flac", "Drums");
         Sidecar(stem, markerBeat: 0);
 
-        Assert.Equal([stem], _marks.Recolour());
-        Assert.Empty(_marks.Recolour());
+        Assert.Equal([stem], _marks.Recolor());
+        Assert.Empty(_marks.Recolor());
 
         var sidecar = AnalysisFile.Read($"{stem}.asd");
-        Assert.Equal(ClipColours.For(stem), sidecar.Clip.Color);
+        Assert.Equal(ClipColors.For(stem), sidecar.Clip.Color);
         Assert.False(_written.IsCratesides(stem));
     }
 
     [Fact]
-    public void A_starter_recoloured_is_still_crateside_s_to_replace()
+    public void A_starter_recolored_is_still_crateside_s_to_replace()
     {
         var stem = Stem("Song (Vocal - Full).flac", "Vocal - Full");
         Sidecar(stem, markerBeat: 1);
         _written.RecordStarter(stem);
 
-        Assert.Equal([stem], _marks.Recolour());
+        Assert.Equal([stem], _marks.Recolor());
 
         Assert.True(_written.IsStarter(stem));
     }
@@ -187,7 +187,7 @@ public sealed class StagingMarksTests : IDisposable
         var stem = Stem("Song (Drums).flac", "Drums");
         Sidecar(stem, markerBeat: 0, saved: false);
 
-        Assert.Empty(_marks.Recolour());
+        Assert.Empty(_marks.Recolor());
     }
 
     private static int[] CollectionsOf(FolderInfo info, string path) =>

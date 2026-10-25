@@ -40,7 +40,7 @@ Two consequences follow directly, and they are the point:
 The filter pills narrow one list instead of addressing five, so a track that stops matching
 disappears from the view the user chose rather than reappearing somewhere they have to go and find.
 
-**The copy cannot drift from what it describes.** The chip label, its colour, and the `Next`
+**The copy cannot drift from what it describes.** The chip label, its color, and the `Next`
 sentence are all derived from the same `TrackState` on the same record. The design supplied them
 as a table; deriving them in one place is what stops that table becoming three tables that
 disagree.

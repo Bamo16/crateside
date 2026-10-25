@@ -6,7 +6,7 @@ Back-filled on 2026-09-25 from the Design session's comment on #21, which was th
 
 The design is in the attached zip, at `canvases/Crateside Track Page.dc.html`. Open it in a browser; it needs `support.js` beside it. **Turn 2 (artboards 2a–2c) is on top and supersedes turn 1 where they differ.** Turn 1 (1a–1i) still carries the full Done layout and the other seven states.
 
-It was drawn against `7d6f916`: `Song.razor`, `Evidence.razor(.css)`, `PageHeader`, `BrandNav`, `app.css`. No new tokens; nothing new is coloured.
+It was drawn against `7d6f916`: `Song.razor`, `Evidence.razor(.css)`, `PageHeader`, `BrandNav`, `app.css`. No new tokens; nothing new is colored.
 
 ### Name
 - Page: **Track details**. Row link: **Track details** (replaces *Why this key*). Tab title: `{name} · crateside`.
@@ -19,7 +19,7 @@ It was drawn against `7d6f916`: `Song.razor`, `Evidence.razor(.css)`, `PageHeade
    - confidence: "judged {date}"
    - BPM: beatdetect's figure and whether it's a half/double or a conflict
    
-   The fourth cell holds the state chip, the "what happens next" sentence, and a "Why {key} ↓" anchor to the evidence. Colour follows state only; the BPM goes amber when the track is ready to warp, as on Tracks.
+   The fourth cell holds the state chip, the "what happens next" sentence, and a "Why {key} ↓" anchor to the evidence. Color follows state only; the BPM goes amber when the track is ready to warp, as on Tracks.
 3. **Stage flow** (2a, 2c). A strip attached under the band (`#17160f`, rounded bottom corners only). It shows the **current pass** as chips joined by short rules, each finished chip with its date and time beneath.
    - Chip states: ✓ done (neutral) · ● running (teal filled, **pulsing**, the only animation on the page) · ● your turn (amber) · ○ not yet · – skipped (dashed, 55% opacity) · ■ stopped (red outline for parked, red filled for gave up, with the reason or strike count in the label).
    - Stages: Download · Detect · Judge · Separate · Stage & tag · Warp.

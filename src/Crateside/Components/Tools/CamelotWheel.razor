@@ -11,7 +11,7 @@
 </svg>
 
 @code {
-    private const double Centre = 160;
+    private const double Center = 160;
     private const double Gap = 0.012;
 
     private static readonly (Mode Mode, double Inner, double Outer)[] Rings =
@@ -68,7 +68,7 @@
         );
 
     private static (double X, double Y) Point(double radius, double angle) =>
-        (Centre + radius * Math.Sin(angle), Centre - radius * Math.Cos(angle));
+        (Center + radius * Math.Sin(angle), Center - radius * Math.Cos(angle));
 
     private static string F(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 

@@ -34,7 +34,7 @@ foreach ($m in $rx.Matches($css)) {
 Set-Content -Path "src\Crateside\wwwroot\fonts.css" -Value (($out -join "`n`n") + "`n") -Encoding utf8NoBOM
 ```
 
-**The user-agent matters.** Google Fonts serves `woff2` only to a browser it recognises; with
+**The user-agent matters.** Google Fonts serves `woff2` only to a browser it recognizes; with
 PowerShell's default agent it returns TTF, which is several times the size for no benefit. Put the
 header comment back on `fonts.css` afterwards — the script above writes only the `@font-face`
 blocks.

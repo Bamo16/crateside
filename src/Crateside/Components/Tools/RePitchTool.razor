@@ -35,7 +35,7 @@
             @for (var shift = Max; shift >= -Max; shift--)
             {
                 var n = shift;
-                var lands = Centre?.Transposed(n);
+                var lands = Center?.Transposed(n);
 
                 <tr class="@Row(n)" @onclick="() => Choose(n)">
                     <td class="numeric mono shift">@MashupPartner.FormatShift(n)</td>
@@ -74,7 +74,7 @@
     </table>
 
     <p class="hint">
-        @if (Centre is not null && Tempo is null)
+        @if (Center is not null && Tempo is null)
         {
             <text>No BPM yet: the keys fill, the BPMs wait.</text>
         }
@@ -96,7 +96,7 @@
     private string? _copiedNote;
 
     [Parameter]
-    public TonalCentre? Centre { get; set; }
+    public TonalCenter? Center { get; set; }
 
     /// <summary>The track's tempo, or the one typed; each shift is written as it would be.</summary>
     [Parameter]
@@ -126,14 +126,14 @@
             new[]
             {
                 shift is 0 ? "reference" : null,
-                Centre is not null ? "selectable" : null,
+                Center is not null ? "selectable" : null,
                 shift == Shift && shift is not 0 ? "chosen" : null,
             }.OfType<string>()
         );
 
     private async Task Choose(int shift)
     {
-        if (Centre is null)
+        if (Center is null)
             return;
 
         await OnShift.InvokeAsync(shift == Shift ? 0 : shift);

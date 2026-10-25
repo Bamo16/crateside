@@ -9,7 +9,7 @@ The clip start crateside writes is only a bar line near the start of the file. T
 saved for the library carries the maintainer's clip start, which only they can choose; the
 starter's job is to make that a matter of picking the right bar.
 
-This page describes the current behaviour and is edited in place whenever that changes. Why it
+This page describes the current behavior and is edited in place whenever that changes. Why it
 works this way is in the ADRs listed at the end.
 
 ## What the maintainer is left with
@@ -24,7 +24,7 @@ works this way is in the ADRs listed at the end.
 
 - **`Warps:StarterWarps`**, changed from Settings while crateside runs and kept in
   `warp-settings.json`, which wins over appsettings:
-  - *Off*: nothing is written, and Live analyses the stem itself.
+  - *Off*: nothing is written, and Live analyzes the stem itself.
   - *On the grid* (the default): the marker on a beat, numbered within its bar, and the clip
     starting on the bar line.
 
@@ -35,14 +35,14 @@ works this way is in the ADRs listed at the end.
 ## When it runs
 
 - **At handoff**, while the stems are still in the working set (`HandoffSidecars`). Each sidecar is
-  written as its stem lands in staging, so a stem never sits there unanalysed.
+  written as its stem lands in staging, so a stem never sits there unanalyzed.
 - **Over staging when Staging or the library changes, and every ten minutes besides**
   (`WarpLending`, [ADR 0060](adr/0060-the-file-workers-wake-on-a-change-and-the-timer-is-the-net.md)), for what changes later: a sibling saved, the
   setting changed, a stem put in staging by hand. Within a run, a stem is looked at again only
   when its files, its siblings' sidecars, or the tempo or downbeat it would be given changed;
   after a restart every stem is looked at again. Either way a stem that already holds the warp it
   would be lent, from the same sibling, or a starter with the same marker, is left as it is.
-- **Never while Live is analysing a stem** whose sidecar was recycled from the warp view
+- **Never while Live is analyzing a stem** whose sidecar was recycled from the warp view
   (#97, showing each stem's warp in Track details).
 
 **Order of precedence:** the maintainer's own warp, which is never touched; then a lent warp; then a
@@ -100,7 +100,7 @@ replaces a lent warp or the maintainer's own.
      off. That bar line is usually before the audio starts;
    - the stem's own waveform and transients;
    - its clip gain to the loudness target (ADR 0059);
-   - its colour by kind.
+   - its color by kind.
 
    The stem goes in its Collection (table above).
 
@@ -108,7 +108,7 @@ replaces a lent warp or the maintainer's own.
 
 | situation | what the stem gets |
 |---|---|
-| `StarterWarps` is *Off* | nothing; Live analyses it |
+| `StarterWarps` is *Off* | nothing; Live analyzes it |
 | a sibling holds a saved warp | the lent warp, or nothing if lending is off |
 | no instrumental, kept source or karaoke stem | Warp off |
 | no reading yet | Warp off, until a reading arrives |

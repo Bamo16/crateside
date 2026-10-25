@@ -40,7 +40,7 @@ vocals sit on most keys. It is not evidence either way.
 
 ## Houshou Marine – A Horny Money World (run 541)
 
-**The windows.** Two, both labelled *Chorus*: bars 33–48 (60.1–86.6 s) and 82–96 (141.2–166.0 s).
+**The windows.** Two, both labeled *Chorus*: bars 33–48 (60.1–86.6 s) and 82–96 (141.2–166.0 s).
 The maintainer's recollection is that only the two choruses carry much harmonic content. No note
 to the judge was given.
 
@@ -54,7 +54,7 @@ to the judge was given.
 madmom wavers between them. The windows did not settle the detectors; they kept the disagreement
 inside the choruses. What settled it was the chord stream, in the whole track and in both windows:
 G♯ is a major chord that resolves into C♯m, a V–i cadence, so the detectors that name G♯ are
-reading the dominant as the tonic. The judge also found a chord-recogniser page whose capo-4
+reading the dominant as the tonic. The judge also found a chord-recognizer page whose capo-4
 guitar shapes transpose to the same C♯m–G♯–A–D♯m7♭5. No authoritative source covers this song, so
 the verdict is **C♯ minor, MEDIUM**, with a section for each chorus (both C♯ minor).
 

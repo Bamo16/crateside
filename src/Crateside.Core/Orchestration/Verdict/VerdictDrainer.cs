@@ -89,7 +89,7 @@ public sealed class VerdictDrainer(
                 result switch
                 {
                     { IsSuccess: true } => JobStatus.Succeeded,
-                    { IsAgentUnavailable: true } => JobStatus.Cancelled,
+                    { IsAgentUnavailable: true } => JobStatus.Canceled,
                     _ => JobStatus.Failed,
                 },
                 error: result.Error
@@ -206,15 +206,15 @@ public sealed class VerdictDrainer(
         {
             var result = await runner.RunAsync(order, ct);
 
-            // Cancelled, not Failed: a session that never ran is not this track's fault, and
-            // Cancelled carries no strike. The ordinary stage then pauses, since a further attempt
+            // Canceled, not Failed: a session that never ran is not this track's fault, and
+            // Canceled carries no strike. The ordinary stage then pauses, since a further attempt
             // would return instantly on every track in the queue; the spend-down holds itself.
             if (result.IsAgentUnavailable)
             {
                 jobs.Record(
                     item.VideoId,
                     JobStage.Verdict,
-                    JobStatus.Cancelled,
+                    JobStatus.Canceled,
                     error: result.Error
                 );
 

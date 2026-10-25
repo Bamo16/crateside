@@ -69,7 +69,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
     {
         GiveWorkingSet();
         Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
-        Jobs.Record(VideoId, JobStage.Handoff, JobStatus.Cancelled, error: "re-cut requested");
+        Jobs.Record(VideoId, JobStage.Handoff, JobStatus.Canceled, error: "re-cut requested");
 
         Assert.Equal(0, Janitor.Sweep());
         Assert.Single(Set.VideoIds);

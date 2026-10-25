@@ -89,12 +89,12 @@ public sealed class JobStoreTests : IDisposable
     }
 
     [Fact]
-    public void Cancelling_is_not_a_strike()
+    public void Canceling_is_not_a_strike()
     {
         var store = Store();
 
         store.Record(VideoId, JobStage.Separation, JobStatus.Running);
-        var job = store.Record(VideoId, JobStage.Separation, JobStatus.Cancelled);
+        var job = store.Record(VideoId, JobStage.Separation, JobStatus.Canceled);
 
         Assert.Equal(0, job.Strikes);
     }

@@ -3,7 +3,7 @@ using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Warps;
 
-public sealed class ClipColoursTests : IDisposable
+public sealed class ClipColorsTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -11,7 +11,7 @@ public sealed class ClipColoursTests : IDisposable
         Guid.NewGuid().ToString("n")
     );
 
-    public ClipColoursTests() => Directory.CreateDirectory(_root);
+    public ClipColorsTests() => Directory.CreateDirectory(_root);
 
     public void Dispose()
     {
@@ -19,25 +19,23 @@ public sealed class ClipColoursTests : IDisposable
     }
 
     [Fact]
-    public void Drums_are_one_colour_whatever_the_song()
+    public void Drums_are_one_color_whatever_the_song()
     {
         Assert.Equal(
             ClipColor.At(1, 2),
-            ClipColours.For(Stem("One (Drums).flac", "Drums", "aaaaaaaaaaa"))
+            ClipColors.For(Stem("One (Drums).flac", "Drums", "aaaaaaaaaaa"))
         );
         Assert.Equal(
             ClipColor.At(1, 2),
-            ClipColours.For(Stem("Two (Drums).flac", "Drums", "bbbbbbbbbbb"))
+            ClipColors.For(Stem("Two (Drums).flac", "Drums", "bbbbbbbbbbb"))
         );
     }
 
     [Fact]
     public void A_songs_vocal_and_instrumental_take_their_own_families()
     {
-        var vocal = ClipColours.For(
-            Stem("Song (Vocal - Full).flac", "Vocal - Full", "abcdefghijk")
-        );
-        var instrumental = ClipColours.For(
+        var vocal = ClipColors.For(Stem("Song (Vocal - Full).flac", "Vocal - Full", "abcdefghijk"));
+        var instrumental = ClipColors.For(
             Stem("Song (Instrumental - Full).flac", "Instrumental - Full", "abcdefghijk")
         );
 
@@ -51,12 +49,12 @@ public sealed class ClipColoursTests : IDisposable
         var full = Stem("Song (Vocal - Full).flac", "Vocal - Full", "abcdefghijk");
         var clean = Stem("Song (Vocal - Clean).flac", "Vocal - Clean", "abcdefghijk");
 
-        Assert.Equal(ClipColours.For(full), ClipColours.For(clean));
-        Assert.Equal(ClipColours.For(full), ClipColours.For(full));
+        Assert.Equal(ClipColors.For(full), ClipColors.For(clean));
+        Assert.Equal(ClipColors.For(full), ClipColors.For(full));
     }
 
     [Fact]
-    public void A_kept_source_is_coloured_as_the_instrumental_it_is_used_as()
+    public void A_kept_source_is_colored_as_the_instrumental_it_is_used_as()
     {
         var source = Stem("Song.flac", preset: null, "abcdefghijk");
         var instrumental = Stem(
@@ -65,7 +63,7 @@ public sealed class ClipColoursTests : IDisposable
             "abcdefghijk"
         );
 
-        Assert.Equal(ClipColours.For(instrumental), ClipColours.For(source));
+        Assert.Equal(ClipColors.For(instrumental), ClipColors.For(source));
     }
 
     [Fact]
@@ -73,10 +71,7 @@ public sealed class ClipColoursTests : IDisposable
     {
         var source = Stem("Theme (1998 - 2006).flac", preset: null, "abcdefghijk");
 
-        Assert.Contains(
-            ClipColours.For(source)!.Value.Index,
-            (int[])[7, 8, 10, 11, 20, 21, 22, 24]
-        );
+        Assert.Contains(ClipColors.For(source)!.Value.Index, (int[])[7, 8, 10, 11, 20, 21, 22, 24]);
     }
 
     private string Stem(string name, string? preset, string videoId)

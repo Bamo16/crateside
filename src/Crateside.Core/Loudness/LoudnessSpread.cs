@@ -50,7 +50,7 @@ public sealed record LoudnessSpread(
                     break;
                 default:
                     if (gains.For(path) is { } gain)
-                        tally.Levelled.Add(
+                        tally.Leveled.Add(
                             new LoudnessSample(NameOf(path, preset, kind), 20 * Math.Log10(gain))
                         );
                     break;
@@ -78,12 +78,12 @@ public sealed record LoudnessSpread(
 
     private sealed class Tally
     {
-        public List<LoudnessSample> Levelled { get; } = [];
+        public List<LoudnessSample> Leveled { get; } = [];
         public int BelowFloor { get; set; }
         public int Unreadable { get; set; }
         public int NotRead { get; set; }
 
-        public LoudnessGroup Group() => new(Levelled, BelowFloor, Unreadable, NotRead);
+        public LoudnessGroup Group() => new(Leveled, BelowFloor, Unreadable, NotRead);
     }
 }
 
@@ -92,7 +92,7 @@ public sealed record LoudnessSample(string Name, double GainDb);
 public sealed record LoudnessBin(int FromDb, int Count);
 
 public sealed record LoudnessGroup(
-    IReadOnlyList<LoudnessSample> Levelled,
+    IReadOnlyList<LoudnessSample> Leveled,
     int BelowFloor,
     int Unreadable,
     int NotRead
@@ -100,7 +100,7 @@ public sealed record LoudnessGroup(
 {
     private const int Extremes = 5;
 
-    public int Count => Levelled.Count;
+    public int Count => Leveled.Count;
 
     public double? Median => Percentile(0.5);
 
@@ -113,10 +113,10 @@ public sealed record LoudnessGroup(
     {
         get
         {
-            if (Levelled.Count is 0)
+            if (Leveled.Count is 0)
                 return [];
 
-            var counts = Levelled
+            var counts = Leveled
                 .GroupBy(sample => (int)Math.Floor(sample.GainDb))
                 .ToDictionary(group => group.Key, group => group.Count());
             var from = Math.Min(0, counts.Keys.Min());
@@ -134,7 +134,7 @@ public sealed record LoudnessGroup(
     /// <summary>The biggest boosts, largest first.</summary>
     public IReadOnlyList<LoudnessSample> Boosts =>
         [
-            .. Levelled
+            .. Leveled
                 .Where(sample => sample.GainDb > 0)
                 .OrderByDescending(sample => sample.GainDb)
                 .Take(Extremes),
@@ -143,20 +143,20 @@ public sealed record LoudnessGroup(
     /// <summary>The biggest cuts, largest first.</summary>
     public IReadOnlyList<LoudnessSample> Cuts =>
         [
-            .. Levelled
+            .. Leveled
                 .Where(sample => sample.GainDb < 0)
                 .OrderBy(sample => sample.GainDb)
                 .Take(Extremes),
         ];
 
-    public int Beyond(double db) => Levelled.Count(sample => Math.Abs(sample.GainDb) > db);
+    public int Beyond(double db) => Leveled.Count(sample => Math.Abs(sample.GainDb) > db);
 
     private double? Percentile(double fraction)
     {
-        if (Levelled.Count is 0)
+        if (Leveled.Count is 0)
             return null;
 
-        var sorted = Levelled.Select(sample => sample.GainDb).Order().ToArray();
+        var sorted = Leveled.Select(sample => sample.GainDb).Order().ToArray();
         var rank = fraction * (sorted.Length - 1);
         var below = (int)Math.Floor(rank);
         var above = (int)Math.Ceiling(rank);

@@ -4,7 +4,7 @@ using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.WorkLists;
 
-/// <summary>An added source renamed and moved to the library is still recognised as fetched.</summary>
+/// <summary>An added source renamed and moved to the library is still recognized as fetched.</summary>
 public sealed class AddedSourceRenameRealLibraryTests
 {
     private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";

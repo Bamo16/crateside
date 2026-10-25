@@ -36,7 +36,7 @@ public sealed class VerdictFileTests : IDisposable
             )
             .Run;
 
-        Assert.Equal(new TonalCentre("A#", DiatonicMode.Aeolian), run.Centre);
+        Assert.Equal(new TonalCenter("A#", DiatonicMode.Aeolian), run.Center);
     }
 
     [Fact]

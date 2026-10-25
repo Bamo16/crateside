@@ -37,7 +37,7 @@ public sealed class LedgerStoreTests : IDisposable
     private static RunRecord Run(
         string? url = $"https://music.youtube.com/watch?v={Judged}",
         KeyConfidence confidence = KeyConfidence.High,
-        TonalCentre? centre = null
+        TonalCenter? center = null
     ) =>
         new()
         {
@@ -47,7 +47,7 @@ public sealed class LedgerStoreTests : IDisposable
             Title = "Furious Angels",
             SourceUrl = url,
             Confidence = confidence,
-            Centre = centre ?? new TonalCentre("A", DiatonicMode.Dorian),
+            Center = center ?? new TonalCenter("A", DiatonicMode.Dorian),
         };
 
     [Fact]
@@ -72,14 +72,14 @@ public sealed class LedgerStoreTests : IDisposable
     }
 
     [Fact]
-    public void Only_a_withheld_verdict_may_name_no_centre()
+    public void Only_a_withheld_verdict_may_name_no_center()
     {
         Assert.Equal(
             "centre",
-            Assert.IsType<RecordOutcome.Refused>(Store.Record(Run() with { Centre = null })).Field
+            Assert.IsType<RecordOutcome.Refused>(Store.Record(Run() with { Center = null })).Field
         );
         Assert.IsType<RecordOutcome.Recorded>(
-            Store.Record(Run(confidence: KeyConfidence.Withheld) with { Centre = null })
+            Store.Record(Run(confidence: KeyConfidence.Withheld) with { Center = null })
         );
     }
 
@@ -94,7 +94,7 @@ public sealed class LedgerStoreTests : IDisposable
     [Fact]
     public void A_section_start_comes_back_and_a_missing_one_stays_missing()
     {
-        var chorus = new TonalCentre("E", DiatonicMode.Aeolian);
+        var chorus = new TonalCenter("E", DiatonicMode.Aeolian);
 
         Store.Record(Run() with { Sections = [new("Verse", chorus), new("Chorus", chorus, 62.5)] });
 
@@ -111,7 +111,7 @@ public sealed class LedgerStoreTests : IDisposable
             Store.Record(
                 Run() with
                 {
-                    Sections = [new("Verse", new TonalCentre("E", DiatonicMode.Aeolian), -1)],
+                    Sections = [new("Verse", new TonalCenter("E", DiatonicMode.Aeolian), -1)],
                 }
             )
         );
@@ -131,7 +131,7 @@ public sealed class LedgerStoreTests : IDisposable
     }
 
     [Fact]
-    public void A_chord_recogniser_is_filed_as_one_whatever_it_was_called()
+    public void A_chord_recognizer_is_filed_as_one_whatever_it_was_called()
     {
         Store.Record(
             Run() with
@@ -161,7 +161,7 @@ public sealed class LedgerStoreTests : IDisposable
         Store.Record(
             Run() with
             {
-                Sections = [new Section("Chorus", new TonalCentre("E", DiatonicMode.Aeolian))],
+                Sections = [new Section("Chorus", new TonalCenter("E", DiatonicMode.Aeolian))],
                 Windows = [new RunWindow(53.5, 80.0, "Chorus", WindowAsker.User)],
                 Direction = "Judge the choruses; the verses have no harmony.",
                 Sources =
@@ -179,7 +179,7 @@ public sealed class LedgerStoreTests : IDisposable
 
         var evidence = Store.EvidenceFor(Song)!;
 
-        Assert.Equal("E", Assert.Single(evidence.Sections).Centre.Tonic);
+        Assert.Equal("E", Assert.Single(evidence.Sections).Center.Tonic);
         Assert.Equal(
             new RunWindow(53.5, 80.0, "Chorus", WindowAsker.User),
             Assert.Single(evidence.Windows)
@@ -229,7 +229,7 @@ public sealed class LedgerStoreTests : IDisposable
             Run() with
             {
                 RecordedAt = DateTimeOffset.Parse("2026-10-20T00:00:00+00:00"),
-                Centre = new TonalCentre("C", DiatonicMode.Ionian),
+                Center = new TonalCenter("C", DiatonicMode.Ionian),
             }
         );
 

@@ -44,7 +44,7 @@ flags 19; `wander ≥ 1.0` catches 25 and falsely flags 27.
 Requiring both, `segments > 1 and wander ≥ W`, catches 26 / 25 / 24 of the unsteady and falsely
 flags 15 / 15 / 14 steady at W = 0.5 / 0.7 / 1.0. At 0.5 or 0.7 that is on the rule's numbers. It
 was found by sweeping after the named flags had failed, and it sits on the limit (15 of 359): so a
-fit to this set, *guessed* to generalise and not tested outside it.
+fit to this set, *guessed* to generalize and not tested outside it.
 
 ## Other findings
 

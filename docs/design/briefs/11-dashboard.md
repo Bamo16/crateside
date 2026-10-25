@@ -23,7 +23,7 @@ The user's direction, in short:
 - Design it **as you would for a customer if this were your product**: practical and modern,
   following current dashboard practice, not decoration.
 - **Maybe customizable.** He is unsure. Give a recommendation (see *Open questions*).
-- The normal viewport is a **maximised Chrome window on a 1440p or 4K monitor**. Use the width.
+- The normal viewport is a **maximized Chrome window on a 1440p or 4K monitor**. Use the width.
   It must still hold up narrower, but wide is the norm, not the exception.
 
 ## The detector panel was a misunderstanding
@@ -109,7 +109,7 @@ all of it deserves a place.
 
 ## Constraints
 
-- No new tokens, and nothing newly coloured (`DESIGN.md`). Teal = the machine is working, amber =
+- No new tokens, and nothing newly colored (`DESIGN.md`). Teal = the machine is working, amber =
   your turn, as on the Tracks page.
 - The bar-table style (key, genre, tempo) is the house style for counts. Reuse it where it fits.
 - Buttons are the existing `.outline` / `.primary` / `.danger`. Pills exist for choices.

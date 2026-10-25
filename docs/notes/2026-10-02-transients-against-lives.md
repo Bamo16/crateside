@@ -11,7 +11,7 @@ note measures it against the transients Live detected for the same audio.
 
 Every sidecar under Mashup Samples and Sample Staging whose `OriginalFileSize` still matches its
 audio file: **958 of 975** (measured). The other 17 describe audio that has changed since Live
-analysed it, *Many Men*'s pair among them. Their waveforms disagree with the file now on disk.
+analyzed it, *Many Men*'s pair among them. Their waveforms disagree with the file now on disk.
 Decoding with crateside's `FfmpegAudioDecoder` reproduces Live's waveform bit for bit on every
 current file checked (two fixture WAVs, seven staged and finished FLACs), so a mismatch is a stale
 sidecar, not a decode.
@@ -34,7 +34,7 @@ Spectral flux on the mono mix: a 1,024-sample Hann window every 256 samples, log
 magnitudes up to 8 kHz, each compared against the previous frame widened by one bin. A peak counts
 when it is the highest within 30 ms, stands 0.02 of the file's strongest above the average of the
 surrounding 100 ms, and is at least 70 ms from the last one. Each is then placed on the loudness
-envelope: the floor up to 40 ms before the peak, the peak up to 20 ms after the flux frame's centre,
+envelope: the floor up to 40 ms before the peak, the peak up to 20 ms after the flux frame's center,
 and the transient **where the rise crosses halfway between them in decibels**. Energy is the flux
 peak over the file's strongest.
 

@@ -42,7 +42,7 @@ enforced in code but never in *scheduling*.
 function.** Concretely:
 
 **1. crateside decides, and crateside launches.** The canonical URL, the
-premium/format judgement, batch selection, stem destination routing and queue cleanup
+premium/format judgment, batch selection, stem destination routing and queue cleanup
 all move to crateside, which already computes or owns each of them. A "run this batch"
 button in the Queue view starts the work.
 
@@ -96,7 +96,7 @@ declared script."
 **7. crateside gains persistent job state — the first non-derived state in the
 system.** An append-only `%APPDATA%\crateside\jobs.jsonl`, last-line-wins per job id,
 mirroring the `runs.jsonl` idiom. It exists because "in progress", "failed at 04:12",
-and "cancelled" are **not derivable from the filesystem**, and because the app is
+and "canceled" are **not derivable from the filesystem**, and because the app is
 restarted constantly during development.
 
 **8. Separation is single-flight, and orphans are adopted rather than killed.** The
@@ -142,7 +142,7 @@ the only constraint rather than one of two.
   is one loop rather than a scheduler plus a button.
 - ~~**A pause control is kept, for a different reason.** Unnoticeable is not silent: with a
   live microphone, fan noise is a real reason to stop for an hour.~~ That is an occasional
-  judgement, not a gate on every batch. *(The microphone was never real — see **The
+  judgment, not a gate on every batch. *(The microphone was never real — see **The
   correction had the same defect** below. The pause is kept; only its justification is
   withdrawn.)*
 - **One track per invocation, not one batch.** `separate` does accept many inputs and
@@ -171,7 +171,7 @@ own documentation, and keytag ADR 0003 — in two of which it was framed as *the
 that is actually true*, i.e. it occupied the slot reserved for the lesson learned.
 
 **The pause survives; only its justification is withdrawn.** Whether to leave the GPU
-alone right now is an occasional judgement belonging to the person whose machine it is,
+alone right now is an occasional judgment belonging to the person whose machine it is,
 and it is now recorded with no stated reason at all. That is deliberate: an empty slot
 invites nobody to reason from it, whereas a plausible-sounding one invites everybody to.
 
@@ -227,7 +227,7 @@ discards the premise that keytag is the detection tool, for no gain.
 ## Consequences
 
 - **`SKILL.md` shrinks to judgment**: weigh the evidence, corroborate, record. It
-  loses URL choice, format judgement, download, separation, routing and queue
+  loses URL choice, format judgment, download, separation, routing and queue
   management. The destination is a skill that receives evidence and returns a verdict.
 - **This is staged, not done in one step.** The orchestrator (job store, background
   service, interlock, headless invocation, button) is identical either way and is

@@ -45,14 +45,14 @@ sounds *too* weird.
 - **The shift carries into Partners.** Choosing a shift in Re-Pitch (−1) makes its landing key
   (A♯ minor) the key Partners works from. Make it clear which key Partners is using: the track's
   own, or the shifted one, and by how much.
-- **Other ways of organising or navigating the keys**, if you see one. He can't recall
+- **Other ways of organizing or navigating the keys**, if you see one. He can't recall
   relationships beyond relative major and minor, which is what Partners is for. A Camelot wheel,
   grouping by relationship, or switching to the relative key in one click are all fair game.
   Propose what serves the scenario above.
 
 ## The viewport
 
-A **maximised Chrome window on a 1440p or 4K monitor** is the norm. Today the Re-Pitch controls
+A **maximized Chrome window on a 1440p or 4K monitor** is the norm. Today the Re-Pitch controls
 spread across the full width with the track search alone at the far right. Lay the page out for
 the wide case, and let it fold to a single column when narrow.
 
@@ -65,7 +65,7 @@ the wide case, and let it fold to a single column when narrow.
 
 ## Constraints
 
-- No new tokens, and nothing newly coloured (`DESIGN.md`).
+- No new tokens, and nothing newly colored (`DESIGN.md`).
 - Two decimals for arrangement BPMs (the point of Re-Pitch); whole numbers everywhere else.
 - Buttons are `.outline` / `.primary` / `.danger`. The slider, select and pills exist already.
 - The routes `/tools/partners` and `/tools/repitch` exist and can change. Say what they become.

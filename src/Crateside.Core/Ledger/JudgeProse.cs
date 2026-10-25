@@ -21,7 +21,7 @@ public sealed record ProseParagraph(IReadOnlyList<ProseSpan> Spans)
 
 /// <summary>
 /// Typesets the judge's text at render time: strips Markdown, splits paragraphs, and spells keys,
-/// chords and detectors one way. It changes only what it recognises with certainty (ADR 0064).
+/// chords and detectors one way. It changes only what it recognizes with certainty (ADR 0064).
 /// </summary>
 public static partial class JudgeProse
 {

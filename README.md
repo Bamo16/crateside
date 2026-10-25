@@ -76,7 +76,7 @@ judging, and how much of the current Claude quota window is used.
 
 ## Things it deliberately does not do
 
-- **It never guesses that a file is warped.** An `.asd` sidecar means Ableton analysed
+- **It never guesses that a file is warped.** An `.asd` sidecar means Ableton analyzed
   a file, not that you warped it, so crateside does not read them. Presence in
   the library is the signal ([ADR 0002](docs/adr/0002-there-is-no-warped-signal.md),
   [ADR 0007](docs/adr/0007-the-move-out-of-staging-is-the-warp-signal.md)).
@@ -109,7 +109,7 @@ judging, and how much of the current Claude quota window is used.
   tool, keytag, whose history it took over ([ADR 0055](docs/adr/0055-crateside-owns-the-key-judge-and-its-ledger.md)).
 - [**StemForge**](https://github.com/Bamo16/StemForge) does the downloading and the stem
   separation. crateside calls its CLI and reads the provenance it writes into each file's
-  tags — that provenance (the video ID) is how every later step recognises a file.
+  tags — that provenance (the video ID) is how every later step recognizes a file.
 
 Beyond the ledger, crateside keeps very little: the YouTube OAuth token, a record of the work it has
 run, and per-track instructions (the plan for which stems to cut, a name override, a
@@ -123,8 +123,8 @@ folders, so nothing falls out of sync.
 - **Ableton Live**, with a Staging folder and a library folder; both are chosen in Settings.
 - **[StemForge](https://github.com/Bamo16/StemForge)'s `stemforge-cli` on `PATH`**, which downloads
   and separates, and a GPU for separation.
+- **ffmpeg builds carrying the `keydetect` filter** (on `PATH`, or named by `Paths:KeydetectFfmpeg`;
   the first start pins it in `builds.json` under `%APPDATA%\crateside`, ADR 0066) and `beatdetect`
-  the first start pins it in `%APPDATA%atesideuilds.json`, ADR 0066) and `beatdetect`
   (`Paths:BeatdetectFfmpeg`, see below). Sources:
   [ffmpeg-keydetect](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-keydetect) and
   [ffmpeg-beatdetect](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-beatdetect).
@@ -182,12 +182,12 @@ those are absent — that has repeatedly caught things fixtures would not have.
 - [docs/the-manual-workflow.md](docs/the-manual-workflow.md) — the human half, step
   by step, for what to do once a track is ready to warp.
 
-## Licence
+## License
 
 [MIT](LICENSE). The IBM Plex fonts in `src/Crateside/wwwroot/fonts/` are under the SIL Open Font
 License 1.1 (`OFL.txt` beside them). madmom's key model, `src/Crateside.Core/KeyDetection/Madmom/key-cnn.onnx`,
 is **CC BY-NC-SA 4.0** (`LICENSE` beside it): it may not be used commercially, so neither may a build of
-crateside that includes it. NuGet dependencies keep their own licences; the one that is
+crateside that includes it. NuGet dependencies keep their own licenses; the one that is
 not MIT or Apache is TagLibSharp (LGPL-2.1), used as an unmodified package.
 
 <!-- LOGO: small mark, 24px, could sit before the footer line or be omitted. -->

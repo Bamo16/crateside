@@ -47,7 +47,7 @@ ink-on-filled-chip `#0f0e0c`.
 | text-40 | .40 | 3.3:1 | **labels and column heads only, never a sentence** |
 | text-30 | .30 | 2.4:1 | decorative: a chevron, an em dash for a missing value |
 
-**The four colours, and nothing else is coloured:**
+**The four colors, and nothing else is colored:**
 teal `#6fc7d6` = the machine is working · amber `#e8b45a` = the user's turn ·
 red `#e07a6d` = needs attention · green `#7fcf9a` = done, and behind them.
 
@@ -180,7 +180,7 @@ the playlist title. The user frequently wants to correct them and renames files 
 which is error-prone. Real examples:
 
 - an artist field that is a duplicated eleven-name pile-up, which should read `Jamie Paige`
-- `星街すいせい`, which he wants romanised to `Hoshimachi Suisei` because he cannot read Japanese
+- `星街すいせい`, which he wants romanized to `Hoshimachi Suisei` because he cannot read Japanese
 - titles containing `(OFFICIAL AUDIO)`
 
 He wants to rename from the Tracks page. The new name must be what the GUI shows **and** what the
@@ -207,7 +207,7 @@ Constraints:
 2. The **rename affordance**, including how an overridden name is marked as overridden, and how
    it is reverted.
 3. How a **rename or re-cut in progress** reads in the collapsed row — reusing the chip
-   vocabulary and the colour rule, or arguing for an addition to it.
+   vocabulary and the color rule, or arguing for an addition to it.
 4. A **notes artboard** listing the open questions the drawing cannot settle.
 
 Two are known already and can seed that last artboard: whether a re-cut is a *new fact* about the

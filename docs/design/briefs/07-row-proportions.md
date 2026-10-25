@@ -96,7 +96,7 @@ suggestion in one gesture from the collapsed row**, plus a way to reach the rest
 
 ## Constraints
 
-- No new tokens, and nothing newly coloured (`DESIGN.md`). Amber is still only *your turn*.
+- No new tokens, and nothing newly colored (`DESIGN.md`). Amber is still only *your turn*.
 - Buttons are the existing `.outline` / `.primary` / `.danger`.
 - `StemList`, `StemConfirm` and the side stack are each one component mounted in the row and on
   Track details. Say what differs by context, and the implementer passes it as a parameter.

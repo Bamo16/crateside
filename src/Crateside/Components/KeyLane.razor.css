@@ -5,7 +5,7 @@
     color: var(--text-50);
 }
 
-/* The key strip: the verdict's centres as bands over the raw running estimate. */
+/* The key strip: the verdict's centers as bands over the raw running estimate. */
 .key-gutter {
     flex-direction: column;
     align-items: flex-start;

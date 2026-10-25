@@ -23,14 +23,14 @@ On 2026-10-02 the user set out how the transients are actually used:
   The old cut is discarded afterwards, so it is still on disk when the new one arrives.
 
 Live has often already detected the transients for this sound. On 2026-10-02, in 413 of 414
-uploads with two or more cuts that Live had analysed, every cut had the same frame count
+uploads with two or more cuts that Live had analyzed, every cut had the same frame count
 (measured).
 
 ## Decision
 
 **A borrowed sidecar's transients come from the first of these that applies:**
 
-1. **The stem's own analysis**, when Live analysed this exact file (its `OriginalFileSize` and
+1. **The stem's own analysis**, when Live analyzed this exact file (its `OriginalFileSize` and
    frame count match) without a saved clip.
 2. **A cut of the same kind from the same upload**: one whose preset starts with the same word
    (`Instrumental`, `Vocal`, `Drums`), or another kept source. Its analysis has to be Live's (not

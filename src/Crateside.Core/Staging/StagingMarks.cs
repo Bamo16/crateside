@@ -8,7 +8,7 @@ using Crateside.Core.Warps;
 namespace Crateside.Core.Staging;
 
 /// <summary>
-/// What Live shows of a staged stem's state: the clip colour of its kind and song, and the browser
+/// What Live shows of a staged stem's state: the clip color of its kind and song, and the browser
 /// Collections its warp and verdict call for (#130).
 /// </summary>
 public sealed class StagingMarks(
@@ -22,9 +22,9 @@ public sealed class StagingMarks(
     FolderInfoWriter writer
 )
 {
-    /// <summary>Gives every staged stem's saved sidecar its clip colour, and returns the ones rewritten.</summary>
-    public IReadOnlyList<string> Recolour() =>
-        [.. Staged().Where(path => waiting.Of(path) is null && sidecars.Recolour(path))];
+    /// <summary>Gives every staged stem's saved sidecar its clip color, and returns the ones rewritten.</summary>
+    public IReadOnlyList<string> Recolor() =>
+        [.. Staged().Where(path => waiting.Of(path) is null && sidecars.Recolor(path))];
 
     /// <summary>Puts every staged file in the Collections it belongs in, in one write.</summary>
     public TagWriteOutcome Collect()

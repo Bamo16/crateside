@@ -99,7 +99,7 @@ public sealed class QueueBatchTests
     }
 
     [Fact]
-    public void A_zero_batch_still_honours_pins()
+    public void A_zero_batch_still_honors_pins()
     {
         var view = ViewOf(Item("a", 2), Item("b", 1));
 

@@ -9,7 +9,7 @@ two tables row for row. Replaces handoff 17's *1d*.
 
 **The rule:** a plain key loses the score, the mood names and the relative pill, gains notes
 shared and a shift span, and nothing else moves. A modal source adds the arrow to the basis line
-and its own row at the top. Nothing is newly coloured.
+and its own row at the top. Nothing is newly colored.
 
 ## 1. The table
 
@@ -25,7 +25,7 @@ meaning line under the relationship.
     Sans 12 `--text-50`, no pill. It answers "which row is the filter my samples carry?" without
     promoting it: it is an ordinary 6 of 7 row and sorts as one.
   - The labels apply **only at shift 0**. A same-notes key listed at +5 in a +3 to +5 span is
-    unlabelled; *the tag* is a fact about the key and stays at any shift.
+    unlabeled; *the tag* is a fact about the key and stays at any shift.
 - **Camelot** (mono 13, `--text-75`). A modal row shows its tag's code at `--text-40` (A Dorian →
   `8A`), since the wheel has no mode segments.
 - **Shift** (mono 13): `0` at 400; signed figures (`+3`, `−1`, with a real minus) at 500, as the
@@ -38,7 +38,7 @@ meaning line under the relationship.
 
 **Groups**: two caps sub-heads, as built, renamed: **As is · shift 0**, then **A shift away ·
 pitch the sample by Shift to land on {source}**. A group with no rows is not drawn (a span of
-+3 to +5 has only the second). Labelled rows do not get a group of their own: they sort to the
++3 to +5 has only the second). Labeled rows do not get a group of their own: they sort to the
 top of *As is* anyway, and the label is enough.
 
 **Sort**: |shift|, then notes shared (descending), then same key, same notes, the tag, then
@@ -80,12 +80,12 @@ look interchangeable when they are not.
   - `The track's verdict.` / `The key you picked.`
   - Re-Pitch: `Re-Pitch −1 from the track's A Dorian.` plus **Back to A Dorian** (`.outline`,
     small), as built.
-  - Sections: `The verse, the primary centre: the tag follows it.` /
-    `The chorus's centre, not the primary.`
+  - Sections: `The verse, the primary center: the tag follows it.` /
+    `The chorus's center, not the primary.`
 - Line 3, modal or mixed only (12.5px `--text-60`): `ModeText`'s reason (handoff 17):
   `Dorian is a minor mode, so it is tagged by its tonic. Same notes as G major (9B).`
   Mixed: `Major melody over minor harmony; tagged by the harmony, and paired as its tag.`
-- **The relative pill goes.** For a plain key the relative is now the second row, labelled
+- **The relative pill goes.** For a plain key the relative is now the second row, labeled
   *same notes*, at shift 0, so the pill only repeated it. Rebasing on it gave a different list,
   and ADR 0056 turned down rebasing on a same-notes key. For a modal source the pill's gloss was
   false. No third pill (handoff 17 *1d* is superseded). Drop `&rel=1`.
@@ -98,7 +98,7 @@ section in the order the ledger holds them: `verse A Dor primary` · `chorus E m
 at 11px `--text-50` on the primary's pill only. The chosen pill is the house *chosen* style for
 pills (`--text` 14% fill, 50% border, 600); the primary is chosen by default.
 
-Picking a section makes its centre the source: line 1, line 3, the table and the wheel all
+Picking a section makes its center the source: line 1, line 3, the table and the wheel all
 follow, and any Re-Pitch shift returns to 0 (it was a shift of the previous source). Query
 `&section={index}`, omitted for the primary.
 
@@ -111,7 +111,7 @@ sections.
 The *From the track* / *Or by hand* box's Key select becomes **two selects**: **Tonic** (72px,
 12 entries, spelled for the mode's quality, mono) and **Mode** (`major`, `minor`, then an
 optgroup *Modes*: Dorian, Phrygian, Lydian, Mixolydian, Locrian). Ionian and Aeolian are not
-offered: they are major and minor. The mode starts at the track's centre, or `major` with nothing
+offered: they are major and minor. The mode starts at the track's center, or `major` with nothing
 picked, so the common case is one select. Editing either drops the track, as built. Not one list
 of 84: two short lists find any key in two choices, and keep the five rare modes out of the way.
 

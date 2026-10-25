@@ -95,7 +95,7 @@ public sealed class StemWarpReaderTests : IDisposable
     public void A_stem_left_for_Live_waits_until_Live_writes_one_then_waits_for_crateside()
     {
         Analysis(saved: true, Lent).Write($"{Target}.asd");
-        Actions().LetLiveAnalyse(Target);
+        Actions().LetLiveAnalyze(Target);
 
         Assert.IsType<WarpOwner.WaitingForLive>(Reader().Read(Target).Owner);
 

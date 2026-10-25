@@ -151,7 +151,7 @@ this pipeline is *for*, and cutting the instructions an agent reasons from to sa
 how you get cheap wrong answers. Revisit only with a verdict-quality check to compare against.
 
 **Resuming one conversation across tracks.** Already tried and reverted in `37bf523`. The
-shared prefix worth amortising is ~50k paid once per track; the previous track's history is
+shared prefix worth amortizing is ~50k paid once per track; the previous track's history is
 ~90k paid *per turn*. **Do not re-propose without new measurements** — and note that the
 measurements that killed it were the double-counted ones, so the effect was real but its
 magnitude was overstated like everything else here.
@@ -227,7 +227,7 @@ Claude quota.
 The two clean samples agree to a tenth of a point, on runs of five and twelve tracks taken a day
 apart. **The first batch is the outlier and its own row says why** — an uncertain start and an
 unrelated question in the window. Treat 5.3–5.4% as the figure and the earlier 6.4–6.6% as the
-noise it was labelled as at the time.
+noise it was labeled as at the time.
 
 That tightens the window estimate: at 5.3% a track, a five-hour window is **about 18 tracks**
 rather than the 15–18 recorded above from the weaker pair.

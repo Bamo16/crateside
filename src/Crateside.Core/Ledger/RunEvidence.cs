@@ -22,11 +22,11 @@ public sealed record RunEvidence
             : Song;
 
     /// <summary>The verdict's key, so a source's own answer can be compared against it.</summary>
-    public string? Key => Centre?.Collapsed;
+    public string? Key => Center?.Collapsed;
 
-    public TonalCentre? Centre { get; init; }
+    public TonalCenter? Center { get; init; }
 
-    public DiatonicMode? Mode => Centre?.Mode;
+    public DiatonicMode? Mode => Center?.Mode;
 
     public bool Mixed { get; init; }
 
@@ -77,7 +77,7 @@ public sealed record RunEvidence
             : null;
 
     /// <summary>
-    /// Which file was analysed and what kind it was. Worth showing: a verdict reached on an
+    /// Which file was analyzed and what kind it was. Worth showing: a verdict reached on an
     /// instrumental is weaker, because the vocal anchors the tonic.
     /// </summary>
     public string? InputKind { get; init; }
@@ -126,7 +126,7 @@ public sealed record RunEvidence
             Song = run.Song,
             Artist = run.Artist,
             Title = run.Title,
-            Centre = run.Centre,
+            Center = run.Center,
             Mixed = run.Mixed,
             Sections = run.Sections,
             Windows = run.Windows,
@@ -144,7 +144,7 @@ public sealed record RunEvidence
                     var coverage = ModeText.Coverage(
                         source.Sections,
                         run.Sections,
-                        run.Centre,
+                        run.Center,
                         source.StatesKey
                     );
 
@@ -310,7 +310,7 @@ public sealed partial record EvidenceSource
             "hooktheory.com" or "musicnotes.com" => SourceKind.Authoritative,
             "tabs.ultimate-guitar.com" or "ultimate-guitar.com" or "songsterr.com" =>
                 SourceKind.Corroborating,
-            // Automatic chord recognisers. Their chords are evidence; their key is another
+            // Automatic chord recognizers. Their chords are evidence; their key is another
             // algorithm's guess, so citing it to confirm ours would be circular.
             "chordify.net" or "chordu.com" => SourceKind.ChordRecogniser,
             "tunebat.com"
@@ -410,7 +410,7 @@ public enum SourceKind
     Algorithmic,
 
     /// <summary>
-    /// An automatic chord recogniser. Its chords are usable evidence; its key may never be
+    /// An automatic chord recognizer. Stored by name, so the member keeps its original spelling. Its chords are usable evidence; its key may never be
     /// the basis of a verdict, and never lifts one to HIGH.
     /// </summary>
     ChordRecogniser,

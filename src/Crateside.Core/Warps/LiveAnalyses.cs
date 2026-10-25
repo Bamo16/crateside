@@ -3,7 +3,7 @@ using Crateside.Core.Samples;
 
 namespace Crateside.Core.Warps;
 
-/// <summary>Samples whose sidecar went to the Recycle Bin so Live analyses them afresh, and the warp to put back once it has (#97).</summary>
+/// <summary>Samples whose sidecar went to the Recycle Bin so Live analyzes them afresh, and the warp to put back once it has (#97).</summary>
 public sealed class LiveAnalyses
 {
     private readonly Lock _lock = new();
@@ -115,7 +115,7 @@ public sealed class SidecarBackups
     }
 }
 
-/// <summary>The two things the warp view lets the user do to a stem's sidecar, and putting a warp back once Live has analysed (#97).</summary>
+/// <summary>The two things the warp view lets the user do to a stem's sidecar, and putting a warp back once Live has analyzed (#97).</summary>
 public sealed class WarpActions(
     SidecarWriter writer,
     WrittenWarps written,
@@ -145,8 +145,8 @@ public sealed class WarpActions(
         return await writer.ReplaceAsync(target, authorities, sameKind, ct);
     }
 
-    /// <summary>Backs up the stem's sidecar and sends it to the Recycle Bin, so Live analyses the stem the next time it is opened.</summary>
-    public LetLiveOutcome LetLiveAnalyse(string target)
+    /// <summary>Backs up the stem's sidecar and sends it to the Recycle Bin, so Live analyzes the stem the next time it is opened.</summary>
+    public LetLiveOutcome LetLiveAnalyze(string target)
     {
         var sidecar = StemFileName.AnalysisFor(target);
 

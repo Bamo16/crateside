@@ -48,7 +48,7 @@ public sealed class EvidenceDrainerTests : IDisposable
                 Song = Judged,
                 SourceUrl = $"https://music.youtube.com/watch?v={JudgedId}",
                 Confidence = KeyConfidence.High,
-                Centre = new TonalCentre("A", DiatonicMode.Aeolian),
+                Center = new TonalCenter("A", DiatonicMode.Aeolian),
                 Evidence = """{"algorithms":{"ffmpeg_keydetect":{"key":"A minor"}}}""",
             }
         );

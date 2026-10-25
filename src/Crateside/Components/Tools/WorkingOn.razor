@@ -13,10 +13,10 @@
                 <span class="change">Change ▾</span>
             </div>
             <span class="facts">
-                @if (track.Centre is { } centre)
+                @if (track.Center is { } center)
                 {
-                    <span class="mono key">@(ModeText.Arrow(centre, track.Run?.Mixed is true) ?? ModeText.Named(centre))</span>
-                    <span class="mono camelot">@MusicKey.Of(centre).CamelotCode</span>
+                    <span class="mono key">@(ModeText.Arrow(center, track.Run?.Mixed is true) ?? ModeText.Named(center))</span>
+                    <span class="mono camelot">@MusicKey.Of(center).CamelotCode</span>
                 }
                 else
                 {
@@ -76,9 +76,9 @@
         <span class="key-pick">
             <label class="tonic">
                 <span>Tonic</span>
-                <select class="mono" value="@(Centre?.Tonic ?? string.Empty)" @onchange="PickTonic">
+                <select class="mono" value="@(Center?.Tonic ?? string.Empty)" @onchange="PickTonic">
                     <option value="">—</option>
-                    @foreach (var tonic in TonalCentre.Tonics)
+                    @foreach (var tonic in TonalCenter.Tonics)
                     {
                         <option value="@tonic">@tonic.Replace('#', '♯')</option>
                     }
@@ -112,7 +112,7 @@
         <span class="hint">
             @(Track is null ? "Or pick a warped track above."
               : Shown is { IsApproximate: true } ? "The tempo drifts, so every figure here is approximate. Typing in the field drops the track."
-              : "The verdict's centre, mode included. Editing any of these drops the track and keeps what you picked.")
+              : "The verdict's center, mode included. Editing any of these drops the track and keeps what you picked.")
         </span>
     </div>
 </div>
@@ -150,9 +150,9 @@
     [Parameter]
     public string? DetailsHref { get; set; }
 
-    /// <summary>The centre the picker shows: the track's, as it pairs, or the one picked.</summary>
+    /// <summary>The center the picker shows: the track's, as it pairs, or the one picked.</summary>
     [Parameter]
-    public TonalCentre? Centre { get; set; }
+    public TonalCenter? Center { get; set; }
 
     [Parameter]
     public string BpmText { get; set; } = string.Empty;
@@ -161,12 +161,12 @@
     public EventCallback<LibrarySong> OnPick { get; set; }
 
     [Parameter]
-    public EventCallback<TonalCentre?> OnCentre { get; set; }
+    public EventCallback<TonalCenter?> OnCenter { get; set; }
 
     [Parameter]
     public EventCallback<string> OnBpm { get; set; }
 
-    private DiatonicMode Mode => Centre?.Mode ?? _mode;
+    private DiatonicMode Mode => Center?.Mode ?? _mode;
 
     private FormattedTempo? Shown => Track?.Bpm is { } tempo ? TempoFormat.Format(tempo) : null;
 
@@ -182,13 +182,13 @@
     }
 
     private Task PickTonic(ChangeEventArgs e) =>
-        OnCentre.InvokeAsync(e.Value is string { Length: > 0 } tonic ? new TonalCentre(tonic, Mode) : null);
+        OnCenter.InvokeAsync(e.Value is string { Length: > 0 } tonic ? new TonalCenter(tonic, Mode) : null);
 
     private Task PickMode(ChangeEventArgs e)
     {
         _mode = Enum.Parse<DiatonicMode>((string)e.Value!);
 
-        return Centre is null ? Task.CompletedTask : OnCentre.InvokeAsync(Centre with { Mode = _mode });
+        return Center is null ? Task.CompletedTask : OnCenter.InvokeAsync(Center with { Mode = _mode });
     }
 
     private void StartSearch()

@@ -10,7 +10,7 @@ crateside holds two secrets, and they are worth very different amounts. A third 
 
 **Nothing secret is ever committed.** `.gitignore` covers `token.json`, `*.token.json`,
 `client_secret*.json`, `appsettings.Secrets.json` and `appsettings.*.Local.json`, but the
-first line of defence is that the key is not in the working tree at all.
+first line of defense is that the key is not in the working tree at all.
 
 ## Setting the API key
 
@@ -72,7 +72,7 @@ hand, and it is the credential that can actually delete things. It is encrypted 
 A token this key ring cannot decrypt — rotated keys, a file copied from another machine —
 reads as **absent** rather than throwing. The cost is one more consent prompt, which is a
 state crateside already handles (Settings offers *Grant access* again); a crash is not. There are tests for that, and for the fact
-that nothing recognisable appears in the file on disk.
+that nothing recognizable appears in the file on disk.
 
 **Know what that does and does not buy.** DPAPI `CurrentUser` means the ciphertext is useless
 on another machine or under another account — it defends against the file being copied off

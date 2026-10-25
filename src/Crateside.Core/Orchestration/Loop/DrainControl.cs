@@ -35,7 +35,7 @@ public class DrainControl : DrainSignal
 
     /// <summary>
     /// Stops new work being picked up. Does not interrupt a separation already running —
-    /// that is what cancelling the loop does, and it is a heavier thing to ask for.
+    /// that is what canceling the loop does, and it is a heavier thing to ask for.
     /// </summary>
     /// <summary>Separation's control, paused or not as the user last left it.</summary>
     public DrainControl(PauseStore remembered)

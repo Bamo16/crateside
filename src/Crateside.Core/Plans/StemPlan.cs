@@ -127,7 +127,7 @@ public sealed record StemPlan
 /// </summary>
 public sealed record AdoptedSample
 {
-    /// <summary>What the user calls it, which is also the file's parenthesised suffix.</summary>
+    /// <summary>What the user calls it, which is also the file's parenthesized suffix.</summary>
     public required string Label { get; init; }
 }
 
@@ -137,7 +137,7 @@ public sealed record AddedSource
     public required string VideoId { get; init; }
 
     /// <summary>
-    /// What the user called it, which becomes the file's parenthesised suffix — unique per track,
+    /// What the user called it, which becomes the file's parenthesized suffix — unique per track,
     /// since it tells two added sources apart on disk (ADR 0019).
     /// </summary>
     public required string Label { get; init; }

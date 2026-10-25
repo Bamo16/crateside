@@ -79,7 +79,7 @@ public sealed class WarpWordingTests
         var wording = Wording(Lender(), vocal);
 
         Assert.False(wording.CanReapply(vocal));
-        Assert.False(WarpWording.CanLetLiveAnalyse(vocal));
+        Assert.False(WarpWording.CanLetLiveAnalyze(vocal));
         Assert.Equal(
             "No warp file yet: Live has not opened this stem.",
             wording.LetLiveStatus(vocal, "Staging")

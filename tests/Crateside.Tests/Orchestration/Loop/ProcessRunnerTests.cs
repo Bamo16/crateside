@@ -23,7 +23,7 @@ public sealed class ProcessRunnerTests
     }
 
     [Fact]
-    public async Task Cancelling_stops_the_wait_with_an_operation_cancelled()
+    public async Task Canceling_stops_the_wait_with_an_operation_canceled()
     {
         using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
 

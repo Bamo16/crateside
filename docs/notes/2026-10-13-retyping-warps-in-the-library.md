@@ -143,7 +143,7 @@ track. 5 ms is about 2.8 of those; the 3-error test is the real gate and 5 ms th
 ## With the grid moved onto the transients (#96)
 
 The same 78 retypes with `rephase`: the retyped warp is moved so the kept drum stem's strongest
-transients (the instrumental's where none is kept; 4 of the 78 have a drum stem) centre on its grid,
+transients (the instrumental's where none is kept; 4 of the 78 have a drum stem) center on its grid,
 and kept only where every 30 s then sits within 5 ms of it.
 
 | outcome | songs |

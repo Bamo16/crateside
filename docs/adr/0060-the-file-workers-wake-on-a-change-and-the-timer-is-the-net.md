@@ -6,7 +6,7 @@
 
 ## Context
 
-The warp worker (lending, colours, Collections), the levelling pass and the warp-guide keeper each
+The warp worker (lending, colors, Collections), the leveling pass and the warp-guide keeper each
 looked once a minute, so a sidecar saved in Live or a track moved into the library waited up to a
 minute to be acted on. A `FileSystemWatcher` had seemed unreliable before: it drops events on a
 burst (and raises `Error` instead), loses them while crateside is down, delivers one save as
@@ -43,7 +43,7 @@ file changes and keeps its five minutes otherwise.
 - **Not woken, so now up to ten minutes:** a new verdict's *Key caveat* in staging (it arrives with
   the next file change or the timer).
 - **Not measured:** how long Live takes to save a sidecar after the user acts in it, and whether
-  the library's drive ever drops events at the rate the levelling pass writes sidecars. The timer
+  the library's drive ever drops events at the rate the leveling pass writes sidecars. The timer
   covers both.
 - Both roots are local NTFS drives. A watcher on a network share is less reliable, and the timer
   covers that case.

@@ -346,7 +346,7 @@ public sealed class StemRecutTests : IDisposable
     }
 
     [Fact]
-    public void A_stem_nobody_analysed_is_removed_without_complaint()
+    public void A_stem_nobody_analyzed_is_removed_without_complaint()
     {
         Stage();
 

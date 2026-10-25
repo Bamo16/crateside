@@ -7,8 +7,8 @@ Figures, offsets and dates in the canvas are made up; songs in italics are not r
 
 **Where a problem shows depends on whose problem it is.** *Drifts* is the music's, so it stays a flag
 beside the title. *Off its tempo* is the warp figure's, so it moves next to the BPM as a mark. No new
-colours: the mark is monochrome. Only the confirm (red), writing (teal) and the confirm label (amber)
-use colour, as the other warp controls do.
+colors: the mark is monochrome. Only the confirm (red), writing (teal) and the confirm label (amber)
+use color, as the other warp controls do.
 
 ## The mark (1a, 1b)
 

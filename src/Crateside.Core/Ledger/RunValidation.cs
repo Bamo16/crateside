@@ -5,7 +5,7 @@ namespace Crateside.Core.Ledger;
 /// <summary>The contract for a run: what is repaired on the way in, and what is refused.</summary>
 internal static partial class RunValidation
 {
-    private static readonly HashSet<string> ChordRecogniserHosts = ["chordify.net", "chordu.com"];
+    private static readonly HashSet<string> ChordRecognizerHosts = ["chordify.net", "chordu.com"];
 
     private const int TonicCheckWords = 70;
     private const int ReasoningWords = 100;
@@ -33,7 +33,7 @@ internal static partial class RunValidation
             WithheldReasoning = Blank(run.WithheldReasoning),
             Candidates =
             [
-                .. run.Candidates.Where(candidate => !IsVerdictKey(candidate, run.Centre)),
+                .. run.Candidates.Where(candidate => !IsVerdictKey(candidate, run.Center)),
             ],
         };
 
@@ -57,7 +57,7 @@ internal static partial class RunValidation
 
         foreach (var candidate in run.Candidates)
         {
-            if (IsVerdictKey(candidate, run.Centre))
+            if (IsVerdictKey(candidate, run.Center))
                 yield return $"candidate {candidate.Key} is the verdict's own key; dropped";
             else if (Sentences(candidate.Why) > 1)
                 yield return $"candidate {candidate.Key} takes more than one sentence";
@@ -85,11 +85,11 @@ internal static partial class RunValidation
                 $"expected {string.Join(" | ", LedgerVocabulary.Confidences)}"
             );
 
-        if (run is { Confidence: not KeyConfidence.Withheld, Centre: null })
-            return new("centre", "a tonal centre is required unless the verdict is WITHHELD");
+        if (run is { Confidence: not KeyConfidence.Withheld, Center: null })
+            return new("centre", "a tonal center is required unless the verdict is WITHHELD");
 
-        if (run is { Centre: { } centre } && !TonalCentre.Tonics.Contains(centre.Tonic))
-            return new("centre.tonic", $"{centre.Tonic} is not a tonic in the ledger's spelling");
+        if (run is { Center: { } center } && !TonalCenter.Tonics.Contains(center.Tonic))
+            return new("centre.tonic", $"{center.Tonic} is not a tonic in the ledger's spelling");
 
         if (run is { SourceUrl: null, LocalSource: false })
             return new(
@@ -114,10 +114,10 @@ internal static partial class RunValidation
                     $"{section.Label}: a start of {section.Start} s is before the track"
                 );
 
-            if (!TonalCentre.Tonics.Contains(section.Centre.Tonic))
+            if (!TonalCenter.Tonics.Contains(section.Center.Tonic))
                 return new(
                     "sections",
-                    $"{section.Label}: {section.Centre.Tonic} is not a tonic in the ledger's spelling"
+                    $"{section.Label}: {section.Center.Tonic} is not a tonic in the ledger's spelling"
                 );
         }
 
@@ -142,13 +142,13 @@ internal static partial class RunValidation
     public static bool IsHttp(string url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var link) && link.Scheme is "http" or "https";
 
-    private static bool IsVerdictKey(RunCandidate candidate, TonalCentre? centre) =>
-        centre is not null
+    private static bool IsVerdictKey(RunCandidate candidate, TonalCenter? center) =>
+        center is not null
         && (
-            centre.IsModal
+            center.IsModal
                 ? candidate.Key.Replace('♯', '#').Trim()
                 : LedgerVocabulary.NormalizeKey(candidate.Key)
-        )?.Equals(centre.Name, StringComparison.OrdinalIgnoreCase)
+        )?.Equals(center.Name, StringComparison.OrdinalIgnoreCase)
             is true;
 
     private static int Words(string? text) =>
@@ -178,10 +178,10 @@ s*
         {
             Url = url,
             Via = Blank(source.Via) ?? via,
-            // The hard rule beats anything written about the source: a chord recogniser's key
+            // The hard rule beats anything written about the source: a chord recognizer's key
             // may never support a verdict.
             Kind =
-                Host(url) is { } host && ChordRecogniserHosts.Contains(host)
+                Host(url) is { } host && ChordRecognizerHosts.Contains(host)
                     ? SourceKind.ChordRecogniser
                     : source.Kind,
             StatesKey =

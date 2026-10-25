@@ -25,16 +25,16 @@
 
     <div class="evidence">
         <section class="argument">
-            @if (Run.Sections.Count > 1 && Run.Centre is { } primary)
+            @if (Run.Sections.Count > 1 && Run.Center is { } primary)
             {
-                <h4 class="first">Centres</h4>
-                <ul class="centres">
+                <h4 class="first">Centers</h4>
+                <ul class="centers">
                     @foreach (var part in Run.Sections)
                     {
                         <li>
                             <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
-                            <span class="mono centre-key">@(ModeText.Arrow(part.Centre, false) ?? ModeText.Tag(part.Centre))</span>
-                            <span class="muted">@(part.Centre == primary ? "primary · the tag follows it" : null)</span>
+                            <span class="mono center-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
+                            <span class="muted">@(part.Center == primary ? "primary · the tag follows it" : null)</span>
                         </li>
                     }
                 </ul>
@@ -355,8 +355,8 @@
         };
 
     private static string HostMismatchTitle(EvidenceSource source) =>
-        $"Recorded as {source.RecordedKind}, but its host is catalogued as "
-        + $"{KindLabel(source.KindFromHost)}. Worth a look: filing a chord recogniser as anything "
+        $"Recorded as {source.RecordedKind}, but its host is cataloged as "
+        + $"{KindLabel(source.KindFromHost)}. Worth a look: filing a chord recognizer as anything "
         + "else is the mistake the hard rule exists to prevent.";
 
     private static string KindLabel(SourceKind kind) =>
@@ -379,7 +379,7 @@
             SourceKind.Algorithmic =>
                 "Shares the failure modes this tool exists to catch — corroboration only, never the answer.",
             SourceKind.ChordRecogniser =>
-                "An automatic chord recogniser. Its chords are evidence; its key is another algorithm's guess and may never be the basis of a verdict.",
+                "An automatic chord recognizer. Its chords are evidence; its key is another algorithm's guess and may never be the basis of a verdict.",
             SourceKind.Unclassified => "Neither recorded nor a host the catalog lists — read the agent's note.",
             _ => "No link to judge by.",
         };

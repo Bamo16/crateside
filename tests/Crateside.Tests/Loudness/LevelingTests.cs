@@ -5,7 +5,7 @@ using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Loudness;
 
-public sealed class LevellingTests : IDisposable
+public sealed class LevelingTests : IDisposable
 {
     private const float Plus6Db = 1.9952623f;
 
@@ -20,7 +20,7 @@ public sealed class LevellingTests : IDisposable
     private readonly LiveAnalyses _waiting = new();
     private readonly LoudnessOptions _options = new();
 
-    public LevellingTests()
+    public LevelingTests()
     {
         _paths = new CratesidePaths
         {
@@ -43,11 +43,11 @@ public sealed class LevellingTests : IDisposable
             Path.Combine("Library", "Artist", "Song (Vocal - Full).flac"),
             gain: 0.5f
         );
-        var levelling = Levelling(_ => -20);
+        var leveling = Leveling(_ => -20);
 
-        Assert.Single(levelling.Unread());
-        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
-        Assert.Equal([stem], levelling.Level());
+        Assert.Single(leveling.Unread());
+        await leveling.ReadAsync(leveling.Unread(), TestContext.Current.CancellationToken);
+        Assert.Equal([stem], leveling.Level());
 
         var sidecar = AnalysisFile.Read($"{stem}.asd");
         Assert.Equal(Plus6Db, sidecar.Clip.SampleVolume, 4);
@@ -60,26 +60,26 @@ public sealed class LevellingTests : IDisposable
     {
         var stem = Sample(Path.Combine("Staging", "Song (Vocal - Full).flac"), gain: Plus6Db);
         var before = File.GetLastWriteTimeUtc($"{stem}.asd");
-        var levelling = Levelling(_ => -20);
+        var leveling = Leveling(_ => -20);
 
-        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
+        await leveling.ReadAsync(leveling.Unread(), TestContext.Current.CancellationToken);
 
-        Assert.Empty(levelling.Level());
+        Assert.Empty(leveling.Level());
         Assert.Equal(before, File.GetLastWriteTimeUtc($"{stem}.asd"));
     }
 
     [Fact]
-    public async Task A_re_save_in_Live_is_levelled_again()
+    public async Task A_re_save_in_Live_is_leveled_again()
     {
         var stem = Sample(Path.Combine("Staging", "Song (Vocal - Full).flac"), gain: 1);
-        var levelling = Levelling(_ => -20);
-        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
-        levelling.Level();
+        var leveling = Leveling(_ => -20);
+        await leveling.ReadAsync(leveling.Unread(), TestContext.Current.CancellationToken);
+        leveling.Level();
 
         Saved(stem, gain: 1);
         File.SetLastWriteTimeUtc($"{stem}.asd", DateTime.UtcNow.AddMinutes(1));
 
-        Assert.Equal([stem], levelling.Level());
+        Assert.Equal([stem], leveling.Level());
         Assert.Equal(Plus6Db, AnalysisFile.Read($"{stem}.asd").Clip.SampleVolume, 4);
     }
 
@@ -87,13 +87,13 @@ public sealed class LevellingTests : IDisposable
     public async Task A_new_target_re_levels_every_sidecar()
     {
         var stem = Sample(Path.Combine("Staging", "Song (Vocal - Full).flac"), gain: 1);
-        var levelling = Levelling(_ => -20);
-        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
-        levelling.Level();
+        var leveling = Leveling(_ => -20);
+        await leveling.ReadAsync(leveling.Unread(), TestContext.Current.CancellationToken);
+        leveling.Level();
 
         _options.TargetLufs = -18;
 
-        Assert.Equal([stem], levelling.Level());
+        Assert.Equal([stem], leveling.Level());
         Assert.Equal(2, 20 * Math.Log10(AnalysisFile.Read($"{stem}.asd").Clip.SampleVolume), 3);
     }
 
@@ -101,10 +101,10 @@ public sealed class LevellingTests : IDisposable
     public async Task A_hand_set_gain_on_drums_goes_back_to_0_dB()
     {
         var drums = Sample(Path.Combine("Staging", "Song (Drums).flac"), gain: 0.5f);
-        var levelling = Levelling(_ => -17);
-        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
+        var leveling = Leveling(_ => -17);
+        await leveling.ReadAsync(leveling.Unread(), TestContext.Current.CancellationToken);
 
-        Assert.Equal([drums], levelling.Level());
+        Assert.Equal([drums], leveling.Level());
         Assert.Equal(1, AnalysisFile.Read($"{drums}.asd").Clip.SampleVolume);
     }
 
@@ -113,10 +113,10 @@ public sealed class LevellingTests : IDisposable
     {
         var stem = Sample(Path.Combine("Staging", "Song (Vocal - Full).flac"), gain: 1);
         _waiting.Await(stem, new AwaitedAnalysis("backup.asd", null, false, DateTime.UtcNow));
-        var levelling = Levelling(_ => -20);
-        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
+        var leveling = Leveling(_ => -20);
+        await leveling.ReadAsync(leveling.Unread(), TestContext.Current.CancellationToken);
 
-        Assert.Empty(levelling.Level());
+        Assert.Empty(leveling.Level());
         Assert.Equal(1, AnalysisFile.Read($"{stem}.asd").Clip.SampleVolume);
     }
 
@@ -128,21 +128,21 @@ public sealed class LevellingTests : IDisposable
             gain: 1,
             saved: false
         );
-        var levelling = Levelling(_ => -20);
-        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
+        var leveling = Leveling(_ => -20);
+        await leveling.ReadAsync(leveling.Unread(), TestContext.Current.CancellationToken);
 
-        Assert.Empty(levelling.Level());
+        Assert.Empty(leveling.Level());
     }
 
     [Fact]
-    public async Task A_starter_levelled_is_still_crateside_s_to_replace()
+    public async Task A_starter_leveled_is_still_crateside_s_to_replace()
     {
         var stem = Sample(Path.Combine("Staging", "Song (Vocal - Full).flac"), gain: 1);
         _written.RecordStarter(stem);
-        var levelling = Levelling(_ => -20);
-        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
+        var leveling = Leveling(_ => -20);
+        await leveling.ReadAsync(leveling.Unread(), TestContext.Current.CancellationToken);
 
-        Assert.Equal([stem], levelling.Level());
+        Assert.Equal([stem], leveling.Level());
         Assert.True(_written.IsStarter(stem));
     }
 
@@ -151,21 +151,21 @@ public sealed class LevellingTests : IDisposable
     {
         Sample(Path.Combine("Staging", "Song (Vocal - Full).flac"), gain: 1);
         Sample(Path.Combine("Library", "Artist", "Other (Instrumental - Full).flac"), gain: 1);
-        var levelling = Levelling(_ => -20);
+        var leveling = Leveling(_ => -20);
 
-        Assert.Equal(2, levelling.Unread().Count);
-        await levelling.ReadAsync(levelling.Unread(), TestContext.Current.CancellationToken);
-        Assert.Empty(levelling.Unread());
+        Assert.Equal(2, leveling.Unread().Count);
+        await leveling.ReadAsync(leveling.Unread(), TestContext.Current.CancellationToken);
+        Assert.Empty(leveling.Unread());
     }
 
     private static readonly WarpMarker[] Markers = [new(0.1, 0), new(0.4, 1), new(0.41, 1.03125)];
 
-    private Levelling Levelling(Func<string, double> lufsOf)
+    private Leveling Leveling(Func<string, double> lufsOf)
     {
         var reader = new LoudnessReader(new FakeEbur128(lufsOf));
         var gains = new ClipGains(reader, new CurrentOptions<LoudnessOptions>(() => _options));
 
-        return new Levelling(
+        return new Leveling(
             _paths,
             reader,
             gains,

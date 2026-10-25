@@ -4,7 +4,7 @@ Issue: #68 (with #60 and #56)
 
 For a Claude Design session. The Library page is gaining panels, and the user sees it turning into
 a reports page more than a "library" one. Three additions are wanted, and the page needs an
-organisation that holds them and whatever comes after. The implementing agent ports your design to
+organization that holds them and whatever comes after. The implementing agent ports your design to
 Blazor, so send layouts and states, not code.
 
 Built against `e6c3802`. The rules as built are in `docs/design/DESIGN.md`. The page today is
@@ -94,7 +94,7 @@ shows anything beyond the count (their keys, their BPMs).
 
 - **Its name and tab label.** "Library" may no longer fit. The tab row today: Tracks · Library ·
   Partners · Settings.
-- **How its panels are organised** as more arrive: one long page, sections with a small table of
+- **How its panels are organized** as more arrive: one long page, sections with a small table of
   contents, tabs within the page, or something else. Key and genre tables exist; tempo, detector
   accuracy and artists join them; familiarity (Mainstream or Obscure) is another axis the page could
   count the same way.
@@ -103,7 +103,7 @@ shows anything beyond the count (their keys, their BPMs).
 
 ## Constraints
 
-- No new tokens, and nothing newly coloured (`DESIGN.md`). Amber is still only *your turn*, and the
+- No new tokens, and nothing newly colored (`DESIGN.md`). Amber is still only *your turn*, and the
   page is rarely anyone's turn.
 - The existing bar-table style (key and genre) is the house style for counts. Reuse it where it fits.
 - Buttons are the existing `.outline` / `.primary` / `.danger`.

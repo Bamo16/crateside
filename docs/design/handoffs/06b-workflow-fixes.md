@@ -57,7 +57,7 @@ file goes.
 - Keep the hash compare as a guard. With partial zips it should mostly find nothing to skip.
 
 ### 5. The issue comment points to the handoff and does not repeat it
-Brief 06's comment summarised the handoff, which means two copies that can drift apart.
+Brief 06's comment summarized the handoff, which means two copies that can drift apart.
 - From now on the comment is short: the brief number, "zip attached", and "build from
   `handoffs/NN-<topic>.md`". The handoff file is the source of truth.
 - Add this to "Back: the result" in `design.md`.
@@ -75,7 +75,7 @@ Otherwise the next session will redraw the problem. Keep it short:
 - **Status + action**: a label line (label left, 1–2 buttons right), then the value, then the
   status as prose. A button never sits inside a sentence.
 - **Tags**: settled = one line with Change; unsettled or Change pressed = every chip.
-- **Destructive**: set apart by position and a stronger rule, not by colour. Only the confirm
+- **Destructive**: set apart by position and a stronger rule, not by color. Only the confirm
   step uses `.danger`.
 - The `Part` / `ShowNextSentence` parameters, and the shared per-track edit state.
 

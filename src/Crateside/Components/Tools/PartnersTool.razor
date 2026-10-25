@@ -7,7 +7,7 @@
         <span class="gist">keys to filter for in Ableton's browser, never files</span>
     </div>
 
-    @if (Centre is null || Own is null)
+    @if (Center is null || Own is null)
     {
         <div class="no-key">Pick a track, or a key, on the left.</div>
     }
@@ -17,16 +17,16 @@
             <div class="basis">
                 <div class="basis-line">
                     <span class="caps">Working from</span>
-                    @if (ModeText.Lead(Centre, Mixed) is { } lead)
+                    @if (ModeText.Lead(Center, Mixed) is { } lead)
                     {
                         <span class="mono lead">@lead <span class="arrow">→</span></span>
-                        <span class="working">@ModeText.Tag(Centre)</span>
+                        <span class="working">@ModeText.Tag(Center)</span>
                     }
                     else
                     {
-                        <span class="working">@ModeText.Named(Centre)</span>
+                        <span class="working">@ModeText.Named(Center)</span>
                     }
-                    <span class="mono camelot">@MusicKey.Of(Centre).CamelotCode</span>
+                    <span class="mono camelot">@MusicKey.Of(Center).CamelotCode</span>
                 </div>
                 <div class="why">
                     @Why
@@ -52,7 +52,7 @@
                             <button class="section-pill @(chosen ? "chosen" : null)" aria-pressed="@(chosen ? "true" : "false")"
                                     @onclick="() => OnSection.InvokeAsync(index == Primary ? null : index)">
                                 <span>@entry.Label</span>
-                                <span class="mono">@Short(entry.Centre)</span>
+                                <span class="mono">@Short(entry.Center)</span>
                                 @if (index == Primary)
                                 {
                                     <span class="primary">primary</span>
@@ -99,7 +99,7 @@
             </thead>
             <tbody>
                 @Group("As is · shift 0", Partners.Where(partner => partner.Shift is 0))
-                @Group($"A shift away · pitch the sample by Shift to land on {ModeText.Named(Centre)}", Partners.Where(partner => partner.Shift is not 0))
+                @Group($"A shift away · pitch the sample by Shift to land on {ModeText.Named(Center)}", Partners.Where(partner => partner.Shift is not 0))
             </tbody>
         </table>
 
@@ -112,16 +112,16 @@
 </section>
 
 @code {
-    /// <summary>The track's centre, or the one picked, before any Re-Pitch shift.</summary>
+    /// <summary>The track's center, or the one picked, before any Re-Pitch shift.</summary>
     [Parameter]
-    public TonalCentre? Own { get; set; }
+    public TonalCenter? Own { get; set; }
 
     [Parameter]
     public int Shift { get; set; }
 
-    /// <summary>The centre Partners works from: <see cref="Own"/> moved by the Re-Pitch shift.</summary>
+    /// <summary>The center Partners works from: <see cref="Own"/> moved by the Re-Pitch shift.</summary>
     [Parameter]
-    public TonalCentre? Centre { get; set; }
+    public TonalCenter? Center { get; set; }
 
     [Parameter]
     public bool Mixed { get; set; }
@@ -136,7 +136,7 @@
     [Parameter]
     public IReadOnlyList<Section> Sections { get; set; } = [];
 
-    /// <summary>The section holding the verdict's primary centre, if one does.</summary>
+    /// <summary>The section holding the verdict's primary center, if one does.</summary>
     [Parameter]
     public int? Primary { get; set; }
 
@@ -172,13 +172,13 @@
             (not 0, true, _) => $"Re-Pitch {MashupPartner.FormatShift(Shift)} from the track's {ModeText.Named(Own!)}.",
             (not 0, false, _) => $"Re-Pitch {MashupPartner.FormatShift(Shift)} from the key you picked, {ModeText.Named(Own!)}.",
             (_, false, _) => "The key you picked.",
-            (_, _, { } index) => $"The {Sections[index].Label}'s centre, not the primary.",
-            _ when Primary is { } primary => $"The {Sections[primary].Label}, the primary centre: the tag follows it.",
+            (_, _, { } index) => $"The {Sections[index].Label}'s center, not the primary.",
+            _ when Primary is { } primary => $"The {Sections[primary].Label}, the primary center: the tag follows it.",
             _ => HasVerdict ? "The track's verdict." : "The track's Key tag: it has no verdict.",
         };
 
     private string? Reason =>
-        (ModeText.Reason(Centre!, Mixed), Mixed) switch
+        (ModeText.Reason(Center!, Mixed), Mixed) switch
         {
             ({ } reason, true) => $"{reason.TrimEnd('.')}, and paired as its tag.",
             var (reason, _) => reason,
@@ -199,10 +199,10 @@
                 : (shift, shift)
         );
 
-    private static string Short(TonalCentre centre) =>
-        ModeText.Abbreviation(centre, mixed: false) is { } mode
-            ? $"{ModeText.Tag(centre).Split(' ')[0]} {mode}"
-            : ModeText.Tag(centre);
+    private static string Short(TonalCenter center) =>
+        ModeText.Abbreviation(center, mixed: false) is { } mode
+            ? $"{ModeText.Tag(center).Split(' ')[0]} {mode}"
+            : ModeText.Tag(center);
 
     private RenderFragment Group(string heading, IEnumerable<MashupPartner> partners) =>
         @<text>

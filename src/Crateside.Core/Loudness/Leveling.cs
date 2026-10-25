@@ -8,7 +8,7 @@ namespace Crateside.Core.Loudness;
 /// Reads every sample's loudness in staging and the library, and keeps each saved default clip at
 /// its clip gain, the user's included; one with Live (#97) waits until Live is done (ADR 0059).
 /// </summary>
-public sealed class Levelling(
+public sealed class Leveling(
     CratesidePaths paths,
     LoudnessReader reader,
     ClipGains gains,
@@ -41,7 +41,7 @@ public sealed class Levelling(
     /// <summary>Sets the clip gain of every saved sidecar that is off it; the samples rewritten.</summary>
     public IReadOnlyList<string> Level()
     {
-        List<string> levelled = [];
+        List<string> leveled = [];
 
         foreach (var path in Samples())
         {
@@ -54,14 +54,14 @@ public sealed class Levelling(
                 continue;
 
             if (writer.Level(path, gain))
-                levelled.Add(path);
+                leveled.Add(path);
 
             // A sidecar that could not be written is locked by Live, whose write changes its stamp.
             if (Stamp(path) is { } after)
                 _settled[path] = (after, gain);
         }
 
-        return levelled;
+        return leveled;
     }
 
     public LoudnessSpread Spread() => LoudnessSpread.From(Samples(), reader, gains);

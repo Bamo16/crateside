@@ -50,7 +50,7 @@ public sealed class LoudnessOptions
 {
     public const string SectionName = "Loudness";
 
-    /// <summary>The integrated loudness every levelled sample is brought to, in LUFS.</summary>
+    /// <summary>The integrated loudness every leveled sample is brought to, in LUFS.</summary>
     public double TargetLufs { get; set; } = -14;
 
     /// <summary>A sample quieter than this, in LUFS integrated, is left at 0 dB.</summary>

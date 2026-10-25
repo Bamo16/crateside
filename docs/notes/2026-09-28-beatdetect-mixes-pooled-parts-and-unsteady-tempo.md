@@ -9,7 +9,7 @@ Three things tried before asking Fil for a filter that takes several drum stems 
 
 ## Weighted mixes of the parts
 
-DrumSep's kick, snare and hi-hat summed with ffmpeg's `amix` (weights as given, normalised) ahead of
+DrumSep's kick, snare and hi-hat summed with ffmpeg's `amix` (weights as given, normalized) ahead of
 `beatdetect`. Whole files; the window behaves the same way.
 
 | input | exact | ½ or ×2 | other | grid on the beat | within 10 ms |

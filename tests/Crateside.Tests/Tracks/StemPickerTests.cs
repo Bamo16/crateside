@@ -177,7 +177,7 @@ public sealed class StemPickerTests
             Row(
                 StemPlan.Default,
                 false,
-                new TrackSample { Label = "Vocal - Balanced", Kind = StemKind.Unrecognised }
+                new TrackSample { Label = "Vocal - Balanced", Kind = StemKind.Unrecognized }
             ),
             Catalog
         );

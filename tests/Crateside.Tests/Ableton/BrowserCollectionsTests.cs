@@ -70,7 +70,7 @@ public sealed class BrowserCollectionsTests
         {
             Timestamp = DateTimeOffset.UnixEpoch,
             Song = "a - b",
-            Centre = new TonalCentre("A", mode),
+            Center = new TonalCenter("A", mode),
             Confidence = confidence,
         };
 
@@ -87,7 +87,7 @@ public sealed class BrowserCollectionsTests
         {
             Timestamp = DateTimeOffset.UnixEpoch,
             Song = "a - b",
-            Centre = new TonalCentre("A", DiatonicMode.Aeolian),
+            Center = new TonalCenter("A", DiatonicMode.Aeolian),
             Confidence = KeyConfidence.High,
         };
 
@@ -103,18 +103,18 @@ public sealed class BrowserCollectionsTests
     }
 
     [Fact]
-    public void A_verdict_with_sections_in_different_centres_carries_the_caveat()
+    public void A_verdict_with_sections_in_different_centers_carries_the_caveat()
     {
         LedgerRun Verdict(params Section[] sections) =>
             new()
             {
                 Timestamp = DateTimeOffset.UnixEpoch,
                 Song = "a - b",
-                Centre = new TonalCentre("E", DiatonicMode.Ionian),
+                Center = new TonalCenter("E", DiatonicMode.Ionian),
                 Confidence = KeyConfidence.High,
                 Sections = sections,
             };
-        var home = new TonalCentre("E", DiatonicMode.Ionian);
+        var home = new TonalCenter("E", DiatonicMode.Ionian);
 
         Assert.Empty(
             BrowserCollections.TrackMarksFor(
@@ -127,7 +127,7 @@ public sealed class BrowserCollectionsTests
             BrowserCollections.TrackMarksFor(
                 Verdict(
                     new Section("Verse", home),
-                    new Section("Outro", new TonalCentre("F#", DiatonicMode.Ionian))
+                    new Section("Outro", new TonalCenter("F#", DiatonicMode.Ionian))
                 )
             )
         );

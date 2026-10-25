@@ -86,7 +86,7 @@ public sealed class FileChangesTests
     }
 
     [Fact]
-    public async Task A_cancelled_wait_throws()
+    public async Task A_canceled_wait_throws()
     {
         using var cancel = new CancellationTokenSource();
         var wait = new FileChanges(_time).Listen().WaitAsync(Timer, cancel.Token);

@@ -40,7 +40,7 @@
     color: inherit;
 }
 
-/* A band is a fact about r, not a state, so it carries no colour. */
+/* A band is a fact about r, not a state, so it carries no color. */
 .chip {
     display: inline-block;
     padding: 0 6px;

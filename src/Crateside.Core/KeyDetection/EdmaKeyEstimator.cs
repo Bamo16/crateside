@@ -49,7 +49,7 @@ public static class EdmaKeyEstimator
         0.32,
     ];
 
-    private static readonly double[] Window = NormalisedHann(FrameSize);
+    private static readonly double[] Window = NormalizedHann(FrameSize);
 
     /// <summary>Over 44.1 kHz mono samples.</summary>
     public static KeyReading Read(ReadOnlySpan<float> samples)
@@ -126,7 +126,7 @@ public static class EdmaKeyEstimator
     }
 
     /// <summary>A symmetric Hann window scaled to sum to 2.</summary>
-    private static double[] NormalisedHann(int size)
+    private static double[] NormalizedHann(int size)
     {
         var window = Enumerable
             .Range(0, size)
@@ -152,18 +152,18 @@ public static class EdmaKeyEstimator
         {
             List<Peak> peaks = [];
 
-            // An edge of the range is a peak when it beats its one neighbour inside it.
+            // An edge of the range is a peak when it beats its one neighbor inside it.
             if (spectrum[First] > spectrum[First + 1] && spectrum[First] > Threshold)
                 peaks.Add(new Peak(First * BinHz, spectrum[First]));
 
             for (var k = First + 1; k < Last; k++)
             {
-                var (left, centre, right) = (spectrum[k - 1], spectrum[k], spectrum[k + 1]);
-                if (centre > left && centre >= right && centre > Threshold)
+                var (left, center, right) = (spectrum[k - 1], spectrum[k], spectrum[k + 1]);
+                if (center > left && center >= right && center > Threshold)
                 {
-                    var offset = 0.5 * (left - right) / (left - 2 * centre + right);
+                    var offset = 0.5 * (left - right) / (left - 2 * center + right);
                     peaks.Add(
-                        new Peak((k + offset) * BinHz, centre - 0.25 * (left - right) * offset)
+                        new Peak((k + offset) * BinHz, center - 0.25 * (left - right) * offset)
                     );
                 }
             }
@@ -259,14 +259,14 @@ public static class EdmaKeyEstimator
                                 (int)Math.Round(1.58 * frequency / BinHz)
                             ),
                         };
-                        var centre = (low + high) / 2.0;
+                        var center = (low + high) / 2.0;
                         var halfWidth = (high - low) / 2.0;
 
                         return (
                             low,
                             Enumerable
                                 .Range(low, high - low + 1)
-                                .Select(bin => Math.Pow(1 - Math.Abs(bin - centre) / halfWidth, 4))
+                                .Select(bin => Math.Pow(1 - Math.Abs(bin - center) / halfWidth, 4))
                                 .ToArray()
                         );
                     }),

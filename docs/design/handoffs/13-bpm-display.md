@@ -32,7 +32,7 @@ Note grammar: **shape first, then source**, joined with ` · `. The same string 
 - `one part`: replace with `the intro` / `the outro` if the build knows where the changing part is. Otherwise keep `one part`.
 - `24 bars at 132`: the second-longest stable tempo. If there are more than two, use the second-longest one and add ` · and others`.
 
-Source phrases, the only three: `from your warp`, `crateside's reading`, `keytag's estimate`. A secondary line's label is the same phrase capitalised: `Your warp`, `crateside's reading` (crateside stays lowercase), `keytag's estimate`.
+Source phrases, the only three: `from your warp`, `crateside's reading`, `keytag's estimate`. A secondary line's label is the same phrase capitalized: `Your warp`, `crateside's reading` (crateside stays lowercase), `keytag's estimate`.
 
 ### Formatter
 One entry point that returns `{ text, approximate, note, flag }` for a tempo. Pages render `text` with the weight and ink set by `approximate` and the source, and nothing else. Two more methods so summaries stay covered by the no-hand-formatting test:
@@ -109,7 +109,7 @@ Applies to the drifting state only. Where it differs, this section overrides the
 ## For investigation (code agent)
 
 **Short warp segments can spike the drift.** Where the range and spread come from warp markers, a segment between two markers very close together gives an unreliable tempo. A few milliseconds of marker placement error over a short span is a large BPM error, and one such spike sets the range and the spread on its own. Before the formatter uses warp-derived range and spread, please look into a guard, for example:
-- dropping or merging segments shorter than some length (a beat count, or a time such as 1–2 s) into their neighbours;
+- dropping or merging segments shorter than some length (a beat count, or a time such as 1–2 s) into their neighbors;
 - weighting by duration and using percentiles (say p5–p95) instead of min/max;
 - or computing over the same 30-second windows as the reading, so both sources measure alike.
 

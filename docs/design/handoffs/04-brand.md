@@ -16,7 +16,7 @@ Replace the bare word in the brand cell with mark + word, one flex row:
 - mark: `<img src="brand/mark.svg" width="18" height="18" alt="">` (decorative; the word is the label)
 - word: unchanged — `crateside`, 15px/600, letter-spacing .02em, `--text`
 - the whole row is the link to `/`
-Do not recolour the mark per page or state. Amber is fixed brand amber `#e8b45a` here even though amber means "your turn" elsewhere — the header is where you look when it is your turn.
+Do not recolor the mark per page or state. Amber is fixed brand amber `#e8b45a` here even though amber means "your turn" elsewhere — the header is where you look when it is your turn.
 
 ## Browser tab
 In `App.razor` `<head>`:
@@ -30,7 +30,7 @@ Tab title stays `crateside` (lowercase) — or `{page} · crateside` per page.
 
 ## Rules
 - Casing: always lowercase `crateside` in product UI.
-- Colours: ink `#ece7dc`, amber `#e8b45a`, tile `#23211a`. No other colours in the mark; no gradients; no outlines.
+- Colors: ink `#ece7dc`, amber `#e8b45a`, tile `#23211a`. No other colors in the mark; no gradients; no outlines.
 - Minimum size: 16px (favicon variant) / 18px (mark.svg). Below that, use the favicon variant.
 - Clear space around the mark: half its height.
 - README placeholder `docs/brand/crateside-lockup.svg` → point it at `lockup.svg` (or copy the file there).

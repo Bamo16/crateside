@@ -6,7 +6,7 @@ Turn 3 of the Tracks page design. The design canvas is `Crateside Unified Page.d
 Read against the repo: `Tracks.razor.css`, `TrackRow.cs`, `StemRecut.cs`, `WorkOrder.cs`, ADRs 0004/0005/0014/0015. Every correction in #22 is carried (no hold, no Done filter, song-keyed rows, parked reasons, side-by-side edits row, `--table-tracks` cap). Tokens are the ones in `app.css`; class names below refer to `Tracks.razor.css`.
 
 ## The decision
-**The stem list is the picker.** There is no separate control. Every file the track could have is a `.stem` line; a leading 22px column holds a tick. A line is either on disk or not; the tick says whether it is wanted. Toggling recolours the same lines into the existing diff classes (`.coming` teal *new*, `.going` red struck *removed*, plain *kept*). The confirm state is therefore the list itself plus the right-hand `.side` column — no second screen.
+**The stem list is the picker.** There is no separate control. Every file the track could have is a `.stem` line; a leading 22px column holds a tick. A line is either on disk or not; the tick says whether it is wanted. Toggling recolors the same lines into the existing diff classes (`.coming` teal *new*, `.going` red struck *removed*, plain *kept*). The confirm state is therefore the list itself plus the right-hand `.side` column — no second screen.
 
 The `has vocals / no vocals` select (`.release`) is **removed, not replaced**. An instrumental release is "Vocal - Full unticked, Source ticked". See notes 1.
 
@@ -59,7 +59,7 @@ Filter bar gains **+ Add track** (pill, 1px `rgba(255,255,255,.4)`) right of sea
 - **Do not ship the Local file tab until notes 3 is decided.** Ship the URL tab alone.
 
 ## 3e — notes (decide before or while building)
-1. **The plan is now the record — ADR 0004 reversed on purpose.** The picker stores the plan per track in the instruction store; nothing derives it. Cost: `has_vocals` stops flowing to keytag (ADR 0005 §6–7). Options: drop the field and amend keytag's glossary, or infer `has_vocals:false` when no vocal preset is ticked *and* the source is kept — labelled as an inference in the ledger, not a statement.
+1. **The plan is now the record — ADR 0004 reversed on purpose.** The picker stores the plan per track in the instruction store; nothing derives it. Cost: `has_vocals` stops flowing to keytag (ADR 0005 §6–7). Options: drop the field and amend keytag's glossary, or infer `has_vocals:false` when no vocal preset is ticked *and* the source is kept — labeled as an inference in the ledger, not a statement.
 2. **Warp guide is not a choice.** Pinned line, dot not box. If drums becomes a preset upstream, the line stays pinned. A re-cut that keeps any file keeps the guide; a new one is cut only when nothing survives.
 3. **Local-file identity is unsolved.** Every reader joins on StemForge `COMMENT` provenance. Two ways out, neither decided: crateside writes provenance into audio (against ADR 0003's one-write rule) or keytag mints an identity. Until then: `parked · no identity`.
 4. **Added upload vs done.** Recommendation: adding a source **reopens** the row to `ready to warp` with one outstanding file. Rows may move on reaching ready to warp, so this is permitted.

@@ -39,7 +39,7 @@ public sealed class TaggingDrainer(
         var (status, error) = outcome switch
         {
             TagWriteOutcome.Written => (JobStatus.Succeeded, (string?)null),
-            TagWriteOutcome.Stale(var stale) => (JobStatus.Cancelled, stale),
+            TagWriteOutcome.Stale(var stale) => (JobStatus.Canceled, stale),
             TagWriteOutcome.Rejected(var rejected) => (JobStatus.Failed, rejected),
             _ => throw new UnreachableException(),
         };

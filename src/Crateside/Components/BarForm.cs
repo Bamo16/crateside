@@ -85,7 +85,7 @@ public sealed class BarForm(bool inBars)
         ];
 
     /// <summary>What the user hears, or null when they left it empty or it is not a key.</summary>
-    public TonalCentre? EarCentre()
+    public TonalCenter? EarCenter()
     {
         if (MusicKey.FromString(Ear.Trim()) is not { } key)
             return null;
@@ -93,10 +93,10 @@ public sealed class BarForm(bool inBars)
         var tonic = key.SharpName.Split(' ')[0];
         var mode = EarMode ?? (key.Mode is Mode.Minor ? DiatonicMode.Aeolian : DiatonicMode.Ionian);
 
-        return new TonalCentre(tonic, mode);
+        return new TonalCenter(tonic, mode);
     }
 
-    public bool EarIsUnreadable => Ear.Trim() is { Length: > 0 } && EarCentre() is null;
+    public bool EarIsUnreadable => Ear.Trim() is { Length: > 0 } && EarCenter() is null;
 
     /// <summary>The request, with the lines' notes as one direction: each under its window's name when there are several.</summary>
     public JudgeDirection Direction(WarpGroup group, string? audio)
@@ -112,7 +112,7 @@ public sealed class BarForm(bool inBars)
             _ => string.Join('\n', noted.Select(pair => $"{pair.Window!.Name}: {pair.Note}")),
         };
 
-        return new JudgeDirection(Windows(group), note, EarCentre(), audio);
+        return new JudgeDirection(Windows(group), note, EarCenter(), audio);
     }
 
     public void Add() => Lines.Add(new());

@@ -9,7 +9,7 @@ namespace Crateside;
 /// Never paused: ffmpeg runs on the CPU and contends for nothing, like detection (ADR 0059).
 /// </summary>
 public sealed class LoudnessWorker(
-    Levelling levelling,
+    Leveling leveling,
     FileChanges changes,
     ILogger<LoudnessWorker> logger
 ) : BackgroundService
@@ -26,24 +26,24 @@ public sealed class LoudnessWorker(
         {
             try
             {
-                if (levelling.Unread() is { Count: > 0 } unread)
+                if (leveling.Unread() is { Count: > 0 } unread)
                 {
                     logger.LogInformation(
                         "Reading the loudness of {Count}",
                         "sample".ToQuantity(unread.Count)
                     );
-                    await levelling.ReadAsync(unread, stoppingToken);
+                    await leveling.ReadAsync(unread, stoppingToken);
                     logger.LogInformation(
                         "Read the loudness of {Count}",
                         "sample".ToQuantity(unread.Count)
                     );
                 }
 
-                if (levelling.Level() is { Count: > 0 } levelled)
+                if (leveling.Level() is { Count: > 0 } leveled)
                     logger.LogInformation(
                         "Set the clip gain of {Count}: {Samples}",
-                        "sample".ToQuantity(levelled.Count),
-                        Listed(levelled)
+                        "sample".ToQuantity(leveled.Count),
+                        Listed(leveled)
                     );
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -52,7 +52,7 @@ public sealed class LoudnessWorker(
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Levelling samples failed");
+                logger.LogWarning(ex, "Leveling samples failed");
             }
 
             try

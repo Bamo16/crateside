@@ -177,7 +177,7 @@
                             @for (var i = 0; i < StripColumns; i++)
                             {
                                 var at = (i + 0.5) / StripColumns * group.Seconds;
-                                <span @onpointerdown="() => CentreOn(group, at)" @onpointerenter="pointer => Drag(group, at, pointer)"></span>
+                                <span @onpointerdown="() => CenterOn(group, at)" @onpointerenter="pointer => Drag(group, at, pointer)"></span>
                             }
                         </div>
                     </div>
@@ -430,7 +430,7 @@
             @if (OpenReading is { } open)
             {
                 <WindowDrawer Run="Run!" Reading="open.Reading" Index="open.Index" Span="@DrawerSpan(group, open.Reading.Window)"
-                              At="WindowCentre(group, open.Reading.Window)" OnClose="() => _openWindow = null" OnStep="StepWindow" />
+                              At="WindowCenter(group, open.Reading.Window)" OnClose="() => _openWindow = null" OnStep="StepWindow" />
             }
 
             @if (selected is not null)
@@ -493,17 +493,17 @@
 
                         <div class="control">
                             <div class="label-line">
-                                <span class="control-label @(_confirming is Confirming.LetLive || selected.Owner is WarpOwner.WaitingForLive ? "asking" : null)">Let Live analyse</span>
-                                @if (WarpWording.CanLetLiveAnalyse(selected) && _confirming is Confirming.None && _working is null)
+                                <span class="control-label @(_confirming is Confirming.LetLive || selected.Owner is WarpOwner.WaitingForLive ? "asking" : null)">Let Live analyze</span>
+                                @if (WarpWording.CanLetLiveAnalyze(selected) && _confirming is Confirming.None && _working is null)
                                 {
-                                    <button class="outline" @onclick="() => _confirming = Confirming.LetLive">Let Live analyse</button>
+                                    <button class="outline" @onclick="() => _confirming = Confirming.LetLive">Let Live analyze</button>
                                 }
                             </div>
                             @if (_confirming is Confirming.LetLive)
                             {
                                 <span class="status">@wording.LetLiveQuestion(selected)</span>
                                 <span class="actions">
-                                    <button class="danger" @onclick="() => LetLiveAnalyse(selected)">Send to Recycle Bin</button>
+                                    <button class="danger" @onclick="() => LetLiveAnalyze(selected)">Send to Recycle Bin</button>
                                     <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
                                 </span>
                             }
@@ -517,7 +517,7 @@
                             }
                             else
                             {
-                                <span class="status @(selected.Owner is WarpOwner.WaitingForLive ? "now" : WarpWording.CanLetLiveAnalyse(selected) && _working is null ? null : "faint")">
+                                <span class="status @(selected.Owner is WarpOwner.WaitingForLive ? "now" : WarpWording.CanLetLiveAnalyze(selected) && _working is null ? null : "faint")">
                                     @(_working is not null && selected.Owner is not WarpOwner.WaitingForLive ? "Not while a change is under way." : wording.LetLiveStatus(selected, Folder(selected)))
                                 </span>
                             }
@@ -599,7 +599,7 @@
             : JudgeText.Time(window);
 
     /// <summary>The middle of a window in the view, as a percentage of the plot, for the drawer's caret.</summary>
-    private double WindowCentre(WarpGroup group, RunWindow window)
+    private double WindowCenter(WarpGroup group, RunWindow window)
     {
         var (from, to) = View(group);
 
@@ -653,12 +653,12 @@
         if (verdict is { Confidence: KeyConfidence.Withheld })
             return $"Withheld again {ago}. The form is open again with your ranges, so a second try is one edit away.";
 
-        var key = verdict.Centre is { } centre ? ModeText.Named(centre) : KeyText.Spell(verdict.Key);
-        // A window in another centre is a section of the song, not a dissent, so it is named rather than counted.
+        var key = verdict.Center is { } center ? ModeText.Named(center) : KeyText.Spell(verdict.Key);
+        // A window in another center is a section of the song, not a dissent, so it is named rather than counted.
         var yours = Run?.Readings.Where(reading => reading.Window.AskedBy is WindowAsker.User).ToList() ?? [];
         var elsewhere = yours
-            .Where(reading => reading.Section is { } section && section.Centre != verdict.Centre)
-            .Select(reading => $"{reading.Section!.Label}: {ModeText.Named(reading.Section.Centre)}")
+            .Where(reading => reading.Section is { } section && section.Center != verdict.Center)
+            .Select(reading => $"{reading.Section!.Label}: {ModeText.Named(reading.Section.Center)}")
             .ToList();
         var agreement = (yours.Count, elsewhere) switch
         {
@@ -752,7 +752,7 @@
                 reading switch
                 {
                     { Window.AskedBy: WindowAsker.User, Section: { } section } =>
-                        new Band(reading.Window.Start, reading.Window.End, $"{section.Label} · {ModeText.Tag(section.Centre)}", "yours", Window: index),
+                        new Band(reading.Window.Start, reading.Window.End, $"{section.Label} · {ModeText.Tag(section.Center)}", "yours", Window: index),
                     { Window.AskedBy: WindowAsker.User } =>
                         new Band(reading.Window.Start, reading.Window.End, reading.Window.Name, "yours", Window: index),
                     _ => new Band(reading.Window.Start, reading.Window.End, $"judge · {Span(group, reading.Window)}", "judge", Window: index),
@@ -872,7 +872,7 @@
     private WarpGroup? _group;
     private string? _stamp;
     private Zoom _zoom = Zoom.Whole;
-    private double _centreBeat;
+    private double _centerBeat;
     private Confirming _confirming;
     private string? _working;
     private ActionDone? _done;
@@ -1134,11 +1134,11 @@
         await Tracks.EnsureFreshAsync(TimeSpan.Zero);
     }
 
-    private async Task LetLiveAnalyse(StemWarp stem)
+    private async Task LetLiveAnalyze(StemWarp stem)
     {
         _confirming = Confirming.None;
 
-        var outcome = Actions.LetLiveAnalyse(stem.Path);
+        var outcome = Actions.LetLiveAnalyze(stem.Path);
 
         _done = outcome is LetLiveOutcome.Sent
             ? null
@@ -1184,42 +1184,42 @@
         _zoom = zoom;
 
         if (zoom is not Zoom.Whole)
-            _centreBeat = Clamped(
+            _centerBeat = Clamped(
                 group,
-                fromWhole ? group.ClipStartBeat + BarsOf(zoom) * group.BeatsPerBar / 2.0 : _centreBeat
+                fromWhole ? group.ClipStartBeat + BarsOf(zoom) * group.BeatsPerBar / 2.0 : _centerBeat
             );
     }
 
     private void Move(WarpGroup group, int direction) =>
-        _centreBeat = Clamped(group, _centreBeat + direction * BarsOf(_zoom) * group.BeatsPerBar / 2.0);
+        _centerBeat = Clamped(group, _centerBeat + direction * BarsOf(_zoom) * group.BeatsPerBar / 2.0);
 
     /// <summary>Follows the pointer across the strip while its button is held.</summary>
     private void Drag(WarpGroup group, double seconds, PointerEventArgs pointer)
     {
         if ((pointer.Buttons & 1) is not 0)
-            CentreOn(group, seconds);
+            CenterOn(group, seconds);
     }
 
-    /// <summary>Centres the view near a point, starting it on a bar line so it reads in whole bars.</summary>
-    private void CentreOn(WarpGroup group, double seconds)
+    /// <summary>Centers the view near a point, starting it on a bar line so it reads in whole bars.</summary>
+    private void CenterOn(WarpGroup group, double seconds)
     {
         if (group.BeatAt(seconds) is not { } beat)
             return;
 
         var half = BarsOf(_zoom) * group.BeatsPerBar / 2.0;
         var bar = Math.Round((beat - half - group.ClipStartBeat) / group.BeatsPerBar);
-        _centreBeat = Clamped(group, group.ClipStartBeat + bar * group.BeatsPerBar + half);
+        _centerBeat = Clamped(group, group.ClipStartBeat + bar * group.BeatsPerBar + half);
     }
 
     /// <summary>Keeps the whole window inside the track, so it never runs off either end.</summary>
-    private double Clamped(WarpGroup group, double centreBeat)
+    private double Clamped(WarpGroup group, double centerBeat)
     {
         if (group.BeatAt(0) is not { } first || group.BeatAt(group.Seconds) is not { } last)
-            return centreBeat;
+            return centerBeat;
 
         var half = BarsOf(_zoom) * group.BeatsPerBar / 2.0;
 
-        return first + half >= last - half ? (first + last) / 2 : Math.Clamp(centreBeat, first + half, last - half);
+        return first + half >= last - half ? (first + last) / 2 : Math.Clamp(centerBeat, first + half, last - half);
     }
 
     private (double From, double To) View(WarpGroup group)
@@ -1229,8 +1229,8 @@
 
         var span = BarsOf(_zoom) * group.BeatsPerBar;
 
-        return group.SecondsAt(_centreBeat - span / 2.0) is { } start
-            && group.SecondsAt(_centreBeat + span / 2.0) is { } end
+        return group.SecondsAt(_centerBeat - span / 2.0) is { } start
+            && group.SecondsAt(_centerBeat + span / 2.0) is { } end
             && end > start
             ? (start, end)
             : (0, Math.Max(group.Seconds, 1));
@@ -1353,14 +1353,14 @@
 
         for (var channel = 0; channel < drawn.Count; channel++)
         {
-            var centre = channel * (each + gap) + each / 2;
+            var center = channel * (each + gap) + each / 2;
             var column = drawn[channel];
 
             path.Append('M');
             for (var x = 0; x < column.Length; x++)
-                path.Append(P(x + 0.5)).Append(',').Append(P(centre - column[x].Max * each / 2)).Append(' ');
+                path.Append(P(x + 0.5)).Append(',').Append(P(center - column[x].Max * each / 2)).Append(' ');
             for (var x = column.Length - 1; x >= 0; x--)
-                path.Append(P(x + 0.5)).Append(',').Append(P(centre - Math.Min(column[x].Min, column[x].Max - 0.02f) * each / 2)).Append(' ');
+                path.Append(P(x + 0.5)).Append(',').Append(P(center - Math.Min(column[x].Min, column[x].Max - 0.02f) * each / 2)).Append(' ');
             path.Append('Z');
         }
 

@@ -72,7 +72,7 @@ internal static class RunLines
         }
     }
 
-    /// <summary>A run line as a run, with <c>key</c> and <c>mode</c> becoming a tonal centre.</summary>
+    /// <summary>A run line as a run, with <c>key</c> and <c>mode</c> becoming a tonal center.</summary>
     public static RunRecord ToRun(RunLine line) =>
         new()
         {
@@ -86,7 +86,7 @@ internal static class RunLines
             InputKind = line.InputKind,
             HasVocals = line.HasVocals,
             Confidence = LedgerRun.ParseConfidence(line.Verdict?.Confidence),
-            Centre = TonalCentre.FromKey(line.Verdict?.Key) is { } plain
+            Center = TonalCenter.FromKey(line.Verdict?.Key) is { } plain
                 ? plain with
                 {
                     Mode = LedgerVocabulary.ParseMode(line.Verdict?.Mode) ?? plain.Mode,

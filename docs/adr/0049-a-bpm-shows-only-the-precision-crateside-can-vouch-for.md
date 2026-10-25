@@ -88,7 +88,7 @@ slope of exactly 128, not 128.002.
 | steady and **vouched for**: any warp, or a reading whose windows agree within 0.02% | `150`, `128.02`, `119.50` | rounded to two decimals; `.00` is dropped, any other hundredths are kept |
 | steady, a reading whose windows agree less tightly | `~128` | whole number, approximate |
 | drifting (warp shape Drifting, or a reading that drifts) | `~96`, marked as drifting | whole numbers; the range on the song page |
-| keytag's estimate | `~128`, labelled as keytag's | never exact |
+| keytag's estimate | `~128`, labeled as keytag's | never exact |
 | mostly steady: a warp with a main tempo and a ramp or drifting stretch besides | the main tempo, written as steady, with a note that a part changes | |
 | changing: a warp with two or more stable tempos | the main tempo with a note that the track changes tempo | the detail is not needed |
 

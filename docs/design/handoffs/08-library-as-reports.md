@@ -4,7 +4,7 @@ Issues: #68, #60, #56 · answers `briefs/08-library-as-reports.md` · built agai
 Canvas: `Crateside Counts Page.dc.html` (1a whole page, 1b a detector band opened).
 
 The canvas is a design reference in HTML. Port it to `Pages/Library.razor` and its `.razor.css`.
-No new tokens, nothing newly coloured, buttons stay `.outline` / `.primary` / `.danger`.
+No new tokens, nothing newly colored, buttons stay `.outline` / `.primary` / `.danger`.
 Song names, per-song figures, and the key, genre and familiarity spreads are illustrative. The
 tempo bins, common tempos, warp shapes, artist counts and detector totals are the brief's measured
 figures.
@@ -18,7 +18,7 @@ figures.
 - Why: the page counts things, one per song. "Library" promised a place to browse files;
   "Reports" or "Stats" promise a dashboard, which the user doesn't want.
 
-## 2. Page organisation
+## 2. Page organization
 
 - One long page. No in-page tabs: every panel is short, and scrolling is the "fun to look at" part.
 - Top to bottom: title block → action band (only when there is one) → a two-column grid:
@@ -112,7 +112,7 @@ as on the side stack.
 - Each row carries its rule under the name in mono 11.5px `--text-50` (`within 0.5`,
   `×½ · ×2 · ±2`, …).
 - The two-thirds/three-quarters row is the finding: its name is 600 weight and the row has a
-  `rgba(255,255,255,.03)` wash. No colour.
+  `rgba(255,255,255,.03)` wash. No color.
 
 ### Where the misses land (1a)
 
@@ -147,7 +147,7 @@ After building, update:
 - **Page headers** table: the Library row becomes **Counts · Bar**.
 - A short **Counts page** section: long page + sticky index, panel order, the action band as the
   one place for actions, the "top N · all" fold, the solid-segment bar for tempo peaks.
-- Note the key table's minor/major colouring (teal/amber bars) as a known exception it already
+- Note the key table's minor/major coloring (teal/amber bars) as a known exception it already
   is: new bar tables are teal only.
 
 ## Not done here

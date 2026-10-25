@@ -65,7 +65,7 @@ How often a source's stated key matched the verdict, by site and the kind the ju
 | tabs.ultimate-guitar.com | corroborating | 58 | 41/42 |
 | tunebat.com | algorithmic | 157 | 53/126 (42%) |
 | songbpm.com | algorithmic | 47 | 18/35 (51%) |
-| chordify.net | chord recogniser | 30 | 12/17 |
+| chordify.net | chord recognizer | 30 | 12/17 |
 
 446 of the 519 songs cite at least one source. The algorithmic sites match the verdict less often
 than keydetect alone does. The Hooktheory figure is circular in the same way as the verdict
@@ -90,7 +90,7 @@ The four Hooktheory pages were read on 2026-10-15:
 
 - **Around the World**: "A Dorian (verse), E minor (chorus)". Not a dissent; the import recorded
   the first section.
-- **Single Ladies**: the tab analyses the melody (E major); the harmony is Aeolian. Same tonic,
+- **Single Ladies**: the tab analyzes the melody (E major); the harmony is Aeolian. Same tonic,
   two modes at once.
 - **Run Away**: one section, *Chorus*, B♭ minor. The ledger's claim came from a search snippet,
   which was accurate. Ultimate Guitar says D♭ major. A relative tie, settled by the judge from

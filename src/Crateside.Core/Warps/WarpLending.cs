@@ -6,9 +6,9 @@ namespace Crateside.Core.Warps;
 /// Gives every staged stem without a finished warp the warp its siblings agree on, whether the
 /// stem just landed or the user just saved a sibling (#54, ADR 0043), or a starter warp at the
 /// measured tempo when nothing of its upload is warped (#77, ADR 0047, ADR 0048), else a clip with
-/// Warp off so it still arrives at its gain and colour (ADR 0059).
+/// Warp off so it still arrives at its gain and color (ADR 0059).
 /// </summary>
-/// <param name="waiting">Stems left for Live to analyse, which nothing is written to meanwhile (#97).</param>
+/// <param name="waiting">Stems left for Live to analyze, which nothing is written to meanwhile (#97).</param>
 public sealed class WarpLending(
     CratesidePaths paths,
     SidecarWriter writer,

@@ -233,7 +233,7 @@ public sealed partial class VerdictRunner(
             : "The maintainer asked for this judgment and named the stretches where they hear the "
                 + "key clearly. crateside detected over each. A window is weaker evidence than the "
                 + "whole track (see Windows in your instructions), so weigh each against the whole "
-                + "file, not above it. Write one section per window, labelled with the window's "
+                + "file, not above it. Write one section per window, labeled with the window's "
                 + "name, with the key you hear in it.";
 
         if (direction.Note is { Length: > 0 } note)
@@ -594,7 +594,7 @@ public sealed partial class VerdictRunner(
     }
 
     /// <summary>What the user said they hear, as a source, with how much it counted on the day.</summary>
-    private RunSource EarSource(TonalCentre ear) =>
+    private RunSource EarSource(TonalCenter ear) =>
         new()
         {
             Via = "the maintainer's ear",

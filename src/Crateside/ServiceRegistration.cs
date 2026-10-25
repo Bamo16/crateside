@@ -223,7 +223,7 @@ public static class ServiceRegistration
     {
         services.AddSingleton<LoudnessReader>();
         services.AddSingleton<ClipGains>();
-        services.AddSingleton<Levelling>();
+        services.AddSingleton<Leveling>();
         // Unattended: reading loudness is ffmpeg on the CPU (ADR 0059).
         services.AddHostedService<LoudnessWorker>();
 

@@ -112,7 +112,7 @@ public sealed class SourcePagesTests
     }
 
     [Fact]
-    public void A_section_synced_to_another_video_does_not_count_towards_coverage()
+    public void A_section_synced_to_another_video_does_not_count_toward_coverage()
     {
         var scores = MoneyScores;
 

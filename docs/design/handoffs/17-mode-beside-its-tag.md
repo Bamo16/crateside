@@ -5,7 +5,7 @@ Brief 17, issue #114, ADR 0055. Canvas: `Crateside Mode Beside Its Tag.dc.html` 
 **The rule:** the tag stays where it is, at its size and in its place. A modal verdict adds its
 mode *before* it. Where there is room this is the arrow (`A Dorian → A min`); where there isn't,
 an outlined abbreviation after the tag with the arrow on hover. Plain major and minor, Ionian and
-Aeolian included, change nothing. No colour anywhere.
+Aeolian included, change nothing. No color anywhere.
 
 ## Words
 
@@ -35,7 +35,7 @@ Ionian and Aeolian are drawn as plain major and minor.
   1px `--text` at 45% border, ink `--text` 85%. Outlined like a corroborating badge.
 - Hover on the cell (`title` is fine) gives the arrow and the reason. With sections, add
   `Also E minor (chorus), C Lydian (bridge).`
-- Sections get no mark in the row: it shows the primary centre, the one the tag follows.
+- Sections get no mark in the row: it shows the primary center, the one the tag follows.
 
 ## 1b Track details band, Key cell
 
@@ -44,7 +44,7 @@ Top to bottom:
 2. **Lead line** (modal only): the arrow's left half, mono 18/500 `--text`, with `→` at `--text-60`.
 3. The tag at 52px/600, unchanged.
 4. **Reason**, 12.5px `--text-75`. Replaces `really A Dorian, tagged as A min`.
-5. **Sections** (if any): a hairline, then one line per other centre, label (52px, Sans 12.5
+5. **Sections** (if any): a hairline, then one line per other center, label (52px, Sans 12.5
    `--text-60`) and key in mono 12.5/500 with its own arrow where it's modal (`C Lydian → C maj`).
 6. The usual sub-line (`tagged A min in Ableton on 2 of 2 samples`). With sections it reads
    `the verse, and the tag follows it`.
@@ -52,21 +52,21 @@ Top to bottom:
 The band's other cells justify to the bottom (`justify-content:flex-end`) so the 52px figures
 stay level when the Key cell is taller. *Why …* in Where it is reads `Why A Dorian ↓`.
 
-**Room for no tonal centre:** the same three lines give `no tonal centre →`, `—` and a reason.
+**Room for no tonal center:** the same three lines give `no tonal center →`, `—` and a reason.
 
 ## 1c Why this key, with sections
 
-- **Centres** block before Sources. Where sections have times, a strip on the track's time axis
-  (34px tall, radius 3): the primary filled at `--text` 16% with a 50% border, other centres
-  outlined at 35%. Each block is labelled `verse · G Mixo` in mono 11, with times under the strip
+- **Centers** block before Sources. Where sections have times, a strip on the track's time axis
+  (34px tall, radius 3): the primary filled at `--text` 16% with a 50% border, other centers
+  outlined at 35%. Each block is labeled `verse · G Mixo` in mono 11, with times under the strip
   as in the warp view. A repeated section is drawn each time it occurs. Without times, no strip.
-- Under it, one ruled line per centre: label (90px) · key with arrow (mono 13/500) · note (`primary ·
+- Under it, one ruled line per center: label (90px) · key with arrow (mono 13/500) · note (`primary ·
   the tag follows it · 0:00, 1:10`, or the times).
 - **Sources**: each row adds a **covers** chip under the site (neutral outline pill, 11px):
   `whole song`, `chorus only`. ✓/✗ is judged against what it covered, and the relation line
   says so: `agrees with the chorus`, `disagrees with the bridge (C Lydian), not the song`,
   `matches the chorus, not the song`.
-- The heading is `Why {primary centre}`, with the gist `three centres; the tag follows the verse`.
+- The heading is `Why {primary center}`, with the gist `three centers; the tag follows the verse`.
 
 ## 1d Partners (proposal, not this issue)
 
@@ -76,5 +76,5 @@ re-sorts from that basis, as the relative pill does now. The basis sentence name
 
 ## Not designed
 
-The Dashboard's tallies (left room for). A fourth shape, *no tonal centre*: not drawn, but nothing
+The Dashboard's tallies (left room for). A fourth shape, *no tonal center*: not drawn, but nothing
 above assumes a tonic.

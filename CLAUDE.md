@@ -180,6 +180,6 @@ dependency on a sibling checkout, no surname or personal circumstances anywhere 
 only), paid services behind a switchable interface, nothing listening beyond localhost without
 authentication. Write issues and docs in the public voice ("the maintainer"). A song named in
 a doc gets its artist and title, enough for a stranger to find it, written `Artist – *Title*`
-(plain artist, en dash, italic title; a title in another script gets its romanisation beside it);
+(plain artist, en dash, italic title; a title in another script gets its romanization beside it);
 otherwise describe it and leave the name out. The full list and the
 pre-publication checklist are in #107.

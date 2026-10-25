@@ -391,7 +391,7 @@
     transform: translateX(-50%);
 }
 
-/* Provenance chips: monochrome by whose warp it is, coloured only for state. */
+/* Provenance chips: monochrome by whose warp it is, colored only for state. */
 .wchip {
     display: inline-flex;
     align-items: center;
@@ -1002,7 +1002,7 @@
     background: rgba(111, 199, 214, 0.1);
 }
 
-/* Cut off with an ellipsis at the band's edge, so neighbouring windows' tags never overlap; the title carries the whole. */
+/* Cut off with an ellipsis at the band's edge, so neighboring windows' tags never overlap; the title carries the whole. */
 .jtag {
     max-width: 100%;
     overflow: hidden;

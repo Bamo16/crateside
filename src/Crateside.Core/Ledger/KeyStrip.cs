@@ -1,48 +1,48 @@
 namespace Crateside.Core.Ledger;
 
-/// <summary>One band of the key strip: a centre over a stretch of the track, in seconds.</summary>
+/// <summary>One band of the key strip: a center over a stretch of the track, in seconds.</summary>
 public sealed record KeyBand(
     double Start,
     double End,
-    TonalCentre Centre,
+    TonalCenter Center,
     string? Section,
     bool FromWindow
 )
 {
-    /// <summary><c>B min</c>, or <c>A Dor</c> for a modal centre.</summary>
-    public string Key => KeyStrip.Short(Centre);
+    /// <summary><c>B min</c>, or <c>A Dor</c> for a modal center.</summary>
+    public string Key => KeyStrip.Short(Center);
 
-    /// <summary><c>verse · A Dor</c>, or just the key where the song has one centre.</summary>
+    /// <summary><c>verse · A Dor</c>, or just the key where the song has one center.</summary>
     public string Label => Section is { Length: > 0 } section ? $"{section} · {Key}" : Key;
 }
 
-/// <summary>The bands the verdict's centres take on the track, and the sections that have no time to be drawn at.</summary>
+/// <summary>The bands the verdict's centers take on the track, and the sections that have no time to be drawn at.</summary>
 public sealed record KeyStripPlan(IReadOnlyList<KeyBand> Bands, IReadOnlyList<Section> Unplaced)
 {
     public bool IsEmpty => Bands is [] && Unplaced is [];
 }
 
-/// <summary>Places a verdict's centres on the track's time axis (handoff 20).</summary>
+/// <summary>Places a verdict's centers on the track's time axis (handoff 20).</summary>
 public static class KeyStrip
 {
-    /// <summary><c>B min</c>, or <c>A Dor</c> for a modal centre.</summary>
-    public static string Short(TonalCentre centre) =>
-        ModeText.Abbreviation(centre, false) is { } mode
-            ? $"{centre.Tonic.Replace('#', '♯')} {mode}"
-            : ModeText.Tag(centre);
+    /// <summary><c>B min</c>, or <c>A Dor</c> for a modal center.</summary>
+    public static string Short(TonalCenter center) =>
+        ModeText.Abbreviation(center, false) is { } mode
+            ? $"{center.Tonic.Replace('#', '♯')} {mode}"
+            : ModeText.Tag(center);
 
     /// <summary>
     /// A section that came from a window takes the window's span, one with a start runs to the next
-    /// boundary, the primary centre fills everything else, and a section with neither is named,
+    /// boundary, the primary center fills everything else, and a section with neither is named,
     /// never drawn.
     /// </summary>
     public static KeyStripPlan Plan(RunEvidence run, double seconds)
     {
-        if (run.Centre is not { } primary || seconds <= 0)
+        if (run.Center is not { } primary || seconds <= 0)
             return new([], []);
 
-        var primaryLabel = run.Sections.FirstOrDefault(section => section.Centre == primary)?.Label;
-        var others = run.Sections.Where(section => section.Centre != primary).ToList();
+        var primaryLabel = run.Sections.FirstOrDefault(section => section.Center == primary)?.Label;
+        var others = run.Sections.Where(section => section.Center != primary).ToList();
 
         if (others is [])
             return new([new(0, seconds, primary, null, false)], []);
@@ -82,7 +82,7 @@ public static class KeyStrip
                             .Min(),
                     seconds
                 ),
-                placed.Section.Centre,
+                placed.Section.Center,
                 placed.Section.Label,
                 placed.FromWindow
             ))

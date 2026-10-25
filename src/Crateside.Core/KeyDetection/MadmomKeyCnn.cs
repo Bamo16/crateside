@@ -100,7 +100,7 @@ internal static class LogFilteredSpectrogram
 
         for (var f = 0; f < frames; f++)
         {
-            // Centred on its sample, zero-padded past either end.
+            // Centerd on its sample, zero-padded past either end.
             var start = (int)(f * HopSize) - FrameSize / 2;
             for (var i = 0; i < FrameSize; i++)
             {
@@ -133,19 +133,19 @@ internal static class LogFilteredSpectrogram
 
     private static (int Start, float[] Weights)[] BuildFilters()
     {
-        var centres = CentreBins();
-        var filters = new (int, float[])[centres.Length - 2];
+        var centers = CenterBins();
+        var filters = new (int, float[])[centers.Length - 2];
 
-        for (var i = 0; i + 2 < centres.Length; i++)
+        for (var i = 0; i + 2 < centers.Length; i++)
         {
-            var (start, centre, stop) = (centres[i], centres[i + 1], centres[i + 2]);
+            var (start, center, stop) = (centers[i], centers[i + 1], centers[i + 2]);
 
             if (stop - start < 2)
-                (centre, stop) = (start, start + 1);
+                (center, stop) = (start, start + 1);
 
             var weights = new double[stop - start];
-            var rise = centre - start;
-            var fall = stop - centre;
+            var rise = center - start;
+            var fall = stop - center;
             for (var j = 0; j < rise; j++)
                 weights[j] = (double)j / rise;
             for (var j = 0; j < fall; j++)
@@ -159,7 +159,7 @@ internal static class LogFilteredSpectrogram
     }
 
     /// <summary>The bins nearest each log-spaced frequency, without repeats.</summary>
-    private static int[] CentreBins()
+    private static int[] CenterBins()
     {
         const double reference = 440;
         const int perOctave = 24;

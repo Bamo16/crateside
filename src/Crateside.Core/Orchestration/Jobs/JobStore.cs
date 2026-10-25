@@ -50,7 +50,7 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
     /// Puts a track a stage has given up on back in line, its strikes kept on the record.
     /// </summary>
     public TrackJob Forgive(string videoId, JobStage stage) =>
-        Record(videoId, stage, JobStatus.Cancelled, error: "put back in line by hand");
+        Record(videoId, stage, JobStatus.Canceled, error: "put back in line by hand");
 
     /// <summary>
     /// Appends an update and returns the job as it now stands. The only way state changes —

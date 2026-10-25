@@ -63,7 +63,7 @@ recovery machinery was already there; the premature move was all that defeated i
   the selector does not take, and it raises what "complete" means for a track whose stems the user
   has deliberately deleted. Deferred with the issue below.
 
-`Cancelled` does not block either: a re-cut records it to reopen the stage, and nothing is in the
+`Canceled` does not block either: a re-cut records it to reopen the stage, and nothing is in the
 cut root at that point for the handoff to take.
 
 ## Consequences
@@ -88,7 +88,7 @@ the user reported that the fix left them with no way forward.
 |---|---|
 | `Outstanding` | fully processed — a verdict and *a* stem in staging |
 | `verdictWithoutStems` → `AwaitingSeparation` | it has a stem, so not this either |
-| `AwaitingCut` → `AwaitingSeparation` | `ReopenedTracks.IsOwed` was `Cancelled or Queued or Running`. **`Failed` was not owed.** |
+| `AwaitingCut` → `AwaitingSeparation` | `ReopenedTracks.IsOwed` was `Canceled or Queued or Running`. **`Failed` was not owed.** |
 | re-cut in the picker | the plan already asks for `Instrumental - Full`, so `AsksTheSameAs` holds and no confirm is offered |
 | the **Retry** button | shown only when `GaveUpAt is not null`, which needs the strikes exhausted. It had one of three. |
 

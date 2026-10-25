@@ -25,7 +25,7 @@ checks the warps themselves, and shows which part sits where.
 | song | beat ms | onsets: drums / kick / snare / hi-hat | beatdetect, drums whole | at marker | worst in song |
 |---|---|---|---|---|---|
 | Rob Zombie - Superbeast | 389.6 | -3 / -1 / -7 / +7 | 154.00 | +0 | 5 |
-| NXONE'S FAVOURITE, Nakedleisure - NOT A DREAM | 359.3 | -0 / -74 / -0 / -2 | 41.76 (other) |  |  |
+| NXONE'S FAVORITE, Nakedleisure - NOT A DREAM | 359.3 | -0 / -74 / -0 / -2 | 41.76 (other) |  |  |
 | Porter Robinson - Language | 468.7 | -2 / +1 / -2 / -2 | 128.05 | +37 | 104 |
 | Will Atkinson, GURLI - Calling For You | 422.5 | +0 / +0 / +0 / +207 | 141.96 | +18 | 58 |
 | Creepy Nuts - Bling-Bang-Bang-Born | 382.2 | +1 / +1 / -5 / +1 | 157.03 | +9 | 25 |

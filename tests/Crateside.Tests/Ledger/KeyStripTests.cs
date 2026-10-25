@@ -6,13 +6,13 @@ public sealed class KeyStripTests
 {
     private const double Seconds = 200;
 
-    private static readonly TonalCentre BMinor = new("B", DiatonicMode.Aeolian);
-    private static readonly TonalCentre ADorian = new("A", DiatonicMode.Dorian);
-    private static readonly TonalCentre EMinor = new("E", DiatonicMode.Aeolian);
-    private static readonly TonalCentre CLydian = new("C", DiatonicMode.Lydian);
+    private static readonly TonalCenter BMinor = new("B", DiatonicMode.Aeolian);
+    private static readonly TonalCenter ADorian = new("A", DiatonicMode.Dorian);
+    private static readonly TonalCenter EMinor = new("E", DiatonicMode.Aeolian);
+    private static readonly TonalCenter CLydian = new("C", DiatonicMode.Lydian);
 
     private static RunEvidence Run(
-        TonalCentre? centre,
+        TonalCenter? center,
         Section[] sections,
         RunWindow[]? windows = null,
         WindowReading[]? readings = null
@@ -21,7 +21,7 @@ public sealed class KeyStripTests
         {
             Timestamp = DateTimeOffset.UnixEpoch,
             Song = "a - b",
-            Centre = centre,
+            Center = center,
             Sections = sections,
             Windows = windows ?? [],
             Readings = readings ?? [],
@@ -31,7 +31,7 @@ public sealed class KeyStripTests
         string.Join(" | ", plan.Bands.Select(band => $"{band.Start:0}-{band.End:0} {band.Label}"));
 
     [Fact]
-    public void A_song_with_one_centre_is_one_band_across_the_track() =>
+    public void A_song_with_one_center_is_one_band_across_the_track() =>
         Assert.Equal(
             "0-200 B min",
             Drawn(KeyStrip.Plan(Run(BMinor, [new("verse", BMinor)]), Seconds))
@@ -61,7 +61,7 @@ public sealed class KeyStripTests
             Drawn(plan)
         );
         Assert.All(
-            plan.Bands.Where(band => band.Centre == EMinor),
+            plan.Bands.Where(band => band.Center == EMinor),
             band => Assert.True(band.FromWindow)
         );
     }
@@ -103,7 +103,7 @@ public sealed class KeyStripTests
     }
 
     [Fact]
-    public void A_sections_centre_equal_to_the_primary_adds_no_band() =>
+    public void A_sections_center_equal_to_the_primary_adds_no_band() =>
         Assert.Equal(
             "0-200 B min",
             Drawn(
@@ -115,7 +115,7 @@ public sealed class KeyStripTests
         );
 
     [Fact]
-    public void A_primary_filling_the_track_is_labelled_with_its_key_alone()
+    public void A_primary_filling_the_track_is_labeled_with_its_key_alone()
     {
         Section bridge = new("bridge", CLydian);
 

@@ -262,7 +262,7 @@ else
         line switch
         {
             { Kind: StemKind.WarpGuide } => "●",
-            { Kind: StemKind.Unrecognised } => "✓",
+            { Kind: StemKind.Unrecognized } => "✓",
             { IsWanted: true } => "✓",
             _ => string.Empty,
         };
@@ -281,7 +281,7 @@ else
         line switch
         {
             { Kind: StemKind.WarpGuide } => "guide",
-            { Kind: StemKind.Unrecognised } => "unrecognised",
+            { Kind: StemKind.Unrecognized } => "unrecognized",
             { State: StemState.Coming } => "coming",
             { State: StemState.Going } => "going",
             { State: StemState.NotMade } => "unmade",
@@ -296,7 +296,7 @@ else
             { Kind: StemKind.WarpGuide, IsWanted: true } => "cut alongside the new files",
             { Kind: StemKind.WarpGuide } => "nothing is being made, so no guide is needed",
             { IsInLibrary: true, State: StemState.Kept } => "in the library — not crateside's to remove",
-            { Kind: StemKind.Unrecognised } => line.Description,
+            { Kind: StemKind.Unrecognized } => line.Description,
             { State: StemState.Kept } when row.HasSeveralUploads => string.Join(
                 " · ",
                 line.Uploads
@@ -363,7 +363,7 @@ else
             .Select(sample => new StemChoice
             {
                 Label = sample.Label,
-                Kind = StemKind.Unrecognised,
+                Kind = StemKind.Unrecognized,
                 IsWanted = true,
                 Files = [sample],
             });
@@ -382,7 +382,7 @@ else
                 ]
             ),
             new("Other sources", [.. lines.Where(line => line.AddedSource is not null)], TakesSources: true),
-            new("No longer offered", [.. lines.Where(line => line.Kind is StemKind.Unrecognised), .. unclaimed]),
+            new("No longer offered", [.. lines.Where(line => line.Kind is StemKind.Unrecognized), .. unclaimed]),
         ];
 
         return [.. bands.Where(band => band.Lines.Count > 0 || band.TakesSources)];

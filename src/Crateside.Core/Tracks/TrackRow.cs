@@ -321,7 +321,7 @@ public sealed record TrackRow
     /// Headed for judging with nothing in its way: unjudged, and queued, downloading or detecting —
     /// the same count whichever of those it is in.
     /// </summary>
-    public bool IsAwaitingJudgement =>
+    public bool IsAwaitingJudgment =>
         this is { Verdict: null, Lookalike: null, IsLibraryOnly: false, IsBackfill: false }
         && State is TrackState.Queued or TrackState.Downloading or TrackState.Detecting;
 
@@ -409,7 +409,7 @@ public sealed record TrackRow
     public string Detail =>
         string.Join(
             " ",
-            new[] { Judgement, Unfetchable, PremiumShortfall, Disagreement, Since }.OfType<string>()
+            new[] { Judgment, Unfetchable, PremiumShortfall, Disagreement, Since }.OfType<string>()
         );
 
     /// <summary>Said while a stage is owed another attempt; its error is too long to inline.</summary>
@@ -422,7 +422,7 @@ public sealed record TrackRow
     private string? PremiumShortfall =>
         ParkedFor is ParkReason.PremiumShortfall ? Acquisition?.Advisory : null;
 
-    private string Judgement =>
+    private string Judgment =>
         this switch
         {
             { Verdict: null } => "Never judged.",

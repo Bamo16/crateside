@@ -3,14 +3,14 @@
 - Status: Accepted
 - Date: 2026-10-17
 - Follows [ADR 0055](0055-crateside-owns-the-key-judge-and-its-ledger.md) (a verdict is a tonal
-  centre and the tag is its collapse). Built in [#126](https://github.com/Bamo16/crateside/issues/126)
+  center and the tag is its collapse). Built in [#126](https://github.com/Bamo16/crateside/issues/126)
   (core) and [#125](https://github.com/Bamo16/crateside/issues/125) (the page, brief 19).
 
 ## Context
 
 Partners was ported from the PowerShell cmdlet `Get-MashupPartner` and tested for parity with it.
 [The note of 2026-10-17](../notes/2026-10-17-partners-and-the-modal-verdict.md) measured the ported
-code against all 84 tonal centres:
+code against all 84 tonal centers:
 
 - Its source is the samples' most common Key tag. It never reads the verdict, so a mode never
   reaches it.
@@ -32,34 +32,34 @@ The design was settled with the maintainer in a grilling round on 2026-10-17.
 
 ## Decision
 
-**Partners works from the verdict.** The source is the latest run's primary tonal centre. Only a
+**Partners works from the verdict.** The source is the latest run's primary tonal center. Only a
 track with no verdict falls back to its samples' Key tag. A key chosen by hand is a tonic and a
 mode.
 
 **A key holding the source's notes needs no shift.** The shift rule stays tonic-aligned, but its
 shift-0 exception widens from "the tag's relative" to every key whose seven notes are the
-centre's. For plain major and minor this is the relative alone, so nothing changes for them. For
+center's. For plain major and minor this is the relative alone, so nothing changes for them. For
 *A Dorian*, G major and E minor are both at shift 0.
 
-**A row says how many notes it shares.** *Notes shared* counts the source centre's seven notes
+**A row says how many notes it shares.** *Notes shared* counts the source center's seven notes
 that the partner's scale holds once moved by its shift, shown as `6 of 7`. The rows sort by
 absolute shift, then by notes shared. Only two labels remain, **same key** and **same notes**.
 The cmdlet's score and its mood names (Energy Rise, Relaxed, Mood Shift, Modulation, "Relative
-(Epic)") go. A modal source's own centre is its same-key row (*A Dorian*, 7 of 7), for consistency with a
+(Epic)") go. A modal source's own center is its same-key row (*A Dorian*, 7 of 7), for consistency with a
 plain key's. Its tag (*A minor*) is an ordinary row.
 
 **The shift range defaults to 0** and can be asymmetric (−1 to +3, say). Its control is the
 design's (#125).
 
-**Sections are a choice of basis.** For a verdict with sections, every section's centre is
+**Sections are a choice of basis.** For a verdict with sections, every section's center is
 visible at once, with the primary chosen by default. Until sections have times they are shown in
-the order the ledger holds them. Partners itself still pairs one centre with one key.
+the order the ledger holds them. Partners itself still pairs one center with one key.
 
 **A mixed verdict pairs as its collapse**, with no same-notes exception, since its notes are two
 scales.
 
 **The cmdlet is no longer the spec.** `PsMashupParityTests` and its fixture are retired. The
-behaviour worth keeping is restated in `PartnersTests`.
+behavior worth keeping is restated in `PartnersTests`.
 
 **Partners still names keys for Ableton's browser.** It does not list tracks, and does not write
 tags to the files.

@@ -337,7 +337,7 @@ public sealed class TrackRenameTests : IDisposable
     }
 
     [Fact]
-    public void A_sample_nobody_has_analysed_carries_nothing_extra()
+    public void A_sample_nobody_has_analyzed_carries_nothing_extra()
     {
         Stage("99th Street (Vocal - Full).flac");
 

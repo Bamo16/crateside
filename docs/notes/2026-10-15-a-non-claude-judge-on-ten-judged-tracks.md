@@ -17,7 +17,7 @@ endpoint, so this is not a result for DeepSeek's official API.*
   API ignores built-in web search (*owned, from the docs*); its Anthropic-format endpoint was not
   tried.
 - **`WebFetch` works** (*measured*, outside the runner, which does not grant it): the page is
-  fetched on this machine and summarised by the configured model. It read Wikipedia and a
+  fetched on this machine and summarized by the configured model. It read Wikipedia and a
   Hooktheory TheoryTab page in full, so keytag's `SOURCES.md`, which says Hooktheory returns 403
   to `WebFetch`, is out of date. DuckDuckGo's HTML results returned a captcha.
 - **Usage reads zero** (*measured*): no token counts, `total_cost_usd` 0. `--max-budget-usd`

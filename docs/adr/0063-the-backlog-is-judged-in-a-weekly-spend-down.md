@@ -63,7 +63,7 @@ late as possible so it does not compete with the user. The **Settings** line abo
 - **A cut-off is harmless, and checked.** When the limit stops the claude session, the runner
   finds `api_error_status` 429 or "hit your limit" in its output (the check ADR 0055's runner
   already made for the ordinary stage) and returns *agent unavailable* before it looks at any
-  withheld verdict, so nothing reaches the ledger. The job is recorded `Cancelled`, which carries
+  withheld verdict, so nothing reaches the ledger. The job is recorded `Canceled`, which carries
   no strike, and the song stays owed: a re-judge leaves the queue only when the ledger holds a
   run from its cutoff on, and a backfill track stays outstanding until the ledger has a run for
   it. Covered by `VerdictRunnerTests`, including a limit hit on the resume after a withheld

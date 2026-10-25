@@ -148,7 +148,7 @@ public sealed record StemPicker
         );
 
         if (
-            row.Samples.Where(sample => sample.Kind is StemKind.Unrecognised).ToArray() is
+            row.Samples.Where(sample => sample.Kind is StemKind.Unrecognized).ToArray() is
             { Length: > 0 } orphaned
         )
             bands.Add(
@@ -160,7 +160,7 @@ public sealed record StemPicker
                             Label = sample.Label,
                             Description =
                                 "the separator no longer offers this preset, so it cannot be cut again",
-                            Kind = StemKind.Unrecognised,
+                            Kind = StemKind.Unrecognized,
                             IsWanted = true,
                             Files = [sample],
                         }),
@@ -205,7 +205,7 @@ public sealed record StemPicker
 
     /// <summary>
     /// Presets the picker leaves out. Never drop them from the catalog, or a stem already cut
-    /// with one reads as unrecognised.
+    /// with one reads as unrecognized.
     /// </summary>
     private static readonly string[] Unoffered = ["vocal_rvc", "instrumental_low_resource"];
 

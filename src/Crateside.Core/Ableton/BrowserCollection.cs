@@ -65,11 +65,11 @@ public static class BrowserCollections
                 .Order(),
         ];
 
-    // Modal, LOW or withheld, or sections the judge placed in different centres.
+    // Modal, LOW or withheld, or sections the judge placed in different centers.
     private static bool MayMislead(LedgerRun? verdict) =>
         verdict
             is { IsCollapsed: true }
                 or { Confidence: KeyConfidence.Low or KeyConfidence.Withheld }
         || verdict is { Sections: { Count: > 1 } sections }
-            && sections.Select(section => section.Centre).Distinct().Count() > 1;
+            && sections.Select(section => section.Center).Distinct().Count() > 1;
 }

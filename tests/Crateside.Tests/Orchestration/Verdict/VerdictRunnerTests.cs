@@ -138,7 +138,7 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.True(result.IsSuccess, result.Error);
         Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
         Assert.Equal("yes - owner of a lonely heart", run.Song);
-        Assert.Equal(new TonalCentre("A", DiatonicMode.Aeolian), run.Centre);
+        Assert.Equal(new TonalCenter("A", DiatonicMode.Aeolian), run.Center);
         Assert.Equal(KeyConfidence.High, run.Confidence);
 
         var evidence = Ledger.EvidenceFor(run.Song)!;
@@ -217,7 +217,7 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.True(result.IsSuccess);
         Assert.Contains("\"H\" is not a tonic", Sessions.Requests[1].StandardInput);
         Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
-        Assert.Equal("A#", run.Centre!.Tonic);
+        Assert.Equal("A#", run.Center!.Tonic);
     }
 
     [Fact]
@@ -586,7 +586,7 @@ public sealed class VerdictRunnerTests : IDisposable
 
     private string AudioPath => Path.Combine(_directory, "kept source.flac");
 
-    private JudgeDirection Direction(TonalCentre? ear = null) =>
+    private JudgeDirection Direction(TonalCenter? ear = null) =>
         new(
             [
                 new RunWindow(45, 67, "Chorus", WindowAsker.User) { Bars = new(33, 48) },
@@ -661,7 +661,7 @@ public sealed class VerdictRunnerTests : IDisposable
         Judge.Ear = EarWeight.HumanSource;
         Session(FromTheBars);
 
-        await JudgeFromBarsAsync(Direction(new TonalCentre("C#", DiatonicMode.Aeolian)), []);
+        await JudgeFromBarsAsync(Direction(new TonalCenter("C#", DiatonicMode.Aeolian)), []);
 
         var ear = Assert.Single(Ledger.EvidenceFor("yes - owner of a lonely heart")!.Sources);
 

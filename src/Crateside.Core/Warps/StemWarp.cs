@@ -145,10 +145,10 @@ public abstract record WarpOwner
 
     public sealed record Starter(DateTime Written) : WarpOwner;
 
-    /// <summary>A clip crateside saved with Warp off, so the stem arrives at its gain and colour for the user to warp (ADR 0059).</summary>
+    /// <summary>A clip crateside saved with Warp off, so the stem arrives at its gain and color for the user to warp (ADR 0059).</summary>
     public sealed record Unwarped(DateTime Written) : WarpOwner;
 
-    /// <summary>Live analysed the file but no warp was saved, so Live ignores its markers.</summary>
+    /// <summary>Live analyzed the file but no warp was saved, so Live ignores its markers.</summary>
     public sealed record LiveAnalysis : WarpOwner;
 
     /// <summary>No sidecar: Live has never opened the file.</summary>

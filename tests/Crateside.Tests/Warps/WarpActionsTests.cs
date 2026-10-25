@@ -49,7 +49,7 @@ public sealed class WarpActionsTests : IDisposable
             TestContext.Current.CancellationToken
         );
 
-        var outcome = actions.LetLiveAnalyse(Target);
+        var outcome = actions.LetLiveAnalyze(Target);
 
         Assert.IsType<LetLiveOutcome.Sent>(outcome);
         Assert.False(File.Exists($"{Target}.asd"));
@@ -66,7 +66,7 @@ public sealed class WarpActionsTests : IDisposable
     {
         var actions = Actions();
         await Writer().BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);
-        actions.LetLiveAnalyse(Target);
+        actions.LetLiveAnalyze(Target);
         Analysis(saved: false, [], LiveFound).Write($"{Target}.asd");
 
         Assert.Equal([Target], actions.PutBack());
@@ -84,7 +84,7 @@ public sealed class WarpActionsTests : IDisposable
     {
         var actions = Actions();
         Analysis(saved: true, Users).Write($"{Target}.asd");
-        actions.LetLiveAnalyse(Target);
+        actions.LetLiveAnalyze(Target);
 
         Assert.Empty(actions.PutBack());
         Assert.NotNull(_waiting.Of(Target));
@@ -95,7 +95,7 @@ public sealed class WarpActionsTests : IDisposable
     {
         var actions = Actions();
         Analysis(saved: true, Lent).Write($"{Target}.asd");
-        actions.LetLiveAnalyse(Target);
+        actions.LetLiveAnalyze(Target);
         Analysis(saved: true, Users).Write($"{Target}.asd");
 
         Assert.Empty(actions.PutBack());

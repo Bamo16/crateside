@@ -4,12 +4,12 @@
 Replaces the Queue page, Staging board, and Audit page with **one page**: a frozen activity header, one filterable list, one row per track. Answers the friction list in `uploads/crateside-ui-restructure-scoping.md` (also copied here as `scoping.md`): rows never move between sections, held tracks expose the instrumental control, running work is visible at a glance, and a toast fires when a track is ready to warp. `Partners` stays a separate page.
 
 ## About the design files
-`Crateside Unified Page.dc.html` is a **design reference built in HTML**, not code to ship. Recreate it in the existing Blazor Server app (`src/Crateside/Components/Pages/`) using its patterns. The file opens in a browser; it is a canvas of artboards labelled 1a–1i. **Implement 1a–1d.** 1e–1i are rejected alternatives — ignore them.
+`Crateside Unified Page.dc.html` is a **design reference built in HTML**, not code to ship. Recreate it in the existing Blazor Server app (`src/Crateside/Components/Pages/`) using its patterns. The file opens in a browser; it is a canvas of artboards labeled 1a–1i. **Implement 1a–1d.** 1e–1i are rejected alternatives — ignore them.
 
 Vocabulary in the design came from the scoping doc only. Where it conflicts with `CONTEXT.md` (crateside or keytag), **CONTEXT.md wins** — fix the label, keep the layout.
 
 ## Fidelity
-**High-fidelity.** Colours, type, spacing and copy are final. Match them.
+**High-fidelity.** Colors, type, spacing and copy are final. Match them.
 
 ## Screens
 
@@ -18,11 +18,11 @@ Page width 1280 target; desktop only, often a second monitor. Background `#14131
 
 **Frozen header** — `position: sticky; top: 0`, background `#1b1a15`, bottom border `rgba(255,255,255,.08)`. Grid `200px 1fr 1fr 300px`, cells divided by 1px `rgba(255,255,255,.08)` right borders.
 1. Brand + nav (padding 18px 22px, column, space-between): "crateside" 15px/600; nav row gap 14px, 12px/500: active tab `#ece7dc` with 2px `#e8b45a` bottom border, inactive `rgba(236,231,220,.5)`. Tabs: Tracks, Partners.
-2. Separation (padding 16px 22px, column, gap 8px): label row — "SEPARATION" 11px/500 uppercase, letter-spacing .08em, `rgba(236,231,220,.5)`; right side "2 waiting" in mono. Activity line — 8px teal dot, track name 16px/500 (ellipsis), elapsed `4:12 elapsed` mono 13px `rgba(236,231,220,.6)`. Below: 3px track `rgba(255,255,255,.08)` with an **indeterminate** sweep (30% wide gradient `transparent → #6fc7d6 → transparent`, translateX −40%→140%, 2.4s linear infinite). Leave this bar in place — it becomes a real progress bar when StemForge#84 lands. Idle state: dot grey, text "idle", bar empty.
+2. Separation (padding 16px 22px, column, gap 8px): label row — "SEPARATION" 11px/500 uppercase, letter-spacing .08em, `rgba(236,231,220,.5)`; right side "2 waiting" in mono. Activity line — 8px teal dot, track name 16px/500 (ellipsis), elapsed `4:12 elapsed` mono 13px `rgba(236,231,220,.6)`. Below: 3px track `rgba(255,255,255,.08)` with an **indeterminate** sweep (30% wide gradient `transparent → #6fc7d6 → transparent`, translateX −40%→140%, 2.4s linear infinite). Leave this bar in place — it becomes a real progress bar when StemForge#84 lands. Idle state: dot gray, text "idle", bar empty.
 3. Judging: same structure; activity line adds elapsed mono and a **Pause** button pushed right (12px/500, transparent, 1px `rgba(255,255,255,.18)` border, radius 6, padding 5px 10px; hover border `.4`). Bar is determinate here only because judging is ~1 min — 68% shown; indeterminate is acceptable. When paused: label "Resume", dot amber.
 4. Claude quota: label "CLAUDE QUOTA" with "resets 6:40 pm" mono at right; "43%" mono 22px/600 + "of this 5-hour window" 13px `rgba(236,231,220,.6)`; 3px bar fill `#ece7dc` at percentage.
 
-**Filter bar** — flex, gap 6px, padding 14px 22px, bottom border `rgba(255,255,255,.06)`. Pills: 12px/500, padding 6px 12px, radius 999. Inactive: text `rgba(236,231,220,.75)`, 1px border `rgba(255,255,255,.1)`. Active: filled — All `#ece7dc`, In staging `#e8b45a`, Needs attention `#e07a6d`, others `#ece7dc`; text `#0f0e0c`. Count in mono; count colour when inactive: In staging amber, In flight teal `#6fc7d6`, Needs attention red, others 60% opacity. Right-aligned status text 12px `rgba(236,231,220,.45)`: "433 samples in Mashup Samples · playlist synced 2 min ago".
+**Filter bar** — flex, gap 6px, padding 14px 22px, bottom border `rgba(255,255,255,.06)`. Pills: 12px/500, padding 6px 12px, radius 999. Inactive: text `rgba(236,231,220,.75)`, 1px border `rgba(255,255,255,.1)`. Active: filled — All `#ece7dc`, In staging `#e8b45a`, Needs attention `#e07a6d`, others `#ece7dc`; text `#0f0e0c`. Count in mono; count color when inactive: In staging amber, In flight teal `#6fc7d6`, Needs attention red, others 60% opacity. Right-aligned status text 12px `rgba(236,231,220,.45)`: "433 samples in Mashup Samples · playlist synced 2 min ago".
 
 Filters and membership:
 - **All**
@@ -80,9 +80,9 @@ Expanded left heading "WILL SEPARATE INTO", listing the planned recipe: skipped 
 
 Chip styles — teal filled: bg `rgba(111,199,214,.14)`, text/dot `#6fc7d6`, border `rgba(111,199,214,.3)`. Teal outline: same without bg. Amber filled: bg `rgba(232,180,90,.16)`, text `#e8b45a`, border `rgba(232,180,90,.35)`. Red outline: text `#e07a6d`, border `rgba(224,122,109,.45)`; red filled adds bg `rgba(224,122,109,.18)`. Green outline: text `#7fcf9a`, border `rgba(127,207,154,.3)`. Neutral: text `rgba(236,231,220,.7)`, border `rgba(255,255,255,.14)`.
 
-Colour rule: **teal = machine working, amber = user's turn, red = needs attention.** Nothing else is coloured.
+Color rule: **teal = machine working, amber = user's turn, red = needs attention.** Nothing else is colored.
 
-## Interactions & behaviour
+## Interactions & behavior
 - Click row → expand/collapse (single expanded at a time is fine). Chevron rotates; no animation required beyond 150ms ease on the panel.
 - Filter pills → filter the one list client-side; counts always reflect the full list.
 - Pause/Resume judging in header (existing `DrainControl`).
@@ -97,7 +97,7 @@ Colour rule: **teal = machine working, amber = user's turn, red = needs attentio
 
 ## Design tokens
 Fonts: **IBM Plex Sans** (text) and **IBM Plex Mono** (every number, key, timestamp, count) — Google Fonts or self-host.
-Colours: page `#141310`, header `#1b1a15`, toast `#23211a`, canvas `#0f0e0c`; text `#ece7dc`; muted text at `.75/.6/.5/.45/.4/.35/.3` alpha of `rgb(236,231,220)`; dividers `rgba(255,255,255,.06)` rows, `.08` header; teal `#6fc7d6`; amber `#e8b45a`; red `#e07a6d`; green `#7fcf9a`.
+Colors: page `#141310`, header `#1b1a15`, toast `#23211a`, canvas `#0f0e0c`; text `#ece7dc`; muted text at `.75/.6/.5/.45/.4/.35/.3` alpha of `rgb(236,231,220)`; dividers `rgba(255,255,255,.06)` rows, `.08` header; teal `#6fc7d6`; amber `#e8b45a`; red `#e07a6d`; green `#7fcf9a`.
 Type: 22/16/15/14/13/12.5/12/11.5/11/10.5 px; weights 400/500/600; uppercase labels 10.5–11px, letter-spacing .08em.
 Radius: pills 999, buttons/stem lines 6, toast 10, flags 4. Row height 46 (52 in staging). Grid gap 14. Page gutter 22.
 

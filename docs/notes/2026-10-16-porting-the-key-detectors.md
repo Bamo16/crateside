@@ -16,7 +16,7 @@ madmom 0.17.dev0, the bake-off's versions) and fitting what came out. Nothing wa
 source except the `edma` profile values, taken as data, as the addendum allows.
 
 madmom is BSD, so its front end was ported from its source; its model files are CC BY-NC-SA 4.0
-and the converted network carries that licence (`src/Crateside.Core/KeyDetection/Madmom/LICENSE`).
+and the converted network carries that license (`src/Crateside.Core/KeyDetection/Madmom/LICENSE`).
 
 ## `KeyExtractor(profileType="edma")`, as reproduced
 
@@ -29,9 +29,9 @@ against `KeyExtractor`'s output:
 | frames | 4096 samples, hop 4096; the first starts 2048 before the audio, and frames continue while their start is before the end (`ceil((n + 2048) / 4096)` frames) |
 | window | symmetric Hann, scaled to sum to 2 |
 | spectrum | magnitude, 2049 bins |
-| peaks | the 60 largest local maxima from bin 3 to bin 326 (25 to 3500 Hz), threshold 1e-4, parabolic interpolation on the linear magnitude; the range's first and last bins count as peaks when they beat their one inner neighbour, uninterpolated; peaks above 3500 Hz after interpolation are dropped |
+| peaks | the 60 largest local maxima from bin 3 to bin 326 (25 to 3500 Hz), threshold 1e-4, parabolic interpolation on the linear magnitude; the range's first and last bins count as peaks when they beat their one inner neighbor, uninterpolated; peaks above 3500 Hz after interpolation are dropped |
 | whitening | on (see below) |
-| HPCP | 12 bins from A, reference 440 Hz, 4 subharmonics, cosine window one semitone wide, no normalisation; the band preset makes no difference here |
+| HPCP | 12 bins from A, reference 440 Hz, 4 subharmonics, cosine window one semitone wide, no normalization; the band preset makes no difference here |
 | averaging | the mean over frames, scaled to its maximum, bins below 0.2 set to 0 |
 | key | Pearson's r against the `edma` major and minor profiles rotated to each tonic; the best of 24, its r the strength; no polyphonic profile |
 
@@ -42,7 +42,7 @@ class of the peak and of its subharmonics f/2 to f/5. Subharmonic h is weighted 
 (1, 1, 1, 1, 0.861 for h = 1 to 5, and 0.774, 0.712, 0.667, 0.631 for h = 6 to 9, which fit the
 same rule). Weights of subharmonics that land on the same pitch class add as amplitudes before
 squaring: a peak at A with h = 1, 2 and 4 contributes 9, not 3. Separate peaks add as powers. The
-window weight is `cos(π d)` for the distance d in semitones to the bin's centre.
+window weight is `cos(π d)` for the distance d in semitones to the bin's center.
 
 **SpectralWhitening**, from flat spectra, single-bin bumps of 0.5 to 60 dB and single probe peaks:
 

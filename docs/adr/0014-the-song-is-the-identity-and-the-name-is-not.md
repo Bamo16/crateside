@@ -17,9 +17,9 @@ and the state it left behind was one song wearing two of everything.
 From `jobs.jsonl`, `runs.jsonl` and the stems' own provenance:
 
 ```
-00:22:02  AhtkGlO7O8c:Separation  Cancelled  "source swapped"
-00:22:02  AhtkGlO7O8c:Handoff     Cancelled  "source swapped"
-00:22:02  AhtkGlO7O8c:Tagging     Cancelled  "source swapped"
+00:22:02  AhtkGlO7O8c:Separation  Canceled  "source swapped"
+00:22:02  AhtkGlO7O8c:Handoff     Canceled  "source swapped"
+00:22:02  AhtkGlO7O8c:Tagging     Canceled  "source swapped"
 00:29:45  AhtkGlO7O8c:Separation  Running
 00:37:49  AhtkGlO7O8c:Separation  Succeeded
 00:35-39  39Z_YiOmHeA:Handoff     Succeeded
@@ -36,9 +36,9 @@ Mashup Samples   (Instrumental - Full), (Vocal - Full)              →  AhtkGlO
    Handoff and tagging are driven by the stems, and StemForge stamps those with the video it
    actually downloaded.
 
-2. **So `AhtkGlO7O8c:Handoff` and `:Tagging` stay `Cancelled` forever.** `JobStore.All()`
+2. **So `AhtkGlO7O8c:Handoff` and `:Tagging` stay `Canceled` forever.** `JobStore.All()`
    projects the current state per `(videoId, stage)`, and `ReadReopenedTracks` treats
-   `Cancelled` as reopened — so the old ID sits in `AwaitingSeparation` permanently. That is the
+   `Canceled` as reopened — so the old ID sits in `AwaitingSeparation` permanently. That is the
    `judged · in line` row and the header's `1 waiting` that never clears.
 
 3. **It will not re-separate**, which was worth checking before calling it urgent.
@@ -71,7 +71,7 @@ one moment two video IDs must merge.
 **Job state is projected per `(song, stage)`, not per `(videoId, stage)`.** The latest record of
 a stage for a song is what that stage's state is, whichever of its video IDs carries it. The
 phantom above then stops being true rather than being patched: the latest `Handoff` for this
-song is `39Z_YiOmHeA` `Succeeded`, which is later than `AhtkGlO7O8c` `Cancelled`.
+song is `39Z_YiOmHeA` `Succeeded`, which is later than `AhtkGlO7O8c` `Canceled`.
 
 ### Why not the first video ID as a canonical key
 
@@ -106,7 +106,7 @@ video ID it was cut from, since the filenames cannot always tell them apart.
 
 **A row's state is the union of its video IDs' work.** The state and filter vocabulary is
 untouched — that is [#10](https://github.com/Bamo16/crateside/issues/10) and
-[#11](https://github.com/Bamo16/crateside/issues/11)'s business, and merging rows is not licence
+[#11](https://github.com/Bamo16/crateside/issues/11)'s business, and merging rows is not license
 to redefine what they mean.
 
 **A swap can rename the stems, and that is new.** StemForge names from the metadata of whichever

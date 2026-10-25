@@ -44,7 +44,7 @@ public sealed class TrackAddTests : IDisposable
     [Fact]
     public void A_library_track_already_judged_is_still_refused()
     {
-        // A LOW or WITHHELD verdict leaves the key null and is still a judgement.
+        // A LOW or WITHHELD verdict leaves the key null and is still a judgment.
         var plan = Add().PlanFor(Upload, [Row(isLibraryOnly: true, hasVerdict: true)]);
 
         Assert.NotNull(plan.Refusal);
