@@ -13,6 +13,13 @@ builder.Services.AddSingleton<ToolsMemory>();
 
 var app = builder.Build();
 
+var respelled = app
+    .Services.GetRequiredService<Crateside.Core.Orchestration.Jobs.JobStatusSpelling>()
+    .Run();
+
+if (respelled > 0)
+    app.Logger.LogInformation("Respelled {Count} job lines to American spelling", respelled);
+
 app.Services.GetRequiredService<Crateside.Core.Ledger.LedgerStore>().Start();
 app.Services.GetRequiredService<Crateside.Core.Tracks.CacheKeeper>();
 

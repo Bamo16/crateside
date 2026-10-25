@@ -46,8 +46,38 @@ public partial class StoreFormatRealDataTests
         RoundTrips("queue.json", QueueFileJsonContext.Default.QueueDocument);
 
     [Fact]
-    public void Jobs_round_trip() =>
-        EveryLineRoundTrips("jobs.jsonl", JobsJsonContext.Default.JobUpdate);
+    public void Jobs_round_trip_once_respelled()
+    {
+        var path = Path.Combine(Data, "jobs.jsonl");
+        Assert.SkipUnless(File.Exists(path), "Needs this machine's jobs.jsonl.");
+
+        var folder = Path.Combine(
+            Path.GetTempPath(),
+            "crateside-tests",
+            Guid.NewGuid().ToString("n")
+        );
+        var copy = Path.Combine(folder, "jobs.jsonl");
+
+        Directory.CreateDirectory(folder);
+
+        try
+        {
+            File.Copy(path, copy);
+            new JobStatusSpelling(copy, Path.Combine(folder, "backups"), TimeProvider.System).Run();
+
+            foreach (
+                var (line, index) in File.ReadLines(copy).Select((line, index) => (line, index))
+            )
+            {
+                if (!string.IsNullOrWhiteSpace(line))
+                    Same(line, JobsJsonContext.Default.JobUpdate, $"jobs.jsonl:{index + 1}");
+            }
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
 
     [Fact]
     public void Actions_round_trip() =>

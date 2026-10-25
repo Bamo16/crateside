@@ -55,6 +55,13 @@ public sealed class LedgerStore : IDisposable
 
         using var context = Context();
 
+        if (
+            IsFile
+            && context.Database.GetAppliedMigrations().Any()
+            && context.Database.GetPendingMigrations().ToList() is [.., var newest]
+        )
+            BackUpBeforeMigrating(newest);
+
         context.Database.Migrate();
     }
 
@@ -304,6 +311,20 @@ public sealed class LedgerStore : IDisposable
             )
                 File.Delete(old);
         }
+    }
+
+    private void BackUpBeforeMigrating(string migration)
+    {
+        var folder = BackupFolder!;
+
+        Directory.CreateDirectory(folder);
+
+        using var backup = new SqliteConnection(
+            ConnectionString(Path.Combine(folder, $"before-{migration}.db"))
+        );
+
+        backup.Open();
+        _connection.BackupDatabase(backup);
     }
 
     /// <summary>Every run and restatement as one JSON line each, oldest first.</summary>

@@ -164,7 +164,7 @@ public sealed class WarpTrueUpTests : IDisposable
     }
 
     [Fact]
-    public async Task Applying_a_rephased_plan_leaves_the_transients_centerd_on_the_grid()
+    public async Task Applying_a_rephased_plan_leaves_the_transients_centered_on_the_grid()
     {
         await Setup(warpBpm: 119.99, trackBpm: 120, hitsLate: 0.008);
         var siblings = WarpSiblings.Scan([_root]);

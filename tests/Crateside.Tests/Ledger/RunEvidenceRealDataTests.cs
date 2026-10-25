@@ -189,7 +189,7 @@ public sealed class RunEvidenceRealDataTests
 
         Assert.Contains(
             All().SelectMany(e => e.Sources),
-            s => s.Kind is SourceKind.ChordRecogniser
+            s => s.Kind is SourceKind.ChordRecognizer
         );
     }
 

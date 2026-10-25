@@ -312,7 +312,7 @@ public sealed partial record EvidenceSource
                 SourceKind.Corroborating,
             // Automatic chord recognizers. Their chords are evidence; their key is another
             // algorithm's guess, so citing it to confirm ours would be circular.
-            "chordify.net" or "chordu.com" => SourceKind.ChordRecogniser,
+            "chordify.net" or "chordu.com" => SourceKind.ChordRecognizer,
             "tunebat.com"
             or "songbpm.com"
             or "getsongbpm.com"
@@ -331,11 +331,11 @@ public sealed partial record EvidenceSource
         && KindFromHost is not (SourceKind.Unknown or SourceKind.Unclassified)
         && recorded != KindFromHost;
 
-    /// <summary>How the ledger spells a kind: <c>chord_recogniser</c>.</summary>
+    /// <summary>How the ledger spells a kind: <c>chord_recognizer</c>.</summary>
     internal static string StoredName(SourceKind kind) =>
         kind switch
         {
-            SourceKind.ChordRecogniser => "chord_recogniser",
+            SourceKind.ChordRecognizer => "chord_recognizer",
             _ => kind.ToString().ToLowerInvariant(),
         };
 
@@ -344,7 +344,7 @@ public sealed partial record EvidenceSource
         {
             "authoritative" => SourceKind.Authoritative,
             "corroborating" => SourceKind.Corroborating,
-            "chord_recogniser" => SourceKind.ChordRecogniser,
+            "chord_recognizer" => SourceKind.ChordRecognizer,
             "algorithmic" => SourceKind.Algorithmic,
             "ear" => SourceKind.Ear,
             _ => null,
@@ -410,10 +410,10 @@ public enum SourceKind
     Algorithmic,
 
     /// <summary>
-    /// An automatic chord recognizer. Stored by name, so the member keeps its original spelling. Its chords are usable evidence; its key may never be
+    /// An automatic chord recognizer. Its chords are usable evidence; its key may never be
     /// the basis of a verdict, and never lifts one to HIGH.
     /// </summary>
-    ChordRecogniser,
+    ChordRecognizer,
 
     /// <summary>Human transcription — solid, consensus-dependent.</summary>
     Corroborating,

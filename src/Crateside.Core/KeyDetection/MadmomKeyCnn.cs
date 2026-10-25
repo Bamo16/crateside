@@ -100,7 +100,7 @@ internal static class LogFilteredSpectrogram
 
         for (var f = 0; f < frames; f++)
         {
-            // Centerd on its sample, zero-padded past either end.
+            // Centered on its sample, zero-padded past either end.
             var start = (int)(f * HopSize) - FrameSize / 2;
             for (var i = 0; i < FrameSize; i++)
             {

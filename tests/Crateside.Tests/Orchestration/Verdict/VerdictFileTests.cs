@@ -32,7 +32,7 @@ public sealed class VerdictFileTests : IDisposable
     {
         var run = Assert
             .IsType<VerdictCheck.Recordable>(
-                Check(Verdict(""", "centre": { "tonic": "Bb", "mode": "minor" }"""))
+                Check(Verdict(""", "center": { "tonic": "Bb", "mode": "minor" }"""))
             )
             .Run;
 
@@ -58,7 +58,7 @@ public sealed class VerdictFileTests : IDisposable
                 Check(
                     Verdict(
                         """
-                        , "centre": { "tonic": "C#", "mode": "ionian" },
+                        , "center": { "tonic": "C#", "mode": "ionian" },
                           "sections": [
                             { "label": "Verse", "tonic": "C#", "mode": "ionian" },
                             { "label": "Chorus", "tonic": "A#", "mode": "aeolian", "start": 62.5 }
@@ -80,7 +80,7 @@ public sealed class VerdictFileTests : IDisposable
                 Check(
                     Verdict(
                         """
-                        , "centre": { "tonic": "C#", "mode": "ionian" },
+                        , "center": { "tonic": "C#", "mode": "ionian" },
                           "sections": [{ "label": "Chorus", "tonic": "A#", "mode": "aeolian" }],
                           "sources": [{ "url": "https://www.hooktheory.com/x", "kind": "authoritative", "states": "Bb minor", "sections": ["Chorus"] }]
                         """
@@ -111,7 +111,7 @@ public sealed class VerdictFileTests : IDisposable
     [Fact]
     public void A_mode_outside_the_seven_is_named_in_the_refusal()
     {
-        var check = Check(Verdict(""", "centre": { "tonic": "A", "mode": "blues" }"""));
+        var check = Check(Verdict(""", "center": { "tonic": "A", "mode": "blues" }"""));
 
         Assert.Contains("\"blues\"", Assert.IsType<VerdictCheck.Unusable>(check).Problem);
     }

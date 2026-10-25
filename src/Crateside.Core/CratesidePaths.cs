@@ -108,6 +108,10 @@ public sealed class CratesidePaths
             "tag-stores"
         );
 
+    /// <summary>Copies of files taken before a one-time startup step rewrote them.</summary>
+    public string SpellingBackups { get; set; } =
+        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "backups", "spelling");
+
     /// <summary>Where stems go when the track has a key the user would tag with.</summary>
     public string StemsKeyIdentified { get; set; } = Path.Combine(MusicStems, "Key Identified");
 

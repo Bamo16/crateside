@@ -29,7 +29,7 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
                 "Runs",
                 table =>
                 {
-                    table.HasCheckConstraint("CK_Runs_Centre", "(Tonic IS NULL) = (Mode IS NULL)");
+                    table.HasCheckConstraint("CK_Runs_Center", "(Tonic IS NULL) = (Mode IS NULL)");
                     table.HasCheckConstraint(
                         "CK_Runs_Source",
                         "SourceUrl IS NOT NULL OR LocalSource = 1"

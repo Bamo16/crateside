@@ -43,7 +43,7 @@ public sealed class OnsetDetector(OnsetSettings? settings = null) : ITransientDe
 
         foreach (var peak in peaks)
         {
-            // The flux frame is centerd on its window; the attack it saw starts before that.
+            // The flux frame is centered on its window; the attack it saw starts before that.
             var center = peak * s.HopSize + s.WindowSize / 2;
             var start = AttackStart(envelope, s.EnvelopeHop, center, audio.SampleRate, s);
             var position = Math.Clamp(start, 0, audio.Frames - 1);
@@ -208,7 +208,7 @@ public sealed class OnsetDetector(OnsetSettings? settings = null) : ITransientDe
         return envelope;
     }
 
-    /// <summary>Where the attack around <paramref name="centre"/> crosses halfway from its floor to its peak, in decibels.</summary>
+    /// <summary>Where the attack around <paramref name="center"/> crosses halfway from its floor to its peak, in decibels.</summary>
     private static int AttackStart(
         float[] envelope,
         int hop,

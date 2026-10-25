@@ -75,10 +75,10 @@ internal static class TestLedger
         if (!File.Exists(source))
             return null;
 
-        var copy = Path.Combine(
-            Path.GetTempPath(),
-            $"crateside-tests-ledger-{Guid.NewGuid():n}.db"
-        );
+        var folder = Path.Combine(Path.GetTempPath(), $"crateside-tests-ledger-{Guid.NewGuid():n}");
+        var copy = Path.Combine(folder, "ledger.db");
+
+        Directory.CreateDirectory(folder);
 
         using (var connection = new SqliteConnection($"Data Source={source};Mode=ReadOnly"))
         {
@@ -90,10 +90,12 @@ internal static class TestLedger
             command.ExecuteNonQuery();
         }
 
+        using (new LedgerStore(copy, TimeProvider.System)) { }
+
         AppDomain.CurrentDomain.ProcessExit += (_, _) =>
         {
             SqliteConnection.ClearAllPools();
-            File.Delete(copy);
+            Directory.Delete(folder, recursive: true);
         };
 
         return copy;

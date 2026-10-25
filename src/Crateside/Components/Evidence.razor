@@ -365,7 +365,7 @@
             SourceKind.Authoritative => "authoritative",
             SourceKind.Corroborating => "corroborating",
             SourceKind.Algorithmic => "algorithmic",
-            SourceKind.ChordRecogniser => "chords only",
+            SourceKind.ChordRecognizer => "chords only",
             SourceKind.Unclassified => "unclassified",
             _ => "no link",
         };
@@ -378,7 +378,7 @@
             SourceKind.Corroborating => "Human transcription. Solid, but consensus-dependent.",
             SourceKind.Algorithmic =>
                 "Shares the failure modes this tool exists to catch — corroboration only, never the answer.",
-            SourceKind.ChordRecogniser =>
+            SourceKind.ChordRecognizer =>
                 "An automatic chord recognizer. Its chords are evidence; its key is another algorithm's guess and may never be the basis of a verdict.",
             SourceKind.Unclassified => "Neither recorded nor a host the catalog lists — read the agent's note.",
             _ => "No link to judge by.",

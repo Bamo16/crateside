@@ -23,7 +23,7 @@ public sealed class VerdictRunnerTests : IDisposable
           "artist": "Yes",
           "title": "Owner of a Lonely Heart",
           "confidence": "HIGH",
-          "centre": { "tonic": "A", "mode": "aeolian" },
+          "center": { "tonic": "A", "mode": "aeolian" },
           "sources": [{ "url": "https://www.hooktheory.com/theorytab/view/yes/owner-of-a-lonely-heart", "kind": "authoritative", "statesKey": "A minor", "sections": ["Chorus"] }],
           "tonicCheck": "E7 resolves to Am.",
           "reasoning": "Backed by both, and Hooktheory agrees.",
@@ -226,7 +226,7 @@ public sealed class VerdictRunnerTests : IDisposable
         GiveEvidence();
         Session(
             Verdict.Replace(
-                "\"centre\": { \"tonic\": \"A\", \"mode\": \"aeolian\" },",
+                "\"center\": { \"tonic\": \"A\", \"mode\": \"aeolian\" },",
                 string.Empty
             )
         );
@@ -235,7 +235,7 @@ public sealed class VerdictRunnerTests : IDisposable
         var result = await RunAsync();
 
         Assert.True(result.IsSuccess);
-        Assert.Contains("centre", Sessions.Requests[1].StandardInput);
+        Assert.Contains("center", Sessions.Requests[1].StandardInput);
     }
 
     [Fact]
@@ -574,7 +574,7 @@ public sealed class VerdictRunnerTests : IDisposable
           "artist": "Yes",
           "title": "Owner of a Lonely Heart",
           "confidence": "HIGH",
-          "centre": { "tonic": "C#", "mode": "aeolian" },
+          "center": { "tonic": "C#", "mode": "aeolian" },
           "sections": [
             { "label": "Chorus", "tonic": "C#", "mode": "aeolian" },
             { "label": "bars 82–96", "tonic": "C#", "mode": "aeolian" }
