@@ -11,7 +11,7 @@ evidence behind it. A SQLite database, read and written only through `LedgerStor
 |---|---|
 | the database | `%LOCALAPPDATA%\crateside\ledger.db`, set by `Paths:LedgerDatabase` |
 | a backup per start, the last seven kept | `ledger-backups\ledger-<yyyyMMdd-HHmmss>.db` beside it |
-| a copy before a migration applies, never pruned | `ledger-backupsbefore-<migration>.db` |
+| a copy before a migration applies, never pruned | `ledger-backupsbefore-<migration>.db` beside it |
 | the export, for reading by eye | `ledger.jsonl` beside it, rewritten after every change |
 
 None of it is in git. A backup is a whole database (SQLite's backup API), so restoring one is
