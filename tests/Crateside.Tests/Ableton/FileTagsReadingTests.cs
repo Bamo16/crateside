@@ -6,7 +6,7 @@ namespace Crateside.Tests.Ableton;
 
 public sealed class FileTagsReadingTests
 {
-    private static readonly CratesidePaths Paths = new();
+    private static readonly CratesidePaths Paths = RealPaths.Create();
 
     [Fact]
     public void Recombines_the_two_key_keywords_into_the_ledger_spelling()

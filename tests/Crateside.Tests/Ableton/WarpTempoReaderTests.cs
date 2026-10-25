@@ -117,7 +117,7 @@ public sealed class WarpTempoReaderTests : IDisposable
 /// <summary>ADR 0038's rule against warps the user knows, in the real library.</summary>
 public sealed class WarpTempoRealLibraryTests
 {
-    private static readonly CratesidePaths Paths = new();
+    private static readonly CratesidePaths Paths = RealPaths.Create();
     private static readonly WarpTempoReader Reader = new();
 
     [Theory]

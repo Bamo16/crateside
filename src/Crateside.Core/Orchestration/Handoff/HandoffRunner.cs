@@ -26,6 +26,9 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
         if (stems.Count is 0)
             return HandoffResult.Failed("no stems to hand off");
 
+        if (paths.StagingFolder is not { Length: > 0 })
+            return HandoffResult.Failed("the Staging folder is not set; set it in Settings");
+
         var cleared = Clear(superseded ?? []);
 
         var moves = stems.Select(s => (From: s, To: Destination(s, name))).ToList();

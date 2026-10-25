@@ -100,7 +100,7 @@ public sealed class HandoffSupersedeTests : IDisposable
     [Fact]
     public void Superseded_never_names_the_incoming_uploads_own_files()
     {
-        var paths = new CratesidePaths();
+        var paths = RealPaths.Create();
 
         Assert.SkipUnless(
             Directory.Exists(paths.StagingFolder) && TestLedger.HasReal,

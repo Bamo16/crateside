@@ -12,7 +12,7 @@ public sealed class VerdictSelectorRealDataTests
 {
     private static readonly WorkingSet Set = new();
     private static readonly JobStore Jobs = new();
-    private static readonly CratesidePaths Paths = new();
+    private static readonly CratesidePaths Paths = RealPaths.Create();
 
     private static WorkItem Item(string videoId) =>
         new()

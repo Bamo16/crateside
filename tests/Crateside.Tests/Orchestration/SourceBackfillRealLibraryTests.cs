@@ -12,7 +12,7 @@ public sealed class SourceBackfillRealLibraryTests
     [Fact]
     public void Every_missing_source_is_a_library_track_that_holds_none()
     {
-        var paths = new CratesidePaths();
+        var paths = RealPaths.Create();
         Assert.SkipUnless(
             TestLedger.HasReal && Directory.Exists(paths.LibraryFolder),
             "no real ledger or library on this machine"

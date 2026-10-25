@@ -3,8 +3,8 @@ using Crateside.Core.Orchestration;
 namespace Crateside.Core;
 
 /// <summary>
-/// Where crateside looks for the things it reads, defaulting to this machine's real paths
-/// (ADR 0023).
+/// Where crateside looks for the things it reads. Staging and Library start empty and are
+/// chosen in Settings (ADR 0023).
 /// </summary>
 public sealed class CratesidePaths
 {
@@ -19,10 +19,10 @@ public sealed class CratesidePaths
         @"V:\Repos\beatdetect-harness\builds\1.3.1-48ba578\ffmpeg.exe";
 
     /// <summary>Where freshly separated stems land, awaiting the human-limited steps.</summary>
-    public string StagingFolder { get; set; } = @"P:\RYAN\Ableton\Sample Staging";
+    public string StagingFolder { get; set; } = string.Empty;
 
     /// <summary>Where stems go once the work on them is finished.</summary>
-    public string LibraryFolder { get; set; } = @"P:\RYAN\Ableton\Mashup Samples";
+    public string LibraryFolder { get; set; } = string.Empty;
 
     /// <summary>Where the user's Ableton sets live, read for the samples they use.</summary>
     public string AbletonProjects { get; set; } = @"P:\RYAN\Ableton\Projects";
