@@ -151,7 +151,7 @@
                         }
                         else
                         {
-                            <Evidence Run="_run" Tempo="Tempo" Heading="@($"Why {HeadingKey}")" Summary="@Summary(_run)"
+                            <Evidence Run="_run" Tempo="Tempo" Heading="@($"Why {HeadingKey}")" Summary="@RunSummary.Of(_run)"
                                       Withheld="Confidence is KeyConfidence.Withheld"
                                       WarpViewLink="@(_row is null ? null : WarpViewLink)" />
                         }
@@ -364,9 +364,4 @@
             $"state {row.ChipLabel}",
             $"verdict {KeyText.Spell(Key) ?? "—"} · {KeyText.Confidence(Confidence)}",
         ];
-
-    private static string Summary(RunEvidence run) =>
-        run.Sources.Count is 0
-            ? $"No human sources; {"detector".ToQuantity(run.Algorithms.Count)} and the chord check."
-            : $"{run.Sources.Count(source => source.Stance is SourceStance.Agrees)} of {"source".ToQuantity(run.Sources.Count)} agree, with {"detector".ToQuantity(run.Algorithms.Count)} alongside.";
 }

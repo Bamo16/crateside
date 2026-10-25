@@ -73,7 +73,7 @@ public sealed class KeyStripTests
 
         var plan = KeyStrip.Plan(Run(ADorian, [new("verse", ADorian), bridge]), Seconds);
 
-        Assert.Equal("0-200 verse · A Dor", Drawn(plan));
+        Assert.Equal("0-200 A Dor", Drawn(plan));
         Assert.Equal([bridge], plan.Unplaced);
     }
 
@@ -98,7 +98,7 @@ public sealed class KeyStripTests
 
         var plan = KeyStrip.Plan(Run(ADorian, [new("verse", ADorian), late]), Seconds);
 
-        Assert.Equal("0-200 verse · A Dor", Drawn(plan));
+        Assert.Equal("0-200 A Dor", Drawn(plan));
         Assert.Equal([late], plan.Unplaced);
     }
 
@@ -113,4 +113,15 @@ public sealed class KeyStripTests
                 )
             )
         );
+
+    [Fact]
+    public void A_primary_filling_the_track_is_labelled_with_its_key_alone()
+    {
+        Section bridge = new("bridge", CLydian);
+
+        var plan = KeyStrip.Plan(Run(ADorian, [new("intro", ADorian), bridge]), Seconds);
+
+        Assert.Equal("0-200 A Dor", Drawn(plan));
+        Assert.Equal([bridge], plan.Unplaced);
+    }
 }

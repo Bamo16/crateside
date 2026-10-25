@@ -771,11 +771,11 @@
                     <div class="jband @band.Style @(band.Window is { } window && window == _openWindow ? "open" : null)" style="left: @P(left)%; width: @P(right - left)%" data-line="@band.Line">
                         @if (tags && band.Window is { } opens)
                         {
-                            <button class="mono jtag" aria-expanded="@(opens == _openWindow ? "true" : "false")" title="@(opens == _openWindow ? "Close this window" : "What this window settled")" @onclick="() => ToggleWindow(opens)">@band.Tag</button>
+                            <button class="mono jtag" aria-expanded="@(opens == _openWindow ? "true" : "false")" title="@band.Tag · @(opens == _openWindow ? "close this window" : "what this window settled")" @onclick="() => ToggleWindow(opens)">@band.Tag</button>
                         }
                         else if (tags)
                         {
-                            <span class="mono jtag">@band.Tag</span>
+                            <span class="mono jtag" title="@band.Tag">@band.Tag</span>
                         }
                     </div>
                 }

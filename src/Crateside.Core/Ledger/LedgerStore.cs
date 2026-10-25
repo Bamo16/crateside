@@ -124,8 +124,11 @@ public sealed class LedgerStore : IDisposable
         }
     }
 
-    /// <summary>The detectors' JSON behind every song's latest run that has any, keyed by song identity.</summary>
-    public IReadOnlyDictionary<string, string> LatestEvidenceJson()
+    /// <summary>
+    /// The detectors' JSON behind every song's latest run that has any, keyed by song identity; a latest run with
+    /// none is given as <c>{}</c> when <paramref name="withEmpty"/>.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> LatestEvidenceJson(bool withEmpty = false)
     {
         lock (_gate)
         {
@@ -142,10 +145,10 @@ public sealed class LedgerStore : IDisposable
                 .AsEnumerable()
                 .GroupBy(run => run.Song, StringComparer.OrdinalIgnoreCase)
                 .Select(song => song.OrderBy(run => run.RecordedAt).Last())
-                .Where(run => run.Evidence is not null)
+                .Where(run => withEmpty || run.Evidence is not null)
                 .ToDictionary(
                     run => run.Song,
-                    run => run.Evidence!,
+                    run => run.Evidence ?? "{}",
                     StringComparer.OrdinalIgnoreCase
                 );
         }
@@ -153,7 +156,8 @@ public sealed class LedgerStore : IDisposable
 
     /// <summary>
     /// Rewrites the evidence of a song's latest run in place, without recording a run: the verdict, its
-    /// time and its judging are untouched. False when the song has no such run or <paramref name="edit"/> returns null.
+    /// time and its judging are untouched; a run with no evidence is edited from <c>{}</c>. False when the song has no
+    /// such run or <paramref name="edit"/> returns null.
     /// </summary>
     public bool EditLatestEvidence(string song, Func<string, string?> edit)
     {
@@ -166,7 +170,7 @@ public sealed class LedgerStore : IDisposable
                 .OrderByDescending(run => run.RecordedAt)
                 .FirstOrDefault();
 
-            if (latest is not { Evidence: { } json } || edit(json) is not { } edited)
+            if (latest is null || edit(latest.Evidence ?? "{}") is not { } edited)
                 return false;
 
             latest.Evidence = edited;

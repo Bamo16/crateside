@@ -67,6 +67,9 @@ public static class KeyStrip
                 unplaced.Add(section);
         }
 
+        if (found is [])
+            return new([new(0, seconds, primary, null, false)], unplaced);
+
         var drawn = found
             .Select(placed => new KeyBand(
                 placed.Start,
