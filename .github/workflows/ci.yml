@@ -15,12 +15,6 @@ jobs:
         with:
           path: crateside
 
-      # Crateside.Core project-references AbleKit as a sibling checkout (../AbleKit).
-      - uses: actions/checkout@v4
-        with:
-          repository: Bamo16/AbleKit
-          path: AbleKit
-
       - uses: actions/setup-dotnet@v4
         with:
           global-json-file: crateside/global.json

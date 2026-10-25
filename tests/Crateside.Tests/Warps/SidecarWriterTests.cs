@@ -529,7 +529,7 @@ public sealed class SidecarWriterTests : IDisposable
                 written.Clip.LoopOn
             )
         );
-        Assert.Equal(ClipColours.For(Target), written.Clip.ColorIndex);
+        Assert.Equal(ClipColours.For(Target), written.Clip.Color);
         Assert.Equal(PlusSixDb, written.Clip.SampleVolume, 4);
         Assert.True(_written.Of(Target) is { IsUnwarped: true, IsStarter: false, From: null });
     }

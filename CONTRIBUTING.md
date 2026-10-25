@@ -38,8 +38,8 @@ dotnet test --solution Crateside.slnx
 dotnet csharpier check .
 ```
 
-Both must pass, with no build warnings (warnings are errors). `Crateside.Core` project-references
-[AbleKit](https://github.com/Bamo16/AbleKit) as a sibling checkout, so clone it beside this repo.
+Both must pass, with no build warnings (warnings are errors). `Crateside.Core` reads Ableton's files through the
+[AbleKit](https://github.com/Bamo16/AbleKit) NuGet package.
 Read [CLAUDE.md](CLAUDE.md) for the working agreements, [CONTEXT.md](CONTEXT.md) for the
 vocabulary, and [docs/adr](docs/adr) before changing a decision.
 

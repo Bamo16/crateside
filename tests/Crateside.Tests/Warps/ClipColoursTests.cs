@@ -1,3 +1,4 @@
+using AbleKit.Analysis;
 using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Warps;
@@ -20,8 +21,14 @@ public sealed class ClipColoursTests : IDisposable
     [Fact]
     public void Drums_are_one_colour_whatever_the_song()
     {
-        Assert.Equal(1, ClipColours.For(Stem("One (Drums).flac", "Drums", "aaaaaaaaaaa")));
-        Assert.Equal(1, ClipColours.For(Stem("Two (Drums).flac", "Drums", "bbbbbbbbbbb")));
+        Assert.Equal(
+            ClipColor.At(1, 2),
+            ClipColours.For(Stem("One (Drums).flac", "Drums", "aaaaaaaaaaa"))
+        );
+        Assert.Equal(
+            ClipColor.At(1, 2),
+            ClipColours.For(Stem("Two (Drums).flac", "Drums", "bbbbbbbbbbb"))
+        );
     }
 
     [Fact]
@@ -34,8 +41,8 @@ public sealed class ClipColoursTests : IDisposable
             Stem("Song (Instrumental - Full).flac", "Instrumental - Full", "abcdefghijk")
         );
 
-        Assert.Contains(vocal!.Value, (int[])[3, 4, 5, 17, 18, 31, 32, 33]);
-        Assert.Contains(instrumental!.Value, (int[])[7, 8, 10, 11, 20, 21, 22, 24]);
+        Assert.Contains(vocal!.Value.Index, (int[])[3, 4, 5, 17, 18, 31, 32, 33]);
+        Assert.Contains(instrumental!.Value.Index, (int[])[7, 8, 10, 11, 20, 21, 22, 24]);
     }
 
     [Fact]
@@ -66,7 +73,10 @@ public sealed class ClipColoursTests : IDisposable
     {
         var source = Stem("Theme (1998 - 2006).flac", preset: null, "abcdefghijk");
 
-        Assert.Contains(ClipColours.For(source)!.Value, (int[])[7, 8, 10, 11, 20, 21, 22, 24]);
+        Assert.Contains(
+            ClipColours.For(source)!.Value.Index,
+            (int[])[7, 8, 10, 11, 20, 21, 22, 24]
+        );
     }
 
     private string Stem(string name, string? preset, string videoId)

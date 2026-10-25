@@ -315,10 +315,7 @@ public sealed class SidecarWriter(
     /// </summary>
     public bool Recolour(string audioPath) =>
         ClipColours.For(audioPath) is { } colour
-        && Rewrite(
-            audioPath,
-            clip => clip.ColorIndex == colour ? null : clip with { ColorIndex = colour }
-        );
+        && Rewrite(audioPath, clip => clip.Color == colour ? null : clip with { Color = colour });
 
     /// <summary>As <see cref="Recolour"/>, for the clip gain, linear: 1 is 0 dB (ADR 0059).</summary>
     public bool Level(string audioPath, float gain) =>
@@ -367,10 +364,10 @@ public sealed class SidecarWriter(
     }
 
     private static AnalysisFile Coloured(AnalysisFile file, string audioPath) =>
-        ClipColours.For(audioPath) is { } colour && file.Clip.ColorIndex != colour
+        ClipColours.For(audioPath) is { } colour && file.Clip.Color != colour
             ? file with
             {
-                Clip = file.Clip with { ColorIndex = colour },
+                Clip = file.Clip with { Color = colour },
             }
             : file;
 

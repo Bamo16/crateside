@@ -130,8 +130,6 @@ folders, so nothing falls out of sync.
   [ffmpeg-beatdetect](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-beatdetect).
 - **The `claude` CLI, logged in**, for judging ([docs/judge.md](docs/judge.md)).
 - **A YouTube API key and playlist** to read the playlist ([docs/secrets.md](docs/secrets.md)).
-- **AbleKit as a sibling checkout**: `Crateside.Core` project-references
-  [Bamo16/AbleKit](https://github.com/Bamo16/AbleKit) at `..\AbleKit` relative to this repo.
 
 ## Built for one workflow today
 
@@ -146,14 +144,12 @@ A stranger cannot yet do these without editing code or files:
   and a subscription; there is no other judge behind an interface yet.
 - **Run it beyond localhost safely.** It listens on `http://localhost:5027` and has no
   authentication, so keep it there.
-- **Build without the AbleKit sibling checkout.**
 
 Open, and not prerequisites for going public: a keytag interface, judging by detectors alone behind an `IVerdictJudge`, and localhost-by-default authentication.
 
 ## Building and running
 
 ```
-git clone https://github.com/Bamo16/AbleKit.git
 git clone https://github.com/Bamo16/crateside.git
 cd crateside
 dotnet tool restore
