@@ -9,6 +9,9 @@
 
 **A bench for building a mashup sample library in Ableton Live.**
 
+> **Status: built for one workflow, by one person.** See [Built for one workflow today](#built-for-one-workflow-today)
+> before expecting it to work on your machine. `master` is the latest; there are no releases yet.
+
 You keep a YouTube playlist of songs you want to mash. crateside turns each one into
 key-tagged vocal and instrumental samples in Ableton's browser, and stops exactly where a
 human has to take over — warping — telling you, in one list, what is waiting on you and
@@ -16,6 +19,14 @@ what the machine is still doing.
 
 It is a Blazor Server app that runs on your own PC, meant to sit on a second monitor
 next to Ableton. There is no cloud, no account, and nothing to deploy.
+
+## How it is built
+
+crateside is built with agentic engineering, using [Claude Code](https://claude.com/claude-code): the maintainer
+(Bamo16) sets direction and reviews, and agents write most of the code, tests and docs. The repo
+keeps the instructions those agents work from (`CLAUDE.md`, `docs/agents/`) and the decisions
+they build against (`docs/adr/`) in the open. Issues carry the labels `ready-for-agent` and
+`ready-for-human`; [CONTRIBUTING.md](CONTRIBUTING.md) explains them.
 
 ## What it does with a song
 
@@ -91,8 +102,9 @@ judging, and how much of the current Claude quota window is used.
 
 ## How it relates to StemForge
 
-- crateside detects keys itself (FiLL's `keydetect` filter through ffmpeg, with ports of madmom's key CNN
-  and Essentia's `edma` profile as its backers), judges with its own prompt, and keeps the
+- crateside detects keys itself (the [`keydetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-keydetect)
+  ffmpeg filter, with ports of madmom's key CNN and Essentia's `edma` profile as its backers) and
+  reads tempo with the [`beatdetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-beatdetect) filter, judges with its own prompt, and keeps the
   **ledger** of every verdict in SQLite ([docs/ledger.md](docs/ledger.md)). It began as a separate
   tool, keytag, whose history it took over ([ADR 0055](docs/adr/0055-crateside-owns-the-key-judge-and-its-ledger.md)).
 - [**StemForge**](https://github.com/Bamo16/StemForge) does the downloading and the stem
@@ -104,13 +116,51 @@ run, and per-track instructions (the plan for which stems to cut, a name overrid
 chosen source). Everything else on screen is derived from the ledger and the Ableton
 folders, so nothing falls out of sync.
 
-## Running it
+## Requirements
 
-Requirements: Windows, .NET 10 SDK, Ableton Live with a Staging folder and
-a library folder as watched roots (both set in Settings), StemForge checked out as a sibling, an
-ffmpeg build with FiLL's `keydetect` filter on `PATH` (or named by `Paths:KeydetectFfmpeg`; the first
-start pins it for keydetect in `%APPDATA%\crateside\builds.json`, ADR 0066), a GPU
-for separation, and a Claude subscription for judging.
+- **Windows.** Paths, the folder chooser and process handling assume it.
+- **.NET 10 SDK** (`global.json` pins 10.0.202 or a later 10.0 feature band).
+- **Ableton Live**, with a Staging folder and a library folder; both are chosen in Settings.
+- **[StemForge](https://github.com/Bamo16/StemForge)'s `stemforge-cli` on `PATH`**, which downloads
+  and separates, and a GPU for separation.
+  the first start pins it in `builds.json` under `%APPDATA%\crateside`, ADR 0066) and `beatdetect`
+  the first start pins it in `%APPDATA%atesideuilds.json`, ADR 0066) and `beatdetect`
+  (`Paths:BeatdetectFfmpeg`, see below). Sources:
+  [ffmpeg-keydetect](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-keydetect) and
+  [ffmpeg-beatdetect](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-beatdetect).
+- **The `claude` CLI, logged in**, for judging ([docs/judge.md](docs/judge.md)).
+- **A YouTube API key and playlist** to read the playlist ([docs/secrets.md](docs/secrets.md)).
+- **AbleKit as a sibling checkout**: `Crateside.Core` project-references
+  [Bamo16/AbleKit](https://github.com/Bamo16/AbleKit) at `..\AbleKit` relative to this repo.
+
+## Built for one workflow today
+
+The repo is being prepared for publication ([#107](https://github.com/Bamo16/crateside/issues/107)).
+A stranger cannot yet do these without editing code or files:
+
+- **Point `beatdetect` at a build.** `Paths:BeatdetectFfmpeg` defaults to a path on the
+  maintainer's machine and has no Settings field.
+- **Name the Ableton projects folder.** `Paths:AbletonProjects` has a machine-specific default and
+  no Settings field. Staging and Library start empty and are chosen in Settings.
+- **Use anything but the maintainer's judging setup.** Judging goes through the Claude Code CLI
+  and a subscription; there is no other judge behind an interface yet.
+- **Run it beyond localhost safely.** It listens on `http://localhost:5027` and has no
+  authentication, so keep it there.
+- **Build without the AbleKit sibling checkout.**
+
+Open, and not prerequisites for going public: a keytag interface, judging by detectors alone behind an `IVerdictJudge`, and localhost-by-default authentication.
+
+## Building and running
+
+```
+git clone https://github.com/Bamo16/AbleKit.git
+git clone https://github.com/Bamo16/crateside.git
+cd crateside
+dotnet tool restore
+dotnet build Crateside.slnx
+```
+
+Then:
 
 ```
 dotnet run --project src/Crateside          # the app
@@ -124,14 +174,14 @@ reshapes an object already in memory — so a multi-file edit can leave the app 
 that is genuinely inconsistent while reporting *"Hot reload succeeded"*. Use it for razor and
 CSS; use `run` for anything else.
 
-Many tests assert against the real Ableton roots and the ledger and skip when
+Many tests assert against the real Ableton folders chosen in Settings and the ledger, and skip when
 those are absent — that has repeatedly caught things fixtures would not have.
 
 ## Reading further
 
 - [CONTEXT.md](CONTEXT.md) — the glossary. Every noun above (track, stem, sample, warp
   guide, verdict, parked, recipe, work order) is defined there.
-- [docs/adr](docs/adr) — seventeen decision records; the ones linked above are the
+- [docs/adr](docs/adr) — the decision records; the ones linked above are the
   load-bearing ones.
 - [docs/the-manual-workflow.md](docs/the-manual-workflow.md) — the human half, step
   by step, for what to do once a track is ready to warp.
