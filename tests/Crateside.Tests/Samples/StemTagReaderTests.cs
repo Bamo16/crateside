@@ -29,7 +29,10 @@ public sealed class StemTagReaderTests : IDisposable
         Title("Before");
         Assert.Equal("Before", StemTagReader.Read(_path)?.Title);
 
+        // Same size on purpose, and a coarse disk clock can give the rewrite the same time, so
+        // move the time as a later rewrite would.
         Title("Afters");
+        File.SetLastWriteTimeUtc(_path, File.GetLastWriteTimeUtc(_path).AddMinutes(1));
         Assert.Equal("Afters", StemTagReader.Read(_path)?.Title);
     }
 
