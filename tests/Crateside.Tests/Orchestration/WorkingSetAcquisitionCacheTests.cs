@@ -30,6 +30,10 @@ public sealed class WorkingSetAcquisitionCacheTests : IDisposable
 
         writing.SaveAcquisition("aaaaaaaaaaa", new Acquisition { IsAccepted = true });
 
+        // The folder's time is the cache's key and the clock ticks only every 15.6 ms on Windows.
+        var folder = Path.Combine(_root, "aaaaaaaaaaa");
+        Directory.SetLastWriteTimeUtc(folder, Directory.GetLastWriteTimeUtc(folder).AddMinutes(1));
+
         Assert.True(reading.Acquisitions()["aaaaaaaaaaa"].IsAccepted);
     }
 
