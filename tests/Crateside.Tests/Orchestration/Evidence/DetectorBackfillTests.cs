@@ -57,7 +57,8 @@ public sealed class DetectorBackfillTests : IDisposable
             _store,
             new SourceIndex(set, Path.Combine(_root, "source-index.json")),
             _detectors,
-            Paths
+            Paths,
+            new FakeTimeProvider(DateTimeOffset.Parse("2026-10-25T00:00:00+00:00"))
         );
     }
 
@@ -180,7 +181,8 @@ public sealed class DetectorBackfillTests : IDisposable
                 Path.Combine(_root, "i.json")
             ),
             _detectors,
-            Paths
+            Paths,
+            new FakeTimeProvider()
         );
 
         Assert.Null(await backfill.NextAsync(TestContext.Current.CancellationToken));
@@ -308,6 +310,82 @@ public sealed class DetectorBackfillTests : IDisposable
         );
         Assert.Equal(["C", "G"], evidence.Chords);
         Assert.Null(await backfill.NextAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task A_re_read_marks_the_evidence_as_read_after_the_verdict()
+    {
+        Judge(ReadBy("old"));
+        _detectors.Sha256 = "new";
+        _detectors.Fresh = ReadBy("new", key: "C major", chords: """["C","G"]""");
+
+        var backfill = Backfill();
+        await backfill.ReadAsync(
+            (await backfill.NextAsync(TestContext.Current.CancellationToken))!,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal("new", _store.EvidenceFor(Song)!.LateReading?.Sha256);
+        Assert.NotNull(_store.EvidenceFor(Song)!.LateReading?.At);
+    }
+
+    [Fact]
+    public async Task Readings_added_to_a_finished_run_mark_it_as_read_after_the_verdict()
+    {
+        Judge(Before);
+
+        var backfill = Backfill();
+        await backfill.ReadAsync(
+            (await backfill.NextAsync(TestContext.Current.CancellationToken))!,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.NotNull(_store.EvidenceFor(Song)!.LateReading);
+    }
+
+    [Fact]
+    public async Task A_run_re_read_before_the_marker_existed_is_marked_once_from_its_build_and_time()
+    {
+        Judge(ReadBy("NEW"));
+        _detectors.Sha256 = "new";
+
+        Assert.Null(await Backfill().NextAsync(TestContext.Current.CancellationToken));
+
+        var late = _store.EvidenceFor(Song)!.LateReading;
+
+        Assert.NotNull(late);
+        Assert.Null(late.At);
+        Assert.Equal("NEW", late.Sha256);
+    }
+
+    [Fact]
+    public async Task A_run_judged_on_the_current_build_is_not_marked()
+    {
+        _store.Record(
+            new RunRecord
+            {
+                RecordedAt = DateTimeOffset.Parse("2026-10-24T23:00:00-05:00"),
+                Song = Song,
+                SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
+                Confidence = KeyConfidence.High,
+                Centre = new TonalCentre("A", DiatonicMode.Aeolian),
+                Evidence = ReadBy("new"),
+            }
+        );
+        _detectors.Sha256 = "new";
+
+        Assert.Null(await Backfill().NextAsync(TestContext.Current.CancellationToken));
+        Assert.Null(_store.EvidenceFor(Song)!.LateReading);
+    }
+
+    [Fact]
+    public void The_note_names_the_build_when_it_is_known()
+    {
+        Assert.Equal(
+            "Read on keydetect 1.2.1, after this verdict.",
+            new LateReading(null, "x").Note("1.2.1")
+        );
+        Assert.Equal("Read after this verdict.", new LateReading(null, "x").Note(null));
     }
 
     [Fact]

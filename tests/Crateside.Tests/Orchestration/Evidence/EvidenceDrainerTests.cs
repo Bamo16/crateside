@@ -62,7 +62,8 @@ public sealed class EvidenceDrainerTests : IDisposable
                 _store,
                 new SourceIndex(_set, Path.Combine(_root, "source-index.json")),
                 detectors,
-                paths
+                paths,
+                new Microsoft.Extensions.Time.Testing.FakeTimeProvider()
             ),
             jobs,
             Options.Create(paths)

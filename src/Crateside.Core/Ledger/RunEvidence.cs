@@ -90,6 +90,9 @@ public sealed record RunEvidence
 
     public IReadOnlyList<AlgorithmResult> Algorithms { get; init; } = [];
 
+    /// <summary>Set when the readings in <see cref="Algorithms"/> were taken after the verdict.</summary>
+    public LateReading? LateReading { get; init; }
+
     /// <summary>
     /// Which detectors agreed. Weighted, not counted: two of the same method family agreeing
     /// is weak, because they share their failure modes.
@@ -162,6 +165,9 @@ public sealed record RunEvidence
                 }),
             ],
             Algorithms = AlgorithmResult.FromDto(machine?.Algorithms),
+            LateReading = machine is { ReadAfterVerdict: { } late }
+                ? new LateReading(late.At, machine.Versions?.GetValueOrDefault("ffmpeg_sha256"))
+                : null,
             Agreement =
             [
                 .. (machine?.PairwiseAgreement ?? []).Select(pair => new AgreementPair
@@ -571,6 +577,14 @@ internal sealed record MachineDto
     public IReadOnlyList<KeyEventDto>? KeyEvents { get; init; }
 
     public IReadOnlyDictionary<string, string?>? Versions { get; init; }
+
+    /// <summary>Added when readings were written into a run after its verdict.</summary>
+    public LateDto? ReadAfterVerdict { get; init; }
+
+    internal sealed record LateDto
+    {
+        public DateTimeOffset? At { get; init; }
+    }
 
     /// <summary>Each window's own report, where windows were detected.</summary>
     public IReadOnlyList<WindowDto>? Windows { get; init; }

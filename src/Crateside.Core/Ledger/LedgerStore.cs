@@ -180,6 +180,37 @@ public sealed class LedgerStore : IDisposable
         }
     }
 
+    /// <summary>
+    /// Rewrites the evidence of every song's latest run that <paramref name="edit"/> returns a new text for, given
+    /// the run's time; returns how many were rewritten. No run is recorded.
+    /// </summary>
+    public int EditEveryLatestEvidence(Func<DateTimeOffset, string, string?> edit)
+    {
+        lock (_gate)
+        {
+            using var context = Context();
+
+            var edited = 0;
+
+            foreach (
+                var latest in context
+                    .Runs.AsEnumerable()
+                    .GroupBy(run => run.Song, StringComparer.OrdinalIgnoreCase)
+                    .Select(song => song.OrderBy(run => run.RecordedAt).Last())
+                    .Where(run => run.Evidence is not null)
+            )
+                if (edit(latest.RecordedAt, latest.Evidence!) is { } text)
+                {
+                    latest.Evidence = text;
+                    edited++;
+                }
+
+            context.SaveChanges();
+
+            return edited;
+        }
+    }
+
     /// <summary>Validates and stores a run, or says which field was refused and why.</summary>
     public RecordOutcome Record(RunRecord run)
     {
