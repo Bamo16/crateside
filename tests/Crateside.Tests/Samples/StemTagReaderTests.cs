@@ -99,12 +99,16 @@ public sealed class StemTagReaderTests : IDisposable
 
     private void Title(string title)
     {
-        using var file = TagLib.File.Create(_path);
-        file.Tag.Title = title;
-        file.Save();
+        var before = File.GetLastWriteTimeUtc(_path);
 
-        // The tags fit the file's padding, so its size never moves, and the clock ticks only every
-        // 15.6 ms on Windows: move the time as a later rewrite would.
-        File.SetLastWriteTimeUtc(_path, File.GetLastWriteTimeUtc(_path).AddMinutes(1));
+        using (var file = TagLib.File.Create(_path))
+        {
+            file.Tag.Title = title;
+            file.Save();
+        }
+
+        // The tags fit the file's padding, so its size never moves, and Windows' clock ticks only
+        // every 15.6 ms: set a time later than the last write's, as a real rewrite would have.
+        File.SetLastWriteTimeUtc(_path, before.AddMinutes(1));
     }
 }
