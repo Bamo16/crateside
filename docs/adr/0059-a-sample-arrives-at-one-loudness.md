@@ -86,3 +86,5 @@ integrated loudness.** The audio is never touched; crateside writes the one fiel
   a limiter, can clip.
 - **A quiet vocal is lifted by at most about 10 dB** with the floor in place; the boost is capped
   by the floor, not by a separate limit.
+
+**Amended 2026-10-25: the floor moves to -32 LUFS.** Of the 8 stems below -24, five were real but quiet vocals (-24.3 to -28.6) and three were residue or silence (-35.8 to -70), with nothing between. Real quiet vocals are now lifted, by up to about 18 dB.

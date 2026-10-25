@@ -54,5 +54,5 @@ public sealed class LoudnessOptions
     public double TargetLufs { get; set; } = -14;
 
     /// <summary>A sample quieter than this, in LUFS integrated, is left at 0 dB.</summary>
-    public double FloorLufs { get; set; } = -24;
+    public double FloorLufs { get; set; } = -32;
 }

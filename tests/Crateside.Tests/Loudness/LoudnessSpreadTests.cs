@@ -122,7 +122,7 @@ public sealed class LoudnessSpreadTests : IDisposable
         var path = Path.Combine(_root, "Quiet (Vocal - Full).flac");
         File.Copy(Fixture, path);
         var spread = await SpreadOf(
-            ("Soft (Vocal - Full).flac", -30),
+            ("Soft (Vocal - Full).flac", -40),
             ("Loud (Vocal - Full).flac", -14)
         );
         var unread = new LoudnessReader(new FakeEbur128(_ => -14));
