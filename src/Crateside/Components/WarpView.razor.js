@@ -49,7 +49,7 @@ export function rulerDrag(section, server) {
 
     // A new range has no band yet, so one is drawn in every row the form's bands are drawn in.
     const newBands = () =>
-        [...section.querySelectorAll(".ruler, .tempo-line, .off-line, .plot")].map((row) => {
+        [...section.querySelectorAll(".ruler, .tempo-line, .off-line, .plot, .key-strip")].map((row) => {
             const band = document.createElement("div");
 
             band.style.cssText =

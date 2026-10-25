@@ -1040,3 +1040,25 @@
 .jband.reading {
     z-index: 1;
 }
+
+/* A window's tag is a button: it opens that window's drawer. */
+button.jtag {
+    pointer-events: auto;
+    cursor: pointer;
+    font-family: var(--font-mono);
+}
+
+button.jtag:hover {
+    border-color: var(--text);
+}
+
+.jband.open {
+    border-color: rgba(236, 231, 220, 0.9);
+    background: rgba(236, 231, 220, 0.07);
+}
+
+.jband.open .jtag {
+    color: var(--ink);
+    background: var(--text);
+    border-color: var(--text);
+}
