@@ -41,7 +41,7 @@ public sealed class DetectorBackfill(
     /// </summary>
     public async Task<BackfillTarget?> NextAsync(CancellationToken ct = default)
     {
-        var held = store.LatestEvidenceJson();
+        var held = store.LatestEvidenceJson(withEmpty: true);
         var lacking = held.Select(run => (Song: run.Key, Lacks: Lacking(run.Value)))
             .Where(run => run.Lacks.Count > 0)
             .ToDictionary(run => run.Song, run => run.Lacks, StringComparer.OrdinalIgnoreCase);

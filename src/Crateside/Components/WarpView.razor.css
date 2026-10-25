@@ -1002,8 +1002,12 @@
     background: rgba(111, 199, 214, 0.1);
 }
 
-/* Runs past a narrow band rather than cutting its words off. */
+/* Cut off with an ellipsis at the band's edge, so neighbouring windows' tags never overlap; the title carries the whole. */
 .jtag {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-sizing: border-box;
     position: absolute;
     top: 2px;
     left: 0;

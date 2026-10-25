@@ -164,8 +164,15 @@
                 </div>
             }
 
-            <h3>What the detectors reported</h3>
-            <DetectorRows Algorithms="Run.Algorithms" Heads="true" />
+            @if (Run.Algorithms.Count > 0)
+            {
+                <h3>What the detectors reported</h3>
+                <DetectorRows Algorithms="Run.Algorithms" Heads="true" />
+            }
+            else
+            {
+                <p class="muted no-readings">This run has no detector readings.</p>
+            }
 
             @if (Run.Backers is { } backers)
             {

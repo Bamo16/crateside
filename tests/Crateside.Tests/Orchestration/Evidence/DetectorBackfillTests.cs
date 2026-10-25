@@ -61,7 +61,7 @@ public sealed class DetectorBackfillTests : IDisposable
         );
     }
 
-    private void Judge(string evidence) =>
+    private void Judge(string? evidence) =>
         Assert.IsType<RecordOutcome.Recorded>(
             _store.Record(
                 new RunRecord
@@ -146,6 +146,26 @@ public sealed class DetectorBackfillTests : IDisposable
         Judge(Complete);
 
         Assert.Null(await Backfill().NextAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task A_run_with_no_evidence_at_all_is_picked_for_all_three_and_filled()
+    {
+        Judge(null);
+
+        var backfill = Backfill();
+        var target = await backfill.NextAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            [KeydetectFilter.Name, MadmomKeyCnn.Name, EdmaKeyEstimator.Name],
+            target!.Detectors
+        );
+
+        var result = await backfill.ReadAsync(target, TestContext.Current.CancellationToken);
+
+        Assert.Empty(result.Failed);
+        Assert.Equal(3, _store.EvidenceFor(Song)!.Algorithms.Count);
+        Assert.Single(_store.Read().Runs);
     }
 
     [Fact]
