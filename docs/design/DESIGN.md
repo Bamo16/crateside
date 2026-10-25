@@ -501,6 +501,10 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **A section with a `Start` runs to the next boundary** (the ledger has starts, not ends). Sections
   with neither a start nor a window are named in the key strip's gutter, as designed; runs judged
   before section times have only the windows' placements.
+- **A detector table read after the verdict says so**: one muted 13px line under it, *Read on
+  keydetect 1.2.1, after this verdict.* (*Read after this verdict.* where the build is not one
+  crateside knows). The re-read (ADR 0066) and the backfill (#139) write readings into a finished run,
+  so the judge's prose can quote a reading the table no longer shows.
 - **Share is a disabled button**, with no menu, card or text export until #152.
 - **Not built, as the handoff says**: the chord lane, the transport and the playhead.
 - **Your note to the judge and your ear** keep their place, heading the right column, which the

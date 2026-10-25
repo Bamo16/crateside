@@ -1,5 +1,7 @@
 @using System.Globalization
+@using Crateside.Core
 @using Crateside.Core.Ledger
+@inject KnownBuilds Builds
 
 <div class="panel">
     <header class="head">
@@ -168,6 +170,10 @@
             {
                 <h3>What the detectors reported</h3>
                 <DetectorRows Algorithms="Run.Algorithms" Heads="true" />
+                @if (Run.LateReading is { } late)
+                {
+                    <p class="muted late-reading">@late.Note(BuildLabel(late.Sha256))</p>
+                }
             }
             else
             {
@@ -296,6 +302,14 @@
     public TrackTempo? Tempo { get; set; }
 
     private bool _chordsOpen;
+
+    private string? BuildLabel(string? sha256) =>
+        sha256 is null
+            ? null
+            : Builds
+                .All(FfmpegFilter.Keydetect)
+                .FirstOrDefault(known => known.Build.Sha256.Equals(sha256, StringComparison.OrdinalIgnoreCase))
+                ?.Build.Label;
 
     /// <summary>What the user said they hear, recorded as a source of its own kind.</summary>
     private EvidenceSource? Ear => Run.Sources.FirstOrDefault(source => source.Kind is SourceKind.Ear);

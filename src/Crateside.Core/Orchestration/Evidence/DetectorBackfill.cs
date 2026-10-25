@@ -16,7 +16,8 @@ public sealed class DetectorBackfill(
     LedgerStore store,
     SourceIndex sources,
     IDetectorSet detectors,
-    CratesidePaths paths
+    CratesidePaths paths,
+    TimeProvider clock
 )
 {
     private const string Reread = "re-read";
@@ -33,7 +34,20 @@ public sealed class DetectorBackfill(
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
+    /// <summary>The evidence stage's first re-read on keydetect 1.2.1 began at 17:21 on 2026-10-24 (ADR 0066); runs recorded before it hold 1.2.1 readings only if they were written in afterwards.</summary>
+    private static readonly DateTimeOffset PinAdopted = new(
+        2026,
+        10,
+        24,
+        17,
+        21,
+        0,
+        TimeSpan.FromHours(-5)
+    );
+
     private readonly HashSet<string> _failed = [];
+
+    private bool _legacyStamped;
 
     /// <summary>
     /// The first judged song, by name, that lacks a reading, else whose evidence another build than keydetect's
@@ -46,6 +60,24 @@ public sealed class DetectorBackfill(
             .Where(run => run.Lacks.Count > 0)
             .ToDictionary(run => run.Song, run => run.Lacks, StringComparer.OrdinalIgnoreCase);
         var current = await detectors.KeydetectSha256Async(ct);
+
+        if (current is not null && !_legacyStamped)
+        {
+            _legacyStamped = true;
+
+            if (
+                store.EditEveryLatestEvidence(
+                    (recordedAt, json) =>
+                        recordedAt < PinAdopted
+                        && !LateReading.IsStamped(json)
+                        && !IsStale(json, current)
+                            ? LateReading.Stamped(json, null)
+                            : null
+                ) > 0
+            )
+                store.Export();
+        }
+
         var stale = held.Where(run =>
                 current is not null && !lacking.ContainsKey(run.Key) && IsStale(run.Value, current)
             )
@@ -131,7 +163,15 @@ public sealed class DetectorBackfill(
                 added.Contains(EdmaKeyEstimator.Name) ? edma : null
             );
 
-            if (store.EditLatestEvidence(target.Song, json => Attach(json, part)))
+            if (
+                store.EditLatestEvidence(
+                    target.Song,
+                    json =>
+                        Attach(json, part) is { } attached
+                            ? LateReading.Stamped(attached, clock.GetUtcNow())
+                            : null
+                )
+            )
                 store.Export();
             else
                 foreach (var detector in added.ToList())
@@ -235,7 +275,13 @@ public sealed class DetectorBackfill(
         if (
             error is null
             && reading is EvidenceReading.Read(var fresh)
-            && !store.EditLatestEvidence(target.Song, json => Refreshed(json, fresh))
+            && !store.EditLatestEvidence(
+                target.Song,
+                json =>
+                    Refreshed(json, fresh) is { } refreshed
+                        ? LateReading.Stamped(refreshed, clock.GetUtcNow())
+                        : null
+            )
         )
             error = "the song has no run with evidence to refresh";
 

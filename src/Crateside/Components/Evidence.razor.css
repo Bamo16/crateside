@@ -335,6 +335,12 @@
     color: inherit;
 }
 
+/* Under the detector table when its readings came after the verdict. */
+.late-reading {
+    margin: 0.4rem 0 0;
+    font-size: 0.82rem;
+}
+
 /* The detectors' own words about themselves. */
 .backers {
     margin: 0.5rem 0 0;

@@ -61,3 +61,11 @@ of the three reads no key changes nothing and is not retried until the app resta
 On this machine's first start with this change, 488 of the 519 judged songs with evidence have a
 source on disk and will be re-read, about 8 seconds each on the CPU (one trial, measured), one per
 idle evidence tick. The other 31 stay as they are until a source is downloaded.
+
+## Amendment, 2026-10-24: a late reading says so
+
+A re-read, or a backfill into a finished run, adds `read_after_verdict: {"at": …}` to the evidence
+(`at` null where only derived), and Track details says *Read on keydetect 1.2.1, after this verdict.*
+under the detector table, since the judge's prose can quote a reading the table no longer shows. The
+first start after this stamps, once, each latest run whose evidence carries the pinned build's
+`ffmpeg_sha256` but was recorded before 17:21 on 2026-10-24, when the re-reads began.
