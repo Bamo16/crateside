@@ -11,17 +11,17 @@ public sealed class StarterGridTests
     private static readonly string Pinned = Path.Combine(
         Harness,
         "builds",
-        "1.3.0-1e57fec",
+        "1.4.0-0fc32ce",
         "ffmpeg.exe"
     );
 
     [Fact]
     public void A_sure_downbeat_numbers_the_starters_beats() =>
-        Assert.Equal(new StarterGrid(120, 1.5), StarterGrid.Of(Reading(confidence: 0.03)));
+        Assert.Equal(new StarterGrid(120, 1.5), StarterGrid.Of(Reading(confidence: 0.6)));
 
     [Fact]
     public void An_unsure_downbeat_leaves_which_beat_starts_a_bar_a_guess() =>
-        Assert.Equal(new StarterGrid(120, null), StarterGrid.Of(Reading(confidence: 0.029)));
+        Assert.Equal(new StarterGrid(120, null), StarterGrid.Of(Reading(confidence: 0.599)));
 
     [Fact]
     public void A_downbeat_in_bars_of_three_is_not_used_on_a_grid_of_four() =>
@@ -54,7 +54,7 @@ public sealed class StarterGridTests
     [Fact]
     public async Task A_corpus_track_the_filter_is_unsure_of_gives_no_downbeat()
     {
-        var grid = StarterGrid.Of(await ReadAsync(Corpus("adele-rolling-in-the-deep")));
+        var grid = StarterGrid.Of(await ReadAsync(Corpus("carly-rae-jepsen-call-me-maybe")));
 
         Assert.NotNull(grid);
         Assert.Null(grid.DownbeatSeconds);

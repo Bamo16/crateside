@@ -8,7 +8,7 @@ namespace Crateside.Core.Warps;
 public sealed record StarterGrid(double Bpm, double? DownbeatSeconds)
 {
     /// <summary>The downbeat confidence from which the filter's downbeat is trusted.</summary>
-    public const double DownbeatSureAt = 0.03;
+    public const double DownbeatSureAt = 0.6;
 
     public const int BeatsPerBar = 4;
 
