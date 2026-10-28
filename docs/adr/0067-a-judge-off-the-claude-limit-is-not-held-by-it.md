@@ -30,7 +30,8 @@ two never overlap.
 
 - Pacing and any limits of the other endpoint are its own business; crateside judges one track at a
   time and adds no rate limit of its own. A rate limit it reports, an endpoint that cannot be
-  reached, or a refused key pauses judging rather than failing the track, as a spent Claude
-  allowance already does.
+  reached, or a refused key never fails the track. Amended 2026-10-28: it holds judging and
+  retries every two minutes rather than pausing it, because the first one paused judging all night
+  over a cooldown of about a minute; a spent Claude allowance still pauses.
 - The ledger does not record which endpoint judged a run; the date the configuration changed is the
   only record.
