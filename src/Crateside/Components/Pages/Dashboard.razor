@@ -215,13 +215,32 @@
                                     @foreach (var song in disagreements.GroupBy(file => file.Song))
                                     {
                                         var first = song.First();
+                                        var row = _rows.FirstOrDefault(row => row.Song.Equals(song.Key, StringComparison.OrdinalIgnoreCase));
+                                        var waitingHere = song.Where(file => !approved.ContainsKey(file.Path)).ToList();
 
                                         <li>
-                                            @song.Key: <span class="mono">@first.Applied</span> →
+                                            @if (row is not null)
+                                            {
+                                                <a href="@row.DetailsHref">@song.Key</a>
+                                            }
+                                            else
+                                            {
+                                                @song.Key
+                                            }: <span class="mono">@first.Applied</span> →
                                             <span class="mono">@first.Verdict</span>
-                                            @if (song.All(file => approved.ContainsKey(file.Path)))
+                                            @if (row?.Verdict is { } verdict)
+                                            {
+                                                <text> · @verdict.Confidence.ToString().ToUpperInvariant(), judged @verdict.Timestamp.ToLocalTime().ToString("d MMM")</text>
+                                            }
+                                            @if (waitingHere is [])
                                             {
                                                 <text> · approved, written on the next backing pass</text>
+                                            }
+                                            else
+                                            {
+                                                <button class="outline one-song" @onclick="() => Corrections.Approve(waitingHere)">
+                                                    Tag @("file".ToQuantity(waitingHere.Count))
+                                                </button>
                                             }
                                         </li>
                                     }
