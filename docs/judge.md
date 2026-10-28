@@ -103,9 +103,19 @@ and, for an Anthropic-compatible gateway rather than Anthropic's own API, its ad
 A backend is trusted only after its own agreement check against verdicts already recorded
 (ADR 0055).
 
+Setting any of `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY` or `ANTHROPIC_AUTH_TOKEN` takes the judge
+off the weekly Claude limit: the quota guard never holds it, and with Library backfill on, ordinary
+judging works the backlog too ([ADR 0067](adr/0067-a-judge-off-the-claude-limit-is-not-held-by-it.md)).
+Claude Code sends its claude.ai login in the `Authorization` header unless `ANTHROPIC_AUTH_TOKEN`
+replaces it, so a local endpoint that checks that header wants `ANTHROPIC_AUTH_TOKEN`, not
+`ANTHROPIC_API_KEY`.
+
+Every session runs with `--safe-mode`, so the user's own CLAUDE.md, rules and memory never reach
+the judge, whichever endpoint it runs on.
+
 ## What it costs
 
-Each session and each resume spends Claude quota, about 37k tokens of start-up per track, and
+On Claude Code's own login, each session and each resume spends Claude quota, about 37k tokens of start-up per track, and
 is capped at $2 by `--max-budget-usd`. The quota guard stops background judging at 85% of the
 week ([ADR 0053](adr/0053-judging-stops-at-85-percent-of-the-weekly-limit.md)), except in the
 weekly spend-down, which judges the backlog to its own ceiling, 100% by default, in the last three hours

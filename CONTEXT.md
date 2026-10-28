@@ -481,7 +481,9 @@ it. The two run types below are named after which of **evidence** and **verdict*
   above 85%. Not the user's pause: it is not remembered, and lifts by itself when the figure
   drops or the weekly reset passes
   ([ADR 0053](docs/adr/0053-judging-stops-at-85-percent-of-the-weekly-limit.md)). The
-  **spend-down** has its own ceiling instead.
+  **spend-down** has its own ceiling instead. A judge on another endpoint is never held, and
+  with Library backfill on it works the backlog in ordinary judging
+  ([ADR 0067](docs/adr/0067-a-judge-off-the-claude-limit-is-not-held-by-it.md)).
 - **Draining** — working the **work lists** down continuously, one track at a time,
   for as long as there is anything outstanding. The normal state of the system rather than
   an action someone takes: what limits separation is that two at once are ruinous,

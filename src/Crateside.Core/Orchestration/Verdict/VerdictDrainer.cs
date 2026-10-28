@@ -21,10 +21,13 @@ public sealed class VerdictDrainer(
     QuotaGuard guard,
     RejudgeQueue rejudges,
     WorkingSet workingSet,
-    IOptions<CratesidePaths> paths
+    PauseStore remembered,
+    IOptions<CratesidePaths> paths,
+    IOptions<JudgeOptions> judge
 ) : IStageDrainer, IBackfillJudge
 {
     private readonly CratesidePaths _paths = paths.Value;
+    private readonly bool _spendsClaudeQuota = judge.Value.SpendsClaudeQuota;
     private readonly SemaphoreSlim _oneAtATime = new(1, 1);
 
     public JobStage Stage => JobStage.Verdict;
@@ -185,6 +188,15 @@ public sealed class VerdictDrainer(
             ),
             // Held, so only the track the user let through is judged
             (_, not null, { } passed) => selector.TryPick(view, ledger, passed, out item),
+            // A judge off the weekly Claude limit works the backlog whenever backfill is on (ADR 0067)
+            _ when !_spendsClaudeQuota && remembered.Read().Backfill => selector.TryPickIdle(
+                view,
+                ledger,
+                WithEvidence(rejudges.Pending(ledger)),
+                includeIntake: true,
+                out item,
+                out isRejudge
+            ),
             _ => selector.TryPickNext(view, ledger, out item),
         };
 
