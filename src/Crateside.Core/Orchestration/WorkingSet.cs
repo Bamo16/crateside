@@ -92,7 +92,7 @@ public sealed class WorkingSet(string? root = null)
         WorkingSetJsonContext.Default.Acquisition.ReadFileOrDefault(AcquisitionPathFor(videoId));
 
     /// <summary>
-    /// Every recorded acquisition, by video ID — what the rows are drawn from. A folder's is read
+    /// Every recorded acquisition, by video ID â€” what the rows are drawn from. A folder's is read
     /// again only when the folder's modified time moves, because a stat per folder costs as much
     /// as the read and every write goes through a temporary file that moves it.
     /// </summary>
