@@ -109,6 +109,9 @@ public sealed class StageWorker<TDrainer>(
 
                 return IdleDelay;
 
+            case { Outcome: StageOutcome.Held, RetryAfter: { } wait }:
+                return wait;
+
             default:
                 return IdleDelay;
         }
