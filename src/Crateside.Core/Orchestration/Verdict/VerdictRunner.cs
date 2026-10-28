@@ -761,15 +761,15 @@ public sealed partial class VerdictRunner(
             var streams when Mentions(streams, "\"api_error_status\":429", "hit your limit") =>
                 _options.SpendsClaudeQuota
                     ? "the Claude allowance is spent; judging is paused until it resets"
-                    : "the judge's endpoint reported its rate limit; judging tries again shortly",
+                    : "the judge's endpoint reported its rate limit",
             // Not a bare "/login", which any searched-up URL could carry.
             var streams when Mentions(streams, "not logged in", "please run /login") =>
                 "Claude Code is not logged in; judging is paused until you run /login",
             // Claude Code retries for minutes before giving up, so this is no blip.
             var streams when Mentions(streams, "ECONNREFUSED", "Unable to connect to API") =>
-                "the judge's endpoint cannot be reached; judging tries again shortly",
+                "the judge's endpoint cannot be reached",
             var streams when Mentions(streams, "Failed to authenticate") =>
-                "the judge's endpoint refused its key; judging tries again shortly",
+                "the judge's endpoint refused its key",
             _ => null,
         };
 

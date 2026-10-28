@@ -84,7 +84,7 @@
             // A session with no track row in the judging state: a re-judge, a backfill track, a run from bars.
             <div class="subject"><span>@activity</span></div>
             <span class="status">
-                <span class="mono value">@Clock.Elapsed(activitySince)</span> elapsed · @Backlog.Describe()
+                <span class="mono value">@Clock.Elapsed(activitySince)</span> elapsed Â· @Backlog.Describe()
             </span>
         }
         else
@@ -112,7 +112,7 @@
         else if (Judging.Hold is { } held)
         {
             <span class="status">
-                Held: @held.Reason @(held.RetryAt is { } retry ? $"Trying again at {retry.ToLocalTime():t}." : "Trying again shortly.")
+                Held: @(held.Reason). @(held.RetryAt is { } retry ? $"Trying again at {retry.ToLocalTime():t}." : "Trying again shortly.")
             </span>
         }
     </div>
