@@ -259,7 +259,10 @@ public sealed class VerdictDrainer(
                 // Another endpoint's limit or outage passes by itself, so it holds and retries;
                 // a spent Claude allowance lasts hours, so it pauses (ADR 0067).
                 if (!backfill && !_spendsClaudeQuota)
-                    return StageTick.Held(result.Error ?? "the judge's endpoint is unavailable");
+                    return StageTick.Held(
+                        result.Error ?? "the judge's endpoint is unavailable",
+                        result.RetryAfter
+                    );
 
                 if (!backfill)
                     control.Pause();

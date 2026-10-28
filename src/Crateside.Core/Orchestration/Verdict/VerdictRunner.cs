@@ -32,6 +32,8 @@ public sealed partial class VerdictRunner(
     /// <summary>The pages fetched for the track before its first session, kept beside the evidence.</summary>
     public const string SourcesFileName = "sources.json";
 
+    private const int MaxRetryAfterSeconds = 3600;
+
     private static readonly string[] Tools = ["Read", "Write", "WebSearch", "WebFetch"];
 
     private readonly JudgeOptions _options = options.Value;
@@ -109,7 +111,17 @@ public sealed partial class VerdictRunner(
         {
             string prompt;
 
-            switch (Assess(VerdictFile.Check(verdictPath), order, direction, audio, detected))
+            switch (
+                Assess(
+                    VerdictFile.Check(verdictPath),
+                    order,
+                    direction,
+                    audio,
+                    detected,
+                    lookups,
+                    canResume: !resumedToWrite
+                )
+            )
             {
                 case VerdictCheck.Recordable(var run):
                     LogNotes(run, order);
@@ -146,7 +158,7 @@ public sealed partial class VerdictRunner(
                     );
 
                 case VerdictCheck.Unusable when AgentUnavailableReason(outcome) is { } reason:
-                    return VerdictResult.AgentUnavailable(reason);
+                    return VerdictResult.AgentUnavailable(reason, RetryAfter(outcome));
 
                 case VerdictCheck.Unusable(var problem) when !resumedToWrite:
                     resumedToWrite = true;
@@ -578,21 +590,54 @@ public sealed partial class VerdictRunner(
         return detected;
     }
 
-    /// <summary>A recordable run the ledger would still refuse is unusable, so the session is told why.</summary>
+    /// <summary>
+    /// A recordable run the ledger would refuse, or whose key the evidence never held, is unusable,
+    /// so the session is told why; a HIGH without its backing is capped once the session has had its resume (ADR 0069).
+    /// </summary>
     private VerdictCheck Assess(
         VerdictCheck check,
         WorkOrder order,
         JudgeDirection? direction,
         string? audio,
-        IReadOnlyList<DetectedWindow> detected
-    ) =>
-        check is VerdictCheck.Recordable(var run)
-        && RunValidation.Refusal(
-            RunValidation.Normalize(Complete(run, order, direction, audio, detected))
-        )
-            is { } refusal
-            ? new VerdictCheck.Unusable($"{refusal.Field}: {refusal.Problem}")
-            : check;
+        IReadOnlyList<DetectedWindow> detected,
+        IReadOnlyList<SiteLookup> lookups,
+        bool canResume
+    )
+    {
+        if (check is not VerdictCheck.Recordable(var run))
+            return check;
+
+        var complete = RunValidation.Normalize(Complete(run, order, direction, audio, detected));
+
+        if (RunValidation.Refusal(complete) is { } refusal)
+            return new VerdictCheck.Unusable($"{refusal.Field}: {refusal.Problem}");
+
+        if (RecordTimeCheck.UnfoundKey(complete, lookups) is { } unfound)
+            return new VerdictCheck.Unusable(unfound);
+
+        if (RecordTimeCheck.MissingForHigh(complete, _options.Ear) is not { } missing)
+            return check;
+
+        return canResume
+            ? new VerdictCheck.Unusable(
+                $"confidence: HIGH needs backed detectors, a tonic check in favor and a human source that agrees; missing {missing}. "
+                    + "Write the confidence the evidence supports, or add what is missing."
+            )
+            : new VerdictCheck.Recordable(
+                run with
+                {
+                    Confidence = KeyConfidence.Medium,
+                    Reasoning = string.Join(
+                        "\n\n",
+                        new[]
+                        {
+                            run.Reasoning,
+                            $"crateside capped this verdict at MEDIUM: HIGH needs backed detectors, a tonic check in favor and a human source that agrees, and it lacked {missing}.",
+                        }.OfType<string>()
+                    ),
+                }
+            );
+    }
 
     /// <summary>The run, with what crateside knows and the session cannot.</summary>
     private RunRecord Complete(
@@ -728,6 +773,16 @@ public sealed partial class VerdictRunner(
             _ => null,
         };
 
+    /// <summary>The wait the endpoint stated with its rate limit, or null when it gave none.</summary>
+    private static TimeSpan? RetryAfter(ProcessOutcome outcome) =>
+        new[] { outcome.StandardOutput, outcome.StandardError }
+            .Select(stream => StatedPause.Match(stream ?? string.Empty))
+            .FirstOrDefault(match => match.Success)
+            is { Groups: var groups }
+        && int.TryParse(groups["Seconds"].Value, out var seconds)
+            ? TimeSpan.FromSeconds(Math.Min(seconds, MaxRetryAfterSeconds))
+            : null;
+
     private static bool Mentions(string[] streams, params string[] phrases) =>
         streams.Any(stream =>
             phrases.Any(phrase => stream.Contains(phrase, StringComparison.OrdinalIgnoreCase))
@@ -742,6 +797,12 @@ public sealed partial class VerdictRunner(
 
         return reader.ReadToEnd();
     }
+
+    [GeneratedRegex(
+        @"\bpause for (?<Seconds>\d+)\s+(more\s+)?seconds",
+        RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture
+    )]
+    private static partial Regex StatedPause { get; }
 
     [GeneratedRegex(@"(\s*[(\[][^()\[\]]*[)\]])+\s*$")]
     private static partial Regex BracketedTail { get; }
@@ -760,17 +821,21 @@ public sealed record VerdictResult
     /// </summary>
     public bool IsAgentUnavailable { get; init; }
 
+    /// <summary>How long the endpoint said to wait, where it said.</summary>
+    public TimeSpan? RetryAfter { get; init; }
+
     public string? Error { get; init; }
 
     public static VerdictResult Succeeded() => new() { IsSuccess = true };
 
     public static VerdictResult Failed(string error) => new() { IsSuccess = false, Error = error };
 
-    public static VerdictResult AgentUnavailable(string reason) =>
+    public static VerdictResult AgentUnavailable(string reason, TimeSpan? retryAfter = null) =>
         new()
         {
             IsSuccess = false,
             IsAgentUnavailable = true,
             Error = reason,
+            RetryAfter = retryAfter,
         };
 }

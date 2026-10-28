@@ -32,6 +32,7 @@ two never overlap.
   time and adds no rate limit of its own. A rate limit it reports, an endpoint that cannot be
   reached, or a refused key never fails the track. Amended 2026-10-28: it holds judging and
   retries every two minutes rather than pausing it, because the first one paused judging all night
-  over a cooldown of about a minute; a spent Claude allowance still pauses.
+  over a cooldown of about a minute; a spent Claude allowance still pauses. Amended again 2026-10-28: where the endpoint states how long to wait, the hold lasts that long
+  ([ADR 0069](0069-a-verdict-is-checked-against-its-evidence-before-it-is-recorded.md)).
 - The ledger does not record which endpoint judged a run; the date the configuration changed is the
   only record.

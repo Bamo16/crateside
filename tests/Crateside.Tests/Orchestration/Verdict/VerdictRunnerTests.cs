@@ -34,6 +34,17 @@ public sealed class VerdictRunnerTests : IDisposable
         }
         """;
 
+    private const string BackedByBoth = """
+        {
+          "algorithms": {
+            "ffmpeg_keydetect": { "key": "A minor", "r": 0.84, "key_alt": "C major" },
+            "madmom": { "key": "A minor", "confidence": 0.9 },
+            "essentia_edma": { "key": "A minor", "confidence": 0.8 }
+          },
+          "chords": ["Am", "E7"]
+        }
+        """;
+
     private const string AsksForWindows = """
         {
           "artist": "Yes",
@@ -94,7 +105,7 @@ public sealed class VerdictRunnerTests : IDisposable
             TestLedger.From("does-not-exist")
         );
 
-    private void GiveEvidence(string evidence = """{"chords":["Am","E7"]}""")
+    private void GiveEvidence(string evidence = BackedByBoth)
     {
         Set.Prepare(VideoId);
         File.WriteAllText(Set.EvidencePathFor(VideoId), evidence);
@@ -208,9 +219,13 @@ public sealed class VerdictRunnerTests : IDisposable
     [Fact]
     public async Task A_refused_file_is_resumed_with_the_reason_and_recorded_once_fixed()
     {
-        GiveEvidence();
+        GiveEvidence(BackedByBoth.Replace("A minor", "A# minor"));
         Session(Verdict.Replace("\"tonic\": \"A\"", "\"tonic\": \"H\""));
-        Session(Verdict.Replace("\"tonic\": \"A\"", "\"tonic\": \"Bb\""));
+        Session(
+            Verdict
+                .Replace("\"tonic\": \"A\"", "\"tonic\": \"Bb\"")
+                .Replace("\"statesKey\": \"A minor\"", "\"statesKey\": \"A# minor\"")
+        );
 
         var result = await RunAsync();
 
@@ -218,6 +233,190 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.Contains("\"H\" is not a tonic", Sessions.Requests[1].StandardInput);
         Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
         Assert.Equal("A#", run.Center!.Tonic);
+    }
+
+    private const string NoSource = """
+        {
+          "artist": "Yes",
+          "title": "Owner of a Lonely Heart",
+          "confidence": "MEDIUM",
+          "center": { "tonic": "C#", "mode": "aeolian" },
+          "tonicCheck": "G#7 resolves to C#m.",
+          "reasoning": "Well supported."
+        }
+        """;
+
+    [Fact]
+    public async Task A_key_the_evidence_never_held_is_resumed_once_and_then_fails_the_run()
+    {
+        GiveEvidence();
+        Session(NoSource);
+        Session(NoSource);
+
+        var result = await RunAsync();
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("C# minor appears nowhere", result.Error);
+        Assert.Equal(2, Sessions.Requests.Count);
+        Assert.Contains("C# minor appears nowhere", Sessions.Requests[1].StandardInput);
+        Assert.Empty(Ledger.Read().Runs);
+    }
+
+    [Fact]
+    public async Task A_key_the_evidence_never_held_is_recorded_once_the_session_fixes_it()
+    {
+        GiveEvidence();
+        Session(NoSource);
+        Session(Verdict);
+
+        var result = await RunAsync();
+
+        Assert.True(result.IsSuccess, result.Error);
+        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.Equal("A minor", run.Center!.Collapsed);
+    }
+
+    [Fact]
+    public async Task A_mode_collapses_to_the_key_the_evidence_holds()
+    {
+        GiveEvidence(BackedByBoth.Replace("A minor", "E minor"));
+        Session(NoSource.Replace("\"C#\"", "\"E\"").Replace("aeolian", "phrygian"));
+
+        var result = await RunAsync();
+
+        Assert.True(result.IsSuccess, result.Error);
+        Assert.Single(Sessions.Requests);
+    }
+
+    [Fact]
+    public async Task A_withheld_verdict_needs_no_key_in_the_evidence()
+    {
+        GiveEvidence();
+        Session(
+            """{"artist":"Yes","title":"Owner of a Lonely Heart","confidence":"WITHHELD","reasoning":"No safe key."}"""
+        );
+
+        var result = await RunAsync();
+
+        Assert.True(result.IsSuccess, result.Error);
+        Assert.Single(Sessions.Requests);
+    }
+
+    [Fact]
+    public async Task A_high_without_backed_detectors_is_resumed_once_then_capped_at_medium()
+    {
+        GiveEvidence(
+            BackedByBoth.Replace(
+                "\"key\": \"A minor\", \"confidence\"",
+                "\"key\": \"C major\", \"confidence\""
+            )
+        );
+        Session(Verdict);
+        Session(Verdict);
+
+        var result = await RunAsync();
+
+        Assert.True(result.IsSuccess, result.Error);
+        Assert.Equal(2, Sessions.Requests.Count);
+        Assert.Contains("HIGH needs", Sessions.Requests[1].StandardInput);
+        Assert.Contains("backed detectors", Sessions.Requests[1].StandardInput);
+        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.Equal(KeyConfidence.Medium, run.Confidence);
+        Assert.Equal("A minor", run.Center!.Collapsed);
+        Assert.Contains(
+            "Backed by both, and Hooktheory agrees.",
+            Ledger.EvidenceFor("yes - owner of a lonely heart")!.Reasoning
+        );
+        Assert.Contains(
+            "capped this verdict at MEDIUM",
+            Ledger.EvidenceFor("yes - owner of a lonely heart")!.Reasoning
+        );
+    }
+
+    [Fact]
+    public async Task A_high_without_a_human_source_is_capped_at_medium_and_says_what_it_lacked()
+    {
+        GiveEvidence();
+        var noHumanSource = Verdict.Replace(
+            "\"kind\": \"authoritative\"",
+            "\"kind\": \"chord_recognizer\""
+        );
+        Session(noHumanSource);
+        Session(noHumanSource);
+
+        await RunAsync();
+
+        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.Equal(KeyConfidence.Medium, run.Confidence);
+        Assert.Contains(
+            "a human source that agrees on A minor",
+            Ledger.EvidenceFor("yes - owner of a lonely heart")!.Reasoning
+        );
+    }
+
+    [Fact]
+    public async Task A_high_the_session_repairs_on_its_resume_is_recorded_as_written()
+    {
+        GiveEvidence();
+        Session(Verdict.Replace("\"kind\": \"authoritative\"", "\"kind\": \"chord_recognizer\""));
+        Session(Verdict);
+
+        await RunAsync();
+
+        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.Equal(KeyConfidence.High, run.Confidence);
+        Assert.DoesNotContain(
+            "capped",
+            Ledger.EvidenceFor("yes - owner of a lonely heart")!.Reasoning
+        );
+    }
+
+    [Fact]
+    public async Task A_valid_high_is_recorded_untouched_after_one_session()
+    {
+        GiveEvidence();
+        Session(Verdict);
+
+        var result = await RunAsync();
+
+        Assert.True(result.IsSuccess, result.Error);
+        Assert.Single(Sessions.Requests);
+        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.Equal(KeyConfidence.High, run.Confidence);
+        Assert.Equal(
+            "Backed by both, and Hooktheory agrees.",
+            Ledger.EvidenceFor("yes - owner of a lonely heart")!.Reasoning
+        );
+    }
+
+    [Fact]
+    public async Task The_wait_an_endpoint_states_with_its_rate_limit_is_carried_on_the_result()
+    {
+        GiveEvidence();
+        Session(
+            writes: null,
+            stdout: """{"is_error":true,"api_error_status":429,"result":"API Error: Request rejected (429) · The endpoint asked us to slow down. Requests pause for 240 more seconds to protect the account."}"""
+        );
+
+        var result = await RunAsync();
+
+        Assert.True(result.IsAgentUnavailable);
+        Assert.Equal(TimeSpan.FromSeconds(240), result.RetryAfter);
+    }
+
+    [Fact]
+    public async Task A_rate_limit_that_states_no_wait_carries_none()
+    {
+        GiveEvidence();
+        Session(
+            writes: null,
+            stdout: """{"is_error":true,"api_error_status":429,"result":"API Error: Request rejected (429) · rate limit: Messages too frequent. Try again later."}"""
+        );
+
+        var result = await RunAsync();
+
+        Assert.True(result.IsAgentUnavailable);
+        Assert.Null(result.RetryAfter);
     }
 
     [Fact]
@@ -466,7 +665,7 @@ public sealed class VerdictRunnerTests : IDisposable
 
         Assert.Contains(Set.EvidencePathFor(VideoId), prompt);
         Assert.Contains(VerdictPath, prompt);
-        Assert.Contains("\"chords\":[\"Am\",\"E7\"]", prompt);
+        Assert.Contains("\"chords\": [\"Am\", \"E7\"]", prompt);
         Assert.Contains($"watch?v={VideoId}", prompt);
     }
 
@@ -598,7 +797,7 @@ public sealed class VerdictRunnerTests : IDisposable
         {
           "artist": "Yes",
           "title": "Owner of a Lonely Heart",
-          "confidence": "HIGH",
+          "confidence": "MEDIUM",
           "center": { "tonic": "C#", "mode": "aeolian" },
           "sections": [
             { "label": "Chorus", "tonic": "C#", "mode": "aeolian" },

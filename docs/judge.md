@@ -44,6 +44,13 @@ A session that ends without a usable file is **resumed once** (`--resume` on the
 with "write the verdict file now" and what was wrong. A second failure is the track's: the
 verdict stage counts it as a strike.
 
+**Checked against the evidence** (ADR 0069), after the ledger's rules: the center's key must appear
+in what the session was given or wrote (readings, runner-ups and key events, fetched pages, sources,
+candidates, sections; a mode collapses to its major or minor), or the file is refused like any
+other. A HIGH must be backed as the prompt asks: two of keydetect, madmom and Essentia on the
+center's key, a tonic check, and a human source that agrees. After the one resume it is recorded
+as MEDIUM, with a line in its reasoning saying it was capped and why.
+
 **Windows.** A WITHHELD verdict may ask for up to four windows, in seconds. crateside detects
 over each, resumes the same session once with that evidence, and records whatever it writes
 then. If nothing usable follows, the WITHHELD verdict is recorded as it was. The windows
@@ -107,6 +114,8 @@ A backend is trusted only after its own agreement check against verdicts already
 Setting any of `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY` or `ANTHROPIC_AUTH_TOKEN` takes the judge
 off the weekly Claude limit: the quota guard never holds it, and with Library backfill on, ordinary
 judging works the backlog too ([ADR 0067](adr/0067-a-judge-off-the-claude-limit-is-not-held-by-it.md)).
+A rate limit from such an endpoint holds judging for the wait the endpoint states, up to an hour, or two
+minutes where it states none (ADR 0069).
 Claude Code sends its claude.ai login in the `Authorization` header unless `ANTHROPIC_AUTH_TOKEN`
 replaces it, so a local endpoint that checks that header wants `ANTHROPIC_AUTH_TOKEN`, not
 `ANTHROPIC_API_KEY`.

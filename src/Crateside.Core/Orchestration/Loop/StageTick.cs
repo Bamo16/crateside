@@ -17,8 +17,13 @@ public sealed record StageTick
 
     public static StageTick Paused { get; } = new() { Outcome = StageOutcome.Paused };
 
-    public static StageTick Held(string reason) =>
-        new() { Outcome = StageOutcome.Held, Error = reason };
+    public static StageTick Held(string reason, TimeSpan? retryAfter = null) =>
+        new()
+        {
+            Outcome = StageOutcome.Held,
+            Error = reason,
+            RetryAfter = retryAfter,
+        };
 
     public required StageOutcome Outcome { get; init; }
 
@@ -32,6 +37,9 @@ public sealed record StageTick
 
     public bool IsSuccess { get; init; }
     public string? Error { get; init; }
+
+    /// <summary>How long a held stage waits before its next pass, where the endpoint said.</summary>
+    public TimeSpan? RetryAfter { get; init; }
 
     /// <summary>The agent could not run (allowance spent, or not logged in), which says nothing about the track.</summary>
     public bool IsAgentUnavailable { get; init; }
