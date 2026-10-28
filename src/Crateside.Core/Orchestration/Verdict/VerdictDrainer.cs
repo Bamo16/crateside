@@ -1,4 +1,5 @@
 using Crateside.Core.Ledger;
+using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Playlist;
@@ -21,6 +22,7 @@ public sealed class VerdictDrainer(
     QuotaGuard guard,
     RejudgeQueue rejudges,
     WorkingSet workingSet,
+    EvidenceCompleter completer,
     PauseStore remembered,
     IOptions<CratesidePaths> paths,
     IOptions<JudgeOptions> judge
@@ -84,7 +86,12 @@ public sealed class VerdictDrainer(
             jobs.Record(order.VideoId, JobStage.Verdict, JobStatus.Running);
             control.Report($"Judging {order.Title} from bars");
 
-            var result = await runner.RunAsync(order, direction, onStep, ct);
+            var result =
+                workingSet.HasEvidence(order.VideoId)
+                && await completer.CompleteAsync(order.VideoId, direction.Audio, ct)
+                    is { } incomplete
+                    ? VerdictResult.Failed($"not judged: {incomplete}")
+                    : await runner.RunAsync(order, direction, onStep, ct);
 
             jobs.Record(
                 order.VideoId,
@@ -170,6 +177,16 @@ public sealed class VerdictDrainer(
             return StageTick.Unavailable(ex.Message);
         }
 
+        return await JudgeNextAsync(view, backfill, hold, ct);
+    }
+
+    internal async Task<StageTick> JudgeNextAsync(
+        WorkListsView view,
+        bool backfill,
+        QuotaHold? hold,
+        CancellationToken ct
+    )
+    {
         // Read once and used for both the choice and the order, so the two cannot disagree.
         var ledger = store.Read();
 
@@ -216,6 +233,15 @@ public sealed class VerdictDrainer(
 
         try
         {
+            if (await completer.CompleteAsync(item.VideoId, ct: ct) is { } incomplete)
+            {
+                var error = $"not judged: {incomplete}";
+
+                jobs.Record(item.VideoId, JobStage.Verdict, JobStatus.Failed, error: error);
+
+                return StageTick.Ran(order, false, error);
+            }
+
             var result = await runner.RunAsync(order, ct);
 
             // Canceled, not Failed: a session that never ran is not this track's fault, and

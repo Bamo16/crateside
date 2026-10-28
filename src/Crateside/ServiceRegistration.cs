@@ -287,6 +287,7 @@ public static class ServiceRegistration
         services.AddSingleton<EvidenceRunner>();
         services.AddSingleton<IWindowDetector, EvidenceRunner>();
         services.AddSingleton<DetectorBackfill>();
+        services.AddSingleton<EvidenceCompleter>();
         services.AddSingleton<EvidenceDrainer>();
         services.AddHostedService<StageWorker<EvidenceDrainer>>();
 

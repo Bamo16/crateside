@@ -301,6 +301,21 @@ public sealed class DetectorBackfill(
         return new BackfillResult(target.Song, Current, new Dictionary<string, string>());
     }
 
+    /// <summary>Whether the evidence holds a reading from every current detector, on keydetect's build when that is known.</summary>
+    internal static bool IsComplete(string json, string? currentSha256)
+    {
+        try
+        {
+            return JsonNode.Parse(json) is JsonObject
+                && Lacking(json).Count is 0
+                && (currentSha256 is null || !IsStale(json, currentSha256));
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
     private static List<string> Unread(string json) =>
         JsonNode.Parse(json)?["algorithms"] is { } algorithms
             ? [.. Current.Where(detector => algorithms[detector]?["key"] is not JsonValue)]
