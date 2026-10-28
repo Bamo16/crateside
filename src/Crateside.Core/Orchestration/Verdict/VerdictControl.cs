@@ -8,6 +8,10 @@ public sealed class VerdictControl : DrainControl
     private readonly Lock _holdGate = new();
     private int _formRunsWaiting;
     private JudgeHold? _hold;
+    private string? _judgingVideoId;
+
+    /// <summary>The track a session is judging right now, or null between sessions.</summary>
+    public string? JudgingVideoId => Volatile.Read(ref _judgingVideoId);
 
     /// <summary>Why the verdict stage is holding off by itself, or null when it is not.</summary>
     public JudgeHold? Hold
@@ -28,6 +32,20 @@ public sealed class VerdictControl : DrainControl
 
     internal VerdictControl(bool startPaused = true)
         : base(startPaused) { }
+
+    /// <summary>Records which track a session is judging, so the UI can show it before the Tracks rows catch up.</summary>
+    public void ReportJudging(string videoId, string activity)
+    {
+        Volatile.Write(ref _judgingVideoId, videoId);
+        Report(activity);
+    }
+
+    /// <summary>Records that no session is judging.</summary>
+    public void ReportIdle()
+    {
+        Volatile.Write(ref _judgingVideoId, null);
+        Report(null);
+    }
 
     /// <summary>Records that the stage is holding off, or clears it with null.</summary>
     public void SetHold(JudgeHold? hold)

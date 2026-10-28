@@ -10,11 +10,32 @@
     white-space: nowrap;
 }
 
+/* Only states where work is running carry a dot, so its pulse says "in progress". */
 .chip-dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background: currentColor;
+    animation: chip-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes chip-pulse {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.35;
+        transform: scale(0.7);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chip-dot {
+        animation: none;
+    }
 }
 
 .chip.neutral-outline {

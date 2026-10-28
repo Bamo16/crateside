@@ -81,8 +81,18 @@
         }
         else if (Judging.Activity is { } activity && Judging.ActivitySince is { } activitySince)
         {
-            // A session with no track row in the judging state: a re-judge, a backfill track, a run from bars.
-            <div class="subject"><span>@activity</span></div>
+            // A session with no track row in the judging state yet: a re-judge, a backfill track, a run from bars.
+            <div class="subject">
+                <StateChip Label="judging" Style="TrackChipStyle.TealFilled" />
+                @if (Rows.FirstOrDefault(row => row.VideoId == Judging.JudgingVideoId) is { } session)
+                {
+                    <a href="@session.DetailsHref">@session.Title</a>
+                }
+                else
+                {
+                    <span>@activity</span>
+                }
+            </div>
             <span class="status">
                 <span class="mono value">@Clock.Elapsed(activitySince)</span> elapsed · @Backlog.Describe()
             </span>
