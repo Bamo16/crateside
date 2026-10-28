@@ -12,6 +12,7 @@ the file and records it in the [ledger](ledger.md). Decided in
 - **A work order** on standard input: the track's title and upload, the evidence (carried
   inline when small enough, its path otherwise), where to write the verdict file, the artist
   and title to keep when the song was judged before, and how much the user's ear counts.
+- **Complete evidence**: a song is judged only once its evidence holds a reading from every current detector, on keydetect's pinned build; crateside reads the missing ones first, and a song it cannot complete is failed, not judged ([ADR 0068](adr/0068-a-song-is-judged-only-on-complete-evidence.md)).
 - **Tools**: `Read`, `Write`, `WebSearch` and `WebFetch`, nothing else. Its working directory
   is the track's working set, where the verdict file goes.
 
