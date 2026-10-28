@@ -675,14 +675,21 @@ public sealed partial class VerdictRunner(
     /// Why the agent could not be run, read from its prose as well as its JSON, or null when the
     /// failure is about this track.
     /// </summary>
-    private static string? AgentUnavailableReason(ProcessOutcome outcome) =>
+    private string? AgentUnavailableReason(ProcessOutcome outcome) =>
         new[] { outcome.StandardOutput, outcome.StandardError } switch
         {
             var streams when Mentions(streams, "\"api_error_status\":429", "hit your limit") =>
-                "the Claude allowance is spent; judging is paused until it resets",
+                _options.SpendsClaudeQuota
+                    ? "the Claude allowance is spent; judging is paused until it resets"
+                    : "the judge's endpoint reported its rate limit; judging is paused",
             // Not a bare "/login", which any searched-up URL could carry.
             var streams when Mentions(streams, "not logged in", "please run /login") =>
                 "Claude Code is not logged in; judging is paused until you run /login",
+            // Claude Code retries for minutes before giving up, so this is no blip.
+            var streams when Mentions(streams, "ECONNREFUSED", "Unable to connect to API") =>
+                "the judge's endpoint cannot be reached; judging is paused",
+            var streams when Mentions(streams, "Failed to authenticate") =>
+                "the judge's endpoint refused its key; judging is paused",
             _ => null,
         };
 
