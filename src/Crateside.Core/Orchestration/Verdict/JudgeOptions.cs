@@ -12,6 +12,12 @@ public sealed class JudgeOptions
     public Dictionary<string, string> Environment { get; set; } = [];
 
     public EarWeight Ear { get; set; } = EarWeight.Hint;
+
+    /// <summary>Whether the judge runs on Claude Code's own login, and so spends the weekly Claude limit (ADR 0067).</summary>
+    public bool SpendsClaudeQuota =>
+        !Environment.ContainsKey("ANTHROPIC_BASE_URL")
+        && !Environment.ContainsKey("ANTHROPIC_API_KEY")
+        && !Environment.ContainsKey("ANTHROPIC_AUTH_TOKEN");
 }
 
 /// <summary>How much the user's own reading of a key counts with the judge (ADR 0055).</summary>

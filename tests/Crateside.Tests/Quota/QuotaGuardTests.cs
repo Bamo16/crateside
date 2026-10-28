@@ -1,4 +1,6 @@
+using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Quota;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Crateside.Tests.Quota;
@@ -58,6 +60,36 @@ public sealed class QuotaGuardTests
         _time.Advance(TimeSpan.FromMinutes(6));
 
         Assert.Null(await guard.CheckAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task A_judge_on_another_endpoint_is_never_held()
+    {
+        QuotaGuard guard = new(
+            new Readings(() => Weekly(90)),
+            _time,
+            Options.Create(
+                new JudgeOptions
+                {
+                    Environment = { ["ANTHROPIC_BASE_URL"] = "http://127.0.0.1:9000" },
+                }
+            )
+        );
+
+        Assert.Null(await guard.CheckAsync(TestContext.Current.CancellationToken));
+        Assert.Null(guard.Hold);
+    }
+
+    [Fact]
+    public async Task A_judge_on_claude_codes_own_login_is_still_held()
+    {
+        QuotaGuard guard = new(
+            new Readings(() => Weekly(90)),
+            _time,
+            Options.Create(new JudgeOptions())
+        );
+
+        Assert.NotNull(await guard.CheckAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]

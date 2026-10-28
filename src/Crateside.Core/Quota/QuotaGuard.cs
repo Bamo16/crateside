@@ -1,16 +1,25 @@
+using Crateside.Core.Orchestration.Verdict;
+using Microsoft.Extensions.Options;
+
 namespace Crateside.Core.Quota;
 
 /// <summary>
 /// Holds judging back while the weekly Claude limit is nearly spent, and lets go by itself once
-/// the reading drops or the reset passes. Not the user's pause, which persists (ADR 0053).
+/// the reading drops or the reset passes. Not the user's pause, which persists (ADR 0053). A judge
+/// on another endpoint is never held (ADR 0067).
 /// </summary>
-public sealed class QuotaGuard(IQuotaReader reader, TimeProvider time)
+public sealed class QuotaGuard(
+    IQuotaReader reader,
+    TimeProvider time,
+    IOptions<JudgeOptions>? judge = null
+)
 {
     /// <summary>Weekly use, as a percentage, at which judging stops.</summary>
     public const double WeeklyLimit = 85;
 
     private static readonly TimeSpan MaxAge = TimeSpan.FromMinutes(5);
 
+    private readonly bool _applies = judge?.Value.SpendsClaudeQuota ?? true;
     private readonly SemaphoreSlim _reading = new(1, 1);
     private readonly Lock _gate = new();
 
@@ -32,7 +41,10 @@ public sealed class QuotaGuard(IQuotaReader reader, TimeProvider time)
     /// The hold as of the last reading, without reading again. Before any reading has succeeded
     /// the hold is on, since an unread quota is not a spare one (ADR 0053).
     /// </summary>
-    public QuotaHold? Hold => _last.IsKnown ? HoldOf(_last, time.GetUtcNow()) : QuotaHold.Unread;
+    public QuotaHold? Hold =>
+        !_applies ? null
+        : _last.IsKnown ? HoldOf(_last, time.GetUtcNow())
+        : QuotaHold.Unread;
 
     /// <summary>The hold a reading puts on judging at <paramref name="now"/>, or null if none.</summary>
     public static QuotaHold? HoldOf(QuotaSnapshot quota, DateTimeOffset now) =>
@@ -60,6 +72,9 @@ public sealed class QuotaGuard(IQuotaReader reader, TimeProvider time)
     /// </summary>
     public async Task<QuotaHold?> CheckAsync(CancellationToken ct = default)
     {
+        if (!_applies)
+            return null;
+
         await _reading.WaitAsync(ct);
 
         try
