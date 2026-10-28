@@ -770,6 +770,9 @@ public sealed partial class VerdictRunner(
                 "the judge's endpoint cannot be reached",
             var streams when Mentions(streams, "Failed to authenticate") =>
                 "the judge's endpoint refused its key",
+            // Said by an endpoint that is still coming back from a limit, not about this track.
+            var streams when Mentions(streams, "unrecognized_model") =>
+                "the judge's endpoint did not recognize its model",
             _ => null,
         };
 
