@@ -101,6 +101,7 @@ public sealed partial class VerdictRunner(
             ["--session-id", session],
             Prompt(order, verdictPath, lookups, direction, given),
             folder,
+            order,
             ct
         );
 
@@ -167,7 +168,7 @@ public sealed partial class VerdictRunner(
             }
 
             File.Delete(verdictPath);
-            outcome = await SessionAsync(["--resume", session], prompt, folder, ct);
+            outcome = await SessionAsync(["--resume", session], prompt, folder, order, ct);
         }
     }
 
@@ -436,9 +437,11 @@ public sealed partial class VerdictRunner(
         IReadOnlyList<string> session,
         string prompt,
         string folder,
+        WorkOrder order,
         CancellationToken ct
-    ) =>
-        await processes.RunAsync(
+    )
+    {
+        var outcome = await processes.RunAsync(
             new ProcessRequest(
                 fileName,
                 [
@@ -473,6 +476,38 @@ public sealed partial class VerdictRunner(
             },
             ct
         );
+
+        LogSession(outcome, order);
+
+        return outcome;
+    }
+
+    /// <summary>Turns and time per session, the measure of a judge besides its verdicts.</summary>
+    private void LogSession(ProcessOutcome outcome, WorkOrder order)
+    {
+        if (TryParseResult(outcome.StandardOutput) is not { } result)
+            return;
+
+        log.LogInformation(
+            "Judge session for {VideoId} on {Model}: {Turns} turns, {Seconds:0} s",
+            order.VideoId,
+            _options.Model,
+            result["num_turns"]?.GetValue<int>(),
+            result["duration_ms"]?.GetValue<double>() / 1000
+        );
+    }
+
+    private static JsonNode? TryParseResult(string? output)
+    {
+        try
+        {
+            return output is { Length: > 0 } ? JsonNode.Parse(output) : null;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
+    }
 
     /// <summary>The pages for this track, fetched once and then read from beside the evidence.</summary>
     private async Task<IReadOnlyList<SiteLookup>> LookUpAsync(

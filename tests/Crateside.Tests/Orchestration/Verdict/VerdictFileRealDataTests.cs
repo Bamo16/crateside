@@ -75,6 +75,7 @@ public sealed class VerdictFileRealDataTests : IDisposable
                     label = section.Label,
                     tonic = section.Center.Tonic,
                     mode = section.Center.Mode.ToString(),
+                    start = section.Start,
                 }),
                 sources = evidence.Sources.Select(source => new
                 {
