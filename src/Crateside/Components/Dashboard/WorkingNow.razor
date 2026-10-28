@@ -94,7 +94,7 @@
                 <div class="subject"><span class="paused-chip">Paused</span></div>
             }
             <span class="status">
-                @(Backlog.Total is 0 ? "Nothing to judge." : "Not judging.")
+                @(Backlog.Total is 0 ? "Nothing to judge. " : "Not judging. ")
                 @if (Backlog.HasMoreThanIntake)
                 {
                     @Backlog.Describe()

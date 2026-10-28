@@ -98,6 +98,12 @@ public enum JobStatus
 
     /// <summary>Stopped on purpose. Not a strike — the user's call is not the track's fault.</summary>
     Canceled,
+
+    /// <summary>
+    /// A session that never reached a model because the judge's endpoint was unavailable. Not a
+    /// strike and not a cancellation: the stage holds, not the track (#161).
+    /// </summary>
+    Held,
 }
 
 /// <summary>What a separation was launched to produce: how many files, and where.</summary>

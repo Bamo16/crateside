@@ -267,16 +267,17 @@ public sealed class VerdictDrainer(
 
             var result = await runner.RunAsync(order, ct);
 
-            // Canceled, not Failed: a session that never ran is not this track's fault, and
-            // Canceled carries no strike. The ordinary stage then pauses, since a further attempt
+            // Held, not Failed: a session that never ran is not this track's fault, and Held
+            // carries no strike. The ordinary stage then pauses, since a further attempt
             // would return instantly on every track in the queue; the spend-down holds itself.
             if (result.IsAgentUnavailable)
             {
                 jobs.Record(
                     item.VideoId,
                     JobStage.Verdict,
-                    JobStatus.Canceled,
-                    error: result.Error
+                    JobStatus.Held,
+                    error: result.Error,
+                    heldUntil: result.RetryAfter is { } wait ? time.GetUtcNow() + wait : null
                 );
 
                 // Another endpoint's limit or outage passes by itself, so it holds and retries;

@@ -34,7 +34,7 @@ public static class StageEligibility
     public static bool IsOwed(TrackJob job) =>
         job.Status switch
         {
-            JobStatus.Canceled or JobStatus.Queued or JobStatus.Running => true,
+            JobStatus.Canceled or JobStatus.Held or JobStatus.Queued or JobStatus.Running => true,
             JobStatus.Failed => !HasGivenUp(job),
             _ => false,
         };
@@ -75,7 +75,7 @@ public static class StageEligibility
             // Something is on it — or a previous crateside was, and it is being adopted.
             JobStatus.Queued or JobStatus.Running => false,
             // Canceling is the user's call, not the track's fault, so it is simply next again.
-            JobStatus.Canceled => true,
+            JobStatus.Canceled or JobStatus.Held => true,
             _ => job.Strikes < maxStrikes && !IsPermanent(job, out _),
         };
 }

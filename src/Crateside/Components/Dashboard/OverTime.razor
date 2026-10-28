@@ -61,12 +61,15 @@
     <div class="column">
         <span class="caps">Latest activity</span>
         <div class="log">
-            @foreach (var update in History.Latest)
+            @foreach (var line in History.Latest)
             {
                 <div class="log-line">
-                    <span class="mono at">@update.Timestamp.ToLocalTime().ToString("t")</span>
-                    <span class="what">@JobHistory.Describe(update)</span>
-                    <a class="song" href="song/@Uri.EscapeDataString(update.VideoId)">@NameOf(update.VideoId)</a>
+                    <span class="mono at">@line.At.ToLocalTime().ToString("t")</span>
+                    <span class="what">@line.What</span>
+                    @if (line.VideoId is { } videoId)
+                    {
+                        <a class="song" href="song/@Uri.EscapeDataString(videoId)">@NameOf(videoId)</a>
+                    }
                 </div>
             }
         </div>

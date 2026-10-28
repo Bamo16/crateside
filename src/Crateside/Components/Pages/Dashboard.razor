@@ -137,7 +137,7 @@
                     <span class="mono value">@LastWeek</span> last week
                     @if (_history.Latest is [var last, ..])
                     {
-                        <text> · last event <span class="mono">@last.Timestamp.ToLocalTime().ToString("t")</span> @JobHistory.Describe(last) @NameOf(last.VideoId)</text>
+                        <text> · last event <span class="mono">@last.At.ToLocalTime().ToString("t")</span> @last.What @(last.VideoId is { } lastId ? NameOf(lastId) : null)</text>
                     }
                 </Summary>
                 <ChildContent>
