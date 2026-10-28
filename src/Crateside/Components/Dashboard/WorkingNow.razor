@@ -7,6 +7,7 @@
 @using Crateside.Core.Quota
 @using Crateside.Core.Tracks
 @using Crateside.Core.WorkLists
+@using Microsoft.Extensions.Options
 @inject DrainControl Separation
 @inject VerdictControl Judging
 @inject PauseStore Paused
@@ -15,6 +16,7 @@
 @inject LedgerStore Ledger
 @inject BeatReader Beats
 @inject PlaylistSettingsStore Settings
+@inject IOptions<JudgeOptions> Judge
 
 <div class="cards">
     <div class="card">
@@ -51,7 +53,7 @@
 
     <div class="card">
         <div class="label-line">
-            <span class="caps">Judging · Claude</span>
+            <span class="caps">Judging · @(Judge.Value.SpendsClaudeQuota ? "Claude" : Judge.Value.Model)</span>
             <button class="outline" @onclick="ToggleJudging">@(Judging.IsPaused ? "Resume" : "Pause")</button>
         </div>
         @if (JudgingRow is { } judged)
@@ -194,7 +196,9 @@
     [Parameter]
     public EventCallback OnRefreshQuota { get; set; }
 
-    private QuotaHold? Hold => QuotaGuard.HoldOf(Quota, DateTimeOffset.UtcNow);
+    // A judge on another endpoint is never held (ADR 0067).
+    private QuotaHold? Hold =>
+        Judge.Value.SpendsClaudeQuota ? QuotaGuard.HoldOf(Quota, DateTimeOffset.UtcNow) : null;
 
     private TrackRow? Separating => Rows.FirstOrDefault(row => row.State is TrackState.Separating);
 

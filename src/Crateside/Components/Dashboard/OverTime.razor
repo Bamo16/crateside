@@ -66,7 +66,7 @@
                 <div class="log-line">
                     <span class="mono at">@update.Timestamp.ToLocalTime().ToString("t")</span>
                     <span class="what">@JobHistory.Describe(update)</span>
-                    <span class="song">@NameOf(update.VideoId)</span>
+                    <a class="song" href="song/@Uri.EscapeDataString(update.VideoId)">@NameOf(update.VideoId)</a>
                 </div>
             }
         </div>
