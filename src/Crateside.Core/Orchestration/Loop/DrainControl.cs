@@ -10,6 +10,7 @@ public class DrainControl : DrainSignal
 
     private bool _paused;
     private string? _activity;
+    private DateTimeOffset? _activitySince;
 
     /// <summary>Raised whenever the state changes, so a rendered page can catch up.</summary>
     public event Action? Changed;
@@ -30,6 +31,16 @@ public class DrainControl : DrainSignal
         {
             lock (_gate)
                 return _activity;
+        }
+    }
+
+    /// <summary>When the current activity began, or null when nothing is happening.</summary>
+    public DateTimeOffset? ActivitySince
+    {
+        get
+        {
+            lock (_gate)
+                return _activitySince;
         }
     }
 
@@ -56,6 +67,7 @@ public class DrainControl : DrainSignal
                 return;
 
             _activity = activity;
+            _activitySince = activity is null ? null : TimeProvider.System.GetUtcNow();
         }
 
         Changed?.Invoke();

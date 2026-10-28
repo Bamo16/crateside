@@ -876,6 +876,8 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                 $"The 5-hour window is at {session:N0}%; Library backfill waits for it to reset at {resets.ToLocalTime():h:mm tt}.",
             SpendDownState.SessionFull(var session, _) =>
                 $"The 5-hour window is at {session:N0}%; Library backfill waits for it to reset.",
+            SpendDownState.Unread when !Judge.Value.SpendsClaudeQuota =>
+                "On: the judge is off the Claude limit, so the backlog is judged whenever judging runs (ADR 0067).",
             SpendDownState.Unread => "On, but Claude use or the weekly reset could not be read, so nothing is judged.",
             _ => "On; the first check comes within five minutes of starting.",
         };
