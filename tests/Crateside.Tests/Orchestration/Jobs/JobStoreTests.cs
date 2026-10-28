@@ -100,6 +100,29 @@ public sealed class JobStoreTests : IDisposable
     }
 
     [Fact]
+    public void A_held_attempt_is_no_strike_and_is_still_owed_and_selectable_and_survives_a_reload()
+    {
+        var store = Store();
+        var until = _time.GetUtcNow().AddMinutes(5);
+
+        var job = store.Record(
+            VideoId,
+            JobStage.Verdict,
+            JobStatus.Held,
+            error: "rate limited",
+            heldUntil: until
+        );
+
+        Assert.Equal(0, job.Strikes);
+        Assert.True(StageEligibility.IsOwed(job));
+        Assert.True(StageEligibility.Allows(store, VideoId, JobStage.Verdict, 3, false));
+        Assert.Equal(
+            until,
+            Assert.Single(Store().Updates(), update => update.Status is JobStatus.Held).HeldUntil
+        );
+    }
+
+    [Fact]
     public void A_failure_message_stays_visible_through_a_retry_and_clears_on_success()
     {
         var store = Store();

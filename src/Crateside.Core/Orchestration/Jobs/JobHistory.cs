@@ -6,13 +6,14 @@ namespace Crateside.Core.Orchestration.Jobs;
 public sealed record JobHistory(
     IReadOnlyList<WeekFinished> Weeks,
     IReadOnlyList<StageTotal> Stages,
-    IReadOnlyList<JobUpdate> Latest,
+    IReadOnlyList<ActivityLine> Latest,
     int Lines,
     DateTimeOffset? Since
 )
 {
     private const int WeeksShown = 12;
     private const int LatestShown = 8;
+    private const string LegacyHoldPrefix = "the judge's endpoint";
 
     private static readonly JobStage[] Totalled =
     [
@@ -57,20 +58,104 @@ public sealed record JobHistory(
                         update.Stage == stage && update.Status is JobStatus.Failed
                     ),
                     updates.Count(update =>
-                        update.Stage == stage && update.Status is JobStatus.Canceled
+                        update.Stage == stage
+                        && update.Status is JobStatus.Canceled
+                        && !IsHold(update)
                     )
                 )),
             ],
-            [
-                .. updates
-                    .Where(update => update.Status is not JobStatus.Queued)
-                    .TakeLast(LatestShown)
-                    .Reverse(),
-            ],
+            [.. Activity(updates).TakeLast(LatestShown).Reverse()],
             updates.Count,
             updates.Count is 0 ? null : updates.Min(update => update.Timestamp)
         );
     }
+
+    /// <summary>
+    /// A judging session that never reached the judge: recorded as held, or by an older crateside
+    /// as a canceled judging whose error names the endpoint (#161).
+    /// </summary>
+    public static bool IsHold(JobUpdate update) =>
+        update is { Stage: JobStage.Verdict }
+        && (
+            update.Status is JobStatus.Held
+            || update is { Status: JobStatus.Canceled, Error: { } error }
+                && error.StartsWith(LegacyHoldPrefix, StringComparison.Ordinal)
+        );
+
+    /// <summary>
+    /// The events worth a line: a hold is the stage's, shown once when it begins and once when
+    /// judging resumes, not as a started and held pair for each retry.
+    /// </summary>
+    private static IEnumerable<ActivityLine> Activity(IReadOnlyList<JobUpdate> updates)
+    {
+        var hidden = StartsOfHeldAttempts(updates);
+        string? holding = null;
+
+        for (var i = 0; i < updates.Count; i++)
+        {
+            var update = updates[i];
+
+            if (update.Status is JobStatus.Queued || hidden.Contains(i))
+                continue;
+
+            if (IsHold(update))
+            {
+                var reason = ReasonOf(update);
+
+                if (reason != holding)
+                    yield return new ActivityLine(
+                        update.Timestamp,
+                        $"judging held · {reason} · {(update.HeldUntil is { } until ? $"until {until.ToLocalTime():t}" : "trying again shortly")} · next:",
+                        update.VideoId,
+                        IsNext: true
+                    );
+
+                holding = reason;
+
+                continue;
+            }
+
+            if (holding is not null && update.Stage is JobStage.Verdict)
+            {
+                yield return new ActivityLine(
+                    update.Timestamp,
+                    "judging resumed",
+                    null,
+                    IsNext: false
+                );
+                holding = null;
+            }
+
+            yield return new ActivityLine(
+                update.Timestamp,
+                Describe(update),
+                update.VideoId,
+                IsNext: false
+            );
+        }
+    }
+
+    private static HashSet<int> StartsOfHeldAttempts(IReadOnlyList<JobUpdate> updates)
+    {
+        HashSet<int> starts = [];
+        Dictionary<string, int> running = new(StringComparer.Ordinal);
+
+        for (var i = 0; i < updates.Count; i++)
+        {
+            if (updates[i] is not { Stage: JobStage.Verdict } update)
+                continue;
+
+            if (update.Status is JobStatus.Running)
+                running[update.VideoId] = i;
+            else if (running.Remove(update.VideoId, out var started) && IsHold(update))
+                starts.Add(started);
+        }
+
+        return starts;
+    }
+
+    private static string ReasonOf(JobUpdate update) =>
+        update.Error?.Split("; judging")[0] is { Length: > 0 } reason ? reason : "unavailable";
 
     /// <summary>A stage change in a few words: <c>separated</c>, <c>judging failed</c>.</summary>
     public static string Describe(JobUpdate update) =>
@@ -121,3 +206,6 @@ public sealed record JobHistory(
 public sealed record WeekFinished(int Week, int Tracks, bool IsCurrent);
 
 public sealed record StageTotal(JobStage Stage, int Done, int Failed, int Canceled);
+
+/// <summary>One line of Latest activity.</summary>
+public sealed record ActivityLine(DateTimeOffset At, string What, string? VideoId, bool IsNext);

@@ -64,7 +64,8 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
         DateTimeOffset? processStartedAt = null,
         string? error = null,
         bool adopted = false,
-        SeparationPromise? promise = null
+        SeparationPromise? promise = null,
+        DateTimeOffset? heldUntil = null
     )
     {
         var update = new JobUpdate
@@ -80,6 +81,7 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
             Adopted = adopted ? true : null,
             ExpectedOutputs = promise?.ExpectedOutputs,
             Destination = promise?.Destination,
+            HeldUntil = heldUntil,
         };
 
         TrackJob job;
@@ -248,4 +250,7 @@ public sealed record JobUpdate
     public int? ExpectedOutputs { get; init; }
 
     public StemDestination? Destination { get; init; }
+
+    /// <summary>When a held attempt will be tried again, where the endpoint said.</summary>
+    public DateTimeOffset? HeldUntil { get; init; }
 }
