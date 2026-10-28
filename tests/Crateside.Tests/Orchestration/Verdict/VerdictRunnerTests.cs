@@ -374,6 +374,30 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.Contains("/login", result.Error);
     }
 
+    [Theory]
+    [InlineData(
+        "API Error: Connection refused — a firewall or proxy may be blocking it (ECONNREFUSED)",
+        "cannot be reached"
+    )]
+    [InlineData("Failed to authenticate. API Error: 401 Invalid local API key.", "refused its key")]
+    public async Task An_endpoint_that_cannot_be_used_is_not_the_tracks_fault(
+        string error,
+        string reason
+    )
+    {
+        GiveEvidence();
+        Session(
+            writes: null,
+            stdout: $$"""{"subtype":"success","is_error":true,"api_error_status":null,"result":"{{error}}"}"""
+        );
+
+        var result = await RunAsync();
+
+        Assert.True(result.IsAgentUnavailable);
+        Assert.Contains(reason, result.Error);
+        Assert.Empty(Ledger.Read().Runs);
+    }
+
     [Fact]
     public async Task A_source_swapped_before_its_verdict_is_linked_to_the_row()
     {

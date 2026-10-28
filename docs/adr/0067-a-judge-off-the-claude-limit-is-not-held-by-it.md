@@ -29,6 +29,8 @@ two never overlap.
 ## Consequences
 
 - Pacing and any limits of the other endpoint are its own business; crateside judges one track at a
-  time and adds no rate limit of its own.
+  time and adds no rate limit of its own. A rate limit it reports, an endpoint that cannot be
+  reached, or a refused key pauses judging rather than failing the track, as a spent Claude
+  allowance already does.
 - The ledger does not record which endpoint judged a run; the date the configuration changed is the
   only record.
