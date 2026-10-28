@@ -457,6 +457,8 @@ public sealed partial class VerdictRunner(
                     "--permission-mode",
                     "acceptEdits",
                     "--strict-mcp-config",
+                    // Keeps the user's CLAUDE.md, rules and memory (~45k characters) out of every session.
+                    "--safe-mode",
                     // The working set holds no settings, so this loads none, and none of the user's.
                     "--setting-sources",
                     "project",
