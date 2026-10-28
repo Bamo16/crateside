@@ -60,4 +60,20 @@ public sealed class VerdictControlTests
 
         Assert.Null(control.ActivitySince);
     }
+
+    [Fact]
+    public void A_judging_session_names_its_track_until_the_stage_goes_idle()
+    {
+        var control = new VerdictControl();
+
+        control.ReportJudging("abc123", "Judging abc123");
+
+        Assert.Equal("abc123", control.JudgingVideoId);
+        Assert.Equal("Judging abc123", control.Activity);
+
+        control.ReportIdle();
+
+        Assert.Null(control.JudgingVideoId);
+        Assert.Null(control.Activity);
+    }
 }

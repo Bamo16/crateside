@@ -103,7 +103,7 @@ public sealed class VerdictDrainer(
         try
         {
             jobs.Record(order.VideoId, JobStage.Verdict, JobStatus.Running);
-            control.Report($"Judging {order.Title} from bars");
+            control.ReportJudging(order.VideoId, $"Judging {order.Title} from bars");
 
             var result =
                 workingSet.HasEvidence(order.VideoId)
@@ -131,7 +131,7 @@ public sealed class VerdictDrainer(
         }
         finally
         {
-            control.Report(null);
+            control.ReportIdle();
             _oneAtATime.Release();
         }
     }
@@ -252,7 +252,7 @@ public sealed class VerdictDrainer(
             order = PrepareRejudge(order, ledger);
 
         jobs.Record(item.VideoId, JobStage.Verdict, JobStatus.Running);
-        control.Report($"Judging {order.Title}");
+        control.ReportJudging(item.VideoId, $"Judging {order.Title}");
 
         try
         {
@@ -305,7 +305,7 @@ public sealed class VerdictDrainer(
         }
         finally
         {
-            control.Report(null);
+            control.ReportIdle();
         }
     }
 }

@@ -1,16 +1,25 @@
 @using Crateside.Core.Tracks
 
-<span class="chip @Class(Row.ChipStyle)">
-    @if (Row.ChipHasDot)
+<span class="chip @Class(ChipStyle)">
+    @if (ChipStyle is TrackChipStyle.TealFilled)
     {
         <span class="chip-dot"></span>
     }
-    @Row.ChipLabel
+    @(Label ?? Row?.ChipLabel)
 </span>
 
 @code {
-    [Parameter, EditorRequired]
-    public required TrackRow Row { get; set; }
+    /// <summary>The row whose state the chip shows, unless <see cref="Label"/> and <see cref="Style"/> say otherwise.</summary>
+    [Parameter]
+    public TrackRow? Row { get; set; }
+
+    [Parameter]
+    public string? Label { get; set; }
+
+    [Parameter]
+    public TrackChipStyle? Style { get; set; }
+
+    private TrackChipStyle ChipStyle => Style ?? Row?.ChipStyle ?? TrackChipStyle.NeutralOutline;
 
     private static string Class(TrackChipStyle style) =>
         style switch
