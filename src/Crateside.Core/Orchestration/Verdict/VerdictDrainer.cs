@@ -25,7 +25,8 @@ public sealed class VerdictDrainer(
     EvidenceCompleter completer,
     PauseStore remembered,
     IOptions<CratesidePaths> paths,
-    IOptions<JudgeOptions> judge
+    IOptions<JudgeOptions> judge,
+    TimeProvider time
 ) : IStageDrainer, IBackfillJudge
 {
     private readonly CratesidePaths _paths = paths.Value;
@@ -41,7 +42,25 @@ public sealed class VerdictDrainer(
 
         try
         {
-            return control.IsPaused ? StageTick.Paused : await JudgeNextAsync(backfill: false, ct);
+            if (control.IsPaused)
+            {
+                control.SetHold(null);
+
+                return StageTick.Paused;
+            }
+
+            var tick = await JudgeNextAsync(backfill: false, ct);
+
+            control.SetHold(
+                tick is { Outcome: StageOutcome.Held, Error: { } reason }
+                    ? new JudgeHold(
+                        reason,
+                        tick.RetryAfter is { } wait ? time.GetUtcNow() + wait : null
+                    )
+                    : null
+            );
+
+            return tick;
         }
         finally
         {
@@ -116,6 +135,10 @@ public sealed class VerdictDrainer(
             _oneAtATime.Release();
         }
     }
+
+    /// <summary>How many songs are owed a re-judge that the drainer can actually run.</summary>
+    public int RejudgesWithEvidence(KeyLedger ledger) =>
+        WithEvidence(rejudges.Pending(ledger)).Count;
 
     /// <summary>The songs owed a re-judge whose evidence the working set holds or the ledger can give back.</summary>
     private IReadOnlyList<LedgerRun> WithEvidence(IReadOnlyList<LedgerRun> owed)

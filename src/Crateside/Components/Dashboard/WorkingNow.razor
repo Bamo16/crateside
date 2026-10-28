@@ -10,6 +10,7 @@
 @using Microsoft.Extensions.Options
 @inject DrainControl Separation
 @inject VerdictControl Judging
+@inject VerdictDrainer Drainer
 @inject PauseStore Paused
 @inject SpendDown Spend
 @inject RejudgeQueue Rejudges
@@ -68,7 +69,22 @@
                     <span class="mono value">@Clock.Elapsed(judgingSince)</span>
                     <text> elapsed Â· </text>
                 }
-                <span class="mono value">@JudgingWaiting</span> waiting
+                @if (Backlog.HasMoreThanIntake)
+                {
+                    @Backlog.Describe()
+                }
+                else
+                {
+                    <span class="mono value">@JudgingWaiting</span> <text>waiting</text>
+                }
+            </span>
+        }
+        else if (Judging.Activity is { } activity && Judging.ActivitySince is { } activitySince)
+        {
+            // A session with no track row in the judging state: a re-judge, a backfill track, a run from bars.
+            <div class="subject"><span>@activity</span></div>
+            <span class="status">
+                <span class="mono value">@Clock.Elapsed(activitySince)</span> elapsed · @Backlog.Describe()
             </span>
         }
         else
@@ -77,11 +93,27 @@
             {
                 <div class="subject"><span class="paused-chip">Paused</span></div>
             }
-            <span class="status">@(JudgingWaiting is 0 ? "Nothing to judge." : "Not judging.") <span class="mono value">@JudgingWaiting</span> waiting</span>
+            <span class="status">
+                @(Backlog.Total is 0 ? "Nothing to judge." : "Not judging.")
+                @if (Backlog.HasMoreThanIntake)
+                {
+                    @Backlog.Describe()
+                }
+                else
+                {
+                    <span class="mono value">@JudgingWaiting</span> <text>waiting</text>
+                }
+            </span>
         }
         @if (Hold is { } hold)
         {
             <span class="status">@hold.Reason@(Judging.IsPaused ? " Your pause stays until you resume." : null)</span>
+        }
+        else if (Judging.Hold is { } held)
+        {
+            <span class="status">
+                Held: @held.Reason @(held.RetryAt is { } retry ? $"Trying again at {retry.ToLocalTime():t}." : "Trying again shortly.")
+            </span>
         }
     </div>
 
@@ -205,6 +237,16 @@
     private TrackRow? JudgingRow => Rows.FirstOrDefault(row => row.State is TrackState.Judging);
 
     private int JudgingWaiting => Rows.Count(row => row.IsAwaitingJudgment) + Judging.FormRunsWaiting;
+
+    // A judge off the Claude limit also works the re-judges and the library backfill (ADR 0067).
+    private JudgingBacklog Backlog =>
+        !Judge.Value.SpendsClaudeQuota && Paused.Read().Backfill
+            ? new(
+                JudgingWaiting,
+                Drainer.RejudgesWithEvidence(Ledger.Read()),
+                Rows.Count(row => row is { IsBackfill: true, Verdict: null, GaveUpAt: null })
+            )
+            : new(JudgingWaiting, 0, 0);
 
     private string SeparationWaiting
     {

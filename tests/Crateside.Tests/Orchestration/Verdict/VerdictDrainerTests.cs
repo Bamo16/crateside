@@ -82,7 +82,8 @@ public sealed class VerdictDrainerTests : IDisposable
             ),
             paused,
             Options.Create(new CratesidePaths()),
-            judge
+            judge,
+            new FakeTimeProvider()
         );
     }
 
