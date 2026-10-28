@@ -428,6 +428,7 @@ public sealed class VerdictRunnerTests : IDisposable
             argument => argument.Contains("Bash") || argument.Contains("Skill")
         );
         Assert.Equal(VerdictRunner.Instructions, After(request, "--append-system-prompt"));
+        Assert.Contains("--safe-mode", request.Arguments);
         Assert.Equal(Set.Prepare(VideoId), request.WorkingDirectory);
         Assert.Equal("https://api.anthropic.com", request.Environment["ANTHROPIC_BASE_URL"]);
     }
