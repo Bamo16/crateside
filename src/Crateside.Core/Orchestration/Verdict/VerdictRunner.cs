@@ -126,11 +126,11 @@ public sealed partial class VerdictRunner(
                 )
             )
             {
-                case VerdictCheck.Recordable(var run):
+                case VerdictCheck.Recordable(var run, var note):
                     LogNotes(run, order);
 
                     return Record(
-                        Complete(run, order, direction, audio, detected) with
+                        Complete(WithNote(run, note), order, direction, audio, detected) with
                         {
                             WithheldReasoning = withheld?.Reasoning,
                         },
@@ -623,7 +623,7 @@ public sealed partial class VerdictRunner(
         bool canResume
     )
     {
-        if (check is not VerdictCheck.Recordable(var run))
+        if (check is not VerdictCheck.Recordable(var run, _))
             return check;
 
         var complete = RunValidation.Normalize(Complete(run, order, direction, audio, detected));
@@ -646,17 +646,18 @@ public sealed partial class VerdictRunner(
                 run with
                 {
                     Confidence = KeyConfidence.Medium,
-                    Reasoning = string.Join(
-                        "\n\n",
-                        new[]
-                        {
-                            run.Reasoning,
-                            $"crateside capped this verdict at MEDIUM: HIGH needs backed detectors, a tonic check in favor and a human source that agrees, and it lacked {missing}.",
-                        }.OfType<string>()
-                    ),
-                }
+                },
+                $"crateside capped this verdict at MEDIUM: HIGH needs backed detectors, a tonic check in favor and a human source that agrees, and it lacked {missing}."
             );
     }
+
+    private static RunRecord WithNote(RunRecord run, string? note) =>
+        note is null
+            ? run
+            : run with
+            {
+                Reasoning = string.Join("\n\n", new[] { run.Reasoning, note }.OfType<string>()),
+            };
 
     /// <summary>The run, with what crateside knows and the session cannot.</summary>
     private RunRecord Complete(
