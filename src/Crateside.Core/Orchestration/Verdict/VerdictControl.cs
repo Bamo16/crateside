@@ -27,11 +27,11 @@ public sealed class VerdictControl : DrainControl
     public int FormRunsWaiting => Volatile.Read(ref _formRunsWaiting);
 
     /// <summary>Paused or not as the user last left judging.</summary>
-    public VerdictControl(PauseStore remembered)
-        : base(remembered.Read().Judging) { }
+    public VerdictControl(PauseStore remembered, TimeProvider time)
+        : base(remembered.Read().Judging, time) { }
 
-    internal VerdictControl(bool startPaused = true)
-        : base(startPaused) { }
+    internal VerdictControl(bool startPaused = true, TimeProvider? time = null)
+        : base(startPaused, time) { }
 
     /// <summary>Records which track a session is judging, so the UI can show it before the Tracks rows catch up.</summary>
     public void ReportJudging(string videoId, string activity)
