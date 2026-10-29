@@ -48,3 +48,13 @@ network only. It shows the count and an estimate first (45 MB each, GUESSED), an
 at zero days, since the downloads would go at the next sweep. Each folder gets its clock record
 before it downloads, so the janitor reads it as joined to the store; a failed download leaves no
 folder. **Built 2026-10-20, not run.**
+
+## Amendment, 2026-10-28: a judging run's download follows the retention too
+
+**Decided by the maintainer.** *Forever* keeps every source, as Settings says ("Every source is
+kept"), judging-only downloads included, and a number of days applies to them as well. The bullet
+above that discarded a judging run's download at once is superseded: its clock starts when the
+library's files first carry its video ID, unless a backfill started it earlier. A download the
+library keeps verbatim as a sample is still discarded, and the source index lists that sample
+instead. **MEASURED 2026-10-28:** 23 of the 66 re-judges that day had been judged from a download
+earlier the same morning, which this rule had already thrown away, so they ran without audio.

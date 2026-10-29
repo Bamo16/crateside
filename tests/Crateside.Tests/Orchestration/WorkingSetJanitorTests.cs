@@ -261,11 +261,42 @@ public sealed class WorkingSetJanitorTests : IDisposable
     }
 
     [Fact]
-    public void A_judging_download_is_still_discarded_whatever_the_retention()
+    public void Forever_keeps_a_judging_download_too()
     {
         GiveWorkingSet();
         Judge();
         WriteLibraryStem();
+        Retention.Remember(new SourceRetention { Forever = true });
+
+        Janitor.Sweep();
+        _time.Advance(TimeSpan.FromDays(3650));
+
+        Assert.Equal(0, Janitor.Sweep());
+        Assert.Single(Set.VideoIds);
+    }
+
+    [Fact]
+    public void A_judging_download_is_kept_for_the_retention_from_when_the_library_files_carry_its_id()
+    {
+        GiveWorkingSet();
+        Judge();
+        WriteLibraryStem();
+        Retention.Remember(new SourceRetention { Days = 7 });
+
+        Assert.Equal(0, Janitor.Sweep());
+        Assert.Equal(_time.GetUtcNow(), Set.LeftStagingAt(VideoId));
+
+        _time.Advance(TimeSpan.FromDays(7));
+
+        Assert.Equal(1, Janitor.Sweep());
+    }
+
+    [Fact]
+    public void A_judging_download_the_library_keeps_as_a_sample_is_discarded_whatever_the_retention()
+    {
+        GiveWorkingSet();
+        Judge();
+        WriteLibraryStem("Yes - Owner of a Lonely Heart.flac", preset: null);
         Retention.Remember(new SourceRetention { Forever = true });
 
         Assert.Equal(1, Janitor.Sweep());

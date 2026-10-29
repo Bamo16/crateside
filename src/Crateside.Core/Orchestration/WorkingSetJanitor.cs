@@ -6,8 +6,8 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Core.Orchestration;
 
 /// <summary>
-/// Throws away the working set of every track that has been <strong>imported</strong>, once its
-/// source has been kept for the retention the user set (#133).
+/// Throws away the working set of every track that has been <strong>imported</strong>, or only judged, once its
+/// source has been kept for the retention the user set (#133, ADR 0061).
 /// </summary>
 public sealed class WorkingSetJanitor(
     LedgerStore store,
@@ -61,20 +61,22 @@ public sealed class WorkingSetJanitor(
             workingSet.ClearLeftStaging(videoId);
 
         // Opening every file in the library is costly, so only when something could be judge-only.
-        if (
-            held.Except(discarded).Where(videoId => MayBeJudgeOnly(videoId, ledger)).ToList() is
-            { Count: > 0 } candidates
+        // Its clock starts once the library files carry its video ID, unless a backfill started it first.
+        foreach (
+            var videoId in held.Except(discarded)
+                .Where(videoId => MayBeJudgeOnly(videoId, ledger))
+                .Where(videoId => everywhere.Value.IsFullyProcessed(videoId))
+                .ToList()
         )
         {
-            // A download that joined the store (a backfill) keeps its clock; a judging run's goes.
-            discarded.AddRange(
-                candidates
-                    .Where(everywhere.Value.IsFullyProcessed)
-                    .Where(videoId =>
-                        workingSet.LeftStagingAt(videoId) is not { } left
-                        || keeping.HasLapsed(left, now)
-                    )
-            );
+            if (workingSet.LeftStagingAt(videoId) is not { } left)
+                workingSet.RecordLeftStaging(videoId, left = now);
+
+            if (
+                keeping.HasLapsed(left, now)
+                || everywhere.Value.StemsFor(videoId).Any(stem => stem.IsVerbatimSource)
+            )
+                discarded.Add(videoId);
         }
 
         foreach (var videoId in discarded)
