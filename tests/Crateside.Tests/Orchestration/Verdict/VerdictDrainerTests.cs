@@ -79,7 +79,7 @@ public sealed class VerdictDrainerTests : IDisposable
             ),
             new VerdictSelector(_jobs, _set),
             _jobs,
-            new VerdictControl(paused),
+            new VerdictControl(paused, new FakeTimeProvider()),
             new QuotaGuard(new UnknownQuota(), new FakeTimeProvider()),
             _rejudges,
             _set,

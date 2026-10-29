@@ -7,6 +7,7 @@ namespace Crateside.Core.Orchestration.Loop;
 public class DrainControl : DrainSignal
 {
     private readonly Lock _gate = new();
+    private readonly TimeProvider _time;
 
     private bool _paused;
     private string? _activity;
@@ -49,10 +50,14 @@ public class DrainControl : DrainSignal
     /// that is what canceling the loop does, and it is a heavier thing to ask for.
     /// </summary>
     /// <summary>Separation's control, paused or not as the user last left it.</summary>
-    public DrainControl(PauseStore remembered)
-        : this(remembered.Read().Separation) { }
+    public DrainControl(PauseStore remembered, TimeProvider time)
+        : this(remembered.Read().Separation, time) { }
 
-    internal DrainControl(bool startPaused = true) => _paused = startPaused;
+    internal DrainControl(bool startPaused = true, TimeProvider? time = null)
+    {
+        _paused = startPaused;
+        _time = time ?? TimeProvider.System;
+    }
 
     public void Pause() => Set(paused: true);
 
@@ -67,7 +72,7 @@ public class DrainControl : DrainSignal
                 return;
 
             _activity = activity;
-            _activitySince = activity is null ? null : TimeProvider.System.GetUtcNow();
+            _activitySince = activity is null ? null : _time.GetUtcNow();
         }
 
         Changed?.Invoke();

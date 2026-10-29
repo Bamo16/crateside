@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Verdict;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Crateside.Tests.Orchestration.Loop;
 
@@ -81,6 +82,22 @@ public sealed class DrainControlTests
                 TestContext.Current.CancellationToken
             )
         );
+    }
+
+    [Fact]
+    public void An_activity_is_timed_by_the_injected_clock()
+    {
+        var clock = new FakeTimeProvider(DateTimeOffset.Parse("2026-10-28T12:00:00+00:00"));
+        var control = new DrainControl(startPaused: false, clock);
+
+        control.Report("Separating");
+        clock.Advance(TimeSpan.FromMinutes(5));
+
+        Assert.Equal(DateTimeOffset.Parse("2026-10-28T12:00:00+00:00"), control.ActivitySince);
+
+        control.Report(null);
+
+        Assert.Null(control.ActivitySince);
     }
 
     [Fact]
