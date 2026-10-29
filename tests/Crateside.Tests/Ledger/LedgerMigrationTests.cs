@@ -175,14 +175,13 @@ public sealed class LedgerMigrationTests : IDisposable
             );
         }
 
-        using (var store = new LedgerStore(DatabasePath, _time))
-        {
-            Assert.Null(store.EvidenceFor("inherited")!.LateReading);
-            Assert.Equal(["Am"], store.EvidenceFor("inherited")!.Chords);
-            Assert.NotNull(store.EvidenceFor("read later")!.LateReading);
-            Assert.NotNull(store.EvidenceFor("before the pin")!.LateReading);
-            Assert.Null(store.EvidenceFor("inherited untimed")!.LateReading);
-        }
+        using var store = new LedgerStore(DatabasePath, _time);
+
+        Assert.Null(store.EvidenceFor("inherited")!.LateReading);
+        Assert.Equal(["Am"], store.EvidenceFor("inherited")!.Chords);
+        Assert.NotNull(store.EvidenceFor("read later")!.LateReading);
+        Assert.NotNull(store.EvidenceFor("before the pin")!.LateReading);
+        Assert.Null(store.EvidenceFor("inherited untimed")!.LateReading);
     }
 
     [Fact]
