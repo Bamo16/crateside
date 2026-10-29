@@ -178,8 +178,20 @@ The maintainer intends to publish it ([#107](https://github.com/Bamo16/crateside
 Until then, new work must not add to what has to be undone: no new machine-specific paths, no new
 dependency on a sibling checkout, no surname or personal circumstances anywhere (handle `Bamo16`
 only), paid services behind a switchable interface, nothing listening beyond localhost without
-authentication. Write issues and docs in the public voice ("the maintainer"). A song named in
-a doc gets its artist and title, enough for a stranger to find it, written `Artist – *Title*`
-(plain artist, en dash, italic title; a title in another script gets its romanization beside it);
-otherwise describe it and leave the name out. The full list and the
-pre-publication checklist are in #107.
+authentication. Write issues and docs in the public voice ("the maintainer"). The full list and
+the pre-publication checklist are in #107.
+
+**People.** Name someone where they made the thing, linked the first time: "FiLL's
+[`beatdetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-beatdetect) filter", then plain
+"FiLL" (always that spelling, whatever his handle on a given site). The maintainer is "the
+maintainer" in process rules and "Bamo" in prose; `Bamo16` only where it is the account (a GitHub
+link, the licence). Never narrate a conversation ("FiLL said on Discord", "Bamo asked for"), and
+never quote a private message: write the decision or the measured fact and link its public source
+(a release, an issue).
+
+**Songs.** Lead with what the song shows, then name it, so a reader without the song still gets
+the point: "a song that modulates up a whole step for the last chorus (Whitney Houston – *I Wanna
+Dance with Somebody*, `eH3giaIzONA`)". Write `Artist – *Title*` (plain artist, en dash, italic
+title; a title in another script gets its romanization beside it) and give the video ID wherever
+there is one, since anyone can fetch it. Otherwise describe the song and leave the name out.
+Existing issues are not rewritten for this.
