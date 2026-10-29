@@ -56,6 +56,10 @@ over each, resumes the same session once with that evidence, and records whateve
 then. If nothing usable follows, the WITHHELD verdict is recorded as it was. The windows
 detected over are kept with the run, and their evidence inside the run's evidence under
 `windows`. A window the judge asked for keeps its own one-sentence `why`, and the pass's reasoning is kept once on the run that follows it as `WithheldReasoning`.
+Windows are detected over the full mix from the source index: the working set's download, else
+the source the library keeps. A re-judge with neither downloads the upload again first. A run that
+still has no audio says so in its work order, so the judge neither asks for windows nor withholds
+waiting for them.
 
 **Section times.** Each section gives a `start`, in seconds into the track, read from the times of keydetect's key events (ADR 0064). A section without one is logged and kept; a negative one is refused. Verdicts from before it have none.
 

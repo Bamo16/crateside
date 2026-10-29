@@ -23,8 +23,10 @@ public sealed class SourceIndex(WorkingSet workingSet, string? path = null) : IS
     private volatile IReadOnlyDictionary<string, string>? _known;
 
     public string? PathOf(string videoId) =>
-        (_known ??= KnownFromFile()).GetValueOrDefault(videoId)
-        ?? (workingSet.TryGetSource(videoId, out var held) ? held : null);
+        workingSet.TryGetSource(videoId, out var held) ? held
+        : (_known ??= KnownFromFile()).GetValueOrDefault(videoId) is { } known && File.Exists(known)
+            ? known
+        : null;
 
     /// <summary>Every source on disk: the working set's downloads first, then the samples kept.</summary>
     public IReadOnlyList<SourceEntry> Entries(ProcessedTracks processed, KeyLedger ledger) =>
@@ -96,7 +98,7 @@ public sealed class SourceIndex(WorkingSet workingSet, string? path = null) : IS
 /// <summary>Where an upload's source audio is, if crateside holds it.</summary>
 public interface ISourceLocator
 {
-    /// <summary>The working set's download, else the sample kept, as last indexed; null when neither is known.</summary>
+    /// <summary>The working set's download, else the sample kept, as last indexed; null when neither is on disk.</summary>
     string? PathOf(string videoId);
 }
 

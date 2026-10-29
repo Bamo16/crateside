@@ -90,7 +90,19 @@ public sealed class VerdictRunnerTests : IDisposable
     }
 
     private VerdictRunner Runner =>
-        new(Ledger, Set, Sessions, Detector, Pages, Options.Create(Judge), _time, _log);
+        new(
+            Ledger,
+            Set,
+            new SourceIndex(Set, IndexPath),
+            Sessions,
+            Detector,
+            Pages,
+            Options.Create(Judge),
+            _time,
+            _log
+        );
+
+    private string IndexPath => Path.Combine(_directory, "source-index.json");
 
     private static WorkOrder Order(bool instrumentalRelease = false, string? statedSource = null) =>
         WorkOrder.Compose(
@@ -486,6 +498,39 @@ public sealed class VerdictRunnerTests : IDisposable
         );
         Assert.Equal(KeyConfidence.High, Assert.Single(Ledger.Read().Runs).Confidence);
         Assert.Equal("A three-way split; the intro is drums only.", evidence.WithheldReasoning);
+    }
+
+    [Fact]
+    public async Task Windows_are_detected_over_the_source_the_library_keeps_when_the_working_set_holds_none()
+    {
+        var kept = Path.Combine(_directory, "Yes - Owner of a Lonely Heart.flac");
+
+        File.WriteAllText(kept, "audio");
+        File.WriteAllText(
+            IndexPath,
+            $$"""[{ "videoId": "{{VideoId}}", "song": "yes - owner of a lonely heart", "location": "KeptSample", "path": {{JsonSerializer.Serialize(kept)}} }]"""
+        );
+        GiveEvidence();
+        Session(AsksForWindows);
+        Session(Verdict);
+
+        await RunAsync();
+
+        Assert.Equal((62.0, 94.5), Assert.Single(Detector.Asked));
+        Assert.Equal("full_mix", Ledger.EvidenceFor("yes - owner of a lonely heart")!.InputKind);
+        Assert.DoesNotContain(VerdictRunner.NoAudioLine, Sessions.Requests[0].StandardInput);
+    }
+
+    [Fact]
+    public void Without_audio_the_work_order_says_no_windows_can_be_detected()
+    {
+        GiveEvidence();
+
+        Assert.Contains(VerdictRunner.NoAudioLine, Runner.Prompt(Order(), VerdictPath, []));
+
+        GiveAudio();
+
+        Assert.DoesNotContain(VerdictRunner.NoAudioLine, Runner.Prompt(Order(), VerdictPath, []));
     }
 
     [Fact]

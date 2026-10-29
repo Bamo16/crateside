@@ -23,6 +23,7 @@ public sealed class VerdictRunnerRealDataTests
         new(
             TestLedger.Store(),
             Set,
+            new SourceIndex(Set),
             new ProcessRunner(),
             new EvidenceRunner(
                 Set,
