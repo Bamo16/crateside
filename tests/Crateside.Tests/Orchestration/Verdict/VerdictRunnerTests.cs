@@ -802,6 +802,8 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.Contains("--safe-mode", request.Arguments);
         Assert.Equal(Set.Prepare(VideoId), request.WorkingDirectory);
         Assert.Equal("https://api.anthropic.com", request.Environment["ANTHROPIC_BASE_URL"]);
+        Assert.Equal("false", request.Environment["ENABLE_TOOL_SEARCH"]);
+        Assert.False(Judge.Environment.ContainsKey("ENABLE_TOOL_SEARCH"));
     }
 
     [Fact]

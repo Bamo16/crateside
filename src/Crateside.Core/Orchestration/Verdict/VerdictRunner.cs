@@ -506,7 +506,11 @@ public sealed partial class VerdictRunner(
             )
             {
                 WorkingDirectory = folder,
-                Environment = _options.Environment,
+                Environment = new Dictionary<string, string>(_options.Environment)
+                {
+                    // Every tool's schema up front, never a deferred placeholder.
+                    ["ENABLE_TOOL_SEARCH"] = "false",
+                },
                 StandardInput = prompt,
             },
             ct
