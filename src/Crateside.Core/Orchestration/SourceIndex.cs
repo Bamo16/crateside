@@ -64,7 +64,7 @@ public sealed class SourceIndex(WorkingSet workingSet, string? path = null) : IS
         _known = ByVideoId(entries);
 
         var json = JsonSerializer.Serialize(
-            entries.OrderBy(entry => entry.Song).ThenBy(entry => entry.VideoId).ToList(),
+            [.. entries.OrderBy(entry => entry.Song).ThenBy(entry => entry.VideoId)],
             SourceIndexJsonContext.Default.ListSourceEntry
         );
 
