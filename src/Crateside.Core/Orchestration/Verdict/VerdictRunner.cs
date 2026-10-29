@@ -172,7 +172,9 @@ public sealed partial class VerdictRunner(
                         : VerdictResult.Failed(
                             outcome.Succeeded
                                 ? problem
-                                : outcome.LastLine ?? $"{fileName} exited with {outcome.ExitCode}"
+                                : ApiError(outcome)
+                                    ?? outcome.LastLine
+                                    ?? $"{fileName} exited with {outcome.ExitCode}"
                         );
 
                 default:
@@ -803,6 +805,18 @@ public sealed partial class VerdictRunner(
         RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture
     )]
     private static partial Regex StatedPause { get; }
+
+    /// <summary>
+    /// The endpoint's own error from the session's result, which Claude Code's stderr can misname
+    /// (any 422 prints as "unrecognized_model").
+    /// </summary>
+    private static string? ApiError(ProcessOutcome outcome) =>
+        SessionApiError.Match(outcome.StandardOutput) is { Success: true } match
+            ? match.Groups["Message"].Value
+            : null;
+
+    [GeneratedRegex(@"""result"":""(?<Message>API Error:[^""]*)""", RegexOptions.ExplicitCapture)]
+    private static partial Regex SessionApiError { get; }
 
     [GeneratedRegex(@"(\s*[(\[][^()\[\]]*[)\]])+\s*$")]
     private static partial Regex BracketedTail { get; }

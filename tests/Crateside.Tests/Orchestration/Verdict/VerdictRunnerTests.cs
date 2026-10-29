@@ -516,6 +516,25 @@ public sealed class VerdictRunnerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_refusal_is_reported_in_the_endpoints_words_not_claude_codes()
+    {
+        GiveEvidence();
+
+        foreach (var _ in Enumerable.Range(0, 2))
+            Session(
+                writes: null,
+                exitCode: 1,
+                stdout: """{"is_error":true,"api_error_status":422,"result":"API Error: 422 withheld after content filtering."}""",
+                stderr: """[claude-code:unrecognized_model] {"model":"judge"}"""
+            );
+
+        var result = await RunAsync();
+
+        Assert.False(result.IsAgentUnavailable);
+        Assert.Equal("API Error: 422 withheld after content filtering.", result.Error);
+    }
+
+    [Fact]
     public async Task A_verdict_written_before_a_crash_still_counts()
     {
         GiveEvidence();
