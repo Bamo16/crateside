@@ -173,15 +173,16 @@ public sealed class RejudgeTests : IDisposable
     }
 
     [Fact]
-    public void The_shipped_seed_names_the_six_songs_of_149()
+    public void The_shipped_seed_names_five_songs_of_149_without_queen()
     {
         var songs = new RejudgeQueue(Options.Create(new CratesidePaths { RejudgeFile = QueuePath }))
             .Read()
             .Select(entry => entry.Song)
             .ToList();
 
-        Assert.Equal(6, songs.Count);
-        Assert.Contains("queen - bohemian rhapsody", songs);
+        Assert.Equal(5, songs.Count);
+        Assert.Contains("seal - kiss from a rose", songs);
+        Assert.DoesNotContain("queen - bohemian rhapsody", songs);
     }
 
     [Fact]
