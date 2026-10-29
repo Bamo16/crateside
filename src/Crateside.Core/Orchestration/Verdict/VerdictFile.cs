@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
@@ -29,30 +30,83 @@ public sealed record VerdictFile
     /// <summary>The file at <paramref name="path"/> as a run, or what is wrong with it, in words the session can act on.</summary>
     public static VerdictCheck Check(string path)
     {
-        VerdictFile? file;
+        string text;
 
         try
         {
-            file = JsonSerializer.Deserialize(
-                File.ReadAllText(path),
-                VerdictFileJsonContext.Default.VerdictFile
-            );
+            text = File.ReadAllText(path);
         }
         catch (FileNotFoundException)
         {
             return new VerdictCheck.Unusable($"no verdict file was written at {path}");
-        }
-        catch (JsonException ex)
-        {
-            return new VerdictCheck.Unusable($"the verdict file is not valid JSON: {ex.Message}");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             return new VerdictCheck.Unusable($"the verdict file could not be read: {ex.Message}");
         }
 
+        VerdictFile? file;
+
+        try
+        {
+            file = Parse(text);
+        }
+        catch (JsonException ex)
+        {
+            try
+            {
+                file = Parse(WithControlCharactersEscaped(text));
+            }
+            catch (JsonException)
+            {
+                return new VerdictCheck.Unusable(
+                    $"the verdict file is not valid JSON: {ex.Message}"
+                );
+            }
+        }
+
         return file is null ? new VerdictCheck.Unusable("the verdict file is empty") : file.Check();
     }
+
+    /// <summary>The JSON with each raw control character inside a string literal escaped, such as a newline written into <c>reasoning</c>.</summary>
+    internal static string WithControlCharactersEscaped(string json)
+    {
+        var escaped = new StringBuilder(json.Length);
+        var (inString, escaping) = (false, false);
+
+        foreach (var character in json)
+        {
+            if (inString && character < ' ')
+            {
+                escaped.Append(
+                    character switch
+                    {
+                        '\n' => @"\n",
+                        '\r' => @"\r",
+                        '\t' => @"\t",
+                        _ => $@"\u{(int)character:x4}",
+                    }
+                );
+                escaping = false;
+
+                continue;
+            }
+
+            escaped.Append(character);
+
+            if (escaping)
+                escaping = false;
+            else if (inString && character is '\\')
+                escaping = true;
+            else if (character is '"')
+                inString = !inString;
+        }
+
+        return escaped.ToString();
+    }
+
+    private static VerdictFile? Parse(string json) =>
+        JsonSerializer.Deserialize(json, VerdictFileJsonContext.Default.VerdictFile);
 
     private VerdictCheck Check()
     {

@@ -39,7 +39,9 @@ call, and the judge may still search.
 `verdict.json` in the working set, UTF-8 JSON in the shape the instructions give. crateside
 fills in what the session cannot know: the time, the upload, the input file, the evidence, and
 the song identity (kept from an earlier run of the same upload). It is checked against the
-[ledger's rules](ledger.md#what-is-refused) before anything is recorded.
+[ledger's rules](ledger.md#what-is-refused) before anything is recorded. A file that is not
+valid JSON is read again with each raw control character inside a string escaped (a newline
+written into `reasoning`), and refused only if it still does not parse.
 
 A session that ends without a usable file is **resumed once** (`--resume` on the same session)
 with "write the verdict file now" and what was wrong. A second failure is the track's: the
