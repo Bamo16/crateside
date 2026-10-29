@@ -35,6 +35,10 @@ public sealed partial class VerdictRunner(
 
     private const int MaxRetryAfterSeconds = 3600;
 
+    private const string HighNeeds =
+        "HIGH needs backed detectors, a tonic check in favor and a human source that agrees, "
+        + "with no authoritative source stating another key";
+
     internal const string NoAudioLine =
         "crateside holds no audio for this track, so it cannot detect over windows. Do not ask "
         + "for windows or withhold waiting for them: judge from the whole-track evidence.";
@@ -634,12 +638,12 @@ public sealed partial class VerdictRunner(
         if (RecordTimeCheck.UnfoundKey(complete, lookups) is { } unfound)
             return new VerdictCheck.Unusable(unfound);
 
-        if (RecordTimeCheck.MissingForHigh(complete, _options.Ear) is not { } missing)
+        if (RecordTimeCheck.MissingForHigh(complete, _options.Ear, lookups) is not { } missing)
             return check;
 
         return canResume
             ? new VerdictCheck.Unusable(
-                $"confidence: HIGH needs backed detectors, a tonic check in favor and a human source that agrees; missing {missing}. "
+                $"confidence: {HighNeeds}; missing {missing}. "
                     + "Write the confidence the evidence supports, or add what is missing."
             )
             : new VerdictCheck.Recordable(
@@ -647,7 +651,7 @@ public sealed partial class VerdictRunner(
                 {
                     Confidence = KeyConfidence.Medium,
                 },
-                $"crateside capped this verdict at MEDIUM: HIGH needs backed detectors, a tonic check in favor and a human source that agrees, and it lacked {missing}."
+                $"crateside capped this verdict at MEDIUM: {HighNeeds}, and it lacked {missing}."
             );
     }
 

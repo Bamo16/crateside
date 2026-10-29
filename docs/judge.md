@@ -48,7 +48,8 @@ verdict stage counts it as a strike.
 in what the session was given or wrote (readings, runner-ups and key events, fetched pages, sources,
 candidates, sections; a mode collapses to its major or minor), or the file is refused like any
 other. A HIGH must be backed as the prompt asks: two of keydetect, madmom and Essentia on the
-center's key, a tonic check, and a human source that agrees. After the one resume it is recorded
+center's key, a tonic check, a human source that agrees, and no recorded authoritative source
+stating another key (a Hooktheory page the work order marked thin excepted). After the one resume it is recorded
 as MEDIUM, with a line in its reasoning saying it was capped and why.
 
 **Windows.** A WITHHELD verdict may ask for up to four windows, in seconds. crateside detects
