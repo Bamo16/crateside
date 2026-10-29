@@ -220,7 +220,8 @@ public abstract record VerdictCheck
 {
     private VerdictCheck() { }
 
-    public sealed record Recordable(RunRecord Run) : VerdictCheck;
+    /// <summary>A run to record; <paramref name="Note"/> is crateside's own paragraph for its reasoning, outside the judge's budget.</summary>
+    public sealed record Recordable(RunRecord Run, string? Note = null) : VerdictCheck;
 
     /// <summary>A withheld verdict that asks for windows; <see cref="Withheld"/> is recorded if nothing better follows.</summary>
     public sealed record WindowsAsked(IReadOnlyList<RunWindow> Windows, RunRecord Withheld)

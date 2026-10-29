@@ -386,6 +386,28 @@ public sealed class VerdictRunnerTests : IDisposable
     }
 
     [Fact]
+    public async Task Cratesides_capped_paragraph_does_not_count_against_the_judges_budget()
+    {
+        GiveEvidence();
+        var nearTheBudget = Verdict
+            .Replace("\"kind\": \"authoritative\"", "\"kind\": \"chord_recognizer\"")
+            .Replace(
+                "Backed by both, and Hooktheory agrees.",
+                string.Join(' ', Enumerable.Repeat("word", 95))
+            );
+        Session(nearTheBudget);
+        Session(nearTheBudget);
+
+        await RunAsync();
+
+        Assert.Contains(
+            "capped this verdict at MEDIUM",
+            Ledger.EvidenceFor("yes - owner of a lonely heart")!.Reasoning
+        );
+        Assert.DoesNotContain(_log.Lines, line => line.Contains("reasoning is"));
+    }
+
+    [Fact]
     public async Task A_high_the_session_repairs_on_its_resume_is_recorded_as_written()
     {
         GiveEvidence();
