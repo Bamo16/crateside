@@ -11,6 +11,7 @@ public sealed class LedgerMigrationTests : IDisposable
 {
     private const string BeforeSpelling = "20261024201525_SectionStart";
     private const string SpellingMigration = "20261025192752_AmericanSpelling";
+    private const string NewestMigration = "20261029013237_InheritedLateReading";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -117,9 +118,9 @@ public sealed class LedgerMigrationTests : IDisposable
 
         using var store = new LedgerStore(DatabasePath, _time);
 
-        var backup = Path.Combine(store.BackupFolder!, $"before-{SpellingMigration}.db");
+        var backup = Assert.Single(Directory.GetFiles(store.BackupFolder!, "before-*.db"));
 
-        Assert.True(File.Exists(backup));
+        Assert.EndsWith($"before-{NewestMigration}.db", backup);
 
         using var connection = new SqliteConnection($"Data Source={backup};Pooling=False");
         connection.Open();
@@ -146,6 +147,42 @@ public sealed class LedgerMigrationTests : IDisposable
         }
 
         Assert.Equal(backups, Directory.GetFiles(Path.Combine(_root, "ledger-backups")));
+    }
+
+    [Fact]
+    public void A_late_reading_marker_older_than_its_run_is_dropped_and_every_true_one_is_kept()
+    {
+        using (var connection = new SqliteConnection($"Data Source={DatabasePath}"))
+        {
+            connection.Open();
+
+            var options = new DbContextOptionsBuilder<LedgerContext>()
+                .UseSqlite(connection)
+                .Options;
+
+            using (var context = new LedgerContext(options))
+                context.GetService<IMigrator>().Migrate(SpellingMigration);
+
+            Execute(
+                connection,
+                """
+                INSERT INTO Runs (Id, Song, Confidence, Mixed, LocalSource, SourceUrl, RecordedAt, Evidence, Tonic, Mode) VALUES
+                  (1, 'inherited', 'Medium', 0, 0, 'https://www.youtube.com/watch?v=a', '2026-10-28T16:40:28+00:00', '{"chords":["Am"],"read_after_verdict":{"at":"2026-10-25T13:59:37+00:00"}}', 'A', 'Aeolian'),
+                  (2, 'read later', 'Medium', 0, 0, 'https://www.youtube.com/watch?v=b', '2026-10-28T15:28:39+00:00', '{"read_after_verdict":{"at":"2026-10-28T15:28:54+00:00"}}', 'A', 'Aeolian'),
+                  (3, 'before the pin', 'Medium', 0, 0, 'https://www.youtube.com/watch?v=c', '2026-10-01T00:00:00+00:00', '{"read_after_verdict":{"at":null}}', 'A', 'Aeolian'),
+                  (4, 'inherited untimed', 'Medium', 0, 0, 'https://www.youtube.com/watch?v=d', '2026-10-28T16:40:28+00:00', '{"read_after_verdict":{"at":null}}', 'A', 'Aeolian');
+                """
+            );
+        }
+
+        using (var store = new LedgerStore(DatabasePath, _time))
+        {
+            Assert.Null(store.EvidenceFor("inherited")!.LateReading);
+            Assert.Equal(["Am"], store.EvidenceFor("inherited")!.Chords);
+            Assert.NotNull(store.EvidenceFor("read later")!.LateReading);
+            Assert.NotNull(store.EvidenceFor("before the pin")!.LateReading);
+            Assert.Null(store.EvidenceFor("inherited untimed")!.LateReading);
+        }
     }
 
     [Fact]

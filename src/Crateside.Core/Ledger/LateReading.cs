@@ -31,6 +31,22 @@ public sealed record LateReading(DateTimeOffset? At, string? Sha256)
         return evidence.ToJsonString(Relaxed);
     }
 
+    /// <summary>The evidence without the marker, since every reading in it was seen by the verdict about to be recorded; unchanged when it has none or does not parse.</summary>
+    public static string Unstamped(string json)
+    {
+        try
+        {
+            if (JsonNode.Parse(json) is not JsonObject { } evidence || !evidence.Remove(Field))
+                return json;
+
+            return evidence.ToJsonString(Relaxed);
+        }
+        catch (JsonException)
+        {
+            return json;
+        }
+    }
+
     /// <summary>Whether the evidence already carries the marker, or does not parse.</summary>
     public static bool IsStamped(string json) =>
         JsonNode.Parse(json) is not JsonObject { } evidence || evidence.ContainsKey(Field);

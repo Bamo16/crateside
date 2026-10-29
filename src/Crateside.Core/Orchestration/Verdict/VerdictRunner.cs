@@ -692,8 +692,10 @@ public sealed partial class VerdictRunner(
                     : "weighed as a hint",
         };
 
-    private static string? Evidence(string? whole, IReadOnlyList<DetectedWindow> detected)
+    private static string? Evidence(string? given, IReadOnlyList<DetectedWindow> detected)
     {
+        var whole = given is null ? null : LateReading.Unstamped(given);
+
         if (whole is null || detected is [] || JsonNode.Parse(whole) is not JsonObject root)
             return whole;
 
