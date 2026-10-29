@@ -40,6 +40,37 @@ public sealed class VerdictFileTests : IDisposable
     }
 
     [Fact]
+    public void A_raw_newline_inside_a_string_is_escaped_rather_than_refused()
+    {
+        var run = Assert
+            .IsType<VerdictCheck.Recordable>(
+                Check(Verdict(", \"reasoning\": \"First paragraph.\n\nSecond,\tafter a tab.\""))
+            )
+            .Run;
+
+        Assert.Equal("First paragraph.\n\nSecond,\tafter a tab.", run.Reasoning);
+    }
+
+    [Fact]
+    public void Escaping_leaves_escapes_and_whitespace_between_tokens_alone()
+    {
+        const string json = "{\n  \"a\": \"say \\\"hi\\\" \\\\\",\n  \"b\": \"x\ny\"\n}";
+
+        Assert.Equal(
+            "{\n  \"a\": \"say \\\"hi\\\" \\\\\",\n  \"b\": \"x\\ny\"\n}",
+            VerdictFile.WithControlCharactersEscaped(json)
+        );
+    }
+
+    [Fact]
+    public void A_file_still_broken_after_escaping_is_refused_as_invalid_json()
+    {
+        var check = Check("{ \"artist\": \"Real McCoy\",\n \"title\": ");
+
+        Assert.Contains("not valid JSON", Assert.IsType<VerdictCheck.Unusable>(check).Problem);
+    }
+
+    [Fact]
     public void The_song_identity_is_built_from_artist_and_title_without_the_stem_suffix()
     {
         var run = Assert
