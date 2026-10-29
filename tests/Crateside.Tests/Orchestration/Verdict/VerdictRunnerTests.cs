@@ -16,6 +16,8 @@ namespace Crateside.Tests.Orchestration.Verdict;
 public sealed class VerdictRunnerTests : IDisposable
 {
     private const string VideoId = "dQw4w9WgXcQ";
+    private const string ThinPage =
+        "https://www.hooktheory.com/theorytab/view/yes/owner-of-a-lonely-heart-intro";
     private const string SwappedTo = "-cuAnMUSN50";
 
     private const string Verdict = """
@@ -405,6 +407,47 @@ public sealed class VerdictRunnerTests : IDisposable
             Ledger.EvidenceFor("yes - owner of a lonely heart")!.Reasoning
         );
         Assert.DoesNotContain(_log.Lines, line => line.Contains("reasoning is"));
+    }
+
+    [Fact]
+    public async Task A_high_over_an_authoritative_source_stating_another_key_is_resumed_then_capped()
+    {
+        GiveEvidence();
+        var dissented = Verdict.Replace(
+            "\"sections\": [\"Chorus\"] }]",
+            "\"sections\": [\"Chorus\"] }, { \"url\": \"https://www.musicnotes.com/sheetmusic/mtd.asp?ppn=MN1\", \"kind\": \"authoritative\", \"statesKey\": \"C major\" }]"
+        );
+        Session(dissented);
+        Session(dissented);
+
+        await RunAsync();
+
+        Assert.Contains("states C major", Sessions.Requests[1].StandardInput);
+        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.Equal(KeyConfidence.Medium, run.Confidence);
+        Assert.Contains(
+            "MN1 states C major",
+            Ledger.EvidenceFor("yes - owner of a lonely heart")!.Reasoning
+        );
+    }
+
+    [Fact]
+    public async Task A_thin_hooktheory_page_stating_another_key_does_not_stop_a_high()
+    {
+        GiveEvidence();
+        Pages.WithThinPage = true;
+        Session(
+            Verdict.Replace(
+                "\"sections\": [\"Chorus\"] }]",
+                $"\"sections\": [\"Chorus\"] }}, {{ \"url\": \"{ThinPage}/\", \"kind\": \"authoritative\", \"statesKey\": \"C major\" }}]"
+            )
+        );
+
+        await RunAsync();
+
+        Assert.Single(Sessions.Requests);
+        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.Equal(KeyConfidence.High, run.Confidence);
     }
 
     [Fact]
@@ -1102,6 +1145,9 @@ public sealed class VerdictRunnerTests : IDisposable
     {
         public List<(string, string)> Asked { get; } = [];
 
+        /// <summary>A second TheoryTab, by one contributor over one section, stating C major.</summary>
+        public bool WithThinPage { get; set; }
+
         public Task<IReadOnlyList<SiteLookup>> FetchAsync(
             string artist,
             string title,
@@ -1123,6 +1169,22 @@ public sealed class VerdictRunnerTests : IDisposable
                             Heading = "Owner of a Lonely Heart by Yes",
                             Keys = [new PageKey("A minor", "Chorus", 124)],
                         },
+                        .. WithThinPage
+                            ?
+                            [
+                                new FetchedPage
+                                {
+                                    Site = "Hooktheory",
+                                    Url = ThinPage,
+                                    Keys = [new PageKey("C major", "Intro", null)],
+                                    Tab = new HooktheoryTab
+                                    {
+                                        Contributors = ["one"],
+                                        Sections = [new TabSection("Intro", null, null, null)],
+                                    },
+                                },
+                            ]
+                            : Array.Empty<FetchedPage>(),
                     ]
                 ),
                 new("Musicnotes", LookupStatus.NotFound, []),

@@ -19,7 +19,7 @@ After the ledger's own refusals, a recordable verdict file is checked twice more
 
 ## Consequences
 
-- **Not checked:** the clause that nothing authoritative contradicts a HIGH. Whether a dissenting page counts depends on the page being thin and on which sections it covers, which the recorded source does not carry; the prompt's fixed rule 1 still asks the judge for it.
+- **Amended 2026-10-28: the clause that nothing authoritative contradicts a HIGH is checked too.** A recorded source of kind authoritative whose `statesKey` is another key than the center's is a missing leg, resumed and then capped like the others, unless it is a Hooktheory page the work order marked `THIN PAGE` (matched by URL), as the prompt's fixed rule 1 exempts. Which sections a page covers is still not weighed. **MEASURED** in the re-judges of 28 October: Nicki Minaj – *Super Bass* was recorded HIGH on B major over its own recorded Hooktheory source stating G# minor, which this catches. Daft Punk – *Get Lucky* is not caught: its HIGH run recorded only Hooktheory (B minor) and left out the Musicnotes F# minor its earlier runs held, and that page was not among those crateside fetched for it.
 - "Backed" is counted on the center's key, so two backers agreeing against keydetect back a HIGH on their key; keydetect and one backer agreeing is enough, as in the prompt's backing table.
 - A tonic check is required to be present, not to be right.
 - Evidence with no detector readings can no longer carry a HIGH.

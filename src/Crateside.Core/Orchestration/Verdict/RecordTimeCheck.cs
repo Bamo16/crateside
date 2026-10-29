@@ -29,8 +29,12 @@ internal static class RecordTimeCheck
                 + "your candidates. Judge a key the evidence holds, or withhold.";
     }
 
-    /// <summary>What a HIGH verdict lacks of what judge-prompt.md asks for it, or null.</summary>
-    public static string? MissingForHigh(RunRecord run, EarWeight ear)
+    /// <summary>What a HIGH verdict lacks of what judge-prompt.md asks for it, or null; a Hooktheory page the work order marked thin does not dissent.</summary>
+    public static string? MissingForHigh(
+        RunRecord run,
+        EarWeight ear,
+        IReadOnlyList<SiteLookup> lookups
+    )
     {
         if (run is not { Confidence: KeyConfidence.High, Center: { } center })
             return null;
@@ -49,8 +53,32 @@ internal static class RecordTimeCheck
         if (!run.Sources.Any(source => AgreesAsHuman(source, key, ear)))
             missing.Add($"a human source that agrees on {center.Name}");
 
+        if (
+            run.Sources.FirstOrDefault(source => Dissents(source, key, lookups)) is
+            { StatesKey: var stated } dissent
+        )
+            missing.Add(
+                $"agreement from every authoritative source ({dissent.Url ?? dissent.Via} states {stated})"
+            );
+
         return missing is [] ? null : string.Join(", ", missing);
     }
+
+    private static bool Dissents(
+        RunSource source,
+        MusicKey key,
+        IReadOnlyList<SiteLookup> lookups
+    ) =>
+        source is { Kind: SourceKind.Authoritative }
+        && KeyOf(source.StatesKey) is { } stated
+        && stated != key
+        && !lookups.Any(lookup =>
+            lookup.Pages.Any(page => page.Tab is { IsThin: true } && SameUrl(page.Url, source.Url))
+        );
+
+    private static bool SameUrl(string page, string? source) =>
+        source is not null
+        && page.TrimEnd('/').Equals(source.TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
 
     private static bool AgreesAsHuman(RunSource source, MusicKey key, EarWeight ear) =>
         (
