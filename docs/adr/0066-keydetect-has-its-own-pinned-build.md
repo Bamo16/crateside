@@ -69,3 +69,13 @@ A re-read, or a backfill into a finished run, adds `read_after_verdict: {"at": â
 under the detector table, since the judge's prose can quote a reading the table no longer shows. The
 first start after this stamps, once, each latest run whose evidence carries the pinned build's
 `ffmpeg_sha256` but was recorded before 17:21 on 2026-10-24, when the re-reads began.
+
+## Amendment, 2026-10-28: a new verdict carries no marker
+
+A re-judge starts from its song's latest evidence, and that evidence carried the earlier run's
+marker into the new run, so the table said the judge had not seen readings it had. **MEASURED
+2026-10-28:** 67 runs held a marker older than the run itself (63 of the 66 re-judges of that day,
+ledger Ids 580â€“645, and four earlier re-judges). crateside now drops the marker when it writes a
+re-judge's evidence and again when it records any verdict, and the `InheritedLateReading` migration
+removed it from those runs: each marker older than its run, and each without a time on a run
+recorded after the re-reads began.

@@ -161,6 +161,25 @@ public sealed class VerdictRunnerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_late_reading_marker_carried_in_from_an_earlier_run_is_not_recorded_on_the_new_one()
+    {
+        GiveEvidence(
+            BackedByBoth.Replace(
+                "\"chords\"",
+                "\"read_after_verdict\": { \"at\": \"2026-10-01T00:00:00+00:00\" }, \"chords\""
+            )
+        );
+        Session(Verdict);
+
+        await RunAsync();
+
+        var evidence = Ledger.EvidenceFor("yes - owner of a lonely heart")!;
+
+        Assert.Null(evidence.LateReading);
+        Assert.Equal(["Am", "E7"], evidence.Chords);
+    }
+
+    [Fact]
     public async Task A_candidate_equal_to_the_verdicts_key_is_dropped_and_logged_while_the_others_are_kept()
     {
         GiveEvidence();

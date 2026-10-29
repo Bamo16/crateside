@@ -167,7 +167,10 @@ public sealed class VerdictDrainer(
             && ledger.SongFor(order.VideoId) is { } song
             && store.LatestEvidenceJson().TryGetValue(song, out var evidence)
         )
-            File.WriteAllText(workingSet.EvidencePathFor(order.VideoId), evidence);
+            File.WriteAllText(
+                workingSet.EvidencePathFor(order.VideoId),
+                LateReading.Unstamped(evidence)
+            );
 
         File.Delete(Path.Combine(folder, VerdictRunner.SourcesFileName));
 
