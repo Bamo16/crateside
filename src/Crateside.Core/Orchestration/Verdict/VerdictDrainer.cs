@@ -1,4 +1,5 @@
 using Crateside.Core.Ledger;
+using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
@@ -23,6 +24,7 @@ public sealed class VerdictDrainer(
     RejudgeQueue rejudges,
     WorkingSet workingSet,
     EvidenceCompleter completer,
+    DownloadRunner downloads,
     PauseStore remembered,
     IOptions<CratesidePaths> paths,
     IOptions<JudgeOptions> judge,
@@ -259,6 +261,17 @@ public sealed class VerdictDrainer(
 
         try
         {
+            if (isRejudge && runner.SourceFor(order) is null)
+            {
+                control.ReportJudging(item.VideoId, $"Downloading {order.Title} again to judge it");
+                await downloads.RunAsync(
+                    order.SourceUrl,
+                    workingSet.Prepare(order.VideoId),
+                    ct: ct
+                );
+                control.ReportJudging(item.VideoId, $"Judging {order.Title}");
+            }
+
             if (await completer.CompleteAsync(item.VideoId, ct: ct) is { } incomplete)
             {
                 var error = $"not judged: {incomplete}";

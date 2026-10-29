@@ -18,6 +18,7 @@ namespace Crateside.Core.Orchestration.Verdict;
 public sealed partial class VerdictRunner(
     LedgerStore store,
     WorkingSet workingSet,
+    SourceIndex sources,
     IProcessRunner processes,
     IWindowDetector detector,
     ISourcePages sourcePages,
@@ -33,6 +34,10 @@ public sealed partial class VerdictRunner(
     public const string SourcesFileName = "sources.json";
 
     private const int MaxRetryAfterSeconds = 3600;
+
+    internal const string NoAudioLine =
+        "crateside holds no audio for this track, so it cannot detect over windows. Do not ask "
+        + "for windows or withhold waiting for them: judge from the whole-track evidence.";
 
     private static readonly string[] Tools = ["Read", "Write", "WebSearch", "WebFetch"];
 
@@ -82,9 +87,7 @@ public sealed partial class VerdictRunner(
         var folder = workingSet.Prepare(order.VideoId);
         var verdictPath = Path.Combine(folder, VerdictFileName);
         var session = Guid.NewGuid().ToString();
-        var audio =
-            direction?.Audio
-            ?? (workingSet.TryGetSource(order.VideoId, out var held) ? held : null);
+        var audio = direction?.Audio ?? SourceFor(order);
         var given = direction is null
             ? []
             : await DetectAsync(direction.Audio, folder, direction.Windows, step, ct);
@@ -101,7 +104,7 @@ public sealed partial class VerdictRunner(
 
         var outcome = await SessionAsync(
             ["--session-id", session],
-            Prompt(order, verdictPath, lookups, direction, given),
+            Prompt(order, verdictPath, lookups, direction, given, audio),
             folder,
             order,
             ct
@@ -191,14 +194,24 @@ public sealed partial class VerdictRunner(
         WorkOrder order,
         string verdictPath,
         IReadOnlyList<SiteLookup> lookups
-    ) => Prompt(order, verdictPath, lookups, direction: null, given: []);
+    ) => Prompt(order, verdictPath, lookups, direction: null, given: [], SourceFor(order));
+
+    /// <summary>The full mix the order is judged from: the working set's download, else the source the library keeps, by the row's upload or the stated one.</summary>
+    public string? SourceFor(WorkOrder order) =>
+        sources.PathOf(order.VideoId)
+        ?? (
+            YouTubeUrl.TryGetVideoId(order.SourceUrl, out var stated)
+                ? sources.PathOf(stated)
+                : null
+        );
 
     private string Prompt(
         WorkOrder order,
         string verdictPath,
         IReadOnlyList<SiteLookup> lookups,
         JudgeDirection? direction,
-        IReadOnlyList<DetectedWindow> given
+        IReadOnlyList<DetectedWindow> given,
+        string? audio
     )
     {
         List<string> lines =
@@ -217,6 +230,10 @@ public sealed partial class VerdictRunner(
             );
 
         lines.AddRange([string.Empty, EarLine(_options.Ear)]);
+
+        if (audio is null)
+            lines.AddRange([string.Empty, NoAudioLine]);
+
         lines.AddRange(PagesLines(lookups));
 
         if (workingSet.TryReadEvidence(order.VideoId, out var evidence))

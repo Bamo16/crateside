@@ -1,7 +1,9 @@
+using System.Text.Json;
 using Crateside.Core;
 using Crateside.Core.KeyDetection;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
@@ -38,6 +40,8 @@ public sealed class VerdictDrainerTests : IDisposable
     private readonly WorkingSet _set;
     private readonly JobStore _jobs;
     private readonly FakeSessions _sessions;
+    private readonly FakeDownloads _downloads = new();
+    private readonly RejudgeQueue _rejudges;
     private readonly VerdictDrainer _drainer;
 
     public VerdictDrainerTests()
@@ -48,7 +52,10 @@ public sealed class VerdictDrainerTests : IDisposable
         _jobs = new JobStore(Path.Combine(_directory, "jobs.jsonl"));
         _sessions = new FakeSessions(() => File.ReadAllText(_set.EvidencePathFor(VideoId)));
 
+        _rejudges = new RejudgeQueue(Path.Combine(_directory, "rejudge.json"), []);
+
         var paused = new PauseStore(Path.Combine(_directory, "paused.json"));
+        var sources = new SourceIndex(_set, Path.Combine(_directory, "source-index.json"));
         var judge = Options.Create(
             new JudgeOptions
             {
@@ -62,6 +69,7 @@ public sealed class VerdictDrainerTests : IDisposable
             new VerdictRunner(
                 _store,
                 _set,
+                sources,
                 _sessions,
                 new NoWindows(),
                 new NoPages(),
@@ -73,13 +81,10 @@ public sealed class VerdictDrainerTests : IDisposable
             _jobs,
             new VerdictControl(paused),
             new QuotaGuard(new UnknownQuota(), new FakeTimeProvider()),
-            new RejudgeQueue(Path.Combine(_directory, "rejudge.json"), []),
+            _rejudges,
             _set,
-            new EvidenceCompleter(
-                _set,
-                new SourceIndex(_set, Path.Combine(_directory, "source-index.json")),
-                new FakeDetectors()
-            ),
+            new EvidenceCompleter(_set, sources, new FakeDetectors()),
+            new DownloadRunner(_downloads),
             paused,
             Options.Create(new CratesidePaths()),
             judge,
@@ -173,13 +178,95 @@ public sealed class VerdictDrainerTests : IDisposable
         Assert.All(_sessions.EvidenceSeen, seen => Assert.Equal(FullEvidence, seen));
     }
 
+    [Fact]
+    public async Task A_re_judge_with_no_source_on_disk_downloads_it_again_before_the_judge_starts()
+    {
+        _store.Record(
+            new RunRecord
+            {
+                RecordedAt = DateTimeOffset.Parse("2026-10-01T00:00:00+00:00"),
+                Song = "artist - song",
+                Artist = "Artist",
+                Title = "Song",
+                SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
+                Confidence = KeyConfidence.Medium,
+                Center = new TonalCenter("A", DiatonicMode.Aeolian),
+                Evidence = FullEvidence,
+            }
+        );
+        _rejudges.Add("artist - song", DateTimeOffset.Parse("2026-10-02T00:00:00+00:00"), "test");
+
+        await JudgeBackfillAsync();
+
+        var download = Assert.Single(_downloads.Requests);
+
+        Assert.Contains($"https://music.youtube.com/watch?v={VideoId}", download.Arguments);
+        Assert.Contains(_set.Prepare(VideoId), download.Arguments);
+        Assert.NotEmpty(_sessions.Prompts);
+        Assert.DoesNotContain(VerdictRunner.NoAudioLine, _sessions.Prompts[0]);
+    }
+
+    [Fact]
+    public async Task A_re_judge_whose_source_is_on_disk_downloads_nothing()
+    {
+        Hold(FullEvidence, withSource: true);
+        _store.Record(
+            new RunRecord
+            {
+                RecordedAt = DateTimeOffset.Parse("2026-10-01T00:00:00+00:00"),
+                Song = "artist - song",
+                Artist = "Artist",
+                Title = "Song",
+                SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
+                Confidence = KeyConfidence.Medium,
+                Center = new TonalCenter("A", DiatonicMode.Aeolian),
+                Evidence = FullEvidence,
+            }
+        );
+        _rejudges.Add("artist - song", DateTimeOffset.Parse("2026-10-02T00:00:00+00:00"), "test");
+
+        await JudgeBackfillAsync();
+
+        Assert.Empty(_downloads.Requests);
+        Assert.NotEmpty(_sessions.Prompts);
+    }
+
+    private sealed class FakeDownloads : IProcessRunner
+    {
+        public List<ProcessRequest> Requests { get; } = [];
+
+        public Task<ProcessOutcome> RunAsync(ProcessRequest request, CancellationToken ct = default)
+        {
+            Requests.Add(request);
+
+            var into = request.Arguments[request.Arguments.ToList().IndexOf("--output") + 1];
+            var path = Path.Combine(into, "Artist - Song.flac");
+
+            File.WriteAllText(path, "audio");
+
+            return Task.FromResult(
+                new ProcessOutcome
+                {
+                    ExitCode = 0,
+                    StandardOutput = JsonSerializer.Serialize(
+                        new[] { new { succeeded = true, path } }
+                    ),
+                    StandardError = string.Empty,
+                }
+            );
+        }
+    }
+
     private sealed class FakeSessions(Func<string> readEvidence) : IProcessRunner
     {
         public List<string> EvidenceSeen { get; } = [];
 
+        public List<string> Prompts { get; } = [];
+
         public Task<ProcessOutcome> RunAsync(ProcessRequest request, CancellationToken ct = default)
         {
             EvidenceSeen.Add(readEvidence());
+            Prompts.Add(request.StandardInput ?? string.Empty);
 
             return Task.FromResult(
                 new ProcessOutcome
