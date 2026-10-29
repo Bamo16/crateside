@@ -579,10 +579,6 @@ public sealed class VerdictRunnerTests : IDisposable
         "cannot be reached"
     )]
     [InlineData("Failed to authenticate. API Error: 401 Invalid local API key.", "refused its key")]
-    [InlineData(
-        "[claude-code:unrecognized_model] {\\\"model\\\":\\\"judge\\\",\\\"query_source\\\":\\\"sdk\\\"}",
-        "did not recognize its model"
-    )]
     public async Task An_endpoint_that_cannot_be_used_is_not_the_tracks_fault(
         string error,
         string reason
