@@ -16,6 +16,7 @@ A wrong key is worse than no key: the maintainer picks mashup partners by it. Wi
 
   When keydetect is wrong, madmom names the right key a little over half the time, and when madmom and Essentia agree on another key they are right about three times in four: a dissent is a candidate, not only doubt. When a backer names keydetect's runner-up (`key_alt`), that runner-up is the first candidate: it was right 27 of 33 times when keydetect was wrong.
 - A detector's confidence never corroborates its own answer. A relative swap (C major ↔ A minor, the same notes) is a confident wrong answer, and breaking it takes evidence of another kind: a cadence, or a human source.
+- Detectors and a human source that differ only by a relative swap agree on the notes and differ on the tonic, where key profiles are weakest. Go with a trustworthy human source (a whole-song Hooktheory page, Musicnotes' Original Published Key, a theory analysis) unless the chords make a convincing case for the other tonic: what resolves, how the song starts and ends, its cadences. A thin or section-only page counts for less.
 - **Tonic check** (`tonicCheck`, at most 70 words): what the music does. Say whether the chords and the running estimate support the tonic over its relative and its fifth neighbors: does V→i resolve there, is keydetect's tonic really the IV of the key, is early instability only a sparse intro. Check the fourth below first: keydetect reads a song's IV as its tonic about three times as often as its V (16 of its 58 misses on the human-sourced songs, against 5).
 
 ## Windows
