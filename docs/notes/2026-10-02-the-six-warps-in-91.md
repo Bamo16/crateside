@@ -11,12 +11,12 @@ near the end, without knowing the tempo.
 
 | track | old warp | new warp | crateside's reading | settled |
 |---|---|---|---|---|
-| *Snail's House – Flash Drive* | 160.010 | 160 (typed: clearly 160) | 160.0006 | 160 |
-| *Aiobahn – non-reflection* | 179.983 | 180.0015 | 179.9984 | 180 |
-| *Princess Superstar – Perfect* | 119.512 | 119.509 | 119.4989 | 119.50 |
-| *Lil Jon – Get Low* | 100.985 | 100.987 | 101.0015 | 101, with a slower ending |
-| *Too $hort – Blow the Whistle* | 100, typed | 99.985 | 99.9817 | 99.98 |
-| *White Shadow – If You Like It* | 128, typed | 127.984 | 127.9840 | 127.98 |
+| Snail's House – *Flash Drive* | 160.010 | 160 (typed: clearly 160) | 160.0006 | 160 |
+| Aiobahn – *non-reflection* | 179.983 | 180.0015 | 179.9984 | 180 |
+| Princess Superstar – *Perfect* | 119.512 | 119.509 | 119.4989 | 119.50 |
+| Lil Jon & The East Side Boyz, Ying Yang Twins – *Get Low* | 100.985 | 100.987 | 101.0015 | 101, with a slower ending |
+| Too $hort – *Blow the Whistle* | 100, typed | 99.985 | 99.9817 | 99.98 |
+| White Shadow – *If You Like It* | 128, typed | 127.984 | 127.9840 | 127.98 |
 
 **How each was settled:** the drum stem's stronger transients were placed against a grid at each
 candidate tempo. The grid's phase came from the first minute, and the offset was measured a minute
@@ -37,8 +37,8 @@ shows as a jump.
 - **A typed warp is not always a declaration.** Both typed warps were wrong, most likely because
   they were copied from crateside's whole-number BPM before it showed decimals. Across the library,
   9 of 121 typed warps with a tight reading disagree with it. Seven differ by 0.005–0.007 BPM,
-  inside the reading's own noise. Two stand out: *The Chemical Brothers – The Salmon Dance* (124,
-  reads 123.982) and *Ludacris – Southern Hospitality* (95, reads 94.992).
+  inside the reading's own noise. Two stand out: The Chemical Brothers – *The Salmon Dance* (124,
+  reads 123.982) and Ludacris, Pharrell – *Southern Hospitality* (95, reads 94.992).
 - **A single best fit over the transients is not a better judge than the reading.** It averages
   over a section change just as a start-and-end snap does. Measuring the offset minute by minute
   shows where the warp drifts.

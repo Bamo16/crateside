@@ -37,14 +37,15 @@ track. 5 ms is about 2.8 of those; the 3-error test is the real gate and 5 ms th
 | **retyped to a whole number** | **33** |
 | **retyped to a drift-corrected tempo** | **45** |
 
-- **The premises in #99 moved.** *Happy* and *Shake It Off* both read 160.0000 now and are left;
-  they were retyped by hand after the issue was written. *Gin and Juice* (94.6174, whole 95 fits
-  0.0394 against 0.8891) is left, as the issue says. *Blow the Whistle* (99.985) is left: 100 fits
-  0.8430 against 0.8999, and its drift is 2.4 ms over the track.
+- **The premises in #99 moved.** Pharrell Williams – *Happy* and Taylor Swift – *Shake It Off* both
+  read 160.0000 now and are left; they were retyped by hand after the issue was written. The
+  Notorious B.I.G. – *Gin and Juice* (94.6174, whole 95 fits 0.0394 against 0.8891) is left, as the
+  issue says. Too $hort – *Blow the Whistle* (99.985) is left: 100 fits 0.8430 against 0.8999, and
+  its drift is 2.4 ms over the track.
 - **Half of the drift retypes are not near a whole number.** 23 of the 45 land more than 0.05 from
-  one (*Here Comes the Hotstepper* 100.3485 → 100.3362, *Dragula* 125.0042 → 125.0257), so an
-  integer-only rule would have left them drifting. Ten of the 45 start from a whole number the user
-  typed (*Queendom* 105 → 105.0103): the track is not at it.
+  one (Ini Kamoze – *Here Comes the Hotstepper* 100.3485 → 100.3362, Rob Zombie – *Dragula* 125.0042
+  → 125.0257), so an integer-only rule would have left them drifting. Ten of the 45 start from a whole number the user
+  typed (Awich – *Queendom* 105 → 105.0103): the track is not at it.
 - **After the retype** the largest remaining drift among the whole-number retypes is 6.3 ms over
   the track, under 3 standard errors; among the drift retypes it is 0.3 ms.
 - No copies crateside lent from these warps are recorded on this machine, so nothing is re-lent in
