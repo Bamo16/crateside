@@ -55,12 +55,15 @@ fit to this set, *guessed* to generalize and not tested outside it.
   range from 1 (8 tracks) to 15.
 - **Wander:** median 0.155 for steady, 1.58 for unsteady; the 90th percentile is 0.69 and 5.2.
 - **The unwarped-tempo fallback** (whole-file `bpm` against the warp, steady warps only, 359):
-  277 within 1 %; 351 within 1 % after folding by octaves; 8 in another class (*Lollipop*,
-  *How Low*, *Or What*, *Number One Spot*, *Kitty – Morgan Stop*, *Stuntin' Like My Daddy*, *A Horny
-  Money World*, *Lose Control*). The issue's "18 of 21 within 0.01" could not be matched to a
-  definition here; these figures are on the whole steady set.
-- *Get Low* reads 101.0007 against a warp of 100.985, wander 0.08, one segment, under this build.
-  *Hello* is not in #75's tracks, so it is not measured here.
+  277 within 1 %; 351 within 1 % after folding by octaves; 8 in another class (Lil Wayne, Static
+  Major – *Lollipop*, Ludacris – *How Low*, NLE Choppa – *Or What*, Ludacris – *Number One Spot*,
+  Kitty – *Morgan Stop*, Birdman, Lil Wayne – *Stuntin' Like My Daddy*, Houshou Marine, MARON
+  (IOSYS), D.watt (IOSYS) – *A Horny Money World*, Missy Elliott, Ciara, Fatman Scoop – *Lose
+  Control*). The issue's "18 of 21 within 0.01" could not be matched to a definition here; these
+  figures are on the whole steady set.
+- Lil Jon & The East Side Boyz, Ying Yang Twins – *Get Low* reads 101.0007 against a warp of
+  100.985, wander 0.08, one segment, under this build.
+  Adele – *Hello* is not in #75's tracks, so it is not measured here.
 
 ## Where the files are
 

@@ -22,9 +22,10 @@ the result is rough, with a lot of bleed.
 | HPSS, margin 1 | 19 | 3 | 1 | 21 | 5 |
 | HPSS, margin 3 | 19 | 3 | 1 | 21 | 8 |
 
-- **Paired, HPSS fixed 2 and broke none** against the instrumental it came from (*Queendom*, *How
-  Low*), and 2 and none against the `htdemucs_ft` drum stem (*NOT A DREAM*, *As the World Caves
-  In*). The one tempo miss left is *Lollipop* (×2/3); the one off-beat lock is *Spicy*.
+- **Paired, HPSS fixed 2 and broke none** against the instrumental it came from (Awich – *Queendom*,
+  Ludacris – *How Low*), and 2 and none against the `htdemucs_ft` drum stem (NXONE'S FAVOURITE,
+  Nakedleisure – *NOT A DREAM*, Sarah Cothran – *As the World Caves In*). The one tempo miss left is
+  Lil Wayne, Static Major – *Lollipop* (×2/3); the one off-beat lock is aespa – *Spicy*.
 - **The one-hop late shift remains** (median +8 to +11 ms on the whole file).
 - **Confidence is higher on HPSS** (median 0.28 at margin 3 against 0.22 on the drum stem), and on
   *Spicy* it is higher while locked to the off-beat. Confidence does not compare inputs.

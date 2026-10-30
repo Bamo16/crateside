@@ -1,6 +1,6 @@
 # beatdetect's phase steps, against the library (2026-10-03)
 
-FiLL built the per-window phase check suggested after *Get Low* (beatdetect branch
+FiLL built the per-window phase check suggested after Lil Jon & The East Side Boyz, Ying Yang Twins – *Get Low* (beatdetect branch)
 `feat/phase-step-detection`, commit `62bdb97`, version 1.2.0 unreleased): `phase_stepN`,
 `phase_bpm` and `phase_noise_ms`. Built locally for Windows and run on every Mashup Samples
 instrumental whose saved warp is a single marker (388), and the 13 kept drum stems whose
@@ -33,8 +33,9 @@ instrumental places it but reports the wrong size and sign.
 | steps both report (within 10 s) | 9, 8 of them the same sign | 0 |
 
 The reported steps are mostly large: median 50 ms, p10 20 ms. 191 of 409 are about an eighth of a
-beat, 47 a 16th and 26 half a beat. Three checked by hand (*Wild Wild West*, *Wings (Remix)*,
-*Entwined*), reported at 69, −51 and −52 ms, sit where GridCheck's windows stay within ±3 ms.
+beat, 47 a 16th and 26 half a beat. Three checked by hand (Will Smith, Dru Hill, Kool Mo Dee –
+*Wild Wild West*, Birdy – *Wings (Remix)*, Sub Focus, Grimes – *Entwined*), reported at 69, −51 and
+−52 ms, sit where GridCheck's windows stay within ±3 ms.
 
 Neither noise nor octave explains it: files with a step are about half of every noise band, and
 about half of both the octave-folded and the unfolded.
