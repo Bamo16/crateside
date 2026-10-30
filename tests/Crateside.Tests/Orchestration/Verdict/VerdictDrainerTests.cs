@@ -52,7 +52,7 @@ public sealed class VerdictDrainerTests : IDisposable
         _jobs = new JobStore(Path.Combine(_directory, "jobs.jsonl"));
         _sessions = new FakeSessions(() => File.ReadAllText(_set.EvidencePathFor(VideoId)));
 
-        _rejudges = new RejudgeQueue(Path.Combine(_directory, "rejudge.json"), []);
+        _rejudges = new RejudgeQueue(Path.Combine(_directory, "rejudge.json"));
 
         var paused = new PauseStore(Path.Combine(_directory, "paused.json"));
         var sources = new SourceIndex(_set, Path.Combine(_directory, "source-index.json"));

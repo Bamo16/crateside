@@ -1,12 +1,10 @@
 using System.Text.Json;
-using Crateside.Core;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
-using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Verdict;
 
@@ -42,18 +40,15 @@ public sealed class RejudgeTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private RejudgeQueue Queue(params string[] seeded) =>
-        new(
-            QueuePath,
-            [
-                .. seeded.Select(videoId => new RejudgeEntry
-                {
-                    Song = $"artist - {videoId}",
-                    Before = Cutoff,
-                    Reason = "test",
-                }),
-            ]
-        );
+    private RejudgeQueue Queue(params string[] queued)
+    {
+        var queue = new RejudgeQueue(QueuePath);
+
+        foreach (var videoId in queued)
+            queue.Add($"artist - {videoId}", Cutoff, "test");
+
+        return queue;
+    }
 
     private static object Run(string videoId, string at) =>
         new
@@ -132,27 +127,6 @@ public sealed class RejudgeTests : IDisposable
     }
 
     [Fact]
-    public void Seeding_twice_queues_each_song_once()
-    {
-        _ = Queue(Owing).Read();
-
-        var again = Queue(Owing).Read();
-
-        Assert.Equal($"artist - {Owing}", Assert.Single(again).Song);
-    }
-
-    [Fact]
-    public void A_re_judged_song_is_not_owed_again_when_seeding_restores_its_entry()
-    {
-        var ledger = Ledger(Run(Owing, JudgedBefore), Run(Owing, JudgedAfter));
-
-        _ = Queue(Owing).Read();
-        File.Delete(QueuePath);
-
-        Assert.Empty(Queue(Owing).Pending(ledger));
-    }
-
-    [Fact]
     public void A_song_added_later_stays_queued_across_restarts()
     {
         Queue().Add($"artist - {Owing}", Cutoff, "added by hand");
@@ -170,19 +144,6 @@ public sealed class RejudgeTests : IDisposable
         queue.Add($"artist - {Owing}", Cutoff.AddDays(-1), "third");
 
         Assert.Equal(Cutoff.AddDays(1), Assert.Single(queue.Read()).Before);
-    }
-
-    [Fact]
-    public void The_shipped_seed_names_five_songs_of_149_without_queen()
-    {
-        var songs = new RejudgeQueue(Options.Create(new CratesidePaths { RejudgeFile = QueuePath }))
-            .Read()
-            .Select(entry => entry.Song)
-            .ToList();
-
-        Assert.Equal(5, songs.Count);
-        Assert.Contains("seal - kiss from a rose", songs);
-        Assert.DoesNotContain("queen - bohemian rhapsody", songs);
     }
 
     [Fact]
