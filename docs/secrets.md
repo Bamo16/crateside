@@ -37,7 +37,7 @@ It is stored at `%APPDATA%\Microsoft\UserSecrets\<UserSecretsId>\secrets.json`. 
 
 **Why user-secrets rather than a gitignored file in the repo:** the risk being defended
 against is showing the key by accident while working on this code — opening the wrong file,
-or a file tree, on stream. A gitignored file is still a file sitting in the folder you have
+or a file tree, while streaming. A gitignored file is still a file sitting in the folder you have
 open. user-secrets is outside the working tree, so it cannot appear.
 
 To read it back or clear it: `dotnet user-secrets list` / `dotnet user-secrets remove "Queue:ApiKey"`.
