@@ -27,7 +27,7 @@ exactly the kind ADR 0002's postscript says to check rather than reason about.
 
 ## The fault it explains, which recurred
 
-Measured on 2026-09-15. A source added to *Eminem - Medicine Ball* — a finished track the playlist
+Measured on 2026-09-15. A source added to Eminem – *Medicine Ball* — a finished track the playlist
 no longer held — was never fetched. No job for it ever existed, while the download stage ran
 repeatedly for other videos.
 
@@ -186,7 +186,7 @@ for the work again.
 
 ## Postscript — the same song under two uploads is two songs
 
-*nimino - Better* was not a fault of any of this. The library's stems carry upload `9Zo8jqTqju0`,
+nimino – *Better* was not a fault of any of this. The library's stems carry upload `9Zo8jqTqju0`,
 which keytag knows as `nimino, manta - better`; the row is upload `V0rMY9WgtKE`, judged separately
 as `nimino - better (feat. manta)`. Two ledger identities, so ADR 0014's grouping by song cannot
 join them, and crateside is right that *that* track has a verdict and no stems.

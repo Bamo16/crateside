@@ -9,7 +9,7 @@
 
 ## Context
 
-`Ludacris, Pharrell - Southern Hospitality` was swapped on 2026-09-09. The pipeline did its job
+Ludacris, Pharrell – *Southern Hospitality* was swapped on 2026-09-09. The pipeline did its job
 and the state it left behind was one song wearing two of everything.
 
 ## What was measured, 2026-09-10

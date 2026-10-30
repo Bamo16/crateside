@@ -9,7 +9,7 @@
 
 ## Context
 
-`Moe Shop - HARDCODED` reached `Sample Staging` with a vocal stem and nothing else. Its plan asked
+Moe Shop – *HARDCODED* reached `Sample Staging` with a vocal stem and nothing else. Its plan asked
 for three. The separation had been killed by a VS Code restart mid-run.
 
 The job history says exactly what happened, to the millisecond:
@@ -82,7 +82,7 @@ The decision above says the retry "produces the rest and the handoff moves a com
 that **was wrong for the very track it was written about.** Tested rather than reasoned about, once
 the user reported that the fix left them with no way forward.
 
-`Moe Shop - HARDCODED` was reachable from nowhere:
+Moe Shop – *HARDCODED* was reachable from nowhere:
 
 | way in | why it was shut |
 |---|---|
