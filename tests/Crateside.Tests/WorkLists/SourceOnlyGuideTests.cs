@@ -9,8 +9,8 @@ namespace Crateside.Tests.WorkLists;
 public sealed class SourceOnlyGuideTests
 {
     private const string Track = "aaaaaaaaaaa";
-    private const string Staging = @"P:\RYAN\Ableton\Sample Staging";
-    private const string Library = @"P:\RYAN\Ableton\Mashup Samples";
+    private const string Staging = @"D:\Music\Sample Staging";
+    private const string Library = @"D:\Music\Library";
 
     private static readonly StemPlan SourceOnly = new() { Presets = [], KeepSource = true };
 

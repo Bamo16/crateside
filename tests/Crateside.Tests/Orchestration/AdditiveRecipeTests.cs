@@ -22,8 +22,8 @@ public sealed class AdditiveRecipeTests
         StemInventory.Of(
             presets.Select(preset => new StemOnDisk
             {
-                Path = $@"P:\RYAN\Ableton\Sample Staging\x ({preset}).flac",
-                Root = @"P:\RYAN\Ableton\Sample Staging",
+                Path = $@"D:\Music\Sample Staging\x ({preset}).flac",
+                Root = @"D:\Music\Sample Staging",
                 Preset = preset,
             }),
             Catalog
@@ -73,12 +73,12 @@ public sealed class AdditiveRecipeTests
             [
                 new StemOnDisk
                 {
-                    Path = @"P:\RYAN\Ableton\Mashup Samples\Chris Rinox - Burst Mode.flac",
-                    Root = @"P:\RYAN\Ableton\Mashup Samples",
+                    Path = @"D:\Music\Library\Chris Rinox - Burst Mode.flac",
+                    Root = @"D:\Music\Library",
                 },
             ],
             Catalog,
-            @"P:\RYAN\Ableton\Mashup Samples"
+            @"D:\Music\Library"
         );
 
         var recipe = SeparationRecipe.For(new StemPlan { Presets = [], KeepSource = true }, kept);

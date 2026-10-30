@@ -11,7 +11,7 @@ namespace Crateside.Tests.Tracks;
 public sealed class StarterWarpRowTests : IDisposable
 {
     private const string Upload = "AhtkGlO7O8c";
-    private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
+    private const string StagingRoot = @"D:\Music\Sample Staging";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -85,7 +85,7 @@ public sealed class StarterWarpRowTests : IDisposable
                     },
                 ],
                 new Dictionary<string, IReadOnlyList<StemOnDisk>>(),
-                @"P:\RYAN\Ableton\Mashup Samples",
+                @"D:\Music\Library",
                 new JobStore(Path.Combine(_root, "jobs.jsonl")),
                 new Dictionary<string, TrackInstruction>(),
                 readings: new SampleReadings { WrittenWarp = writtenWarp }
