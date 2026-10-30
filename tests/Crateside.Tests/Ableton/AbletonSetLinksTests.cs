@@ -52,6 +52,24 @@ public sealed class AbletonSetLinksTests : IDisposable
         );
     }
 
+    [Fact]
+    public void With_no_projects_folder_no_set_uses_a_file_and_no_relink_changes_any()
+    {
+        var links = new AbletonSetLinks(
+            new CratesidePaths { AbletonProjects = string.Empty },
+            new FakeTimeProvider(new(2026, 9, 27, 10, 15, 0, TimeSpan.Zero))
+        );
+
+        Assert.Empty(links.Using(["C:/Samples/A (Vocal - Full).flac"]));
+
+        var relink = links.Relink([
+            new SampleMove("C:/Samples/A (Vocal - Full).flac", "C:/Samples/B (Vocal - Full).flac"),
+        ]);
+
+        Assert.Empty(relink.Relinked);
+        Assert.Empty(relink.Failed);
+    }
+
     [Theory]
     [InlineData(
         "Internet Gucci (S3RL x Kreayshawn) - Ableton Live 12 Lite",
