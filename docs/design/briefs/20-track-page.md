@@ -108,7 +108,7 @@ text**. Placing it is yours: it shares the verdict, so it belongs near the verdi
 evidence panel, not in the side stack's file actions.
 
 **The card** is its own layout, about 1200 px wide, not a crop of the page. It is what a friend
-sees in Discord, so it reads at preview size without the app around it:
+sees when it is shared, so it reads at preview size without the app around it:
 
 - `Artist – Title`
 - key, confidence and BPM, as the verdict band shows them

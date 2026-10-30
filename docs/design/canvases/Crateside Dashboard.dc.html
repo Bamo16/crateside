@@ -313,8 +313,8 @@ class Component extends DCLogic {
     const log = [['14:06','tagged','Aiobahn – Daydreamer'],['14:02','separation started','Xi – Ascension to Heaven'],['13:58','verdict, HIGH','Porter Robinson – Language'],['13:51','warped at 128','Snail\u2019s House – Pixel Galaxy'],['13:44','judging paused','by you'],['13:40','handed to Ableton','Fox Stevenson – Sandblast'],['13:31','deleted','3 files from staging'],['13:22','tagged','PSYQUI – Hype feat. Such']].map(([t,what,song]) => ({ t, what, song }));
     const hi = s.high;
     const kdRows = hi
-      ? [['keydetect',"Fil's ffmpeg filter",78,null],['crema','',71,null],['librosa','',62,null]]
-      : [['keydetect',"Fil's ffmpeg filter",73,88],['crema','',65,81],['librosa','',59,76]];
+      ? [['keydetect',"FiLL's ffmpeg filter",78,null],['crema','',71,null],['librosa','',62,null]]
+      : [['keydetect',"FiLL's ffmpeg filter",73,88],['crema','',65,81],['librosa','',59,76]];
     const kd = {
       rows: kdRows.map(([name,who,r,c]) => ({ name, who: who || 'python', right: r + ' %', close: c ? c + ' %' : '—', rw: c ? (r * 100 / c).toFixed(1) + '%' : '100%', cw: (c || r) + '%' })),
       lead: hi ? 'On the 192 HIGH verdicts, keydetect is right on 78 %. The gap to crema and librosa holds.' : 'On 397 HIGH or MEDIUM verdicts, keydetect is right on 73 %, and right or a near miss (a fifth or the relative key) on 88 %. The pale part of a bar is those near misses, which still pair fine for a mashup.',

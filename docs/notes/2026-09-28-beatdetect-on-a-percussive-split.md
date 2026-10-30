@@ -1,11 +1,11 @@
 # beatdetect on a percussive split (HPSS) instead of a drum stem
 
-*Note, 2026-09-28, frozen. For [#68](https://github.com/Bamo16/crateside/issues/68) and Fil. Measured
-on this machine with Fil's reworked `beatdetect` (`3f1b218`), CPU only, on the same 23 songs as
+*Note, 2026-09-28, frozen. For [#68](https://github.com/Bamo16/crateside/issues/68) and FiLL. Measured
+on this machine with FiLL's reworked `beatdetect` (`3f1b218`), CPU only, on the same 23 songs as
 [the drum-stem note](2026-09-27-beatdetect-on-drum-stems.md) (picked across the old build's error
 types, so harder than average).*
 
-**The question** (the user's): Fil's `stemsplit` runs Spleeter's 2-stem model inside ffmpeg. Would a
+**The question** (the user's): FiLL's `stemsplit` runs Spleeter's 2-stem model inside ffmpeg. Would a
 cheap, leaky drum isolation be enough to help `beatdetect`, given that analysis tolerates bleed that a
 mashup stem could not?
 

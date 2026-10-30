@@ -16,7 +16,7 @@ The weekly totals and all key-detector figures are the brief's measured numbers.
    remembered per section (local storage is enough). No widget grid.
 2. **The landing page, and the first tab.** Tabs: **Dashboard · Tracks · Tools · Settings**. `/`
    opens it, and the brand link in the header goes to it (it went to Tracks).
-3. **Named Dashboard.** Route `/dashboard`. The user asked for **no** `/counts` or `/library`
+3. **Named Dashboard.** Route `/dashboard`, with **no** `/counts` or `/library`
    aliases: drop them.
 4. **Live.** *Your turn* and *Working now* update as stages move, over the same push the Tracks
    header uses. *Over time* updates when a stage ends. *The library* is read on load and by
@@ -142,7 +142,7 @@ is right on 78 %…".
 
 Two tables side by side (1.25fr 1fr, gap 40px):
 
-**Accuracy**: Detector (name in mono, with a gist under it: *Fil's ffmpeg filter*, *python*) · a
+**Accuracy**: Detector (name in mono, with a gist under it: *FiLL's ffmpeg filter*, *python*) · a
 **split bar** (the tempo panel's house style: the full bar is right or close at teal 35%, and the
 solid part from the left is right) · Right % · Close %.
 

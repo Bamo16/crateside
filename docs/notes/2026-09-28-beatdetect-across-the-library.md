@@ -1,8 +1,8 @@
 # beatdetect across the library, and Ableton's transients as a second reference
 
 *Note, 2026-09-28, frozen. For [#68](https://github.com/Bamo16/crateside/issues/68). Measured on this
-machine: both `beatdetect` builds (PATH's pre-rework NoMercy build, and Fil's `3f1b218`) on every
-warped library instrumental, CPU only. The write-up for Fil is
+machine: both `beatdetect` builds (PATH's pre-rework NoMercy build, and FiLL's `3f1b218`) on every
+warped library instrumental, CPU only. The write-up for FiLL is
 `%USERPROFILE%\Music\Stems\BPM Corpus\for-fil\beatdetect-on-a-warped-library-2026-09-28.md`.*
 
 ## Ground truth, and how far to trust it
