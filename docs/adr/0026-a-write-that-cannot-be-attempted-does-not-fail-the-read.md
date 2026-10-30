@@ -63,7 +63,7 @@ through `WriteAccess`, which is where it belongs.
 
 - With a lapsed token and `consumeOnArrival` on, draining continues. Entries accumulate in the
   playlist, unremoved and still offerable, and are consumed on the first scan after re-consent.
-- The two entries #34 measured — `Light Years Away` and `Look On Down From The Bridge` — are **not**
+- The two entries #34 measured — Oliver – *Light Years Away* and Mazzy Star – *Look On Down From The Bridge* — are **not**
   freed by this. They were marked on 2026-09-17 and this only clears marks at the moment a lapse is
   caught. Freeing them is a one-off, and it is worth knowing which of the 60 marked entries are
   genuinely stranded before touching any of them.
