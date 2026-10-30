@@ -174,7 +174,7 @@ Two things this ADR left open are now measured and closed:
 
 ## Alternatives considered
 
-**EF Core.** The user asked. Rejected: crateside neither owns this schema nor writes it, so a
+**EF Core.** Asked for. Rejected: crateside neither owns this schema nor writes it, so a
 model, a migration story and a change tracker would all be dead weight over four columns of a
 read-only query.
 

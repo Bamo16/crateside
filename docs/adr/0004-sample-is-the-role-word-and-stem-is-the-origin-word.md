@@ -12,7 +12,7 @@ production, which is too broad to be useful. Use **Track** for source material a
 a separated part. `Sample Staging` and `Mashup Samples` keep the word only because they are
 existing folder names on disk."* The folder names were treated as legacy baggage.
 
-They were not. The user chose that word deliberately, and the breadth is the point: what lands
+They were not. That word was chosen deliberately, and the breadth is the point: what lands
 in those folders is not always a separated part.
 
 **Stem** describes how a file was made. The board needs to know what a file is *for*, and those
@@ -99,8 +99,8 @@ policy, and crateside's policy is to expect the usual vocal and instrumental pai
 This ADR says a warp guide "is never tagged and never mixed". **The first half is not true, and
 that is deliberate rather than a lapse.** crateside tags one with the key and no type — the
 mapping `TaggingRunner.KeywordsFor` was read off the user's own library, where every drums entry
-in staging already carried a key — and the user confirmed on 2026-09-02 that this is what they
-want: so the key reads sensibly on the rare occasion a drum stem is selected in Ableton's
+in staging already carried a key — and it was confirmed on 2026-09-02 that this is what is
+wanted: so the key reads sensibly on the rare occasion a drum stem is selected in Ableton's
 browser, and so the library is consistent. Never *mixed* still holds.
 
 Found by noticing `Rob Dougan - Furious Angels (Drums).flac` carrying `Key|C` and `Key|Minor`,

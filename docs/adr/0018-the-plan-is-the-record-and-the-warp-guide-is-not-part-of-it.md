@@ -65,7 +65,7 @@ the line stays pinned — the reason is retention, not how the file is produced.
   guarding against arrives anyway, by a different door.
 - **Infer `has_vocals` from the plan and label it an inference.** Rejected: nothing consumes it, so
   the only effect is a nullable field every future reader has to be told to ignore.
-- **Offer an "instrumental release" shortcut in the picker.** Rejected by the user: it reaches
+- **Offer an "instrumental release" shortcut in the picker.** Rejected: it reaches
   today's behavior with no special mode, and keeping the control simple is worth more.
 
 ## Consequences

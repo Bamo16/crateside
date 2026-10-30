@@ -110,8 +110,8 @@ drain loop would block the thread rather than reach anyone, which is why
 
 ## The form — 2026-09-24
 
-Built for [#44](https://github.com/Bamo16/crateside/issues/44), while the user was away. The
-calls below were taken as defaults and are for their review:
+Built for [#44](https://github.com/Bamo16/crateside/issues/44). The calls below were taken as
+defaults, open to revision:
 
 - **Adopted where it is.** The file is written in whichever root it is in. A finished file in
   `Mashup Samples` is not routed back through staging, which would move a warped file for nothing.
