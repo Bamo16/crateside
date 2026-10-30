@@ -7,6 +7,7 @@ public sealed class KeyStripTests
     private const double Seconds = 200;
 
     private static readonly TonalCenter BMinor = new("B", DiatonicMode.Aeolian);
+    private static readonly TonalCenter DMajor = new("D", DiatonicMode.Ionian);
     private static readonly TonalCenter ADorian = new("A", DiatonicMode.Dorian);
     private static readonly TonalCenter EMinor = new("E", DiatonicMode.Aeolian);
     private static readonly TonalCenter CLydian = new("C", DiatonicMode.Lydian);
@@ -123,5 +124,54 @@ public sealed class KeyStripTests
 
         Assert.Equal("0-200 A Dor", Drawn(plan));
         Assert.Equal([bridge], plan.Unplaced);
+    }
+
+    [Fact]
+    public void A_section_with_a_start_ends_where_a_primary_section_starts()
+    {
+        var run = Run(DMajor, [new("Verse", BMinor, 0), new("Chorus", DMajor, 71.55)]);
+
+        Assert.Equal(
+            "0-72 Verse · B min | 72-200 Chorus · D maj",
+            Drawn(KeyStrip.Plan(run, Seconds))
+        );
+    }
+
+    [Fact]
+    public void The_primary_fill_after_a_boundary_takes_the_label_of_the_primary_section_there()
+    {
+        var run = Run(
+            DMajor,
+            [
+                new("Intro", DMajor),
+                new("Verse", BMinor, 10),
+                new("Chorus", DMajor, 70),
+                new("Bridge", CLydian, 120),
+                new("Outro", DMajor, 150),
+            ]
+        );
+
+        Assert.Equal(
+            "0-10 Intro · D maj | 10-70 Verse · B min | 70-120 Chorus · D maj | 120-150 Bridge · C Lyd | 150-200 Outro · D maj",
+            Drawn(KeyStrip.Plan(run, Seconds))
+        );
+    }
+
+    [Fact]
+    public void A_window_keeps_its_own_span_when_a_primary_section_starts_inside_it()
+    {
+        Section chorus = new("chorus", EMinor);
+        RunWindow window = new(60, 90, "chorus", WindowAsker.User);
+        var run = Run(
+            ADorian,
+            [new("verse", ADorian, 0), new("hook", ADorian, 70), chorus],
+            [window],
+            [new(window, [], null, chorus)]
+        );
+
+        Assert.Equal(
+            "0-60 verse · A Dor | 60-90 chorus · E min | 90-200 hook · A Dor",
+            Drawn(KeyStrip.Plan(run, Seconds))
+        );
     }
 }

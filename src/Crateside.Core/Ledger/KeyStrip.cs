@@ -33,8 +33,9 @@ public static class KeyStrip
 
     /// <summary>
     /// A section that came from a window takes the window's span, one with a start runs to the next
-    /// boundary, the primary center fills everything else, and a section with neither is named,
-    /// never drawn.
+    /// start of any section (the primary's included) or window, the primary center fills everything
+    /// else under the label of the primary section starting there, and a section with neither is
+    /// named, never drawn.
     /// </summary>
     public static KeyStripPlan Plan(RunEvidence run, double seconds)
     {
@@ -42,6 +43,12 @@ public static class KeyStrip
             return new([], []);
 
         var primaryLabel = run.Sections.FirstOrDefault(section => section.Center == primary)?.Label;
+        var primaryStarts = run
+            .Sections.Where(section => section.Center == primary)
+            .Where(section => section.Start is not null)
+            .OrderBy(section => section.Start)
+            .Select(section => (section.Start, section.Label))
+            .ToList();
         var others = run.Sections.Where(section => section.Center != primary).ToList();
 
         if (others is [])
@@ -78,6 +85,11 @@ public static class KeyStrip
                         ?? found
                             .Where(other => other.Start > placed.Start)
                             .Select(other => other.Start)
+                            .Concat(
+                                primaryStarts
+                                    .Where(primaryStart => primaryStart.Start > placed.Start)
+                                    .Select(primaryStart => primaryStart.Start!.Value)
+                            )
                             .DefaultIfEmpty(seconds)
                             .Min(),
                     seconds
@@ -96,15 +108,19 @@ public static class KeyStrip
         foreach (var band in drawn)
         {
             if (band.Start > cursor)
-                bands.Add(new(cursor, band.Start, primary, primaryLabel, false));
+                bands.Add(new(cursor, band.Start, primary, PrimaryLabelAt(cursor), false));
 
             bands.Add(band);
             cursor = Math.Max(cursor, band.End);
         }
 
         if (cursor < seconds)
-            bands.Add(new(cursor, seconds, primary, primaryLabel, false));
+            bands.Add(new(cursor, seconds, primary, PrimaryLabelAt(cursor), false));
 
         return new(bands, unplaced);
+
+        string? PrimaryLabelAt(double at) =>
+            primaryStarts.LastOrDefault(primaryStart => primaryStart.Start <= at).Label
+            ?? primaryLabel;
     }
 }
