@@ -1,11 +1,11 @@
 # beatdetect: weighted mixes, pooled parts, and telling an unsteady tempo
 
-*Note, 2026-09-28, frozen. For [#68](https://github.com/Bamo16/crateside/issues/68) and Fil. Measured
-on this machine with Fil's reworked `beatdetect` (`3f1b218`), CPU only. Follows
+*Note, 2026-09-28, frozen. For [#68](https://github.com/Bamo16/crateside/issues/68) and FiLL. Measured
+on this machine with FiLL's reworked `beatdetect` (`3f1b218`), CPU only. Follows
 [the beat-grid note](2026-09-28-beatdetect-beat-grid-against-the-warps.md) of the same day; the
 first two parts use its 23 songs and comparison.*
 
-Three things tried before asking Fil for a filter that takes several drum stems at once.
+Three things tried before asking FiLL for a filter that takes several drum stems at once.
 
 ## Weighted mixes of the parts
 

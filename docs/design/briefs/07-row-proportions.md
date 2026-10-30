@@ -70,7 +70,7 @@ kept the list as it was (recorded under "Differs from the design" in `DESIGN.md`
 
 ## 2. Genre from the collapsed row (carried over from #62)
 
-The user asked for this on #62 after seeing the backlog. It never reached brief 06, so handoff 06
+This was decided on #62 after seeing the backlog. It never reached brief 06, so handoff 06
 does not cover it.
 
 Measured on 2026-09-25: **322 named songs** have no genre answer, **280** of them with a

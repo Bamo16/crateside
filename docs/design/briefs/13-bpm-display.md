@@ -25,7 +25,7 @@ Rounding was right when the detectors were rough. They no longer are. Crateside 
 anyone warps a track, whether its tempo is 128.00 or 128.02, and nearly a third of the user's steady
 warps are not whole numbers.
 
-## What the user wants, condensed
+## What was asked for, condensed
 
 - **A BPM read at a glance says what it means about the track.** If `150` sometimes means
   "measured exactly" and sometimes "roughly", it can never be trusted to mean the first. So a bare

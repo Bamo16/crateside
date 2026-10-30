@@ -28,11 +28,11 @@ The user's direction, in short:
 
 ## The detector panel was a misunderstanding
 
-When the user asked for detector analytics, he meant the **key** detectors. The BPM panel
+The detector analytics asked for were the **key** detectors. The BPM panel
 (*Detectors against the warps*) is fine and stays, but a **key-detector panel** is what he wanted.
-The figures are the ones he put together for Fil, who maintains ffmpeg's `keydetect`.
+The figures are the ones put together for FiLL, who maintains ffmpeg's `keydetect`.
 
-crateside runs three key detectors on every track: **keydetect** (Fil's ffmpeg filter), **crema**
+crateside runs three key detectors on every track: **keydetect** (FiLL's ffmpeg filter), **crema**
 and **librosa**. It then hands their results, keydetect's chord list, and web sources to a Claude
 agent, which gives the verdict and a confidence. Measured 2026-09-28 on the keytag ledger, latest
 run per song:
@@ -54,7 +54,7 @@ or a relative key is harmonically close, so for a mashup it is a near miss, not 
 | no reading | 0 | 10 | 0 |
 
 The **30 songs where all three detectors are wrong** are where the Claude verdict earns its place.
-They are also test cases the user wants to add to Fil's corpus, so a way to see that list (and copy
+They are also test cases the user wants to add to FiLL's corpus, so a way to see that list (and copy
 it, as the BPM panel's bands already allow) is useful.
 
 ## What the page holds today

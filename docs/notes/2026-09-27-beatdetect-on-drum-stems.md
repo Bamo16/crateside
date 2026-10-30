@@ -1,8 +1,8 @@
 # beatdetect on drum stems, against the warps
 
-*Note, 2026-09-27, frozen. For [#68](https://github.com/Bamo16/crateside/issues/68) and Fil. Measured
+*Note, 2026-09-27, frozen. For [#68](https://github.com/Bamo16/crateside/issues/68) and FiLL. Measured
 on this machine with the **pre-rework** `beatdetect` (ffmpeg `8.1.2-NoMercy-MediaServer`: one BPM,
-no confidence). Fil's rework of 2026-09-06 is not in this build.*
+no confidence). FiLL's rework of 2026-09-06 is not in this build.*
 
 ## What was run
 

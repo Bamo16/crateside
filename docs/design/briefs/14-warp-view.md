@@ -28,7 +28,7 @@ Today all the user sees of this is one phrase in the sample list on Track detail
 *Sample Staging · warped from Instrumental - Clean*. There is no way to see the warp itself, or to
 undo what crateside wrote, without opening Live.
 
-## What the user wants, condensed
+## What was asked for, condensed
 
 - **See each stem's warp the way Ableton shows it**, on Track details, without opening Live.
 - **Know whose warp it is**: Live's, the user's own, or crateside's, and if crateside's, borrowed
