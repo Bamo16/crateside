@@ -190,15 +190,16 @@ public sealed class BeatReadingTests
     [Fact]
     public void A_kept_source_used_as_the_instrumental_is_read_too()
     {
-        var paths = RealPaths.Create();
+        const string Name = "Darude - Sandstorm (Radio Edit).flac";
+        var library = RealPaths.Library();
         Assert.SkipUnless(
-            Directory.Exists(paths.LibraryFolder),
-            $"{paths.LibraryFolder} not present."
+            Directory.EnumerateFiles(library, Name, SearchOption.AllDirectories).Any(),
+            $"{Name} is not in the library on this machine."
         );
 
         Assert.Contains(
-            BeatReader.Instrumentals(paths, new FolderInfoReader()),
-            file => Path.GetFileName(file) == "Darude - Sandstorm (Radio Edit).flac"
+            BeatReader.Instrumentals(RealPaths.Create(), new FolderInfoReader()),
+            file => Path.GetFileName(file) == Name
         );
     }
 
