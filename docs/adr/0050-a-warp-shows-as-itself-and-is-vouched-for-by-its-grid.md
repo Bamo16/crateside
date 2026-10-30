@@ -13,7 +13,7 @@ snapped warp lands at 128.002.
 
 The user rejected it on 2026-10-02: crateside's analysis is now accurate enough to say what a warp
 is, and the snap replaces that with a guess that the producer used a round number, made on no
-evidence about the track. It also hides warps that are off. *Blow the Whistle* was typed at 100 and
+evidence about the track. It also hides warps that are off. Too $hort – *Blow the Whistle* was typed at 100 and
 is 99.98; a warp in #96 shows `180` while running at 179.983, drifting about 23 ms over four
 minutes (#91, [note](../notes/2026-10-02-the-six-warps-in-91.md)).
 
