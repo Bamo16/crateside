@@ -1,12 +1,12 @@
 # Radiohead – Creep: a hand-warped drifting track
 
-2026-09-29. The first track the drift flag (#75) caught that the user then warped by hand. Kept as
+2026-09-29. The first track the drift flag (#75) caught, then warped by hand. Kept as
 a drifting example for FiLL's beatdetect work (#83).
 
-## How it was warped (the user, from memory, the same day)
+## How it was warped (by hand, the same day)
 
-"It is one of the more inconsistent ones I've come across. Only stays with the metronome for a bar
-or so before I need to add another marker without fail."
+One of the more inconsistent tracks: it stays with the metronome for a bar or so before another
+marker is needed without fail.
 
 - A marker on the first beat of the song.
 - Then one on **every snare, beats 2 and 4**.

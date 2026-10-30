@@ -1,6 +1,6 @@
 # beatdetect: weighted mixes, pooled parts, and telling an unsteady tempo
 
-*Note, 2026-09-28, frozen. For [#68](https://github.com/Bamo16/crateside/issues/68) and FiLL. Measured
+*Note, 2026-09-28, frozen. For [#68](https://github.com/Bamo16/crateside/issues/68). Measured
 on this machine with FiLL's reworked `beatdetect` (`3f1b218`), CPU only. Follows
 [the beat-grid note](2026-09-28-beatdetect-beat-grid-against-the-warps.md) of the same day; the
 first two parts use its 23 songs and comparison.*
@@ -43,7 +43,7 @@ winning class takes its octave from the drum stem's candidates.
 
 ## Telling an unsteady tempo
 
-What the user wants from an inconsistent track is only *that* it is inconsistent. Measured on all
+What is wanted from an inconsistent track is only *that* it is inconsistent. Measured on all
 429 warped library instrumentals (no drum stems), against crateside's shape from the warp. 418 could
 be scored (three or more windows in one octave): 361 steady, 22 steady with changes, 35 unsteady.
 

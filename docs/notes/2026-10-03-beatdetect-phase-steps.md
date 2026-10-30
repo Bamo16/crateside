@@ -1,6 +1,6 @@
 # beatdetect's phase steps, against the library (2026-10-03)
 
-FiLL built the per-window phase check suggested after Lil Jon & The East Side Boyz, Ying Yang Twins – *Get Low* (beatdetect branch
+FiLL built the per-window phase check prompted by Lil Jon & The East Side Boyz, Ying Yang Twins – *Get Low* (beatdetect branch
 `feat/phase-step-detection`, commit `62bdb97`, version 1.2.0 unreleased): `phase_stepN`,
 `phase_bpm` and `phase_noise_ms`. Built locally for Windows and run on every Mashup Samples
 instrumental whose saved warp is a single marker (388), and the 13 kept drum stems whose
