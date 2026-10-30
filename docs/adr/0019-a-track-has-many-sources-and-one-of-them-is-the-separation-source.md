@@ -88,7 +88,7 @@ stops forbidding it.
 
 **Local files remain unsolved and out of scope.** Every reader joins on the provenance
 `stemforge-cli download` writes, and a local file has none. Two files in the library are already
-in that state — 아야츠노 유니 (Ayatsuno Yuni) – *SUPADOPA* and *The Mandalorian* — and they are what the
+in that state — `SUPADOPA (Official Instrumental)` and `The Mandalorian` — and they are what the
 problem looks like.
 
 ## The kept source is the download stage's too — 2026-09-13
