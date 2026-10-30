@@ -44,7 +44,7 @@ nothing is outstanding. Separation (GPU) and judging (paid tokens) can be paused
 6. **Stage** the stems in your Staging folder, which Ableton's browser shows, and **tag** each with
    its key in the folder's tag store.
 7. **Warp.** A steady-tempo track gets a *starter warp*: crateside reads the tempo and downbeat
-   with FiLL's `beatdetect` filter, fits the tempo to the stem's transients, and writes Live's
+   with NoMercy's `beatdetect` ffmpeg filter, fits the tempo to the stem's transients, and writes Live's
    `.asd` sidecar so the stems open on the grid, bars on the downbeats. Each stem's clip gain is
    set to one loudness target, and its Collection in Live's browser says what is left to check.
    [docs/starter-warps.md](docs/starter-warps.md) has the whole procedure.
@@ -70,7 +70,7 @@ hand before crateside, step by step.
 A wrong key is worse than no key, because samples are paired by key. So the key is judged, not
 read off one detector.
 
-- **Three detectors.** FiLL's [`keydetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-keydetect)
+- **Three detectors.** NoMercy's [`keydetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-keydetect)
   ffmpeg filter is the primary: a key, its runner-up, a chord stream and a running key estimate.
   Two backers run in-process on the CPU: [madmom](https://github.com/CPJKU/madmom)'s key CNN as an
   ONNX model, and a port of [Essentia](https://essentia.upf.edu/)'s `edma` key profile.
@@ -120,9 +120,10 @@ subscription each track costs about 37k tokens of session start-up, and backgrou
 - **Ableton Live**, with a Staging folder and a library folder, both chosen in Settings.
 - **[StemForge](https://github.com/Bamo16/StemForge)'s `stemforge-cli` on `PATH`**, set up for
   separation, and a GPU for it to use.
-- **An ffmpeg build carrying FiLL's [`keydetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-keydetect)
-  and [`beatdetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-beatdetect) filters**, built
-  from those repos. crateside uses the `ffmpeg` on `PATH`, or the builds named by
+- **An ffmpeg build carrying NoMercy's `keydetect` and `beatdetect` filters**: the
+  [NoMercy FFmpeg](https://github.com/NoMercy-Entertainment/nomercy-ffmpeg) build, whose filter
+  sources are [`ffmpeg-keydetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-keydetect) and
+  [`ffmpeg-beatdetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-beatdetect). crateside uses the `ffmpeg` on `PATH`, or the builds named by
   `Paths:KeydetectFfmpeg` and `Paths:BeatdetectFfmpeg`, and pins the first build it sees for each
   filter in `%APPDATA%\crateside\builds.json`
   ([ADR 0066](docs/adr/0066-keydetect-has-its-own-pinned-build.md)).
@@ -192,8 +193,8 @@ those are absent.
   [AbleKit](https://github.com/Bamo16/AbleKit), from [NuGet](https://www.nuget.org/packages/AbleKit),
   reads and writes Ableton's files. Both are the maintainer's.
 - [FiLL](https://forgejo.phillippepelzer.me/FiLL) wrote the `keydetect` and `beatdetect` ffmpeg
-  filters. He and [StoneyEagle](https://github.com/StoneyEagle) build the NoMercy ffmpeg that
-  carries them.
+  filters. He and [StoneyEagle](https://github.com/StoneyEagle) build
+  [NoMercy's ffmpeg](https://github.com/NoMercy-Entertainment/nomercy-ffmpeg), which carries them.
 - madmom's key model is by Filip Korzeniowski and Gerhard Widmer
   ([madmom_models](https://github.com/CPJKU/madmom_models)); the `edma` profile is Essentia's.
 - Hooktheory, Musicnotes and Ultimate Guitar are read for the human sources; MusicBrainz, Deezer and
