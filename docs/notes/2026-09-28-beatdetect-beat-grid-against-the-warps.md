@@ -65,14 +65,15 @@ those. Every row is in `offsets.tsv`, kick, snare and hi-hat included.
 ## Observations
 
 - **The warps are on the onsets.** The summed drum stem's onsets peak within 5 ms of the warp beat on
-  16 of 23 songs and within 16 ms on 20. On *What You Know* (+13) and *Where The Hood At* (−14)
+  16 of 23 songs and within 16 ms on 20. On T.I. – *What You Know* (+13) and DMX – *Where The Hood At* (−14)
   every part agrees, so the marker sits a little off the transients rather than the audio being odd.
 - **The snare marks the beat most reliably.** Its onsets are within 20 ms of the warp beat on all 23,
   within 7 ms on 19, and never on the half-beat. The summed kit peaks near the half-beat on 3 songs
-  (*Shake It Off*, *Queendom*, *Forgot About Dre*), the kick alone on 6, the hi-hat on 8.
+  (Taylor Swift – *Shake It Off*, Awich – *Queendom*, Dr. Dre, Eminem – *Forgot About Dre*), the kick alone on 6, the hi-hat on 8.
 - **beatdetect finds the beat on 17 of the 20 drum stems whose tempo it gets.** The three it misses by
-  about half a beat: *Spicy*, where it follows the kick (kick +259 ms, grid +258); *Anna Sun*; and
-  *Fancy*, read at half tempo. **All three are on the beat in the window** (drums: +1, −4 and −27 ms).
+  about half a beat: aespa – *Spicy*, where it follows the kick (kick +259 ms, grid +258); WALK THE
+  MOON – *Anna Sun*; and Iggy Azalea, Charli XCX – *Fancy*, read at half tempo. **All three are on the
+  beat in the window** (drums: +1, −4 and −27 ms).
   By the user's ear, *Spicy*'s beat is unconventional, *Fancy*'s sparse, and *Anna Sun* has long
   stretches with no drums or only an off-beat snare: consistent with those sections pulling a
   whole-file fit onto the off-beat, not checked section by section.
@@ -83,9 +84,9 @@ those. Every row is in `offsets.tsv`, kick, snare and hi-hat included.
 - **The window does better than the whole file** at the marker (median absolute 7.3 ms against 16.4
   on the drums), plausibly because a grid fitted to 90 s drifts less than one fitted to the song.
 - **Tempo precision limits a whole-song grid.** On same-tempo readings the BPM is off by a median
-  0.02 and at most 0.05 (drums, whole), which drifts up to 104 ms across a song (*Language*,
+  0.02 and at most 0.05 (drums, whole), which drifts up to 104 ms across a song (Porter Robinson – *Language*,
   128.05 against 128.00). A one-marker warp needs the tempo to about 0.01 or better
-  (*Ready Steady Go*: 128.02 against 128.00 was the difference). `beat_interval_ms` carries more
+  (Paul Oakenfold, Asher D – *Ready Steady Go*: 128.02 against 128.00 was the difference). `beat_interval_ms` carries more
   precision than the two-decimal `bpm`.
 
 ## For placing a marker (#72)

@@ -53,13 +53,15 @@ The octave is the user's call (ADR 0038, amended): *½ or ×2* is ambiguous, not
 
 ## Observations
 
-- **A drum stem fixed 3 of the 9 triplet/dotted misses** in the window (*Superbeast*,
-  *Bling-Bang-Bang-Born*, *Spicy*). The instrumental alone fixed 2 of those, so removing vocals does
-  some of the work. Six stayed at ×2/3 or ×3/4.
-- **Window against whole file disagrees often**, in both directions: *Superbeast* is exact only in
-  the window, *At the River* and *White Flag* only on the whole file.
+- **A drum stem fixed 3 of the 9 triplet/dotted misses** in the window (Rob Zombie – *Superbeast*,
+  Creepy Nuts – *Bling-Bang-Bang-Born*, aespa – *Spicy*). The instrumental alone fixed 2 of those, so
+  removing vocals does some of the work. Six stayed at ×2/3 or ×3/4.
+- **Window against whole file disagrees often**, in both directions: Rob Zombie – *Superbeast* is exact
+  only in the window, Groove Armada – *At the River* and Delta Heavy – *White Flag* only on the whole
+  file.
 - **Leading and trailing silence matters sometimes.** Trimming it (`silenceremove`, −50 dB) turned
-  *Superbeast*'s whole-file 102.32 into 153.78 (warped 154) and left three others unchanged.
+  Rob Zombie – *Superbeast*'s whole-file 102.32 into 153.78 (warped 154) and left three others
+  unchanged.
 - **The build reports from a coarse grid**: 414 ledger readings hold 162 distinct values, about
   0.8 BPM apart near 128.
 - **Its full-mix readings never exceed 163.11** in the ledger, and bottom out at 80.00 (ten times).
