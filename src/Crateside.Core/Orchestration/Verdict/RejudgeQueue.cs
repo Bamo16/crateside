@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
 using Microsoft.Extensions.Options;
@@ -13,21 +12,16 @@ namespace Crateside.Core.Orchestration.Verdict;
 public sealed class RejudgeQueue
 {
     private readonly string _path;
-    private readonly IReadOnlyList<RejudgeEntry> _seed;
     private readonly Lock _gate = new();
 
     private List<RejudgeEntry>? _entries;
 
     public RejudgeQueue(IOptions<CratesidePaths> paths)
-        : this(paths.Value.RejudgeFile, ReadSeed()) { }
+        : this(paths.Value.RejudgeFile) { }
 
-    internal RejudgeQueue(string path, IReadOnlyList<RejudgeEntry> seed)
-    {
-        _path = path;
-        _seed = seed;
-    }
+    internal RejudgeQueue(string path) => _path = path;
 
-    /// <summary>Every song ever queued, the shipped seed included. Never throws: an unreadable file reads as only the seed.</summary>
+    /// <summary>Every song ever queued. Never throws: an unreadable file reads as empty.</summary>
     public IReadOnlyList<RejudgeEntry> Read()
     {
         lock (_gate)
@@ -78,28 +72,11 @@ public sealed class RejudgeQueue
                 .OfType<LedgerRun>(),
         ];
 
-    // Seeding is idempotent by song: a song already in the file is never added again, and one
-    // re-judged since its cutoff is not pending whether or not its entry is still there.
-    private List<RejudgeEntry> Load()
-    {
-        if (_entries is not null)
-            return _entries;
-
-        var entries = RejudgeJsonContext.Default.RejudgeFile.ReadFileOrDefault(_path)?.Songs
+    private List<RejudgeEntry> Load() =>
+        _entries ??= RejudgeJsonContext.Default.RejudgeFile.ReadFileOrDefault(_path)?.Songs
             is { } held
             ? [.. held]
-            : new List<RejudgeEntry>();
-        var missing = _seed
-            .Where(seed => !entries.Exists(entry => Same(entry.Song, seed.Song)))
-            .ToList();
-
-        entries.AddRange(missing);
-
-        if (missing is not [])
-            Save(entries);
-
-        return _entries = entries;
-    }
+            : [];
 
     private void Save(List<RejudgeEntry> entries)
     {
@@ -115,15 +92,6 @@ public sealed class RejudgeQueue
 
     private static bool Same(string left, string right) =>
         left.Equals(right, StringComparison.OrdinalIgnoreCase);
-
-    private static IReadOnlyList<RejudgeEntry> ReadSeed()
-    {
-        using var stream = typeof(RejudgeQueue).Assembly.GetManifestResourceStream(
-            "rejudge-seed.json"
-        )!;
-
-        return JsonSerializer.Deserialize(stream, RejudgeJsonContext.Default.RejudgeFile)!.Songs;
-    }
 }
 
 public sealed record RejudgeEntry

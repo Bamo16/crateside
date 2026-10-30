@@ -25,10 +25,6 @@
             LogicalName="judge-prompt.md"
         />
         <EmbeddedResource
-            Include="Orchestration\Verdict\rejudge-seed.json"
-            LogicalName="rejudge-seed.json"
-        />
-        <EmbeddedResource
             Include="KeyDetection\Madmom\key-cnn.onnx"
             LogicalName="madmom-key-cnn.onnx"
         />
