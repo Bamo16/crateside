@@ -207,7 +207,7 @@ their presence does not conflict with it. This is now the chosen design.
 **Cowork routines for the scheduled half.** Attractive because routines draw on a
 separate daily allowance the user is not otherwise spending. Rejected on a hard
 constraint: **routines execute remotely**, and every input and output of this workflow
-is a local file — the GPU, `P:\RYAN\Ableton\*`, the keytag ledger, `localhost`.
+is a local file — the GPU, the Ableton library folders, the keytag ledger, `localhost`.
 Bridging that would mean exposing a deliberately local personal tool to the network.
 The premise also self-defeats: routines exist to run while the machine sleeps, but
 evidence production requires the machine awake.

@@ -64,9 +64,9 @@ probably the ride-cymbal section (hypothesis: the section's times were not taken
 
 ## Files
 
-- `P:\RYAN\Ableton\Mashup Samples\Radiohead - Creep (Instrumental - Full).flac` and `(Vocal - Full)`,
+- `<Library>\Radiohead - Creep (Instrumental - Full).flac` and `(Vocal - Full)`,
   warped.
-- `P:\RYAN\Ableton\Sample Staging\Radiohead - Creep (Drums).flac`, the AI drum stem, warped with
+- `<Staging>\Radiohead - Creep (Drums).flac`, the AI drum stem, warped with
   the same markers, left in staging by the user for this purpose. crateside never deletes a warp
   guide itself; the row keeps asking for it to be deleted while it is there.
 - An HPSS split of Creep is in `%USERPROFILE%\Music\Stems\HPSS Guide Test\` (#83).

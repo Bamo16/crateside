@@ -111,7 +111,7 @@ point at the session scratch they were made in). The full-mix comparison is besi
 ## The reworked filter (added the same evening)
 
 Built from `FiLL/ffmpeg-beatdetect` at `3f1b218` (2026-09-06 rework) with his `dev.sh` in Docker,
-`TARGET=windows`, into `V:/Repos/ffmpeg-beatdetect/out/ffmpeg.exe`. Default options
+`TARGET=windows`, into the `ffmpeg-beatdetect` checkout's `out/ffmpeg.exe`. Default options
 (`tempo_prior=none`). Every stem above plus each song's library instrumental re-scored the same way;
 `rescore-3f1b218.tsv` beside the stems has every reading, old and new.
 

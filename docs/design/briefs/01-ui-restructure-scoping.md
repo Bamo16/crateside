@@ -4,7 +4,7 @@
 **Not:** an implementation plan. The pipeline underneath is finished and working; this is
 about what the user looks at.
 
-Repository: `V:\Repos\crateside`. Runs locally at `http://localhost:5027`.
+Repository: crateside (this repo). Runs locally at `http://localhost:5027`.
 
 ---
 
@@ -15,7 +15,7 @@ user's Ableton library. It runs a five-stage pipeline unattended:
 
 **evidence → verdict → separation → handoff → tagging**
 
-The domain vocabulary is defined in `CONTEXT.md` (crateside) and `V:\Repos\keytag\CONTEXT.md`
+The domain vocabulary is defined in `CONTEXT.md` (crateside) and keytag's `CONTEXT.md`
 (shared terms: *track*, *stem*, *sample*, *warp guide*, *Sample Staging*, *Mashup Samples*,
 *fully processed*). **Read those before designing — the words are load-bearing and the user
 cares about them.** Decisions and their measurements live in `docs/adr/`.
@@ -209,7 +209,7 @@ Design should not solve these, but should not make them awkward either:
 
 Read these rather than asking for a summary:
 
-- `CONTEXT.md` — crateside's vocabulary; `V:\Repos\keytag\CONTEXT.md` — shared terms.
+- `CONTEXT.md` — crateside's vocabulary; keytag's `CONTEXT.md` — shared terms.
 - `CLAUDE.md` — working agreements. Note especially: **measure before recording**, and do not
   run the app with `dotnet watch` while editing.
 - `docs/adr/0003-*.md` — Ableton tag store, and what was measured about it.

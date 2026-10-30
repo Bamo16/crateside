@@ -153,7 +153,7 @@ browser, which is where the filtering happens. Still worth doing one day; not a 
 - **Untested: file removal.** Adding a file was covered (finding 6); removing one, and the
   user's report that emptying a folder deletes the XMP entirely, were not. crateside
   already treats an absent XMP as an ordinary empty state, so the risk is low.
-- The test folder `P:\RYAN\Ableton\Crateside XMP Test` and its five `XMPTEST-*.flac` files
+- The test folder `Crateside XMP Test` and its five `XMPTEST-*.flac` files
   exist only for this and should be deleted, and the watched folder removed in Ableton.
 
 ## Postscript
