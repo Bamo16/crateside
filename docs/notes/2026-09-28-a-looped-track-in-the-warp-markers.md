@@ -3,7 +3,7 @@
 *Note, 2026-09-28, frozen. For [#68](https://github.com/Bamo16/crateside/issues/68). Measured from
 the warp's own markers; no audio analyzed.*
 
-The user's hypothesis about *Cypress Hill – Hits from the Bong* (owned): the backing is a drum loop a
+The hypothesis about *Cypress Hill – Hits from the Bong* (owned): the backing is a drum loop a
 human played, repeated through the song, with hits far enough off the grid that the warp needed
 markers to correct them.
 
