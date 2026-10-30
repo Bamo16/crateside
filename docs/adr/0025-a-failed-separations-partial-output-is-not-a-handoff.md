@@ -80,7 +80,7 @@ cut root at that point for the handoff to take.
 
 The decision above says the retry "produces the rest and the handoff moves a complete set", and
 that **was wrong for the very track it was written about.** Tested rather than reasoned about, once
-the user reported that the fix left them with no way forward.
+the fix left the user with no way forward.
 
 Moe Shop – *HARDCODED* was reachable from nowhere:
 
