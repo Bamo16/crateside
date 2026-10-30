@@ -745,6 +745,72 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.Empty(Ledger.Read().Runs);
     }
 
+    [Theory]
+    [InlineData(
+        """{"type":"result","subtype":"success","is_error":true,"num_turns":1,"duration_ms":412,"api_error_status":429,"result":"API Error: Request rejected (429) · DeepSeek rate limit: Messages too frequent. Try again later."}""",
+        "reported its rate limit"
+    )]
+    [InlineData(
+        """{"type":"result","subtype":"success","is_error":true,"num_turns":1,"duration_ms":38211,"api_error_status":529,"result":"API Error: Repeated 529 Overloaded errors"}""",
+        "is overloaded"
+    )]
+    [InlineData(
+        """{"type":"result","subtype":"success","is_error":true,"num_turns":1,"duration_ms":1207,"api_error_status":503,"result":"API Error: 503 {\"type\":\"error\",\"error\":{\"type\":\"api_error\",\"message\":\"upstream unavailable\"}}"}""",
+        "failed with HTTP 503"
+    )]
+    [InlineData(
+        """{"type":"result","subtype":"success","is_error":true,"num_turns":1,"duration_ms":600000,"api_error_status":null,"result":"API Error: Request timed out."}""",
+        "answered \"API Error: Request timed out.\""
+    )]
+    public async Task A_session_the_endpoint_refused_holds_judging_after_one_session(
+        string stdout,
+        string reason
+    )
+    {
+        GiveEvidence();
+        Session(writes: null, stdout: stdout);
+
+        var result = await RunAsync();
+
+        Assert.True(result.IsRefused);
+        Assert.True(result.IsAgentUnavailable);
+        Assert.Contains(reason, result.Error);
+        Assert.Single(Sessions.Requests);
+        Assert.Empty(Ledger.Read().Runs);
+    }
+
+    [Fact]
+    public async Task An_overloaded_claude_holds_judging_rather_than_pausing_it()
+    {
+        Judge.Environment.Clear();
+        GiveEvidence();
+        Session(
+            writes: null,
+            stdout: """{"is_error":true,"api_error_status":529,"result":"API Error: Repeated 529 Overloaded errors"}"""
+        );
+
+        var result = await RunAsync();
+
+        Assert.True(Judge.SpendsClaudeQuota);
+        Assert.True(result.IsRefused);
+    }
+
+    [Fact]
+    public async Task A_spent_claude_allowance_pauses_rather_than_holds()
+    {
+        Judge.Environment.Clear();
+        GiveEvidence();
+        Session(
+            writes: null,
+            stdout: """{"is_error":true,"api_error_status":429,"result":"hit your limit"}"""
+        );
+
+        var result = await RunAsync();
+
+        Assert.True(result.IsAgentUnavailable);
+        Assert.False(result.IsRefused);
+    }
+
     [Fact]
     public async Task A_source_swapped_before_its_verdict_is_linked_to_the_row()
     {

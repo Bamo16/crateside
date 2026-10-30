@@ -43,6 +43,11 @@ public sealed class VerdictDrainerTests : IDisposable
     private readonly FakeDownloads _downloads = new();
     private readonly RejudgeQueue _rejudges;
     private readonly VerdictDrainer _drainer;
+    private readonly VerdictControl _control;
+
+    private readonly FakeTimeProvider _time = new(
+        DateTimeOffset.Parse("2026-10-30T15:36:00+00:00")
+    );
 
     public VerdictDrainerTests()
     {
@@ -63,6 +68,7 @@ public sealed class VerdictDrainerTests : IDisposable
             }
         );
 
+        _control = new VerdictControl(paused, _time);
         _drainer = new VerdictDrainer(
             _store,
             null!,
@@ -79,7 +85,7 @@ public sealed class VerdictDrainerTests : IDisposable
             ),
             new VerdictSelector(_jobs, _set),
             _jobs,
-            new VerdictControl(paused, new FakeTimeProvider()),
+            _control,
             new QuotaGuard(new UnknownQuota(), new FakeTimeProvider()),
             _rejudges,
             _set,
@@ -88,7 +94,7 @@ public sealed class VerdictDrainerTests : IDisposable
             paused,
             Options.Create(new CratesidePaths()),
             judge,
-            new FakeTimeProvider()
+            _time
         );
     }
 
@@ -231,6 +237,56 @@ public sealed class VerdictDrainerTests : IDisposable
         Assert.NotEmpty(_sessions.Prompts);
     }
 
+    [Fact]
+    public async Task A_refused_session_holds_the_song_without_a_strike_and_starts_nothing_until_the_hold_passes()
+    {
+        Hold(FullEvidence, withSource: false);
+        _sessions.Output =
+            """{"type":"result","subtype":"success","is_error":true,"num_turns":1,"duration_ms":412,"api_error_status":429,"result":"API Error: Request rejected (429) · DeepSeek rate limit: Messages too frequent. Try again later."}""";
+
+        var first = await JudgeBackfillAsync();
+
+        Assert.Equal(StageOutcome.Held, first.Outcome);
+        Assert.Equal(TimeSpan.FromMinutes(1), first.RetryAfter);
+        Assert.True(_jobs.TryGet(VideoId, JobStage.Verdict, out var job));
+        Assert.Equal(JobStatus.Held, job.Status);
+        Assert.Equal(_time.GetUtcNow() + TimeSpan.FromMinutes(1), _jobs.Updates()[^1].HeldUntil);
+        Assert.Equal(0, job.Strikes);
+
+        _time.Advance(TimeSpan.FromSeconds(50));
+
+        var woken = await JudgeBackfillAsync();
+
+        Assert.Equal(StageOutcome.Held, woken.Outcome);
+        Assert.Equal(TimeSpan.FromSeconds(10), woken.RetryAfter);
+        Assert.Single(_sessions.Prompts);
+
+        _time.Advance(TimeSpan.FromSeconds(10));
+
+        var second = await JudgeBackfillAsync();
+
+        Assert.Equal(2, _sessions.Prompts.Count);
+        Assert.Equal(TimeSpan.FromMinutes(2), second.RetryAfter);
+    }
+
+    [Fact]
+    public async Task A_session_the_endpoint_served_ends_the_backoff()
+    {
+        Hold(FullEvidence, withSource: false);
+        _control.Backoff.Refused("rate limited", retryAfter: null);
+        _control.Backoff.Refused("rate limited", retryAfter: null);
+        _time.Advance(TimeSpan.FromMinutes(2));
+
+        var tick = await JudgeBackfillAsync();
+
+        Assert.Equal(StageOutcome.Ran, tick.Outcome);
+        Assert.Null(_control.Backoff.Hold);
+        Assert.Equal(
+            TimeSpan.FromMinutes(1),
+            _control.Backoff.Refused("rate limited", retryAfter: null).RetryAt - _time.GetUtcNow()
+        );
+    }
+
     private sealed class FakeDownloads : IProcessRunner
     {
         public List<ProcessRequest> Requests { get; } = [];
@@ -263,6 +319,9 @@ public sealed class VerdictDrainerTests : IDisposable
 
         public List<string> Prompts { get; } = [];
 
+        /// <summary>What every session prints, as Claude Code's result JSON.</summary>
+        public string Output { get; set; } = string.Empty;
+
         public Task<ProcessOutcome> RunAsync(ProcessRequest request, CancellationToken ct = default)
         {
             EvidenceSeen.Add(readEvidence());
@@ -272,7 +331,7 @@ public sealed class VerdictDrainerTests : IDisposable
                 new ProcessOutcome
                 {
                     ExitCode = 0,
-                    StandardOutput = string.Empty,
+                    StandardOutput = Output,
                     StandardError = string.Empty,
                 }
             );

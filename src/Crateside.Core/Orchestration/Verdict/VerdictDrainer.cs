@@ -126,8 +126,20 @@ public sealed class VerdictDrainer(
                 error: result.Error
             );
 
-            if (result.IsAgentUnavailable)
-                control.Pause();
+            switch (result)
+            {
+                case { IsRefused: true, Error: { } reason }:
+                    control.Backoff.Refused(reason, result.RetryAfter);
+                    break;
+
+                case { IsAgentUnavailable: true }:
+                    control.Pause();
+                    break;
+
+                default:
+                    control.Backoff.Served();
+                    break;
+            }
 
             return result;
         }
@@ -215,6 +227,10 @@ public sealed class VerdictDrainer(
         CancellationToken ct
     )
     {
+        // Checked on every pass, since another stage's wake ends the worker's wait early (ADR 0070).
+        if (control.Backoff.Hold is { RetryAt: { } until, Reason: var holding })
+            return StageTick.Held(holding, until - time.GetUtcNow());
+
         // Read once and used for both the choice and the order, so the two cannot disagree.
         var ledger = store.Read();
 
@@ -284,31 +300,35 @@ public sealed class VerdictDrainer(
             var result = await runner.RunAsync(order, ct);
 
             // Held, not Failed: a session that never ran is not this track's fault, and Held
-            // carries no strike. The ordinary stage then pauses, since a further attempt
-            // would return instantly on every track in the queue; the spend-down holds itself.
-            if (result.IsAgentUnavailable)
+            // carries no strike.
+            if (result is { IsRefused: true, Error: { } reason })
             {
+                var refused = control.Backoff.Refused(reason, result.RetryAfter);
+
                 jobs.Record(
                     item.VideoId,
                     JobStage.Verdict,
                     JobStatus.Held,
-                    error: result.Error,
-                    heldUntil: result.RetryAfter is { } wait ? time.GetUtcNow() + wait : null
+                    error: refused.Reason,
+                    heldUntil: refused.RetryAt
                 );
 
-                // Another endpoint's limit or outage passes by itself, so it holds and retries;
-                // a spent Claude allowance lasts hours, so it pauses (ADR 0067).
-                if (!backfill && !_spendsClaudeQuota)
-                    return StageTick.Held(
-                        result.Error ?? "the judge's endpoint is unavailable",
-                        result.RetryAfter
-                    );
+                return StageTick.Held(refused.Reason, refused.RetryAt - time.GetUtcNow());
+            }
+
+            // A spent Claude allowance or a missing login lasts hours: the ordinary stage pauses,
+            // and the spend-down cuts itself off (ADR 0067).
+            if (result.IsAgentUnavailable)
+            {
+                jobs.Record(item.VideoId, JobStage.Verdict, JobStatus.Held, error: result.Error);
 
                 if (!backfill)
                     control.Pause();
 
                 return StageTick.AgentUnavailable(order, result.Error);
             }
+
+            control.Backoff.Served();
 
             jobs.Record(
                 item.VideoId,
