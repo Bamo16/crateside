@@ -53,7 +53,7 @@ The user chose to fix adoption rather than delete it (2026-09-28).
 
 ## Amended 2026-09-29: the handoff waits for the settle
 
-The first adopted run seen live (*Radiohead – Creep*) finished, and within the same second the
+The first adopted run seen live (Radiohead – *Creep*) finished, and within the same second the
 handoff moved its stems to staging, before the next drain tick counted them. The count found 0 of
 3 in the destination and recorded `Failed`, although the stems had arrived.
 

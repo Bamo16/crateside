@@ -10,7 +10,7 @@ ADR 0025 made the handoff skip a track whose separation is `Failed`. It chose no
 is `Running`, because an adopted run (one that outlives a restart) is never released. Blocking on
 `Running` would then maroon its stems.
 
-On 2026-09-25 the gap bit. *T & Sugah – TumDaDaDum* was separating. Its vocal (22:48:49 UTC) and
+On 2026-09-25 the gap bit. T & Sugah – *TumDaDaDum* was separating. Its vocal (22:48:49 UTC) and
 instrumental (22:50:02) were finished in the cut root, and the handoff moved them into Sample
 Staging at 22:50:21 while the process was still writing. The user then restarted the app. The
 process was killed, which is the abandoned path again: 5 interruptions recorded, 0 adoptions. The
