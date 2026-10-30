@@ -26,19 +26,12 @@ public sealed class PathOverrideStore(string? path = null)
                 : new();
     }
 
-    public void Remember(string stagingFolder, string libraryFolder)
+    public void Remember(PathOverrides chosen)
     {
         lock (_gate)
             PathOverrideJsonContext.Default.PathOverridesFile.WriteFile(
                 _path,
-                new PathOverridesFile
-                {
-                    Paths = new PathOverrides
-                    {
-                        StagingFolder = stagingFolder,
-                        LibraryFolder = libraryFolder,
-                    },
-                }
+                new PathOverridesFile { Paths = chosen }
             );
     }
 }
@@ -53,6 +46,8 @@ public sealed record PathOverrides
     public string? StagingFolder { get; init; }
 
     public string? LibraryFolder { get; init; }
+
+    public string? AbletonProjects { get; init; }
 }
 
 [JsonSourceGenerationOptions(

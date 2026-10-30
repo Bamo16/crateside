@@ -17,15 +17,22 @@ public sealed class AbletonSetLinks(CratesidePaths paths, TimeProvider time) : I
 {
     private const string BackupLabel = "crateside";
 
-    private readonly LiveSets _sets = new(paths.AbletonProjects, time);
+    private readonly LiveSets? _sets = paths.AbletonProjects is { Length: > 0 } projects
+        ? new(projects, time)
+        : null;
 
     public IReadOnlyList<string> Using(IReadOnlyCollection<string> samples) =>
-        [.. _sets.Using(samples).Select(Name).Order(StringComparer.OrdinalIgnoreCase)];
+        _sets is null
+            ? []
+            : [.. _sets.Using(samples).Select(Name).Order(StringComparer.OrdinalIgnoreCase)];
 
     public OpenSet ReadOpenSet() => AbletonSession.Read();
 
     public SetRelink Relink(IReadOnlyList<SampleMove> moves)
     {
+        if (_sets is null)
+            return new SetRelink([], []);
+
         var result = _sets.Relink(moves, BackupLabel);
 
         return new SetRelink(

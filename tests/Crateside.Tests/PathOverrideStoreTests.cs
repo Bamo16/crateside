@@ -28,25 +28,36 @@ public sealed class PathOverrideStoreTests : IDisposable
 
         Assert.Null(overrides.StagingFolder);
         Assert.Null(overrides.LibraryFolder);
+        Assert.Null(overrides.AbletonProjects);
     }
 
     [Fact]
     public void Remembered_folders_read_back()
     {
         var store = new PathOverrideStore(FilePath);
+        PathOverrides chosen = new()
+        {
+            StagingFolder = @"D:\In",
+            LibraryFolder = @"D:\Done",
+            AbletonProjects = @"D:\Sets",
+        };
 
-        store.Remember(@"D:\In", @"D:\Done");
+        store.Remember(chosen);
 
-        Assert.Equal(
-            new PathOverrides { StagingFolder = @"D:\In", LibraryFolder = @"D:\Done" },
-            store.Read()
-        );
+        Assert.Equal(chosen, store.Read());
     }
 
     [Fact]
     public void The_file_overrides_appsettings_when_layered_over_it()
     {
-        new PathOverrideStore(FilePath).Remember(@"D:\In", @"D:\Done");
+        new PathOverrideStore(FilePath).Remember(
+            new PathOverrides
+            {
+                StagingFolder = @"D:\In",
+                LibraryFolder = @"D:\Done",
+                AbletonProjects = @"D:\Sets",
+            }
+        );
 
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(
@@ -54,6 +65,7 @@ public sealed class PathOverrideStoreTests : IDisposable
                 {
                     ["Paths:StagingFolder"] = @"P:\Old",
                     ["Paths:LibraryFolder"] = @"P:\OldLibrary",
+                    ["Paths:AbletonProjects"] = @"P:\OldSets",
                 }
             )
             .AddJsonFile(FilePath, optional: true)
@@ -63,5 +75,6 @@ public sealed class PathOverrideStoreTests : IDisposable
 
         Assert.Equal(@"D:\In", paths?.StagingFolder);
         Assert.Equal(@"D:\Done", paths?.LibraryFolder);
+        Assert.Equal(@"D:\Sets", paths?.AbletonProjects);
     }
 }

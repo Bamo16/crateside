@@ -610,7 +610,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                         <span>@folder.Name</span>
                         <span class="gist">@folder.Gist</span>
                     </div>
-                    <span class="path mono">@(folder.Path is { Length: > 0 } path ? path : "Not set. Choose it with Change.")</span>
+                    <span class="path mono">@(FolderState(folder))</span>
                     <div class="actions">
                         @if (folder.Place is not null)
                         {
@@ -626,7 +626,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             @if (_choosing is { } place)
             {
                 <FolderChooser Title="@($"Choose the {place} folder")"
-                               Start="@(place is Place.Staging ? _staging : _library)"
+                               Start="@(StartFor(place))"
                                Chosen="folder => Chosen(place, folder)"
                                Canceled="() => _choosing = null" />
             }
@@ -641,7 +641,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             }
 
             <span class="status note">
-                Staging and the library are changed here and take effect at the next start. The rest are set in
+                Staging, the library and Ableton projects are changed here and take effect at the next start. The rest are set in
                 <code>appsettings.json</code>, which crateside never writes.
             </span>
         </section>
@@ -835,6 +835,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     private bool _foldersChanged;
     private string _staging = string.Empty;
     private string _library = string.Empty;
+    private string _projects = string.Empty;
     private IReadOnlyList<RemovalResult>? _removals;
 
     private bool HasPendingChange =>
@@ -899,7 +900,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     [
         new("Staging", "Where new stems land.", _staging, IsFile: false, Place.Staging),
         new("Library", "Where finished stems go.", _library, IsFile: false, Place.Library),
-        new("Ableton projects", "Your sets, relinked when a track is renamed.", Paths.AbletonProjects, IsFile: false),
+        new("Ableton projects", "Your sets, relinked when a track is renamed.", _projects, IsFile: false, Place.AbletonProjects),
         new("Key ledger", "Every key verdict, and the evidence behind it.", Paths.LedgerDatabase, IsFile: true),
     ];
 
@@ -919,6 +920,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
         _staging = Paths.StagingFolder;
         _library = Paths.LibraryFolder;
+        _projects = Paths.AbletonProjects;
 
         _playlist = Playlist.PlaylistId ?? string.Empty;
         var saved = PlaylistStore.Read();
@@ -987,12 +989,39 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
         if (place is Place.Staging)
             _staging = folder;
-        else
+        else if (place is Place.Library)
             _library = folder;
+        else
+            _projects = folder;
 
-        Overrides.Remember(_staging, _library);
+        Overrides.Remember(
+            new PathOverrides
+            {
+                StagingFolder = _staging,
+                LibraryFolder = _library,
+                AbletonProjects = _projects,
+            }
+        );
         _foldersChanged = true;
     }
+
+    private string FolderState(Folder folder) =>
+        folder switch
+        {
+            { Path: { Length: > 0 } path } => path,
+            { Place: Place.AbletonProjects } =>
+                "Optional. Renamed tracks relink no sets until it is set.",
+            _ => "Not set. Choose it with Change.",
+        };
+
+    private string StartFor(Place place) =>
+        place switch
+        {
+            Place.Staging => _staging,
+            Place.Library => _library,
+            Place.AbletonProjects => _projects,
+            _ => throw new UnreachableException(),
+        };
 
     private async Task Save()
     {
@@ -1090,5 +1119,6 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     {
         Staging,
         Library,
+        AbletonProjects,
     }
 }

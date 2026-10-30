@@ -14,9 +14,8 @@ public sealed class CratesidePaths
         "Stems"
     );
 
-    /// <summary>The beatdetect build a machine knowing none starts on: the newest the harness has scored.</summary>
-    public string BeatdetectFfmpeg { get; set; } =
-        @"V:\Repos\beatdetect-harness\builds\1.3.1-48ba578\ffmpeg.exe";
+    /// <summary>The ffmpeg that reads beats: on PATH unless a build is pinned.</summary>
+    public string BeatdetectFfmpeg { get; set; } = "ffmpeg";
 
     /// <summary>Where freshly separated stems land, awaiting the human-limited steps.</summary>
     public string StagingFolder { get; set; } = string.Empty;
@@ -24,8 +23,11 @@ public sealed class CratesidePaths
     /// <summary>Where stems go once the work on them is finished.</summary>
     public string LibraryFolder { get; set; } = string.Empty;
 
-    /// <summary>Where the user's Ableton sets live, read for the samples they use.</summary>
-    public string AbletonProjects { get; set; } = @"P:\RYAN\Ableton\Projects";
+    /// <summary>
+    /// Optional: the folder holding the user's Ableton sets, relinked when a track is renamed;
+    /// empty means renames relink no sets.
+    /// </summary>
+    public string AbletonProjects { get; set; } = string.Empty;
 
     /// <summary>
     /// The folder holding Ableton's own file index, the database behind the browser. Read-only;

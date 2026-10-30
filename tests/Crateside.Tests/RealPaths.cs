@@ -13,6 +13,7 @@ internal static class RealPaths
         {
             StagingFolder = chosen.StagingFolder ?? string.Empty,
             LibraryFolder = chosen.LibraryFolder ?? string.Empty,
+            AbletonProjects = chosen.AbletonProjects ?? string.Empty,
         };
     }
 }
