@@ -122,8 +122,10 @@ pass it (MEASURED, ADR 0048).
 
 ## Known issues
 
-- **A third of steady tracks still get the wrong beat of the bar**: the downbeat is a guess under
-  confidence 0.03, and wrong on one in five above it. The marker's beat is then changed by hand.
+- **The bar line falls on the downbeat on about two thirds of steady tracks** (251 of the 382 read
+  at the right tempo, ADR 0054). On the rest the beats are right but the bar starts on another
+  beat: the downbeat is a guess under confidence 0.03, and misplaced on one in five above it. The
+  marker's beat is then renumbered in Live, a quick fix.
 - **The downbeat comes from the source, else the instrumental.** The drum stem gave a surer one on GYARI –
   *アカリがやってきたぞっ* (*Akari ga Yattekita zo*) (0.078 against 0.002), but over 42 kept drum
   stems it was less sure and no more often right (ADR 0054).

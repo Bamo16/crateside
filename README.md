@@ -50,8 +50,11 @@ nothing is outstanding. Separation (GPU) and judging (paid tokens) can be paused
    [docs/starter-warps.md](docs/starter-warps.md) has the whole procedure.
 
 A track whose tempo drifts, or does not hold one grid to within 10 ms, arrives with Warp off
-instead, to be warped by hand. On the maintainer's library, 345 of 394 steady tracks pass that
-check, and about a third of steady tracks still get the bar line on the wrong beat.
+instead, to be warped by hand. Checked against the maintainer's own warps, the starter lands on the
+beat: 345 of 394 steady tracks in his library (88%) hold one grid to within 10 ms. The bar line is a
+stricter test. On 251 of the 382 steady tracks beatdetect reads at the right tempo (66%), it also
+falls on the downbeat; on the rest the beats are right but the bar starts on another beat, which is
+quick to fix in Live.
 
 ### Then it is your turn
 
