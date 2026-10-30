@@ -44,7 +44,7 @@ Ableton file.
    places                 7   file_id, folder_kind, level, name
    ```
 
-   `places` is the anchor and `files.parent_id` walks all the way up to `P:\`, so a place is
+   `places` is the anchor and `files.parent_id` walks all the way up to the drive root, so a place is
    found by the **absolute path it stands for** rather than by `places.name`, which is only a
    display name.
 

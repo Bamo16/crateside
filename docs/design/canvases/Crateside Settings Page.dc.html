@@ -52,7 +52,7 @@
               <div style="display:flex;flex-direction:column;gap:3px"><span style="font:500 14px 'IBM Plex Sans',sans-serif">YouTube access</span><span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Reading uses the API key. Removing needs your consent.</span></div>
               <div style="display:flex;flex-direction:column;gap:6px">
                 <div style="display:grid;grid-template-columns:80px minmax(0,1fr) auto;gap:12px;align-items:center"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Read</span><span style="font:400 13.5px 'IBM Plex Sans',sans-serif">API key set</span><span></span></div>
-                <div style="display:grid;grid-template-columns:80px minmax(0,1fr) auto;gap:12px;align-items:center"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Remove</span><span style="font:400 13.5px 'IBM Plex Sans',sans-serif">Authorized as <strong style="font-weight:500">Ryan</strong></span><button style="padding:5px 10px;background:transparent;color:#ece7dc;border:1px solid rgba(255,255,255,.18);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif">Forget access</button></div>
+                <div style="display:grid;grid-template-columns:80px minmax(0,1fr) auto;gap:12px;align-items:center"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Remove</span><span style="font:400 13.5px 'IBM Plex Sans',sans-serif">Authorized as <strong style="font-weight:500">Bamo</strong></span><button style="padding:5px 10px;background:transparent;color:#ece7dc;border:1px solid rgba(255,255,255,.18);border-radius:6px;font:500 12px 'IBM Plex Sans',sans-serif">Forget access</button></div>
                 <span style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6)">Removal only works if that channel owns the playlist. The token lapses about weekly; reading keeps working.</span>
               </div>
             </div>
@@ -164,9 +164,9 @@ class Component extends DCLogic {
       { name: 'Judging', gist: 'Checking keys with Claude. The library backfill runs either way.', paused: true, status: 'Paused since 2:40 PM. Kept across restarts.' },
     ].map(p => ({ ...p, onBg: p.paused ? off.bg : on.bg, onBd: p.paused ? off.bd : on.bd, offBd: p.paused ? on.bd : off.bd, onFg: p.paused ? off.fg : on.fg, offBg: p.paused ? on.bg : off.bg, offFg: p.paused ? on.fg : off.fg }));
     const folders = [
-      { name: 'Sample Staging', gist: 'Where new stems land.', path: 'P:\\RYAN\\Ableton\\Sample Staging', action: 'Open' },
-      { name: 'Mashup Samples', gist: 'The library that Counts counts.', path: 'P:\\RYAN\\Ableton\\Mashup Samples', action: 'Open' },
-      { name: 'keytag ledger', gist: 'Detector runs, for keys and BPM.', path: 'V:\\Repos\\keytag\\results\\runs.jsonl', action: 'Show in folder' },
+      { name: 'Sample Staging', gist: 'Where new stems land.', path: 'D:\\Music\\Sample Staging', action: 'Open' },
+      { name: 'Mashup Samples', gist: 'The library that Counts counts.', path: 'D:\\Music\\Mashup Samples', action: 'Open' },
+      { name: 'keytag ledger', gist: 'Detector runs, for keys and BPM.', path: 'D:\\Music\\keytag\\runs.jsonl', action: 'Show in folder' },
     ];
     const left = [
       { title: 'Snail\u2019s House - Pixel Galaxy', reason: 'Quota spent for today. Resets at midnight Pacific.', retry: true },

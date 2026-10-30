@@ -17,7 +17,7 @@ so **the signal costs no extra quota** — no second request, no yt-dlp.
 
 ## What it was measured against
 
-The 552-video corpus in `V:\Repos\Yt-dlp_Formats`, resolved three ways (logged out, signed-in
+The 552-video corpus in the `Yt-dlp_Formats` repo, resolved three ways (logged out, signed-in
 free, signed-in Premium). All 552 were still live and were re-queried through
 `videos.list` (12 quota units).
 
@@ -111,4 +111,4 @@ matters.
 The marker is a YouTube presentation detail, not a contract. If YouTube restyles
 auto-generated descriptions, this silently degrades to "everything looks like a video
 upload" — noisy, but never wrong in the dangerous direction. Re-run the join in
-`V:\Repos\Yt-dlp_Formats` against `analysis/per-video.csv` to check.
+the `Yt-dlp_Formats` repo against `analysis/per-video.csv` to check.

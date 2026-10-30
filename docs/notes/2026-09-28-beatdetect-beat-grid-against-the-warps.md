@@ -1,7 +1,7 @@
 # beatdetect's beat grid against the warps
 
 *Note, 2026-09-28, frozen. For [#68](https://github.com/Bamo16/crateside/issues/68). Measured
-on this machine with FiLL's reworked `beatdetect` (`3f1b218`, `V:\Repos\ffmpeg-beatdetect\out\ffmpeg.exe`),
+on this machine with FiLL's reworked `beatdetect` (`3f1b218`, `ffmpeg-beatdetect\out\ffmpeg.exe`),
 on the same 23 songs and stems as [the drum-stem note](2026-09-27-beatdetect-on-drum-stems.md).*
 
 ## What was compared

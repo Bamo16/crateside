@@ -38,7 +38,7 @@ things fixtures could not, repeatedly. Prefer a real-data test over a mock when 
 ## The AbleKit library
 
 Reading Ableton's files is its own repo, `Bamo16/AbleKit` (formerly AbletonSampleData), checked out
-at `V:\Repos\AbleKit` for editing and consumed by `Crateside.Core` as the `AbleKit` NuGet package
+beside this repo (`..\AbleKit`) for editing and consumed by `Crateside.Core` as the `AbleKit` NuGet package
 (a preview; the version is in `Directory.Packages.props`). The sibling project reference was
 dropped on 2026-10-25, so a library change is committed and released there (tag, then NuGet) and
 the version bumped here. Library changes are committed there, on `main`, with its own CI. Crateside's interpretation
