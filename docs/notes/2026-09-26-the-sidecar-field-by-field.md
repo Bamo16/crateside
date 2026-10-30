@@ -70,11 +70,11 @@ Spread is over the 845 library sidecars unless stated.
 
 | field | type | meaning | spread |
 |---|---|---|---|
-| `WarpMode` | int32 enum | crateside's `WarpMode` order | Complex (4) on 844; Complex Pro (6) on *ReeK, Asatsumei, L4hee – Deity Mode (Instrumental)* |
+| `WarpMode` | int32 enum | crateside's `WarpMode` order | Complex (4) on 844; Complex Pro (6) on ReeK, Asatsumei, L4hee – *Deity Mode (Instrumental)* |
 | `TransientResolution`, `TransientLoopMode`, `TransientEnvelope`, `GranularityTones`, `GranularityTexture`, `FluctuationTexture`, `ComplexProFormants`, `ComplexProEnvelope` | int32, float | per-mode parameters; *guessed* to be Ableton's defaults | 6, 2, 100, 30, 65, 25, 100, 128 on all |
 | `TimeSignature` | 2 floats, double | numerator, denominator, and `Time`, *guessed* to be where it applies | 4/4 at 0 on all |
 | `WarpMarkers` | list of `WarpMarker` (id, `SecTime`, `BeatTime`) | markers, with ids from the list's allocator | 2 on 712 (one user marker and Ableton's handle 1/32 beat on); 21+ on 106 |
-| `MarkersGenerated` | bool | *guessed*: the markers came from auto-warp | true on 3, each with 2 markers: *Carter Vail – Dirt Man* (both stems), *Snail's House – love birds* |
+| `MarkersGenerated` | bool | *guessed*: the markers came from auto-warp | true on 3, each with 2 markers: Carter Vail – *Dirt Man* (both stems), Snail's House – *love birds* |
 
 ### Transients
 
@@ -113,7 +113,7 @@ The 14 are 8 songs, both stems for 6 of them. Against the warped tempo, the esti
 | field | type | meaning | spread |
 |---|---|---|---|
 | `ExtraLength` | int32 | | 0 on all |
-| `OriginalFileSize` | int32, bytes | the audio's size when analyzed; exact on the Disconnect stem (*measured*) | matches on 828. Of the other 17, 15 hold the same number of samples as recorded. The *1991 – Jungle (Colin Hennerz Remix)* pair is 645 samples longer now than when Ableton analyzed it, and was not re-analyzed |
+| `OriginalFileSize` | int32, bytes | the audio's size when analyzed; exact on the Disconnect stem (*measured*) | matches on 828. Of the other 17, 15 hold the same number of samples as recorded. The 1991, Alex Hosking, Colin Hennerz – *Jungle (Colin Hennerz Remix)* pair is 645 samples longer now than when Ableton analyzed it, and was not re-analyzed |
 | `OverView.OverViewLevels` | list of float16 arrays | **the waveform**: min and max per channel per bin, interleaved. *Measured* against decoded audio, within 0.0005 at every level | 4 levels; 3 on two 36-second files |
 | `OverView.SamplesPerBinLog2` | int32 | level *k*'s bin is 2^(this × (*k*+1)) samples | 7 up to 379 s; 8 from 387 s (13 files) |
 | `OverView.ChannelCount`, `.Version` | int32 | | 2, 2 on all |

@@ -6,7 +6,7 @@
 
 ## Context
 
-The judge sometimes runs on a model other than Claude (ADR 0067). In its first run of 32 verdicts it made mistakes a mechanical check would have caught. *Will Stetson – Why Do I* was recorded as C♯ minor while its own reasoning named A♯ minor as the tonic, and the evidence held only C♯ major and A♯ minor. Two verdicts got HIGH without what `judge-prompt.md` requires for it: *DMX* had no human source, *Roxette* had no backed detectors. **Measured:** the three cases were found by reading the 32 verdicts against their evidence. The check is judge-agnostic, so it belongs in crateside whatever model judges.
+The judge sometimes runs on a model other than Claude (ADR 0067). In its first run of 32 verdicts it made mistakes a mechanical check would have caught. Will Stetson – *Why Do I* was recorded as C♯ minor while its own reasoning named A♯ minor as the tonic, and the evidence held only C♯ major and A♯ minor. Two verdicts got HIGH without what `judge-prompt.md` requires for it: DMX had no human source, Roxette had no backed detectors. **Measured:** the three cases were found by reading the 32 verdicts against their evidence. The check is judge-agnostic, so it belongs in crateside whatever model judges.
 
 ## Decision
 
