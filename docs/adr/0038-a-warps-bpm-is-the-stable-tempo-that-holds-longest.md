@@ -22,12 +22,12 @@ Measured across the 844 saved library sidecars on 2026-09-26:
 
 - 712 (84%) hold one marker, so one tempo.
 - 37 multi-marker warps hold one tempo on at least 80% of their bars. 95 drift (live drummers, e.g.
-  *Cypress Hill – Hits from the Bong*, 90.8–93.6 bar to bar) or change (*ReeK – Deity Mode*: 180, a
+  Cypress Hill – *Hits from the Bong*, 90.8–93.6 bar to bar) or change (ReeK – *Deity Mode*: 180, a
   drop to 132.007 for 24 bars, a ramp back to 180, a slowdown at the end).
 - Tempo read per bar reproduces Ableton's tempo lane for *Deity Mode* bar for bar, and averages out
   the per-hit jitter a hand-warped ramp shows there.
 - Ableton keeps more than two decimals: 305 of the 712 single-marker tempos sit exactly on two
-  decimals (e.g. *Throw Some D's* 80.3904). 42 songs sit more than 0.2 from a whole number, mostly
+  decimals (e.g. Rich Boy – *Throw Some D's* 80.3904). 42 songs sit more than 0.2 from a whole number, mostly
   80s and 90s hip hop and pop. *Ready Steady Go*'s 10 markers fit one line at 128.02 within 2 ms.
 
 ## Decision
@@ -63,12 +63,12 @@ Measured across the 844 saved library sidecars on 2026-09-26:
 The figures the decision left to the build, measured on the library that day:
 
 - **Tolerance: 3 ms.** At 2 ms, *Ready Steady Go*'s ten markers (all within 2.0 ms of one line)
-  split into two runs. At 5 ms, *Hall & Oates – Rich Girl*, a live band, gains a spurious 9-bar run.
+  split into two runs. At 5 ms, Hall & Oates – *Rich Girl*, a live band, gains a spurious 9-bar run.
 - **A run's tempo is the median of its bars,** not the slope of the fitted line. The fit let two
-  wobbly intro bars pull *T & Sugah – TumDaDaDum* to 174.03, where every other bar is 174.000.
+  wobbly intro bars pull T & Sugah – *TumDaDaDum* to 174.03, where every other bar is 174.000.
 - **Silence is a bar whose loudest sample is under −50 dBFS** in the waveform overview. Leaving it
   out changes the answer on 5 of 844 sidecars, each time from a silent stretch passing for the
-  tempo (*Group X – Jonny Poopoopants* read 131.9 against a song around 170).
+  tempo (Group X – *Jonny Poopoopants* read 131.9 against a song around 170).
 - The sample rate comes from the audio file, since the sidecar does not record it.
 
 ## Amended, 2026-09-27: the octave is the user's call, not ground truth

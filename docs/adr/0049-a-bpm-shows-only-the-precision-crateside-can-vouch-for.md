@@ -10,7 +10,7 @@
 Crateside rounds every BPM it shows to a whole number. That made sense when beatdetect was too rough
 to trust past that. It no longer is: on the steady tracks the user has warped, crateside's own
 whole-file reading lands within 0.01 BPM of the warp on 95%, and 132 of 437 steady warps are not
-whole numbers at all (*Mr Oizo – Jo* 119.50, *Eminem – My Name Is* 85.52)
+whole numbers at all (Mr Oizo – *Jo* 119.50, Eminem – *My Name Is* 85.52)
 ([note](../notes/2026-10-02-beatdetect-precision-against-warps.md)). Ableton sets an arrangement's
 tempo to two decimals.
 
@@ -22,7 +22,7 @@ What the user asked for, 2026-10-02:
   Any other BPM shown beside it says what it is.
 - **A drifting tempo shows that it drifts**, with soft whole-number figures. A track that is
   steady apart from an intro or interlude shows its steady tempo and says that a part changes. A
-  track that really changes tempo (*ReeK – Deity Mode*, *Laur – Sound Chimera*) needs only to say
+  track that really changes tempo (ReeK – *Deity Mode*, Laur – *Sound Chimera*) needs only to say
   so. That is the rarest case and the bar is low.
 
 Measured the same day, on the user's sidecars and crateside's readings:
@@ -31,14 +31,14 @@ Measured the same day, on the user's sidecars and crateside's readings:
   to a millionth of a BPM, and only 19 within 0.0005 without being exact. Snapping a transient lands
   on a sample-resolution position, so it essentially never gives an exact number. The user types the
   tempo when they have decided what it is.
-- **A snapped warp is usually a hair off the true tempo.** *Flo Rida – Low* is warped at 128.002.
+- **A snapped warp is usually a hair off the true tempo.** Flo Rida – *Low* is warped at 128.002.
   Where the reading sits on the grid and the warp does not, the user expects the warp to be the one
   that is off (#91).
 - **The reading says when it can be trusted to the hundredth.** When its 30 s windows agree within
   0.02%, it lands within 0.01 of the warp on 296 of 304. Its confidence figure does not predict
   that.
 - **Real tempos sit off the grid too**, and must never be snapped: *Ready Steady Go* reads 128.021
-  and is warped at 128.02. *In Da Club* reads 90.009 and is warped at 90.008.
+  and is warped at 128.02. 50 Cent – *In Da Club* reads 90.009 and is warped at 90.008.
 
 ## Decision
 
@@ -108,8 +108,8 @@ Two decimals or none, never one: `119.50`, matching Ableton.
 ## Amended 2026-10-02: a typed warp is not a declaration
 
 #91 re-warped six tracks from scratch ([note](../notes/2026-10-02-the-six-warps-in-91.md)). Both
-typed whole-number warps were wrong, most likely copied from crateside's whole-number BPM: *Blow
-the Whistle* is 99.98, not 100, and *If You Like It* 127.98, not 128. So an exact warp gets no
+typed whole-number warps were wrong, most likely copied from crateside's whole-number BPM: Too $hort – *Blow
+the Whistle* is 99.98, not 100, and White Shadow – *If You Like It* 127.98, not 128. So an exact warp gets no
 special standing. It is held to the same snap as any other warp, which leaves every figure shown
 unchanged: a warp that typed 128 still shows `128`, through the snap when the reading agrees and as
 its own figure when it does not. The snap itself gave the settled figure on all six.
