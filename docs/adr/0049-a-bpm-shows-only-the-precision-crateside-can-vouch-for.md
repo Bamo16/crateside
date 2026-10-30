@@ -14,7 +14,7 @@ whole numbers at all (Mr Oizo – *Jo* 119.50, Eminem – *My Name Is* 85.52)
 ([note](../notes/2026-10-02-beatdetect-precision-against-warps.md)). Ableton sets an arrangement's
 tempo to two decimals.
 
-What the user asked for, 2026-10-02:
+What was asked for, 2026-10-02:
 
 - **A BPM read at a glance has to say what it means about the track.** If `150` sometimes means
   "measured exactly" and sometimes "roughly", it can never be trusted to mean the first.

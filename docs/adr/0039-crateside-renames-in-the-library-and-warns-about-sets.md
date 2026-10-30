@@ -8,7 +8,7 @@
 ## Context
 
 A row with any file in `Mashup Samples` could not be renamed; the user was told to rename it in
-Ableton. The user decided on 2026-09-27 that crateside has outgrown that boundary.
+Ableton. It was decided on 2026-09-27 that crateside has outgrown that boundary.
 
 A rename in the library touches three things:
 
@@ -25,7 +25,7 @@ Nothing of crateside's or keytag's own depends on the name: a track is its video
 
 - **A track's files in `Mashup Samples` are renamed with its staged ones**, found by the upload
   their tags name, with their sidecars and their tag-store entries.
-- **The sets are not changed.** The user chose this over updating the paths in their sets, and over
+- **The sets are not changed.** This was chosen over updating the paths in the sets, and over
   refusing to rename a file a set uses.
 - **The sets that use the files are named before the rename is confirmed** (the user's
   requirement). The editor looks them up when it opens, and its confirm waits for the answer. A

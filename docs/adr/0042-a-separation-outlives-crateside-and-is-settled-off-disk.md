@@ -21,7 +21,7 @@ And one piece was missing: nothing released an adopted run. Its job stayed `Runn
 restart marked it abandoned, however well it had finished. Its result is printed on stdout, which
 dies with the crateside that started it.
 
-The user chose to fix adoption rather than delete it (2026-09-28).
+Adoption was fixed rather than deleted (2026-09-28).
 
 ## Decision
 
