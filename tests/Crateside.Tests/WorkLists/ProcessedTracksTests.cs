@@ -7,8 +7,6 @@ namespace Crateside.Tests.WorkLists;
 
 public sealed class ProcessedTracksTests : IDisposable
 {
-    private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
-
     private const string RealStemComment =
         "stemforge/0.2.1.1 | preset: Vocal - Full | date: 2026-08-05 | "
         + "source: https://www.youtube.com/watch?v={0} | codec: mp4a.40.2";
@@ -39,12 +37,13 @@ public sealed class ProcessedTracksTests : IDisposable
     private string? StemFor(string videoId, string name)
     {
         // Any staged FLAC: a named one skips itself once the user finishes that track.
-        var source = Directory.Exists(StagingRoot)
-            ? Directory
-                .EnumerateFiles(StagingRoot, "*.flac")
-                .Order(StringComparer.Ordinal)
-                .FirstOrDefault()
-            : null;
+        var source =
+            RealPaths.Create().StagingFolder is var staging && Directory.Exists(staging)
+                ? Directory
+                    .EnumerateFiles(staging, "*.flac")
+                    .Order(StringComparer.Ordinal)
+                    .FirstOrDefault()
+                : null;
 
         if (source is null)
             return null;

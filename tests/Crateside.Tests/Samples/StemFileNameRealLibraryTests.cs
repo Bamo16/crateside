@@ -5,12 +5,13 @@ namespace Crateside.Tests.Samples;
 /// <summary>The naming rule against the real staging folder, where titles have parentheses too.</summary>
 public sealed class StemFileNameRealLibraryTests
 {
-    private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
+    private static IEnumerable<string> Staged()
+    {
+        var staging = RealPaths.Staging();
+        Assert.SkipUnless(RealLibrary.HasStems(staging), "Staging holds no stems.");
 
-    private static bool Available => RealLibrary.HasStems(StagingRoot);
-
-    private static IEnumerable<string> Staged() =>
-        Directory.EnumerateFiles(StagingRoot).Where(SampleFiles.IsAudio);
+        return Directory.EnumerateFiles(staging).Where(SampleFiles.IsAudio);
+    }
 
     /// <summary>
     /// A prefix, not equality: the name says <c>(Drums)</c> where the tag says <c>Drums - htdemucs_ft</c>.
@@ -18,8 +19,6 @@ public sealed class StemFileNameRealLibraryTests
     [Fact]
     public void The_last_parentheses_hold_a_preset_rather_than_part_of_the_title()
     {
-        Assert.SkipUnless(Available, "The staging root must be present.");
-
         var files = Staged().ToArray();
 
         Assert.NotEmpty(files);
@@ -39,8 +38,6 @@ public sealed class StemFileNameRealLibraryTests
     [Fact]
     public void Renaming_a_real_file_changes_the_name_and_nothing_else()
     {
-        Assert.SkipUnless(Available, "The staging root must be present.");
-
         foreach (var path in Staged())
         {
             var renamed = StemFileName.Renamed(path, "Somebody - Something");

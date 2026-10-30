@@ -226,10 +226,7 @@ public sealed class BeatReadingTests
     [Fact]
     public async Task A_real_instrumental_reads_at_its_warped_tempo_and_is_kept_until_it_changes()
     {
-        var audio = Path.Combine(
-            @"P:\RYAN\Ableton\Mashup Samples",
-            "1991 - If Only (Instrumental - Full).flac"
-        );
+        var audio = Path.Combine(RealPaths.Library(), "1991 - If Only (Instrumental - Full).flac");
         Assert.SkipUnless(File.Exists(audio), $"{audio} not present on this machine.");
 
         var reader = new BeatReader(new ProcessRunner());
