@@ -394,7 +394,7 @@ link restores it, and the tab reopens where it was left until a restart.
   in force. Read-only.
 - **Re-Pitch's *Lands on*** names the center, mode included (`G♯ Dorian`), with its tag's Camelot.
   It keeps its ±N slider: it lists every shift's BPM to pick one row, which a span would not help.
-- **Breakpoints**: four columns at ≥ 2200px; below, the wheel sits beside the basis box inside
+- **Breakpoints**: three columns at ≥ 2200px (Working on, Re-Pitch above Partners, the wheel); below, the wheel sits beside the basis box inside
   Partners; below 1700px *Working on* runs across the top; below 1100px one column with the wheel
   last.
 - **A third tool** joins as a foldable column with Re-Pitch's anatomy: left of Partners if it
