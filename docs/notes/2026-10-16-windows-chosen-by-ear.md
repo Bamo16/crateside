@@ -33,7 +33,7 @@ think a one-section entry is corpus-grade. Filed as
 [#122](https://github.com/Bamo16/crateside/issues/122) (weigh how much a Hooktheory entry covers
 before it caps a verdict).
 
-**A caution about the mashup.** The maintainer once made a mashup (*50 Scent*, with *In Da Club*,
+**A caution about the mashup.** The maintainer once made a mashup (*50 Scent*, with 50 Cent – *In Da Club*,
 which is C♯ minor) from this track's instrumental. They picked the vocal because the sample was
 tagged C♯ minor, so the mashup shows what the tag was, not that the tag is right, and hip-hop
 vocals sit on most keys. It is not evidence either way.
@@ -63,7 +63,7 @@ three-way split over the whole file, then C♯ minor from the choruses when the 
 over them by hand. This is the first run of the same idea through the form, and it agrees with
 the by-hand reading.
 
-## Run Away (Real McCoy): no window
+## Real McCoy – *Run Away*: no window
 
 The maintainer listened to the whole track and heard nothing to exclude, so there is no ranged
 run to report. The plain re-judge recorded **A♯ minor, MEDIUM** (it was C♯ major HIGH). All three
@@ -75,7 +75,7 @@ pair.
 ## Observations for the report
 
 - **From two runs, a window chosen by ear seems to help where the rest of the track is dominated by something other than the harmony**
-  (Horny Money World: drums, bass and noise outside the choruses), not where it is most of the
+  (*A Horny Money World*: drums, bass and noise outside the choruses), not where it is most of the
   song (perfume!).
 - **The detectors still disagree inside a window.** edma's G♯ major held across both choruses;
   the cure was the chord stream, not a cleaner reading.
