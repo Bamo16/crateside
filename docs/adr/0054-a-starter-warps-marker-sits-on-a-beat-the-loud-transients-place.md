@@ -32,7 +32,7 @@ warps, with the pinned beatdetect build ([first note](../notes/2026-10-13-placin
 **The starter warp's marker is written on the first beat the transients place** (`GridCheck.FirstBeat`),
 as beat 1, and the clip starts on that beat and runs to the end of the file. A clip start between
 beats leaves the clip off the arrangement's grid, so the audio before the first beat is left out of
-the clip (2026-10-13, found on *How Will I Know*). With fewer than 32 transients nothing is placed and the marker stays where
+the clip (2026-10-13, found on Whitney Houston – *How Will I Know*). With fewer than 32 transients nothing is placed and the marker stays where
 ADR 0047 put it: beat 0 at the start of the audio.
 
 - **The whole group is timed from one stem**: the instrumental its tempo is read from. Timed each

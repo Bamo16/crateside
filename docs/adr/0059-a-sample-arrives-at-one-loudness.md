@@ -37,7 +37,7 @@ integrated loudness.** The audio is never touched; crateside writes the one fiel
 - **A stem below -24 LUFS integrated is not leveled either.** It is separator residue, such as
   the vocal stem of an instrumental that was queued with the default recipe, and a gain would
   amplify it. The floor is a GUESS from the distribution (7 of 513 vocal stems are below it, and
-  the one listened to, fusq's *Perfume!*, an instrumental, sat near -27); it is a setting.
+  the one listened to, fusq – *Perfume!*, an instrumental, sat near -27); it is a setting.
 - **crateside owns the gain of every sidecar with a saved default clip**, in the library and in
   staging, the maintainer's hand-set gains included, and re-writes it whenever the file is off
   target, including after Live saves over it. A sidecar that is with Live (#97) is left until
