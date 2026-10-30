@@ -115,8 +115,8 @@ public sealed class ShortTrackTests
             Inventory = StemInventory.Of(
                 presets.Select(preset => new StemOnDisk
                 {
-                    Path = $@"P:\RYAN\Ableton\Sample Staging\Moe Shop - HARDCODED ({preset}).flac",
-                    Root = @"P:\RYAN\Ableton\Sample Staging",
+                    Path = $@"D:\Music\Sample Staging\Moe Shop - HARDCODED ({preset}).flac",
+                    Root = @"D:\Music\Sample Staging",
                     Preset = preset,
                 }),
                 Catalog

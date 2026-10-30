@@ -6,7 +6,7 @@ namespace Crateside.Tests.Plans;
 
 public sealed class StemInventoryTests
 {
-    private const string Staging = @"P:\RYAN\Ableton\Sample Staging";
+    private const string Staging = @"D:\Music\Sample Staging";
 
     private static readonly PresetCatalog Catalog = PresetCatalogReader.Parse(
         """

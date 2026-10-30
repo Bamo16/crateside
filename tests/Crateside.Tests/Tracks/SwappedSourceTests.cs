@@ -14,8 +14,8 @@ public sealed class SwappedSourceTests : IDisposable
     private const string Original = "AhtkGlO7O8c";
     private const string Replacement = "39Z_YiOmHeA";
     private const string Song = "ludacris, pharrell - southern hospitality";
-    private const string FinishedRoot = @"P:\RYAN\Ableton\Mashup Samples";
-    private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
+    private const string FinishedRoot = @"D:\Music\Library";
+    private const string StagingRoot = @"D:\Music\Sample Staging";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),

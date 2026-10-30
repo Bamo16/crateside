@@ -18,8 +18,8 @@ namespace Crateside.Tests.Tracks;
 public sealed class TracksViewCompositionTests : IDisposable
 {
     private const string Video = "aaaaaaaaaaa";
-    private const string FinishedRoot = @"P:\RYAN\Ableton\Mashup Samples";
-    private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
+    private const string FinishedRoot = @"D:\Music\Library";
+    private const string StagingRoot = @"D:\Music\Sample Staging";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
