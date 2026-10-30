@@ -8,10 +8,8 @@
 
 ADR 0030 writes only a genre the user settled, and the user settles almost none: 1 of 412 on
 2026-09-25. The user wants genre as automated as possible without crateside silently tagging
-things wrong. They also described how they decide it themselves:
-
-> I tend to generalize sometimes based on artist [...] Kanye West, Lil Wayne, Lil Dicky where I
-> would feel pretty confident simply treating every track of theirs to be hip hop.
+things wrong. Genre is decided by generalizing from the artist: for an artist whose tracks have
+consistently been called one genre, every track of theirs can be treated as that genre.
 
 ## Decision
 

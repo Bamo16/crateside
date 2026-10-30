@@ -11,10 +11,9 @@ one per idle window. That did not hold. On 2026-09-25 the user resumed judging, 
 verdict stage judged the queued library tracks back to back, which was not what they meant. They
 paused judging at 18:27 local.
 
-What the user wants, in their words: *"I'm going to have to spend some quota at some point if I
-ever want these to go through the proper process and this gives a convenient balance between
-getting them judged fast versus respecting my ability to use more Claude."* Keeping the windows
-rolling is *"a convenient side-effect"*, not the purpose.
+What the user wants: these spend some quota eventually so they go through the proper process,
+balanced against how much Claude the user has left to use. Keeping the windows rolling is a
+convenient side effect, not the purpose.
 
 ## Decision
 
