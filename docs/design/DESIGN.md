@@ -549,7 +549,7 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   until pressed.
 - **Stage chips are all colored by state** (done green, running teal, your turn amber, stopped red),
   with the current stage the only filled, bold chip. **No timestamps** under them: the Activity log
-  carries times. The user asked for both on 2026-09-25.
+  carries times. Both were asked for on 2026-09-25.
 
 ### Tempo (handoff 13, #92)
 
@@ -622,8 +622,8 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 
 ### Tools (handoff 12, #79)
 
-- **No redirects from `/tools/partners`, `/tools/repitch` or `/partners`.** The user asked for no
-  aliases that nothing uses (2026-09-28), and nothing links to them.
+- **No redirects from `/tools/partners`, `/tools/repitch` or `/partners`.** No aliases that
+  nothing uses (2026-09-28), and nothing links to them.
 - **The track is picked from warped library songs**, as the Re-Pitch search already did.
 - **Re-Pitch sits above Partners, in one column**, not in a column of its own between *Working on*
   and Partners: folding it shifted Partners and the wheel sideways (user, 2026-09-29). It keeps

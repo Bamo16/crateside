@@ -22,7 +22,7 @@ user does not work the tracker. Drop `needs-triage` or `needs-design` once the w
 
 **Sweep before a handoff.** Read every open issue against its last comment and the commits that
 name it; close what is finished, and list what needs only something small. Finished work left open
-for days has happened, and the user noticed it from their phone (2026-09-27).
+for days has happened (noticed from a phone, 2026-09-27).
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
 
