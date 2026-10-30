@@ -140,6 +140,17 @@
     }
 }
 
+/* Working on runs across the top, as its own breakpoint in WorkingOn.razor.css lays it out for. */
+@media (max-width: 1700px) {
+    .columns {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .tools-col {
+        max-width: 860px;
+    }
+}
+
 @media (max-width: 1100px) {
     .columns {
         grid-template-columns: minmax(0, 1fr);
