@@ -11,20 +11,20 @@ Claude, not accuracy.*
 
 | track | Claude | non-Claude | sources | s |
 |---|---|---|---|---|
-| Sammy Virji, Chris Lake, RoRo - 925 | G minor, MEDIUM | G minor, MEDIUM | 2 | 94 |
-| Telefon Tel Aviv - Fahrenheit Fair Enough | D minor, MEDIUM | D minor, MEDIUM | 2 | 121 |
-| Johnny Pearson - Action in Memphis | C minor, MEDIUM | C minor, MEDIUM | 0 | 126 |
-| Whitney Houston - How Will I Know | F# major, HIGH | F# major, HIGH | 4 | 201 |
-| Monday Night Football Theme | C major, HIGH | C major, HIGH | 1 | 92 |
-| Nelly - Hot In Herre | E minor dorian, HIGH | E minor, HIGH, **not recorded** | | 46 |
-| GYARI - アカリがやってきたぞっ | G minor dorian, HIGH | G minor, MEDIUM, **not recorded** | | 70 |
-| Rob Araujo - Nineteen | F minor, MEDIUM | refused: three detectors, three tonics | | 12 |
-| Kanye West, Pusha T - Runaway | E major, HIGH | stopped after one turn | | 5 |
-| Three 6 Mafia, Unk - I'd Rather | B minor, MEDIUM | stopped after two turns | | 16 |
+| Chris Lake & Sammy Virji ft RoRo – *925* | G minor, MEDIUM | G minor, MEDIUM | 2 | 94 |
+| Telefon Tel Aviv – *Fahrenheit Fair Enough* | D minor, MEDIUM | D minor, MEDIUM | 2 | 121 |
+| Johnny Pearson – *Action in Memphis* | C minor, MEDIUM | C minor, MEDIUM | 0 | 126 |
+| Whitney Houston – *How Will I Know* | F# major, HIGH | F# major, HIGH | 4 | 201 |
+| Johnny Pearson – *Monday Night Football Theme (1998 - 2006)* | C major, HIGH | C major, HIGH | 1 | 92 |
+| Nelly – *Hot In Herre* | E minor dorian, HIGH | E minor, HIGH, **not recorded** | | 46 |
+| GYARI – *アカリがやってきたぞっ* (*Akari ga Yattekita zo*) | G minor dorian, HIGH | G minor, MEDIUM, **not recorded** | | 70 |
+| Rob Araujo – *Nineteen* | F minor, MEDIUM | refused: three detectors, three tonics | | 12 |
+| Kanye West, Pusha T – *Runaway* | E major, HIGH | stopped after one turn | | 5 |
+| Three 6 Mafia, Unk – *I'd Rather* | B minor, MEDIUM | stopped after two turns | | 16 |
 
 - **Search works** (*measured*): `WebSearch` returns cited pages (Beatport, Sheet Music Direct,
   Musicnotes, Sheet Music Plus, getsongkey, AcousticBrainz), and HIGH verdicts came back where a
-  source agreed. How Will I Know, a three-way detector split that was refused twice without
+  source agreed. *How Will I Know*, a three-way detector split that was refused twice without
   search, was settled from two published transcriptions.
 - **Five recorded, all five agree with Claude; seven stated, all seven agree** (*measured*). No
   key disagreement in any run of either note.
