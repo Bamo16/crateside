@@ -10,7 +10,7 @@ run**, **verdict run**, **separation** — and built only the third. `Separation
 exists; nothing produces evidence and nothing produces a verdict. So crateside orchestrates
 the one stage that needs an agent least and cannot run the two that come before it.
 
-The gap is not cosmetic. On 2026-08-16 the drainer separated a track titled *"Eat Sleep
+The gap is not cosmetic. On 2026-08-16 the drainer separated a track titled 電音部 – *"Eat Sleep
 Dance (feat. Moe Shop) **Instrumental**"* with `--preset vocal_full --preset
 instrumental_full`, producing a vocal stem of a track with no vocals. It could not have
 known better: `SeparationRecipe` is fixed at `Standard`, and the ledger held no line for a
