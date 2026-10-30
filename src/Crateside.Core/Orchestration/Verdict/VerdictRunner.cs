@@ -164,8 +164,8 @@ public sealed partial class VerdictRunner(
                         order
                     );
 
-                case VerdictCheck.Unusable when AgentUnavailableReason(outcome) is { } reason:
-                    return VerdictResult.AgentUnavailable(reason, RetryAfter(outcome));
+                case VerdictCheck.Unusable when Unavailable(outcome) is { } unavailable:
+                    return unavailable;
 
                 case VerdictCheck.Unusable(var problem) when !resumedToWrite:
                     resumedToWrite = true;
@@ -782,30 +782,70 @@ public sealed partial class VerdictRunner(
     }
 
     /// <summary>
-    /// Why the agent could not be run, read from its prose as well as its JSON, or null when the
-    /// failure is about this track.
+    /// Why no session could be served, read from its prose as well as its JSON, or null when the
+    /// failure is about this track (ADR 0070).
     /// </summary>
-    private string? AgentUnavailableReason(ProcessOutcome outcome) =>
-        new[] { outcome.StandardOutput, outcome.StandardError } switch
-        {
-            var streams when Mentions(streams, "\"api_error_status\":429", "hit your limit") =>
-                _options.SpendsClaudeQuota
-                    ? "the Claude allowance is spent; judging is paused until it resets"
-                    : "the judge's endpoint reported its rate limit",
-            // Not a bare "/login", which any searched-up URL could carry.
-            var streams when Mentions(streams, "not logged in", "please run /login") =>
-                "Claude Code is not logged in; judging is paused until you run /login",
-            // Claude Code retries for minutes before giving up, so this is no blip.
-            var streams when Mentions(streams, "ECONNREFUSED", "Unable to connect to API") =>
-                "the judge's endpoint cannot be reached",
-            var streams when Mentions(streams, "Failed to authenticate") =>
-                "the judge's endpoint refused its key",
-            _ => null,
-        };
+    private VerdictResult? Unavailable(ProcessOutcome outcome)
+    {
+        string[] streams = [outcome.StandardOutput, outcome.StandardError];
+        var status = ApiErrorStatus(streams);
+
+        if (status is 429 || Mentions(streams, "hit your limit"))
+            return _options.SpendsClaudeQuota
+                ? VerdictResult.AgentUnavailable(
+                    "the Claude allowance is spent; judging is paused until it resets"
+                )
+                : Refused("the judge's endpoint reported its rate limit");
+
+        // Not a bare "/login", which any searched-up URL could carry.
+        if (Mentions(streams, "not logged in", "please run /login"))
+            return _options.SpendsClaudeQuota
+                ? VerdictResult.AgentUnavailable(
+                    "Claude Code is not logged in; judging is paused until you run /login"
+                )
+                : Refused("Claude Code is not logged in; run /login");
+
+        // Claude Code retries for minutes before giving up, so this is no blip.
+        if (Mentions(streams, "ECONNREFUSED", "Unable to connect to API"))
+            return Refused("the judge's endpoint cannot be reached");
+
+        if (Mentions(streams, "Failed to authenticate"))
+            return Refused("the judge's endpoint refused its key");
+
+        var error = ApiError(outcome);
+
+        if (
+            status is 529
+            || error?.Contains("overloaded", StringComparison.OrdinalIgnoreCase) is true
+        )
+            return Refused("the judge's endpoint is overloaded");
+
+        if (status is >= 500)
+            return Refused($"the judge's endpoint failed with HTTP {status}");
+
+        // A request the endpoint could not take is this track's, and would be refused again.
+        return error is not null && status is not (400 or 413 or 422)
+            ? Refused($"the judge's endpoint answered \"{error}\"")
+            : null;
+
+        VerdictResult Refused(string reason) => VerdictResult.Refused(reason, RetryAfter(streams));
+    }
+
+    private static int? ApiErrorStatus(string[] streams) =>
+        streams
+            .Select(stream => StatusPattern.Match(stream ?? string.Empty))
+            .FirstOrDefault(match => match.Success)
+            is { Groups: var groups }
+        && int.TryParse(groups["Status"].Value, CultureInfo.InvariantCulture, out var status)
+            ? status
+            : null;
+
+    [GeneratedRegex(@"""api_error_status"":\s*(?<Status>\d{3})", RegexOptions.ExplicitCapture)]
+    private static partial Regex StatusPattern { get; }
 
     /// <summary>The wait the endpoint stated with its rate limit, or null when it gave none.</summary>
-    private static TimeSpan? RetryAfter(ProcessOutcome outcome) =>
-        new[] { outcome.StandardOutput, outcome.StandardError }
+    private static TimeSpan? RetryAfter(string[] streams) =>
+        streams
             .Select(stream => StatedPause.Match(stream ?? string.Empty))
             .FirstOrDefault(match => match.Success)
             is { Groups: var groups }
@@ -858,10 +898,13 @@ public sealed record VerdictResult
     public required bool IsSuccess { get; init; }
 
     /// <summary>
-    /// The agent never ran — no allowance left, or nobody logged in. Says nothing about the
-    /// track, and a further attempt would fail the same way and just as fast.
+    /// No session could be served: the allowance is spent, nobody is logged in, or the endpoint
+    /// refused. Says nothing about the track.
     /// </summary>
     public bool IsAgentUnavailable { get; init; }
+
+    /// <summary>The endpoint refused or failed the session, which holds judging rather than pausing it (ADR 0070).</summary>
+    public bool IsRefused { get; init; }
 
     /// <summary>How long the endpoint said to wait, where it said.</summary>
     public TimeSpan? RetryAfter { get; init; }
@@ -872,12 +915,18 @@ public sealed record VerdictResult
 
     public static VerdictResult Failed(string error) => new() { IsSuccess = false, Error = error };
 
-    public static VerdictResult AgentUnavailable(string reason, TimeSpan? retryAfter = null) =>
+    public static VerdictResult AgentUnavailable(string reason) =>
         new()
         {
             IsSuccess = false,
             IsAgentUnavailable = true,
             Error = reason,
+        };
+
+    public static VerdictResult Refused(string reason, TimeSpan? retryAfter) =>
+        AgentUnavailable(reason) with
+        {
+            IsRefused = true,
             RetryAfter = retryAfter,
         };
 }

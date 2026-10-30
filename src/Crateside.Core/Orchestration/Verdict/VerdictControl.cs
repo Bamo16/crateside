@@ -26,12 +26,15 @@ public sealed class VerdictControl : DrainControl
     /// <summary>Runs started from a track's page that are waiting for the judgment in progress (#120).</summary>
     public int FormRunsWaiting => Volatile.Read(ref _formRunsWaiting);
 
+    /// <summary>How long judging holds after the judge's endpoint refused a session (ADR 0070).</summary>
+    public JudgeBackoff Backoff { get; }
+
     /// <summary>Paused or not as the user last left judging.</summary>
     public VerdictControl(PauseStore remembered, TimeProvider time)
-        : base(remembered.Read().Judging, time) { }
+        : base(remembered.Read().Judging, time) => Backoff = new JudgeBackoff(time);
 
     internal VerdictControl(bool startPaused = true, TimeProvider? time = null)
-        : base(startPaused, time) { }
+        : base(startPaused, time) => Backoff = new JudgeBackoff(time ?? TimeProvider.System);
 
     /// <summary>Records which track a session is judging, so the UI can show it before the Tracks rows catch up.</summary>
     public void ReportJudging(string videoId, string activity)

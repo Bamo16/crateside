@@ -23,4 +23,4 @@ After the ledger's own refusals, a recordable verdict file is checked twice more
 - "Backed" is counted on the center's key, so two backers agreeing against keydetect back a HIGH on their key; keydetect and one backer agreeing is enough, as in the prompt's backing table.
 - A tonic check is required to be present, not to be right.
 - Evidence with no detector readings can no longer carry a HIGH.
-- Stages other than the verdict stage and the spend-down loop do not use the stated wait; another stage waking the verdict stage can retry sooner.
+- Stages other than the verdict stage and the spend-down loop do not use the stated wait; another stage waking the verdict stage can retry sooner. Amended 2026-10-30: it no longer can, and a 429 stating no wait backs off from a minute instead of keeping two ([ADR 0070](0070-a-refusing-endpoint-holds-judging-with-a-backoff.md)).

@@ -122,8 +122,11 @@ A backend is trusted only after its own agreement check against verdicts already
 Setting any of `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY` or `ANTHROPIC_AUTH_TOKEN` takes the judge
 off the weekly Claude limit: the quota guard never holds it, and with Library backfill on, ordinary
 judging works the backlog too ([ADR 0067](adr/0067-a-judge-off-the-claude-limit-is-not-held-by-it.md)).
-A rate limit from such an endpoint holds judging for the wait the endpoint states, up to an hour, or two
-minutes where it states none (ADR 0069).
+When the endpoint refuses a session (a rate limit, an overload, a server error, or no answer), judging
+holds for the wait the endpoint states, up to an hour, or else a minute doubling to thirty, until a
+session is served; the song is not failed for it
+([ADR 0070](adr/0070-a-refusing-endpoint-holds-judging-with-a-backoff.md)). A spent Claude allowance
+still pauses judging.
 Claude Code sends its claude.ai login in the `Authorization` header unless `ANTHROPIC_AUTH_TOKEN`
 replaces it, so a local endpoint that checks that header wants `ANTHROPIC_AUTH_TOKEN`, not
 `ANTHROPIC_API_KEY`.
