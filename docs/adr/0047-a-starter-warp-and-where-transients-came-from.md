@@ -13,12 +13,12 @@ dragged into an empty arrangement, the clip's tempo then sets the arrangement's,
 at the start of every warp. #54 settled how crateside writes sidecars: Live needs the saved-clip
 byte set, and a record of the sidecars crateside wrote tells them apart from the user's.
 
-Two things the user said on 2026-10-02 shape this:
+Two things settled on 2026-10-02 shape this:
 
 - **A warp is the user's once they save it.** Dragging the clips in, finding the verse, adjusting
   the offset or the downbeat and pressing *Save Default Clip* is a sign-off. The result is as
   trustworthy as a warp placed by hand.
-- **Raw data for FiLL may want Live's transients rather than crateside's.** The user's sign-off
+- **Raw data for FiLL may want Live's transients rather than crateside's.** Signing a warp off
   does not touch them: Live never detects transients in a sidecar it did not write
   (docs/notes/2026-10-02-transients-against-lives.md). So once the user saves, the warp is theirs,
   but the transients are still whatever crateside wrote. The record of written sidecars stops

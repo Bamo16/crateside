@@ -50,8 +50,8 @@ saved clip is tried against its siblings in staging and in Mashup Samples. That 
 triggers in #54: a re-cut landing in staging, and the user saving one stem whose siblings are still
 unwarped. Decoding uses the CPU and contends for nothing, like detection.
 
-**It ships switched off** (`Warps:LendAutomatically` in appsettings). The user asked for it on once
-the transient detector met its bar. On the library it does for instrumentals and drums but not for
+**It ships switched off** (`Warps:LendAutomatically` in appsettings). It is to be switched on once
+the transient detector meets its bar. On the library it does for instrumentals and drums but not for
 vocals ([the note](../notes/2026-10-02-transients-against-lives.md)), and vocals are the stems most
 often given a borrowed warp. A borrowed sidecar the user has not saved over is crateside's to
 rewrite, so a better detector can later replace the transients it wrote.

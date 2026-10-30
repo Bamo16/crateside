@@ -17,7 +17,7 @@ Ableton's `.asd` sidecars, which only crateside reads. keytag records what its d
 (`bpm.value`, keytag's recommendation, and `bpm.beatdetect`, ffmpeg's raw figure) and has no access
 to the warps.
 
-The user asked for detector accuracy on the page that became Counts, mainly for ffmpeg's
+Detector accuracy was asked for on the page that became Counts, mainly for ffmpeg's
 `beatdetect`, whose maintainer they can take it to (#68, 2026-09-26).
 
 ## Decision
