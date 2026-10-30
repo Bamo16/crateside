@@ -1,4 +1,3 @@
-using Crateside.Core;
 using Crateside.Core.Samples;
 
 namespace Crateside.Tests.Ledger;
@@ -6,8 +5,6 @@ namespace Crateside.Tests.Ledger;
 /// <summary>A stem on disk joins to a ledger verdict, against the real ledger and library.</summary>
 public sealed class KeyLedgerRealDataTests
 {
-    private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
-
     [Fact]
     public void Reads_the_real_ledger()
     {
@@ -51,15 +48,13 @@ public sealed class KeyLedgerRealDataTests
     [Fact]
     public void Every_staged_stem_joins_to_a_ledger_verdict()
     {
-        Assert.SkipUnless(
-            TestLedger.HasReal && Directory.Exists(StagingRoot),
-            "Ledger and staging root must both be present."
-        );
+        var staging = RealPaths.Staging();
+        Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
 
         var ledger = TestLedger.FromReal();
 
         var unresolved = Directory
-            .GetFiles(StagingRoot, "*.flac")
+            .GetFiles(staging, "*.flac")
             .Select(path => (Name: Path.GetFileName(path), Tags: StemTagReader.Read(path)))
             .Where(s =>
                 s.Tags?.SourceVideoId is null
@@ -74,14 +69,12 @@ public sealed class KeyLedgerRealDataTests
     [Fact]
     public void The_join_survives_a_renamed_file()
     {
-        Assert.SkipUnless(
-            TestLedger.HasReal && Directory.Exists(StagingRoot),
-            "Ledger and staging root must both be present."
-        );
+        var paths = RealPaths.Create();
+        Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
 
         // Its ledger identity is "alan gomez, luck ra - luck ra | mission 15": only the video ID
         // in the tag can find it.
-        var stem = new[] { StagingRoot, RealPaths.Create().LibraryFolder }
+        var stem = new[] { paths.StagingFolder, paths.LibraryFolder }
             .Select(r => Path.Combine(r, "Alan Gomez - Mission 15 (Vocal - Full).flac"))
             .FirstOrDefault(File.Exists);
 

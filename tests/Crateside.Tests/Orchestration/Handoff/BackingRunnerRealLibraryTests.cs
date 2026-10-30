@@ -8,28 +8,31 @@ namespace Crateside.Tests.Orchestration.Handoff;
 /// <summary>What a backing pass would do to the user's actual library, without writing to it.</summary>
 public sealed class BackingRunnerRealLibraryTests
 {
-    private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";
+    private static string Library()
+    {
+        var library = RealPaths.Library();
+        Assert.SkipUnless(TestLedger.HasReal, "No ledger on this machine.");
 
-    private static bool Available => Directory.Exists(LibraryRoot) && TestLedger.HasReal;
+        return library;
+    }
 
-    private static IReadOnlyList<TagAssignment> Unbacked() =>
+    private static IReadOnlyList<TagAssignment> Unbacked(string library) =>
         new BackingRunner(new FolderInfoReader(), new FolderInfoWriter()).Unbacked(
-            LibraryRoot,
+            library,
             TestLedger.FromReal()
         );
 
     [Fact]
     public void No_key_the_store_already_holds_is_offered_again()
     {
-        Assert.SkipUnless(Available, "The library and the ledger must be present.");
-
-        var backed = new FolderInfoReader().Read(LibraryRoot);
+        var library = Library();
+        var backed = new FolderInfoReader().Read(library);
 
         // Having a key is the test, not having an entry.
         Assert.DoesNotContain(
-            Unbacked(),
+            Unbacked(library),
             a =>
-                backed.TryGet(Path.Combine(LibraryRoot, a.RelativePath), out var tags)
+                backed.TryGet(Path.Combine(library, a.RelativePath), out var tags)
                 && tags.IsKeyTagged
         );
     }
@@ -37,15 +40,14 @@ public sealed class BackingRunnerRealLibraryTests
     [Fact]
     public void An_entry_it_completes_keeps_every_keyword_that_was_there()
     {
-        Assert.SkipUnless(Available, "The library and the ledger must be present.");
-
-        var backed = new FolderInfoReader().Read(LibraryRoot);
+        var library = Library();
+        var backed = new FolderInfoReader().Read(library);
 
         Assert.All(
-            Unbacked(),
+            Unbacked(library),
             assignment =>
             {
-                if (!backed.TryGet(Path.Combine(LibraryRoot, assignment.RelativePath), out var was))
+                if (!backed.TryGet(Path.Combine(library, assignment.RelativePath), out var was))
                     return;
 
                 Assert.All(
@@ -59,10 +61,10 @@ public sealed class BackingRunnerRealLibraryTests
     [Fact]
     public void Every_entry_it_would_write_is_a_keyword_ableton_already_knows()
     {
-        Assert.SkipUnless(Available, "The library and the ledger must be present.");
+        var library = Library();
 
         Assert.All(
-            Unbacked().SelectMany(a => a.Keywords ?? []),
+            Unbacked(library).SelectMany(a => a.Keywords ?? []),
             keyword =>
                 Assert.True(
                     CratesideKeywords.IsKnown(keyword),
@@ -74,10 +76,10 @@ public sealed class BackingRunnerRealLibraryTests
     [Fact]
     public void Every_entry_it_would_write_carries_a_whole_key()
     {
-        Assert.SkipUnless(Available, "The library and the ledger must be present.");
+        var library = Library();
 
         Assert.All(
-            Unbacked(),
+            Unbacked(library),
             assignment =>
                 Assert.Equal(
                     2,
@@ -91,9 +93,9 @@ public sealed class BackingRunnerRealLibraryTests
     [Fact]
     public void The_pass_names_each_file_once()
     {
-        Assert.SkipUnless(Available, "The library and the ledger must be present.");
+        var library = Library();
 
-        var assignments = Unbacked();
+        var assignments = Unbacked(library);
 
         Assert.Equal(
             assignments.Count,

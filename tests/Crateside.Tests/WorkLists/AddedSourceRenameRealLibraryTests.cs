@@ -7,18 +7,15 @@ namespace Crateside.Tests.WorkLists;
 /// <summary>An added source renamed and moved to the library is still recognized as fetched.</summary>
 public sealed class AddedSourceRenameRealLibraryTests
 {
-    private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";
-
-    private static bool Available => Directory.Exists(LibraryRoot) && TestLedger.HasReal;
-
     [Fact]
     public void An_added_source_moved_to_the_library_is_still_held()
     {
-        Assert.SkipUnless(Available, "The library and the ledger must be present.");
+        var library = RealPaths.Library();
+        Assert.SkipUnless(TestLedger.HasReal, "No ledger on this machine.");
 
         var ledger = TestLedger.FromReal();
 
-        var processed = ProcessedTracks.Scan(ledger, [LibraryRoot]);
+        var processed = ProcessedTracks.Scan(ledger, [library]);
         var inventories = WorkListService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
 
         var held = inventories

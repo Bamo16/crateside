@@ -7,19 +7,20 @@ namespace Crateside.Tests.WorkLists;
 /// <summary>The inventory lookup run against the user's actual library and ledger.</summary>
 public sealed class InventoryRealLibraryTests
 {
-    private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
-    private const string LibraryRoot = @"P:\RYAN\Ableton\Mashup Samples";
+    private static string[] Roots()
+    {
+        string[] roots = [RealPaths.Staging(), RealPaths.Library()];
+        Assert.SkipUnless(TestLedger.HasReal, "No ledger on this machine.");
 
-    private static bool Available =>
-        Directory.Exists(LibraryRoot) && TestLedger.HasReal && Directory.Exists(StagingRoot);
+        return roots;
+    }
 
     [Fact]
     public void Every_upload_of_a_cut_song_reaches_that_songs_stems()
     {
-        Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
-
+        var roots = Roots();
         var ledger = TestLedger.FromReal();
-        var processed = ProcessedTracks.Scan(ledger, [StagingRoot, LibraryRoot]);
+        var processed = ProcessedTracks.Scan(ledger, roots);
         var inventories = WorkListService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
 
         string Song(string videoId) => ledger.SongFor(videoId) ?? videoId;
@@ -41,10 +42,9 @@ public sealed class InventoryRealLibraryTests
     [Fact]
     public void An_upload_with_no_file_of_its_own_still_sees_the_songs_presets()
     {
-        Assert.SkipUnless(Available, "Both stem roots and the ledger must be present.");
-
+        var roots = Roots();
         var ledger = TestLedger.FromReal();
-        var processed = ProcessedTracks.Scan(ledger, [StagingRoot, LibraryRoot]);
+        var processed = ProcessedTracks.Scan(ledger, roots);
         var inventories = WorkListService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
 
         var withoutFilesOfTheirOwn = inventories
