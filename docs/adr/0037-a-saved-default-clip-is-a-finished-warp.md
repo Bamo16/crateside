@@ -47,7 +47,7 @@ samples are all warped is *ready to move*.**
 - **A saved clip is only as good as the user's habit.** The save comes after the warp is good
   because that is how the user works, not because Ableton enforces it. A clip saved early would read
   as warped, and nothing on disk could show it. The one slip found so far is the opposite:
-  *Kreayshawn – Gucci Gucci (Acapella)*, moved with no clip saved.
+  Kreayshawn – *Gucci Gucci (Acapella)*, moved with no clip saved.
 - **Staging's sidecars are read on every rebuild of the tracks view,** about 500 KB each. Staging
   holds a few songs at a time, so this was not measured as a cost.
 - The board stays purely derived: the signal is read off Ableton's own file, which is what ADR 0002

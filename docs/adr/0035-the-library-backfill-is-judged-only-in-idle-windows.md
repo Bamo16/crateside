@@ -47,7 +47,7 @@ stage, whether judging is paused or running.**
   anyway* on a pasted track writes it too, and `actions.jsonl` (kept only from 2026-09-25) records
   no such case among the 89.
 - A backfill verdict can disagree with the key the user tagged by hand, and crateside never
-  writes to Mashup Samples. The first was *1991 – Jungle (Colin Hennerz Remix)*, judged D♯ major
+  writes to Mashup Samples. The first was 1991 – *Jungle (Colin Hennerz Remix)*, judged D♯ major
   against a hand tag of G♯ major. The row shows the audit note, and
   `The_index_and_the_ledger_never_disagree_about_a_key` fails until the user settles it.
 - The last roll's time is still held in memory only, so a restart forgets it, and a second roll

@@ -50,7 +50,7 @@ which set is open. Two signals were measured on 2026-09-27:
 
 ## Checked, 2026-09-27
 
-Live with the user, on *Chris Lake, Skrillex – La Noche* and a set made for the test, *Rename
+Live with the user, on Chris Lake, Skrillex, ANITA B QUEEN – *LA NOCHE* and a set made for the test, *Rename
 Test*. With the set open, the rename was refused and named it. With it closed, both stems were
 renamed with their sidecars and tag entries (keywords intact), all four references in the set were
 relinked, and its backup was kept. Reopened in Ableton, the set found the sample; Ableton redrew
