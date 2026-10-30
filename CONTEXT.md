@@ -505,7 +505,7 @@ it. The two run types below are named after which of **evidence** and **verdict*
   only a verdict run records, so a track becomes ready for it by having been
   judged rather than by the clock coming round.
 - **Library backfill** — library tracks tagged by hand before crateside, queued
-  from the Library page to be judged and never cut. Marked when queued, so a track
+  from the Dashboard's library section to be judged and never cut. Marked when queued, so a track
   stays backfill after its download makes it stop being library-only. Judged only in
   the **spend-down**, never by the ordinary verdict stage, unless the user asks for
   one first ([ADR 0035](docs/adr/0035-the-library-backfill-is-judged-only-in-idle-windows.md)).
@@ -514,7 +514,7 @@ it. The two run types below are named after which of **evidence** and **verdict*
   the weekly window it runs in.
 - **Sourceless song** — a library song StemForge cut before it recorded a source (about
   June 2026), so no video ID names it. Its row is library-only and keyed `name:` plus the
-  file name without the preset, the identity the Library page already uses; renaming the
+  file name without the preset, the identity the library counts already use; renaming the
   files changes the key, and the song page follows. It has no upload, so nothing that needs
   one is offered, and it is never queued for backfill (#94).
 - **Spend-down** — the hours before the weekly Claude reset (three by default), in which the
