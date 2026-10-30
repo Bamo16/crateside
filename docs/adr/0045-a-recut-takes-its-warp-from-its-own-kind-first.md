@@ -8,8 +8,8 @@
 ## Context
 
 ADR 0043 lets only an instrumental, karaoke or the kept source lend a warp, because a vocal is
-sometimes re-warped on its own. On 2026-10-02 how that happens, and what follows from it, was set
-out:
+sometimes re-warped on its own. How that happens, and what follows from it
+(2026-10-02):
 
 - **A group is warped together, on the drum stem.** The drum stem is then deleted, or left in
   staging (#87), and the instrumental and vocal each carry the warp, usually still in step.

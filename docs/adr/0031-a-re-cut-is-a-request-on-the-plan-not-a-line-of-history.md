@@ -2,8 +2,8 @@
 
 - Status: Accepted
 - Date: 2026-09-24
-- Settles [#50](https://github.com/Bamo16/crateside/issues/50), Option A, with the user's
-  go-ahead on its three questions.
+- Settles [#50](https://github.com/Bamo16/crateside/issues/50), Option A, with the user's go-ahead
+  on its three questions.
 
 ## Context
 
