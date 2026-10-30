@@ -181,9 +181,11 @@ only), paid services behind a switchable interface, nothing listening beyond loc
 authentication. Write issues and docs in the public voice ("the maintainer"). The full list and
 the pre-publication checklist are in #107.
 
-**People.** Name someone where they made the thing, linked the first time: "FiLL's
-[`beatdetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-beatdetect) filter", then plain
-"FiLL" (always that spelling, whatever his handle on a given site). The maintainer is "the
+**People.** The detection filters are NoMercy's in description: "NoMercy's `beatdetect`
+filter", linking [nomercy-ffmpeg](https://github.com/NoMercy-Entertainment/nomercy-ffmpeg) the
+first time. Name a person where the authorship is the point (the README's Credits, a note measuring
+a build of his source), linked the first time, then plain "FiLL" (always that spelling, whatever
+his handle on a given site). The maintainer is "the
 maintainer" in process rules and "Bamo" in prose; `Bamo16` only where it is the account (a GitHub
 link, the licence). Never narrate a conversation ("FiLL said on Discord", "Bamo asked for"), and
 never quote a private message: write the decision or the measured fact and link its public source
