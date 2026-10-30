@@ -235,7 +235,7 @@ rather than the 15–18 recorded above from the weaker pair.
 *Corrected in place, hours after being written: this section first recorded the sample as an
 **upper bound**, on the reasoning that a Claude Code session had been working on the same account
 inside the same window and its usage would be inside the sixty-four points. Plausible, and wrong —
-that session was idle across the whole interval, which the user confirmed when they read it. The
+that session was idle across the whole interval, which was confirmed on checking it. The
 premise was inferred rather than checked, which is the exact failure [ADR 0002](0002-there-is-no-warped-signal.md)'s
 postscript names: a fact about someone else's tools or habits is a fact to check with them. Worth
 leaving visible here, because this file already documents one measurement that was wrong for a
