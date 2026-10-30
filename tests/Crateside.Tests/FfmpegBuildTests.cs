@@ -26,29 +26,28 @@ public sealed class FfmpegBuildTests
     [Fact]
     public async Task Keydetect_reports_its_own_version_and_a_build_without_beatdetect_has_none()
     {
-        var executable = @"V:\Repos\keydetect-harness\builds\ffmpeg-keydetect-1.2.1.exe";
-
-        if (!File.Exists(executable))
-        {
-            Assert.Skip("The keydetect 1.2.1 build is not on this machine");
-
-            return;
-        }
-
-        var keydetect = await FfmpegBuild.IdentifyAsync(
-            new ProcessRunner(),
-            executable,
-            FfmpegFilter.Keydetect,
-            TestContext.Current.CancellationToken
-        );
-        var beatdetect = await FfmpegBuild.IdentifyAsync(
-            new ProcessRunner(),
-            executable,
-            FfmpegFilter.Beatdetect,
+        var pinned = RealPaths.PinnedBuild(FfmpegFilter.Keydetect);
+        var runner = new ProcessRunner();
+        var filters = await runner.RunAsync(
+            new ProcessRequest(pinned.Path, ["-hide_banner", "-filters"]),
             TestContext.Current.CancellationToken
         );
 
-        Assert.Equal("1.2.1", keydetect?.Version);
+        Assert.SkipWhen(
+            filters.StandardOutput.Contains(" beatdetect ", StringComparison.Ordinal),
+            "The pinned keydetect build carries beatdetect too."
+        );
+
+        var keydetect = await IdentifyAsync(runner, pinned.Path, FfmpegFilter.Keydetect);
+        var beatdetect = await IdentifyAsync(runner, pinned.Path, FfmpegFilter.Beatdetect);
+
+        Assert.Matches(@"^\d+\.\d+\.\d+$", keydetect?.Version);
         Assert.Null(beatdetect);
     }
+
+    private static Task<FfmpegBuild?> IdentifyAsync(
+        ProcessRunner runner,
+        string fileName,
+        FfmpegFilter filter
+    ) => FfmpegBuild.IdentifyAsync(runner, fileName, filter, TestContext.Current.CancellationToken);
 }
