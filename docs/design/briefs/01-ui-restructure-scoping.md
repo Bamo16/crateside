@@ -197,10 +197,10 @@ Design should not solve these, but should not make them awkward either:
   not exist yet.**
 - **A live view of the judging agent.** Buildable now — judging currently runs
   `--output-format json` (one payload at the end) and Claude Code also offers `stream-json`,
-  which emits NDJSON per message and tool call. The user wants something like
-  https://www.beautifului.dev/ for this. Not in this pass.
+  which emits NDJSON per message and tool call. Something like
+  https://www.beautifului.dev/ is wanted for this. Not in this pass.
 - **Stem requests.** Replacing the instrumental toggle with a preset picker, *including asking
-  for extra stems for a track already staged or finished*. The user has not needed it yet. The
+  for extra stems for a track already staged or finished*. Not needed yet. The
   seam exists in `SeparationRecipe.For`.
 
 ---
