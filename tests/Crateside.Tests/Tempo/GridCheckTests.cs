@@ -6,6 +6,8 @@ namespace Crateside.Tests.Tempo;
 /// <summary>Transients against a beat grid: a tempo's fit, and a warp's drift and steps.</summary>
 public sealed class GridCheckTests
 {
+    private const int SampleRate = 44_100;
+
     [Fact]
     public void Refining_finds_the_tempo_the_transients_were_played_at() =>
         Assert.Equal(128.02, GridCheck.Refine(Hits(128.02, seconds: 240), 128), 3);
@@ -13,18 +15,57 @@ public sealed class GridCheckTests
     [Fact]
     public void The_first_beat_is_where_the_loud_transients_fall_not_where_the_most_do()
     {
-        const int Rate = 44_100;
         var transients = Enumerable
             .Range(0, 80)
-            .Select(beat => new Transient((int)((0.55 + beat * 0.5) * Rate), 0.7f))
+            .Select(beat => new Transient((int)((0.55 + beat * 0.5) * SampleRate), 0.7f))
             .Concat(
                 Enumerable
                     .Range(0, 40)
-                    .Select(bar => new Transient((int)((0.3 + bar * 1.0) * Rate), 1f))
+                    .Select(bar => new Transient((int)((0.3 + bar * 1.0) * SampleRate), 1f))
             )
             .ToArray();
 
-        Assert.Equal(0.3, GridCheck.FirstBeat(transients, Rate, 120) ?? 0, 2);
+        Assert.Equal(0.3, GridCheck.FirstBeat(transients, SampleRate, 120) ?? 0, 2);
+    }
+
+    [Fact]
+    public void A_3_3_2_rhythm_loudest_off_the_beat_is_placed_on_the_beat_beatdetect_gives()
+    {
+        // omniboi – Sugar Glider: hits on 16ths 0, 3 and 6 of every two beats, 16th 3 the loudest.
+        const double Bpm = 69.99941;
+        const double FirstBeat = 0.4;
+        var transients = Pattern(Bpm, FirstBeat, (0, 0.85f), (3, 1f), (6, 0.9f));
+
+        Assert.Equal(
+            FirstBeat - Sixteenth(Bpm),
+            GridCheck.FirstBeat(transients, SampleRate, Bpm) ?? 0,
+            2
+        );
+        Assert.Equal(
+            FirstBeat,
+            GridCheck.FirstBeat(transients, SampleRate, Bpm, near: FirstBeat - 0.024) ?? 0,
+            2
+        );
+    }
+
+    [Fact]
+    public void Offbeat_8ths_as_loud_as_the_beats_are_placed_on_the_beat_beatdetect_gives()
+    {
+        // VaVa, Snail's House – Persona: the beat and the offbeat 8th, the offbeat a touch louder.
+        const double Bpm = 176.9953;
+        const double FirstBeat = 0.1;
+        var transients = Pattern(Bpm, FirstBeat, (0, 0.95f), (2, 1f), (4, 0.95f), (6, 1f));
+
+        Assert.Equal(
+            FirstBeat + 2 * Sixteenth(Bpm),
+            GridCheck.FirstBeat(transients, SampleRate, Bpm) ?? 0,
+            2
+        );
+        Assert.Equal(
+            FirstBeat,
+            GridCheck.FirstBeat(transients, SampleRate, Bpm, near: FirstBeat + 0.011) ?? 0,
+            2
+        );
     }
 
     [Fact]
@@ -107,4 +148,27 @@ public sealed class GridCheckTests
 
     private static Warp Warp(double bpm, double start = 0) =>
         new() { Markers = [new(start, 0), new(start + 60 / bpm, 1)] };
+
+    private static double Sixteenth(double bpm) => 15 / bpm;
+
+    /// <summary>A minute of a two-beat pattern from <paramref name="firstBeat"/>: each hit a 16th of the pattern and its energy.</summary>
+    private static Transient[] Pattern(
+        double bpm,
+        double firstBeat,
+        params (int Sixteenth, float Energy)[] hits
+    ) =>
+        [
+            .. Enumerable
+                .Range(0, (int)(bpm / 2))
+                .SelectMany(pattern =>
+                    hits.Select(hit => new Transient(
+                        (int)
+                            Math.Round(
+                                (firstBeat + (pattern * 8 + hit.Sixteenth) * Sixteenth(bpm))
+                                    * SampleRate
+                            ),
+                        hit.Energy
+                    ))
+                ),
+        ];
 }

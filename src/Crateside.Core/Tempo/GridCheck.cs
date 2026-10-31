@@ -53,10 +53,15 @@ public static class GridCheck
     }
 
     /// <summary>
-    /// Where the first beat falls at <paramref name="bpm"/>, in seconds from the start of the file: the transients
-    /// folded onto one beat, the louder weighted to the fourth power, and the peak taken (#72); null when too few.
+    /// Where the first beat falls at <paramref name="bpm"/>, in seconds: the transients folded onto one beat, louder to the
+    /// fourth power, the peak taken within half a 16th of <paramref name="near"/> when given (ADR 0054); null when too few.
     /// </summary>
-    public static double? FirstBeat(IReadOnlyList<Transient> transients, int sampleRate, double bpm)
+    public static double? FirstBeat(
+        IReadOnlyList<Transient> transients,
+        int sampleRate,
+        double bpm,
+        double? near = null
+    )
     {
         if (transients.Count < MinToPlace)
             return null;
@@ -71,17 +76,32 @@ public static class GridCheck
             weights[(int)ms % bins] += Math.Pow(transient.Energy, LoudnessPower);
         }
 
-        var peak = Enumerable
-            .Range(0, bins)
-            .MaxBy(bin =>
-                Enumerable
-                    .Range(-SmoothingBins, 2 * SmoothingBins + 1)
-                    .Sum(step =>
-                        weights[(bin + step + bins) % bins] * (SmoothingBins + 1 - Math.Abs(step))
-                    )
-            );
+        var candidates = near is { } nearSeconds
+            ? Enumerable
+                .Range(0, bins)
+                .Where(bin =>
+                    Circular(bin + 0.5 - nearSeconds * 1000, beatMs)
+                    <= beatMs / SixteenthsPerBeat / 2
+                )
+            : Enumerable.Range(0, bins);
+
+        var peak = candidates.MaxBy(bin =>
+            Enumerable
+                .Range(-SmoothingBins, 2 * SmoothingBins + 1)
+                .Sum(step =>
+                    weights[(bin + step + bins) % bins] * (SmoothingBins + 1 - Math.Abs(step))
+                )
+        );
 
         return (peak + 0.5) / 1000;
+    }
+
+    /// <summary>How far <paramref name="ms"/> is from the nearest multiple of <paramref name="period"/>.</summary>
+    private static double Circular(double ms, double period)
+    {
+        var within = (ms % period + period) % period;
+
+        return Math.Min(within, period - within);
     }
 
     /// <summary>The transients against the grid a warp lays down, so an offset of 0 is a transient on its line.</summary>

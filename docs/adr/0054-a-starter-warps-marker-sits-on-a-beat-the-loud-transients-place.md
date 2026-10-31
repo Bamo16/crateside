@@ -1,7 +1,8 @@
 # 0054 — a starter warp's marker sits on a beat the loud transients place
 
 - Status: Accepted; amended 2026-10-19 (below): the marker's beat is numbered from the downbeat
-  where the filter is sure of it, and *Tempo only* is removed
+  where the filter is sure of it, and *Tempo only* is removed; amended 2026-10-30: beatdetect's beat
+  picks the 16th, and the fold places the marker within it
 - Date: 2026-10-13
 - Amends [ADR 0047](0047-a-starter-warp-and-where-transients-came-from.md), which put the starter
   warp's one marker at the start of the audio. Builds [#72](https://github.com/Bamo16/crateside/issues/72)
@@ -108,3 +109,47 @@ as no choice made, so appsettings applies. The maintainer may bring the mode bac
   default is *Tempo only*: the placement has been seen in Live on one track.
 
 **Amended 2026-10-30.** beatdetect 1.4.0 rescaled `downbeat_confidence`, so the gate is 0.6 on it (dd86fea, `StarterGrid.DownbeatSureAt`); the 0.03 above and its counts are 1.3.x's.
+
+**Amended 2026-10-30: beatdetect's beat picks which 16th the marker goes on, and the fold places it
+within half a 16th of that beat.** The fold alone could land a whole 16th or 8th off: on omniboi –
+*Sugar Glider*, `o9IUpPwdgL0` (a 3-3-2 rhythm whose loudest hit is the last 16th before a beat) it put the marker a
+16th early, and on VaVa, Snail's House – *Persona*, `kbV8MOB6mWY` (offbeat 8ths as loud as the beats) half a beat
+late. The 10 ms check cannot see either, because it measures phase within a 16th. The reading's
+`beat_offset_ms` now travels in `StarterGrid.BeatSeconds`, and `GridCheck.FirstBeat` takes the peak
+only among bins within half a 16th of it; with no beat in the reading, the whole fold is used as
+before.
+
+- **Measured** (2026-10-30) on the 303 steady library instrumentals whose source beatdetect reads in
+  the warp's octave, on the pinned `1.4.0-0fc32ce` with `hpss=1`, folding crateside's own transients
+  on each instrumental as a starter does at handoff, against the maintainer's warps. The 30 s drift gate was not applied (the run reads whole files).
+  "Off the beat"
+  is a marker nearer any 16th but the beat. The run and the per-track lists are in beatdetect-harness,
+  `results/2026-10-30-1.4.0-0fc32ce-hpss-library-source/marker-phase.md`.
+
+  | rule | off the beat, all 303 | where one tempo holds (233) | on the beat within 10 ms, all |
+  |---|---|---|---|
+  | the fold (before) | 26 (19 half a beat, 7 a 16th) | 23 | 250 |
+  | beatdetect's beat alone | 12 | 9 | 215 |
+  | **the fold within half a 16th of it (built)** | **13** | **9** | **262** |
+
+  Against the fold, the rule built fixes 24 and breaks 11 (exact McNemar p 0.04); where one tempo
+  holds, so a starter is written, it fixes 21 and breaks 7 (p 0.013). Both named tracks move onto the
+  beat, within 2 and 5 ms. On the sidecars' transients instead, the fold is off on 35 and the rule
+  built on 13 (29 fixed, 7 broken).
+- **What it breaks** (where a starter is written): seven tracks the fold had on the beat now land
+  off it, six of them half a beat (Ludacris, Sleepy Brown – *Blueberry Yum Yum* `ftXz7aMQNTY`, Mr Weebl – *Badger Badger
+  Badger* `Pse8vPErraU`, Netsky, Andromedik – *Out of Body* `Xa8n8lE-_XI`, Run The Jewels – *ooh la
+  la* `jlA-sbRWzBQ`, SNAP! – *The Power* `-BxiAL5ON90`, Yorushika – *Bubble* `n9GWKPu9Fh8`) and one a
+  16th (Lil Wayne, Babyface – *Comfortable* `CJvUrFMSUbQ`). On all seven beatdetect's own beat is in that same wrong
+  16th, and the window followed it. They are moved by hand as before.
+- **Variants that did not earn a place.** Falling back to the fold when the reading's confidence
+  is under 0.1 or 0.2 still leaves 13 off the beat. Falling back when the window's best is under half
+  the fold's peak broke only 3 on crateside's transients but put 20 off the beat on the sidecars'
+  (against 13), and was picked on this set, so it is not used. A window of a 16th or a quarter beat
+  instead of half a 16th does no better.
+- **This reverses the finding above that holding the phase near beatdetect's grid did worse** (34–37
+  off the beat in [the 2026-10-13 note](../notes/2026-10-13-the-marker-from-crateside-s-own-transients.md)).
+  That was 1.3.0's beat on the instrumental, a window of a quarter beat, and 353 tracks; this is
+  1.4.0's on the source (ADR 0065).
+- The marker beatdetect gives alone is less precise than the fold (215 against 262 on the beat
+  within 10 ms), so the fold still places it.
