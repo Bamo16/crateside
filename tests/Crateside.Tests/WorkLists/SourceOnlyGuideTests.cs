@@ -80,6 +80,26 @@ public sealed class SourceOnlyGuideTests
         Assert.Empty(Compose(Files(Staging, [null]), plan).AwaitingSeparation);
     }
 
+    [Fact]
+    public void A_staged_source_whose_guide_is_being_cut_is_in_the_separation_list_once()
+    {
+        // The source reached Staging ahead of the guide, and the cut is still owed.
+        var view = WorkListsView.Compose(
+            [new WorkItem { VideoId = Track, Title = "Track" }],
+            new HashSet<string> { Track },
+            new HashSet<string>(),
+            new HashSet<string>(),
+            new Dictionary<string, TrackInstruction>
+            {
+                [Track] = new() { VideoId = Track, Plan = SourceOnly },
+            },
+            awaitingCut: new HashSet<string> { Track },
+            inventories: new Dictionary<string, StemInventory> { [Track] = Files(Staging, [null]) }
+        );
+
+        Assert.Equal(Track, Assert.Single(view.AwaitingSeparation).VideoId);
+    }
+
     private static WorkListsView Compose(StemInventory inventory, StemPlan plan) =>
         WorkListsView.Compose(
             [new WorkItem { VideoId = Track, Title = "Track" }],

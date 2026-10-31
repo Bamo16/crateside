@@ -8,6 +8,7 @@ using Crateside.Core.Marks;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Plans;
 using Crateside.Core.Samples;
@@ -80,8 +81,10 @@ public sealed record TracksView
                 StringComparer.Ordinal
             );
 
-        var gpuLine = view
-            .AwaitingSeparation.Select((item, index) => (item.VideoId, Position: index + 1))
+        // What the separation drainer will actually pick, so a row is never in a line it isn't in.
+        var gpuLine = new SeparationSelector(jobs)
+            .Line(view)
+            .Select((item, index) => (item.VideoId, Position: index + 1))
             .ToDictionary(entry => entry.VideoId, entry => entry.Position, StringComparer.Ordinal);
 
         var staged = staging

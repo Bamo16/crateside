@@ -26,11 +26,17 @@ public sealed class EvidenceSelector(
             // early costs it a strike for arriving before its audio, which is not a fault of the
             // track and would eventually make it give up.
             && workingSet.TryGetSource(i.VideoId, out _)
+            // The file lands before stemforge-cli tags it, and a detector holding it open makes
+            // that write fail silently: stems cut from it carry no source and join to nothing.
+            && !IsDownloading(i.VideoId)
             && IsEligible(i)
         )!;
 
         return next is not null;
     }
+
+    private bool IsDownloading(string videoId) =>
+        jobs.TryGet(videoId, JobStage.Download, out var download) && download.IsOpen;
 
     /// <summary>Retries even a succeeded detection, since the caller has already found its evidence gone.</summary>
     private bool IsEligible(WorkItem item) =>

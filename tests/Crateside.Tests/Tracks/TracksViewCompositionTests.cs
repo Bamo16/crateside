@@ -2,6 +2,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Orchestration.Tagging;
 using Crateside.Core.Plans;
 using Crateside.Core.Staging;
@@ -158,6 +159,68 @@ public sealed class TracksViewCompositionTests : IDisposable
                 }
             )
             .Rows;
+
+    private static WorkListsView InLineForTheGpu() =>
+        View(verdictWithoutStems: new HashSet<string>(StringComparer.Ordinal) { Video });
+
+    [Fact]
+    public void A_judged_track_without_stems_is_in_line_for_the_gpu()
+    {
+        var row = Assert.Single(Compose(InLineForTheGpu()));
+
+        Assert.Equal(TrackState.JudgedInLine, row.State);
+        Assert.Equal(1, row.GpuPosition);
+    }
+
+    [Fact]
+    public void A_track_already_separated_is_not_in_line_when_its_stems_cannot_be_found()
+    {
+        // Stems with no source in their tags join to no track, so it still reads as unseparated;
+        // the drainer never redoes a success unasked, so the line must not claim it either.
+        var jobs = Jobs();
+        jobs.Record(Video, JobStage.Separation, JobStatus.Running);
+        jobs.Record(Video, JobStage.Separation, JobStatus.Succeeded);
+
+        var row = Assert.Single(Compose(InLineForTheGpu(), jobs: jobs));
+
+        Assert.Null(row.GpuPosition);
+        Assert.NotEqual(TrackState.JudgedInLine, row.State);
+    }
+
+    [Fact]
+    public void A_track_separation_gave_up_on_shows_as_given_up_rather_than_in_line()
+    {
+        var jobs = Jobs();
+
+        for (var i = 0; i < SeparationSelector.DefaultMaxStrikes; i++)
+        {
+            jobs.Record(Video, JobStage.Separation, JobStatus.Running);
+            jobs.Record(Video, JobStage.Separation, JobStatus.Failed, error: "AudioExportError");
+        }
+
+        var row = Assert.Single(Compose(InLineForTheGpu(), jobs: jobs));
+
+        Assert.Null(row.GpuPosition);
+        Assert.Equal(TrackState.GaveUp, row.State);
+    }
+
+    [Fact]
+    public void A_track_listed_twice_for_the_gpu_composes_into_one_row()
+    {
+        var item = Item();
+        var view = new WorkListsView
+        {
+            Items = [item],
+            Outstanding = [],
+            FullyProcessed = [],
+            AwaitingKey = [],
+            AwaitingSeparation = [item, item],
+        };
+
+        var row = Assert.Single(Compose(view));
+
+        Assert.Equal(1, row.GpuPosition);
+    }
 
     [Fact]
     public void A_superseded_uploads_recycled_files_show_on_the_song_that_replaced_it()
