@@ -66,7 +66,7 @@
                     <span class="form-label">@form.Title(group)</span>
                     <span class="unit-note">
                         @(form.InBars
-                            ? "Bars as Live counts them, from the clip start of your warp."
+                            ? "Bars as Live's ruler numbers them: bar 1 is the warp's 1.1.1, and bars before it are -1, -2…"
                             : "No warp yet, so ranges are in minutes and seconds. Warp it in Live and the form takes bars.")
                     </span>
                 </div>
@@ -228,7 +228,7 @@
                     {
                         var clipStart = lender.Clip.Start;
                         <span class="notch" style="left: @P(X(clipStart, from, to))%"
-                              title="Clip start · @WarpWording.Time(clipStart) · bar 1.1"></span>
+                              title="Clip start · @WarpWording.Time(clipStart) · bar @StartBar(group)"></span>
                     }
                     @if (_form is { } dragged)
                     {
@@ -594,7 +594,7 @@
     }
 
     private static string DrawerSpan(WarpGroup group, RunWindow window) =>
-        (window.Bars ?? JudgeRanges.BarsOf(group, window.Start, window.End)) is { } bars
+        JudgeRanges.BarsOf(group, window.Start, window.End) is { } bars
             ? $"bars {bars.First}–{bars.Last} · {JudgeText.Time(window)}"
             : JudgeText.Time(window);
 
@@ -635,7 +635,7 @@
 
     /// <summary>A window's span in bars where the warp can say, else in time.</summary>
     private static string Span(WarpGroup group, RunWindow window) =>
-        window.Bars is null && JudgeRanges.BarsOf(group, window.Start, window.End) is { } bars
+        JudgeRanges.BarsOf(group, window.Start, window.End) is { } bars
             ? $"bars {bars.First}–{bars.Last}"
             : JudgeText.Span(window);
 
@@ -753,8 +753,10 @@
                 {
                     { Window.AskedBy: WindowAsker.User, Section: { } section } =>
                         new Band(reading.Window.Start, reading.Window.End, $"{section.Label} · {ModeText.Tag(section.Center)}", "yours", Window: index),
+                    { Window: { AskedBy: WindowAsker.User, Label: { Length: > 0 } label } } =>
+                        new Band(reading.Window.Start, reading.Window.End, label, "yours", Window: index),
                     { Window.AskedBy: WindowAsker.User } =>
-                        new Band(reading.Window.Start, reading.Window.End, reading.Window.Name, "yours", Window: index),
+                        new Band(reading.Window.Start, reading.Window.End, Span(group, reading.Window), "yours", Window: index),
                     _ => new Band(reading.Window.Start, reading.Window.End, $"judge · {Span(group, reading.Window)}", "judge", Window: index),
                 }
             ) ?? [],
@@ -790,9 +792,9 @@
             if (group.BeatAt(from) is not { } first || group.BeatAt(to) is not { } last)
                 yield break;
 
-            for (var bar = Math.Max(1, JudgeRanges.BarAt(group, first)); bar <= JudgeRanges.BarAt(group, last) + 1; bar++)
+            for (var index = group.Bars.IndexAt(first); index <= group.Bars.IndexAt(last) + 1; index++)
             {
-                if (group.SecondsAt(JudgeRanges.BeatOfBar(group, bar)) is { } at && X(at, from, to) is >= 0 and <= 100 and var x)
+                if (group.SecondsAt(index * group.Bars.BeatsPerBar) is { } at && X(at, from, to) is >= 0 and <= 100 and var x)
                     yield return x / 100;
             }
 
@@ -818,11 +820,7 @@
         if (!form.InBars)
             form.Place(line, (int)Math.Round(startSeconds), (int)Math.Round(endSeconds));
         else if (group.BeatAt(startSeconds) is { } first && group.BeatAt(endSeconds) is { } last)
-            form.Place(
-                line,
-                Math.Max(1, JudgeRanges.BarAt(group, first + 0.001)),
-                Math.Max(1, JudgeRanges.BarAt(group, last - 0.001))
-            );
+            form.Place(line, group.Bars.BarAt(first + 0.001), group.Bars.BarAt(last - 0.001));
 
         StateHasChanged();
     }
@@ -1186,12 +1184,14 @@
         if (zoom is not Zoom.Whole)
             _centerBeat = Clamped(
                 group,
-                fromWhole ? group.ClipStartBeat + BarsOf(zoom) * group.BeatsPerBar / 2.0 : _centerBeat
+                fromWhole
+                    ? group.Bars.IndexAt(group.ClipStartBeat) * group.Bars.BeatsPerBar + BarsOf(zoom) * group.Bars.BeatsPerBar / 2.0
+                    : _centerBeat
             );
     }
 
     private void Move(WarpGroup group, int direction) =>
-        _centerBeat = Clamped(group, _centerBeat + direction * BarsOf(_zoom) * group.BeatsPerBar / 2.0);
+        _centerBeat = Clamped(group, _centerBeat + direction * BarsOf(_zoom) * group.Bars.BeatsPerBar / 2.0);
 
     /// <summary>Follows the pointer across the strip while its button is held.</summary>
     private void Drag(WarpGroup group, double seconds, PointerEventArgs pointer)
@@ -1206,9 +1206,9 @@
         if (group.BeatAt(seconds) is not { } beat)
             return;
 
-        var half = BarsOf(_zoom) * group.BeatsPerBar / 2.0;
-        var bar = Math.Round((beat - half - group.ClipStartBeat) / group.BeatsPerBar);
-        _centerBeat = Clamped(group, group.ClipStartBeat + bar * group.BeatsPerBar + half);
+        var half = BarsOf(_zoom) * group.Bars.BeatsPerBar / 2.0;
+        var bar = Math.Round((beat - half) / group.Bars.BeatsPerBar);
+        _centerBeat = Clamped(group, bar * group.Bars.BeatsPerBar + half);
     }
 
     /// <summary>Keeps the whole window inside the track, so it never runs off either end.</summary>
@@ -1217,7 +1217,7 @@
         if (group.BeatAt(0) is not { } first || group.BeatAt(group.Seconds) is not { } last)
             return centerBeat;
 
-        var half = BarsOf(_zoom) * group.BeatsPerBar / 2.0;
+        var half = BarsOf(_zoom) * group.Bars.BeatsPerBar / 2.0;
 
         return first + half >= last - half ? (first + last) / 2 : Math.Clamp(centerBeat, first + half, last - half);
     }
@@ -1227,7 +1227,7 @@
         if (_zoom is Zoom.Whole || group.Lender is null)
             return (0, Math.Max(group.Seconds, 1));
 
-        var span = BarsOf(_zoom) * group.BeatsPerBar;
+        var span = BarsOf(_zoom) * group.Bars.BeatsPerBar;
 
         return group.SecondsAt(_centerBeat - span / 2.0) is { } start
             && group.SecondsAt(_centerBeat + span / 2.0) is { } end
@@ -1236,20 +1236,17 @@
             : (0, Math.Max(group.Seconds, 1));
     }
 
-    private string ViewLabel(WarpGroup group, double from, double to) =>
-        $"bars {Bar(group, from)}–{Bar(group, to) - 1} · {TempoFormat.Clock(from)}–{TempoFormat.Clock(to)}";
-
-    private static int Bar(WarpGroup group, double seconds) =>
-        group.BeatAt(seconds) is { } beat
-            ? (int)Math.Round((beat - group.ClipStartBeat) / group.BeatsPerBar) + 1
-            : 0;
+    private static string ViewLabel(WarpGroup group, double from, double to) =>
+        JudgeRanges.BarsOf(group, from, to) is { } bars
+            ? $"bars {bars.First}–{bars.Last} · {TempoFormat.Clock(from)}–{TempoFormat.Clock(to)}"
+            : $"{TempoFormat.Clock(from)}–{TempoFormat.Clock(to)}";
 
     private IEnumerable<(double At, int Bar, bool Numbered, bool Beat)> BarTicks(WarpGroup group, double from, double to)
     {
         if (group.Lender is null || group.BeatAt(from) is not { } first || group.BeatAt(to) is not { } last)
             yield break;
 
-        var perBar = group.BeatsPerBar;
+        var ruler = group.Bars;
         var (tickEvery, numberEvery) = _zoom switch
         {
             Zoom.Whole => (4, 16),
@@ -1257,9 +1254,10 @@
             _ => (1, 1),
         };
 
-        for (var bar = (int)Math.Floor((first - group.ClipStartBeat) / perBar) + 1; ; bar++)
+        for (var index = ruler.IndexAt(first); ; index++)
         {
-            var beat = group.ClipStartBeat + (bar - 1) * perBar;
+            var beat = index * ruler.BeatsPerBar;
+            var bar = BarRuler.Number(index);
 
             if (beat > last)
                 yield break;
@@ -1267,14 +1265,15 @@
             if (group.SecondsAt(beat) is not { } at)
                 continue;
 
-            if (bar >= 1 && (bar - 1) % tickEvery is 0)
-                yield return (at, bar, (bar - 1) % numberEvery is 0, false);
+            if (index % tickEvery is 0)
+                yield return (at, bar, index % numberEvery is 0, false);
 
             if (_zoom is Zoom.Bars8)
             {
-                for (var i = 1; i < perBar; i++)
+                // A beat as Live's ruler counts it: a quarter note in x/4, an eighth in x/8.
+                for (var i = 1; i < ruler.Numerator; i++)
                 {
-                    if (group.SecondsAt(beat + i) is { } inBar)
+                    if (group.SecondsAt(beat + i * 4.0 / ruler.Denominator) is { } inBar)
                         yield return (inBar, bar, false, true);
                 }
             }
@@ -1441,17 +1440,11 @@
             : ("Default clip", "not saved", "Live ignores it", null);
     }
 
-    private static string StartsAt(WarpGroup group, double seconds)
-    {
-        if (group.BeatAt(seconds) is not { } beat)
-            return string.Empty;
+    private static string StartsAt(WarpGroup group, double seconds) =>
+        group.BeatAt(seconds) is { } beat ? $"starts at bar {group.Bars.Position(beat)}" : string.Empty;
 
-        var bar = (beat - group.ClipStartBeat) / group.BeatsPerBar + 1;
+    private static string StartBar(WarpGroup group) => group.Bars.Position(group.ClipStartBeat);
 
-        return Math.Abs(bar - Math.Round(bar)) < 0.01
-            ? $"starts at bar {Math.Round(bar):0}"
-            : $"starts at bar {bar.ToString("0.##", CultureInfo.InvariantCulture)}";
-    }
 
     private static string LoopTitle((double Start, double End, bool On) loop) =>
         $"Loop {WarpWording.Time(loop.Start)}–{WarpWording.Time(loop.End)}{(loop.On ? null : " · off")}";
