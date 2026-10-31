@@ -59,7 +59,7 @@ replaces a lent warp or the maintainer's own.
    sample, from `source-index.json`) when there is one, else on that stem
    (`BeatReader.ReferenceFor`, [ADR 0065](adr/0065-the-starter-warps-beats-are-read-on-the-source.md)).
 2. **Read the reference's tempo with beatdetect.** The pinned build (`BeatdetectFfmpeg`, today
-   `1.3.1-48ba578`, the v1.3.1 release's code) runs `beatdetect=hpss=1` over the whole file, then over each full 30 s of it
+   `1.4.0-0fc32ce`, the v1.4.0 release's code) runs `beatdetect=hpss=1` over the whole file, then over each full 30 s of it
    (`BeatReader`). Each file's reading is kept until that file changes, so a new reference (a source
    where the instrumental was) is read once, and one that falls back is read by its own. A reading from an older build than
    the pin is used until the beat worker reads the file again, which it does once every file with
@@ -90,7 +90,7 @@ replaces a lent warp or the maintainer's own.
    in the file, at most one beat from its start. With fewer than 32 transients no beat is placed,
    and the stem gets a clip with Warp off.
 8. **Number the marker's beat in its bar** (`StarterGrid`, `SidecarWriter.StarterWarp`). Bar lines
-   are every fourth beat from beat 0. When the reading's `downbeat_confidence` is 0.03 or more, in
+   are every fourth beat from beat 0. When the reading's `downbeat_confidence` is 0.6 or more (1.4.0's scale; 0.03 on 1.3.x), in
    bars of four, the marker is the beat it falls on counting from beatdetect's downbeat: 0 to 3, so
    a pickup makes it 1, 2 or 3. Otherwise the marker is beat 0, a downbeat. On the library this puts
    the bar right on 66% of steady tracks, against 52% for the marker always as a downbeat (ADR 0054).
@@ -124,7 +124,7 @@ pass it (MEASURED, ADR 0048).
 
 - **The bar line falls on the downbeat on about two thirds of steady tracks** (251 of the 382 read
   at the right tempo, ADR 0054). On the rest the beats are right but the bar starts on another
-  beat: the downbeat is a guess under confidence 0.03, and misplaced on one in five above it. The
+  beat: the downbeat is a guess under the gate (measured on 1.3.x at 0.03), and misplaced on one in five above it. The
   marker's beat is then renumbered in Live, a quick fix.
 - **The downbeat comes from the source, else the instrumental.** The drum stem gave a surer one on GYARI –
   *アカリがやってきたぞっ* (*Akari ga Yattekita zo*) (0.078 against 0.002), but over 42 kept drum
