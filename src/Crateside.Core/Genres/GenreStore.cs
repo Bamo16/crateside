@@ -87,6 +87,61 @@ public sealed class GenreStore(string? path = null)
                     }
         );
 
+    /// <summary>
+    /// Moves each record kept under a video ID onto the song the ledger has since judged it as,
+    /// calling <paramref name="beforeWrite"/> with the file's path first; returns how many moved.
+    /// </summary>
+    public int FollowSongs(Func<string, string?> songFor, Action<string>? beforeWrite = null)
+    {
+        lock (_gate)
+        {
+            var records = new Dictionary<string, GenreRecord>(
+                _cached ??= TryReadFile(),
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            var moved = SongKeys.Follow(records, songFor, Merged);
+
+            if (moved is 0)
+                return 0;
+
+            try
+            {
+                beforeWrite?.Invoke(_path);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return 0;
+            }
+
+            _cached = records;
+            Write(records);
+
+            return moved;
+        }
+    }
+
+    /// <summary>The user's own answer wins wherever it was given; otherwise the song's record, the later one.</summary>
+    private static GenreRecord Merged(string song, GenreRecord moved, GenreRecord? held)
+    {
+        if (held is null)
+            return moved with { Song = song };
+
+        var answer =
+            held.IsTheUsersAnswer || !moved.IsTheUsersAnswer && held.IsSettled ? held : moved;
+        var lookup = held.LookedUpAt is not null ? held : moved;
+
+        return held with
+        {
+            Genre = answer.Genre,
+            IsSettled = answer.IsSettled,
+            LearnedFrom = answer.LearnedFrom,
+            Heard = lookup.Heard,
+            Suggested = lookup.Suggested,
+            LookedUpAt = lookup.LookedUpAt,
+        };
+    }
+
     private void Update(string song, Func<GenreRecord, GenreRecord> change)
     {
         lock (_gate)
@@ -97,15 +152,20 @@ public sealed class GenreStore(string? path = null)
                 records.GetValueOrDefault(song) ?? new GenreRecord { Song = song }
             );
 
-            try
-            {
-                GenreJsonContext.Default.ListGenreRecord.WriteFile(
-                    _path,
-                    [.. records.Values.OrderBy(r => r.Song)]
-                );
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            Write(records);
         }
+    }
+
+    private void Write(Dictionary<string, GenreRecord> records)
+    {
+        try
+        {
+            GenreJsonContext.Default.ListGenreRecord.WriteFile(
+                _path,
+                [.. records.Values.OrderBy(r => r.Song)]
+            );
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
     private Dictionary<string, GenreRecord> TryReadFile() =>

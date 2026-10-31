@@ -21,6 +21,14 @@ if (respelled > 0)
     app.Logger.LogInformation("Respelled {Count} job lines to American spelling", respelled);
 
 app.Services.GetRequiredService<Crateside.Core.Ledger.LedgerStore>().Start();
+
+var followed = app.Services.GetRequiredService<Crateside.Core.Tracks.SongKeyMigration>().Run();
+
+if (followed > 0)
+    app.Logger.LogInformation(
+        "Moved {Count} genre, familiarity and mark records from video IDs to their songs",
+        followed
+    );
 app.Services.GetRequiredService<Crateside.Core.Tracks.CacheKeeper>();
 
 var builds = app.Services.GetRequiredService<KnownBuilds>();

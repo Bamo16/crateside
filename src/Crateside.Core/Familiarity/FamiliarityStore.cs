@@ -49,6 +49,57 @@ public sealed class FamiliarityStore(string? path = null)
         Update(song, record => record with { Settled = value });
     }
 
+    /// <summary>
+    /// Moves each record kept under a video ID onto the song the ledger has since judged it as,
+    /// calling <paramref name="beforeWrite"/> with the file's path first; returns how many moved.
+    /// </summary>
+    public int FollowSongs(Func<string, string?> songFor, Action<string>? beforeWrite = null)
+    {
+        lock (_gate)
+        {
+            var records = new Dictionary<string, FamiliarityRecord>(
+                _cached ??= TryReadFile(),
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            var moved = SongKeys.Follow(records, songFor, Merged);
+
+            if (moved is 0)
+                return 0;
+
+            try
+            {
+                beforeWrite?.Invoke(_path);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return 0;
+            }
+
+            _cached = records;
+            Write(records);
+
+            return moved;
+        }
+    }
+
+    /// <summary>The song's measurement where it has one, and the user's answer wherever it was given.</summary>
+    private static FamiliarityRecord Merged(
+        string song,
+        FamiliarityRecord moved,
+        FamiliarityRecord? held
+    ) =>
+        held switch
+        {
+            null => moved with { Song = song },
+            { LookedUpAt: null } => moved with
+            {
+                Song = song,
+                Settled = held.Settled ?? moved.Settled,
+            },
+            _ => held with { Settled = held.Settled ?? moved.Settled },
+        };
+
     private void Update(string song, Func<FamiliarityRecord, FamiliarityRecord> change)
     {
         lock (_gate)
@@ -59,15 +110,20 @@ public sealed class FamiliarityStore(string? path = null)
                 records.GetValueOrDefault(song) ?? new FamiliarityRecord { Song = song }
             );
 
-            try
-            {
-                FamiliarityJsonContext.Default.ListFamiliarityRecord.WriteFile(
-                    _path,
-                    [.. records.Values.OrderBy(r => r.Song)]
-                );
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            Write(records);
         }
+    }
+
+    private void Write(Dictionary<string, FamiliarityRecord> records)
+    {
+        try
+        {
+            FamiliarityJsonContext.Default.ListFamiliarityRecord.WriteFile(
+                _path,
+                [.. records.Values.OrderBy(r => r.Song)]
+            );
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
     private Dictionary<string, FamiliarityRecord> TryReadFile() =>
