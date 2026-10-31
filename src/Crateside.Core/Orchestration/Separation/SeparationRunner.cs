@@ -4,6 +4,7 @@ using System.Text.Json;
 using CliWrap;
 using CliWrap.Buffered;
 using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Samples;
 using Humanizer;
 
 namespace Crateside.Core.Orchestration.Separation;
@@ -24,7 +25,13 @@ public sealed class SeparationRunner(
     /// </summary>
     public async Task<SeparationResult> RunAsync(WorkOrder order, CancellationToken ct = default)
     {
-        var retained = workingSet.TryGetSource(order.VideoId, out var path) ? path : null;
+        // Stems inherit the source's provenance, which is how the handoff finds them: a retained
+        // file without it is fetched again by URL rather than cut into stems that join to nothing.
+        var retained =
+            workingSet.TryGetSource(order.VideoId, out var path)
+            && StemTagReader.Read(path) is { SourceVideoId.Length: > 0 }
+                ? path
+                : null;
 
         if (interlock.TryGetLive(out var live))
             return SeparationResult.Refused($"already separating {live.VideoId}");
@@ -145,10 +152,6 @@ public sealed class SeparationRunner(
             {
                 args.Add("separate");
 
-                // Safe only because the file is StemForge's own — it reads back the provenance
-                // comment stemforge-cli download wrote, carrying the source URL, and therefore
-                // the video ID, into the stems. A file from elsewhere would produce stems that
-                // join to nothing.
                 args.Add(retained ?? order.SourceUrl);
 
                 foreach (var preset in order.Recipe.Presets)

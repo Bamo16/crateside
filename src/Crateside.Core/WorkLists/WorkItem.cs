@@ -129,46 +129,53 @@ public sealed record WorkListsView
             };
         }
 
+        IEnumerable<WorkItem> awaitingSeparation =
+        [
+            // Two ways in: nothing of the track is on disk, or the user asked for a cut it
+            // has not had. The second is what makes adding to a track possible at all —
+            // deleting every file used to be the only way back into this list.
+            //
+            // Either way the separator must have something to do. A plan whose outstanding
+            // half is only its source owes a copy, which the download stage makes, and being
+            // in this list would queue it for a GPU it never reaches (ADR 0019).
+            .. described.Where(i =>
+                !separatedWithoutKey.Contains(i.VideoId)
+                && (
+                    verdictWithoutStems.Contains(i.VideoId)
+                    || awaitingCut?.Contains(i.VideoId) is true
+                )
+                && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory).Passes > 0
+            ),
+            // A kept source staged before its guide was cut owes only the guide (#55). Nothing
+            // else re-enters this way: a missing stem is stated, never re-cut (ADR 0027).
+            .. described.Where(i =>
+                fullyProcessed.Contains(i.VideoId)
+                && !separatedWithoutKey.Contains(i.VideoId)
+                && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory)
+                    is { Presets.Count: 0, ExtractDrums: true }
+            ),
+            // Filtered, not appended bare: a reopened track owing only a handoff or a tagging
+            // needs no GPU, and one whose stems are parked for want of a key must not be in
+            // the line at the same time as it is parked (#32).
+            //
+            // No awaitingCut means the caller has not said which of them owe a cut, not that
+            // none do, so they all still count.
+            .. reopenedItems.Where(i =>
+                !separatedWithoutKey.Contains(i.VideoId)
+                && (awaitingCut is null || awaitingCut.Contains(i.VideoId))
+                && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory).Passes > 0
+            ),
+        ];
+
         return new WorkListsView
         {
             Items = described,
             FullyProcessed = [.. described.Where(i => fullyProcessed.Contains(i.VideoId))],
+            // A drums-only cut in flight is in two of these at once: its source is staged, and it
+            // still owes the cut.
             AwaitingSeparation =
             [
-                // Two ways in: nothing of the track is on disk, or the user asked for a cut it
-                // has not had. The second is what makes adding to a track possible at all —
-                // deleting every file used to be the only way back into this list.
-                //
-                // Either way the separator must have something to do. A plan whose outstanding
-                // half is only its source owes a copy, which the download stage makes, and being
-                // in this list would queue it for a GPU it never reaches (ADR 0019).
-                .. described.Where(i =>
-                    !separatedWithoutKey.Contains(i.VideoId)
-                    && (
-                        verdictWithoutStems.Contains(i.VideoId)
-                        || awaitingCut?.Contains(i.VideoId) is true
-                    )
-                    && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory).Passes > 0
-                ),
-                // A kept source staged before its guide was cut owes only the guide (#55). Nothing
-                // else re-enters this way: a missing stem is stated, never re-cut (ADR 0027).
-                .. described.Where(i =>
-                    fullyProcessed.Contains(i.VideoId)
-                    && !separatedWithoutKey.Contains(i.VideoId)
-                    && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory)
-                        is { Presets.Count: 0, ExtractDrums: true }
-                ),
-                // Filtered, not appended bare: a reopened track owing only a handoff or a tagging
-                // needs no GPU, and one whose stems are parked for want of a key must not be in
-                // the line at the same time as it is parked (#32).
-                //
-                // No awaitingCut means the caller has not said which of them owe a cut, not that
-                // none do, so they all still count.
-                .. reopenedItems.Where(i =>
-                    !separatedWithoutKey.Contains(i.VideoId)
-                    && (awaitingCut is null || awaitingCut.Contains(i.VideoId))
-                    && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory).Passes > 0
-                ),
+                .. awaitingSeparation.DistinctBy(i => i.VideoId, StringComparer.Ordinal),
             ],
             Reopened = reopenedItems,
             AwaitingKey = [.. described.Where(i => separatedWithoutKey.Contains(i.VideoId))],

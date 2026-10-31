@@ -14,15 +14,23 @@ public sealed class SeparationSelector(
     public const int DefaultMaxStrikes = 3;
 
     /// <summary>
+    /// The tracks separation will work, in the order it will take them: what the Tracks page shows
+    /// as the GPU line.
+    /// </summary>
+    public IReadOnlyList<WorkItem> Line(WorkListsView view) =>
+        [
+            .. view
+                .AwaitingSeparation.Where(item => !item.IsUnavailable && IsEligible(item))
+                .DistinctBy(item => item.VideoId, StringComparer.Ordinal),
+        ];
+
+    /// <summary>
     /// The next judged track to separate, even LOW or WITHHELD: oldest-added first, skipping
     /// anything already done, in flight, or given up on.
     /// </summary>
     public bool TryPickNext(WorkListsView view, KeyLedger ledger, out WorkOrder order)
     {
-        if (
-            view.AwaitingSeparation.FirstOrDefault(i => !i.IsUnavailable && IsEligible(i))
-            is not { } next
-        )
+        if (Line(view) is not [var next, ..])
         {
             order = null!;
 

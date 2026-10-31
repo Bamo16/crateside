@@ -213,12 +213,29 @@ public sealed class SeparationRunnerTests : IDisposable
         return new SeparationRunner(Interlock, Set, Paths, script);
     }
 
-    [Fact]
-    public async Task The_retained_download_is_separated_rather_than_fetched_again()
+    /// <summary>A retained download as stemforge-cli leaves it, its provenance naming the video when asked.</summary>
+    private string Retained(string? provenanceVideoId)
     {
         var audio = Path.Combine(Set.Prepare(VideoId), "Yes - Owner of a Lonely Heart.flac");
 
-        File.WriteAllText(audio, "audio");
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), audio);
+
+        if (provenanceVideoId is null)
+            return audio;
+
+        using var file = TagLib.File.Create(audio);
+
+        file.Tag.Comment =
+            $"stemforge/0.5.1.0 | date: 2026-10-30 | source: https://www.youtube.com/watch?v={provenanceVideoId}";
+        file.Save();
+
+        return audio;
+    }
+
+    [Fact]
+    public async Task The_retained_download_is_separated_rather_than_fetched_again()
+    {
+        var audio = Retained(VideoId);
 
         var runner = RunnerEchoingArguments(out var argumentsFile);
 
@@ -228,6 +245,22 @@ public sealed class SeparationRunnerTests : IDisposable
 
         Assert.Contains(audio, arguments);
         Assert.DoesNotContain("youtube.com", arguments);
+    }
+
+    [Fact]
+    public async Task A_retained_download_its_tagging_never_reached_is_fetched_again_by_url()
+    {
+        // Its stems would carry no source, and the handoff would never find them.
+        var audio = Retained(provenanceVideoId: null);
+
+        var runner = RunnerEchoingArguments(out var argumentsFile);
+
+        await runner.RunAsync(Order(), TestContext.Current.CancellationToken);
+
+        var arguments = File.ReadAllText(argumentsFile);
+
+        Assert.DoesNotContain(audio, arguments);
+        Assert.Contains($"watch?v={VideoId}", arguments);
     }
 
     [Fact]

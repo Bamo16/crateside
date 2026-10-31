@@ -104,6 +104,32 @@ public sealed class EvidenceSelectorTests : IDisposable
         Assert.Equal("bbbbbbbbbbb", next.VideoId);
     }
 
+    [Theory]
+    [InlineData(JobStatus.Running)]
+    [InlineData(JobStatus.Queued)]
+    public void A_source_still_being_downloaded_is_left_until_the_download_ends(JobStatus status)
+    {
+        Jobs.Record("aaaaaaaaaaa", JobStage.Download, status);
+
+        new EvidenceSelector(Jobs, Set).TryPickNext(
+            View(Item("aaaaaaaaaaa"), Item("bbbbbbbbbbb")),
+            out var next
+        );
+
+        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+    }
+
+    [Fact]
+    public void A_finished_download_is_detected()
+    {
+        Jobs.Record("aaaaaaaaaaa", JobStage.Download, JobStatus.Running);
+        Jobs.Record("aaaaaaaaaaa", JobStage.Download, JobStatus.Succeeded);
+
+        new EvidenceSelector(Jobs, Set).TryPickNext(View(Item("aaaaaaaaaaa")), out var next);
+
+        Assert.Equal("aaaaaaaaaaa", next.VideoId);
+    }
+
     [Fact]
     public void A_succeeded_run_whose_evidence_has_gone_is_acquired_again()
     {
