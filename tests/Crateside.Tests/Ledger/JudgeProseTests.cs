@@ -64,6 +64,7 @@ public sealed class JudgeProseTests
     [Theory]
     [InlineData("the G#m chord", "the <c>G♯m</c> chord")]
     [InlineData("a B7 and F#maj7", "a <c>B7</c> and <c>F♯maj7</c>")]
+    [InlineData("the chorus C#M7 lands", "the chorus <c>C♯M7</c> lands")]
     [InlineData("Am/D over Em7b5", "<c>Am/D</c> over <c>Em7♭5</c>")]
     [InlineData("D#/Eb enharmonic", "<c>D♯/E♭</c> enharmonic")]
     [InlineData("G#3 median", "<c>G♯3</c> median")]
@@ -77,6 +78,7 @@ public sealed class JudgeProseTests
     [InlineData("Chords B, E and G are diatonic")]
     [InlineData("Be sure to Add Dim and Bed")]
     [InlineData("so A is the tonic")]
+    [InlineData("at 8 AM and 9 PM")]
     public void A_bare_letter_outside_a_progression_stays_plain(string text) =>
         Assert.Equal(text, Marked(text));
 
