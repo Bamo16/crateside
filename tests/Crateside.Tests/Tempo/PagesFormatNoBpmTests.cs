@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace Crateside.Tests.Tempo;
@@ -9,7 +8,7 @@ public sealed partial class PagesFormatNoBpmTests
     [Fact]
     public void No_page_or_component_formats_a_bpm_itself()
     {
-        var pages = Path.Combine(RepoRoot(), "src", "Crateside");
+        var pages = Path.Combine(Repository.Root(), "src", "Crateside");
         List<string> found =
         [
             .. Directory
@@ -62,14 +61,4 @@ public sealed partial class PagesFormatNoBpmTests
         RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace
     )]
     private static partial Regex HandFormatted { get; }
-
-    private static string RepoRoot([CallerFilePath] string here = "")
-    {
-        var directory = new DirectoryInfo(Path.GetDirectoryName(here)!);
-
-        while (!File.Exists(Path.Combine(directory.FullName, "Crateside.slnx")))
-            directory = directory.Parent!;
-
-        return directory.FullName;
-    }
 }

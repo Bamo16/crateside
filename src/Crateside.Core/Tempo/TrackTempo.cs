@@ -192,6 +192,7 @@ public sealed record TrackTempo
     }
 }
 
+/// <summary>A warp that is off its tempo, and by how much.</summary>
 /// <param name="Bpm">The tempo the warp should be at.</param>
 /// <param name="DriftMs">What the warp drifts over the track, positive when it runs fast; null where a reading, not the grid, says so.</param>
 public sealed record TempoOff(double Bpm, double? DriftMs);

@@ -9,7 +9,30 @@
              %APPDATA%\Microsoft\UserSecrets\<id>\secrets.json, outside the working tree, so
              it cannot surface in an editor or a file tree. See docs/secrets.md. -->
         <UserSecretsId>7a95298e-4fd7-4b0a-84ca-d58216445bb0</UserSecretsId>
+
+        <!-- The API's summaries come from doc comments (#167); most members rightly have none. -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
+
+    <!-- The build writes the OpenAPI document to docs/openapi.json, so an API change shows in the
+         diff. CI does not, so OpenApiDocumentTests checks the committed file against the code. -->
+    <PropertyGroup>
+        <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)/../../docs</OpenApiDocumentsDirectory>
+        <OpenApiGenerateDocumentsOptions>--file-name openapi</OpenApiGenerateDocumentsOptions>
+        <OpenApiGenerateDocumentsOnBuild>true</OpenApiGenerateDocumentsOnBuild>
+        <OpenApiGenerateDocumentsOnBuild Condition="'$(CI)' == 'true'"
+            >false</OpenApiGenerateDocumentsOnBuild
+        >
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+        <PackageReference
+            Include="Microsoft.Extensions.ApiDescription.Server"
+            PrivateAssets="all"
+        />
+        <PackageReference Include="Scalar.AspNetCore" />
+    </ItemGroup>
 
     <ItemGroup>
         <!-- Pluralization and number-to-words in the UI. No hand-rolled "s" suffixes. -->

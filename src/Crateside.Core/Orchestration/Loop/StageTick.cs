@@ -10,7 +10,7 @@ public interface IStageDrainer
     Task<StageTick> DrainOnceAsync(CancellationToken ct = default);
 }
 
-/// <summary>What one pass of a stage did. Separation reports <see cref="DrainTick"/> instead.</summary>
+/// <summary>What one pass of a stage did. Separation reports <see cref="Separation.DrainTick"/> instead.</summary>
 public sealed record StageTick
 {
     public static StageTick Idle { get; } = new() { Outcome = StageOutcome.Idle };

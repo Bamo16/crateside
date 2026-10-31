@@ -1,4 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
+    <!-- The API's schema summaries come from these doc comments (#167); most members rightly have none. -->
+    <PropertyGroup>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
     <ItemGroup>
         <InternalsVisibleTo Include="Crateside.Tests" />
     </ItemGroup>

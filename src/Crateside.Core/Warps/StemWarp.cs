@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using AbleKit.Analysis;
 using Crateside.Core.Ableton;
 using Crateside.Core.Samples;
@@ -132,17 +133,29 @@ public sealed record StemWarp
 }
 
 /// <summary>Whose warp a stem's sidecar holds.</summary>
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+[JsonDerivedType(typeof(Yours), "yours")]
+[JsonDerivedType(typeof(Borrowed), "borrowed")]
+[JsonDerivedType(typeof(Starter), "starter")]
+[JsonDerivedType(typeof(Unwarped), "unwarped")]
+[JsonDerivedType(typeof(LiveAnalysis), "liveAnalysis")]
+[JsonDerivedType(typeof(None), "none")]
+[JsonDerivedType(typeof(WaitingForLive), "waitingForLive")]
+[JsonDerivedType(typeof(PuttingBack), "puttingBack")]
 public abstract record WarpOwner
 {
     private WarpOwner() { }
 
+    /// <summary>A warp the user saved in Live.</summary>
     /// <param name="LentTo">The siblings crateside lent this warp to, whose sidecars still hold it.</param>
     /// <param name="SavedOver">The warp crateside wrote that the user saved over, if any.</param>
     public sealed record Yours(DateTime Saved, IReadOnlyList<string> LentTo, WrittenWarp? SavedOver)
         : WarpOwner;
 
+    /// <summary>A sibling's warp crateside copied onto this stem (ADR 0043).</summary>
     public sealed record Borrowed(string From, DateTime Written) : WarpOwner;
 
+    /// <summary>A starter warp crateside wrote from beatdetect's reading, not yet saved over.</summary>
     public sealed record Starter(DateTime Written) : WarpOwner;
 
     /// <summary>A clip crateside saved with Warp off, so the stem arrives at its gain and color for the user to warp (ADR 0059).</summary>

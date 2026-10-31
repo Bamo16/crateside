@@ -119,6 +119,7 @@ public sealed class TrackMarkStore
             .ToDictionary(record => record.Song, StringComparer.OrdinalIgnoreCase);
 }
 
+/// <summary>One song's marks, as the store files them.</summary>
 public sealed record TrackMarkRecord
 {
     /// <summary>The ledger's song identity, or the upload's video ID for a song it never judged.</summary>

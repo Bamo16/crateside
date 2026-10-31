@@ -93,4 +93,5 @@ public sealed record StageProgress
     private static readonly JobStage[] Stages = Enum.GetValues<JobStage>();
 }
 
+/// <summary>A stage that failed and will be tried again: its strikes so far and its last error.</summary>
 public sealed record StageFailure(JobStage Stage, int Strikes, string? Error);

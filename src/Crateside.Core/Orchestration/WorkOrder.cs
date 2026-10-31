@@ -7,7 +7,7 @@ namespace Crateside.Core.Orchestration;
 
 /// <summary>
 /// crateside's instruction for one track: which URL is canonical, where its stems belong, and
-/// what to ask for. What actually ran is a <see cref="TrackJob"/>.
+/// what to ask for. What actually ran is a <see cref="Jobs.TrackJob"/>.
 /// </summary>
 public sealed record WorkOrder
 {

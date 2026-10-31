@@ -106,6 +106,7 @@ public sealed class TransientOrigins
             : [];
 }
 
+/// <summary>Where the transients in a sidecar crateside wrote came from: its own detector, or a copy of Live's.</summary>
 /// <param name="Audio">The file it was written beside, by name.</param>
 /// <param name="Detector">crateside's detector and its version, such as <c>onsets 1</c>; null for a copy of Live's.</param>
 /// <param name="CopiedFrom">The file whose Live-detected transients were copied, by name; null when detected.</param>
