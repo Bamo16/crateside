@@ -83,7 +83,11 @@ public sealed class HandoffRunner(CratesidePaths paths, DeletionLog? deletions =
     private string Destination(string stem, string? name) =>
         Path.Combine(
             paths.StagingFolder,
-            Path.GetFileName(StemFileName.IsUsable(name) ? StemFileName.Renamed(stem, name) : stem)
+            Path.GetFileName(
+                StemFileName.IsUsable(name)
+                    ? StemFileName.Renamed(stem, name, paths.StagingFolder)
+                    : stem
+            )
         );
 }
 
