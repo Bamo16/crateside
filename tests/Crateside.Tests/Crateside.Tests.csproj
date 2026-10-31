@@ -7,6 +7,8 @@
     <ItemGroup>
         <!-- DataProtectionProvider.Create, for standing up a real key ring in tests. -->
         <PackageReference Include="Microsoft.AspNetCore.DataProtection.Extensions" />
+        <!-- An in-process server for the API's tests, standing on synthetic state. -->
+        <PackageReference Include="Microsoft.AspNetCore.TestHost" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
         <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
@@ -17,6 +19,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Crateside.Core\Crateside.Core.csproj" />
+        <ProjectReference Include="..\..\src\Crateside\Crateside.csproj" />
     </ItemGroup>
 
     <ItemGroup>

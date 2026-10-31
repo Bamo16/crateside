@@ -23,7 +23,7 @@ public sealed class StemRecut(
     /// <param name="known">
     /// This track's files as the last queue scan found them, passed in rather than read here
     /// because scanning the library is the most expensive thing the app does. Only
-    /// <paramref name="staged"/> is read fresh.
+    /// what is staged is read fresh.
     /// </param>
     public RecutPlan PlanFor(
         string videoId,

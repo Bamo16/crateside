@@ -77,6 +77,7 @@ public sealed class RetypedWarps
         );
 }
 
+/// <summary>A warp crateside retyped to a truer tempo, and the sidecar as it wrote it.</summary>
 /// <param name="Length">The sidecar's size as written, to tell whether Live has saved over it.</param>
 /// <param name="Written">The sidecar's last write time (UTC) as written.</param>
 public sealed record RetypedWarp(double Bpm, long Length, DateTime Written, DateTimeOffset At);

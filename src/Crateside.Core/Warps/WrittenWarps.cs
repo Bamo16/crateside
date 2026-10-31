@@ -140,6 +140,7 @@ public sealed class WrittenWarps
         );
 }
 
+/// <summary>A sidecar crateside wrote: a sibling's warp, a starter warp, or a clip with Warp off.</summary>
 /// <param name="From">The sibling's audio file, or null for a starter warp.</param>
 /// <param name="Length">The sidecar's size as written, to tell whether Live has saved over it.</param>
 /// <param name="Written">The sidecar's last write time (UTC) as written.</param>

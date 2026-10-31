@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Crateside.Core;
 using Crateside.Core.KeyDetection;
@@ -72,7 +71,7 @@ public sealed partial class DetectorParityTests(ITestOutputHelper output)
     private static IEnumerable<BakeOffRow> BakeOff()
     {
         var lines = File.ReadAllLines(
-            Path.Combine(RepoRoot(), "docs", "notes", "2026-10-15-the-detector-bake-off.csv")
+            Path.Combine(Repository.Root(), "docs", "notes", "2026-10-15-the-detector-bake-off.csv")
         );
         var header = Fields(lines[0]);
         var (id, url, madmom, edma) = (
@@ -104,16 +103,6 @@ public sealed partial class DetectorParityTests(ITestOutputHelper output)
         ];
 
     private sealed record BakeOffRow(string Id, string SourceUrl, string Madmom, string Edma);
-
-    private static string RepoRoot([CallerFilePath] string here = "")
-    {
-        var directory = new DirectoryInfo(Path.GetDirectoryName(here)!);
-
-        while (!File.Exists(Path.Combine(directory.FullName, "Crateside.slnx")))
-            directory = directory.Parent!;
-
-        return directory.FullName;
-    }
 
     [GeneratedRegex(@"(?<=^|,)(""(?<Quoted>[^""]*)""|(?<Plain>[^,]*))")]
     private static partial Regex CsvField { get; }

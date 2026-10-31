@@ -1,0 +1,235 @@
+using AbleKit.Analysis;
+using AbleKit.Tags;
+using Crateside.Api;
+using Crateside.Core.Familiarity;
+using Crateside.Core.Genres;
+using Crateside.Core.Ledger;
+using Crateside.Core.Marks;
+using Crateside.Core.Naming;
+using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Loop;
+using Crateside.Core.Playlist;
+using Crateside.Core.Tracks;
+using Crateside.Core.Warps;
+using Crateside.Core.WorkLists;
+using Crateside.Tests.Tracks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
+
+namespace Crateside.Tests.Api;
+
+/// <summary>The API in process, over a temporary folder of synthetic state: one judged track with a warped stem, one waiting, one filed.</summary>
+internal sealed class SyntheticCrateside : IAsyncDisposable
+{
+    public const string Judged = "Zx3TrackA01";
+    public const string Waiting = "Zx3TrackB02";
+    public const string Filed = "Zx3TrackC03";
+    public const string Song = "the examples - synthetic song";
+
+    private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-10-01T12:00:00+00:00");
+
+    private readonly string _root = Path.Combine(
+        Path.GetTempPath(),
+        "crateside-tests",
+        Guid.NewGuid().ToString("n")
+    );
+
+    private WebApplication? _app;
+    private TracksService? _tracks;
+
+    public HttpClient Client { get; private set; } = null!;
+
+    public string Instrumental =>
+        Path.Combine(_root, "Staging", "Synthetic Song (Instrumental - Full).flac");
+
+    public string WarpBackups => Path.Combine(_root, "warp-backups");
+
+    public static async Task<SyntheticCrateside> StartAsync()
+    {
+        var crateside = new SyntheticCrateside();
+        await crateside.StartAppAsync();
+
+        return crateside;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Client.Dispose();
+        _tracks?.Dispose();
+
+        if (_app is not null)
+            await _app.DisposeAsync();
+
+        Directory.Delete(_root, recursive: true);
+    }
+
+    private async Task StartAppAsync()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(Instrumental)!);
+        Directory.CreateDirectory(WarpBackups);
+
+        var time = new FakeTimeProvider(At);
+        var ledger = new LedgerStore(LedgerStore.InMemory, time);
+        ledger.Record(
+            new RunRecord
+            {
+                RecordedAt = At,
+                Song = Song,
+                Artist = "The Examples",
+                Title = "Synthetic Song",
+                SourceUrl = $"https://music.youtube.com/watch?v={Judged}",
+                Confidence = KeyConfidence.High,
+                Center = new TonalCenter("F#", DiatonicMode.Aeolian),
+            }
+        );
+        ledger.Read().TryGetLatestByVideoId(Judged, out var verdict);
+
+        var written = new WrittenWarps();
+        File.WriteAllBytes(Instrumental, [1, 2, 3]);
+        Sidecar().Write($"{Instrumental}.asd");
+        written.RecordStarter(Instrumental);
+        File.WriteAllBytes(
+            Path.Combine(WarpBackups, $"2026-10-01 115900 {Path.GetFileName(Instrumental)}.asd"),
+            [1]
+        );
+        File.WriteAllBytes(
+            Path.Combine(
+                WarpBackups,
+                $"2026-10-01 115900 Other {Path.GetFileName(Instrumental)}.asd"
+            ),
+            [1]
+        );
+
+        var jobs = new JobStore(Path.Combine(_root, "jobs.jsonl"), time);
+        jobs.Record(Judged, JobStage.Download, JobStatus.Running);
+        jobs.Record(Judged, JobStage.Download, JobStatus.Succeeded);
+        jobs.Record(Waiting, JobStage.Download, JobStatus.Queued);
+
+        var genres = new GenreStore(Path.Combine(_root, "genres.json"));
+        genres.Suggest(Judged, ["synthwave"], At);
+
+        var familiarity = new FamiliarityStore(Path.Combine(_root, "familiarity.json"));
+        familiarity.Measure(Song, new FamiliarityReading("The Examples", 1_200, 50_000), At, 1);
+
+        var marks = new TrackMarkStore(Path.Combine(_root, "track-marks.json"));
+        marks.Set(Song, TrackMark.OddBars, marked: true);
+
+        var names = new ResolvedNameStore(Path.Combine(_root, "names.json"));
+        names.Save(
+            Waiting,
+            new ResolvedName
+            {
+                DisplayTitle = "The Examples - Another Song",
+                BaseName = "The Examples - Another Song",
+            }
+        );
+
+        TracksView view = new()
+        {
+            Rows =
+            [
+                new TrackRow
+                {
+                    VideoId = Judged,
+                    Title = "The Examples - Synthetic Song",
+                    Verdict = verdict,
+                    Familiarity = familiarity.Read()[Song],
+                    Marks = marks.Of(Song),
+                    Samples =
+                    [
+                        new TrackSample
+                        {
+                            Path = Instrumental,
+                            Label = "Instrumental - Full",
+                            AbletonKey = "F#m",
+                            HasDefaultClip = true,
+                        },
+                    ],
+                },
+                new TrackRow { VideoId = Waiting, Title = "The Examples - Another Song" },
+                new TrackRow
+                {
+                    VideoId = Filed,
+                    Title = "The Examples - Filed Song",
+                    Samples =
+                    [
+                        new TrackSample
+                        {
+                            Path = Path.Combine(_root, "Library", "Filed Song (Vocal - Full).flac"),
+                            Label = "Vocal - Full",
+                            IsInLibrary = true,
+                        },
+                    ],
+                },
+            ],
+            ReadAt = At,
+        };
+
+        _tracks = new TracksService(new TracksReads(() => view), new StageHub(), time);
+
+        var details = new TrackDetailsReader(
+            _tracks,
+            ledger,
+            jobs,
+            new StemDetailsReader(
+                new StemWarpReader(written, new TransientOrigins(), new LiveAnalyses()),
+                written,
+                new RetypedWarps(),
+                new SidecarBackups(WarpBackups, time),
+                new FolderInfoReader(),
+                new FileIndexReader(Path.Combine(_root, "no-index"))
+            ),
+            new FiledRecordsReader(
+                genres,
+                familiarity,
+                marks,
+                names,
+                new TrackInstructionStore(
+                    new QueueFile(
+                        Options.Create(new PlaylistOptions()),
+                        Path.Combine(_root, "queue.json")
+                    )
+                )
+            )
+        );
+
+        var builder = WebApplication.CreateBuilder(
+            new WebApplicationOptions { EnvironmentName = Environments.Production }
+        );
+        builder.WebHost.UseTestServer();
+        builder.Services.AddCratesideApi();
+        builder.Services.AddSingleton(_tracks);
+        builder.Services.AddSingleton(details);
+
+        _app = builder.Build();
+        _app.MapCratesideApi();
+        await _app.StartAsync(TestContext.Current.CancellationToken);
+
+        Client = _app.GetTestClient();
+    }
+
+    /// <summary>Ten seconds, with a saved clip and Warp on: markers at 120 BPM from half a second in, four bars looped.</summary>
+    private static AnalysisFile Sidecar() =>
+        new()
+        {
+            Audio = AudioAnalysis.FromSamples(
+                [.. Enumerable.Repeat(0.5f, 44_100 * 2 * 10)],
+                2,
+                [],
+                3
+            ),
+            Warp = new Warp { Markers = [new(0.5, 0), new(2.5, 4), new(2.515625, 4.03125)] },
+            Clip = new Clip
+            {
+                LoopStart = 0,
+                LoopEnd = 16,
+                OutMarker = 16,
+                LoopOn = true,
+            },
+            IsDefaultClipSaved = true,
+        };
+}
