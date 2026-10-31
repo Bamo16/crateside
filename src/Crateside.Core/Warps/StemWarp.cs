@@ -303,9 +303,8 @@ public sealed record WarpGroup(IReadOnlyList<StemWarp> Stems, StemWarp? Lender)
 
     public double? SecondsAt(double beat) => Lender?.Sidecar?.Warp.SecondsAt(beat);
 
-    /// <summary>The beat the shared warp's clip starts on, which the ruler calls bar 1.</summary>
+    /// <summary>The beat the shared warp's clip starts on: a point on the ruler, not its bar 1.</summary>
     public double ClipStartBeat => Lender?.Sidecar?.DefaultClip?.Start ?? 0;
 
-    public int BeatsPerBar =>
-        Lender?.Sidecar?.Warp.TimeSignature.Numerator is > 0 and var beats ? beats : 4;
+    public BarRuler Bars => BarRuler.Of(Lender?.Sidecar?.Warp.TimeSignature);
 }

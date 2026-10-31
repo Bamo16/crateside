@@ -9,16 +9,18 @@ namespace Crateside.Core.Orchestration.Verdict;
 /// <summary>A range the user types or drags, in bars through the warp Ableton shows, or in time without one (#116).</summary>
 public static partial class JudgeRanges
 {
-    /// <summary><c>33–48</c>, <c>33-48</c> or <c>33 48</c>.</summary>
+    /// <summary><c>33–48</c>, <c>33-48</c> or <c>33 48</c>; <c>-4–2</c> for bars before beat 0, there being no bar 0.</summary>
     public static bool TryParseBars(string? text, [NotNullWhen(true)] out BarSpan? bars)
     {
         bars =
             text is not null
             && BarPattern.Match(text) is { Success: true } match
             && int.Parse(match.Groups["First"].Value, CultureInfo.InvariantCulture)
-                is >= 1
+                is not 0
                     and var first
-            && int.Parse(match.Groups["Last"].Value, CultureInfo.InvariantCulture) is var last
+            && int.Parse(match.Groups["Last"].Value, CultureInfo.InvariantCulture)
+                is not 0
+                    and var last
             && last >= first
                 ? new BarSpan(first, last)
                 : null;
@@ -48,8 +50,8 @@ public static partial class JudgeRanges
     /// <summary>The bars as a window in seconds, from the start of the first to the end of the last; null where the warp cannot say.</summary>
     public static RunWindow? Window(WarpGroup group, BarSpan bars, string? label) =>
         group.Lender is not null
-        && group.SecondsAt(BeatOfBar(group, bars.First)) is { } start
-        && group.SecondsAt(BeatOfBar(group, bars.Last + 1)) is { } end
+        && group.SecondsAt(group.Bars.StartOf(bars.First)) is { } start
+        && group.SecondsAt(group.Bars.EndOf(bars.Last)) is { } end
         && end > start
             ? new RunWindow(Math.Max(0, start), end, label, WindowAsker.User) { Bars = bars }
             : null;
@@ -59,15 +61,8 @@ public static partial class JudgeRanges
         group.Lender is not null
         && group.BeatAt(start) is { } first
         && group.BeatAt(end) is { } last
-            ? new BarSpan(Math.Max(1, BarAt(group, first)), Math.Max(1, BarAt(group, last - 0.001)))
+            ? new BarSpan(group.Bars.BarAt(first), group.Bars.BarAt(last - 0.001))
             : null;
-
-    /// <summary>The bar a beat falls in, as Live counts from the clip start.</summary>
-    public static int BarAt(WarpGroup group, double beat) =>
-        (int)Math.Floor((beat - group.ClipStartBeat) / group.BeatsPerBar) + 1;
-
-    public static double BeatOfBar(WarpGroup group, int bar) =>
-        group.ClipStartBeat + (bar - 1) * group.BeatsPerBar;
 
     private static bool TryReadClock(string text, out double seconds)
     {
@@ -94,7 +89,7 @@ public static partial class JudgeRanges
     }
 
     [GeneratedRegex(
-        @"^\s*(?<First>\d{1,4})\s*([–—-]|\s)\s*(?<Last>\d{1,4})\s*$",
+        @"^\s*(?<First>-?\d{1,4})(\s*[–—]\s*|-\s*|\s+-\s+|\s+)(?<Last>-?\d{1,4})\s*$",
         RegexOptions.ExplicitCapture
     )]
     private static partial Regex BarPattern { get; }

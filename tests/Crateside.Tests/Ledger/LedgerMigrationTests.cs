@@ -11,7 +11,8 @@ public sealed class LedgerMigrationTests : IDisposable
 {
     private const string BeforeSpelling = "20261024201525_SectionStart";
     private const string SpellingMigration = "20261025192752_AmericanSpelling";
-    private const string NewestMigration = "20261029013237_InheritedLateReading";
+    private const string LateReadingMigration = "20261029013237_InheritedLateReading";
+    private const string NewestMigration = "20261031183004_LiveBarNumbers";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -182,6 +183,41 @@ public sealed class LedgerMigrationTests : IDisposable
         Assert.NotNull(store.EvidenceFor("read later")!.LateReading);
         Assert.NotNull(store.EvidenceFor("before the pin")!.LateReading);
         Assert.Null(store.EvidenceFor("inherited untimed")!.LateReading);
+    }
+
+    [Fact]
+    public void Bars_counted_from_the_clip_start_are_cleared_and_their_seconds_kept()
+    {
+        using (var connection = new SqliteConnection($"Data Source={DatabasePath}"))
+        {
+            connection.Open();
+
+            var options = new DbContextOptionsBuilder<LedgerContext>()
+                .UseSqlite(connection)
+                .Options;
+
+            using (var context = new LedgerContext(options))
+                context.GetService<IMigrator>().Migrate(LateReadingMigration);
+
+            Execute(
+                connection,
+                """
+                INSERT INTO Runs (Id, Song, Confidence, Mixed, LocalSource, SourceUrl, RecordedAt, Evidence, Tonic, Mode)
+                VALUES (1, 'fusq - perfume!', 'Medium', 0, 0, 'https://www.youtube.com/watch?v=a', '2026-10-28T16:40:28+00:00', '{}', 'A', 'Aeolian');
+                INSERT INTO Windows (RunId, Position, Start, End, Label, AskedBy, FirstBar, LastBar)
+                VALUES (1, 0, 37.79539574431894, 158.74199331266047, NULL, 'User', 1, 64);
+                """
+            );
+        }
+
+        using var store = new LedgerStore(DatabasePath, _time);
+
+        var window = Assert.Single(store.EvidenceFor("fusq - perfume!")!.Windows);
+
+        Assert.Equal(
+            new RunWindow(37.79539574431894, 158.74199331266047, null, WindowAsker.User),
+            window
+        );
     }
 
     [Fact]

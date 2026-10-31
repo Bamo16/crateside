@@ -37,7 +37,8 @@ start. Enums are stored by name (`Dorian`, `ChordRecognizer`); times as round-tr
   it covered as a JSON list (null when it did not say).
 - **Windows**: stretches detected on their own, `Start` and `End` in seconds, with an
   optional `Label` and who asked (`User` or `Judge`; null on windows imported from history).
-  `FirstBar` and `LastBar` are the bars the user gave, both included, where they gave bars;
+  `FirstBar` and `LastBar` are the bars the user gave, both included, where they gave bars,
+  numbered as Live's ruler numbers them (ADR 0072; bars stored before 2026-10-31 were cleared);
   `Why` is the one sentence the judge gave for asking; on windows recorded before ADR 0064 it is a copy of the first pass's whole reasoning.
 - **Candidates**: the keys the judge weighed besides the verdict's, each a `Key` as written and a `Why` of one sentence, in `Position` order.
 - **Restatements**: "this upload is that song": a `SourceUrl` and the `RunId` whose verdict

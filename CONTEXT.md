@@ -75,6 +75,10 @@ the views, and running the workflow.
   backers says more about its being right than its own confidence does.
 - **Window** — a stretch of a track detected on its own, given by the user in bars or asked
   for by the judge. The windows of a judged run become its verdict's **sections**.
+- **Bar number** — a bar as Live's ruler numbers it for a warped clip: the warp's beat 0 is bar 1,
+  the bars before it are -1, -2… (there is no bar 0), and the bar length is the warp's time
+  signature. The **default clip**'s start is a point on that ruler, not its bar 1
+  ([ADR 0072](docs/adr/0072-bars-are-numbered-as-lives-ruler-numbers-them.md)).
 - **Direction** — the user's free-text note to the judge, sent with windows and kept with
   the run.
 - **Ear** — the user's own reading of a key, a source of its own kind. A hint by default;
