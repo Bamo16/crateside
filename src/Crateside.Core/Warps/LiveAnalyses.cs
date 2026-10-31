@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Serialization;
 using Crateside.Core.Samples;
 
@@ -69,6 +70,7 @@ public sealed class LiveAnalyses
         );
 }
 
+/// <summary>A sidecar sent to the Recycle Bin for Live to analyze again, and what to put back once it has.</summary>
 /// <param name="Backup">The sidecar as it was before it went to the Recycle Bin, whose clip and warp are put back.</param>
 /// <param name="From">The sibling it was borrowed from, or null.</param>
 /// <param name="WasStarter">Whether it held a starter warp crateside wrote.</param>
@@ -88,6 +90,8 @@ internal sealed partial class LiveAnalysesJsonContext : JsonSerializerContext { 
 /// <summary>Copies a sidecar aside before crateside replaces or recycles it.</summary>
 public sealed class SidecarBackups
 {
+    private const string Stamp = "yyyy-MM-dd HHmmss";
+
     private readonly string _root;
     private readonly TimeProvider _time;
 
@@ -107,11 +111,31 @@ public sealed class SidecarBackups
 
         var backup = Path.Combine(
             _root,
-            $"{_time.GetLocalNow():yyyy-MM-dd HHmmss} {Path.GetFileName(sidecarPath)}"
+            $"{_time.GetLocalNow().ToString(Stamp, CultureInfo.InvariantCulture)} {Path.GetFileName(sidecarPath)}"
         );
         File.Copy(sidecarPath, backup, overwrite: true);
 
         return backup;
+    }
+
+    /// <summary>The copies kept of a sidecar, oldest first.</summary>
+    public IReadOnlyList<string> Of(string sidecarPath)
+    {
+        var name = $" {Path.GetFileName(sidecarPath)}";
+
+        return Directory.Exists(_root)
+            ?
+            [
+                .. Directory
+                    .EnumerateFiles(_root)
+                    .Where(backup =>
+                        Path.GetFileName(backup) is var file
+                        && file.Length == Stamp.Length + name.Length
+                        && file.EndsWith(name, StringComparison.OrdinalIgnoreCase)
+                    )
+                    .Order(StringComparer.Ordinal),
+            ]
+            : [];
     }
 }
 

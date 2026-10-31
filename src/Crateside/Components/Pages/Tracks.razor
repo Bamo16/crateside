@@ -641,16 +641,9 @@
     private TrackFilter Viewing => Searching ? TrackFilter.All : _filter;
 
     private IEnumerable<TrackRow> Shown =>
-        Viewing switch
-        {
-            TrackFilter.TagsToAnswer => Answering().Where(row => row.HasFamiliarity(_familiarity)),
-            TrackFilter.OffItsTempo => Found
-                .Where(row => row.Matches(Viewing) && row.HasFamiliarity(_familiarity))
-                .OrderByDescending(row => Math.Abs(row.Bpm?.Off?.DriftMs ?? 0)),
-            _ => Found.Where(row =>
-                row.Matches(Viewing) && (Searching || row.HasFamiliarity(_familiarity))
-            ),
-        };
+        Viewing is TrackFilter.TagsToAnswer
+            ? Answering().Where(row => row.HasFamiliarity(_familiarity))
+            : Rows.Narrow(_filter, _search, _familiarity);
 
     private IEnumerable<TrackRow> Answering()
     {

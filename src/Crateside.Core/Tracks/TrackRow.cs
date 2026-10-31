@@ -57,6 +57,33 @@ public sealed record TrackRow
             source.VideoId.Equals(videoId, StringComparison.Ordinal)
         );
 
+    /// <summary>Every upload this track has used, the one it is cut from first, each with its role; none without an upload.</summary>
+    public IReadOnlyList<TrackUpload> Uploads =>
+        HasUpload
+            ?
+            [
+                .. Facts
+                    .Uploads.Prepend(CutFrom)
+                    .Distinct(StringComparer.Ordinal)
+                    .Select(videoId => new TrackUpload(videoId, UploadRole(videoId))),
+            ]
+            : [];
+
+    /// <summary>The upload the files are cut from: the one swapped in, else the playlist's.</summary>
+    private string CutFrom =>
+        StatedSourceUrl is { } stated && YouTubeUrl.TryGetVideoId(stated, out var swapped)
+            ? swapped
+            : VideoId;
+
+    private string UploadRole(string videoId) =>
+        Plan.AddedSources.FirstOrDefault(source => source.VideoId == videoId) switch
+        {
+            { } added => $"added source · {added.Label}",
+            null when videoId == CutFrom => "cut from",
+            null when videoId == VideoId => "the playlist's upload",
+            _ => "old upload",
+        };
+
     /// <summary>
     /// Whether this row's samples were cut from more than one upload, which is what makes saying
     /// so on each of them worth the room (ADR 0014).
@@ -496,6 +523,9 @@ public sealed record TrackRow
         : GpuPosition is 1 ? "next on the GPU"
         : $"{GpuPosition.GetValueOrDefault().Ordinalize(English)} for the GPU";
 }
+
+/// <summary>One upload a track has used, and what it is to the track: <c>cut from</c>, an added source, an old upload.</summary>
+public sealed record TrackUpload(string VideoId, string Role);
 
 /// <summary>Where a track's derived name came from, best first.</summary>
 public enum TrackNameSource

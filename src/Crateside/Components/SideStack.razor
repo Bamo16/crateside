@@ -118,7 +118,7 @@
 
     /// <summary>Every upload the track has used, with its role; drawn only where it is given.</summary>
     [Parameter]
-    public IReadOnlyList<(string VideoId, string Role)>? Uploads { get; set; }
+    public IReadOnlyList<TrackUpload>? Uploads { get; set; }
 
     [Parameter]
     public EventCallback<(string Title, string Note)> Removed { get; set; }
