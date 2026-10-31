@@ -31,9 +31,7 @@ public sealed class TrueUpRealLibraryTests
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
-            (original with { Warp = TrueUpDecision.Retyped(original.Warp, retype.Bpm) }).Write(
-                copy
-            );
+            (original with { Warp = TrueUpDecision.Retyped(original, retype.Bpm) }).Write(copy);
             var written = AnalysisFile.Read(copy);
             var report = GridCheck.Against(
                 GridCheck.Strongest(written.Audio.Transients, 44100),

@@ -68,9 +68,10 @@ public sealed class WarpTrueUp(
             {
                 TrueUpVerdict.Retype verdict => Retype(
                     verdict,
+                    analysis,
                     canonical.Select(stem => stem.Cut.Path).Concat(sharing),
                     rephase
-                        ? Phase(siblings, song, analysis, source.Path, verdict.Bpm, rate)
+                        ? Phase(siblings, song, analysis, source.Path, verdict, rate)
                         : (0, null)
                 ),
                 TrueUpVerdict.Leave(var reason) => new TrueUpPlan.Left(reason),
@@ -86,6 +87,7 @@ public sealed class WarpTrueUp(
 
     private TrueUpPlan Retype(
         TrueUpVerdict.Retype verdict,
+        AnalysisFile analysis,
         IEnumerable<string> canonical,
         (double Shift, string? From)? phase
     ) =>
@@ -93,6 +95,7 @@ public sealed class WarpTrueUp(
             ? new TrueUpPlan.Left(TrueUpReason.DoesNotHold)
             : new TrueUpPlan.Retype(
                 verdict,
+                TrueUpDecision.Retyped(analysis, verdict.Bpm, shift).Markers,
                 [.. canonical.Select(Stamped)],
                 [
                     .. canonical
@@ -105,31 +108,34 @@ public sealed class WarpTrueUp(
 
     /// <summary>
     /// How far later the retyped warp has to sit for the transients of the kept drum stem, else the
-    /// canonical stem, to center on its grid; null when the grid then does not hold within 5 ms
-    /// through every 30 s.
+    /// canonical stem, to center on its grid; null when the grid then does not hold within 5 ms through
+    /// every 30 s, or moves anything audible further than the drift and the shift.
     /// </summary>
     private static (double Shift, string? From)? Phase(
         WarpSiblings siblings,
         SiblingFile song,
         AnalysisFile canonical,
         string canonicalPath,
-        double bpm,
+        TrueUpVerdict.Retype verdict,
         int rate
     )
     {
         var (times, from) = PhaseSource(siblings, song, canonical, canonicalPath, rate);
-        var warp = TrueUpDecision.Retyped(canonical.Warp, bpm);
+        var warp = TrueUpDecision.Retyped(canonical, verdict.Bpm);
         var offset = GridCheck.Against(times, warp);
 
         if (offset.Windows.Count < MinWindowsToPhase)
             return null;
 
         var shift = offset.MedianOffsetMs / 1000;
+        var phased = TrueUpDecision.Retyped(canonical, verdict.Bpm, shift);
 
-        return GridCheck
-            .Against(times, TrueUpDecision.Retyped(canonical.Warp, bpm, shift))
-            .OffsetsPer(BlockSeconds)
-            .All(ms => Math.Abs(ms) <= HoldsWithinMs)
+        return
+            GridCheck
+                .Against(times, phased)
+                .OffsetsPer(BlockSeconds)
+                .All(ms => Math.Abs(ms) <= HoldsWithinMs)
+            && TrueUpDecision.Keeps(canonical, phased, verdict.DriftMs, shift)
             ? (shift, from == canonicalPath ? null : from)
             : null;
     }
@@ -194,16 +200,9 @@ public sealed class WarpTrueUp(
                     var analysis = AnalysisFile.Read(sidecar);
                     var backup = backups.Keep(sidecar);
 
-                    (
-                        analysis with
-                        {
-                            Warp = TrueUpDecision.Retyped(
-                                analysis.Warp,
-                                plan.Verdict.Bpm,
-                                plan.ShiftSeconds
-                            ),
-                        }
-                    ).Write(sidecar);
+                    (analysis with { Warp = analysis.Warp with { Markers = plan.Markers } }).Write(
+                        sidecar
+                    );
                     written.Add((sidecar, backup));
                     retyped.Record(stamp.Path, plan.Verdict.Bpm, time.GetUtcNow());
                 }
@@ -275,12 +274,14 @@ public abstract record TrueUpPlan
 {
     private TrueUpPlan() { }
 
+    /// <param name="Markers">The retyped markers every one of <paramref name="Sidecars"/> is given.</param>
     /// <param name="Sidecars">The canonical stems whose sidecars are rewritten.</param>
     /// <param name="Lent">The stems crateside copied their warp to, written again afterwards.</param>
-    /// <param name="ShiftSeconds">How much later every marker moves to sit on the transients; 0 where the warp is only retyped.</param>
+    /// <param name="ShiftSeconds">How much later the steady stretch moves to sit on the transients; 0 where the warp is only retyped.</param>
     /// <param name="PhasedFrom">The kept drum stem the phase was read from, or null when it was the canonical stem or there is no phase.</param>
     public sealed record Retype(
         TrueUpVerdict.Retype Verdict,
+        IReadOnlyList<WarpMarker> Markers,
         IReadOnlyList<SidecarStamp> Sidecars,
         IReadOnlyList<string> Lent,
         double ShiftSeconds = 0,

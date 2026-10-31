@@ -250,6 +250,28 @@ public sealed class WarpTrueUpTests : IDisposable
         Assert.IsType<TrueUpPlan.Disagree>(plan);
     }
 
+    [Fact]
+    public async Task A_quiet_intro_at_other_tempos_stays_and_the_body_keeps_its_beats()
+    {
+        Stem(Instrumental, "Instrumental - Full");
+        WithoutMe.Analysis().Write($"{Instrumental}.asd");
+        var siblings = WarpSiblings.Scan([_root]);
+
+        var plan = Assert.IsType<TrueUpPlan.Retype>(
+            Truer().Plan(siblings, WarpSiblings.Read(Instrumental)!, rephase: true)
+        );
+        await Truer().ApplyAsync(plan, siblings, TestContext.Current.CancellationToken);
+
+        var written = AnalysisFile.Read($"{Instrumental}.asd").Warp;
+        Assert.Equal(4.85884350024975, written.SecondsAt(6) ?? 0, 0.005);
+        Assert.Equal(WithoutMe.Markers[..7], written.Markers.Take(7));
+        Assert.Equal(
+            WithoutMe.Warp.SecondsAt(WithoutMe.ClipStart) ?? 0,
+            written.SecondsAt(WithoutMe.ClipStart) ?? 0,
+            0.015
+        );
+    }
+
     /// <summary>An instrumental the user warped, a vocal crateside lent it, and a vocal the user warped by hand.</summary>
     private async Task Setup(double warpBpm, double trackBpm, double hitsLate = 0)
     {
