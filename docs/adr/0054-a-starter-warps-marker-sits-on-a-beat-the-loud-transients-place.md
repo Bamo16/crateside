@@ -106,3 +106,5 @@ as no choice made, so appsettings applies. The maintainer may bring the mode bac
   ADR 0047's starter, with the group's shared tempo) and *On the grid* (this ADR). Settings changes it
   while crateside runs and keeps the choice in `warp-settings.json`, which wins over appsettings. The
   default is *Tempo only*: the placement has been seen in Live on one track.
+
+**Amended 2026-10-30.** beatdetect 1.4.0 rescaled `downbeat_confidence`, so the gate is 0.6 on it (dd86fea, `StarterGrid.DownbeatSureAt`); the 0.03 above and its counts are 1.3.x's.

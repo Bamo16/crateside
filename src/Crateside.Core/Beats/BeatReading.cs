@@ -28,7 +28,7 @@ public sealed record BeatReading
     /// <summary>Where the first bar's downbeat falls, in ms; null from a build without it.</summary>
     public double? DownbeatOffsetMs { get; init; }
 
-    /// <summary>How sure the filter is of the downbeat; 0.03 and up is the working threshold.</summary>
+    /// <summary>How sure the filter is of the downbeat; <see cref="Warps.StarterGrid.DownbeatSureAt"/> and up is the working threshold.</summary>
     public double? DownbeatConfidence { get; init; }
 
     public int? BeatsPerBar { get; init; }
