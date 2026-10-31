@@ -35,7 +35,7 @@ public static partial class JudgeProse
     private const string ChordShape = $$"""
         (?<Root>[A-G])(?<Accidental>\#\#|{{Accidental}})?
         (?<Quality>
-            (?:maj|min|dim|aug|sus[24]?|add(?:9|11|13)|m)?
+            (?:maj|min|dim|aug|sus[24]?|add(?:9|11|13)|M(?=7|9|11|13)|m)?
             (?:5|6|7|9|11|13)?
             (?:{{Accidental}}(?:5|9|11|13))*
             (?:\((?:[Mm]aj|[Mm]in|[Mm]|[iIvV]+)\.?\))?
