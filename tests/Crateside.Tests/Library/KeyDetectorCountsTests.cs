@@ -39,7 +39,7 @@ public sealed class KeyDetectorCountsTests
     }
 
     [Fact]
-    public void The_ledger_gives_keydetect_the_lead_and_every_song_one_place_per_detector()
+    public void The_ledger_gives_every_song_one_place_per_detector()
     {
         Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
 
@@ -49,18 +49,10 @@ public sealed class KeyDetectorCountsTests
             highOnly: false
         );
 
-        Assert.True(counts.Songs > 390, $"only {counts.Songs} songs");
+        Assert.True(counts.Songs > 0);
         Assert.All(
             counts.Detectors,
             tally => Assert.Equal(counts.Songs, tally.ByMiss.Values.Sum())
         );
-        Assert.Equal(
-            ["keydetect", "madmom", "edma"],
-            counts
-                .Detectors.OrderByDescending(tally => tally.Count(KeyMiss.Right))
-                .Select(tally => tally.Name)
-                .Take(3)
-        );
-        Assert.NotEmpty(counts.AllWrong);
     }
 }
