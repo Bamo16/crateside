@@ -1,3 +1,5 @@
+using Crateside.Core.Orchestration.Verdict;
+
 namespace Crateside.Core.Orchestration.Loop;
 
 /// <summary>
@@ -24,6 +26,10 @@ public sealed class PauseStore(string? path = null)
 
     public void RememberBackfill(bool on) => Save(Read() with { Backfill = on });
 
+    /// <summary>Not a pause: the judge's refusals in a row and the hold they set (ADR 0070), or null once a session is served.</summary>
+    public void RememberBackoff(JudgeBackoffState? backoff) =>
+        Save(Read() with { Backoff = backoff });
+
     private void Save(PausedStages stages)
     {
         lock (_gate)
@@ -45,4 +51,7 @@ public sealed record PausedStages
 
     /// <summary>Not a pause: whether the weekly spend-down judges the backlog (ADR 0063).</summary>
     public bool Backfill { get; init; }
+
+    /// <summary>Not a pause: the judge backoff, kept so a restart does not reset it (ADR 0070).</summary>
+    public JudgeBackoffState? Backoff { get; init; }
 }

@@ -31,7 +31,7 @@ public sealed class VerdictControl : DrainControl
 
     /// <summary>Paused or not as the user last left judging.</summary>
     public VerdictControl(PauseStore remembered, TimeProvider time)
-        : base(remembered.Read().Judging, time) => Backoff = new JudgeBackoff(time);
+        : base(remembered.Read().Judging, time) => Backoff = new JudgeBackoff(time, remembered);
 
     internal VerdictControl(bool startPaused = true, TimeProvider? time = null)
         : base(startPaused, time) => Backoff = new JudgeBackoff(time ?? TimeProvider.System);

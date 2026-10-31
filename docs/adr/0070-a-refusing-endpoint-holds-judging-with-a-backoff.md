@@ -48,7 +48,9 @@ nothing wrong, and each was resumed once for a second session before failing.
 ## Consequences
 
 - An outage of hours costs about two sessions an hour once the backoff reaches 30 minutes.
-- The hold lives in memory: a restart forgets it, and the first pass after a restart tries at once.
+- The refusal count and the hold are kept in `%APPDATA%\crateside\paused.json` (`PauseStore`), so a
+  restart does not reset the waits. On 2026-10-31 a restart in the middle of a 4-minute hold made
+  the next refusal wait a minute again, so the backoff looked as if it never grew.
 - Claude Code's own retries inside one session are untouched; crateside decides only when the
   next session starts.
 - A user's pause and resume clears the shown hold but not the backoff, so judging still waits it out.
