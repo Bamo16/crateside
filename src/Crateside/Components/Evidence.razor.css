@@ -406,11 +406,8 @@
     line-height: 1.8;
 }
 
-.chords .run {
-    white-space: nowrap;
-}
-
 .chords .repeats {
+    white-space: nowrap;
     font-weight: 400;
     color: var(--text-50);
 }
