@@ -80,7 +80,14 @@ public sealed class GenreWorker(
                 continue;
 
             if (await lookup.HearAsync(artist, title, stoppingToken) is not { } heard)
+            {
+                logger.LogInformation(
+                    "A genre source could not be reached for {Song}; trying again later",
+                    song
+                );
+
                 return AfterFailure;
+            }
 
             store.Suggest(song, heard, time.GetUtcNow());
             suggested++;

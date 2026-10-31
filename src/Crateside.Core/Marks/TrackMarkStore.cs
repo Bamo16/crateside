@@ -52,17 +52,65 @@ public sealed class TrackMarkStore
             else
                 records[song] = new TrackMarkRecord { Song = song, Marks = marks };
 
-            try
-            {
-                TrackMarkJsonContext.Default.ListTrackMarkRecord.WriteFile(
-                    _path,
-                    [.. records.Values.OrderBy(record => record.Song)]
-                );
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            Write(records);
         }
 
         Changed?.Invoke(song);
+    }
+
+    /// <summary>
+    /// Moves each record kept under a video ID onto the song the ledger has since judged it as,
+    /// calling <paramref name="beforeWrite"/> with the file's path first; returns how many moved.
+    /// </summary>
+    public int FollowSongs(Func<string, string?> songFor, Action<string>? beforeWrite = null)
+    {
+        lock (_gate)
+        {
+            var records = new Dictionary<string, TrackMarkRecord>(
+                _cached ??= TryReadFile(),
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            var moved = SongKeys.Follow(
+                records,
+                songFor,
+                (song, record, held) =>
+                    new TrackMarkRecord
+                    {
+                        Song = song,
+                        Marks = [.. (held?.Marks ?? []).Union(record.Marks).Order()],
+                    }
+            );
+
+            if (moved is 0)
+                return 0;
+
+            try
+            {
+                beforeWrite?.Invoke(_path);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return 0;
+            }
+
+            _cached = records;
+            Write(records);
+
+            return moved;
+        }
+    }
+
+    private void Write(Dictionary<string, TrackMarkRecord> records)
+    {
+        try
+        {
+            TrackMarkJsonContext.Default.ListTrackMarkRecord.WriteFile(
+                _path,
+                [.. records.Values.OrderBy(record => record.Song)]
+            );
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
     private Dictionary<string, TrackMarkRecord> TryReadFile() =>

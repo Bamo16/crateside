@@ -36,7 +36,7 @@ public sealed class TracksReader(
                 paths.LibraryFolder,
                 jobs,
                 scan.Instructions,
-                annotations.Read(),
+                annotations.Read(scan.Ledger),
                 await samples.ReadAsync(ct)
             );
 
