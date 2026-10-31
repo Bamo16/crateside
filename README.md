@@ -56,6 +56,16 @@ stricter test. On 251 of the 382 steady tracks beatdetect reads at the right tem
 falls on the downbeat; on the rest the beats are right but the bar starts on another beat, which is
 quick to fix in Live.
 
+### Loudness
+
+Every sample is brought to one level, so two dragged into a set start out matched. crateside reads
+each file's integrated loudness (EBU R128, whole file) with ffmpeg's `ebur128` filter and sets the
+default clip's gain in its `.asd` sidecar to reach −14 LUFS; the audio itself is never changed. A
+stem quieter than −32 LUFS is separator residue and stays at 0 dB, as drum guides do. Staged stems
+get the gain with their sidecar, and every saved sample in Staging or the library is kept at it,
+a gain set by hand included. Both numbers are settings (`Loudness` in `appsettings.json`);
+[ADR 0059](docs/adr/0059-a-sample-arrives-at-one-loudness.md) has the measurements behind them.
+
 ### Then it is your turn
 
 In Live: check the bars fall on the downbeats, move the clip start to the bar where the first verse
