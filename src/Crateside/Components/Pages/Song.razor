@@ -7,7 +7,7 @@
 @using Crateside.Core.Orchestration.Verdict
 @using Crateside.Core.Tempo
 @using Crateside.Core.Tracks
-@inject LedgerStore Ledger
+@inject TrackDetailsReader Details
 @inject TracksService Tracks
 @inject IServiceProvider Services
 @inject NavigationManager Navigation
@@ -167,7 +167,7 @@
             <aside class="rail">
                 @if (_row is not null)
                 {
-                    <SideStack Row="_row" Editor="_stems" OnTrackDetails="true" Uploads="Uploads(_row)"
+                    <SideStack Row="_row" Editor="_stems" OnTrackDetails="true" Uploads="_row.Uploads"
                                Removed="OnRemoved" />
                 }
             </aside>
@@ -255,7 +255,7 @@
             new[]
             {
                 _row?.Genre?.Written ?? _row?.Genre?.Suggested,
-                _row is null ? null : "upload".ToQuantity(Uploads(_row).Count),
+                _row is null ? null : "upload".ToQuantity(_row.Uploads.Count),
             }.OfType<string>()
         );
 
@@ -312,13 +312,7 @@
     private bool IsTaggedWithKey(TrackSample sample) =>
         Key is { } key && key.Equals(sample.AbletonKey, StringComparison.OrdinalIgnoreCase);
 
-    private void Read()
-    {
-        _row = Tracks.Current?.Rows.FirstOrDefault(row =>
-            row.VideoId.Equals(VideoId, StringComparison.Ordinal)
-        );
-        _run = Verdict is { Song: var song } ? Ledger.EvidenceFor(song) : Ledger.EvidenceForVideoId(VideoId);
-    }
+    private void Read() => (_row, _run) = Details.Find(VideoId);
 
     // Raised on a worker thread, never the circuit's, so the render is marshalled back.
     private void OnChanged() =>
@@ -327,35 +321,6 @@
             Read();
             StateHasChanged();
         });
-
-    /// <summary>Every upload this track has used, the one it is cut from first, with its role.</summary>
-    private static List<(string VideoId, string Role)> Uploads(TrackRow row)
-    {
-        if (!row.HasUpload)
-            return [];
-
-        var cutFrom =
-            row.StatedSourceUrl is { } stated && YouTubeUrl.TryGetVideoId(stated, out var swapped)
-                ? swapped
-                : row.VideoId;
-
-        return
-        [
-            .. row
-                .Facts.Uploads.Prepend(cutFrom)
-                .Distinct(StringComparer.Ordinal)
-                .Select(id => (id, Role(row, id, cutFrom))),
-        ];
-    }
-
-    private static string Role(TrackRow row, string videoId, string cutFrom) =>
-        row.Plan.AddedSources.FirstOrDefault(source => source.VideoId == videoId) switch
-        {
-            { } added => $"added source · {added.Label}",
-            null when videoId == cutFrom => "cut from",
-            null when videoId == row.VideoId => "the playlist's upload",
-            _ => "old upload",
-        };
 
     private IReadOnlyList<string> CopyHeader(TrackRow row) =>
         [

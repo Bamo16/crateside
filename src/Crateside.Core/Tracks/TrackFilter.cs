@@ -66,6 +66,27 @@ public static class TrackFilters
             _ => false,
         };
 
+    /// <summary>
+    /// The rows a view shows: a search looks through every track and ignores familiarity (#142),
+    /// and Off its tempo puts the furthest off first.
+    /// </summary>
+    public static IEnumerable<TrackRow> Narrow(
+        this IEnumerable<TrackRow> rows,
+        TrackFilter filter,
+        string? search = null,
+        string? familiarity = null
+    )
+    {
+        if (!string.IsNullOrWhiteSpace(search))
+            return rows.Where(row => row.Matches(search));
+
+        var shown = rows.Where(row => row.Matches(filter) && row.HasFamiliarity(familiarity));
+
+        return filter is TrackFilter.OffItsTempo
+            ? shown.OrderByDescending(row => Math.Abs(row.Bpm?.Off?.DriftMs ?? 0))
+            : shown;
+    }
+
     /// <summary>Whether this row's familiarity, as it is tagged, is <paramref name="value"/>; every row when none is asked for.</summary>
     public static bool HasFamiliarity(this TrackRow row, string? value) =>
         value is null || row.Familiarity?.Written == value;

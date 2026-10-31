@@ -396,7 +396,7 @@ public static class ServiceRegistration
         return services;
     }
 
-    /// <summary>The Tracks page's view of everything, and the cache that keeps it affordable.</summary>
+    /// <summary>The Tracks page's view of everything, the cache that keeps it affordable, and one track in full.</summary>
     private static IServiceCollection AddTracks(this IServiceCollection services)
     {
         services.AddSingleton<ITracksReader, TracksReader>();
@@ -405,6 +405,9 @@ public static class ServiceRegistration
         services.AddSingleton<SongKeyMigration>();
         services.AddSingleton<SampleReadingsReader>();
         services.AddSingleton<CacheKeeper>();
+        services.AddSingleton<TrackDetailsReader>();
+        services.AddSingleton<StemDetailsReader>();
+        services.AddSingleton<FiledRecordsReader>();
 
         return services;
     }
