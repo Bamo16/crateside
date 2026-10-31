@@ -6,14 +6,38 @@ namespace Crateside.Core.Samples;
 /// <summary>How a track's files are named: the track's name, then the preset in parentheses.</summary>
 public static partial class StemFileName
 {
-    /// <summary>The same file under a different track name, keeping its preset and extension.</summary>
-    public static string Renamed(string path, string name) =>
-        Path.Combine(
-            Path.GetDirectoryName(path) ?? string.Empty,
-            name
+    /// <summary>
+    /// The same file under a different track name, keeping its preset and extension. A name too
+    /// long for the folder it lands in is cut by <see cref="FileTitle"/>.
+    /// </summary>
+    public static string Renamed(string path, string name, string? destination = null)
+    {
+        var directory = Path.GetDirectoryName(path) ?? string.Empty;
+
+        return Path.Combine(
+            destination ?? directory,
+            FileTitle.Fit(
+                name,
+                FileTitle.MaxLengthIn(destination ?? directory, FileTitle.LongPathsEnabled)
+            )
                 + PresetSuffix.Match(Path.GetFileNameWithoutExtension(path)).Value
                 + Path.GetExtension(path)
         );
+    }
+
+    /// <summary>
+    /// The file's name with <c> (label)</c> added before its extension, in a name that still fits.
+    /// </summary>
+    public static string Labeled(string path, string label)
+    {
+        var directory = Path.GetDirectoryName(path) ?? string.Empty;
+        var title = FileTitle.Fit(
+            Path.GetFileNameWithoutExtension(path),
+            FileTitle.MaxLengthIn(directory, FileTitle.LongPathsEnabled)
+        );
+
+        return Path.Combine(directory, $"{title} ({label}){Path.GetExtension(path)}");
+    }
 
     /// <summary>
     /// Ableton's analysis file for a sample, where the warp markers live — the whole name plus

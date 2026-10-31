@@ -168,10 +168,7 @@ public sealed class DownloadDrainer(
         [NotNullWhen(false)] out string? problem
     )
     {
-        renamed = Path.Combine(
-            Path.GetDirectoryName(path) ?? string.Empty,
-            $"{Path.GetFileNameWithoutExtension(path)} ({label}){Path.GetExtension(path)}"
-        );
+        renamed = StemFileName.Labeled(path, label);
 
         try
         {
