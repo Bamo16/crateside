@@ -26,6 +26,10 @@ one, use `stemforge-cli download <url> --format flac --output <dir>`, never `yt-
 fetches the Premium format the stems were cut from, and gives the identical file. Plain `yt-dlp`
 fetched a free format whose audio started 36 ms off (#133).
 
+**Building `src/Crateside` rewrites [docs/openapi.json](docs/openapi.json)** from the API's code, wherever
+the output goes. Commit it with the change that moved it; CI does not rewrite it, and a test fails
+there when it is stale.
+
 **A detector runs on the source**, the full mix from the source index. Run it on a stem (instrumental,
 drums) only when the question is how that detector does on that stem, and say so. A measurement on a
 stem standing in for the source is a shortcut that a filter's author cannot repeat like-for-like.
@@ -34,6 +38,18 @@ Many tests **assert against the real library** — the Ableton roots chosen in S
 ledger, this machine's working sets — and skip when those are absent. That has caught
 things fixtures could not, repeatedly. Prefer a real-data test over a mock when the question is
 "what is actually true on this machine".
+
+## Investigating a track starts with the API
+
+When the app is running, ask it before reading any store: `curl http://localhost:5027/api/tracks/<videoId>`
+gives the track's row, the evidence behind its verdict, its job history, each stem's tags and parsed
+warp with crateside's records about that warp, and its entry in every per-song store under each key
+it is filed under. `/api/tracks?filter=<filter>` gives the Tracks page's rows. Shapes and examples
+are in [docs/api.md](docs/api.md); `/scalar` browses them. The API only reads.
+
+Fall back to the files (`ledger.db`, `jobs.jsonl`, the stores under `%APPDATA%\crateside`, the
+`.asd` sidecars through AbleKit) when the app is not running, or for what the API does not serve:
+the log, the source index, ledger runs before the latest. Never start the app to use the API.
 
 ## The AbleKit library
 
