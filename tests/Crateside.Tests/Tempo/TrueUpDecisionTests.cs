@@ -82,11 +82,28 @@ public sealed class TrueUpDecisionTests
     }
 
     [Fact]
+    public void A_steady_stretch_with_another_tempo_after_it_is_left_alone()
+    {
+        var analysis = SteadyTrack.Analysis(warpBpm: 120, trackBpm: 120.01) with
+        {
+            Warp = new Warp { Markers = [new(0.5, 0), new(240.5, 480), new(250.5, 490)] },
+        };
+
+        Assert.Equal(
+            new TrueUpVerdict.Leave(TrueUpReason.NotSteady),
+            TrueUpDecision.Of(analysis, SampleRate)
+        );
+    }
+
+    [Fact]
     public void Retyping_keeps_the_first_marker_and_every_beat_and_lays_the_rest_on_one_line()
     {
-        Warp warp = new() { Markers = [new(1, 0), new(61.001, 160), new(61.0025, 160.0625)] };
+        var analysis = SteadyTrack.Analysis(warpBpm: 160, trackBpm: 160) with
+        {
+            Warp = new Warp { Markers = [new(1, 0), new(61.001, 160), new(61.0025, 160.0625)] },
+        };
 
-        var retyped = TrueUpDecision.Retyped(warp, 160);
+        var retyped = TrueUpDecision.Retyped(analysis, 160);
 
         Assert.Equal(new WarpMarker(1, 0), retyped.Markers[0]);
         Assert.Equal([0, 160, 160.0625], retyped.Markers.Select(marker => marker.Beat));
@@ -95,6 +112,40 @@ public sealed class TrueUpDecisionTests
             retyped.Markers.Select(marker => marker.Seconds),
             Within(1e-9)
         );
+    }
+
+    [Fact]
+    public void Markers_before_the_clip_at_another_tempo_are_left_and_the_retype_starts_where_the_tempo_does()
+    {
+        var analysis = WithoutMe.Analysis();
+
+        var retyped = TrueUpDecision.Retyped(analysis, 112.25285);
+
+        Assert.Equal((7, 8), TrueUpDecision.SteadyStretch(analysis.Warp, analysis.DefaultClip));
+        Assert.Equal(WithoutMe.Markers[..8], retyped.Markers.Take(8));
+        Assert.True(TrueUpDecision.Keeps(analysis, retyped, driftMs: 6.5, shiftSeconds: 0));
+    }
+
+    [Fact]
+    public void A_retype_that_moves_the_body_whole_beats_is_refused_though_it_lands_on_a_16th()
+    {
+        var analysis = WithoutMe.Analysis();
+        var anchor = WithoutMe.Markers[0];
+        var oneLine = new Warp
+        {
+            Markers =
+            [
+                .. WithoutMe.Markers.Select(marker =>
+                    marker with
+                    {
+                        Seconds = anchor.Seconds + (marker.Beat - anchor.Beat) * 60 / 112.25285,
+                    }
+                ),
+            ],
+        };
+
+        Assert.InRange(TrueUpDecision.MovedMs(analysis, oneLine), 1200, 1210);
+        Assert.False(TrueUpDecision.Keeps(analysis, oneLine, driftMs: 6.5, shiftSeconds: 0));
     }
 
     private static EqualityComparer<double> Within(double tolerance) =>

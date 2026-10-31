@@ -123,6 +123,7 @@ public sealed class WarpWordingTests
             new TrueUpVerdict.Retype(179.983, 180, false, 23.4, 0.1),
             [],
             [],
+            [],
             0.0032,
             null
         );
@@ -138,6 +139,7 @@ public sealed class WarpWordingTests
     {
         var plan = new TrueUpPlan.Retype(
             new TrueUpVerdict.Retype(179.983, 180, false, 23.4, 0.1),
+            [],
             [],
             [Vocal],
             0.0032,
