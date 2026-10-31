@@ -272,7 +272,7 @@ public sealed class SidecarWriterTests : IDisposable
         var outcome = await writer.StartAsync(
             Target,
             [],
-            new(120, null),
+            new(120, null, null),
             ct: TestContext.Current.CancellationToken
         );
 
@@ -299,7 +299,7 @@ public sealed class SidecarWriterTests : IDisposable
         var outcome = await writer.StartAsync(
             Target,
             [],
-            new(120, null),
+            new(120, null, null),
             ct: TestContext.Current.CancellationToken
         );
 
@@ -314,7 +314,12 @@ public sealed class SidecarWriterTests : IDisposable
         Audio(Target);
 
         await OnTheHalfSecond()
-            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
+            .StartAsync(
+                Target,
+                [],
+                new(120, null, null),
+                ct: TestContext.Current.CancellationToken
+            );
 
         var written = AnalysisFile.Read($"{Target}.asd");
 
@@ -329,7 +334,7 @@ public sealed class SidecarWriterTests : IDisposable
         Audio(Target);
 
         await OnTheHalfSecond()
-            .StartAsync(Target, [], new(120, 1.3), ct: TestContext.Current.CancellationToken);
+            .StartAsync(Target, [], new(120, null, 1.3), ct: TestContext.Current.CancellationToken);
 
         var written = AnalysisFile.Read($"{Target}.asd");
 
@@ -348,20 +353,20 @@ public sealed class SidecarWriterTests : IDisposable
         await writer.StartAsync(
             Target,
             [],
-            new(120, null),
+            new(120, null, null),
             ct: TestContext.Current.CancellationToken
         );
 
         var renumbered = await writer.StartAsync(
             Target,
             [],
-            new(120, 1.3),
+            new(120, null, 1.3),
             ct: TestContext.Current.CancellationToken
         );
         var again = await writer.StartAsync(
             Target,
             [],
-            new(120, 1.3),
+            new(120, null, 1.3),
             ct: TestContext.Current.CancellationToken
         );
 
@@ -399,13 +404,13 @@ public sealed class SidecarWriterTests : IDisposable
         await writer.StartAsync(
             reference,
             [],
-            new(120, null),
+            new(120, null, null),
             ct: TestContext.Current.CancellationToken
         );
         await writer.StartAsync(
             Target,
             [],
-            new(120, null),
+            new(120, null, null),
             ct: TestContext.Current.CancellationToken,
             timingFrom: reference
         );
@@ -423,7 +428,12 @@ public sealed class SidecarWriterTests : IDisposable
         Audio(Target);
 
         await Borrower()
-            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
+            .StartAsync(
+                Target,
+                [],
+                new(120, null, null),
+                ct: TestContext.Current.CancellationToken
+            );
 
         Assert.Equal(
             new TransientOrigin("Song (Vocal - Full).flac", "fixed 1", null),
@@ -437,7 +447,12 @@ public sealed class SidecarWriterTests : IDisposable
         Audio(Target);
         Audio(Sibling);
         await Borrower()
-            .StartAsync(Sibling, [], new(120, null), ct: TestContext.Current.CancellationToken);
+            .StartAsync(
+                Sibling,
+                [],
+                new(120, null, null),
+                ct: TestContext.Current.CancellationToken
+            );
 
         var outcome = await Borrower()
             .BorrowAsync(Target, [Sibling], [], TestContext.Current.CancellationToken);
@@ -450,7 +465,12 @@ public sealed class SidecarWriterTests : IDisposable
     {
         Audio(Target);
         await Borrower()
-            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
+            .StartAsync(
+                Target,
+                [],
+                new(120, null, null),
+                ct: TestContext.Current.CancellationToken
+            );
         Analysis(saved: true).Write($"{Sibling}.asd");
 
         var outcome = await Borrower()
@@ -466,7 +486,12 @@ public sealed class SidecarWriterTests : IDisposable
     {
         Audio(Target);
         await Borrower()
-            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
+            .StartAsync(
+                Target,
+                [],
+                new(120, null, null),
+                ct: TestContext.Current.CancellationToken
+            );
 
         Analysis(saved: true).Write($"{Target}.asd");
         File.SetLastWriteTimeUtc($"{Target}.asd", DateTime.UtcNow.AddMinutes(1));
@@ -474,7 +499,12 @@ public sealed class SidecarWriterTests : IDisposable
         Assert.False(_written.IsStarter(Target));
         Assert.IsType<WarpOutcome.AlreadyWarped>(
             await Borrower()
-                .StartAsync(Target, [], new(90, null), ct: TestContext.Current.CancellationToken)
+                .StartAsync(
+                    Target,
+                    [],
+                    new(90, null, null),
+                    ct: TestContext.Current.CancellationToken
+                )
         );
     }
 
@@ -484,7 +514,12 @@ public sealed class SidecarWriterTests : IDisposable
         Audio(Target);
 
         await Leveling(lufs: -20)
-            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
+            .StartAsync(
+                Target,
+                [],
+                new(120, null, null),
+                ct: TestContext.Current.CancellationToken
+            );
 
         Assert.Equal(PlusSixDb, AnalysisFile.Read($"{Target}.asd").Clip.SampleVolume, 4);
     }
@@ -555,7 +590,12 @@ public sealed class SidecarWriterTests : IDisposable
 
         Assert.IsType<WarpOutcome.Started>(
             await Steady()
-                .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken)
+                .StartAsync(
+                    Target,
+                    [],
+                    new(120, null, null),
+                    ct: TestContext.Current.CancellationToken
+                )
         );
         Assert.IsType<WarpOutcome.Unwarped>(
             await Steady().UnwarpAsync(Target, [], TestContext.Current.CancellationToken)
@@ -571,7 +611,12 @@ public sealed class SidecarWriterTests : IDisposable
         Audio(Target);
 
         var outcome = await Steady(jumpAt: 35, jumpSeconds: 0.04)
-            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
+            .StartAsync(
+                Target,
+                [],
+                new(120, null, null),
+                ct: TestContext.Current.CancellationToken
+            );
 
         Assert.IsType<WarpOutcome.Unwarped>(outcome);
         Assert.False(AnalysisFile.Read($"{Target}.asd").Warp.IsWarped);
@@ -583,10 +628,20 @@ public sealed class SidecarWriterTests : IDisposable
     {
         Audio(Target);
         await Steady()
-            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
+            .StartAsync(
+                Target,
+                [],
+                new(120, null, null),
+                ct: TestContext.Current.CancellationToken
+            );
 
         var outcome = await Steady(jumpAt: 35, jumpSeconds: 0.04)
-            .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken);
+            .StartAsync(
+                Target,
+                [],
+                new(120, null, null),
+                ct: TestContext.Current.CancellationToken
+            );
 
         Assert.IsType<WarpOutcome.Unwarped>(outcome);
         Assert.False(_written.IsStarter(Target));
@@ -599,7 +654,12 @@ public sealed class SidecarWriterTests : IDisposable
 
         Assert.IsType<WarpOutcome.Unwarped>(
             await Borrower()
-                .StartAsync(Target, [], new(120, null), ct: TestContext.Current.CancellationToken)
+                .StartAsync(
+                    Target,
+                    [],
+                    new(120, null, null),
+                    ct: TestContext.Current.CancellationToken
+                )
         );
     }
 

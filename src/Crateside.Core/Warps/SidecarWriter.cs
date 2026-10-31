@@ -31,7 +31,7 @@ public sealed class SidecarWriter(
     private const int MinWindowsToHold = 6;
 
     private readonly ConcurrentDictionary<
-        (string Reference, long Length, double Bpm),
+        (string Reference, long Length, double Bpm, double? BeatSeconds),
         StarterTiming
     > _timings = new();
 
@@ -176,7 +176,7 @@ public sealed class SidecarWriter(
             if (own is { IsUsers: true })
                 return Refuse(new WarpOutcome.AlreadyWarped());
 
-            if (await TimingAsync(timingFrom ?? target, grid.Bpm, ct) is not { } timing)
+            if (await TimingAsync(timingFrom ?? target, grid, ct) is not { } timing)
                 return Refuse(Undecodable(timingFrom ?? target));
 
             if (timing is not { Holds: true, FirstBeat: { } firstBeat })
@@ -455,11 +455,11 @@ public sealed class SidecarWriter(
     /// <summary>The tempo and first beat one stem gives a whole group, so their warps match and Live can adjust them together.</summary>
     private async Task<StarterTiming?> TimingAsync(
         string reference,
-        double bpm,
+        StarterGrid grid,
         CancellationToken ct
     )
     {
-        var key = (reference, new FileInfo(reference).Length, bpm);
+        var key = (reference, new FileInfo(reference).Length, grid.Bpm, grid.BeatSeconds);
 
         if (_timings.TryGetValue(key, out var kept))
             return kept;
@@ -474,11 +474,11 @@ public sealed class SidecarWriter(
             audio,
             key.Length
         );
-        var tempo = Refined(bpm, transients, audio.SampleRate);
+        var tempo = Refined(grid.Bpm, transients, audio.SampleRate);
 
         return _timings[key] = new StarterTiming(
             tempo,
-            GridCheck.FirstBeat(transients, audio.SampleRate, tempo),
+            GridCheck.FirstBeat(transients, audio.SampleRate, tempo, grid.BeatSeconds),
             Holds(GridCheck.Against(GridCheck.Strongest(transients, audio.SampleRate), tempo))
         );
     }

@@ -223,7 +223,7 @@ public sealed class WarpLendingTests : IDisposable
                 new TransientOrigins()
             ),
             Options.Create(options),
-            new Grids(bpm is { } tempo ? new StarterGrid(tempo, null) : null)
+            new Grids(bpm is { } tempo ? new StarterGrid(tempo, null, null) : null)
         );
 
     private static string Stem(string root, string name, string preset)

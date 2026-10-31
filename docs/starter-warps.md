@@ -86,9 +86,12 @@ replaces a lent warp or the maintainer's own.
 
    A stem that fails gets a clip with Warp off.
 7. **Place the marker.** Fold the transients onto one beat at the refined tempo, louder ones
-   weighted to the fourth power, and take the peak (`GridCheck.FirstBeat`). That is the first beat
-   in the file, at most one beat from its start. With fewer than 32 transients no beat is placed,
-   and the stem gets a clip with Warp off.
+   weighted to the fourth power, and take the peak within half a 16th of the reading's beat
+   (`beat_offset_ms`, carried in `StarterGrid.BeatSeconds`; `GridCheck.FirstBeat`). The reading
+   picks which 16th is the beat, and the transients place the marker precisely within it. A reading
+   with no beat leaves the whole fold to choose. That is the first beat in the file, at most one beat
+   from its start. With fewer than 32 transients no beat is placed, and the stem gets a clip with
+   Warp off.
 8. **Number the marker's beat in its bar** (`StarterGrid`, `SidecarWriter.StarterWarp`). Bar lines
    are every fourth beat from beat 0. When the reading's `downbeat_confidence` is 0.6 or more (1.4.0's scale; 0.03 on 1.3.x), in
    bars of four, the marker is the beat it falls on counting from beatdetect's downbeat: 0 to 3, so
@@ -122,6 +125,11 @@ pass it (MEASURED, ADR 0048).
 
 ## Known issues
 
+- **The marker lands a 16th or half a beat off on about one steady track in thirty** (13 of 303 on
+  the library, 9 of the 233 where one tempo holds; ADR 0054, 2026-10-30), where beatdetect's own
+  beat is off. The 10 ms check cannot see it, since it measures phase within a 16th. The marker is
+  moved by hand.
+
 - **The bar line falls on the downbeat on about two thirds of steady tracks** (251 of the 382 read
   at the right tempo, ADR 0054). On the rest the beats are right but the bar starts on another
   beat: the downbeat is a guess under the gate (measured on 1.3.x at 0.03), and misplaced on one in five above it. The
@@ -139,7 +147,7 @@ pass it (MEASURED, ADR 0048).
   crateside's own tempo; the 10 ms check; beatdetect's moving flag dropped
 - [ADR 0050](adr/0050-a-warp-shows-as-itself-and-is-vouched-for-by-its-grid.md): the refined tempo
 - [ADR 0054](adr/0054-a-starter-warps-marker-sits-on-a-beat-the-loud-transients-place.md): the
-  marker on a beat, numbered from the downbeat
+  marker on a beat, numbered from the downbeat; beatdetect's beat picks the 16th (2026-10-30)
 - [ADR 0058](adr/0058-a-staged-stem-shows-its-state-in-live.md): Collections
 - [ADR 0059](adr/0059-a-sample-arrives-at-one-loudness.md): clip gain, and Warp off when there is
   no starter
