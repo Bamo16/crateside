@@ -173,6 +173,20 @@
     transform: translateX(3px);
 }
 
+.clip-word {
+    position: absolute;
+    bottom: 9px;
+    font-size: 10.5px;
+    color: var(--text-50);
+    white-space: nowrap;
+    transform: translateX(4px);
+    pointer-events: none;
+}
+
+.clip-word.left {
+    transform: translateX(calc(-100% - 4px));
+}
+
 .notch {
     position: absolute;
     bottom: 0;
@@ -342,11 +356,13 @@
     background: var(--text-30);
 }
 
-.outside {
+/* The clip start, marked rather than dimmed. */
+.clip-line {
     position: absolute;
     top: 0;
     bottom: 0;
-    background: rgba(20, 19, 16, 0.62);
+    width: 1px;
+    background: var(--text-50);
     pointer-events: none;
 }
 

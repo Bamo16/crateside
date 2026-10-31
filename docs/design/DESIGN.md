@@ -113,7 +113,9 @@ open, no fold, drawn when the track has samples.
   own` at `--text` (the only loud thing; not colored). Zoom pills right: *Whole track · 32 bars ·
   8 bars*; zoomed, `bars 61–68 · 2:10–2:27` and `‹ ›` move by half a view.
 - **Rows**: overview strip (zoomed only, click to move) · ruler (loop bar, bar ticks, clip-start
-  notch; bars counted from the shared warp's clip start) · tempo line (step line from the shared
+  notch labelled `clip start` in the bar-number row, which takes the place of any number it would
+  run into; bars numbered as Live's ruler numbers them, from the shared warp's beat 0 as bar 1, with
+  -1, -2… before it and no bar 0, across the whole file, ADR 0072) · tempo line (step line from the shared
   markers, dashed at the headline figure, ±1 BPM when steady, the rounded range when drifting) ·
   **Off the grid** (below) · one 64px lane per stem · time axis.
 - **Off the grid** (handoff 16, #96): drawn for a steady warp whenever the check ran, never for one
@@ -125,7 +127,8 @@ open, no fold, drawn when the track has samples.
   …*. The milliseconds are drawn here only, never on the lanes.
 - **A lane**: flags (7×9 pennants) where every visible pair is ≥ 9px apart, else 9px ticks with
   faint lines; Live's overview at 42%, stereo as two channels; transients only when zoomed;
-  outside the clip dimmed with `--bg` at 62%; a stem with markers of its own boxed dashed from where
+  the whole file at full strength, the stem's clip start a 1px `--text-50` line (nothing dimmed
+  before or after the clip, ADR 0072); a stem with markers of its own boxed dashed from where
   it parts. No sidecar: a dashed box with one line (amber while waiting for Live).
 - **Markers are the ones Live shows**: Live writes one more, 1/32 beat past the last, and that one is
   never drawn or counted. A steady warp is *1 marker*.

@@ -183,7 +183,7 @@
                     </div>
                 }
 
-                @{ var bands = Bands(group); }
+                @{ var bands = Bands(group); var clipWord = ClipWord(group, from, to); }
                 <span class="gutter faint ruler-gutter">
                     <span>@(group.Lender is null ? "Time" : "Bar")</span>
                     @if (_form is not null)
@@ -219,16 +219,16 @@
                     @foreach (var (at, bar, numbered, beat) in BarTicks(group, from, to))
                     {
                         <span class="tick @(numbered ? "numbered" : null) @(beat ? "beat" : null)" style="left: @P(X(at, from, to))%"></span>
-                        @if (numbered)
+                        @if (numbered && !UnderClipWord(clipWord, X(at, from, to)))
                         {
                             <span class="mono bar-number" style="left: @P(X(at, from, to))%">@bar</span>
                         }
                     }
-                    @if (group.Lender is { } lender)
+                    @if (clipWord is var (clipX, toLeft))
                     {
-                        var clipStart = lender.Clip.Start;
-                        <span class="notch" style="left: @P(X(clipStart, from, to))%"
-                              title="Clip start · @WarpWording.Time(clipStart) · bar @StartBar(group)"></span>
+                        <span class="notch" style="left: @P(clipX)%"
+                              title="Clip start · @WarpWording.Time(group.Lender!.Clip.Start) · bar @StartBar(group)"></span>
+                        <span class="mono clip-word @(toLeft ? "left" : null)" style="left: @P(clipX)%">clip start</span>
                     }
                     @if (_form is { } dragged)
                     {
@@ -393,14 +393,9 @@
                                     }
                                 }
 
-                                var (clipStart, clipEnd) = stem.Clip;
-                                @if (X(clipStart, from, to) > 0)
+                                @if (X(stem.Clip.Start, from, to) is >= 0 and <= 100 and var stemClipX)
                                 {
-                                    <div class="outside" style="left: 0; width: @P(Math.Min(100, X(clipStart, from, to)))%"></div>
-                                }
-                                @if (X(clipEnd, from, to) < 100)
-                                {
-                                    <div class="outside" style="left: @P(Math.Max(0, X(clipEnd, from, to)))%; right: 0"></div>
+                                    <div class="clip-line" style="left: @P(stemClipX)%"></div>
                                 }
                             }
                             @if (parts is { } parting && wording.Name(group.Lender!.Path) is var sibling)
@@ -1445,6 +1440,17 @@
 
     private static string StartBar(WarpGroup group) => group.Bars.Position(group.ClipStartBeat);
 
+    /// <summary>Where the clip start's label goes: right of its notch, or left of it near the view's right edge.</summary>
+    private static (double X, bool ToLeft)? ClipWord(WarpGroup group, double from, double to) =>
+        group.Lender is { } lender && X(lender.Clip.Start, from, to) is >= 0 and <= 100 and var x
+            ? (x, x > 100 - Px(72))
+            : null;
+
+    /// <summary>Whether a bar number at <paramref name="x"/> would run into the clip start's label, which then takes its place.</summary>
+    private static bool UnderClipWord((double X, bool ToLeft)? word, double x) =>
+        word is var (at, toLeft) && (toLeft ? x > at - Px(90) && x < at - Px(7) : x > at - Px(19) && x < at + Px(66));
+
+    private static double Px(double pixels) => pixels / PlotPixels * 100;
 
     private static string LoopTitle((double Start, double End, bool On) loop) =>
         $"Loop {WarpWording.Time(loop.Start)}–{WarpWording.Time(loop.End)}{(loop.On ? null : " · off")}";
