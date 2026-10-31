@@ -1,10 +1,17 @@
+using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Verdict;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Crateside.Tests.Orchestration.Verdict;
 
-public sealed class JudgeBackoffTests
+public sealed class JudgeBackoffTests : IDisposable
 {
+    private readonly string _directory = Path.Combine(
+        Path.GetTempPath(),
+        "crateside-tests",
+        Guid.NewGuid().ToString("n")
+    );
+
     private readonly FakeTimeProvider _time = new(
         DateTimeOffset.Parse("2026-10-30T15:36:00+00:00")
     );
@@ -65,5 +72,54 @@ public sealed class JudgeBackoffTests
         _time.Advance(TimeSpan.FromSeconds(1));
 
         Assert.Null(Backoff.Hold);
+    }
+
+    [Fact]
+    public void A_restart_between_refusals_does_not_start_the_waits_again()
+    {
+        var store = new PauseStore(Path.Combine(_directory, "paused.json"));
+        var before = new VerdictControl(store, _time);
+
+        // Three refusals as on 2026-10-31: one, two and four minutes, the app restarted in the third.
+        before.Backoff.Refused("cannot be reached", retryAfter: null);
+        _time.Advance(TimeSpan.FromMinutes(1));
+        before.Backoff.Refused("cannot be reached", retryAfter: null);
+        _time.Advance(TimeSpan.FromMinutes(2));
+        before.Backoff.Refused("cannot be reached", retryAfter: null);
+        _time.Advance(TimeSpan.FromMinutes(2));
+
+        var after = new VerdictControl(store, _time).Backoff;
+
+        Assert.Equal("cannot be reached", after.Hold?.Reason);
+        Assert.Equal(
+            TimeSpan.FromMinutes(8),
+            after.Refused("cannot be reached", retryAfter: null).RetryAt - _time.GetUtcNow()
+        );
+    }
+
+    [Fact]
+    public void A_served_session_is_forgotten_across_a_restart_too()
+    {
+        var store = new PauseStore(Path.Combine(_directory, "paused.json"));
+        var before = new VerdictControl(store, _time);
+
+        before.Backoff.Refused("cannot be reached", retryAfter: null);
+        before.Backoff.Served();
+
+        var after = new VerdictControl(store, _time).Backoff;
+
+        Assert.Null(after.Hold);
+        Assert.Equal(
+            TimeSpan.FromMinutes(1),
+            after.Refused("cannot be reached", retryAfter: null).RetryAt - _time.GetUtcNow()
+        );
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_directory))
+            Directory.Delete(_directory, recursive: true);
+
+        GC.SuppressFinalize(this);
     }
 }

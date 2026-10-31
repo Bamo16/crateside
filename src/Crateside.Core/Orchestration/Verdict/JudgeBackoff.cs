@@ -1,17 +1,31 @@
+using Crateside.Core.Orchestration.Loop;
+
 namespace Crateside.Core.Orchestration.Verdict;
 
 /// <summary>
 /// How long judging holds after the endpoint refused a session: the wait it stated, else a minute
 /// doubling to thirty, until a session is served (ADR 0070).
 /// </summary>
-public sealed class JudgeBackoff(TimeProvider time)
+public sealed class JudgeBackoff
 {
     private static readonly TimeSpan First = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan Longest = TimeSpan.FromMinutes(30);
 
+    private readonly TimeProvider _time;
+    private readonly PauseStore? _remembered;
     private readonly Lock _gate = new();
     private int _refusals;
     private JudgeHold? _hold;
+
+    /// <summary>Takes up the refusals and hold <paramref name="remembered"/> kept, so a restart does not forget them.</summary>
+    public JudgeBackoff(TimeProvider time, PauseStore? remembered = null)
+    {
+        _time = time;
+        _remembered = remembered;
+
+        if (remembered?.Read().Backoff is { } kept)
+            (_refusals, _hold) = (kept.Refusals, kept.Hold);
+    }
 
     /// <summary>The hold in force, or null once its time has passed.</summary>
     public JudgeHold? Hold
@@ -19,7 +33,7 @@ public sealed class JudgeBackoff(TimeProvider time)
         get
         {
             lock (_gate)
-                return _hold is { RetryAt: { } until } && until > time.GetUtcNow() ? _hold : null;
+                return _hold is { RetryAt: { } until } && until > _time.GetUtcNow() ? _hold : null;
         }
     }
 
@@ -29,11 +43,10 @@ public sealed class JudgeBackoff(TimeProvider time)
         lock (_gate)
         {
             _refusals++;
+            _hold = new JudgeHold(reason, _time.GetUtcNow() + (retryAfter ?? Wait(_refusals)));
+            _remembered?.RememberBackoff(new JudgeBackoffState(_refusals, _hold));
 
-            return _hold = new JudgeHold(
-                reason,
-                time.GetUtcNow() + (retryAfter ?? Wait(_refusals))
-            );
+            return _hold;
         }
     }
 
@@ -44,6 +57,7 @@ public sealed class JudgeBackoff(TimeProvider time)
         {
             _refusals = 0;
             _hold = null;
+            _remembered?.RememberBackoff(null);
         }
     }
 
@@ -51,3 +65,6 @@ public sealed class JudgeBackoff(TimeProvider time)
     public static TimeSpan Wait(int refusals) =>
         refusals > 5 ? Longest : First * (1 << (refusals - 1));
 }
+
+/// <summary>What <see cref="JudgeBackoff"/> keeps across a restart.</summary>
+public sealed record JudgeBackoffState(int Refusals, JudgeHold? Hold);
