@@ -96,7 +96,13 @@
         _entries = TrackActivity.Build(
             Jobs.History(Row.VideoId),
             Deletions.All().Where(deletion => deletion.VideoId is { } id && uploads.Contains(id)),
-            Actions.For(Row.VideoId)
+            Actions.For(Row.VideoId),
+            [
+                .. Enum.GetValues<JobStage>()
+                    .Select(stage => Jobs.TryGet(Row.VideoId, stage, out var job) ? job : null)
+                    .OfType<TrackJob>()
+                    .Where(job => job.IsOpen),
+            ]
         );
     }
 

@@ -65,7 +65,8 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
         string? error = null,
         bool adopted = false,
         SeparationPromise? promise = null,
-        DateTimeOffset? heldUntil = null
+        DateTimeOffset? heldUntil = null,
+        string? summary = null
     )
     {
         var update = new JobUpdate
@@ -82,6 +83,7 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
             ExpectedOutputs = promise?.ExpectedOutputs,
             Destination = promise?.Destination,
             HeldUntil = heldUntil,
+            Summary = summary,
         };
 
         TrackJob job;
@@ -253,4 +255,7 @@ public sealed record JobUpdate
 
     /// <summary>When a held attempt will be tried again, where the endpoint said.</summary>
     public DateTimeOffset? HeldUntil { get; init; }
+
+    /// <summary>One line on what a finished stage did, which the activity feed shows in place of "succeeded" (#170); lines written before it have none.</summary>
+    public string? Summary { get; init; }
 }
