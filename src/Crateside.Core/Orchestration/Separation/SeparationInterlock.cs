@@ -115,12 +115,13 @@ public sealed class SeparationInterlock(
         );
 
     /// <summary>Records how a separation ended, freeing the GPU for the next one.</summary>
-    public TrackJob Release(string videoId, string? error = null) =>
+    public TrackJob Release(string videoId, string? error = null, string? summary = null) =>
         jobs.Record(
             videoId,
             JobStage.Separation,
             error is null ? JobStatus.Succeeded : JobStatus.Failed,
-            error: error
+            error: error,
+            summary: error is null ? summary : null
         );
 
     /// <summary>The separation, recorded as succeeded, or null once it is recorded as failed.</summary>
@@ -154,7 +155,14 @@ public sealed class SeparationInterlock(
             return null;
         }
 
-        return new SettledSeparation(Release(job.VideoId), promise, outputs);
+        return new SettledSeparation(
+            Release(
+                job.VideoId,
+                summary: $"{"file".ToQuantity(outputs.Count)} written while crateside was not watching"
+            ),
+            promise,
+            outputs
+        );
     }
 
     private static IReadOnlyList<string> WrittenSince(TrackJob job, string directory) =>
