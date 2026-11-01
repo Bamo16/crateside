@@ -161,16 +161,17 @@ open, no fold, drawn when the track has samples.
   Clicking the tag again, ×, or Esc closes it. `WindowDrawer`.
 - **The key strip** (handoff 20): the last lane before the time axis, 52px, on the zoomed axis, with
   a stronger top rule (`--text` 10%). The gutter says `Key` and a gist (`A Dorian, 3 centers, placed
-  from your windows · faint: the running estimate, 27 changes`), then each section with no time in
+  from your windows`), then each section with no time in
   mono: `bridge · C Lyd: no time given`. **Bands** are the verdict's centers, outlined (1px `--text`
   55%, radius 3, 44px), the short key in mono 11.5 where the band is 56px or wider (`verse · A
   Dor`), the title always carrying it; fill 3%, 7% where a window placed it. **Placement**
   (`KeyStrip.Plan`): one center is one band across the track; a section from a window takes the
   window's span; a section with a `Start` runs from it to the next boundary; the primary center
-  fills everything else; a section with none of these is named in the gutter and never drawn. **The
-  underlay** is the raw running estimate along the strip's foot (y 30–47): each change a block to the
-  next, filled `--text` at r × 0.22 with a 3px tick, labeled in mono 9.5 where 40px wide, its
-  title `0:03.39 · E min · r 0.36`. `KeyLane`.
+  fills everything else; a section with none of these is named in the gutter and never drawn. **A
+band whose start only the judge gave** (no window) has a dashed outline and the title says `start
+not placed by a window or source`. The running estimate is not drawn: keydetect's key values are
+running totals, so a change is where the whole-song estimate flipped, not where the key does (#174).
+`KeyLane`.
 - **The band invites it** only where the verdict is WITHHELD, or LOW with the whole-file detectors
   split: the Confidence cell adds the reason and an `.outline` *Judge from these bars ↓* that scrolls
   here and opens the form. Running, the cell holds the teal chip `● judging from bars` and

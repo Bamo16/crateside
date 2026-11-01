@@ -1,7 +1,7 @@
 @using Crateside.Core.Ledger
 @using Crateside.Core.Warps
 
-@if (!Plan.IsEmpty || Run.KeyEvents.Count > 0)
+@if (!Plan.IsEmpty)
 {
     <span class="gutter key-gutter">
         <span class="key-name">Key</span>
@@ -12,21 +12,12 @@
         }
     </span>
     <div class="key-strip">
-        @foreach (var change in Raw)
-        {
-            <div class="raw" style="left: @P(change.Left)%; width: @P(change.Width)%; background: rgba(236, 231, 220, @P(change.Alpha))" title="@change.Title">
-                @if (change.Width / 100 * PlotPixels >= 40)
-                {
-                    <span class="mono raw-label">@change.Key</span>
-                }
-            </div>
-        }
         @foreach (var band in Plan.Bands)
         {
             var (left, right) = (Math.Clamp(X(band.Start), 0, 100), Math.Clamp(X(band.End), 0, 100));
             @if (right > left)
             {
-                <div class="key-band @(band.FromWindow ? "from-window" : null)" style="left: @P(left)%; width: @P(right - left)%" title="@Title(band)">
+                <div class="key-band @(band.FromWindow ? "from-window" : null) @(band.StartUnbacked ? "unbacked" : null)" style="left: @P(left)%; width: @P(right - left)%" title="@Title(band)">
                     @if ((right - left) / 100 * PlotPixels >= 56)
                     {
                         <span class="mono key-label">@band.Label</span>
@@ -63,47 +54,18 @@
     private KeyStripPlan Plan => KeyStrip.Plan(Run, Seconds);
 
     private string Gist =>
-        string.Join(
-            " · ",
-            new[]
+        Run.Center is { } center
+            ? Run.Sections.Select(section => section.Center).Distinct().Count() switch
             {
-                Run.Center is { } center
-                    ? Run.Sections.Select(section => section.Center).Distinct().Count() switch
-                    {
-                        <= 1 => $"{ModeText.Named(center)}, one center",
-                        var centers when Plan.Bands.Any(band => band.FromWindow) =>
-                            $"{ModeText.Named(center)}, {centers} centers, placed from your windows",
-                        var centers => $"{ModeText.Named(center)}, {centers} centers",
-                    }
-                    : "no key",
-                Run.KeyEvents.Count > 0
-                    ? $"faint: the running estimate, {"change".ToQuantity(Run.KeyEvents.Count)}"
-                    : null,
-            }.OfType<string>()
-        );
-
-    /// <summary>Each change of the running estimate as a block from its time to the next, shaded by its r.</summary>
-    private IEnumerable<(double Left, double Width, string Key, double Alpha, string Title)> Raw
-    {
-        get
-        {
-            var changes = Run.KeyEvents.OrderBy(change => change.Seconds).ToList();
-
-            for (var i = 0; i < changes.Count; i++)
-            {
-                var change = changes[i];
-                var end = i + 1 < changes.Count ? changes[i + 1].Seconds : Seconds;
-                var (left, right) = (Math.Clamp(X(change.Seconds), 0, 100), Math.Clamp(X(end), 0, 100));
-                var key = KeyText.Spell(change.Key) ?? change.Key;
-
-                if (right > left)
-                    yield return (left, right - left, key, Math.Clamp(change.R, 0, 1) * 0.22, $"{WarpWording.Time(change.Seconds)} · {key} · r {change.R:F2}");
+                <= 1 => $"{ModeText.Named(center)}, one center",
+                var centers when Plan.Bands.Any(band => band.FromWindow) =>
+                    $"{ModeText.Named(center)}, {centers} centers, placed from your windows",
+                var centers => $"{ModeText.Named(center)}, {centers} centers",
             }
-        }
-    }
+            : "no key";
 
     private static string Title(KeyBand band) =>
-        $"{(band.Section is { Length: > 0 } named ? named + " · " : null)}{ModeText.Named(band.Center)} · {WarpWording.Time(band.Start)}–{WarpWording.Time(band.End)}{(band.FromWindow ? " · from a window" : null)}";
+        $"{(band.Section is { Length: > 0 } named ? named + " · " : null)}{ModeText.Named(band.Center)} · {WarpWording.Time(band.Start)}–{WarpWording.Time(band.End)}{(band.FromWindow ? " · from a window" : null)}{(band.StartUnbacked ? " · start not placed by a window or source" : null)}";
 
     private double X(double seconds) => (seconds - From) / (To - From) * 100;
 
