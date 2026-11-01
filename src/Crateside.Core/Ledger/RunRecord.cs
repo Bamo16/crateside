@@ -103,6 +103,9 @@ public sealed record RunWindow(double Start, double End, string? Label, WindowAs
 /// <summary>Bars <see cref="First"/> to <see cref="Last"/>, both included.</summary>
 public sealed record BarSpan(int First, int Last);
 
+/// <summary>Bars as typed: a null side is open, to the start or end of the file.</summary>
+public sealed record BarRange(int? First, int? Last);
+
 /// <summary>Who asked for a window. Null on a window imported from history, which never said.</summary>
 public enum WindowAsker
 {
