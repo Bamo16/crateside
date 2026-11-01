@@ -43,7 +43,6 @@
 @inject IQuotaReader Quota
 @inject StageSignals Signals
 @inject CratesidePaths Paths
-@inject KeyCorrections Corrections
 @inject Leveling Levels
 @inject IJSRuntime Js
 
@@ -150,10 +149,6 @@
                     <span class="mono">@_distribution.TrackCount.ToString("N0")</span> songs, one count per song ·
                     <span class="mono">@_distribution.KeyedTrackCount.ToString("N0")</span> with a key ·
                     <span class="mono">@_distribution.FileCount.ToString("N0")</span> files
-                    @if (Corrections.Disagreements.Count > 0)
-                    {
-                        <text> · </text><a href="dashboard#keys-behind"><span class="mono">@Corrections.Disagreements.Count</span> keys behind their verdict</a>
-                    }
                 </Gist>
                 <ChildContent>
                     @if (_distribution.FileCount is 0)
@@ -187,64 +182,6 @@
                                     detected, about 44 MB apiece until judged, in the hours before the weekly
                                     Claude reset when Settings has Library backfill on.
                                 </p>
-                            </div>
-                        }
-
-                        @if (Corrections.Disagreements is { Count: > 0 } disagreements)
-                        {
-                            var approved = Corrections.Approved();
-                            var waiting = disagreements.Where(file => !approved.ContainsKey(file.Path)).ToList();
-
-                            <div class="band" id="keys-behind">
-                                <div class="band-line">
-                                    <span class="band-label">Keys behind their verdict</span>
-                                    @if (waiting.Count > 0)
-                                    {
-                                        <button class="outline" @onclick="() => Corrections.Approve(waiting)">
-                                            Tag @("file".ToQuantity(waiting.Count)) with the verdict
-                                        </button>
-                                    }
-                                </div>
-                                <span class="band-value">
-                                    <span class="mono">@disagreements.Count</span>
-                                    @("file".ToQuantity(disagreements.Count, ShowQuantityAs.None)) of
-                                    @("song".ToQuantity(disagreements.DistinctBy(file => file.Song).Count()))
-                                    carry a key their verdict disagrees with
-                                </span>
-                                <ul class="band-status">
-                                    @foreach (var song in disagreements.GroupBy(file => file.Song))
-                                    {
-                                        var first = song.First();
-                                        var row = _rows.FirstOrDefault(row => row.Song.Equals(song.Key, StringComparison.OrdinalIgnoreCase));
-                                        var waitingHere = song.Where(file => !approved.ContainsKey(file.Path)).ToList();
-
-                                        <li>
-                                            @if (row is not null)
-                                            {
-                                                <a href="@row.DetailsHref">@song.Key</a>
-                                            }
-                                            else
-                                            {
-                                                @song.Key
-                                            }: <span class="mono">@first.Applied</span> →
-                                            <span class="mono">@first.Verdict</span>
-                                            @if (row?.Verdict is { } verdict)
-                                            {
-                                                <text> · @verdict.Confidence.ToString().ToUpperInvariant(), judged @verdict.Timestamp.ToLocalTime().ToString("d MMM")</text>
-                                            }
-                                            @if (waitingHere is [])
-                                            {
-                                                <text> · approved, written on the next backing pass</text>
-                                            }
-                                            else
-                                            {
-                                                <button class="outline one-song" @onclick="() => Corrections.Approve(waitingHere)">
-                                                    Tag @("file".ToQuantity(waitingHere.Count))
-                                                </button>
-                                            }
-                                        </li>
-                                    }
-                                </ul>
                             </div>
                         }
 

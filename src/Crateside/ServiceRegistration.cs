@@ -305,7 +305,6 @@ public static class ServiceRegistration
         services.AddSingleton<HandoffRunner>();
         services.AddSingleton<HandoffDrainer>();
         services.AddSingleton<TagStoreBackups>();
-        services.AddSingleton<KeyCorrections>();
         services.AddSingleton<BackingRunner>();
         services.AddHostedService<StageWorker<HandoffDrainer>>();
         // Unattended: the gap opens on every import and is collected by an ordinary

@@ -5,6 +5,8 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Handoff;
 using Crateside.Tests.Ableton;
 using Crateside.Tests.Ledger;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Crateside.Tests.Orchestration.Handoff;
 
@@ -29,7 +31,7 @@ public sealed class BackingRunnerTests : IDisposable
     }
 
     [Fact]
-    public void A_key_the_store_already_holds_is_never_rewritten()
+    public void An_entry_that_already_has_a_key_does_not_need_one()
     {
         Assert.False(Needs(Tags("Key|G♯", "Key|Minor", "Type|Vocal")));
     }
@@ -86,7 +88,7 @@ public sealed class BackingRunnerTests : IDisposable
     [Fact]
     public void A_root_that_is_not_there_yields_nothing()
     {
-        var runner = new BackingRunner(new FolderInfoReader(), new FolderInfoWriter());
+        var runner = Runner();
 
         Assert.Empty(runner.Unbacked(Path.Combine(_root, "gone"), TestLedger.From("no-such-file")));
     }
@@ -224,12 +226,68 @@ public sealed class BackingRunnerTests : IDisposable
     }
 
     [Fact]
-    public void Only_a_keyed_entry_whose_key_is_not_the_approved_one_is_corrected()
+    public void A_key_that_differs_from_the_verdict_is_rewritten_and_logged()
     {
-        Assert.True(BackingRunner.NeedsCorrection(Tags("Key|F♯", "Key|Major"), "D# minor"));
-        Assert.False(BackingRunner.NeedsCorrection(Tags("Key|D♯", "Key|Minor"), "D# minor"));
-        Assert.False(BackingRunner.NeedsCorrection(Tags("Type|Vocal"), "D# minor"));
-        Assert.False(BackingRunner.NeedsCorrection(null, "D# minor"));
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|C♯", "Key|Major", "Type|Vocal"],
+                },
+            ]
+        );
+        var log = new ListLogger();
+
+        var outcome = new BackingRunner(new FolderInfoReader(), new FolderInfoWriter(), log).Run(
+            _root,
+            Ledger("HIGH"),
+            backKeys: false
+        );
+
+        Assert.IsType<TagWriteOutcome.Written>(outcome);
+        Assert.True(new FolderInfoReader().Read(_root).TryGet(stem, out var tags));
+        Assert.Equal("A minor", tags.Key);
+        Assert.Contains("Type|Vocal", tags.Keywords);
+        Assert.Equal([$"retagged {Path.GetFileName(stem)}: C# major → A minor"], log.Messages);
+    }
+
+    [Fact]
+    public void A_key_that_matches_the_verdict_is_left_alone()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [new() { RelativePath = Path.GetFileName(stem), Keywords = ["Key|A", "Key|Minor"] }]
+        );
+
+        Assert.Empty(Runner().Unbacked(_root, Ledger("HIGH")));
+    }
+
+    [Fact]
+    public void A_key_is_left_as_found_where_the_verdict_is_withheld()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [new() { RelativePath = Path.GetFileName(stem), Keywords = ["Key|C♯", "Key|Major"] }]
+        );
+
+        Assert.Empty(Runner().Unbacked(_root, Ledger("LOW")));
+    }
+
+    [Fact]
+    public void A_key_is_left_as_found_when_corrections_are_off()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [new() { RelativePath = Path.GetFileName(stem), Keywords = ["Key|C♯", "Key|Major"] }]
+        );
+
+        Assert.Empty(Runner().Unbacked(_root, Ledger("HIGH"), correctKeys: false));
     }
 
     [Fact]
@@ -365,7 +423,26 @@ public sealed class BackingRunnerTests : IDisposable
         Assert.Equal(["Key|A", "Key|Minor", "Key|Phrygian"], assignment.Keywords);
     }
 
-    private static BackingRunner Runner() => new(new FolderInfoReader(), new FolderInfoWriter());
+    private static BackingRunner Runner() =>
+        new(new FolderInfoReader(), new FolderInfoWriter(), NullLogger<BackingRunner>.Instance);
+
+    private sealed class ListLogger : ILogger<BackingRunner>
+    {
+        public List<string> Messages { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter
+        ) => Messages.Add(formatter(state, exception));
+    }
 
     private string LibraryStem()
     {

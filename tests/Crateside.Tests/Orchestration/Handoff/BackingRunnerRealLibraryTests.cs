@@ -2,6 +2,7 @@ using AbleKit.Tags;
 using Crateside.Core.Ableton;
 using Crateside.Core.Orchestration.Handoff;
 using Crateside.Tests.Ledger;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Crateside.Tests.Orchestration.Handoff;
 
@@ -17,10 +18,11 @@ public sealed class BackingRunnerRealLibraryTests
     }
 
     private static IReadOnlyList<TagAssignment> Unbacked(string library) =>
-        new BackingRunner(new FolderInfoReader(), new FolderInfoWriter()).Unbacked(
-            library,
-            TestLedger.FromReal()
-        );
+        new BackingRunner(
+            new FolderInfoReader(),
+            new FolderInfoWriter(),
+            NullLogger<BackingRunner>.Instance
+        ).Unbacked(library, TestLedger.FromReal(), correctKeys: false);
 
     [Fact]
     public void No_key_the_store_already_holds_is_offered_again()

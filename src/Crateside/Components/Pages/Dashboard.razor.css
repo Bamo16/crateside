@@ -689,9 +689,3 @@ h4 {
     font-size: 13px;
     color: var(--text-60);
 }
-
-.band-status .one-song {
-    margin-left: 8px;
-    padding: 1px 8px;
-    font-size: 12px;
-}

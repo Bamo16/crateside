@@ -54,3 +54,20 @@ Words: this ADR says *the library* for the root ADR 0003 called `Mashup Samples`
 - The rule that has not moved: crateside never deletes a file from the library (ADR 0019).
 - A user's own key on a library file is not protected. A file the user wants keyed against its
   verdict needs the verdict superseded, which is keytag's business.
+
+**Amended 2026-11-01 ([#175](https://github.com/Bamo16/crateside/issues/175), a sample's Key tag
+always follows crateside's recorded key): the approval is gone, and so is the restriction to the
+library.** A Key tag that differs from its song's taggable verdict means "not yet written", never
+"the user's choice", the way loudness gain does ([ADR 0059](0059-a-sample-arrives-at-one-loudness.md)).
+Every backing pass rewrites it in Staging and the library alike, in the pass's single `Apply`, and
+logs `retagged <file>: <old> → <new>`. The rest of the Decision stands: only `Key|` is replaced, other
+keywords are kept, and the library's store is backed up before a write. The Dashboard's "Keys behind
+their verdict" band and `key-corrections.json` are removed. A manual key override is not built; when it
+is, it becomes the recorded key and is written the same way.
+
+Why *Persona* ([kbV8MOB6mWY](https://music.youtube.com/watch?v=kbV8MOB6mWY)) was not retagged,
+read from the code: its stems were in Staging, where the backing pass ran with `backKeys: false`
+and the tagging stage (ADR 0017) writes a key only to a file that has none, so a differing key was
+never looked at; and the correction that did exist ran in the library only, on files the user had
+approved. Nothing else treated a differing tag as the user's: the audit and the song page only
+report it.
