@@ -27,6 +27,7 @@ public sealed class EvidenceDrainerTests : IDisposable
     private readonly LedgerStore _store = new(LedgerStore.InMemory, new FakeTimeProvider());
     private readonly WorkingSet _set;
     private readonly EvidenceDrainer _drainer;
+    private readonly JobStore _jobs;
 
     public EvidenceDrainerTests()
     {
@@ -39,7 +40,7 @@ public sealed class EvidenceDrainerTests : IDisposable
             LibraryFolder = Path.Combine(_root, "library"),
         };
         var detectors = new WritingDetectors();
-        var jobs = new JobStore(Path.Combine(_root, "jobs.json"));
+        var jobs = _jobs = new JobStore(Path.Combine(_root, "jobs.json"));
 
         _store.Record(
             new RunRecord
@@ -100,6 +101,22 @@ public sealed class EvidenceDrainerTests : IDisposable
         Assert.Equal("added madmom, essentia_edma", tick.Note);
         Assert.False(tick.WakesOthers);
         Assert.Equal(3, _store.EvidenceFor(Judged)!.Algorithms.Count);
+    }
+
+    [Fact]
+    public async Task A_detected_song_records_what_each_detector_read()
+    {
+        File.WriteAllText(Path.Combine(_set.Prepare(NewId), "source.flac"), "audio");
+
+        await _drainer.DrainAsync(Queue(NewId), TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            ["keydetect A minor (r 0.81), madmom A minor, edma C major"],
+            _jobs
+                .History(NewId)
+                .Where(update => update.Status is JobStatus.Succeeded)
+                .Select(update => update.Summary)
+        );
     }
 
     [Fact]
@@ -166,7 +183,10 @@ public sealed class EvidenceDrainerTests : IDisposable
         {
             await File.WriteAllTextAsync(evidencePath, "{}", ct);
 
-            return new DetectionOutcome.Written(evidencePath);
+            return new DetectionOutcome.Written(evidencePath)
+            {
+                Summary = "keydetect A minor (r 0.81), madmom A minor, edma C major",
+            };
         }
     }
 }

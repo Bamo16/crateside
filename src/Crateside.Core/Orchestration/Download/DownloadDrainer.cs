@@ -47,7 +47,7 @@ public sealed class DownloadDrainer(
 
         var destination = _paths.DestinationFor(order.Destination);
 
-        var error = wanted.Copy
+        var (error, summary) = wanted.Copy
             ? Copied(wanted.VideoId, destination)
             : await FetchedAsync(wanted, order, destination, ct);
 
@@ -55,13 +55,14 @@ public sealed class DownloadDrainer(
             wanted.VideoId,
             JobStage.Download,
             error is null ? JobStatus.Succeeded : JobStatus.Failed,
-            error: error
+            error: error,
+            summary: error is null ? summary : null
         );
 
         return StageTick.Ran(order, error is null, error);
     }
 
-    private async Task<string?> FetchedAsync(
+    private async Task<(string? Error, string? Summary)> FetchedAsync(
         WantedDownload wanted,
         WorkOrder order,
         string destination,
@@ -75,7 +76,7 @@ public sealed class DownloadDrainer(
             ct
         );
 
-        return result.IsSuccess ? Placed(wanted, result) : result.Error;
+        return result.IsSuccess ? (Placed(wanted, result), result.Summary) : (result.Error, null);
     }
 
     /// <summary>
@@ -94,24 +95,24 @@ public sealed class DownloadDrainer(
     /// <summary>
     /// Copies the separation source into the destination, for a plan that keeps it as a sample.
     /// </summary>
-    private string? Copied(string videoId, string destination)
+    private (string? Error, string? Summary) Copied(string videoId, string destination)
     {
         if (!workingSet.TryGetSource(videoId, out var held))
-            return "the audio to copy is no longer on disk";
+            return ("the audio to copy is no longer on disk", null);
 
         if (IsFiled(_paths, Path.GetFileName(held)))
-            return null;
+            return (null, "kept the source as a sample, which was already filed");
 
         try
         {
             Directory.CreateDirectory(destination);
             File.Copy(held, Path.Combine(destination, Path.GetFileName(held)), overwrite: true);
 
-            return null;
+            return (null, "kept the source as a sample");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            return $"the source could not be copied: {ex.Message}";
+            return ($"the source could not be copied: {ex.Message}", null);
         }
     }
 

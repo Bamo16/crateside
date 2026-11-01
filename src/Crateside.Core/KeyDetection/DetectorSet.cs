@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -54,10 +55,10 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
     {
         switch (await ReadAsync(audioPath, window, ct))
         {
-            case EvidenceReading.Read(var json):
+            case EvidenceReading.Read(var json) reading:
                 await File.WriteAllTextAsync(evidencePath, json, ct);
 
-                return new DetectionOutcome.Written(evidencePath);
+                return new DetectionOutcome.Written(evidencePath) { Summary = reading.Summary };
             case EvidenceReading.Failed(var error):
                 return new DetectionOutcome.Failed(error);
             default:
@@ -153,7 +154,32 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
             ? new EvidenceReading.Failed(
                 $"no detector read a key: {evidence.Algorithms.FfmpegKeydetect.Error}"
             )
-            : new EvidenceReading.Read(JsonSerializer.Serialize(evidence, Written));
+            : new EvidenceReading.Read(JsonSerializer.Serialize(evidence, Written))
+            {
+                Summary = Summarize(evidence.Algorithms),
+            };
+    }
+
+    /// <summary>What each detector read, for the activity feed (#170).</summary>
+    internal static string Summarize(AlgorithmsDto? algorithms)
+    {
+        static string Said(string name, string? key, string? detail = null) =>
+            key is null ? $"{name} no key" : $"{name} {key}{detail}";
+
+        return string.Join(
+            ", ",
+            [
+                Said(
+                    "keydetect",
+                    algorithms?.FfmpegKeydetect?.Key,
+                    algorithms?.FfmpegKeydetect is { R: { } r }
+                        ? string.Create(CultureInfo.InvariantCulture, $" (r {r:0.00})")
+                        : null
+                ),
+                Said("madmom", algorithms?.Madmom?.Key),
+                Said("edma", algorithms?.EssentiaEdma?.Key),
+            ]
+        );
     }
 
     private static AlgorithmsDto.FfmpegDto FfmpegOf(KeydetectReading keydetect) =>
@@ -291,7 +317,11 @@ public abstract record DetectionOutcome
 {
     private DetectionOutcome() { }
 
-    public sealed record Written(string EvidencePath) : DetectionOutcome;
+    public sealed record Written(string EvidencePath) : DetectionOutcome
+    {
+        /// <summary>What the detectors read, in a line for the activity feed (#170).</summary>
+        public string? Summary { get; init; }
+    }
 
     public sealed record Failed(string Error) : DetectionOutcome;
 }
@@ -300,7 +330,11 @@ public abstract record EvidenceReading
 {
     private EvidenceReading() { }
 
-    public sealed record Read(string Json) : EvidenceReading;
+    public sealed record Read(string Json) : EvidenceReading
+    {
+        /// <summary>What the detectors read, in a line for the activity feed (#170).</summary>
+        public string? Summary { get; init; }
+    }
 
     public sealed record Failed(string Error) : EvidenceReading;
 }
