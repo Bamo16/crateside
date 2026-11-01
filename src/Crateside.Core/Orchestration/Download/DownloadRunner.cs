@@ -56,11 +56,26 @@ public sealed class DownloadRunner(IProcessRunner processes, string stemforge = 
                     PremiumStatus = Acquisition.StatusFrom(row.PremiumStatus),
                     IsPremium = row.IsPremium is true,
                 }
-            ),
+            ) with
+            {
+                Summary = Summarize(path, row),
+            },
             [{ Error: { Length: > 0 } error }, ..] => DownloadResult.Failed(error),
             _ => DownloadResult.Failed("stemforge-cli download failed without saying why"),
         };
     }
+
+    private static string Summarize(string path, DownloadOutput row) =>
+        string.Join(
+            ' ',
+            new[]
+            {
+                "downloaded",
+                Path.GetExtension(path).TrimStart('.'),
+                row.BitrateKbps is { } kbps ? $"{kbps:0} kbps" : null,
+                row.FormatId is { Length: > 0 } format ? $"(format {format})" : null,
+            }.Where(part => part is { Length: > 0 })
+        );
 
     private static List<DownloadOutput>? Parse(string stdout)
     {
@@ -96,6 +111,9 @@ public sealed record DownloadResult
 
     public string? Error { get; init; }
 
+    /// <summary>What was fetched, in a line for the activity feed (#170). Null unless it succeeded.</summary>
+    public string? Summary { get; init; }
+
     public static DownloadResult Succeeded(string path, Acquisition acquisition) =>
         new()
         {
@@ -119,4 +137,8 @@ internal sealed record DownloadOutput
     public bool? IsPremium { get; init; }
 
     public string? PremiumStatus { get; init; }
+
+    public string? FormatId { get; init; }
+
+    public double? BitrateKbps { get; init; }
 }

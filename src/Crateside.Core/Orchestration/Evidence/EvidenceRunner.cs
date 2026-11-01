@@ -31,7 +31,10 @@ public sealed class EvidenceRunner(WorkingSet workingSet, IDetectorSet detectors
     public async Task<EvidenceResult> RunAsync(WorkOrder order, CancellationToken ct = default)
     {
         if (workingSet.HasEvidence(order.VideoId))
-            return EvidenceResult.Succeeded(workingSet.EvidencePathFor(order.VideoId));
+            return EvidenceResult.Succeeded(
+                workingSet.EvidencePathFor(order.VideoId),
+                "evidence was already on file"
+            );
 
         if (!workingSet.TryGetSource(order.VideoId, out var audio))
             return EvidenceResult.Failed("no audio in the working set to detect over");
@@ -65,7 +68,10 @@ public sealed class EvidenceRunner(WorkingSet workingSet, IDetectorSet detectors
     ) =>
         await detectors.DetectAsync(audioPath, window, evidencePath, ct) switch
         {
-            DetectionOutcome.Written(var path) => EvidenceResult.Succeeded(path),
+            DetectionOutcome.Written(var path) written => EvidenceResult.Succeeded(
+                path,
+                written.Summary
+            ),
             DetectionOutcome.Failed(var error) => EvidenceResult.Failed(error),
             _ => throw new UnreachableException(),
         };
@@ -81,8 +87,16 @@ public sealed record EvidenceResult
 
     public string? Error { get; init; }
 
-    public static EvidenceResult Succeeded(string evidencePath) =>
-        new() { IsSuccess = true, EvidencePath = evidencePath };
+    /// <summary>What the detectors read, in a line for the activity feed (#170). Null unless it succeeded.</summary>
+    public string? Summary { get; init; }
+
+    public static EvidenceResult Succeeded(string evidencePath, string? summary = null) =>
+        new()
+        {
+            IsSuccess = true,
+            EvidencePath = evidencePath,
+            Summary = summary,
+        };
 
     public static EvidenceResult Failed(string error) => new() { IsSuccess = false, Error = error };
 }

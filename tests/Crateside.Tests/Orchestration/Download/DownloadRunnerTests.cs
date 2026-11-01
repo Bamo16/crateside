@@ -53,6 +53,24 @@ public sealed class DownloadRunnerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_finished_download_summarizes_the_format_it_fetched()
+    {
+        var result = await RunAsync(
+            """[{"succeeded":true,"path":"C:\\working\\track.m4a","formatId":"141","codec":"aac","bitrateKbps":257.6}]"""
+        );
+
+        Assert.Equal("downloaded m4a 258 kbps (format 141)", result.Summary);
+    }
+
+    [Fact]
+    public async Task A_download_that_reports_no_format_summarizes_only_its_container()
+    {
+        var result = await RunAsync(Says(@"C:\working\track.flac"));
+
+        Assert.Equal("downloaded flac", result.Summary);
+    }
+
+    [Fact]
     public async Task A_failed_download_says_what_the_downloader_said()
     {
         var result = await RunAsync("ERROR: video unavailable", exitCode: 1);

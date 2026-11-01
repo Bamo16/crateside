@@ -61,7 +61,8 @@ public sealed class EvidenceDrainer(
             item.VideoId,
             JobStage.Evidence,
             result.IsSuccess ? JobStatus.Succeeded : JobStatus.Failed,
-            error: result.Error
+            error: result.Error,
+            summary: result.Summary
         );
 
         return StageTick.Ran(order, result.IsSuccess, result.Error);
