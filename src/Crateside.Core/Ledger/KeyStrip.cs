@@ -6,7 +6,8 @@ public sealed record KeyBand(
     double End,
     TonalCenter Center,
     string? Section,
-    bool FromWindow
+    bool FromWindow,
+    bool StartUnbacked = false
 )
 {
     /// <summary><c>B min</c>, or <c>A Dor</c> for a modal center.</summary>
@@ -96,7 +97,8 @@ public static class KeyStrip
                 ),
                 placed.Section.Center,
                 placed.Section.Label,
-                placed.FromWindow
+                placed.FromWindow,
+                StartUnbacked: !placed.FromWindow
             ))
             .Where(band => band.End > band.Start)
             .OrderBy(band => band.Start)
