@@ -1,6 +1,7 @@
 using AbleKit.Analysis;
 using Crateside.Core;
 using Crateside.Core.Loudness;
+using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Loudness;
@@ -19,9 +20,11 @@ public sealed class LevelingTests : IDisposable
     private readonly WrittenWarps _written = new();
     private readonly LiveAnalyses _waiting = new();
     private readonly LoudnessOptions _options = new();
+    private readonly StageNotes _notes;
 
     public LevelingTests()
     {
+        _notes = new StageNotes(Path.Combine(_root, "stage-notes.jsonl"));
         _paths = new CratesidePaths
         {
             StagingFolder = Path.Combine(_root, "Staging"),
@@ -53,6 +56,28 @@ public sealed class LevelingTests : IDisposable
         Assert.Equal(Plus6Db, sidecar.Clip.SampleVolume, 4);
         Assert.Equal(Markers, sidecar.Warp.Markers);
         Assert.False(_written.IsCratesides(stem));
+    }
+
+    [Fact]
+    public async Task A_sample_that_is_leveled_leaves_a_note_on_its_song_with_the_gain_and_the_target()
+    {
+        var stem = Sample(Path.Combine("Staging", "Song (Instrumental - Full).flac"), gain: 1);
+        using (var file = TagLib.File.Create(stem))
+        {
+            file.Tag.Comment =
+                "stemforge/0.4.0.0 | preset: Instrumental - Full | source: https://www.youtube.com/watch?v=abcdefghijk";
+            file.Save();
+        }
+
+        var leveling = Leveling(_ => -20);
+        await leveling.ReadAsync(leveling.Unread(), TestContext.Current.CancellationToken);
+        leveling.Level();
+        leveling.Level();
+
+        var note = Assert.Single(_notes.All());
+        Assert.Equal("abcdefghijk", note.VideoId);
+        Assert.Equal("Loudness", note.Stage);
+        Assert.Equal("Instrumental - Full: clip gain +6.0 dB to −14 LUFS", note.Summary);
     }
 
     [Fact]
@@ -175,7 +200,8 @@ public sealed class LevelingTests : IDisposable
                 _written,
                 new TransientOrigins()
             ),
-            _waiting
+            _waiting,
+            _notes
         );
     }
 

@@ -175,6 +175,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
             _tracks,
             ledger,
             jobs,
+            new StageNotes(Path.Combine(_root, "stage-notes.jsonl"), time),
             new StemDetailsReader(
                 new StemWarpReader(written, new TransientOrigins(), new LiveAnalyses()),
                 written,

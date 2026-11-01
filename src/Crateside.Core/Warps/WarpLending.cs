@@ -1,3 +1,4 @@
+using Crateside.Core.Orchestration.Jobs;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Warps;
@@ -14,7 +15,8 @@ public sealed class WarpLending(
     SidecarWriter writer,
     IOptions<WarpOptions> options,
     IStarterGrids? starterGrids = null,
-    LiveAnalyses? waiting = null
+    LiveAnalyses? waiting = null,
+    StageNotes? notes = null
 )
 {
     private readonly WarpOptions _options = options.Value;
@@ -58,7 +60,13 @@ public sealed class WarpLending(
                 _tried[target.Path] = Signature(target.Path, lenders, grid);
 
             if (outcome is not null)
-                loans.Add(new WarpLoan(target.Path, outcome));
+            {
+                var loan = new WarpLoan(target.Path, outcome, target.SourceVideoId);
+                loans.Add(loan);
+
+                if (WarpSummary.Of(loan) is { } summary)
+                    notes?.Record(loan.VideoId, "Warp", summary);
+            }
         }
 
         return loans;
@@ -117,7 +125,7 @@ public sealed class WarpLending(
             : "-";
 }
 
-public sealed record WarpLoan(string Target, WarpOutcome Outcome);
+public sealed record WarpLoan(string Target, WarpOutcome Outcome, string VideoId);
 
 /// <summary>The <c>Warps</c> section of appsettings.</summary>
 public sealed class WarpOptions

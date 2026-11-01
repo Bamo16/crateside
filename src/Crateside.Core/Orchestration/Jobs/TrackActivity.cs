@@ -16,13 +16,15 @@ public static class TrackActivity
         IEnumerable<JobUpdate> jobs,
         IEnumerable<Deletion> deletions,
         IEnumerable<UserAction> actions,
-        IEnumerable<TrackJob>? running = null
+        IEnumerable<TrackJob>? running = null,
+        IEnumerable<StageNote>? notes = null
     )
     {
         var merged = FromJobs([.. jobs], [.. running ?? []])
             .Select(entry => (Entry: entry, StartsPass: false))
             .Concat(deletions.Select(FromDeletion))
             .Concat(actions.Select(FromAction))
+            .Concat((notes ?? []).Select(FromNote))
             .OrderBy(entry => entry.Entry.At)
             // A user action and the stage it wakes share a timestamp; the action comes first.
             .ThenBy(entry => entry.Entry.Source == You ? 0 : 1);
@@ -109,6 +111,17 @@ public static class TrackActivity
                 At = deletion.At,
                 Source = Crateside,
                 Message = $"recycled {deletion.FileName}: {deletion.Reason}",
+            },
+            false
+        );
+
+    private static (ActivityEntry Entry, bool StartsPass) FromNote(StageNote note) =>
+        (
+            new ActivityEntry
+            {
+                At = note.At,
+                Source = note.Stage,
+                Message = note.Summary,
             },
             false
         );

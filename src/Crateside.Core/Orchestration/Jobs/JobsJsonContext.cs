@@ -11,4 +11,5 @@ namespace Crateside.Core.Orchestration.Jobs;
 [JsonSerializable(typeof(JobUpdate))]
 [JsonSerializable(typeof(UserAction))]
 [JsonSerializable(typeof(Deletion))]
+[JsonSerializable(typeof(StageNote))]
 internal sealed partial class JobsJsonContext : JsonSerializerContext { }

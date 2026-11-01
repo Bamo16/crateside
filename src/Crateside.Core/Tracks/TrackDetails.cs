@@ -17,6 +17,9 @@ public sealed record TrackDetails
     /// <summary>Every line <c>jobs.jsonl</c> holds for any of the track's uploads, oldest first.</summary>
     public IReadOnlyList<JobUpdate> Jobs { get; init; } = [];
 
+    /// <summary>What the warp pass and loudness did to the track's samples, one line each, oldest first.</summary>
+    public IReadOnlyList<StageNote> StageNotes { get; init; } = [];
+
     /// <summary>Each sample on disk, with its tags, its parsed warp and crateside's records about that warp.</summary>
     public IReadOnlyList<StemDetails> Stems { get; init; } = [];
 
@@ -32,6 +35,7 @@ public sealed class TrackDetailsReader(
     TracksService tracks,
     LedgerStore ledger,
     JobStore jobs,
+    StageNotes stageNotes,
     StemDetailsReader stems,
     FiledRecordsReader records
 )
@@ -70,6 +74,7 @@ public sealed class TrackDetailsReader(
             Row = row,
             Evidence = evidence,
             Jobs = [.. jobs.Updates().Where(update => uploads.Contains(update.VideoId))],
+            StageNotes = stageNotes.For(uploads),
             Stems = [.. (row?.Samples ?? []).Select(stems.Read)],
             Records = records.Read([
                 .. uploads,

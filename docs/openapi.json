@@ -1776,6 +1776,32 @@
         },
         "description": "A stage that failed and will be tried again: its strikes so far and its last error."
       },
+      "StageNote": {
+        "required": [
+          "at",
+          "videoId",
+          "stage",
+          "summary"
+        ],
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "videoId": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string",
+            "description": "The pass's name as the activity feed shows it: `Warp` or `Loudness`."
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "description": "What one pass did to one song, in about eighty characters."
+      },
       "StemDestination": {
         "enum": [
           "KeyIdentified",
@@ -2303,6 +2329,13 @@
               "$ref": "#/components/schemas/JobUpdate"
             },
             "description": "Every line `jobs.jsonl` holds for any of the track's uploads, oldest first."
+          },
+          "stageNotes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StageNote"
+            },
+            "description": "What the warp pass and loudness did to the track's samples, one line each, oldest first."
           },
           "stems": {
             "type": "array",

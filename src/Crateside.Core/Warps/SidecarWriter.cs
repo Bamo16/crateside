@@ -179,10 +179,15 @@ public sealed class SidecarWriter(
             if (await TimingAsync(timingFrom ?? target, grid, ct) is not { } timing)
                 return Refuse(Undecodable(timingFrom ?? target));
 
-            if (timing is not { Holds: true, FirstBeat: { } firstBeat })
+            if (timing is not { WarpOffBecause: null, FirstBeat: { } firstBeat })
                 return written.Of(target) is { IsStarter: false }
                     ? Refuse(new WarpOutcome.AlreadyWarped())
-                    : await UnwarpedAsync(target, sameKind, ct);
+                    : await UnwarpedAsync(
+                        target,
+                        sameKind,
+                        timing.WarpOffBecause ?? "no beat to put a marker on",
+                        ct
+                    );
 
             var warp = StarterWarp(timing.Bpm, firstBeat, grid.DownbeatSeconds);
 
@@ -231,7 +236,7 @@ public sealed class SidecarWriter(
         {
             return Own(target) is { IsUsers: true } || written.Of(target) is { IsStarter: false }
                 ? Refuse(new WarpOutcome.AlreadyWarped())
-                : await UnwarpedAsync(target, sameKind, ct);
+                : await UnwarpedAsync(target, sameKind, null, ct);
         }
         catch (Exception ex)
             when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
@@ -243,6 +248,7 @@ public sealed class SidecarWriter(
     private async Task<SidecarPlan> UnwarpedAsync(
         string target,
         IReadOnlyList<string> sameKind,
+        string? warpOffBecause,
         CancellationToken ct
     ) =>
         await decoder.DecodeAsync(target, ct) is not { } audio
@@ -253,7 +259,8 @@ public sealed class SidecarWriter(
                 audio,
                 null,
                 await GainAsync(target, ct),
-                analysis => (Unwarped((double)audio.Frames / audio.SampleRate, analysis), null)
+                analysis => (Unwarped((double)audio.Frames / audio.SampleRate, analysis), null),
+                warpOffBecause
             );
 
     /// <summary>
@@ -298,8 +305,15 @@ public sealed class SidecarWriter(
             return sidecar switch
             {
                 { From: { } from } => new WarpOutcome.Written(from, transientsFrom),
-                { Bpm: { } bpm } => new WarpOutcome.Started(bpm, transientsFrom),
-                { IsUnwarped: true } => new WarpOutcome.Unwarped(transientsFrom),
+                { Bpm: { } bpm } => new WarpOutcome.Started(
+                    bpm,
+                    transientsFrom,
+                    sidecar.File.Warp.Markers[0].Seconds
+                ),
+                { IsUnwarped: true } => new WarpOutcome.Unwarped(
+                    transientsFrom,
+                    sidecar.WarpOffBecause
+                ),
                 _ => throw new UnreachableException(),
             };
         }
@@ -479,17 +493,26 @@ public sealed class SidecarWriter(
         return _timings[key] = new StarterTiming(
             tempo,
             GridCheck.FirstBeat(transients, audio.SampleRate, tempo, grid.BeatSeconds),
-            Holds(GridCheck.Against(GridCheck.Strongest(transients, audio.SampleRate), tempo))
+            WhyNotHeld(GridCheck.Against(GridCheck.Strongest(transients, audio.SampleRate), tempo))
         );
     }
 
-    /// <param name="Holds">Whether one tempo keeps the stronger transients on its grid through the whole track.</param>
-    private sealed record StarterTiming(double Bpm, double? FirstBeat, bool Holds);
+    /// <param name="WarpOffBecause">Null when one tempo keeps the stronger transients on its grid through the whole track, else why not.</param>
+    private sealed record StarterTiming(double Bpm, double? FirstBeat, string? WarpOffBecause);
 
-    internal static bool Holds(GridReport report) =>
-        report is { Windows.Count: >= MinWindowsToHold, Steps.Count: 0 }
-        && report.OffsetsPer(HoldBlockSeconds).ToArray() is { Length: > 0 } blocks
-        && blocks.Max() - blocks.Min() <= StarterHoldsWithinMs;
+    internal static bool Holds(GridReport report) => WhyNotHeld(report) is null;
+
+    private static string? WhyNotHeld(GridReport report) =>
+        report switch
+        {
+            { Windows.Count: < MinWindowsToHold } => "too few clear transients to hold a tempo",
+            { Steps.Count: > 0 } => "the tempo steps part-way",
+            _ when report.OffsetsPer(HoldBlockSeconds).ToArray() is { Length: > 0 } blocks
+                    && blocks.Max() - blocks.Min() is var spread
+                    && spread > StarterHoldsWithinMs => $"one tempo misses by {spread:0} ms",
+            _ when report.OffsetsPer(HoldBlockSeconds).Any() => null,
+            _ => "no transients to hold a tempo",
+        };
 
     /// <summary>The tempo within a hair of the reading that the stem's stronger transients fit best, or the reading when there are too few to say (ADR 0050).</summary>
     internal static double Refined(
@@ -508,7 +531,8 @@ public sealed class SidecarWriter(
         DecodedAudio audio,
         string? from,
         float? gain,
-        Func<AudioAnalysis, (AnalysisFile File, double? Bpm)> sidecar
+        Func<AudioAnalysis, (AnalysisFile File, double? Bpm)> sidecar,
+        string? warpOffBecause = null
     )
     {
         var size = new FileInfo(target).Length;
@@ -531,7 +555,12 @@ public sealed class SidecarWriter(
         if (gain is { } level)
             file = file with { Clip = file.Clip with { SampleVolume = level } };
 
-        return new SidecarPlan.Ready(new PreparedSidecar(target, file, from, bpm, transientsFrom));
+        return new SidecarPlan.Ready(
+            new PreparedSidecar(target, file, from, bpm, transientsFrom)
+            {
+                WarpOffBecause = warpOffBecause,
+            }
+        );
     }
 
     private OwnSidecar? Own(string target) =>
@@ -642,10 +671,12 @@ public abstract record WarpOutcome
     public sealed record Written(string From, string? TransientsFrom) : WarpOutcome;
 
     /// <param name="TransientsFrom">As for <see cref="Written"/>.</param>
-    public sealed record Started(double Bpm, string? TransientsFrom) : WarpOutcome;
+    /// <param name="MarkerSeconds">Where in the file the marker sits.</param>
+    public sealed record Started(double Bpm, string? TransientsFrom, double MarkerSeconds)
+        : WarpOutcome;
 
     /// <param name="TransientsFrom">As for <see cref="Written"/>.</param>
-    public sealed record Unwarped(string? TransientsFrom) : WarpOutcome;
+    public sealed record Unwarped(string? TransientsFrom, string? Because = null) : WarpOutcome;
 
     /// <summary>The target holds the user's warp, never replaced (ADR 0037), or already a starter.</summary>
     public sealed record AlreadyWarped : WarpOutcome;
@@ -684,5 +715,8 @@ public sealed record PreparedSidecar(
     string? TransientsFrom
 )
 {
+    /// <summary>Why a clip with Warp off was written instead of a starter, where a starter was tried.</summary>
+    public string? WarpOffBecause { get; init; }
+
     public bool IsUnwarped => !File.Warp.IsWarped;
 }

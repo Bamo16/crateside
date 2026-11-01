@@ -217,4 +217,36 @@ public sealed class TrackActivityTests
             Assert.True(entries.Zip(entries.Skip(1)).All(pair => pair.First.At <= pair.Second.At));
         }
     }
+
+    [Fact]
+    public void A_stage_note_sits_among_the_job_lines_in_time_order_under_its_own_name()
+    {
+        var entries = TrackActivity.Build(
+            [
+                Job(0, JobStage.Handoff, JobStatus.Succeeded, summary: "staged 2 stems"),
+                Job(5, JobStage.Verdict, JobStatus.Succeeded, summary: "D major"),
+            ],
+            [],
+            [],
+            notes:
+            [
+                new StageNote
+                {
+                    At = Start.AddMinutes(2),
+                    VideoId = "v",
+                    Stage = "Warp",
+                    Summary = "Vocal - Full: Warp off: one tempo misses by 12 ms",
+                },
+            ]
+        );
+
+        Assert.Equal(
+            [
+                ("Handoff", "staged 2 stems"),
+                ("Warp", "Vocal - Full: Warp off: one tempo misses by 12 ms"),
+                ("Verdict", "D major"),
+            ],
+            entries.Select(entry => (entry.Source, entry.Message))
+        );
+    }
 }

@@ -276,7 +276,7 @@ public sealed class SidecarWriterTests : IDisposable
             ct: TestContext.Current.CancellationToken
         );
 
-        Assert.Equal(new WarpOutcome.Unwarped(null), outcome);
+        Assert.Equal(new WarpOutcome.Unwarped(null, "no beat to put a marker on"), outcome);
         Assert.False(_written.IsStarter(Target));
         Assert.Empty(AnalysisFile.Read($"{Target}.asd").Warp.Markers);
     }
@@ -618,7 +618,11 @@ public sealed class SidecarWriterTests : IDisposable
                 ct: TestContext.Current.CancellationToken
             );
 
-        Assert.IsType<WarpOutcome.Unwarped>(outcome);
+        var unwarped = Assert.IsType<WarpOutcome.Unwarped>(outcome);
+        Assert.Matches(
+            @"^(the tempo steps part-way|one tempo misses by \d+ ms)$",
+            unwarped.Because
+        );
         Assert.False(AnalysisFile.Read($"{Target}.asd").Warp.IsWarped);
         Assert.True(_written.Of(Target) is { IsUnwarped: true });
     }
@@ -652,14 +656,17 @@ public sealed class SidecarWriterTests : IDisposable
     {
         Audio(Target);
 
-        Assert.IsType<WarpOutcome.Unwarped>(
-            await Borrower()
-                .StartAsync(
-                    Target,
-                    [],
-                    new(120, null, null),
-                    ct: TestContext.Current.CancellationToken
-                )
+        var outcome = await Borrower()
+            .StartAsync(
+                Target,
+                [],
+                new(120, null, null),
+                ct: TestContext.Current.CancellationToken
+            );
+
+        Assert.Equal(
+            "too few clear transients to hold a tempo",
+            Assert.IsType<WarpOutcome.Unwarped>(outcome).Because
         );
     }
 
