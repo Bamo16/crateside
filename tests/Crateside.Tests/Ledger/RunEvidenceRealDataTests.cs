@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Crateside.Core;
 using Crateside.Core.Ledger;
+using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Verdict;
 
 namespace Crateside.Tests.Ledger;
 
@@ -203,5 +205,82 @@ public sealed class RunEvidenceRealDataTests
         Assert.Contains(pairs, p => p.Agrees);
         Assert.All(pairs.Where(p => p.Agrees), p => Assert.NotNull(p.Recommended));
         Assert.All(pairs.Where(p => p.Status == "none"), p => Assert.False(p.Agrees));
+    }
+
+    /// <summary>The lookups the working sets hold, recorded with the Hooktheory pages each track's verdict cited, as a judged run now keeps them (#176).</summary>
+    [Fact]
+    public void Every_hooktheory_page_a_verdict_cited_from_its_lookup_comes_back_with_its_tab()
+    {
+        Assert.SkipUnless(Available, "The ledger must be present.");
+
+        using var real = TestLedger.StoreReal();
+        using var store = TestLedger.Store();
+        var working = new WorkingSet();
+        var checkedPages = 0;
+
+        foreach (var videoId in working.VideoIds)
+        {
+            var lookups = Path.Combine(
+                Path.GetDirectoryName(working.EvidencePathFor(videoId))!,
+                VerdictRunner.SourcesFileName
+            );
+
+            if (
+                !File.Exists(lookups)
+                || real.EvidenceForVideoId(videoId) is not { } judged
+                || JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(lookups))
+                    is not { ValueKind: JsonValueKind.Array } found
+            )
+                continue;
+
+            var tabbed = found
+                .EnumerateArray()
+                .SelectMany(site =>
+                    site.TryGetProperty("pages", out var pages) ? pages.EnumerateArray() : []
+                )
+                .Where(page => page.TryGetProperty("tab", out _))
+                .Select(page => page.GetProperty("url").GetString()!)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            RunSource[] cited =
+            [
+                .. judged
+                    .Sources.Where(source => source.Url is { } url && tabbed.Contains(url))
+                    .Select(source => new RunSource
+                    {
+                        Url = source.Url,
+                        Kind = SourceKind.Authoritative,
+                    }),
+            ];
+
+            if (cited is [])
+                continue;
+
+            var song = $"lookup - {videoId}".ToLowerInvariant();
+
+            Assert.IsType<RecordOutcome.Recorded>(
+                store.Record(
+                    new RunRecord
+                    {
+                        RecordedAt = DateTimeOffset.UnixEpoch,
+                        Song = song,
+                        SourceUrl = $"https://www.youtube.com/watch?v={videoId}",
+                        Confidence = KeyConfidence.Withheld,
+                        Sources = cited,
+                        Lookups = File.ReadAllText(lookups),
+                    }
+                )
+            );
+
+            var evidence = store.EvidenceFor(song)!;
+
+            Assert.All(
+                evidence.Sources,
+                source => Assert.True(source.Tab is { Sections.Count: > 0 }, source.Url)
+            );
+            Assert.NotEmpty(evidence.Lookups);
+            checkedPages += cited.Length;
+        }
+
+        Assert.SkipWhen(checkedPages is 0, "No working set holds a lookup a verdict cited.");
     }
 }

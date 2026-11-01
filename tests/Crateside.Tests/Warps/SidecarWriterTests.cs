@@ -1,4 +1,5 @@
 using AbleKit.Analysis;
+using Crateside.Core.Beats;
 using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Warps;
@@ -374,6 +375,118 @@ public sealed class SidecarWriterTests : IDisposable
         Assert.IsType<WarpOutcome.AlreadyWarped>(again);
         Assert.Equal(2, AnalysisFile.Read($"{Target}.asd").Warp.Markers[0].Beat);
         Assert.True(_written.IsStarter(Target));
+    }
+
+    /// <summary>beatdetect 1.4.0 on Basement Jaxx – <i>Never Say Never</i> (<c>-pS4u1qPaiM</c>): its downbeat two beats after its first beat, at confidence 0.317.</summary>
+    private static BeatReading NeverSayNever(double downbeatConfidence = 0.317) =>
+        new()
+        {
+            Bpm = 125.99913,
+            BeatOffsetMs = 232.09,
+            DownbeatOffsetMs = 1184.47,
+            DownbeatConfidence = downbeatConfidence,
+            BeatsPerBar = 4,
+            Windows =
+            [
+                126.0157,
+                126.0074,
+                126.0248,
+                126.0101,
+                126.0183,
+                125.9959,
+                126.0072,
+                126.0112,
+            ],
+        };
+
+    /// <summary>A transient on every beat at the reading's tempo, from its first beat.</summary>
+    private SidecarWriter OnNeverSayNeversBeats(WrittenWarps written) =>
+        new(
+            new FixedDecoder(Samples(0.5f, 130 * 44_100)),
+            new FixedDetector([
+                .. Enumerable
+                    .Range(0, 270)
+                    .Select(i => new Transient((int)((0.23209 + i * 60 / 125.99913) * 44_100), 1f)),
+            ]),
+            written,
+            _origins
+        );
+
+    [Fact]
+    public async Task A_starter_under_the_downbeat_gate_records_its_grid_and_why_its_marker_is_a_downbeat()
+    {
+        Audio(Target);
+        var file = Path.Combine(_root, "written-warps.json");
+
+        await OnNeverSayNeversBeats(new WrittenWarps(file))
+            .StartAsync(
+                Target,
+                [],
+                StarterGrid.Of(NeverSayNever())!,
+                ct: TestContext.Current.CancellationToken
+            );
+
+        var starter = new WrittenWarps(file).Of(Target)?.Starter;
+
+        Assert.NotNull(starter);
+        Assert.Equal(126, starter.Bpm, 1);
+        Assert.Equal(125.99913, starter.ReadBpm);
+        Assert.Equal(0.232, starter.MarkerSeconds, 2);
+        Assert.Equal(0, starter.MarkerBeat);
+        Assert.Equal(0.23209, starter.ReadBeatSeconds);
+        Assert.Equal(StarterBeat.ReadingRefinedByFold, starter.BeatFrom);
+        Assert.Equal(StarterBar.UnsureDownbeat, starter.BarFrom);
+        Assert.NotNull(starter.Downbeat);
+        Assert.Equal(1.18447, starter.Downbeat.Seconds, 5);
+        Assert.Equal((0.317, 4), (starter.Downbeat.Confidence, starter.Downbeat.BeatsPerBar));
+        Assert.Equal(2, starter.ReadMarkerBeat);
+        Assert.Equal(0.6, starter.DownbeatSureAt);
+        Assert.Equal(
+            "marker on beat 1: downbeat confidence 0.32 under 0.6, so beat 1 (beatdetect said beat 3)",
+            WarpWording.StarterWhy(starter)
+        );
+    }
+
+    [Fact]
+    public async Task A_starter_over_the_downbeat_gate_records_that_beatdetects_downbeat_numbered_it()
+    {
+        Audio(Target);
+
+        await OnNeverSayNeversBeats(_written)
+            .StartAsync(
+                Target,
+                [],
+                StarterGrid.Of(NeverSayNever(downbeatConfidence: 0.71))!,
+                ct: TestContext.Current.CancellationToken
+            );
+
+        var starter = _written.Of(Target)?.Starter;
+
+        Assert.NotNull(starter);
+        Assert.Equal(2, starter.MarkerBeat);
+        Assert.Equal(StarterBar.Downbeat, starter.BarFrom);
+        Assert.Equal(2, AnalysisFile.Read($"{Target}.asd").Warp.Markers[0].Beat);
+        Assert.Equal(
+            "marker on beat 3: beatdetect's downbeat, confidence 0.71",
+            WarpWording.StarterWhy(starter)
+        );
+    }
+
+    [Fact]
+    public async Task A_starter_keeps_its_reasons_when_its_clip_is_recolored()
+    {
+        Audio(Target);
+        var writer = OnNeverSayNeversBeats(_written);
+        await writer.StartAsync(
+            Target,
+            [],
+            StarterGrid.Of(NeverSayNever())!,
+            ct: TestContext.Current.CancellationToken
+        );
+
+        writer.Level(Target, 0.5f);
+
+        Assert.Equal(StarterBar.UnsureDownbeat, _written.Of(Target)?.Starter?.BarFrom);
     }
 
     private SidecarWriter OnTheHalfSecond() =>

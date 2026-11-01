@@ -28,7 +28,10 @@ start. Enums are stored by name (`Dorian`, `ChordRecognizer`); times as round-tr
   (one of the seven diatonic modes), both null only when withheld. `Mixed` marks two modes on
   one tonic, the center being the harmony's. `SourceUrl` is the upload the audio came from,
   null only with `LocalSource`. `WithheldReasoning` is the reasoning of the first pass when it asked for windows, kept once here. `Direction` is the user's note sent with windows. `Evidence`
-  is the detectors' report as JSON. `OldBpm*` are the old estimates of imported history, never
+  is the detectors' report as JSON. `Lookups` is what the lookup found on each site before the
+  judge ran, as JSON: every page, cited or not, with the TheoryTab parsed from each Hooktheory
+  page; null on runs recorded before 2026-11-01 and where there was no artist and title to look
+  up. `OldBpm*` are the old estimates of imported history, never
   written again.
 - **Sections**: a run's sections, each a `Label` with its own `Tonic` and `Mode`, and a `Start` in seconds into the track (null on runs recorded before ADR 0064).
 - **Sources**: what the judge consulted. `Kind` is `Authoritative`, `Corroborating`,

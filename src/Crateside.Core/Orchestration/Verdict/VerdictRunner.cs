@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Crateside.Core.Ledger;
@@ -141,7 +142,8 @@ public sealed partial class VerdictRunner(
                             WithheldReasoning = withheld?.Reasoning,
                         },
                         order,
-                        tally
+                        tally,
+                        lookups
                     );
 
                 case VerdictCheck.WindowsAsked(var windows, var run)
@@ -165,7 +167,8 @@ public sealed partial class VerdictRunner(
                             WithheldReasoning = withheld?.Reasoning,
                         },
                         order,
-                        tally
+                        tally,
+                        lookups
                     );
 
                 case VerdictCheck.Unusable when Unavailable(outcome) is { } unavailable:
@@ -179,7 +182,7 @@ public sealed partial class VerdictRunner(
 
                 case VerdictCheck.Unusable(var problem):
                     return withheld is not null
-                        ? Record(withheld, order, tally)
+                        ? Record(withheld, order, tally, lookups)
                         : VerdictResult.Failed(
                             outcome.Succeeded
                                 ? problem
@@ -766,9 +769,28 @@ public sealed partial class VerdictRunner(
             log.LogWarning("Verdict for {VideoId}: {Note}", order.VideoId, note);
     }
 
-    private VerdictResult Record(RunRecord run, WorkOrder order, SessionTally tally)
+    /// <param name="lookups">Kept with the run, cited or not (#176).</param>
+    private VerdictResult Record(
+        RunRecord run,
+        WorkOrder order,
+        SessionTally tally,
+        IReadOnlyList<SiteLookup> lookups
+    )
     {
-        if (store.Record(run) is RecordOutcome.Refused(var field, var problem))
+        if (
+            store.Record(
+                run with
+                {
+                    Lookups = lookups is []
+                        ? null
+                        : JsonSerializer.Serialize(
+                            lookups,
+                            SiteLookupJsonContext.Default.IReadOnlyListSiteLookup
+                        ),
+                }
+            )
+            is RecordOutcome.Refused(var field, var problem)
+        )
             return VerdictResult.Failed($"the ledger refused the verdict: {field}: {problem}");
 
         LinkSwappedSource(order);

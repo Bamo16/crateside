@@ -190,6 +190,7 @@ public sealed class SidecarWriter(
                     );
 
             var warp = StarterWarp(timing.Bpm, firstBeat, grid.DownbeatSeconds);
+            var starter = WrittenStarter.Of(grid, timing.Bpm, warp.Markers[0]);
 
             if (
                 own is { IsStarter: true, Analysis: { Clip.LoopStart: 0 } kept }
@@ -215,7 +216,8 @@ public sealed class SidecarWriter(
                             analysis
                         ),
                         timing.Bpm
-                    )
+                    ),
+                starter: starter
             );
         }
         catch (Exception ex)
@@ -286,7 +288,7 @@ public sealed class SidecarWriter(
                 else if (sidecar.IsUnwarped)
                     written.RecordUnwarped(audioPath);
                 else
-                    written.RecordStarter(audioPath);
+                    written.RecordStarter(audioPath, sidecar.Starter);
             }
 
             var transients = sidecar.File.Audio.Transients;
@@ -404,10 +406,7 @@ public sealed class SidecarWriter(
     {
         var beatSeconds = 60 / bpm;
         var markerBeat = downbeatSeconds is { } downbeat
-            ? (
-                Math.Round((markerSeconds - downbeat) / beatSeconds) % StarterGrid.BeatsPerBar
-                + StarterGrid.BeatsPerBar
-            ) % StarterGrid.BeatsPerBar
+            ? StarterGrid.BeatInBar(markerSeconds, downbeat, bpm)
             : 0;
 
         return new Warp
@@ -532,7 +531,8 @@ public sealed class SidecarWriter(
         string? from,
         float? gain,
         Func<AudioAnalysis, (AnalysisFile File, double? Bpm)> sidecar,
-        string? warpOffBecause = null
+        string? warpOffBecause = null,
+        WrittenStarter? starter = null
     )
     {
         var size = new FileInfo(target).Length;
@@ -559,6 +559,7 @@ public sealed class SidecarWriter(
             new PreparedSidecar(target, file, from, bpm, transientsFrom)
             {
                 WarpOffBecause = warpOffBecause,
+                Starter = starter,
             }
         );
     }
@@ -717,6 +718,9 @@ public sealed record PreparedSidecar(
 {
     /// <summary>Why a clip with Warp off was written instead of a starter, where a starter was tried.</summary>
     public string? WarpOffBecause { get; init; }
+
+    /// <summary>A starter's grid and why its marker got its beat, recorded when it is written (#176).</summary>
+    public WrittenStarter? Starter { get; init; }
 
     public bool IsUnwarped => !File.Warp.IsWarped;
 }

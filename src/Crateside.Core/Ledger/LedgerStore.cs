@@ -344,10 +344,16 @@ public sealed class LedgerStore : IDisposable
                         run.RecordedAt,
                         Line: new ExportLine
                         {
-                            Run = run.ToRecord() with { Evidence = null },
+                            Run = run.ToRecord() with { Evidence = null, Lookups = null },
                             Evidence = run.Evidence is { } json
                                 ? JsonSerializer.Deserialize(
                                     json,
+                                    LedgerStoreJsonContext.Default.JsonElement
+                                )
+                                : null,
+                            Lookups = run.Lookups is { } found
+                                ? JsonSerializer.Deserialize(
+                                    found,
                                     LedgerStoreJsonContext.Default.JsonElement
                                 )
                                 : null,
@@ -493,6 +499,9 @@ internal sealed record ExportLine
 
     /// <summary>The detectors' report, as JSON rather than a string of it.</summary>
     public JsonElement? Evidence { get; init; }
+
+    /// <summary>What the lookup found, as JSON rather than a string of it.</summary>
+    public JsonElement? Lookups { get; init; }
 
     public ExportedRestatement? Restatement { get; init; }
 }

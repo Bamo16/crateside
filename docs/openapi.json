@@ -378,6 +378,16 @@
             "type": "boolean",
             "description": "Whether it held a clip crateside saved with Warp off.",
             "default": false
+          },
+          "starter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WrittenStarter"
+              }
+            ]
           }
         },
         "description": "A sidecar sent to the Recycle Bin for Live to analyze again, and what to put back once it has."
@@ -703,6 +713,17 @@
             ],
             "description": "The key this source is judged against: the verdict's, or the section it covered."
           },
+          "tab": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The TheoryTab as the lookup parsed it, where the source is one; null on runs recorded before #176.",
+                "$ref": "#/components/schemas/HooktheoryTab"
+              }
+            ]
+          },
           "link": {
             "type": [
               "null",
@@ -798,6 +819,58 @@
           }
         },
         "description": "One song's familiarity: measured, settled, or both."
+      },
+      "FetchedPage": {
+        "required": [
+          "site",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "site": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "heading": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the page calls itself, so the judge can tell whether it is this song."
+          },
+          "arrangement": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageKey"
+            }
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tab": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "A TheoryTab's contributors, sections and sync, where the page is one.",
+                "$ref": "#/components/schemas/HooktheoryTab"
+              }
+            ]
+          }
+        },
+        "description": "A page found by artist and title; whether it is this recording is the judge's call."
       },
       "FiledRecords": {
         "type": "object",
@@ -939,6 +1012,53 @@
           }
         },
         "description": "One song's genre, settled or suggested."
+      },
+      "HooktheoryTab": {
+        "type": "object",
+        "properties": {
+          "contributors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The analysts, without the site's own account and deleted users."
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TabSection"
+            }
+          },
+          "allKeys": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The keys of the whole song as the site summarizes them, such as `B dorian, B minor`."
+          },
+          "syncedVideoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The YouTube video the sections are synced to, often not the recording being judged."
+          },
+          "coverage": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "The share of the synced video, 0 to 1, that the sections synced to it span together; null when none is.",
+            "format": "double"
+          },
+          "isThin": {
+            "type": "boolean",
+            "description": "One contributor and one or two sections; Rule 1 of the judge's prompt does not cap on such a page (ADR 0062)."
+          }
+        },
+        "description": "What a TheoryTab says beyond each section's first key (#124)."
       },
       "JobStage": {
         "enum": [
@@ -1233,6 +1353,42 @@
         },
         "description": "One recorded verdict for a song, or a restatement carrying one over to another upload."
       },
+      "LookupStatus": {
+        "enum": [
+          "Found",
+          "NotFound",
+          "Unreachable"
+        ]
+      },
+      "PageKey": {
+        "required": [
+          "key",
+          "section",
+          "tempo"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "section": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tempo": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "A key as the page writes it, with the section it covers where the page says."
+      },
       "ParkReason": {
         "enum": [
           "NoKey",
@@ -1290,6 +1446,43 @@
             ]
           }
         }
+      },
+      "ReadDownbeat": {
+        "required": [
+          "seconds",
+          "confidence",
+          "beatsPerBar"
+        ],
+        "type": "object",
+        "properties": {
+          "seconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "confidence": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "beatsPerBar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "A downbeat as the filter read it, in seconds into the file."
       },
       "ResolvedName": {
         "required": [
@@ -1494,6 +1687,13 @@
               "$ref": "#/components/schemas/EvidenceSource"
             },
             "description": "External sources consulted. Often empty — not a defect, many releases have no human\r\ncoverage at all."
+          },
+          "lookups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteLookup"
+            },
+            "description": "Every page the lookup handed the judge, by site, cited or not; empty on runs recorded before #176."
           },
           "algorithms": {
             "type": "array",
@@ -1706,6 +1906,35 @@
         },
         "description": "What to ask the separator for: which stems, in what form."
       },
+      "SiteLookup": {
+        "required": [
+          "site",
+          "status",
+          "pages"
+        ],
+        "type": "object",
+        "properties": {
+          "site": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/LookupStatus"
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FetchedPage"
+            }
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "What one site gave for a song."
+      },
       "SourceKind": {
         "enum": [
           "Unknown",
@@ -1801,6 +2030,22 @@
           }
         },
         "description": "What one pass did to one song, in about eighty characters."
+      },
+      "StarterBar": {
+        "enum": [
+          "Downbeat",
+          "UnsureDownbeat",
+          "NotInFours",
+          "NoDownbeat"
+        ],
+        "description": "How a starter's marker was numbered within its bar."
+      },
+      "StarterBeat": {
+        "enum": [
+          "ReadingRefinedByFold",
+          "FoldAlone"
+        ],
+        "description": "Where a starter's marker took its beat from."
       },
       "StemDestination": {
         "enum": [
@@ -2134,6 +2379,135 @@
           }
         },
         "description": "A sample's `.asd` sidecar as parsed, and crateside's records about the warp it holds."
+      },
+      "TabChord": {
+        "required": [
+          "beat",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "beat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "description": "A chord of a section's score, as a Harte label such as `C:maj7/3`."
+      },
+      "TabKey": {
+        "required": [
+          "beat",
+          "key"
+        ],
+        "type": "object",
+        "properties": {
+          "beat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "key": {
+            "type": "string"
+          }
+        }
+      },
+      "TabSection": {
+        "required": [
+          "name",
+          "progression",
+          "percentChord",
+          "percentMelody"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "progression": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "percentChord": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "percentMelody": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TabKey"
+            },
+            "description": "Every key the section is in, with the beat it starts at; more than one means it modulates inside the section."
+          },
+          "chords": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "harmony": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TabChord"
+            },
+            "description": "The chords as its score names them, by the key in force at each beat; the page's numerals stay in the section's first key."
+          },
+          "videoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The video the section is synced to, when it is not the song's."
+          },
+          "syncStart": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "Where the section starts and ends in its video, as fractions of the video's length.",
+            "format": "double"
+          },
+          "syncEnd": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "One section of a TheoryTab; the percentages say how much of it is filled in."
       },
       "TempoOff": {
         "required": [
@@ -3667,6 +4041,103 @@
         },
         "description": "One window's detector readings, and the section the verdict gave it, if any."
       },
+      "WrittenStarter": {
+        "required": [
+          "bpm",
+          "readBpm",
+          "markerSeconds",
+          "markerBeat",
+          "readBeatSeconds",
+          "downbeat",
+          "barFrom",
+          "downbeatSureAt"
+        ],
+        "type": "object",
+        "properties": {
+          "bpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The tempo written: the reading's, refined on the transients (ADR 0050).",
+            "format": "double"
+          },
+          "readBpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The reading's tempo before it was refined.",
+            "format": "double"
+          },
+          "markerSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "markerBeat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The marker's beat within its bar, 0 being the downbeat.",
+            "format": "double"
+          },
+          "readBeatSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "The reading's beat, which picked the 16th the transients' fold placed the marker in; null when the fold chose alone.",
+            "format": "double"
+          },
+          "downbeat": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The reading's downbeat, used or not; null when it read none.",
+                "$ref": "#/components/schemas/ReadDownbeat"
+              }
+            ]
+          },
+          "barFrom": {
+            "$ref": "#/components/schemas/StarterBar"
+          },
+          "downbeatSureAt": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The confidence the downbeat had to reach to be used, when this was written.",
+            "format": "double"
+          },
+          "beatFrom": {
+            "$ref": "#/components/schemas/StarterBeat"
+          },
+          "readMarkerBeat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "The marker's beat within its bar counting from the reading's downbeat, used or not; null without one.",
+            "format": "double"
+          }
+        },
+        "description": "A starter as written: its tempo and marker, the reading they came from, and why the marker got its beat (#176)."
+      },
       "WrittenWarp": {
         "required": [
           "from",
@@ -3700,6 +4171,17 @@
             "type": "boolean",
             "description": "A clip with Warp off, for a stem that gets no starter: no warp at all (ADR 0059).",
             "default": false
+          },
+          "starter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "A starter's grid and why its marker got its beat; null for anything else, and for starters written before #176.",
+                "$ref": "#/components/schemas/WrittenStarter"
+              }
+            ]
           }
         },
         "description": "A sidecar crateside wrote: a sibling's warp, a starter warp, or a clip with Warp off."

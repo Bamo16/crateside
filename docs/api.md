@@ -235,7 +235,11 @@ nor a verdict for the video ID:
 - **`row`**: the track's row, the same object `/api/tracks` returns. Null for a song the ledger
   judged that has no row.
 - **`evidence`**: the evidence behind the latest verdict: its sections, sources, windows, candidates
-  and every detector's readings. Track details' *Why* section draws it.
+  and every detector's readings. Track details' *Why* section draws it. A source that is a
+  TheoryTab carries the tab as the lookup parsed it (`tab`: its sections in order, each section's
+  keys with the beat they start at, its sync span, and the share of the video they cover).
+  `lookups` holds every page the lookup handed the judge, site by site, cited or not, so what the
+  judge passed over can be read beside what it used. Runs recorded before 2026-11-01 have neither.
 - **`jobs`**: every line of `jobs.jsonl` for any of the track's uploads, oldest first. A stage that
   finished well says what it did in `summary` ("D major, HIGH, 2 sections; 3 turns, 150 s"); lines
   written before summaries existed, and every line that is not a success, have none.
@@ -249,7 +253,14 @@ nor a verdict for the video ID:
   markers in seconds and beats, the tempo read bar by bar, the default clip and loop in seconds,
   and whether Warp is on. Beside that, crateside's own records about the warp: the one it wrote that
   the sidecar still holds (`written`), the one it last wrote even if saved over (`lastWritten`),
-  a retype to a truer tempo (`retyped`), and the copies of the sidecar it kept (`backups`).
+  a retype to a truer tempo (`retyped`), and the copies of the sidecar it kept (`backups`). A
+  starter written since 2026-11-01 says how it was made (`written.starter`): the tempo written and
+  beatdetect's before refining, the marker in seconds and its beat within the bar (0 the downbeat),
+  beatdetect's beat and downbeat with its confidence and the gate it was held to, where the beat
+  came from (`beatFrom`: `ReadingRefinedByFold`, or `FoldAlone` when beatdetect gave none), how the
+  bar was numbered (`barFrom`: `Downbeat`, or `UnsureDownbeat`, `NotInFours` or `NoDownbeat`, each
+  making the marker beat 0), and the beat beatdetect's own downbeat would have given it
+  (`readMarkerBeat`). The warp card shows the same as one line.
 - **`records`**: the track's entry in each per-song store (genres, familiarity, marks, StemForge's
   resolved names, the user's standing instructions) under **every key it is filed under**: its
   video IDs and its song. The row shows the genre, familiarity and marks filed under `row.song`
@@ -290,7 +301,76 @@ shows no genre.
     "withheldReasoning": null,
     "firstPass": null,
     "inputKind": null,
-    "sources": [],
+    "sources": [
+      {
+        "url": "https://www.hooktheory.com/theorytab/view/the-examples/synthetic-song",
+        "via": null,
+        "states": null,
+        "statesKey": "F# minor",
+        "statesMode": null,
+        "recordedKind": "authoritative",
+        "note": null,
+        "sections": null,
+        "covers": "whole song",
+        "relation": null,
+        "verdictKey": "F# minor",
+        "tab": {
+          "contributors": ["one", "two"],
+          "sections": [
+            {
+              "name": "Verse",
+              "progression": "i VI III VII",
+              "percentChord": 100,
+              "percentMelody": 50,
+              "keys": [{ "beat": 1, "key": "F# minor" }],
+              "chords": null,
+              "harmony": [],
+              "videoId": null,
+              "syncStart": 0.1,
+              "syncEnd": 0.3
+            }
+          ],
+          "allKeys": null,
+          "syncedVideoId": null,
+          "coverage": 0.2,
+          "isThin": false
+        },
+        "link": "https://www.hooktheory.com/theorytab/view/the-examples/synthetic-song",
+        "host": "www.hooktheory.com",
+        "stance": "Agrees",
+        "kind": "Authoritative",
+        "kindFromHost": "Authoritative",
+        "kindDisagreesWithHost": false
+      }
+    ],
+    "lookups": [
+      {
+        "site": "Hooktheory",
+        "status": "Found",
+        "pages": [
+          {
+            "site": "Hooktheory",
+            "url": "https://www.hooktheory.com/theorytab/view/the-examples/synthetic-song",
+            "heading": null,
+            "arrangement": null,
+            "keys": [{ "key": "F# minor", "section": "Verse", "tempo": 126 }],
+            "note": null,
+            "tab": { /* … the same tab as the source's */ }
+          },
+          {
+            "site": "Hooktheory",
+            "url": "https://www.hooktheory.com/theorytab/view/a-cover-band/synthetic-song",
+            "heading": null,
+            "arrangement": null,
+            "keys": [{ "key": "G minor", "section": "Chorus", "tempo": 120 }],
+            "note": null,
+            "tab": null
+          }
+        ],
+        "error": null
+      },
+      { "site": "Musicnotes", "status": "NotFound", "pages": [], "error": null }
+    ],
     "algorithms": [],
     "lateReading": null,
     "agreement": [],
@@ -389,14 +469,21 @@ shows no genre.
           "from": null,
           "length": 31180,
           "written": "2026-10-01T12:58:00Z",
-          "isUnwarped": false
+          "isUnwarped": false,
+          "starter": {
+            "bpm": 120,
+            "readBpm": 119.998,
+            "markerSeconds": 0.5,
+            "markerBeat": 0,
+            "readBeatSeconds": 0.5,
+            "downbeat": { "seconds": 1.5, "confidence": 0.317, "beatsPerBar": 4 },
+            "barFrom": "UnsureDownbeat",
+            "downbeatSureAt": 0.6,
+            "beatFrom": "ReadingRefinedByFold",
+            "readMarkerBeat": 2
+          }
         },
-        "lastWritten": {
-          "from": null,
-          "length": 31180,
-          "written": "2026-10-01T12:58:00Z",
-          "isUnwarped": false
-        },
+        "lastWritten": { /* … the same, until Live or the user saves over it */ },
         "retyped": null,
         "backups": [
           "C:\\Users\\you\\AppData\\Roaming\\crateside\\warp-backups\\2026-10-01 115900 Synthetic Song (Instrumental - Full).flac.asd"

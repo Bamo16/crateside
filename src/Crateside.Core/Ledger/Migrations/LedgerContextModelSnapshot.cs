@@ -71,6 +71,9 @@ namespace Crateside.Core.Ledger.Migrations
                     b.Property<bool>("LocalSource")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Lookups")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("Mixed")
                         .HasColumnType("INTEGER");
 

@@ -136,6 +136,9 @@ internal sealed class RunRow
     /// <summary>The detectors' report, as JSON.</summary>
     public string? Evidence { get; set; }
 
+    /// <summary>What the lookup found on each site, cited or not, as JSON.</summary>
+    public string? Lookups { get; set; }
+
     public double? OldBpm { get; set; }
     public string? OldBpmSource { get; set; }
     public double? OldBpmBeatdetect { get; set; }
@@ -168,6 +171,7 @@ internal sealed class RunRow
             Reasoning = run.Reasoning,
             WithheldReasoning = run.WithheldReasoning,
             Evidence = run.Evidence,
+            Lookups = run.Lookups,
             OldBpm = run.OldBpm?.Value,
             OldBpmSource = run.OldBpm?.Source,
             OldBpmBeatdetect = run.OldBpm?.Beatdetect,
@@ -260,6 +264,7 @@ internal sealed class RunRow
                     .Select(candidate => new RunCandidate(candidate.Key, candidate.Why)),
             ],
             Evidence = Evidence,
+            Lookups = Lookups,
             OldBpm = (OldBpm, OldBpmSource, OldBpmBeatdetect) is (null, null, null)
                 ? null
                 : new(OldBpm, OldBpmSource, OldBpmBeatdetect),
