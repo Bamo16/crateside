@@ -21,7 +21,6 @@ public sealed class BackingWorker(
     GenreStore genres,
     FamiliarityStore familiarity,
     TrackMarkStore trackMarks,
-    KeyCorrections corrections,
     TagStoreBackups backups,
     FileIndexReader index,
     IOptions<CratesidePaths> paths,
@@ -80,7 +79,7 @@ public sealed class BackingWorker(
                 delay = AfterFailure;
             }
 
-            // An approval or a mark cuts the wait short, so it lands while the user is looking.
+            // A mark cuts the wait short, so it lands while the user is looking.
             await WaitAsync(delay, marked, stoppingToken);
         }
     }
@@ -88,15 +87,15 @@ public sealed class BackingWorker(
     private async Task WaitAsync(TimeSpan delay, Task marked, CancellationToken stoppingToken)
     {
         using var cut = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-        var approved = corrections.WaitAsync(delay, cut.Token);
+        var waiting = Task.Delay(delay, cut.Token);
 
-        // Canceled rather than abandoned, so the wait cannot swallow a later approval.
-        if (await Task.WhenAny(approved, marked) == marked)
+        // Canceled rather than abandoned, so the timer does not outlive the wait.
+        if (await Task.WhenAny(waiting, marked) == marked)
             await cut.CancelAsync();
 
         try
         {
-            await approved;
+            await waiting;
         }
         catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested) { }
     }
@@ -136,7 +135,6 @@ public sealed class BackingWorker(
                 _paths.LibraryFolder,
                 ledger,
                 OwnedOf,
-                corrections: corrections.Approved(),
                 index: libraryIndex,
                 marksOf: trackMarks.Of,
                 beforeWrite: backups.Save
@@ -145,15 +143,6 @@ public sealed class BackingWorker(
             started
         );
 
-        // From the index, which the write above reaches minutes later: an approval stays until
-        // the index agrees, so a correction is never dropped as done before it shows.
-        corrections.Found(
-            runner.Disagreements(
-                _paths.LibraryFolder,
-                ledger,
-                libraryIndex ?? FolderInfo.Empty(_paths.LibraryFolder)
-            )
-        );
         started = Stopwatch.GetTimestamp();
 
         var staging = Report(

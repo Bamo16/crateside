@@ -7,15 +7,21 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Marks;
 using Crateside.Core.Orchestration.Tagging;
 using Crateside.Core.Samples;
+using Microsoft.Extensions.Logging;
 
 namespace Crateside.Core.Orchestration.Handoff;
 
 /// <summary>
 /// Gives every unbacked file in a root the entry its verdict earns, so its key survives the next
 /// write (ADR 0023), and every keyed entry crateside's own tags: genre (ADR 0030), familiarity (#52)
-/// and its track's Collections (#130).
+/// and its track's Collections (#130). A key that differs from its song's verdict is rewritten to it
+/// (ADR 0052, amended by #175).
 /// </summary>
-public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter writer)
+public sealed class BackingRunner(
+    FolderInfoReader folderInfo,
+    FolderInfoWriter writer,
+    ILogger<BackingRunner> log
+)
 {
     /// <summary>Each file's provenance as last read, keyed by path and good while its write time holds.</summary>
     private readonly ConcurrentDictionary<
@@ -29,7 +35,7 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
     /// </summary>
     /// <param name="ownedOf">A video ID's keywords in crateside's own groups; a group left out is left alone.</param>
     /// <param name="backKeys">False where another stage writes the keys, which is staging.</param>
-    /// <param name="corrections">Paths the user approved re-keying, each to the verdict they saw (ADR 0052).</param>
+    /// <param name="correctKeys">True rewrites a keyed entry's key to its song's verdict where they differ (#175).</param>
     /// <param name="index">Live's index of the root, which an imported file's Collections arrive in; null leaves Collections alone.</param>
     /// <param name="marksOf">A song's marks the maintainer set; none when left out.</param>
     /// <param name="beforeWrite">Called with the root just before a write that changes something.</param>
@@ -39,18 +45,18 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
         KeyLedger ledger,
         Func<string, IReadOnlyList<string>>? ownedOf = null,
         bool backKeys = true,
-        IReadOnlyDictionary<string, string>? corrections = null,
+        bool correctKeys = true,
         FolderInfo? index = null,
         Func<string, IReadOnlyCollection<TrackMark>>? marksOf = null,
         Action<string>? beforeWrite = null,
         string? song = null
     )
     {
-        IReadOnlyList<TagAssignment> unbacked;
+        IReadOnlyList<Planned> unbacked;
 
         try
         {
-            unbacked = Unbacked(root, ledger, ownedOf, backKeys, corrections, index, marksOf, song);
+            unbacked = Plan(root, ledger, ownedOf, backKeys, correctKeys, index, marksOf, song);
         }
         // A store Live is writing reads as nothing backed; wait for it rather than back everything.
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -61,40 +67,27 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
         if (unbacked.Count > 0)
             beforeWrite?.Invoke(root);
 
-        return CratesideKeywords.Apply(writer, root, unbacked);
+        var outcome = CratesideKeywords.Apply(
+            writer,
+            root,
+            [.. unbacked.Select(planned => planned.Assignment)]
+        );
+
+        if (outcome is TagWriteOutcome.Written)
+            foreach (var change in unbacked.Select(planned => planned.Retag).OfType<Retag>())
+                log.LogInformation(
+                    "retagged {File}: {Old} → {New}",
+                    Path.GetFileName(change.Path),
+                    change.Old,
+                    change.New
+                );
+
+        return outcome;
     }
 
     /// <summary>
-    /// Library files whose key, as the index holds it, is not their taggable verdict (ADR 0052).
-    /// </summary>
-    public IReadOnlyList<KeyDisagreement> Disagreements(
-        string root,
-        KeyLedger ledger,
-        FolderInfo index
-    ) =>
-        Directory.Exists(root)
-            ?
-            [
-                .. Directory
-                    .EnumerateFiles(root, "*", SearchOption.AllDirectories)
-                    .Where(SampleFiles.IsAudio)
-                    .Select(path =>
-                        index.TryGet(path, out var tags)
-                        && tags.Key is { } applied
-                        && ProvenanceOf(path) is { SourceVideoId: { } videoId }
-                        && ledger.TryGetLatestByVideoId(videoId, out var run)
-                        && run is { HasTaggableKey: true, Key: { } verdict }
-                        && !verdict.Equals(applied, StringComparison.OrdinalIgnoreCase)
-                            ? new KeyDisagreement(path, run.DisplayName, applied, verdict)
-                            : null
-                    )
-                    .OfType<KeyDisagreement>(),
-            ]
-            : [];
-
-    /// <summary>
     /// Every file under <paramref name="root"/> whose entry is missing a key, a tag or a Collection it
-    /// could have, with what the entry should say; a key already in the store is never rewritten.
+    /// could have, with what the entry should say.
     /// </summary>
     /// <param name="index">Given, every keyed entry is put in its track's Collections and out of the warp states.</param>
     /// <param name="song">Given, only files of this song are looked at.</param>
@@ -103,10 +96,25 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
         KeyLedger ledger,
         Func<string, IReadOnlyList<string>>? ownedOf = null,
         bool backKeys = true,
-        IReadOnlyDictionary<string, string>? corrections = null,
+        bool correctKeys = true,
         FolderInfo? index = null,
         Func<string, IReadOnlyCollection<TrackMark>>? marksOf = null,
         string? song = null
+    ) =>
+        [
+            .. Plan(root, ledger, ownedOf, backKeys, correctKeys, index, marksOf, song)
+                .Select(planned => planned.Assignment),
+        ];
+
+    private IReadOnlyList<Planned> Plan(
+        string root,
+        KeyLedger ledger,
+        Func<string, IReadOnlyList<string>>? ownedOf,
+        bool backKeys,
+        bool correctKeys,
+        FolderInfo? index,
+        Func<string, IReadOnlyCollection<TrackMark>>? marksOf,
+        string? song
     )
     {
         if (!Directory.Exists(root))
@@ -123,22 +131,18 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
                 {
                     Path = path,
                     Existing = backed.TryGet(path, out var tags) ? tags : null,
-                    Approved = corrections?.GetValueOrDefault(path),
                 })
                 .Select(file => new
                 {
                     file.Path,
                     file.Existing,
                     NeedsKey = backKeys && NeedsAKey(file.Existing),
-                    CorrectTo = file.Approved is { } approved
-                    && NeedsCorrection(file.Existing, approved)
-                        ? approved
-                        : null,
+                    MayCorrect = correctKeys && CanTakeOwnedTags(file.Existing),
                 })
                 // Before reading any provenance, which costs a tag read per file.
                 .Where(file =>
                     file.NeedsKey
-                    || file.CorrectTo is not null
+                    || file.MayCorrect
                     || (
                         (ownedOf is not null || index is not null)
                         && CanTakeOwnedTags(file.Existing)
@@ -158,13 +162,14 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
                 .Select(file =>
                 {
                     var provenance = ProvenanceOf(file.Path);
-                    var (keywords, corrects) = KeywordsFor(
+                    var (keywords, correctedTo) = KeywordsFor(
                         provenance,
                         ledger,
                         ownedOf,
                         file.NeedsKey,
-                        file.CorrectTo
+                        file.MayCorrect ? file.Existing!.Key : null
                     );
+                    var corrects = correctedTo is not null;
                     var merged = WithMode(
                         Merged(file.Existing, keywords, correcting: corrects),
                         file.Existing,
@@ -185,6 +190,9 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
                     return new
                     {
                         file.Path,
+                        Retag = correctedTo is null
+                            ? null
+                            : new Retag(file.Path, file.Existing!.Key!, correctedTo),
                         Keywords = changes ? merged : null,
                         Collections = index is not null && keyed
                             ? CollectionsFor(
@@ -199,12 +207,15 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
                     };
                 })
                 .Where(file => file.Keywords is not null || file.Collections is not null)
-                .Select(file => new TagAssignment
-                {
-                    RelativePath = Path.GetRelativePath(root, file.Path),
-                    Keywords = file.Keywords,
-                    Collections = file.Collections,
-                }),
+                .Select(file => new Planned(
+                    new TagAssignment
+                    {
+                        RelativePath = Path.GetRelativePath(root, file.Path),
+                        Keywords = file.Keywords,
+                        Collections = file.Collections,
+                    },
+                    file.Retag
+                )),
         ];
     }
 
@@ -262,16 +273,11 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
     internal static bool CanTakeOwnedTags(FileTags? existing) =>
         existing is { IsKeyTagged: true } && existing.Keywords.All(CratesideKeywords.IsKnown);
 
-    /// <summary>A keyed entry, all of whose keywords the writer knows, holding a key other than the approved one.</summary>
-    internal static bool NeedsCorrection(FileTags? existing, string approved) =>
-        CanTakeOwnedTags(existing)
-        && !approved.Equals(existing!.Key, StringComparison.OrdinalIgnoreCase);
-
     /// <summary>
     /// The entry's whole bag plus the key it lacks and its own tags, each replacing the one of its
     /// group. The writer replaces the whole bag, so anything left out here is destroyed.
     /// </summary>
-    /// <param name="correcting">The key replaces the entry's own, approved by the user (ADR 0052).</param>
+    /// <param name="correcting">The key replaces the entry's own, which differs from the verdict (ADR 0052).</param>
     internal static IReadOnlyList<string> Merged(
         FileTags? existing,
         IReadOnlyList<string> keywords,
@@ -293,7 +299,7 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
             [
                 .. existing.Keywords.Where(keyword => !replaced.Contains(GroupOf(keyword))),
                 .. keywords.Where(keyword =>
-                    // An approved key is written whole, or the file would be left with half of one.
+                    // A corrected key is written whole, or the file would be left with half of one.
                     (correcting && IsKey(keyword))
                     || (
                         !hidden.Contains(keyword, StringComparer.Ordinal)
@@ -357,24 +363,25 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
     /// What one file's entry should gain, from its own provenance, the verdict the ledger settled
     /// and crateside's own tags. Empty for a file nothing can be said about.
     /// </summary>
-    /// <param name="correctTo">The verdict the user approved; ignored once the ledger has moved on from it.</param>
-    private static (IReadOnlyList<string> Keywords, bool Corrects) KeywordsFor(
+    /// <param name="keyToCorrect">A key the entry holds that the verdict should replace; null leaves it be.</param>
+    /// <returns>The keywords to write, and the verdict a key is corrected to, or null where none is.</returns>
+    private static (IReadOnlyList<string> Keywords, string? CorrectedTo) KeywordsFor(
         StemProvenance? provenance,
         KeyLedger ledger,
         Func<string, IReadOnlyList<string>>? ownedOf,
         bool needsKey,
-        string? correctTo
+        string? keyToCorrect
     )
     {
         if (provenance is not { SourceVideoId: { } videoId })
-            return ([], false);
+            return ([], null);
 
         var hasRun = ledger.TryGetLatestByVideoId(videoId, out var run);
         var corrects =
-            correctTo is not null
+            keyToCorrect is not null
             && hasRun
-            && run is { HasTaggableKey: true }
-            && correctTo.Equals(run.Key, StringComparison.OrdinalIgnoreCase);
+            && run is { HasTaggableKey: true, Key: { } verdict }
+            && !verdict.Equals(keyToCorrect, StringComparison.OrdinalIgnoreCase);
 
         IReadOnlyList<string> key =
             (needsKey || corrects) && hasRun
@@ -383,11 +390,11 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
 
         // An owned tag with no key would make a keyless entry, which is the tagging stage's to write.
         if (needsKey && key.Count is 0)
-            return ([], false);
+            return ([], null);
 
         return (
             [.. key, .. (ownedOf?.Invoke(videoId) ?? []).Where(CratesideKeywords.IsKnown)],
-            corrects && key.Count > 0
+            corrects && key.Count > 0 ? run!.Key : null
         );
     }
 
@@ -406,5 +413,6 @@ public sealed class BackingRunner(FolderInfoReader folderInfo, FolderInfoWriter 
     }
 }
 
-/// <summary>A library file whose key is not its verdict, as the user is shown it (ADR 0052).</summary>
-public sealed record KeyDisagreement(string Path, string Song, string Applied, string Verdict);
+internal sealed record Retag(string Path, string Old, string New);
+
+internal sealed record Planned(TagAssignment Assignment, Retag? Retag);
