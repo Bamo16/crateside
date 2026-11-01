@@ -79,6 +79,9 @@ public sealed record StageFlow(int Pass, string Reason, IReadOnlyList<FlowStep> 
         if (Parked(row) is { } parkedAt && stages.Contains(parkedAt))
             return new(label, FlowState.Parked, Note: "parked");
 
+        if (row.WaitingForJudge && stages.Contains(JobStage.Verdict))
+            return new(label, FlowState.NotYet, Note: "waiting to be judged");
+
         return jobs.Count == stages.Length && jobs.All(j => j.Status is JobStatus.Succeeded)
             ? new(label, FlowState.Done)
             : new(label, FlowState.NotYet);
