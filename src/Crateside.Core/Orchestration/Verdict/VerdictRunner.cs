@@ -63,6 +63,7 @@ public sealed partial class VerdictRunner(
     )
     {
         var step = onStep ?? (_ => { });
+        var tally = new SessionTally();
 
         if (direction is { Audio: null })
             throw new ArgumentException(
@@ -111,6 +112,7 @@ public sealed partial class VerdictRunner(
             Prompt(order, verdictPath, lookups, direction, given, audio),
             folder,
             order,
+            tally,
             ct
         );
 
@@ -138,7 +140,8 @@ public sealed partial class VerdictRunner(
                         {
                             WithheldReasoning = withheld?.Reasoning,
                         },
-                        order
+                        order,
+                        tally
                     );
 
                 case VerdictCheck.WindowsAsked(var windows, var run)
@@ -161,7 +164,8 @@ public sealed partial class VerdictRunner(
                         {
                             WithheldReasoning = withheld?.Reasoning,
                         },
-                        order
+                        order,
+                        tally
                     );
 
                 case VerdictCheck.Unusable when Unavailable(outcome) is { } unavailable:
@@ -175,7 +179,7 @@ public sealed partial class VerdictRunner(
 
                 case VerdictCheck.Unusable(var problem):
                     return withheld is not null
-                        ? Record(withheld, order)
+                        ? Record(withheld, order, tally)
                         : VerdictResult.Failed(
                             outcome.Succeeded
                                 ? problem
@@ -189,7 +193,7 @@ public sealed partial class VerdictRunner(
             }
 
             File.Delete(verdictPath);
-            outcome = await SessionAsync(["--resume", session], prompt, folder, order, ct);
+            outcome = await SessionAsync(["--resume", session], prompt, folder, order, tally, ct);
         }
     }
 
@@ -473,6 +477,7 @@ public sealed partial class VerdictRunner(
         string prompt,
         string folder,
         WorkOrder order,
+        SessionTally tally,
         CancellationToken ct
     )
     {
@@ -516,16 +521,19 @@ public sealed partial class VerdictRunner(
             ct
         );
 
-        LogSession(outcome, order);
+        LogSession(outcome, order, tally);
 
         return outcome;
     }
 
     /// <summary>Turns and time per session, the measure of a judge besides its verdicts.</summary>
-    private void LogSession(ProcessOutcome outcome, WorkOrder order)
+    private void LogSession(ProcessOutcome outcome, WorkOrder order, SessionTally tally)
     {
         if (TryParseResult(outcome.StandardOutput) is not { } result)
             return;
+
+        tally.Turns += result["num_turns"]?.GetValue<int>() ?? 0;
+        tally.Seconds += result["duration_ms"]?.GetValue<double>() / 1000 ?? 0;
 
         log.LogInformation(
             "Judge session for {VideoId} on {Model}: {Turns} turns, {Seconds:0} s",
@@ -758,14 +766,27 @@ public sealed partial class VerdictRunner(
             log.LogWarning("Verdict for {VideoId}: {Note}", order.VideoId, note);
     }
 
-    private VerdictResult Record(RunRecord run, WorkOrder order)
+    private VerdictResult Record(RunRecord run, WorkOrder order, SessionTally tally)
     {
         if (store.Record(run) is RecordOutcome.Refused(var field, var problem))
             return VerdictResult.Failed($"the ledger refused the verdict: {field}: {problem}");
 
         LinkSwappedSource(order);
 
-        return VerdictResult.Succeeded();
+        return VerdictResult.Succeeded(Summarize(run, _options.Model, tally));
+    }
+
+    /// <summary>The verdict a run recorded and what the judge spent on it, for the activity feed (#170).</summary>
+    internal static string Summarize(RunRecord run, string model, SessionTally tally)
+    {
+        var verdict = run.Center is { Name: var name }
+            ? $"{name}, {run.Confidence.ToString().ToUpperInvariant()}"
+            : $"key withheld, {run.Confidence.ToString().ToUpperInvariant()}";
+
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"{verdict}, {"section".ToQuantity(run.Sections.Count)}; {"turn".ToQuantity(tally.Turns)} on {model}, {tally.Seconds:0} s"
+        );
     }
 
     /// <summary>
@@ -890,6 +911,14 @@ public sealed partial class VerdictRunner(
     private static partial Regex BracketedTail { get; }
 
     private sealed record DetectedWindow(RunWindow Window, string? Evidence, string? Error);
+
+    /// <summary>What a run's judge sessions spent, added up as they end.</summary>
+    internal sealed class SessionTally
+    {
+        public int Turns { get; set; }
+
+        public double Seconds { get; set; }
+    }
 }
 
 /// <summary>How one verdict run turned out.</summary>
@@ -911,7 +940,11 @@ public sealed record VerdictResult
 
     public string? Error { get; init; }
 
-    public static VerdictResult Succeeded() => new() { IsSuccess = true };
+    /// <summary>The verdict recorded and what the judge spent, in a line for the activity feed (#170). Null unless it succeeded.</summary>
+    public string? Summary { get; init; }
+
+    public static VerdictResult Succeeded(string? summary = null) =>
+        new() { IsSuccess = true, Summary = summary };
 
     public static VerdictResult Failed(string error) => new() { IsSuccess = false, Error = error };
 

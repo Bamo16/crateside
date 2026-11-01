@@ -123,7 +123,8 @@ public sealed class VerdictDrainer(
                     { IsAgentUnavailable: true } => JobStatus.Canceled,
                     _ => JobStatus.Failed,
                 },
-                error: result.Error
+                error: result.Error,
+                summary: result.Summary
             );
 
             switch (result)
@@ -334,7 +335,8 @@ public sealed class VerdictDrainer(
                 item.VideoId,
                 JobStage.Verdict,
                 result.IsSuccess ? JobStatus.Succeeded : JobStatus.Failed,
-                error: result.Error
+                error: result.Error,
+                summary: result.Summary
             );
 
             return StageTick.Ran(order, result.IsSuccess, result.Error);

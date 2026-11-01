@@ -175,6 +175,21 @@ public sealed class VerdictRunnerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_recorded_verdict_is_summarized_with_its_key_confidence_and_what_the_judge_spent()
+    {
+        GiveEvidence();
+        GiveAudio();
+        Session(
+            Verdict,
+            stdout: """{"type":"result","subtype":"success","is_error":false,"num_turns":3,"duration_ms":150400,"result":"done"}"""
+        );
+
+        var result = await RunAsync();
+
+        Assert.Equal($"A minor, HIGH, 0 sections; 3 turns on {Judge.Model}, 150 s", result.Summary);
+    }
+
+    [Fact]
     public async Task A_late_reading_marker_carried_in_from_an_earlier_run_is_not_recorded_on_the_new_one()
     {
         GiveEvidence(
