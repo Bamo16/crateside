@@ -38,6 +38,23 @@ public sealed class WorkingSetAcquisitionCacheTests : IDisposable
     }
 
     [Fact]
+    public void An_acquisition_saved_in_the_same_clock_tick_as_the_last_read_is_read_afresh()
+    {
+        var set = new WorkingSet(_root);
+        var folder = Path.Combine(_root, "aaaaaaaaaaa");
+        set.Prepare("aaaaaaaaaaa");
+
+        set.SaveAcquisition("aaaaaaaaaaa", new Acquisition { IsAccepted = false });
+        Assert.False(set.Acquisitions()["aaaaaaaaaaa"].IsAccepted);
+        var cachedAt = Directory.GetLastWriteTimeUtc(folder);
+
+        set.SaveAcquisition("aaaaaaaaaaa", new Acquisition { IsAccepted = true });
+        Directory.SetLastWriteTimeUtc(folder, cachedAt);
+
+        Assert.True(set.Acquisitions()["aaaaaaaaaaa"].IsAccepted);
+    }
+
+    [Fact]
     public void A_discarded_working_set_no_longer_has_an_acquisition()
     {
         var set = new WorkingSet(_root);

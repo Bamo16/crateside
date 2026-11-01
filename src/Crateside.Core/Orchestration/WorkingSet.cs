@@ -93,7 +93,7 @@ public sealed class WorkingSet(string? root = null)
 
     /// <summary>
     /// Every recorded acquisition, by video ID — what the rows are drawn from. A folder's is read
-    /// again only when the folder's modified time moves, because a stat per folder costs as much
+    /// again only when the folder's modified time moves or this instance saved into it, because a stat per folder costs as much
     /// as the read and every write goes through a temporary file that moves it.
     /// </summary>
     public IReadOnlyDictionary<string, Acquisition> Acquisitions()
@@ -131,6 +131,8 @@ public sealed class WorkingSet(string? root = null)
     /// <summary>Writes down how the download went, replacing whatever was there.</summary>
     public void SaveAcquisition(string videoId, Acquisition acquisition)
     {
+        _acquisitions.TryRemove(videoId, out _);
+
         try
         {
             WorkingSetJsonContext.Default.Acquisition.WriteFile(
