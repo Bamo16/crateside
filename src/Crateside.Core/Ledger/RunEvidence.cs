@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Crateside.Core.Orchestration.Verdict;
 
 namespace Crateside.Core.Ledger;
 
@@ -88,6 +89,9 @@ public sealed record RunEvidence
     /// </summary>
     public IReadOnlyList<EvidenceSource> Sources { get; init; } = [];
 
+    /// <summary>Every page the lookup handed the judge, by site, cited or not; empty on runs recorded before #176.</summary>
+    public IReadOnlyList<SiteLookup> Lookups { get; init; } = [];
+
     public IReadOnlyList<AlgorithmResult> Algorithms { get; init; } = [];
 
     /// <summary>Set when the readings in <see cref="Algorithms"/> were taken after the verdict.</summary>
@@ -119,6 +123,7 @@ public sealed record RunEvidence
         var machine = run.Evidence is { } json
             ? JsonSerializer.Deserialize(json, RunEvidenceJsonContext.Default.MachineDto)
             : null;
+        var lookups = ReadLookups(run.Lookups);
 
         return new()
         {
@@ -161,9 +166,11 @@ public sealed record RunEvidence
                         Covers = coverage.Covers,
                         Relation = coverage.Relation,
                         VerdictKey = coverage.JudgedAgainst,
+                        Tab = TabAt(lookups, source.Url),
                     };
                 }),
             ],
+            Lookups = lookups,
             Algorithms = AlgorithmResult.FromDto(machine?.Algorithms),
             LateReading = machine is { ReadAfterVerdict: { } late }
                 ? new LateReading(late.At, machine.Versions?.GetValueOrDefault("ffmpeg_sha256"))
@@ -192,6 +199,39 @@ public sealed record RunEvidence
             Bpm = run.OldBpm?.Value,
         };
     }
+
+    private static IReadOnlyList<SiteLookup> ReadLookups(string? json)
+    {
+        try
+        {
+            return json is null
+                ? []
+                : JsonSerializer.Deserialize(
+                    json,
+                    SiteLookupJsonContext.Default.IReadOnlyListSiteLookup
+                ) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    /// <summary>The TheoryTab the lookup parsed at this page, or null when it parsed none there.</summary>
+    private static HooktheoryTab? TabAt(IReadOnlyList<SiteLookup> lookups, string? url) =>
+        url is null
+            ? null
+            : lookups
+                .SelectMany(lookup => lookup.Pages)
+                .FirstOrDefault(page => page.Tab is not null && SamePage(page.Url, url))
+                ?.Tab;
+
+    private static bool SamePage(string left, string right) =>
+        string.Equals(
+            Uri.UnescapeDataString(left).TrimEnd('/'),
+            Uri.UnescapeDataString(right).TrimEnd('/'),
+            StringComparison.OrdinalIgnoreCase
+        );
 }
 
 /// <summary>One window's detector readings, and the section the verdict gave it, if any.</summary>
@@ -273,6 +313,9 @@ public sealed partial record EvidenceSource
 
     /// <summary>The key this source is judged against: the verdict's, or the section it covered.</summary>
     public string? VerdictKey { get; init; }
+
+    /// <summary>The TheoryTab as the lookup parsed it, where the source is one; null on runs recorded before #176.</summary>
+    public HooktheoryTab? Tab { get; init; }
 
     /// <summary>
     /// <see cref="Url"/> as something safe to render as a link, or null when it is not one.

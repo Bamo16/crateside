@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AbleKit.Analysis;
 using AbleKit.Tags;
 using Crateside.Api;
@@ -8,6 +9,7 @@ using Crateside.Core.Marks;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
+using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Playlist;
 using Crateside.Core.Tracks;
 using Crateside.Core.Warps;
@@ -67,6 +69,47 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         Directory.Delete(_root, recursive: true);
     }
 
+    public const string TheoryTab =
+        "https://www.hooktheory.com/theorytab/view/the-examples/synthetic-song";
+
+    /// <summary>The cited TheoryTab, and a cover's the judge passed over.</summary>
+    private static readonly IReadOnlyList<SiteLookup> Lookups =
+    [
+        new(
+            "Hooktheory",
+            LookupStatus.Found,
+            [
+                new FetchedPage
+                {
+                    Site = "Hooktheory",
+                    Url = TheoryTab,
+                    Keys = [new PageKey("F# minor", "Verse", 126)],
+                    Tab = new HooktheoryTab
+                    {
+                        Contributors = ["one", "two"],
+                        Sections =
+                        [
+                            new TabSection("Verse", "i VI III VII", 100, 50)
+                            {
+                                Keys = [new TabKey(1, "F# minor")],
+                                SyncStart = 0.1,
+                                SyncEnd = 0.3,
+                            },
+                        ],
+                        Coverage = 0.2,
+                    },
+                },
+                new FetchedPage
+                {
+                    Site = "Hooktheory",
+                    Url = "https://www.hooktheory.com/theorytab/view/a-cover-band/synthetic-song",
+                    Keys = [new PageKey("G minor", "Chorus", 120)],
+                },
+            ]
+        ),
+        new("Musicnotes", LookupStatus.NotFound, []),
+    ];
+
     private async Task StartAppAsync()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(Instrumental)!);
@@ -84,6 +127,19 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
                 SourceUrl = $"https://music.youtube.com/watch?v={Judged}",
                 Confidence = KeyConfidence.High,
                 Center = new TonalCenter("F#", DiatonicMode.Aeolian),
+                Sources =
+                [
+                    new RunSource
+                    {
+                        Url = TheoryTab,
+                        Kind = SourceKind.Authoritative,
+                        StatesKey = "F# minor",
+                    },
+                ],
+                Lookups = JsonSerializer.Serialize(
+                    Lookups,
+                    SiteLookupJsonContext.Default.IReadOnlyListSiteLookup
+                ),
             }
         );
         ledger.Read().TryGetLatestByVideoId(Judged, out var verdict);
@@ -91,7 +147,19 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         var written = new WrittenWarps();
         File.WriteAllBytes(Instrumental, [1, 2, 3]);
         Sidecar().Write($"{Instrumental}.asd");
-        written.RecordStarter(Instrumental);
+        written.RecordStarter(
+            Instrumental,
+            new WrittenStarter(
+                120,
+                119.998,
+                0.5,
+                0,
+                0.5,
+                new ReadDownbeat(1.5, 0.317, 4),
+                StarterBar.UnsureDownbeat,
+                StarterGrid.DownbeatSureAt
+            )
+        );
         File.WriteAllBytes(
             Path.Combine(WarpBackups, $"2026-10-01 115900 {Path.GetFileName(Instrumental)}.asd"),
             [1]

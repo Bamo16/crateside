@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using AbleKit.Analysis;
 using Crateside.Core.Samples;
 
 namespace Crateside.Core.Warps;
@@ -77,15 +78,18 @@ public sealed class WrittenWarps
     }
 
     public void RecordBorrowed(string audioPath, string from) =>
-        Record(audioPath, from, unwarped: false);
+        Record(audioPath, from, unwarped: false, starter: null);
 
-    public void RecordStarter(string audioPath) => Record(audioPath, null, unwarped: false);
+    /// <param name="starter">Its grid and why its marker got its beat; null where that is not known.</param>
+    public void RecordStarter(string audioPath, WrittenStarter? starter = null) =>
+        Record(audioPath, null, unwarped: false, starter);
 
-    public void RecordUnwarped(string audioPath) => Record(audioPath, null, unwarped: true);
+    public void RecordUnwarped(string audioPath) =>
+        Record(audioPath, null, unwarped: true, starter: null);
 
     /// <summary>Records a sidecar crateside rewrote as still being what it was.</summary>
     public void Rerecord(string audioPath, WrittenWarp was) =>
-        Record(audioPath, was.From, was.IsUnwarped);
+        Record(audioPath, was.From, was.IsUnwarped, was.Starter);
 
     private WrittenWarp? Current(string audioPath)
     {
@@ -103,7 +107,7 @@ public sealed class WrittenWarps
         }
     }
 
-    private void Record(string audioPath, string? from, bool unwarped)
+    private void Record(string audioPath, string? from, bool unwarped, WrittenStarter? starter)
     {
         var sidecar = new FileInfo(SidecarOf(audioPath));
 
@@ -113,7 +117,8 @@ public sealed class WrittenWarps
                 from,
                 sidecar.Length,
                 sidecar.LastWriteTimeUtc,
-                unwarped
+                unwarped,
+                starter
             );
 
             if (_path is not null)
@@ -145,17 +150,94 @@ public sealed class WrittenWarps
 /// <param name="Length">The sidecar's size as written, to tell whether Live has saved over it.</param>
 /// <param name="Written">The sidecar's last write time (UTC) as written.</param>
 /// <param name="IsUnwarped">A clip with Warp off, for a stem that gets no starter: no warp at all (ADR 0059).</param>
+/// <param name="Starter">A starter's grid and why its marker got its beat; null for anything else, and for starters written before #176.</param>
 public sealed record WrittenWarp(
     string? From,
     long Length,
     DateTime Written,
-    bool IsUnwarped = false
+    bool IsUnwarped = false,
+    WrittenStarter? Starter = null
 )
 {
     [JsonIgnore]
     public bool IsStarter => From is null && !IsUnwarped;
 }
 
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+/// <summary>A starter as written: its tempo and marker, the reading they came from, and why the marker got its beat (#176).</summary>
+/// <param name="Bpm">The tempo written: the reading's, refined on the transients (ADR 0050).</param>
+/// <param name="ReadBpm">The reading's tempo before it was refined.</param>
+/// <param name="MarkerBeat">The marker's beat within its bar, 0 being the downbeat.</param>
+/// <param name="ReadBeatSeconds">The reading's beat, which picked the 16th the transients' fold placed the marker in; null when the fold chose alone.</param>
+/// <param name="Downbeat">The reading's downbeat, used or not; null when it read none.</param>
+/// <param name="DownbeatSureAt">The confidence the downbeat had to reach to be used, when this was written.</param>
+public sealed record WrittenStarter(
+    double Bpm,
+    double ReadBpm,
+    double MarkerSeconds,
+    double MarkerBeat,
+    double? ReadBeatSeconds,
+    ReadDownbeat? Downbeat,
+    StarterBar BarFrom,
+    double DownbeatSureAt
+)
+{
+    public StarterBeat BeatFrom =>
+        ReadBeatSeconds is null ? StarterBeat.FoldAlone : StarterBeat.ReadingRefinedByFold;
+
+    /// <summary>The marker's beat within its bar counting from the reading's downbeat, used or not; null without one.</summary>
+    public double? ReadMarkerBeat =>
+        Downbeat is { Seconds: var downbeat }
+            ? StarterGrid.BeatInBar(MarkerSeconds, downbeat, Bpm)
+            : null;
+
+    public static WrittenStarter Of(StarterGrid grid, double bpm, WarpMarker marker) =>
+        new(
+            bpm,
+            grid.Bpm,
+            marker.Seconds,
+            marker.Beat,
+            grid.BeatSeconds,
+            grid.Read,
+            grid switch
+            {
+                { DownbeatSeconds: not null } => StarterBar.Downbeat,
+                { Read: null } => StarterBar.NoDownbeat,
+                { Read.Confidence: not >= StarterGrid.DownbeatSureAt } => StarterBar.UnsureDownbeat,
+                _ => StarterBar.NotInFours,
+            },
+            StarterGrid.DownbeatSureAt
+        );
+}
+
+/// <summary>Where a starter's marker took its beat from.</summary>
+public enum StarterBeat
+{
+    /// <summary>The reading's beat picked the 16th, and the transients' fold placed the marker within it.</summary>
+    ReadingRefinedByFold,
+
+    /// <summary>The reading gave no beat, so the fold alone chose the first beat.</summary>
+    FoldAlone,
+}
+
+/// <summary>How a starter's marker was numbered within its bar.</summary>
+public enum StarterBar
+{
+    /// <summary>Counted from the reading's downbeat, sure enough to use.</summary>
+    Downbeat,
+
+    /// <summary>Beat 0, because the downbeat's confidence was under the gate.</summary>
+    UnsureDownbeat,
+
+    /// <summary>Beat 0, because the reading's bars were not of four.</summary>
+    NotInFours,
+
+    /// <summary>Beat 0, because the reading had no downbeat.</summary>
+    NoDownbeat,
+}
+
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    UseStringEnumConverter = true
+)]
 [JsonSerializable(typeof(Dictionary<string, WrittenWarp>))]
 internal sealed partial class WrittenWarpsJsonContext : JsonSerializerContext { }

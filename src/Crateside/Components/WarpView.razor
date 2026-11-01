@@ -455,6 +455,10 @@
                     </div>
 
                     <p class="provenance">@wording.Sentence(selected)</p>
+                    @if (selected.Starter is { } starter)
+                    {
+                        <p class="starter-why mono">@WarpWording.StarterWhy(starter)</p>
+                    }
 
                     <div class="controls">
                         <div class="control">

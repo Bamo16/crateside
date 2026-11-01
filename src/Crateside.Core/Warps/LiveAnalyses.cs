@@ -81,9 +81,15 @@ public sealed record AwaitedAnalysis(
     bool WasStarter,
     DateTime Sent,
     bool WasUnwarped = false
-);
+)
+{
+    public WrittenStarter? Starter { get; init; }
+}
 
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSourceGenerationOptions(
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    UseStringEnumConverter = true
+)]
 [JsonSerializable(typeof(Dictionary<string, AwaitedAnalysis>))]
 internal sealed partial class LiveAnalysesJsonContext : JsonSerializerContext { }
 
@@ -192,6 +198,9 @@ public sealed class WarpActions(
                     time.GetUtcNow().UtcDateTime,
                     crateside is { IsUnwarped: true }
                 )
+                {
+                    Starter = crateside?.Starter,
+                }
             );
 
             return new LetLiveOutcome.Sent();
@@ -238,7 +247,7 @@ public sealed class WarpActions(
                 if (awaited.From is { } from)
                     written.RecordBorrowed(target, from);
                 else if (awaited.WasStarter)
-                    written.RecordStarter(target);
+                    written.RecordStarter(target, awaited.Starter);
                 else if (awaited.WasUnwarped)
                     written.RecordUnwarped(target);
 

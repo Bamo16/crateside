@@ -13,6 +13,9 @@ public sealed record StarterGrid(double Bpm, double? BeatSeconds, double? Downbe
 
     public const int BeatsPerBar = 4;
 
+    /// <summary>The filter's downbeat as read, sure or not, so a starter can say why its marker got its beat (#176).</summary>
+    public ReadDownbeat? Read { get; init; }
+
     /// <summary>Null when the reading gives no starter tempo (<see cref="TrackTempo.StarterBpm"/>).</summary>
     public static StarterGrid? Of(BeatReading? reading) =>
         TrackTempo.StarterBpm(reading) is { } bpm
@@ -28,5 +31,18 @@ public sealed record StarterGrid(double Bpm, double? BeatSeconds, double? Downbe
                     ? downbeat / 1000
                     : null
             )
+            {
+                Read = reading is { DownbeatOffsetMs: { } offset }
+                    ? new(offset / 1000, reading.DownbeatConfidence, reading.BeatsPerBar)
+                    : null,
+            }
             : null;
+
+    /// <summary>The beat a marker falls on within its bar of four, counting from a downbeat: 0 to 3.</summary>
+    public static double BeatInBar(double markerSeconds, double downbeatSeconds, double bpm) =>
+        (Math.Round((markerSeconds - downbeatSeconds) / (60 / bpm)) % BeatsPerBar + BeatsPerBar)
+        % BeatsPerBar;
 }
+
+/// <summary>A downbeat as the filter read it, in seconds into the file.</summary>
+public sealed record ReadDownbeat(double Seconds, double? Confidence, int? BeatsPerBar);

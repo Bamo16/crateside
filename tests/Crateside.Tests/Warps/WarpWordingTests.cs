@@ -197,4 +197,39 @@ public sealed class WarpWordingTests
                 IsDefaultClipSaved = true,
             },
         };
+
+    private static WrittenStarter Starter(
+        StarterBar bar,
+        ReadDownbeat? downbeat,
+        double? readBeat = 0.23209
+    ) => new(126, 125.99913, 0.23209, 0, readBeat, downbeat, bar, StarterGrid.DownbeatSureAt);
+
+    [Fact]
+    public void A_starter_with_no_downbeat_says_so()
+    {
+        Assert.Equal(
+            "marker on beat 1: beatdetect read no downbeat, so beat 1",
+            WarpWording.StarterWhy(Starter(StarterBar.NoDownbeat, null))
+        );
+    }
+
+    [Fact]
+    public void A_starter_whose_reading_counts_bars_of_three_says_so()
+    {
+        Assert.Equal(
+            "marker on beat 1: beatdetect counted 3 beats to the bar, so beat 1",
+            WarpWording.StarterWhy(Starter(StarterBar.NotInFours, new(1.18447, 0.8, 3)))
+        );
+    }
+
+    [Fact]
+    public void A_starter_whose_beat_the_transients_alone_placed_says_so()
+    {
+        Assert.Equal(
+            "marker on beat 1: downbeat confidence 0.33 under 0.6, so beat 1 (beatdetect said beat 3); beatdetect gave no beat, so the transients alone placed it",
+            WarpWording.StarterWhy(
+                Starter(StarterBar.UnsureDownbeat, new(1.18447, 0.33, 4), readBeat: null)
+            )
+        );
+    }
 }

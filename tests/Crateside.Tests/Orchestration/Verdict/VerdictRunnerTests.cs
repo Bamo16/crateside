@@ -447,6 +447,73 @@ public sealed class VerdictRunnerTests : IDisposable
     }
 
     [Fact]
+    public async Task The_lookup_is_kept_with_the_run_and_each_cited_tab_comes_back_under_its_source()
+    {
+        GiveEvidence();
+        Pages.WithThinPage = true;
+        Pages.Tab = MoneyTab();
+        Session(Verdict);
+
+        await RunAsync();
+
+        var evidence = Ledger.EvidenceFor("yes - owner of a lonely heart")!;
+        var tab = Assert.Single(evidence.Sources).Tab;
+
+        Assert.NotNull(tab);
+        Assert.Equal(["Verse", "Chorus"], tab.Sections.Select(section => section.Name));
+        Assert.Equal([new TabKey(1, "B minor"), new TabKey(15, "B dorian")], tab.Sections[1].Keys);
+        Assert.Equal(0.0628, Assert.NotNull(tab.Coverage), 4);
+        Assert.Equal(
+            ["Hooktheory", "Musicnotes", "Ultimate Guitar"],
+            evidence.Lookups.Select(lookup => lookup.Site)
+        );
+        Assert.Contains(evidence.Lookups[0].Pages, page => page.Url == ThinPage);
+        Assert.Equal("timed out", evidence.Lookups[2].Error);
+    }
+
+    [Fact]
+    public async Task A_run_with_no_artist_and_title_to_look_up_keeps_no_lookup()
+    {
+        GiveEvidence();
+        Session(Verdict);
+
+        await RunAsync(
+            WorkOrder.Compose(
+                new WorkItem
+                {
+                    PlaylistItemId = "PLI1",
+                    VideoId = VideoId,
+                    Title = "an upload with no dash",
+                    Plan = StemPlan.Default,
+                },
+                TestLedger.From("does-not-exist")
+            )
+        );
+
+        Assert.Empty(Pages.Asked);
+        Assert.Empty(Ledger.EvidenceFor("yes - owner of a lonely heart")!.Lookups);
+    }
+
+    /// <summary>A real TheoryTab, read from the pages recorded on 2026-10-16.</summary>
+    private static HooktheoryTab MoneyTab()
+    {
+        var fixtures = Path.Combine(AppContext.BaseDirectory, "Fixtures", "SourcePages");
+        string Fixture(string name) => File.ReadAllText(Path.Combine(fixtures, name));
+
+        return SourcePages
+            .HooktheoryPage(
+                "https://www.hooktheory.com/theorytab/view/pink-floyd/money",
+                Fixture("hooktheory-money.html"),
+                new Dictionary<string, string>
+                {
+                    ["jDgX__kw_mK"] = Fixture("hooktheory-api-jDgX__kw_mK.json"),
+                    ["VMgJXXWOKoq"] = Fixture("hooktheory-api-VMgJXXWOKoq.json"),
+                }
+            )
+            .Tab!;
+    }
+
+    [Fact]
     public async Task A_thin_hooktheory_page_stating_another_key_does_not_stop_a_high()
     {
         GiveEvidence();
@@ -1231,6 +1298,9 @@ public sealed class VerdictRunnerTests : IDisposable
         /// <summary>A second TheoryTab, by one contributor over one section, stating C major.</summary>
         public bool WithThinPage { get; set; }
 
+        /// <summary>The tab parsed at the page the verdict cites.</summary>
+        public HooktheoryTab? Tab { get; set; }
+
         public Task<IReadOnlyList<SiteLookup>> FetchAsync(
             string artist,
             string title,
@@ -1251,6 +1321,7 @@ public sealed class VerdictRunnerTests : IDisposable
                                 "https://www.hooktheory.com/theorytab/view/yes/owner-of-a-lonely-heart",
                             Heading = "Owner of a Lonely Heart by Yes",
                             Keys = [new PageKey("A minor", "Chorus", 124)],
+                            Tab = Tab,
                         },
                         .. WithThinPage
                             ?

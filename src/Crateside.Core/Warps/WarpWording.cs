@@ -30,6 +30,37 @@ public sealed class WarpWording(WarpGroup group, Func<string, string> nameOf)
             _ => mode.ToString(),
         };
 
+    /// <summary>Why a starter's marker got its beat, in one line, its beats numbered from 1 as Live's ruler numbers them (#176).</summary>
+    public static string StarterWhy(WrittenStarter starter)
+    {
+        var bar = starter switch
+        {
+            { BarFrom: StarterBar.Downbeat, Downbeat.Confidence: { } sure } =>
+                $"beatdetect's downbeat, confidence {Hundredths(sure)}",
+            { BarFrom: StarterBar.Downbeat } => "beatdetect's downbeat",
+            { BarFrom: StarterBar.UnsureDownbeat, Downbeat.Confidence: { } unsure } =>
+                $"downbeat confidence {Hundredths(unsure)} under {starter.DownbeatSureAt.ToString("0.0#", CultureInfo.InvariantCulture)}, so beat 1{ReadSaid(starter)}",
+            { BarFrom: StarterBar.UnsureDownbeat } =>
+                $"no downbeat confidence, so beat 1{ReadSaid(starter)}",
+            { BarFrom: StarterBar.NotInFours, Downbeat.BeatsPerBar: { } beats } =>
+                $"beatdetect counted {beats} beats to the bar, so beat 1",
+            { BarFrom: StarterBar.NotInFours } => "beatdetect's bars are not of four, so beat 1",
+            _ => "beatdetect read no downbeat, so beat 1",
+        };
+        var beat =
+            starter.BeatFrom is StarterBeat.FoldAlone
+                ? "; beatdetect gave no beat, so the transients alone placed it"
+                : string.Empty;
+
+        return $"marker on beat {starter.MarkerBeat + 1:0}: {bar}{beat}";
+    }
+
+    private static string ReadSaid(WrittenStarter starter) =>
+        starter.ReadMarkerBeat is { } said ? $" (beatdetect said beat {said + 1:0})" : string.Empty;
+
+    private static string Hundredths(double value) =>
+        value.ToString("0.00", CultureInfo.InvariantCulture);
+
     public WarpChip Chip(StemWarp stem) =>
         stem.Owner switch
         {

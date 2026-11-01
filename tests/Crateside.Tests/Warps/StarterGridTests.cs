@@ -19,16 +19,22 @@ public sealed class StarterGridTests : IDisposable
 
     [Fact]
     public void A_sure_downbeat_numbers_the_starters_beats() =>
-        Assert.Equal(new StarterGrid(120, 0.5, 1.5), StarterGrid.Of(Reading(confidence: 0.6)));
+        Assert.Equal(
+            new StarterGrid(120, 0.5, 1.5) { Read = new(1.5, 0.6, 4) },
+            StarterGrid.Of(Reading(confidence: 0.6))
+        );
 
     [Fact]
-    public void An_unsure_downbeat_leaves_which_beat_starts_a_bar_a_guess() =>
-        Assert.Equal(new StarterGrid(120, 0.5, null), StarterGrid.Of(Reading(confidence: 0.599)));
+    public void An_unsure_downbeat_leaves_which_beat_starts_a_bar_a_guess_and_keeps_what_was_read() =>
+        Assert.Equal(
+            new StarterGrid(120, 0.5, null) { Read = new(1.5, 0.599, 4) },
+            StarterGrid.Of(Reading(confidence: 0.599))
+        );
 
     [Fact]
     public void A_downbeat_in_bars_of_three_is_not_used_on_a_grid_of_four() =>
         Assert.Equal(
-            new StarterGrid(120, 0.5, null),
+            new StarterGrid(120, 0.5, null) { Read = new(1.5, 0.2, 3) },
             StarterGrid.Of(Reading(confidence: 0.2) with { BeatsPerBar = 3 })
         );
 

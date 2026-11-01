@@ -70,6 +70,9 @@ public sealed class CratesideApiTests : IAsyncLifetime
         Assert.Equal(120, (double?)warp["tempo"]!["bpm"]);
         Assert.True((bool?)warp["loop"]!["on"]);
         Assert.Null((string?)warp["written"]!["from"]);
+        Assert.Equal("UnsureDownbeat", (string?)warp["written"]!["starter"]!["barFrom"]);
+        Assert.Equal(0.317, (double?)warp["written"]!["starter"]!["downbeat"]!["confidence"]);
+        Assert.Equal(2, (double?)warp["written"]!["starter"]!["readMarkerBeat"]);
         Assert.Equal(
             [
                 Path.Combine(
@@ -79,6 +82,25 @@ public sealed class CratesideApiTests : IAsyncLifetime
             ],
             warp["backups"]!.AsArray().Select(backup => (string?)backup)
         );
+    }
+
+    [Fact]
+    public async Task A_cited_theorytab_comes_back_under_its_source_beside_every_page_the_lookup_found()
+    {
+        var evidence = (await GetAsync($"/api/tracks/{SyntheticCrateside.Judged}"))["evidence"]!;
+        var tab = evidence["sources"]![0]!["tab"]!;
+
+        Assert.Equal("Verse", (string?)tab["sections"]![0]!["name"]);
+        Assert.Equal("F# minor", (string?)tab["sections"]![0]!["keys"]![0]!["key"]);
+        Assert.Equal(0.2, (double?)tab["coverage"]);
+        Assert.Equal(
+            [
+                SyntheticCrateside.TheoryTab,
+                "https://www.hooktheory.com/theorytab/view/a-cover-band/synthetic-song",
+            ],
+            evidence["lookups"]![0]!["pages"]!.AsArray().Select(page => (string?)page!["url"])
+        );
+        Assert.Equal("NotFound", (string?)evidence["lookups"]![1]!["status"]);
     }
 
     [Fact]

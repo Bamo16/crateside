@@ -56,6 +56,9 @@ public sealed record RunRecord
     /// <summary>The detectors' report, as JSON.</summary>
     public string? Evidence { get; init; }
 
+    /// <summary>What the lookup found on each site before the judge ran, cited or not, as JSON (#176).</summary>
+    public string? Lookups { get; init; }
+
     /// <summary>The old BPM estimate, from imported history. Never written by a new run.</summary>
     public OldBpm? OldBpm { get; init; }
 }

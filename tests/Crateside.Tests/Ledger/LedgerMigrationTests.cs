@@ -12,7 +12,7 @@ public sealed class LedgerMigrationTests : IDisposable
     private const string BeforeSpelling = "20261024201525_SectionStart";
     private const string SpellingMigration = "20261025192752_AmericanSpelling";
     private const string LateReadingMigration = "20261029013237_InheritedLateReading";
-    private const string NewestMigration = "20261031183004_LiveBarNumbers";
+    private const string NewestMigration = "20261101225614_LookupsKept";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),

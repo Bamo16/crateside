@@ -26,6 +26,9 @@ public sealed record StemWarp
     /// <summary>Whether its sibling's warp is the track's: an instrumental, karaoke or the kept source.</summary>
     public bool IsAuthority { get; init; }
 
+    /// <summary>The starter the sidecar still holds, with why its marker got its beat; null for anything else.</summary>
+    public WrittenStarter? Starter { get; init; }
+
     /// <summary>The markers Live shows: every one but the last, which Live keeps and never draws.</summary>
     // Usually 1/32 beat past the anchor, but not always: a few hold it hundreds of beats out and
     // Live hides those too, so the count is what defines it rather than the distance.
@@ -201,7 +204,8 @@ public sealed class StemWarpReader(
             };
 
         var changed = File.GetLastWriteTime(sidecarPath);
-        WarpOwner owner = (awaited, written.Of(audioPath), sidecar.IsDefaultClipSaved) switch
+        var ours = written.Of(audioPath);
+        WarpOwner owner = (awaited, ours, sidecar.IsDefaultClipSaved) switch
         {
             ({ } waited, _, false) => new WarpOwner.PuttingBack(waited),
             (_, { IsUnwarped: true }, _) => new WarpOwner.Unwarped(changed),
@@ -226,6 +230,7 @@ public sealed class StemWarpReader(
                 : duration,
             TransientOrigin = origins.Of(sidecar.Audio.Transients, audioPath),
             IsAuthority = isAuthority,
+            Starter = owner is WarpOwner.Starter ? ours?.Starter : null,
         };
     }
 

@@ -105,7 +105,14 @@ replaces a lent warp or the maintainer's own.
    - its clip gain to the loudness target (ADR 0059);
    - its color by kind.
 
-   The stem goes in its Collection (table above).
+   The stem goes in its Collection (table above). `written-warps.json` records, beside the sidecar,
+   how the starter was made (`WrittenStarter`): the tempo written and the reading's, the marker in
+   seconds and its beat, the reading's beat and downbeat with its confidence and the gate in force,
+   where the beat came from (the reading's 16th placed by the fold, or the fold alone), and how the
+   bar was numbered (the reading's downbeat, or beat 0 and why). The stem's warp card on the song
+   page shows it as one line, its beats numbered from 1 as Live's ruler numbers them: "marker on
+   beat 1: downbeat confidence 0.32 under 0.6, so beat 1 (beatdetect said beat 3)". The API returns
+   it under the stem's `warp.written.starter`. Starters written before 2026-11-01 have none.
 
 ## When it does not apply
 
