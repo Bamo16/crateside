@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using Crateside.Core.Ableton;
+using Crateside.Core.Audit;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
+using Humanizer;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Orchestration.Tagging;
@@ -44,8 +46,22 @@ public sealed class TaggingDrainer(
             _ => throw new UnreachableException(),
         };
 
-        jobs.Record(videoId, JobStage.Tagging, status, error: error);
+        jobs.Record(
+            videoId,
+            JobStage.Tagging,
+            status,
+            error: error,
+            summary: outcome is TagWriteOutcome.Written(var applied)
+                ? Summarize(applied, stems)
+                : null
+        );
 
         return Task.FromResult(StageTick.Ran(subject, outcome is TagWriteOutcome.Written, error));
     }
+
+    /// <summary>What a finished tagging pass wrote, for the activity feed (#170).</summary>
+    internal static string Summarize(int applied, IReadOnlyList<TaggedStem> stems) =>
+        stems.Select(stem => stem.LedgerKey).Distinct().ToList() is [{ } key]
+            ? $"tagged {"file".ToQuantity(applied)} {key}"
+            : $"tagged {"file".ToQuantity(applied)}";
 }

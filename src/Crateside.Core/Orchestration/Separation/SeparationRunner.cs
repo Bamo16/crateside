@@ -64,9 +64,29 @@ public sealed class SeparationRunner(
             error = ShortfallFrom(order.Recipe, outputs);
         }
 
-        interlock.Release(order.VideoId, error);
+        interlock.Release(
+            order.VideoId,
+            error,
+            error is null ? Summarize(order.Recipe, outputs.Count) : null
+        );
 
         return error is null ? SeparationResult.Succeeded(outputs) : SeparationResult.Failed(error);
+    }
+
+    /// <summary>What a finished run cut, for the activity feed (#170); the feed adds how long it took.</summary>
+    internal static string Summarize(SeparationRecipe recipe, int written)
+    {
+        string[] cut = recipe.ExtractDrums
+            ? [.. recipe.Presets, "a drum guide"]
+            : [.. recipe.Presets];
+        var named = cut switch
+        {
+            [] => "nothing named",
+            [var only] => only,
+            [.. var rest, var last] => $"{string.Join(", ", rest)} and {last}",
+        };
+
+        return $"cut {named} ({"file".ToQuantity(written)})";
     }
 
     /// <summary>

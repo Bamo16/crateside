@@ -106,6 +106,16 @@ public sealed class HandoffTests : IDisposable
     }
 
     [Fact]
+    public void A_handoff_summary_counts_the_stems_and_any_superseded_files_removed()
+    {
+        Assert.Equal("staged 2 stems", HandoffDrainer.Summarize(HandoffResult.Succeeded(2)));
+        Assert.Equal(
+            "staged 1 stem, removed 2 superseded files",
+            HandoffDrainer.Summarize(HandoffResult.Succeeded(1, cleared: 2))
+        );
+    }
+
+    [Fact]
     public void Handing_off_nothing_is_a_failure_rather_than_a_quiet_success()
     {
         Assert.False(_runner.Run([]).IsSuccess);

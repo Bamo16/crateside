@@ -101,6 +101,23 @@ public sealed class SeparationRunnerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_finished_run_records_what_it_cut()
+    {
+        await RunnerPrinting("""[{"succeeded":true,"outputFiles":["v.flac","i.flac","d.flac"]}]""")
+            .RunAsync(Order(), TestContext.Current.CancellationToken);
+
+        var finished = Assert.Single(
+            Jobs.History(VideoId),
+            update => update.Status is JobStatus.Succeeded
+        );
+
+        Assert.Equal(
+            "cut vocal_full, instrumental_full and a drum guide (3 files)",
+            finished.Summary
+        );
+    }
+
+    [Fact]
     public async Task A_per_input_failure_is_caught_even_though_the_process_exited_cleanly()
     {
         // The CLI reports a track's failure inside its JSON rather than by failing the run, so
