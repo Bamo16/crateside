@@ -236,7 +236,9 @@ nor a verdict for the video ID:
   judged that has no row.
 - **`evidence`**: the evidence behind the latest verdict: its sections, sources, windows, candidates
   and every detector's readings. Track details' *Why* section draws it.
-- **`jobs`**: every line of `jobs.jsonl` for any of the track's uploads, oldest first.
+- **`jobs`**: every line of `jobs.jsonl` for any of the track's uploads, oldest first. A stage that
+  finished well says what it did in `summary` ("D major, HIGH, 2 sections; 3 turns, 150 s"); lines
+  written before summaries existed, and every line that is not a success, have none.
 - **`stems`**: each sample on disk, with the keywords and Collections Live holds for it (`tags`,
   null when it holds none) and its parsed sidecar (`warp`): whose warp it is (`owner.kind`), the
   markers in seconds and beats, the tempo read bar by bar, the default clip and loop in seconds,
@@ -305,7 +307,8 @@ shows no genre.
       "adopted": null,
       "expectedOutputs": null,
       "destination": null,
-      "heldUntil": null
+      "heldUntil": null,
+      "summary": null
     },
     {
       "id": "Zx3TrackA01:Download",
@@ -319,7 +322,8 @@ shows no genre.
       "adopted": null,
       "expectedOutputs": null,
       "destination": null,
-      "heldUntil": null
+      "heldUntil": null,
+      "summary": null
     }
   ],
   "stems": [

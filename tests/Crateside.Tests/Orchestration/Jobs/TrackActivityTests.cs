@@ -10,7 +10,9 @@ public sealed class TrackActivityTests
         int minute,
         JobStage stage,
         JobStatus status,
-        string? error = null
+        string? error = null,
+        string? summary = null,
+        DateTimeOffset? heldUntil = null
     ) =>
         new()
         {
@@ -20,6 +22,8 @@ public sealed class TrackActivityTests
             Status = status,
             Timestamp = Start.AddMinutes(minute),
             Error = error,
+            Summary = summary,
+            HeldUntil = heldUntil,
         };
 
     private static UserAction Action(int minute, UserActionKind kind, JobStage? passFrom = null) =>
@@ -108,6 +112,85 @@ public sealed class TrackActivityTests
     }
 
     [Fact]
+    public void A_finished_stage_is_one_line_with_its_summary_and_how_long_it_took()
+    {
+        var entries = TrackActivity.Build(
+            [
+                Job(0, JobStage.Separation, JobStatus.Running),
+                Job(6, JobStage.Separation, JobStatus.Succeeded, summary: "cut Vocal - Full"),
+            ],
+            [],
+            []
+        );
+
+        var entry = Assert.Single(entries);
+
+        Assert.Equal("cut Vocal - Full · 6 min", entry.Message);
+        Assert.Equal(Start.AddMinutes(6), entry.At);
+    }
+
+    [Fact]
+    public void A_stage_still_running_is_one_live_line()
+    {
+        var running = Job(0, JobStage.Verdict, JobStatus.Running);
+        var open = new TrackJob
+        {
+            Id = running.Id,
+            VideoId = "v",
+            Stage = JobStage.Verdict,
+            Status = JobStatus.Running,
+            UpdatedAt = running.Timestamp,
+            Strikes = 0,
+        };
+
+        var entry = Assert.Single(TrackActivity.Build([running], [], [], [open]));
+
+        Assert.Equal($"running since {running.Timestamp.ToLocalTime():HH:mm}", entry.Message);
+    }
+
+    [Fact]
+    public void Lines_written_before_summaries_read_as_they_did()
+    {
+        var entries = TrackActivity.Build(
+            [
+                Job(0, JobStage.Download, JobStatus.Running),
+                Job(2, JobStage.Download, JobStatus.Succeeded),
+            ],
+            [],
+            []
+        );
+
+        Assert.Equal(["started", "succeeded"], entries.Select(entry => entry.Message));
+    }
+
+    [Fact]
+    public void A_held_stage_says_why_and_when_it_tries_again()
+    {
+        var until = Start.AddMinutes(1);
+
+        var entry = Assert.Single(
+            TrackActivity.Build(
+                [
+                    Job(
+                        0,
+                        JobStage.Verdict,
+                        JobStatus.Held,
+                        "the judge's endpoint can't be reached",
+                        heldUntil: until
+                    ),
+                ],
+                [],
+                []
+            )
+        );
+
+        Assert.Equal(
+            $"held: the judge's endpoint can't be reached; next try {until.ToLocalTime():HH:mm}",
+            entry.Message
+        );
+    }
+
+    [Fact]
     public void Every_track_in_this_machines_job_log_reads_as_a_timeline_that_never_loses_a_line()
     {
         var jobs = new JobStore();
@@ -123,7 +206,14 @@ public sealed class TrackActivityTests
             var history = jobs.History(videoId);
             var entries = TrackActivity.Build(history, [], []);
 
-            Assert.Equal(history.Count, entries.Sum(entry => entry.Count));
+            // Only the "started" lines a summary replaced may go.
+            var summarized = history.Count(update => update.Summary is { Length: > 0 });
+
+            Assert.InRange(
+                entries.Sum(entry => entry.Count),
+                history.Count - summarized,
+                history.Count
+            );
             Assert.True(entries.Zip(entries.Skip(1)).All(pair => pair.First.At <= pair.Second.At));
         }
     }

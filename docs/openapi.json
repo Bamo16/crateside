@@ -1044,6 +1044,13 @@
             ],
             "description": "When a held attempt will be tried again, where the endpoint said.",
             "format": "date-time"
+          },
+          "summary": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "One line on what a finished stage did, which the activity feed shows in place of \"succeeded\" (#170); lines written before it have none."
           }
         },
         "description": "One appended line: a single state change to a job. Lines are never edited or removed, so the\r\nfile is a history and TrackJob is the fold over it."

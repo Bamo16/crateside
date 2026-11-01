@@ -52,6 +52,23 @@ public sealed class JobStoreTests : IDisposable
     }
 
     [Fact]
+    public void A_summary_survives_a_restart_and_a_line_written_without_one_still_reads()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+        File.WriteAllText(
+            _path,
+            $$$"""{"id":"{{{VideoId}}}:Evidence","videoId":"{{{VideoId}}}","stage":"Evidence","status":"Succeeded","timestamp":"2026-08-13T21:00:00+00:00"}"""
+                + Environment.NewLine
+        );
+        Store().Record(VideoId, JobStage.Tagging, JobStatus.Succeeded, summary: "tagged D maj");
+
+        var history = Store().History(VideoId);
+
+        Assert.Null(history[0].Summary);
+        Assert.Equal("tagged D maj", history[1].Summary);
+    }
+
+    [Fact]
     public void State_survives_a_restart()
     {
         Store().Record(VideoId, JobStage.Separation, JobStatus.Running, processId: 4242);

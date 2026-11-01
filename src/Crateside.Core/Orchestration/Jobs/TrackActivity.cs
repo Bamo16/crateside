@@ -11,13 +11,16 @@ public static class TrackActivity
     public const string You = "you";
     public const string Crateside = "crateside";
 
+    /// <param name="running">Jobs in flight now, whose last "started" line reads as a live "running since" one.</param>
     public static IReadOnlyList<ActivityEntry> Build(
         IEnumerable<JobUpdate> jobs,
         IEnumerable<Deletion> deletions,
-        IEnumerable<UserAction> actions
+        IEnumerable<UserAction> actions,
+        IEnumerable<TrackJob>? running = null
     )
     {
-        var merged = jobs.Select(FromJob)
+        var merged = FromJobs([.. jobs], [.. running ?? []])
+            .Select(entry => (Entry: entry, StartsPass: false))
             .Concat(deletions.Select(FromDeletion))
             .Concat(actions.Select(FromAction))
             .OrderBy(entry => entry.Entry.At)
@@ -43,24 +46,61 @@ public static class TrackActivity
         return entries;
     }
 
-    private static (ActivityEntry Entry, bool StartsPass) FromJob(JobUpdate update) =>
-        (
-            new ActivityEntry
+    /// <summary>
+    /// A stage that finished with a summary is one line, that summary and how long it took; its
+    /// "started" line goes. One still running is a single live line. A line with no summary reads as
+    /// it always has.
+    /// </summary>
+    private static IEnumerable<ActivityEntry> FromJobs(
+        IReadOnlyList<JobUpdate> updates,
+        IReadOnlyList<TrackJob> running
+    )
+    {
+        for (var i = 0; i < updates.Count; i++)
+        {
+            var update = updates[i];
+            var next = updates.Skip(i + 1).FirstOrDefault(other => other.Id == update.Id);
+            var started = updates.Take(i).LastOrDefault(other => other.Id == update.Id)
+                is { Status: JobStatus.Running } begun
+                ? begun
+                : null;
+
+            if (update is { Status: JobStatus.Running } && next is { Summary.Length: > 0 })
+                continue;
+
+            var message = update switch
+            {
+                { Adopted: true } => "picked up a process still running",
+                { Status: JobStatus.Running }
+                    when next is null
+                        && running.Any(job =>
+                            job.Id == update.Id && job.UpdatedAt == update.Timestamp
+                        ) => $"running since {update.Timestamp.ToLocalTime():HH:mm}",
+                { Status: JobStatus.Running } => "started",
+                { Summary: { Length: > 0 } summary } when started is not null =>
+                    $"{summary} · {Took(update.Timestamp - started.Timestamp)}",
+                { Summary: { Length: > 0 } summary } => summary,
+                { Status: JobStatus.Held, Error: { Length: > 0 } error, HeldUntil: { } until } =>
+                    $"held: {error}; next try {until.ToLocalTime():HH:mm}",
+                { Error: { Length: > 0 } error } =>
+                    $"{update.Status.Humanize(LetterCasing.LowerCase)}: {error}",
+                _ => update.Status.Humanize(LetterCasing.LowerCase),
+            };
+
+            yield return new ActivityEntry
             {
                 At = update.Timestamp,
                 Source = update.Stage.ToString(),
-                Message = update switch
-                {
-                    { Adopted: true } => "picked up a process still running",
-                    { Status: JobStatus.Running } => "started",
-                    { Error: { Length: > 0 } error } =>
-                        $"{update.Status.Humanize(LetterCasing.LowerCase)}: {error}",
-                    _ => update.Status.Humanize(LetterCasing.LowerCase),
-                },
+                Message = message,
                 IsProblem = update.Status is JobStatus.Failed,
-            },
-            false
-        );
+            };
+        }
+    }
+
+    private static string Took(TimeSpan span) =>
+        span.TotalMinutes >= 1
+            ? $"{Math.Round(span.TotalMinutes)} min"
+            : $"{Math.Round(span.TotalSeconds)} s";
 
     private static (ActivityEntry Entry, bool StartsPass) FromDeletion(Deletion deletion) =>
         (
