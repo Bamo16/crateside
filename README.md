@@ -22,7 +22,14 @@ It is a Blazor Server app that runs on your own PC, meant to sit on a second mon
 Ableton. There is no cloud service, no account of its own, and nothing to deploy. It is built with
 [Claude Code](https://claude.com/claude-code).
 
-<!-- Screenshots go here: the Tracks page and a song page. -->
+![The song page: the verdict, the key strip and the warp.](docs/images/song-a-top.png)
+*The top of a song page.*
+
+![The evidence behind a verdict.](docs/images/song-b-evidence.png)
+*Why a key: the evidence behind the verdict.*
+
+![The Tools page with the Camelot wheel.](docs/images/tools-camelot.png)
+*Tools.*
 
 ## What it does with a song
 
