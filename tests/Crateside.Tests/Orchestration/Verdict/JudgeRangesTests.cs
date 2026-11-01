@@ -36,7 +36,8 @@ public sealed class JudgeRangesTests : IDisposable
     private WarpGroup Group(
         IReadOnlyList<WarpMarker> markers,
         double clipStart,
-        TimeSignature? signature = null
+        TimeSignature? signature = null,
+        double seconds = 400
     )
     {
         var path = Path.Combine(_root, $"{Guid.NewGuid():n} (Instrumental - Full).flac");
@@ -44,7 +45,15 @@ public sealed class JudgeRangesTests : IDisposable
         File.WriteAllBytes(path, [1, 2, 3]);
         new AnalysisFile
         {
-            Audio = AudioAnalysis.FromSamples([.. Enumerable.Repeat(0.5f, 44_100 * 2)], 2, [], 3),
+            Audio = AudioAnalysis.FromSamples(
+                [.. Enumerable.Repeat(0.5f, 44_100 * 2)],
+                2,
+                [],
+                3
+            ) with
+            {
+                HeadTable = [(int)(seconds * 44_100)],
+            },
             Warp = new Warp { Markers = markers, TimeSignature = signature ?? new(4, 4) },
             Clip = new Clip
             {
@@ -65,7 +74,7 @@ public sealed class JudgeRangesTests : IDisposable
     [Fact]
     public void Bars_become_seconds_through_the_warp_counted_from_its_beat_0_not_the_clip_start()
     {
-        var window = JudgeRanges.Window(Warped(), new BarSpan(33, 48), "Chorus");
+        var window = JudgeRanges.Window(Warped(), new BarRange(33, 48), "Chorus");
 
         Assert.Equal(
             new RunWindow(64, 96, "Chorus", WindowAsker.User) { Bars = new(33, 48) },
@@ -80,7 +89,7 @@ public sealed class JudgeRangesTests : IDisposable
     [Fact]
     public void Persona_bar_106_is_where_the_maintainer_hears_the_modulation_in_Live()
     {
-        var window = JudgeRanges.Window(Persona(), new BarSpan(106, 106), null);
+        var window = JudgeRanges.Window(Persona(), new BarRange(106, 106), null);
 
         Assert.NotNull(window);
         Assert.Equal(141.84, window.Start, 0.01);
@@ -90,7 +99,7 @@ public sealed class JudgeRangesTests : IDisposable
     [Fact]
     public void Persona_1_to_106_starts_at_the_top_of_the_file_and_not_at_the_clip_start()
     {
-        var window = JudgeRanges.Window(Persona(), new BarSpan(1, 106), null);
+        var window = JudgeRanges.Window(Persona(), new BarRange(1, 106), null);
 
         Assert.NotNull(window);
         Assert.Equal(0, window.Start, 0.01);
@@ -115,7 +124,7 @@ public sealed class JudgeRangesTests : IDisposable
         Assert.Equal(new BarSpan(-3, -1), JudgeRanges.BarsOf(group, 0, 5));
         Assert.Equal(
             new RunWindow(1, 7, null, WindowAsker.User) { Bars = new(-2, 1) },
-            JudgeRanges.Window(group, new BarSpan(-2, 1), null)
+            JudgeRanges.Window(group, new BarRange(-2, 1), null)
         );
     }
 
@@ -126,7 +135,7 @@ public sealed class JudgeRangesTests : IDisposable
 
         Assert.Equal(
             new RunWindow(3, 6, null, WindowAsker.User) { Bars = new(3, 4) },
-            JudgeRanges.Window(group, new BarSpan(3, 4), null)
+            JudgeRanges.Window(group, new BarRange(3, 4), null)
         );
     }
 
@@ -139,7 +148,7 @@ public sealed class JudgeRangesTests : IDisposable
     public void A_bar_range_is_read_whichever_way_it_is_separated(string text)
     {
         Assert.True(JudgeRanges.TryParseBars(text, out var bars));
-        Assert.Equal(new BarSpan(33, 48), bars);
+        Assert.Equal(new BarRange(33, 48), bars);
     }
 
     [Theory]
@@ -151,7 +160,53 @@ public sealed class JudgeRangesTests : IDisposable
     public void A_bar_range_may_start_or_end_before_beat_0(string text, int first, int last)
     {
         Assert.True(JudgeRanges.TryParseBars(text, out var bars));
-        Assert.Equal(new BarSpan(first, last), bars);
+        Assert.Equal(new BarRange(first, last), bars);
+    }
+
+    [Theory]
+    [InlineData("start-105", null, 105)]
+    [InlineData("106-end", 106, null)]
+    [InlineData("106-", 106, null)]
+    [InlineData("106–", 106, null)]
+    [InlineData("start end", null, null)]
+    [InlineData("106-999", 106, 999)]
+    public void A_bar_range_may_leave_either_end_open(string text, int? first, int? last)
+    {
+        Assert.True(JudgeRanges.TryParseBars(text, out var bars));
+        Assert.Equal(new BarRange(first, last), bars);
+    }
+
+    [Theory]
+    [InlineData("-105")]
+    [InlineData("106 ")]
+    [InlineData("end-105")]
+    [InlineData("106-start")]
+    public void A_lone_or_misplaced_bound_is_refused(string text) =>
+        Assert.False(JudgeRanges.TryParseBars(text, out _));
+
+    [Fact]
+    public void Open_ends_run_to_the_files_edges_and_a_bar_past_the_end_is_clamped()
+    {
+        // Persona is 3:39 long; bar 106 is at 141.84 s.
+        var group = Persona();
+        group = Group(
+            [new(0.3135, 2.5), new(0.3135 + 60 / 176.9953 / 32, 2.5 + 1.0 / 32)],
+            132,
+            null,
+            219
+        );
+
+        var toEnd = JudgeRanges.Window(group, new BarRange(106, null), null);
+        var clamped = JudgeRanges.Window(group, new BarRange(106, 999), null);
+        var fromStart = JudgeRanges.Window(group, new BarRange(null, 105), null);
+
+        Assert.NotNull(toEnd);
+        Assert.Equal(141.84, toEnd.Start, 0.01);
+        Assert.Equal(219, toEnd.End, 0.01);
+        Assert.Equal(toEnd, clamped);
+        Assert.NotNull(fromStart);
+        Assert.Equal(0, fromStart.Start, 0.01);
+        Assert.Equal(141.84, fromStart.End, 0.01);
     }
 
     [Theory]

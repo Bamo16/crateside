@@ -38,6 +38,10 @@ judge was given those stretches, and an unlabelled window's clip-relative bars a
   1px line through each lane. Nothing before or after the clip is dimmed; the clip start is a
   reference point, not the start of what matters. The clip's detail reads
   `starts at bar 34`, or Live's `22.3.4` off a bar line.
+- **Ranges may be open and may meet** (#173): `start-105`, `106-end` and `106-` run to the file's
+  edges, and a bar past the end is clamped to it. Two ranges that meet on one bar (`1-106`,
+  `106-end`) read as a change at the start of that bar, so the first ends where the second begins.
+  Each row of the form shows the stretch it resolves to.
 
 ## Consequences
 
