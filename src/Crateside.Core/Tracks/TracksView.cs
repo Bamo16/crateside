@@ -216,6 +216,9 @@ public sealed record TracksView
 
             var stated = instruction?.Name is { Length: > 0 } name ? name : null;
 
+            var isParked = members.Any(seed => parked.Contains(seed.VideoId));
+            var isUnjudged = members.Any(seed => unjudged.Contains(seed.VideoId));
+
             return new TrackRow
             {
                 VideoId = primary.VideoId,
@@ -241,19 +244,15 @@ public sealed record TracksView
                 // The work list covers the queue item; the instruction covers everything after it
                 // leaves the playlist.
                 Plan = instruction?.Plan ?? StemPlan.Default,
-                // Want of a key outranks a shortfall once the track has been judged: the GPU has
-                // already been spent. Never judged, its stems in the unresolved-key folder are only
-                // waiting (a source-only plan copies the source there), and the shortfall that
-                // stops the verdict is what holds it.
+                // No key is the verdict's outcome: a track never judged is waiting for the judge,
+                // whatever folder its source was copied into (a source-only plan copies it into the
+                // unresolved-key folder, #178). Want of a key outranks a shortfall once judged,
+                // since the GPU has already been spent.
                 ParkedFor =
-                    members.Any(seed => parked.Contains(seed.VideoId))
-                    && (
-                        acquisition?.Stops is not true
-                        || !members.Any(seed => unjudged.Contains(seed.VideoId))
-                    )
-                        ? ParkReason.NoKey
+                    isParked && !isUnjudged ? ParkReason.NoKey
                     : acquisition?.Stops is true ? ParkReason.PremiumShortfall
                     : null,
+                WaitingForJudge = isParked && isUnjudged && acquisition?.Stops is not true,
                 Acquisition = acquisition,
                 GpuPosition = members
                     .Select(seed =>

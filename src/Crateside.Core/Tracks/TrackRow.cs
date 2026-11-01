@@ -239,6 +239,9 @@ public sealed record TrackRow
     /// </summary>
     public ParkReason? ParkedFor { get; init; }
 
+    /// <summary>Detected and never judged: the judge has it, nothing about its key is missing yet.</summary>
+    public bool WaitingForJudge { get; init; }
+
     /// <summary>
     /// How the held download turned out, or null when there is none; a finding only when
     /// <see cref="Acquisition.Stops"/> says so, not by being here.
@@ -357,6 +360,7 @@ public sealed record TrackRow
         State switch
         {
             TrackState.Queued when Lookalike is not null => "same song?",
+            TrackState.Queued when WaitingForJudge => "waiting to be judged",
             TrackState.Queued => "queued",
             TrackState.Downloading => "downloading",
             TrackState.Detecting => "detecting key",
@@ -406,6 +410,7 @@ public sealed record TrackRow
         {
             TrackState.Queued when Lookalike is { } like =>
                 $"is this {like.DisplayName}? judging waits for your answer",
+            TrackState.Queued when WaitingForJudge => "then judged, when the judge reaches it",
             TrackState.Queued when IsBackfill => "waiting for Library backfill",
             TrackState.Downloading or TrackState.Detecting when IsBackfill =>
                 "then judged by Library backfill",

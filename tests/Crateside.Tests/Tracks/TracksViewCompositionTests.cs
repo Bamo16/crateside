@@ -308,6 +308,17 @@ public sealed class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
+    public void A_source_only_track_never_judged_waits_for_the_judge_rather_than_parking_for_a_key()
+    {
+        var row = Assert.Single(Compose(View(separatedWithoutKey: new HashSet<string> { Video })));
+
+        Assert.Null(row.ParkedFor);
+        Assert.True(row.WaitingForJudge);
+        Assert.NotEqual(TrackState.Parked, row.State);
+        Assert.Equal("waiting to be judged", row.ChipLabel);
+    }
+
+    [Fact]
     public void A_download_short_of_premium_parks_the_row_over_its_source()
     {
         var row = Assert.Single(

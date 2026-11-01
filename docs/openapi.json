@@ -2762,6 +2762,10 @@
               }
             ]
           },
+          "waitingForJudge": {
+            "type": "boolean",
+            "description": "Detected and never judged: the judge has it, nothing about its key is missing yet."
+          },
           "acquisition": {
             "oneOf": [
               {
