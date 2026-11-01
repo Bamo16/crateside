@@ -239,6 +239,11 @@ nor a verdict for the video ID:
 - **`jobs`**: every line of `jobs.jsonl` for any of the track's uploads, oldest first. A stage that
   finished well says what it did in `summary` ("D major, HIGH, 2 sections; 3 turns, 150 s"); lines
   written before summaries existed, and every line that is not a success, have none.
+- **`stageNotes`**: what the two passes with no job record did to the track's samples, one line each
+  in `summary`, oldest first: the warp pass (`stage` `Warp`: "Vocal - Full: starter warp at 190.00
+  BPM, marker at 0.75 s", "Vocal - Full: Warp off: one tempo misses by 12 ms") and loudness (`stage`
+  `Loudness`: "Vocal - Full: clip gain −3.2 dB to −14 LUFS"). The activity feed merges them in with
+  the job lines.
 - **`stems`**: each sample on disk, with the keywords and Collections Live holds for it (`tags`,
   null when it holds none) and its parsed sidecar (`warp`): whose warp it is (`owner.kind`), the
   markers in seconds and beats, the tempo read bar by bar, the default clip and loop in seconds,
@@ -326,6 +331,7 @@ shows no genre.
       "summary": null
     }
   ],
+  "stageNotes": [],
   "stems": [
     {
       "path": "C:\\Music\\Staging\\Synthetic Song (Instrumental - Full).flac",

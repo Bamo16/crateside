@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Samples;
 using Crateside.Core.Warps;
 
@@ -13,7 +14,8 @@ public sealed class Leveling(
     LoudnessReader reader,
     ClipGains gains,
     SidecarWriter writer,
-    LiveAnalyses waiting
+    LiveAnalyses waiting,
+    StageNotes? notes = null
 )
 {
     private const int AtOnce = 8;
@@ -42,6 +44,7 @@ public sealed class Leveling(
     public IReadOnlyList<string> Level()
     {
         List<string> leveled = [];
+        var target = gains.Options.TargetLufs;
 
         foreach (var path in Samples())
         {
@@ -54,7 +57,12 @@ public sealed class Leveling(
                 continue;
 
             if (writer.Level(path, gain))
+            {
                 leveled.Add(path);
+
+                if (StemTagReader.Read(path)?.SourceVideoId is { } videoId)
+                    notes?.Record(videoId, "Loudness", ClipGainSummary.Of(path, gain, target));
+            }
 
             // A sidecar that could not be written is locked by Live, whose write changes its stamp.
             if (Stamp(path) is { } after)

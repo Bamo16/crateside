@@ -5,6 +5,7 @@
 @inject JobStore Jobs
 @inject DeletionLog Deletions
 @inject ActionLog Actions
+@inject StageNotes Notes
 @inject IJSRuntime Js
 
 <section id="activity" class="activity">
@@ -102,7 +103,8 @@
                     .Select(stage => Jobs.TryGet(Row.VideoId, stage, out var job) ? job : null)
                     .OfType<TrackJob>()
                     .Where(job => job.IsOpen),
-            ]
+            ],
+            Notes.For(uploads)
         );
     }
 

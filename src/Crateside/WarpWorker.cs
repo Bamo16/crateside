@@ -132,7 +132,7 @@ public sealed class WarpWorker(
 
                 break;
 
-            case WarpOutcome.Started(var bpm, var transientsFrom):
+            case WarpOutcome.Started(var bpm, var transientsFrom, _):
                 logger.LogInformation(
                     "Gave {Target} a starter warp at {Bpm} BPM, transients {Transients}",
                     target,
@@ -142,7 +142,7 @@ public sealed class WarpWorker(
 
                 break;
 
-            case WarpOutcome.Unwarped(var transientsFrom):
+            case WarpOutcome.Unwarped(var transientsFrom, _):
                 logger.LogInformation(
                     "Gave {Target} a clip with Warp off at its gain, transients {Transients}",
                     target,

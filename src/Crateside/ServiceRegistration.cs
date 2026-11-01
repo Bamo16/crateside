@@ -262,6 +262,7 @@ public static class ServiceRegistration
         services.AddSingleton<IReopenedWork, ReopenedWork>();
         services.AddSingleton<DeletionLog>();
         services.AddSingleton<ActionLog>();
+        services.AddSingleton<StageNotes>();
 
         services.AddSingleton<StageHub>();
         services.AddSingleton<StageSignals>();

@@ -1,5 +1,6 @@
 using AbleKit.Analysis;
 using Crateside.Core;
+using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Warps;
 using Microsoft.Extensions.Options;
 
@@ -18,6 +19,7 @@ public sealed class WarpLendingTests : IDisposable
 
     private readonly CratesidePaths _paths;
     private readonly WarpLending _lending;
+    private readonly StageNotes _notes;
 
     public WarpLendingTests()
     {
@@ -29,6 +31,7 @@ public sealed class WarpLendingTests : IDisposable
         Directory.CreateDirectory(_paths.StagingFolder);
         Directory.CreateDirectory(_paths.LibraryFolder);
 
+        _notes = new StageNotes(Path.Combine(_root, "stage-notes.jsonl"));
         _lending = Lending(new WarpOptions { LendAutomatically = true });
     }
 
@@ -51,7 +54,7 @@ public sealed class WarpLendingTests : IDisposable
         var loans = await _lending.LendAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(
-            new WarpLoan(recut, new WarpOutcome.Written(finished, null)),
+            new WarpLoan(recut, new WarpOutcome.Written(finished, null), "abcdefghijk"),
             Assert.Single(loans)
         );
         Assert.True(AnalysisFile.Read($"{recut}.asd").IsDefaultClipSaved);
@@ -76,7 +79,7 @@ public sealed class WarpLendingTests : IDisposable
         var loans = await _lending.LendAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(
-            new WarpLoan(recut, new WarpOutcome.Written(finished, finished)),
+            new WarpLoan(recut, new WarpOutcome.Written(finished, finished), "abcdefghijk"),
             Assert.Single(loans)
         );
         Assert.Equal(live, AnalysisFile.Read($"{recut}.asd").Audio.Transients);
@@ -132,7 +135,10 @@ public sealed class WarpLendingTests : IDisposable
         var again = await Lending(options, written: new WrittenWarps(record))
             .LendAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(new WarpLoan(vocal, new WarpOutcome.AlreadyWarped()), Assert.Single(again));
+        Assert.Equal(
+            new WarpLoan(vocal, new WarpOutcome.AlreadyWarped(), "abcdefghijk"),
+            Assert.Single(again)
+        );
         Assert.Equal(lent, File.GetLastWriteTimeUtc($"{vocal}.asd"));
     }
 
@@ -157,11 +163,24 @@ public sealed class WarpLendingTests : IDisposable
             [instrumental, vocal],
             loans
                 .Where(loan =>
-                    loan.Outcome is WarpOutcome.Started(var bpm, _) && Math.Abs(bpm - 120) < 0.01
+                    loan.Outcome is WarpOutcome.Started(var bpm, _, _) && Math.Abs(bpm - 120) < 0.01
                 )
                 .Select(loan => loan.Target)
                 .Order(StringComparer.Ordinal)
         );
+        Assert.All(
+            _notes.All(),
+            note =>
+            {
+                Assert.Equal("Warp", note.Stage);
+                Assert.Equal("abcdefghijk", note.VideoId);
+                Assert.Matches(
+                    @"^(Vocal|Instrumental) - Full: starter warp at 120\.\d\d BPM, marker at \d+\.\d\d s$",
+                    note.Summary
+                );
+            }
+        );
+        Assert.Equal(2, _notes.All().Count);
     }
 
     [Fact]
@@ -172,7 +191,14 @@ public sealed class WarpLendingTests : IDisposable
         var loans = await Lending(new WarpOptions { StarterWarps = StarterWarps.OnTheGrid })
             .LendAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(new WarpLoan(vocal, new WarpOutcome.Unwarped(null)), Assert.Single(loans));
+        Assert.Equal(
+            new WarpLoan(vocal, new WarpOutcome.Unwarped(null), "abcdefghijk"),
+            Assert.Single(loans)
+        );
+        Assert.Equal(
+            "Vocal - Full: Warp off: no tempo reading",
+            Assert.Single(_notes.All()).Summary
+        );
         Assert.False(AnalysisFile.Read($"{vocal}.asd").Warp.IsWarped);
     }
 
@@ -223,7 +249,8 @@ public sealed class WarpLendingTests : IDisposable
                 new TransientOrigins()
             ),
             Options.Create(options),
-            new Grids(bpm is { } tempo ? new StarterGrid(tempo, null, null) : null)
+            new Grids(bpm is { } tempo ? new StarterGrid(tempo, null, null) : null),
+            notes: _notes
         );
 
     private static string Stem(string root, string name, string preset)
