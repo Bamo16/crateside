@@ -8,8 +8,9 @@
 
 .head {
     display: flex;
+    flex-wrap: wrap;
     align-items: baseline;
-    gap: 12px;
+    gap: 4px 12px;
 }
 
 h3 {
@@ -92,10 +93,11 @@ h4 {
     color: var(--text-50);
 }
 
+/* One list under the other, each the kind's full width, so a name has room for artist and title. */
 .extremes {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
 .extremes-title {
@@ -114,15 +116,13 @@ ul {
 }
 
 li {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr);
     padding: 3px 0;
     border-bottom: 1px solid var(--line);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
 }
 
 .db {
-    display: inline-block;
-    min-width: 72px;
     color: var(--text-60);
 }
