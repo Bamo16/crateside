@@ -71,7 +71,7 @@
             <ul>
                 @foreach (var sample in samples)
                 {
-                    <li title="@sample.Name"><span class="mono db">@Db(sample.GainDb)</span> @sample.Name</li>
+                    <li title="@sample.Name"><span class="mono db">@Db(sample.GainDb)</span><span>@sample.Name</span></li>
                 }
             </ul>
         </div>;
