@@ -92,7 +92,7 @@ public sealed class JobHistoryTests
         Assert.Equal(
             [
                 "judged",
-                $"judging held · rate limited · until {until.ToLocalTime():t} · next:",
+                $"held · rate limited · until {until.ToLocalTime():t} · next:",
                 "judging resumed",
                 "judging started",
                 "judged",
@@ -123,7 +123,7 @@ public sealed class JobHistoryTests
         );
 
         Assert.Equal(
-            "judging held · the judge\x27s endpoint cannot be reached · trying again shortly · next:",
+            "held · endpoint cannot be reached · trying again shortly · next:",
             history.Latest.Single().What
         );
     }
@@ -144,7 +144,7 @@ public sealed class JobHistoryTests
         );
 
         Assert.Equal(
-            "judging held · the judge\x27s endpoint reported its rate limit · trying again shortly · next:",
+            "held · endpoint reported its rate limit · trying again shortly · next:",
             history.Latest.Single().What
         );
         Assert.Equal(0, history.Stages.Single(stage => stage.Stage is JobStage.Verdict).Canceled);

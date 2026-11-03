@@ -105,7 +105,7 @@ public sealed record JobHistory(
                 if (reason != holding)
                     yield return new ActivityLine(
                         update.Timestamp,
-                        $"judging held · {reason} · {(update.HeldUntil is { } until ? $"until {until.ToLocalTime():t}" : "trying again shortly")} · next:",
+                        $"held · {Briefly(reason)} · {(update.HeldUntil is { } until ? $"until {until.ToLocalTime():t}" : "trying again shortly")} · next:",
                         update.VideoId,
                         IsNext: true
                     );
@@ -153,6 +153,10 @@ public sealed record JobHistory(
 
         return starts;
     }
+
+    /// <summary>The reason as a feed line says it: "the judge's endpoint refused…" is "endpoint refused…".</summary>
+    private static string Briefly(string reason) =>
+        reason.Replace("the judge's endpoint", "endpoint", StringComparison.Ordinal);
 
     private static string ReasonOf(JobUpdate update) =>
         update.Error?.Split("; judging")[0] is { Length: > 0 } reason ? reason : "unavailable";

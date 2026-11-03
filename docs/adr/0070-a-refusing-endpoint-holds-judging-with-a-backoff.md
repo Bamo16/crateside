@@ -43,7 +43,7 @@ nothing wrong, and each was resumed once for a second session before failing.
 - A spent Claude allowance, and a missing login on Claude's own login, still pause judging
   (ADR 0067).
 - The hold is shown where it already was: the Judging card ("Held: … Trying again at …") and
-  Latest activity ("judging held · … · until …"), now always with a time.
+  Latest activity ("held · … · until …", clamped to two lines with the whole entry in a tooltip), now always with a time.
 
 ## Consequences
 
