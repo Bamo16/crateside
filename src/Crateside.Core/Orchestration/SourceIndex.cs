@@ -9,18 +9,16 @@ namespace Crateside.Core.Orchestration;
 /// Keeps <c>%LOCALAPPDATA%\crateside\source-index.json</c> current: every track's source audio on
 /// disk, held in the working set or kept as a sample, found by video ID or song (#133).
 /// </summary>
-public sealed class SourceIndex(WorkingSet workingSet, string? path = null) : ISourceLocator
+public sealed class SourceIndex(WorkingSet workingSet, CratesidePaths paths) : ISourceLocator
 {
-    private readonly string _path =
-        path
-        ?? Environment.SpecialFolder.LocalApplicationData.GetFolderPath(
-            "crateside",
-            "source-index.json"
-        );
+    private readonly string _path = paths.SourceIndexFile;
 
     private readonly Lock _gate = new();
     private string? _written;
     private volatile IReadOnlyDictionary<string, string>? _known;
+
+    internal SourceIndex(WorkingSet workingSet, string path)
+        : this(workingSet, new CratesidePaths { SourceIndexFile = path }) { }
 
     public string? PathOf(string videoId) =>
         workingSet.TryGetSource(videoId, out var held) ? held

@@ -6,16 +6,14 @@ namespace Crateside.Core.Warps;
 /// The starter-warp setting the user chose in Settings, kept in <c>%APPDATA%\crateside\warp-settings.json</c>
 /// so it outlives a restart and wins over appsettings.
 /// </summary>
-public sealed class WarpSettingsStore(string? path = null)
+public sealed class WarpSettingsStore(CratesidePaths paths)
 {
-    private readonly string _path =
-        path
-        ?? Environment.SpecialFolder.ApplicationData.GetFolderPath(
-            "crateside",
-            "warp-settings.json"
-        );
+    private readonly string _path = paths.WarpSettingsFile;
 
     private readonly Lock _gate = new();
+
+    internal WarpSettingsStore(string path)
+        : this(new CratesidePaths { WarpSettingsFile = path }) { }
 
     /// <summary>Never throws: an unreadable file reads as nothing chosen.</summary>
     public StarterWarps? Read()

@@ -16,15 +16,16 @@ public sealed record SpendDownSettings
 }
 
 /// <summary>The spend-down the user chose in Settings, kept in <c>%APPDATA%\crateside\spend-down.json</c>.</summary>
-public sealed class SpendDownStore(string? path = null)
+public sealed class SpendDownStore(CratesidePaths paths)
 {
     private const int HoursInAWeek = 168;
 
-    private readonly string _path =
-        path
-        ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "spend-down.json");
+    private readonly string _path = paths.SpendDownFile;
 
     private readonly Lock _gate = new();
+
+    internal SpendDownStore(string path)
+        : this(new CratesidePaths { SpendDownFile = path }) { }
 
     /// <summary>Never throws: an unreadable file reads as the defaults.</summary>
     public SpendDownSettings Read()

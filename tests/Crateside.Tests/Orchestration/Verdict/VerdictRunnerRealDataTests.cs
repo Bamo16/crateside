@@ -17,13 +17,13 @@ public sealed class VerdictRunnerRealDataTests
     /// <summary>A tool call's round trip: the measured per-turn floor, in tokens.</summary>
     private const int RoundTripTokens = 13_000;
 
-    private static readonly WorkingSet Set = new();
+    private static readonly WorkingSet Set = new(new CratesidePaths());
 
     private static VerdictRunner Runner =>
         new(
             TestLedger.Store(),
             Set,
-            new SourceIndex(Set),
+            new SourceIndex(Set, new CratesidePaths()),
             new ProcessRunner(),
             new EvidenceRunner(
                 Set,

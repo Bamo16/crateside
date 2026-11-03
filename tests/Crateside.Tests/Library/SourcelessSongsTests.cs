@@ -84,7 +84,7 @@ public sealed class SourcelessSongsTests : IDisposable
                     [],
                     SourcelessSongs.Scan(_library),
                     _library,
-                    new JobStore(),
+                    new JobStore(new CratesidePaths()),
                     new Dictionary<string, TrackInstruction>()
                 )
                 .Rows
@@ -126,7 +126,7 @@ public sealed class SourcelessSongsTests : IDisposable
                 [],
                 sourceless,
                 paths.LibraryFolder,
-                new JobStore(),
+                new JobStore(new CratesidePaths()),
                 new Dictionary<string, TrackInstruction>()
             )
             .Rows;

@@ -10,8 +10,8 @@ namespace Crateside.Tests.Orchestration.Verdict;
 /// <summary>The verdict selector against this machine's real working set, job store and ledger.</summary>
 public sealed class VerdictSelectorRealDataTests
 {
-    private static readonly WorkingSet Set = new();
-    private static readonly JobStore Jobs = new();
+    private static readonly WorkingSet Set = new(new CratesidePaths());
+    private static readonly JobStore Jobs = new(new CratesidePaths());
     private static readonly CratesidePaths Paths = RealPaths.Create();
 
     private static WorkItem Item(string videoId) =>

@@ -8,12 +8,14 @@ namespace Crateside.Core.WorkLists;
 /// <c>%APPDATA%\crateside\queue.json</c>, holding both the playlist settings and the track
 /// instructions, so a save of either never drops the other. The API key is never here.
 /// </summary>
-public sealed class QueueFile(IOptions<PlaylistOptions> fallback, string? path = null)
+public sealed class QueueFile(IOptions<PlaylistOptions> fallback, CratesidePaths paths)
 {
-    private readonly string _path =
-        path ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "queue.json");
+    private readonly string _path = paths.QueueFile;
     private readonly PlaylistOptions _fallback = fallback.Value;
     private readonly Lock _gate = new();
+
+    internal QueueFile(IOptions<PlaylistOptions> fallback, string path)
+        : this(fallback, new CratesidePaths { QueueFile = path }) { }
 
     private QueueDocument? _cached;
 

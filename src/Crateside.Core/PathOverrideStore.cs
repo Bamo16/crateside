@@ -6,14 +6,14 @@ namespace Crateside.Core;
 /// The folders the user changed in Settings, kept in <c>%APPDATA%\crateside\paths.json</c> and
 /// layered over <c>appsettings.json</c> at the next start.
 /// </summary>
-public sealed class PathOverrideStore(string? path = null)
+public sealed class PathOverrideStore(CratesidePaths paths)
 {
     private readonly Lock _gate = new();
 
-    public static string DefaultPath { get; } =
-        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "paths.json");
+    private readonly string _path = paths.PathOverridesFile;
 
-    private readonly string _path = path ?? DefaultPath;
+    internal PathOverrideStore(string path)
+        : this(new CratesidePaths { PathOverridesFile = path }) { }
 
     /// <summary>Never throws: an unreadable file reads as nothing changed.</summary>
     public PathOverrides Read()

@@ -3,16 +3,14 @@ using System.Text.Json.Serialization;
 namespace Crateside.Core.Orchestration.Verdict;
 
 /// <summary>The judging choices made in Settings, which override configuration (docs/judge.md).</summary>
-public sealed class JudgeSettingsStore(string? path = null)
+public sealed class JudgeSettingsStore(CratesidePaths paths)
 {
-    private readonly string _path =
-        path
-        ?? Environment.SpecialFolder.ApplicationData.GetFolderPath(
-            "crateside",
-            "judge-settings.json"
-        );
+    private readonly string _path = paths.JudgeSettingsFile;
 
     private readonly Lock _gate = new();
+
+    internal JudgeSettingsStore(string path)
+        : this(new CratesidePaths { JudgeSettingsFile = path }) { }
 
     /// <summary>Never throws: an unreadable file reads as nothing chosen.</summary>
     public EarWeight? ReadEar()

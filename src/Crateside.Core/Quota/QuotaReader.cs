@@ -13,7 +13,7 @@ public interface IQuotaReader
 /// <summary>
 /// Reads the user's five-hour Claude window from Anthropic's usage endpoint, which is undocumented.
 /// </summary>
-public sealed class QuotaReader(IHttpClientFactory clients) : IQuotaReader
+public sealed class QuotaReader(IHttpClientFactory clients, CratesidePaths paths) : IQuotaReader
 {
     public const string ClientName = "anthropic-usage";
 
@@ -23,7 +23,7 @@ public sealed class QuotaReader(IHttpClientFactory clients) : IQuotaReader
     private const string BetaHeader = "oauth-2025-04-20";
 
     /// <summary>Where Claude Code keeps its credentials. Settable so a test needs no real one.</summary>
-    public string CredentialsPath { get; init; } = DefaultCredentialsPath();
+    public string CredentialsPath { get; init; } = paths.ClaudeCredentialsFile;
 
     /// <summary>
     /// The current window, or <see cref="QuotaSnapshot.Unknown"/> — never an exception — if it
@@ -160,9 +160,6 @@ public sealed class QuotaReader(IHttpClientFactory clients) : IQuotaReader
             return null;
         }
     }
-
-    private static string DefaultCredentialsPath() =>
-        Environment.SpecialFolder.UserProfile.GetFolderPath(".claude", ".credentials.json");
 }
 
 /// <summary>

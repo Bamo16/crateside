@@ -8,7 +8,7 @@ internal static class RealPaths
 {
     public static CratesidePaths Create()
     {
-        var chosen = new PathOverrideStore().Read();
+        var chosen = new PathOverrideStore(new CratesidePaths()).Read();
 
         return new()
         {

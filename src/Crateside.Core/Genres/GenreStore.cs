@@ -6,11 +6,13 @@ namespace Crateside.Core.Genres;
 /// Each song's genre as the user settled it and as the sources suggested it, kept in
 /// <c>%APPDATA%\crateside\genres.json</c> by song identity, as the ledger keeps its key (ADR 0030).
 /// </summary>
-public sealed class GenreStore(string? path = null)
+public sealed class GenreStore(CratesidePaths paths)
 {
-    private readonly string _path =
-        path ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "genres.json");
+    private readonly string _path = paths.GenresFile;
     private readonly Lock _gate = new();
+
+    internal GenreStore(string path)
+        : this(new CratesidePaths { GenresFile = path }) { }
 
     private Dictionary<string, GenreRecord>? _cached;
 

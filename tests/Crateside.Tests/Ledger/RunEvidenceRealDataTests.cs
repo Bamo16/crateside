@@ -215,7 +215,7 @@ public sealed class RunEvidenceRealDataTests
 
         using var real = TestLedger.StoreReal();
         using var store = TestLedger.Store();
-        var working = new WorkingSet();
+        var working = new WorkingSet(new CratesidePaths());
         var checkedPages = 0;
 
         foreach (var videoId in working.VideoIds)

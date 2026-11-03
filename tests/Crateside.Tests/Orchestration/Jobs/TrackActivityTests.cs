@@ -1,3 +1,4 @@
+using Crateside.Core;
 using Crateside.Core.Orchestration.Jobs;
 
 namespace Crateside.Tests.Orchestration.Jobs;
@@ -193,7 +194,7 @@ public sealed class TrackActivityTests
     [Fact]
     public void Every_track_in_this_machines_job_log_reads_as_a_timeline_that_never_loses_a_line()
     {
-        var jobs = new JobStore();
+        var jobs = new JobStore(new CratesidePaths());
 
         Assert.SkipUnless(File.Exists(jobs.Path), "Needs this machine's jobs.jsonl.");
 

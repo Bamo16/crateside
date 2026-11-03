@@ -9,15 +9,17 @@ namespace Crateside.Core.Playlist;
 /// Google's token store, encrypted at rest with Windows DPAPI — no defense against anything
 /// running as this user (<c>docs/secrets.md</c>).
 /// </summary>
-public sealed class ProtectedTokenStore(IDataProtectionProvider provider, string? directory = null)
+public sealed class ProtectedTokenStore(IDataProtectionProvider provider, CratesidePaths paths)
     : IDataStore
 {
     private const string Purpose = "crateside.queue.oauth.v1";
 
     private readonly IDataProtector _protector = provider.CreateProtector(Purpose);
 
-    private readonly string _directory =
-        directory ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "tokens");
+    private readonly string _directory = paths.TokensFolder;
+
+    internal ProtectedTokenStore(IDataProtectionProvider provider, string directory)
+        : this(provider, new CratesidePaths { TokensFolder = directory }) { }
 
     /// <summary>Whether any token is stored at all — "have we ever consented?".</summary>
     public bool HasStoredToken =>

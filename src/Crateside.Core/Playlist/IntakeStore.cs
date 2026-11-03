@@ -6,11 +6,13 @@ namespace Crateside.Core.Playlist;
 /// What crateside keeps in <c>%APPDATA%\crateside\intake.json</c> about a playlist entry, so it
 /// never has to read the entry again (ADR 0021).
 /// </summary>
-public sealed class IntakeStore(string? path = null)
+public sealed class IntakeStore(CratesidePaths paths)
 {
-    private readonly string _path =
-        path ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "intake.json");
+    private readonly string _path = paths.IntakeFile;
     private readonly Lock _gate = new();
+
+    internal IntakeStore(string path)
+        : this(new CratesidePaths { IntakeFile = path }) { }
 
     private IReadOnlyList<IntakeRecord>? _cached;
     private bool _durable = true;

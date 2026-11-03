@@ -6,13 +6,14 @@ namespace Crateside.Core.Orchestration.Jobs;
 /// Everything the user did to a track, in <c>%APPDATA%\crateside\actions.jsonl</c>: the half of a
 /// track's activity that <c>jobs.jsonl</c> cannot say (#59).
 /// </summary>
-public sealed class ActionLog(string? path = null, TimeProvider? time = null)
+public sealed class ActionLog(CratesidePaths paths, TimeProvider? time = null)
 {
-    private readonly string _path =
-        path
-        ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "actions.jsonl");
+    private readonly string _path = paths.ActionsFile;
     private readonly TimeProvider _time = time ?? TimeProvider.System;
     private readonly Lock _gate = new();
+
+    internal ActionLog(string path, TimeProvider? time = null)
+        : this(new CratesidePaths { ActionsFile = path }, time) { }
 
     /// <summary>Records nothing, for a caller with nowhere to say it.</summary>
     public static ActionLog None { get; } = new(string.Empty);

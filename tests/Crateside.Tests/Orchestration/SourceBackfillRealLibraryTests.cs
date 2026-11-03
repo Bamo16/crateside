@@ -18,7 +18,7 @@ public sealed class SourceBackfillRealLibraryTests
             "no real ledger or library on this machine"
         );
 
-        var set = new WorkingSet();
+        var set = new WorkingSet(new CratesidePaths());
         using var store = TestLedger.StoreReal();
         var missing = new SourceBackfill(
             store,

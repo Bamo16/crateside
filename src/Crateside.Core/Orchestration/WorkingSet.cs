@@ -7,7 +7,7 @@ namespace Crateside.Core.Orchestration;
 /// Everything crateside is holding about one track while that track is in flight: the source
 /// audio it acquired and the evidence it produced from it.
 /// </summary>
-public sealed class WorkingSet(string? root = null)
+public sealed class WorkingSet(CratesidePaths paths)
 {
     /// <summary>The evidence from the whole-file detection — the one a verdict run starts from.</summary>
     public const string EvidenceFileName = "evidence.json";
@@ -26,9 +26,10 @@ public sealed class WorkingSet(string? root = null)
     /// <summary>The largest evidence file worth carrying rather than pointing at.</summary>
     private const long MaxInlineBytes = 32 * 1024;
 
-    private readonly string _root =
-        root
-        ?? Environment.SpecialFolder.LocalApplicationData.GetFolderPath("crateside", "working");
+    private readonly string _root = paths.WorkingFolder;
+
+    internal WorkingSet(string root)
+        : this(new CratesidePaths { WorkingFolder = root }) { }
 
     /// <summary>Every video ID currently holding a working set.</summary>
     public IReadOnlyList<string> VideoIds =>

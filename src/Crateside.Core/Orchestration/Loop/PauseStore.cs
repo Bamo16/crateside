@@ -6,12 +6,14 @@ namespace Crateside.Core.Orchestration.Loop;
 /// Whether the user has paused separation or judging, kept in <c>%APPDATA%\crateside\paused.json</c>
 /// so a pause outlives a restart. Only the user's own pause is kept; both run when nothing is.
 /// </summary>
-public sealed class PauseStore(string? path = null)
+public sealed class PauseStore(CratesidePaths paths)
 {
-    private readonly string _path =
-        path ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "paused.json");
+    private readonly string _path = paths.PausedFile;
 
     private readonly Lock _gate = new();
+
+    internal PauseStore(string path)
+        : this(new CratesidePaths { PausedFile = path }) { }
 
     /// <summary>Never throws: an unreadable file reads as nothing paused.</summary>
     public PausedStages Read()
