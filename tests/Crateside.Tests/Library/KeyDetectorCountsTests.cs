@@ -39,6 +39,15 @@ public sealed class KeyDetectorCountsTests
     }
 
     [Fact]
+    public void Only_the_detectors_crateside_still_runs_are_shown()
+    {
+        Assert.Equal(
+            ["keydetect", "madmom", "edma"],
+            KeyDetectorCounts.Names.Select(name => name.Shown)
+        );
+    }
+
+    [Fact]
     public void The_ledger_gives_every_song_one_place_per_detector()
     {
         Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
@@ -50,6 +59,7 @@ public sealed class KeyDetectorCountsTests
         );
 
         Assert.True(counts.Songs > 0);
+        Assert.DoesNotContain(counts.Detectors, tally => tally.Name is "crema" or "librosa");
         Assert.All(
             counts.Detectors,
             tally => Assert.Equal(counts.Songs, tally.ByMiss.Values.Sum())
