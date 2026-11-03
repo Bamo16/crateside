@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using AbleKit.Analysis;
+using Crateside.Core.Beats;
+using Crateside.Core.Library;
 
 namespace Crateside.Demo;
 
@@ -61,12 +63,55 @@ internal static class DemoAudio
             throw new InvalidOperationException($"ffmpeg could not write {path}: {error}");
     }
 
+    /// <summary>
+    /// What beatdetect read on the song's instrumental, set up so the starter warp fares as it did on a real machine
+    /// (the sidecar's first beat is beat 1 for a starter left at beat 0); null where the song is left out of that panel.
+    /// </summary>
+    public static BeatReading? Reading(DemoTrack track)
+    {
+        if (track.Fate is not { } fate)
+            return null;
+
+        var beatMs = 60_000 / track.Bpm;
+        var lead = Lead * 1000;
+        var bpm =
+            fate is StarterFate.OtherOctave
+                ? track.Bpm < 110
+                    ? track.Bpm * 2
+                    : track.Bpm / 2
+                : track.Bpm;
+        var (beat, downbeat, confidence) = fate switch
+        {
+            StarterFate.Kept => (lead, lead, 0.8),
+            StarterFate.OtherOctave => (lead, lead, 0.8),
+            StarterFate.BeatMoved => (lead + 0.4 * beatMs, lead + 0.4 * beatMs, 0.8),
+            StarterFate.LeftAtBeatZero => (lead, lead, 0.3),
+            _ => throw new UnreachableException(),
+        };
+
+        return new BeatReading
+        {
+            Bpm = bpm,
+            Confidence = 0.9,
+            TempoSpread = 0.02,
+            BeatOffsetMs = beat,
+            DownbeatOffsetMs = downbeat,
+            DownbeatConfidence = confidence,
+            BeatsPerBar = 4,
+            TempoWander = 0.01,
+            Windows = [.. Enumerable.Repeat(bpm, Math.Max(3, track.Seconds / 30))],
+        };
+    }
+
     /// <summary>A sidecar with the user's warp: markers at the tempo from the first downbeat, and a saved default clip.</summary>
     public static AnalysisFile Sidecar(DemoTrack track, DemoStem stem, double gain, long fileSize)
     {
         var secondsPerBeat = 60 / track.Bpm;
         var samples = Waveform(track, stem);
         var tail = 1 / 64.0;
+
+        // A starter left at beat 0 is wrong when the finished warp numbers its first beat 1; the clip then starts a bar on.
+        var first = track.Fate is StarterFate.LeftAtBeatZero ? 1 : 0;
         List<Transient> transients = [];
 
         for (var step = 0; Lead + step * secondsPerBeat / 4 < track.Seconds - 0.1; step++)
@@ -86,16 +131,16 @@ internal static class DemoAudio
             {
                 Markers =
                 [
-                    new(Lead, 0),
-                    new(Lead + 4 * secondsPerBeat, 4),
-                    new(Lead + 4 * secondsPerBeat + tail, 4 + tail * track.Bpm / 60),
+                    new(Lead, first),
+                    new(Lead + 4 * secondsPerBeat, first + 4),
+                    new(Lead + 4 * secondsPerBeat + tail, first + 4 + tail * track.Bpm / 60),
                 ],
             },
             Clip = new Clip
             {
-                LoopStart = 0,
-                LoopEnd = Bars(track) * 4,
-                OutMarker = Bars(track) * 4,
+                LoopStart = first * 4,
+                LoopEnd = Bars(track) * 4 + first * 4,
+                OutMarker = Bars(track) * 4 + first * 4,
                 LoopOn = false,
                 SampleVolume = (float)gain,
             },

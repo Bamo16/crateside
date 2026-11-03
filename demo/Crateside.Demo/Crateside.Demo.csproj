@@ -6,6 +6,7 @@
 
     <ItemGroup>
         <EmbeddedResource Include="verdicts.json" LogicalName="verdicts.json" />
+        <EmbeddedResource Include="library.json" LogicalName="library.json" />
     </ItemGroup>
 
     <ItemGroup>
