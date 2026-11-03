@@ -1,0 +1,4646 @@
+[
+ {
+  "artist": "Taylor Swift",
+  "title": "Style",
+  "confidence": "High",
+  "tonic": "D",
+  "mode": "Ionian",
+  "mixed": false,
+  "reasoning": "keydetect, madmom and Essentia all name D major, and the chord stream supports it. Musicnotes' original published key is D major.\n\nHooktheory agrees on D major for the chorus and bridge but hears the verse in B minor, which the sectioned evidence backs, so the verse is recorded as its own section.",
+  "tonicCheck": "The chorus loop Bm-G-D-G leans on D as home, and the fade resolves A (V) to D (I). The verse sits on Bm with no cadence to B, so it reads as a relative section, not the tonic. The alternate G major never resolves to G.",
+  "withheldReasoning": null,
+  "sections": [
+   {
+    "label": "Verse",
+    "tonic": "B",
+    "mode": "Aeolian",
+    "start": 0.0
+   },
+   {
+    "label": "Chorus",
+    "tonic": "D",
+    "mode": "Ionian",
+    "start": 71.55
+   }
+  ],
+  "sources": [
+   {
+    "url": "https://www.musicnotes.com/sheetmusic/taylor-swift/style/MN0143350",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "D Major (orig. published key, Piano/Vocal/Chords)",
+    "statesKey": "D major",
+    "statesMode": "Ionian",
+    "note": "Whole-song chart, agrees with the center",
+    "sections": null
+   },
+   {
+    "url": "https://www.hooktheory.com/theorytab/view/taylor-swift/style-%28taylors-version%29",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "B Minor (intro, verse, pre-chorus), D Major (chorus, bridge)",
+    "statesKey": "D major",
+    "statesMode": "Ionian",
+    "note": "Taylor's Version; 13 contributors",
+    "sections": [
+     "Intro",
+     "Verse",
+     "Pre-Chorus",
+     "Chorus",
+     "Bridge"
+    ]
+   }
+  ],
+  "candidates": [
+   {
+    "key": "B minor",
+    "why": "The relative; it carries the verse, but no cadence resolves to B."
+   },
+   {
+    "key": "G major",
+    "why": "keydetect's runner-up; the G chords never resolve home."
+   }
+  ],
+  "evidence": {
+   "algorithms": {
+    "ffmpeg_keydetect": {
+     "key": "D major",
+     "r": 0.815,
+     "r_flag": "trust band (>0.75; watch for relative-key swap)",
+     "key_alt": "G major",
+     "key_alt_confidence": 0.692,
+     "key_reranked": false
+    },
+    "madmom": {
+     "key": "D major",
+     "confidence": 0.9087
+    },
+    "essentia_edma": {
+     "key": "D major",
+     "confidence": 0.867
+    }
+   },
+   "backers": [
+    "madmom",
+    "essentia_edma"
+   ],
+   "pairwise_agreement": [
+    {
+     "pair": "madmom+ffmpeg",
+     "status": "full",
+     "recommended": "D major"
+    },
+    {
+     "pair": "edma+ffmpeg",
+     "status": "full",
+     "recommended": "D major"
+    },
+    {
+     "pair": "madmom+edma",
+     "status": "full",
+     "recommended": "D major"
+    }
+   ],
+   "chords": [
+    "Bm",
+    "G",
+    "Bm",
+    "G",
+    "Bm",
+    "G",
+    "Bm",
+    "G",
+    "Bm",
+    "G",
+    "Em",
+    "F#m",
+    "Bm",
+    "G",
+    "Bm",
+    "G",
+    "Bm",
+    "D",
+    "G",
+    "D",
+    "G",
+    "D",
+    "G",
+    "D",
+    "Bm",
+    "G",
+    "D",
+    "Bm",
+    "G",
+    "Bm",
+    "G",
+    "Bm",
+    "G",
+    "Em",
+    "F#m",
+    "Bm",
+    "G",
+    "D",
+    "Bm",
+    "D",
+    "G",
+    "D",
+    "G",
+    "D",
+    "G",
+    "Bm",
+    "D",
+    "G",
+    "D",
+    "G",
+    "D",
+    "Bm",
+    "D",
+    "G",
+    "D",
+    "G",
+    "Bm",
+    "D",
+    "G",
+    "D",
+    "A",
+    "D"
+   ],
+   "key_events": [
+    {
+     "t": 0.29,
+     "key": "B",
+     "r": 0.35
+    },
+    {
+     "t": 0.35,
+     "key": "A",
+     "r": 0.49
+    },
+    {
+     "t": 0.4,
+     "key": "F#m",
+     "r": 0.56
+    },
+    {
+     "t": 0.6,
+     "key": "Bm",
+     "r": 0.71
+    },
+    {
+     "t": 71.55,
+     "key": "D",
+     "r": 0.77
+    },
+    {
+     "t": 77.04,
+     "key": "G",
+     "r": 0.72
+    },
+    {
+     "t": 81.54,
+     "key": "D",
+     "r": 0.78
+    },
+    {
+     "t": 87.24,
+     "key": "G",
+     "r": 0.72
+    },
+    {
+     "t": 91.59,
+     "key": "D",
+     "r": 0.79
+    },
+    {
+     "t": 92.24,
+     "key": "Bm",
+     "r": 0.7
+    },
+    {
+     "t": 97.15,
+     "key": "G",
+     "r": 0.71
+    },
+    {
+     "t": 101.65,
+     "key": "D",
+     "r": 0.79
+    },
+    {
+     "t": 102.44,
+     "key": "Bm",
+     "r": 0.71
+    },
+    {
+     "t": 107.25,
+     "key": "G",
+     "r": 0.71
+    },
+    {
+     "t": 112.55,
+     "key": "Bm",
+     "r": 0.71
+    },
+    {
+     "t": 117.14,
+     "key": "G",
+     "r": 0.72
+    },
+    {
+     "t": 122.6,
+     "key": "Bm",
+     "r": 0.71
+    },
+    {
+     "t": 127.3,
+     "key": "G",
+     "r": 0.72
+    },
+    {
+     "t": 132.85,
+     "key": "Bm",
+     "r": 0.71
+    },
+    {
+     "t": 137.74,
+     "key": "G",
+     "r": 0.73
+    },
+    {
+     "t": 140.6,
+     "key": "D",
+     "r": 0.78
+    },
+    {
+     "t": 141.74,
+     "key": "Bm",
+     "r": 0.71
+    },
+    {
+     "t": 142.45,
+     "key": "D",
+     "r": 0.78
+    },
+    {
+     "t": 147.99,
+     "key": "G",
+     "r": 0.72
+    },
+    {
+     "t": 152.34,
+     "key": "D",
+     "r": 0.79
+    },
+    {
+     "t": 158,
+     "key": "G",
+     "r": 0.72
+    },
+    {
+     "t": 162.25,
+     "key": "D",
+     "r": 0.79
+    },
+    {
+     "t": 168.15,
+     "key": "G",
+     "r": 0.72
+    },
+    {
+     "t": 172.89,
+     "key": "Bm",
+     "r": 0.69
+    },
+    {
+     "t": 177.65,
+     "key": "D",
+     "r": 0.8
+    },
+    {
+     "t": 178.14,
+     "key": "G",
+     "r": 0.71
+    },
+    {
+     "t": 182.59,
+     "key": "D",
+     "r": 0.8
+    },
+    {
+     "t": 188.44,
+     "key": "G",
+     "r": 0.71
+    },
+    {
+     "t": 192.6,
+     "key": "D",
+     "r": 0.8
+    },
+    {
+     "t": 198.15,
+     "key": "G",
+     "r": 0.7
+    },
+    {
+     "t": 202.49,
+     "key": "D",
+     "r": 0.81
+    },
+    {
+     "t": 208.55,
+     "key": "G",
+     "r": 0.7
+    },
+    {
+     "t": 213.5,
+     "key": "D",
+     "r": 0.81
+    },
+    {
+     "t": 218.6,
+     "key": "G",
+     "r": 0.7
+    },
+    {
+     "t": 222.89,
+     "key": "D",
+     "r": 0.81
+    }
+   ],
+   "versions": {
+    "ffmpeg": "ffmpeg version 9.0-NoMercy-keydetect-v1.3.0 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg_sha256": "28f445ee6e65c4337e8fca617763af9e3816af7f3920983edcf34b16a7173a96",
+    "onnxruntime": "1.30.0.0",
+    "madmom_model": "key_cnn 2018 (madmom_models), as ONNX"
+   }
+  },
+  "duration": 238
+ },
+ {
+  "artist": "Adele",
+  "title": "Rolling in the Deep",
+  "confidence": "High",
+  "tonic": "C",
+  "mode": "Aeolian",
+  "mixed": false,
+  "reasoning": "crema and ffmpeg_keydetect agree on C minor, and ffmpeg's r=0.893 sits in the trust band; only librosa_ks (the weaker, template-correlation detector) dissents with G minor, which the chord evidence above directly rules out (Ab appears repeatedly but isn't in G minor's diatonic set). crema's runner-up, D# major at a 0.787 ratio, is the relative-major swap risk this tool watches for, but it's ruled out the same way HIGH confidence normally requires a positive tonic argument, not just algorithm counting: G major triads (containing B natural, the raised leading tone into C) resolving into Cm/C throughout the progression are classic V-i dominant motion in a minor key, which has no equivalent pull in Eb major (where G would be a plain diatonic iii). Two authoritative human sources -- Hooktheory's multi-contributor TheoryTab and Musicnotes' originally-published sheet music -- both independently state C minor, and Hooktheory's stated 105 BPM matches the runner's rough beat-detect BPM of 104.86 almost exactly, with no octave ambiguity.",
+  "tonicCheck": "The chord list is dominated by G# (Ab, bVI), A# (Bb, bVII) and Cm (i), all diatonic to C natural minor -- and the occasional G/Gm and C/Cm alternation matches Hooktheory's open-fifth voicings, which a chord recognizer can read as either major or minor triad off the same power chord. Critically, G# (Ab) is not diatonic to G minor (G natural minor has no Ab), which rules out librosa's G minor call rather than just failing to support it. The key-flicker log settles almost entirely into a C/Cm oscillation from t=1.2s onward after a brief unstable intro (Dm/Bm/G#m/B, all low-r and gone by t=0.9s); there is no sustained flicker toward G minor or D#/Eb major, so this isn't a relative- or parallel-swap in progress -- it's noise on a mostly percussive intro before the tonic locks in.",
+  "withheldReasoning": null,
+  "sections": [],
+  "sources": [
+   {
+    "url": "https://www.hooktheory.com/theorytab/view/adele/rolling-in-the-deep",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "C minor, common time, 105 BPM; verse/chorus built on open-fifth i5-v5-VII5 voicings",
+    "statesKey": "C minor",
+    "statesMode": null,
+    "note": "Hooktheory multi-contributor TheoryTab",
+    "sections": null
+   },
+   {
+    "url": "https://www.musicnotes.com/sheetmusic/adele/rolling-in-the-deep/MN0089577",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "Sheet music sold as originally published in C minor",
+    "statesKey": "C minor",
+    "statesMode": null,
+    "note": "Musicnotes original-key listing, not a beginner transposition",
+    "sections": null
+   }
+  ],
+  "candidates": [],
+  "evidence": {
+   "segment": null,
+   "algorithms": {
+    "librosa_ks": {
+     "key": "G minor",
+     "confidence": 0.6046141029597116,
+     "error": null
+    },
+    "crema": {
+     "key": "C minor",
+     "confidence": null,
+     "runner_up": {
+      "key": "D# major",
+      "ratio": 0.787
+     },
+     "error": null
+    },
+    "ffmpeg_keydetect": {
+     "key": "C minor",
+     "r": 0.905,
+     "r_flag": "trust band (>0.75; watch for relative-key swap)",
+     "key_alt": "D# major",
+     "key_alt_confidence": 0.684,
+     "key_reranked": false
+    },
+    "madmom": {
+     "key": "C minor",
+     "confidence": 0.549
+    },
+    "essentia_edma": {
+     "key": "C minor",
+     "confidence": 0.8802
+    }
+   },
+   "pairwise_agreement": [
+    {
+     "pair": "madmom+ffmpeg",
+     "status": "full",
+     "recommended": "C minor"
+    },
+    {
+     "pair": "edma+ffmpeg",
+     "status": "full",
+     "recommended": "C minor"
+    },
+    {
+     "pair": "madmom+edma",
+     "status": "full",
+     "recommended": "C minor"
+    }
+   ],
+   "chords": [
+    "G",
+    "Gm",
+    "G#",
+    "A#",
+    "Gm",
+    "G",
+    "Gm",
+    "C",
+    "A#",
+    "D#",
+    "G#",
+    "A#",
+    "C",
+    "Cm",
+    "A#",
+    "G#",
+    "A#",
+    "G#",
+    "A#",
+    "C",
+    "Cm",
+    "A#",
+    "G#",
+    "A#",
+    "G",
+    "Cm",
+    "F",
+    "Cm",
+    "F",
+    "Gm",
+    "C",
+    "Cm",
+    "A#",
+    "G#",
+    "A#",
+    "Cm",
+    "D#",
+    "A#",
+    "D#",
+    "G#",
+    "Cm",
+    "G#",
+    "A#",
+    "C",
+    "Cm",
+    "A#",
+    "D#",
+    "G#",
+    "A#",
+    "C",
+    "Cm",
+    "A#",
+    "G#",
+    "A#",
+    "Cm",
+    "A#",
+    "D#",
+    "G#",
+    "A#",
+    "Cm",
+    "A#",
+    "G#",
+    "A#",
+    "Am"
+   ],
+   "key_events": [
+    {
+     "t": 0.5,
+     "key": "Dm",
+     "r": 0.67
+    },
+    {
+     "t": 0.6,
+     "key": "Bm",
+     "r": 0.65
+    },
+    {
+     "t": 0.69,
+     "key": "B",
+     "r": 0.58
+    },
+    {
+     "t": 0.74,
+     "key": "G#m",
+     "r": 0.62
+    },
+    {
+     "t": 0.79,
+     "key": "B",
+     "r": 0.63
+    },
+    {
+     "t": 1.05,
+     "key": "Cm",
+     "r": 0.46
+    },
+    {
+     "t": 3.24,
+     "key": "C",
+     "r": 0.63
+    },
+    {
+     "t": 9.89,
+     "key": "Cm",
+     "r": 0.72
+    }
+   ],
+   "bpm_rough": 104.86,
+   "versions": {
+    "ffmpeg": "ffmpeg version 9.0-NoMercy-keydetect-v1.3.0 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg_sha256": "28f445ee6e65c4337e8fca617763af9e3816af7f3920983edcf34b16a7173a96",
+    "onnxruntime": "1.30.0.0",
+    "madmom_model": "key_cnn 2018 (madmom_models), as ONNX"
+   },
+   "backers": [
+    "madmom",
+    "essentia_edma"
+   ],
+   "read_after_verdict": {
+    "at": "2026-10-25T13:55:48.4806990+00:00"
+   }
+  },
+  "duration": 25
+ },
+ {
+  "artist": "Daft Punk ft. Pharrell Williams, Nile Rodgers",
+  "title": "Get Lucky",
+  "confidence": "High",
+  "tonic": "B",
+  "mode": "Dorian",
+  "mixed": false,
+  "reasoning": "keydetect gives B minor at r 0.833, backed by Essentia; madmom dissents to D major, the relative. The tonic B is therefore agreed across detectors and by Hooktheory. The mode is settled by Hooktheory's whole-song B dorian reading, consistent with the III and IV loop.",
+  "tonicCheck": "The loop Bm–D–F#m–E turns on B as i, with D (III) and E (IV) hanging off it; no cadence lands on D or F#, so neither the relative D major nor the fifth F# is a center. The raised sixth over B makes it dorian, not aeolian.",
+  "withheldReasoning": null,
+  "sections": [
+   {
+    "label": "Verse",
+    "tonic": "B",
+    "mode": "Dorian",
+    "start": 0.0
+   },
+   {
+    "label": "Pre-Chorus and Chorus",
+    "tonic": "B",
+    "mode": "Dorian",
+    "start": null
+   },
+   {
+    "label": "Outro",
+    "tonic": "B",
+    "mode": "Dorian",
+    "start": null
+   }
+  ],
+  "sources": [
+   {
+    "url": "https://www.hooktheory.com/theorytab/view/daft-punk/get-lucky",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "B dorian (Verse, Pre-Chorus and Chorus, Outro)",
+    "statesKey": "B minor",
+    "statesMode": "Dorian",
+    "note": "27 contributors; whole song listed as B dorian",
+    "sections": [
+     "Verse",
+     "Pre-Chorus and Chorus",
+     "Outro"
+    ]
+   }
+  ],
+  "candidates": [
+   {
+    "key": "D major",
+    "why": "madmom's dissent and keydetect's runner-up, but the loop never resolves to D."
+   },
+   {
+    "key": "B aeolian",
+    "why": "keydetect's own answer; the same tonic, but the raised sixth points to dorian."
+   }
+  ],
+  "evidence": {
+   "algorithms": {
+    "ffmpeg_keydetect": {
+     "key": "B minor",
+     "r": 0.833,
+     "r_flag": "trust band (>0.75; watch for relative-key swap)",
+     "key_alt": "D major",
+     "key_alt_confidence": 0.625,
+     "key_reranked": false
+    },
+    "madmom": {
+     "key": "D major",
+     "confidence": 0.3191
+    },
+    "essentia_edma": {
+     "key": "B minor",
+     "confidence": 0.8232
+    }
+   },
+   "chords": [
+    "Bm",
+    "D",
+    "F#m",
+    "E",
+    "Bm",
+    "D",
+    "F#m",
+    "E",
+    "Bm",
+    "D",
+    "F#m",
+    "E",
+    "Bm",
+    "D",
+    "F#m",
+    "E",
+    "Bm",
+    "B",
+    "D",
+    "Bm",
+    "D",
+    "F#m",
+    "F#",
+    "F#m",
+    "E",
+    "Bm",
+    "D",
+    "Bm",
+    "D",
+    "Em",
+    "D",
+    "E",
+    "D",
+    "Bm",
+    "D",
+    "Bm",
+    "D",
+    "Bm",
+    "E",
+    "B",
+    "Bm",
+    "D",
+    "F#m",
+    "E",
+    "Bm",
+    "D",
+    "F#m",
+    "E",
+    "Bm",
+    "D",
+    "F#m",
+    "E",
+    "Bm",
+    "D",
+    "F#m",
+    "E",
+    "Bm",
+    "D",
+    "F#m",
+    "E",
+    "Bm",
+    "D",
+    "F#m",
+    "E"
+   ],
+   "key_events": [
+    {
+     "t": 0.19,
+     "key": "G",
+     "r": 0.59
+    },
+    {
+     "t": 0.24,
+     "key": "Bm",
+     "r": 0.75
+    }
+   ],
+   "backers": [
+    "essentia_edma"
+   ],
+   "pairwise_agreement": [
+    {
+     "pair": "madmom+ffmpeg",
+     "status": "relative",
+     "note": "relative keys: D major and B minor"
+    },
+    {
+     "pair": "edma+ffmpeg",
+     "status": "full",
+     "recommended": "B minor"
+    },
+    {
+     "pair": "madmom+edma",
+     "status": "relative",
+     "note": "relative keys: D major and B minor"
+    }
+   ],
+   "versions": {
+    "ffmpeg": "ffmpeg version 9.0-NoMercy-keydetect-v1.3.0 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg_sha256": "28f445ee6e65c4337e8fca617763af9e3816af7f3920983edcf34b16a7173a96",
+    "onnxruntime": "1.30.0.0",
+    "madmom_model": "key_cnn 2018 (madmom_models), as ONNX"
+   }
+  },
+  "duration": 15
+ },
+ {
+  "artist": "Michael Jackson",
+  "title": "Beat It",
+  "confidence": "Medium",
+  "tonic": "D#",
+  "mode": "Aeolian",
+  "mixed": false,
+  "reasoning": "keydetect's D# minor is backed by Essentia at r 0.873, and Hooktheory, with 11 contributors across every section, names D# minor for all but the intro. madmom's A# minor is the fifth, the weakest kind of split.\n\nHeld at MEDIUM: Musicnotes publishes the official edition in E minor, a transposition that contradicts the recording's chords. The whole-track agreement and the cadence outweigh it, but an authoritative page differing keeps this short of HIGH.",
+  "tonicCheck": "The loop is D#m (i) with C# (VII), B (VI), A#m (v) and F# (III); D# major (V) appears and resolves back to D#m (i). A#m is the v of D# minor, not the tonic, so madmom's A# minor reads a v-i as its i-v. The G-labeled intro is a sparse riff in the relative.",
+  "withheldReasoning": null,
+  "sections": [
+   {
+    "label": "Intro",
+    "tonic": "G",
+    "mode": "Ionian",
+    "start": 0.0
+   },
+   {
+    "label": "Verse/Chorus",
+    "tonic": "D#",
+    "mode": "Aeolian",
+    "start": 45.64
+   }
+  ],
+  "sources": [
+   {
+    "url": "https://www.hooktheory.com/theorytab/view/michael-jackson/beat-it",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "D# minor for Verse, Chorus, Bridge and Instrumental; G major for the Intro",
+    "statesKey": "D# minor",
+    "statesMode": "Aeolian",
+    "note": "11 contributors, all sections analyzed; whole-song coverage",
+    "sections": [
+     "Intro",
+     "Verse",
+     "Chorus",
+     "Bridge",
+     "Instrumental"
+    ]
+   },
+   {
+    "url": "https://www.musicnotes.com/sheetmusic/michael-jackson/beat-it/MN0041780_U7",
+    "via": null,
+    "kind": "Corroborating",
+    "states": "Original Published Key E minor; the edition viewed is transposed to B minor",
+    "statesKey": "E minor",
+    "statesMode": "Aeolian",
+    "note": "Official Sony/ATV edition but a transposition; its pitch content (no C#, F#, D#, A#) does not fit the recording's chords",
+    "sections": null
+   }
+  ],
+  "candidates": [
+   {
+    "key": "A# minor",
+    "why": "madmom's dissent; A#m is the v of D# minor, so its repeated pairing with D#m is a v-i, not a tonic loop."
+   },
+   {
+    "key": "G major",
+    "why": "The relative, and Hooktheory's label for the sparse intro only; nothing in the verse or chorus resolves to G."
+   },
+   {
+    "key": "E minor",
+    "why": "Musicnotes' Original Published Key, but the recording's chords contain C#, F#, D# and A#, which E minor does not."
+   }
+  ],
+  "evidence": {
+   "algorithms": {
+    "ffmpeg_keydetect": {
+     "key": "D# minor",
+     "r": 0.873,
+     "r_flag": "trust band (>0.75; watch for relative-key swap)",
+     "key_alt": "A# minor",
+     "key_alt_confidence": 0.611,
+     "key_reranked": false
+    },
+    "madmom": {
+     "key": "A# minor",
+     "confidence": 0.4536
+    },
+    "essentia_edma": {
+     "key": "D# minor",
+     "confidence": 0.9042
+    }
+   },
+   "backers": [
+    "essentia_edma"
+   ],
+   "pairwise_agreement": [
+    {
+     "pair": "madmom+ffmpeg",
+     "status": "none",
+     "note": "A# minor against D# minor"
+    },
+    {
+     "pair": "edma+ffmpeg",
+     "status": "full",
+     "recommended": "D# minor"
+    },
+    {
+     "pair": "madmom+edma",
+     "status": "none",
+     "note": "A# minor against D# minor"
+    }
+   ],
+   "chords": [
+    "C#",
+    "D#m",
+    "C#",
+    "D#m",
+    "B",
+    "C#",
+    "D#m",
+    "C#",
+    "D#m",
+    "C#",
+    "D#m",
+    "D#",
+    "C#",
+    "B",
+    "C#",
+    "D#",
+    "D#m",
+    "C#",
+    "A#m",
+    "D#",
+    "D#m",
+    "A#m",
+    "D#m",
+    "C#",
+    "D#m",
+    "D#",
+    "A#m",
+    "D#m",
+    "D#",
+    "A#m",
+    "D#m",
+    "C#",
+    "D#m",
+    "D#",
+    "C#",
+    "D#m",
+    "D#",
+    "A#m",
+    "D#m",
+    "D#",
+    "A#m",
+    "F#",
+    "D#m",
+    "A#m",
+    "D#m",
+    "C#",
+    "D#m",
+    "D#",
+    "A#m",
+    "F#",
+    "D#m",
+    "D#",
+    "A#m",
+    "D#m",
+    "A#m",
+    "D#m",
+    "C#",
+    "D#m",
+    "D#",
+    "A#m",
+    "D#m",
+    "D#",
+    "A#m",
+    "D#m"
+   ],
+   "key_events": [
+    {
+     "t": 0.29,
+     "key": "A#m",
+     "r": 0.79
+    },
+    {
+     "t": 0.35,
+     "key": "D#",
+     "r": 0.7
+    },
+    {
+     "t": 0.4,
+     "key": "Gm",
+     "r": 0.5
+    },
+    {
+     "t": 0.55,
+     "key": "C",
+     "r": 0.57
+    },
+    {
+     "t": 0.64,
+     "key": "Gm",
+     "r": 0.69
+    },
+    {
+     "t": 0.74,
+     "key": "C",
+     "r": 0.7
+    },
+    {
+     "t": 1,
+     "key": "Gm",
+     "r": 0.69
+    },
+    {
+     "t": 5.24,
+     "key": "G",
+     "r": 0.61
+    },
+    {
+     "t": 5.89,
+     "key": "C",
+     "r": 0.61
+    },
+    {
+     "t": 6.64,
+     "key": "Am",
+     "r": 0.64
+    },
+    {
+     "t": 14.24,
+     "key": "Em",
+     "r": 0.66
+    },
+    {
+     "t": 14.45,
+     "key": "G",
+     "r": 0.66
+    },
+    {
+     "t": 14.6,
+     "key": "Em",
+     "r": 0.66
+    },
+    {
+     "t": 42.15,
+     "key": "D#",
+     "r": 0.28
+    },
+    {
+     "t": 45.64,
+     "key": "D#m",
+     "r": 0.34
+    }
+   ],
+   "versions": {
+    "ffmpeg": "ffmpeg version 9.0-NoMercy-keydetect-v1.3.0 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg_sha256": "28f445ee6e65c4337e8fca617763af9e3816af7f3920983edcf34b16a7173a96",
+    "onnxruntime": "1.30.0.0",
+    "madmom_model": "key_cnn 2018 (madmom_models), as ONNX"
+   }
+  },
+  "duration": 61
+ },
+ {
+  "artist": "Eminem",
+  "title": "Without Me",
+  "confidence": "High",
+  "tonic": "G",
+  "mode": "Aeolian",
+  "mixed": false,
+  "reasoning": "librosa_ks calls G minor directly. crema and ffmpeg_keydetect both call G major, and ffmpeg's r=0.803 sits in the usually-trustworthy band -- but this is a parallel major/minor call, not a relative one, and the track's bass-hook-driven, sparsely-voiced verses give the whole-file chroma plenty of mixed-third content to get that call wrong from either method. Two independent authoritative human sources -- Musicnotes' originally-published sheet music key and Hooktheory's TheoryTab chord transcription -- both land on G minor and agree with each other despite being produced completely differently (an engraver's transcription vs. a crowd-sourced chord chart), which is exactly the kind of corroboration that could have failed independently and didn't. SongBPM/Tunebat's algorithmic 'G major' tag is the same failure mode the detectors show and doesn't add anything past what crema/ffmpeg already showed. Calling HIGH here rests on the two authoritative sources agreeing with each other and with librosa, plus the chord check's clean explanation for why the acoustic detectors likely got the mode wrong.",
+  "tonicCheck": "The committed progression cycles almost entirely through G/Gm, C/Cm and D, with G and Gm appearing equally often (21 each) -- genuinely ambiguous by raw frequency. But the tiebreak is what's absent: G major's other diatonic triads (Am, Em, Bm) never appear anywhere in the progression or the flicker log's stable region, while Cm (G minor's iv) recurs 6 times as a full harmonic-minor idiom alongside D major (the raised-7th V that resolves i-iv-V: Gm-Cm-D-Gm). That cadential shape, not chord-symbol counting, is what argues for G minor over its parallel. The brief A/A#m/Am/Bm readings at t<1.1s are low-r (0.48-0.54) intro noise before the bass hook stabilizes and don't reflect the song's harmony.",
+  "withheldReasoning": null,
+  "sections": [],
+  "sources": [
+   {
+    "url": "https://www.musicnotes.com/sheetmusic/without-me/9355",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "Original published sheet music key: G minor",
+    "statesKey": "G minor",
+    "statesMode": null,
+    "note": "Musicnotes 'Orig. published key' field, tempo listed ~120 BPM (vague, not used over SongBPM's 112)",
+    "sections": null
+   },
+   {
+    "url": "https://www.hooktheory.com/theorytab/view/eminem/without-me",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "TheoryTab lists the song's three most important chords (i, iv, v) as Gm, Cm, Dm",
+    "statesKey": "G minor",
+    "statesMode": null,
+    "note": "search-snippet only (page 403s to fetch); independently agrees with Musicnotes on tonic",
+    "sections": null
+   },
+   {
+    "url": "https://songbpm.com/@eminem/without-me",
+    "via": null,
+    "kind": "Algorithmic",
+    "states": "Lists 'G key, major mode', 112 BPM",
+    "statesKey": "G major",
+    "statesMode": null,
+    "note": "dissents on mode; same failure class as crema/ffmpeg (chroma-based), outweighed by two independent authoritative sources plus the chord check's absence of G-major-only chords (no Am/Em/Bm anywhere in the committed progression)",
+    "sections": null
+   }
+  ],
+  "candidates": [],
+  "evidence": {
+   "segment": null,
+   "algorithms": {
+    "librosa_ks": {
+     "key": "G minor",
+     "confidence": 0.5273276187277968,
+     "error": null
+    },
+    "crema": {
+     "key": "G major",
+     "confidence": null,
+     "runner_up": {
+      "key": "C minor",
+      "ratio": 0.6907
+     },
+     "error": null
+    },
+    "ffmpeg_keydetect": {
+     "key": "G major",
+     "r": 0.803,
+     "r_flag": "trust band (>0.75; watch for relative-key swap)",
+     "key_alt": "G minor",
+     "key_alt_confidence": 0.747,
+     "key_reranked": false
+    },
+    "madmom": {
+     "key": "G minor",
+     "confidence": 0.5892
+    },
+    "essentia_edma": {
+     "key": "G minor",
+     "confidence": 0.9056
+    }
+   },
+   "pairwise_agreement": [
+    {
+     "pair": "madmom+ffmpeg",
+     "status": "none",
+     "note": "G minor against G major"
+    },
+    {
+     "pair": "edma+ffmpeg",
+     "status": "none",
+     "note": "G minor against G major"
+    },
+    {
+     "pair": "madmom+edma",
+     "status": "full",
+     "recommended": "G minor"
+    }
+   ],
+   "chords": [
+    "G",
+    "C",
+    "G",
+    "C",
+    "G",
+    "Gm",
+    "C",
+    "Cm",
+    "D",
+    "G",
+    "C",
+    "G",
+    "Gm",
+    "C",
+    "Gm",
+    "G",
+    "Gm",
+    "G",
+    "Gm",
+    "C",
+    "G",
+    "D",
+    "G",
+    "Gm",
+    "G",
+    "Gm",
+    "G",
+    "C",
+    "Gm",
+    "Cm",
+    "Gm",
+    "G",
+    "Cm",
+    "Gm",
+    "G",
+    "Cm",
+    "Gm",
+    "G",
+    "Gm",
+    "G",
+    "Gm",
+    "G",
+    "Gm",
+    "G",
+    "Gm",
+    "G",
+    "C",
+    "D",
+    "Gm",
+    "G",
+    "Gm",
+    "G",
+    "D",
+    "Gm",
+    "G",
+    "D",
+    "Gm",
+    "G",
+    "Gm",
+    "G",
+    "C",
+    "G",
+    "Gm",
+    "G"
+   ],
+   "key_events": [
+    {
+     "t": 0.19,
+     "key": "A",
+     "r": 0.51
+    },
+    {
+     "t": 0.24,
+     "key": "A#m",
+     "r": 0.48
+    },
+    {
+     "t": 0.64,
+     "key": "A#",
+     "r": 0.54
+    },
+    {
+     "t": 0.74,
+     "key": "Am",
+     "r": 0.48
+    },
+    {
+     "t": 0.79,
+     "key": "Bm",
+     "r": 0.49
+    },
+    {
+     "t": 1.1,
+     "key": "Gm",
+     "r": 0.53
+    },
+    {
+     "t": 10.44,
+     "key": "G",
+     "r": 0.72
+    },
+    {
+     "t": 10.75,
+     "key": "Cm",
+     "r": 0.64
+    },
+    {
+     "t": 10.85,
+     "key": "G",
+     "r": 0.74
+    },
+    {
+     "t": 12.39,
+     "key": "Gm",
+     "r": 0.78
+    },
+    {
+     "t": 13.74,
+     "key": "G",
+     "r": 0.74
+    },
+    {
+     "t": 15.3,
+     "key": "Gm",
+     "r": 0.76
+    },
+    {
+     "t": 16.55,
+     "key": "Cm",
+     "r": 0.64
+    },
+    {
+     "t": 17.65,
+     "key": "Gm",
+     "r": 0.74
+    },
+    {
+     "t": 18.04,
+     "key": "Cm",
+     "r": 0.64
+    },
+    {
+     "t": 18.09,
+     "key": "Gm",
+     "r": 0.74
+    },
+    {
+     "t": 18.74,
+     "key": "G",
+     "r": 0.77
+    },
+    {
+     "t": 21,
+     "key": "Gm",
+     "r": 0.76
+    },
+    {
+     "t": 21.94,
+     "key": "G",
+     "r": 0.77
+    },
+    {
+     "t": 28.34,
+     "key": "Gm",
+     "r": 0.74
+    },
+    {
+     "t": 28.75,
+     "key": "G",
+     "r": 0.77
+    },
+    {
+     "t": 31.49,
+     "key": "Cm",
+     "r": 0.65
+    },
+    {
+     "t": 32.14,
+     "key": "G",
+     "r": 0.76
+    },
+    {
+     "t": 33.44,
+     "key": "Cm",
+     "r": 0.64
+    },
+    {
+     "t": 36.14,
+     "key": "G",
+     "r": 0.76
+    },
+    {
+     "t": 37.45,
+     "key": "Cm",
+     "r": 0.66
+    },
+    {
+     "t": 38.2,
+     "key": "G",
+     "r": 0.76
+    },
+    {
+     "t": 39.65,
+     "key": "Cm",
+     "r": 0.64
+    },
+    {
+     "t": 40.75,
+     "key": "G",
+     "r": 0.76
+    },
+    {
+     "t": 44,
+     "key": "Gm",
+     "r": 0.74
+    },
+    {
+     "t": 44.99,
+     "key": "G",
+     "r": 0.77
+    },
+    {
+     "t": 81.39,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 81.49,
+     "key": "G",
+     "r": 0.77
+    },
+    {
+     "t": 88.54,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 91.09,
+     "key": "G",
+     "r": 0.78
+    },
+    {
+     "t": 96.35,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 98.04,
+     "key": "G",
+     "r": 0.78
+    },
+    {
+     "t": 105.24,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 106.94,
+     "key": "G",
+     "r": 0.79
+    },
+    {
+     "t": 108.19,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 109.2,
+     "key": "G",
+     "r": 0.79
+    },
+    {
+     "t": 113.2,
+     "key": "Gm",
+     "r": 0.74
+    },
+    {
+     "t": 113.7,
+     "key": "G",
+     "r": 0.79
+    },
+    {
+     "t": 114.69,
+     "key": "Gm",
+     "r": 0.74
+    },
+    {
+     "t": 117.75,
+     "key": "G",
+     "r": 0.79
+    },
+    {
+     "t": 120.49,
+     "key": "Gm",
+     "r": 0.74
+    },
+    {
+     "t": 121.19,
+     "key": "G",
+     "r": 0.79
+    },
+    {
+     "t": 137.69,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 138.8,
+     "key": "G",
+     "r": 0.79
+    },
+    {
+     "t": 156.99,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 157.8,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 217.79,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 218.44,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 219.54,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 220.24,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 224.64,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 226.35,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 233.5,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 235.19,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 236.39,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 237.15,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 241.39,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 243.39,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 250.29,
+     "key": "Gm",
+     "r": 0.74
+    },
+    {
+     "t": 252.5,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 253.49,
+     "key": "Gm",
+     "r": 0.74
+    },
+    {
+     "t": 254.24,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 258.45,
+     "key": "Gm",
+     "r": 0.74
+    },
+    {
+     "t": 260.59,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 262.1,
+     "key": "Gm",
+     "r": 0.74
+    },
+    {
+     "t": 262.69,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 266.99,
+     "key": "Gm",
+     "r": 0.74
+    },
+    {
+     "t": 269.2,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 275.6,
+     "key": "Gm",
+     "r": 0.74
+    },
+    {
+     "t": 277.75,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 279.19,
+     "key": "Gm",
+     "r": 0.75
+    },
+    {
+     "t": 279.89,
+     "key": "G",
+     "r": 0.8
+    },
+    {
+     "t": 284.15,
+     "key": "Gm",
+     "r": 0.75
+    },
+    {
+     "t": 286.29,
+     "key": "G",
+     "r": 0.8
+    }
+   ],
+   "bpm_rough": 112.28,
+   "versions": {
+    "ffmpeg": "ffmpeg version 9.0-NoMercy-keydetect-v1.3.0 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg_sha256": "28f445ee6e65c4337e8fca617763af9e3816af7f3920983edcf34b16a7173a96",
+    "onnxruntime": "1.30.0.0",
+    "madmom_model": "key_cnn 2018 (madmom_models), as ONNX"
+   },
+   "backers": [],
+   "read_after_verdict": {
+    "at": "2026-10-25T14:18:50.3919015+00:00"
+   }
+  },
+  "duration": 301
+ },
+ {
+  "artist": "Britney Spears",
+  "title": "Toxic",
+  "confidence": "High",
+  "tonic": "C",
+  "mode": "Aeolian",
+  "mixed": false,
+  "reasoning": "All three detectors agree on C minor and ffmpeg's r=0.8 sits in the trust band. The chord progression's recurring G-major dominant is the kind of cadence evidence that specifically rules out both plausible confusions (Eb relative major, G minor runner-up), so this isn't just algorithmic agreement -- it's positively corroborated. Hooktheory's TheoryTab (multi-contributor consensus site) independently states Cm. Online BPM sources cluster around 143-144, consistent with the runner's rough beat-detected 142.56 (no octave mismatch), so 144 is a safe warp start.",
+  "tonicCheck": "The progression alternates Cm with D# (Eb) major -- i and the relative-major VI, a normal minor-key move -- but G recurs repeatedly as a major chord (the famous strings-riff dominant), which only makes sense as V of C minor with a raised leading tone; it would be a minor iii if the tonic were actually Eb major. That rules out the Eb relative-major reading. CREMA's runner-up was G minor, not G major, and G minor never appears as a stable chord in the progression (Gm shows up once, likely a passing/borrowed chord in the bridge), so the runner-up doesn't hold up against the chord evidence either. Early key-flicker instability (A#, D#, C bouncing before settling on Cm at t=2.04) is just the unaccompanied strings intro finding its footing, not a competing tonal center.",
+  "withheldReasoning": null,
+  "sections": [],
+  "sources": [
+   {
+    "url": "https://www.hooktheory.com/theorytab/view/britney-spears/toxic",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "Hooktheory TheoryTab lists the song's key as Cm",
+    "statesKey": "C minor",
+    "statesMode": null,
+    "note": "multi-metric Hooktheory analysis (tension/novelty scores) confirms Cm as the analyzed key",
+    "sections": null
+   }
+  ],
+  "candidates": [],
+  "evidence": {
+   "segment": null,
+   "algorithms": {
+    "librosa_ks": {
+     "key": "C minor",
+     "confidence": 0.5829376141150951,
+     "error": null
+    },
+    "crema": {
+     "key": "C minor",
+     "confidence": null,
+     "runner_up": {
+      "key": "G minor",
+      "ratio": 0.6476
+     },
+     "error": null
+    },
+    "ffmpeg_keydetect": {
+     "key": "C minor",
+     "r": 0.84,
+     "r_flag": "trust band (>0.75; watch for relative-key swap)",
+     "key_alt": "D# major",
+     "key_alt_confidence": 0.661,
+     "key_reranked": false
+    },
+    "madmom": {
+     "key": "C minor",
+     "confidence": 0.9862
+    },
+    "essentia_edma": {
+     "key": "C minor",
+     "confidence": 0.9549
+    }
+   },
+   "pairwise_agreement": [
+    {
+     "pair": "madmom+ffmpeg",
+     "status": "full",
+     "recommended": "C minor"
+    },
+    {
+     "pair": "edma+ffmpeg",
+     "status": "full",
+     "recommended": "C minor"
+    },
+    {
+     "pair": "madmom+edma",
+     "status": "full",
+     "recommended": "C minor"
+    }
+   ],
+   "chords": [
+    "D#",
+    "G",
+    "Cm",
+    "C",
+    "D#",
+    "Cm",
+    "Am",
+    "Cm",
+    "A#",
+    "Dm",
+    "Gm",
+    "D#",
+    "G",
+    "Cm",
+    "C",
+    "Cm",
+    "D#",
+    "D",
+    "C#",
+    "Cm",
+    "C",
+    "D#",
+    "G#",
+    "C",
+    "D#",
+    "D",
+    "C#",
+    "C",
+    "D#",
+    "G#",
+    "F",
+    "C",
+    "B",
+    "D#",
+    "Cm",
+    "C",
+    "Cm",
+    "B",
+    "D#",
+    "Cm",
+    "G#",
+    "C",
+    "G",
+    "D#",
+    "D",
+    "C#",
+    "C",
+    "D#",
+    "G#",
+    "Cm",
+    "D#",
+    "D",
+    "C#",
+    "Cm",
+    "D#",
+    "G#",
+    "C",
+    "Cm",
+    "D#",
+    "A#m",
+    "C",
+    "D#",
+    "G#",
+    "Cm"
+   ],
+   "key_events": [
+    {
+     "t": 0.24,
+     "key": "D#",
+     "r": 0.49
+    },
+    {
+     "t": 2.25,
+     "key": "Cm",
+     "r": 0.66
+    },
+    {
+     "t": 3.1,
+     "key": "D#",
+     "r": 0.65
+    },
+    {
+     "t": 3.44,
+     "key": "Cm",
+     "r": 0.68
+    }
+   ],
+   "bpm_rough": 142.56,
+   "versions": {
+    "ffmpeg": "ffmpeg version 9.0-NoMercy-keydetect-v1.3.0 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg_sha256": "28f445ee6e65c4337e8fca617763af9e3816af7f3920983edcf34b16a7173a96",
+    "onnxruntime": "1.30.0.0",
+    "madmom_model": "key_cnn 2018 (madmom_models), as ONNX"
+   },
+   "backers": [
+    "madmom",
+    "essentia_edma"
+   ],
+   "read_after_verdict": {
+    "at": "2026-10-25T14:05:11.8991720+00:00"
+   }
+  },
+  "duration": 18
+ },
+ {
+  "artist": "Kesha",
+  "title": "TiK ToK",
+  "confidence": "High",
+  "tonic": "D",
+  "mode": "Aeolian",
+  "mixed": false,
+  "reasoning": "CREMA and ffmpeg both landed on A# (Bb) major, but that agreement is exactly the relative-key trap this tool watches for, not real corroboration: CREMA's own runner-up was D minor at a 0.9801 separation ratio -- essentially a tie -- and ffmpeg's r=0.694 sits in the DISTRUST band. Neither detector's answer is independently reliable enough for their agreement to count for much. librosa_ks called D minor directly, with a moderate 0.676 correlation. The chord check (above) rules out Bb major as the actual tonic via its non-diatonic C-major chord, leaving D minor and F major -- true relative keys sharing the same chord vocabulary -- as the only real candidates, and the loop's repeated resolution onto Dm favors D minor. Two independent authoritative human sources settle it: Hooktheory's multi-contributor TheoryTab and Musicnotes' published sheet music both give D minor as the song's key, matching librosa's answer and CREMA's near-tied runner-up over its stated top pick.",
+  "tonicCheck": "The chord vocabulary (Dm, F, A#/Bb, Gm, C, one passing D#) is the shared diatonic set of the D minor/F major relative pair, so the chords alone can't distinguish D minor from Bb major or F major. It does rule out Bb major specifically, though: Bb major's diatonic ii chord is C minor, but the transcribed chord is C major, which isn't diatonic to a Bb-major reading. Phrases in the loop also consistently resolve back onto Dm rather than F or A#, consistent with Dm functioning as the tonic rather than a passing or subdominant chord.",
+  "withheldReasoning": null,
+  "sections": [],
+  "sources": [
+   {
+    "url": "https://www.hooktheory.com/theorytab/view/kesha/tik-tok",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "TheoryTab lists the song in D Minor at 120 BPM, most-used chord is the VI (Bb)",
+    "statesKey": "D minor",
+    "statesMode": null,
+    "note": "multi-contributor TheoryTab consensus",
+    "sections": null
+   },
+   {
+    "url": "https://www.musicnotes.com/sheetmusic/kesha/tik-tok/MN0080585",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "Piano/Vocal/Chords sheet music listed in D Minor",
+    "statesKey": "D minor",
+    "statesMode": null,
+    "note": "published sheet music in the original key",
+    "sections": null
+   }
+  ],
+  "candidates": [],
+  "evidence": {
+   "segment": null,
+   "algorithms": {
+    "librosa_ks": {
+     "key": "D minor",
+     "confidence": 0.6759854363010457,
+     "error": null
+    },
+    "crema": {
+     "key": "A# major",
+     "confidence": null,
+     "runner_up": {
+      "key": "D minor",
+      "ratio": 0.9801
+     },
+     "error": null
+    },
+    "ffmpeg_keydetect": {
+     "key": "A# major",
+     "r": 0.699,
+     "r_flag": "DISTRUST (r<0.70: unreliable band)",
+     "key_alt": "G minor",
+     "key_alt_confidence": 0.721,
+     "key_reranked": true
+    },
+    "madmom": {
+     "key": "D minor",
+     "confidence": 0.4537
+    },
+    "essentia_edma": {
+     "key": "D minor",
+     "confidence": 0.7391
+    }
+   },
+   "pairwise_agreement": [
+    {
+     "pair": "madmom+ffmpeg",
+     "status": "none",
+     "note": "D minor against A# major"
+    },
+    {
+     "pair": "edma+ffmpeg",
+     "status": "none",
+     "note": "D minor against A# major"
+    },
+    {
+     "pair": "madmom+edma",
+     "status": "full",
+     "recommended": "D minor"
+    }
+   ],
+   "chords": [
+    "A#",
+    "F",
+    "Dm",
+    "A#",
+    "F",
+    "Dm",
+    "Gm",
+    "A#",
+    "Dm",
+    "Am",
+    "A#",
+    "F",
+    "Dm",
+    "A#",
+    "F",
+    "Dm",
+    "A#",
+    "F",
+    "Dm",
+    "Gm",
+    "Dm",
+    "Am",
+    "D#",
+    "A#",
+    "Gm",
+    "Dm",
+    "C",
+    "A#",
+    "Gm",
+    "Dm",
+    "C",
+    "A#",
+    "Gm",
+    "Dm",
+    "C",
+    "F",
+    "A#",
+    "Gm",
+    "A#",
+    "F",
+    "Dm",
+    "A#",
+    "F",
+    "Dm",
+    "A#",
+    "F",
+    "Dm",
+    "Gm",
+    "A#",
+    "Dm",
+    "Am",
+    "A#",
+    "F",
+    "Dm",
+    "A#",
+    "F",
+    "Dm",
+    "A#",
+    "F",
+    "Dm",
+    "Gm",
+    "Dm",
+    "Am",
+    "A#"
+   ],
+   "key_events": [
+    {
+     "t": 0.19,
+     "key": "Fm",
+     "r": 0.46
+    },
+    {
+     "t": 0.24,
+     "key": "B",
+     "r": 0.77
+    },
+    {
+     "t": 0.6,
+     "key": "A#",
+     "r": 0.63
+    },
+    {
+     "t": 1.85,
+     "key": "Dm",
+     "r": 0.54
+    },
+    {
+     "t": 1.9,
+     "key": "D",
+     "r": 0.61
+    },
+    {
+     "t": 2.59,
+     "key": "Dm",
+     "r": 0.55
+    },
+    {
+     "t": 3,
+     "key": "Em",
+     "r": 0.56
+    },
+    {
+     "t": 3.44,
+     "key": "Dm",
+     "r": 0.58
+    },
+    {
+     "t": 15.44,
+     "key": "F",
+     "r": 0.66
+    },
+    {
+     "t": 15.75,
+     "key": "Dm",
+     "r": 0.76
+    },
+    {
+     "t": 32.35,
+     "key": "Gm",
+     "r": 0.64
+    },
+    {
+     "t": 33.29,
+     "key": "A#",
+     "r": 0.67
+    },
+    {
+     "t": 35.1,
+     "key": "F",
+     "r": 0.63
+    },
+    {
+     "t": 36.04,
+     "key": "Dm",
+     "r": 0.69
+    },
+    {
+     "t": 37.1,
+     "key": "A#",
+     "r": 0.69
+    },
+    {
+     "t": 38.95,
+     "key": "F",
+     "r": 0.66
+    },
+    {
+     "t": 39.99,
+     "key": "Dm",
+     "r": 0.7
+    },
+    {
+     "t": 41.24,
+     "key": "A#",
+     "r": 0.7
+    },
+    {
+     "t": 43.59,
+     "key": "F",
+     "r": 0.66
+    },
+    {
+     "t": 44,
+     "key": "Dm",
+     "r": 0.72
+    },
+    {
+     "t": 45.25,
+     "key": "Gm",
+     "r": 0.66
+    },
+    {
+     "t": 47.1,
+     "key": "A#",
+     "r": 0.7
+    },
+    {
+     "t": 47.59,
+     "key": "Dm",
+     "r": 0.73
+    },
+    {
+     "t": 49.05,
+     "key": "A#",
+     "r": 0.7
+    },
+    {
+     "t": 51.05,
+     "key": "F",
+     "r": 0.66
+    },
+    {
+     "t": 51.99,
+     "key": "Dm",
+     "r": 0.73
+    },
+    {
+     "t": 53.14,
+     "key": "A#",
+     "r": 0.71
+    },
+    {
+     "t": 55.04,
+     "key": "F",
+     "r": 0.67
+    },
+    {
+     "t": 55.55,
+     "key": "Dm",
+     "r": 0.73
+    },
+    {
+     "t": 57.19,
+     "key": "A#",
+     "r": 0.72
+    },
+    {
+     "t": 58.99,
+     "key": "F",
+     "r": 0.67
+    },
+    {
+     "t": 60,
+     "key": "Dm",
+     "r": 0.74
+    },
+    {
+     "t": 61.2,
+     "key": "Gm",
+     "r": 0.66
+    },
+    {
+     "t": 63.39,
+     "key": "Dm",
+     "r": 0.75
+    },
+    {
+     "t": 65.34,
+     "key": "A#",
+     "r": 0.71
+    },
+    {
+     "t": 66.19,
+     "key": "Dm",
+     "r": 0.74
+    },
+    {
+     "t": 69.19,
+     "key": "A#",
+     "r": 0.69
+    },
+    {
+     "t": 71.19,
+     "key": "Dm",
+     "r": 0.74
+    },
+    {
+     "t": 73.04,
+     "key": "A#",
+     "r": 0.69
+    },
+    {
+     "t": 76.55,
+     "key": "Dm",
+     "r": 0.74
+    },
+    {
+     "t": 81.44,
+     "key": "A#",
+     "r": 0.71
+    },
+    {
+     "t": 84.45,
+     "key": "Dm",
+     "r": 0.71
+    },
+    {
+     "t": 84.9,
+     "key": "A#",
+     "r": 0.71
+    },
+    {
+     "t": 99,
+     "key": "F",
+     "r": 0.64
+    },
+    {
+     "t": 99.99,
+     "key": "Dm",
+     "r": 0.71
+    },
+    {
+     "t": 101.14,
+     "key": "A#",
+     "r": 0.71
+    },
+    {
+     "t": 102.95,
+     "key": "F",
+     "r": 0.65
+    },
+    {
+     "t": 103.84,
+     "key": "Dm",
+     "r": 0.72
+    },
+    {
+     "t": 105.24,
+     "key": "A#",
+     "r": 0.71
+    },
+    {
+     "t": 107.3,
+     "key": "F",
+     "r": 0.65
+    },
+    {
+     "t": 107.95,
+     "key": "Dm",
+     "r": 0.72
+    },
+    {
+     "t": 109.25,
+     "key": "Gm",
+     "r": 0.66
+    },
+    {
+     "t": 110.99,
+     "key": "A#",
+     "r": 0.71
+    },
+    {
+     "t": 111.49,
+     "key": "Dm",
+     "r": 0.73
+    },
+    {
+     "t": 113.15,
+     "key": "A#",
+     "r": 0.7
+    },
+    {
+     "t": 115,
+     "key": "F",
+     "r": 0.65
+    },
+    {
+     "t": 116.04,
+     "key": "Dm",
+     "r": 0.73
+    },
+    {
+     "t": 117.14,
+     "key": "A#",
+     "r": 0.7
+    },
+    {
+     "t": 119.04,
+     "key": "F",
+     "r": 0.65
+    },
+    {
+     "t": 119.89,
+     "key": "Dm",
+     "r": 0.73
+    },
+    {
+     "t": 121.09,
+     "key": "A#",
+     "r": 0.71
+    },
+    {
+     "t": 123.09,
+     "key": "F",
+     "r": 0.65
+    },
+    {
+     "t": 123.9,
+     "key": "Dm",
+     "r": 0.73
+    },
+    {
+     "t": 125.2,
+     "key": "Gm",
+     "r": 0.66
+    },
+    {
+     "t": 127.39,
+     "key": "Dm",
+     "r": 0.74
+    },
+    {
+     "t": 130.4,
+     "key": "A#",
+     "r": 0.72
+    },
+    {
+     "t": 131.2,
+     "key": "Gm",
+     "r": 0.68
+    },
+    {
+     "t": 133.5,
+     "key": "Dm",
+     "r": 0.72
+    },
+    {
+     "t": 137.24,
+     "key": "A#",
+     "r": 0.7
+    },
+    {
+     "t": 139.4,
+     "key": "Gm",
+     "r": 0.71
+    },
+    {
+     "t": 141.44,
+     "key": "Dm",
+     "r": 0.72
+    },
+    {
+     "t": 145.2,
+     "key": "A#",
+     "r": 0.69
+    },
+    {
+     "t": 147.55,
+     "key": "Gm",
+     "r": 0.71
+    },
+    {
+     "t": 149.5,
+     "key": "Dm",
+     "r": 0.72
+    },
+    {
+     "t": 152.3,
+     "key": "F",
+     "r": 0.64
+    },
+    {
+     "t": 153.19,
+     "key": "A#",
+     "r": 0.69
+    },
+    {
+     "t": 155.3,
+     "key": "Gm",
+     "r": 0.72
+    },
+    {
+     "t": 165.19,
+     "key": "A#",
+     "r": 0.69
+    },
+    {
+     "t": 167.24,
+     "key": "F",
+     "r": 0.63
+    },
+    {
+     "t": 167.99,
+     "key": "Dm",
+     "r": 0.71
+    },
+    {
+     "t": 169.04,
+     "key": "A#",
+     "r": 0.69
+    },
+    {
+     "t": 171.09,
+     "key": "F",
+     "r": 0.63
+    },
+    {
+     "t": 171.9,
+     "key": "Dm",
+     "r": 0.71
+    },
+    {
+     "t": 173.15,
+     "key": "A#",
+     "r": 0.7
+    },
+    {
+     "t": 175.39,
+     "key": "F",
+     "r": 0.64
+    },
+    {
+     "t": 176,
+     "key": "Dm",
+     "r": 0.71
+    },
+    {
+     "t": 177.15,
+     "key": "Gm",
+     "r": 0.72
+    },
+    {
+     "t": 178.79,
+     "key": "A#",
+     "r": 0.7
+    },
+    {
+     "t": 179.29,
+     "key": "Dm",
+     "r": 0.71
+    },
+    {
+     "t": 180.14,
+     "key": "A#",
+     "r": 0.7
+    },
+    {
+     "t": 180.25,
+     "key": "Dm",
+     "r": 0.71
+    },
+    {
+     "t": 181.1,
+     "key": "A#",
+     "r": 0.7
+    },
+    {
+     "t": 183.24,
+     "key": "F",
+     "r": 0.63
+    },
+    {
+     "t": 183.99,
+     "key": "Dm",
+     "r": 0.71
+    },
+    {
+     "t": 185.04,
+     "key": "A#",
+     "r": 0.7
+    },
+    {
+     "t": 187.19,
+     "key": "F",
+     "r": 0.63
+    },
+    {
+     "t": 187.9,
+     "key": "Dm",
+     "r": 0.71
+    },
+    {
+     "t": 189.04,
+     "key": "A#",
+     "r": 0.7
+    },
+    {
+     "t": 191.2,
+     "key": "F",
+     "r": 0.63
+    },
+    {
+     "t": 192,
+     "key": "Dm",
+     "r": 0.71
+    },
+    {
+     "t": 193.15,
+     "key": "Gm",
+     "r": 0.72
+    },
+    {
+     "t": 195.49,
+     "key": "Dm",
+     "r": 0.71
+    },
+    {
+     "t": 196.25,
+     "key": "A#",
+     "r": 0.7
+    }
+   ],
+   "bpm_rough": 119.8,
+   "versions": {
+    "ffmpeg": "ffmpeg version 9.0-NoMercy-keydetect-v1.3.0 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg_sha256": "28f445ee6e65c4337e8fca617763af9e3816af7f3920983edcf34b16a7173a96",
+    "onnxruntime": "1.30.0.0",
+    "madmom_model": "key_cnn 2018 (madmom_models), as ONNX"
+   },
+   "backers": [],
+   "read_after_verdict": {
+    "at": "2026-10-25T14:37:30.4370903+00:00"
+   }
+  },
+  "duration": 211
+ },
+ {
+  "artist": "Whitney Houston",
+  "title": "How Will I Know",
+  "confidence": "High",
+  "tonic": "F#",
+  "mode": "Ionian",
+  "mixed": false,
+  "reasoning": "CREMA (F# major) and an authoritative, multi-contributor Hooktheory TheoryTab agree exactly, and the chord/cadence evidence positively supports F# over its relative rather than just reflecting detector confidence. ffmpeg's D# minor is explained as a relative-key swap -- a known failure mode, not an unresolved split -- because the chord and flicker evidence can positively rule it out as the tonic. librosa's Bb minor doesn't match any other source; it's plausibly whole-file chroma dilution from a modulating outro (the chord list's late A#/D#/Cm shift), consistent with known KS-template weakness on tracks that change tonal center partway through. Musicnotes' sheet-music listings are inconsistent across arrangements (G/F/Bb major) and SingingCarrots' automated F major call shows no chord reasoning, so neither outweighs the authoritative source plus direct chord-progression match.",
+  "tonicCheck": "The chord progression is overwhelmingly diatonic to F# major: F#-C#-A#m-G#m-D#m-B cycles repeatedly through most of the track, which is I-V-iii-ii-vi-IV in F# major -- every chord in that cycle fits. The key-flicker log backs this up independently: from roughly t=20s to t=53s it stabilizes on an F#/C# (I-V) oscillation at r=0.75-0.80, well above the trust band. ffmpeg's D# minor call is F# major's relative minor, and D#m already appears in the chord list as the diatonic vi chord within the F# major cycle rather than as a cadential tonic -- it never resolves a V(7)->i into itself the way a true D# minor tonic would. The one key-flicker hit on D#m (t=263s, r=0.76) lines up with a later shift in the chord list into A#/D# alternation and a borrowed Cm, which reads as a key-change outro rather than evidence the whole song centers on D# minor.",
+  "withheldReasoning": null,
+  "sections": [],
+  "sources": [
+   {
+    "url": "https://www.hooktheory.com/theorytab/view/whitney-houston/how-will-i-know",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "F# Major, 120 BPM; I/IV/V (F#/B/C#) given as the three main chords",
+    "statesKey": "F# major",
+    "statesMode": null,
+    "note": "multi-contributor TheoryTab consensus; matches the chord list almost exactly",
+    "sections": null
+   },
+   {
+    "url": "https://www.musicnotes.com/sheetmusic/whitney-houston/how-will-i-know/MN0063765",
+    "via": null,
+    "kind": "Corroborating",
+    "states": "Musicnotes lists separate arrangements in G major, Bb major, and C major (sax solo), with no single edition clearly marked as the true original key",
+    "statesKey": null,
+    "statesMode": null,
+    "note": "inconsistent across arrangements -- classic beginner-transposition noise, not used to decide the tonic",
+    "sections": null
+   },
+   {
+    "url": "https://singingcarrots.com/song?song=whitney-houston-how-will-i-know",
+    "via": null,
+    "kind": "Algorithmic",
+    "states": "vocal-range tool states \"Original Key: F Major\"",
+    "statesKey": "F major",
+    "statesMode": null,
+    "note": "automated pitch-derived tool, no chord reasoning shown; a semitone off Hooktheory and off the chord evidence, so not weighted as a dissent worth demoting the verdict",
+    "sections": null
+   }
+  ],
+  "candidates": [],
+  "evidence": {
+   "segment": null,
+   "algorithms": {
+    "librosa_ks": {
+     "key": "A# minor",
+     "confidence": 0.6380462610307858,
+     "error": null
+    },
+    "crema": {
+     "key": "F# major",
+     "confidence": null,
+     "runner_up": {
+      "key": "C# major",
+      "ratio": 0.9118
+     },
+     "error": null
+    },
+    "ffmpeg_keydetect": {
+     "key": "D# minor",
+     "r": 0.765,
+     "r_flag": "trust band (>0.75; watch for relative-key swap)",
+     "key_alt": "F# major",
+     "key_alt_confidence": 0.661,
+     "key_reranked": false
+    },
+    "madmom": {
+     "key": "F# major",
+     "confidence": 0.878
+    },
+    "essentia_edma": {
+     "key": "A# minor",
+     "confidence": 0.7289
+    }
+   },
+   "pairwise_agreement": [
+    {
+     "pair": "madmom+ffmpeg",
+     "status": "relative",
+     "note": "relative keys: F# major and D# minor"
+    },
+    {
+     "pair": "edma+ffmpeg",
+     "status": "none",
+     "note": "A# minor against D# minor"
+    },
+    {
+     "pair": "madmom+edma",
+     "status": "none",
+     "note": "F# major against A# minor"
+    }
+   ],
+   "chords": [
+    "C#",
+    "F#",
+    "C#",
+    "D#m",
+    "F#",
+    "C#",
+    "F#",
+    "C#",
+    "D#m",
+    "F#",
+    "C#",
+    "F#",
+    "B",
+    "F#",
+    "B",
+    "F#",
+    "B",
+    "F#",
+    "C#m",
+    "B",
+    "F#",
+    "G#m",
+    "G#",
+    "F#",
+    "B",
+    "C#m",
+    "C#",
+    "D#",
+    "A#",
+    "D#",
+    "A#",
+    "D#",
+    "A#",
+    "D#",
+    "A#",
+    "D#",
+    "A#",
+    "D#",
+    "Cm",
+    "D#",
+    "A#",
+    "D#",
+    "A#",
+    "D#",
+    "Cm",
+    "D#",
+    "A#",
+    "D#",
+    "A#",
+    "D#",
+    "Cm",
+    "D#",
+    "A#m",
+    "D#",
+    "A#m",
+    "D#",
+    "Cm",
+    "D#",
+    "A#",
+    "D#",
+    "G#",
+    "D#",
+    "Cm",
+    "D#"
+   ],
+   "key_events": [
+    {
+     "t": 0.19,
+     "key": "Fm",
+     "r": 0.6
+    },
+    {
+     "t": 0.24,
+     "key": "C#",
+     "r": 0.66
+    },
+    {
+     "t": 0.4,
+     "key": "F",
+     "r": 0.61
+    },
+    {
+     "t": 1.59,
+     "key": "C",
+     "r": 0.4
+    },
+    {
+     "t": 6.25,
+     "key": "C#",
+     "r": 0.42
+    },
+    {
+     "t": 6.3,
+     "key": "C",
+     "r": 0.43
+    },
+    {
+     "t": 6.4,
+     "key": "C#",
+     "r": 0.42
+    },
+    {
+     "t": 7.04,
+     "key": "C",
+     "r": 0.43
+    },
+    {
+     "t": 7.19,
+     "key": "C#",
+     "r": 0.42
+    },
+    {
+     "t": 7.29,
+     "key": "C",
+     "r": 0.43
+    },
+    {
+     "t": 7.45,
+     "key": "C#",
+     "r": 0.43
+    },
+    {
+     "t": 8.3,
+     "key": "C",
+     "r": 0.42
+    },
+    {
+     "t": 8.49,
+     "key": "C#",
+     "r": 0.42
+    },
+    {
+     "t": 20.3,
+     "key": "F#",
+     "r": 0.67
+    },
+    {
+     "t": 257.34,
+     "key": "D#m",
+     "r": 0.76
+    }
+   ],
+   "versions": {
+    "ffmpeg": "ffmpeg version 9.0-NoMercy-keydetect-v1.3.0 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg_sha256": "28f445ee6e65c4337e8fca617763af9e3816af7f3920983edcf34b16a7173a96",
+    "onnxruntime": "1.30.0.0",
+    "madmom_model": "key_cnn 2018 (madmom_models), as ONNX"
+   },
+   "backers": [],
+   "read_after_verdict": {
+    "at": "2026-10-25T15:26:49.7408431+00:00"
+   }
+  },
+  "duration": 272
+ },
+ {
+  "artist": "Beyoncé",
+  "title": "Single Ladies (Put a Ring on It)",
+  "confidence": "High",
+  "tonic": "E",
+  "mode": "Ionian",
+  "mixed": true,
+  "reasoning": "Backed by madmom, and keydetect's runner-up E minor agrees on the E tonic; its low r only makes the mode uncertain. Hooktheory and a cadence-based analysis both center the song on E, with documented mixture in the chorus. Essentia's C major has no cadence behind it.",
+  "tonicCheck": "The verse melody outlines E, G#, F# and the chorus bass runs B to C (bVI); the closing Am6 pulls back to E as IV-6, not II-. Nothing resolves to C, the relative, and A and Bm act as IV and V of E.",
+  "withheldReasoning": null,
+  "sections": [
+   {
+    "label": "Verse",
+    "tonic": "E",
+    "mode": "Ionian",
+    "start": 0.0
+   },
+   {
+    "label": "Bridge",
+    "tonic": "E",
+    "mode": "Aeolian",
+    "start": null
+   }
+  ],
+  "sources": [
+   {
+    "url": "https://www.hooktheory.com/theorytab/view/beyonce/single-ladies",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "E major (intro, verse), E mixolydian (chorus), E minor (bridge)",
+    "statesKey": "E major",
+    "statesMode": "Ionian",
+    "note": "four contributors",
+    "sections": [
+     "Intro",
+     "Verse",
+     "Chorus",
+     "Bridge"
+    ]
+   },
+   {
+    "url": "https://blog.fixyourmix.com/2009/single-ladies-by-beyonce-a-compositional-analysis/",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "E major vocal over E minor bass; chorus borrows bVI (C) from E minor",
+    "statesKey": "E major",
+    "statesMode": "Ionian",
+    "note": "argues from cadence: hears a pull back to E (I)",
+    "sections": null
+   }
+  ],
+  "candidates": [
+   {
+    "key": "E minor",
+    "why": "keydetect's runner-up; the chorus and bridge borrow C and Am, but the verse melody and cadence stay E major."
+   },
+   {
+    "key": "C major",
+    "why": "Essentia's dissent; C is E's bVI, and nothing resolves to C."
+   }
+  ],
+  "evidence": {
+   "algorithms": {
+    "ffmpeg_keydetect": {
+     "key": "E major",
+     "r": 0.673,
+     "r_flag": "DISTRUST (r<0.70: unreliable band)",
+     "key_alt": "E minor",
+     "key_alt_confidence": 0.63,
+     "key_reranked": false
+    },
+    "madmom": {
+     "key": "E major",
+     "confidence": 0.6898
+    },
+    "essentia_edma": {
+     "key": "C major",
+     "confidence": 0.6463
+    }
+   },
+   "backers": [
+    "madmom"
+   ],
+   "pairwise_agreement": [
+    {
+     "pair": "madmom+ffmpeg",
+     "status": "full",
+     "recommended": "E major"
+    },
+    {
+     "pair": "edma+ffmpeg",
+     "status": "none",
+     "note": "C major against E major"
+    },
+    {
+     "pair": "madmom+edma",
+     "status": "none",
+     "note": "E major against C major"
+    }
+   ],
+   "chords": [
+    "Bm",
+    "B",
+    "E",
+    "A",
+    "E",
+    "Bm",
+    "C",
+    "Bm",
+    "A",
+    "Bm",
+    "C",
+    "Bm",
+    "A",
+    "E",
+    "A",
+    "E",
+    "A",
+    "E",
+    "C",
+    "Bm",
+    "A",
+    "C",
+    "A",
+    "Dm",
+    "Am",
+    "Bm",
+    "Em",
+    "E",
+    "Am",
+    "A",
+    "Em",
+    "E",
+    "Am",
+    "Em",
+    "E",
+    "Em",
+    "C",
+    "Bm",
+    "B",
+    "Bm",
+    "B",
+    "Bm",
+    "B",
+    "Bm",
+    "E",
+    "G#m",
+    "C",
+    "B",
+    "A",
+    "C",
+    "Bm",
+    "A",
+    "C",
+    "B",
+    "A",
+    "Bm",
+    "C",
+    "Bm",
+    "A",
+    "E"
+   ],
+   "key_events": [
+    {
+     "t": 0.4,
+     "key": "Bm",
+     "r": 0.66
+    },
+    {
+     "t": 0.5,
+     "key": "G#",
+     "r": 0.69
+    },
+    {
+     "t": 0.55,
+     "key": "Cm",
+     "r": 0.73
+    },
+    {
+     "t": 1.2,
+     "key": "A#",
+     "r": 0.64
+    },
+    {
+     "t": 1.25,
+     "key": "F",
+     "r": 0.63
+    },
+    {
+     "t": 2.19,
+     "key": "A#m",
+     "r": 0.37
+    },
+    {
+     "t": 2.25,
+     "key": "F",
+     "r": 0.35
+    },
+    {
+     "t": 2.3,
+     "key": "E",
+     "r": 0.34
+    },
+    {
+     "t": 2.4,
+     "key": "F",
+     "r": 0.35
+    },
+    {
+     "t": 2.45,
+     "key": "E",
+     "r": 0.33
+    },
+    {
+     "t": 2.5,
+     "key": "F",
+     "r": 0.34
+    },
+    {
+     "t": 2.55,
+     "key": "A#m",
+     "r": 0.32
+    },
+    {
+     "t": 2.64,
+     "key": "Bm",
+     "r": 0.35
+    },
+    {
+     "t": 2.95,
+     "key": "B",
+     "r": 0.46
+    },
+    {
+     "t": 3,
+     "key": "Bm",
+     "r": 0.47
+    },
+    {
+     "t": 18.64,
+     "key": "E",
+     "r": 0.54
+    },
+    {
+     "t": 125.59,
+     "key": "Em",
+     "r": 0.6
+    },
+    {
+     "t": 125.69,
+     "key": "E",
+     "r": 0.69
+    },
+    {
+     "t": 129.34,
+     "key": "Em",
+     "r": 0.61
+    },
+    {
+     "t": 130.3,
+     "key": "E",
+     "r": 0.68
+    },
+    {
+     "t": 133.19,
+     "key": "A",
+     "r": 0.55
+    },
+    {
+     "t": 133.24,
+     "key": "E",
+     "r": 0.67
+    },
+    {
+     "t": 133.89,
+     "key": "A",
+     "r": 0.55
+    },
+    {
+     "t": 134.54,
+     "key": "E",
+     "r": 0.67
+    },
+    {
+     "t": 134.64,
+     "key": "Em",
+     "r": 0.62
+    },
+    {
+     "t": 135.34,
+     "key": "E",
+     "r": 0.67
+    },
+    {
+     "t": 136.44,
+     "key": "Em",
+     "r": 0.63
+    },
+    {
+     "t": 136.9,
+     "key": "A",
+     "r": 0.55
+    },
+    {
+     "t": 139.35,
+     "key": "E",
+     "r": 0.67
+    },
+    {
+     "t": 148.64,
+     "key": "Bm",
+     "r": 0.57
+    },
+    {
+     "t": 149.14,
+     "key": "E",
+     "r": 0.67
+    },
+    {
+     "t": 153.45,
+     "key": "Bm",
+     "r": 0.58
+    },
+    {
+     "t": 156,
+     "key": "E",
+     "r": 0.66
+    },
+    {
+     "t": 156.24,
+     "key": "Em",
+     "r": 0.64
+    },
+    {
+     "t": 158.34,
+     "key": "Bm",
+     "r": 0.59
+    },
+    {
+     "t": 159.64,
+     "key": "E",
+     "r": 0.67
+    },
+    {
+     "t": 178.3,
+     "key": "Bm",
+     "r": 0.58
+    },
+    {
+     "t": 178.84,
+     "key": "E",
+     "r": 0.67
+    },
+    {
+     "t": 185.74,
+     "key": "Bm",
+     "r": 0.58
+    },
+    {
+     "t": 186.44,
+     "key": "E",
+     "r": 0.67
+    },
+    {
+     "t": 188.15,
+     "key": "Bm",
+     "r": 0.58
+    },
+    {
+     "t": 188.75,
+     "key": "E",
+     "r": 0.67
+    }
+   ],
+   "versions": {
+    "ffmpeg": "ffmpeg version 9.0-NoMercy-keydetect-v1.3.0 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg_sha256": "28f445ee6e65c4337e8fca617763af9e3816af7f3920983edcf34b16a7173a96",
+    "onnxruntime": "1.30.0.0",
+    "madmom_model": "key_cnn 2018 (madmom_models), as ONNX"
+   }
+  },
+  "duration": 204
+ },
+ {
+  "artist": "50 Cent",
+  "title": "Just A Lil Bit",
+  "confidence": "Withheld",
+  "tonic": null,
+  "mode": null,
+  "mixed": false,
+  "reasoning": "librosa_ks (D# major, conf 0.59) and ffmpeg_keydetect (C minor, r=0.667, DISTRUST band) form an unresolved relative-key pair; crema produced no result at all (no pitched chords detected). ffmpeg's r sits below the 0.70 trust floor. The chord/flicker check (see tonic_check) does not positively resolve the split in favor of either candidate -- if anything it points toward a third, undetected center (F minor) that no algorithm proposed, which is itself evidence the whole-file chroma read is unreliable here rather than evidence for a specific alternate tag. Corroboration search found only algorithmic/chord-recogniser sources, and they scatter across four different answers with no two agreeing for the same reason (C# unspecified-mode, C minor, Eb major via the excluded Chordify, G#/Ab minor) -- this is dispersion, not consensus, and none is authoritative or corroborating per the source ladder. A --segment re-run was considered but skipped: choosing a window responsibly requires knowing the track's structure (verse/hook boundaries), which isn't available without listening to the retained audio, and picking a window by scanning the r-confidence flicker instead would be circular reasoning the skill explicitly rules out. Given an unresolved relative split, a sub-threshold r, chord evidence that fits neither candidate cleanly, and no converging external source, this is withheld rather than tagged with either candidate.",
+  "tonicCheck": "The committed progression is dominated by Fm (21/64 chords) with the piece opening and closing on Fm, moving mainly Fm<->F#(A#m/A# also frequent). Read as C minor, Fm works as iv and Gm as v, but A#m (9x) and F# (11x) together are 31% of the chords and don't fit C natural minor's diatonic set (that scale's vii is Bb major, not Bbm, and F natural not F#). Read as Eb major (D# major's relative), Fm works as ii and Cm as vi, but again A#m and F# have no clean diatonic home (V should be Bb major, not Bbm; Eb's bII is Fb/E, not Gb/F#). Neither detector candidate is cleanly supported by the actual chord content -- the progression reads more like a chromatic ostinato (i-bII-iv around Fm) than functional harmony in either candidate key, and F minor itself isn't a hypothesis either algorithm produced. The key-event flicker is unsettled early (r 0.32-0.51 across A#/Cm/Bm/F#/C) before landing highest on Cm (r=0.81) late in the track, versus Fm (r=0.70) earlier -- two different windows disagreeing, not corroboration.",
+  "withheldReasoning": null,
+  "sections": [],
+  "sources": [
+   {
+    "url": "https://www.musicgateway.com/music-tools/song-key-bpm/50-cent/just-a-lil-bit",
+    "via": null,
+    "kind": "Algorithmic",
+    "states": "key of C#, mode not specified",
+    "statesKey": null,
+    "statesMode": null,
+    "note": "algorithmic aggregator; no mode given so not usable as states_key",
+    "sections": null
+   },
+   {
+    "url": "https://tunebat.com/Info/Just-A-Lil-Bit-50-Cent/4nva9EpKntUTs6CRSGBCn9",
+    "via": null,
+    "kind": "Algorithmic",
+    "states": "Camelot-wheel-derived key of C minor",
+    "statesKey": "C minor",
+    "statesMode": null,
+    "note": "algorithmic (Tunebat); agrees with ffmpeg_keydetect's answer but is not independent corroboration",
+    "sections": null
+   },
+   {
+    "url": "https://chordify.net/chords/50-cent-songs/just-a-lil-bit-2-chords",
+    "via": null,
+    "kind": "ChordRecognizer",
+    "states": "Eb maj",
+    "statesKey": "D# major",
+    "statesMode": null,
+    "note": "Chordify is an automatic chord recogniser, excluded as circular; matches librosa_ks's relative-major answer but carries no independent weight",
+    "sections": null
+   },
+   {
+    "url": "https://songbpm.com/@50-cent/just-a-lil-bit",
+    "via": null,
+    "kind": "Algorithmic",
+    "states": "G#/Ab key, major mode per SongBPM's own label but Camelot-adjacent to Ab; treated as a fourth, unrelated answer",
+    "statesKey": "G# minor",
+    "statesMode": null,
+    "note": "does not agree with any other source; underscores the scatter rather than resolving it",
+    "sections": null
+   }
+  ],
+  "candidates": [],
+  "evidence": {
+   "segment": null,
+   "algorithms": {
+    "librosa_ks": {
+     "key": "D# major",
+     "confidence": 0.5885740607472086,
+     "error": null
+    },
+    "crema": {
+     "key": null,
+     "confidence": null,
+     "runner_up": null,
+     "error": "no pitched chords detected"
+    },
+    "ffmpeg_keydetect": {
+     "key": "C minor",
+     "r": 0.667,
+     "r_flag": "DISTRUST (r<0.70: unreliable band)",
+     "error": null
+    }
+   },
+   "pairwise_agreement": [
+    {
+     "pair": "crema+ffmpeg",
+     "status": "single",
+     "recommended": null,
+     "note": "only ffmpeg_keydetect produced a result"
+    },
+    {
+     "pair": "librosa+crema",
+     "status": "single",
+     "recommended": null,
+     "note": "only librosa_ks produced a result"
+    },
+    {
+     "pair": "librosa+ffmpeg",
+     "status": "relative",
+     "recommended": "C minor",
+     "note": "algorithms returned relative keys (ffmpeg_keydetect: C minor, librosa_ks: Eb major); recommendation is the higher-confidence answer but either is defensible"
+    }
+   ],
+   "chords": [
+    "Fm",
+    "A#m",
+    "A#",
+    "Fm",
+    "C",
+    "F",
+    "Fm",
+    "F",
+    "A#",
+    "F",
+    "A#",
+    "Fm",
+    "F",
+    "A#",
+    "F",
+    "Fm",
+    "A#",
+    "F",
+    "Fm",
+    "D#",
+    "Fm",
+    "Gm",
+    "Fm",
+    "G#",
+    "D#",
+    "F#",
+    "A#m",
+    "Fm",
+    "F#",
+    "Fm",
+    "F#",
+    "A#m",
+    "Fm",
+    "F#",
+    "Fm",
+    "D#",
+    "A#m",
+    "Fm",
+    "F#",
+    "Fm",
+    "Cm",
+    "F#",
+    "A#m",
+    "Fm",
+    "A#m",
+    "F",
+    "F#",
+    "A#m",
+    "Fm",
+    "A#",
+    "F#",
+    "Fm",
+    "A#m",
+    "Fm",
+    "F#",
+    "F",
+    "A#m",
+    "Fm",
+    "A#",
+    "F#",
+    "Fm",
+    "A#",
+    "F#",
+    "Fm"
+   ],
+   "key_events": [
+    {
+     "t": 0.2,
+     "key": "A#",
+     "r": 0.41
+    },
+    {
+     "t": 0.25,
+     "key": "Cm",
+     "r": 0.44
+    },
+    {
+     "t": 0.34,
+     "key": "Bm",
+     "r": 0.39
+    },
+    {
+     "t": 0.45,
+     "key": "F#",
+     "r": 0.32
+    },
+    {
+     "t": 0.59,
+     "key": "C",
+     "r": 0.41
+    },
+    {
+     "t": 0.64,
+     "key": "Cm",
+     "r": 0.51
+    },
+    {
+     "t": 0.75,
+     "key": "Fm",
+     "r": 0.7
+    },
+    {
+     "t": 1.55,
+     "key": "Cm",
+     "r": 0.81
+    }
+   ],
+   "bpm_rough": 96.84,
+   "versions": {
+    "python": "3.12.13",
+    "ffmpeg": "ffmpeg version 8.1.2-NoMercy-MediaServer Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg_sha256": "9f8787381c039a90110d9832dd8c8e026b831e87558525d26e670d0bcfb2801d",
+    "librosa": "0.11.0",
+    "crema": "0.2.0"
+   }
+  },
+  "duration": 17
+ },
+ {
+  "artist": "Rihanna",
+  "title": "Rude Boy",
+  "confidence": "High",
+  "tonic": "D#",
+  "mode": "Aeolian",
+  "mixed": false,
+  "reasoning": "All three algorithms agree on D# minor: librosa_ks (confidence 0.667), crema (D# minor; runner-up G#m at ratio 0.74), ffmpeg_keydetect (r=0.816, in the trust band). The ffmpeg r-flag warns of a possible relative-key swap to F# major, but the chord and cadence evidence rules it out — F# appears only as III in passing and C#→D#m cadences resolve consistently to D#m as the tonic. Hooktheory TheoryTab independently confirms D# minor. Three-way algorithmic agreement, a positively resolving cadence to D#m, and an authoritative human source all point to the same answer.",
+  "tonicCheck": "The chord progression is dominated by D#m (i) and G#m (iv), with F#, B, and C# appearing as III, VI, and VII — all diatonic to D# natural minor. The VII→i cadence (C#→D#m) repeatedly resolves to D#m, not F# major, which rules out the relative-key swap the ffmpeg r-flag warns about. Early key flicker is chaotic (sparse intro) but stabilizes to D#m/G#m oscillation from ~t=2.8s, consistent with a i–iv vamp. CREMA's runner-up G#m is the iv chord of D# minor, not a competing tonal center.",
+  "withheldReasoning": null,
+  "sections": [],
+  "sources": [
+   {
+    "url": "https://www.hooktheory.com/theorytab/view/rihanna/rude-boy",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "D# minor; Hooktheory TheoryTab analysis names D#/Eb minor as the key, notes it as the 10th most popular minor key in the Theorytab database",
+    "statesKey": "D# minor",
+    "statesMode": null,
+    "note": "Multi-contributor Hooktheory TheoryTab, top-tier authoritative source",
+    "sections": null
+   }
+  ],
+  "candidates": [],
+  "evidence": {
+   "segment": null,
+   "algorithms": {
+    "librosa_ks": {
+     "key": "D# minor",
+     "confidence": 0.6671966889590395,
+     "error": null
+    },
+    "crema": {
+     "key": "D# minor",
+     "confidence": null,
+     "runner_up": {
+      "key": "G# minor",
+      "ratio": 0.7368
+     },
+     "error": null
+    },
+    "ffmpeg_keydetect": {
+     "key": "G# minor",
+     "r": 0.73,
+     "r_flag": "gray zone (0.70-0.75)",
+     "key_alt": "D# minor",
+     "key_alt_confidence": 0.816,
+     "key_reranked": true
+    },
+    "madmom": {
+     "key": "D# minor",
+     "confidence": 0.8831
+    },
+    "essentia_edma": {
+     "key": "D# minor",
+     "confidence": 0.9392
+    }
+   },
+   "pairwise_agreement": [
+    {
+     "pair": "madmom+ffmpeg",
+     "status": "none",
+     "note": "D# minor against G# minor"
+    },
+    {
+     "pair": "edma+ffmpeg",
+     "status": "none",
+     "note": "D# minor against G# minor"
+    },
+    {
+     "pair": "madmom+edma",
+     "status": "full",
+     "recommended": "D# minor"
+    }
+   ],
+   "chords": [
+    "G#m",
+    "D#m",
+    "G#m",
+    "D#m",
+    "F#",
+    "B",
+    "G#m",
+    "F#",
+    "C#",
+    "F#",
+    "C#",
+    "D#m",
+    "G#m",
+    "F#",
+    "C#",
+    "D#m",
+    "G#m",
+    "F#",
+    "D#m",
+    "C#",
+    "F#",
+    "A#m",
+    "G#m",
+    "B",
+    "F#",
+    "D#m",
+    "G#m",
+    "D#m",
+    "G#m",
+    "D#m",
+    "F#",
+    "D#m",
+    "B",
+    "D#m",
+    "B",
+    "G#m",
+    "D#m",
+    "B",
+    "G#m",
+    "B",
+    "D#m",
+    "G#m",
+    "D#m",
+    "F#",
+    "B",
+    "G#m",
+    "A#m",
+    "D#m",
+    "A#m",
+    "B",
+    "G#m",
+    "D#m",
+    "A#m",
+    "B",
+    "G#m",
+    "D#m",
+    "A#m",
+    "B",
+    "G#m",
+    "D#m",
+    "F#",
+    "B",
+    "G#m",
+    "A#m"
+   ],
+   "key_events": [
+    {
+     "t": 0.19,
+     "key": "C",
+     "r": 0.67
+    },
+    {
+     "t": 0.29,
+     "key": "Bm",
+     "r": 0.58
+    },
+    {
+     "t": 0.35,
+     "key": "B",
+     "r": 0.54
+    },
+    {
+     "t": 0.55,
+     "key": "G#m",
+     "r": 0.71
+    },
+    {
+     "t": 5.5,
+     "key": "D#m",
+     "r": 0.7
+    },
+    {
+     "t": 5.99,
+     "key": "G#m",
+     "r": 0.71
+    },
+    {
+     "t": 6.15,
+     "key": "D#m",
+     "r": 0.71
+    },
+    {
+     "t": 11.35,
+     "key": "G#m",
+     "r": 0.69
+    },
+    {
+     "t": 12.84,
+     "key": "D#m",
+     "r": 0.79
+    },
+    {
+     "t": 14.84,
+     "key": "G#m",
+     "r": 0.71
+    },
+    {
+     "t": 17.85,
+     "key": "D#m",
+     "r": 0.79
+    },
+    {
+     "t": 19.2,
+     "key": "G#m",
+     "r": 0.73
+    },
+    {
+     "t": 23.19,
+     "key": "D#m",
+     "r": 0.8
+    },
+    {
+     "t": 25.89,
+     "key": "G#m",
+     "r": 0.74
+    },
+    {
+     "t": 28.55,
+     "key": "D#m",
+     "r": 0.8
+    },
+    {
+     "t": 31.15,
+     "key": "G#m",
+     "r": 0.75
+    },
+    {
+     "t": 34.19,
+     "key": "D#m",
+     "r": 0.8
+    },
+    {
+     "t": 35.89,
+     "key": "G#m",
+     "r": 0.74
+    },
+    {
+     "t": 37.29,
+     "key": "D#m",
+     "r": 0.8
+    },
+    {
+     "t": 38.44,
+     "key": "G#m",
+     "r": 0.73
+    },
+    {
+     "t": 40.54,
+     "key": "D#m",
+     "r": 0.8
+    },
+    {
+     "t": 42.05,
+     "key": "G#m",
+     "r": 0.71
+    },
+    {
+     "t": 44.55,
+     "key": "D#m",
+     "r": 0.81
+    },
+    {
+     "t": 44.94,
+     "key": "G#m",
+     "r": 0.71
+    },
+    {
+     "t": 46,
+     "key": "D#m",
+     "r": 0.81
+    },
+    {
+     "t": 47.95,
+     "key": "G#m",
+     "r": 0.7
+    },
+    {
+     "t": 48.19,
+     "key": "D#m",
+     "r": 0.81
+    },
+    {
+     "t": 48.89,
+     "key": "G#m",
+     "r": 0.69
+    },
+    {
+     "t": 49.65,
+     "key": "D#m",
+     "r": 0.81
+    },
+    {
+     "t": 49.99,
+     "key": "G#m",
+     "r": 0.69
+    },
+    {
+     "t": 50.4,
+     "key": "D#m",
+     "r": 0.81
+    },
+    {
+     "t": 53,
+     "key": "G#m",
+     "r": 0.69
+    },
+    {
+     "t": 55.84,
+     "key": "D#m",
+     "r": 0.81
+    },
+    {
+     "t": 64.55,
+     "key": "G#m",
+     "r": 0.7
+    },
+    {
+     "t": 67.1,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 69.45,
+     "key": "G#m",
+     "r": 0.7
+    },
+    {
+     "t": 72.7,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 74.49,
+     "key": "G#m",
+     "r": 0.71
+    },
+    {
+     "t": 78.39,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 81,
+     "key": "G#m",
+     "r": 0.71
+    },
+    {
+     "t": 83.75,
+     "key": "D#m",
+     "r": 0.81
+    },
+    {
+     "t": 85.5,
+     "key": "G#m",
+     "r": 0.72
+    },
+    {
+     "t": 90.15,
+     "key": "D#m",
+     "r": 0.81
+    },
+    {
+     "t": 91.5,
+     "key": "G#m",
+     "r": 0.72
+    },
+    {
+     "t": 92.5,
+     "key": "D#m",
+     "r": 0.81
+    },
+    {
+     "t": 94.24,
+     "key": "G#m",
+     "r": 0.71
+    },
+    {
+     "t": 96,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 97.49,
+     "key": "G#m",
+     "r": 0.71
+    },
+    {
+     "t": 99.49,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 99.99,
+     "key": "G#m",
+     "r": 0.7
+    },
+    {
+     "t": 101.89,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 126.55,
+     "key": "G#m",
+     "r": 0.71
+    },
+    {
+     "t": 127.85,
+     "key": "D#m",
+     "r": 0.83
+    },
+    {
+     "t": 130.4,
+     "key": "G#m",
+     "r": 0.71
+    },
+    {
+     "t": 133.45,
+     "key": "D#m",
+     "r": 0.83
+    },
+    {
+     "t": 136.34,
+     "key": "G#m",
+     "r": 0.71
+    },
+    {
+     "t": 138.89,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 140.75,
+     "key": "G#m",
+     "r": 0.71
+    },
+    {
+     "t": 149.39,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 149.94,
+     "key": "G#m",
+     "r": 0.72
+    },
+    {
+     "t": 154.89,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 155.69,
+     "key": "G#m",
+     "r": 0.72
+    },
+    {
+     "t": 157.09,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 158.55,
+     "key": "G#m",
+     "r": 0.72
+    },
+    {
+     "t": 167,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 168.99,
+     "key": "G#m",
+     "r": 0.73
+    },
+    {
+     "t": 170.05,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 170.49,
+     "key": "G#m",
+     "r": 0.73
+    },
+    {
+     "t": 172.15,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 173.69,
+     "key": "G#m",
+     "r": 0.73
+    },
+    {
+     "t": 174.19,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 174.84,
+     "key": "G#m",
+     "r": 0.73
+    },
+    {
+     "t": 177.49,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 179.75,
+     "key": "G#m",
+     "r": 0.73
+    },
+    {
+     "t": 182.95,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 185.6,
+     "key": "G#m",
+     "r": 0.73
+    },
+    {
+     "t": 188.75,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 191.3,
+     "key": "G#m",
+     "r": 0.73
+    },
+    {
+     "t": 193.94,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 195.84,
+     "key": "G#m",
+     "r": 0.73
+    },
+    {
+     "t": 199.55,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 201.3,
+     "key": "G#m",
+     "r": 0.73
+    },
+    {
+     "t": 205.04,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 206.99,
+     "key": "G#m",
+     "r": 0.73
+    },
+    {
+     "t": 210.69,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 212.4,
+     "key": "G#m",
+     "r": 0.73
+    },
+    {
+     "t": 216.05,
+     "key": "D#m",
+     "r": 0.82
+    },
+    {
+     "t": 217.95,
+     "key": "G#m",
+     "r": 0.73
+    }
+   ],
+   "bpm_rough": 86.52,
+   "versions": {
+    "ffmpeg": "ffmpeg version 9.0-NoMercy-keydetect-v1.3.0 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg_sha256": "28f445ee6e65c4337e8fca617763af9e3816af7f3920983edcf34b16a7173a96",
+    "onnxruntime": "1.30.0.0",
+    "madmom_model": "key_cnn 2018 (madmom_models), as ONNX"
+   },
+   "backers": [],
+   "read_after_verdict": {
+    "at": "2026-10-25T15:07:27.3182599+00:00"
+   }
+  },
+  "duration": 233
+ },
+ {
+  "artist": "Katy Perry",
+  "title": "California Gurls",
+  "confidence": "Medium",
+  "tonic": "F",
+  "mode": "Ionian",
+  "mixed": false,
+  "reasoning": "Three-way relative split between F major and D minor; librosa+ffmpeg fully agree on F major but share KS-correlation errors (weak corroboration); crema goes D minor with a near-tie runner-up of A# major (ratio 0.9995), meaning crema is uncertain rather than confidently D minor; ffmpeg r=0.714 gray zone. Hooktheory (authoritative human source) names F major and its 125 BPM matches the evidence bpm_rough of 124.91 exactly, independently confirming the right song and breaking the relative tie. MEDIUM because crema (different method) dissented and Hooktheory was accessed via snippet.",
+  "tonicCheck": "Chord list Dm-A#-F-Gm-C is I-IV-V-vi in F major with one D major chord (V/iv secondary dominant resolving to Gm), which fits F major neatly and has no equally tidy reading in D minor. Dm appears most frequently and the flicker settles on Dm early (r=0.75), consistent with a hook built on the vi chord — not a competing tonal center. Late-song F reading (t=232s) aligns with the labeled key. Flicker complicates but does not overturn.",
+  "withheldReasoning": null,
+  "sections": [],
+  "sources": [
+   {
+    "url": "https://www.hooktheory.com/theorytab/view/katy-perry/california-gurls",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "F major, 125 BPM; chords F, Bb, C, Dm (I-IV-V-vi)",
+    "statesKey": "F major",
+    "statesMode": null,
+    "note": "Hooktheory human-contributed analysis; read from search snippet, not direct page fetch — confident enough to break the relative-key split but one leg short of HIGH",
+    "sections": null
+   }
+  ],
+  "candidates": [],
+  "evidence": {
+   "segment": null,
+   "algorithms": {
+    "librosa_ks": {
+     "key": "F major",
+     "confidence": 0.28679376654484307,
+     "error": null
+    },
+    "crema": {
+     "key": "D minor",
+     "confidence": null,
+     "runner_up": {
+      "key": "A# major",
+      "ratio": 0.9995
+     },
+     "error": null
+    },
+    "ffmpeg_keydetect": {
+     "key": "F major",
+     "r": 0.739,
+     "r_flag": "gray zone (0.70-0.75)",
+     "key_alt": "D minor",
+     "key_alt_confidence": 0.734,
+     "key_reranked": false
+    },
+    "madmom": {
+     "key": "D minor",
+     "confidence": 0.6834
+    },
+    "essentia_edma": {
+     "key": "F major",
+     "confidence": 0.8438
+    }
+   },
+   "pairwise_agreement": [
+    {
+     "pair": "madmom+ffmpeg",
+     "status": "relative",
+     "note": "relative keys: D minor and F major"
+    },
+    {
+     "pair": "edma+ffmpeg",
+     "status": "full",
+     "recommended": "F major"
+    },
+    {
+     "pair": "madmom+edma",
+     "status": "relative",
+     "note": "relative keys: D minor and F major"
+    }
+   ],
+   "chords": [
+    "F",
+    "Dm",
+    "F",
+    "A#",
+    "C",
+    "Dm",
+    "A#",
+    "Dm",
+    "F",
+    "A#",
+    "F",
+    "Dm",
+    "A#",
+    "Dm",
+    "A#",
+    "Dm",
+    "A#",
+    "Dm",
+    "A#",
+    "Dm",
+    "A#",
+    "Dm",
+    "A#",
+    "Dm",
+    "F",
+    "A#",
+    "F",
+    "Dm",
+    "F",
+    "A#",
+    "F",
+    "Dm",
+    "A#",
+    "Dm",
+    "F",
+    "A#",
+    "F",
+    "Dm",
+    "F",
+    "A#",
+    "Dm",
+    "F",
+    "A#",
+    "C",
+    "Dm",
+    "A#",
+    "Dm",
+    "F",
+    "A#",
+    "F",
+    "Dm",
+    "A#",
+    "F",
+    "A#",
+    "C",
+    "A#",
+    "Dm",
+    "A#",
+    "F",
+    "Dm",
+    "A#",
+    "C",
+    "Dm",
+    "F"
+   ],
+   "key_events": [
+    {
+     "t": 0.19,
+     "key": "Am",
+     "r": 0.47
+    },
+    {
+     "t": 0.24,
+     "key": "C#m",
+     "r": 0.89
+    },
+    {
+     "t": 0.35,
+     "key": "Am",
+     "r": 0.69
+    },
+    {
+     "t": 0.55,
+     "key": "Dm",
+     "r": 0.8
+    },
+    {
+     "t": 1.75,
+     "key": "A#",
+     "r": 0.71
+    },
+    {
+     "t": 2.9,
+     "key": "Dm",
+     "r": 0.69
+    },
+    {
+     "t": 13.25,
+     "key": "Gm",
+     "r": 0.72
+    },
+    {
+     "t": 15.25,
+     "key": "Dm",
+     "r": 0.78
+    },
+    {
+     "t": 18.19,
+     "key": "F",
+     "r": 0.7
+    },
+    {
+     "t": 19.15,
+     "key": "Dm",
+     "r": 0.8
+    },
+    {
+     "t": 21.75,
+     "key": "Gm",
+     "r": 0.73
+    },
+    {
+     "t": 21.94,
+     "key": "Dm",
+     "r": 0.82
+    },
+    {
+     "t": 28.8,
+     "key": "Gm",
+     "r": 0.72
+    },
+    {
+     "t": 30.6,
+     "key": "Dm",
+     "r": 0.82
+    },
+    {
+     "t": 36.85,
+     "key": "Gm",
+     "r": 0.7
+    },
+    {
+     "t": 37.45,
+     "key": "Dm",
+     "r": 0.82
+    },
+    {
+     "t": 60.29,
+     "key": "F",
+     "r": 0.68
+    },
+    {
+     "t": 61.4,
+     "key": "Dm",
+     "r": 0.77
+    },
+    {
+     "t": 68.69,
+     "key": "F",
+     "r": 0.69
+    },
+    {
+     "t": 69.1,
+     "key": "Dm",
+     "r": 0.77
+    },
+    {
+     "t": 70.15,
+     "key": "F",
+     "r": 0.69
+    },
+    {
+     "t": 70.85,
+     "key": "Dm",
+     "r": 0.77
+    },
+    {
+     "t": 81.59,
+     "key": "F",
+     "r": 0.71
+    },
+    {
+     "t": 82.55,
+     "key": "Dm",
+     "r": 0.76
+    },
+    {
+     "t": 83.55,
+     "key": "F",
+     "r": 0.71
+    },
+    {
+     "t": 84.49,
+     "key": "Dm",
+     "r": 0.76
+    },
+    {
+     "t": 116.4,
+     "key": "F",
+     "r": 0.7
+    },
+    {
+     "t": 117,
+     "key": "Dm",
+     "r": 0.76
+    },
+    {
+     "t": 120.05,
+     "key": "F",
+     "r": 0.7
+    },
+    {
+     "t": 120.85,
+     "key": "Dm",
+     "r": 0.76
+    },
+    {
+     "t": 121.69,
+     "key": "F",
+     "r": 0.71
+    },
+    {
+     "t": 122.85,
+     "key": "Dm",
+     "r": 0.76
+    },
+    {
+     "t": 130.04,
+     "key": "F",
+     "r": 0.71
+    },
+    {
+     "t": 130.59,
+     "key": "Dm",
+     "r": 0.76
+    },
+    {
+     "t": 131.55,
+     "key": "F",
+     "r": 0.71
+    },
+    {
+     "t": 132.35,
+     "key": "Dm",
+     "r": 0.76
+    },
+    {
+     "t": 133.6,
+     "key": "F",
+     "r": 0.71
+    },
+    {
+     "t": 134.3,
+     "key": "Dm",
+     "r": 0.76
+    },
+    {
+     "t": 135.34,
+     "key": "F",
+     "r": 0.71
+    },
+    {
+     "t": 136.1,
+     "key": "Dm",
+     "r": 0.76
+    },
+    {
+     "t": 142.99,
+     "key": "F",
+     "r": 0.72
+    },
+    {
+     "t": 143.95,
+     "key": "Dm",
+     "r": 0.76
+    },
+    {
+     "t": 145.15,
+     "key": "F",
+     "r": 0.72
+    },
+    {
+     "t": 145.9,
+     "key": "Dm",
+     "r": 0.76
+    },
+    {
+     "t": 185.19,
+     "key": "F",
+     "r": 0.71
+    },
+    {
+     "t": 186.24,
+     "key": "Dm",
+     "r": 0.75
+    },
+    {
+     "t": 186.89,
+     "key": "F",
+     "r": 0.71
+    },
+    {
+     "t": 188.1,
+     "key": "Dm",
+     "r": 0.75
+    },
+    {
+     "t": 189.2,
+     "key": "F",
+     "r": 0.71
+    },
+    {
+     "t": 189.85,
+     "key": "Dm",
+     "r": 0.75
+    },
+    {
+     "t": 190.94,
+     "key": "F",
+     "r": 0.72
+    },
+    {
+     "t": 192.69,
+     "key": "Dm",
+     "r": 0.75
+    },
+    {
+     "t": 196.79,
+     "key": "F",
+     "r": 0.72
+    },
+    {
+     "t": 197.65,
+     "key": "Dm",
+     "r": 0.75
+    },
+    {
+     "t": 198.69,
+     "key": "F",
+     "r": 0.72
+    },
+    {
+     "t": 199.69,
+     "key": "Dm",
+     "r": 0.75
+    },
+    {
+     "t": 200.9,
+     "key": "F",
+     "r": 0.72
+    },
+    {
+     "t": 201.35,
+     "key": "Dm",
+     "r": 0.75
+    },
+    {
+     "t": 204.5,
+     "key": "F",
+     "r": 0.72
+    },
+    {
+     "t": 204.99,
+     "key": "Dm",
+     "r": 0.75
+    },
+    {
+     "t": 212.14,
+     "key": "F",
+     "r": 0.73
+    },
+    {
+     "t": 213.1,
+     "key": "Dm",
+     "r": 0.75
+    },
+    {
+     "t": 214.25,
+     "key": "F",
+     "r": 0.73
+    },
+    {
+     "t": 215.04,
+     "key": "Dm",
+     "r": 0.75
+    },
+    {
+     "t": 217.69,
+     "key": "F",
+     "r": 0.73
+    },
+    {
+     "t": 218.6,
+     "key": "Dm",
+     "r": 0.75
+    },
+    {
+     "t": 225.29,
+     "key": "F",
+     "r": 0.73
+    },
+    {
+     "t": 227.2,
+     "key": "Dm",
+     "r": 0.74
+    },
+    {
+     "t": 232.05,
+     "key": "F",
+     "r": 0.74
+    }
+   ],
+   "bpm_rough": 124.91,
+   "versions": {
+    "ffmpeg": "ffmpeg version 9.0-NoMercy-keydetect-v1.3.0 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg_sha256": "28f445ee6e65c4337e8fca617763af9e3816af7f3920983edcf34b16a7173a96",
+    "onnxruntime": "1.30.0.0",
+    "madmom_model": "key_cnn 2018 (madmom_models), as ONNX"
+   },
+   "backers": [
+    "essentia_edma"
+   ],
+   "read_after_verdict": {
+    "at": "2026-10-25T14:35:53.0967663+00:00"
+   }
+  },
+  "duration": 247
+ },
+ {
+  "artist": "Mark Ronson, Bruno Mars",
+  "title": "Uptown Funk",
+  "confidence": "High",
+  "tonic": "D",
+  "mode": "Dorian",
+  "mixed": false,
+  "reasoning": "All three detectors agree on D minor. Agreement is meaningful here because CREMA is a different method from the two Krumhansl-Schmuckler template correlators, and CREMA's runner-up (G minor at 0.62) is not the relative, so there is no near-tie relative-swap warning. ffmpeg r=0.716 is only gray-zone, so the call rests on the cadence check plus independent human transcription rather than on detector confidence. Hooktheory states D Dorian outright -- read in full rather than inferred from a search snippet -- and the G major against the D tonic noted in the tonic check is that mode audible in the harmony. The Ableton tag stays D minor: the collapse is to the parallel, so the tonic is shared, and a D Dorian tag would drop the track out of a D Minor browser filter.",
+  "tonicCheck": "Committed progression F C F Dm C F G F Dm D Dm F Dm returns to Dm as its resting point every cycle; F, the relative major, only ever passes through and never functions as an arrival, so the relative swap is ruled out positively rather than by detector confidence. The G major against a D tonic is the Dorian natural-6 that gives the riff its character and explains the C major algorithmic misreads. Early flicker (A, D, Gm) is the horn-stab intro before the groove enters; the estimate holds Dm from t=62s onward.",
+  "withheldReasoning": null,
+  "sections": [],
+  "sources": [
+   {
+    "url": "https://www.hooktheory.com/theorytab/view/bruno-mars/uptown-funk",
+    "via": null,
+    "kind": "Authoritative",
+    "states": "D Dorian. The page states it nine times and explains it directly: \"The D Dorian scale is similar to the D Minor scale except that its 6th note is a half step higher.\"",
+    "statesKey": "D minor",
+    "statesMode": "Dorian",
+    "note": "Read in full via curl with a browser User-Agent per SOURCES.md, which returns 200 -- the earlier run recorded this as snippet-only because SOURCES.md also claimed these sites are not directly fetchable.",
+    "sections": null
+   },
+   {
+    "url": "https://midisale.com/product/123797-uptown-funk-style-bruno-mars-tempo-115-key-d-min",
+    "via": null,
+    "kind": "Corroborating",
+    "states": "commercial MIDI transcription listed as TEMPO 115 KEY D MIN",
+    "statesKey": "D minor",
+    "statesMode": null,
+    "note": "hand-transcribed product listing, independent of the audio detectors; also the BPM source",
+    "sections": null
+   },
+   {
+    "url": "https://tunebat.com/Info/Uptown-Funk-feat-Bruno-Mars-Mark-Ronson-Bruno-Mars/32OlwWuMpZ6b0aN2RZOeMS",
+    "via": null,
+    "kind": "Algorithmic",
+    "states": "Tunebat and Musicstax both report C major, 115 BPM",
+    "statesKey": "C major",
+    "statesMode": null,
+    "note": "dissent kept, verdict unchanged: C major is the flat-VII of a Dorian D tonic, not a relative or parallel swap, and the cadence check rules it out. Precisely the Dorian-to-Ionian confusion these Spotify-derived detectors are prone to -- and now explained by the recorded mode rather than only in prose.",
+    "sections": null
+   }
+  ],
+  "candidates": [],
+  "evidence": {
+   "segment": null,
+   "algorithms": {
+    "librosa_ks": {
+     "key": "D minor",
+     "confidence": 0.3923177879620579,
+     "error": null
+    },
+    "crema": {
+     "key": "D minor",
+     "confidence": null,
+     "runner_up": {
+      "key": "G minor",
+      "ratio": 0.6191
+     },
+     "error": null
+    },
+    "ffmpeg_keydetect": {
+     "key": "D minor",
+     "r": 0.814,
+     "r_flag": "trust band (>0.75; watch for relative-key swap)",
+     "key_alt": "D major",
+     "key_alt_confidence": 0.615,
+     "key_reranked": false
+    },
+    "madmom": {
+     "key": "D minor",
+     "confidence": 0.7646
+    },
+    "essentia_edma": {
+     "key": "F major",
+     "confidence": 0.723
+    }
+   },
+   "pairwise_agreement": [
+    {
+     "pair": "madmom+ffmpeg",
+     "status": "full",
+     "recommended": "D minor"
+    },
+    {
+     "pair": "edma+ffmpeg",
+     "status": "relative",
+     "note": "relative keys: F major and D minor"
+    },
+    {
+     "pair": "madmom+edma",
+     "status": "relative",
+     "note": "relative keys: D minor and F major"
+    }
+   ],
+   "chords": [
+    "Dm",
+    "F",
+    "G",
+    "Dm",
+    "F",
+    "C",
+    "F",
+    "Dm",
+    "D",
+    "G",
+    "F",
+    "Dm",
+    "C",
+    "F",
+    "G",
+    "F",
+    "G",
+    "F",
+    "Dm",
+    "D",
+    "G",
+    "D",
+    "G",
+    "D",
+    "Dm",
+    "G",
+    "Dm",
+    "D",
+    "Dm",
+    "F",
+    "Dm",
+    "F",
+    "Dm",
+    "F",
+    "Dm"
+   ],
+   "key_events": [
+    {
+     "t": 0.35,
+     "key": "A",
+     "r": 0.6
+    },
+    {
+     "t": 0.55,
+     "key": "Dm",
+     "r": 0.72
+    },
+    {
+     "t": 0.84,
+     "key": "D",
+     "r": 0.78
+    },
+    {
+     "t": 0.89,
+     "key": "Dm",
+     "r": 0.78
+    },
+    {
+     "t": 1.2,
+     "key": "D",
+     "r": 0.77
+    },
+    {
+     "t": 2.74,
+     "key": "G",
+     "r": 0.74
+    },
+    {
+     "t": 9.14,
+     "key": "Gm",
+     "r": 0.76
+    },
+    {
+     "t": 26.8,
+     "key": "C",
+     "r": 0.65
+    },
+    {
+     "t": 38.4,
+     "key": "Dm",
+     "r": 0.58
+    },
+    {
+     "t": 38.64,
+     "key": "C",
+     "r": 0.67
+    },
+    {
+     "t": 39.74,
+     "key": "Dm",
+     "r": 0.57
+    },
+    {
+     "t": 40.3,
+     "key": "C",
+     "r": 0.67
+    },
+    {
+     "t": 40.95,
+     "key": "Dm",
+     "r": 0.59
+    },
+    {
+     "t": 41.35,
+     "key": "C",
+     "r": 0.66
+    },
+    {
+     "t": 41.5,
+     "key": "Dm",
+     "r": 0.59
+    },
+    {
+     "t": 41.84,
+     "key": "C",
+     "r": 0.66
+    },
+    {
+     "t": 42.24,
+     "key": "Dm",
+     "r": 0.59
+    }
+   ],
+   "bpm_rough": 114.59,
+   "versions": {
+    "ffmpeg": "ffmpeg version 9.0-NoMercy-keydetect-v1.3.0 Copyright (c) 2000-2026 the FFmpeg developers",
+    "ffmpeg_sha256": "28f445ee6e65c4337e8fca617763af9e3816af7f3920983edcf34b16a7173a96",
+    "onnxruntime": "1.30.0.0",
+    "madmom_model": "key_cnn 2018 (madmom_models), as ONNX"
+   },
+   "backers": [
+    "madmom"
+   ],
+   "read_after_verdict": {
+    "at": "2026-10-25T14:49:56.8769865+00:00"
+   }
+  },
+  "duration": 57
+ }
+]

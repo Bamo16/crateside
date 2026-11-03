@@ -44,3 +44,19 @@ Read [CLAUDE.md](CLAUDE.md) for the working agreements, [CONTEXT.md](CONTEXT.md)
 vocabulary, and [docs/adr](docs/adr) before changing a decision.
 
 Do not run the app while editing it, and do not add machine-specific paths.
+
+## Screenshots
+
+The README's screenshots come from a demo library, never from a real one, so each can be retaken
+identically after a redesign:
+
+```
+uv run --no-project --with playwright python scripts/screenshots.py
+```
+
+It builds crateside and `demo/Crateside.Demo`, writes the demo library into a scratch folder, starts
+crateside on port 5099 against it (`Paths:DataRoot`, no workers: nothing downloads, separates,
+judges or touches the network), shoots `docs/images/*.png` in headless Edge, and stops what it
+started. It needs ffmpeg on PATH and leaves nothing behind. The demo's state is written through
+crateside's own stores, so a change to a store's format is a change to the demo
+([ADR 0074](docs/adr/0074-a-data-root-moves-all-of-crateside-state-and-a-demo-library-fills-it.md)).
