@@ -153,7 +153,7 @@
     font-weight: 400;
 }
 
-/* The library's panels, three across on a wide window. The two detector panels take two. */
+/* The library's panels, three across on a wide window. Key detectors, Loudness adjustments and the starter warps take two. */
 .library {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -166,19 +166,8 @@
 
 .library > ::deep .kdet,
 .library > ::deep .loud,
-.library > .wide {
+.library > ::deep .starter {
     grid-column: span 2;
-}
-
-.bpm-pair {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 40px;
-    align-items: start;
-}
-
-.bpm-pair .strip-row {
-    grid-template-columns: 110px minmax(0, 1fr);
 }
 
 .sub-panel {
@@ -207,13 +196,10 @@
 
     .library > ::deep .kdet,
     .library > ::deep .loud,
-    .library > .wide {
+    .library > ::deep .starter {
         grid-column: auto;
     }
 
-    .bpm-pair {
-        grid-template-columns: minmax(0, 1fr);
-    }
 }
 
 .panels {
@@ -437,195 +423,6 @@ h4 {
     justify-content: space-between;
     padding: 4px 12px;
     border-bottom: 1px solid var(--line);
-}
-
-.detectors {
-    display: flex;
-    flex-direction: column;
-}
-
-.det-row {
-    display: grid;
-    grid-template-columns: 190px minmax(0, 1fr) minmax(0, 1fr);
-    align-items: center;
-    border-bottom: 1px solid var(--line);
-}
-
-.det-row > span {
-    padding: 6px 12px;
-}
-
-.det-head {
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-50);
-    border-bottom-color: var(--line-strong);
-}
-
-.finding {
-    background: rgba(255, 255, 255, 0.03);
-}
-
-.band-name {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-}
-
-.band-title {
-    font-size: 14px;
-}
-
-.finding .band-title {
-    font-weight: 600;
-}
-
-.rule {
-    font-size: 11.5px;
-    color: var(--text-50);
-}
-
-.det-cell {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 40px;
-    gap: 10px;
-    align-items: center;
-}
-
-.det-cell .count {
-    padding: 0;
-    font-size: 13px;
-    text-align: right;
-    color: var(--text);
-    background: none;
-    border: 0;
-    text-underline-offset: 3px;
-    cursor: pointer;
-}
-
-.det-cell .count:hover:not(:disabled),
-.det-cell .count.open {
-    text-decoration: underline;
-}
-
-.det-cell .count.open {
-    font-weight: 500;
-}
-
-.det-cell .count:disabled {
-    color: var(--text-50);
-    cursor: default;
-}
-
-.band-songs {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin: 8px 0 8px 190px;
-    padding: 14px 16px;
-    background: var(--surface);
-    border: 1px solid var(--line-strong);
-    border-radius: 8px;
-}
-
-.band-songs .fold {
-    padding: 0;
-}
-
-.song-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 70px 70px 70px;
-    align-items: center;
-    padding: 5px 0;
-    font-size: 13.5px;
-    border-bottom: 1px solid var(--line);
-}
-
-.song-head {
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-50);
-    border-bottom-color: var(--line-strong);
-}
-
-.song-head .numeric {
-    font-family: inherit;
-    font-size: 12px;
-}
-
-.misses {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding-top: 6px;
-}
-
-.misses-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    font-size: 12.5px;
-}
-
-.misses-head .quiet {
-    color: var(--text-50);
-}
-
-.strip-row {
-    display: grid;
-    grid-template-columns: 190px minmax(0, 1fr);
-    align-items: end;
-}
-
-.strip-name {
-    padding: 0 12px 4px;
-    font-size: 13px;
-    color: var(--text-75);
-}
-
-.strip {
-    display: flex;
-    align-items: flex-end;
-    gap: 1px;
-    height: 64px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.strip span {
-    flex: 1;
-    background: var(--teal);
-    border-radius: 1px 1px 0 0;
-}
-
-.ticks {
-    position: relative;
-    height: 30px;
-}
-
-.tick {
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    font-size: 11.5px;
-    color: var(--text-50);
-    transform: translateX(-50%);
-}
-
-.tick.strong {
-    color: var(--text);
-}
-
-.tick-mark {
-    width: 1px;
-    height: 5px;
-    background: var(--text-30);
 }
 
 .opener summary {

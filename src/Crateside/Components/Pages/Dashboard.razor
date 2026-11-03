@@ -308,124 +308,9 @@
                                 </section>
                             }
 
-                            @if (_detectors.Songs > 0)
+                            @if (_starters.Compared > 0)
                             {
-                                <section id="p-bpm" class="wide">
-                                    <h3>BPM detectors against the warps</h3>
-                                    <p class="lead">
-                                        How often each detector's BPM matches the one set by ear, on the
-                                        <span class="mono">@_detectors.Songs</span> songs that have both.
-                                        beatdetect is read by crateside on each upload's source, else its instrumental@(Beats.Build is { } build ? $" with ffmpeg {build.Label}" : null).
-                                    </p>
-
-                                    <div class="bpm-pair">
-                                    <div class="detectors">
-                                        <div class="det-row det-head">
-                                            <span>Reads the tempo</span>
-                                            @foreach (var detector in Detectors)
-                                            {
-                                                <span>@DetectorHead(detector)</span>
-                                            }
-                                        </div>
-
-                                        @foreach (var band in Enum.GetValues<TempoBand>())
-                                        {
-                                            <div class="det-row @(band is TempoBand.TripletOrDotted ? "finding" : null)">
-                                                <span class="band-name">
-                                                    <span class="band-title">@BandName(band)</span>
-                                                    <span class="rule mono">@BandRule(band)</span>
-                                                </span>
-                                                @foreach (var detector in Detectors)
-                                                {
-                                                    var reads = _detectors.Reads(detector, band).Count;
-
-                                                    <span class="det-cell">
-                                                        <span class="bar" style="width: @Percent(reads, _detectors.Largest)"></span>
-                                                        <button class="count mono @(_open == (detector, band) ? "open" : null)"
-                                                                @onclick="() => Toggle(detector, band)" disabled="@(reads is 0)">
-                                                            @reads
-                                                        </button>
-                                                    </span>
-                                                }
-                                            </div>
-
-                                            @if (_open is { } open && open.Band == band)
-                                            {
-                                                var songs = _detectors.Reads(open.Detector, open.Band);
-
-                                                <div class="band-songs">
-                                                    <div class="band-line">
-                                                        <span class="band-label">@BandSentence(open.Detector, open.Band, songs.Count)</span>
-                                                        <div class="actions">
-                                                            <button class="outline" @onclick="() => Copy(open.Detector, open.Band)">
-                                                                @(_copied ? "Copied" : "Copy as text")
-                                                            </button>
-                                                            <button class="outline" @onclick="() => _open = null">Close</button>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="song-row song-head">
-                                                        <span>Song</span>
-                                                        <span class="numeric">Warp</span>
-                                                        <span class="numeric">Read</span>
-                                                        <span class="numeric">Ratio</span>
-                                                    </div>
-                                                    @foreach (var read in _allSongs ? songs : songs.Take(SongsShown))
-                                                    {
-                                                        <div class="song-row">
-                                                            <span>@read.Song.Name</span>
-                                                            <TempoFigure Tempo="read.Warped" />
-                                                            <TempoFigure Tempo="read.Read" />
-                                                            <span class="numeric quiet">@read.Ratio.ToString("0.00", CultureInfo.InvariantCulture)</span>
-                                                        </div>
-                                                    }
-                                                    @if (!_allSongs && songs.Count > SongsShown)
-                                                    {
-                                                        <p class="fold">
-                                                            @(songs.Count - SongsShown) more ·
-                                                            <button class="link" @onclick="() => _allSongs = true">show all</button>
-                                                        </p>
-                                                    }
-                                                </div>
-                                            }
-                                        }
-                                    </div>
-
-                                    <div class="misses">
-                                        <div class="misses-head">
-                                            <span class="band-label">Where the misses land · detected ÷ warped</span>
-                                            <span class="quiet">exact matches left out</span>
-                                        </div>
-
-                                        @foreach (var detector in Detectors)
-                                        {
-                                            <div class="strip-row">
-                                                <span class="strip-name">@DetectorHead(detector)</span>
-                                                <div class="strip">
-                                                    @foreach (var height in _strips[detector])
-                                                    {
-                                                        <span style="height: @(height)px"></span>
-                                                    }
-                                                </div>
-                                            </div>
-                                        }
-
-                                        <div class="strip-row">
-                                            <span></span>
-                                            <div class="ticks">
-                                                @foreach (var (ratio, label) in Ticks)
-                                                {
-                                                    <span class="tick @(ratio is 2.0 / 3 or 0.75 ? "strong" : null)"
-                                                          style="left: @Position(ratio)">
-                                                        <span class="tick-mark"></span>
-                                                        <span class="mono">@label</span>
-                                                    </span>
-                                                }
-                                            </div>
-                                        </div>
-                                    </div>
-                                    </div>
-                                </section>
+                                <StarterWarps Counts="_starters" />
                             }
 
                             <section id="p-genre">
@@ -574,38 +459,19 @@
     private const string FoldCookie = "crateside.dashboard.folded";
     private const int KeysShown = 8;
     private const int ArtistsShown = 12;
-    private const int SongsShown = 8;
-    private const int StripBins = 64;
-    private const int StripHeight = 64;
-    private const double StripLow = 0.4;
-    private const double StripHigh = 2.2;
 
     private static readonly string[] Sections = [TurnId, WorkId, TimeId, LibraryId];
-
-    private static readonly Detector[] Detectors = [Detector.Beatdetect];
 
     private static readonly TimeSpan Tick = TimeSpan.FromSeconds(1);
 
     private static readonly TimeSpan QuotaEvery = TimeSpan.FromMinutes(1);
 
-    private static readonly (double Ratio, string Label)[] Ticks =
-    [
-        (0.5, "½"),
-        (2.0 / 3, "2/3"),
-        (0.75, "3/4"),
-        (1, "1"),
-        (4.0 / 3, "4/3"),
-        (1.5, "3/2"),
-        (2, "2"),
-    ];
-
     private KeyDistribution _distribution = null!;
     private IReadOnlyList<GenreGap> _gaps = [];
     private TempoCounts _tempo = null!;
     private ArtistCounts _artists = null!;
-    private DetectorBands _detectors = null!;
     private IReadOnlyList<DriftCount> _drift = [];
-    private Dictionary<Detector, int[]> _strips = [];
+    private StarterWarpCounts _starters = new([], 0);
     private IReadOnlyList<(string? Value, int Songs)> _familiarity = [];
     private KeyDetectorCounts _keysBoth = new(0, [], []);
     private KeyDetectorCounts _keysHigh = new(0, [], []);
@@ -626,9 +492,6 @@
     private int? _queued;
     private bool _allKeys;
     private bool _allArtists;
-    private (Detector Detector, TempoBand Band)? _open;
-    private bool _allSongs;
-    private bool _copied;
 
     private ElementReference _index;
     private IJSObjectReference? _module;
@@ -681,7 +544,7 @@
             new("p-key", "By key", Represented, IsPanel: true),
             LoudnessCounted > 0 ? new("p-loud", "Loudness adjustments", LoudnessCounted, IsPanel: true) : null,
             _tempo.Warped > 0 ? new("p-tempo", "By tempo", _tempo.Warped, IsPanel: true) : null,
-            _detectors.Songs > 0 ? new("p-bpm", "BPM detectors", _detectors.Songs, IsPanel: true) : null,
+            _starters.Compared > 0 ? new("p-starter", "Starter warps", _starters.Compared, IsPanel: true) : null,
             new("p-genre", "By genre", _distribution.Genres.Count(g => g.Tracks > 0), IsPanel: true),
             new("p-familiarity", "By familiarity", _familiarity.Count(f => f is { Value: not null, Songs: > 0 }), IsPanel: true),
             _artists.Artists.Count > 0 ? new("p-artist", "By artist", _artists.Artists.Count, IsPanel: true) : null,
@@ -840,17 +703,13 @@
         _gaps = GenreGaps.From(GenreRecords.Read().Values);
         _tempo = TempoCounts.From(distribution.Songs);
         _artists = ArtistCounts.From(distribution.Songs);
-        _detectors = DetectorBands.From(distribution.Songs);
+        _starters = StarterWarpCounts.From(distribution.Songs.ToList());
         _drift = DriftCount.From(distribution.Songs);
 
         var evidence = Ledger.LatestEvidence().Values;
         var ledger = Ledger.Read();
         _keysBoth = KeyDetectorCounts.From(evidence, ledger, highOnly: false);
         _keysHigh = KeyDetectorCounts.From(evidence, ledger, highOnly: true);
-
-        var strips = Detectors.ToDictionary(detector => detector, Strip);
-        var tallest = strips.Values.SelectMany(bins => bins).DefaultIfEmpty().Max();
-        _strips = strips.ToDictionary(pair => pair.Key, pair => Scaled(pair.Value, tallest));
 
         var familiarity = FamiliarityRecords.Read();
         var written = distribution
@@ -892,90 +751,6 @@
     }
 
     private DriftCount Drift(TempoShape shape) => _drift.First(count => count.Shape == shape);
-
-    private void Toggle(Detector detector, TempoBand band)
-    {
-        _open = _open == (detector, band) ? null : (detector, band);
-        _allSongs = false;
-        _copied = false;
-    }
-
-    private async Task Copy(Detector detector, TempoBand band)
-    {
-        var reads = _detectors.Reads(detector, band);
-        var text = new StringBuilder().AppendLine(BandSentence(detector, band, reads.Count));
-
-        foreach (var read in reads)
-            text.AppendLine(
-                $"{read.Song.Name} · {TempoFormat.Format(read.Warped).Text} · {TempoFormat.Format(read.Read).Text} · {read.Ratio.ToString("0.00", CultureInfo.InvariantCulture)}"
-            );
-
-        await Js.InvokeVoidAsync("navigator.clipboard.writeText", text.ToString());
-        _copied = true;
-    }
-
-    /// <summary>Column heights for one detector's misses, on a log₂ axis shared by both strips.</summary>
-    private int[] Strip(Detector detector)
-    {
-        var bins = new int[StripBins];
-
-        foreach (var miss in _detectors.Misses(detector))
-        {
-            var at = (Math.Log2(miss.Ratio) - Math.Log2(StripLow)) / (Math.Log2(StripHigh) - Math.Log2(StripLow));
-
-            if (at is >= 0 and < 1)
-                bins[(int)(at * StripBins)]++;
-        }
-
-        return bins;
-    }
-
-    private static int[] Scaled(int[] bins, int largest) =>
-        [.. bins.Select(count => largest is 0 || count is 0 ? 0 : Math.Max(1, count * StripHeight / largest))];
-
-    private static string Position(double ratio) =>
-        Percent((Math.Log2(ratio) - Math.Log2(StripLow)) / (Math.Log2(StripHigh) - Math.Log2(StripLow)) * 100, 100);
-
-    private static string DetectorHead(Detector detector) =>
-        detector switch
-        {
-            Detector.Beatdetect => "beatdetect, raw",
-            _ => detector.ToString(),
-        };
-
-    private string BandName(TempoBand band) =>
-        band switch
-        {
-            TempoBand.Exact => "Exact",
-            TempoBand.Close => "Close",
-            TempoBand.HalfOrDouble => "Half or double",
-            TempoBand.TripletOrDotted when _detectors.ReadsFastToo => "Triplet or dotted",
-            TempoBand.TripletOrDotted => "Two-thirds or three-quarters",
-            _ => "Wrong",
-        };
-
-    private string BandRule(TempoBand band) =>
-        band switch
-        {
-            TempoBand.Exact => "within 0.5",
-            TempoBand.Close => "within 2",
-            TempoBand.HalfOrDouble => "×½ · ×2 · ±2",
-            TempoBand.TripletOrDotted when _detectors.ReadsFastToo => "×2/3 · ×3/4 · ×4/3 · ×3/2 · ±2",
-            TempoBand.TripletOrDotted => "×2/3 · ×3/4 · ±2",
-            _ => "anything else",
-        };
-
-    private string BandSentence(Detector detector, TempoBand band, int songs) =>
-        $"beatdetect · {"song".ToQuantity(songs)} "
-        + band switch
-        {
-            TempoBand.Exact => "read exactly",
-            TempoBand.Close => "read within 2",
-            TempoBand.HalfOrDouble => "read at half or double",
-            TempoBand.TripletOrDotted when _detectors.ReadsFastToo => "read as a triplet or dotted tempo",
-            TempoBand.TripletOrDotted => "read at two-thirds or three-quarters",
-            _ => "read wrong",
-        };
 
     private static string Percent(double part, double whole) =>
         $"{(whole is 0 ? 0 : part * 100 / whole).ToString("0.#", CultureInfo.InvariantCulture)}%";

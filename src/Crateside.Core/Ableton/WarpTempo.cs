@@ -32,6 +32,9 @@ public sealed record WarpTempo(
     /// <summary>Each audible run of four bars and its tempo, where a drifting warp's range is read.</summary>
     public IReadOnlyList<TempoWindow> Windows { get; init; } = [];
 
+    /// <summary>The first and last bar line the clip spans, so a steady warp's beat at any time can be read off it.</summary>
+    public GridLine? Line { get; init; }
+
     /// <summary>Where a steady warp's grid sits against the audio's transients; null for any other shape (ADR 0050).</summary>
     public WarpGrid? Grid { get; init; }
 
@@ -101,6 +104,7 @@ public sealed record WarpTempo(
         {
             AudibleBars = audible.Length,
             Windows = WindowsOf(lines, overview, sampleRate),
+            Line = new GridLine(lines[0].Seconds, lines[0].Beat, lines[^1].Seconds, lines[^1].Beat),
         };
     }
 
@@ -236,6 +240,20 @@ public sealed record WarpGrid(TrueUpReason? Reason, double? TrueBpm, double Drif
     /// <summary>It sits on the audio's grid within what the windows can tell apart.</summary>
     [JsonIgnore]
     public bool Holds => Reason is TrueUpReason.WithinNoise;
+}
+
+/// <summary>Two points on a warp's beat line, in seconds into the audio and beats on Live's ruler.</summary>
+public sealed record GridLine(
+    double FirstSeconds,
+    double FirstBeat,
+    double LastSeconds,
+    double LastBeat
+)
+{
+    /// <summary>The beat at a time, extending the line past either end.</summary>
+    public double BeatAt(double seconds) =>
+        FirstBeat
+        + (seconds - FirstSeconds) * (LastBeat - FirstBeat) / (LastSeconds - FirstSeconds);
 }
 
 public enum TempoShape

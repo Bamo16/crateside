@@ -341,9 +341,9 @@ Tools · Settings**), at `/` and `/dashboard`; Tracks moved to `/tracks`. No wid
   header is.
 - **Over time**: tracks finished by ISO week (the current week dashed, "so far"), stages run, and
   the latest eight stage events.
-- **The library grid** is three columns at ≥ 2000px, two below, one below 1400px. Key detectors
-  and BPM detectors span two wherever there are two. Order: Key detectors, By key, By tempo, BPM
-  detectors, By genre (with *What the sources called the rest* behind a dashed opener), By
+- **The library grid** is three columns at ≥ 2000px, two below, one below 1400px. Key detectors,
+  Loudness adjustments and How the starter warps fared span two wherever there are two. Order: Key
+  detectors, Loudness adjustments, By key, By tempo, How the starter warps fared, By genre (with *What the sources called the rest* behind a dashed opener), By
   familiarity (with No key under it), By artist.
 - **The action band** (*Never judged*) sits at the top of *The library*.
 - **Top N · all.** Key shows 8 rows, artists 12, the all-three-wrong list 6.
@@ -352,8 +352,8 @@ Tools · Settings**), at `/` and `/dashboard`; Tracks moved to `/tracks`. No wid
 - **Split bars** (tempo bins, key detectors): the solid part is the strict count, teal 35% the
   looser one.
 - **Tempo summaries are whole with no marks**: bins and peaks (a peak counts songs whose headline
-  rounds to it), and *By artist*'s range, rounded outward. The BPM detectors drill-down is one
-  track per row, so its figures carry their marks, decimal-padded; Copy keeps the tilde.
+  rounds to it), and *By artist*'s range, rounded outward. *How the starter warps fared* lists
+  song names under a count, with no figures.
 
 ## Tools
 
@@ -615,11 +615,9 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **Key-detector figures are live**, read from the ledger on load and Re-read, so they move as
   verdicts arrive (406 HIGH or MEDIUM songs on 2026-09-28, against the brief's 397). A verdict
   recorded by hand carries no detectors, so its song uses the latest run that has them.
-- **The BPM detector figures differ from the canvas** (from handoff 08): some detectors read fast
-  as well as slow, so the fourth band is *Triplet or dotted* with its wider rule.
-- **The BPM detectors panel has one detector, beatdetect.** The ledger stopped producing a BPM
-  (#93), so its row was retired; older ledger lines keep their `bpm` as the
-  last-resort figure, but nothing is compared.
+- **The BPM detectors panel is gone** (ADR 0075). It had one detector, beatdetect, and said little;
+  *How the starter warps fared* took its place. The ledger stopped producing a BPM (#93); older ledger lines
+  keep their `bpm` as the last-resort figure.
 - **The shape line reads "Steady · Mostly steady · Drifting"** (handoff 08 drew the older names).
 - **Key detectors shows the three detectors crateside still runs**: keydetect, madmom and edma (#113).
   CREMA and librosa are retired from the panel and its miss table (their readings stay in older

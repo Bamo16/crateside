@@ -127,7 +127,7 @@ subscription each track costs about 37k tokens of session start-up, and backgrou
 ## The pages
 
 - **Dashboard**: what is waiting on you, what is running now, and the library by key, tempo,
-  genre, familiarity and artist, with how the BPM detectors compare against your warps.
+  genre, familiarity and artist, with how crateside's starter warps compared with the warps you finished.
 - **Tracks**: one row per song, filtered to *Unfinished*, *In staging*, *In flight*, *Needs
   attention* and more. A row expands to its files, its verdict and why, and its controls: rename,
   swap the upload its stems are cut from, change which stems are cut, or remove it.
