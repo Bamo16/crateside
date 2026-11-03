@@ -115,7 +115,7 @@
 
 .log-line {
     display: grid;
-    grid-template-columns: 64px 150px minmax(0, 1fr);
+    grid-template-columns: 64px minmax(0, 1fr);
     gap: 12px;
     align-items: baseline;
     padding: 6px 0;
@@ -128,16 +128,27 @@
     color: var(--text-50);
 }
 
+/* At most two lines; the whole entry is in the tooltip, and the text stays selectable. */
+.entry {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow-wrap: anywhere;
+}
+
 .what {
     font-size: 13px;
     color: var(--text-75);
 }
 
 .song {
-    overflow: hidden;
     font-size: 13.5px;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+}
+
+.what + .song {
+    margin-left: 0.4em;
 }
 
 @media (max-width: 1100px) {
