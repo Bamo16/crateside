@@ -20,16 +20,14 @@ public sealed record SourceRetention
 }
 
 /// <summary>The retention the user chose in Settings, kept in <c>%APPDATA%\crateside\source-retention.json</c>.</summary>
-public sealed class SourceRetentionStore(string? path = null)
+public sealed class SourceRetentionStore(CratesidePaths paths)
 {
-    private readonly string _path =
-        path
-        ?? Environment.SpecialFolder.ApplicationData.GetFolderPath(
-            "crateside",
-            "source-retention.json"
-        );
+    private readonly string _path = paths.SourceRetentionFile;
 
     private readonly Lock _gate = new();
+
+    internal SourceRetentionStore(string path)
+        : this(new CratesidePaths { SourceRetentionFile = path }) { }
 
     /// <summary>Never throws: an unreadable file reads as the default, zero days.</summary>
     public SourceRetention Read()

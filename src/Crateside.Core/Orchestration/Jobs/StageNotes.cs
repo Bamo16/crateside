@@ -6,16 +6,14 @@ namespace Crateside.Core.Orchestration.Jobs;
 /// One line on what a pass with no job record did to a song, in <c>%APPDATA%\crateside\stage-notes.jsonl</c>:
 /// the warp pass and loudness, which the activity feed merges in beside the job lines (#170, ADR 0073).
 /// </summary>
-public sealed class StageNotes(string? path = null, TimeProvider? time = null)
+public sealed class StageNotes(CratesidePaths paths, TimeProvider? time = null)
 {
-    private readonly string _path =
-        path
-        ?? Environment.SpecialFolder.ApplicationData.GetFolderPath(
-            "crateside",
-            "stage-notes.jsonl"
-        );
+    private readonly string _path = paths.StageNotesFile;
     private readonly TimeProvider _time = time ?? TimeProvider.System;
     private readonly Lock _gate = new();
+
+    internal StageNotes(string path, TimeProvider? time = null)
+        : this(new CratesidePaths { StageNotesFile = path }, time) { }
 
     public void Record(string videoId, string stage, string summary) =>
         Append(

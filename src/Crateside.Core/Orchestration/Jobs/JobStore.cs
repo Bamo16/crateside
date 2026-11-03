@@ -11,11 +11,14 @@ namespace Crateside.Core.Orchestration.Jobs;
 /// <param name="hub">
 /// Told about every recorded change, so a page can update the one row that moved.
 /// </param>
-public sealed class JobStore(string? path = null, TimeProvider? time = null, StageHub? hub = null)
+public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, StageHub? hub = null)
 {
-    private readonly string _path = path ?? DefaultPath();
+    private readonly string _path = paths.JobsFile;
     private readonly TimeProvider _time = time ?? TimeProvider.System;
     private readonly Lock _gate = new();
+
+    internal JobStore(string path, TimeProvider? time = null, StageHub? hub = null)
+        : this(new CratesidePaths { JobsFile = path }, time, hub) { }
 
     private Dictionary<string, TrackJob>? _cached;
 
@@ -122,9 +125,6 @@ public sealed class JobStore(string? path = null, TimeProvider? time = null, Sta
     }
 
     private static string IdFor(string videoId, JobStage stage) => $"{videoId}:{stage}";
-
-    private static string DefaultPath() =>
-        Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "jobs.jsonl");
 
     /// <summary>
     /// Folds one update onto what came before. Strikes accumulate here rather than being

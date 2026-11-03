@@ -4,11 +4,13 @@ namespace Crateside.Core.Naming;
 /// The names StemForge has already been asked for, kept in <c>%APPDATA%\crateside\names.json</c>
 /// apart from the user's own (ADR 0014).
 /// </summary>
-public sealed class ResolvedNameStore(string? path = null)
+public sealed class ResolvedNameStore(CratesidePaths paths)
 {
-    private readonly string _path =
-        path ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "names.json");
+    private readonly string _path = paths.ResolvedNamesFile;
     private readonly Lock _gate = new();
+
+    internal ResolvedNameStore(string path)
+        : this(new CratesidePaths { ResolvedNamesFile = path }) { }
 
     private Dictionary<string, ResolvedName>? _cached;
 

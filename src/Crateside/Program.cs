@@ -17,6 +17,11 @@ if (DocumentBuild.IsRunning)
 else
     builder.AddCratesideLogging();
 
+// An instance that only shows state it was given: nothing downloads, separates, judges or looks
+// anything up (ADR 0074).
+if (builder.Configuration.GetValue<bool>("Workers:Disabled"))
+    builder.Services.WithoutWorkers();
+
 var app = builder.Build();
 
 if (!DocumentBuild.IsRunning)

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
+using Crateside.Core;
 using Crateside.Core.Quota;
 
 namespace Crateside.Tests.Quota;
@@ -155,7 +156,8 @@ public sealed class QuotaReaderTests : IDisposable
         var reader = new QuotaReader(
             new FixedHttpClientFactory(
                 new HttpClient(handler) { BaseAddress = new Uri("https://api.anthropic.com") }
-            )
+            ),
+            new CratesidePaths()
         )
         {
             CredentialsPath = Path.Combine(_root, "nothing-here.json"),
@@ -172,7 +174,8 @@ public sealed class QuotaReaderTests : IDisposable
         return new QuotaReader(
             new FixedHttpClientFactory(
                 new HttpClient(handler) { BaseAddress = new Uri("https://api.anthropic.com") }
-            )
+            ),
+            new CratesidePaths()
         )
         {
             CredentialsPath = CredentialsWith("token-value"),

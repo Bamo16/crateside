@@ -28,6 +28,8 @@ using Crateside.Core.Warps;
 using Crateside.Core.Watching;
 using Crateside.Core.WorkLists;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.AspNetCore.DataProtection.Repositories;
 using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
@@ -81,7 +83,16 @@ public static class ServiceRegistration
         if (!builder.Environment.IsDevelopment())
             builder.Configuration.AddUserSecrets<Program>(optional: true);
 
-        builder.Configuration.AddJsonFile(PathOverrideStore.DefaultPath, optional: true);
+        // Crateside__Paths__DataRoot=<folder> is the same setting as Paths:DataRoot (ADR 0074).
+        builder.Configuration.AddEnvironmentVariables("Crateside__");
+
+        builder.Configuration.AddJsonFile(
+            (
+                builder.Configuration.GetSection(CratesidePaths.SectionName).Get<CratesidePaths>()
+                ?? new CratesidePaths()
+            ).PathOverridesFile,
+            optional: true
+        );
 
         builder.Services.Configure<CratesidePaths>(
             builder.Configuration.GetSection(CratesidePaths.SectionName)
@@ -332,17 +343,17 @@ public static class ServiceRegistration
     private static IServiceCollection AddPlaylist(this IServiceCollection services)
     {
         // The key ring is sealed to the current Windows user (docs/secrets.md).
-        var dataProtection = services
-            .AddDataProtection()
-            .PersistKeysToFileSystem(
-                new DirectoryInfo(
-                    Environment.SpecialFolder.LocalApplicationData.GetFolderPath(
-                        "crateside",
-                        "keys"
+        var dataProtection = services.AddDataProtection().SetApplicationName("crateside");
+
+        services
+            .AddOptions<KeyManagementOptions>()
+            .Configure<IOptions<CratesidePaths>, ILoggerFactory>(
+                (options, paths, logs) =>
+                    options.XmlRepository = new FileSystemXmlRepository(
+                        new DirectoryInfo(paths.Value.KeyRingFolder),
+                        logs
                     )
-                )
-            )
-            .SetApplicationName("crateside");
+            );
 
         if (OperatingSystem.IsWindows())
             dataProtection.ProtectKeysWithDpapi();

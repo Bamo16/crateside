@@ -7,13 +7,14 @@ namespace Crateside.Core.Orchestration.Jobs;
 /// Every sample crateside sent to the recycle bin on its own initiative, in
 /// <c>%APPDATA%\crateside\deletions.jsonl</c>.
 /// </summary>
-public sealed class DeletionLog(string? path = null, TimeProvider? time = null)
+public sealed class DeletionLog(CratesidePaths paths, TimeProvider? time = null)
 {
-    private readonly string _path =
-        path
-        ?? Environment.SpecialFolder.ApplicationData.GetFolderPath("crateside", "deletions.jsonl");
+    private readonly string _path = paths.DeletionsFile;
     private readonly TimeProvider _time = time ?? TimeProvider.System;
     private readonly Lock _gate = new();
+
+    internal DeletionLog(string path, TimeProvider? time = null)
+        : this(new CratesidePaths { DeletionsFile = path }, time) { }
 
     /// <summary>Recycles without recording, for a caller with nowhere to say it.</summary>
     public static DeletionLog None { get; } = new(string.Empty);
