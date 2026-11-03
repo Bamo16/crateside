@@ -621,8 +621,9 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   (#93), so its row was retired; older ledger lines keep their `bpm` as the
   last-resort figure, but nothing is compared.
 - **The shape line reads "Steady · Mostly steady · Drifting"** (handoff 08 drew the older names).
-- **Key detectors gains madmom and edma** (#113) as columns once a run has a reading from them. A song counts as *all three wrong* when the three
-  detectors of its own run all read it and all miss, whichever three those were.
+- **Key detectors shows the three detectors crateside still runs**: keydetect, madmom and edma (#113).
+  CREMA and librosa are retired from the panel and its miss table (their readings stay in older
+  ledger runs, untouched). A song counts as *all three wrong* when all three read it and all miss.
 
 ### Tools (handoff 12, #79)
 

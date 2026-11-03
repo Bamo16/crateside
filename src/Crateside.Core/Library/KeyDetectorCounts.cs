@@ -10,18 +10,16 @@ public sealed record KeyDetectorCounts(
     IReadOnlyList<AllThreeWrong> AllWrong
 )
 {
-    /// <summary>The detectors one run has: three, whichever three detected it.</summary>
+    /// <summary>The detectors one run has: keydetect, madmom and edma.</summary>
     private const int DetectorsPerRun = 3;
 
     /// <summary>
-    /// The detectors in the ledger's own names, in the order the panel shows them: keydetect, CREMA and librosa,
-    /// then the two that replaced CREMA and librosa (#113).
+    /// The detectors crateside still runs, in the ledger's own names and the order the panel shows them
+    /// (#113). CREMA and librosa ran before the port; their readings stay in older ledger runs and are not shown.
     /// </summary>
     public static readonly IReadOnlyList<(string Ledger, string Shown, string Who)> Names =
     [
         ("ffmpeg keydetect", "keydetect", "FiLL's ffmpeg filter"),
-        ("CREMA", "crema", "python"),
-        ("librosa (K-S)", "librosa", "python"),
         ("madmom", "madmom", "CNN, ONNX"),
         ("Essentia edma", "edma", "HPCP profile"),
     ];
