@@ -1,6 +1,6 @@
 # 0041 — crateside measures the BPM detectors against the warps, and shows it on Counts
 
-- Status: Accepted
+- Status: Accepted; the Dashboard panel was replaced by [ADR 0075](0075-the-dashboard-shows-how-the-starter-warps-fared.md)
 - Date: 2026-09-27
 - Answers part of [#3](https://github.com/Bamo16/crateside/issues/3). The corpus and key-detector
   parts stay open (below).

@@ -6,21 +6,6 @@ namespace Crateside.Tests.Library;
 
 public sealed class CountsTests
 {
-    [Theory]
-    [InlineData(128, 128.4, TempoBand.Exact)]
-    [InlineData(128, 129.9, TempoBand.Close)]
-    [InlineData(128, 64.2, TempoBand.HalfOrDouble)]
-    [InlineData(87, 174, TempoBand.HalfOrDouble)]
-    [InlineData(174, 116, TempoBand.TripletOrDotted)]
-    [InlineData(128, 96, TempoBand.TripletOrDotted)]
-    [InlineData(116, 174, TempoBand.TripletOrDotted)]
-    [InlineData(128, 100, TempoBand.Wrong)]
-    public void A_read_lands_in_the_first_band_it_fits(
-        double warped,
-        double read,
-        TempoBand band
-    ) => Assert.Equal(band, DetectorBands.BandOf(warped, read));
-
     [Fact]
     public void Tempos_bin_by_ten_with_the_slow_end_and_a_sparse_top_merged()
     {

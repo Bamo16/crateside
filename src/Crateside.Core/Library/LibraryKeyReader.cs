@@ -110,6 +110,13 @@ public sealed class LibraryKeyReader(
             : StemFileName.WithoutPreset(samples[0].File);
 
         var instrumentals = samples.Where(s => BeatReader.IsInstrumental(s.File, s.Tags)).ToList();
+        var tempo = samples
+            .OrderByDescending(s => instrumentals.Contains(s))
+            .Select(s => tempos.Read(s.File))
+            .FirstOrDefault(read => read is not null);
+        var reading = instrumentals
+            .Select(s => beats?.ReadFor(videoIds[s.File], s.File))
+            .FirstOrDefault(read => read is not null);
 
         return new LibrarySong
         {
@@ -120,13 +127,9 @@ public sealed class LibraryKeyReader(
                 : null,
             Key = MusicKey.FromString(MostCommon(samples, s => s.Tags?.Key)),
             Genre = MostCommon(samples, s => s.Tags?.Genre),
-            Tempo = samples
-                .OrderByDescending(s => instrumentals.Contains(s))
-                .Select(s => tempos.Read(s.File))
-                .FirstOrDefault(tempo => tempo is not null),
-            Beats = instrumentals
-                .Select(s => beats?.ReadFor(videoIds[s.File], s.File))
-                .FirstOrDefault(reading => reading is not null),
+            Tempo = tempo,
+            Beats = reading,
+            Starter = StarterFates.Of(reading, tempo),
             Run = run,
         };
     }

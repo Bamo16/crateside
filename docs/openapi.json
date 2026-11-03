@@ -1013,6 +1013,50 @@
         },
         "description": "One song's genre, settled or suggested."
       },
+      "GridLine": {
+        "required": [
+          "firstSeconds",
+          "firstBeat",
+          "lastSeconds",
+          "lastBeat"
+        ],
+        "type": "object",
+        "properties": {
+          "firstSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "firstBeat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "lastSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "lastBeat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "Two points on a warp's beat line, in seconds into the audio and beats on Live's ruler."
+      },
       "HooktheoryTab": {
         "type": "object",
         "properties": {
@@ -3979,6 +4023,17 @@
               "$ref": "#/components/schemas/TempoWindow"
             },
             "description": "Each audible run of four bars and its tempo, where a drifting warp's range is read."
+          },
+          "line": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The first and last bar line the clip spans, so a steady warp's beat at any time can be read off it.",
+                "$ref": "#/components/schemas/GridLine"
+              }
+            ]
           },
           "grid": {
             "oneOf": [

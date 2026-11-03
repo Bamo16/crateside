@@ -27,6 +27,9 @@ public sealed record LibrarySong
     /// <summary>beatdetect's reading of the upload's source, else of its instrumental, once crateside has read it (#76, ADR 0065).</summary>
     public BeatReading? Beats { get; init; }
 
+    /// <summary>How the starter warp today's code would write from beatdetect's reading compares with the finished warp; null where they cannot be compared (ADR 0075).</summary>
+    public StarterFate? Starter { get; init; }
+
     public LedgerRun? Run { get; init; }
 
     /// <summary>What Partners works from: the verdict's primary center, else the samples' Key tag (ADR 0056).</summary>
