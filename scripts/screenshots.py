@@ -28,6 +28,8 @@ VIEWPORT = {"width": 1600, "height": 900}
 # Tools lays the Camelot wheel beside Partners only from this width.
 WIDE = {"width": 1900, "height": 1000}
 FIRST_TRACK = "DemoTrack01"
+# The Tracks page lists every song; its screenshot stops after this many rows.
+TRACK_ROWS = 17
 TOOLS_SONG = "adele - rolling in the deep"
 
 
@@ -79,7 +81,15 @@ def take(page: Page) -> None:
     shoot(page, "dashboard")
 
     settle(page, "tracks?filter=All", "text=Rolling in the Deep")
-    shoot(page, "tracks")
+    rows_end = page.evaluate(
+        """rows => {
+            const all = [...document.querySelectorAll('div.row')];
+            const last = all[Math.min(rows, all.length) - 1].getBoundingClientRect();
+            return last.bottom + window.scrollY + 8;
+        }""",
+        TRACK_ROWS,
+    )
+    shoot(page, "tracks", clip={"x": 0, "y": 0, "width": VIEWPORT["width"], "height": rows_end})
 
     settle(page, f"song/{FIRST_TRACK}", "text=Why D major")
     page.click("button.toggle:has-text('Activity')")

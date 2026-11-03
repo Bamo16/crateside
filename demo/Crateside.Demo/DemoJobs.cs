@@ -251,10 +251,11 @@ internal static class DemoJobs
                 Note: new DemoNote("Loudness", $"Vocal - Full: gain set to reach -14 LUFS")
             );
 
-        yield return new DemoStep(
-            id,
-            at + TimeSpan.FromMinutes(40),
-            Action: new DemoAction(UserActionKind.GenreSettled, track.Genre)
-        );
+        if (track.Genre is { } genre)
+            yield return new DemoStep(
+                id,
+                at + TimeSpan.FromMinutes(40),
+                Action: new DemoAction(UserActionKind.GenreSettled, genre)
+            );
     }
 }

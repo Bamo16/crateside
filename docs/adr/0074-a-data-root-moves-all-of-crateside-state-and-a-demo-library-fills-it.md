@@ -25,8 +25,8 @@ that machine holds that day, real song names included.
   **`Queue:Offline`** (environment: `Crateside__Queue__Offline`) stops the Tracks page reporting
   that the playlist could not be read, which an instance with no playlist would otherwise say.
   A data root also reads no user-secrets or `appsettings.Secrets.json`.
-- **`demo/Crateside.Demo`** writes a demo library into a folder: seventeen well-known songs spread
-  over every stage, state written through crateside's own stores so it cannot drift from the
+- **`demo/Crateside.Demo`** writes a demo library into a folder: sixty well-known songs, most of them
+  in the Library stage and some in every other, state written through crateside's own stores so it cannot drift from the
   formats, and no audio beyond a one-second file of silence for each stem a warp sidecar sits beside
   (TagLib reads its sample rate; nothing decodes it). Every other stem is an empty file, its tags
   seeded in the stem tag cache. Jobs for separation and judging are written as running, which with
@@ -35,12 +35,14 @@ that machine holds that day, real song names included.
   rebound), under synthetic IDs `DemoHistoryNNN` that only the Dashboard's job history reads: Tracks
   lists from the playlist, staging and the library, not from jobs. Their weeks end in the current
   one, and a few canceled judgings and retried separations give the stage totals some failures.
-  Loudness gains and beatdetect's reads are varied across the four library songs so those panels
-  have both boosts and cuts and a half-time read.
+  The library songs (`library.json`) carry what a real machine recorded for the same songs: loudness,
+  tempo, genre, familiarity, and how the starter warp fared (ADR 0075), which the sidecar and
+  beatdetect's reading are built to reproduce. Each finishes in a week of the history, which counts it.
 - **The verdicts are real.** `demo/Crateside.Demo/verdicts.json` holds what crateside recorded for
-  thirteen of those songs (key, confidence, sections, sources, candidates, the detectors' report),
+  fifty-six of those songs (key, confidence, sections, sources, candidates, the detectors' report),
   kept so the shots show honest evidence. Upload IDs, paths and anything of the maintainer's own
-  are not in it.
+  are not in it (the evidence's `input` path is stripped).
+- **The Tracks screenshot stops after 17 rows**; the Dashboard is the full page.
 - **`scripts/screenshots.py`** builds that library, starts crateside on port 5099 against it and
   takes the README's screenshots, so all of them come from one state. Relative times ("3 min ago")
   and the dates of the history follow the day the library is written, since the pages read the

@@ -127,7 +127,10 @@ internal sealed class DemoLibrary
 
     private static List<string> KeywordsOf(DemoTrack track)
     {
-        List<string> keywords = [GenreVocabulary.Keyword(track.Genre)];
+        List<string> keywords = [];
+
+        if (track.Genre is { } genre)
+            keywords.Add(GenreVocabulary.Keyword(genre));
 
         if (track.Familiarity is { } familiarity)
             keywords.Add(FamiliarityVocabulary.Keyword(familiarity));
@@ -225,8 +228,8 @@ internal sealed class DemoLibrary
     {
         var lufs =
             stem is DemoStem.Instrumental
-                ? -16.5 + Spread(track, 0) * 1.8
-                : -21 + Spread(track, 1) * 2.2;
+                ? track.InstrumentalLufs ?? -16.5 + Spread(track, 0) * 1.8
+                : track.VocalLufs ?? -21 + Spread(track, 1) * 2.2;
         var sidecar = $"{file.FullName}.asd";
 
         DemoAudio.Sidecar(track, stem, Math.Pow(10, (-14 - lufs) / 20), file.Length).Write(sidecar);
@@ -237,33 +240,9 @@ internal sealed class DemoLibrary
             new LoudnessReading(Math.Round(lufs, 1))
         );
 
-        if (stem is DemoStem.Instrumental)
-            _beats[file.FullName] = new BeatEntry(
-                BeatStamp.Of(file),
-                null,
-                new BeatReading
-                {
-                    Bpm = ReadBpm(track),
-                    Confidence = 0.9,
-                    TempoSpread = 0.02,
-                    BeatOffsetMs = DemoAudio.Lead * 1000,
-                    DownbeatOffsetMs = DemoAudio.Lead * 1000,
-                    DownbeatConfidence = 0.8,
-                    BeatsPerBar = 4,
-                    TempoWander = 0.01,
-                    Windows = [.. Enumerable.Repeat(track.Bpm, track.Seconds / 30)],
-                }
-            );
+        if (stem is DemoStem.Instrumental && DemoAudio.Reading(track) is { } reading)
+            _beats[file.FullName] = new BeatEntry(BeatStamp.Of(file), null, reading);
     }
-
-    /// <summary>What beatdetect read: mostly the warp's tempo, with a half-time read and a near miss so the detector bars are not one column.</summary>
-    private static double ReadBpm(DemoTrack track) =>
-        track.VideoId switch
-        {
-            "DemoTrack02" => track.Bpm / 2,
-            "DemoTrack03" => track.Bpm + 1.4,
-            _ => track.Bpm,
-        };
 
     /// <summary>A steady figure from the track, so loudness differs from song to song without a random draw.</summary>
     private static double Spread(DemoTrack track, int salt) =>
@@ -294,15 +273,22 @@ internal sealed class DemoLibrary
             var song = track.HasVerdict ? track.Song : track.VideoId;
             var at = StartOf(track) + TimeSpan.FromMinutes(12);
 
-            genres.Suggest(song, [track.Genre.ToLowerInvariant()], at);
+            if (track.Heard is [_, ..] heard)
+                genres.Suggest(song, heard, at);
+            else if (track.Genre is { } suggested)
+                genres.Suggest(song, [suggested.ToLowerInvariant()], at);
 
-            if (track.HasStems && track.Stage is not DemoStage.Parked)
-                genres.Settle(song, track.Genre);
+            if (
+                track is { Genre: { } genre, HasStems: true }
+                && track.Stage is not DemoStage.Parked
+            )
+                genres.Settle(song, genre);
 
-            var (fans, rank) = track.Familiarity switch
+            var (fans, rank) = track switch
             {
-                "Mainstream" => (900_000L, 700_000),
-                "Obscure" => (6_000L, 20_000),
+                { ArtistFans: { } recorded, SongRank: { } place } => (recorded, place),
+                { Familiarity: "Mainstream" } => (900_000L, 700_000),
+                { Familiarity: "Obscure" } => (6_000L, 20_000),
                 _ => (40_000L, 300_000),
             };
 
