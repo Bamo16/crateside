@@ -72,19 +72,26 @@ public static class ServiceRegistration
         this WebApplicationBuilder builder
     )
     {
-        // The Development environment loads user-secrets automatically; this adds it
-        // explicitly for other environments.
-        builder.Configuration.AddJsonFile(
-            "appsettings.Secrets.json",
-            optional: true,
-            reloadOnChange: true
-        );
-
-        if (!builder.Environment.IsDevelopment())
-            builder.Configuration.AddUserSecrets<Program>(optional: true);
-
         // Crateside__Paths__DataRoot=<folder> is the same setting as Paths:DataRoot (ADR 0074).
         builder.Configuration.AddEnvironmentVariables("Crateside__");
+
+        // A data root is an instance of its own: nothing is read from the profile, secrets included.
+        if (
+            builder.Configuration.GetValue<string>($"{CratesidePaths.SectionName}:DataRoot")
+            is not { Length: > 0 }
+        )
+        {
+            // The Development environment loads user-secrets automatically; this adds it
+            // explicitly for other environments.
+            builder.Configuration.AddJsonFile(
+                "appsettings.Secrets.json",
+                optional: true,
+                reloadOnChange: true
+            );
+
+            if (!builder.Environment.IsDevelopment())
+                builder.Configuration.AddUserSecrets<Program>(optional: true);
+        }
 
         builder.Configuration.AddJsonFile(
             (

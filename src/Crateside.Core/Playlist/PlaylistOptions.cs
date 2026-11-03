@@ -17,6 +17,9 @@ public sealed class PlaylistOptions
     /// </summary>
     public string? ApiKey { get; set; }
 
+    /// <summary>No playlist is read and none is reported unreadable, for an instance that only shows what it was given (ADR 0074).</summary>
+    public bool Offline { get; set; }
+
     /// <summary>OAuth client ID for a Desktop app client. Secret-adjacent.</summary>
     public string? ClientId { get; set; }
 

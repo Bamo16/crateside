@@ -93,7 +93,9 @@ The workflow that works:
   long-running is in flight.
 
 **Do not launch the app yourself.** Ask the user to run the task, so output lands in their
-terminal where they can see it and stop it.
+terminal where they can see it and stop it. The exception is `scripts/screenshots.py`, which starts
+its own instance on port 5099 over a demo library and stops it (CONTRIBUTING.md); it never touches
+the user's instance or data.
 
 ## The GPU is the user's to spend
 
