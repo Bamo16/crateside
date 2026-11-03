@@ -1,4 +1,5 @@
 using Crateside.Core.WorkLists;
+using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Playlist;
 
@@ -7,7 +8,8 @@ public sealed class CachedPlaylist(
     PlaylistReader reader,
     PlaylistSettingsStore settings,
     PlaylistRemover remover,
-    TimeProvider time
+    TimeProvider time,
+    IOptions<PlaylistOptions>? options = null
 )
 {
     private static readonly TimeSpan CacheFor = TimeSpan.FromMinutes(2);
@@ -73,6 +75,14 @@ public sealed class CachedPlaylist(
         {
             if (_cachedItems is { } cached && time.GetUtcNow() - _cachedAt < CacheFor)
                 return cached;
+
+            if (options?.Value.Offline is true)
+            {
+                _cachedAt = time.GetUtcNow();
+                Problem = null;
+
+                return _cachedItems = [];
+            }
 
             try
             {

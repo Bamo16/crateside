@@ -6,6 +6,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="Crateside.Tests" />
+        <InternalsVisibleTo Include="Crateside.Demo" />
     </ItemGroup>
 
     <ItemGroup>
