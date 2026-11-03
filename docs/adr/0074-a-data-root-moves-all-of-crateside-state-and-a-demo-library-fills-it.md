@@ -31,6 +31,12 @@ that machine holds that day, real song names included.
   (TagLib reads its sample rate; nothing decodes it). Every other stem is an empty file, its tags
   seeded in the stem tag cache. Jobs for separation and judging are written as running, which with
   workers off stay running.
+  Behind them sit about 400 finished tracks over eleven ISO weeks (a ramp, a peak near 74, a dip, a
+  rebound), under synthetic IDs `DemoHistoryNNN` that only the Dashboard's job history reads: Tracks
+  lists from the playlist, staging and the library, not from jobs. Their weeks end in the current
+  one, and a few canceled judgings and retried separations give the stage totals some failures.
+  Loudness gains and beatdetect's reads are varied across the four library songs so those panels
+  have both boosts and cuts and a half-time read.
 - **The verdicts are real.** `demo/Crateside.Demo/verdicts.json` holds what crateside recorded for
   thirteen of those songs (key, confidence, sections, sources, candidates, the detectors' report),
   kept so the shots show honest evidence. Upload IDs, paths and anything of the maintainer's own

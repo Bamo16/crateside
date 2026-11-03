@@ -182,7 +182,15 @@ internal sealed class DemoLibrary
         var notes = new StageNotes(_paths, _clock);
         var actions = new ActionLog(_paths, _clock);
 
-        foreach (var step in DemoJobs.Timeline(DemoCast.All, _now).OrderBy(step => step.At))
+        var demo = DemoJobs.Timeline(DemoCast.All, _now).ToList();
+
+        // First in the file, so Latest activity, which reads the end of it, shows the demo tracks.
+        foreach (
+            var step in DemoJobs
+                .History(demo, _now)
+                .OrderBy(step => step.At)
+                .Concat(demo.OrderBy(step => step.At))
+        )
         {
             _clock.Set(step.At);
 
@@ -216,7 +224,9 @@ internal sealed class DemoLibrary
     private void WriteWarp(DemoTrack track, DemoStem stem, FileInfo file, DateTimeOffset landed)
     {
         var lufs =
-            stem is DemoStem.Instrumental ? -9.5 - Spread(track, 0) : -19.5 - Spread(track, 1);
+            stem is DemoStem.Instrumental
+                ? -16.5 + Spread(track, 0) * 1.8
+                : -21 + Spread(track, 1) * 2.2;
         var sidecar = $"{file.FullName}.asd";
 
         DemoAudio.Sidecar(track, stem, Math.Pow(10, (-14 - lufs) / 20), file.Length).Write(sidecar);
@@ -233,7 +243,7 @@ internal sealed class DemoLibrary
                 null,
                 new BeatReading
                 {
-                    Bpm = track.Bpm,
+                    Bpm = ReadBpm(track),
                     Confidence = 0.9,
                     TempoSpread = 0.02,
                     BeatOffsetMs = DemoAudio.Lead * 1000,
@@ -245,6 +255,15 @@ internal sealed class DemoLibrary
                 }
             );
     }
+
+    /// <summary>What beatdetect read: mostly the warp's tempo, with a half-time read and a near miss so the detector bars are not one column.</summary>
+    private static double ReadBpm(DemoTrack track) =>
+        track.VideoId switch
+        {
+            "DemoTrack02" => track.Bpm / 2,
+            "DemoTrack03" => track.Bpm + 1.4,
+            _ => track.Bpm,
+        };
 
     /// <summary>A steady figure from the track, so loudness differs from song to song without a random draw.</summary>
     private static double Spread(DemoTrack track, int salt) =>
