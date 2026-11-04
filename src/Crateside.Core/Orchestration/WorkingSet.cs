@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Crateside.Core.Imports;
 using Crateside.Core.Orchestration.Download;
 
 namespace Crateside.Core.Orchestration;
@@ -27,9 +28,16 @@ public sealed class WorkingSet(CratesidePaths paths)
     private const long MaxInlineBytes = 32 * 1024;
 
     private readonly string _root = paths.WorkingFolder;
+    private readonly string _imports = paths.ImportsFolder;
 
     internal WorkingSet(string root)
-        : this(new CratesidePaths { WorkingFolder = root }) { }
+        : this(
+            new CratesidePaths
+            {
+                WorkingFolder = root,
+                ImportsFolder = Path.Combine(Path.GetDirectoryName(root) ?? root, "imports"),
+            }
+        ) { }
 
     /// <summary>Every video ID currently holding a working set.</summary>
     public IReadOnlyList<string> TrackKeys =>
@@ -162,7 +170,8 @@ public sealed class WorkingSet(CratesidePaths paths)
     }
 
     /// <summary>
-    /// The retained source audio, if exactly one file of it is there.
+    /// The retained source audio, if exactly one file of it is there, else the file imported for
+    /// the track (ADR 0077).
     /// </summary>
     public bool TryGetSource(string trackKey, out string path)
     {
@@ -182,6 +191,9 @@ public sealed class WorkingSet(CratesidePaths paths)
             is [var only]
             ? only
             : null!;
+
+        if (path is null && ImportStore.TryFind(_imports, trackKey, out var imported))
+            path = imported;
 
         return path is not null;
     }

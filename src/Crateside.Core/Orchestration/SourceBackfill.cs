@@ -35,7 +35,8 @@ public sealed class SourceBackfill(
         [
             .. processed
                 .StemsByTrackKey.Keys.Where(trackKey =>
-                    !held.Contains(trackKey)
+                    TrackKeys.IsVideoId(trackKey)
+                    && !held.Contains(trackKey)
                     && processed
                         .StemsFor(trackKey)
                         .Any(stem =>

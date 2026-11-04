@@ -100,6 +100,7 @@ public sealed class WarpSiblingsTests : IDisposable
             new[]
             {
                 adopted ? "crateside/0.1.0" : "stemforge/0.4.0.0",
+                adopted ? "label: Mix" : null,
                 preset is null ? null : $"preset: {preset}",
                 $"source: {source}",
             }.OfType<string>()

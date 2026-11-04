@@ -78,7 +78,18 @@ public sealed record WorkItem
     /// <summary>Judged only in the weekly spend-down, unless the user asks for it first (ADR 0063).</summary>
     public bool IsBackfill { get; init; }
 
-    public string WatchUrl => $"https://www.youtube.com/watch?v={TrackKey}";
+    /// <summary>The page a track not on YouTube is fetched from; null for a file and for YouTube.</summary>
+    public string? PageUrl { get; init; }
+
+    /// <summary>False for a track with no upload or page to fetch its audio from again.</summary>
+    [JsonIgnore]
+    public bool CanBeFetched =>
+        TrackKeys.IsVideoId(TrackKey) || PageUrl is not null || StatedSourceUrl is { Length: > 0 };
+
+    public string WatchUrl =>
+        TrackKeys.IsVideoId(TrackKey)
+            ? $"https://www.youtube.com/watch?v={TrackKey}"
+            : PageUrl ?? TrackKeys.ProvenanceOf(TrackKey);
 }
 
 /// <summary>The Queue as work: what is in the playlist, what is done, what is new.</summary>

@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Crateside.Core.Imports;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
@@ -17,10 +18,12 @@ public sealed class DownloadDrainer(
     DownloadSelector selector,
     JobStore jobs,
     WorkingSet workingSet,
-    IOptions<CratesidePaths> paths
+    IOptions<CratesidePaths> paths,
+    TimeProvider? time = null
 ) : IStageDrainer
 {
     private readonly CratesidePaths _paths = paths.Value;
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
 
     public JobStage Stage => JobStage.Download;
 
@@ -106,7 +109,24 @@ public sealed class DownloadDrainer(
         try
         {
             Directory.CreateDirectory(destination);
-            File.Copy(held, Path.Combine(destination, Path.GetFileName(held)), overwrite: true);
+            var copy = Path.Combine(destination, Path.GetFileName(held));
+
+            File.Copy(held, copy, overwrite: true);
+
+            if (
+                !TrackKeys.IsVideoId(trackKey)
+                && !KeptSourceStamp.TryWrite(
+                    copy,
+                    trackKey,
+                    DateOnly.FromDateTime(_time.GetUtcNow().UtcDateTime),
+                    out var problem
+                )
+            )
+            {
+                File.Delete(copy);
+
+                return ($"the kept source could not be stamped: {problem}", null);
+            }
 
             return (null, "kept the source as a sample");
         }
@@ -154,9 +174,16 @@ public sealed class DownloadDrainer(
     /// landed (#31).
     /// </summary>
     internal static bool IsAccepted(WantedDownload wanted) =>
-        wanted is { IsAdded: false, Track.AcceptedUpload: { } accepted }
-        && YouTubeUrl.TryGetVideoId(wanted.Url, out var upload)
-        && upload.Equals(accepted, StringComparison.Ordinal);
+        wanted is { IsAdded: false }
+        && (
+            // A site's audio has no Premium format to fall short of.
+            !TrackKeys.IsVideoId(wanted.TrackKey)
+            || (
+                wanted.Track.AcceptedUpload is { } accepted
+                && YouTubeUrl.TryGetVideoId(wanted.Url, out var upload)
+                && upload.Equals(accepted, StringComparison.Ordinal)
+            )
+        );
 
     /// <summary>
     /// Renames a fetched source to carry its label, which the handoff then preserves while it

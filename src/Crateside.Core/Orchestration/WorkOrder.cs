@@ -39,6 +39,7 @@ public sealed record WorkOrder
             SourceUrl = item switch
             {
                 { StatedSourceUrl: { Length: > 0 } stated } => stated,
+                { TrackKey: var key } when !TrackKeys.IsVideoId(key) => TrackKeys.ProvenanceOf(key),
                 { PremiumOutlook: PremiumOutlook.ArtTrack } =>
                     $"https://music.youtube.com/watch?v={item.TrackKey}",
                 _ => item.WatchUrl,

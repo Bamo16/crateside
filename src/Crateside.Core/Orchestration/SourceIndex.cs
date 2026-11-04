@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Crateside.Core.Imports;
 using Crateside.Core.Ledger;
 using Crateside.Core.WorkLists;
 
@@ -7,7 +8,7 @@ namespace Crateside.Core.Orchestration;
 
 /// <summary>
 /// Keeps <c>%LOCALAPPDATA%\crateside\source-index.json</c> current: every track's source audio on
-/// disk, held in the working set or kept as a sample, found by video ID or song (#133).
+/// disk, held in the working set, imported or kept as a sample, found by video ID or song (#133).
 /// </summary>
 public sealed class SourceIndex(WorkingSet workingSet, CratesidePaths paths) : ISourceLocator
 {
@@ -46,6 +47,19 @@ public sealed class SourceIndex(WorkingSet workingSet, CratesidePaths paths) : I
                         ledger.SongFor(trackKey) ?? Path.GetFileNameWithoutExtension(held),
                         SourceLocation.WorkingSet,
                         held
+                    );
+                }),
+            .. new ImportStore(paths)
+                .TrackKeys.Where(trackKey => workingSet.TryGetSource(trackKey, out _))
+                .Select(trackKey =>
+                {
+                    workingSet.TryGetSource(trackKey, out var imported);
+
+                    return new SourceEntry(
+                        trackKey,
+                        ledger.SongFor(trackKey) ?? Path.GetFileNameWithoutExtension(imported),
+                        SourceLocation.Import,
+                        imported
                     );
                 }),
             .. processed
@@ -120,6 +134,9 @@ public enum SourceLocation
 {
     WorkingSet,
     KeptSample,
+
+    /// <summary>The file a track not on YouTube was taken in as, which is never pruned.</summary>
+    Import,
 }
 
 [JsonSourceGenerationOptions(

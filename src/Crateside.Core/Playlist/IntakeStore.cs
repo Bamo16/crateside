@@ -76,6 +76,23 @@ public sealed class IntakeStore(CratesidePaths paths)
         }
     }
 
+    /// <summary>Takes on a track that came from somewhere other than the playlist; false when it is already known.</summary>
+    public bool TakeIn(IntakeRecord record)
+    {
+        lock (_gate)
+        {
+            if (
+                Read()
+                    .Any(known => known.TrackKey.Equals(record.TrackKey, StringComparison.Ordinal))
+            )
+                return false;
+
+            Write([.. Read(), record]);
+
+            return true;
+        }
+    }
+
     /// <summary>
     /// The entries that are new arrivals: tracks never taken on, and tracks whose entry crateside
     /// removed that the user has added again (#84). Records the first and puts the second back in
@@ -299,6 +316,7 @@ public sealed class IntakeStore(CratesidePaths paths)
             AddedAt = record.AddedAt,
             PremiumOutlook = record.PremiumOutlook,
             IsUnavailable = record.IsUnavailable,
+            PageUrl = record.PageUrl,
         };
 
     private IReadOnlyList<IntakeRecord>? TryReadFile() =>
@@ -337,6 +355,12 @@ public sealed record IntakeRecord
     public PremiumOutlook PremiumOutlook { get; init; }
 
     public bool IsUnavailable { get; init; }
+
+    /// <summary>The page a track not on YouTube was fetched from; null for a file and for YouTube.</summary>
+    public string? PageUrl { get; init; }
+
+    /// <summary>What the source says about the release; null for a track taken from the playlist.</summary>
+    public Imports.Release? Release { get; init; }
 
     /// <summary>
     /// When the playlist entry was offered back, whether or not the removal worked, or null while

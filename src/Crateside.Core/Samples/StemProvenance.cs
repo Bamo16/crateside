@@ -23,9 +23,11 @@ public sealed record StemProvenance
     public string? Label { get; init; }
 
     /// <summary>
-    /// crateside wrote this comment, so the file is one it adopted rather than made (ADR 0022).
+    /// crateside wrote this comment and the user named the file, so it is one it adopted rather
+    /// than made (ADR 0022). A copy of a track's own source, stamped with no label, is not.
     /// </summary>
-    public bool IsAdopted => ToolVersion.StartsWith(AdoptedPrefix, StringComparison.Ordinal);
+    public bool IsAdopted =>
+        Label is not null && ToolVersion.StartsWith(AdoptedPrefix, StringComparison.Ordinal);
 
     /// <summary>The separation preset, e.g. <c>Vocal - Full</c>. Absent on older stems.</summary>
     public string? Preset { get; init; }
