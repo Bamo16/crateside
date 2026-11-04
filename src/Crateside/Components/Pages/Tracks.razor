@@ -381,7 +381,7 @@
                     }
                 </span>
 
-                <span class="mono conf @KeyText.ConfidenceTone(row.Confidence)">@KeyText.Confidence(row.Confidence)</span>
+                <span class="mono conf @KeyText.ConfidenceTone(row.Confidence)" title="@(row.DecidedBy is { } by ? KeyText.Byline(by) : null)">@KeyText.Decided(row.DecidedBy, row.Confidence)</span>
 
                 <span class="mono bpm right @(row.State is TrackState.ReadyToWarp ? "ready" : null) @(bpm is null ? "none" : null) @(bpm?.IsApproximate is true ? "approx" : null) @(bpm?.IsEstimate is true ? "estimate" : null)" title="@bpm?.Note">@(bpm?.Text ?? "—")<span class="pad">@bpm?.Padding@if (bpm is { Mark: not OffMark.None })
                 {<OffMarkGlyph Mark="bpm.Mark" />}</span></span>

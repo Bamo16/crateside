@@ -319,6 +319,75 @@ public sealed class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
+    public void A_track_the_verdict_stage_left_to_the_person_reads_waiting_for_you()
+    {
+        var jobs = Jobs();
+
+        jobs.Record(Video, JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        var row = Assert.Single(Compose(jobs: jobs));
+
+        Assert.True(row.WaitingForPerson);
+        Assert.False(row.WaitingForJudge);
+        Assert.Equal("waiting for you", row.ChipLabel);
+        Assert.Equal(TrackChipStyle.AmberFilled, row.ChipStyle);
+        Assert.Equal("decide its key on its page", row.Next);
+        Assert.True(row.Matches(TrackFilter.NeedsAttention));
+    }
+
+    [Fact]
+    public void A_track_waiting_for_you_with_its_stems_parked_still_reads_waiting_for_you()
+    {
+        var jobs = Jobs();
+
+        jobs.Record(Video, JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        var row = Assert.Single(
+            Compose(View(separatedWithoutKey: new HashSet<string> { Video }), jobs: jobs)
+        );
+
+        Assert.Equal("waiting for you", row.ChipLabel);
+        Assert.False(row.WaitingForJudge);
+    }
+
+    [Fact]
+    public void A_track_waiting_for_you_in_the_gpu_line_still_reads_waiting_for_you()
+    {
+        var jobs = Jobs();
+
+        jobs.Record(Video, JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        var row = Assert.Single(
+            Compose(
+                WorkListsView.Compose(
+                    [Item()],
+                    new HashSet<string>(),
+                    new HashSet<string>(),
+                    new HashSet<string>(),
+                    new Dictionary<string, TrackInstruction>(),
+                    awaitingPerson: new HashSet<string> { Video }
+                ),
+                jobs: jobs
+            )
+        );
+
+        Assert.Equal(TrackState.JudgedInLine, row.State);
+        Assert.Equal("waiting for you", row.ChipLabel);
+    }
+
+    [Fact]
+    public void Once_the_person_has_chosen_the_row_is_no_longer_waiting_for_them()
+    {
+        var jobs = Jobs();
+
+        jobs.Record(Video, JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        var row = Assert.Single(Compose(ledger: LedgerWith("A minor", "HIGH", 120), jobs: jobs));
+
+        Assert.False(row.WaitingForPerson);
+    }
+
+    [Fact]
     public void A_download_short_of_premium_parks_the_row_over_its_source()
     {
         var row = Assert.Single(

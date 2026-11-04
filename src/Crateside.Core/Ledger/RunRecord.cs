@@ -61,7 +61,7 @@ public sealed record RunRecord
     /// <summary>What the lookup found on each site before the judge ran, cited or not, as JSON (#176).</summary>
     public string? Lookups { get; init; }
 
-    /// <summary>The old BPM estimate, from imported history. Never written by a new run.</summary>
+    /// <summary>The old BPM estimate, from imported history. Only the person's run over an imported verdict carries it on.</summary>
     public OldBpm? OldBpm { get; init; }
 }
 

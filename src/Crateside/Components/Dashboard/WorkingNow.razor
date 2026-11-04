@@ -54,7 +54,7 @@
 
     <div class="card">
         <div class="label-line">
-            <span class="caps">Judging · @(Judge.Value.SpendsClaudeQuota ? "Claude" : Judge.Value.Model)</span>
+            <span class="caps">Judging · @(!Judge.Value.IsConfigured ? "crateside's rules" : Judge.Value.SpendsClaudeQuota ? "Claude" : Judge.Value.Model)</span>
             <button class="outline" @onclick="ToggleJudging">@(Judging.IsPaused ? "Resume" : "Pause")</button>
         </div>
         @if (JudgingRow is { } judged)
@@ -214,7 +214,7 @@
         <div class="figures">
             <span><span class="mono figure">@Rows.Count(row => row is { IsBackfill: true, Verdict: null, GaveUpAt: null })</span><span class="note">waiting</span></span>
             <span><span class="mono figure">@Rows.Count(row => row is { IsBackfill: true, Verdict: not null })</span><span class="note">judged</span></span>
-            <span><span class="mono figure">@Rejudges.Pending(Ledger.Read()).Count</span><span class="note">to re-judge first</span></span>
+            <span><span class="mono figure">@(Judge.Value.IsConfigured ? Rejudges.Pending(Ledger.Read()).Count : 0)</span><span class="note">to re-judge first</span></span>
             <span><span class="mono figure">@Rows.Count(row => row is { IsBackfill: true, Verdict: null, GaveUpAt: not null })</span><span class="note">gave up</span></span>
         </div>
     </div>

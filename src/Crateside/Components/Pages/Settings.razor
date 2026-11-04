@@ -217,7 +217,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                     <div class="counts">
                         <span><span class="mono value">@Backfill(row => row is { Verdict: null, GaveUpAt: null })</span> waiting</span>
                         <span><span class="mono value">@Backfill(row => row is { Verdict: not null })</span> judged</span>
-                        <span><span class="mono value">@Rejudges.Pending(Ledger.Read()).Count</span> to re-judge first</span>
+                        <span><span class="mono value">@(Judge.Value.IsConfigured ? Rejudges.Pending(Ledger.Read()).Count : 0)</span> to re-judge first</span>
                         @if (Backfill(row => row is { Verdict: null, GaveUpAt: not null }) is > 0 and var stuck)
                         {
                             <span class="problem"><span class="mono">@stuck</span> gave up, see each row</span>

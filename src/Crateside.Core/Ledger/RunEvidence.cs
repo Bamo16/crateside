@@ -31,6 +31,8 @@ public sealed record RunEvidence
 
     public bool Mixed { get; init; }
 
+    public DecidedBy DecidedBy { get; init; } = DecidedBy.Judge;
+
     public IReadOnlyList<Section> Sections { get; init; } = [];
 
     /// <summary>The stretches detected on their own, where the evidence is not the whole track's.</summary>
@@ -133,6 +135,7 @@ public sealed record RunEvidence
             Title = run.Title,
             Center = run.Center,
             Mixed = run.Mixed,
+            DecidedBy = run.DecidedBy,
             Sections = run.Sections,
             Windows = run.Windows,
             Direction = run.Direction,

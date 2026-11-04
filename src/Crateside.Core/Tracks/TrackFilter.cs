@@ -58,6 +58,7 @@ public static class TrackFilters
                     or TrackState.Short
                 || row.AuditNote is not null
                 || row.Lookalike is not null
+                || row.WaitingForPerson
                 || row.AwaitingRename > 0,
             TrackFilter.TagsToAnswer => row.HasTagsToAnswer,
             TrackFilter.TempoDrifts => row.TempoDrifts,

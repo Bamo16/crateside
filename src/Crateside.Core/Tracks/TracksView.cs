@@ -329,6 +329,7 @@ public sealed record TracksView
             { State: TrackState.Parked or TrackState.GaveUp or TrackState.Short }
             or { AuditNote: not null }
             or { Lookalike: not null }
+            or { WaitingForPerson: true }
             or { AwaitingRename: > 0 } => 0,
             { State: TrackState.ReadyToWarp or TrackState.ReadyToMove } => 2,
             { State: TrackState.Done } => 3,
