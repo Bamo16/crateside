@@ -219,3 +219,90 @@ source.
 - **The lookup change reaches YouTube tracks too.** Only through the title-only search and the
   initial-and-surname match, and a looser hit can only send a track to the person (ADR 0076).
 - `docs/ledger.md`, `docs/api.md` and `docs/openapi.json` follow the rename of what an ID can be.
+
+## As built, 2026-11-04
+
+What was decided in building it, and where it differs from the text above. The Decision stands
+unless a line below says otherwise.
+
+### Corrections to the Decision
+
+- **StemForge did not copy `source:` from a `crateside/` comment** (measured, StemForge
+  `AudioTagger.ParseProvenance` reads only comments starting `stemforge/`), so stamping crateside's
+  copy would have left every stem unjoinable. The fix is in StemForge: `separate --source-url
+  <value>` sets the `source:` written on every stem of a local-file input, and a URL input rejects
+  it. crateside passes `--source-url track:<key>` when it separates a track that is not on YouTube,
+  an import or a site track alike, so every such stem carries the same form.
+  **crateside does not rewrite the imported file's comment at all**; the original tags stay intact,
+  so `Release` keeps no copy of the comment. Before such a separation crateside reads
+  `stemforge-cli separate --help` and, when the option is missing, fails the job with "StemForge is
+  too old: stemforge-cli separate needs --source-url" instead of cutting stems that join to nothing.
+- **The kept copy of such a source is stamped, on the copy.** A plan that keeps the source copies
+  the audio into the stem folder, and that copy needs provenance to join its track. crateside
+  writes `crateside/<version> | date: … | source: track:<key>` on the copy only. So that it does not
+  read as an adopted sample, `StemProvenance.IsAdopted` now needs a `label:` as well as the prefix;
+  every adopted file has one (ADR 0022).
+- **Downloads go through `stemforge-cli` and nothing else.** There is no yt-dlp dump in crateside,
+  no ranged read of a file's head, and no HTTP fetch of its own. A pasted non-YouTube link is
+  downloaded by `stemforge-cli download` into a scratch folder, and what the source was comes from
+  its `--json` row. That row lacked it, so StemForge now reports `extractorKey`, `id`, `isGeneric`,
+  `uploader`, `uploadDate`, `releaseYear`, `album`, `albumArtist` and `trackNumber`, and leaves a
+  direct link's own `TITLE` tag alone instead of retitling the file with its file name. A direct
+  link (`isGeneric`) is keyed `file~` and the hash **of the downloaded file**, not of the file as
+  received, since StemForge writes it; the same link pasted twice is caught by the page URL kept on
+  the intake record, because the hash of a tagged output differs from day to day (its comment is
+  dated). A site track is moved into the working set under its key and fetched again from its page
+  if it is ever missing. A crateside too old to say what a source is reports "StemForge is too old"
+  for a link; the install step is in the hand-off.
+- **A direct link is not bit-for-bit.** Measured against a local HTTP server: a 44.1 kHz FLAC comes
+  out of `stemforge-cli download` with the same decoded audio (identical MD5 of the PCM) and the
+  same tags, but a 48 kHz one is resampled to 44.1 kHz, because StemForge's download pins `-ar
+  44100`. Not worked around here; it is StemForge's rule for every download.
+- **The class is `TrackKeys`, not `TrackKey`.** A property named `TrackKey` cannot call a static
+  class of that name, and the rename put `TrackKey` on every type that holds the key. Its
+  `TryParse` also accepts a bare `<source>~<id>`, which is how a key is stored. A site's ID is kept
+  to `[A-Za-z0-9_.-]`, anything else becoming `-`.
+- **Stored names did not move.** Every renamed property carries `[JsonPropertyName("videoId")]` (or
+  `sourceVideoId`), the API's `videoId` is unchanged, and the route parameter is now `{trackKey}`.
+  `TrackNameSource.VideoId` kept its name for the same reason. No migration and no backup were
+  needed.
+
+### What was built as decided, with the choices the ADR left open
+
+- **Inbox.** Polled every three seconds; a file is read once its size has held for five seconds and
+  it opens exclusively. A zip's audio entries are extracted flat into a scratch folder and the zip
+  deleted; a file that cannot be read, or an unrecognized file, is named once in the log and left.
+  A duplicate saved into the inbox is consumed, since leaving it would be read for ever. The inbox
+  folder is created at start.
+- **Dropping onto Tracks** is a file input stretched over a strip of the page, so the browser uploads
+  the bytes over the circuit (up to 4 GB a file) into a scratch folder, and the originals are never
+  touched.
+- **The default recipe** is applied once, at arrival: to a playlist track new since the first read,
+  a pasted YouTube track and everything taken in here, by writing the plan on the track's
+  instruction. Standard leaves the plan unsaid, so changing the default later reaches no track that
+  has already arrived.
+- **A site track's name** is its `TITLE` tag where StemForge has put the artist in it, else
+  `uploader - title`. A file's `Release.Year` is the first four-digit run of its date with `Kind`
+  `Release`; a site's is `release_year` or else the upload date as `Upload`. The cover is taken
+  from the file's embedded picture, which for a site is the thumbnail StemForge embedded.
+- **The page lookup.** The widened search and the loose artist match are Hooktheory's; Musicnotes
+  and Ultimate Guitar only gain the dropped " - Act N" / " - Part N" tail. Candidates are kept in
+  `SiteLookup.Candidates`, beside `Pages`, which is all the rules read, so a candidate cannot rule
+  or block one; the judge's prompt shows them as "unconfirmed, not evidence". A file with no title
+  tag is looked up by its whole name rather than split at a dash. Up to two candidate pages are
+  fetched per song.
+- **The near-silent vocal flag** reads the loudness crateside already keeps (`loudness.json`); the
+  threshold is `NearSilentVocal.ThresholdDb`. It is shown on the Tracks row with a button that
+  re-cuts the track as the Instrumental recipe, and it is not shown once the plan has no vocal.
+- **YouTube-only stages.** The premium shortfall cannot park a site track (its acquisition is taken
+  as accepted), the name worker and the source backfill skip a key that is not a video ID, and a
+  track's YouTube upload list leaves one out. Playlist removal acts only on playlist entries, which
+  an import never has.
+
+### Not built
+
+- **The tag's genre standing in** where Deezer finds nothing: the genre is kept on the intake
+  record's `Release` and shown nowhere else yet.
+- **The cover is not displayed** anywhere (#159 is its user).
+- **Swap source** for a key that is not a video ID was not exercised; it is the existing edit
+  against a different key.

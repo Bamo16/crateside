@@ -30,11 +30,12 @@ start. Enums are stored by name (`Dorian`, `ChordRecognizer`); times as round-tr
   included), `Rules` (crateside's rules, which rule only on what the evidence and the pages agree on)
   or `Person` (the key chosen on the song page); ADR 0076. `Mixed` marks two modes on
   one tonic, the center being the harmony's. `SourceUrl` is the upload the audio came from,
-  null only with `LocalSource`. `WithheldReasoning` is the reasoning of the first pass when it asked for windows, kept once here. `Direction` is the user's note sent with windows. `Evidence`
+  or `track:<key>` for a track that is not on YouTube (ADR 0077); null only with `LocalSource`. `WithheldReasoning` is the reasoning of the first pass when it asked for windows, kept once here. `Direction` is the user's note sent with windows. `Evidence`
   is the detectors' report as JSON. `Lookups` is what the lookup found on each site before the
   judge ran, as JSON: every page, cited or not, with the TheoryTab parsed from each Hooktheory
-  page; null on runs recorded before 2026-11-01 and where there was no artist and title to look
-  up. `OldBpm*` are the old estimates of imported history, written
+  page, and under `candidates` the pages found with the exact title under no artist the track credits,
+  which no rule reads (ADR 0077); null on runs recorded before 2026-11-01 and where there was no
+  artist and title to look up. `OldBpm*` are the old estimates of imported history, written
   again only by the person's run over an imported verdict, so its warp starting point stays.
 - **Sections**: a run's sections, each a `Label` with its own `Tonic` and `Mode`, and a `Start` in seconds into the track (null on runs recorded before ADR 0064).
 - **Sources**: what the judge consulted. `Kind` is `Authoritative`, `Corroborating`,
@@ -79,3 +80,15 @@ already has is a skip, not a failure.
 The judge writes here itself ([docs/judge.md](judge.md)). The rows before it were imported once from
 a predecessor tool's JSONL, and the import is gone: `OldBpm*` and the windows with
 no asker are what is left of it ([ADR 0055](adr/0055-crateside-owns-the-key-judge-and-its-ledger.md)).
+
+## The work key is not always a video ID
+
+A track's **work key** is the one string the queue, the working set, intake and a stem's provenance
+join on. A YouTube track's is its video ID; any other track's is `<source>~<id>` (`soundcloud~242136202`,
+`file~3fa9c0d12be84471`), and its `SourceUrl` and every stem's `source:` read `track:<key>`
+([ADR 0077](adr/0077-a-track-that-is-not-on-youtube-is-keyed-by-its-source-and-named-from-its-tags.md)).
+`TrackKeys` in `Crateside.Core` is the one place that knows these shapes. **Nothing stored changed
+name**: the JSON files and API keep `videoId` and `sourceVideoId`, and the ledger's columns are the
+ones above, so a stored key is read as before whatever it holds. `intake.json` gained optional
+`pageUrl`, `artist`, `songTitle` and `release` fields on a record, which older readers ignore, and
+`recipe.json` is new.

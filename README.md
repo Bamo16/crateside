@@ -48,6 +48,9 @@ nothing is outstanding. Separation (GPU) and judging (paid tokens) can be paused
 1. **Intake.** A new entry in the playlist, or a YouTube URL pasted on the Tracks page. With
    YouTube access granted, crateside can remove each entry from the playlist once it has taken it
    in, so the playlist works as an inbox ([ADR 0021](docs/adr/0021-the-playlist-is-a-message-queue-consumed-on-arrival.md)).
+   A track that is not on YouTube comes in as an audio file or zip saved into the inbox folder or
+   dropped on the Tracks page, or as a pasted link to a site or a media file, and is named from
+   its tags ([ADR 0077](docs/adr/0077-a-track-that-is-not-on-youtube-is-keyed-by-its-source-and-named-from-its-tags.md)).
 2. **Download** through [StemForge](https://github.com/Bamo16/StemForge)'s `stemforge-cli`,
    noting whether YouTube served its Premium-quality format.
 3. **Detect** the key with three detectors, and look the song up on Hooktheory, Musicnotes and
@@ -180,8 +183,9 @@ For now:
 
 - **Setup is manual.** Everything in Requirements is installed and configured by hand; there is no
   first-run setup yet.
-- **Intake is YouTube only**: the playlist, or one video URL at a time. A playlist cannot be pasted
-  as a URL yet.
+- **Intake is one track at a time**: the YouTube playlist, a video URL, a file, or a link to one
+  track elsewhere. A playlist cannot be pasted as a URL yet, and a file's key is taken only once
+  StemForge's `download` reports it (older builds of `stemforge-cli` need updating).
 - **It takes over part of Live's browser.** crateside sets Collections 2 to 7 on the files it
   manages, writes the `.asd` sidecars of staged stems, and keeps the clip gain of every saved
   sample at its loudness target. It backs up a sidecar or tag store before changing it.

@@ -16,10 +16,16 @@ dotnet csharpier check .                   # must be clean before every commit
 
 **Read the app's log from its file, not the terminal.** `%LOCALAPPDATA%\crateside\logs\crateside-<yyyyMMdd>.log` holds every entry, one line each with the full date and time; the last 14 days are kept.
 
+**Downloads go through `stemforge-cli`, and only through it.** Never `yt-dlp` directly and never
+crateside's own HTTP fetch: StemForge carries the provenance, album art and cookie support. When
+it lacks something crateside needs, the change goes into StemForge, not around it. Local files (the
+inbox, a drop) are copied or moved, not downloaded.
+
 **Find a track's source without searching.** `%LOCALAPPDATA%\crateside\source-index.json` lists
 every source on disk, by `videoId` and `song`, with its `path`: the full-mix download in the working
 set (`location: WorkingSet`, kept for the retention set in Settings after the stems reach the
-library), or the sample the library keeps (`KeptSample`). The working set's folders are named by
+library), or the sample the library keeps (`KeptSample`), or the file a track that is not on YouTube was taken
+in as (`Import`, under `imports\<key>`, never pruned). The working set's folders are named by
 video ID, not by song (the ID is in the stem's `COMMENT` tag or the ledger's `sourceUrl`). Look in
 the index before downloading again, and never search directories by song name. To download
 one, use `stemforge-cli download <url> --format flac --output <dir>`, never `yt-dlp`: stemforge
