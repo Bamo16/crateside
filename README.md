@@ -14,8 +14,8 @@
 > machine. `master` is the latest; there are no releases yet.
 
 Put songs in a YouTube playlist, or paste their links. crateside works through them unattended:
-it downloads each one, has an LLM agent judge its key, separates a vocal and an instrumental, tags
-them, and stages them in Ableton Live already laid on a beat grid. What is left is the part only a
+it downloads each one, settles its key (by its own rules where the evidence agrees, otherwise by an
+LLM judge or by you), separates a vocal and an instrumental, tags them, and stages them in Ableton Live already laid on a beat grid. What is left is the part only a
 person can do: check the grid, pick the bar the sample starts on, and save it into the library.
 
 It is a Blazor Server app that runs on your own PC, meant to sit on a second monitor next to
@@ -52,9 +52,11 @@ nothing is outstanding. Separation (GPU) and judging (paid tokens) can be paused
    noting whether YouTube served its Premium-quality format.
 3. **Detect** the key with three detectors, and look the song up on Hooktheory, Musicnotes and
    Ultimate Guitar ([below](#how-a-key-is-judged)).
-4. **Judge** the key: an LLM agent weighs that evidence into one verdict with a confidence, or
-   withholds one. Every verdict goes into a SQLite [ledger](docs/ledger.md).
-5. **Separate** on the GPU, once the song has a verdict: by default a full vocal and a full
+4. **Decide** the key: crateside's own rules where the detectors and the pages agree; otherwise an
+   LLM agent weighs the evidence into one verdict with a confidence, or withholds one; with no
+   judge set up, the track waits for you to pick its key on its page. Every verdict goes into a
+   SQLite [ledger](docs/ledger.md) saying who decided it.
+5. **Separate** on the GPU, once the song has a verdict or is waiting for yours: by default a full vocal and a full
    instrumental, plus a drum stem kept only as a warp guide. An instrumental release keeps its
    source as the sample instead.
 6. **Stage** the stems in your Staging folder, which Ableton's browser shows, and **tag** each with
@@ -106,6 +108,13 @@ read off one detector.
   [Ultimate Guitar](https://www.ultimate-guitar.com/) (chord charts), and hands the agent what it
   found. The agent may search further. Sites that publish a machine-detected key (Tunebat and the
   like) are not counted as sources.
+- **Rules first.** Where at least two detectors name a key and every Hooktheory or Musicnotes page
+  found states it, crateside records it HIGH; with no page, all three detectors agreeing (or
+  keydetect and one backer with a strong correlation) gives MEDIUM. Measured against 582 judged
+  songs, the rules settle 60–67% of them and agree with the judge on 97–99% of those
+  ([the note](docs/notes/2026-11-03-what-rules-can-rule-on-without-a-judge.md),
+  [ADR 0076](docs/adr/0076-crateside-rules-first-and-the-person-is-the-judge-of-the-rest.md)).
+  They run whatever judge is set up, so the judge sees only what they leave.
 - **The agent.** A headless [Claude Code](https://claude.com/claude-code) session (`claude -p`)
   reads the evidence, checks the detectors against the chords (does V resolve to the tonic, or is
   the detected tonic really the IV?), and writes a verdict file: HIGH, MEDIUM, LOW or WITHHELD.
@@ -119,6 +128,11 @@ read off one detector.
   A song is judged only once every detector has read it
   ([ADR 0068](docs/adr/0068-a-song-is-judged-only-on-complete-evidence.md)).
 
+- **You.** With no judge set up, a track the rules leave open waits for you: its page lists the
+  keys the detectors and the pages named, and you pick one, or any of the 24. You can set the key
+  of any song the same way. The screen says of every verdict who decided it: judged, ruled by
+  crateside, or your call.
+
 The judge runs on whatever Claude Code is logged in to, or on another Anthropic-compatible endpoint
 set under `Judge:Environment` ([docs/judge.md](docs/judge.md#the-endpoint)). On a Claude
 subscription each track costs about 37k tokens of session start-up, and background judging stops at
@@ -131,8 +145,8 @@ subscription each track costs about 37k tokens of session start-up, and backgrou
 - **Tracks**: one row per song, filtered to *Unfinished*, *In staging*, *In flight*, *Needs
   attention* and more. A row expands to its files, its verdict and why, and its controls: rename,
   swap the upload its stems are cut from, change which stems are cut, or remove it.
-- **Song**: one page per track, with its evidence and its warp. From here you can have it judged
-  again over bars you choose, with a note to the judge and what you hear.
+- **Song**: one page per track, with its evidence and its warp. From here you can pick its key
+  yourself, or have it judged again over bars you choose, with a note to the judge and what you hear.
 - **Tools**: *Partners* (the keys that pair with a song's key, fewest semitones of shift first), a
   re-pitch calculator and a Camelot wheel.
 - **Settings**: folders, the playlist and YouTube access, pausing separation and judging, starter
@@ -153,9 +167,9 @@ subscription each track costs about 37k tokens of session start-up, and backgrou
   `Paths:KeydetectFfmpeg` and `Paths:BeatdetectFfmpeg`, and pins the first build it sees for each
   filter in `%APPDATA%\crateside\builds.json`
   ([ADR 0066](docs/adr/0066-keydetect-has-its-own-pinned-build.md)).
-- **The `claude` CLI on `PATH`, logged in**, or set up for another endpoint
-  ([docs/judge.md](docs/judge.md)). This is required today: separation waits for a verdict, so
-  without a judge nothing gets past detection.
+- **Optional: the `claude` CLI on `PATH`, logged in**, or set up for another endpoint
+  ([docs/judge.md](docs/judge.md)), to judge what the rules leave. Without it (`Judge:Kind` is
+  `None`), those tracks wait for you instead.
 - **Optional: a YouTube API key**, to read a playlist, and an OAuth client, to remove entries from
   it ([docs/secrets.md](docs/secrets.md)). Without them, add tracks by URL on the Tracks page.
 
@@ -166,8 +180,6 @@ For now:
 
 - **Setup is manual.** Everything in Requirements is installed and configured by hand; there is no
   first-run setup yet.
-- **There is no judge-free mode.** Every track goes through the Claude Code judge (on its own login
-  or a configured endpoint) before it is separated.
 - **Intake is YouTube only**: the playlist, or one video URL at a time. A playlist cannot be pasted
   as a URL yet.
 - **It takes over part of Live's browser.** crateside sets Collections 2 to 7 on the files it
