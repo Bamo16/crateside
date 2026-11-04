@@ -30,6 +30,10 @@ The Tracks page's rows, narrowed by the page's own filters:
 | `search` | a name, key or video ID; like the page's search, it looks through every track and ignores `filter` and `familiarity` |
 | `familiarity` | only rows whose familiarity is tagged as this |
 
+`decidedBy` says who made a row's verdict: `Judge`, `Rules` (crateside's own rules) or `Person`
+(chosen on the song page); `waitingForPerson` is true for a track the rules left open while no judge
+is set up (ADR 0076). `NeedsAttention` includes such a track.
+
 `Off its tempo` comes furthest off first; the others keep the page's order. A 503 means the rows
 have never been read, and its `detail` says why.
 
@@ -82,6 +86,7 @@ track, the same state the API's tests stand on. Each row is the whole `TrackRow`
         "isCollapsed": false,
         "modalKey": null,
         "confidence": "High",
+        "decidedBy": "Judge",
         "bpm": null,
         "restates": null,
         "hasTaggableKey": true
@@ -108,6 +113,7 @@ track, the same state the API's tests stand on. Each row is the whole `TrackRow`
       },
       "key": "F# minor",
       "confidence": "High",
+      "decidedBy": "Judge",
       "bpm": null,
       "tempo": null,
       "beats": null,
@@ -135,6 +141,8 @@ track, the same state the API's tests stand on. Each row is the whole `TrackRow`
       "isBackfill": false,
       "canForget": true,
       "parkedFor": null,
+      "waitingForJudge": false,
+      "waitingForPerson": false,
       "acquisition": null,
       "gpuPosition": null,
       "samples": [

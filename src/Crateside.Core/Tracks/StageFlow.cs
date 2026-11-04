@@ -79,6 +79,9 @@ public sealed record StageFlow(int Pass, string Reason, IReadOnlyList<FlowStep> 
         if (Parked(row) is { } parkedAt && stages.Contains(parkedAt))
             return new(label, FlowState.Parked, Note: "parked");
 
+        if (row.WaitingForPerson && stages.Contains(JobStage.Verdict))
+            return new(label, FlowState.YourTurn, Note: "waiting for you");
+
         if (row.WaitingForJudge && stages.Contains(JobStage.Verdict))
             return new(label, FlowState.NotYet, Note: "waiting to be judged");
 

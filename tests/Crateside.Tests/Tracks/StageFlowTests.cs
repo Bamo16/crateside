@@ -134,4 +134,22 @@ public sealed class StageFlowTests
 
         Assert.Equal(new FlowStep("Warp", expected, note), warp);
     }
+
+    [Fact]
+    public void A_track_left_to_the_person_shows_its_judge_step_as_theirs()
+    {
+        var flow = StageFlow.For(
+            Row with
+            {
+                WaitingForPerson = true,
+            },
+            Succeeded(JobStage.Download, JobStage.Evidence),
+            []
+        );
+
+        var judge = Assert.Single(flow.Steps, step => step.Label == "Judge");
+
+        Assert.Equal(FlowState.YourTurn, judge.State);
+        Assert.Equal("waiting for you", judge.Note);
+    }
 }

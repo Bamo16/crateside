@@ -1,5 +1,6 @@
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Tracks;
 
@@ -258,4 +259,26 @@ public sealed class TrackChipAndFilterTests
     [Fact]
     public void A_song_nothing_has_looked_up_has_nothing_to_answer_yet() =>
         Assert.False(Tagged(genre: null, familiarity: null).Matches(TrackFilter.TagsToAnswer));
+
+    [Fact]
+    public void A_verdict_names_who_made_it_in_the_detail_line()
+    {
+        var by = (DecidedBy decided) =>
+            Base with
+            {
+                Verdict = new LedgerRun
+                {
+                    Timestamp = DateTimeOffset.Parse("2026-11-03T00:00:00+00:00"),
+                    Song = "rob dougan - furious angels",
+                    Confidence = KeyConfidence.High,
+                    Center = new TonalCenter("A", DiatonicMode.Aeolian),
+                    DecidedBy = decided,
+                },
+            };
+
+        Assert.Equal("Your call: A minor.", by(DecidedBy.Person).Detail);
+        Assert.Equal("Ruled A minor by crateside, high confidence.", by(DecidedBy.Rules).Detail);
+        Assert.Equal("Judged A minor, high confidence.", by(DecidedBy.Judge).Detail);
+        Assert.Equal(DecidedBy.Person, by(DecidedBy.Person).DecidedBy);
+    }
 }

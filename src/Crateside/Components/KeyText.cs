@@ -15,6 +15,24 @@ public static class KeyText
     public static string Confidence(KeyConfidence confidence) =>
         confidence is KeyConfidence.Unknown ? "—" : confidence.ToString().ToUpperInvariant();
 
+    /// <summary>The confidence band, or who made the call where it was not the judge's (ADR 0076).</summary>
+    public static string Decided(DecidedBy? by, KeyConfidence confidence) =>
+        by switch
+        {
+            DecidedBy.Person => "your call",
+            DecidedBy.Rules => $"{Confidence(confidence)} · rules",
+            _ => Confidence(confidence),
+        };
+
+    /// <summary>Who made the verdict, in a few words.</summary>
+    public static string Byline(DecidedBy by) =>
+        by switch
+        {
+            DecidedBy.Person => "your call",
+            DecidedBy.Rules => "ruled by crateside",
+            _ => "judged",
+        };
+
     public static string ConfidenceTone(KeyConfidence confidence) =>
         confidence switch
         {

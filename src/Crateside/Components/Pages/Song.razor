@@ -7,11 +7,13 @@
 @using Crateside.Core.Orchestration.Verdict
 @using Crateside.Core.Tempo
 @using Crateside.Core.Tracks
+@using Microsoft.Extensions.Options
 @inject TrackDetailsReader Details
 @inject TracksService Tracks
 @inject IServiceProvider Services
 @inject NavigationManager Navigation
 @inject BarJudging Judging
+@inject IOptions<JudgeOptions> Judge
 
 <PageTitle>@(Name ?? "Track details") · crateside</PageTitle>
 
@@ -74,7 +76,7 @@
                 }
                 else
                 {
-                    <span class="mono value conf @KeyText.ConfidenceTone(Confidence)">@KeyText.Confidence(Confidence)</span>
+                    <span class="mono value conf @KeyText.ConfidenceTone(Confidence) @(Verdict?.DecidedBy is DecidedBy.Person ? "call" : null)">@KeyText.Decided(Verdict?.DecidedBy, Confidence)</span>
                     <span class="sub">@ConfidenceNote</span>
                     @if (Invitation is { } invitation)
                     {
@@ -232,13 +234,19 @@
         {
             ({ } judged, [_, ..] yours) when _run!.Timestamp == judged.Timestamp =>
                 $"judged from {JudgeText.Spans(yours)} · {Clock.Ago(judged.Timestamp)}",
-            ({ } judged, _) => $"judged {judged.Timestamp.ToLocalTime():yyyy-MM-dd}",
+            ({ DecidedBy: DecidedBy.Judge } judged, _) =>
+                $"judged {judged.Timestamp.ToLocalTime():yyyy-MM-dd}",
+            ({ } decided, _) =>
+                $"{KeyText.Byline(decided.DecidedBy)} · {decided.Timestamp.ToLocalTime():yyyy-MM-dd}",
+            _ when _row?.WaitingForPerson is true => "waiting for you",
             _ => "never judged",
         };
 
     /// <summary>Why to judge it from bars, where the verdict is withheld or the detectors split and the warp view is there to do it in.</summary>
     private string? Invitation =>
-        _row is { HasUpload: true, Samples.Count: > 0 } ? JudgeText.Invitation(Confidence, _run) : null;
+        _row is { HasUpload: true, Samples.Count: > 0 } && Judge.Value.IsConfigured
+            ? JudgeText.Invitation(Confidence, _run)
+            : null;
 
     private TrackTempo? Tempo => _row is null ? TrackTempo.Of(null, null, _run?.Bpm) : _row.Bpm;
 

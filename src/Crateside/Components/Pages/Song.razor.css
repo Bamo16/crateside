@@ -121,6 +121,12 @@ h1 {
     font-weight: 500;
 }
 
+/* Words, not a band: "your call" has to fit the cell on one line. */
+.value.conf.call {
+    font-size: 36px;
+    line-height: 1.5;
+}
+
 .value.empty,
 .value.conf.none {
     color: var(--text-30);

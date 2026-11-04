@@ -218,6 +218,29 @@ public sealed class PersonsKeyTests : IDisposable
     }
 
     [Fact]
+    public void A_choice_over_an_imported_verdict_keeps_its_old_BPM_estimate()
+    {
+        _store.Record(
+            new RunRecord
+            {
+                RecordedAt = DateTimeOffset.Parse("2026-10-01T00:00:00+00:00"),
+                Song = "artist - song",
+                Artist = "Artist",
+                Title = "Song",
+                SourceUrl = Order.SourceUrl,
+                Confidence = KeyConfidence.Low,
+                Center = new TonalCenter("C", DiatonicMode.Ionian),
+                OldBpm = new OldBpm(97, "keytag", null),
+            }
+        );
+
+        _person.Choose(Order, MusicKey.FromString("A minor")!);
+
+        Assert.True(_store.Read().TryGetLatestByVideoId(VideoId, out var latest));
+        Assert.Equal(97, latest.Bpm);
+    }
+
+    [Fact]
     public void A_parked_stem_is_released_once_the_person_has_chosen()
     {
         var paths = new CratesidePaths

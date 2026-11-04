@@ -167,3 +167,15 @@ Where the decision above was silent:
 - **A Library backfill track the rules leave open, with no judge, is `AwaitingPerson` too**, which
   is what stops the selector picking it again every pass. With no judge the ordinary verdict stage
   works the backfill whenever backfill is switched on, since a ruling costs nothing.
+- **The Tracks list puts a track waiting for the person among the rows that need attention**, with
+  the other things the user resolves, and its separation chip reads `waiting for you` whether it is
+  queued, in the GPU line or already cut and parked.
+- **With no judge, what only a judge does is not shown**: Judge again, and the form for judging
+  from bars. The Library backfill and Settings counts of songs "to re-judge first" read zero.
+- **The song page's list of choices is the keys the detectors, keydetect's runner-up and the
+  Hooktheory and Musicnotes pages name**, most-named first. Ultimate Guitar names no choice. The
+  person's run keeps the evidence and lookups of the run it replaces (or the working set's, for a
+  track that has none), the windows of the run it replaces, and no sections.
+- **Recording the person's call wakes the handoff and tagging stages.** `ReleaseParked` already
+  runs at the start of every handoff pass, so no new wiring was needed for the stems to leave
+  `Unresolved Key`; a test chooses a key and then releases a parked stem on the recorded run.

@@ -1668,6 +1668,9 @@
           "mixed": {
             "type": "boolean"
           },
+          "decidedBy": {
+            "$ref": "#/components/schemas/DecidedBy"
+          },
           "sections": {
             "type": "array",
             "items": {
@@ -3073,6 +3076,10 @@
           },
           "confidence": {
             "$ref": "#/components/schemas/KeyConfidence"
+          },
+          "decidedBy": {
+            "description": "Who made the current verdict; null when there is none (ADR 0076).",
+            "$ref": "#/components/schemas/DecidedBy"
           },
           "bpm": {
             "description": "The headline tempo: the finished warp's, else crateside's reading, else the ledger's estimate (ADR 0049).",

@@ -97,6 +97,7 @@ public sealed class PersonsKey(
                 DecidedBy = DecidedBy.Person,
                 Center = center,
                 Windows = basis?.Windows ?? [],
+                OldBpm = basis?.OldBpm,
                 Sources =
                 [
                     new RunSource

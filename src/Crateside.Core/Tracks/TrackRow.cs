@@ -168,6 +168,9 @@ public sealed record TrackRow
 
     public KeyConfidence Confidence => Verdict?.Confidence ?? KeyConfidence.Unknown;
 
+    /// <summary>Who made the current verdict; null when there is none (ADR 0076).</summary>
+    public DecidedBy? DecidedBy => Verdict?.DecidedBy;
+
     /// <summary>The headline tempo: the finished warp's, else crateside's reading, else the ledger's estimate (ADR 0049).</summary>
     public TrackTempo? Bpm => TrackTempo.Of(Tempo, Beats, Verdict?.Bpm);
 
@@ -362,6 +365,7 @@ public sealed record TrackRow
     public string ChipLabel =>
         State switch
         {
+            TrackState.Queued or TrackState.JudgedInLine when WaitingForPerson => "waiting for you",
             TrackState.Queued when Lookalike is not null => "same song?",
             TrackState.Queued when WaitingForJudge => "waiting to be judged",
             TrackState.Queued => "queued",
@@ -395,6 +399,8 @@ public sealed record TrackRow
             or TrackState.Separating
             or TrackState.Staging
             or TrackState.Tagging => TrackChipStyle.TealFilled,
+            TrackState.Queued or TrackState.JudgedInLine when WaitingForPerson =>
+                TrackChipStyle.AmberFilled,
             TrackState.JudgedInLine => TrackChipStyle.TealOutline,
             TrackState.ReadyToWarp or TrackState.ReadyToMove => TrackChipStyle.AmberFilled,
             TrackState.Parked or TrackState.Short => TrackChipStyle.RedOutline,
@@ -411,6 +417,8 @@ public sealed record TrackRow
     public string Next =>
         State switch
         {
+            TrackState.Queued or TrackState.JudgedInLine when WaitingForPerson =>
+                "decide its key on its page",
             TrackState.Queued when Lookalike is { } like =>
                 $"is this {like.DisplayName}? judging waits for your answer",
             TrackState.Queued when WaitingForJudge => "then judged, when the judge reaches it",
@@ -460,7 +468,13 @@ public sealed record TrackRow
     private string Judgment =>
         this switch
         {
+            { Verdict: null, WaitingForPerson: true } =>
+                "No ruling and no judge: decide its key on its page.",
             { Verdict: null } => "Never judged.",
+            { Verdict: { DecidedBy: Ledger.DecidedBy.Person }, Key: { } key } =>
+                $"Your call: {key}.",
+            { Verdict: { DecidedBy: Ledger.DecidedBy.Rules }, Key: { } key } =>
+                $"Ruled {key} by crateside, {Spoken(Confidence)} confidence.",
             { Key: { } key } => $"Judged {key}, {Spoken(Confidence)} confidence.",
             _ =>
                 $"Judged, and the verdict came back {Spoken(Confidence)} — no key worth tagging with.",
