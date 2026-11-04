@@ -59,6 +59,20 @@ public sealed class DownloadRunner(IProcessRunner processes, string stemforge = 
             ) with
             {
                 Summary = Summarize(path, row),
+                Source = row.ExtractorKey is null
+                    ? null
+                    : new DownloadedSource
+                    {
+                        ExtractorKey = row.ExtractorKey,
+                        Id = row.Id,
+                        IsGeneric = row.IsGeneric is true,
+                        Uploader = row.Uploader,
+                        UploadDate = row.UploadDate,
+                        ReleaseYear = row.ReleaseYear,
+                        Album = row.Album,
+                        AlbumArtist = row.AlbumArtist,
+                        TrackNumber = row.TrackNumber,
+                    },
             },
             [{ Error: { Length: > 0 } error }, ..] => DownloadResult.Failed(error),
             _ => DownloadResult.Failed("stemforge-cli download failed without saying why"),
@@ -114,6 +128,9 @@ public sealed record DownloadResult
     /// <summary>What was fetched, in a line for the activity feed (#170). Null unless it succeeded.</summary>
     public string? Summary { get; init; }
 
+    /// <summary>What identifies the source; null when StemForge is too old to say.</summary>
+    public DownloadedSource? Source { get; init; }
+
     public static DownloadResult Succeeded(string path, Acquisition acquisition) =>
         new()
         {
@@ -141,4 +158,46 @@ internal sealed record DownloadOutput
     public string? FormatId { get; init; }
 
     public double? BitrateKbps { get; init; }
+
+    public string? ExtractorKey { get; init; }
+
+    public string? Id { get; init; }
+
+    public bool? IsGeneric { get; init; }
+
+    public string? Uploader { get; init; }
+
+    public string? UploadDate { get; init; }
+
+    public int? ReleaseYear { get; init; }
+
+    public string? Album { get; init; }
+
+    public string? AlbumArtist { get; init; }
+
+    public int? TrackNumber { get; init; }
+}
+
+/// <summary>What <c>stemforge-cli download --json</c> says the source was.</summary>
+public sealed record DownloadedSource
+{
+    /// <summary>yt-dlp's extractor key, such as <c>Soundcloud</c> or <c>Generic</c>.</summary>
+    public required string ExtractorKey { get; init; }
+
+    public string? Id { get; init; }
+
+    /// <summary>A direct link to a media file, which yt-dlp reads with its generic extractor.</summary>
+    public bool IsGeneric { get; init; }
+
+    public string? Uploader { get; init; }
+
+    public string? UploadDate { get; init; }
+
+    public int? ReleaseYear { get; init; }
+
+    public string? Album { get; init; }
+
+    public string? AlbumArtist { get; init; }
+
+    public int? TrackNumber { get; init; }
 }
