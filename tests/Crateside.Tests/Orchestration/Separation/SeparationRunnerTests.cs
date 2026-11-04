@@ -11,7 +11,7 @@ namespace Crateside.Tests.Orchestration.Separation;
 /// <summary>Driven against a real child process rather than a mocked one.</summary>
 public sealed class SeparationRunnerTests : IDisposable
 {
-    private const string VideoId = "dQw4w9WgXcQ";
+    private const string TrackKey = "dQw4w9WgXcQ";
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
@@ -48,7 +48,7 @@ public sealed class SeparationRunnerTests : IDisposable
             new WorkItem
             {
                 PlaylistItemId = "PLI1",
-                VideoId = VideoId,
+                TrackKey = TrackKey,
                 Title = "Yes - Owner of a Lonely Heart",
                 Plan = StemPlan.InstrumentalRelease,
             },
@@ -60,7 +60,7 @@ public sealed class SeparationRunnerTests : IDisposable
             new WorkItem
             {
                 PlaylistItemId = "PLI1",
-                VideoId = VideoId,
+                TrackKey = TrackKey,
                 Title = "Yes - Owner of a Lonely Heart",
             },
             TestLedger.From("does-not-exist")
@@ -95,7 +95,7 @@ public sealed class SeparationRunnerTests : IDisposable
         await RunnerPrinting("""[{"succeeded":true,"outputFiles":["v.flac","i.flac","d.flac"]}]""")
             .RunAsync(Order(), TestContext.Current.CancellationToken);
 
-        Assert.True(Jobs.TryGet(VideoId, JobStage.Separation, out var job));
+        Assert.True(Jobs.TryGet(TrackKey, JobStage.Separation, out var job));
         Assert.Equal(JobStatus.Succeeded, job.Status);
         Assert.Equal(0, job.Strikes);
     }
@@ -107,7 +107,7 @@ public sealed class SeparationRunnerTests : IDisposable
             .RunAsync(Order(), TestContext.Current.CancellationToken);
 
         var finished = Assert.Single(
-            Jobs.History(VideoId),
+            Jobs.History(TrackKey),
             update => update.Status is JobStatus.Succeeded
         );
 
@@ -129,7 +129,7 @@ public sealed class SeparationRunnerTests : IDisposable
         Assert.Equal(SeparationOutcome.Failed, result.Outcome);
         Assert.Equal("cuda out of memory", result.Error);
 
-        Assert.True(Jobs.TryGet(VideoId, JobStage.Separation, out var job));
+        Assert.True(Jobs.TryGet(TrackKey, JobStage.Separation, out var job));
         Assert.Equal(1, job.Strikes);
     }
 
@@ -165,7 +165,7 @@ public sealed class SeparationRunnerTests : IDisposable
         Assert.Equal(SeparationOutcome.Refused, result.Outcome);
         Assert.Contains("otherVideo0", result.Error);
 
-        Assert.False(Jobs.TryGet(VideoId, JobStage.Separation, out _));
+        Assert.False(Jobs.TryGet(TrackKey, JobStage.Separation, out _));
     }
 
     [Fact]
@@ -193,7 +193,7 @@ public sealed class SeparationRunnerTests : IDisposable
             runner.RunAsync(Order(), cancellation.Token)
         );
 
-        Assert.True(Jobs.TryGet(VideoId, JobStage.Separation, out var job));
+        Assert.True(Jobs.TryGet(TrackKey, JobStage.Separation, out var job));
         using var process = System.Diagnostics.Process.GetProcessById(job.ProcessId!.Value);
 
         try
@@ -231,19 +231,19 @@ public sealed class SeparationRunnerTests : IDisposable
     }
 
     /// <summary>A retained download as stemforge-cli leaves it, its provenance naming the video when asked.</summary>
-    private string Retained(string? provenanceVideoId)
+    private string Retained(string? provenanceTrackKey)
     {
-        var audio = Path.Combine(Set.Prepare(VideoId), "Yes - Owner of a Lonely Heart.flac");
+        var audio = Path.Combine(Set.Prepare(TrackKey), "Yes - Owner of a Lonely Heart.flac");
 
         File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), audio);
 
-        if (provenanceVideoId is null)
+        if (provenanceTrackKey is null)
             return audio;
 
         using var file = TagLib.File.Create(audio);
 
         file.Tag.Comment =
-            $"stemforge/0.5.1.0 | date: 2026-10-30 | source: https://www.youtube.com/watch?v={provenanceVideoId}";
+            $"stemforge/0.5.1.0 | date: 2026-10-30 | source: https://www.youtube.com/watch?v={provenanceTrackKey}";
         file.Save();
 
         return audio;
@@ -252,7 +252,7 @@ public sealed class SeparationRunnerTests : IDisposable
     [Fact]
     public async Task The_retained_download_is_separated_rather_than_fetched_again()
     {
-        var audio = Retained(VideoId);
+        var audio = Retained(TrackKey);
 
         var runner = RunnerEchoingArguments(out var argumentsFile);
 
@@ -268,7 +268,7 @@ public sealed class SeparationRunnerTests : IDisposable
     public async Task A_retained_download_its_tagging_never_reached_is_fetched_again_by_url()
     {
         // Its stems would carry no source, and the handoff would never find them.
-        var audio = Retained(provenanceVideoId: null);
+        var audio = Retained(provenanceTrackKey: null);
 
         var runner = RunnerEchoingArguments(out var argumentsFile);
 
@@ -277,7 +277,7 @@ public sealed class SeparationRunnerTests : IDisposable
         var arguments = File.ReadAllText(argumentsFile);
 
         Assert.DoesNotContain(audio, arguments);
-        Assert.Contains($"watch?v={VideoId}", arguments);
+        Assert.Contains($"watch?v={TrackKey}", arguments);
     }
 
     [Fact]
@@ -287,14 +287,14 @@ public sealed class SeparationRunnerTests : IDisposable
 
         await runner.RunAsync(Order(), TestContext.Current.CancellationToken);
 
-        Assert.Contains($"watch?v={VideoId}", File.ReadAllText(argumentsFile));
+        Assert.Contains($"watch?v={TrackKey}", File.ReadAllText(argumentsFile));
     }
 
     [Fact]
     public async Task A_kept_source_is_no_longer_this_stages_business()
     {
         // The download stage copies it (ADR 0019).
-        var audio = Path.Combine(Set.Prepare(VideoId), "Yes - Owner of a Lonely Heart.flac");
+        var audio = Path.Combine(Set.Prepare(TrackKey), "Yes - Owner of a Lonely Heart.flac");
 
         File.WriteAllText(audio, "the source");
 
@@ -329,7 +329,7 @@ public sealed class SeparationRunnerTests : IDisposable
         Assert.Contains("3 files", result.Error);
         Assert.Contains("produced 1", result.Error);
 
-        Assert.True(Jobs.TryGet(VideoId, JobStage.Separation, out var job));
+        Assert.True(Jobs.TryGet(TrackKey, JobStage.Separation, out var job));
         Assert.Equal(JobStatus.Failed, job.Status);
     }
 
@@ -357,7 +357,7 @@ public sealed class SeparationRunnerTests : IDisposable
     [Fact]
     public async Task An_ordinary_release_keeps_no_source_either_way()
     {
-        File.WriteAllText(Path.Combine(Set.Prepare(VideoId), "track.flac"), "the source");
+        File.WriteAllText(Path.Combine(Set.Prepare(TrackKey), "track.flac"), "the source");
 
         var runner = RunnerEchoingArguments(out var argumentsFile);
 

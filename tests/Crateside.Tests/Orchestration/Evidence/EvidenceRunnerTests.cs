@@ -12,7 +12,7 @@ namespace Crateside.Tests.Orchestration.Evidence;
 /// <summary>Running the detectors over audio crateside already holds (ADR 0019).</summary>
 public sealed class EvidenceRunnerTests : IDisposable
 {
-    private const string VideoId = "dQw4w9WgXcQ";
+    private const string TrackKey = "dQw4w9WgXcQ";
 
     private const string KeydetectSummary = """
         [Parsed_keydetect_0 @ 0000025c7e797d00] t=3.20 key=F#m (r=0.66)
@@ -49,7 +49,7 @@ public sealed class EvidenceRunnerTests : IDisposable
             new WorkItem
             {
                 PlaylistItemId = "PLI1",
-                VideoId = VideoId,
+                TrackKey = TrackKey,
                 Title = "Yes - Owner of a Lonely Heart",
             },
             TestLedger.From("does-not-exist")
@@ -57,7 +57,7 @@ public sealed class EvidenceRunnerTests : IDisposable
 
     private string Held()
     {
-        var audio = Path.Combine(Set.Prepare(VideoId), "Yes - Owner of a Lonely Heart.flac");
+        var audio = Path.Combine(Set.Prepare(TrackKey), "Yes - Owner of a Lonely Heart.flac");
         File.WriteAllText(audio, "audio");
 
         return audio;
@@ -80,7 +80,7 @@ public sealed class EvidenceRunnerTests : IDisposable
             .RunAsync(Order(), TestContext.Current.CancellationToken);
 
         Assert.True(result.IsSuccess, result.Error);
-        Assert.Equal(Set.EvidencePathFor(VideoId), result.EvidencePath);
+        Assert.Equal(Set.EvidencePathFor(TrackKey), result.EvidencePath);
 
         var evidence = Read(result.EvidencePath!);
         Assert.Equal(
@@ -104,7 +104,7 @@ public sealed class EvidenceRunnerTests : IDisposable
     public async Task Evidence_already_on_disk_is_not_produced_again()
     {
         Held();
-        File.WriteAllText(Set.EvidencePathFor(VideoId), "{}");
+        File.WriteAllText(Set.EvidencePathFor(TrackKey), "{}");
         var ffmpeg = new FakeFfmpeg(KeydetectSummary);
 
         var result = await Runner(ffmpeg).RunAsync(Order(), TestContext.Current.CancellationToken);
@@ -156,7 +156,7 @@ public sealed class EvidenceRunnerTests : IDisposable
 
         Assert.False(result.IsSuccess);
         Assert.Contains("moov atom not found", result.Error);
-        Assert.False(Set.HasEvidence(VideoId));
+        Assert.False(Set.HasEvidence(TrackKey));
     }
 
     [Fact]

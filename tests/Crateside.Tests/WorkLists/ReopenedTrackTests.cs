@@ -8,16 +8,16 @@ public sealed class ReopenedTrackTests
     private const string Queued = "aaaaaaaaaaa";
     private const string Reopened = "bbbbbbbbbbb";
 
-    private static WorkItem Item(string videoId) =>
+    private static WorkItem Item(string trackKey) =>
         new()
         {
-            PlaylistItemId = $"PLI-{videoId}",
-            VideoId = videoId,
+            PlaylistItemId = $"PLI-{trackKey}",
+            TrackKey = trackKey,
             Title = "In the playlist",
         };
 
-    private static WorkItem Off(string videoId) =>
-        new() { VideoId = videoId, Title = "Long since removed" };
+    private static WorkItem Off(string trackKey) =>
+        new() { TrackKey = trackKey, Title = "Long since removed" };
 
     private static WorkListsView Compose(params WorkItem[] reopened) =>
         WorkListsView.Compose(
@@ -35,7 +35,7 @@ public sealed class ReopenedTrackTests
     {
         var view = Compose(Off(Reopened));
 
-        Assert.Contains(view.AwaitingSeparation, item => item.VideoId == Reopened);
+        Assert.Contains(view.AwaitingSeparation, item => item.TrackKey == Reopened);
     }
 
     [Fact]
@@ -44,8 +44,8 @@ public sealed class ReopenedTrackTests
         // Kept out of Items, which Outstanding is built from, so a re-cut cannot buy a second judging.
         var view = Compose(Off(Reopened));
 
-        Assert.DoesNotContain(view.Items, item => item.VideoId == Reopened);
-        Assert.DoesNotContain(view.Outstanding, item => item.VideoId == Reopened);
+        Assert.DoesNotContain(view.Items, item => item.TrackKey == Reopened);
+        Assert.DoesNotContain(view.Outstanding, item => item.TrackKey == Reopened);
     }
 
     [Fact]
@@ -53,9 +53,9 @@ public sealed class ReopenedTrackTests
     {
         var view = Compose(Off(Reopened));
 
-        Assert.DoesNotContain(view.FullyProcessed, item => item.VideoId == Reopened);
+        Assert.DoesNotContain(view.FullyProcessed, item => item.TrackKey == Reopened);
         Assert.Null(
-            Assert.Single(view.AwaitingSeparation, i => i.VideoId == Reopened).PlaylistItemId
+            Assert.Single(view.AwaitingSeparation, i => i.TrackKey == Reopened).PlaylistItemId
         );
     }
 
@@ -64,7 +64,7 @@ public sealed class ReopenedTrackTests
     {
         var view = Compose();
 
-        Assert.Contains(view.AwaitingSeparation, item => item.VideoId == Queued);
+        Assert.Contains(view.AwaitingSeparation, item => item.TrackKey == Queued);
         Assert.Single(view.AwaitingSeparation);
     }
 
@@ -83,10 +83,10 @@ public sealed class ReopenedTrackTests
             awaitingCut: new HashSet<string>()
         );
 
-        Assert.DoesNotContain(view.AwaitingSeparation, item => item.VideoId == Reopened);
+        Assert.DoesNotContain(view.AwaitingSeparation, item => item.TrackKey == Reopened);
 
-        Assert.Contains(view.Reopened, item => item.VideoId == Reopened);
-        Assert.Contains(view.Everything, item => item.VideoId == Reopened);
+        Assert.Contains(view.Reopened, item => item.TrackKey == Reopened);
+        Assert.Contains(view.Everything, item => item.TrackKey == Reopened);
     }
 
     [Fact]
@@ -101,6 +101,6 @@ public sealed class ReopenedTrackTests
             reopened: [Off(Reopened)]
         );
 
-        Assert.DoesNotContain(view.AwaitingSeparation, item => item.VideoId == Reopened);
+        Assert.DoesNotContain(view.AwaitingSeparation, item => item.TrackKey == Reopened);
     }
 }

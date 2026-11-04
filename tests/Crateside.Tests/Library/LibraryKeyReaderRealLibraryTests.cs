@@ -71,8 +71,8 @@ public sealed class LibraryKeyReaderRealLibraryTests
         tags.TryGet(file, out var applied) && applied.IsKeyTagged ? applied.Key : null;
 
     private static string? Verdict(KeyLedger ledger, string file) =>
-        StemTagReader.Read(file)?.Provenance is { SourceVideoId: { } videoId }
-        && ledger.TryGetLatestByVideoId(videoId, out var run)
+        StemTagReader.Read(file)?.Provenance is { SourceTrackKey: { } trackKey }
+        && ledger.TryGetLatestByTrackKey(trackKey, out var run)
         && run.HasTaggableKey
         // A re-judged song's new verdict waits on the approval list (ADR 0052) before its files change.
         && ledger.Runs.Count(other => other.Song == run.Song && other.Restates is null) is 1

@@ -69,14 +69,14 @@ public static class StemTagReader
     }
 
     /// <summary>The audio files under <paramref name="root"/> whose tags name this upload.</summary>
-    public static IReadOnlyList<string> FilesCutFrom(string root, string videoId) =>
+    public static IReadOnlyList<string> FilesCutFrom(string root, string trackKey) =>
         Directory.Exists(root)
             ?
             [
                 .. Directory
                     .EnumerateFiles(root, "*", SearchOption.AllDirectories)
                     .Where(SampleFiles.IsAudio)
-                    .Where(path => Read(path)?.Provenance?.SourceVideoId == videoId),
+                    .Where(path => Read(path)?.Provenance?.SourceTrackKey == trackKey),
             ]
             : [];
 
@@ -181,7 +181,7 @@ public sealed record StemTags
     public StemProvenance? Provenance { get; init; }
 
     /// <summary>The ledger join key, or null when this stem cannot be joined.</summary>
-    public string? SourceVideoId => Provenance?.SourceVideoId;
+    public string? SourceTrackKey => Provenance?.SourceTrackKey;
 }
 
 internal sealed record StemTagRecord(

@@ -12,7 +12,7 @@ public sealed class TrackStateResolutionTests
     private static TrackRow Row() =>
         new()
         {
-            VideoId = Video,
+            TrackKey = Video,
             PlaylistItemId = $"PLI-{Video}",
             Title = "Track one",
         };

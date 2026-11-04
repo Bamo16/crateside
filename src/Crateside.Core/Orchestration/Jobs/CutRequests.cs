@@ -31,10 +31,10 @@ public static class CutRequests
         || handoff is { Status: JobStatus.Succeeded, UpdatedAt: var at } && at >= asked;
 
     public static bool OwesCut(WorkItem item, JobStore jobs) =>
-        OwesCut(item.CutRequestedAt, Latest(jobs, item.VideoId, JobStage.Separation));
+        OwesCut(item.CutRequestedAt, Latest(jobs, item.TrackKey, JobStage.Separation));
 
     public static bool IsSettled(WorkItem item, JobStore jobs) =>
-        IsSettled(item.CutRequestedAt, Latest(jobs, item.VideoId, JobStage.Handoff));
+        IsSettled(item.CutRequestedAt, Latest(jobs, item.TrackKey, JobStage.Handoff));
 
     /// <summary>Video IDs whose request still owes a separation.</summary>
     public static IReadOnlySet<string> Cutting(
@@ -43,7 +43,8 @@ public static class CutRequests
     ) =>
         Where(
             instructions,
-            track => OwesCut(track.CutRequestedAt, Latest(jobs, track.VideoId, JobStage.Separation))
+            track =>
+                OwesCut(track.CutRequestedAt, Latest(jobs, track.TrackKey, JobStage.Separation))
         );
 
     /// <summary>Video IDs whose request is not yet carried through, which keeps their rows.</summary>
@@ -53,7 +54,8 @@ public static class CutRequests
     ) =>
         Where(
             instructions,
-            track => !IsSettled(track.CutRequestedAt, Latest(jobs, track.VideoId, JobStage.Handoff))
+            track =>
+                !IsSettled(track.CutRequestedAt, Latest(jobs, track.TrackKey, JobStage.Handoff))
         );
 
     private static HashSet<string> Where(
@@ -62,9 +64,9 @@ public static class CutRequests
     ) =>
         instructions
             .Where(track => track.CutRequestedAt is not null && owing(track))
-            .Select(track => track.VideoId)
+            .Select(track => track.TrackKey)
             .ToHashSet(StringComparer.Ordinal);
 
-    private static TrackJob? Latest(JobStore jobs, string videoId, JobStage stage) =>
-        jobs.TryGet(videoId, stage, out var job) ? job : null;
+    private static TrackJob? Latest(JobStore jobs, string trackKey, JobStage stage) =>
+        jobs.TryGet(trackKey, stage, out var job) ? job : null;
 }

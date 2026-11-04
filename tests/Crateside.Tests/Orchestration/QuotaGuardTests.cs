@@ -75,17 +75,17 @@ public sealed class QuotaGuardTests : IDisposable
         Assert.False(new VerdictSelector(Jobs, Set).TryPickNext(view, ledger, out _));
     }
 
-    private void GiveAudio(string videoId) =>
-        File.WriteAllText(Path.Combine(Set.Prepare(videoId), "track.flac"), "audio");
+    private void GiveAudio(string trackKey) =>
+        File.WriteAllText(Path.Combine(Set.Prepare(trackKey), "track.flac"), "audio");
 
-    private KeyLedger Judged(params string[] videoIds)
+    private KeyLedger Judged(params string[] trackKeys)
     {
         var path = Path.Combine(_directory, "runs.jsonl");
 
         Directory.CreateDirectory(_directory);
         File.WriteAllLines(
             path,
-            videoIds.Select(v =>
+            trackKeys.Select(v =>
                 JsonSerializer.Serialize(
                     new
                     {
@@ -103,8 +103,8 @@ public sealed class QuotaGuardTests : IDisposable
         return TestLedger.From(path);
     }
 
-    private static WorkItem Item(string videoId) =>
-        new() { VideoId = videoId, Title = $"Track {videoId}" };
+    private static WorkItem Item(string trackKey) =>
+        new() { TrackKey = trackKey, Title = $"Track {trackKey}" };
 
     private static WorkListsView View(params WorkItem[] outstanding) =>
         new()

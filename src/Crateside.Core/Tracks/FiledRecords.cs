@@ -45,7 +45,7 @@ public sealed class FiledRecordsReader(
             Marks = FiledUnder(marks.Read(), keys),
             ResolvedNames = FiledUnder(names.Read(), keys),
             Instructions = FiledUnder(
-                instructions.Read().ToDictionary(instruction => instruction.VideoId),
+                instructions.Read().ToDictionary(instruction => instruction.TrackKey),
                 keys
             ),
         };

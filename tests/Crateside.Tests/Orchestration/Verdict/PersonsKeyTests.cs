@@ -12,7 +12,7 @@ namespace Crateside.Tests.Orchestration.Verdict;
 
 public sealed class PersonsKeyTests : IDisposable
 {
-    private const string VideoId = "dQw4w9WgXcQ";
+    private const string TrackKey = "dQw4w9WgXcQ";
 
     private const string Evidence = """
         {
@@ -41,9 +41,9 @@ public sealed class PersonsKeyTests : IDisposable
 
     private static readonly WorkOrder Order = new()
     {
-        VideoId = VideoId,
+        TrackKey = TrackKey,
         Title = "Artist - Song",
-        SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
+        SourceUrl = $"https://music.youtube.com/watch?v={TrackKey}",
         Destination = StemDestination.UnresolvedKey,
     };
 
@@ -76,9 +76,9 @@ public sealed class PersonsKeyTests : IDisposable
 
     private void HoldEvidenceAndPages()
     {
-        var folder = _set.Prepare(VideoId);
+        var folder = _set.Prepare(TrackKey);
 
-        File.WriteAllText(_set.EvidencePathFor(VideoId), Evidence);
+        File.WriteAllText(_set.EvidencePathFor(TrackKey), Evidence);
         File.WriteAllText(
             Path.Combine(folder, PageLookups.SourcesFileName),
             """
@@ -126,7 +126,7 @@ public sealed class PersonsKeyTests : IDisposable
     public void A_track_that_was_waiting_takes_the_choice_as_a_HIGH_verdict_of_the_person()
     {
         HoldEvidenceAndPages();
-        _jobs.Record(VideoId, JobStage.Verdict, JobStatus.AwaitingPerson);
+        _jobs.Record(TrackKey, JobStage.Verdict, JobStatus.AwaitingPerson);
 
         Assert.IsType<RecordOutcome.Recorded>(
             _person.Choose(Order, MusicKey.FromString("A minor")!)
@@ -151,7 +151,7 @@ public sealed class PersonsKeyTests : IDisposable
             evidence.Lookups,
             lookup => lookup is { Site: "Hooktheory", Pages.Count: 1 }
         );
-        Assert.True(_jobs.TryGet(VideoId, JobStage.Verdict, out var job));
+        Assert.True(_jobs.TryGet(TrackKey, JobStage.Verdict, out var job));
         Assert.Equal(JobStatus.Succeeded, job.Status);
     }
 
@@ -186,7 +186,7 @@ public sealed class PersonsKeyTests : IDisposable
 
         _person.Choose(Order, MusicKey.FromString("D major")!);
 
-        Assert.True(_store.Read().TryGetLatestByVideoId(VideoId, out var latest));
+        Assert.True(_store.Read().TryGetLatestByTrackKey(TrackKey, out var latest));
         Assert.Equal("the artist - the song", latest.Song);
         Assert.Equal(DecidedBy.Person, latest.DecidedBy);
         Assert.Equal("D major", latest.Key);
@@ -212,7 +212,7 @@ public sealed class PersonsKeyTests : IDisposable
 
         _person.Choose(Order, MusicKey.FromString("A minor")!);
 
-        Assert.True(_store.Read().TryGetLatestByVideoId(VideoId, out var latest));
+        Assert.True(_store.Read().TryGetLatestByTrackKey(TrackKey, out var latest));
         Assert.Equal("A minor", latest.Key);
         Assert.Equal(KeyConfidence.High, latest.Confidence);
     }
@@ -236,7 +236,7 @@ public sealed class PersonsKeyTests : IDisposable
 
         _person.Choose(Order, MusicKey.FromString("A minor")!);
 
-        Assert.True(_store.Read().TryGetLatestByVideoId(VideoId, out var latest));
+        Assert.True(_store.Read().TryGetLatestByTrackKey(TrackKey, out var latest));
         Assert.Equal(97, latest.Bpm);
     }
 
@@ -257,7 +257,7 @@ public sealed class PersonsKeyTests : IDisposable
         using (var file = TagLib.File.Create(parked))
         {
             file.Tag.Comment =
-                $"stemforge/0.3.1.0 | date: 2026-11-03 | source: https://www.youtube.com/watch?v={VideoId}";
+                $"stemforge/0.3.1.0 | date: 2026-11-03 | source: https://www.youtube.com/watch?v={TrackKey}";
             file.Save();
         }
 

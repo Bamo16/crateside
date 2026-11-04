@@ -29,11 +29,11 @@ public sealed class IntakeStoreTests : IDisposable
 
     private IntakeStore Store() => new(Path.Combine(_directory, "intake.json"));
 
-    private static WorkItem Item(string videoId, string title = "Some Track") =>
+    private static WorkItem Item(string trackKey, string title = "Some Track") =>
         new()
         {
-            PlaylistItemId = $"PLI-{videoId}",
-            VideoId = videoId,
+            PlaylistItemId = $"PLI-{trackKey}",
+            TrackKey = trackKey,
             Title = title,
             AddedAt = DateTimeOffset.Parse("2026-09-15T12:00:00+00:00"),
             PremiumOutlook = PremiumOutlook.ArtTrack,
@@ -46,7 +46,7 @@ public sealed class IntakeStoreTests : IDisposable
 
         var kept = Store().Read();
 
-        Assert.Equal(Track, Assert.Single(kept).VideoId);
+        Assert.Equal(Track, Assert.Single(kept).TrackKey);
         Assert.Equal("Medicine Ball", kept[0].Title);
         Assert.Equal(PremiumOutlook.ArtTrack, kept[0].PremiumOutlook);
     }
@@ -80,7 +80,7 @@ public sealed class IntakeStoreTests : IDisposable
         store.Backfill([Track, Other]);
 
         Assert.Equal(2, store.Read().Count);
-        Assert.All(store.Read(), record => Assert.Equal(record.VideoId, record.Title));
+        Assert.All(store.Read(), record => Assert.Equal(record.TrackKey, record.Title));
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public sealed class IntakeStoreTests : IDisposable
 
         store.Record([Item(Track), Item(Other)]);
 
-        var recorded = Store().Read().Select(r => r.VideoId).ToHashSet(StringComparer.Ordinal);
+        var recorded = Store().Read().Select(r => r.TrackKey).ToHashSet(StringComparer.Ordinal);
 
         Assert.Contains(Track, recorded);
         Assert.Contains(Other, recorded);
@@ -190,7 +190,7 @@ public sealed class IntakeStoreTests : IDisposable
 
         Assert.Equal(
             [Track, Other],
-            claims.SelectMany(claim => claim).Select(item => item.VideoId).Order()
+            claims.SelectMany(claim => claim).Select(item => item.TrackKey).Order()
         );
     }
 
@@ -221,7 +221,7 @@ public sealed class IntakeStoreTests : IDisposable
     }
 
     private static string[] Offerable(IntakeStore store) =>
-        [.. store.Read().Where(r => r.RemovalAttemptedAt is null).Select(r => r.VideoId)];
+        [.. store.Read().Where(r => r.RemovalAttemptedAt is null).Select(r => r.TrackKey)];
 
     [Fact]
     public void A_stand_in_for_an_instruction_that_asks_nothing_is_pruned()
@@ -231,7 +231,7 @@ public sealed class IntakeStoreTests : IDisposable
         store.Backfill([Track, Other]);
         store.Prune(owed: new HashSet<string> { Other }, held: new HashSet<string>());
 
-        Assert.Equal(Other, Assert.Single(store.Read()).VideoId);
+        Assert.Equal(Other, Assert.Single(store.Read()).TrackKey);
     }
 
     [Fact]
@@ -264,6 +264,6 @@ public sealed class IntakeStoreTests : IDisposable
         store.Record([Item(Track), Item(Other)]);
         store.Forget(Track);
 
-        Assert.Equal(Other, Assert.Single(store.Read()).VideoId);
+        Assert.Equal(Other, Assert.Single(store.Read()).TrackKey);
     }
 }

@@ -120,19 +120,19 @@ public sealed class CratesideApiTests : IAsyncLifetime
     {
         Assert.Equal(
             [SyntheticCrateside.Judged, SyntheticCrateside.Waiting],
-            await VideoIdsAsync("/api/tracks")
+            await TrackKeysAsync("/api/tracks")
         );
         Assert.Equal(
             [SyntheticCrateside.Judged, SyntheticCrateside.Waiting, SyntheticCrateside.Filed],
-            await VideoIdsAsync("/api/tracks?filter=All")
+            await TrackKeysAsync("/api/tracks?filter=All")
         );
         Assert.Equal(
             [SyntheticCrateside.Judged],
-            await VideoIdsAsync("/api/tracks?filter=InStaging")
+            await TrackKeysAsync("/api/tracks?filter=InStaging")
         );
         Assert.Equal(
             [SyntheticCrateside.Filed],
-            await VideoIdsAsync("/api/tracks?filter=InStaging&search=Filed")
+            await TrackKeysAsync("/api/tracks?filter=InStaging&search=Filed")
         );
     }
 
@@ -147,7 +147,7 @@ public sealed class CratesideApiTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
-    private async Task<string[]> VideoIdsAsync(string url) =>
+    private async Task<string[]> TrackKeysAsync(string url) =>
         [
             .. (await GetAsync(url))["rows"]!
                 .AsArray()

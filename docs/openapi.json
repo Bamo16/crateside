@@ -54,7 +54,7 @@
         }
       }
     },
-    "/api/tracks/{videoId}": {
+    "/api/tracks/{trackKey}": {
       "get": {
         "tags": [
           "Tracks"
@@ -63,9 +63,9 @@
         "operationId": "GetTrack",
         "parameters": [
           {
-            "name": "videoId",
+            "name": "trackKey",
             "in": "path",
-            "description": "The track's YouTube video ID, as in /song/{videoId}.",
+            "description": "The track key, as in /song/{trackKey}: a YouTube video ID, or what ADR 0077 keys any other source by.",
             "required": true,
             "schema": {
               "type": "string"
@@ -1335,7 +1335,7 @@
               "null",
               "string"
             ],
-            "description": "The video ID from string? LedgerRun.SourceUrl — the join onto a stem on disk."
+            "description": "The work key from string? LedgerRun.SourceUrl — the join onto a stem on disk."
           },
           "center": {
             "oneOf": [
@@ -2948,7 +2948,7 @@
               "null",
               "string"
             ],
-            "description": "The upload this track is cut from, when it is not the one string TrackRow.VideoId names."
+            "description": "The upload this track is cut from, when it is not the one string TrackRow.TrackKey names."
           },
           "isSourceSwapped": {
             "type": "boolean"

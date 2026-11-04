@@ -24,15 +24,15 @@ public sealed record StageProgress
     /// <summary>The verdict stage has left the key to the person (ADR 0076).</summary>
     public bool AwaitingPerson { get; init; }
 
-    public static StageProgress For(JobStore jobs, string videoId) => For(jobs, [videoId]);
+    public static StageProgress For(JobStore jobs, string trackKey) => For(jobs, [trackKey]);
 
     /// <summary>
     /// The same, across every upload one song has been cut from (ADR 0014): the latest record of
     /// a stage is that stage's state, whichever video ID carries it.
     /// </summary>
-    public static StageProgress For(JobStore jobs, IEnumerable<string> videoIds)
+    public static StageProgress For(JobStore jobs, IEnumerable<string> trackKeys)
     {
-        var ids = videoIds.ToArray();
+        var ids = trackKeys.ToArray();
 
         JobStage? running = null;
         DateTimeOffset? runningSince = null;
@@ -86,11 +86,11 @@ public sealed record StageProgress
 
     private static TrackJob? Latest(
         JobStore jobs,
-        IReadOnlyList<string> videoIds,
+        IReadOnlyList<string> trackKeys,
         JobStage stage
     ) =>
-        videoIds
-            .Select(videoId => jobs.TryGet(videoId, stage, out var job) ? job : null)
+        trackKeys
+            .Select(trackKey => jobs.TryGet(trackKey, stage, out var job) ? job : null)
             .OfType<TrackJob>()
             .MaxBy(job => job.UpdatedAt);
 

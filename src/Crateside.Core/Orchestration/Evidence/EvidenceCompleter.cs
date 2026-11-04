@@ -14,19 +14,19 @@ public sealed class EvidenceCompleter(
 {
     /// <summary>Null once the evidence is complete; otherwise why it could not be made so.</summary>
     public async Task<string?> CompleteAsync(
-        string videoId,
+        string trackKey,
         string? audioPath = null,
         CancellationToken ct = default
     )
     {
-        var path = workingSet.EvidencePathFor(videoId);
+        var path = workingSet.EvidencePathFor(trackKey);
         var held = await File.ReadAllTextAsync(path, ct);
         var current = await detectors.KeydetectSha256Async(ct);
 
         if (DetectorBackfill.IsComplete(held, current))
             return null;
 
-        if ((audioPath ?? sources.PathOf(videoId)) is not { } audio || !File.Exists(audio))
+        if ((audioPath ?? sources.PathOf(trackKey)) is not { } audio || !File.Exists(audio))
             return "its evidence is missing detector readings and no source audio is on disk to read them from";
 
         if (await detectors.ReadEvidenceAsync(audio, ct) is not EvidenceReading.Read(var fresh))

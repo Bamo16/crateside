@@ -24,7 +24,7 @@ public sealed class StandInNameTests
             expected,
             new WorkItem
             {
-                VideoId = "zFYEYRcjK2g",
+                TrackKey = "zFYEYRcjK2g",
                 Title = title,
                 ChannelTitle = channel,
             }.StandInTitle
@@ -35,7 +35,7 @@ public sealed class StandInNameTests
     {
         var row = new TrackRow
         {
-            VideoId = "zFYEYRcjK2g",
+            TrackKey = "zFYEYRcjK2g",
             Title = "Radiohead - Creep",
             NameSource = TrackNameSource.Playlist,
         };

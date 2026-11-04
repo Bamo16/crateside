@@ -34,20 +34,20 @@ public sealed class VerdictSelectorTests : IDisposable
 
     private static readonly KeyLedger NoLedger = TestLedger.From("does-not-exist");
 
-    private void GiveEvidence(string videoId)
+    private void GiveEvidence(string trackKey)
     {
-        Set.Prepare(videoId);
-        File.WriteAllText(Set.EvidencePathFor(videoId), "{}");
+        Set.Prepare(trackKey);
+        File.WriteAllText(Set.EvidencePathFor(trackKey), "{}");
     }
 
-    private KeyLedger Judged(params string[] videoIds)
+    private KeyLedger Judged(params string[] trackKeys)
     {
         var path = Path.Combine(_directory, "runs.jsonl");
 
         Directory.CreateDirectory(_directory);
         File.WriteAllLines(
             path,
-            videoIds.Select(v =>
+            trackKeys.Select(v =>
                 JsonSerializer.Serialize(
                     new
                     {
@@ -65,12 +65,12 @@ public sealed class VerdictSelectorTests : IDisposable
         return TestLedger.From(path);
     }
 
-    private static WorkItem Item(string videoId, bool unavailable = false) =>
+    private static WorkItem Item(string trackKey, bool unavailable = false) =>
         new()
         {
-            PlaylistItemId = $"PLI-{videoId}",
-            VideoId = videoId,
-            Title = $"Track {videoId}",
+            PlaylistItemId = $"PLI-{trackKey}",
+            TrackKey = trackKey,
+            Title = $"Track {trackKey}",
             IsUnavailable = unavailable,
         };
 
@@ -115,7 +115,7 @@ public sealed class VerdictSelectorTests : IDisposable
                 out var next
             )
         );
-        Assert.Equal("aaaaaaaaaaa", next.VideoId);
+        Assert.Equal("aaaaaaaaaaa", next.TrackKey);
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public sealed class VerdictSelectorTests : IDisposable
         );
 
         Assert.True(picked);
-        Assert.Equal("aaaaaaaaaaa", next.VideoId);
+        Assert.Equal("aaaaaaaaaaa", next.TrackKey);
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public sealed class VerdictSelectorTests : IDisposable
             out var next
         );
 
-        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+        Assert.Equal("bbbbbbbbbbb", next.TrackKey);
     }
 
     [Fact]
@@ -167,7 +167,7 @@ public sealed class VerdictSelectorTests : IDisposable
             out var next
         );
 
-        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+        Assert.Equal("bbbbbbbbbbb", next.TrackKey);
     }
 
     [Theory]
@@ -185,7 +185,7 @@ public sealed class VerdictSelectorTests : IDisposable
             out var next
         );
 
-        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+        Assert.Equal("bbbbbbbbbbb", next.TrackKey);
     }
 
     [Fact]
@@ -224,7 +224,7 @@ public sealed class VerdictSelectorTests : IDisposable
             out var next
         );
 
-        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+        Assert.Equal("bbbbbbbbbbb", next.TrackKey);
     }
 
     [Theory]
@@ -242,7 +242,7 @@ public sealed class VerdictSelectorTests : IDisposable
             out var next
         );
 
-        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+        Assert.Equal("bbbbbbbbbbb", next.TrackKey);
     }
 
     [Theory]
@@ -376,7 +376,7 @@ public sealed class VerdictSelectorTests : IDisposable
             out var next
         );
 
-        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+        Assert.Equal("bbbbbbbbbbb", next.TrackKey);
     }
 
     [Fact]
@@ -408,7 +408,7 @@ public sealed class VerdictSelectorTests : IDisposable
             out var next
         );
 
-        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+        Assert.Equal("bbbbbbbbbbb", next.TrackKey);
     }
 
     [Fact]

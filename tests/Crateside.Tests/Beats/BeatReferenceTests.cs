@@ -6,7 +6,7 @@ namespace Crateside.Tests.Beats;
 
 public sealed class BeatReferenceTests : IDisposable
 {
-    private const string VideoId = "abcdefghijk";
+    private const string TrackKey = "abcdefghijk";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -35,19 +35,19 @@ public sealed class BeatReferenceTests : IDisposable
     [Fact]
     public void The_source_is_the_reference_when_the_upload_has_one()
     {
-        _sources[VideoId] = _source;
+        _sources[TrackKey] = _source;
 
-        Assert.Equal(_source, _reader.ReferenceFor(VideoId, _instrumental));
+        Assert.Equal(_source, _reader.ReferenceFor(TrackKey, _instrumental));
     }
 
     [Fact]
     public void The_instrumental_is_the_reference_when_there_is_no_source_on_disk()
     {
-        Assert.Equal(_instrumental, _reader.ReferenceFor(VideoId, _instrumental));
+        Assert.Equal(_instrumental, _reader.ReferenceFor(TrackKey, _instrumental));
 
-        _sources[VideoId] = Path.Combine(_root, "deleted.flac");
+        _sources[TrackKey] = Path.Combine(_root, "deleted.flac");
 
-        Assert.Equal(_instrumental, _reader.ReferenceFor(VideoId, _instrumental));
+        Assert.Equal(_instrumental, _reader.ReferenceFor(TrackKey, _instrumental));
         Assert.Equal(_instrumental, _reader.ReferenceFor(null, _instrumental));
     }
 
@@ -55,30 +55,30 @@ public sealed class BeatReferenceTests : IDisposable
     public async Task A_new_reference_is_read_once_and_a_fallback_uses_the_instrumentals_own_reading()
     {
         await _reader.MeasureAsync(_instrumental, TestContext.Current.CancellationToken);
-        Assert.Empty(_reader.ToRead([_reader.ReferenceFor(VideoId, _instrumental)]));
+        Assert.Empty(_reader.ToRead([_reader.ReferenceFor(TrackKey, _instrumental)]));
 
-        _sources[VideoId] = _source;
-        var reference = _reader.ReferenceFor(VideoId, _instrumental);
+        _sources[TrackKey] = _source;
+        var reference = _reader.ReferenceFor(TrackKey, _instrumental);
 
         Assert.Equal([_source], _reader.ToRead([reference]));
-        Assert.Equal(120, _reader.ReadFor(VideoId, _instrumental)!.Bpm);
+        Assert.Equal(120, _reader.ReadFor(TrackKey, _instrumental)!.Bpm);
 
         await _reader.MeasureAsync(_source, TestContext.Current.CancellationToken);
 
         Assert.Empty(_reader.ToRead([reference]));
-        Assert.Same(_reader.Read(_source), _reader.ReadFor(VideoId, _instrumental));
+        Assert.Same(_reader.Read(_source), _reader.ReadFor(TrackKey, _instrumental));
 
         File.Delete(_source);
-        var fallback = _reader.ReferenceFor(VideoId, _instrumental);
+        var fallback = _reader.ReferenceFor(TrackKey, _instrumental);
 
         Assert.Equal(_instrumental, fallback);
-        Assert.Same(_reader.Read(_instrumental), _reader.ReadFor(VideoId, _instrumental));
+        Assert.Same(_reader.Read(_instrumental), _reader.ReadFor(TrackKey, _instrumental));
     }
 
     [Fact]
     public async Task A_changed_reference_file_is_read_again()
     {
-        _sources[VideoId] = _source;
+        _sources[TrackKey] = _source;
         await _reader.MeasureAsync(_source, TestContext.Current.CancellationToken);
         Assert.Empty(_reader.ToRead([_source]));
 
@@ -97,7 +97,7 @@ public sealed class BeatReferenceTests : IDisposable
 
     private sealed class Locator(Dictionary<string, string> sources) : ISourceLocator
     {
-        public string? PathOf(string videoId) => sources.GetValueOrDefault(videoId);
+        public string? PathOf(string trackKey) => sources.GetValueOrDefault(trackKey);
     }
 
     private sealed class FixedBpm : IProcessRunner

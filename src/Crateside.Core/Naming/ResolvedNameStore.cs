@@ -21,13 +21,13 @@ public sealed class ResolvedNameStore(CratesidePaths paths)
             return _cached ??= TryReadFile();
     }
 
-    public void Save(string videoId, ResolvedName name)
+    public void Save(string trackKey, ResolvedName name)
     {
         lock (_gate)
         {
             var names = _cached ??= TryReadFile();
 
-            names[videoId] = name;
+            names[trackKey] = name;
 
             try
             {

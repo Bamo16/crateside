@@ -72,7 +72,7 @@ public sealed class TagAuditReportTests
             Path = @"C:\root\song (Instrumental - Full).flac",
             FileName = "song (Instrumental - Full).flac",
             Root = @"C:\root",
-            SourceVideoId = "abc123",
+            SourceTrackKey = "abc123",
             Song = "artist - song",
             LedgerKey = "A minor",
             HasTaggableVerdict = true,

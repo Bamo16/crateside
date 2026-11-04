@@ -126,8 +126,8 @@
                         }
                         else
                         {
-                            var adding = Editor.Adding == Row.VideoId;
-                            var adopting = Editor.Adopting == Row.VideoId;
+                            var adding = Editor.Adding == Row.TrackKey;
+                            var adopting = Editor.Adopting == Row.TrackKey;
 
                             <div class="source-openers">
                                 <button class="opener compact @(adding ? "open" : adopting ? "dimmed" : null)"
@@ -389,7 +389,7 @@ else
     }
 
     private static string KeyOf(StemChoice line) =>
-        line.PresetId ?? line.AddedSource?.VideoId ?? $"{line.Kind}:{line.Label}";
+        line.PresetId ?? line.AddedSource?.TrackKey ?? $"{line.Kind}:{line.Label}";
 
     /// <summary>Which upload a file came from, said only where the song has been cut from more than one.</summary>
     private RenderFragment? Upload(TrackSample sample)
@@ -397,12 +397,12 @@ else
         if (!Row.HasSeveralUploads)
             return null;
 
-        var added = Row.IsAddedSource(sample.SourceVideoId);
-        var current = sample.SourceVideoId == Row.VideoId;
+        var added = Row.IsAddedSource(sample.SourceTrackKey);
+        var current = sample.SourceTrackKey == Row.TrackKey;
 
         return @<span class="upload @(added ? "added" : current ? "current" : "superseded")">
             @(added ? "added source" : current ? "new upload" : "old upload")
-            <span class="mono">@sample.SourceVideoId</span>
+            <span class="mono">@sample.SourceTrackKey</span>
         </span>;
     }
 

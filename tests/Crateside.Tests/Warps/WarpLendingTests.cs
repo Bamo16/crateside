@@ -173,7 +173,7 @@ public sealed class WarpLendingTests : IDisposable
             note =>
             {
                 Assert.Equal("Warp", note.Stage);
-                Assert.Equal("abcdefghijk", note.VideoId);
+                Assert.Equal("abcdefghijk", note.TrackKey);
                 Assert.Matches(
                     @"^(Vocal|Instrumental) - Full: starter warp at 120\.\d\d BPM, marker at \d+\.\d\d s$",
                     note.Summary

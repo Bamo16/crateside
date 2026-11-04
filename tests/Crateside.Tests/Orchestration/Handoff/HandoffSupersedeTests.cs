@@ -113,30 +113,30 @@ public sealed class HandoffSupersedeTests : IDisposable
         var stagedSongs = Directory
             .EnumerateFiles(paths.StagingFolder)
             .Where(SampleFiles.IsAudio)
-            .Select(path => StemTagReader.Read(path)?.SourceVideoId)
+            .Select(path => StemTagReader.Read(path)?.SourceTrackKey)
             .OfType<string>()
             .Select(ledger.SongFor)
             .OfType<string>()
             .ToHashSet(StringComparer.Ordinal);
 
-        var videoIds = ledger
-            .Runs.Select(run => run.SourceVideoId)
+        var trackKeys = ledger
+            .Runs.Select(run => run.SourceTrackKey)
             .OfType<string>()
             .Distinct(StringComparer.Ordinal)
             .Where(id => ledger.SongFor(id) is { } song && stagedSongs.Contains(song));
 
-        foreach (var videoId in videoIds)
+        foreach (var trackKey in trackKeys)
         {
             Assert.DoesNotContain(
-                SupersededStems.In(paths.StagingFolder, videoId, ledger),
-                path => StemTagsSay(path, videoId)
+                SupersededStems.In(paths.StagingFolder, trackKey, ledger),
+                path => StemTagsSay(path, trackKey)
             );
         }
     }
 
-    private static bool StemTagsSay(string path, string videoId) =>
-        Crateside.Core.Samples.StemTagReader.Read(path)?.Provenance?.SourceVideoId is { } id
-        && id.Equals(videoId, StringComparison.Ordinal);
+    private static bool StemTagsSay(string path, string trackKey) =>
+        Crateside.Core.Samples.StemTagReader.Read(path)?.Provenance?.SourceTrackKey is { } id
+        && id.Equals(trackKey, StringComparison.Ordinal);
 
     [Fact]
     public void A_track_the_ledger_has_never_judged_supersedes_nothing() =>

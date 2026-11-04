@@ -63,7 +63,7 @@ public sealed partial class DetectorParityTests(ITestOutputHelper output)
 
     /// <summary>A corpus track is named by its id; a ledger song, whose id is its title, by its video id.</summary>
     private static string? AudioFor(string folder, BakeOffRow row) =>
-        new[] { row.Id, YouTubeUrl.TryGetVideoId(row.SourceUrl, out var videoId) ? videoId : null }
+        new[] { row.Id, TrackKeys.TryParse(row.SourceUrl, out var trackKey) ? trackKey : null }
             .OfType<string>()
             .Select(name => Path.Combine(folder, $"{name}.flac"))
             .FirstOrDefault(File.Exists);

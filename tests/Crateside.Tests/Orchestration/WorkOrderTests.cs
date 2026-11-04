@@ -10,7 +10,7 @@ namespace Crateside.Tests.Orchestration;
 
 public sealed class WorkOrderTests : IDisposable
 {
-    private const string VideoId = "dQw4w9WgXcQ";
+    private const string TrackKey = "dQw4w9WgXcQ";
 
     private readonly string _ledgerPath = Path.Combine(
         Path.GetTempPath(),
@@ -36,7 +36,7 @@ public sealed class WorkOrderTests : IDisposable
         new()
         {
             PlaylistItemId = "PLI1",
-            VideoId = VideoId,
+            TrackKey = TrackKey,
             Title = "Yes - Owner of a Lonely Heart",
             PremiumOutlook = outlook,
             Plan = instrumentalRelease ? StemPlan.InstrumentalRelease : StemPlan.Default,
@@ -53,7 +53,7 @@ public sealed class WorkOrderTests : IDisposable
         File.WriteAllText(
             _ledgerPath,
             $$"""
-            {"timestamp":"2026-08-13T10:00:00Z","song":"yes - owner of a lonely heart","source_url":"https://music.youtube.com/watch?v={{VideoId}}","verdict":{{verdict}}}
+            {"timestamp":"2026-08-13T10:00:00Z","song":"yes - owner of a lonely heart","source_url":"https://music.youtube.com/watch?v={{TrackKey}}","verdict":{{verdict}}}
             """
         );
 
@@ -129,7 +129,7 @@ public sealed class WorkOrderTests : IDisposable
     {
         var order = WorkOrder.Compose(Item(PremiumOutlook.ArtTrack), Ledger("A minor"));
 
-        Assert.Equal($"https://music.youtube.com/watch?v={VideoId}", order.SourceUrl);
+        Assert.Equal($"https://music.youtube.com/watch?v={TrackKey}", order.SourceUrl);
     }
 
     [Theory]
@@ -139,7 +139,7 @@ public sealed class WorkOrderTests : IDisposable
     {
         var order = WorkOrder.Compose(Item(outlook), Ledger("A minor"));
 
-        Assert.Equal($"https://www.youtube.com/watch?v={VideoId}", order.SourceUrl);
+        Assert.Equal($"https://www.youtube.com/watch?v={TrackKey}", order.SourceUrl);
     }
 
     [Fact]

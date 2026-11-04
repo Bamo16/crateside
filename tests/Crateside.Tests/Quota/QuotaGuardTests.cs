@@ -133,11 +133,11 @@ public sealed class QuotaGuardTests
         guard.Pass("first");
         guard.Pass("second");
 
-        Assert.Equal("second", guard.PassedVideoId);
+        Assert.Equal("second", guard.PassedTrackKey);
 
         guard.ClearPass();
 
-        Assert.Null(guard.PassedVideoId);
+        Assert.Null(guard.PassedTrackKey);
     }
 
     [Fact]

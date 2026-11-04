@@ -52,18 +52,18 @@ public sealed class TrueUpAllTests : IDisposable
         Assert.Equal(before, File.ReadAllBytes($"{holding.Instrumental}.asd"));
     }
 
-    private (string Instrumental, string Vocal) Song(string name, string videoId, double warpBpm)
+    private (string Instrumental, string Vocal) Song(string name, string trackKey, double warpBpm)
     {
         var folder = Path.Combine(_paths.LibraryFolder, "Artist");
         var instrumental = Stem(
             Path.Combine(folder, $"{name} (Instrumental - Full).flac"),
             "Instrumental - Full",
-            videoId
+            trackKey
         );
         var vocal = Stem(
             Path.Combine(folder, $"{name} (Vocal - Full).flac"),
             "Vocal - Full",
-            videoId
+            trackKey
         );
         var warp = SteadyTrack.Analysis(warpBpm, 120, seconds: 90);
         warp.Write($"{instrumental}.asd");
@@ -72,13 +72,13 @@ public sealed class TrueUpAllTests : IDisposable
         return (instrumental, vocal);
     }
 
-    private static string Stem(string path, string preset, string videoId)
+    private static string Stem(string path, string preset, string trackKey)
     {
         File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), path);
 
         using var file = TagLib.File.Create(path);
         file.Tag.Comment =
-            $"stemforge/0.4.0.0 | preset: {preset} | source: https://www.youtube.com/watch?v={videoId}";
+            $"stemforge/0.4.0.0 | preset: {preset} | source: https://www.youtube.com/watch?v={trackKey}";
         file.Save();
 
         return path;

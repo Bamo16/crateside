@@ -84,7 +84,7 @@
             // A session with no track row in the judging state yet: a re-judge, a backfill track, a run from bars.
             <div class="subject">
                 <StateChip Label="judging" Style="TrackChipStyle.TealFilled" />
-                @if (Rows.FirstOrDefault(row => row.VideoId == Judging.JudgingVideoId) is { } session)
+                @if (Rows.FirstOrDefault(row => row.TrackKey == Judging.JudgingTrackKey) is { } session)
                 {
                     <a href="@session.DetailsHref">@session.Title</a>
                 }

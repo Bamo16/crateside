@@ -15,7 +15,7 @@ public sealed class SourceAddTests : IDisposable
 {
     private static readonly TrackRowFacts Track = new()
     {
-        VideoId = "aaaaaaaaaaa",
+        TrackKey = "aaaaaaaaaaa",
         Song = "kreayshawn - gucci gucci",
         Plan = StemPlan.Default,
         Uploads = ["aaaaaaaaaaa"],

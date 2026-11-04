@@ -47,7 +47,7 @@ public sealed class SourcePagesTests
             ["Instrumental Intro", "Intro", "Verse", "Pre-Chorus", "Chorus", "Instrumental"],
             tab.Sections.Select(section => section.Name)
         );
-        Assert.Equal("gxEPV4kolz0", tab.SyncedVideoId);
+        Assert.Equal("gxEPV4kolz0", tab.SyncedTrackKey);
         Assert.Equal("C major", tab.AllKeys);
     }
 
@@ -121,8 +121,8 @@ public sealed class SourcePagesTests
         var tab = Money(scores);
 
         Assert.Equal(0.0363, Assert.NotNull(tab.Coverage), 4);
-        Assert.Equal("another-video", tab.Sections[1].VideoId);
-        Assert.Null(tab.Sections[0].VideoId);
+        Assert.Equal("another-video", tab.Sections[1].TrackKey);
+        Assert.Null(tab.Sections[0].TrackKey);
     }
 
     [Fact]

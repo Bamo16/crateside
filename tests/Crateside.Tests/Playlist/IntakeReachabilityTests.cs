@@ -27,11 +27,11 @@ public sealed class IntakeReachabilityTests : IDisposable
 
     private IntakeStore Store() => new(Path.Combine(_directory, "intake.json"));
 
-    private static WorkItem Entry(string videoId, string title, int addedDay = 1) =>
+    private static WorkItem Entry(string trackKey, string title, int addedDay = 1) =>
         new()
         {
-            PlaylistItemId = $"PLI-{videoId}",
-            VideoId = videoId,
+            PlaylistItemId = $"PLI-{trackKey}",
+            TrackKey = trackKey,
             Title = title,
             AddedAt = DateTimeOffset.Parse($"2026-09-0{addedDay}T00:00:00+00:00"),
         };
@@ -45,7 +45,7 @@ public sealed class IntakeReachabilityTests : IDisposable
 
         var item = Assert.Single(IntakeStore.Merge([], store.Read()));
 
-        Assert.Equal(Gone, item.VideoId);
+        Assert.Equal(Gone, item.TrackKey);
         Assert.Equal("Eminem - Medicine Ball", item.Title);
         Assert.Null(item.PlaylistItemId);
     }
@@ -72,7 +72,7 @@ public sealed class IntakeReachabilityTests : IDisposable
         var merged = IntakeStore.Merge([Entry(Held, "Still Queued")], store.Read());
 
         Assert.Equal(2, merged.Count);
-        Assert.Equal([Held, Gone], merged.Select(item => item.VideoId));
+        Assert.Equal([Held, Gone], merged.Select(item => item.TrackKey));
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public sealed class IntakeReachabilityTests : IDisposable
 
         store.Backfill([Gone]);
 
-        Assert.Equal(Gone, Assert.Single(IntakeStore.Merge([], store.Read())).VideoId);
+        Assert.Equal(Gone, Assert.Single(IntakeStore.Merge([], store.Read())).TrackKey);
     }
 
     [Fact]
@@ -94,6 +94,6 @@ public sealed class IntakeReachabilityTests : IDisposable
 
         var merged = IntakeStore.Merge([Entry(Held, "Still Queued", addedDay: 9)], store.Read());
 
-        Assert.Equal([Held, Gone], merged.Select(item => item.VideoId));
+        Assert.Equal([Held, Gone], merged.Select(item => item.TrackKey));
     }
 }

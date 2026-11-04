@@ -24,11 +24,11 @@ public sealed class TaggingSelector(
     /// </summary>
     public bool TryPickNext(
         KeyLedger ledger,
-        out string videoId,
+        out string trackKey,
         out IReadOnlyList<TaggedStem> stems
     )
     {
-        videoId = null!;
+        trackKey = null!;
         stems = [];
 
         var next = TagAudit
@@ -37,18 +37,18 @@ public sealed class TaggingSelector(
                 [AuditRoot.Written(paths.StagingFolder)],
                 TagAudit.Using(index, folderInfo)
             )
-            .Untagged.GroupBy(s => s.SourceVideoId, StringComparer.Ordinal)
+            .Untagged.GroupBy(s => s.SourceTrackKey, StringComparer.Ordinal)
             .FirstOrDefault(g => IsEligible(g.Key));
 
         if (next is null)
             return false;
 
-        videoId = next.Key;
+        trackKey = next.Key;
         stems = [.. next];
 
         return true;
     }
 
-    private bool IsEligible(string videoId) =>
-        StageEligibility.Allows(jobs, videoId, JobStage.Tagging, maxStrikes, retrySucceeded: true);
+    private bool IsEligible(string trackKey) =>
+        StageEligibility.Allows(jobs, trackKey, JobStage.Tagging, maxStrikes, retrySucceeded: true);
 }

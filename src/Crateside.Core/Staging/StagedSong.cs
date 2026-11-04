@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
 
 namespace Crateside.Core.Staging;
@@ -8,7 +9,8 @@ namespace Crateside.Core.Staging;
 public sealed record StagedSong
 {
     /// <summary>The ledger join key. Null for a stem carrying no usable provenance.</summary>
-    public string? SourceVideoId { get; init; }
+    [JsonPropertyName("sourceVideoId")]
+    public string? SourceTrackKey { get; init; }
 
     /// <summary>What to call this row: the ledger's title, the tag's, or the filename.</summary>
     public required string DisplayName { get; init; }

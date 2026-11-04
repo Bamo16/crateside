@@ -16,18 +16,18 @@ public sealed class AddedSourceTests
         """[{"id":"vocal_full","displayName":"Vocal - Full","category":"Vocals"}]"""
     );
 
-    private static StemOnDisk File(string name, string videoId, string? preset = null) =>
+    private static StemOnDisk File(string name, string trackKey, string? preset = null) =>
         new()
         {
             Path = Path.Combine(Staging, name),
             Root = Staging,
             Preset = preset,
-            SourceVideoId = videoId,
+            SourceTrackKey = trackKey,
         };
 
     private static readonly AddedSource Official = new()
     {
-        VideoId = Added,
+        TrackKey = Added,
         Label = "Official Instrumental",
     };
 
@@ -55,7 +55,7 @@ public sealed class AddedSourceTests
     public void A_file_with_no_provenance_is_still_matched_on_its_label()
     {
         var inventory = StemInventory.Of(
-            [File("SUPADOPA (Official Instrumental).flac", videoId: null!)],
+            [File("SUPADOPA (Official Instrumental).flac", trackKey: null!)],
             Catalog
         );
 

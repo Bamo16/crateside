@@ -36,7 +36,7 @@
 
         Marks.Set(Row.Song, Mark, marking);
         Actions.Record(
-            Row.VideoId,
+            Row.TrackKey,
             marking ? UserActionKind.MarkSet : UserActionKind.MarkCleared,
             Label
         );

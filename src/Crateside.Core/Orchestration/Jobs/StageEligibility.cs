@@ -54,8 +54,8 @@ public static class StageEligibility
             && DownloadFailure.IsPermanent(job.Error, out reason);
     }
 
-    public static bool Owes(JobStore jobs, string videoId, JobStage stage) =>
-        jobs.TryGet(videoId, stage, out var job) && IsOwed(job);
+    public static bool Owes(JobStore jobs, string trackKey, JobStage stage) =>
+        jobs.TryGet(trackKey, stage, out var job) && IsOwed(job);
 
     /// <param name="retrySucceeded">
     /// Whether a past success may be attempted again. True where the stage has its own artifact
@@ -64,12 +64,12 @@ public static class StageEligibility
     /// </param>
     public static bool Allows(
         JobStore jobs,
-        string videoId,
+        string trackKey,
         JobStage stage,
         int maxStrikes,
         bool retrySucceeded
     ) =>
-        !jobs.TryGet(videoId, stage, out var job)
+        !jobs.TryGet(trackKey, stage, out var job)
         || job.Status switch
         {
             JobStatus.Succeeded => retrySucceeded,

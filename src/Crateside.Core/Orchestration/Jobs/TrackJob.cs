@@ -8,10 +8,11 @@ namespace Crateside.Core.Orchestration.Jobs;
 /// </summary>
 public sealed record TrackJob
 {
-    /// <summary>Stable across attempts: <c>{videoId}:{stage}</c>. Retrying does not mint a new id.</summary>
+    /// <summary>Stable across attempts: <c>{trackKey}:{stage}</c>. Retrying does not mint a new id.</summary>
     public required string Id { get; init; }
 
-    public required string VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
     public required JobStage Stage { get; init; }
     public required JobStatus Status { get; init; }
 

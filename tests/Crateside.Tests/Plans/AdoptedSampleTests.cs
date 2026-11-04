@@ -7,7 +7,7 @@ namespace Crateside.Tests.Plans;
 /// <summary>An adopted sample: how it is recognized, and what a re-cut may do to it.</summary>
 public sealed class AdoptedSampleTests
 {
-    private const string VideoId = "aaaaaaaaaaa";
+    private const string TrackKey = "aaaaaaaaaaa";
     private const string Label = "Instrumental - Mix";
 
     private static StemOnDisk Adopted(string label = Label) =>
@@ -17,7 +17,7 @@ public sealed class AdoptedSampleTests
             Root = @"P:\Staging",
             Label = label,
             IsAdopted = true,
-            SourceVideoId = VideoId,
+            SourceTrackKey = TrackKey,
         };
 
     private static StemPlan PlanKeeping(params string[] labels) =>
@@ -31,7 +31,7 @@ public sealed class AdoptedSampleTests
     public void Crateside_provenance_round_trips_through_the_parser()
     {
         var comment = StemAdoption.Comment(
-            VideoId,
+            TrackKey,
             Label,
             SampleType.Instrumental,
             new DateOnly(2026, 9, 19)
@@ -42,7 +42,7 @@ public sealed class AdoptedSampleTests
         Assert.NotNull(parsed);
         Assert.True(parsed.IsAdopted);
         Assert.Equal(Label, parsed.Label);
-        Assert.Equal(VideoId, parsed.SourceVideoId);
+        Assert.Equal(TrackKey, parsed.SourceTrackKey);
         Assert.Equal(SampleType.Instrumental, parsed.Type);
         Assert.Null(parsed.Preset);
     }
@@ -52,7 +52,7 @@ public sealed class AdoptedSampleTests
     {
         var parsed = StemProvenance.Parse(
             "stemforge/0.3.1.0 | preset: Vocal - Full | source: https://www.youtube.com/watch?v="
-                + VideoId
+                + TrackKey
         );
 
         Assert.NotNull(parsed);
@@ -133,7 +133,7 @@ public sealed class AdoptedSampleTests
             Assert.False(
                 StemAdoption.TryAdopt(
                     path,
-                    VideoId,
+                    TrackKey,
                     Label,
                     SampleType.Instrumental,
                     TimeProvider.System,
@@ -154,7 +154,7 @@ public sealed class AdoptedSampleTests
         Assert.False(
             StemAdoption.TryAdopt(
                 @"P:\nowhere\absent.flac",
-                VideoId,
+                TrackKey,
                 Label,
                 SampleType.Instrumental,
                 TimeProvider.System,
@@ -164,7 +164,7 @@ public sealed class AdoptedSampleTests
         Assert.False(
             StemAdoption.TryAdopt(
                 @"P:\nowhere\absent.flac",
-                VideoId,
+                TrackKey,
                 "  ",
                 SampleType.Instrumental,
                 TimeProvider.System,

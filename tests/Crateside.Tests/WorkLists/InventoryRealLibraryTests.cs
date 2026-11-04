@@ -23,17 +23,19 @@ public sealed class InventoryRealLibraryTests
         var processed = ProcessedTracks.Scan(ledger, roots);
         var inventories = WorkListService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
 
-        string Song(string videoId) => ledger.SongFor(videoId) ?? videoId;
+        string Song(string trackKey) => ledger.SongFor(trackKey) ?? trackKey;
 
-        var cut = processed.StemsByVideoId.Keys.Select(Song).ToHashSet(StringComparer.Ordinal);
+        var cut = processed.StemsByTrackKey.Keys.Select(Song).ToHashSet(StringComparer.Ordinal);
 
         // An upload the ledger files under a song that has stems.
         var stranded = ledger
-            .Runs.Select(run => run.SourceVideoId)
+            .Runs.Select(run => run.SourceTrackKey)
             .OfType<string>()
             .Distinct(StringComparer.Ordinal)
-            .Where(videoId => cut.Contains(Song(videoId)))
-            .Where(videoId => inventories.GetValueOrDefault(videoId) is null or { Files.Count: 0 })
+            .Where(trackKey => cut.Contains(Song(trackKey)))
+            .Where(trackKey =>
+                inventories.GetValueOrDefault(trackKey) is null or { Files.Count: 0 }
+            )
             .ToArray();
 
         Assert.Empty(stranded);
@@ -48,7 +50,7 @@ public sealed class InventoryRealLibraryTests
         var inventories = WorkListService.InventoriesBySong(processed, ledger, PresetCatalog.Empty);
 
         var withoutFilesOfTheirOwn = inventories
-            .Keys.Where(videoId => !processed.StemsByVideoId.ContainsKey(videoId))
+            .Keys.Where(trackKey => !processed.StemsByTrackKey.ContainsKey(trackKey))
             .ToArray();
 
         Assert.SkipWhen(
@@ -56,6 +58,9 @@ public sealed class InventoryRealLibraryTests
             "No song in this library is judged under more than one upload."
         );
 
-        Assert.All(withoutFilesOfTheirOwn, videoId => Assert.NotEmpty(inventories[videoId].Files));
+        Assert.All(
+            withoutFilesOfTheirOwn,
+            trackKey => Assert.NotEmpty(inventories[trackKey].Files)
+        );
     }
 }

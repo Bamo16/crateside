@@ -57,7 +57,7 @@ public sealed class ShortTrackTests
     [Fact]
     public void A_track_never_cut_is_not_short()
     {
-        var row = new TrackRow { VideoId = "_DiMKyZwaA0", Title = "Moe Shop - HARDCODED" };
+        var row = new TrackRow { TrackKey = "_DiMKyZwaA0", Title = "Moe Shop - HARDCODED" };
 
         Assert.False(row.IsShort);
     }
@@ -100,7 +100,7 @@ public sealed class ShortTrackTests
     private static TrackRow Row(bool inLibrary, params string[] presets) =>
         new()
         {
-            VideoId = "_DiMKyZwaA0",
+            TrackKey = "_DiMKyZwaA0",
             Title = "Moe Shop - HARDCODED",
             Plan = StemPlan.Default,
             Samples =

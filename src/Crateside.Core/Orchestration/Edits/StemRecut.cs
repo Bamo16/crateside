@@ -26,13 +26,13 @@ public sealed class StemRecut(
     /// what is staged is read fresh.
     /// </param>
     public RecutPlan PlanFor(
-        string videoId,
+        string trackKey,
         StemPlan wanted,
         PresetCatalog catalog,
         StemInventory? known = null
     )
     {
-        var files = staged.Of(videoId);
+        var files = staged.Of(trackKey);
         var stagedInventory = StemInventory.Of(files.Select(AsOnDisk), catalog);
 
         // Everywhere the track's files could be, so a preset already sitting in the library
@@ -43,7 +43,7 @@ public sealed class StemRecut(
             IsFinished = known?.IsFinished is true,
         };
 
-        var stored = Stored(videoId);
+        var stored = Stored(trackKey);
         var recipe = SeparationRecipe.For(wanted, everywhere);
         var removing = stagedInventory.Superseded(wanted, stored);
 
@@ -51,7 +51,7 @@ public sealed class StemRecut(
         {
             Recipe = recipe,
             Removing = removing,
-            WillRefetch = !workingSet.TryGetSource(videoId, out _),
+            WillRefetch = !workingSet.TryGetSource(trackKey, out _),
             Refusal = RefusalFor(
                 catalog,
                 wanted,
@@ -68,13 +68,13 @@ public sealed class StemRecut(
     /// track back in line for whatever it now owes.
     /// </summary>
     public RecutOutcome Apply(
-        string videoId,
+        string trackKey,
         StemPlan wanted,
         PresetCatalog catalog,
         StemInventory? known = null
     )
     {
-        var plan = PlanFor(videoId, wanted, catalog, known);
+        var plan = PlanFor(trackKey, wanted, catalog, known);
 
         if (plan.Refusal is { } refusal)
             return new RecutOutcome { Problem = refusal };
@@ -102,20 +102,20 @@ public sealed class StemRecut(
             }
         }
 
-        instructions.SetPlan(videoId, wanted);
+        instructions.SetPlan(trackKey, wanted);
 
         // A change that only drops files asks for nothing to be made.
         if (plan.MakesSomething)
-            instructions.RequestCut(videoId, time.GetUtcNow());
+            instructions.RequestCut(trackKey, time.GetUtcNow());
 
         return new RecutOutcome { Removed = removed, Recipe = plan.Recipe };
     }
 
     /// <summary>The plan this track currently has, which says which of its files were added.</summary>
-    private StemPlan Stored(string videoId) =>
+    private StemPlan Stored(string trackKey) =>
         instructions
             .Read()
-            .FirstOrDefault(track => track.VideoId.Equals(videoId, StringComparison.Ordinal))
+            .FirstOrDefault(track => track.TrackKey.Equals(trackKey, StringComparison.Ordinal))
             ?.Plan
         ?? StemPlan.Default;
 

@@ -46,7 +46,7 @@ public sealed class QueueBatchTests
         new()
         {
             PlaylistItemId = id,
-            VideoId = id,
+            TrackKey = id,
             Title = id,
             AddedAt = new DateTimeOffset(2026, 8, 13, 0, 0, 0, TimeSpan.Zero).AddDays(-daysAgo),
         };

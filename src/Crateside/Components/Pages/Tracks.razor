@@ -295,7 +295,7 @@
     {
         @foreach (var row in Shown)
         {
-            var open = _expanded == row.VideoId;
+            var open = _expanded == row.TrackKey;
             var bpm = row.Bpm is { } tempo ? TempoFormat.Format(tempo) : null;
 
             @if (Viewing is TrackFilter.TagsToAnswer)
@@ -403,9 +403,9 @@
             </div>
             }
 
-            @if (open || _closing.Contains(row.VideoId))
+            @if (open || _closing.Contains(row.TrackKey))
             {
-                <div class="reveal @(open ? null : "closing")" @key="row.VideoId">
+                <div class="reveal @(open ? null : "closing")" @key="row.TrackKey">
                     <div class="panel">
                         <TrackFindings Row="row" />
 
@@ -434,7 +434,7 @@
             {
                 <div class="toast">
                     <span class="eyebrow">Already filed</span>
-                    <span class="toast-song">@(filed.Row?.Title ?? filed.Action.VideoId)</span>
+                    <span class="toast-song">@(filed.Row?.Title ?? filed.Action.TrackKey)</span>
                     <span class="toast-foot">
                         @Sentence(filed.Action.Detail ?? "already filed")
                         @if (filed.Row is { } row)
@@ -648,9 +648,9 @@
     private IEnumerable<TrackRow> Answering()
     {
         foreach (var row in Found.Where(row => row.HasTagsToAnswer))
-            _held.Add(row.VideoId);
+            _held.Add(row.TrackKey);
 
-        return Found.Where(row => _held.Contains(row.VideoId));
+        return Found.Where(row => _held.Contains(row.TrackKey));
     }
 
     private async Task ShowFamiliarity(string value)
@@ -807,7 +807,7 @@
 
     private void OnAlreadyFiled(UserAction action)
     {
-        var filed = (action, Source.Current?.Rows.FirstOrDefault(row => row.VideoId == action.VideoId));
+        var filed = (action, Source.Current?.Rows.FirstOrDefault(row => row.TrackKey == action.TrackKey));
 
         _filed.Insert(0, filed);
         _ = InvokeAsync(StateHasChanged);
@@ -859,13 +859,13 @@
         _filter = TrackFilter.All;
         _search = string.Empty;
         _familiarity = null;
-        _expanded = row.VideoId;
+        _expanded = row.TrackKey;
         _problem = null;
 
         _toasts.Remove(row);
     }
 
-    private static string Anchor(TrackRow row) => $"track-{row.VideoId}";
+    private static string Anchor(TrackRow row) => $"track-{row.TrackKey}";
 
     private static string Figure(TrackRow row) =>
         string.Join(
@@ -912,15 +912,15 @@
         if (_expanded is { } closing)
             _ = CloseLater(closing);
 
-        _expanded = _expanded == row.VideoId ? null : row.VideoId;
+        _expanded = _expanded == row.TrackKey ? null : row.TrackKey;
         _problem = null;
 
         _stems.Reset();
     }
 
-    private async Task CloseLater(string videoId)
+    private async Task CloseLater(string trackKey)
     {
-        _closing.Add(videoId);
+        _closing.Add(trackKey);
 
         try
         {
@@ -931,7 +931,7 @@
             return;
         }
 
-        _closing.Remove(videoId);
+        _closing.Remove(trackKey);
 
         await InvokeAsync(StateHasChanged);
     }

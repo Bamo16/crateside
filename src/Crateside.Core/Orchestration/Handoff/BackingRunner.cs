@@ -151,9 +151,9 @@ public sealed class BackingRunner(
                 .Where(file =>
                     song is null
                     || (
-                        ProvenanceOf(file.Path) is { SourceVideoId: { } videoId }
+                        ProvenanceOf(file.Path) is { SourceTrackKey: { } trackKey }
                         && string.Equals(
-                            ledger.SongFor(videoId) ?? videoId,
+                            ledger.SongFor(trackKey) ?? trackKey,
                             song,
                             StringComparison.OrdinalIgnoreCase
                         )
@@ -235,10 +235,10 @@ public sealed class BackingRunner(
         LedgerRun? verdict = null;
         IReadOnlyCollection<TrackMark> mine = [];
 
-        if (provenance is { SourceVideoId: { } videoId })
+        if (provenance is { SourceTrackKey: { } trackKey })
         {
-            ledger.TryGetLatestByVideoId(videoId, out verdict);
-            mine = marksOf?.Invoke(verdict?.Song ?? videoId) ?? [];
+            ledger.TryGetLatestByTrackKey(trackKey, out verdict);
+            mine = marksOf?.Invoke(verdict?.Song ?? trackKey) ?? [];
         }
 
         var has =
@@ -327,8 +327,8 @@ public sealed class BackingRunner(
     )
     {
         if (
-            provenance is not { SourceVideoId: { } videoId }
-            || !ledger.TryGetLatestByVideoId(videoId, out var run)
+            provenance is not { SourceTrackKey: { } trackKey }
+            || !ledger.TryGetLatestByTrackKey(trackKey, out var run)
             || run is not { HasTaggableKey: true, Key: { } verdict }
             || !verdict.Equals(
                 keyWritten ? verdict : existing?.Key,
@@ -373,10 +373,10 @@ public sealed class BackingRunner(
         string? keyToCorrect
     )
     {
-        if (provenance is not { SourceVideoId: { } videoId })
+        if (provenance is not { SourceTrackKey: { } trackKey })
             return ([], null);
 
-        var hasRun = ledger.TryGetLatestByVideoId(videoId, out var run);
+        var hasRun = ledger.TryGetLatestByTrackKey(trackKey, out var run);
         var corrects =
             keyToCorrect is not null
             && hasRun
@@ -393,7 +393,7 @@ public sealed class BackingRunner(
             return ([], null);
 
         return (
-            [.. key, .. (ownedOf?.Invoke(videoId) ?? []).Where(CratesideKeywords.IsKnown)],
+            [.. key, .. (ownedOf?.Invoke(trackKey) ?? []).Where(CratesideKeywords.IsKnown)],
             corrects && key.Count > 0 ? run!.Key : null
         );
     }

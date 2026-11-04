@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Samples;
 using Crateside.Core.WorkLists;
@@ -34,18 +35,18 @@ public sealed class DownloadSelector(
     private WantedDownload? Audio(WorkListsView view) =>
         view
             .Outstanding.Concat(view.AwaitingSeparation)
-            .DistinctBy(item => item.VideoId, StringComparer.Ordinal)
+            .DistinctBy(item => item.TrackKey, StringComparer.Ordinal)
             .Where(item =>
                 !item.IsUnavailable
-                && !workingSet.TryGetSource(item.VideoId, out _)
+                && !workingSet.TryGetSource(item.TrackKey, out _)
                 && !IsSweptUp(item)
-                && IsEligible(item.VideoId)
+                && IsEligible(item.TrackKey)
             )
             .Select(item => new WantedDownload
             {
-                VideoId = item.VideoId,
+                TrackKey = item.TrackKey,
                 Url = item.StatedSourceUrl is { Length: > 0 } stated ? stated : item.WatchUrl,
-                Into = workingSet.Prepare(item.VideoId),
+                Into = workingSet.Prepare(item.TrackKey),
                 Track = item,
             })
             .FirstOrDefault();
@@ -63,12 +64,12 @@ public sealed class DownloadSelector(
 
     private WantedDownload? KeptSource(WorkItem item)
     {
-        if (workingSet.TryGetSource(item.VideoId, out var held))
+        if (workingSet.TryGetSource(item.TrackKey, out var held))
             return AwaitingHandoff(Path.GetFileName(held))
                 ? null
                 : new WantedDownload
                 {
-                    VideoId = item.VideoId,
+                    TrackKey = item.TrackKey,
                     Url = item.WatchUrl,
                     Track = item,
                     Copy = true,
@@ -79,17 +80,17 @@ public sealed class DownloadSelector(
         if (
             IsSweptUp(item)
                 && CutRequests.IsSettled(item, jobs)
-                && !StageEligibility.Owes(jobs, item.VideoId, JobStage.Handoff)
-            || !IsEligible(item.VideoId)
+                && !StageEligibility.Owes(jobs, item.TrackKey, JobStage.Handoff)
+            || !IsEligible(item.TrackKey)
         )
             return null;
 
         // Into the working set, so the next pass copies it the same way as audio already held.
         return new WantedDownload
         {
-            VideoId = item.VideoId,
+            TrackKey = item.TrackKey,
             Url = item.StatedSourceUrl is { Length: > 0 } stated ? stated : item.WatchUrl,
-            Into = workingSet.Prepare(item.VideoId),
+            Into = workingSet.Prepare(item.TrackKey),
             Track = item,
         };
     }
@@ -104,11 +105,11 @@ public sealed class DownloadSelector(
                 item.Plan.AddedSources.Where(added =>
                         !item.Inventory.Has(added)
                         && !AwaitingHandoff($"*({added.Label}).*")
-                        && IsEligible(added.VideoId)
+                        && IsEligible(added.TrackKey)
                     )
                     .Select(added => new WantedDownload
                     {
-                        VideoId = added.VideoId,
+                        TrackKey = added.TrackKey,
                         Url = added.WatchUrl,
                         Label = added.Label,
                         Type = added.Type,
@@ -138,12 +139,12 @@ public sealed class DownloadSelector(
         };
 
     /// <summary>Retries even a succeeded download, since every caller has already found its file gone.</summary>
-    private bool IsEligible(string videoId) =>
-        StageEligibility.Allows(jobs, videoId, JobStage.Download, maxStrikes, retrySucceeded: true)
-        && !IsWaitingOut(videoId);
+    private bool IsEligible(string trackKey) =>
+        StageEligibility.Allows(jobs, trackKey, JobStage.Download, maxStrikes, retrySucceeded: true)
+        && !IsWaitingOut(trackKey);
 
-    private bool IsWaitingOut(string videoId) =>
-        jobs.TryGet(videoId, JobStage.Download, out var job)
+    private bool IsWaitingOut(string trackKey) =>
+        jobs.TryGet(trackKey, JobStage.Download, out var job)
         && job is { Status: JobStatus.Failed, Strikes: var strikes }
         && _time.GetUtcNow() < job.UpdatedAt + Backoff(strikes);
 
@@ -152,7 +153,7 @@ public sealed class DownloadSelector(
     /// was never fetched — unless a re-cut or swap has asked for another separation since (#50).
     /// </summary>
     private bool IsSweptUp(WorkItem item) =>
-        jobs.TryGet(item.VideoId, JobStage.Separation, out var job)
+        jobs.TryGet(item.TrackKey, JobStage.Separation, out var job)
         && job is { Status: JobStatus.Succeeded }
         && !CutRequests.OwesCut(item, jobs);
 }
@@ -161,7 +162,8 @@ public sealed class DownloadSelector(
 public sealed record WantedDownload
 {
     /// <summary>The video this fetches, which is what the job is recorded against.</summary>
-    public required string VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
 
     public required string Url { get; init; }
 

@@ -69,7 +69,7 @@ public sealed class KeyLedgerTests : IDisposable
         Assert.Equal("kobaryo - kawaii", run.Song);
         Assert.Equal("D# minor", run.Key);
         Assert.Equal(KeyConfidence.Medium, run.Confidence);
-        Assert.Equal("wqqARL9SDec", run.SourceVideoId);
+        Assert.Equal("wqqARL9SDec", run.SourceTrackKey);
         Assert.Equal(145, run.Bpm);
         Assert.True(run.HasTaggableKey);
     }
@@ -114,7 +114,7 @@ public sealed class KeyLedgerTests : IDisposable
             Line("2026-08-12T00:00:00+00:00", "a - b", null, "C# minor", "MEDIUM")
         );
 
-        Assert.True(ledger.TryGetLatestByVideoId("NSLYAT7sjAA", out var run));
+        Assert.True(ledger.TryGetLatestByTrackKey("NSLYAT7sjAA", out var run));
         Assert.Equal("C# minor", run.Key);
         Assert.Equal(KeyConfidence.Medium, run.Confidence);
     }
@@ -145,7 +145,7 @@ public sealed class KeyLedgerTests : IDisposable
         );
         using var store = TestLedger.Store(_path);
 
-        Assert.True(store.Read().TryGetLatestByVideoId("NSLYAT7sjAA", out var original));
+        Assert.True(store.Read().TryGetLatestByTrackKey("NSLYAT7sjAA", out var original));
         Assert.Equal("C# minor", original.Key);
         Assert.False(store.Read().HasRunFor("dQw4w9WgXcQ"));
     }
@@ -207,10 +207,10 @@ public sealed class KeyLedgerTests : IDisposable
             )
         );
 
-        Assert.True(ledger.TryGetLatestByVideoId("NEWnewNEWne", out var viaNew));
+        Assert.True(ledger.TryGetLatestByTrackKey("NEWnewNEWne", out var viaNew));
         Assert.Equal("C# minor", viaNew.Key);
 
-        Assert.True(ledger.TryGetLatestByVideoId("OLDoldOLDol", out var viaOld));
+        Assert.True(ledger.TryGetLatestByTrackKey("OLDoldOLDol", out var viaOld));
         Assert.Equal(viaNew.Key, viaOld.Key);
         Assert.Equal(viaNew.Confidence, viaOld.Confidence);
 
@@ -234,9 +234,9 @@ public sealed class KeyLedgerTests : IDisposable
             Line("2026-09-10T00:00:00+00:00", "a - b", Watch("NEWnewNEWne"), "F major")
         );
 
-        foreach (var videoId in (string[])["OLDoldOLDol", "NEWnewNEWne"])
+        foreach (var trackKey in (string[])["OLDoldOLDol", "NEWnewNEWne"])
         {
-            Assert.True(ledger.TryGetLatestByVideoId(videoId, out var run));
+            Assert.True(ledger.TryGetLatestByTrackKey(trackKey, out var run));
             Assert.Equal("F major", run.Key);
             Assert.Equal(KeyConfidence.High, run.Confidence);
         }
@@ -260,7 +260,7 @@ public sealed class KeyLedgerTests : IDisposable
         Assert.Equal(1, ledger.SongCount);
     }
 
-    private static string Watch(string videoId) => $"https://music.youtube.com/watch?v={videoId}";
+    private static string Watch(string trackKey) => $"https://music.youtube.com/watch?v={trackKey}";
 
     [Fact]
     public void A_withheld_run_still_counts_as_having_been_processed()
@@ -276,7 +276,7 @@ public sealed class KeyLedgerTests : IDisposable
         );
 
         Assert.True(ledger.HasRunFor("NSLYAT7sjAA"));
-        Assert.True(ledger.TryGetLatestByVideoId("NSLYAT7sjAA", out var run));
+        Assert.True(ledger.TryGetLatestByTrackKey("NSLYAT7sjAA", out var run));
         Assert.Null(run.Key);
         Assert.False(run.HasTaggableKey);
     }
@@ -339,6 +339,6 @@ public sealed class KeyLedgerTests : IDisposable
             )
         );
 
-        Assert.False(ledger.TryGetLatestByVideoId("vfBJjufAG1E", out _));
+        Assert.False(ledger.TryGetLatestByTrackKey("vfBJjufAG1E", out _));
     }
 }

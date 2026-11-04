@@ -8,27 +8,27 @@ public sealed class BumpedTrack
 {
     private readonly Lock _gate = new();
 
-    private string? _videoId;
+    private string? _trackKey;
 
-    public string? VideoId
+    public string? TrackKey
     {
         get
         {
             lock (_gate)
-                return _videoId;
+                return _trackKey;
         }
     }
 
     /// <summary>Bumping another track replaces the first — there is only ever one.</summary>
-    public void Bump(string videoId)
+    public void Bump(string trackKey)
     {
         lock (_gate)
-            _videoId = videoId;
+            _trackKey = trackKey;
     }
 
     public void Clear()
     {
         lock (_gate)
-            _videoId = null;
+            _trackKey = null;
     }
 }

@@ -218,16 +218,16 @@ public sealed class RunEvidenceRealDataTests
         var working = new WorkingSet(new CratesidePaths());
         var checkedPages = 0;
 
-        foreach (var videoId in working.VideoIds)
+        foreach (var trackKey in working.TrackKeys)
         {
             var lookups = Path.Combine(
-                Path.GetDirectoryName(working.EvidencePathFor(videoId))!,
+                Path.GetDirectoryName(working.EvidencePathFor(trackKey))!,
                 VerdictRunner.SourcesFileName
             );
 
             if (
                 !File.Exists(lookups)
-                || real.EvidenceForVideoId(videoId) is not { } judged
+                || real.EvidenceForTrackKey(trackKey) is not { } judged
                 || JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(lookups))
                     is not { ValueKind: JsonValueKind.Array } found
             )
@@ -255,7 +255,7 @@ public sealed class RunEvidenceRealDataTests
             if (cited is [])
                 continue;
 
-            var song = $"lookup - {videoId}".ToLowerInvariant();
+            var song = $"lookup - {trackKey}".ToLowerInvariant();
 
             Assert.IsType<RecordOutcome.Recorded>(
                 store.Record(
@@ -263,7 +263,7 @@ public sealed class RunEvidenceRealDataTests
                     {
                         RecordedAt = DateTimeOffset.UnixEpoch,
                         Song = song,
-                        SourceUrl = $"https://www.youtube.com/watch?v={videoId}",
+                        SourceUrl = $"https://www.youtube.com/watch?v={trackKey}",
                         Confidence = KeyConfidence.Withheld,
                         Sources = cited,
                         Lookups = File.ReadAllText(lookups),

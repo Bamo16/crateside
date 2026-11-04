@@ -29,7 +29,7 @@ public sealed class PageLookups(
 
         if (!lookups.Any(VerdictRules.MayHoldAnotherKey))
             SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.WriteFile(
-                Path.Combine(workingSet.Prepare(order.VideoId), SourcesFileName),
+                Path.Combine(workingSet.Prepare(order.TrackKey), SourcesFileName),
                 lookups
             );
 
@@ -40,7 +40,7 @@ public sealed class PageLookups(
     public IReadOnlyList<SiteLookup>? CachedFor(WorkOrder order) =>
         SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.ReadFileOrDefault(
             Path.Combine(
-                Path.GetDirectoryName(workingSet.EvidencePathFor(order.VideoId))!,
+                Path.GetDirectoryName(workingSet.EvidencePathFor(order.TrackKey))!,
                 SourcesFileName
             )
         );
@@ -51,7 +51,8 @@ public sealed class PageLookups(
             ? (artist, title)
             : Split(order.Title)
                 ?? (
-                    names?.Read().GetValueOrDefault(order.VideoId) is { DisplayTitle: var resolved }
+                    names?.Read().GetValueOrDefault(order.TrackKey)
+                        is { DisplayTitle: var resolved }
                         ? Split(resolved)
                         : null
                 );
@@ -68,10 +69,10 @@ public sealed class PageLookups(
     {
         var ledger = store.Read();
 
-        return YouTubeUrl.TryGetVideoId(order.SourceUrl, out var source)
-            && ledger.TryGetLatestByVideoId(source, out var swapped)
+        return TrackKeys.TryParse(order.SourceUrl, out var source)
+            && ledger.TryGetLatestByTrackKey(source, out var swapped)
                 ? swapped
-            : ledger.TryGetLatestByVideoId(order.VideoId, out var held) ? held
+            : ledger.TryGetLatestByTrackKey(order.TrackKey, out var held) ? held
             : null;
     }
 }

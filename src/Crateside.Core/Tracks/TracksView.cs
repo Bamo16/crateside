@@ -65,14 +65,14 @@ public sealed record TracksView
         var known = annotations ?? TrackAnnotations.None;
         var read = readings ?? SampleReadings.None;
 
-        var parked = VideoIdsOf(view.AwaitingKey);
-        var unjudged = VideoIdsOf(view.Outstanding);
+        var parked = TrackKeysOf(view.AwaitingKey);
+        var unjudged = TrackKeysOf(view.Outstanding);
 
         // By song, not upload: a swap's old upload stops being a member once its files are gone.
         var deletedBySong = known
-            .Deletions.Where(deletion => deletion.VideoId is not null)
+            .Deletions.Where(deletion => deletion.TrackKey is not null)
             .GroupBy(
-                deletion => ledger.SongFor(deletion.VideoId!) ?? deletion.VideoId!,
+                deletion => ledger.SongFor(deletion.TrackKey!) ?? deletion.TrackKey!,
                 StringComparer.Ordinal
             )
             .ToDictionary(
@@ -84,33 +84,33 @@ public sealed record TracksView
         // What the separation drainer will actually pick, so a row is never in a line it isn't in.
         var gpuLine = new SeparationSelector(jobs)
             .Line(view)
-            .Select((item, index) => (item.VideoId, Position: index + 1))
-            .ToDictionary(entry => entry.VideoId, entry => entry.Position, StringComparer.Ordinal);
+            .Select((item, index) => (item.TrackKey, Position: index + 1))
+            .ToDictionary(entry => entry.TrackKey, entry => entry.Position, StringComparer.Ordinal);
 
         var staged = staging
-            .Where(song => song.SourceVideoId is not null)
-            .ToDictionary(song => song.SourceVideoId!, StringComparer.Ordinal);
+            .Where(song => song.SourceTrackKey is not null)
+            .ToDictionary(song => song.SourceTrackKey!, StringComparer.Ordinal);
 
         // Everything in the playlist, then everything still in staging that isn't.
-        var queued = VideoIdsOf(view.Items);
-        var reopened = VideoIdsOf(view.Reopened);
+        var queued = TrackKeysOf(view.Items);
+        var reopened = TrackKeysOf(view.Reopened);
 
         // One seed per video ID with something to say. A song that has been cut from more than
         // one upload contributes several, and they are folded into one row below (ADR 0014).
         List<RowSeed> seeds =
         [
-            .. view.Items.Select(item => new RowSeed(item.VideoId, item.StandInTitle, item)),
+            .. view.Items.Select(item => new RowSeed(item.TrackKey, item.StandInTitle, item)),
             .. staging
-                .Where(song => song.SourceVideoId is { } id && !queued.Contains(id))
-                .Select(song => new RowSeed(song.SourceVideoId!, song.DisplayName)),
+                .Where(song => song.SourceTrackKey is { } id && !queued.Contains(id))
+                .Select(song => new RowSeed(song.SourceTrackKey!, song.DisplayName)),
             // A track still owing a stage with its playlist entry long gone — a re-cut, or a
             // handoff or tagging left open. Read from Reopened rather than AwaitingSeparation so
             // a track that owes no cut keeps its row without joining the GPU line (#32).
             .. view
                 .Reopened.Where(item =>
-                    !queued.Contains(item.VideoId) && !staged.ContainsKey(item.VideoId)
+                    !queued.Contains(item.TrackKey) && !staged.ContainsKey(item.TrackKey)
                 )
-                .Select(item => new RowSeed(item.VideoId, item.StandInTitle, item)),
+                .Select(item => new RowSeed(item.TrackKey, item.StandInTitle, item)),
             // Everything else the library has: tracks judged before crateside existed, or
             // finished long enough ago that the playlist entry is gone.
             .. onDisk
@@ -130,7 +130,7 @@ public sealed record TracksView
             Rows = InOrder([
                 .. seeds
                     .GroupBy(
-                        seed => ledger.SongFor(seed.VideoId) ?? seed.VideoId,
+                        seed => ledger.SongFor(seed.TrackKey) ?? seed.TrackKey,
                         StringComparer.Ordinal
                     )
                     .Select(song => Row([.. song])),
@@ -141,7 +141,7 @@ public sealed record TracksView
         {
             // Resolves through song identity, so every upload of this song lands on the same
             // verdict and a supersede wins over whichever run named a given URL.
-            var verdict = ledger.TryGetLatestByVideoId(members[0].VideoId, out var run)
+            var verdict = ledger.TryGetLatestByTrackKey(members[0].TrackKey, out var run)
                 ? run
                 : null;
 
@@ -150,25 +150,25 @@ public sealed record TracksView
             var primary =
                 members.FirstOrDefault(seed => seed.Item is not null)
                 ?? members.FirstOrDefault(seed =>
-                    seed.VideoId.Equals(verdict?.SourceVideoId, StringComparison.Ordinal)
+                    seed.TrackKey.Equals(verdict?.SourceTrackKey, StringComparison.Ordinal)
                 )
                 ?? members[0];
 
             var songs = members
-                .Select(seed => staged.GetValueOrDefault(seed.VideoId))
+                .Select(seed => staged.GetValueOrDefault(seed.TrackKey))
                 .OfType<StagedSong>()
                 .ToArray();
 
             var files = members
-                .SelectMany(seed => onDisk.GetValueOrDefault(seed.VideoId) ?? [])
+                .SelectMany(seed => onDisk.GetValueOrDefault(seed.TrackKey) ?? [])
                 .ToArray();
 
             // One instruction, never a merge of several: the primary's if it has one, else
             // whichever upload of this song carries one.
             var instruction =
-                instructions.GetValueOrDefault(primary.VideoId)
+                instructions.GetValueOrDefault(primary.TrackKey)
                 ?? members
-                    .Select(seed => instructions.GetValueOrDefault(seed.VideoId))
+                    .Select(seed => instructions.GetValueOrDefault(seed.TrackKey))
                     .OfType<TrackInstruction>()
                     .FirstOrDefault();
 
@@ -178,13 +178,13 @@ public sealed record TracksView
             var progress = StageProgress.For(
                 jobs,
                 [
-                    .. members.Select(seed => seed.VideoId),
-                    .. instruction?.Plan?.AddedSources.Select(source => source.VideoId) ?? [],
+                    .. members.Select(seed => seed.TrackKey),
+                    .. instruction?.Plan?.AddedSources.Select(source => source.TrackKey) ?? [],
                 ]
             );
 
             var added = (instruction?.Plan?.AddedSources ?? [])
-                .Select(source => source.VideoId)
+                .Select(source => source.TrackKey)
                 .ToHashSet(StringComparer.Ordinal);
 
             // The primary's download, since that is the upload the row currently speaks for.
@@ -193,10 +193,10 @@ public sealed record TracksView
             // own acquisition had been discarded with its working set, which is every finished
             // track — so attaching a source to one put a shortfall banner across the whole row.
             var acquisition =
-                known.Acquisitions.GetValueOrDefault(primary.VideoId)
+                known.Acquisitions.GetValueOrDefault(primary.TrackKey)
                 ?? members
-                    .Where(seed => !added.Contains(seed.VideoId))
-                    .Select(seed => known.Acquisitions.GetValueOrDefault(seed.VideoId))
+                    .Where(seed => !added.Contains(seed.TrackKey))
+                    .Select(seed => known.Acquisitions.GetValueOrDefault(seed.TrackKey))
                     .OfType<Acquisition>()
                     .FirstOrDefault();
 
@@ -209,19 +209,19 @@ public sealed record TracksView
                 verdict,
                 members
                     .Select(seed =>
-                        known.ResolvedNames.GetValueOrDefault(seed.VideoId)?.DisplayTitle
+                        known.ResolvedNames.GetValueOrDefault(seed.TrackKey)?.DisplayTitle
                     )
                     .FirstOrDefault(name => name is { Length: > 0 })
             );
 
             var stated = instruction?.Name is { Length: > 0 } name ? name : null;
 
-            var isParked = members.Any(seed => parked.Contains(seed.VideoId));
-            var isUnjudged = members.Any(seed => unjudged.Contains(seed.VideoId));
+            var isParked = members.Any(seed => parked.Contains(seed.TrackKey));
+            var isUnjudged = members.Any(seed => unjudged.Contains(seed.TrackKey));
 
             return new TrackRow
             {
-                VideoId = primary.VideoId,
+                TrackKey = primary.TrackKey,
                 PlaylistItemId = primary.Item?.PlaylistItemId,
                 Title = stated ?? derived,
                 DerivedTitle = stated is null ? null : derived,
@@ -229,16 +229,18 @@ public sealed record TracksView
                 StatedSourceUrl = instruction?.SourceUrl,
                 AwaitingRename = songs.Sum(song => AwaitingRenameIn(song, stated)),
                 Verdict = verdict,
-                Genre = known.Genres.GetValueOrDefault(verdict?.Song ?? primary.VideoId),
-                Familiarity = known.Familiarity.GetValueOrDefault(verdict?.Song ?? primary.VideoId),
+                Genre = known.Genres.GetValueOrDefault(verdict?.Song ?? primary.TrackKey),
+                Familiarity = known.Familiarity.GetValueOrDefault(
+                    verdict?.Song ?? primary.TrackKey
+                ),
                 Marks =
-                    known.Marks.GetValueOrDefault(verdict?.Song ?? primary.VideoId)?.Marks ?? [],
+                    known.Marks.GetValueOrDefault(verdict?.Song ?? primary.TrackKey)?.Marks ?? [],
                 Lookalike =
                     verdict is null && primary.Item is { } item
                         ? VerdictSelector.LookalikeOf(
                             item,
                             ledger,
-                            known.ResolvedNames.GetValueOrDefault(item.VideoId)?.DisplayTitle
+                            known.ResolvedNames.GetValueOrDefault(item.TrackKey)?.DisplayTitle
                         )
                         : null,
                 // The work list covers the queue item; the instruction covers everything after it
@@ -261,14 +263,14 @@ public sealed record TracksView
                 Acquisition = acquisition,
                 GpuPosition = members
                     .Select(seed =>
-                        gpuLine.TryGetValue(seed.VideoId, out var position) ? position : (int?)null
+                        gpuLine.TryGetValue(seed.TrackKey, out var position) ? position : (int?)null
                     )
                     .Min(),
                 RunningStage = progress.Running,
                 RunningSince = progress.RunningSince,
                 Deletions =
                     deletedBySong.GetValueOrDefault(
-                        ledger.SongFor(members[0].VideoId) ?? members[0].VideoId
+                        ledger.SongFor(members[0].TrackKey) ?? members[0].TrackKey
                     ) ?? [],
                 GaveUpAt = progress.GaveUpAt,
                 GaveUpStrikes = progress.GaveUpStrikes,
@@ -278,10 +280,10 @@ public sealed record TracksView
                 [
                     .. members.SelectMany(seed =>
                         SamplesOf(
-                            staged.GetValueOrDefault(seed.VideoId),
-                            onDisk.GetValueOrDefault(seed.VideoId) ?? [],
+                            staged.GetValueOrDefault(seed.TrackKey),
+                            onDisk.GetValueOrDefault(seed.TrackKey) ?? [],
                             finishedRoot,
-                            seed.VideoId,
+                            seed.TrackKey,
                             read
                         )
                     ),
@@ -302,7 +304,7 @@ public sealed record TracksView
 
     /// <summary>One upload's contribution to a row, before a song's uploads are folded together.</summary>
     private sealed record RowSeed(
-        string VideoId,
+        string TrackKey,
         string FallbackName,
         WorkItem? Item = null,
         bool IsLibraryOnly = false
@@ -394,7 +396,7 @@ public sealed record TracksView
         StagedSong? staged,
         IReadOnlyList<StemOnDisk> onDisk,
         string finishedRoot,
-        string sourceVideoId,
+        string sourceTrackKey,
         SampleReadings readings
     ) =>
         [
@@ -408,7 +410,7 @@ public sealed record TracksView
                     )
                 )
                 .Select(staged =>
-                    Sample(StemOnDisk.Of(staged.sample), readings.Presets, sourceVideoId) with
+                    Sample(StemOnDisk.Of(staged.sample), readings.Presets, sourceTrackKey) with
                     {
                         AbletonKey = staged.sample.AbletonKey,
                         // A starter warp is crateside's guess at the tempo, not a warp (#77), and a
@@ -424,7 +426,7 @@ public sealed record TracksView
                             : null,
                         WarpBorrowedFrom = staged.written?.From,
                         Beats = readings.BeatsOf?.Invoke(
-                            StemOnDisk.Of(staged.sample).SourceVideoId ?? sourceVideoId,
+                            StemOnDisk.Of(staged.sample).SourceTrackKey ?? sourceTrackKey,
                             staged.sample.Path
                         ),
                     }
@@ -436,13 +438,13 @@ public sealed record TracksView
                     && !StagedFile.IsWarpGuidePreset(file.Preset)
                 )
                 .Select(file =>
-                    Sample(file, readings.Presets, sourceVideoId) with
+                    Sample(file, readings.Presets, sourceTrackKey) with
                     {
                         IsInLibrary = true,
                         AbletonKey = KeyIn(readings.LibraryTags, file.Path),
                         Tempo = readings.TempoOf?.Invoke(file.Path),
                         Beats = readings.BeatsOf?.Invoke(
-                            file.SourceVideoId ?? sourceVideoId,
+                            file.SourceTrackKey ?? sourceTrackKey,
                             file.Path
                         ),
                     }
@@ -459,7 +461,7 @@ public sealed record TracksView
     /// One file, said in both vocabularies: what the separator called it, and what the plan would
     /// ask for to make it again.
     /// </summary>
-    private static TrackSample Sample(StemOnDisk file, PresetCatalog catalog, string sourceVideoId)
+    private static TrackSample Sample(StemOnDisk file, PresetCatalog catalog, string sourceTrackKey)
     {
         var classified = ClassifiedStem.Of(file, catalog);
 
@@ -472,7 +474,7 @@ public sealed record TracksView
             // What the file says it was cut from, which is the seed only where it says nothing.
             // Reading the seed first made every file of a song report the same upload, so an
             // attached source could not be told from a stem cut alongside it.
-            SourceVideoId = file.SourceVideoId ?? sourceVideoId,
+            SourceTrackKey = file.SourceTrackKey ?? sourceTrackKey,
             IsPremium = file.IsPremium,
         };
     }
@@ -508,6 +510,6 @@ public sealed record TracksView
             ? earliest
             : null;
 
-    private static HashSet<string> VideoIdsOf(IEnumerable<WorkItem> items) =>
-        items.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
+    private static HashSet<string> TrackKeysOf(IEnumerable<WorkItem> items) =>
+        items.Select(item => item.TrackKey).ToHashSet(StringComparer.Ordinal);
 }

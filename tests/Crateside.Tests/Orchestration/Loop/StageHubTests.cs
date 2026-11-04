@@ -32,10 +32,10 @@ public sealed class StageHubTests : IDisposable
         StageChange? seen = null;
 
         hub.Changed += change => seen = change;
-        hub.Publish(new StageChange { Stage = JobStage.Separation, VideoId = Video });
+        hub.Publish(new StageChange { Stage = JobStage.Separation, TrackKey = Video });
 
         Assert.Equal(JobStage.Separation, seen?.Stage);
-        Assert.Equal(Video, seen?.VideoId);
+        Assert.Equal(Video, seen?.TrackKey);
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public sealed class StageHubTests : IDisposable
         hub.Changed += _ => throw new InvalidOperationException("a page that went away");
         hub.Changed += _ => reached = true;
 
-        hub.Publish(new StageChange { Stage = JobStage.Tagging, VideoId = Video });
+        hub.Publish(new StageChange { Stage = JobStage.Tagging, TrackKey = Video });
 
         Assert.True(reached);
     }
@@ -67,7 +67,7 @@ public sealed class StageHubTests : IDisposable
         jobs.Record(Video, JobStage.Separation, JobStatus.Succeeded);
 
         Assert.Equal(2, seen.Count);
-        Assert.All(seen, change => Assert.Equal(Video, change.VideoId));
+        Assert.All(seen, change => Assert.Equal(Video, change.TrackKey));
         Assert.All(seen, change => Assert.Equal(JobStage.Separation, change.Stage));
     }
 

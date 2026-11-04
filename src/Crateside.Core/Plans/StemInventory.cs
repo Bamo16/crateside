@@ -63,8 +63,8 @@ public sealed record StemInventory
         Files.Any(file =>
             file.Kind is StemKind.Source
             && (
-                file.File.SourceVideoId is { } upload
-                    ? upload.Equals(added.VideoId, StringComparison.Ordinal)
+                file.File.SourceTrackKey is { } upload
+                    ? upload.Equals(added.TrackKey, StringComparison.Ordinal)
                     : added.Label.Equals(file.DisplayName, StringComparison.OrdinalIgnoreCase)
             )
         );
@@ -102,10 +102,10 @@ public sealed record StemInventory
     /// reads as labeled.
     /// </summary>
     private static bool IsDropped(ClassifiedStem file, StemPlan wanted, StemPlan stored) =>
-        file.File.SourceVideoId is { } upload
-        && stored.AddedSources.Any(added => added.VideoId.Equals(upload, StringComparison.Ordinal))
+        file.File.SourceTrackKey is { } upload
+        && stored.AddedSources.Any(added => added.TrackKey.Equals(upload, StringComparison.Ordinal))
             ? !wanted.AddedSources.Any(added =>
-                added.VideoId.Equals(upload, StringComparison.Ordinal)
+                added.TrackKey.Equals(upload, StringComparison.Ordinal)
             )
             : !wanted.KeepSource;
 

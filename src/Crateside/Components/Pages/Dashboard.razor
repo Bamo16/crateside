@@ -136,7 +136,7 @@
                     <span class="mono value">@LastWeek</span> last week
                     @if (_history.Latest is [var last, ..])
                     {
-                        <text> · last event <span class="mono">@last.At.ToLocalTime().ToString("t")</span> @last.What @(last.VideoId is { } lastId ? NameOf(lastId) : null)</text>
+                        <text> · last event <span class="mono">@last.At.ToLocalTime().ToString("t")</span> @last.What @(last.TrackKey is { } lastId ? NameOf(lastId) : null)</text>
                     }
                 </Summary>
                 <ChildContent>
@@ -694,8 +694,8 @@
         }
     }
 
-    private string NameOf(string videoId) =>
-        _rows.FirstOrDefault(row => row.VideoId.Equals(videoId, StringComparison.Ordinal))?.Title ?? videoId;
+    private string NameOf(string trackKey) =>
+        _rows.FirstOrDefault(row => row.TrackKey.Equals(trackKey, StringComparison.Ordinal))?.Title ?? trackKey;
 
     private void Count(KeyDistribution distribution)
     {

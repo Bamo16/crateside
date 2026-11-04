@@ -74,7 +74,7 @@ public sealed class TrackChipAndFilterTests
     private static TrackRow Base =>
         new()
         {
-            VideoId = "aaaaaaaaaaa",
+            TrackKey = "aaaaaaaaaaa",
             PlaylistItemId = "PLI-a",
             Title = "Rob Dougan - Furious Angels",
         };

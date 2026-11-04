@@ -11,7 +11,7 @@ namespace Crateside.Tests.Orchestration;
 
 public sealed class WorkingSetJanitorTests : IDisposable
 {
-    private const string VideoId = "dQw4w9WgXcQ";
+    private const string TrackKey = "dQw4w9WgXcQ";
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
@@ -60,52 +60,52 @@ public sealed class WorkingSetJanitorTests : IDisposable
 
     private void GiveWorkingSet()
     {
-        File.WriteAllText(Path.Combine(Set.Prepare(VideoId), "track.flac"), "audio");
-        File.WriteAllText(Set.EvidencePathFor(VideoId), "{}");
+        File.WriteAllText(Path.Combine(Set.Prepare(TrackKey), "track.flac"), "audio");
+        File.WriteAllText(Set.EvidencePathFor(TrackKey), "{}");
     }
 
     [Fact]
     public void A_track_still_owed_a_handoff_keeps_its_working_set()
     {
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
-        Jobs.Record(VideoId, JobStage.Handoff, JobStatus.Canceled, error: "re-cut requested");
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(TrackKey, JobStage.Handoff, JobStatus.Canceled, error: "re-cut requested");
 
         Assert.Equal(0, Janitor.Sweep());
-        Assert.Single(Set.VideoIds);
+        Assert.Single(Set.TrackKeys);
     }
 
     [Fact]
     public void A_track_whose_stems_have_left_staging_is_finished_with()
     {
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Succeeded);
 
         Assert.Equal(1, Janitor.Sweep());
-        Assert.Empty(Set.VideoIds);
+        Assert.Empty(Set.TrackKeys);
     }
 
     [Fact]
     public void A_track_with_a_stage_running_keeps_its_working_set()
     {
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
-        Jobs.Record(VideoId, JobStage.Verdict, JobStatus.Running);
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(TrackKey, JobStage.Verdict, JobStatus.Running);
 
         Assert.Equal(0, Janitor.Sweep());
-        Assert.Single(Set.VideoIds);
-        Assert.True(Set.HasEvidence(VideoId));
+        Assert.Single(Set.TrackKeys);
+        Assert.True(Set.HasEvidence(TrackKey));
     }
 
     [Fact]
     public void A_track_waiting_for_the_person_keeps_the_evidence_they_decide_from()
     {
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
-        Jobs.Record(VideoId, JobStage.Verdict, JobStatus.AwaitingPerson);
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(TrackKey, JobStage.Verdict, JobStatus.AwaitingPerson);
 
         Assert.Equal(0, Janitor.Sweep());
-        Assert.True(Set.HasEvidence(VideoId));
+        Assert.True(Set.HasEvidence(TrackKey));
     }
 
     [Fact]
@@ -115,18 +115,18 @@ public sealed class WorkingSetJanitorTests : IDisposable
         GiveWorkingSet();
 
         Assert.Equal(0, Janitor.Sweep());
-        Assert.Single(Set.VideoIds);
+        Assert.Single(Set.TrackKeys);
     }
 
     [Fact]
     public void A_track_still_being_worked_in_ableton_keeps_its_working_set()
     {
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Succeeded);
         WriteStem("Yes - Owner of a Lonely Heart (Vocal - Full).flac");
 
         Assert.Equal(0, Janitor.Sweep());
-        Assert.Single(Set.VideoIds);
+        Assert.Single(Set.TrackKeys);
     }
 
     [Fact]
@@ -134,21 +134,21 @@ public sealed class WorkingSetJanitorTests : IDisposable
     {
         // Staging empties progressively, so this has to be "nothing left", not "no samples left".
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Succeeded);
         WriteStem("Yes - Owner of a Lonely Heart (Drums).flac");
 
         Assert.Equal(0, Janitor.Sweep());
-        Assert.Single(Set.VideoIds);
+        Assert.Single(Set.TrackKeys);
     }
 
     [Fact]
     public void A_failed_separation_keeps_its_working_set_so_the_retry_costs_no_download()
     {
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Failed, error: "cuda out of memory");
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Failed, error: "cuda out of memory");
 
         Assert.Equal(0, Janitor.Sweep());
-        Assert.Single(Set.VideoIds);
+        Assert.Single(Set.TrackKeys);
     }
 
     [Fact]
@@ -158,11 +158,11 @@ public sealed class WorkingSetJanitorTests : IDisposable
     public void A_re_cut_asked_for_since_the_separation_keeps_the_audio_it_will_cut_from()
     {
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
-        Instructions.RequestCut(VideoId, DateTimeOffset.UtcNow.AddMinutes(1));
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Succeeded);
+        Instructions.RequestCut(TrackKey, DateTimeOffset.UtcNow.AddMinutes(1));
 
         Assert.Equal(0, Janitor.Sweep());
-        Assert.Single(Set.VideoIds);
+        Assert.Single(Set.TrackKeys);
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
         WriteLibraryStem();
 
         Assert.Equal(1, Janitor.Sweep());
-        Assert.Empty(Set.VideoIds);
+        Assert.Empty(Set.TrackKeys);
     }
 
     [Fact]
@@ -183,18 +183,18 @@ public sealed class WorkingSetJanitorTests : IDisposable
         Judge();
 
         Assert.Equal(0, Janitor.Sweep());
-        Assert.Single(Set.VideoIds);
+        Assert.Single(Set.TrackKeys);
     }
 
     [Fact]
     public void A_source_is_kept_until_its_retention_runs_out_counted_from_when_the_track_left_staging()
     {
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Succeeded);
         Retention.Remember(new SourceRetention { Days = 7 });
 
         Assert.Equal(0, Janitor.Sweep());
-        Assert.Equal(_time.GetUtcNow(), Set.LeftStagingAt(VideoId));
+        Assert.Equal(_time.GetUtcNow(), Set.LeftStagingAt(TrackKey));
 
         _time.Advance(TimeSpan.FromDays(6.9));
 
@@ -203,28 +203,28 @@ public sealed class WorkingSetJanitorTests : IDisposable
         _time.Advance(TimeSpan.FromDays(0.2));
 
         Assert.Equal(1, Janitor.Sweep());
-        Assert.Empty(Set.VideoIds);
+        Assert.Empty(Set.TrackKeys);
     }
 
     [Fact]
     public void Forever_keeps_every_source_however_long_it_has_been()
     {
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Succeeded);
         Retention.Remember(new SourceRetention { Forever = true });
 
         Janitor.Sweep();
         _time.Advance(TimeSpan.FromDays(3650));
 
         Assert.Equal(0, Janitor.Sweep());
-        Assert.Single(Set.VideoIds);
+        Assert.Single(Set.TrackKeys);
     }
 
     [Fact]
     public void Shortening_the_retention_discards_what_is_already_held_on_the_next_pass()
     {
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Succeeded);
         Retention.Remember(new SourceRetention { Forever = true });
         Janitor.Sweep();
         _time.Advance(TimeSpan.FromDays(10));
@@ -238,33 +238,33 @@ public sealed class WorkingSetJanitorTests : IDisposable
     public void A_track_whose_stems_come_back_to_staging_starts_its_clock_again()
     {
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Succeeded);
         Retention.Remember(new SourceRetention { Days = 7 });
         Janitor.Sweep();
         WriteStem("Yes - Owner of a Lonely Heart (Vocal - Full).flac");
 
         Janitor.Sweep();
 
-        Assert.Null(Set.LeftStagingAt(VideoId));
+        Assert.Null(Set.LeftStagingAt(TrackKey));
     }
 
     [Fact]
     public void A_source_the_library_already_keeps_as_a_sample_is_discarded_whatever_the_retention()
     {
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Succeeded);
         Retention.Remember(new SourceRetention { Forever = true });
         WriteLibraryStem("Yes - Owner of a Lonely Heart.flac", preset: null);
 
         Assert.Equal(1, Janitor.Sweep());
-        Assert.Empty(Set.VideoIds);
+        Assert.Empty(Set.TrackKeys);
     }
 
     [Fact]
     public void A_stem_in_the_library_is_not_a_kept_source()
     {
         GiveWorkingSet();
-        Jobs.Record(VideoId, JobStage.Separation, JobStatus.Succeeded);
+        Jobs.Record(TrackKey, JobStage.Separation, JobStatus.Succeeded);
         Retention.Remember(new SourceRetention { Forever = true });
         WriteLibraryStem("Yes - Owner of a Lonely Heart (Vocal - Full).flac", "Vocal - Full");
 
@@ -283,7 +283,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
         _time.Advance(TimeSpan.FromDays(3650));
 
         Assert.Equal(0, Janitor.Sweep());
-        Assert.Single(Set.VideoIds);
+        Assert.Single(Set.TrackKeys);
     }
 
     [Fact]
@@ -295,7 +295,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
         Retention.Remember(new SourceRetention { Days = 7 });
 
         Assert.Equal(0, Janitor.Sweep());
-        Assert.Equal(_time.GetUtcNow(), Set.LeftStagingAt(VideoId));
+        Assert.Equal(_time.GetUtcNow(), Set.LeftStagingAt(TrackKey));
 
         _time.Advance(TimeSpan.FromDays(7));
 
@@ -320,7 +320,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
         Judge();
         WriteLibraryStem();
         Retention.Remember(new SourceRetention { Days = 30 });
-        Set.RecordLeftStaging(VideoId, _time.GetUtcNow());
+        Set.RecordLeftStaging(TrackKey, _time.GetUtcNow());
 
         Assert.Equal(0, Janitor.Sweep());
 
@@ -337,7 +337,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
                 {
                     timestamp = "2026-09-24T00:00:00+00:00",
                     song = "yes - owner of a lonely heart",
-                    source_url = $"https://www.youtube.com/watch?v={VideoId}",
+                    source_url = $"https://www.youtube.com/watch?v={TrackKey}",
                     verdict = new { key = "A minor", confidence = "HIGH" },
                 }
             )
@@ -356,7 +356,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
 
         using var file = TagLib.File.Create(path);
         file.Tag.Comment =
-            $"stemforge/0.2.1.1 | {(preset is null ? string.Empty : $"preset: {preset} | ")}source: https://www.youtube.com/watch?v={VideoId}";
+            $"stemforge/0.2.1.1 | {(preset is null ? string.Empty : $"preset: {preset} | ")}source: https://www.youtube.com/watch?v={TrackKey}";
         file.Save();
     }
 
@@ -372,7 +372,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
 
         using var file = TagLib.File.Create(path);
         file.Tag.Comment =
-            $"stemforge/0.2.1.1 | preset: Vocal - Full | date: 2026-08-17 | source: https://www.youtube.com/watch?v={VideoId}";
+            $"stemforge/0.2.1.1 | preset: Vocal - Full | date: 2026-08-17 | source: https://www.youtube.com/watch?v={TrackKey}";
         file.Save();
     }
 }

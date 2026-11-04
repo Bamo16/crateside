@@ -13,23 +13,23 @@ public static class StemAdoption
         Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.0.0.0";
 
     /// <summary>The comment written into an adopted file, and read back by <see cref="StemProvenance"/>.</summary>
-    public static string Comment(string videoId, string label, SampleType type, DateOnly on) =>
+    public static string Comment(string trackKey, string label, SampleType type, DateOnly on) =>
         string.Join(
             " | ",
             $"{StemProvenance.AdoptedPrefix}{Version}",
             $"label: {label}",
             $"date: {on:yyyy-MM-dd}",
-            $"source: https://www.youtube.com/watch?v={videoId}",
+            $"source: https://www.youtube.com/watch?v={trackKey}",
             $"{StemProvenance.TypePrefix}{type}"
         );
 
     /// <summary>
     /// Writes the provenance into <paramref name="path"/>, so the file reads as a sample of
-    /// <paramref name="videoId"/> — refusing a file that already carries some.
+    /// <paramref name="trackKey"/> — refusing a file that already carries some.
     /// </summary>
     public static bool TryAdopt(
         string path,
-        string videoId,
+        string trackKey,
         string label,
         SampleType type,
         TimeProvider time,
@@ -62,7 +62,7 @@ public static class StemAdoption
             }
 
             file.Tag.Comment = Comment(
-                videoId,
+                trackKey,
                 label,
                 type,
                 DateOnly.FromDateTime(time.GetUtcNow().UtcDateTime)

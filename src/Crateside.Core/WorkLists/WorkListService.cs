@@ -38,8 +38,8 @@ public sealed class WorkListService(
         if (playlist.Problem is null)
             intake.ForgetRemovalFailures(
                 intake
-                    .LeftInPlaylist.Select(record => record.VideoId)
-                    .Except(held.Select(item => item.VideoId), StringComparer.Ordinal)
+                    .LeftInPlaylist.Select(record => record.TrackKey)
+                    .Except(held.Select(item => item.TrackKey), StringComparer.Ordinal)
             );
 
         await consumer.ConsumeAsync(held, ct);
@@ -54,7 +54,7 @@ public sealed class WorkListService(
 
         NoteFiledArrivals(arrivals, processed, ledger);
 
-        var byVideoId = instructions.Read().ToDictionary(t => t.VideoId, StringComparer.Ordinal);
+        var byTrackKey = instructions.Read().ToDictionary(t => t.TrackKey, StringComparer.Ordinal);
 
         var catalog = presets is null ? PresetCatalog.Empty : await presets.ReadAsync(ct);
 
@@ -65,24 +65,24 @@ public sealed class WorkListService(
                 processed.FullyProcessed,
                 processed.VerdictWithoutStems,
                 items
-                    .Where(i => parked.StemsFor(i.VideoId).Count > 0)
-                    .Select(i => i.VideoId)
+                    .Where(i => parked.StemsFor(i.TrackKey).Count > 0)
+                    .Select(i => i.TrackKey)
                     .ToHashSet(StringComparer.Ordinal),
-                byVideoId,
+                byTrackKey,
                 Reopened(items, ledger),
-                bumped.VideoId,
+                bumped.TrackKey,
                 reopened?.AwaitingCut(ledger),
                 InventoriesBySong(processed, ledger, catalog, _paths.LibraryFolder),
                 jobs?.All()
                     .Where(job =>
                         job is { Stage: JobStage.Verdict, Status: JobStatus.AwaitingPerson }
                     )
-                    .Select(job => job.VideoId)
+                    .Select(job => job.TrackKey)
                     .ToHashSet(StringComparer.Ordinal)
             ),
             Ledger = ledger,
             Processed = processed,
-            Instructions = byVideoId,
+            Instructions = byTrackKey,
             ReadAt = playlist.ReadAt,
             PlaylistProblem = playlist.Problem,
         };
@@ -95,15 +95,19 @@ public sealed class WorkListService(
     /// <summary>The playlist, plus the tracks the user pasted in (ADR 0010).</summary>
     private IReadOnlyList<WorkItem> Pasted(IReadOnlyList<WorkItem> listed)
     {
-        var held = listed.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
+        var held = listed.Select(item => item.TrackKey).ToHashSet(StringComparer.Ordinal);
 
         return
         [
             .. listed,
             .. instructions
                 .Read()
-                .Where(track => track.AddedByUrl && !held.Contains(track.VideoId))
-                .Select(track => new WorkItem { VideoId = track.VideoId, Title = track.VideoId }),
+                .Where(track => track.AddedByUrl && !held.Contains(track.TrackKey))
+                .Select(track => new WorkItem
+                {
+                    TrackKey = track.TrackKey,
+                    Title = track.TrackKey,
+                }),
         ];
     }
 
@@ -122,7 +126,7 @@ public sealed class WorkListService(
         var arrivals = intake.Arrive(held);
 
         intake.Backfill(owed);
-        intake.Prune(owed, held.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal));
+        intake.Prune(owed, held.Select(item => item.TrackKey).ToHashSet(StringComparer.Ordinal));
 
         return (IntakeStore.Merge(held, intake.Read()), isFirstRead ? [] : arrivals);
     }
@@ -142,7 +146,7 @@ public sealed class WorkListService(
 
         foreach (var arrival in arrivals)
             if (FiledWhere(arrival, processed, ledger, _paths.LibraryFolder) is { } where)
-                actions.Record(arrival.VideoId, UserActionKind.ArrivedAlreadyFiled, where);
+                actions.Record(arrival.TrackKey, UserActionKind.ArrivedAlreadyFiled, where);
     }
 
     /// <summary>
@@ -156,7 +160,7 @@ public sealed class WorkListService(
         string finishedRoot
     )
     {
-        var known = ledger.SongFor(arrival.VideoId);
+        var known = ledger.SongFor(arrival.TrackKey);
         var song =
             known
             ?? (
@@ -164,8 +168,8 @@ public sealed class WorkListService(
             );
 
         var stems = processed
-            .StemsByVideoId.Where(entry =>
-                entry.Key.Equals(arrival.VideoId, StringComparison.Ordinal)
+            .StemsByTrackKey.Where(entry =>
+                entry.Key.Equals(arrival.TrackKey, StringComparison.Ordinal)
                 || (
                     song is not null
                     && string.Equals(
@@ -187,7 +191,7 @@ public sealed class WorkListService(
             ? "the library"
             : "Staging";
 
-        return known is null && processed.StemsFor(arrival.VideoId) is []
+        return known is null && processed.StemsFor(arrival.TrackKey) is []
             ? $"looks like one in {place}"
             : $"in {place}";
     }
@@ -202,7 +206,7 @@ public sealed class WorkListService(
             .Where(track =>
                 track.Plan is { } plan && (plan.KeepSource || plan.AddedSources.Count > 0)
             )
-            .Select(track => track.VideoId);
+            .Select(track => track.TrackKey);
 
     /// <summary>
     /// What each video ID already has, counting every upload of the same song — including those
@@ -215,10 +219,10 @@ public sealed class WorkListService(
         string? finishedRoot = null
     )
     {
-        string Song(string videoId) => ledger.SongFor(videoId) ?? videoId;
+        string Song(string trackKey) => ledger.SongFor(trackKey) ?? trackKey;
 
         var bySong = processed
-            .StemsByVideoId.GroupBy(entry => Song(entry.Key), StringComparer.Ordinal)
+            .StemsByTrackKey.GroupBy(entry => Song(entry.Key), StringComparer.Ordinal)
             .ToDictionary(
                 song => song.Key,
                 song =>
@@ -227,14 +231,14 @@ public sealed class WorkListService(
             );
 
         return ledger
-            .Runs.Select(run => run.SourceVideoId)
+            .Runs.Select(run => run.SourceTrackKey)
             .OfType<string>()
-            .Concat(processed.StemsByVideoId.Keys)
+            .Concat(processed.StemsByTrackKey.Keys)
             .Distinct(StringComparer.Ordinal)
-            .Where(videoId => bySong.ContainsKey(Song(videoId)))
+            .Where(trackKey => bySong.ContainsKey(Song(trackKey)))
             .ToDictionary(
-                videoId => videoId,
-                videoId => bySong[Song(videoId)],
+                trackKey => trackKey,
+                trackKey => bySong[Song(trackKey)],
                 StringComparer.Ordinal
             );
     }
@@ -245,24 +249,27 @@ public sealed class WorkListService(
     /// </summary>
     private IReadOnlyList<WorkItem> Reopened(IReadOnlyList<WorkItem> items, Ledger.KeyLedger ledger)
     {
-        if (reopened?.Owing(ledger) is not { Count: > 0 } videoIds)
+        if (reopened?.Owing(ledger) is not { Count: > 0 } trackKeys)
             return [];
 
-        var queued = items.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
-        var held = intake.Read().Select(record => record.VideoId).ToHashSet(StringComparer.Ordinal);
+        var queued = items.Select(item => item.TrackKey).ToHashSet(StringComparer.Ordinal);
+        var held = intake
+            .Read()
+            .Select(record => record.TrackKey)
+            .ToHashSet(StringComparer.Ordinal);
 
         // Bare, with no instruction fields copied on: WorkListsView.Compose describes these the same
         // way it describes playlist items.
         return
         [
-            .. videoIds
-                .Where(videoId => !queued.Contains(videoId))
+            .. trackKeys
+                .Where(trackKey => !queued.Contains(trackKey))
                 // A track the user removed owes nothing, whatever its jobs say (ADR 0027). No
                 // records at all is an intake that could not be read, not one that holds nothing.
-                .Where(videoId => held.Count is 0 || held.Contains(videoId))
-                .Select(videoId =>
-                    ledger.TryGetLatestByVideoId(videoId, out var run)
-                        ? new WorkItem { VideoId = videoId, Title = run.DisplayName }
+                .Where(trackKey => held.Count is 0 || held.Contains(trackKey))
+                .Select(trackKey =>
+                    ledger.TryGetLatestByTrackKey(trackKey, out var run)
+                        ? new WorkItem { TrackKey = trackKey, Title = run.DisplayName }
                         : null
                 )
                 .OfType<WorkItem>(),

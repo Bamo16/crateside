@@ -36,7 +36,7 @@ public sealed class KeyLedgerRealDataTests
         Assert.SkipUnless(TestLedger.HasReal, "No ledger.db on this machine.");
 
         var runs = TestLedger.FromReal().Runs;
-        var withId = runs.Count(r => r.SourceVideoId is not null);
+        var withId = runs.Count(r => r.SourceTrackKey is not null);
 
         // Measured at 124/125 at design; a run from a local file has no URL.
         Assert.True(
@@ -57,8 +57,8 @@ public sealed class KeyLedgerRealDataTests
             .GetFiles(staging, "*.flac")
             .Select(path => (Name: Path.GetFileName(path), Tags: StemTagReader.Read(path)))
             .Where(s =>
-                s.Tags?.SourceVideoId is null
-                || !ledger.TryGetLatestByVideoId(s.Tags.SourceVideoId, out _)
+                s.Tags?.SourceTrackKey is null
+                || !ledger.TryGetLatestByTrackKey(s.Tags.SourceTrackKey, out _)
             )
             .Select(s => s.Name)
             .ToArray();
@@ -81,9 +81,9 @@ public sealed class KeyLedgerRealDataTests
         Assert.SkipWhen(stem is null, "The Mission 15 stem is no longer in the library.");
 
         var tags = StemTagReader.Read(stem);
-        Assert.NotNull(tags?.SourceVideoId);
+        Assert.NotNull(tags?.SourceTrackKey);
 
-        Assert.True(TestLedger.FromReal().TryGetLatestByVideoId(tags.SourceVideoId, out var run));
+        Assert.True(TestLedger.FromReal().TryGetLatestByTrackKey(tags.SourceTrackKey, out var run));
         Assert.DoesNotContain("mission 15", Path.GetFileNameWithoutExtension(stem));
         Assert.Contains("mission 15", run.Song, StringComparison.OrdinalIgnoreCase);
     }

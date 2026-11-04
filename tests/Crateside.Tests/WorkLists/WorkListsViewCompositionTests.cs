@@ -11,12 +11,12 @@ public sealed class WorkListsViewCompositionTests
     private const string Unjudged = "bbbbbbbbbbb";
     private const string Done = "ccccccccccc";
 
-    private static WorkItem Item(string videoId) =>
+    private static WorkItem Item(string trackKey) =>
         new()
         {
-            PlaylistItemId = $"PLI-{videoId}",
-            VideoId = videoId,
-            Title = $"Track {videoId}",
+            PlaylistItemId = $"PLI-{trackKey}",
+            TrackKey = trackKey,
+            Title = $"Track {trackKey}",
         };
 
     private static WorkListsView Compose(
@@ -31,7 +31,7 @@ public sealed class WorkListsViewCompositionTests
             fullyProcessed ?? new HashSet<string>(),
             verdictWithoutStems ?? new HashSet<string>(),
             separatedWithoutKey ?? new HashSet<string>(),
-            instructions.ToDictionary(t => t.VideoId, StringComparer.Ordinal)
+            instructions.ToDictionary(t => t.TrackKey, StringComparer.Ordinal)
         );
 
     [Fact]
@@ -39,7 +39,7 @@ public sealed class WorkListsViewCompositionTests
     {
         var view = Compose([Item(Unjudged)]);
 
-        Assert.Equal(Unjudged, Assert.Single(view.Outstanding).VideoId);
+        Assert.Equal(Unjudged, Assert.Single(view.Outstanding).TrackKey);
         Assert.Empty(view.AwaitingSeparation);
         Assert.Empty(view.FullyProcessed);
     }
@@ -56,8 +56,8 @@ public sealed class WorkListsViewCompositionTests
             awaitingPerson: new HashSet<string> { Unjudged }
         );
 
-        Assert.Equal(Unjudged, Assert.Single(view.AwaitingSeparation).VideoId);
-        Assert.Equal(Unjudged, Assert.Single(view.Outstanding).VideoId);
+        Assert.Equal(Unjudged, Assert.Single(view.AwaitingSeparation).TrackKey);
+        Assert.Equal(Unjudged, Assert.Single(view.Outstanding).TrackKey);
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public sealed class WorkListsViewCompositionTests
         );
 
         Assert.Empty(view.AwaitingSeparation);
-        Assert.Equal(Unjudged, Assert.Single(view.AwaitingKey).VideoId);
+        Assert.Equal(Unjudged, Assert.Single(view.AwaitingKey).TrackKey);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public sealed class WorkListsViewCompositionTests
         );
 
         Assert.Empty(view.AwaitingSeparation);
-        Assert.Equal(Judged, Assert.Single(view.AwaitingKey).VideoId);
+        Assert.Equal(Judged, Assert.Single(view.AwaitingKey).TrackKey);
 
         Assert.Empty(view.FullyProcessed);
     }
@@ -96,7 +96,7 @@ public sealed class WorkListsViewCompositionTests
     {
         var view = Compose([Item(Judged)], verdictWithoutStems: new HashSet<string> { Judged });
 
-        Assert.Equal(Judged, Assert.Single(view.AwaitingSeparation).VideoId);
+        Assert.Equal(Judged, Assert.Single(view.AwaitingSeparation).TrackKey);
         Assert.Empty(view.Outstanding);
     }
 
@@ -105,7 +105,7 @@ public sealed class WorkListsViewCompositionTests
     {
         var view = Compose([Item(Done)], fullyProcessed: new HashSet<string> { Done });
 
-        Assert.Equal(Done, Assert.Single(view.FullyProcessed).VideoId);
+        Assert.Equal(Done, Assert.Single(view.FullyProcessed).TrackKey);
         Assert.Empty(view.Outstanding);
         Assert.Empty(view.AwaitingSeparation);
     }
@@ -117,7 +117,7 @@ public sealed class WorkListsViewCompositionTests
             [Item(Unjudged)],
             instructions: new TrackInstruction
             {
-                VideoId = Unjudged,
+                TrackKey = Unjudged,
                 Plan = StemPlan.InstrumentalRelease,
             }
         );
@@ -145,7 +145,7 @@ public sealed class WorkListsViewCompositionTests
             verdictWithoutStems: new HashSet<string> { Judged },
             instructions: new TrackInstruction
             {
-                VideoId = Judged,
+                TrackKey = Judged,
                 Plan = StemPlan.InstrumentalRelease,
             }
         );
@@ -190,7 +190,7 @@ public sealed class WorkListsViewCompositionTests
             awaitingCut: new HashSet<string> { Judged }
         );
 
-        Assert.Equal(Judged, Assert.Single(view.AwaitingSeparation).VideoId);
+        Assert.Equal(Judged, Assert.Single(view.AwaitingSeparation).TrackKey);
     }
 
     [Fact]

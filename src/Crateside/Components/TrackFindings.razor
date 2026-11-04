@@ -69,10 +69,10 @@
     private Task SameSong(LedgerRun like) =>
         Working(() =>
         {
-            _problem = Lookalike.SameSong(Row.VideoId, like);
+            _problem = Lookalike.SameSong(Row.TrackKey, like);
 
             if (_problem is null)
-                Actions.Record(Row.VideoId, UserActionKind.SameSong, like.DisplayName);
+                Actions.Record(Row.TrackKey, UserActionKind.SameSong, like.DisplayName);
 
             return Task.CompletedTask;
         });
@@ -80,8 +80,8 @@
     private Task DifferentSong(LedgerRun like) =>
         Working(() =>
         {
-            Lookalike.DifferentSong(Row.VideoId, like);
-            Actions.Record(Row.VideoId, UserActionKind.DifferentSong, like.DisplayName, JobStage.Verdict);
+            Lookalike.DifferentSong(Row.TrackKey, like);
+            Actions.Record(Row.TrackKey, UserActionKind.DifferentSong, like.DisplayName, JobStage.Verdict);
             Judging.Wake();
 
             return Task.CompletedTask;
@@ -91,14 +91,14 @@
     private Task UseAnyway() =>
         Working(() =>
         {
-            if (YouTubeUrl.TryGetVideoId(Row.StatedSourceUrl ?? Row.VideoId, out var upload))
-                Instructions.AcceptUpload(Row.VideoId, upload);
+            if (YouTubeUrl.TryGetVideoId(Row.StatedSourceUrl ?? Row.TrackKey, out var upload))
+                Instructions.AcceptUpload(Row.TrackKey, upload);
 
-            if (!Held.AcceptAcquisition(Row.VideoId))
+            if (!Held.AcceptAcquisition(Row.TrackKey))
                 _problem =
                     "There is no downloaded audio for this track any more. It will be fetched again, and taken as it comes.";
 
-            Actions.Record(Row.VideoId, UserActionKind.UsedAnyway, Row.Acquisition?.Advisory, JobStage.Verdict);
+            Actions.Record(Row.TrackKey, UserActionKind.UsedAnyway, Row.Acquisition?.Advisory, JobStage.Verdict);
 
             // Judging is paused by default, so this only puts the track back in line for it.
             Judging.Wake();

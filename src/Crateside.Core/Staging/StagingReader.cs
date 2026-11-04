@@ -46,7 +46,7 @@ public sealed class StagingReader(LedgerStore store, FolderInfoReader? folderInf
             .. stems
                 // Falls back to the filename-derived key so an untagged stem still groups
                 // with its siblings instead of becoming one row per file.
-                .GroupBy(s => s.Tags?.SourceVideoId ?? SongKeyFromFileName(s.Path))
+                .GroupBy(s => s.Tags?.SourceTrackKey ?? SongKeyFromFileName(s.Path))
                 .Select(group =>
                     BuildSong(
                         group.Key,
@@ -68,11 +68,13 @@ public sealed class StagingReader(LedgerStore store, FolderInfoReader? folderInf
         KeyLedger ledger
     )
     {
-        var videoId = group.Select(g => g.Tags?.SourceVideoId).FirstOrDefault(id => id is not null);
+        var trackKey = group
+            .Select(g => g.Tags?.SourceTrackKey)
+            .FirstOrDefault(id => id is not null);
 
         LedgerRun? verdict = null;
-        if (videoId is not null)
-            ledger.TryGetLatestByVideoId(videoId, out verdict);
+        if (trackKey is not null)
+            ledger.TryGetLatestByTrackKey(trackKey, out verdict);
 
         var stems = group
             .Select(g => BuildStem(g.Path, g.Tags, folderInfo, verdict))
@@ -81,7 +83,7 @@ public sealed class StagingReader(LedgerStore store, FolderInfoReader? folderInf
 
         return new StagedSong
         {
-            SourceVideoId = videoId,
+            SourceTrackKey = trackKey,
             DisplayName = DisplayName(group, verdict, groupKey),
             Verdict = verdict,
             Stems = stems,

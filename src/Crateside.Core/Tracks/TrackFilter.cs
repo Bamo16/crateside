@@ -105,7 +105,7 @@ public static class TrackFilters
         || Contains(row.DerivedTitle, term)
         || Contains(row.Title, term)
         || Contains(row.Verdict?.Key, term)
-        || Contains(row.VideoId, term);
+        || Contains(row.TrackKey, term);
 
     private static bool Contains(string? value, string term) =>
         value?.Contains(term, StringComparison.OrdinalIgnoreCase) is true;

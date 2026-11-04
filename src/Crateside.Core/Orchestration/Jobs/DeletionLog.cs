@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Crateside.Core.Samples;
 
 namespace Crateside.Core.Orchestration.Jobs;
@@ -28,7 +29,7 @@ public sealed class DeletionLog(CratesidePaths paths, TimeProvider? time = null)
         if (!File.Exists(sample))
             return;
 
-        var videoId = StemTagReader.Read(sample)?.SourceVideoId;
+        var trackKey = StemTagReader.Read(sample)?.SourceTrackKey;
 
         RecycleBin.Remove(sample);
 
@@ -36,7 +37,7 @@ public sealed class DeletionLog(CratesidePaths paths, TimeProvider? time = null)
             new Deletion
             {
                 At = _time.GetUtcNow(),
-                VideoId = videoId,
+                TrackKey = trackKey,
                 FileName = Path.GetFileName(sample),
                 Reason = reason,
             }
@@ -106,7 +107,8 @@ public sealed record Deletion
     public required DateTimeOffset At { get; init; }
 
     /// <summary>The upload the file was of. Null for a file that carried no provenance.</summary>
-    public string? VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public string? TrackKey { get; init; }
 
     public required string FileName { get; init; }
 

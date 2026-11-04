@@ -39,7 +39,7 @@ public sealed class StagingReaderRealLibraryTests
     {
         var songs = Staged();
 
-        Assert.All(songs, song => Assert.NotNull(song.SourceVideoId));
+        Assert.All(songs, song => Assert.NotNull(song.SourceTrackKey));
         Assert.DoesNotContain(songs, s => s.AwaitingDetection);
     }
 

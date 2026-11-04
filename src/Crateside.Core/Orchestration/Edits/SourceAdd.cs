@@ -29,9 +29,9 @@ public sealed class SourceAdd(
         KeyLedger ledger
     )
     {
-        YouTubeUrl.TryGetVideoId(url, out var videoId);
+        YouTubeUrl.TryGetVideoId(url, out var trackKey);
 
-        return (videoId, label?.Trim()) switch
+        return (trackKey, label?.Trim()) switch
         {
             (null, _) => Impossible("That is not a YouTube video ID or URL crateside can read."),
             _ when type is null => Impossible("Say whether it is a vocal or an instrumental."),
@@ -43,17 +43,17 @@ public sealed class SourceAdd(
             ),
             (_, { } given) when track.Labels.Contains(given, StringComparer.OrdinalIgnoreCase) =>
                 Impossible($"This track already has a source called {given}."),
-            _ when track.Uploads.Contains(videoId, StringComparer.Ordinal) => Impossible(
+            _ when track.Uploads.Contains(trackKey, StringComparer.Ordinal) => Impossible(
                 "This track already has that upload."
             ),
-            _ when OtherSong(ledger, videoId, track.Song) is { } song => Impossible(
+            _ when OtherSong(ledger, trackKey, track.Song) is { } song => Impossible(
                 $"The ledger has that video as {song}. Adding it here would make the two one song."
             ),
             (_, { } given) => new AddPlan
             {
                 Source = new AddedSource
                 {
-                    VideoId = videoId,
+                    TrackKey = trackKey,
                     Label = given,
                     Type = type,
                 },
@@ -97,26 +97,26 @@ public sealed class SourceAdd(
 
         if (
             store
-                .Restate(track.VideoId, $"https://music.youtube.com/watch?v={source.VideoId}")
+                .Restate(track.TrackKey, $"https://music.youtube.com/watch?v={source.TrackKey}")
                 .Refusal is
             { } failure
         )
             return new AddOutcome { Problem = failure };
 
-        instructions.SetPlan(track.VideoId, track.Plan.Adding(source));
+        instructions.SetPlan(track.TrackKey, track.Plan.Adding(source));
 
         return new AddOutcome { Source = source };
     }
 
     /// <summary>What the upload is called, for suggesting what kind of file it is.</summary>
     public async Task<string?> TitleOfAsync(string? url, CancellationToken ct) =>
-        YouTubeUrl.TryGetVideoId(url, out var videoId)
-            ? (await probe.ReadAsync($"https://music.youtube.com/watch?v={videoId}", ct)).Title
+        YouTubeUrl.TryGetVideoId(url, out var trackKey)
+            ? (await probe.ReadAsync($"https://music.youtube.com/watch?v={trackKey}", ct)).Title
             : null;
 
     /// <summary>The song the ledger already has this video under, when it is not this track's.</summary>
-    private static string? OtherSong(KeyLedger ledger, string videoId, string? song) =>
-        ledger.SongFor(videoId) is { } known
+    private static string? OtherSong(KeyLedger ledger, string trackKey, string? song) =>
+        ledger.SongFor(trackKey) is { } known
         && !known.Equals(song, StringComparison.OrdinalIgnoreCase)
             ? known
             : null;

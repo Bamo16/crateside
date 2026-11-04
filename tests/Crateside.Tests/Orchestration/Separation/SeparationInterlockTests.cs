@@ -7,7 +7,7 @@ namespace Crateside.Tests.Orchestration.Separation;
 
 public sealed class SeparationInterlockTests : IDisposable
 {
-    private const string VideoId = "dQw4w9WgXcQ";
+    private const string TrackKey = "dQw4w9WgXcQ";
     private static readonly DateTimeOffset Launched = new(2026, 8, 13, 22, 0, 0, TimeSpan.Zero);
 
     private readonly string _path = Path.Combine(
@@ -42,7 +42,7 @@ public sealed class SeparationInterlockTests : IDisposable
     private SeparationInterlock Interlock() => new(new JobStore(_path), _probe, Paths);
 
     /// <summary>A stem on disk as stemforge-cli writes one, tagged with the upload it came from.</summary>
-    private string Stem(string name, string videoId = VideoId, DateTimeOffset? written = null)
+    private string Stem(string name, string trackKey = TrackKey, DateTimeOffset? written = null)
     {
         Directory.CreateDirectory(Paths.StemsUnresolvedKey);
 
@@ -53,7 +53,7 @@ public sealed class SeparationInterlockTests : IDisposable
         {
             file.Tag.Comment =
                 "stemforge/0.3.1 | preset: Vocal - Full | date: 2026-09-28 | "
-                + $"source: https://www.youtube.com/watch?v={videoId}";
+                + $"source: https://www.youtube.com/watch?v={trackKey}";
             file.Save();
         }
 
@@ -71,23 +71,23 @@ public sealed class SeparationInterlockTests : IDisposable
     [Fact]
     public void A_claimed_separation_is_live()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched);
+        Interlock().Claim(TrackKey, processId: 4242, Launched);
         _probe.Running[4242] = Launched;
 
         Assert.True(Interlock().TryGetLive(out var job));
-        Assert.Equal(VideoId, job.VideoId);
+        Assert.Equal(TrackKey, job.TrackKey);
     }
 
     [Fact]
     public void An_orphan_survives_a_restart_and_is_adopted_rather_than_relaunched()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched);
+        Interlock().Claim(TrackKey, processId: 4242, Launched);
         _probe.Running[4242] = Launched;
 
         // crateside restarts; on Windows the child is not killed with its parent.
         var reconciliation = Interlock().Reconcile();
 
-        Assert.Equal(VideoId, Assert.Single(reconciliation.Adopted).VideoId);
+        Assert.Equal(TrackKey, Assert.Single(reconciliation.Adopted).TrackKey);
         Assert.Empty(reconciliation.Abandoned);
         Assert.True(Interlock().TryGetLive(out _));
     }
@@ -95,12 +95,12 @@ public sealed class SeparationInterlockTests : IDisposable
     [Fact]
     public void An_adoption_is_recorded_on_the_job_and_keeps_the_process()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched);
+        Interlock().Claim(TrackKey, processId: 4242, Launched);
         _probe.Running[4242] = Launched;
 
         Interlock().Reconcile();
 
-        Assert.True(new JobStore(_path).TryGet(VideoId, JobStage.Separation, out var job));
+        Assert.True(new JobStore(_path).TryGet(TrackKey, JobStage.Separation, out var job));
         Assert.NotNull(job.AdoptedAt);
         Assert.Equal(JobStatus.Running, job.Status);
         Assert.Equal(4242, job.ProcessId);
@@ -111,7 +111,7 @@ public sealed class SeparationInterlockTests : IDisposable
     [Fact]
     public void An_adopted_run_that_is_gone_by_the_next_restart_is_abandoned()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched);
+        Interlock().Claim(TrackKey, processId: 4242, Launched);
         _probe.Running[4242] = Launched;
         Interlock().Reconcile();
 
@@ -125,16 +125,16 @@ public sealed class SeparationInterlockTests : IDisposable
     [Fact]
     public void A_claimed_separation_is_not_adopted()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched);
+        Interlock().Claim(TrackKey, processId: 4242, Launched);
 
-        Assert.True(new JobStore(_path).TryGet(VideoId, JobStage.Separation, out var job));
+        Assert.True(new JobStore(_path).TryGet(TrackKey, JobStage.Separation, out var job));
         Assert.Null(job.AdoptedAt);
     }
 
     [Fact]
     public void A_process_that_died_without_recording_a_result_is_abandoned_and_strikes()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched);
+        Interlock().Claim(TrackKey, processId: 4242, Launched);
 
         // The probe knows of no such process: the machine rebooted mid-batch.
         var reconciliation = Interlock().Reconcile();
@@ -149,7 +149,7 @@ public sealed class SeparationInterlockTests : IDisposable
     [Fact]
     public void A_recycled_pid_is_not_mistaken_for_our_separation()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched);
+        Interlock().Claim(TrackKey, processId: 4242, Launched);
 
         // Same id, different process: Windows handed 4242 to something else after the reboot.
         _probe.Running[4242] = Launched.AddHours(9);
@@ -163,7 +163,7 @@ public sealed class SeparationInterlockTests : IDisposable
     {
         // Written by an older crateside that did not record start times.
         new JobStore(_path).Record(
-            VideoId,
+            TrackKey,
             JobStage.Separation,
             JobStatus.Running,
             processId: 4242
@@ -176,10 +176,10 @@ public sealed class SeparationInterlockTests : IDisposable
     [Fact]
     public void Releasing_frees_the_gpu()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched);
+        Interlock().Claim(TrackKey, processId: 4242, Launched);
         _probe.Running[4242] = Launched;
 
-        Interlock().Release(VideoId);
+        Interlock().Release(TrackKey);
         _probe.Running.Remove(4242);
 
         Assert.False(Interlock().TryGetLive(out _));
@@ -190,17 +190,17 @@ public sealed class SeparationInterlockTests : IDisposable
     {
         var interlock = Interlock();
 
-        interlock.Claim(VideoId, processId: 4242, Launched);
-        Assert.Equal(1, interlock.Release(VideoId, error: "cuda out of memory").Strikes);
+        interlock.Claim(TrackKey, processId: 4242, Launched);
+        Assert.Equal(1, interlock.Release(TrackKey, error: "cuda out of memory").Strikes);
 
-        interlock.Claim(VideoId, processId: 4243, Launched);
-        Assert.Equal(JobStatus.Succeeded, interlock.Release(VideoId).Status);
+        interlock.Claim(TrackKey, processId: 4243, Launched);
+        Assert.Equal(JobStatus.Succeeded, interlock.Release(TrackKey).Status);
     }
 
     [Fact]
     public void A_separation_that_finished_while_crateside_was_down_is_recorded_as_succeeded()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched, ThreeStems);
+        Interlock().Claim(TrackKey, processId: 4242, Launched, ThreeStems);
         string[] stems =
         [
             Stem("Song (Vocal - Full).flac"),
@@ -220,7 +220,7 @@ public sealed class SeparationInterlockTests : IDisposable
     [Fact]
     public void A_separation_that_ended_short_is_abandoned_with_what_it_wrote()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched, ThreeStems);
+        Interlock().Claim(TrackKey, processId: 4242, Launched, ThreeStems);
         Stem("Song (Vocal - Full).flac");
 
         var abandoned = Assert.Single(Interlock().Reconcile().Abandoned);
@@ -232,7 +232,7 @@ public sealed class SeparationInterlockTests : IDisposable
     [Fact]
     public void Stems_from_an_earlier_run_of_the_track_do_not_count()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched, ThreeStems);
+        Interlock().Claim(TrackKey, processId: 4242, Launched, ThreeStems);
         Stem("Song (Vocal - Full).flac", written: Launched.AddDays(-3));
         Stem("Song (Instrumental - Full).flac", written: Launched.AddDays(-3));
         Stem("Song (Drums).flac");
@@ -243,10 +243,10 @@ public sealed class SeparationInterlockTests : IDisposable
     [Fact]
     public void Another_tracks_stems_do_not_count()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched, ThreeStems);
-        Stem("Other (Vocal - Full).flac", videoId: "otherVideo0");
-        Stem("Other (Instrumental - Full).flac", videoId: "otherVideo0");
-        Stem("Other (Drums).flac", videoId: "otherVideo0");
+        Interlock().Claim(TrackKey, processId: 4242, Launched, ThreeStems);
+        Stem("Other (Vocal - Full).flac", trackKey: "otherVideo0");
+        Stem("Other (Instrumental - Full).flac", trackKey: "otherVideo0");
+        Stem("Other (Drums).flac", trackKey: "otherVideo0");
 
         Assert.Single(Interlock().Reconcile().Abandoned);
     }
@@ -254,11 +254,11 @@ public sealed class SeparationInterlockTests : IDisposable
     [Fact]
     public void An_adopted_run_keeps_its_promise_and_is_settled_when_it_ends()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched, ThreeStems);
+        Interlock().Claim(TrackKey, processId: 4242, Launched, ThreeStems);
         _probe.Running[4242] = Launched;
         Interlock().Reconcile();
 
-        Assert.True(new JobStore(_path).TryGet(VideoId, JobStage.Separation, out var adopted));
+        Assert.True(new JobStore(_path).TryGet(TrackKey, JobStage.Separation, out var adopted));
         Assert.Equal(ThreeStems, adopted.Promise);
         Assert.Empty(Interlock().SettleEnded().Finished);
 
@@ -275,8 +275,8 @@ public sealed class SeparationInterlockTests : IDisposable
     [Fact]
     public void Reconciling_a_clean_startup_finds_nothing()
     {
-        Interlock().Claim(VideoId, processId: 4242, Launched);
-        Interlock().Release(VideoId);
+        Interlock().Claim(TrackKey, processId: 4242, Launched);
+        Interlock().Release(TrackKey);
 
         Assert.False(Interlock().Reconcile().FoundAnything);
     }

@@ -99,7 +99,7 @@ public sealed class TrackAnnotationReaderTests : IDisposable
                             new WorkItem
                             {
                                 PlaylistItemId = $"PLI-{Video}",
-                                VideoId = Video,
+                                TrackKey = Video,
                                 Title = "Style",
                             },
                         ],

@@ -27,14 +27,14 @@ public sealed class TrackRename(
         "is open in Ableton and uses these files. Open another set, then rename.";
 
     /// <summary>What renaming this track to <paramref name="name"/> would do, or why it cannot.</summary>
-    public RenamePlan PlanFor(string videoId, string? name)
+    public RenamePlan PlanFor(string trackKey, string? name)
     {
         var wanted = name?.Trim() ?? string.Empty;
 
         if (!StemFileName.IsUsable(wanted))
             return Impossible(wanted, @"A name cannot be blank or contain \ / : * ? "" < > |.");
 
-        var moves = Files(videoId)
+        var moves = Files(trackKey)
             .Select(file => new Move(file.Path, StemFileName.Renamed(file.Path, wanted), file.Root))
             .Where(move => !PathsMatch(move.From, move.To))
             .ToArray();
@@ -74,32 +74,33 @@ public sealed class TrackRename(
     /// The user's sets that use any of this track's files, whatever the new name, and why the
     /// rename must wait if one of them is open.
     /// </summary>
-    public SetCheck SetsUsing(string videoId) =>
-        Check([.. Files(videoId).Select(file => file.Path)]);
+    public SetCheck SetsUsing(string trackKey) =>
+        Check([.. Files(trackKey).Select(file => file.Path)]);
 
     /// <summary>Records the name and puts it on whatever files the track already has.</summary>
-    public RenameOutcome Apply(string videoId, string name) => Rename(videoId, name, stored: name);
+    public RenameOutcome Apply(string trackKey, string name) =>
+        Rename(trackKey, name, stored: name);
 
     /// <summary>
     /// Drops the override and puts the derived name back on the files.
     /// </summary>
-    public RenameOutcome Revert(string videoId, string derivedName) =>
-        Rename(videoId, derivedName, stored: null);
+    public RenameOutcome Revert(string trackKey, string derivedName) =>
+        Rename(trackKey, derivedName, stored: null);
 
     /// <summary>
     /// Stores the instruction, then moves the files — in that order, so a rename stopped half way
     /// is finished by pressing again.
     /// </summary>
-    private RenameOutcome Rename(string videoId, string name, string? stored)
+    private RenameOutcome Rename(string trackKey, string name, string? stored)
     {
-        var plan = PlanFor(videoId, name);
+        var plan = PlanFor(trackKey, name);
 
         if (plan.Refusal is { } refusal)
             return new RenameOutcome { Problem = refusal };
 
         // A sourceless song is identified by its file name, so the files carry the name.
-        if (!SourcelessSongs.IsKey(videoId))
-            instructions.SetName(videoId, stored);
+        if (!SourcelessSongs.IsKey(trackKey))
+            instructions.SetName(trackKey, stored);
 
         List<Move> done = [];
         List<string> markersLost = [];
@@ -241,10 +242,10 @@ public sealed class TrackRename(
             .OfType<string>()
             .FirstOrDefault();
 
-    private IEnumerable<(string Path, string Root)> Files(string videoId) =>
+    private IEnumerable<(string Path, string Root)> Files(string trackKey) =>
         [
-            .. staged.Of(videoId).Select(stem => (stem.Path, paths.StagingFolder)),
-            .. (library?.Of(videoId) ?? []).Select(path => (path, paths.LibraryFolder)),
+            .. staged.Of(trackKey).Select(stem => (stem.Path, paths.StagingFolder)),
+            .. (library?.Of(trackKey) ?? []).Select(path => (path, paths.LibraryFolder)),
         ];
 
     private string RootOf(string path) =>

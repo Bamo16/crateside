@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Plans;
 
 namespace Crateside.Core.Tracks;
@@ -5,7 +6,8 @@ namespace Crateside.Core.Tracks;
 /// <summary>What a row knows about itself that adding a source needs (ADR 0014).</summary>
 public sealed record TrackRowFacts
 {
-    public required string VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
 
     /// <summary>The ledger identity every upload of this track resolves to.</summary>
     public string? Song { get; init; }

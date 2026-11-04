@@ -29,13 +29,13 @@ public sealed class TrackRemoval(
                 .Where(stem => !stem.IsAdopted),
         ];
 
-    public TrackRemovalOutcome Apply(string videoId, IReadOnlyList<string> uploads)
+    public TrackRemovalOutcome Apply(string trackKey, IReadOnlyList<string> uploads)
     {
         var recycling = Recycling(uploads);
 
         // Both, because either one alone puts the track back on the next scan (ADR 0021).
-        instructions.Forget(videoId);
-        intake.Forget(videoId);
+        instructions.Forget(trackKey);
+        intake.Forget(trackKey);
 
         foreach (var upload in uploads.Distinct(StringComparer.Ordinal))
             workingSet.Discard(upload);

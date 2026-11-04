@@ -50,7 +50,7 @@ public sealed class PresetCatalogRealDataTests
 
         var unresolved = ProcessedTracks
             .Scan(TestLedger.FromReal(), [RealPaths.Create().StagingFolder, library])
-            .StemsByVideoId.SelectMany(entry => entry.Value)
+            .StemsByTrackKey.SelectMany(entry => entry.Value)
             .Select(file => file.Preset)
             .Where(preset => preset is not null && !StagedFile.IsWarpGuidePreset(preset))
             .Distinct(StringComparer.OrdinalIgnoreCase)

@@ -32,7 +32,7 @@ public sealed class WorkingSet(CratesidePaths paths)
         : this(new CratesidePaths { WorkingFolder = root }) { }
 
     /// <summary>Every video ID currently holding a working set.</summary>
-    public IReadOnlyList<string> VideoIds =>
+    public IReadOnlyList<string> TrackKeys =>
         Directory.Exists(_root)
             ? [.. Directory.EnumerateDirectories(_root).Select(Path.GetFileName).OfType<string>()]
             : [];
@@ -46,9 +46,9 @@ public sealed class WorkingSet(CratesidePaths paths)
             : 0;
 
     /// <summary>The folder for one track, created if it is not there yet.</summary>
-    public string Prepare(string videoId)
+    public string Prepare(string trackKey)
     {
-        var path = DirectoryFor(videoId);
+        var path = DirectoryFor(trackKey);
 
         Directory.CreateDirectory(path);
 
@@ -56,26 +56,26 @@ public sealed class WorkingSet(CratesidePaths paths)
     }
 
     /// <summary>Where the whole-file evidence for this track belongs.</summary>
-    public string EvidencePathFor(string videoId) =>
-        Path.Combine(DirectoryFor(videoId), EvidenceFileName);
+    public string EvidencePathFor(string trackKey) =>
+        Path.Combine(DirectoryFor(trackKey), EvidenceFileName);
 
     /// <summary>Whether evidence has been produced for this track — the evidence stage's "done".</summary>
-    public bool HasEvidence(string videoId) => File.Exists(EvidencePathFor(videoId));
+    public bool HasEvidence(string trackKey) => File.Exists(EvidencePathFor(trackKey));
 
     /// <summary>
     /// The whole-file evidence itself, when it is small enough to hand to a reader directly.
     /// </summary>
-    public bool TryReadEvidence(string videoId, out string evidence)
+    public bool TryReadEvidence(string trackKey, out string evidence)
     {
         evidence = null!;
 
         try
         {
             if (
-                new FileInfo(EvidencePathFor(videoId)) is
+                new FileInfo(EvidencePathFor(trackKey)) is
                 { Exists: true, Length: <= MaxInlineBytes }
             )
-                evidence = File.ReadAllText(EvidencePathFor(videoId));
+                evidence = File.ReadAllText(EvidencePathFor(trackKey));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
 
@@ -83,14 +83,14 @@ public sealed class WorkingSet(CratesidePaths paths)
     }
 
     /// <summary>Where the download's own account of itself belongs.</summary>
-    public string AcquisitionPathFor(string videoId) =>
-        Path.Combine(DirectoryFor(videoId), AcquisitionFileName);
+    public string AcquisitionPathFor(string trackKey) =>
+        Path.Combine(DirectoryFor(trackKey), AcquisitionFileName);
 
     /// <summary>
     /// How this track's retained download went, or null — no finding — when nothing recorded it.
     /// </summary>
-    public Acquisition? AcquisitionFor(string videoId) =>
-        WorkingSetJsonContext.Default.Acquisition.ReadFileOrDefault(AcquisitionPathFor(videoId));
+    public Acquisition? AcquisitionFor(string trackKey) =>
+        WorkingSetJsonContext.Default.Acquisition.ReadFileOrDefault(AcquisitionPathFor(trackKey));
 
     /// <summary>
     /// Every recorded acquisition, by video ID — what the rows are drawn from. A folder's is read
@@ -106,38 +106,38 @@ public sealed class WorkingSet(CratesidePaths paths)
 
         foreach (var directory in new DirectoryInfo(_root).EnumerateDirectories())
         {
-            var videoId = directory.Name;
+            var trackKey = directory.Name;
             var written = directory.LastWriteTimeUtc;
 
-            if (_acquisitions.TryGetValue(videoId, out var kept) && kept.Written == written)
+            if (_acquisitions.TryGetValue(trackKey, out var kept) && kept.Written == written)
             {
                 if (kept.Acquisition is { } acquisition)
-                    found[videoId] = acquisition;
+                    found[trackKey] = acquisition;
 
                 continue;
             }
 
-            var read = AcquisitionFor(videoId);
+            var read = AcquisitionFor(trackKey);
 
-            if (read is not null || !File.Exists(AcquisitionPathFor(videoId)))
-                _acquisitions[videoId] = (written, read);
+            if (read is not null || !File.Exists(AcquisitionPathFor(trackKey)))
+                _acquisitions[trackKey] = (written, read);
 
             if (read is not null)
-                found[videoId] = read;
+                found[trackKey] = read;
         }
 
         return found;
     }
 
     /// <summary>Writes down how the download went, replacing whatever was there.</summary>
-    public void SaveAcquisition(string videoId, Acquisition acquisition)
+    public void SaveAcquisition(string trackKey, Acquisition acquisition)
     {
-        _acquisitions.TryRemove(videoId, out _);
+        _acquisitions.TryRemove(trackKey, out _);
 
         try
         {
             WorkingSetJsonContext.Default.Acquisition.WriteFile(
-                AcquisitionPathFor(videoId),
+                AcquisitionPathFor(trackKey),
                 acquisition
             );
         }
@@ -151,12 +151,12 @@ public sealed class WorkingSet(CratesidePaths paths)
     /// Records that the user has accepted this download's audio, and says whether there was one
     /// to accept.
     /// </summary>
-    public bool AcceptAcquisition(string videoId)
+    public bool AcceptAcquisition(string trackKey)
     {
-        if (AcquisitionFor(videoId) is not { } acquisition)
+        if (AcquisitionFor(trackKey) is not { } acquisition)
             return false;
 
-        SaveAcquisition(videoId, acquisition with { IsAccepted = true });
+        SaveAcquisition(trackKey, acquisition with { IsAccepted = true });
 
         return true;
     }
@@ -164,9 +164,9 @@ public sealed class WorkingSet(CratesidePaths paths)
     /// <summary>
     /// The retained source audio, if exactly one file of it is there.
     /// </summary>
-    public bool TryGetSource(string videoId, out string path)
+    public bool TryGetSource(string trackKey, out string path)
     {
-        var directory = DirectoryFor(videoId);
+        var directory = DirectoryFor(trackKey);
 
         path = (
             Directory.Exists(directory)
@@ -187,19 +187,19 @@ public sealed class WorkingSet(CratesidePaths paths)
     }
 
     /// <summary>When the track left staging, or null while no clock is running for it.</summary>
-    public DateTimeOffset? LeftStagingAt(string videoId) =>
+    public DateTimeOffset? LeftStagingAt(string trackKey) =>
         WorkingSetJsonContext
             .Default.LeftStaging.ReadFileOrDefault(
-                Path.Combine(DirectoryFor(videoId), LeftStagingFileName)
+                Path.Combine(DirectoryFor(trackKey), LeftStagingFileName)
             )
             ?.At;
 
-    public void RecordLeftStaging(string videoId, DateTimeOffset at)
+    public void RecordLeftStaging(string trackKey, DateTimeOffset at)
     {
         try
         {
             WorkingSetJsonContext.Default.LeftStaging.WriteFile(
-                Path.Combine(DirectoryFor(videoId), LeftStagingFileName),
+                Path.Combine(DirectoryFor(trackKey), LeftStagingFileName),
                 new LeftStaging(at)
             );
         }
@@ -209,22 +209,22 @@ public sealed class WorkingSet(CratesidePaths paths)
         }
     }
 
-    public void ClearLeftStaging(string videoId)
+    public void ClearLeftStaging(string trackKey)
     {
         try
         {
-            File.Delete(Path.Combine(DirectoryFor(videoId), LeftStagingFileName));
+            File.Delete(Path.Combine(DirectoryFor(trackKey), LeftStagingFileName));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
     /// <summary>Throws the whole working set away, once the track is imported.</summary>
-    public void Discard(string videoId)
+    public void Discard(string trackKey)
     {
         try
         {
-            if (Directory.Exists(DirectoryFor(videoId)))
-                Directory.Delete(DirectoryFor(videoId), recursive: true);
+            if (Directory.Exists(DirectoryFor(trackKey)))
+                Directory.Delete(DirectoryFor(trackKey), recursive: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -232,7 +232,7 @@ public sealed class WorkingSet(CratesidePaths paths)
         }
     }
 
-    private string DirectoryFor(string videoId) => Path.Combine(_root, videoId);
+    private string DirectoryFor(string trackKey) => Path.Combine(_root, trackKey);
 
     private static long TryLength(string path)
     {

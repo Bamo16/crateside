@@ -1,7 +1,7 @@
 <div class="upload-card">
     @if (_playing)
     {
-        <iframe class="player" src="@($"https://www.youtube-nocookie.com/embed/{VideoId}?autoplay=1")"
+        <iframe class="player" src="@($"https://www.youtube-nocookie.com/embed/{TrackKey}?autoplay=1")"
                 title="@Role" allow="autoplay; encrypted-media" allowfullscreen></iframe>
     }
     else
@@ -12,8 +12,8 @@
         </button>
     }
     <div class="upload-meta">
-        <span class="mono">@VideoId</span>
-        <a href="@($"https://www.youtube.com/watch?v={VideoId}")" target="_blank" rel="noopener noreferrer">YouTube ↗</a>
+        <span class="mono">@TrackKey</span>
+        <a href="@($"https://www.youtube.com/watch?v={TrackKey}")" target="_blank" rel="noopener noreferrer">YouTube ↗</a>
     </div>
     <span class="role">@Role</span>
 </div>
@@ -22,7 +22,7 @@
     private bool _playing;
 
     [Parameter, EditorRequired]
-    public required string VideoId { get; set; }
+    public required string TrackKey { get; set; }
 
     [Parameter, EditorRequired]
     public required string Role { get; set; }

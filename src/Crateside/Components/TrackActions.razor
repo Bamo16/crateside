@@ -185,7 +185,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
     [Parameter]
     public EventCallback<(string Title, string Note)> Removed { get; set; }
 
-    private bool IsBumped => Bumped.VideoId == Row.VideoId;
+    private bool IsBumped => Bumped.TrackKey == Row.TrackKey;
 
     /// <summary>
     /// Waiting is the only time this means anything: once a stage has the track, the work lists
@@ -193,7 +193,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
     /// </summary>
     private bool CanBump => Row.State is TrackState.Queued or TrackState.JudgedInLine;
 
-    private bool IsPassed => Quota.PassedVideoId == Row.VideoId;
+    private bool IsPassed => Quota.PassedTrackKey == Row.TrackKey;
 
     /// <summary>Only while weekly use holds judging back, and only for a track headed for it.</summary>
     private bool CanPass => Row.IsAwaitingJudgment && Quota.Hold is not null;
@@ -235,8 +235,8 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
 
     private async Task Bump()
     {
-        Bumped.Bump(Row.VideoId);
-        Actions.Record(Row.VideoId, UserActionKind.Bumped);
+        Bumped.Bump(Row.TrackKey);
+        Actions.Record(Row.TrackKey, UserActionKind.Bumped);
 
         await Tracks.RefreshAsync(_circuit.Token);
     }
@@ -244,15 +244,15 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
     private async Task ClearBump()
     {
         Bumped.Clear();
-        Actions.Record(Row.VideoId, UserActionKind.BumpCleared);
+        Actions.Record(Row.TrackKey, UserActionKind.BumpCleared);
 
         await Tracks.RefreshAsync(_circuit.Token);
     }
 
     private async Task Pass()
     {
-        Quota.Pass(Row.VideoId);
-        Actions.Record(Row.VideoId, UserActionKind.PassedTheHold);
+        Quota.Pass(Row.TrackKey);
+        Actions.Record(Row.TrackKey, UserActionKind.PassedTheHold);
         Signals.Wake([JobStage.Verdict]);
 
         await Tracks.RefreshAsync(_circuit.Token);
@@ -261,7 +261,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
     private async Task ClearPass()
     {
         Quota.ClearPass();
-        Actions.Record(Row.VideoId, UserActionKind.PassCleared);
+        Actions.Record(Row.TrackKey, UserActionKind.PassCleared);
 
         await Tracks.RefreshAsync(_circuit.Token);
     }
@@ -271,15 +271,15 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
         List<JobStage> forgiven = [];
 
         foreach (var stage in Enum.GetValues<JobStage>())
-            if (Jobs.TryGet(Row.VideoId, stage, out var job) && job is { Status: JobStatus.Failed })
+            if (Jobs.TryGet(Row.TrackKey, stage, out var job) && job is { Status: JobStatus.Failed })
             {
-                Jobs.Forgive(Row.VideoId, stage);
+                Jobs.Forgive(Row.TrackKey, stage);
                 forgiven.Add(stage);
             }
 
         if (forgiven.Count > 0)
             Actions.Record(
-                Row.VideoId,
+                Row.TrackKey,
                 UserActionKind.Retried,
                 string.Join(", ", forgiven),
                 forgiven.Min()
@@ -302,7 +302,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
                     new WorkItem
                     {
                         PlaylistItemId = playlistItemId,
-                        VideoId = Row.VideoId,
+                        TrackKey = Row.TrackKey,
                         Title = Row.Title,
                     },
                 ]
@@ -311,7 +311,7 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
             _problem = results.FirstOrDefault(result => !result.Removed)?.Reason;
 
             if (_problem is null)
-                Actions.Record(Row.VideoId, UserActionKind.RemovedFromPlaylist);
+                Actions.Record(Row.TrackKey, UserActionKind.RemovedFromPlaylist);
 
             await Tracks.RefreshAsync(_circuit.Token);
         }
@@ -352,11 +352,11 @@ else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
 
         try
         {
-            var outcome = Removal.Apply(Row.VideoId, Row.Facts.Uploads);
+            var outcome = Removal.Apply(Row.TrackKey, Row.Facts.Uploads);
             var title = Row.Title;
 
             if (outcome.Problem is null)
-                Actions.Record(Row.VideoId, UserActionKind.Forgotten, $"{outcome.Recycled} recycled");
+                Actions.Record(Row.TrackKey, UserActionKind.Forgotten, $"{outcome.Recycled} recycled");
 
             CancelRemove();
 

@@ -116,7 +116,7 @@ public sealed class PersonsKey(
                 Evidence =
                     basis?.Evidence
                     ?? (
-                        workingSet.TryReadEvidence(order.VideoId, out var evidence)
+                        workingSet.TryReadEvidence(order.TrackKey, out var evidence)
                             ? LateReading.Unstamped(evidence)
                             : null
                     ),
@@ -131,11 +131,11 @@ public sealed class PersonsKey(
         VerdictRecording.LinkSwappedSource(store, order);
 
         if (
-            jobs.TryGet(order.VideoId, JobStage.Verdict, out var job)
+            jobs.TryGet(order.TrackKey, JobStage.Verdict, out var job)
             && job.Status is JobStatus.AwaitingPerson
         )
             jobs.Record(
-                order.VideoId,
+                order.TrackKey,
                 JobStage.Verdict,
                 JobStatus.Succeeded,
                 summary: $"{center.Name}, your call"
@@ -146,12 +146,12 @@ public sealed class PersonsKey(
 
     /// <summary>The evidence and pages kept for a track that has no run to read them from.</summary>
     private RunEvidence? Pending(WorkOrder order) =>
-        workingSet.TryReadEvidence(order.VideoId, out var evidence)
+        workingSet.TryReadEvidence(order.TrackKey, out var evidence)
             ? RunEvidence.From(
                 new RunRecord
                 {
                     RecordedAt = time.GetUtcNow(),
-                    Song = order.VideoId,
+                    Song = order.TrackKey,
                     Confidence = KeyConfidence.Withheld,
                     Evidence = evidence,
                     Lookups = VerdictRecording.Serialized(lookups.CachedFor(order) ?? []),

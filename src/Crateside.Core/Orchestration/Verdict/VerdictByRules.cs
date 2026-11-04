@@ -15,7 +15,7 @@ public sealed class VerdictByRules(
     /// <summary>The recorded ruling, or null when the rules leave the track open.</summary>
     public async Task<VerdictResult?> TryRuleAsync(WorkOrder order, CancellationToken ct = default)
     {
-        if (!workingSet.TryReadEvidence(order.VideoId, out var evidence))
+        if (!workingSet.TryReadEvidence(order.TrackKey, out var evidence))
             return null;
 
         var found = await lookups.LookUpAsync(order, ct);

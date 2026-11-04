@@ -2,7 +2,7 @@
 @using Crateside.Core.Samples
 @using Crateside.Core.Tracks
 
-@if (Editor.Adding == Row.VideoId)
+@if (Editor.Adding == Row.TrackKey)
 {
     <div class="add-source">
         <div class="add-fields @(Stacked ? "stacked" : null)">
@@ -68,7 +68,7 @@
         </div>
     </div>
 }
-else if (Editor.Adopting == Row.VideoId)
+else if (Editor.Adopting == Row.TrackKey)
 {
     <div class="add-source">
         <div class="add-fields @(Stacked ? "stacked" : null)">
@@ -129,5 +129,5 @@ else if (Editor.Adopting == Row.VideoId)
     public bool Stacked { get; set; }
 
     public static bool IsOpen(StemEditor editor, TrackRow row) =>
-        editor.Adding == row.VideoId || editor.Adopting == row.VideoId;
+        editor.Adding == row.TrackKey || editor.Adopting == row.TrackKey;
 }

@@ -118,18 +118,18 @@ public sealed class VerdictDrainer(
 
         try
         {
-            jobs.Record(order.VideoId, JobStage.Verdict, JobStatus.Running);
-            control.ReportJudging(order.VideoId, $"Judging {order.Title} from bars");
+            jobs.Record(order.TrackKey, JobStage.Verdict, JobStatus.Running);
+            control.ReportJudging(order.TrackKey, $"Judging {order.Title} from bars");
 
             var result =
-                workingSet.HasEvidence(order.VideoId)
-                && await completer.CompleteAsync(order.VideoId, direction.Audio, ct)
+                workingSet.HasEvidence(order.TrackKey)
+                && await completer.CompleteAsync(order.TrackKey, direction.Audio, ct)
                     is { } incomplete
                     ? VerdictResult.Failed($"not judged: {incomplete}")
                     : await judge.JudgeAsync(order, direction, onStep, ct);
 
             jobs.Record(
-                order.VideoId,
+                order.TrackKey,
                 JobStage.Verdict,
                 result switch
                 {
@@ -184,7 +184,7 @@ public sealed class VerdictDrainer(
     }
 
     private bool HasWorkingEvidence(LedgerRun run) =>
-        run is { SourceVideoId: { } videoId } && workingSet.HasEvidence(videoId);
+        run is { SourceTrackKey: { } trackKey } && workingSet.HasEvidence(trackKey);
 
     /// <summary>
     /// Puts back the evidence the janitor cleared and drops the cached source pages, so the new
@@ -192,21 +192,22 @@ public sealed class VerdictDrainer(
     /// </summary>
     private WorkOrder PrepareRejudge(WorkOrder order, KeyLedger ledger)
     {
-        var folder = workingSet.Prepare(order.VideoId);
+        var folder = workingSet.Prepare(order.TrackKey);
 
         if (
-            !workingSet.HasEvidence(order.VideoId)
-            && ledger.SongFor(order.VideoId) is { } song
+            !workingSet.HasEvidence(order.TrackKey)
+            && ledger.SongFor(order.TrackKey) is { } song
             && store.LatestEvidenceJson().TryGetValue(song, out var evidence)
         )
             File.WriteAllText(
-                workingSet.EvidencePathFor(order.VideoId),
+                workingSet.EvidencePathFor(order.TrackKey),
                 LateReading.Unstamped(evidence)
             );
 
         File.Delete(Path.Combine(folder, VerdictRunner.SourcesFileName));
 
-        return ledger.TryGetLatestByVideoId(order.VideoId, out var run) && run.SourceUrl is { } url
+        return
+            ledger.TryGetLatestByTrackKey(order.TrackKey, out var run) && run.SourceUrl is { } url
             ? order with
             {
                 SourceUrl = url,
@@ -233,12 +234,12 @@ public sealed class VerdictDrainer(
 
         while (selector.TryPickNext(view, ledger, out var item, skip: _triedByRules))
         {
-            _triedByRules.Add(item.VideoId);
+            _triedByRules.Add(item.TrackKey);
 
             var order = WorkOrder.Compose(item, ledger);
 
             // The judge's pass reports what is missing, as a failure of its own.
-            if (await completer.CompleteAsync(item.VideoId, ct: ct) is not null)
+            if (await completer.CompleteAsync(item.TrackKey, ct: ct) is not null)
                 continue;
 
             if (await rules.TryRuleAsync(order, ct) is { } ruled)
@@ -254,7 +255,7 @@ public sealed class VerdictDrainer(
     private StageTick Ruled(WorkItem item, WorkOrder order, VerdictResult ruled)
     {
         jobs.Record(
-            item.VideoId,
+            item.TrackKey,
             JobStage.Verdict,
             ruled.IsSuccess ? JobStatus.Succeeded : JobStatus.Failed,
             error: ruled.Error,
@@ -267,7 +268,7 @@ public sealed class VerdictDrainer(
     private StageTick WaitsForPerson(WorkItem item, WorkOrder order)
     {
         jobs.Record(
-            item.VideoId,
+            item.TrackKey,
             JobStage.Verdict,
             JobStatus.AwaitingPerson,
             summary: "no ruling, and no judge: waiting for your call"
@@ -286,7 +287,7 @@ public sealed class VerdictDrainer(
         if (!backfill && hold is null)
             guard.ClearPass();
 
-        if (hold is not null && guard.PassedVideoId is null)
+        if (hold is not null && guard.PassedTrackKey is null)
             return StageTick.Held(hold.Reason);
 
         WorkListsView view;
@@ -320,7 +321,7 @@ public sealed class VerdictDrainer(
         WorkItem item;
         var isRejudge = false;
 
-        var picked = (backfill, hold, guard.PassedVideoId) switch
+        var picked = (backfill, hold, guard.PassedTrackKey) switch
         {
             (true, _, _) => selector.TryPickIdle(
                 view,
@@ -355,27 +356,30 @@ public sealed class VerdictDrainer(
         if (isRejudge)
             order = PrepareRejudge(order, ledger);
 
-        jobs.Record(item.VideoId, JobStage.Verdict, JobStatus.Running);
-        control.ReportJudging(item.VideoId, $"Judging {order.Title}");
+        jobs.Record(item.TrackKey, JobStage.Verdict, JobStatus.Running);
+        control.ReportJudging(item.TrackKey, $"Judging {order.Title}");
 
         try
         {
             if (isRejudge && sources.PathFor(order) is null)
             {
-                control.ReportJudging(item.VideoId, $"Downloading {order.Title} again to judge it");
+                control.ReportJudging(
+                    item.TrackKey,
+                    $"Downloading {order.Title} again to judge it"
+                );
                 await downloads.RunAsync(
                     order.SourceUrl,
-                    workingSet.Prepare(order.VideoId),
+                    workingSet.Prepare(order.TrackKey),
                     ct: ct
                 );
-                control.ReportJudging(item.VideoId, $"Judging {order.Title}");
+                control.ReportJudging(item.TrackKey, $"Judging {order.Title}");
             }
 
-            if (await completer.CompleteAsync(item.VideoId, ct: ct) is { } incomplete)
+            if (await completer.CompleteAsync(item.TrackKey, ct: ct) is { } incomplete)
             {
                 var error = $"not judged: {incomplete}";
 
-                jobs.Record(item.VideoId, JobStage.Verdict, JobStatus.Failed, error: error);
+                jobs.Record(item.TrackKey, JobStage.Verdict, JobStatus.Failed, error: error);
 
                 return StageTick.Ran(order, false, error);
             }
@@ -395,7 +399,7 @@ public sealed class VerdictDrainer(
                 var refused = control.Backoff.Refused(reason, result.RetryAfter);
 
                 jobs.Record(
-                    item.VideoId,
+                    item.TrackKey,
                     JobStage.Verdict,
                     JobStatus.Held,
                     error: refused.Reason,
@@ -409,7 +413,7 @@ public sealed class VerdictDrainer(
             // and the spend-down cuts itself off (ADR 0067).
             if (result.IsAgentUnavailable)
             {
-                jobs.Record(item.VideoId, JobStage.Verdict, JobStatus.Held, error: result.Error);
+                jobs.Record(item.TrackKey, JobStage.Verdict, JobStatus.Held, error: result.Error);
 
                 if (!backfill)
                     control.Pause();
@@ -420,7 +424,7 @@ public sealed class VerdictDrainer(
             control.Backoff.Served();
 
             jobs.Record(
-                item.VideoId,
+                item.TrackKey,
                 JobStage.Verdict,
                 result.IsSuccess ? JobStatus.Succeeded : JobStatus.Failed,
                 error: result.Error,

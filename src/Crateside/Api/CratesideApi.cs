@@ -51,7 +51,7 @@ public static class CratesideApi
             .WithName("ListTracks")
             .WithSummary("The Tracks page's rows, narrowed as its filters narrow them.");
         tracks
-            .MapGet("/{videoId}", ReadAsync)
+            .MapGet("/{trackKey}", ReadAsync)
             .WithName("GetTrack")
             .WithSummary(
                 "One track: its row, verdict evidence, job history, stems with their warps, and its store records."
@@ -90,7 +90,10 @@ public static class CratesideApi
 
     /// <summary>A missing track's 404 carries a body, so the status code pages leave it alone.</summary>
     private static async Task<Results<Ok<TrackDetails>, NotFound<ProblemDetails>>> ReadAsync(
-        [Description("The track's YouTube video ID, as in /song/{videoId}.")] string videoId,
+        [Description(
+            "The track key, as in /song/{trackKey}: a YouTube video ID, or what ADR 0077 keys any other source by."
+        )]
+            string trackKey,
         TracksService tracks,
         TrackDetailsReader details,
         CancellationToken ct
@@ -98,13 +101,13 @@ public static class CratesideApi
     {
         await tracks.EnsureFreshAsync(Freshness, ct);
 
-        return details.Read(videoId) is { } found
+        return details.Read(trackKey) is { } found
             ? TypedResults.Ok(found)
             : TypedResults.NotFound(
                 new ProblemDetails
                 {
                     Status = StatusCodes.Status404NotFound,
-                    Title = $"crateside has no track for {videoId}",
+                    Title = $"crateside has no track for {trackKey}",
                 }
             );
     }

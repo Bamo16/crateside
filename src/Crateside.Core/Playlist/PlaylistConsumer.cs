@@ -35,20 +35,20 @@ public sealed class PlaylistConsumer(
         if (entries.Count is 0)
             return;
 
-        var offered = entries.Select(item => item.VideoId).ToList();
+        var offered = entries.Select(item => item.TrackKey).ToList();
 
         try
         {
             var results = await playlist.RemoveAsync(entries, ct);
-            var videoIdOf = entries.ToDictionary(
+            var trackKeyOf = entries.ToDictionary(
                 item => item.PlaylistItemId!,
-                item => item.VideoId,
+                item => item.TrackKey,
                 StringComparer.Ordinal
             );
 
             // Kept on the record rather than discarded: nothing will try these again, so this is
             // the only trace that they were left in the playlist, and why (#34).
-            intake.RecordRemovalFailures(FailuresByVideo(results, videoIdOf));
+            intake.RecordRemovalFailures(FailuresByVideo(results, trackKeyOf));
         }
         catch (PlaylistUnavailableException)
         {
@@ -61,11 +61,11 @@ public sealed class PlaylistConsumer(
     /// <summary>One failure per video: a playlist can hold the same video twice, and both entries can fail.</summary>
     internal static Dictionary<string, RemovalFailure> FailuresByVideo(
         IEnumerable<RemovalResult> results,
-        IReadOnlyDictionary<string, string> videoIdOf
+        IReadOnlyDictionary<string, string> trackKeyOf
     ) =>
         results
-            .Where(result => !result.Removed && videoIdOf.ContainsKey(result.PlaylistItemId))
-            .GroupBy(result => videoIdOf[result.PlaylistItemId], StringComparer.Ordinal)
+            .Where(result => !result.Removed && trackKeyOf.ContainsKey(result.PlaylistItemId))
+            .GroupBy(result => trackKeyOf[result.PlaylistItemId], StringComparer.Ordinal)
             .ToDictionary(
                 group => group.Key,
                 group => new RemovalFailure

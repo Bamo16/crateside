@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Crateside.Core.Orchestration.Jobs;
 
@@ -15,20 +16,20 @@ public sealed class StageNotes(CratesidePaths paths, TimeProvider? time = null)
     internal StageNotes(string path, TimeProvider? time = null)
         : this(new CratesidePaths { StageNotesFile = path }, time) { }
 
-    public void Record(string videoId, string stage, string summary) =>
+    public void Record(string trackKey, string stage, string summary) =>
         Append(
             new StageNote
             {
                 At = _time.GetUtcNow(),
-                VideoId = videoId,
+                TrackKey = trackKey,
                 Stage = stage,
                 Summary = summary,
             }
         );
 
     /// <summary>The notes of any of these uploads, oldest first.</summary>
-    public IReadOnlyList<StageNote> For(IReadOnlySet<string> videoIds) =>
-        [.. All().Where(note => videoIds.Contains(note.VideoId))];
+    public IReadOnlyList<StageNote> For(IReadOnlySet<string> trackKeys) =>
+        [.. All().Where(note => trackKeys.Contains(note.TrackKey))];
 
     public IReadOnlyList<StageNote> All()
     {
@@ -89,7 +90,8 @@ public sealed record StageNote
 {
     public required DateTimeOffset At { get; init; }
 
-    public required string VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
 
     /// <summary>The pass's name as the activity feed shows it: <c>Warp</c> or <c>Loudness</c>.</summary>
     public required string Stage { get; init; }

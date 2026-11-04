@@ -5,7 +5,7 @@ namespace Crateside.Tests.Orchestration.Jobs;
 
 public sealed class JobStoreTests : IDisposable
 {
-    private const string VideoId = "dQw4w9WgXcQ";
+    private const string TrackKey = "dQw4w9WgXcQ";
 
     private readonly string _path = Path.Combine(
         Path.GetTempPath(),
@@ -33,7 +33,7 @@ public sealed class JobStoreTests : IDisposable
     [Fact]
     public void A_stage_never_run_is_simply_absent()
     {
-        Assert.False(Store().TryGet(VideoId, JobStage.Separation, out _));
+        Assert.False(Store().TryGet(TrackKey, JobStage.Separation, out _));
     }
 
     [Fact]
@@ -41,13 +41,13 @@ public sealed class JobStoreTests : IDisposable
     {
         var store = Store();
 
-        store.Record(VideoId, JobStage.Evidence, JobStatus.Queued);
+        store.Record(TrackKey, JobStage.Evidence, JobStatus.Queued);
         _time.Advance(TimeSpan.FromMinutes(1));
-        store.Record(VideoId, JobStage.Evidence, JobStatus.Running);
+        store.Record(TrackKey, JobStage.Evidence, JobStatus.Running);
         _time.Advance(TimeSpan.FromMinutes(1));
-        store.Record(VideoId, JobStage.Evidence, JobStatus.Succeeded);
+        store.Record(TrackKey, JobStage.Evidence, JobStatus.Succeeded);
 
-        Assert.True(store.TryGet(VideoId, JobStage.Evidence, out var job));
+        Assert.True(store.TryGet(TrackKey, JobStage.Evidence, out var job));
         Assert.Equal(JobStatus.Succeeded, job.Status);
     }
 
@@ -57,12 +57,12 @@ public sealed class JobStoreTests : IDisposable
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         File.WriteAllText(
             _path,
-            $$$"""{"id":"{{{VideoId}}}:Evidence","videoId":"{{{VideoId}}}","stage":"Evidence","status":"Succeeded","timestamp":"2026-08-13T21:00:00+00:00"}"""
+            $$$"""{"id":"{{{TrackKey}}}:Evidence","videoId":"{{{TrackKey}}}","stage":"Evidence","status":"Succeeded","timestamp":"2026-08-13T21:00:00+00:00"}"""
                 + Environment.NewLine
         );
-        Store().Record(VideoId, JobStage.Tagging, JobStatus.Succeeded, summary: "tagged D maj");
+        Store().Record(TrackKey, JobStage.Tagging, JobStatus.Succeeded, summary: "tagged D maj");
 
-        var history = Store().History(VideoId);
+        var history = Store().History(TrackKey);
 
         Assert.Null(history[0].Summary);
         Assert.Equal("tagged D maj", history[1].Summary);
@@ -71,9 +71,9 @@ public sealed class JobStoreTests : IDisposable
     [Fact]
     public void State_survives_a_restart()
     {
-        Store().Record(VideoId, JobStage.Separation, JobStatus.Running, processId: 4242);
+        Store().Record(TrackKey, JobStage.Separation, JobStatus.Running, processId: 4242);
 
-        Assert.True(Store().TryGet(VideoId, JobStage.Separation, out var job));
+        Assert.True(Store().TryGet(TrackKey, JobStage.Separation, out var job));
         Assert.Equal(JobStatus.Running, job.Status);
         Assert.Equal(4242, job.ProcessId);
     }
@@ -83,9 +83,9 @@ public sealed class JobStoreTests : IDisposable
     {
         var store = Store();
 
-        store.Record(VideoId, JobStage.Verdict, JobStatus.Failed, error: "quota exhausted");
-        store.Record(VideoId, JobStage.Verdict, JobStatus.Running);
-        store.Record(VideoId, JobStage.Verdict, JobStatus.Succeeded);
+        store.Record(TrackKey, JobStage.Verdict, JobStatus.Failed, error: "quota exhausted");
+        store.Record(TrackKey, JobStage.Verdict, JobStatus.Running);
+        store.Record(TrackKey, JobStage.Verdict, JobStatus.Succeeded);
 
         Assert.Single(store.All());
     }
@@ -95,13 +95,13 @@ public sealed class JobStoreTests : IDisposable
     {
         var store = Store();
 
-        store.Record(VideoId, JobStage.Verdict, JobStatus.Failed, error: "quota exhausted");
-        store.Record(VideoId, JobStage.Verdict, JobStatus.Failed, error: "quota exhausted");
-        var job = store.Record(VideoId, JobStage.Verdict, JobStatus.Failed, error: "again");
+        store.Record(TrackKey, JobStage.Verdict, JobStatus.Failed, error: "quota exhausted");
+        store.Record(TrackKey, JobStage.Verdict, JobStatus.Failed, error: "quota exhausted");
+        var job = store.Record(TrackKey, JobStage.Verdict, JobStatus.Failed, error: "again");
 
         Assert.Equal(3, job.Strikes);
 
-        Assert.True(Store().TryGet(VideoId, JobStage.Verdict, out var reloaded));
+        Assert.True(Store().TryGet(TrackKey, JobStage.Verdict, out var reloaded));
         Assert.Equal(3, reloaded.Strikes);
     }
 
@@ -110,8 +110,8 @@ public sealed class JobStoreTests : IDisposable
     {
         var store = Store();
 
-        store.Record(VideoId, JobStage.Separation, JobStatus.Running);
-        var job = store.Record(VideoId, JobStage.Separation, JobStatus.Canceled);
+        store.Record(TrackKey, JobStage.Separation, JobStatus.Running);
+        var job = store.Record(TrackKey, JobStage.Separation, JobStatus.Canceled);
 
         Assert.Equal(0, job.Strikes);
     }
@@ -123,7 +123,7 @@ public sealed class JobStoreTests : IDisposable
         var until = _time.GetUtcNow().AddMinutes(5);
 
         var job = store.Record(
-            VideoId,
+            TrackKey,
             JobStage.Verdict,
             JobStatus.Held,
             error: "rate limited",
@@ -132,7 +132,7 @@ public sealed class JobStoreTests : IDisposable
 
         Assert.Equal(0, job.Strikes);
         Assert.True(StageEligibility.IsOwed(job));
-        Assert.True(StageEligibility.Allows(store, VideoId, JobStage.Verdict, 3, false));
+        Assert.True(StageEligibility.Allows(store, TrackKey, JobStage.Verdict, 3, false));
         Assert.Equal(
             until,
             Assert.Single(Store().Updates(), update => update.Status is JobStatus.Held).HeldUntil
@@ -144,11 +144,11 @@ public sealed class JobStoreTests : IDisposable
     {
         var store = Store();
 
-        var job = store.Record(VideoId, JobStage.Verdict, JobStatus.AwaitingPerson);
+        var job = store.Record(TrackKey, JobStage.Verdict, JobStatus.AwaitingPerson);
 
         Assert.Equal(0, job.Strikes);
         Assert.False(StageEligibility.IsOwed(job));
-        Assert.False(StageEligibility.Allows(store, VideoId, JobStage.Verdict, 3, true));
+        Assert.False(StageEligibility.Allows(store, TrackKey, JobStage.Verdict, 3, true));
         Assert.False(job.IsOpen);
     }
 
@@ -157,13 +157,13 @@ public sealed class JobStoreTests : IDisposable
     {
         var store = Store();
 
-        store.Record(VideoId, JobStage.Verdict, JobStatus.Failed, error: "quota exhausted");
+        store.Record(TrackKey, JobStage.Verdict, JobStatus.Failed, error: "quota exhausted");
 
         Assert.Equal(
             "quota exhausted",
-            store.Record(VideoId, JobStage.Verdict, JobStatus.Running).Error
+            store.Record(TrackKey, JobStage.Verdict, JobStatus.Running).Error
         );
-        Assert.Null(store.Record(VideoId, JobStage.Verdict, JobStatus.Succeeded).Error);
+        Assert.Null(store.Record(TrackKey, JobStage.Verdict, JobStatus.Succeeded).Error);
     }
 
     [Fact]
@@ -171,13 +171,13 @@ public sealed class JobStoreTests : IDisposable
     {
         var store = Store();
 
-        store.Record(VideoId, JobStage.Evidence, JobStatus.Succeeded);
-        store.Record(VideoId, JobStage.Separation, JobStatus.Running);
+        store.Record(TrackKey, JobStage.Evidence, JobStatus.Succeeded);
+        store.Record(TrackKey, JobStage.Separation, JobStatus.Running);
 
         Assert.Equal(2, store.All().Count);
-        Assert.True(store.TryGet(VideoId, JobStage.Evidence, out var evidence));
+        Assert.True(store.TryGet(TrackKey, JobStage.Evidence, out var evidence));
         Assert.Equal(JobStatus.Succeeded, evidence.Status);
-        Assert.True(store.TryGet(VideoId, JobStage.Separation, out var separation));
+        Assert.True(store.TryGet(TrackKey, JobStage.Separation, out var separation));
         Assert.Equal(JobStatus.Running, separation.Status);
     }
 
@@ -192,17 +192,17 @@ public sealed class JobStoreTests : IDisposable
 
         var open = Store().Open(JobStage.Separation);
 
-        Assert.Equal("aaaaaaaaaaa", Assert.Single(open).VideoId);
+        Assert.Equal("aaaaaaaaaaa", Assert.Single(open).TrackKey);
     }
 
     [Fact]
     public void A_half_written_trailing_line_does_not_lose_the_rest()
     {
-        Store().Record(VideoId, JobStage.Evidence, JobStatus.Succeeded);
+        Store().Record(TrackKey, JobStage.Evidence, JobStatus.Succeeded);
 
         File.AppendAllText(_path, "{\"id\":\"trunc");
 
-        Assert.True(Store().TryGet(VideoId, JobStage.Evidence, out var job));
+        Assert.True(Store().TryGet(TrackKey, JobStage.Evidence, out var job));
         Assert.Equal(JobStatus.Succeeded, job.Status);
     }
 
@@ -211,9 +211,9 @@ public sealed class JobStoreTests : IDisposable
     {
         var store = Store();
 
-        store.Record(VideoId, JobStage.Evidence, JobStatus.Queued);
-        store.Record(VideoId, JobStage.Evidence, JobStatus.Running);
-        store.Record(VideoId, JobStage.Evidence, JobStatus.Succeeded);
+        store.Record(TrackKey, JobStage.Evidence, JobStatus.Queued);
+        store.Record(TrackKey, JobStage.Evidence, JobStatus.Running);
+        store.Record(TrackKey, JobStage.Evidence, JobStatus.Succeeded);
 
         Assert.Equal(3, File.ReadAllLines(_path).Length);
     }
@@ -221,7 +221,7 @@ public sealed class JobStoreTests : IDisposable
     [Fact]
     public void Statuses_are_written_as_names_so_the_file_reads_at_3am()
     {
-        Store().Record(VideoId, JobStage.Separation, JobStatus.Running, processId: 4242);
+        Store().Record(TrackKey, JobStage.Separation, JobStatus.Running, processId: 4242);
 
         var line = File.ReadAllText(_path);
 

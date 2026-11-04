@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Serialization;
 
 namespace Crateside.Core.Orchestration.Jobs;
 
@@ -26,7 +27,7 @@ public sealed record JobHistory(
     {
         var finished = updates
             .Where(update => update is { Stage: JobStage.Tagging, Status: JobStatus.Succeeded })
-            .GroupBy(update => update.VideoId, StringComparer.Ordinal)
+            .GroupBy(update => update.TrackKey, StringComparer.Ordinal)
             .Select(track => WeekOf(track.Min(update => update.Timestamp)))
             .CountBy(week => week)
             .ToDictionary();
@@ -106,7 +107,7 @@ public sealed record JobHistory(
                     yield return new ActivityLine(
                         update.Timestamp,
                         $"held · {Briefly(reason)} · {(update.HeldUntil is { } until ? $"until {until.ToLocalTime():t}" : "trying again shortly")} · next:",
-                        update.VideoId,
+                        update.TrackKey,
                         IsNext: true
                     );
 
@@ -129,7 +130,7 @@ public sealed record JobHistory(
             yield return new ActivityLine(
                 update.Timestamp,
                 Describe(update),
-                update.VideoId,
+                update.TrackKey,
                 IsNext: false
             );
         }
@@ -146,8 +147,8 @@ public sealed record JobHistory(
                 continue;
 
             if (update.Status is JobStatus.Running)
-                running[update.VideoId] = i;
-            else if (running.Remove(update.VideoId, out var started) && IsHold(update))
+                running[update.TrackKey] = i;
+            else if (running.Remove(update.TrackKey, out var started) && IsHold(update))
                 starts.Add(started);
         }
 
@@ -213,4 +214,9 @@ public sealed record WeekFinished(int Week, int Tracks, bool IsCurrent);
 public sealed record StageTotal(JobStage Stage, int Done, int Failed, int Canceled);
 
 /// <summary>One line of Latest activity.</summary>
-public sealed record ActivityLine(DateTimeOffset At, string What, string? VideoId, bool IsNext);
+public sealed record ActivityLine(
+    DateTimeOffset At,
+    string What,
+    [property: JsonPropertyName("videoId")] string? TrackKey,
+    bool IsNext
+);

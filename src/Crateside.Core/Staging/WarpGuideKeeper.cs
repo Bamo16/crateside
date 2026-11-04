@@ -15,15 +15,15 @@ public sealed class WarpGuideKeeper(CratesidePaths paths, TimeProvider time)
 
         var staged = Cuts(paths.StagingFolder);
         var filed = Cuts(paths.LibraryFolder)
-            .Select(cut => cut.VideoId)
+            .Select(cut => cut.TrackKey)
             .ToHashSet(StringComparer.Ordinal);
         List<GuideKeeping> kept = [];
 
         foreach (var guide in staged.Where(cut => cut.IsGuide))
         {
             if (
-                !filed.Contains(guide.VideoId)
-                || staged.Any(cut => !cut.IsGuide && cut.VideoId == guide.VideoId)
+                !filed.Contains(guide.TrackKey)
+                || staged.Any(cut => !cut.IsGuide && cut.TrackKey == guide.TrackKey)
             )
                 continue;
 
@@ -95,10 +95,12 @@ public sealed class WarpGuideKeeper(CratesidePaths paths, TimeProvider time)
                     .EnumerateFiles(root)
                     .Where(SampleFiles.IsAudio)
                     .Select(path => (Path: path, StemTagReader.Read(path)?.Provenance))
-                    .Where(file => file.Provenance is { IsAdopted: false, SourceVideoId: not null })
+                    .Where(file =>
+                        file.Provenance is { IsAdopted: false, SourceTrackKey: not null }
+                    )
                     .Select(file => new Cut(
                         file.Path,
-                        file.Provenance!.SourceVideoId!,
+                        file.Provenance!.SourceTrackKey!,
                         StagedFile.IsWarpGuidePreset(
                             file.Provenance.Preset ?? StemFileName.PresetOf(file.Path)
                         )
@@ -106,7 +108,7 @@ public sealed class WarpGuideKeeper(CratesidePaths paths, TimeProvider time)
             ]
             : [];
 
-    private sealed record Cut(string Path, string VideoId, bool IsGuide);
+    private sealed record Cut(string Path, string TrackKey, bool IsGuide);
 }
 
 public abstract record GuideKeeping

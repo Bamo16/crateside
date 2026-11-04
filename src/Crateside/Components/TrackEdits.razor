@@ -207,9 +207,9 @@ else if (Part is Parts.Source && HasSource(Row))
         _sets = null;
         Editing.Start(TrackEdit.Rename);
 
-        var videoId = Row.VideoId;
+        var trackKey = Row.TrackKey;
 
-        _ = Task.Run(() => Rename.SetsUsing(videoId))
+        _ = Task.Run(() => Rename.SetsUsing(trackKey))
             .ContinueWith(
                 found =>
                     InvokeAsync(() =>
@@ -238,8 +238,8 @@ else if (Part is Parts.Source && HasSource(Row))
         }
 
         await Renaming(
-            () => Rename.Apply(Row.VideoId, name),
-            () => Actions.Record(Row.VideoId, UserActionKind.Renamed, name)
+            () => Rename.Apply(Row.TrackKey, name),
+            () => Actions.Record(Row.TrackKey, UserActionKind.Renamed, name)
         );
     }
 
@@ -256,8 +256,8 @@ else if (Part is Parts.Source && HasSource(Row))
 
     private Task Reverting() =>
         Renaming(
-            () => Rename.Revert(Row.VideoId, Row.DerivedTitle ?? Row.Title),
-            () => Actions.Record(Row.VideoId, UserActionKind.RenameReverted, Row.DerivedTitle)
+            () => Rename.Revert(Row.TrackKey, Row.DerivedTitle ?? Row.Title),
+            () => Actions.Record(Row.TrackKey, UserActionKind.RenameReverted, Row.DerivedTitle)
         );
 
     private async Task Renaming(Func<RenameOutcome> rename, Action record)
@@ -311,7 +311,7 @@ else if (Part is Parts.Source && HasSource(Row))
     private void OnSwapUrl(ChangeEventArgs e)
     {
         _draft = e.Value?.ToString() ?? string.Empty;
-        _swapPlan = _draft.Length is 0 ? null : Swap.PlanFor(Row.VideoId, _draft);
+        _swapPlan = _draft.Length is 0 ? null : Swap.PlanFor(Row.TrackKey, _draft);
     }
 
     private async Task OnSwapKey(KeyboardEventArgs e)
@@ -330,13 +330,13 @@ else if (Part is Parts.Source && HasSource(Row))
         try
         {
             var url = _draft;
-            var outcome = Swap.Apply(Row.VideoId, url);
+            var outcome = Swap.Apply(Row.TrackKey, url);
 
             _problem = outcome.Problem;
 
             if (outcome.Succeeded)
             {
-                Actions.Record(Row.VideoId, UserActionKind.Swapped, url, JobStage.Download);
+                Actions.Record(Row.TrackKey, UserActionKind.Swapped, url, JobStage.Download);
                 Editing.Close();
                 Signals.Wake(JobStage.Download, JobStage.Separation);
             }

@@ -28,12 +28,12 @@ public sealed class TaggingDrainer(
     {
         var ledger = store.Read();
 
-        if (!selector.TryPickNext(ledger, out var videoId, out var stems))
+        if (!selector.TryPickNext(ledger, out var trackKey, out var stems))
             return Task.FromResult(StageTick.Idle);
 
-        var subject = stems[0].Song ?? videoId;
+        var subject = stems[0].Song ?? trackKey;
 
-        jobs.Record(videoId, JobStage.Tagging, JobStatus.Running);
+        jobs.Record(trackKey, JobStage.Tagging, JobStatus.Running);
 
         var outcome = runner.Run(stems);
 
@@ -47,7 +47,7 @@ public sealed class TaggingDrainer(
         };
 
         jobs.Record(
-            videoId,
+            trackKey,
             JobStage.Tagging,
             status,
             error: error,

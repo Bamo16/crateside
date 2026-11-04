@@ -44,20 +44,20 @@ public sealed class RejudgeTests : IDisposable
     {
         var queue = new RejudgeQueue(QueuePath);
 
-        foreach (var videoId in queued)
-            queue.Add($"artist - {videoId}", Cutoff, "test");
+        foreach (var trackKey in queued)
+            queue.Add($"artist - {trackKey}", Cutoff, "test");
 
         return queue;
     }
 
-    private static object Run(string videoId, string at) =>
+    private static object Run(string trackKey, string at) =>
         new
         {
             timestamp = at,
-            song = $"artist - {videoId}",
+            song = $"artist - {trackKey}",
             artist = "Artist",
-            title = videoId,
-            source_url = $"https://music.youtube.com/watch?v={videoId}",
+            title = trackKey,
+            source_url = $"https://music.youtube.com/watch?v={trackKey}",
             verdict = new { key = "C major", confidence = "HIGH" },
         };
 
@@ -70,17 +70,17 @@ public sealed class RejudgeTests : IDisposable
         return TestLedger.From(path);
     }
 
-    private void GiveEvidence(string videoId)
+    private void GiveEvidence(string trackKey)
     {
-        Set.Prepare(videoId);
-        File.WriteAllText(Set.EvidencePathFor(videoId), "{}");
+        Set.Prepare(trackKey);
+        File.WriteAllText(Set.EvidencePathFor(trackKey), "{}");
     }
 
-    private static WorkItem Item(string videoId, bool backfill = false) =>
+    private static WorkItem Item(string trackKey, bool backfill = false) =>
         new()
         {
-            VideoId = videoId,
-            Title = $"Track {videoId}",
+            TrackKey = trackKey,
+            Title = $"Track {trackKey}",
             IsBackfill = backfill,
         };
 
@@ -99,7 +99,7 @@ public sealed class RejudgeTests : IDisposable
     {
         var owed = Queue(Owing).Pending(Ledger(Run(Owing, JudgedBefore)));
 
-        Assert.Equal(Owing, Assert.Single(owed).SourceVideoId);
+        Assert.Equal(Owing, Assert.Single(owed).SourceTrackKey);
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public sealed class RejudgeTests : IDisposable
                 out var firstIsRejudge
             )
         );
-        Assert.Equal((Intake, false), (first.VideoId, firstIsRejudge));
+        Assert.Equal((Intake, false), (first.TrackKey, firstIsRejudge));
 
         Assert.True(
             selector.TryPickIdle(
@@ -177,7 +177,7 @@ public sealed class RejudgeTests : IDisposable
                 out var secondIsRejudge
             )
         );
-        Assert.Equal((Owing, true), (second.VideoId, secondIsRejudge));
+        Assert.Equal((Owing, true), (second.TrackKey, secondIsRejudge));
 
         Assert.True(
             selector.TryPickIdle(
@@ -189,7 +189,7 @@ public sealed class RejudgeTests : IDisposable
                 out var thirdIsRejudge
             )
         );
-        Assert.Equal((Backfill, false), (third.VideoId, thirdIsRejudge));
+        Assert.Equal((Backfill, false), (third.TrackKey, thirdIsRejudge));
     }
 
     [Fact]
@@ -207,7 +207,7 @@ public sealed class RejudgeTests : IDisposable
             out _
         );
 
-        Assert.Equal(Owing, next.VideoId);
+        Assert.Equal(Owing, next.TrackKey);
     }
 
     [Fact]

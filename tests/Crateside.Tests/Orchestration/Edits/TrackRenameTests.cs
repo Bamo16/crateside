@@ -90,7 +90,7 @@ public sealed class TrackRenameTests : IDisposable
     private string Staged(string name) => Path.Combine(_paths.StagingFolder, name);
 
     private static string? StoredName(TrackInstructionStore settings) =>
-        settings.Read().FirstOrDefault(track => track.VideoId == Video)?.Name;
+        settings.Read().FirstOrDefault(track => track.TrackKey == Video)?.Name;
 
     [Fact]
     public void Renaming_a_sourceless_song_renames_its_files_and_stores_no_instruction()
@@ -567,5 +567,5 @@ internal sealed class FakeSets : ISetLinks
 
 internal sealed class FilesInLibrary(List<string> files) : ILibraryFiles
 {
-    public IReadOnlyList<string> Of(string videoId) => files;
+    public IReadOnlyList<string> Of(string trackKey) => files;
 }

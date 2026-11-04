@@ -19,7 +19,7 @@ namespace Crateside.Tests.Orchestration.Verdict;
 
 public sealed class VerdictDrainerTests : IDisposable
 {
-    private const string VideoId = "backfill001";
+    private const string TrackKey = "backfill001";
     private const string PinnedSha = "pinned-build";
 
     private const string OldEvidence = """
@@ -61,7 +61,7 @@ public sealed class VerdictDrainerTests : IDisposable
 
         _set = new WorkingSet(Path.Combine(_directory, "working"));
         _jobs = new JobStore(Path.Combine(_directory, "jobs.jsonl"));
-        _sessions = new FakeSessions(() => File.ReadAllText(_set.EvidencePathFor(VideoId)));
+        _sessions = new FakeSessions(() => File.ReadAllText(_set.EvidencePathFor(TrackKey)));
 
         _rejudges = new RejudgeQueue(Path.Combine(_directory, "rejudge.json"));
 
@@ -133,7 +133,7 @@ public sealed class VerdictDrainerTests : IDisposable
             [
                 new WorkItem
                 {
-                    VideoId = VideoId,
+                    TrackKey = TrackKey,
                     Title = "Artist - Song",
                     IsBackfill = true,
                 },
@@ -146,9 +146,9 @@ public sealed class VerdictDrainerTests : IDisposable
 
     private void Hold(string evidence, bool withSource)
     {
-        var folder = _set.Prepare(VideoId);
+        var folder = _set.Prepare(TrackKey);
 
-        File.WriteAllText(_set.EvidencePathFor(VideoId), evidence);
+        File.WriteAllText(_set.EvidencePathFor(TrackKey), evidence);
 
         if (withSource)
             File.WriteAllText(Path.Combine(folder, "source.flac"), "audio");
@@ -188,7 +188,7 @@ public sealed class VerdictDrainerTests : IDisposable
         Assert.Empty(_sessions.EvidenceSeen);
         Assert.False(tick.IsSuccess);
         Assert.StartsWith("not judged:", tick.Error);
-        Assert.True(_jobs.TryGet(VideoId, JobStage.Verdict, out var job));
+        Assert.True(_jobs.TryGet(TrackKey, JobStage.Verdict, out var job));
         Assert.Equal(JobStatus.Failed, job.Status);
         Assert.Equal(1, job.Strikes);
     }
@@ -214,7 +214,7 @@ public sealed class VerdictDrainerTests : IDisposable
                 Song = "artist - song",
                 Artist = "Artist",
                 Title = "Song",
-                SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
+                SourceUrl = $"https://music.youtube.com/watch?v={TrackKey}",
                 Confidence = KeyConfidence.Medium,
                 Center = new TonalCenter("A", DiatonicMode.Aeolian),
                 Evidence = FullEvidence,
@@ -226,8 +226,8 @@ public sealed class VerdictDrainerTests : IDisposable
 
         var download = Assert.Single(_downloads.Requests);
 
-        Assert.Contains($"https://music.youtube.com/watch?v={VideoId}", download.Arguments);
-        Assert.Contains(_set.Prepare(VideoId), download.Arguments);
+        Assert.Contains($"https://music.youtube.com/watch?v={TrackKey}", download.Arguments);
+        Assert.Contains(_set.Prepare(TrackKey), download.Arguments);
         Assert.NotEmpty(_sessions.Prompts);
         Assert.DoesNotContain(VerdictRunner.NoAudioLine, _sessions.Prompts[0]);
     }
@@ -243,7 +243,7 @@ public sealed class VerdictDrainerTests : IDisposable
                 Song = "artist - song",
                 Artist = "Artist",
                 Title = "Song",
-                SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
+                SourceUrl = $"https://music.youtube.com/watch?v={TrackKey}",
                 Confidence = KeyConfidence.Medium,
                 Center = new TonalCenter("A", DiatonicMode.Aeolian),
                 Evidence = FullEvidence,
@@ -268,7 +268,7 @@ public sealed class VerdictDrainerTests : IDisposable
 
         Assert.Equal(StageOutcome.Held, first.Outcome);
         Assert.Equal(TimeSpan.FromMinutes(1), first.RetryAfter);
-        Assert.True(_jobs.TryGet(VideoId, JobStage.Verdict, out var job));
+        Assert.True(_jobs.TryGet(TrackKey, JobStage.Verdict, out var job));
         Assert.Equal(JobStatus.Held, job.Status);
         Assert.Equal(_time.GetUtcNow() + TimeSpan.FromMinutes(1), _jobs.Updates()[^1].HeldUntil);
         Assert.Equal(0, job.Strikes);
@@ -323,7 +323,7 @@ public sealed class VerdictDrainerTests : IDisposable
         Assert.Equal(KeyConfidence.Medium, run.Confidence);
         Assert.Equal("A minor", run.Key);
         Assert.Equal("artist - song", run.Song);
-        Assert.True(_jobs.TryGet(VideoId, JobStage.Verdict, out var job));
+        Assert.True(_jobs.TryGet(TrackKey, JobStage.Verdict, out var job));
         Assert.Equal(JobStatus.Succeeded, job.Status);
         Assert.Equal(
             "keydetect, madmom and Essentia name A minor; no Hooktheory or Musicnotes page states a key.",
@@ -331,12 +331,12 @@ public sealed class VerdictDrainerTests : IDisposable
         );
     }
 
-    private static WorkListsView Intake(params (string VideoId, string Title)[] tracks) =>
+    private static WorkListsView Intake(params (string TrackKey, string Title)[] tracks) =>
         WorkListsView.Compose(
             [
                 .. tracks.Select(track => new WorkItem
                 {
-                    VideoId = track.VideoId,
+                    TrackKey = track.TrackKey,
                     Title = track.Title,
                 }),
             ],
@@ -346,10 +346,10 @@ public sealed class VerdictDrainerTests : IDisposable
             new Dictionary<string, TrackInstruction>()
         );
 
-    private void Detected(string videoId, string evidence)
+    private void Detected(string trackKey, string evidence)
     {
-        _set.Prepare(videoId);
-        File.WriteAllText(_set.EvidencePathFor(videoId), evidence);
+        _set.Prepare(trackKey);
+        File.WriteAllText(_set.EvidencePathFor(trackKey), evidence);
     }
 
     [Fact]
@@ -417,7 +417,7 @@ public sealed class VerdictDrainerTests : IDisposable
         Assert.True(tick.IsSuccess);
         Assert.Empty(_sessions.Prompts);
         Assert.Empty(_store.Read().Runs);
-        Assert.True(_jobs.TryGet(VideoId, JobStage.Verdict, out var job));
+        Assert.True(_jobs.TryGet(TrackKey, JobStage.Verdict, out var job));
         Assert.Equal(JobStatus.AwaitingPerson, job.Status);
         Assert.Equal(0, job.Strikes);
     }
@@ -450,7 +450,7 @@ public sealed class VerdictDrainerTests : IDisposable
     public async Task A_track_waiting_for_the_person_goes_to_the_judge_once_one_is_set_up()
     {
         Hold(FullEvidence, withSource: false);
-        _jobs.Record(VideoId, JobStage.Verdict, JobStatus.AwaitingPerson);
+        _jobs.Record(TrackKey, JobStage.Verdict, JobStatus.AwaitingPerson);
 
         await JudgeBackfillAsync();
 
@@ -468,7 +468,7 @@ public sealed class VerdictDrainerTests : IDisposable
                 Song = "artist - song",
                 Artist = "Artist",
                 Title = "Song",
-                SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
+                SourceUrl = $"https://music.youtube.com/watch?v={TrackKey}",
                 Confidence = KeyConfidence.Medium,
                 Center = new TonalCenter("A", DiatonicMode.Aeolian),
                 Evidence = FullEvidence,
@@ -491,9 +491,9 @@ public sealed class VerdictDrainerTests : IDisposable
             .JudgeFromBarsAsync(
                 new WorkOrder
                 {
-                    VideoId = VideoId,
+                    TrackKey = TrackKey,
                     Title = "Artist - Song",
-                    SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
+                    SourceUrl = $"https://music.youtube.com/watch?v={TrackKey}",
                     Destination = StemDestination.UnresolvedKey,
                 },
                 new JudgeDirection([], null, null, null),
@@ -502,7 +502,7 @@ public sealed class VerdictDrainerTests : IDisposable
             );
 
         Assert.False(result.IsSuccess);
-        Assert.False(_jobs.TryGet(VideoId, JobStage.Verdict, out _));
+        Assert.False(_jobs.TryGet(TrackKey, JobStage.Verdict, out _));
     }
 
     private sealed class FakeDownloads : IProcessRunner

@@ -54,7 +54,7 @@ public sealed class TrackRemovalTests : IDisposable
 
         Assert.DoesNotContain(
             Settings().Read(),
-            track => track.VideoId == Video && track.Plan is not null
+            track => track.TrackKey == Video && track.Plan is not null
         );
     }
 
@@ -62,7 +62,7 @@ public sealed class TrackRemovalTests : IDisposable
     public void Both_records_go_so_the_next_scan_does_not_put_the_track_back()
     {
         var intake = Intake();
-        intake.Record([new WorkItem { VideoId = Video, Title = "Clubbed to Death" }]);
+        intake.Record([new WorkItem { TrackKey = Video, Title = "Clubbed to Death" }]);
 
         Removal(Settings(), intake).Apply(Video, [Video]);
 
@@ -93,7 +93,7 @@ public sealed class TrackRemovalTests : IDisposable
 
         Removal(Settings()).Apply(Video, [Video]);
 
-        Assert.Empty(set.VideoIds);
+        Assert.Empty(set.TrackKeys);
     }
 
     [Fact]

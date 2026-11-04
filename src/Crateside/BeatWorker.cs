@@ -37,7 +37,7 @@ public sealed class BeatWorker(
                         )
                     )
                 )
-                .Select(row => row.VideoId)
+                .Select(row => row.TrackKey)
     );
 
     public override void Dispose()

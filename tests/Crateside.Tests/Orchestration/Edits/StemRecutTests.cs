@@ -215,7 +215,7 @@ public sealed class StemRecutTests : IDisposable
         Assert.False(plan.MakesSomething);
         Assert.True(outcome.Succeeded);
         Assert.True(
-            settings.Read().Single(track => track.VideoId == Video).Plan?.AsksTheSameAs(sourceOnly)
+            settings.Read().Single(track => track.TrackKey == Video).Plan?.AsksTheSameAs(sourceOnly)
         );
     }
 
@@ -311,7 +311,7 @@ public sealed class StemRecutTests : IDisposable
 
         Assert.True(File.Exists(guide));
 
-        var stored = settings.Read().Single(track => track.VideoId == Video).Plan;
+        var stored = settings.Read().Single(track => track.TrackKey == Video).Plan;
 
         Assert.NotNull(stored);
         Assert.True(stored.AsksTheSameAs(wanted));

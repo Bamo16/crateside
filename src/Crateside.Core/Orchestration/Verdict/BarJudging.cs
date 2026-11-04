@@ -23,21 +23,21 @@ public sealed class BarJudging(
     public event Action? Changed;
 
     /// <summary>The track's latest run, going or finished, since the app started.</summary>
-    public BarRun? Of(string videoId)
+    public BarRun? Of(string trackKey)
     {
         lock (_gate)
-            return _runs.GetValueOrDefault(videoId);
+            return _runs.GetValueOrDefault(trackKey);
     }
 
     /// <summary>The order a run from bars judges under: the upload the track is cut from, as the queue would.</summary>
     public static WorkOrder OrderFor(TrackRow row) =>
         new()
         {
-            VideoId = row.VideoId,
+            TrackKey = row.TrackKey,
             Title = row.Title,
             SourceUrl = row.StatedSourceUrl is { Length: > 0 } stated
                 ? stated
-                : $"https://music.youtube.com/watch?v={row.VideoId}",
+                : $"https://music.youtube.com/watch?v={row.TrackKey}",
             Destination = row.Verdict?.HasTaggableKey is true
                 ? StemDestination.KeyIdentified
                 : StemDestination.UnresolvedKey,
@@ -45,7 +45,7 @@ public sealed class BarJudging(
 
     /// <summary>The full mix to detect over: the working set's, else the source kept in the library; null when it has to be downloaded again.</summary>
     public string? AudioFor(TrackRow row) =>
-        workingSet.TryGetSource(row.VideoId, out var held) ? held
+        workingSet.TryGetSource(row.TrackKey, out var held) ? held
         : row.Samples.FirstOrDefault(sample =>
             sample.Kind is StemKind.Source && File.Exists(sample.Path)
         )
@@ -58,10 +58,10 @@ public sealed class BarJudging(
     {
         lock (_gate)
         {
-            if (_runs.GetValueOrDefault(order.VideoId) is { IsRunning: true })
+            if (_runs.GetValueOrDefault(order.TrackKey) is { IsRunning: true })
                 return false;
 
-            _runs[order.VideoId] = new BarRun(direction, time.GetUtcNow());
+            _runs[order.TrackKey] = new BarRun(direction, time.GetUtcNow());
         }
 
         Changed?.Invoke();
@@ -78,7 +78,7 @@ public sealed class BarJudging(
 
     private async Task RunAsync(WorkOrder order, JudgeDirection direction)
     {
-        var madeForTheRun = !workingSet.VideoIds.Contains(order.VideoId, StringComparer.Ordinal);
+        var madeForTheRun = !workingSet.TrackKeys.Contains(order.TrackKey, StringComparer.Ordinal);
         VerdictResult result;
 
         try
@@ -96,9 +96,9 @@ public sealed class BarJudging(
         }
 
         if (madeForTheRun)
-            workingSet.Discard(order.VideoId);
+            workingSet.Discard(order.TrackKey);
 
-        Update(order.VideoId, run => run with { Outcome = result, FinishedAt = time.GetUtcNow() });
+        Update(order.TrackKey, run => run with { Outcome = result, FinishedAt = time.GetUtcNow() });
     }
 
     /// <summary>Downloads the full mix again where crateside no longer holds it, then judges.</summary>
@@ -106,11 +106,11 @@ public sealed class BarJudging(
     {
         if (direction.Audio is null)
         {
-            Update(order.VideoId, run => run.After(new JudgeStep.Downloading(), time.GetUtcNow()));
+            Update(order.TrackKey, run => run.After(new JudgeStep.Downloading(), time.GetUtcNow()));
 
             var fetched = await downloads.RunAsync(
                 order.SourceUrl,
-                workingSet.Prepare(order.VideoId),
+                workingSet.Prepare(order.TrackKey),
                 ct: _stopping.Token
             );
 
@@ -125,15 +125,15 @@ public sealed class BarJudging(
         return await drainer.JudgeFromBarsAsync(
             order,
             direction,
-            step => Update(order.VideoId, run => run.After(step, time.GetUtcNow())),
+            step => Update(order.TrackKey, run => run.After(step, time.GetUtcNow())),
             _stopping.Token
         );
     }
 
-    private void Update(string videoId, Func<BarRun, BarRun> change)
+    private void Update(string trackKey, Func<BarRun, BarRun> change)
     {
         lock (_gate)
-            _runs[videoId] = change(_runs[videoId]);
+            _runs[trackKey] = change(_runs[trackKey]);
 
         Changed?.Invoke();
     }

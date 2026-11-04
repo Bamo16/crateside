@@ -11,7 +11,7 @@ public sealed class TaggingSummaryTests
             Path = "S:/Staging/Song (Vocal - Full).flac",
             FileName = "Song (Vocal - Full).flac",
             Root = "S:/Staging",
-            SourceVideoId = "dQw4w9WgXcQ",
+            SourceTrackKey = "dQw4w9WgXcQ",
             LedgerKey = ledgerKey,
         };
 

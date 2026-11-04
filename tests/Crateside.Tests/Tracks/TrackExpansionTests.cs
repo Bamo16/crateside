@@ -14,7 +14,7 @@ public sealed class TrackExpansionTests
     private static TrackRow Row() =>
         new()
         {
-            VideoId = "aaaaaaaaaaa",
+            TrackKey = "aaaaaaaaaaa",
             PlaylistItemId = "PLI-a",
             Title = "Rob Dougan - Furious Angels",
         };

@@ -27,7 +27,7 @@ public sealed class SeparationInterlock(
         foreach (var job in jobs.Open(JobStage.Separation).Where(job => job.ProcessId is null))
             unlaunched.Add(
                 jobs.Record(
-                    job.VideoId,
+                    job.TrackKey,
                     JobStage.Separation,
                     JobStatus.Failed,
                     error: "separation was interrupted before it started"
@@ -37,7 +37,7 @@ public sealed class SeparationInterlock(
         foreach (var job in jobs.Open(JobStage.Separation).Where(IsStillRunning))
             adopted.Add(
                 jobs.Record(
-                    job.VideoId,
+                    job.TrackKey,
                     JobStage.Separation,
                     JobStatus.Running,
                     job.ProcessId,
@@ -71,7 +71,7 @@ public sealed class SeparationInterlock(
         {
             if (Settle(job) is { } settled)
                 finished.Add(settled);
-            else if (jobs.TryGet(job.VideoId, JobStage.Separation, out var failed))
+            else if (jobs.TryGet(job.TrackKey, JobStage.Separation, out var failed))
                 abandoned.Add(failed);
         }
 
@@ -95,18 +95,20 @@ public sealed class SeparationInterlock(
     /// Whether this track's separation process is alive right now, and so may still be writing
     /// files; a recorded <c>Running</c> whose process is gone says nothing.
     /// </summary>
-    public bool IsSeparating(string videoId) =>
-        jobs.TryGet(videoId, JobStage.Separation, out var job) && job.IsOpen && IsStillRunning(job);
+    public bool IsSeparating(string trackKey) =>
+        jobs.TryGet(trackKey, JobStage.Separation, out var job)
+        && job.IsOpen
+        && IsStillRunning(job);
 
     /// <summary>Records that a separation process has been launched and now owns the GPU.</summary>
     public TrackJob Claim(
-        string videoId,
+        string trackKey,
         int processId,
         DateTimeOffset processStartedAt,
         SeparationPromise? promise = null
     ) =>
         jobs.Record(
-            videoId,
+            trackKey,
             JobStage.Separation,
             JobStatus.Running,
             processId,
@@ -115,9 +117,9 @@ public sealed class SeparationInterlock(
         );
 
     /// <summary>Records how a separation ended, freeing the GPU for the next one.</summary>
-    public TrackJob Release(string videoId, string? error = null, string? summary = null) =>
+    public TrackJob Release(string trackKey, string? error = null, string? summary = null) =>
         jobs.Record(
-            videoId,
+            trackKey,
             JobStage.Separation,
             error is null ? JobStatus.Succeeded : JobStatus.Failed,
             error: error,
@@ -131,7 +133,7 @@ public sealed class SeparationInterlock(
         {
             // Launched before crateside recorded what a run promised.
             jobs.Record(
-                job.VideoId,
+                job.TrackKey,
                 JobStage.Separation,
                 JobStatus.Failed,
                 error: $"separation process {job.ProcessId} is gone without recording a result"
@@ -145,7 +147,7 @@ public sealed class SeparationInterlock(
         if (outputs.Count < promise.ExpectedOutputs)
         {
             jobs.Record(
-                job.VideoId,
+                job.TrackKey,
                 JobStage.Separation,
                 JobStatus.Failed,
                 error: $"separation process {processId} ended having written "
@@ -157,7 +159,7 @@ public sealed class SeparationInterlock(
 
         return new SettledSeparation(
             Release(
-                job.VideoId,
+                job.TrackKey,
                 summary: $"{"file".ToQuantity(outputs.Count)} written while crateside was not watching"
             ),
             promise,
@@ -168,7 +170,7 @@ public sealed class SeparationInterlock(
     private static IReadOnlyList<string> WrittenSince(TrackJob job, string directory) =>
         [
             .. StemTagReader
-                .FilesCutFrom(directory, job.VideoId)
+                .FilesCutFrom(directory, job.TrackKey)
                 // A stem from an earlier run of the same track is not this run's output.
                 .Where(file =>
                     job.ProcessStartedAt is not { } started

@@ -49,22 +49,26 @@ public sealed class DownloadSelectorTests : IDisposable
 
     private DownloadSelector Selector() => new(Jobs, Set, Paths, time: _time);
 
-    private static readonly AddedSource Source = new() { VideoId = Attached, Label = "A Cappella" };
+    private static readonly AddedSource Source = new()
+    {
+        TrackKey = Attached,
+        Label = "A Cappella",
+    };
 
-    private static WorkItem Absent(string videoId, StemPlan plan) =>
+    private static WorkItem Absent(string trackKey, StemPlan plan) =>
         new()
         {
-            VideoId = videoId,
-            Title = videoId,
+            TrackKey = trackKey,
+            Title = trackKey,
             Plan = plan,
         };
 
-    private static WorkItem Held(string videoId, StemPlan? plan = null) =>
+    private static WorkItem Held(string trackKey, StemPlan? plan = null) =>
         new()
         {
-            PlaylistItemId = $"PLI-{videoId}",
-            VideoId = videoId,
-            Title = videoId,
+            PlaylistItemId = $"PLI-{trackKey}",
+            TrackKey = trackKey,
+            Title = trackKey,
             Plan = plan ?? StemPlan.Default,
         };
 
@@ -98,7 +102,7 @@ public sealed class DownloadSelectorTests : IDisposable
     {
         Assert.True(Selector().TryPickNext(View(Absent(Finished, WithSource)), out var next));
 
-        Assert.Equal(Attached, next.VideoId);
+        Assert.Equal(Attached, next.TrackKey);
         Assert.True(next.IsAdded);
         Assert.Equal("A Cappella", next.Label);
     }
@@ -109,7 +113,7 @@ public sealed class DownloadSelectorTests : IDisposable
         var view = View(Absent(Finished, WithSource), Held(Fresh));
 
         Assert.True(Selector().TryPickNext(view, out var next));
-        Assert.Equal(Attached, next.VideoId);
+        Assert.Equal(Attached, next.TrackKey);
     }
 
     [Fact]
@@ -127,7 +131,7 @@ public sealed class DownloadSelectorTests : IDisposable
         var view = View(Absent(Finished, plan), Held(Fresh));
 
         Assert.True(Selector().TryPickNext(view, out var next));
-        Assert.Equal(Finished, next.VideoId);
+        Assert.Equal(Finished, next.TrackKey);
         Assert.True(next.Copy);
     }
 
@@ -140,7 +144,7 @@ public sealed class DownloadSelectorTests : IDisposable
 
         Assert.True(Selector().TryPickNext(FinishedWith(KeepingTheSource), out var next));
 
-        Assert.Equal(Finished, next.VideoId);
+        Assert.Equal(Finished, next.TrackKey);
         Assert.False(next.Copy);
         Assert.NotNull(next.Into);
     }
@@ -158,7 +162,7 @@ public sealed class DownloadSelectorTests : IDisposable
     {
         Assert.True(Selector().TryPickNext(View(Held(Fresh)), out var next));
 
-        Assert.Equal(Fresh, next.VideoId);
+        Assert.Equal(Fresh, next.TrackKey);
         Assert.False(next.IsAdded);
     }
 
@@ -196,7 +200,7 @@ public sealed class DownloadSelectorTests : IDisposable
         Jobs.Record(Fresh, JobStage.Separation, JobStatus.Canceled);
 
         Assert.True(Selector().TryPickNext(View(Held(Fresh)), out var next));
-        Assert.Equal(Fresh, next.VideoId);
+        Assert.Equal(Fresh, next.TrackKey);
     }
 
     [Fact]

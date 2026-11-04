@@ -34,8 +34,8 @@ public sealed class VerdictSelector(
     )
     {
         next = view.Outstanding.FirstOrDefault(i =>
-            (!i.IsBackfill || i.VideoId == view.Bumped)
-            && skip?.Contains(i.VideoId) is not true
+            (!i.IsBackfill || i.TrackKey == view.Bumped)
+            && skip?.Contains(i.TrackKey) is not true
             && IsJudgeable(i, ledger)
         )!;
 
@@ -43,10 +43,10 @@ public sealed class VerdictSelector(
     }
 
     /// <summary>This one track, if it is outstanding and judgeable.</summary>
-    public bool TryPick(WorkListsView view, KeyLedger ledger, string videoId, out WorkItem next)
+    public bool TryPick(WorkListsView view, KeyLedger ledger, string trackKey, out WorkItem next)
     {
         next = view.Outstanding.FirstOrDefault(i =>
-            i.VideoId == videoId && IsJudgeable(i, ledger)
+            i.TrackKey == trackKey && IsJudgeable(i, ledger)
         )!;
 
         return next is not null;
@@ -92,14 +92,14 @@ public sealed class VerdictSelector(
     {
         next = owed.Select(run => new WorkItem
             {
-                VideoId = run.SourceVideoId ?? string.Empty,
+                TrackKey = run.SourceTrackKey ?? string.Empty,
                 Title = run.DisplayName,
             })
             .FirstOrDefault(item =>
-                item.VideoId is not ""
+                item.TrackKey is not ""
                 && StageEligibility.Allows(
                     jobs,
-                    item.VideoId,
+                    item.TrackKey,
                     JobStage.Verdict,
                     maxStrikes,
                     retrySucceeded: true
@@ -111,15 +111,15 @@ public sealed class VerdictSelector(
 
     private bool IsJudgeable(WorkItem i, KeyLedger ledger) =>
         !i.IsUnavailable
-        && workingSet.HasEvidence(i.VideoId)
-        && !ledger.HasRunFor(i.VideoId)
+        && workingSet.HasEvidence(i.TrackKey)
+        && !ledger.HasRunFor(i.TrackKey)
         && (
-            jobs.TryGet(i.VideoId, JobStage.Verdict, out var job)
+            jobs.TryGet(i.TrackKey, JobStage.Verdict, out var job)
             && job.Status is JobStatus.AwaitingPerson
                 ? _hasJudge
                 : StageEligibility.Allows(
                     jobs,
-                    i.VideoId,
+                    i.TrackKey,
                     JobStage.Verdict,
                     maxStrikes,
                     // A prior success here produced nothing that survived the ledger check, so
@@ -129,8 +129,9 @@ public sealed class VerdictSelector(
         )
         // Last, because it opens a file: a swap copies the verdict forward, so judging poor
         // audio first would restate that key onto the better upload rather than re-derive it.
-        && workingSet.AcquisitionFor(i.VideoId)?.Stops is not true
-        && LookalikeOf(i, ledger, names?.Read().GetValueOrDefault(i.VideoId)?.DisplayTitle) is null;
+        && workingSet.AcquisitionFor(i.TrackKey)?.Stops is not true
+        && LookalikeOf(i, ledger, names?.Read().GetValueOrDefault(i.TrackKey)?.DisplayTitle)
+            is null;
 
     /// <summary>
     /// The judged song this track's name, or StemForge's name for it once resolved, looks like,

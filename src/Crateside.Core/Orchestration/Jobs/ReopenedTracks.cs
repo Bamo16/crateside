@@ -36,14 +36,14 @@ public static class ReopenedTracks
         JobStage[] stages
     )
     {
-        string Identity(TrackJob job) => ledger.SongFor(job.VideoId) ?? job.VideoId;
+        string Identity(TrackJob job) => ledger.SongFor(job.TrackKey) ?? job.TrackKey;
 
         return jobs.Where(job => stages.Contains(job.Stage))
             .GroupBy(Identity, StringComparer.Ordinal)
             .Where(song =>
                 song.GroupBy(job => job.Stage).Select(Latest).Any(StageEligibility.IsOwed)
             )
-            .Select(song => Latest(song).VideoId)
+            .Select(song => Latest(song).TrackKey)
             .ToHashSet(StringComparer.Ordinal);
     }
 

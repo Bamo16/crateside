@@ -9,7 +9,7 @@ namespace Crateside.Core.Ledger;
 public sealed class KeyLedger
 {
     private readonly Dictionary<string, LedgerRun> _latestBySong;
-    private readonly Dictionary<string, string> _songByVideoId;
+    private readonly Dictionary<string, string> _songByTrackKey;
 
     public static KeyLedger Empty { get; } = new([]);
 
@@ -33,8 +33,8 @@ public sealed class KeyLedger
                 StringComparer.OrdinalIgnoreCase
             );
 
-        _songByVideoId = runs.Where(run => run.SourceVideoId is not null)
-            .GroupBy(run => run.SourceVideoId!, StringComparer.Ordinal)
+        _songByTrackKey = runs.Where(run => run.SourceTrackKey is not null)
+            .GroupBy(run => run.SourceTrackKey!, StringComparer.Ordinal)
             .ToDictionary(
                 upload => upload.Key,
                 upload => upload.OrderBy(run => run.Timestamp).Last().Song,
@@ -50,13 +50,13 @@ public sealed class KeyLedger
     /// The song a video ID belongs to, or null where the ledger has never seen it. Every URL a
     /// song has been cut from resolves to the same answer (ADR 0014).
     /// </summary>
-    public string? SongFor(string videoId) => _songByVideoId.GetValueOrDefault(videoId);
+    public string? SongFor(string trackKey) => _songByTrackKey.GetValueOrDefault(trackKey);
 
-    public bool TryGetLatestByVideoId(string videoId, [NotNullWhen(true)] out LedgerRun? run)
+    public bool TryGetLatestByTrackKey(string trackKey, [NotNullWhen(true)] out LedgerRun? run)
     {
         run = null;
 
-        return _songByVideoId.TryGetValue(videoId, out var song)
+        return _songByTrackKey.TryGetValue(trackKey, out var song)
             && TryGetLatestBySong(song, out run);
     }
 
@@ -64,5 +64,5 @@ public sealed class KeyLedger
     /// Whether any run has been recorded for this video ID, regardless of verdict — a
     /// WITHHELD run still counts as worked.
     /// </summary>
-    public bool HasRunFor(string videoId) => _songByVideoId.ContainsKey(videoId);
+    public bool HasRunFor(string trackKey) => _songByTrackKey.ContainsKey(trackKey);
 }

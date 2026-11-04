@@ -39,35 +39,35 @@ public sealed class SeparationSelectorTests : IDisposable
             AwaitingSeparation = awaitingSeparation,
         };
 
-    private KeyLedger JudgedAs(string confidence, params string[] videoIds)
+    private KeyLedger JudgedAs(string confidence, params string[] trackKeys)
     {
         var path = Path.Combine(_directory, "runs.jsonl");
 
         Directory.CreateDirectory(_directory);
-        File.WriteAllLines(path, videoIds.Select(v => Line(v, confidence)));
+        File.WriteAllLines(path, trackKeys.Select(v => Line(v, confidence)));
 
         return TestLedger.From(path);
     }
 
-    private static string Line(string videoId, string confidence) =>
+    private static string Line(string trackKey, string confidence) =>
         JsonSerializer.Serialize(
             new
             {
                 timestamp = "2026-08-16T00:00:00+00:00",
-                song = $"artist - {videoId}",
+                song = $"artist - {trackKey}",
                 artist = "Artist",
-                title = videoId,
-                source_url = $"https://music.youtube.com/watch?v={videoId}",
+                title = trackKey,
+                source_url = $"https://music.youtube.com/watch?v={trackKey}",
                 verdict = new { key = confidence == "WITHHELD" ? null : "C major", confidence },
             }
         );
 
-    private static WorkItem Item(string videoId, bool unavailable = false) =>
+    private static WorkItem Item(string trackKey, bool unavailable = false) =>
         new()
         {
-            PlaylistItemId = $"PLI-{videoId}",
-            VideoId = videoId,
-            Title = $"Track {videoId}",
+            PlaylistItemId = $"PLI-{trackKey}",
+            TrackKey = trackKey,
+            Title = $"Track {trackKey}",
             IsUnavailable = unavailable,
         };
 
@@ -105,7 +105,7 @@ public sealed class SeparationSelectorTests : IDisposable
         );
 
         Assert.True(picked);
-        Assert.Equal("aaaaaaaaaaa", order.VideoId);
+        Assert.Equal("aaaaaaaaaaa", order.TrackKey);
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public sealed class SeparationSelectorTests : IDisposable
         );
 
         Assert.True(picked);
-        Assert.Equal("bbbbbbbbbbb", order.VideoId);
+        Assert.Equal("bbbbbbbbbbb", order.TrackKey);
     }
 
     [Theory]
@@ -136,7 +136,7 @@ public sealed class SeparationSelectorTests : IDisposable
             out var order
         );
 
-        Assert.Equal("bbbbbbbbbbb", order.VideoId);
+        Assert.Equal("bbbbbbbbbbb", order.TrackKey);
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public sealed class SeparationSelectorTests : IDisposable
             out var order
         );
 
-        Assert.Equal("aaaaaaaaaaa", order.VideoId);
+        Assert.Equal("aaaaaaaaaaa", order.TrackKey);
     }
 
     [Fact]
@@ -191,7 +191,7 @@ public sealed class SeparationSelectorTests : IDisposable
             out var order
         );
 
-        Assert.Equal("bbbbbbbbbbb", order.VideoId);
+        Assert.Equal("bbbbbbbbbbb", order.TrackKey);
     }
 
     [Fact]
@@ -219,7 +219,7 @@ public sealed class SeparationSelectorTests : IDisposable
             out var order
         );
 
-        Assert.Equal("aaaaaaaaaaa", order.VideoId);
+        Assert.Equal("aaaaaaaaaaa", order.TrackKey);
     }
 
     [Fact]
@@ -231,7 +231,7 @@ public sealed class SeparationSelectorTests : IDisposable
             out var order
         );
 
-        Assert.Equal("bbbbbbbbbbb", order.VideoId);
+        Assert.Equal("bbbbbbbbbbb", order.TrackKey);
     }
 
     [Fact]

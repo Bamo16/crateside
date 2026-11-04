@@ -11,7 +11,7 @@ public sealed class TracksServiceTests
     private static TracksView Empty => new() { Rows = [] };
 
     private static StageChange Change(JobStage stage = JobStage.Separation) =>
-        new() { Stage = stage, VideoId = "aaaaaaaaaaa" };
+        new() { Stage = stage, TrackKey = "aaaaaaaaaaa" };
 
     [Fact]
     public async Task A_stage_change_refreshes_once_the_burst_has_settled()

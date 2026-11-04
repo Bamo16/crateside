@@ -93,7 +93,7 @@ public sealed class DetectorBackfill(
                 ProcessedTracks.Scan(ledger, [paths.StagingFolder, paths.LibraryFolder]),
                 ledger
             )
-            .Select(entry => (entry.Path, Song: ledger.SongFor(entry.VideoId)))
+            .Select(entry => (entry.Path, Song: ledger.SongFor(entry.TrackKey)))
             .Where(found => found.Song is not null)
             .Select(found => (found.Path, Song: found.Song!))
             .OrderBy(found => found.Song, StringComparer.Ordinal)

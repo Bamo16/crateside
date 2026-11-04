@@ -214,16 +214,16 @@ public sealed class TracksService : IDisposable
                 _seeded = true;
 
                 foreach (var row in ready)
-                    _announced.Add(row.VideoId);
+                    _announced.Add(row.TrackKey);
 
                 return;
             }
 
             // A track leaving ready-to-warp and returning counts as arriving again — e.g. after a
             // re-cut.
-            _announced.IntersectWith(ready.Select(row => row.VideoId));
+            _announced.IntersectWith(ready.Select(row => row.TrackKey));
 
-            fresh = [.. ready.Where(row => _announced.Add(row.VideoId))];
+            fresh = [.. ready.Where(row => _announced.Add(row.TrackKey))];
         }
 
         foreach (var row in fresh)

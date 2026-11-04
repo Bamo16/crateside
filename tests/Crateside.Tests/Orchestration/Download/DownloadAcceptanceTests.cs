@@ -12,12 +12,12 @@ public sealed class DownloadAcceptanceTests
     private static WantedDownload Wanted(string url, string? accepted, string? label = null) =>
         new()
         {
-            VideoId = Track,
+            TrackKey = Track,
             Url = url,
             Label = label,
             Track = new WorkItem
             {
-                VideoId = Track,
+                TrackKey = Track,
                 Title = "Track",
                 AcceptedUpload = accepted,
             },

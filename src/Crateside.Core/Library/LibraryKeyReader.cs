@@ -38,7 +38,7 @@ public sealed class LibraryKeyReader(
         var tracks = new Dictionary<string, List<(string File, FileTags? Tags)>>(
             StringComparer.OrdinalIgnoreCase
         );
-        var videoIds = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        var trackKeys = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         var unkeyed = new List<string>();
         var files = 0;
         var perishable = 0;
@@ -53,13 +53,13 @@ public sealed class LibraryKeyReader(
 
             var applied = tags.TryGet(file, out var found) ? found : null;
 
-            var (track, videoId) = TrackOf(file, ledger);
+            var (track, trackKey) = TrackOf(file, ledger);
 
             if (!tracks.TryGetValue(track, out var samples))
                 tracks[track] = samples = [];
 
             samples.Add((file, applied));
-            videoIds[file] = videoId;
+            trackKeys[file] = trackKey;
 
             if (MusicKey.FromString(applied?.Key) is null)
                 unkeyed.Add(Path.GetRelativePath(root, file));
@@ -68,7 +68,7 @@ public sealed class LibraryKeyReader(
         }
 
         var songs = tracks
-            .Select(pair => Song(pair.Key, pair.Value, videoIds, ledger))
+            .Select(pair => Song(pair.Key, pair.Value, trackKeys, ledger))
             .OrderBy(song => song.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -100,7 +100,7 @@ public sealed class LibraryKeyReader(
     private LibrarySong Song(
         string track,
         List<(string File, FileTags? Tags)> samples,
-        Dictionary<string, string?> videoIds,
+        Dictionary<string, string?> trackKeys,
         KeyLedger ledger
     )
     {
@@ -115,7 +115,7 @@ public sealed class LibraryKeyReader(
             .Select(s => tempos.Read(s.File))
             .FirstOrDefault(read => read is not null);
         var reading = instrumentals
-            .Select(s => beats?.ReadFor(videoIds[s.File], s.File))
+            .Select(s => beats?.ReadFor(trackKeys[s.File], s.File))
             .FirstOrDefault(read => read is not null);
 
         return new LibrarySong
@@ -138,9 +138,9 @@ public sealed class LibraryKeyReader(
     /// The song a file belongs to: its ledger identity, else its upload, else its name with the
     /// preset stripped for a file carrying no provenance.
     /// </summary>
-    private static (string Track, string? VideoId) TrackOf(string file, KeyLedger ledger) =>
-        StemTagReader.Read(file)?.Provenance is { SourceVideoId: { } videoId }
-            ? (ledger.SongFor(videoId) ?? videoId, videoId)
+    private static (string Track, string? TrackKey) TrackOf(string file, KeyLedger ledger) =>
+        StemTagReader.Read(file)?.Provenance is { SourceTrackKey: { } trackKey }
+            ? (ledger.SongFor(trackKey) ?? trackKey, trackKey)
             : (SourcelessSongs.KeyOf(file), null);
 
     private static string? MostCommon(

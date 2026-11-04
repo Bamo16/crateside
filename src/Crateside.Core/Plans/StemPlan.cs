@@ -108,8 +108,8 @@ public sealed record StemPlan
         && !Presets.Except(other.Presets, StringComparer.Ordinal).Any()
         && AddedSources.Count == other.AddedSources.Count
         && !AddedSources
-            .Select(source => source.VideoId)
-            .Except(other.AddedSources.Select(source => source.VideoId), StringComparer.Ordinal)
+            .Select(source => source.TrackKey)
+            .Except(other.AddedSources.Select(source => source.TrackKey), StringComparer.Ordinal)
             .Any()
         && AdoptedSamples.Count == other.AdoptedSamples.Count
         && !AdoptedSamples
@@ -134,7 +134,8 @@ public sealed record AdoptedSample
 /// <summary>A whole file of this song the user attached: downloaded, staged, tagged, never cut.</summary>
 public sealed record AddedSource
 {
-    public required string VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
 
     /// <summary>
     /// What the user called it, which becomes the file's parenthesized suffix — unique per track,
@@ -146,5 +147,5 @@ public sealed record AddedSource
     public SampleType? Type { get; init; }
 
     [JsonIgnore]
-    public string WatchUrl => $"https://music.youtube.com/watch?v={VideoId}";
+    public string WatchUrl => $"https://music.youtube.com/watch?v={TrackKey}";
 }

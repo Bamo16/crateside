@@ -35,12 +35,12 @@ public sealed class HandoffDrainer(
 
         StemLanding.ReleaseParked(_paths, ledger, jobs, deletions);
 
-        if (!selector.TryPickNext(out var videoId, out var stems))
+        if (!selector.TryPickNext(out var trackKey, out var stems))
             return StageTick.Idle;
 
-        var subject = ledger.TryGetLatestByVideoId(videoId, out var run) ? run.Song : videoId;
+        var subject = ledger.TryGetLatestByTrackKey(trackKey, out var run) ? run.Song : trackKey;
 
-        jobs.Record(videoId, JobStage.Handoff, JobStatus.Running);
+        jobs.Record(trackKey, JobStage.Handoff, JobStatus.Running);
 
         // Worked out before the move, so each stem lands in staging with its sidecar (#77).
         var prepared = sidecars is null
@@ -49,13 +49,13 @@ public sealed class HandoffDrainer(
 
         var result = runner.Run(
             stems,
-            NameFor(videoId),
-            SupersededStems.In(_paths.StagingFolder, videoId, ledger, Kept()),
+            NameFor(trackKey),
+            SupersededStems.In(_paths.StagingFolder, trackKey, ledger, Kept()),
             (from, to) => sidecars?.Moved(prepared, from, to)
         );
 
         jobs.Record(
-            videoId,
+            trackKey,
             JobStage.Handoff,
             result.IsSuccess ? JobStatus.Succeeded : JobStatus.Failed,
             error: result.Error,
@@ -83,30 +83,30 @@ public sealed class HandoffDrainer(
         instructions
             .Read()
             .SelectMany(track => track.Plan?.AddedSources ?? [])
-            .Select(source => source.VideoId)
+            .Select(source => source.TrackKey)
             .ToHashSet(StringComparer.Ordinal);
 
     /// <summary>
     /// What the user calls the track this file belongs to — through its owner, for an added
     /// source — or null when they have not said (ADR 0014).
     /// </summary>
-    private string? NameFor(string videoId) =>
-        Owner(videoId) switch
+    private string? NameFor(string trackKey) =>
+        Owner(trackKey) switch
         {
             null => null,
             { Name: { Length: > 0 } stated } => stated,
             // A track's own download already arrives under the name the separator was asked for.
-            { VideoId: var owner } when owner.Equals(videoId, StringComparison.Ordinal) => null,
-            { VideoId: var owner } => names.Read().GetValueOrDefault(owner)?.BaseName,
+            { TrackKey: var owner } when owner.Equals(trackKey, StringComparison.Ordinal) => null,
+            { TrackKey: var owner } => names.Read().GetValueOrDefault(owner)?.BaseName,
         };
 
-    private TrackInstruction? Owner(string videoId) =>
+    private TrackInstruction? Owner(string trackKey) =>
         instructions
             .Read()
             .FirstOrDefault(track =>
-                track.VideoId.Equals(videoId, StringComparison.Ordinal)
+                track.TrackKey.Equals(trackKey, StringComparison.Ordinal)
                 || track.Plan?.AddedSources.Any(source =>
-                    source.VideoId.Equals(videoId, StringComparison.Ordinal)
+                    source.TrackKey.Equals(trackKey, StringComparison.Ordinal)
                 )
                     is true
             );

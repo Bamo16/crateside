@@ -123,8 +123,8 @@ public sealed class LedgerStore : IDisposable
     }
 
     /// <summary>Resolves the video ID to its song first, so the song's latest run wins.</summary>
-    public RunEvidence? EvidenceForVideoId(string videoId) =>
-        Read().SongFor(videoId) is { } song ? EvidenceFor(song) : null;
+    public RunEvidence? EvidenceForTrackKey(string trackKey) =>
+        Read().SongFor(trackKey) is { } song ? EvidenceFor(song) : null;
 
     /// <summary>The evidence behind every song's latest verdict, keyed by song identity.</summary>
     public IReadOnlyDictionary<string, RunEvidence> LatestEvidence()
@@ -254,7 +254,7 @@ public sealed class LedgerStore : IDisposable
     /// Says an upload is the song another upload already is, carrying its verdict over; an upload
     /// the song already has is a skip.
     /// </summary>
-    public RestateOutcome Restate(string fromVideoId, string toUrl)
+    public RestateOutcome Restate(string fromTrackKey, string toUrl)
     {
         lock (_gate)
         {
@@ -263,15 +263,15 @@ public sealed class LedgerStore : IDisposable
             if (!YouTubeUrl.TryNormalize(toUrl, out var url))
                 return new RestateOutcome.Refused($"{toUrl} is not an http(s) URL.");
 
-            if (ledger.SongFor(fromVideoId) is not { } song)
+            if (ledger.SongFor(fromTrackKey) is not { } song)
                 return new RestateOutcome.Refused(
-                    $"No run recorded for video ID {fromVideoId}. A restatement adds an upload to a "
+                    $"No run recorded for video ID {fromTrackKey}. A restatement adds an upload to a "
                         + "song the ledger already knows."
                 );
 
             if (
-                YouTubeUrl.TryGetVideoId(url, out var toVideoId)
-                && ledger.SongFor(toVideoId) is { } held
+                YouTubeUrl.TryGetVideoId(url, out var toTrackKey)
+                && ledger.SongFor(toTrackKey) is { } held
                 && held.Equals(song, StringComparison.OrdinalIgnoreCase)
             )
                 return new RestateOutcome.AlreadyHeld(song);

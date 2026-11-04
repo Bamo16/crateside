@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Crateside.Core.Samples;
 
 /// <summary>
@@ -51,10 +53,11 @@ public sealed record StemProvenance
     public string? SourceUrl { get; init; }
 
     /// <summary>
-    /// The YouTube video ID extracted from <see cref="SourceUrl"/> — the join key onto the
+    /// The work key read from <see cref="SourceUrl"/> — the join key onto the
     /// key ledger, and the reason this parse exists.
     /// </summary>
-    public string? SourceVideoId { get; init; }
+    [JsonPropertyName("sourceVideoId")]
+    public string? SourceTrackKey { get; init; }
 
     /// <summary>
     /// Parses a provenance comment. Returns null for anything carrying neither known prefix,
@@ -113,7 +116,7 @@ public sealed record StemProvenance
             SourceUrl = sourceUrl,
             Type = type,
             FormatId = formatId,
-            SourceVideoId = YouTubeUrl.TryGetVideoId(sourceUrl, out var videoId) ? videoId : null,
+            SourceTrackKey = TrackKeys.TryParse(sourceUrl, out var trackKey) ? trackKey : null,
         };
     }
 

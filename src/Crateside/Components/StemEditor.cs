@@ -99,7 +99,7 @@ public sealed class StemEditor(
 
     public async Task LoadAsync() => Presets = await presetReader.ReadAsync(_circuit.Token);
 
-    public bool IsPicking(TrackRow row) => Picking == row.VideoId;
+    public bool IsPicking(TrackRow row) => Picking == row.TrackKey;
 
     /// <summary>A tick has moved, so the page shows the confirm instead of what happens next.</summary>
     public bool IsConfirming(TrackRow row) => IsPicking(row) && Plan is not null;
@@ -126,7 +126,7 @@ public sealed class StemEditor(
             return;
         }
 
-        Picking = row.VideoId;
+        Picking = row.TrackKey;
         _wanted = StemPicker.For(row, Presets).Wanted;
         Plan = null;
 
@@ -175,10 +175,10 @@ public sealed class StemEditor(
         if (row.CanChangePlan)
         {
             // Nothing has been made, so there is nothing to confirm and nothing to lose.
-            instructions.SetPlan(row.VideoId, wanted);
-            actions.Record(row.VideoId, UserActionKind.PlanChanged, line.Label);
+            instructions.SetPlan(row.TrackKey, wanted);
+            actions.Record(row.TrackKey, UserActionKind.PlanChanged, line.Label);
 
-            _ticked[row.VideoId] = wanted;
+            _ticked[row.TrackKey] = wanted;
 
             if (IsPicking(row))
                 _wanted = wanted;
@@ -200,7 +200,7 @@ public sealed class StemEditor(
         Plan =
             wanted.AsksTheSameAs(row.Plan) && !row.IsShort
                 ? null
-                : recut.PlanFor(row.VideoId, wanted, Presets, row.Inventory);
+                : recut.PlanFor(row.TrackKey, wanted, Presets, row.Inventory);
 
         Changed?.Invoke();
     }
@@ -209,14 +209,14 @@ public sealed class StemEditor(
         WorkAsync(async () =>
         {
             var picker = PickerFor(row);
-            var outcome = recut.Apply(row.VideoId, _wanted, Presets, row.Inventory);
+            var outcome = recut.Apply(row.TrackKey, _wanted, Presets, row.Inventory);
 
             Problem = outcome.Problem;
 
             if (outcome.Succeeded)
             {
                 actions.Record(
-                    row.VideoId,
+                    row.TrackKey,
                     UserActionKind.Recut,
                     $"{picker.Adding} new, {picker.Removing} removed",
                     picker.Adding > 0 ? JobStage.Separation : null
@@ -234,11 +234,11 @@ public sealed class StemEditor(
     public Task CutShortfallAsync(TrackRow row) =>
         WorkAsync(async () =>
         {
-            Problem = recut.Apply(row.VideoId, row.Plan, Presets, row.Inventory).Problem;
+            Problem = recut.Apply(row.TrackKey, row.Plan, Presets, row.Inventory).Problem;
 
             if (Problem is null)
                 actions.Record(
-                    row.VideoId,
+                    row.TrackKey,
                     UserActionKind.ShortfallCut,
                     Missing(row),
                     JobStage.Separation
@@ -258,7 +258,7 @@ public sealed class StemEditor(
         CancelAdopting();
 
         Problem = null;
-        Adding = row.VideoId;
+        Adding = row.TrackKey;
         Changed?.Invoke();
     }
 
@@ -285,8 +285,8 @@ public sealed class StemEditor(
         AddLabel = label ?? AddLabel;
         Shortfall = null;
 
-        if (YouTubeUrl.TryGetVideoId(AddUrl, out var videoId) && videoId != _titleOf)
-            _ = ReadTitleAsync(row, videoId);
+        if (YouTubeUrl.TryGetVideoId(AddUrl, out var trackKey) && trackKey != _titleOf)
+            _ = ReadTitleAsync(row, trackKey);
 
         Replan(row);
         Changed?.Invoke();
@@ -322,7 +322,7 @@ public sealed class StemEditor(
             if (outcome.Succeeded)
             {
                 actions.Record(
-                    row.VideoId,
+                    row.TrackKey,
                     UserActionKind.SourceAdded,
                     $"{AddLabel} · {AddUrl}",
                     JobStage.Download
@@ -340,7 +340,7 @@ public sealed class StemEditor(
         CancelAdopting();
 
         Problem = null;
-        Adopting = row.VideoId;
+        Adopting = row.TrackKey;
         AdoptCandidates = adoption.Candidates();
         Changed?.Invoke();
     }
@@ -378,7 +378,7 @@ public sealed class StemEditor(
             if (Problem is null)
             {
                 actions.Record(
-                    row.VideoId,
+                    row.TrackKey,
                     UserActionKind.SampleAdopted,
                     Path.GetFileName(AdoptPath)
                 );
@@ -413,13 +413,13 @@ public sealed class StemEditor(
 
     private StemPlan PlanOf(TrackRow row)
     {
-        if (!_ticked.TryGetValue(row.VideoId, out var ticked))
+        if (!_ticked.TryGetValue(row.TrackKey, out var ticked))
             return row.Plan;
 
         if (!ticked.AsksTheSameAs(row.Plan))
             return ticked;
 
-        _ticked.Remove(row.VideoId);
+        _ticked.Remove(row.TrackKey);
 
         return row.Plan;
     }
@@ -443,9 +443,9 @@ public sealed class StemEditor(
             ? PlanOf(row).TogglingSource()
             : PlanOf(row).Toggling(line.PresetId!);
 
-        instructions.SetPlan(row.VideoId, wanted);
+        instructions.SetPlan(row.TrackKey, wanted);
 
-        _ticked[row.VideoId] = wanted;
+        _ticked[row.TrackKey] = wanted;
         _wanted = wanted;
         Plan = null;
 
@@ -467,9 +467,9 @@ public sealed class StemEditor(
         });
 
     /// <summary>Suggests a type from what the upload is called, until the user has picked one.</summary>
-    private async Task ReadTitleAsync(TrackRow row, string videoId)
+    private async Task ReadTitleAsync(TrackRow row, string trackKey)
     {
-        _titleOf = videoId;
+        _titleOf = trackKey;
         _addTitle = null;
         _readingTitle = true;
 
@@ -480,7 +480,7 @@ public sealed class StemEditor(
 
         try
         {
-            title = await sources.TitleOfAsync(videoId, _circuit.Token);
+            title = await sources.TitleOfAsync(trackKey, _circuit.Token);
         }
         catch (OperationCanceledException)
         {
@@ -488,7 +488,7 @@ public sealed class StemEditor(
         }
 
         // The URL moved on while this was being asked.
-        if (_titleOf != videoId || Adding != row.VideoId)
+        if (_titleOf != trackKey || Adding != row.TrackKey)
             return;
 
         _readingTitle = false;
