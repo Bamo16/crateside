@@ -36,6 +36,28 @@ public sealed record Release
     /// <summary>The cover's file name in the covers folder.</summary>
     public string? Cover { get; init; }
 
+    /// <summary>The release in short phrases for a header line: album, album artist, position, year.</summary>
+    public IReadOnlyList<string> Describe() =>
+        [
+            .. new[]
+            {
+                Album,
+                AlbumArtist is { Length: > 0 } artist && artist != Album ? artist : null,
+                Track is { } track
+                    ? TrackCount is { } count
+                        ? $"track {track} of {count}"
+                        : $"track {track}"
+                    : null,
+                Disc is { } disc && DiscCount is > 1 ? $"disc {disc} of {DiscCount}" : null,
+                YearKind switch
+                {
+                    Imports.YearKind.Release when Year is { } year => $"{year}",
+                    Imports.YearKind.Upload when Year is { } year => $"uploaded {year}",
+                    _ => null,
+                },
+            }.OfType<string>(),
+        ];
+
     [JsonIgnore]
     public int? ReleaseYear => YearKind is Imports.YearKind.Release ? Year : null;
 }

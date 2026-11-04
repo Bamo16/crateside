@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Crateside.Core.Naming;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
@@ -65,6 +66,62 @@ public sealed class TrackIntake(
         Record(key, name, stored, tags, pageUrl, recipe);
 
         return new IntakeOutcome.TakenIn(key, name);
+    }
+
+    /// <summary>Extracts each audio file of a zip as a track of its own and deletes the zip.</summary>
+    public IReadOnlyList<IntakeOutcome> TakeInZip(string zip, Recipe? recipe = null)
+    {
+        var folder = Path.Combine(paths.ImportsFolder, ".incoming", Guid.NewGuid().ToString("n"));
+        List<IntakeOutcome> outcomes = [];
+
+        try
+        {
+            Directory.CreateDirectory(folder);
+
+            using (var archive = ZipFile.OpenRead(zip))
+            {
+                foreach (var entry in archive.Entries.Where(entry => IsAudioFile(entry.Name)))
+                    entry.ExtractToFile(Path.Combine(folder, Unique(folder, entry.Name)));
+            }
+
+            foreach (var file in Directory.EnumerateFiles(folder))
+                outcomes.Add(TakeInFile(file, IntakeMode.Move, recipe));
+
+            File.Delete(zip);
+        }
+        catch (Exception ex)
+            when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            outcomes.Add(
+                new IntakeOutcome.Refused(
+                    $"{Path.GetFileName(zip)} could not be read: {ex.Message}"
+                )
+            );
+        }
+        finally
+        {
+            TryDeleteFolder(folder);
+        }
+
+        return outcomes;
+    }
+
+    public static bool IsAudioFile(string path) =>
+        AudioExtensions.Contains(Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
+
+    // Two entries of one name, from different folders of the zip, are two tracks.
+    private static string Unique(string folder, string name) =>
+        File.Exists(Path.Combine(folder, name))
+            ? $"{Path.GetFileNameWithoutExtension(name)}~{Guid.NewGuid():n}{Path.GetExtension(name)}"
+            : name;
+
+    private static void TryDeleteFolder(string folder)
+    {
+        try
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
     /// <summary>Takes in a track a site gave, whose audio is already in the working set.</summary>
@@ -183,6 +240,18 @@ public sealed class TrackIntake(
             return null;
         }
     }
+
+    private static readonly string[] AudioExtensions =
+    [
+        ".flac",
+        ".mp3",
+        ".m4a",
+        ".ogg",
+        ".opus",
+        ".wav",
+        ".aif",
+        ".aiff",
+    ];
 
     private IntakeRecord? Known(string key) =>
         intake

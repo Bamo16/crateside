@@ -4,6 +4,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
+using Crateside.Core.Imports;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
 using Crateside.Core.Marks;
@@ -95,6 +96,9 @@ public sealed record TrackRow
         > 1;
 
     public TrackNameSource NameSource { get; init; }
+
+    /// <summary>What the source said about the release this track is from; null for a playlist track.</summary>
+    public Release? Release { get; init; }
 
     /// <summary>
     /// Staged files not yet carrying the name the user stated — zero unless a rename was

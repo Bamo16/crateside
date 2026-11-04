@@ -1,5 +1,3 @@
-using System.IO.Compression;
-
 namespace Crateside.Core.Imports;
 
 /// <summary>
@@ -10,18 +8,6 @@ public sealed class InboxScanner(TrackIntake intake, CratesidePaths paths, TimeP
 {
     /// <summary>How long a file's size must hold still before it is read.</summary>
     public static readonly TimeSpan StillFor = TimeSpan.FromSeconds(5);
-
-    private static readonly string[] AudioExtensions =
-    [
-        ".flac",
-        ".mp3",
-        ".m4a",
-        ".ogg",
-        ".opus",
-        ".wav",
-        ".aif",
-        ".aiff",
-    ];
 
     private static readonly string[] PartialExtensions = [".part", ".crdownload", ".tmp"];
 
@@ -49,7 +35,7 @@ public sealed class InboxScanner(TrackIntake intake, CratesidePaths paths, TimeP
 
             var isZip = extension.Equals(".zip", StringComparison.OrdinalIgnoreCase);
 
-            if (!isZip && !AudioExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            if (!isZip && !TrackIntake.IsAudioFile(file))
             {
                 if (_named.Add(file))
                     left.Add(file);
@@ -124,61 +110,15 @@ public sealed class InboxScanner(TrackIntake intake, CratesidePaths paths, TimeP
         }
     }
 
-    private List<IntakeOutcome> TakeInZip(string zip)
+    private IReadOnlyList<IntakeOutcome> TakeInZip(string zip)
     {
-        var recipe = RecipeOf(zip);
-        var folder = Path.Combine(paths.ImportsFolder, ".incoming", Guid.NewGuid().ToString("n"));
-        List<IntakeOutcome> outcomes = [];
+        var outcomes = intake.TakeInZip(zip, RecipeOf(zip));
 
-        try
-        {
-            Directory.CreateDirectory(folder);
-
-            using (var archive = ZipFile.OpenRead(zip))
-            {
-                foreach (var entry in archive.Entries.Where(IsAudio))
-                    entry.ExtractToFile(Path.Combine(folder, Unique(folder, entry.Name)));
-            }
-
-            foreach (var file in Directory.EnumerateFiles(folder))
-                outcomes.Add(intake.TakeInFile(file, IntakeMode.Move, recipe));
-
-            File.Delete(zip);
-        }
-        catch (Exception ex)
-            when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
-        {
+        if (outcomes is [IntakeOutcome.Refused])
             _unreadable.Add(zip);
-            outcomes.Add(
-                new IntakeOutcome.Refused(
-                    $"{Path.GetFileName(zip)} could not be read: {ex.Message}"
-                )
-            );
-        }
-        finally
-        {
-            try
-            {
-                Directory.Delete(folder, recursive: true);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
-        }
 
         return outcomes;
     }
-
-    private static bool IsAudio(ZipArchiveEntry entry) =>
-        entry.Name.Length > 0
-        && AudioExtensions.Contains(
-            Path.GetExtension(entry.Name),
-            StringComparer.OrdinalIgnoreCase
-        );
-
-    // Two entries of one name, from different folders of the zip, are two tracks.
-    private static string Unique(string folder, string name) =>
-        File.Exists(Path.Combine(folder, name))
-            ? $"{Path.GetFileNameWithoutExtension(name)}~{Guid.NewGuid():n}{Path.GetExtension(name)}"
-            : name;
 }
 
 /// <summary>What one pass of the inbox did, and the files it left where they were.</summary>

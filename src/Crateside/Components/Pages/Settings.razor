@@ -6,6 +6,7 @@
 
 @using System.Diagnostics
 @using Crateside.Core
+@using Crateside.Core.Imports
 @using Crateside.Core.Ledger
 @using Crateside.Core.Orchestration
 @using Crateside.Core.Orchestration.Loop
@@ -35,6 +36,8 @@
 @inject JudgeSettingsStore JudgeStore
 @inject TrueUpAll TrueUps
 @inject SourceRetentionStore RetentionStore
+@inject RecipeStore Recipes
+@inject ImportStore Imports
 @inject SourceBackfill SourceFill
 @inject SourceAvailability Availability
 
@@ -339,6 +342,47 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
                     {
                         <span class="status problem">@trueUpProblem</span>
                     }
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>Taking in tracks</h3>
+
+            <div class="row">
+                <div class="name">
+                    <span>Default recipe</span>
+                    <span class="gist">
+                        What a new track is cut into: Standard makes the vocal and instrumental
+                        stems and a drum guide; Instrumental keeps the source and the drum guide,
+                        for music with no vocal. It applies to a track when it arrives, and a
+                        folder inside the inbox named Standard or Instrumental overrides it for
+                        the files in it.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="pills">
+                        <button class="pill @(_recipe is Recipe.Standard ? "on plain" : "off")"
+                                @onclick="() => SetRecipe(Recipe.Standard)">Standard</button>
+                        <button class="pill @(_recipe is Recipe.Instrumental ? "on plain" : "off")"
+                                @onclick="() => SetRecipe(Recipe.Instrumental)">Instrumental</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="name">
+                    <span>Inbox</span>
+                    <span class="gist">
+                        Audio files and zips saved here become tracks, then are moved out of it.
+                        Change the folder with Paths:Inbox in the configuration and restart.
+                    </span>
+                </div>
+                <div class="control">
+                    <span class="status mono">@Paths.Inbox</span>
+                    <span class="status">
+                        Imported audio takes @((Imports.TotalBytes / 1_000_000_000.0).ToString("N1")) GB and is never pruned.
+                    </span>
                 </div>
             </div>
         </section>
@@ -683,6 +727,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     private StarterWarps Starter => Warps.Value.StarterWarps;
 
     private SourceRetention _retention = new();
+    private Recipe _recipe;
     private int _days;
     private IReadOnlyList<string>? _missing;
     private bool _missingWorking;
@@ -701,6 +746,12 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
             { Days: <= 0 } => "Discarded as soon as the last stem leaves Staging.",
             _ => $"Kept {"day".ToQuantity(_retention.Days)} after the last stem leaves Staging.",
         };
+
+    private void SetRecipe(Recipe recipe)
+    {
+        Recipes.Choose(recipe);
+        _recipe = Recipes.Default;
+    }
 
     private void SetForever(bool forever) => Remember(_retention with { Forever = forever });
 
@@ -943,6 +994,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         _consume = saved.ConsumeOnArrival;
         _retention = RetentionStore.Read();
         _days = _retention.Days;
+        _recipe = Recipes.Default;
         LoadSpendDown();
     }
 
