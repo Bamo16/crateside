@@ -584,7 +584,7 @@ public sealed partial class VerdictRunner(
         return lookups;
     }
 
-    /// <summary>The ledger's names for a song judged before, else the row's <c>Artist - Title</c> without its bracketed tail.</summary>
+    /// <summary>The ledger's names for a song judged before, else the row's <c>Artist - Title</c>.</summary>
     private (string Artist, string Title)? ArtistAndTitle(WorkOrder order)
     {
         if (HeldRun(order) is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title })
@@ -592,8 +592,8 @@ public sealed partial class VerdictRunner(
 
         return
             order.Title.Split(" - ", 2) is [var named, var rest]
-            && BracketedTail.Replace(rest, string.Empty).Trim() is { Length: > 0 } bare
-            ? (named.Trim(), bare)
+            && rest.Trim() is { Length: > 0 } rowTitle
+            ? (named.Trim(), rowTitle)
             : null;
     }
 
@@ -928,9 +928,6 @@ public sealed partial class VerdictRunner(
 
     [GeneratedRegex(@"""result"":""(?<Message>API Error:[^""]*)""", RegexOptions.ExplicitCapture)]
     private static partial Regex SessionApiError { get; }
-
-    [GeneratedRegex(@"(\s*[(\[][^()\[\]]*[)\]])+\s*$")]
-    private static partial Regex BracketedTail { get; }
 
     private sealed record DetectedWindow(RunWindow Window, string? Evidence, string? Error);
 

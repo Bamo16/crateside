@@ -34,16 +34,25 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
     private const string HooktheorySearchUrl =
         "https://www.hooktheory.com/meili/indexes/theorytabs/search";
 
+    /// <summary>A bracketed tail on the title (<c>(feat. …)</c>, <c>(Remaster)</c>) is left out, since the sites file the song without it.</summary>
     public async Task<IReadOnlyList<SiteLookup>> FetchAsync(
         string artist,
         string title,
         CancellationToken ct = default
-    ) =>
+    )
+    {
+        var bare = BareTitle(title);
+
+        return
         [
-            await LookUpAsync("Hooktheory", () => HooktheoryAsync(artist, title, ct)),
-            await LookUpAsync("Musicnotes", () => MusicnotesAsync(artist, title, ct)),
-            await LookUpAsync("Ultimate Guitar", () => UltimateGuitarAsync(artist, title, ct)),
+            await LookUpAsync("Hooktheory", () => HooktheoryAsync(artist, bare, ct)),
+            await LookUpAsync("Musicnotes", () => MusicnotesAsync(artist, bare, ct)),
+            await LookUpAsync("Ultimate Guitar", () => UltimateGuitarAsync(artist, bare, ct)),
         ];
+    }
+
+    private static string BareTitle(string title) =>
+        BracketedTail.Replace(title, string.Empty).Trim() is { Length: > 0 } bare ? bare : title;
 
     /// <summary><c>Beyoncé</c> → <c>beyonce</c>, <c>Don't Stop Me Now</c> → <c>dont-stop-me-now</c>.</summary>
     public static string Slug(string text)
@@ -407,6 +416,9 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
         TitleTag.Match(page).Groups["Title"] is { Success: true, Value: var title }
             ? WebUtility.HtmlDecode(title).Trim()
             : null;
+
+    [GeneratedRegex(@"(\s*[(\[][^()\[\]]*[)\]])+\s*$")]
+    private static partial Regex BracketedTail { get; }
 
     [GeneratedRegex(@"searchKey:\s*""(?<Key>[^""]+)""")]
     private static partial Regex HooktheorySearchKey { get; }
