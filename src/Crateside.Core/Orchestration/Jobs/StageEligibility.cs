@@ -36,6 +36,7 @@ public static class StageEligibility
         {
             JobStatus.Canceled or JobStatus.Held or JobStatus.Queued or JobStatus.Running => true,
             JobStatus.Failed => !HasGivenUp(job),
+            // The person's to do, not crateside's.
             _ => false,
         };
 
@@ -73,7 +74,7 @@ public static class StageEligibility
         {
             JobStatus.Succeeded => retrySucceeded,
             // Something is on it — or a previous crateside was, and it is being adopted.
-            JobStatus.Queued or JobStatus.Running => false,
+            JobStatus.Queued or JobStatus.Running or JobStatus.AwaitingPerson => false,
             // Canceling is the user's call, not the track's fault, so it is simply next again.
             JobStatus.Canceled or JobStatus.Held => true,
             _ => job.Strikes < maxStrikes && !IsPermanent(job, out _),

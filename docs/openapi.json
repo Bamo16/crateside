@@ -1130,7 +1130,8 @@
           "Succeeded",
           "Failed",
           "Canceled",
-          "Held"
+          "Held",
+          "AwaitingPerson"
         ],
         "description": "How a job is currently going."
       },

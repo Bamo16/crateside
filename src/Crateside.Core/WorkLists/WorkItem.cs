@@ -96,6 +96,10 @@ public sealed record WorkListsView
     /// <param name="awaitingCut">
     /// Video IDs whose separation is owed with their files left where they are.
     /// </param>
+    /// <param name="awaitingPerson">
+    /// Video IDs with no verdict that the person is to decide; their stems are cut and parked
+    /// without waiting for one (ADR 0076).
+    /// </param>
     public static WorkListsView Compose(
         IReadOnlyList<WorkItem> items,
         IReadOnlySet<string> fullyProcessed,
@@ -105,7 +109,8 @@ public sealed record WorkListsView
         IReadOnlyList<WorkItem>? reopened = null,
         string? bumped = null,
         IReadOnlySet<string>? awaitingCut = null,
-        IReadOnlyDictionary<string, StemInventory>? inventories = null
+        IReadOnlyDictionary<string, StemInventory>? inventories = null,
+        IReadOnlySet<string>? awaitingPerson = null
     )
     {
         var described = items.Select(Described).ToArray();
@@ -142,6 +147,7 @@ public sealed record WorkListsView
                 !separatedWithoutKey.Contains(i.VideoId)
                 && (
                     verdictWithoutStems.Contains(i.VideoId)
+                    || awaitingPerson?.Contains(i.VideoId) is true
                     || awaitingCut?.Contains(i.VideoId) is true
                 )
                 && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory).Passes > 0

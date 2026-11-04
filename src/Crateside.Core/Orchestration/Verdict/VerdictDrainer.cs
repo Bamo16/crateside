@@ -17,6 +17,7 @@ public sealed class VerdictDrainer(
     LedgerStore store,
     WorkListService queue,
     IVerdictJudge judge,
+    VerdictByRules rules,
     SourceIndex sources,
     VerdictSelector selector,
     JobStore jobs,
@@ -33,6 +34,7 @@ public sealed class VerdictDrainer(
 ) : IStageDrainer, IBackfillJudge
 {
     private readonly CratesidePaths _paths = paths.Value;
+    private readonly bool _hasJudge = options.Value.IsConfigured;
     private readonly bool _spendsClaudeQuota = options.Value.SpendsClaudeQuota;
     private readonly SemaphoreSlim _oneAtATime = new(1, 1);
 
@@ -101,7 +103,10 @@ public sealed class VerdictDrainer(
     )
     {
         using (control.WaitingFormRun())
-            await _oneAtATime.WaitAsync(ct);
+            if (!_hasJudge)
+                return VerdictResult.Failed("no judge is set up");
+
+        await _oneAtATime.WaitAsync(ct);
 
         try
         {
@@ -159,6 +164,9 @@ public sealed class VerdictDrainer(
     /// <summary>The songs owed a re-judge whose evidence the working set holds or the ledger can give back.</summary>
     private IReadOnlyList<LedgerRun> WithEvidence(IReadOnlyList<LedgerRun> owed)
     {
+        if (!_hasJudge)
+            return [];
+
         if (owed.All(HasWorkingEvidence))
             return owed;
 
@@ -297,6 +305,34 @@ public sealed class VerdictDrainer(
                 jobs.Record(item.VideoId, JobStage.Verdict, JobStatus.Failed, error: error);
 
                 return StageTick.Ran(order, false, error);
+            }
+
+            if (!isRejudge && await rules.TryRuleAsync(order, ct) is { } ruled)
+            {
+                jobs.Record(
+                    item.VideoId,
+                    JobStage.Verdict,
+                    ruled.IsSuccess ? JobStatus.Succeeded : JobStatus.Failed,
+                    error: ruled.Error,
+                    summary: ruled.Summary
+                );
+
+                return StageTick.Ran(order, ruled.IsSuccess, ruled.Error);
+            }
+
+            if (!isRejudge && !_hasJudge)
+            {
+                jobs.Record(
+                    item.VideoId,
+                    JobStage.Verdict,
+                    JobStatus.AwaitingPerson,
+                    summary: "no ruling, and no judge: waiting for your call"
+                );
+
+                return StageTick.Ran(order, true, null) with
+                {
+                    Note = "waiting for you",
+                };
             }
 
             var result = await judge.JudgeAsync(order, direction: null, _ => { }, ct);

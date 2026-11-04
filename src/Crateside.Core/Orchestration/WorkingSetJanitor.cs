@@ -32,7 +32,13 @@ public sealed class WorkingSetJanitor(
             .Select(job => job.VideoId)
             .ToHashSet();
 
-        held = [.. held.Where(videoId => !running.Contains(videoId))];
+        // Its evidence and pages are what the person decides from.
+        var waiting = jobs.All()
+            .Where(job => job is { Stage: JobStage.Verdict, Status: JobStatus.AwaitingPerson })
+            .Select(job => job.VideoId)
+            .ToHashSet();
+
+        held = [.. held.Where(videoId => !running.Contains(videoId) && !waiting.Contains(videoId))];
 
         var ledger = store.Read();
         var staged = ProcessedTracks.Scan(ledger, [_paths.StagingFolder]);

@@ -17,7 +17,8 @@ public sealed class WorkListService(
     PlaylistConsumer consumer,
     IReopenedWork? reopened = null,
     PresetCatalogReader? presets = null,
-    ActionLog? actions = null
+    ActionLog? actions = null,
+    JobStore? jobs = null
 )
 {
     private readonly CratesidePaths _paths = paths.Value;
@@ -71,7 +72,13 @@ public sealed class WorkListService(
                 Reopened(items, ledger),
                 bumped.VideoId,
                 reopened?.AwaitingCut(ledger),
-                InventoriesBySong(processed, ledger, catalog, _paths.LibraryFolder)
+                InventoriesBySong(processed, ledger, catalog, _paths.LibraryFolder),
+                jobs?.All()
+                    .Where(job =>
+                        job is { Stage: JobStage.Verdict, Status: JobStatus.AwaitingPerson }
+                    )
+                    .Select(job => job.VideoId)
+                    .ToHashSet(StringComparer.Ordinal)
             ),
             Ledger = ledger,
             Processed = processed,

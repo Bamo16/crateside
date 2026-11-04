@@ -140,3 +140,30 @@ screen shows "your call", not a confidence band, for a `Person` run.
   judge's own MEDIUM for a song nobody has transcribed.
 - The thresholds are fixed in code from one measurement. A detector build change does not re-rule
   anything, and the next measurement is read from `DecidedBy = Rules` runs the person overrides.
+
+## Choices made in building it
+
+Where the decision above was silent:
+
+- **`Judge:Kind` is resolved, not registered.** `IVerdictJudge` is always registered as the Claude
+  Code judge; an unset kind becomes `ClaudeCode` or `None` once at start (`DefaultJudgeKind`, from a
+  `claude` executable on PATH), so `None` is what the drainer, the selector and the quota guard read
+  from `JudgeOptions.IsConfigured`, and no registration holds a condition.
+- **A ruling needs a name.** The rules record only for a song that has an artist and a title, from
+  the ledger when it was judged before or else the row's `Artist - Title`; a row without either goes
+  on to the judge or the person, as the page lookup could not run for it either.
+- **A page the lookup could not reach is not an absence.** When Hooktheory or Musicnotes could not
+  be reached, tier B does not rule (the page that disagrees may be there), and the lookup is not
+  kept as `sources.json`, so the next attempt asks again. Ultimate Guitar's failure changes nothing.
+- **Only the keys a page lists count**: each Hooktheory section's key and Musicnotes' Original
+  Published Key. A key change inside a section, which the parsed tab shows, is the judge's to weigh.
+- **A Musicnotes page whose note says "user arrangement" is `Corroborating`**; every other
+  Hooktheory or Musicnotes page is `Authoritative`.
+- **Separation did not wait for a verdict's absence to be settled, it waited for a verdict.** A
+  track enters the GPU line only once the ledger has a run for it, so an `AwaitingPerson` track
+  would have sat there. It now joins the line like a judged track, and its stems park as "no key".
+- **The working set of an `AwaitingPerson` track is kept** by the janitor: its evidence and pages
+  are what the person decides from.
+- **A Library backfill track the rules leave open, with no judge, is `AwaitingPerson` too**, which
+  is what stops the selector picking it again every pass. With no judge the ordinary verdict stage
+  works the backfill whenever backfill is switched on, since a ruling costs nothing.

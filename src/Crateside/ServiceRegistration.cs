@@ -316,6 +316,8 @@ public static class ServiceRegistration
         services.AddSingleton<VerdictSelector>();
         services.AddSingleton<RejudgeQueue>();
         services.AddSingleton<ISourcePages, SourcePages>();
+        services.AddSingleton<PageLookups>();
+        services.AddSingleton<VerdictByRules>();
         services.AddSingleton<IVerdictJudge, VerdictRunner>();
         services.AddSingleton<VerdictDrainer>();
         services.AddSingleton<BarJudging>();

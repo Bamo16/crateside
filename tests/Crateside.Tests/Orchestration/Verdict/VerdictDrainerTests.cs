@@ -30,6 +30,10 @@ public sealed class VerdictDrainerTests : IDisposable
         {"algorithms":{"ffmpeg_keydetect":{"key":"A minor"},"madmom":{"key":"A minor"},"essentia_edma":{"key":"C major"}},"versions":{"ffmpeg_sha256":"pinned-build"}}
         """;
 
+    private const string AgreedEvidence = """
+        {"algorithms":{"ffmpeg_keydetect":{"key":"A minor"},"madmom":{"key":"A minor"},"essentia_edma":{"key":"A minor"}},"versions":{"ffmpeg_sha256":"pinned-build"}}
+        """;
+
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
         "crateside-tests",
@@ -44,6 +48,8 @@ public sealed class VerdictDrainerTests : IDisposable
     private readonly RejudgeQueue _rejudges;
     private readonly VerdictDrainer _drainer;
     private readonly VerdictControl _control;
+    private readonly PauseStore _paused;
+    private readonly SourceIndex _sources;
 
     private readonly FakeTimeProvider _time = new(
         DateTimeOffset.Parse("2026-10-30T15:36:00+00:00")
@@ -59,23 +65,29 @@ public sealed class VerdictDrainerTests : IDisposable
 
         _rejudges = new RejudgeQueue(Path.Combine(_directory, "rejudge.json"));
 
-        var paused = new PauseStore(Path.Combine(_directory, "paused.json"));
-        var sources = new SourceIndex(_set, Path.Combine(_directory, "source-index.json"));
+        _paused = new PauseStore(Path.Combine(_directory, "paused.json"));
+        _sources = new SourceIndex(_set, Path.Combine(_directory, "source-index.json"));
+        _control = new VerdictControl(_paused, _time);
+        _drainer = DrainerFor(JudgeKind.ClaudeCode);
+    }
+
+    private VerdictDrainer DrainerFor(JudgeKind kind)
+    {
         var judge = Options.Create(
             new JudgeOptions
             {
+                Kind = kind,
                 Environment = new() { ["ANTHROPIC_BASE_URL"] = "https://api.anthropic.com" },
             }
         );
 
-        _control = new VerdictControl(paused, _time);
-        _drainer = new VerdictDrainer(
+        return new VerdictDrainer(
             _store,
             null!,
             new VerdictRunner(
                 _store,
                 _set,
-                sources,
+                _sources,
                 _sessions,
                 new NoWindows(),
                 new NoPages(),
@@ -83,16 +95,23 @@ public sealed class VerdictDrainerTests : IDisposable
                 new FakeTimeProvider(),
                 NullLogger<VerdictRunner>.Instance
             ),
-            sources,
-            new VerdictSelector(_jobs, _set),
+            new VerdictByRules(
+                _store,
+                _set,
+                _sources,
+                new PageLookups(new NoPages(), _set, _store),
+                _time
+            ),
+            _sources,
+            new VerdictSelector(_jobs, _set, judge: judge),
             _jobs,
             _control,
-            new QuotaGuard(new UnknownQuota(), new FakeTimeProvider()),
+            new QuotaGuard(new UnknownQuota(), new FakeTimeProvider(), judge),
             _rejudges,
             _set,
-            new EvidenceCompleter(_set, sources, new FakeDetectors()),
+            new EvidenceCompleter(_set, _sources, new FakeDetectors()),
             new DownloadRunner(_downloads),
-            paused,
+            _paused,
             Options.Create(new CratesidePaths()),
             judge,
             _time
@@ -135,8 +154,8 @@ public sealed class VerdictDrainerTests : IDisposable
             File.WriteAllText(Path.Combine(folder, "source.flac"), "audio");
     }
 
-    private Task<StageTick> JudgeBackfillAsync() =>
-        _drainer.JudgeNextAsync(
+    private Task<StageTick> JudgeBackfillAsync(VerdictDrainer? drainer = null) =>
+        (drainer ?? _drainer).JudgeNextAsync(
             Queue(),
             backfill: true,
             hold: null,
@@ -286,6 +305,138 @@ public sealed class VerdictDrainerTests : IDisposable
             TimeSpan.FromMinutes(1),
             _control.Backoff.Refused("rate limited", retryAfter: null).RetryAt - _time.GetUtcNow()
         );
+    }
+
+    [Fact]
+    public async Task A_track_the_rules_settle_is_recorded_as_a_ruling_and_no_session_runs()
+    {
+        Hold(AgreedEvidence, withSource: false);
+
+        var tick = await JudgeBackfillAsync();
+
+        Assert.True(tick.IsSuccess);
+        Assert.Empty(_sessions.Prompts);
+
+        var run = Assert.Single(_store.Read().Runs);
+
+        Assert.Equal(DecidedBy.Rules, run.DecidedBy);
+        Assert.Equal(KeyConfidence.Medium, run.Confidence);
+        Assert.Equal("A minor", run.Key);
+        Assert.Equal("artist - song", run.Song);
+        Assert.True(_jobs.TryGet(VideoId, JobStage.Verdict, out var job));
+        Assert.Equal(JobStatus.Succeeded, job.Status);
+        Assert.Equal(
+            "keydetect, madmom and Essentia name A minor; no Hooktheory or Musicnotes page states a key.",
+            _store.EvidenceFor("artist - song")!.Reasoning
+        );
+    }
+
+    [Fact]
+    public async Task A_track_the_rules_leave_open_goes_to_the_judge_when_one_is_set_up()
+    {
+        Hold(FullEvidence, withSource: false);
+
+        await JudgeBackfillAsync();
+
+        Assert.NotEmpty(_sessions.Prompts);
+    }
+
+    [Fact]
+    public async Task With_no_judge_a_track_the_rules_leave_open_waits_for_the_person_without_a_strike()
+    {
+        Hold(FullEvidence, withSource: false);
+
+        var tick = await JudgeBackfillAsync(DrainerFor(JudgeKind.None));
+
+        Assert.True(tick.IsSuccess);
+        Assert.Empty(_sessions.Prompts);
+        Assert.Empty(_store.Read().Runs);
+        Assert.True(_jobs.TryGet(VideoId, JobStage.Verdict, out var job));
+        Assert.Equal(JobStatus.AwaitingPerson, job.Status);
+        Assert.Equal(0, job.Strikes);
+    }
+
+    [Fact]
+    public async Task With_no_judge_the_rules_still_rule()
+    {
+        Hold(AgreedEvidence, withSource: false);
+
+        await JudgeBackfillAsync(DrainerFor(JudgeKind.None));
+
+        Assert.Equal(DecidedBy.Rules, Assert.Single(_store.Read().Runs).DecidedBy);
+    }
+
+    [Fact]
+    public async Task A_track_waiting_for_the_person_is_not_picked_again_while_there_is_no_judge()
+    {
+        Hold(FullEvidence, withSource: false);
+
+        var none = DrainerFor(JudgeKind.None);
+
+        await JudgeBackfillAsync(none);
+
+        var again = await JudgeBackfillAsync(none);
+
+        Assert.Equal(StageOutcome.Idle, again.Outcome);
+    }
+
+    [Fact]
+    public async Task A_track_waiting_for_the_person_goes_to_the_judge_once_one_is_set_up()
+    {
+        Hold(FullEvidence, withSource: false);
+        _jobs.Record(VideoId, JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        await JudgeBackfillAsync();
+
+        Assert.NotEmpty(_sessions.Prompts);
+    }
+
+    [Fact]
+    public async Task With_no_judge_a_song_owed_a_re_judge_is_left_alone()
+    {
+        Hold(FullEvidence, withSource: true);
+        _store.Record(
+            new RunRecord
+            {
+                RecordedAt = DateTimeOffset.Parse("2026-10-01T00:00:00+00:00"),
+                Song = "artist - song",
+                Artist = "Artist",
+                Title = "Song",
+                SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
+                Confidence = KeyConfidence.Medium,
+                Center = new TonalCenter("A", DiatonicMode.Aeolian),
+                Evidence = FullEvidence,
+            }
+        );
+        _rejudges.Add("artist - song", DateTimeOffset.Parse("2026-10-02T00:00:00+00:00"), "test");
+
+        var none = DrainerFor(JudgeKind.None);
+        var tick = await JudgeBackfillAsync(none);
+
+        Assert.Equal(StageOutcome.Idle, tick.Outcome);
+        Assert.Empty(_sessions.Prompts);
+        Assert.Equal(0, none.RejudgesWithEvidence(_store.Read()));
+    }
+
+    [Fact]
+    public async Task With_no_judge_judging_from_bars_is_refused_without_touching_the_track()
+    {
+        var result = await DrainerFor(JudgeKind.None)
+            .JudgeFromBarsAsync(
+                new WorkOrder
+                {
+                    VideoId = VideoId,
+                    Title = "Artist - Song",
+                    SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
+                    Destination = StemDestination.UnresolvedKey,
+                },
+                new JudgeDirection([], null, null, null),
+                _ => { },
+                TestContext.Current.CancellationToken
+            );
+
+        Assert.False(result.IsSuccess);
+        Assert.False(_jobs.TryGet(VideoId, JobStage.Verdict, out _));
     }
 
     private sealed class FakeDownloads : IProcessRunner

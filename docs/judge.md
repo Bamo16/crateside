@@ -5,6 +5,23 @@ which weighs it, looks for human corroboration and writes a **verdict file**. cr
 the file and records it in the [ledger](ledger.md). Decided in
 [ADR 0055](adr/0055-crateside-owns-the-key-judge-and-its-ledger.md).
 
+## Rules first
+
+The judge is the second thing asked. Once a track's evidence is complete and its pages are looked
+up, `VerdictRules` rules on it if it can (ADR 0076), recording a run with `DecidedBy = Rules` and
+running no session:
+
+- **HIGH**: at least two of keydetect, madmom and Essentia name one key, every key the Hooktheory
+  and Musicnotes pages state is that key, and at least one page states it.
+- **MEDIUM**: no Hooktheory or Musicnotes page states a key, and either all three detectors agree
+  or keydetect and one of madmom and Essentia agree with keydetect's `r` at least 0.80.
+- **No ruling** otherwise, and also when Hooktheory or Musicnotes could not be reached.
+
+Keys are compared as major or minor (a page's `B dorian` is B minor); Ultimate Guitar is never
+counted. What the rules leave goes to the judge, or, with `Judge:Kind` `None`, waits for the person:
+the track's verdict job is `AwaitingPerson`, its stems are cut and parked as "no key", and a judge
+set up later takes it. A re-judge and judging from bars always go to the judge.
+
 ## What the session gets
 
 - **Instructions**: `src/Crateside.Core/Orchestration/Verdict/judge-prompt.md`, passed with

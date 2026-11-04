@@ -168,6 +168,7 @@ public sealed record JobHistory(
             (JobStage.Download, JobStatus.Succeeded) => "downloaded",
             (JobStage.Evidence, JobStatus.Succeeded) => "detected",
             (JobStage.Verdict, JobStatus.Succeeded) => "judged",
+            (JobStage.Verdict, JobStatus.AwaitingPerson) => "waiting for you",
             (JobStage.Separation, JobStatus.Succeeded) => "separated",
             (JobStage.Handoff, JobStatus.Succeeded) => "staged",
             (JobStage.Tagging, JobStatus.Succeeded) => "tagged",
