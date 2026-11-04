@@ -263,7 +263,7 @@ public sealed class TrackChipAndFilterTests
     [Fact]
     public void A_verdict_names_who_made_it_in_the_detail_line()
     {
-        var by = (DecidedBy decided) =>
+        static TrackRow By(DecidedBy decided) =>
             Base with
             {
                 Verdict = new LedgerRun
@@ -276,9 +276,9 @@ public sealed class TrackChipAndFilterTests
                 },
             };
 
-        Assert.Equal("Your call: A minor.", by(DecidedBy.Person).Detail);
-        Assert.Equal("Ruled A minor by crateside, high confidence.", by(DecidedBy.Rules).Detail);
-        Assert.Equal("Judged A minor, high confidence.", by(DecidedBy.Judge).Detail);
-        Assert.Equal(DecidedBy.Person, by(DecidedBy.Person).DecidedBy);
+        Assert.Equal("Your call: A minor.", By(DecidedBy.Person).Detail);
+        Assert.Equal("Ruled A minor by crateside, high confidence.", By(DecidedBy.Rules).Detail);
+        Assert.Equal("Judged A minor, high confidence.", By(DecidedBy.Judge).Detail);
+        Assert.Equal(DecidedBy.Person, By(DecidedBy.Person).DecidedBy);
     }
 }

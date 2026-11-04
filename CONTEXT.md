@@ -46,10 +46,16 @@ the views, and running the workflow.
 
 ## Keys
 
-- **Verdict** — the judge's confidence-rated conclusion about a *song*'s key. It names a
+- **Verdict** — a confidence-rated conclusion about a *song*'s key, made by the judge, by
+  crateside's rules or by the person (**decided by**). It names a
   **tonal center**, and where the song moves, its **sections**; it may be **mixed**. A song-level
   fact: one verdict covers every stem of the song. Its tag is derived from it by the **collapse**
   and is never the verdict itself.
+- **Decided by** — who made a verdict: the **judge** (an agent session), **rules** (crateside
+  rules on a key by itself when two detectors and every page agree, or all three detectors
+  agree and no page states a key) or the **person** (chosen on the song page, recorded HIGH and
+  shown as "your call"). With no judge, a track the rules leave open waits for the person
+  ([ADR 0076](docs/adr/0076-crateside-rules-first-and-the-person-is-the-judge-of-the-rest.md)).
 - **Tonal center** — a tonic and a **diatonic mode**: *A Dorian*, *E minor*. What the music
   is, as a person transcribing it would name it.
 - **Diatonic mode** — one of the seven rotations of the major scale. A closed set; harmonic and
