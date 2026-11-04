@@ -804,3 +804,9 @@
     margin: 4px 6px;
     background: var(--line);
 }
+
+.song button.outline.small {
+    margin-left: 6px;
+    padding: 1px 8px;
+    font-size: 11px;
+}

@@ -3101,6 +3101,10 @@
           "nameSource": {
             "$ref": "#/components/schemas/TrackNameSource"
           },
+          "hasNearSilentVocal": {
+            "type": "boolean",
+            "description": "The vocal stem is more than double NearSilentVocal.ThresholdDb dB quieter than the\r\ninstrumental, and the plan still asks for it: the track may want the Instrumental recipe."
+          },
           "release": {
             "oneOf": [
               {

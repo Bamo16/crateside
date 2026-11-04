@@ -7,6 +7,7 @@ using Crateside.Core.Genres;
 using Crateside.Core.Imports;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
+using Crateside.Core.Loudness;
 using Crateside.Core.Marks;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
@@ -96,6 +97,12 @@ public sealed record TrackRow
         > 1;
 
     public TrackNameSource NameSource { get; init; }
+
+    /// <summary>
+    /// The vocal stem is more than <see cref="NearSilentVocal.ThresholdDb"/> dB quieter than the
+    /// instrumental, and the plan still asks for it: the track may want the Instrumental recipe.
+    /// </summary>
+    public bool HasNearSilentVocal { get; init; }
 
     /// <summary>What the source said about the release this track is from; null for a playlist track.</summary>
     public Release? Release { get; init; }

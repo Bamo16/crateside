@@ -20,4 +20,7 @@ public sealed record SampleReadings
     public Func<string?, string, BeatReading?>? BeatsOf { get; init; }
 
     public Func<string, WrittenWarp?>? WrittenWarp { get; init; }
+
+    /// <summary>The integrated loudness kept for a file, or null when none is.</summary>
+    public Func<string, double?>? LufsOf { get; init; }
 }
