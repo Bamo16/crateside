@@ -4,6 +4,7 @@ using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
+using Crateside.Core.Loudness;
 using Crateside.Core.Marks;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Download;
@@ -219,6 +220,18 @@ public sealed record TracksView
             var isParked = members.Any(seed => parked.Contains(seed.TrackKey));
             var isUnjudged = members.Any(seed => unjudged.Contains(seed.TrackKey));
 
+            var samples = members
+                .SelectMany(seed =>
+                    SamplesOf(
+                        staged.GetValueOrDefault(seed.TrackKey),
+                        onDisk.GetValueOrDefault(seed.TrackKey) ?? [],
+                        finishedRoot,
+                        seed.TrackKey,
+                        read
+                    )
+                )
+                .ToList();
+
             return new TrackRow
             {
                 TrackKey = primary.TrackKey,
@@ -277,18 +290,13 @@ public sealed record TracksView
                 GaveUpStrikes = progress.GaveUpStrikes,
                 GaveUpFor = progress.GaveUpFor,
                 Retrying = progress.Retrying,
-                Samples =
-                [
-                    .. members.SelectMany(seed =>
-                        SamplesOf(
-                            staged.GetValueOrDefault(seed.TrackKey),
-                            onDisk.GetValueOrDefault(seed.TrackKey) ?? [],
-                            finishedRoot,
-                            seed.TrackKey,
-                            read
-                        )
+                Samples = samples,
+                HasNearSilentVocal =
+                    read.LufsOf is { } lufsOf
+                    && NearSilentVocal.AsksForVocal(instruction?.Plan ?? StemPlan.Default)
+                    && NearSilentVocal.IsFlagged(
+                        samples.Select(sample => (sample.PresetId, lufsOf(sample.Path)))
                     ),
-                ],
                 HasWarpGuide = songs.Any(song => song.WarpGuides.Count > 0),
                 AuditNote = songs.Any(song => song.StaleTaggedStems.Count > 0)
                     ? "tag disagrees"

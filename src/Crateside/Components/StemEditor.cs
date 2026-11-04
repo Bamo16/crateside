@@ -1,4 +1,5 @@
 using Crateside.Core;
+using Crateside.Core.Imports;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Edits;
@@ -225,6 +226,32 @@ public sealed class StemEditor(
             }
 
             // A worker part-way through its two-minute idle wait would not look again.
+            signals.Wake(JobStage.Download, JobStage.Separation);
+
+            await tracks.RefreshAsync(_circuit.Token);
+        });
+
+    /// <summary>Re-cuts the track as the Instrumental recipe: its source and a drum guide, no vocal or instrumental stem (ADR 0077).</summary>
+    public Task SwitchToInstrumentalAsync(TrackRow row) =>
+        WorkAsync(async () =>
+        {
+            var outcome = recut.Apply(
+                row.TrackKey,
+                Recipes.PlanOf(Recipe.Instrumental),
+                Presets,
+                row.Inventory
+            );
+
+            Problem = outcome.Problem;
+
+            if (outcome.Succeeded)
+                actions.Record(
+                    row.TrackKey,
+                    UserActionKind.Recut,
+                    "switched to Instrumental: the vocal is near-silent",
+                    JobStage.Separation
+                );
+
             signals.Wake(JobStage.Download, JobStage.Separation);
 
             await tracks.RefreshAsync(_circuit.Token);
