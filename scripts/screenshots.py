@@ -25,7 +25,7 @@ IMAGES = ROOT / "docs" / "images"
 PORT = 5099
 URL = f"http://localhost:{PORT}"
 VIEWPORT = {"width": 1600, "height": 900}
-# Tools lays the Camelot wheel beside Partners only from this width.
+# A window as wide as the maintainer's, for the Tools shot.
 WIDE = {"width": 1900, "height": 1000}
 FIRST_TRACK = "DemoTrack01"
 # The Tracks page lists every song; its screenshot stops after this many rows.
