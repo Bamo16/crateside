@@ -10,7 +10,7 @@
 ## Context
 
 Judging is the only stage that needs an account, so a first-run user has no judge, and a judge that
-is down (DeepSeek's suspension of 2026-11-03) stops every new track at "waiting to be judged". #164
+is down (as one was for days from 2026-11-03) stops every new track at "waiting to be judged". #164
 first asked for a `none` judge giving "the detectors' agreed key". The maintainer reframed it: the
 person using crateside is the judge. crateside shows the evidence and rules on what it can rule on
 confidently by itself, and the rest waits for the person.
