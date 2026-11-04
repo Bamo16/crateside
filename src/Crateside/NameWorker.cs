@@ -1,3 +1,4 @@
+using Crateside.Core;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Tracks;
@@ -71,7 +72,9 @@ public sealed class NameWorker(
 
         var unresolved = scan
             .View.Items.Where(item =>
-                !known.ContainsKey(item.TrackKey) && !_unresolvable.Contains(item.TrackKey)
+                TrackKeys.IsVideoId(item.TrackKey)
+                && !known.ContainsKey(item.TrackKey)
+                && !_unresolvable.Contains(item.TrackKey)
             )
             .ToArray();
 

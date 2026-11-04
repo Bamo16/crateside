@@ -4,6 +4,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
+using Crateside.Core.Imports;
 using Crateside.Core.KeyDetection;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
@@ -150,6 +151,7 @@ public static class ServiceRegistration
             .AddBeats()
             .AddFamiliarity()
             .AddGenres()
+            .AddImports()
             .AddKeyDetection()
             .AddLedger()
             .AddLibrary()
@@ -220,6 +222,18 @@ public static class ServiceRegistration
         services.AddSingleton<GenreStore>();
         services.AddSingleton<GenreLookup>();
         services.AddHostedService<GenreWorker>();
+
+        return services;
+    }
+
+    private static IServiceCollection AddImports(this IServiceCollection services)
+    {
+        services.AddSingleton<ImportStore>();
+        services.AddSingleton<RecipeStore>();
+        services.AddSingleton<TrackIntake>();
+        services.AddSingleton<LinkIntake>();
+        services.AddSingleton<InboxScanner>();
+        services.AddHostedService<InboxWorker>();
 
         return services;
     }

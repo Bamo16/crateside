@@ -13,7 +13,14 @@ public sealed class ImportStore(CratesidePaths paths)
     /// <summary>Every key holding an import.</summary>
     public IReadOnlyList<string> TrackKeys =>
         Directory.Exists(_root)
-            ? [.. Directory.EnumerateDirectories(_root).Select(Path.GetFileName).OfType<string>()]
+            ?
+            [
+                .. Directory
+                    .EnumerateDirectories(_root)
+                    .Select(Path.GetFileName)
+                    .OfType<string>()
+                    .Where(name => !name.StartsWith('.')),
+            ]
             : [];
 
     public long TotalBytes =>

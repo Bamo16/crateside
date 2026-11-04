@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Crateside.Core.Imports;
 using Crateside.Core.Ledger;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Download;
@@ -14,7 +15,8 @@ public sealed class TrackAdd(
     LedgerStore store,
     TrackInstructionStore instructions,
     SourceProbe probe,
-    ResolvedNameStore names
+    ResolvedNameStore names,
+    RecipeStore? recipes = null
 )
 {
     /// <summary>What adding this track would do, or why it cannot be done.</summary>
@@ -115,6 +117,9 @@ public sealed class TrackAdd(
             return new AddTrackOutcome { Shortfall = probed };
 
         instructions.AddByUrl(plan.TrackKey!);
+
+        if (recipes?.Default is { } recipe and not Recipe.Standard)
+            instructions.SetPlan(plan.TrackKey!, Recipes.PlanOf(recipe));
 
         // The probe already resolved the name, so keeping it is what stops a pasted row reading
         // as its own video ID until the name worker gets round to asking the same question.

@@ -1,3 +1,4 @@
+using Crateside.Core.Imports;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
@@ -18,7 +19,8 @@ public sealed class WorkListService(
     IReopenedWork? reopened = null,
     PresetCatalogReader? presets = null,
     ActionLog? actions = null,
-    JobStore? jobs = null
+    JobStore? jobs = null,
+    RecipeStore? recipes = null
 )
 {
     private readonly CratesidePaths _paths = paths.Value;
@@ -53,6 +55,7 @@ public sealed class WorkListService(
         var parked = ProcessedTracks.Scan(ledger, [_paths.StemsUnresolvedKey]);
 
         NoteFiledArrivals(arrivals, processed, ledger);
+        ApplyDefaultRecipe(arrivals);
 
         var byTrackKey = instructions.Read().ToDictionary(t => t.TrackKey, StringComparer.Ordinal);
 
@@ -90,6 +93,22 @@ public sealed class WorkListService(
         Scanned?.Invoke(scan);
 
         return scan;
+    }
+
+    /// <summary>Gives each new arrival the plan Settings chose, once, so changing the choice later leaves it be (ADR 0077).</summary>
+    private void ApplyDefaultRecipe(IReadOnlyList<WorkItem> arrivals)
+    {
+        if (recipes?.Default is not { } recipe || recipe is Recipe.Standard)
+            return;
+
+        var planned = instructions
+            .Read()
+            .Where(track => track.Plan is not null)
+            .Select(track => track.TrackKey)
+            .ToHashSet(StringComparer.Ordinal);
+
+        foreach (var arrival in arrivals.Where(item => !planned.Contains(item.TrackKey)))
+            instructions.SetPlan(arrival.TrackKey, Recipes.PlanOf(recipe));
     }
 
     /// <summary>The playlist, plus the tracks the user pasted in (ADR 0010).</summary>
