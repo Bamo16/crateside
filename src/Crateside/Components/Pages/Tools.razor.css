@@ -18,21 +18,30 @@
     color: var(--text-75);
 }
 
-/* Left to right in the order the user works: the track, the tools, the wheel. Re-Pitch sits above
-   Partners, which it feeds, so folding it moves nothing sideways. */
+/* The track, with the wheel under it, beside the tools. Re-Pitch sits above Partners, which it
+   feeds, so folding it moves nothing sideways; both share the tools column's width. */
 .columns {
     display: grid;
-    grid-template-columns: 340px minmax(0, 860px) 340px;
-    gap: 40px;
+    grid-template-columns: 340px minmax(0, 860px);
+    grid-template-areas:
+        "working tools"
+        "wheel tools";
+    grid-template-rows: auto 1fr;
+    gap: 32px 40px;
     align-items: start;
 }
 
-.tools-col {
-    gap: 32px;
+.working-col {
+    grid-area: working;
 }
 
-.tools-col ::deep .repitch-tool {
-    max-width: 540px;
+.wheel-col {
+    grid-area: wheel;
+}
+
+.tools-col {
+    grid-area: tools;
+    gap: 32px;
 }
 
 .col {
@@ -121,46 +130,25 @@
     border: 2px solid var(--text);
 }
 
-/* The wheel has its own column only on the widest windows and the narrowest. */
-.col ::deep .wheel-inline {
-    display: none;
-}
-
-@media (max-width: 2200px) {
-    .columns {
-        grid-template-columns: 340px minmax(0, 1fr);
-    }
-
-    .wheel-col {
-        display: none;
-    }
-
-    .col ::deep .wheel-inline {
-        display: block;
-    }
-}
-
-/* Working on runs across the top, as its own breakpoint in WorkingOn.razor.css lays it out for. */
+/* Working on runs across the top, as its own breakpoint in WorkingOn.razor.css lays it out for,
+   and the wheel moves to the right of the tools. */
 @media (max-width: 1700px) {
     .columns {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
-    .tools-col {
-        max-width: 860px;
+        grid-template-columns: minmax(0, 860px) 300px;
+        grid-template-areas:
+            "working working"
+            "tools wheel";
+        grid-template-rows: auto;
     }
 }
 
+/* One column, the wheel last. */
 @media (max-width: 1100px) {
     .columns {
         grid-template-columns: minmax(0, 1fr);
-    }
-
-    .wheel-col {
-        display: flex;
-    }
-
-    .col ::deep .wheel-inline {
-        display: none;
+        grid-template-areas:
+            "working"
+            "tools"
+            "wheel";
     }
 }

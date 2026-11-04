@@ -62,10 +62,6 @@
                     </div>
                 }
             </div>
-
-            <div class="wheel-inline">
-                @Wheel
-            </div>
         </div>
 
         <div class="span">
@@ -161,10 +157,6 @@
 
     [Parameter]
     public EventCallback OnBack { get; set; }
-
-    /// <summary>The wheel, drawn beside the basis box when the page is too narrow for its own column.</summary>
-    [Parameter]
-    public RenderFragment? Wheel { get; set; }
 
     private string Why =>
         (Shift, IsTrack, Section) switch

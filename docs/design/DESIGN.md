@@ -357,9 +357,9 @@ Tools · Settings**), at `/` and `/dashboard`; Tracks moved to `/tracks`. No wid
 
 ## Tools
 
-Handoff 12, superseding handoff 09's sub-tabs. **One page at `/tools`, no sub-tabs**, in columns
-left to right as the user works: *Working on* (340px), **Re-Pitch** (540px, foldable), **Partners**
-(up to 860px; never folds), the **Camelot wheel** (340px). The state lives in the query (`?track=`
+Handoff 12, superseding handoff 09's sub-tabs. **One page at `/tools`, no sub-tabs**, in two
+columns: *Working on* (340px) with the **Camelot wheel** under it, beside **Re-Pitch** (foldable)
+above **Partners** (never folds), which share one column of up to 860px. The state lives in the query (`?track=`
 and `&section=`, or `?key=a-dorian&bpm=`, plus `&shift=` and `&lo=&hi=`), so a reload or a pasted
 link restores it, and the tab reopens where it was left until a restart.
 
@@ -398,11 +398,11 @@ link restores it, and the tab reopens where it was left until a restart.
   in force. Read-only.
 - **Re-Pitch's *Lands on*** names the center, mode included (`G♯ Dorian`), with its tag's Camelot.
   It keeps its ±N slider: it lists every shift's BPM to pick one row, which a span would not help.
-- **Breakpoints**: three columns at ≥ 2200px (Working on, Re-Pitch above Partners, the wheel); below, the wheel sits beside the basis box inside
-  Partners; below 1700px *Working on* runs across the top; below 1100px one column with the wheel
-  last.
-- **A third tool** joins as a foldable column with Re-Pitch's anatomy: left of Partners if it
-  changes the key or BPM Partners works from, right of the wheel if not.
+- **Breakpoints**: below 1700px *Working on* runs across the top and the wheel moves to the right of
+  the tools (300px); below 1100px one column with the wheel last. The wheel is never drawn inside
+  Partners: beside its short basis box it left a hole (2026-11-04).
+- **A third tool** joins the tools column with Re-Pitch's anatomy: above Partners if it changes the
+  key or BPM Partners works from, below it if not.
 - **Re-Pitch figures use the tempo formatter**: a shift of a vouched tempo is vouched, a drifting
   track's are `~` whole numbers. A BPM copies on click; **the clipboard gets the figure without the
   tilde**, and the row says what was copied (and that it's approximate, for a drifting track).
@@ -439,8 +439,8 @@ Handoff 10. Every setting is one **row**: name (14px/500) and a one-line gist (`
 ## Table caps
 
 One width cap per table shape: `--table-partners` 50rem, `--table-library` 56rem,
-`--table-tracks` 92rem. Track details uses `--table-tracks`. The Tools columns cap themselves:
-Re-Pitch 540px, Partners 860px.
+`--table-tracks` 92rem. Track details uses `--table-tracks`. The Tools column caps itself at
+860px, Re-Pitch and Partners alike.
 
 ## Differs from the design
 
