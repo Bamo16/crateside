@@ -1,5 +1,6 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Naming;
+using Crateside.Core.Playlist;
 
 namespace Crateside.Core.Orchestration.Verdict;
 
@@ -8,7 +9,8 @@ public sealed class PageLookups(
     ISourcePages pages,
     WorkingSet workingSet,
     LedgerStore store,
-    ResolvedNameStore? names = null
+    ResolvedNameStore? names = null,
+    IntakeStore? intake = null
 )
 {
     public const string SourcesFileName = "sources.json";
@@ -25,7 +27,7 @@ public sealed class PageLookups(
         if (NamesOf(order) is not var (artist, title))
             return [];
 
-        var lookups = await pages.FetchAsync(artist, title, ct);
+        var lookups = await pages.FetchAsync(artist, title, AlsoCreditedOf(order), ct);
 
         if (!lookups.Any(VerdictRules.MayHoldAnotherKey))
             SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.WriteFile(
@@ -49,13 +51,47 @@ public sealed class PageLookups(
     public (string Artist, string Title)? NamesOf(WorkOrder order) =>
         HeldRun(order) is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title }
             ? (artist, title)
-            : Split(order.Title)
+            : TaggedNamesOf(order)
+                ?? Split(order.Title)
                 ?? (
                     names?.Read().GetValueOrDefault(order.TrackKey)
                         is { DisplayTitle: var resolved }
                         ? Split(resolved)
                         : null
                 );
+
+    /// <summary>The album artist, composer and organization a file credits: names a page may be filed under (ADR 0077).</summary>
+    public IReadOnlyList<string> AlsoCreditedOf(WorkOrder order) =>
+        IntakeOf(order)?.Release is { } release
+            ?
+            [
+                .. new[]
+                {
+                    release.AlbumArtist,
+                    release.Composer,
+                    release.Organization,
+                }.OfType<string>(),
+            ]
+            : [];
+
+    /// <summary>What a file's own tags call the track; a file with no title tag is its name alone, since a split would cut it at a dash in the title.</summary>
+    private (string Artist, string Title)? TaggedNamesOf(WorkOrder order) =>
+        IntakeOf(order) switch
+        {
+            { Release: not null, SongTitle: { Length: > 0 } songTitle } record => (
+                record.Artist ?? string.Empty,
+                songTitle
+            ),
+            { Release: not null } record => (string.Empty, record.Title),
+            _ => null,
+        };
+
+    private IntakeRecord? IntakeOf(WorkOrder order) =>
+        intake
+            ?.Read()
+            .FirstOrDefault(record =>
+                record.TrackKey.Equals(order.TrackKey, StringComparison.Ordinal)
+            );
 
     private static (string Artist, string Title)? Split(string name) =>
         name.Split(" - ", 2) is [var named, var rest]

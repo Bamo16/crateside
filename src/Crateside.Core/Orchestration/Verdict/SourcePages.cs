@@ -16,6 +16,14 @@ public interface ISourcePages
         string title,
         CancellationToken ct = default
     );
+
+    /// <summary>As above, accepting a page filed under any of <paramref name="alsoCredited"/> as well as under the artist (ADR 0077).</summary>
+    Task<IReadOnlyList<SiteLookup>> FetchAsync(
+        string artist,
+        string title,
+        IReadOnlyList<string> alsoCredited,
+        CancellationToken ct = default
+    ) => FetchAsync(artist, title, ct);
 }
 
 /// <summary>
@@ -28,16 +36,24 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
 
     private const int UltimateGuitarTabs = 3;
     private const int HooktheoryPagesPerSong = 4;
+    private const int HooktheoryCandidatesPerSong = 2;
     private const string HooktheoryTabs = "https://www.hooktheory.com/theorytab/view/";
     private const string HooktheorySearchScript =
         "https://www.hooktheory.com/js/meilisearch/meilisearchAppDashboard.js";
     private const string HooktheorySearchUrl =
         "https://www.hooktheory.com/meili/indexes/theorytabs/search";
 
-    /// <summary>A bracketed tail on the title (<c>(feat. …)</c>, <c>(Remaster)</c>) is left out, since the sites file the song without it.</summary>
+    public Task<IReadOnlyList<SiteLookup>> FetchAsync(
+        string artist,
+        string title,
+        CancellationToken ct = default
+    ) => FetchAsync(artist, title, [], ct);
+
+    /// <summary>A bracketed tail on the title (<c>(feat. …)</c>, <c>(Remaster)</c>) or a <c> - Act 1</c> is left out, since the sites file the song without it.</summary>
     public async Task<IReadOnlyList<SiteLookup>> FetchAsync(
         string artist,
         string title,
+        IReadOnlyList<string> alsoCredited,
         CancellationToken ct = default
     )
     {
@@ -45,14 +61,23 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
 
         return
         [
-            await LookUpAsync("Hooktheory", () => HooktheoryAsync(artist, bare, ct)),
-            await LookUpAsync("Musicnotes", () => MusicnotesAsync(artist, bare, ct)),
-            await LookUpAsync("Ultimate Guitar", () => UltimateGuitarAsync(artist, bare, ct)),
+            await LookUpAsync("Hooktheory", () => HooktheoryAsync(artist, bare, alsoCredited, ct)),
+            await LookUpAsync(
+                "Musicnotes",
+                async () => new FoundPages(await MusicnotesAsync(artist, bare, ct), [])
+            ),
+            await LookUpAsync(
+                "Ultimate Guitar",
+                async () => new FoundPages(await UltimateGuitarAsync(artist, bare, ct), [])
+            ),
         ];
     }
 
-    private static string BareTitle(string title) =>
-        BracketedTail.Replace(title, string.Empty).Trim() is { Length: > 0 } bare ? bare : title;
+    internal static string BareTitle(string title) =>
+        PartTail.Replace(BracketedTail.Replace(title, string.Empty), string.Empty).Trim()
+            is { Length: > 0 } bare
+            ? bare
+            : title;
 
     /// <summary><c>Beyoncé</c> → <c>beyonce</c>, <c>Don't Stop Me Now</c> → <c>dont-stop-me-now</c>.</summary>
     public static string Slug(string text)
@@ -70,16 +95,20 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
             .Trim('-');
     }
 
-    private static async Task<SiteLookup> LookUpAsync(
-        string site,
-        Func<Task<IReadOnlyList<FetchedPage>>> fetch
-    )
+    private static async Task<SiteLookup> LookUpAsync(string site, Func<Task<FoundPages>> fetch)
     {
         try
         {
-            return await fetch() is { Count: > 0 } pages
-                ? new(site, LookupStatus.Found, pages)
-                : new(site, LookupStatus.NotFound, []);
+            var found = await fetch();
+
+            return (
+                found.Pages is { Count: > 0 } pages
+                    ? new SiteLookup(site, LookupStatus.Found, pages)
+                    : new SiteLookup(site, LookupStatus.NotFound, [])
+            ) with
+            {
+                Candidates = found.Candidates is { Count: > 0 } ? found.Candidates : null,
+            };
         }
         catch (Exception ex)
             when (ex
@@ -94,15 +123,17 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
         }
     }
 
-    private async Task<IReadOnlyList<FetchedPage>> HooktheoryAsync(
+    private async Task<FoundPages> HooktheoryAsync(
         string artist,
         string title,
+        IReadOnlyList<string> alsoCredited,
         CancellationToken ct
     )
     {
         List<FetchedPage> pages = [];
+        var hits = await HooktheorySearchAsync(artist, title, alsoCredited, ct);
 
-        foreach (var url in await HooktheoryUrlsAsync(artist, title, ct))
+        foreach (var url in HooktheoryUrls(artist, title, hits.Confirmed))
         {
             if (await GetAsync(url, ct) is not { } page)
                 continue;
@@ -118,19 +149,35 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
             pages.Add(HooktheoryPage(url, page, scores));
         }
 
-        return pages;
+        List<FetchedPage> candidates = [];
+
+        foreach (var candidate in hits.Candidates.Take(HooktheoryCandidatesPerSong))
+        {
+            if (await GetAsync(candidate.Url, ct) is { } page)
+                candidates.Add(
+                    HooktheoryPage(candidate.Url, page) with
+                    {
+                        Note =
+                            $"unconfirmed: filed under {candidate.Artist}, who is none of the artists this track credits",
+                    }
+                );
+        }
+
+        return new(pages, candidates);
     }
 
-    /// <summary>The slug the artist and title spell, then every other TheoryTab the site's search files under them.</summary>
-    private async Task<IReadOnlyList<string>> HooktheoryUrlsAsync(
+    /// <summary>The slug the artist and title spell, then every other TheoryTab the search confirmed.</summary>
+    private static IReadOnlyList<string> HooktheoryUrls(
         string artist,
         string title,
-        CancellationToken ct
+        IReadOnlyList<string> confirmed
     )
     {
-        List<string> urls = [$"{HooktheoryTabs}{Slug(artist)}/{Slug(title)}"];
+        List<string> urls = Slug(artist) is { Length: > 0 } slug
+            ? [$"{HooktheoryTabs}{slug}/{Slug(title)}"]
+            : [];
 
-        foreach (var found in await HooktheorySearchAsync(artist, title, ct))
+        foreach (var found in confirmed)
         {
             if (!urls.Contains(found, StringComparer.OrdinalIgnoreCase))
                 urls.Add(found);
@@ -139,9 +186,11 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
         return [.. urls.Take(HooktheoryPagesPerSong)];
     }
 
-    private async Task<IReadOnlyList<string>> HooktheorySearchAsync(
+    /// <summary>Searches by artist and title, and by title alone, since a game's page is rarely filed under the artist a file credits.</summary>
+    private async Task<HooktheoryHits> HooktheorySearchAsync(
         string artist,
         string title,
+        IReadOnlyList<string> alsoCredited,
         CancellationToken ct
     )
     {
@@ -152,23 +201,31 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
                 || HooktheorySearchKey.Match(script).Groups["Key"]
                     is not { Success: true, Value: var key }
             )
-                return [];
+                return HooktheoryHits.None;
 
-            using var request = new HttpRequestMessage(HttpMethod.Post, HooktheorySearchUrl)
+            List<string> bodies = [];
+
+            foreach (var query in new[] { $"{artist} {title}".Trim(), title }.Distinct())
             {
-                Content = JsonContent.Create(
-                    new HooktheorySearchQuery($"{artist} {title}"),
-                    HooktheoryJsonContext.Default.HooktheorySearchQuery
-                ),
-            };
+                using var request = new HttpRequestMessage(HttpMethod.Post, HooktheorySearchUrl)
+                {
+                    Content = JsonContent.Create(
+                        new HooktheorySearchQuery(query),
+                        HooktheoryJsonContext.Default.HooktheorySearchQuery
+                    ),
+                };
 
-            request.Headers.Authorization = new("Bearer", key);
+                request.Headers.Authorization = new("Bearer", key);
 
-            using var response = await clients.CreateClient(ClientName).SendAsync(request, ct);
+                using var response = await clients.CreateClient(ClientName).SendAsync(request, ct);
 
-            return response.IsSuccessStatusCode
-                ? HooktheoryTabUrls(await response.Content.ReadAsStringAsync(ct), artist, title)
-                : [];
+                if (response.IsSuccessStatusCode)
+                    bodies.Add(await response.Content.ReadAsStringAsync(ct));
+            }
+
+            return HooktheoryHits.Merge(
+                bodies.Select(body => HooktheoryTabUrls(body, [artist, .. alsoCredited], title))
+            );
         }
         catch (Exception ex)
             when (ex
@@ -179,49 +236,91 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
                         }
             )
         {
-            return [];
+            return HooktheoryHits.None;
         }
     }
 
-    /// <summary>The tabs the search lists for this song under this artist, or the same artist with a feature credit, in the order it ranks them.</summary>
     internal static IReadOnlyList<string> HooktheoryTabUrls(
         string search,
         string artist,
+        string title
+    ) => HooktheoryTabUrls(search, [artist], title).Confirmed;
+
+    /// <summary>
+    /// The tabs the search lists for this song under one of these artists (or the same with a
+    /// feature credit), in the order it ranks them; and those with the exact title under nobody
+    /// the track credits, which are only candidates.
+    /// </summary>
+    internal static HooktheoryHits HooktheoryTabUrls(
+        string search,
+        IReadOnlyList<string> artists,
         string title
     )
     {
         try
         {
-            return
-            [
-                .. (
-                    JsonSerializer
-                        .Deserialize(search, HooktheoryJsonContext.Default.HooktheorySearchResponse)
-                        ?.Hits
-                    ?? []
+            var titled = (
+                JsonSerializer
+                    .Deserialize(search, HooktheoryJsonContext.Default.HooktheorySearchResponse)
+                    ?.Hits
+                ?? []
+            )
+                .Where(hit =>
+                    hit
+                        is {
+                            Artist.Length: > 0,
+                            Song.Length: > 0,
+                            ArtistSlug.Length: > 0,
+                            SongSlug.Length: > 0,
+                        }
+                    && Slug(hit.Song) == Slug(title)
                 )
-                    .Where(hit =>
-                        hit
-                            is {
-                                Artist.Length: > 0,
-                                Song.Length: > 0,
-                                ArtistSlug.Length: > 0,
-                                SongSlug.Length: > 0,
-                            }
-                        && Slug(hit.Song) == Slug(title)
-                        && SameArtist(Slug(hit.Artist), Slug(artist))
+                .Select(hit =>
+                    (
+                        Hit: hit,
+                        Url: $"{HooktheoryTabs}{Uri.EscapeDataString(Uri.UnescapeDataString(hit.ArtistSlug!))}/{Uri.EscapeDataString(Uri.UnescapeDataString(hit.SongSlug!))}"
                     )
-                    .Select(hit =>
-                        $"{HooktheoryTabs}{Uri.EscapeDataString(Uri.UnescapeDataString(hit.ArtistSlug!))}/{Uri.EscapeDataString(Uri.UnescapeDataString(hit.SongSlug!))}"
-                    )
-                    .Distinct(StringComparer.OrdinalIgnoreCase),
-            ];
+                )
+                .DistinctBy(found => found.Url, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            return new(
+                [
+                    .. titled
+                        .Where(found => IsCredited(found.Hit.Artist!, artists))
+                        .Select(found => found.Url),
+                ],
+                [
+                    .. titled
+                        .Where(found => !IsCredited(found.Hit.Artist!, artists))
+                        .Select(found => new HooktheoryCandidate(found.Url, found.Hit.Artist!)),
+                ]
+            );
         }
         catch (JsonException)
         {
-            return [];
+            return HooktheoryHits.None;
         }
     }
+
+    /// <summary>Whether a page's artist is any of the credited names, spelled loosely.</summary>
+    internal static bool IsCredited(string pageArtist, IEnumerable<string> credited) =>
+        credited
+            .SelectMany(names => names.Split([',', ';', '&', '/'], StringSplitOptions.TrimEntries))
+            .Where(name => name.Length > 0)
+            .Any(name =>
+                SameArtist(Slug(pageArtist), Slug(name)) || SameSurnameAndInitial(pageArtist, name)
+            );
+
+    /// <summary>Dave Wise and David Wise: the same last word and the same first letter of the first.</summary>
+    internal static bool SameSurnameAndInitial(string a, string b) =>
+        Words(a) is [var firstA, .., var lastA]
+        && Words(b) is [var firstB, .., var lastB]
+        && lastA == lastB
+        && firstA[0] == firstB[0];
+
+    private static string[] Words(string name) =>
+        Slug(name).Split('-', StringSplitOptions.RemoveEmptyEntries);
 
     /// <summary>The same slug, one with a credit added (<c>disclosure</c> and <c>disclosure-ft-sam-smith</c>), or spelled without hyphens (<c>billyjoel</c>).</summary>
     private static bool SameArtist(string hit, string wanted) =>
@@ -420,6 +519,9 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
     [GeneratedRegex(@"(\s*[(\[][^()\[\]]*[)\]])+\s*$")]
     private static partial Regex BracketedTail { get; }
 
+    [GeneratedRegex(@"\s+-\s+(?:Act|Part)\s+(?:\d+|[IVX]+|[A-Za-z]+)\s*$", RegexOptions.IgnoreCase)]
+    private static partial Regex PartTail { get; }
+
     [GeneratedRegex(@"searchKey:\s*""(?<Key>[^""]+)""")]
     private static partial Regex HooktheorySearchKey { get; }
 
@@ -455,6 +557,45 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
 public sealed record SiteLookup(string Site, LookupStatus Status, IReadOnlyList<FetchedPage> Pages)
 {
     public string? Error { get; init; }
+
+    /// <summary>Pages with the exact title under no artist the track credits: shown to the judge and the person, and never a source for a rule (ADR 0077).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FetchedPage>? Candidates { get; init; }
+}
+
+internal sealed record FoundPages(
+    IReadOnlyList<FetchedPage> Pages,
+    IReadOnlyList<FetchedPage> Candidates
+);
+
+internal sealed record HooktheoryCandidate(string Url, string Artist);
+
+internal sealed record HooktheoryHits(
+    IReadOnlyList<string> Confirmed,
+    IReadOnlyList<HooktheoryCandidate> Candidates
+)
+{
+    public static HooktheoryHits None { get; } = new([], []);
+
+    /// <summary>Every search's hits in order, a page once, and a page one search confirmed never a candidate of another.</summary>
+    public static HooktheoryHits Merge(IEnumerable<HooktheoryHits> searches)
+    {
+        var all = searches.ToList();
+        var confirmed = all.SelectMany(hits => hits.Confirmed)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return new(
+            confirmed,
+            [
+                .. all.SelectMany(hits => hits.Candidates)
+                    .Where(candidate =>
+                        !confirmed.Contains(candidate.Url, StringComparer.OrdinalIgnoreCase)
+                    )
+                    .DistinctBy(candidate => candidate.Url, StringComparer.OrdinalIgnoreCase),
+            ]
+        );
+    }
 }
 
 public enum LookupStatus

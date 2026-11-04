@@ -103,4 +103,31 @@ public sealed class PagesLinesTests
             lines
         );
     }
+
+    [Fact]
+    public void A_candidate_is_shown_to_the_judge_as_unconfirmed_and_not_evidence()
+    {
+        var lines = VerdictRunner.PagesLines([
+            new SiteLookup("Hooktheory", LookupStatus.NotFound, [])
+            {
+                Candidates =
+                [
+                    new FetchedPage
+                    {
+                        Site = "Hooktheory",
+                        Url = "https://www.hooktheory.com/theorytab/view/sega/chemical-plant-zone",
+                        Heading = "Chemical Plant Zone",
+                        Note = "unconfirmed: filed under Sega",
+                    },
+                ],
+            },
+        ]);
+
+        Assert.Contains(
+            lines,
+            line =>
+                line.Contains("unconfirmed, not evidence")
+                && line.Contains("sega/chemical-plant-zone")
+        );
+    }
 }

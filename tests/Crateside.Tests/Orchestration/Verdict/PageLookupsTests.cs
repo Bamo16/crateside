@@ -65,9 +65,84 @@ public sealed class PageLookupsTests : IDisposable
         Assert.Empty(_pages.Asked);
     }
 
+    [Fact]
+    public async Task A_file_with_tags_is_looked_up_by_them_and_its_other_credits_are_passed_on()
+    {
+        var intake = new Core.Playlist.IntakeStore(Path.Combine(_directory, "intake.json"));
+
+        intake.TakeIn(
+            new Core.Playlist.IntakeRecord
+            {
+                TrackKey = TrackKey,
+                Title = "Dave Wise - Stickerbush Symphony",
+                Artist = "Dave Wise",
+                SongTitle = "Stickerbush Symphony",
+                Release = new Core.Imports.Release
+                {
+                    AlbumArtist = "Rare",
+                    Composer = "David Wise",
+                    Organization = "Rare, Nintendo",
+                },
+            }
+        );
+
+        var lookups = new PageLookups(
+            _pages,
+            new WorkingSet(Path.Combine(_directory, "working")),
+            _store,
+            intake: intake
+        );
+
+        await lookups.LookUpAsync(
+            Order("Dave Wise - Stickerbush Symphony"),
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal([("Dave Wise", "Stickerbush Symphony")], _pages.Asked);
+        Assert.Equal(["Rare", "David Wise", "Rare, Nintendo"], _pages.AlsoCredited.Single());
+    }
+
+    [Fact]
+    public async Task A_file_with_no_title_tag_is_looked_up_by_its_whole_name_not_split_at_a_dash()
+    {
+        var intake = new Core.Playlist.IntakeStore(Path.Combine(_directory, "intake.json"));
+
+        intake.TakeIn(
+            new Core.Playlist.IntakeRecord
+            {
+                TrackKey = TrackKey,
+                Title = "Chemical Plant Zone - Act 1",
+                Release = new Core.Imports.Release(),
+            }
+        );
+
+        await new PageLookups(
+            _pages,
+            new WorkingSet(Path.Combine(_directory, "working")),
+            _store,
+            intake: intake
+        ).LookUpAsync(Order("Chemical Plant Zone - Act 1"), TestContext.Current.CancellationToken);
+
+        Assert.Equal([(string.Empty, "Chemical Plant Zone - Act 1")], _pages.Asked);
+    }
+
     private sealed class AskedPages : ISourcePages
     {
         public List<(string Artist, string Title)> Asked { get; } = [];
+
+        public List<IReadOnlyList<string>> AlsoCredited { get; } = [];
+
+        public Task<IReadOnlyList<SiteLookup>> FetchAsync(
+            string artist,
+            string title,
+            IReadOnlyList<string> alsoCredited,
+            CancellationToken ct = default
+        )
+        {
+            AlsoCredited.Add(alsoCredited);
+
+            return FetchAsync(artist, title, ct);
+        }
 
         public Task<IReadOnlyList<SiteLookup>> FetchAsync(
             string artist,

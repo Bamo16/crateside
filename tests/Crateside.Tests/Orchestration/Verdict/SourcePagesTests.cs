@@ -228,7 +228,7 @@ public sealed class SourcePagesTests
             lookups[0].Pages.Select(page => page.Url)
         );
         Assert.Equal([2, 6], lookups[0].Pages.Select(page => page.Tab!.Sections.Count));
-        Assert.Equal(["test-search-key"], handler.Bearers);
+        Assert.Equal(["test-search-key", "test-search-key"], handler.Bearers);
     }
 
     [Fact]
@@ -439,5 +439,110 @@ public sealed class SourcePagesTests
                     }
             );
         }
+    }
+
+    [Theory]
+    [InlineData("Chemical Plant Zone - Act 1", "Chemical Plant Zone")]
+    [InlineData("Green Hill Zone - Part II", "Green Hill Zone")]
+    [InlineData("Latch (feat. Sam Smith)", "Latch")]
+    [InlineData("Hot - Act", "Hot - Act")]
+    [InlineData("Act 1", "Act 1")]
+    [InlineData("Stickerbush Symphony", "Stickerbush Symphony")]
+    public void A_title_is_searched_without_its_act_part_or_bracketed_tail(
+        string title,
+        string expected
+    ) => Assert.Equal(expected, SourcePages.BareTitle(title));
+
+    [Theory]
+    [InlineData("David Wise", "Dave Wise", true)]
+    [InlineData("Dave Wise", "David Wise", true)]
+    [InlineData("Sega", "Konami, Sega", true)]
+    [InlineData("Yoko Shimomura", "Yoko Shimomura", true)]
+    [InlineData("John Wise", "David Wise", false)]
+    [InlineData("David Wiseman", "David Wise", false)]
+    [InlineData("Sega", "SophieDude", false)]
+    [InlineData("Wise", "David Wise", false)]
+    public void A_page_artist_matches_any_credited_name_loosely(
+        string pageArtist,
+        string credited,
+        bool expected
+    ) => Assert.Equal(expected, SourcePages.IsCredited(pageArtist, [credited]));
+
+    private const string Search = """
+        {"hits":[
+          {"artist":"David Wise","song":"Stickerbush Symphony","artistSlug":"david-wise","songSlug":"stickerbush-symphony"},
+          {"artist":"Sega","song":"Chemical Plant Zone","artistSlug":"sega","songSlug":"chemical-plant-zone"},
+          {"artist":"Someone Else","song":"Stickerbush Symphony","artistSlug":"someone-else","songSlug":"stickerbush-symphony"},
+          {"artist":"David Wise","song":"Another Song","artistSlug":"david-wise","songSlug":"another-song"}
+        ]}
+        """;
+
+    [Fact]
+    public void A_hit_under_a_name_the_file_credits_is_confirmed_even_spelled_another_way()
+    {
+        var hits = SourcePages.HooktheoryTabUrls(
+            Search,
+            ["SophieDude", "Dave Wise"],
+            "Stickerbush Symphony"
+        );
+
+        Assert.Equal(
+            ["https://www.hooktheory.com/theorytab/view/david-wise/stickerbush-symphony"],
+            hits.Confirmed
+        );
+    }
+
+    [Fact]
+    public void An_exact_title_under_nobody_credited_is_only_a_candidate()
+    {
+        var hits = SourcePages.HooktheoryTabUrls(Search, ["Dave Wise"], "Stickerbush Symphony");
+
+        var candidate = Assert.Single(hits.Candidates);
+
+        Assert.Equal("Someone Else", candidate.Artist);
+        Assert.Equal(
+            "https://www.hooktheory.com/theorytab/view/someone-else/stickerbush-symphony",
+            candidate.Url
+        );
+    }
+
+    [Fact]
+    public void The_publisher_page_for_a_game_title_is_a_candidate_for_a_fan_remake()
+    {
+        var hits = SourcePages.HooktheoryTabUrls(
+            Search,
+            ["SophieDude", "Konami"],
+            "Chemical Plant Zone"
+        );
+
+        Assert.Empty(hits.Confirmed);
+        Assert.Equal("Sega", Assert.Single(hits.Candidates).Artist);
+    }
+
+    [Fact]
+    public void A_page_one_search_confirmed_is_not_a_candidate_of_another()
+    {
+        var byArtist = SourcePages.HooktheoryTabUrls(
+            Search,
+            ["David Wise"],
+            "Stickerbush Symphony"
+        );
+        var byTitle = SourcePages.HooktheoryTabUrls(Search, ["Nobody"], "Stickerbush Symphony");
+
+        var merged = HooktheoryHits.Merge([byArtist, byTitle]);
+
+        Assert.Single(merged.Confirmed);
+        Assert.Equal("Someone Else", Assert.Single(merged.Candidates).Artist);
+    }
+
+    [Fact]
+    public void A_lookup_with_no_candidates_is_stored_exactly_as_before()
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(
+            (IReadOnlyList<SiteLookup>)[new SiteLookup("Hooktheory", LookupStatus.NotFound, [])],
+            SiteLookupJsonContext.Default.IReadOnlyListSiteLookup
+        );
+
+        Assert.DoesNotContain("andidates", json);
     }
 }
