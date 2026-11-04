@@ -3196,6 +3196,10 @@
             "type": "boolean",
             "description": "Detected and never judged: the judge has it, nothing about its key is missing yet."
           },
+          "waitingForPerson": {
+            "type": "boolean",
+            "description": "The rules left its key open and there is no judge, so the person decides it on its page (ADR 0076)."
+          },
           "acquisition": {
             "oneOf": [
               {

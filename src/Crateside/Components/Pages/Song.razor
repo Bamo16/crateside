@@ -138,6 +138,11 @@
                     <WarpView Row="_row" @bind-SelectedPath="_selectedWarp" Run="_run" OpenRequests="_openRequests" />
                 }
 
+                @if (_row is not null)
+                {
+                    <KeyPicker Row="_row" Run="_run" />
+                }
+
                 @if (HasEvidenceSection)
                 {
                     <section id="evidence" class="evidence-section">

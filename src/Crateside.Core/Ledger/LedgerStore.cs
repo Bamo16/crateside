@@ -106,6 +106,22 @@ public sealed class LedgerStore : IDisposable
         }
     }
 
+    /// <summary>A song's latest run as it was written, evidence and lookups included; null when it has none.</summary>
+    public RunRecord? LatestRecord(string song)
+    {
+        lock (_gate)
+        {
+            using var context = Context();
+
+            return context
+                .Runs.AsNoTracking()
+                .Where(run => run.Song == song)
+                .OrderByDescending(run => run.RecordedAt)
+                .FirstOrDefault()
+                ?.ToRecord();
+        }
+    }
+
     /// <summary>Resolves the video ID to its song first, so the song's latest run wins.</summary>
     public RunEvidence? EvidenceForVideoId(string videoId) =>
         Read().SongFor(videoId) is { } song ? EvidenceFor(song) : null;

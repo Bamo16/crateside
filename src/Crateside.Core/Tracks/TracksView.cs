@@ -252,7 +252,12 @@ public sealed record TracksView
                     isParked && !isUnjudged ? ParkReason.NoKey
                     : acquisition?.Stops is true ? ParkReason.PremiumShortfall
                     : null,
-                WaitingForJudge = isParked && isUnjudged && acquisition?.Stops is not true,
+                WaitingForJudge =
+                    isParked
+                    && isUnjudged
+                    && acquisition?.Stops is not true
+                    && !(progress.AwaitingPerson && verdict is null),
+                WaitingForPerson = progress.AwaitingPerson && verdict is null,
                 Acquisition = acquisition,
                 GpuPosition = members
                     .Select(seed =>
