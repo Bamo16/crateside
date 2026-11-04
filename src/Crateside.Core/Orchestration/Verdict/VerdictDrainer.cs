@@ -16,7 +16,8 @@ namespace Crateside.Core.Orchestration.Verdict;
 public sealed class VerdictDrainer(
     LedgerStore store,
     WorkListService queue,
-    VerdictRunner runner,
+    IVerdictJudge judge,
+    SourceIndex sources,
     VerdictSelector selector,
     JobStore jobs,
     VerdictControl control,
@@ -27,12 +28,12 @@ public sealed class VerdictDrainer(
     DownloadRunner downloads,
     PauseStore remembered,
     IOptions<CratesidePaths> paths,
-    IOptions<JudgeOptions> judge,
+    IOptions<JudgeOptions> options,
     TimeProvider time
 ) : IStageDrainer, IBackfillJudge
 {
     private readonly CratesidePaths _paths = paths.Value;
-    private readonly bool _spendsClaudeQuota = judge.Value.SpendsClaudeQuota;
+    private readonly bool _spendsClaudeQuota = options.Value.SpendsClaudeQuota;
     private readonly SemaphoreSlim _oneAtATime = new(1, 1);
 
     public JobStage Stage => JobStage.Verdict;
@@ -112,7 +113,7 @@ public sealed class VerdictDrainer(
                 && await completer.CompleteAsync(order.VideoId, direction.Audio, ct)
                     is { } incomplete
                     ? VerdictResult.Failed($"not judged: {incomplete}")
-                    : await runner.RunAsync(order, direction, onStep, ct);
+                    : await judge.JudgeAsync(order, direction, onStep, ct);
 
             jobs.Record(
                 order.VideoId,
@@ -278,7 +279,7 @@ public sealed class VerdictDrainer(
 
         try
         {
-            if (isRejudge && runner.SourceFor(order) is null)
+            if (isRejudge && sources.PathFor(order) is null)
             {
                 control.ReportJudging(item.VideoId, $"Downloading {order.Title} again to judge it");
                 await downloads.RunAsync(
@@ -298,7 +299,7 @@ public sealed class VerdictDrainer(
                 return StageTick.Ran(order, false, error);
             }
 
-            var result = await runner.RunAsync(order, ct);
+            var result = await judge.JudgeAsync(order, direction: null, _ => { }, ct);
 
             // Held, not Failed: a session that never ran is not this track's fault, and Held
             // carries no strike.

@@ -83,6 +83,7 @@ public sealed class VerdictDrainerTests : IDisposable
                 new FakeTimeProvider(),
                 NullLogger<VerdictRunner>.Instance
             ),
+            sources,
             new VerdictSelector(_jobs, _set),
             _jobs,
             _control,

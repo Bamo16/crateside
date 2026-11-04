@@ -108,6 +108,8 @@ public static class ServiceRegistration
             builder.Configuration.GetSection(PlaylistOptions.SectionName)
         );
         builder.Services.AddSingleton<JudgeSettingsStore>();
+        builder.Services.AddSingleton<IClaudeInstall, ClaudeOnPath>();
+        builder.Services.AddSingleton<IPostConfigureOptions<JudgeOptions>, DefaultJudgeKind>();
         builder
             .Services.AddOptions<JudgeOptions>()
             .Bind(builder.Configuration.GetSection(JudgeOptions.SectionName))
@@ -314,7 +316,7 @@ public static class ServiceRegistration
         services.AddSingleton<VerdictSelector>();
         services.AddSingleton<RejudgeQueue>();
         services.AddSingleton<ISourcePages, SourcePages>();
-        services.AddSingleton<VerdictRunner>();
+        services.AddSingleton<IVerdictJudge, VerdictRunner>();
         services.AddSingleton<VerdictDrainer>();
         services.AddSingleton<BarJudging>();
         services.AddSingleton<LookalikeAnswer>();
