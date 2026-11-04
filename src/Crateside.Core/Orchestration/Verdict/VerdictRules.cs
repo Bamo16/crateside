@@ -177,7 +177,7 @@ internal static class VerdictRules
         ];
 
     /// <summary>A counted site that could not be reached may hold the page that disagrees.</summary>
-    private static bool MayHoldAnotherKey(SiteLookup lookup) =>
+    internal static bool MayHoldAnotherKey(SiteLookup lookup) =>
         CountedSites.Contains(lookup.Site) && lookup.Status is LookupStatus.Unreachable;
 
     private static string Possessive(string site) => site.EndsWith('s') ? $"{site}'" : $"{site}'s";

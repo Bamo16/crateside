@@ -32,7 +32,7 @@ public sealed partial class VerdictRunner(
     public const string VerdictFileName = "verdict.json";
 
     /// <summary>The pages fetched for the track before its first session, kept beside the evidence.</summary>
-    public const string SourcesFileName = "sources.json";
+    public const string SourcesFileName = PageLookups.SourcesFileName;
 
     private const int MaxRetryAfterSeconds = 3600;
 
@@ -47,6 +47,7 @@ public sealed partial class VerdictRunner(
     private static readonly string[] Tools = ["Read", "Write", "WebSearch", "WebFetch"];
 
     private readonly JudgeOptions _options = options.Value;
+    private readonly PageLookups _lookups = new(sourcePages, workingSet, store);
 
     /// <summary>The judge's instructions, the same for every track (judge-prompt.md).</summary>
     public static string Instructions { get; } = ReadInstructions();
@@ -111,7 +112,7 @@ public sealed partial class VerdictRunner(
 
         File.Delete(verdictPath);
 
-        var lookups = await LookUpAsync(order, folder, ct);
+        var lookups = await _lookups.LookUpAsync(order, ct);
 
         step(new JudgeStep.Judging());
 
@@ -560,44 +561,6 @@ public sealed partial class VerdictRunner(
         }
     }
 
-    /// <summary>The pages for this track, fetched once and then read from beside the evidence.</summary>
-    private async Task<IReadOnlyList<SiteLookup>> LookUpAsync(
-        WorkOrder order,
-        string folder,
-        CancellationToken ct
-    )
-    {
-        var path = Path.Combine(folder, SourcesFileName);
-
-        if (
-            SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.ReadFileOrDefault(path) is
-            { } cached
-        )
-            return cached;
-
-        if (ArtistAndTitle(order) is not var (artist, title))
-            return [];
-
-        var lookups = await sourcePages.FetchAsync(artist, title, ct);
-
-        SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.WriteFile(path, lookups);
-
-        return lookups;
-    }
-
-    /// <summary>The ledger's names for a song judged before, else the row's <c>Artist - Title</c>.</summary>
-    private (string Artist, string Title)? ArtistAndTitle(WorkOrder order)
-    {
-        if (HeldRun(order) is { Artist: { Length: > 0 } artist, Title: { Length: > 0 } title })
-            return (artist, title);
-
-        return
-            order.Title.Split(" - ", 2) is [var named, var rest]
-            && rest.Trim() is { Length: > 0 } rowTitle
-            ? (named.Trim(), rowTitle)
-            : null;
-    }
-
     /// <param name="first">How many windows this run has already detected, so their files are kept.</param>
     private async Task<List<DetectedWindow>> DetectAsync(
         string audio,
@@ -752,17 +715,7 @@ public sealed partial class VerdictRunner(
         return root.ToJsonString();
     }
 
-    /// <summary>The run already recorded for this upload, or for the source it was swapped to.</summary>
-    private LedgerRun? HeldRun(WorkOrder order)
-    {
-        var ledger = store.Read();
-
-        return YouTubeUrl.TryGetVideoId(order.SourceUrl, out var source)
-            && ledger.TryGetLatestByVideoId(source, out var swapped)
-                ? swapped
-            : ledger.TryGetLatestByVideoId(order.VideoId, out var held) ? held
-            : null;
-    }
+    private LedgerRun? HeldRun(WorkOrder order) => _lookups.HeldRun(order);
 
     private void LogNotes(RunRecord run, WorkOrder order)
     {
@@ -779,22 +732,12 @@ public sealed partial class VerdictRunner(
     )
     {
         if (
-            store.Record(
-                run with
-                {
-                    Lookups = lookups is []
-                        ? null
-                        : JsonSerializer.Serialize(
-                            lookups,
-                            SiteLookupJsonContext.Default.IReadOnlyListSiteLookup
-                        ),
-                }
-            )
+            store.Record(run with { Lookups = VerdictRecording.Serialized(lookups) })
             is RecordOutcome.Refused(var field, var problem)
         )
             return VerdictResult.Failed($"the ledger refused the verdict: {field}: {problem}");
 
-        LinkSwappedSource(order);
+        VerdictRecording.LinkSwappedSource(store, order);
 
         return VerdictResult.Succeeded(Summarize(run, _options.Model, tally));
     }
@@ -810,19 +753,6 @@ public sealed partial class VerdictRunner(
             CultureInfo.InvariantCulture,
             $"{verdict}, {"section".ToQuantity(run.Sections.Count)}; {"turn".ToQuantity(tally.Turns)} on {model}, {tally.Seconds:0} s"
         );
-    }
-
-    /// <summary>
-    /// A source swapped before its verdict is recorded under the stated upload, so the row's own
-    /// ID is linked to that song, as the swap does for a judged track (#88).
-    /// </summary>
-    private void LinkSwappedSource(WorkOrder order)
-    {
-        if (
-            YouTubeUrl.TryGetVideoId(order.SourceUrl, out var source)
-            && !source.Equals(order.VideoId, StringComparison.Ordinal)
-        )
-            store.Restate(source, $"https://music.youtube.com/watch?v={order.VideoId}");
     }
 
     /// <summary>

@@ -104,6 +104,12 @@ public enum JobStatus
     /// strike and not a cancellation: the stage holds, not the track (#161).
     /// </summary>
     Held,
+
+    /// <summary>
+    /// Evidence complete, no ruling and no judge: the person decides on the song page. Not a
+    /// strike and not a hold; a judge set up later takes it as queued (ADR 0076).
+    /// </summary>
+    AwaitingPerson,
 }
 
 /// <summary>What a separation was launched to produce: how many files, and where.</summary>

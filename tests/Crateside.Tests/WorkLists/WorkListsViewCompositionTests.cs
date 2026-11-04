@@ -45,6 +45,38 @@ public sealed class WorkListsViewCompositionTests
     }
 
     [Fact]
+    public void A_track_waiting_for_the_person_is_awaiting_separation_with_no_verdict()
+    {
+        var view = WorkListsView.Compose(
+            [Item(Unjudged)],
+            new HashSet<string>(),
+            new HashSet<string>(),
+            new HashSet<string>(),
+            new Dictionary<string, TrackInstruction>(),
+            awaitingPerson: new HashSet<string> { Unjudged }
+        );
+
+        Assert.Equal(Unjudged, Assert.Single(view.AwaitingSeparation).VideoId);
+        Assert.Equal(Unjudged, Assert.Single(view.Outstanding).VideoId);
+    }
+
+    [Fact]
+    public void A_track_waiting_for_the_person_whose_stems_are_parked_leaves_the_separation_line()
+    {
+        var view = WorkListsView.Compose(
+            [Item(Unjudged)],
+            new HashSet<string>(),
+            new HashSet<string>(),
+            new HashSet<string> { Unjudged },
+            new Dictionary<string, TrackInstruction>(),
+            awaitingPerson: new HashSet<string> { Unjudged }
+        );
+
+        Assert.Empty(view.AwaitingSeparation);
+        Assert.Equal(Unjudged, Assert.Single(view.AwaitingKey).VideoId);
+    }
+
+    [Fact]
     public void A_track_parked_for_want_of_a_key_is_not_awaiting_separation()
     {
         var view = Compose(

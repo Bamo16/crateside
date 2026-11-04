@@ -9,6 +9,7 @@ using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
+using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Orchestration.Verdict;
 
@@ -82,6 +83,40 @@ public sealed class VerdictSelectorTests : IDisposable
             AwaitingKey = [],
             AwaitingSeparation = [],
         };
+
+    private static IOptions<JudgeOptions> Judge(JudgeKind kind) =>
+        Options.Create(new JudgeOptions { Kind = kind });
+
+    [Fact]
+    public void A_track_waiting_for_the_person_is_skipped_while_there_is_no_judge()
+    {
+        GiveEvidence("aaaaaaaaaaa");
+        Jobs.Record("aaaaaaaaaaa", JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        Assert.False(
+            new VerdictSelector(Jobs, Set, judge: Judge(JudgeKind.None)).TryPickNext(
+                View(Item("aaaaaaaaaaa")),
+                NoLedger,
+                out _
+            )
+        );
+    }
+
+    [Fact]
+    public void A_track_waiting_for_the_person_is_queued_for_the_judge_once_one_is_set_up()
+    {
+        GiveEvidence("aaaaaaaaaaa");
+        Jobs.Record("aaaaaaaaaaa", JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        Assert.True(
+            new VerdictSelector(Jobs, Set, judge: Judge(JudgeKind.ClaudeCode)).TryPickNext(
+                View(Item("aaaaaaaaaaa")),
+                NoLedger,
+                out var next
+            )
+        );
+        Assert.Equal("aaaaaaaaaaa", next.VideoId);
+    }
 
     [Fact]
     public void A_track_with_no_evidence_has_nothing_to_judge()

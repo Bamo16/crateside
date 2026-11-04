@@ -140,6 +140,19 @@ public sealed class JobStoreTests : IDisposable
     }
 
     [Fact]
+    public void A_job_waiting_for_the_person_carries_no_strike_and_is_nobodys_to_retry()
+    {
+        var store = Store();
+
+        var job = store.Record(VideoId, JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        Assert.Equal(0, job.Strikes);
+        Assert.False(StageEligibility.IsOwed(job));
+        Assert.False(StageEligibility.Allows(store, VideoId, JobStage.Verdict, 3, true));
+        Assert.False(job.IsOpen);
+    }
+
+    [Fact]
     public void A_failure_message_stays_visible_through_a_retry_and_clears_on_success()
     {
         var store = Store();

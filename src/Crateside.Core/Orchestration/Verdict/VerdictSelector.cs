@@ -2,6 +2,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.WorkLists;
+using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Orchestration.Verdict;
 
@@ -10,9 +11,12 @@ public sealed class VerdictSelector(
     JobStore jobs,
     WorkingSet workingSet,
     int maxStrikes = VerdictSelector.DefaultMaxStrikes,
-    ResolvedNameStore? names = null
+    ResolvedNameStore? names = null,
+    IOptions<JudgeOptions>? judge = null
 )
 {
+    private readonly bool _hasJudge = judge?.Value.IsConfigured ?? true;
+
     /// <summary>How many failures before a track is left alone.</summary>
     public const int DefaultMaxStrikes = 3;
 
@@ -101,14 +105,19 @@ public sealed class VerdictSelector(
         !i.IsUnavailable
         && workingSet.HasEvidence(i.VideoId)
         && !ledger.HasRunFor(i.VideoId)
-        && StageEligibility.Allows(
-            jobs,
-            i.VideoId,
-            JobStage.Verdict,
-            maxStrikes,
-            // A prior success here produced nothing that survived the ledger check, so
-            // retrying is the only way the track moves.
-            retrySucceeded: true
+        && (
+            jobs.TryGet(i.VideoId, JobStage.Verdict, out var job)
+            && job.Status is JobStatus.AwaitingPerson
+                ? _hasJudge
+                : StageEligibility.Allows(
+                    jobs,
+                    i.VideoId,
+                    JobStage.Verdict,
+                    maxStrikes,
+                    // A prior success here produced nothing that survived the ledger check, so
+                    // retrying is the only way the track moves.
+                    retrySucceeded: true
+                )
         )
         // Last, because it opens a file: a swap copies the verdict forward, so judging poor
         // audio first would restate that key onto the better upload rather than re-derive it.
