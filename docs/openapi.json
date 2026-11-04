@@ -2102,6 +2102,16 @@
               "null",
               "string"
             ]
+          },
+          "candidates": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/FetchedPage"
+            },
+            "description": "Pages with the exact title under no artist the track credits: shown to the judge and the person, and never a source for a rule (ADR 0077)."
           }
         },
         "description": "What one site gave for a song."

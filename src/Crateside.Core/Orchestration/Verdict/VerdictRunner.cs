@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Loop;
+using Crateside.Core.Playlist;
 using Humanizer;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -26,7 +27,8 @@ public sealed partial class VerdictRunner(
     IOptions<JudgeOptions> options,
     TimeProvider time,
     ILogger<VerdictRunner> log,
-    string fileName = "claude"
+    string fileName = "claude",
+    IntakeStore? intake = null
 ) : IVerdictJudge
 {
     public const string VerdictFileName = "verdict.json";
@@ -47,7 +49,7 @@ public sealed partial class VerdictRunner(
     private static readonly string[] Tools = ["Read", "Write", "WebSearch", "WebFetch"];
 
     private readonly JudgeOptions _options = options.Value;
-    private readonly PageLookups _lookups = new(sourcePages, workingSet, store);
+    private readonly PageLookups _lookups = new(sourcePages, workingSet, store, null, intake);
 
     /// <summary>The judge's instructions, the same for every track (judge-prompt.md).</summary>
     public static string Instructions { get; } = ReadInstructions();
@@ -334,6 +336,10 @@ public sealed partial class VerdictRunner(
                     yield return $"  - {line}";
             }
         }
+
+        foreach (var page in lookups.SelectMany(lookup => lookup.Candidates ?? []))
+            yield return $"- unconfirmed, not evidence: {page.Site}, {page.Url}, \"{page.Heading}\". "
+                + $"{page.Note}. Its keys are not a source for a verdict.";
 
         foreach (var lookup in lookups.Where(lookup => lookup.Status is not LookupStatus.Found))
             yield return lookup.Status is LookupStatus.NotFound

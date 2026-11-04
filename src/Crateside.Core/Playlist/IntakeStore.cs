@@ -359,6 +359,12 @@ public sealed record IntakeRecord
     /// <summary>The page a track not on YouTube was fetched from; null for a file and for YouTube.</summary>
     public string? PageUrl { get; init; }
 
+    /// <summary>The artists the file credits, joined; null when it credits none.</summary>
+    public string? Artist { get; init; }
+
+    /// <summary>The title the file's own tags give, apart from the name built from it.</summary>
+    public string? SongTitle { get; init; }
+
     /// <summary>What the source says about the release; null for a track taken from the playlist.</summary>
     public Imports.Release? Release { get; init; }
 

@@ -203,6 +203,8 @@ public sealed class TrackIntake(
                 Title = name,
                 AddedAt = time.GetUtcNow(),
                 PageUrl = pageUrl,
+                Artist = tags.Artists is [_, ..] ? string.Join(", ", tags.Artists) : null,
+                SongTitle = facts is null ? tags.Title : null,
                 Release = release,
             }
         );

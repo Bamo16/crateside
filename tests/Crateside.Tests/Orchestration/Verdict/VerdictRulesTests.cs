@@ -326,4 +326,24 @@ public sealed class VerdictRulesTests
     {
         Assert.False(VerdictRules.TryRule(evidence, [], out _));
     }
+
+    [Fact]
+    public void An_unconfirmed_candidate_never_rules_nor_blocks_a_ruling()
+    {
+        var candidate = new FetchedPage
+        {
+            Site = "Hooktheory",
+            Url = "https://www.hooktheory.com/theorytab/view/sega/b",
+            Keys = [new PageKey("C major", "Verse", null)],
+        };
+
+        var withCandidate = Rule(
+            Evidence("A minor", "A minor", "A minor"),
+            new SiteLookup("Hooktheory", LookupStatus.NotFound, []) { Candidates = [candidate] },
+            NothingFound("Musicnotes")
+        );
+
+        Assert.Equal(KeyConfidence.Medium, withCandidate?.Confidence);
+        Assert.Equal(new TonalCenter("A", DiatonicMode.Aeolian), withCandidate?.Center);
+    }
 }
