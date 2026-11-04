@@ -43,16 +43,16 @@ public sealed class DownloadDrainer(
         var ledger = store.Read();
         var order = WorkOrder.Compose(wanted.Track, ledger);
 
-        jobs.Record(wanted.VideoId, JobStage.Download, JobStatus.Running);
+        jobs.Record(wanted.TrackKey, JobStage.Download, JobStatus.Running);
 
         var destination = _paths.DestinationFor(order.Destination);
 
         var (error, summary) = wanted.Copy
-            ? Copied(wanted.VideoId, destination)
+            ? Copied(wanted.TrackKey, destination)
             : await FetchedAsync(wanted, order, destination, ct);
 
         jobs.Record(
-            wanted.VideoId,
+            wanted.TrackKey,
             JobStage.Download,
             error is null ? JobStatus.Succeeded : JobStatus.Failed,
             error: error,
@@ -95,9 +95,9 @@ public sealed class DownloadDrainer(
     /// <summary>
     /// Copies the separation source into the destination, for a plan that keeps it as a sample.
     /// </summary>
-    private (string? Error, string? Summary) Copied(string videoId, string destination)
+    private (string? Error, string? Summary) Copied(string trackKey, string destination)
     {
-        if (!workingSet.TryGetSource(videoId, out var held))
+        if (!workingSet.TryGetSource(trackKey, out var held))
             return ("the audio to copy is no longer on disk", null);
 
         if (IsFiled(_paths, Path.GetFileName(held)))
@@ -123,7 +123,7 @@ public sealed class DownloadDrainer(
     private string? Placed(WantedDownload wanted, DownloadResult result)
     {
         workingSet.SaveAcquisition(
-            wanted.VideoId,
+            wanted.TrackKey,
             result.Acquisition! with
             {
                 IsAccepted = IsAccepted(wanted),

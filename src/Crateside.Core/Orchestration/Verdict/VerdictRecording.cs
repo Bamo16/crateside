@@ -14,9 +14,9 @@ internal static class VerdictRecording
     {
         if (
             YouTubeUrl.TryGetVideoId(order.SourceUrl, out var source)
-            && !source.Equals(order.VideoId, StringComparison.Ordinal)
+            && !source.Equals(order.TrackKey, StringComparison.Ordinal)
         )
-            store.Restate(source, $"https://music.youtube.com/watch?v={order.VideoId}");
+            store.Restate(source, $"https://music.youtube.com/watch?v={order.TrackKey}");
     }
 
     /// <summary>What the lookup found, as the ledger keeps it; null when it found nothing to keep.</summary>

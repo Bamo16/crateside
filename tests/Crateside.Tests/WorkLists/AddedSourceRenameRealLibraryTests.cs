@@ -22,7 +22,7 @@ public sealed class AddedSourceRenameRealLibraryTests
             .Values.Distinct()
             .SelectMany(inventory => inventory.Files)
             .Where(file => file.Kind is StemKind.Source)
-            .Select(file => file.File.SourceVideoId)
+            .Select(file => file.File.SourceTrackKey)
             .OfType<string>()
             .ToHashSet(StringComparer.Ordinal);
 
@@ -31,7 +31,7 @@ public sealed class AddedSourceRenameRealLibraryTests
         foreach (var upload in held)
         {
             var inventory = inventories[upload];
-            var added = new AddedSource { VideoId = upload, Label = "whatever the user typed" };
+            var added = new AddedSource { TrackKey = upload, Label = "whatever the user typed" };
 
             Assert.True(inventory.Has(added), $"{upload} is on disk but reads as not fetched.");
         }

@@ -65,7 +65,7 @@ public sealed class SourceAvailabilityTests
 
         var gone = Assert.Single(report.Unavailable);
 
-        Assert.Equal("gone0000000", gone.VideoId);
+        Assert.Equal("gone0000000", gone.TrackKey);
         Assert.Equal(UnavailableReason.Removed, gone.Reason);
         Assert.Equal(Start, gone.FirstSeen);
     }
@@ -180,18 +180,18 @@ public sealed class SourceAvailabilityTests
             CancellationToken ct
         )
         {
-            var videoId = request.RequestUri!.Query.Split("watch?v=")[1].Split('&')[0];
+            var trackKey = request.RequestUri!.Query.Split("watch?v=")[1].Split('&')[0];
 
             lock (owner._asked)
             {
-                owner._asked.Add(videoId);
+                owner._asked.Add(trackKey);
             }
 
-            return owner._answers.GetValueOrDefault(videoId) is HttpStatusCode.RequestTimeout
+            return owner._answers.GetValueOrDefault(trackKey) is HttpStatusCode.RequestTimeout
                 ? throw new HttpRequestException("timed out")
                 : Task.FromResult(
                     new HttpResponseMessage(
-                        owner._answers.GetValueOrDefault(videoId, HttpStatusCode.OK)
+                        owner._answers.GetValueOrDefault(trackKey, HttpStatusCode.OK)
                     )
                 );
         }

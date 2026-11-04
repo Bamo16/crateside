@@ -25,15 +25,15 @@ public sealed class QuotaGuard(
 
     private QuotaSnapshot _last = QuotaSnapshot.Unknown;
     private DateTimeOffset _readAt;
-    private string? _passedVideoId;
+    private string? _passedTrackKey;
 
     /// <summary>The one track the user let through the hold, held in memory only.</summary>
-    public string? PassedVideoId
+    public string? PassedTrackKey
     {
         get
         {
             lock (_gate)
-                return _passedVideoId;
+                return _passedTrackKey;
         }
     }
 
@@ -54,16 +54,16 @@ public sealed class QuotaGuard(
             : null;
 
     /// <summary>Lets this one track be judged despite the hold; a second call replaces the first.</summary>
-    public void Pass(string videoId)
+    public void Pass(string trackKey)
     {
         lock (_gate)
-            _passedVideoId = videoId;
+            _passedTrackKey = trackKey;
     }
 
     public void ClearPass()
     {
         lock (_gate)
-            _passedVideoId = null;
+            _passedTrackKey = null;
     }
 
     /// <summary>

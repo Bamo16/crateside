@@ -21,28 +21,28 @@ public sealed class EvidenceSelector(
     {
         next = view.Outstanding.FirstOrDefault(i =>
             !i.IsUnavailable
-            && !workingSet.HasEvidence(i.VideoId)
+            && !workingSet.HasEvidence(i.TrackKey)
             // Not this stage's turn until the download stage has been (ADR 0019). Picking one up
             // early costs it a strike for arriving before its audio, which is not a fault of the
             // track and would eventually make it give up.
-            && workingSet.TryGetSource(i.VideoId, out _)
+            && workingSet.TryGetSource(i.TrackKey, out _)
             // The file lands before stemforge-cli tags it, and a detector holding it open makes
             // that write fail silently: stems cut from it carry no source and join to nothing.
-            && !IsDownloading(i.VideoId)
+            && !IsDownloading(i.TrackKey)
             && IsEligible(i)
         )!;
 
         return next is not null;
     }
 
-    private bool IsDownloading(string videoId) =>
-        jobs.TryGet(videoId, JobStage.Download, out var download) && download.IsOpen;
+    private bool IsDownloading(string trackKey) =>
+        jobs.TryGet(trackKey, JobStage.Download, out var download) && download.IsOpen;
 
     /// <summary>Retries even a succeeded detection, since the caller has already found its evidence gone.</summary>
     private bool IsEligible(WorkItem item) =>
         StageEligibility.Allows(
             jobs,
-            item.VideoId,
+            item.TrackKey,
             JobStage.Evidence,
             maxStrikes,
             retrySucceeded: true

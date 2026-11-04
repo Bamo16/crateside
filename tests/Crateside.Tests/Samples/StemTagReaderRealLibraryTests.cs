@@ -22,7 +22,7 @@ public sealed class StemTagReaderRealLibraryTests
 
         var unjoinable = stems
             .Select(path => (Name: Path.GetFileName(path), Tags: StemTagReader.Read(path)))
-            .Where(s => s.Tags?.SourceVideoId is null)
+            .Where(s => s.Tags?.SourceTrackKey is null)
             .Select(s => s.Name)
             .ToArray();
 
@@ -34,8 +34,8 @@ public sealed class StemTagReaderRealLibraryTests
     {
         var songs = Stems()
             .Select(StemTagReader.Read)
-            .Where(t => t?.SourceVideoId is not null)
-            .GroupBy(t => t!.SourceVideoId)
+            .Where(t => t?.SourceTrackKey is not null)
+            .GroupBy(t => t!.SourceTrackKey)
             .ToArray();
 
         Assert.NotEmpty(songs);

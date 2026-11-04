@@ -9,14 +9,14 @@ public sealed class TrackSearchTests
 {
     private static readonly TrackRow Staged = new()
     {
-        VideoId = "aaaaaaaaaaa",
+        TrackKey = "aaaaaaaaaaa",
         Title = "Ludacris, Pharrell - Southern Hospitality",
         Samples = [new TrackSample { Label = "Vocal - Full", AbletonKey = "B major" }],
     };
 
     private static readonly TrackRow Finished = new()
     {
-        VideoId = "bbbbbbbbbbb",
+        TrackKey = "bbbbbbbbbbb",
         Title = "TLC - No Scrubs",
         Verdict = new LedgerRun
         {
@@ -29,7 +29,7 @@ public sealed class TrackSearchTests
 
     private static readonly TrackRow Renamed = new()
     {
-        VideoId = "ccccccccccc",
+        TrackKey = "ccccccccccc",
         Title = "topic - Provided to YouTube",
         DerivedTitle = "Diana Ross - Upside Down",
         Samples = [new TrackSample { Label = "Vocal - Full", IsInLibrary = true }],

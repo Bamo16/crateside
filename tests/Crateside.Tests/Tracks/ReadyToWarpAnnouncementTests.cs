@@ -7,16 +7,16 @@ namespace Crateside.Tests.Tracks;
 /// <summary>The one interruption the page makes: a track has become the user's to finish.</summary>
 public sealed class ReadyToWarpAnnouncementTests
 {
-    private static TrackRow Ready(string videoId) =>
+    private static TrackRow Ready(string trackKey) =>
         new()
         {
-            VideoId = videoId,
-            Title = $"Track {videoId}",
+            TrackKey = trackKey,
+            Title = $"Track {trackKey}",
             Samples = [new TrackSample { Label = "Vocal - Full", AbletonKey = "C minor" }],
         };
 
-    private static TrackRow Queued(string videoId) =>
-        new() { VideoId = videoId, Title = $"Track {videoId}" };
+    private static TrackRow Queued(string trackKey) =>
+        new() { TrackKey = trackKey, Title = $"Track {trackKey}" };
 
     private static TracksView View(params TrackRow[] rows) => new() { Rows = rows };
 
@@ -37,7 +37,7 @@ public sealed class ReadyToWarpAnnouncementTests
         using var service = Reading(View(Ready("a"), Ready("b")));
         var announced = new List<string>();
 
-        service.ReadyToWarp += row => announced.Add(row.VideoId);
+        service.ReadyToWarp += row => announced.Add(row.TrackKey);
         await service.RefreshAsync(TestContext.Current.CancellationToken);
 
         Assert.Empty(announced);
@@ -49,7 +49,7 @@ public sealed class ReadyToWarpAnnouncementTests
         using var service = Reading(View(Queued("a")), View(Ready("a")));
         var announced = new List<string>();
 
-        service.ReadyToWarp += row => announced.Add(row.VideoId);
+        service.ReadyToWarp += row => announced.Add(row.TrackKey);
 
         await service.RefreshAsync(TestContext.Current.CancellationToken);
         await service.RefreshAsync(TestContext.Current.CancellationToken);
@@ -63,7 +63,7 @@ public sealed class ReadyToWarpAnnouncementTests
         using var service = Reading(View(Queued("a")), View(Ready("a")));
         var announced = new List<string>();
 
-        service.ReadyToWarp += row => announced.Add(row.VideoId);
+        service.ReadyToWarp += row => announced.Add(row.TrackKey);
 
         for (var i = 0; i < 4; i++)
             await service.RefreshAsync(TestContext.Current.CancellationToken);
@@ -81,7 +81,7 @@ public sealed class ReadyToWarpAnnouncementTests
         );
         var announced = new List<string>();
 
-        service.ReadyToWarp += row => announced.Add(row.VideoId);
+        service.ReadyToWarp += row => announced.Add(row.TrackKey);
 
         await service.RefreshAsync(TestContext.Current.CancellationToken);
         await service.RefreshAsync(TestContext.Current.CancellationToken);
@@ -101,7 +101,7 @@ public sealed class ReadyToWarpAnnouncementTests
         );
         var announced = new List<string>();
 
-        service.ReadyToWarp += row => announced.Add(row.VideoId);
+        service.ReadyToWarp += row => announced.Add(row.TrackKey);
         await service.RefreshAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(service.LastError);

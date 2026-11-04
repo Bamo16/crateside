@@ -79,7 +79,7 @@ public sealed class StarterWarpRowTests : IDisposable
                 [
                     new StagedSong
                     {
-                        SourceVideoId = Upload,
+                        SourceTrackKey = Upload,
                         DisplayName = "Song",
                         Stems = [Saved("Vocal - Full"), Saved("Instrumental - Full")],
                     },

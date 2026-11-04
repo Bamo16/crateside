@@ -31,7 +31,7 @@ public sealed class TracksReader(
                 scan.View,
                 scan.Ledger,
                 staging.Read(paths),
-                scan.Processed.StemsByVideoId.Concat(SourcelessSongs.Scan(paths.LibraryFolder))
+                scan.Processed.StemsByTrackKey.Concat(SourcelessSongs.Scan(paths.LibraryFolder))
                     .ToDictionary(),
                 paths.LibraryFolder,
                 jobs,

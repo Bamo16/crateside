@@ -60,16 +60,16 @@ public sealed class StageWorker<TDrainer>(
         foreach (var job in jobs.Open(drainer.Stage))
         {
             jobs.Record(
-                job.VideoId,
+                job.TrackKey,
                 drainer.Stage,
                 JobStatus.Canceled,
                 error: "did not survive a restart"
             );
 
             logger.LogInformation(
-                "{Stage} for {VideoId} did not survive a restart; it goes back in line",
+                "{Stage} for {TrackKey} did not survive a restart; it goes back in line",
                 drainer.Stage,
-                job.VideoId
+                job.TrackKey
             );
         }
     }

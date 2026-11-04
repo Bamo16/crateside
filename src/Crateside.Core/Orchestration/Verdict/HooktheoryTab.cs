@@ -17,7 +17,8 @@ public sealed record HooktheoryTab
     public string? AllKeys { get; init; }
 
     /// <summary>The YouTube video the sections are synced to, often not the recording being judged.</summary>
-    public string? SyncedVideoId { get; init; }
+    [JsonPropertyName("syncedVideoId")]
+    public string? SyncedTrackKey { get; init; }
 
     /// <summary>The share of the synced video, 0 to 1, that the sections synced to it span together; null when none is.</summary>
     public double? Coverage { get; init; }
@@ -43,7 +44,8 @@ public sealed record TabSection(
     public IReadOnlyList<TabChord> Harmony { get; init; } = [];
 
     /// <summary>The video the section is synced to, when it is not the song's.</summary>
-    public string? VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public string? TrackKey { get; init; }
 
     /// <summary>Where the section starts and ends in its video, as fractions of the video's length.</summary>
     public double? SyncStart { get; init; }
@@ -86,7 +88,7 @@ internal static partial class HooktheoryPageReader
                         ],
                         Chords = score.Chords?.Count(chord => chord.IsRest is not true),
                         Harmony = HookpadChord.Read(score),
-                        VideoId = score.Youtube?.Id is { } id && id != song.YouTubeId ? id : null,
+                        TrackKey = score.Youtube?.Id is { } id && id != song.YouTubeId ? id : null,
                         SyncStart =
                             score.Youtube is { SyncStart: { } start, SyncEnd: { } end }
                             && end > start
@@ -114,7 +116,7 @@ internal static partial class HooktheoryPageReader
                 song.SectionStats is { } stats && stats.TryGetValue("all", out var all)
                     ? string.Join(", ", (all.AllKeys ?? []).Select(key => string.Join(' ', key)))
                     : null,
-            SyncedVideoId = song.YouTubeId,
+            SyncedTrackKey = song.YouTubeId,
             Coverage = Coverage(sections),
         };
     }
@@ -123,7 +125,7 @@ internal static partial class HooktheoryPageReader
     private static double? Coverage(IReadOnlyList<TabSection> sections)
     {
         var spans = sections
-            .Where(section => section is { VideoId: null, SyncStart: not null, SyncEnd: not null })
+            .Where(section => section is { TrackKey: null, SyncStart: not null, SyncEnd: not null })
             .OrderBy(section => section.SyncStart)
             .ToList();
 

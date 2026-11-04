@@ -29,8 +29,8 @@ public sealed class SourceAvailability(
         var now = time.GetUtcNow();
         var known = store.All();
         var toCheck = missing
-            .Where(videoId =>
-                known.GetValueOrDefault(videoId) is not { } entry
+            .Where(trackKey =>
+                known.GetValueOrDefault(trackKey) is not { } entry
                 || recheckAll
                 || entry.Checked.AddMonths(1) <= now
             )
@@ -39,16 +39,16 @@ public sealed class SourceAvailability(
         await Parallel.ForEachAsync(
             toCheck,
             new ParallelOptions { MaxDegreeOfParallelism = Concurrency, CancellationToken = ct },
-            async (videoId, token) =>
+            async (trackKey, token) =>
             {
-                switch (await CheckAsync(videoId, token))
+                switch (await CheckAsync(trackKey, token))
                 {
                     case VideoStatus.Available:
-                        store.Forget(videoId);
+                        store.Forget(trackKey);
 
                         break;
                     case VideoStatus.Unavailable(var reason):
-                        store.Mark(videoId, reason, now);
+                        store.Mark(trackKey, reason, now);
 
                         break;
                 }
@@ -60,27 +60,27 @@ public sealed class SourceAvailability(
         var ledgerNow = gone.Count > 0 ? ledger.Read() : null;
 
         return new AvailabilityReport(
-            [.. missing.Where(videoId => !after.ContainsKey(videoId))],
+            [.. missing.Where(trackKey => !after.ContainsKey(trackKey))],
             [
-                .. gone.Select(videoId => new UnavailableSource(
-                    videoId,
-                    ledgerNow?.SongFor(videoId) ?? videoId,
-                    after[videoId].Reason,
-                    after[videoId].FirstSeen
+                .. gone.Select(trackKey => new UnavailableSource(
+                    trackKey,
+                    ledgerNow?.SongFor(trackKey) ?? trackKey,
+                    after[trackKey].Reason,
+                    after[trackKey].FirstSeen
                 )),
             ]
         );
     }
 
     /// <summary>Unknown on any status or failure that does not say the video is gone.</summary>
-    public async Task<VideoStatus> CheckAsync(string videoId, CancellationToken ct = default)
+    public async Task<VideoStatus> CheckAsync(string trackKey, CancellationToken ct = default)
     {
         try
         {
             using var response = await clients
                 .CreateClient(ClientName)
                 .GetAsync(
-                    $"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={videoId}&format=json",
+                    $"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={trackKey}&format=json",
                     ct
                 );
 
@@ -127,7 +127,7 @@ public enum UnavailableReason
 }
 
 public sealed record UnavailableSource(
-    string VideoId,
+    [property: JsonPropertyName("videoId")] string TrackKey,
     string Song,
     UnavailableReason Reason,
     DateTimeOffset FirstSeen
@@ -173,16 +173,16 @@ public sealed class UnavailableSources
     }
 
     /// <summary>Keeps the date it was first seen unavailable when already known.</summary>
-    public void Mark(string videoId, UnavailableReason reason, DateTimeOffset checkedAt) =>
+    public void Mark(string trackKey, UnavailableReason reason, DateTimeOffset checkedAt) =>
         Change(entries =>
-            entries[videoId] = new UnavailableEntry(
+            entries[trackKey] = new UnavailableEntry(
                 reason,
-                entries.TryGetValue(videoId, out var known) ? known.FirstSeen : checkedAt,
+                entries.TryGetValue(trackKey, out var known) ? known.FirstSeen : checkedAt,
                 checkedAt
             )
         );
 
-    public void Forget(string videoId) => Change(entries => entries.Remove(videoId));
+    public void Forget(string trackKey) => Change(entries => entries.Remove(trackKey));
 
     private void Change(Action<Dictionary<string, UnavailableEntry>> change)
     {

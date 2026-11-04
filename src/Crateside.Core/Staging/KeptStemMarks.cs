@@ -111,10 +111,10 @@ public sealed class KeptStemMarks(
         LedgerRun? verdict = null;
         IReadOnlyCollection<TrackMark> mine = [];
 
-        if (StemTagReader.Read(path)?.SourceVideoId is { } videoId)
+        if (StemTagReader.Read(path)?.SourceTrackKey is { } trackKey)
         {
-            ledger.TryGetLatestByVideoId(videoId, out verdict);
-            mine = marked.GetValueOrDefault(verdict?.Song ?? videoId)?.Marks ?? [];
+            ledger.TryGetLatestByTrackKey(trackKey, out verdict);
+            mine = marked.GetValueOrDefault(verdict?.Song ?? trackKey)?.Marks ?? [];
         }
 
         return BrowserCollections.TrackMarksFor(verdict, mine);

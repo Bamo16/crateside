@@ -15,7 +15,7 @@ namespace Crateside.Tests.Orchestration.Verdict;
 
 public sealed class VerdictRunnerTests : IDisposable
 {
-    private const string VideoId = "dQw4w9WgXcQ";
+    private const string TrackKey = "dQw4w9WgXcQ";
     private const string ThinPage =
         "https://www.hooktheory.com/theorytab/view/yes/owner-of-a-lonely-heart-intro";
     private const string SwappedTo = "-cuAnMUSN50";
@@ -71,7 +71,8 @@ public sealed class VerdictRunnerTests : IDisposable
 
     private WorkingSet Set => field ??= new WorkingSet(Path.Combine(_directory, "working"));
     private LedgerStore Ledger => field ??= TestLedger.Store();
-    private string VerdictPath => Path.Combine(Set.Prepare(VideoId), VerdictRunner.VerdictFileName);
+    private string VerdictPath =>
+        Path.Combine(Set.Prepare(TrackKey), VerdictRunner.VerdictFileName);
     private FakeSessions Sessions { get; } = new();
     private FakeDetector Detector { get; } = new();
     private FakePages Pages { get; } = new();
@@ -111,7 +112,7 @@ public sealed class VerdictRunnerTests : IDisposable
             new WorkItem
             {
                 PlaylistItemId = "PLI1",
-                VideoId = VideoId,
+                TrackKey = TrackKey,
                 Title = "Yes - Owner of a Lonely Heart",
                 Plan = instrumentalRelease ? StemPlan.InstrumentalRelease : StemPlan.Default,
                 StatedSourceUrl = statedSource,
@@ -121,12 +122,12 @@ public sealed class VerdictRunnerTests : IDisposable
 
     private void GiveEvidence(string evidence = BackedByBoth)
     {
-        Set.Prepare(VideoId);
-        File.WriteAllText(Set.EvidencePathFor(VideoId), evidence);
+        Set.Prepare(TrackKey);
+        File.WriteAllText(Set.EvidencePathFor(TrackKey), evidence);
     }
 
     private void GiveAudio() =>
-        File.WriteAllText(Path.Combine(Set.Prepare(VideoId), "track.flac"), "audio");
+        File.WriteAllText(Path.Combine(Set.Prepare(TrackKey), "track.flac"), "audio");
 
     /// <summary>The next session writes this verdict file, or nothing, and says this.</summary>
     private void Session(
@@ -161,7 +162,7 @@ public sealed class VerdictRunnerTests : IDisposable
         var result = await RunAsync();
 
         Assert.True(result.IsSuccess, result.Error);
-        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.True(Ledger.Read().TryGetLatestByTrackKey(TrackKey, out var run));
         Assert.Equal("yes - owner of a lonely heart", run.Song);
         Assert.Equal(new TonalCenter("A", DiatonicMode.Aeolian), run.Center);
         Assert.Equal(KeyConfidence.High, run.Confidence);
@@ -279,7 +280,7 @@ public sealed class VerdictRunnerTests : IDisposable
 
         Assert.True(result.IsSuccess);
         Assert.Contains("\"H\" is not a tonic", Sessions.Requests[1].StandardInput);
-        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.True(Ledger.Read().TryGetLatestByTrackKey(TrackKey, out var run));
         Assert.Equal("A#", run.Center!.Tonic);
     }
 
@@ -320,7 +321,7 @@ public sealed class VerdictRunnerTests : IDisposable
         var result = await RunAsync();
 
         Assert.True(result.IsSuccess, result.Error);
-        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.True(Ledger.Read().TryGetLatestByTrackKey(TrackKey, out var run));
         Assert.Equal("A minor", run.Center!.Collapsed);
     }
 
@@ -368,7 +369,7 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.Equal(2, Sessions.Requests.Count);
         Assert.Contains("HIGH needs", Sessions.Requests[1].StandardInput);
         Assert.Contains("backed detectors", Sessions.Requests[1].StandardInput);
-        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.True(Ledger.Read().TryGetLatestByTrackKey(TrackKey, out var run));
         Assert.Equal(KeyConfidence.Medium, run.Confidence);
         Assert.Equal("A minor", run.Center!.Collapsed);
         Assert.Contains(
@@ -394,7 +395,7 @@ public sealed class VerdictRunnerTests : IDisposable
 
         await RunAsync();
 
-        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.True(Ledger.Read().TryGetLatestByTrackKey(TrackKey, out var run));
         Assert.Equal(KeyConfidence.Medium, run.Confidence);
         Assert.Contains(
             "a human source that agrees on A minor",
@@ -438,7 +439,7 @@ public sealed class VerdictRunnerTests : IDisposable
         await RunAsync();
 
         Assert.Contains("states C major", Sessions.Requests[1].StandardInput);
-        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.True(Ledger.Read().TryGetLatestByTrackKey(TrackKey, out var run));
         Assert.Equal(KeyConfidence.Medium, run.Confidence);
         Assert.Contains(
             "MN1 states C major",
@@ -482,7 +483,7 @@ public sealed class VerdictRunnerTests : IDisposable
                 new WorkItem
                 {
                     PlaylistItemId = "PLI1",
-                    VideoId = VideoId,
+                    TrackKey = TrackKey,
                     Title = "an upload with no dash",
                     Plan = StemPlan.Default,
                 },
@@ -528,7 +529,7 @@ public sealed class VerdictRunnerTests : IDisposable
         await RunAsync();
 
         Assert.Single(Sessions.Requests);
-        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.True(Ledger.Read().TryGetLatestByTrackKey(TrackKey, out var run));
         Assert.Equal(KeyConfidence.High, run.Confidence);
     }
 
@@ -541,7 +542,7 @@ public sealed class VerdictRunnerTests : IDisposable
 
         await RunAsync();
 
-        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.True(Ledger.Read().TryGetLatestByTrackKey(TrackKey, out var run));
         Assert.Equal(KeyConfidence.High, run.Confidence);
         Assert.DoesNotContain(
             "capped",
@@ -559,7 +560,7 @@ public sealed class VerdictRunnerTests : IDisposable
 
         Assert.True(result.IsSuccess, result.Error);
         Assert.Single(Sessions.Requests);
-        Assert.True(Ledger.Read().TryGetLatestByVideoId(VideoId, out var run));
+        Assert.True(Ledger.Read().TryGetLatestByTrackKey(TrackKey, out var run));
         Assert.Equal(KeyConfidence.High, run.Confidence);
         Assert.Equal(
             "Backed by both, and Hooktheory agrees.",
@@ -655,7 +656,7 @@ public sealed class VerdictRunnerTests : IDisposable
         File.WriteAllText(kept, "audio");
         File.WriteAllText(
             IndexPath,
-            $$"""[{ "videoId": "{{VideoId}}", "song": "yes - owner of a lonely heart", "location": "KeptSample", "path": {{JsonSerializer.Serialize(kept)}} }]"""
+            $$"""[{ "videoId": "{{TrackKey}}", "song": "yes - owner of a lonely heart", "location": "KeptSample", "path": {{JsonSerializer.Serialize(kept)}} }]"""
         );
         GiveEvidence();
         Session(AsksForWindows);
@@ -905,7 +906,7 @@ public sealed class VerdictRunnerTests : IDisposable
 
         Assert.True(result.IsSuccess);
         Assert.True(Ledger.Read().HasRunFor(SwappedTo));
-        Assert.True(Ledger.Read().HasRunFor(VideoId));
+        Assert.True(Ledger.Read().HasRunFor(TrackKey));
     }
 
     [Fact]
@@ -948,7 +949,7 @@ public sealed class VerdictRunnerTests : IDisposable
         );
         Assert.Equal(VerdictRunner.Instructions, After(request, "--append-system-prompt"));
         Assert.Contains("--safe-mode", request.Arguments);
-        Assert.Equal(Set.Prepare(VideoId), request.WorkingDirectory);
+        Assert.Equal(Set.Prepare(TrackKey), request.WorkingDirectory);
         Assert.Equal("https://api.anthropic.com", request.Environment["ANTHROPIC_BASE_URL"]);
         Assert.Equal("false", request.Environment["ENABLE_TOOL_SEARCH"]);
         Assert.False(Judge.Environment.ContainsKey("ENABLE_TOOL_SEARCH"));
@@ -961,10 +962,10 @@ public sealed class VerdictRunnerTests : IDisposable
 
         var prompt = Runner.Prompt(Order(), VerdictPath, []);
 
-        Assert.Contains(Set.EvidencePathFor(VideoId), prompt);
+        Assert.Contains(Set.EvidencePathFor(TrackKey), prompt);
         Assert.Contains(VerdictPath, prompt);
         Assert.Contains("\"chords\": [\"Am\", \"E7\"]", prompt);
-        Assert.Contains($"watch?v={VideoId}", prompt);
+        Assert.Contains($"watch?v={TrackKey}", prompt);
     }
 
     [Fact]
@@ -975,7 +976,7 @@ public sealed class VerdictRunnerTests : IDisposable
         var prompt = Runner.Prompt(Order(), VerdictPath, []);
 
         Assert.DoesNotContain("```json", prompt);
-        Assert.Contains(Set.EvidencePathFor(VideoId), prompt);
+        Assert.Contains(Set.EvidencePathFor(TrackKey), prompt);
     }
 
     [Fact]
@@ -1055,7 +1056,7 @@ public sealed class VerdictRunnerTests : IDisposable
                 new WorkItem
                 {
                     PlaylistItemId = "PLI1",
-                    VideoId = VideoId,
+                    TrackKey = TrackKey,
                     Title = "Owner of a Lonely Heart",
                 },
                 TestLedger.From("does-not-exist")
@@ -1198,7 +1199,7 @@ public sealed class VerdictRunnerTests : IDisposable
         await JudgeFromBarsAsync(Direction(), steps);
 
         Assert.Equal([(45.0, 67.0), (112.0, 133.0), (62.0, 94.5)], Detector.Asked);
-        Assert.True(File.Exists(Path.Combine(Set.Prepare(VideoId), "evidence.window3.json")));
+        Assert.True(File.Exists(Path.Combine(Set.Prepare(TrackKey), "evidence.window3.json")));
         Assert.Contains(steps, step => step is JudgeStep.JudgeAsked);
 
         var windows = Ledger.EvidenceFor("yes - owner of a lonely heart")!.Windows;

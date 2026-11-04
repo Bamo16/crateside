@@ -22,7 +22,7 @@ public sealed class TrueUpAll(CratesidePaths paths, WarpTrueUp trueUp)
             var cuts in audio
                 .Select(WarpSiblings.Read)
                 .OfType<SiblingFile>()
-                .GroupBy(cut => cut.SourceVideoId, StringComparer.Ordinal)
+                .GroupBy(cut => cut.SourceTrackKey, StringComparer.Ordinal)
         )
         {
             ct.ThrowIfCancellationRequested();

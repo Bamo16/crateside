@@ -20,7 +20,7 @@ public sealed class StemProvenanceTests
         Assert.Equal("Vocal - Full", provenance.Preset);
         Assert.Equal(new DateOnly(2026, 8, 5), provenance.SeparatedOn);
         Assert.Equal("https://www.youtube.com/watch?v=vfBJjufAG1E", provenance.SourceUrl);
-        Assert.Equal("vfBJjufAG1E", provenance.SourceVideoId);
+        Assert.Equal("vfBJjufAG1E", provenance.SourceTrackKey);
     }
 
     [Theory]
@@ -43,7 +43,7 @@ public sealed class StemProvenanceTests
         Assert.NotNull(provenance);
         Assert.Equal("Drums", provenance.Preset);
         Assert.Null(provenance.SourceUrl);
-        Assert.Null(provenance.SourceVideoId);
+        Assert.Null(provenance.SourceTrackKey);
     }
 
     [Theory]

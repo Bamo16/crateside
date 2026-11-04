@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Crateside.Core.Orchestration.Jobs;
 
@@ -20,7 +21,7 @@ public sealed class ActionLog(CratesidePaths paths, TimeProvider? time = null)
 
     /// <param name="passFrom">The stage this action sends the track back to, if it starts a pass.</param>
     public void Record(
-        string videoId,
+        string trackKey,
         UserActionKind kind,
         string? detail = null,
         JobStage? passFrom = null
@@ -29,7 +30,7 @@ public sealed class ActionLog(CratesidePaths paths, TimeProvider? time = null)
             new UserAction
             {
                 At = _time.GetUtcNow(),
-                VideoId = videoId,
+                TrackKey = trackKey,
                 Kind = kind,
                 Detail = detail,
                 PassFrom = passFrom,
@@ -37,8 +38,8 @@ public sealed class ActionLog(CratesidePaths paths, TimeProvider? time = null)
         );
 
     /// <summary>One track's actions, oldest first.</summary>
-    public IReadOnlyList<UserAction> For(string videoId) =>
-        [.. All().Where(action => action.VideoId.Equals(videoId, StringComparison.Ordinal))];
+    public IReadOnlyList<UserAction> For(string trackKey) =>
+        [.. All().Where(action => action.TrackKey.Equals(trackKey, StringComparison.Ordinal))];
 
     public IReadOnlyList<UserAction> All()
     {
@@ -102,7 +103,8 @@ public sealed record UserAction
 {
     public required DateTimeOffset At { get; init; }
 
-    public required string VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
 
     public required UserActionKind Kind { get; init; }
 

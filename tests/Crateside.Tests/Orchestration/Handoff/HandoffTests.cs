@@ -49,7 +49,7 @@ public sealed class HandoffTests : IDisposable
     private string Staged(string name) => Path.Combine(_paths.StagingFolder, name);
 
     /// <summary>A stem in the cut root carrying a given video ID in its StemForge provenance.</summary>
-    private void Provenanced(string fileName, string videoId)
+    private void Provenanced(string fileName, string trackKey)
     {
         var path = Path.Combine(_paths.StemsKeyIdentified, fileName);
 
@@ -63,7 +63,7 @@ public sealed class HandoffTests : IDisposable
 
         file.Tag.Comment =
             "stemforge/0.2.1.1 | preset: Vocal - Full | date: 2026-09-23 | "
-            + $"source: https://www.youtube.com/watch?v={videoId}";
+            + $"source: https://www.youtube.com/watch?v={trackKey}";
         file.Save();
     }
 
@@ -204,8 +204,8 @@ public sealed class HandoffTests : IDisposable
 
         jobs.Record("_DiMKyZwaA0", JobStage.Separation, JobStatus.Succeeded);
 
-        Assert.True(Selector(jobs).TryPickNext(out var videoId, out _));
-        Assert.Equal("_DiMKyZwaA0", videoId);
+        Assert.True(Selector(jobs).TryPickNext(out var trackKey, out _));
+        Assert.Equal("_DiMKyZwaA0", trackKey);
     }
 
     [Fact]
@@ -215,8 +215,8 @@ public sealed class HandoffTests : IDisposable
 
         Provenanced("Moe Shop - HARDCODED (Original).flac", "_DiMKyZwaA0");
 
-        Assert.True(Selector(jobs).TryPickNext(out var videoId, out _));
-        Assert.Equal("_DiMKyZwaA0", videoId);
+        Assert.True(Selector(jobs).TryPickNext(out var trackKey, out _));
+        Assert.Equal("_DiMKyZwaA0", trackKey);
     }
 
     [Fact]
@@ -246,8 +246,8 @@ public sealed class HandoffTests : IDisposable
 
         jobs.Record("vaQClQzY2fk", JobStage.Separation, JobStatus.Succeeded);
 
-        Assert.True(selector.TryPickNext(out var videoId, out _));
-        Assert.Equal("vaQClQzY2fk", videoId);
+        Assert.True(selector.TryPickNext(out var trackKey, out _));
+        Assert.Equal("vaQClQzY2fk", trackKey);
     }
 
     private HandoffSelector Selector(JobStore jobs) => new(jobs, _paths);

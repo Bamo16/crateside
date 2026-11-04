@@ -91,22 +91,24 @@ public sealed partial class BeatReader
         files.Where(file => Read(file) is null).Concat(files.Where(IsFromOlderBuild));
 
     /// <summary>The file an upload's beats are read from: its source on disk, else <paramref name="stemPath"/>.</summary>
-    public string ReferenceFor(string? videoId, string stemPath) =>
-        videoId is not null && _sources?.PathOf(videoId) is { } source && File.Exists(source)
+    public string ReferenceFor(string? trackKey, string stemPath) =>
+        trackKey is not null && _sources?.PathOf(trackKey) is { } source && File.Exists(source)
             ? source
             : stemPath;
 
     /// <summary>The upload's reference file for each stem, once each, in the order given.</summary>
     public IEnumerable<string> ReferencesOf(IEnumerable<string> stemPaths) =>
         stemPaths
-            .Select(stem => ReferenceFor(StemTagReader.Read(stem)?.Provenance?.SourceVideoId, stem))
+            .Select(stem =>
+                ReferenceFor(StemTagReader.Read(stem)?.Provenance?.SourceTrackKey, stem)
+            )
             .Distinct(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// The reference file's reading; until that is read, the stem's own, which belongs to the stem.
     /// </summary>
-    public BeatReading? ReadFor(string? videoId, string stemPath) =>
-        Read(ReferenceFor(videoId, stemPath)) ?? Read(stemPath);
+    public BeatReading? ReadFor(string? trackKey, string stemPath) =>
+        Read(ReferenceFor(trackKey, stemPath)) ?? Read(stemPath);
 
     /// <summary>The kept reading, whichever build made it, or null when the file changed since.</summary>
     public BeatReading? Read(string audioPath) => Kept(audioPath)?.Reading;

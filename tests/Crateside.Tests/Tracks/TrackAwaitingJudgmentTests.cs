@@ -13,7 +13,7 @@ public sealed class TrackAwaitingJudgmentTests
         Song = "darude - sandstorm (radio edit)",
     };
 
-    private static TrackRow Row() => new() { VideoId = "XjvkxXblpz8", Title = "Sandstorm" };
+    private static TrackRow Row() => new() { TrackKey = "XjvkxXblpz8", Title = "Sandstorm" };
 
     [Theory]
     [InlineData(null)]

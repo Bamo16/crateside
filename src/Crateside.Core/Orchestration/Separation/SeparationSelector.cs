@@ -21,7 +21,7 @@ public sealed class SeparationSelector(
         [
             .. view
                 .AwaitingSeparation.Where(item => !item.IsUnavailable && IsEligible(item))
-                .DistinctBy(item => item.VideoId, StringComparer.Ordinal),
+                .DistinctBy(item => item.TrackKey, StringComparer.Ordinal),
         ];
 
     /// <summary>
@@ -49,7 +49,7 @@ public sealed class SeparationSelector(
     private bool IsEligible(WorkItem item) =>
         StageEligibility.Allows(
             jobs,
-            item.VideoId,
+            item.TrackKey,
             JobStage.Separation,
             maxStrikes,
             retrySucceeded: false

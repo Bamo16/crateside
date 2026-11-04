@@ -63,7 +63,7 @@ public sealed class SourceOnlyGuideTests
     {
         var view = Compose(Files(Staging, [null]), SourceOnly);
 
-        Assert.Equal(Track, Assert.Single(view.AwaitingSeparation).VideoId);
+        Assert.Equal(Track, Assert.Single(view.AwaitingSeparation).TrackKey);
     }
 
     [Fact]
@@ -85,30 +85,30 @@ public sealed class SourceOnlyGuideTests
     {
         // The source reached Staging ahead of the guide, and the cut is still owed.
         var view = WorkListsView.Compose(
-            [new WorkItem { VideoId = Track, Title = "Track" }],
+            [new WorkItem { TrackKey = Track, Title = "Track" }],
             new HashSet<string> { Track },
             new HashSet<string>(),
             new HashSet<string>(),
             new Dictionary<string, TrackInstruction>
             {
-                [Track] = new() { VideoId = Track, Plan = SourceOnly },
+                [Track] = new() { TrackKey = Track, Plan = SourceOnly },
             },
             awaitingCut: new HashSet<string> { Track },
             inventories: new Dictionary<string, StemInventory> { [Track] = Files(Staging, [null]) }
         );
 
-        Assert.Equal(Track, Assert.Single(view.AwaitingSeparation).VideoId);
+        Assert.Equal(Track, Assert.Single(view.AwaitingSeparation).TrackKey);
     }
 
     private static WorkListsView Compose(StemInventory inventory, StemPlan plan) =>
         WorkListsView.Compose(
-            [new WorkItem { VideoId = Track, Title = "Track" }],
+            [new WorkItem { TrackKey = Track, Title = "Track" }],
             new HashSet<string> { Track },
             new HashSet<string>(),
             new HashSet<string>(),
             new Dictionary<string, TrackInstruction>
             {
-                [Track] = new() { VideoId = Track, Plan = plan },
+                [Track] = new() { TrackKey = Track, Plan = plan },
             },
             inventories: new Dictionary<string, StemInventory> { [Track] = inventory }
         );

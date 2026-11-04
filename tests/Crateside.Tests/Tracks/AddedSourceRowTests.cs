@@ -36,7 +36,11 @@ public sealed class AddedSourceRowTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static readonly AddedSource Source = new() { VideoId = Attached, Label = "A Cappella" };
+    private static readonly AddedSource Source = new()
+    {
+        TrackKey = Attached,
+        Label = "A Cappella",
+    };
 
     private static readonly StemPlan Plan = new()
     {
@@ -63,13 +67,13 @@ public sealed class AddedSourceRowTests : IDisposable
         return TestLedger.From(path);
     }
 
-    private static StemOnDisk Library(string name, string videoId, string? preset = null) =>
+    private static StemOnDisk Library(string name, string trackKey, string? preset = null) =>
         new()
         {
             Path = Path.Combine(FinishedRoot, name),
             Root = FinishedRoot,
             Preset = preset,
-            SourceVideoId = videoId,
+            SourceTrackKey = trackKey,
         };
 
     private TrackRow Row(
@@ -78,9 +82,9 @@ public sealed class AddedSourceRowTests : IDisposable
         FolderInfo? libraryTags = null
     )
     {
-        var instruction = new TrackInstruction { VideoId = Track, Plan = Plan };
+        var instruction = new TrackInstruction { TrackKey = Track, Plan = Plan };
         var view = WorkListsView.Compose(
-            [new WorkItem { VideoId = Track, Title = "Some Track" }],
+            [new WorkItem { TrackKey = Track, Title = "Some Track" }],
             new HashSet<string>(),
             new HashSet<string>(),
             new HashSet<string>(),
@@ -124,7 +128,7 @@ public sealed class AddedSourceRowTests : IDisposable
             Label = "A Cappella",
             Kind = StemKind.Source,
             IsWanted = true,
-            Files = [.. row.Samples.Where(sample => sample.SourceVideoId == Attached)],
+            Files = [.. row.Samples.Where(sample => sample.SourceTrackKey == Attached)],
         };
 
         Assert.True(line.IsNotPremium);
@@ -203,7 +207,7 @@ public sealed class AddedSourceRowTests : IDisposable
     {
         var row = new TrackRow
         {
-            VideoId = Track,
+            TrackKey = Track,
             Title = "Rob Dougan - Clubbed to Death",
             Samples = [new TrackSample { Label = "source" }],
         };
@@ -217,7 +221,7 @@ public sealed class AddedSourceRowTests : IDisposable
         // The handoff picks stems by provenance, so a running cut would stage them again after.
         var row = new TrackRow
         {
-            VideoId = Track,
+            TrackKey = Track,
             Title = "Rob Dougan - Clubbed to Death",
             RunningStage = JobStage.Separation,
         };

@@ -74,15 +74,15 @@ public sealed class ClipColorsTests : IDisposable
         Assert.Contains(ClipColors.For(source)!.Value.Index, (int[])[7, 8, 10, 11, 20, 21, 22, 24]);
     }
 
-    private string Stem(string name, string? preset, string videoId)
+    private string Stem(string name, string? preset, string trackKey)
     {
         var path = Path.Combine(_root, name);
         File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), path);
 
         using var file = TagLib.File.Create(path);
         file.Tag.Comment = preset is null
-            ? $"stemforge/0.4.0.0 | source: https://www.youtube.com/watch?v={videoId}"
-            : $"stemforge/0.4.0.0 | preset: {preset} | source: https://www.youtube.com/watch?v={videoId}";
+            ? $"stemforge/0.4.0.0 | source: https://www.youtube.com/watch?v={trackKey}"
+            : $"stemforge/0.4.0.0 | preset: {preset} | source: https://www.youtube.com/watch?v={trackKey}";
         file.Save();
 
         return path;

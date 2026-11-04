@@ -55,7 +55,7 @@ public sealed class LedgerStoreTests : IDisposable
     {
         Assert.IsType<RecordOutcome.Recorded>(Store.Record(Run()));
 
-        Assert.True(Store.Read().TryGetLatestByVideoId(Judged, out var run));
+        Assert.True(Store.Read().TryGetLatestByTrackKey(Judged, out var run));
         Assert.Equal("A minor", run.Key);
         Assert.Equal("A Dorian", run.ModalKey);
     }
@@ -196,7 +196,7 @@ public sealed class LedgerStoreTests : IDisposable
 
         Assert.IsType<RestateOutcome.Restated>(Store.Restate(Judged, Other));
 
-        Assert.True(Store.Read().TryGetLatestByVideoId(Other, out var run));
+        Assert.True(Store.Read().TryGetLatestByTrackKey(Other, out var run));
         Assert.Equal("A minor", run.Key);
         Assert.Equal(1, Store.Read().SongCount);
     }
@@ -233,7 +233,7 @@ public sealed class LedgerStoreTests : IDisposable
             }
         );
 
-        Assert.True(Store.Read().TryGetLatestByVideoId(Other, out var run));
+        Assert.True(Store.Read().TryGetLatestByTrackKey(Other, out var run));
         Assert.Equal("C major", run.Key);
     }
 

@@ -45,7 +45,7 @@ public sealed class SampleTypingTests : IDisposable
 
         var provenance = ReadBack();
         Assert.Equal(SampleType.Vocal, provenance?.Type);
-        Assert.Equal("C_DIhh3sWO0", provenance?.SourceVideoId);
+        Assert.Equal("C_DIhh3sWO0", provenance?.SourceTrackKey);
         Assert.Null(provenance?.Preset);
     }
 

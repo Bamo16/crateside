@@ -81,9 +81,9 @@ public sealed class EvidenceDrainerTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static WorkListsView Queue(params string[] videoIds) =>
+    private static WorkListsView Queue(params string[] trackKeys) =>
         WorkListsView.Compose(
-            [.. videoIds.Select(id => new WorkItem { VideoId = id, Title = $"Song {id}" })],
+            [.. trackKeys.Select(id => new WorkItem { TrackKey = id, Title = $"Song {id}" })],
             new HashSet<string>(),
             new HashSet<string>(),
             new HashSet<string>(),

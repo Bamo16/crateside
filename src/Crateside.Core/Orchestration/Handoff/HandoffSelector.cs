@@ -14,36 +14,36 @@ public sealed class HandoffSelector(
 {
     public const int DefaultMaxStrikes = 3;
 
-    public bool TryPickNext(out string videoId, out IReadOnlyList<string> stems)
+    public bool TryPickNext(out string trackKey, out IReadOnlyList<string> stems)
     {
-        videoId = null!;
+        trackKey = null!;
         stems = [];
 
         if (!Directory.Exists(paths.StemsKeyIdentified))
             return false;
 
-        var byVideoId = Directory
+        var byTrackKey = Directory
             .EnumerateFiles(paths.StemsKeyIdentified)
             .Select(StemTagReader.Read)
             .OfType<StemTags>()
-            .Where(t => t.SourceVideoId is { Length: > 0 })
-            .GroupBy(t => t.SourceVideoId!, StringComparer.Ordinal)
+            .Where(t => t.SourceTrackKey is { Length: > 0 })
+            .GroupBy(t => t.SourceTrackKey!, StringComparer.Ordinal)
             .FirstOrDefault(g => IsEligible(g.Key));
 
-        if (byVideoId is null)
+        if (byTrackKey is null)
             return false;
 
-        videoId = byVideoId.Key;
-        stems = [.. byVideoId.Select(t => t.Path)];
+        trackKey = byTrackKey.Key;
+        stems = [.. byTrackKey.Select(t => t.Path)];
 
         return true;
     }
 
-    private bool IsEligible(string videoId) =>
-        SeparationOwesNothingMore(videoId)
+    private bool IsEligible(string trackKey) =>
+        SeparationOwesNothingMore(trackKey)
         && StageEligibility.Allows(
             jobs,
-            videoId,
+            trackKey,
             JobStage.Handoff,
             maxStrikes,
             retrySucceeded: true
@@ -53,7 +53,7 @@ public sealed class HandoffSelector(
     /// Whether what is on disk for this track is all there is going to be: not while its
     /// separation failed, or until it is settled, which an ended process is not yet (ADR 0042).
     /// </summary>
-    private bool SeparationOwesNothingMore(string videoId) =>
-        !jobs.TryGet(videoId, JobStage.Separation, out var separation)
+    private bool SeparationOwesNothingMore(string trackKey) =>
+        !jobs.TryGet(trackKey, JobStage.Separation, out var separation)
         || separation is { IsOpen: false, Status: not JobStatus.Failed };
 }

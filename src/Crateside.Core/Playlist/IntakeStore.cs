@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.WorkLists;
 
 namespace Crateside.Core.Playlist;
@@ -52,12 +53,12 @@ public sealed class IntakeStore(CratesidePaths paths)
     {
         lock (_gate)
         {
-            var known = Read().Select(r => r.VideoId).ToHashSet(StringComparer.Ordinal);
+            var known = Read().Select(r => r.TrackKey).ToHashSet(StringComparer.Ordinal);
             var added = items
-                .Where(item => known.Add(item.VideoId))
+                .Where(item => known.Add(item.TrackKey))
                 .Select(item => new IntakeRecord
                 {
-                    VideoId = item.VideoId,
+                    TrackKey = item.TrackKey,
                     Title = item.Title,
                     ChannelTitle = item.ChannelTitle,
                     AddedAt = item.AddedAt,
@@ -86,25 +87,25 @@ public sealed class IntakeStore(CratesidePaths paths)
         {
             var removed = Read()
                 .Where(record => record is { RemovalAttemptedAt: not null, RemovalFailure: null })
-                .ToDictionary(record => record.VideoId, StringComparer.Ordinal);
+                .ToDictionary(record => record.TrackKey, StringComparer.Ordinal);
 
             // A new entry has a new ID; the one crateside removed, read again from a stale
             // playlist, does not.
             var again = held.Where(item =>
                     item.PlaylistItemId is { } entry
-                    && removed.TryGetValue(item.VideoId, out var record)
+                    && removed.TryGetValue(item.TrackKey, out var record)
                     && entry != record.RemovedEntryId
                 )
                 .ToList();
 
             if (again.Count is not 0)
                 Update(
-                    again.Select(item => item.VideoId),
+                    again.Select(item => item.TrackKey),
                     record => record with { RemovalAttemptedAt = null, RemovedEntryId = null }
                 );
 
-            var known = Read().Select(record => record.VideoId).ToHashSet(StringComparer.Ordinal);
-            var fresh = held.Where(item => !known.Contains(item.VideoId)).ToList();
+            var known = Read().Select(record => record.TrackKey).ToHashSet(StringComparer.Ordinal);
+            var fresh = held.Where(item => !known.Contains(item.TrackKey)).ToList();
 
             Record(fresh);
 
@@ -115,14 +116,14 @@ public sealed class IntakeStore(CratesidePaths paths)
     /// <summary>
     /// Takes tracks crateside already knows of into the intake, for a store that predates it.
     /// </summary>
-    public void Backfill(IEnumerable<string> videoIds)
+    public void Backfill(IEnumerable<string> trackKeys)
     {
         lock (_gate)
         {
-            var known = Read().Select(r => r.VideoId).ToHashSet(StringComparer.Ordinal);
-            var added = videoIds
+            var known = Read().Select(r => r.TrackKey).ToHashSet(StringComparer.Ordinal);
+            var added = trackKeys
                 .Where(known.Add)
-                .Select(videoId => new IntakeRecord { VideoId = videoId, Title = videoId })
+                .Select(trackKey => new IntakeRecord { TrackKey = trackKey, Title = trackKey })
                 .ToList();
 
             if (added.Count is not 0)
@@ -136,17 +137,17 @@ public sealed class IntakeStore(CratesidePaths paths)
     /// </summary>
     /// <param name="entries">The playlist entry offered for each video, so a later re-add is told from a stale read.</param>
     public void MarkRemovalAttempted(
-        IEnumerable<string> videoIds,
+        IEnumerable<string> trackKeys,
         DateTimeOffset at,
         IReadOnlyDictionary<string, string>? entries = null
     ) =>
         Update(
-            videoIds,
+            trackKeys,
             record =>
                 record with
                 {
                     RemovalAttemptedAt = at,
-                    RemovedEntryId = entries?.GetValueOrDefault(record.VideoId),
+                    RemovedEntryId = entries?.GetValueOrDefault(record.TrackKey),
                 }
         );
 
@@ -160,24 +161,24 @@ public sealed class IntakeStore(CratesidePaths paths)
         {
             var offerable = Read()
                 .Where(record => record.RemovalAttemptedAt is null)
-                .Select(record => record.VideoId)
+                .Select(record => record.TrackKey)
                 .ToHashSet(StringComparer.Ordinal);
 
             List<WorkItem> claimed =
             [
                 .. held.Where(item =>
-                    item.PlaylistItemId is not null && offerable.Contains(item.VideoId)
+                    item.PlaylistItemId is not null && offerable.Contains(item.TrackKey)
                 ),
             ];
 
             if (claimed.Count is not 0)
                 MarkRemovalAttempted(
-                    claimed.Select(item => item.VideoId),
+                    claimed.Select(item => item.TrackKey),
                     at,
                     claimed
-                        .DistinctBy(item => item.VideoId)
+                        .DistinctBy(item => item.TrackKey)
                         .ToDictionary(
-                            item => item.VideoId,
+                            item => item.TrackKey,
                             item => item.PlaylistItemId!,
                             StringComparer.Ordinal
                         )
@@ -191,9 +192,9 @@ public sealed class IntakeStore(CratesidePaths paths)
     /// Puts these entries back in line to be offered — only for a removal that never reached the
     /// API and so spent no quota (#34).
     /// </summary>
-    public void ClearRemovalAttempted(IEnumerable<string> videoIds) =>
+    public void ClearRemovalAttempted(IEnumerable<string> trackKeys) =>
         Update(
-            videoIds,
+            trackKeys,
             record =>
                 record with
                 {
@@ -204,25 +205,25 @@ public sealed class IntakeStore(CratesidePaths paths)
         );
 
     /// <summary>Keeps why each of these entries was left in the playlist.</summary>
-    public void RecordRemovalFailures(IReadOnlyDictionary<string, RemovalFailure> byVideoId) =>
+    public void RecordRemovalFailures(IReadOnlyDictionary<string, RemovalFailure> byTrackKey) =>
         Update(
-            byVideoId.Keys,
-            record => record with { RemovalFailure = byVideoId[record.VideoId] }
+            byTrackKey.Keys,
+            record => record with { RemovalFailure = byTrackKey[record.TrackKey] }
         );
 
     /// <summary>Forgets why these entries were left, once they are gone from the playlist however they went.</summary>
-    public void ForgetRemovalFailures(IEnumerable<string> videoIds) =>
-        Update(videoIds, record => record with { RemovalFailure = null });
+    public void ForgetRemovalFailures(IEnumerable<string> trackKeys) =>
+        Update(trackKeys, record => record with { RemovalFailure = null });
 
-    private void Update(IEnumerable<string> videoIds, Func<IntakeRecord, IntakeRecord> change)
+    private void Update(IEnumerable<string> trackKeys, Func<IntakeRecord, IntakeRecord> change)
     {
         lock (_gate)
         {
-            var changing = videoIds.ToHashSet(StringComparer.Ordinal);
+            var changing = trackKeys.ToHashSet(StringComparer.Ordinal);
 
             Write([
                 .. Read()
-                    .Select(record => changing.Contains(record.VideoId) ? change(record) : record),
+                    .Select(record => changing.Contains(record.TrackKey) ? change(record) : record),
             ]);
         }
     }
@@ -238,8 +239,8 @@ public sealed class IntakeStore(CratesidePaths paths)
             var kept = Read()
                 .Where(record =>
                     !IsStandIn(record)
-                    || owed.Contains(record.VideoId)
-                    || held.Contains(record.VideoId)
+                    || owed.Contains(record.TrackKey)
+                    || held.Contains(record.TrackKey)
                 )
                 .ToList();
 
@@ -249,15 +250,15 @@ public sealed class IntakeStore(CratesidePaths paths)
     }
 
     private static bool IsStandIn(IntakeRecord record) =>
-        record.AddedAt is null && record.Title.Equals(record.VideoId, StringComparison.Ordinal);
+        record.AddedAt is null && record.Title.Equals(record.TrackKey, StringComparison.Ordinal);
 
     /// <summary>Drops a record, which is what forgetting a track means.</summary>
-    public void Forget(string videoId)
+    public void Forget(string trackKey)
     {
         lock (_gate)
         {
             var kept = Read()
-                .Where(r => !r.VideoId.Equals(videoId, StringComparison.Ordinal))
+                .Where(r => !r.TrackKey.Equals(trackKey, StringComparison.Ordinal))
                 .ToList();
 
             if (kept.Count != Read().Count)
@@ -274,13 +275,13 @@ public sealed class IntakeStore(CratesidePaths paths)
         IEnumerable<IntakeRecord> recorded
     )
     {
-        var current = held.Select(item => item.VideoId).ToHashSet(StringComparer.Ordinal);
+        var current = held.Select(item => item.TrackKey).ToHashSet(StringComparer.Ordinal);
 
         return
         [
             .. held,
             .. recorded
-                .Where(record => !current.Contains(record.VideoId))
+                .Where(record => !current.Contains(record.TrackKey))
                 .Select(AsQueueItem)
                 .OrderBy(item => item.AddedAt ?? DateTimeOffset.MaxValue),
         ];
@@ -292,7 +293,7 @@ public sealed class IntakeStore(CratesidePaths paths)
     public static WorkItem AsQueueItem(IntakeRecord record) =>
         new()
         {
-            VideoId = record.VideoId,
+            TrackKey = record.TrackKey,
             Title = record.Title,
             ChannelTitle = record.ChannelTitle,
             AddedAt = record.AddedAt,
@@ -323,7 +324,8 @@ public sealed class IntakeStore(CratesidePaths paths)
 /// <summary>One track crateside has taken on, and what the playlist said about it.</summary>
 public sealed record IntakeRecord
 {
-    public required string VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
 
     public required string Title { get; init; }
 

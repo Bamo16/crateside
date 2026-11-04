@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
 using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
@@ -11,7 +12,8 @@ namespace Crateside.Core.Orchestration;
 /// </summary>
 public sealed record WorkOrder
 {
-    public required string VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
     public required string Title { get; init; }
 
     /// <summary>The URL to hand the downloader. See <see cref="Compose"/> for how it is picked.</summary>
@@ -32,17 +34,17 @@ public sealed record WorkOrder
     public static WorkOrder Compose(WorkItem item, KeyLedger ledger) =>
         new()
         {
-            VideoId = item.VideoId,
+            TrackKey = item.TrackKey,
             Title = item.Title,
             SourceUrl = item switch
             {
                 { StatedSourceUrl: { Length: > 0 } stated } => stated,
                 { PremiumOutlook: PremiumOutlook.ArtTrack } =>
-                    $"https://music.youtube.com/watch?v={item.VideoId}",
+                    $"https://music.youtube.com/watch?v={item.TrackKey}",
                 _ => item.WatchUrl,
             },
             Destination =
-                ledger.TryGetLatestByVideoId(item.VideoId, out var run) && run.HasTaggableKey
+                ledger.TryGetLatestByTrackKey(item.TrackKey, out var run) && run.HasTaggableKey
                     ? StemDestination.KeyIdentified
                     : StemDestination.UnresolvedKey,
             PremiumOutlook = item.PremiumOutlook,

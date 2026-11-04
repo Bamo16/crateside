@@ -50,7 +50,7 @@ public sealed class SampleAdoptionTests : IDisposable
     private static TrackRowFacts Facts(StemPlan? plan = null) =>
         new()
         {
-            VideoId = Track,
+            TrackKey = Track,
             Plan = plan ?? StemPlan.Default,
             Uploads = [Track],
         };
@@ -90,9 +90,9 @@ public sealed class SampleAdoptionTests : IDisposable
         Assert.True(provenance?.IsAdopted);
         Assert.Equal("Instrumental - Mixed", provenance?.Label);
         Assert.Equal(SampleType.Instrumental, provenance?.Type);
-        Assert.Equal(Track, provenance?.SourceVideoId);
+        Assert.Equal(Track, provenance?.SourceTrackKey);
 
-        var plan = _settings.Read().Single(t => t.VideoId == Track).Plan;
+        var plan = _settings.Read().Single(t => t.TrackKey == Track).Plan;
         Assert.Equal("Instrumental - Mixed", Assert.Single(plan!.AdoptedSamples).Label);
     }
 

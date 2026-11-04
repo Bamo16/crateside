@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Orchestration.Jobs;
 
 namespace Crateside.Core.Orchestration.Loop;
@@ -45,5 +46,6 @@ public sealed record StageChange
     /// The track it happened to, where the stage knows. Handoff reads the disk rather than the
     /// queue, so it can finish work for a track it never learned the video ID of.
     /// </summary>
-    public string? VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public string? TrackKey { get; init; }
 }

@@ -18,7 +18,7 @@ public sealed class TrackActivityTests
         new()
         {
             Id = $"v:{stage}",
-            VideoId = "v",
+            TrackKey = "v",
             Stage = stage,
             Status = status,
             Timestamp = Start.AddMinutes(minute),
@@ -31,7 +31,7 @@ public sealed class TrackActivityTests
         new()
         {
             At = Start.AddMinutes(minute),
-            VideoId = "v",
+            TrackKey = "v",
             Kind = kind,
             PassFrom = passFrom,
         };
@@ -137,7 +137,7 @@ public sealed class TrackActivityTests
         var open = new TrackJob
         {
             Id = running.Id,
-            VideoId = "v",
+            TrackKey = "v",
             Stage = JobStage.Verdict,
             Status = JobStatus.Running,
             UpdatedAt = running.Timestamp,
@@ -198,13 +198,13 @@ public sealed class TrackActivityTests
 
         Assert.SkipUnless(File.Exists(jobs.Path), "Needs this machine's jobs.jsonl.");
 
-        var videoIds = jobs.All().Select(job => job.VideoId).Distinct().ToList();
+        var trackKeys = jobs.All().Select(job => job.TrackKey).Distinct().ToList();
 
-        Assert.NotEmpty(videoIds);
+        Assert.NotEmpty(trackKeys);
 
-        foreach (var videoId in videoIds)
+        foreach (var trackKey in trackKeys)
         {
-            var history = jobs.History(videoId);
+            var history = jobs.History(trackKey);
             var entries = TrackActivity.Build(history, [], []);
 
             // Only the "started" lines a summary replaced may go.
@@ -234,7 +234,7 @@ public sealed class TrackActivityTests
                 new StageNote
                 {
                     At = Start.AddMinutes(2),
-                    VideoId = "v",
+                    TrackKey = "v",
                     Stage = "Warp",
                     Summary = "Vocal - Full: Warp off: one tempo misses by 12 ms",
                 },

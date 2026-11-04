@@ -90,7 +90,7 @@ public sealed class SourcelessSongsTests : IDisposable
                 .Rows
         );
 
-        Assert.Equal("name:Song", row.VideoId);
+        Assert.Equal("name:Song", row.TrackKey);
         Assert.Equal("Song", row.Title);
         Assert.True(row.IsLibraryOnly);
         Assert.False(row.HasUpload);
@@ -133,7 +133,7 @@ public sealed class SourcelessSongsTests : IDisposable
 
         Assert.Equal(
             [.. sourceless.Keys.Order()],
-            [.. rows.Where(row => !row.HasUpload).Select(row => row.VideoId).Order()]
+            [.. rows.Where(row => !row.HasUpload).Select(row => row.TrackKey).Order()]
         );
     }
 }

@@ -95,12 +95,12 @@
         var uploads = Row.Facts.Uploads.ToHashSet(StringComparer.Ordinal);
 
         _entries = TrackActivity.Build(
-            Jobs.History(Row.VideoId),
-            Deletions.All().Where(deletion => deletion.VideoId is { } id && uploads.Contains(id)),
-            Actions.For(Row.VideoId),
+            Jobs.History(Row.TrackKey),
+            Deletions.All().Where(deletion => deletion.TrackKey is { } id && uploads.Contains(id)),
+            Actions.For(Row.TrackKey),
             [
                 .. Enum.GetValues<JobStage>()
-                    .Select(stage => Jobs.TryGet(Row.VideoId, stage, out var job) ? job : null)
+                    .Select(stage => Jobs.TryGet(Row.TrackKey, stage, out var job) ? job : null)
                     .OfType<TrackJob>()
                     .Where(job => job.IsOpen),
             ],

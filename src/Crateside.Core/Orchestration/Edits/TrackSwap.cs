@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Samples;
@@ -21,23 +22,23 @@ public sealed class TrackSwap(
     private readonly DeletionLog _deletions = deletions ?? DeletionLog.None;
 
     /// <summary>What swapping this track's source would do, or why it cannot be done.</summary>
-    public SwapPlan PlanFor(string videoId, string? url) => PlanFor(videoId, url, store.Read());
+    public SwapPlan PlanFor(string trackKey, string? url) => PlanFor(trackKey, url, store.Read());
 
-    private SwapPlan PlanFor(string videoId, string? url, KeyLedger ledger)
+    private SwapPlan PlanFor(string trackKey, string? url, KeyLedger ledger)
     {
-        YouTubeUrl.TryGetVideoId(url, out var newVideoId);
+        YouTubeUrl.TryGetVideoId(url, out var newTrackKey);
 
-        return (newVideoId, ledger.TryGetLatestByVideoId(videoId, out _)) switch
+        return (newTrackKey, ledger.TryGetLatestByTrackKey(trackKey, out _)) switch
         {
             (null, _) => Impossible("That is not a YouTube video ID or URL crateside can read."),
-            (var id, _) when id.Equals(videoId, StringComparison.Ordinal) => Impossible(
+            (var id, _) when id.Equals(trackKey, StringComparison.Ordinal) => Impossible(
                 "That is already this track's source."
             ),
             (_, var judged) => new SwapPlan
             {
-                NewVideoId = newVideoId,
-                Url = $"https://music.youtube.com/watch?v={newVideoId}",
-                Removing = staged.Of(videoId),
+                NewTrackKey = newTrackKey,
+                Url = $"https://music.youtube.com/watch?v={newTrackKey}",
+                Removing = staged.Of(trackKey),
                 CarriesVerdict = judged,
             },
         };
@@ -47,18 +48,18 @@ public sealed class TrackSwap(
     /// Records the new video as this song — first, or its stems resolve to nothing — then
     /// records the URL, throws away the old audio, and reopens separation.
     /// </summary>
-    public SwapOutcome Apply(string videoId, string url)
+    public SwapOutcome Apply(string trackKey, string url)
     {
         var ledger = store.Read();
-        var plan = PlanFor(videoId, url, ledger);
+        var plan = PlanFor(trackKey, url, ledger);
 
         if (plan.Refusal is { } refusal)
             return new SwapOutcome { Problem = refusal };
 
-        if (Restate(videoId, plan.Url!, ledger) is { } failure)
+        if (Restate(trackKey, plan.Url!, ledger) is { } failure)
             return new SwapOutcome { Problem = failure };
 
-        instructions.SetSourceUrl(videoId, plan.Url);
+        instructions.SetSourceUrl(trackKey, plan.Url);
 
         var removed = 0;
 
@@ -75,7 +76,7 @@ public sealed class TrackSwap(
             {
                 return new SwapOutcome
                 {
-                    NewVideoId = plan.NewVideoId,
+                    NewTrackKey = plan.NewTrackKey,
                     Removed = removed,
                     Problem =
                         $"{stem.FileName} could not be removed — it is probably open in Ableton. "
@@ -85,19 +86,19 @@ public sealed class TrackSwap(
         }
 
         // The retained download is the old upload, and separation prefers it over the URL.
-        workingSet.Discard(videoId);
+        workingSet.Discard(trackKey);
 
-        instructions.RequestCut(videoId, time.GetUtcNow());
+        instructions.RequestCut(trackKey, time.GetUtcNow());
 
-        return new SwapOutcome { NewVideoId = plan.NewVideoId, Removed = removed };
+        return new SwapOutcome { NewTrackKey = plan.NewTrackKey, Removed = removed };
     }
 
     /// <summary>
     /// Records that the new video is this song, or says why it could not; skipped with no verdict
     /// to carry across (ADR 0016).
     /// </summary>
-    private string? Restate(string videoId, string url, KeyLedger ledger) =>
-        ledger.HasRunFor(videoId) ? store.Restate(videoId, url).Refusal : null;
+    private string? Restate(string trackKey, string url, KeyLedger ledger) =>
+        ledger.HasRunFor(trackKey) ? store.Restate(trackKey, url).Refusal : null;
 
     private static SwapPlan Impossible(string refusal) =>
         new() { Removing = [], Refusal = refusal };
@@ -115,9 +116,10 @@ public sealed record SwapPlan
         + "downloaded audio is thrown away and the track starts again from the new upload.";
 
     /// <summary>The video the track would be cut from, or null when the URL was unreadable.</summary>
-    public string? NewVideoId { get; init; }
+    [JsonPropertyName("newVideoId")]
+    public string? NewTrackKey { get; init; }
 
-    /// <summary>The canonical watch URL for <see cref="NewVideoId"/>.</summary>
+    /// <summary>The canonical watch URL for <see cref="NewTrackKey"/>.</summary>
     public string? Url { get; init; }
 
     /// <summary>The staged files that would go: they came from the upload being replaced.</summary>
@@ -142,7 +144,8 @@ public sealed record SwapPlan
 /// <summary>What a swap actually did.</summary>
 public sealed record SwapOutcome
 {
-    public string? NewVideoId { get; init; }
+    [JsonPropertyName("newVideoId")]
+    public string? NewTrackKey { get; init; }
 
     /// <summary>Staged files removed.</summary>
     public int Removed { get; init; }

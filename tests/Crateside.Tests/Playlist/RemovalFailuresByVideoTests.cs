@@ -7,7 +7,11 @@ public sealed class RemovalFailuresByVideoTests
     [Fact]
     public void A_video_held_twice_whose_entries_both_fail_is_one_failure_not_a_crash()
     {
-        var videoIdOf = new Dictionary<string, string> { ["entry-1"] = "abc", ["entry-2"] = "abc" };
+        var trackKeyOf = new Dictionary<string, string>
+        {
+            ["entry-1"] = "abc",
+            ["entry-2"] = "abc",
+        };
         RemovalResult[] results =
         [
             new()
@@ -26,7 +30,7 @@ public sealed class RemovalFailuresByVideoTests
             },
         ];
 
-        var failures = PlaylistConsumer.FailuresByVideo(results, videoIdOf);
+        var failures = PlaylistConsumer.FailuresByVideo(results, trackKeyOf);
 
         Assert.Equal("forbidden", Assert.Single(failures).Value.Reason);
     }
@@ -34,7 +38,7 @@ public sealed class RemovalFailuresByVideoTests
     [Fact]
     public void An_entry_that_was_removed_is_no_failure()
     {
-        var videoIdOf = new Dictionary<string, string> { ["entry-1"] = "abc" };
+        var trackKeyOf = new Dictionary<string, string> { ["entry-1"] = "abc" };
         RemovalResult[] results =
         [
             new()
@@ -45,6 +49,6 @@ public sealed class RemovalFailuresByVideoTests
             },
         ];
 
-        Assert.Empty(PlaylistConsumer.FailuresByVideo(results, videoIdOf));
+        Assert.Empty(PlaylistConsumer.FailuresByVideo(results, trackKeyOf));
     }
 }

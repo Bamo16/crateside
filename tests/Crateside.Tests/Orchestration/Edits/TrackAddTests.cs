@@ -76,7 +76,7 @@ public sealed class TrackAddTests : IDisposable
         var row = Row(isLibraryOnly: true, hasVerdict: false) with
         {
             Plan = StemPlan.Default.Adding(
-                new AddedSource { VideoId = added, Label = "A Cappella" }
+                new AddedSource { TrackKey = added, Label = "A Cappella" }
             ),
             Uploads = [Upload, added],
         };
@@ -99,7 +99,7 @@ public sealed class TrackAddTests : IDisposable
     private static TrackRowFacts Row(bool isLibraryOnly, bool hasVerdict) =>
         new()
         {
-            VideoId = Upload,
+            TrackKey = Upload,
             Plan = StemPlan.Default,
             Uploads = [Upload],
             IsLibraryOnly = isLibraryOnly,

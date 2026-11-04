@@ -75,7 +75,7 @@ public sealed class LevelingTests : IDisposable
         leveling.Level();
 
         var note = Assert.Single(_notes.All());
-        Assert.Equal("abcdefghijk", note.VideoId);
+        Assert.Equal("abcdefghijk", note.TrackKey);
         Assert.Equal("Loudness", note.Stage);
         Assert.Equal("Instrumental - Full: clip gain +6.0 dB to −14 LUFS", note.Summary);
     }

@@ -172,7 +172,7 @@
         _track is null
             ? null
             : Tracks.Current?.Rows.FirstOrDefault(row => row.Song.Equals(_track.Song, StringComparison.OrdinalIgnoreCase)) is { } row
-                ? $"song/{Uri.EscapeDataString(row.VideoId)}"
+                ? $"song/{Uri.EscapeDataString(row.TrackKey)}"
                 : null;
 
     protected override void OnInitialized()

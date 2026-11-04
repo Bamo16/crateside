@@ -92,7 +92,7 @@ public sealed class PlaylistReader(IOptions<PlaylistOptions> options) : IDisposa
 
     private static WorkItem? ToQueueItem(PlaylistItem item)
     {
-        if (item.Snippet?.ResourceId?.VideoId is not { Length: > 0 } videoId)
+        if (item.Snippet?.ResourceId?.VideoId is not { Length: > 0 } trackKey)
             return null;
 
         // YouTube keeps the entry and blanks the title when a video goes away.
@@ -104,8 +104,8 @@ public sealed class PlaylistReader(IOptions<PlaylistOptions> options) : IDisposa
         return new WorkItem
         {
             PlaylistItemId = item.Id,
-            VideoId = videoId,
-            Title = item.Snippet.Title ?? videoId,
+            TrackKey = trackKey,
+            Title = item.Snippet.Title ?? trackKey,
             ChannelTitle = item.Snippet.VideoOwnerChannelTitle,
             AddedAt = item.Snippet.PublishedAtDateTimeOffset,
             Position = (int?)item.Snippet.Position,

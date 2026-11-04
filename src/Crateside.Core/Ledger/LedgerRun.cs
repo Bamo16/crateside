@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Crateside.Core.Ledger;
 
 /// <summary>One recorded verdict for a song, or a restatement carrying one over to another upload.</summary>
@@ -30,14 +32,15 @@ public sealed record LedgerRun
         init
         {
             field = value;
-            SourceVideoId = YouTubeUrl.TryGetVideoId(value, out var videoId) ? videoId : null;
+            SourceTrackKey = TrackKeys.TryParse(value, out var trackKey) ? trackKey : null;
         }
     }
 
     /// <summary>
-    /// The video ID from <see cref="SourceUrl"/> — the join onto a stem on disk.
+    /// The work key from <see cref="SourceUrl"/> — the join onto a stem on disk.
     /// </summary>
-    public string? SourceVideoId { get; private init; }
+    [JsonPropertyName("sourceVideoId")]
+    public string? SourceTrackKey { get; private init; }
 
     /// <summary>The verdict's primary tonal center, or null when withheld.</summary>
     public TonalCenter? Center { get; init; }

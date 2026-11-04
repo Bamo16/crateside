@@ -75,7 +75,7 @@ else
         try
         {
             Genres.Settle(Row.Song, genre);
-            Actions.Record(Row.VideoId, UserActionKind.GenreSettled, genre ?? "none of these");
+            Actions.Record(Row.TrackKey, UserActionKind.GenreSettled, genre ?? "none of these");
 
             await Tracks.RefreshAsync();
         }

@@ -34,7 +34,7 @@ public sealed class ProcessedTracksTests : IDisposable
     }
 
     /// <summary>Copies a real staged stem and rewrites its provenance.</summary>
-    private string? StemFor(string videoId, string name)
+    private string? StemFor(string trackKey, string name)
     {
         // Any staged FLAC: a named one skips itself once the user finishes that track.
         var source =
@@ -56,18 +56,18 @@ public sealed class ProcessedTracksTests : IDisposable
 
         using (var file = TagLib.File.Create(path))
         {
-            file.Tag.Comment = string.Format(RealStemComment, videoId);
+            file.Tag.Comment = string.Format(RealStemComment, trackKey);
             file.Save();
         }
 
         return path;
     }
 
-    private KeyLedger LedgerWith(params string[] videoIds)
+    private KeyLedger LedgerWith(params string[] trackKeys)
     {
         File.WriteAllLines(
             _ledgerPath,
-            videoIds.Select(
+            trackKeys.Select(
                 (id, i) =>
                     JsonSerializer.Serialize(
                         new
@@ -87,24 +87,24 @@ public sealed class ProcessedTracksTests : IDisposable
     [Fact]
     public void A_verdict_and_a_stem_together_are_fully_processed()
     {
-        const string VideoId = "vfBJjufAG1E";
-        Assert.SkipWhen(StemFor(VideoId, "done.flac") is null, "Needs a real stem to copy.");
+        const string TrackKey = "vfBJjufAG1E";
+        Assert.SkipWhen(StemFor(TrackKey, "done.flac") is null, "Needs a real stem to copy.");
 
-        var processed = ProcessedTracks.Scan(LedgerWith(VideoId), [_root]);
+        var processed = ProcessedTracks.Scan(LedgerWith(TrackKey), [_root]);
 
-        Assert.True(processed.IsFullyProcessed(VideoId));
-        Assert.Single(processed.StemsFor(VideoId));
+        Assert.True(processed.IsFullyProcessed(TrackKey));
+        Assert.Single(processed.StemsFor(TrackKey));
         Assert.Empty(processed.VerdictWithoutStems);
     }
 
     [Fact]
     public void A_stem_remembers_its_preset_and_the_root_it_was_found_in()
     {
-        const string VideoId = "vfBJjufAG1E";
-        Assert.SkipWhen(StemFor(VideoId, "kept.flac") is null, "Needs a real stem to copy.");
+        const string TrackKey = "vfBJjufAG1E";
+        Assert.SkipWhen(StemFor(TrackKey, "kept.flac") is null, "Needs a real stem to copy.");
 
         var stem = Assert.Single(
-            ProcessedTracks.Scan(LedgerWith(VideoId), [_root]).StemsFor(VideoId)
+            ProcessedTracks.Scan(LedgerWith(TrackKey), [_root]).StemsFor(TrackKey)
         );
 
         Assert.Equal("Vocal - Full", stem.Preset);
@@ -115,23 +115,23 @@ public sealed class ProcessedTracksTests : IDisposable
     public void A_verdict_with_no_stem_is_not_processed()
     {
         // The run recorded a key and then died during separation. It must stay queued.
-        const string VideoId = "NSLYAT7sjAA";
+        const string TrackKey = "NSLYAT7sjAA";
 
-        var processed = ProcessedTracks.Scan(LedgerWith(VideoId), [_root]);
+        var processed = ProcessedTracks.Scan(LedgerWith(TrackKey), [_root]);
 
-        Assert.False(processed.IsFullyProcessed(VideoId));
-        Assert.Contains(VideoId, processed.VerdictWithoutStems);
+        Assert.False(processed.IsFullyProcessed(TrackKey));
+        Assert.Contains(TrackKey, processed.VerdictWithoutStems);
     }
 
     [Fact]
     public void A_stem_with_no_verdict_is_not_processed()
     {
-        const string VideoId = "vfBJjufAG1E";
-        Assert.SkipWhen(StemFor(VideoId, "orphan.flac") is null, "Needs a real stem to copy.");
+        const string TrackKey = "vfBJjufAG1E";
+        Assert.SkipWhen(StemFor(TrackKey, "orphan.flac") is null, "Needs a real stem to copy.");
 
         var processed = ProcessedTracks.Scan(LedgerWith(), [_root]);
 
-        Assert.False(processed.IsFullyProcessed(VideoId));
+        Assert.False(processed.IsFullyProcessed(TrackKey));
         Assert.Empty(processed.FullyProcessed);
     }
 
@@ -139,41 +139,41 @@ public sealed class ProcessedTracksTests : IDisposable
     public void Deleted_stems_leave_a_track_queued_rather_than_processed()
     {
         // Deleted stems and a separation that never finished are indistinguishable.
-        const string VideoId = "vfBJjufAG1E";
-        var stem = StemFor(VideoId, "deleted.flac");
+        const string TrackKey = "vfBJjufAG1E";
+        var stem = StemFor(TrackKey, "deleted.flac");
         Assert.SkipWhen(stem is null, "Needs a real stem to copy.");
 
-        var ledger = LedgerWith(VideoId);
-        Assert.True(ProcessedTracks.Scan(ledger, [_root]).IsFullyProcessed(VideoId));
+        var ledger = LedgerWith(TrackKey);
+        Assert.True(ProcessedTracks.Scan(ledger, [_root]).IsFullyProcessed(TrackKey));
 
         File.Delete(stem);
 
-        Assert.False(ProcessedTracks.Scan(ledger, [_root]).IsFullyProcessed(VideoId));
+        Assert.False(ProcessedTracks.Scan(ledger, [_root]).IsFullyProcessed(TrackKey));
     }
 
     [Fact]
     public void Stems_are_found_in_any_root_so_moving_them_out_of_staging_keeps_them_processed()
     {
-        const string VideoId = "vfBJjufAG1E";
-        var stem = StemFor(VideoId, "moved.flac");
+        const string TrackKey = "vfBJjufAG1E";
+        var stem = StemFor(TrackKey, "moved.flac");
         Assert.SkipWhen(stem is null, "Needs a real stem to copy.");
 
         var destination = Path.Combine(_root, "mashup-samples");
         Directory.CreateDirectory(destination);
         File.Move(stem, Path.Combine(destination, Path.GetFileName(stem)));
 
-        var processed = ProcessedTracks.Scan(LedgerWith(VideoId), [_root]);
+        var processed = ProcessedTracks.Scan(LedgerWith(TrackKey), [_root]);
 
-        Assert.True(processed.IsFullyProcessed(VideoId));
+        Assert.True(processed.IsFullyProcessed(TrackKey));
     }
 
     [Fact]
     public void The_scan_is_idempotent()
     {
-        const string VideoId = "vfBJjufAG1E";
-        Assert.SkipWhen(StemFor(VideoId, "idempotent.flac") is null, "Needs a real stem.");
+        const string TrackKey = "vfBJjufAG1E";
+        Assert.SkipWhen(StemFor(TrackKey, "idempotent.flac") is null, "Needs a real stem.");
 
-        var ledger = LedgerWith(VideoId);
+        var ledger = LedgerWith(TrackKey);
 
         Assert.Equal(
             ProcessedTracks.Scan(ledger, [_root]).FullyProcessed,

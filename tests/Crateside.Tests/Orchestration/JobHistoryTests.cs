@@ -99,7 +99,7 @@ public sealed class JobHistoryTests
             ],
             history.Latest.Select(line => line.What).Reverse()
         );
-        Assert.Equal("b", history.Latest.Single(line => line.IsNext).VideoId);
+        Assert.Equal("b", history.Latest.Single(line => line.IsNext).TrackKey);
         Assert.Equal(
             new StageTotal(JobStage.Verdict, Done: 2, Failed: 0, Canceled: 0),
             history.Stages.Single(stage => stage.Stage is JobStage.Verdict)
@@ -175,7 +175,7 @@ public sealed class JobHistoryTests
     }
 
     private static JobUpdate Update(
-        string videoId,
+        string trackKey,
         JobStage stage,
         JobStatus status,
         DateTimeOffset at,
@@ -184,8 +184,8 @@ public sealed class JobHistoryTests
     ) =>
         new()
         {
-            Id = $"{videoId}:{stage}",
-            VideoId = videoId,
+            Id = $"{trackKey}:{stage}",
+            TrackKey = trackKey,
             Stage = stage,
             Status = status,
             Timestamp = at,

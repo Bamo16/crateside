@@ -42,7 +42,7 @@ public sealed class TrackOrderTests
             _ => Base(title),
         };
 
-    private static TrackRow Base(string title) => new() { VideoId = title, Title = title };
+    private static TrackRow Base(string title) => new() { TrackKey = title, Title = title };
 
     private static IReadOnlyList<string> Ordered(params TrackRow[] rows) =>
         [.. TracksView.InOrder(rows).Select(row => row.Title)];

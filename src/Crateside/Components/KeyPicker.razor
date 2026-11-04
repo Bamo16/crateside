@@ -83,7 +83,7 @@
                 return;
             }
 
-            Actions.Record(Row.VideoId, UserActionKind.KeyChosen, key.LedgerName);
+            Actions.Record(Row.TrackKey, UserActionKind.KeyChosen, key.LedgerName);
             Signals.Wake(JobStage.Handoff, JobStage.Tagging);
             await Tracks.RefreshAsync(_circuit.Token);
         }

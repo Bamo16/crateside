@@ -8,7 +8,7 @@ public sealed class StageFlowTests
 {
     private static readonly DateTimeOffset Start = new(2026, 9, 25, 12, 0, 0, TimeSpan.Zero);
 
-    private static readonly TrackRow Row = new() { VideoId = "v", Title = "Song" };
+    private static readonly TrackRow Row = new() { TrackKey = "v", Title = "Song" };
 
     private static Func<JobStage, TrackJob?> Succeeded(params JobStage[] stages) =>
         stage =>
@@ -16,7 +16,7 @@ public sealed class StageFlowTests
                 ? new TrackJob
                 {
                     Id = $"v:{stage}",
-                    VideoId = "v",
+                    TrackKey = "v",
                     Stage = stage,
                     Status = JobStatus.Succeeded,
                     UpdatedAt = Start.AddMinutes((int)stage),
@@ -64,7 +64,7 @@ public sealed class StageFlowTests
                 new UserAction
                 {
                     At = Start,
-                    VideoId = "v",
+                    TrackKey = "v",
                     Kind = UserActionKind.Recut,
                     PassFrom = JobStage.Separation,
                 },

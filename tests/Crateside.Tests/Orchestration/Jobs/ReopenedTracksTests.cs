@@ -8,7 +8,7 @@ namespace Crateside.Tests.Orchestration.Jobs;
 /// <summary>What counts as work a track is still owed.</summary>
 public sealed class ReopenedTracksTests
 {
-    private const string VideoId = "_DiMKyZwaA0";
+    private const string TrackKey = "_DiMKyZwaA0";
 
     private static KeyLedger Ledger =>
         TestLedger.From(
@@ -20,8 +20,8 @@ public sealed class ReopenedTracksTests
     {
         TrackJob[] jobs = [Job(JobStage.Separation, JobStatus.Failed, strikes: 1)];
 
-        Assert.Equal([VideoId], ReopenedTracks.From(jobs, Ledger));
-        Assert.Equal([VideoId], ReopenedTracks.AwaitingCut(jobs, Ledger));
+        Assert.Equal([TrackKey], ReopenedTracks.From(jobs, Ledger));
+        Assert.Equal([TrackKey], ReopenedTracks.AwaitingCut(jobs, Ledger));
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public sealed class ReopenedTracksTests
     {
         TrackJob[] jobs = [Job(JobStage.Handoff, JobStatus.Failed, strikes: 1)];
 
-        Assert.Equal([VideoId], ReopenedTracks.From(jobs, Ledger));
+        Assert.Equal([TrackKey], ReopenedTracks.From(jobs, Ledger));
         Assert.Empty(ReopenedTracks.AwaitingCut(jobs, Ledger));
     }
 
@@ -61,14 +61,14 @@ public sealed class ReopenedTracksTests
     {
         TrackJob[] jobs = [Job(JobStage.Separation, status, strikes: 0)];
 
-        Assert.Equal([VideoId], ReopenedTracks.From(jobs, Ledger));
+        Assert.Equal([TrackKey], ReopenedTracks.From(jobs, Ledger));
     }
 
     private static TrackJob Job(JobStage stage, JobStatus status, int strikes) =>
         new()
         {
-            Id = $"{VideoId}:{stage}",
-            VideoId = VideoId,
+            Id = $"{TrackKey}:{stage}",
+            TrackKey = TrackKey,
             Stage = stage,
             Status = status,
             UpdatedAt = DateTimeOffset.Parse("2026-09-23T19:19:15+00:00"),

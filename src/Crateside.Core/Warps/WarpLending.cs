@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Orchestration.Jobs;
 using Microsoft.Extensions.Options;
 
@@ -61,11 +62,11 @@ public sealed class WarpLending(
 
             if (outcome is not null)
             {
-                var loan = new WarpLoan(target.Path, outcome, target.SourceVideoId);
+                var loan = new WarpLoan(target.Path, outcome, target.SourceTrackKey);
                 loans.Add(loan);
 
                 if (WarpSummary.Of(loan) is { } summary)
-                    notes?.Record(loan.VideoId, "Warp", summary);
+                    notes?.Record(loan.TrackKey, "Warp", summary);
             }
         }
 
@@ -125,7 +126,11 @@ public sealed class WarpLending(
             : "-";
 }
 
-public sealed record WarpLoan(string Target, WarpOutcome Outcome, string VideoId);
+public sealed record WarpLoan(
+    string Target,
+    WarpOutcome Outcome,
+    [property: JsonPropertyName("videoId")] string TrackKey
+);
 
 /// <summary>The <c>Warps</c> section of appsettings.</summary>
 public sealed class WarpOptions

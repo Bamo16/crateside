@@ -53,12 +53,12 @@ public sealed class EvidenceDrainer(
 
         // Recorded before the run starts, so a crash leaves the job "Running" rather than
         // absent, distinguishing an interrupted attempt from one never made.
-        jobs.Record(item.VideoId, JobStage.Evidence, JobStatus.Running);
+        jobs.Record(item.TrackKey, JobStage.Evidence, JobStatus.Running);
 
         var result = await runner.RunAsync(order, ct);
 
         jobs.Record(
-            item.VideoId,
+            item.TrackKey,
             JobStage.Evidence,
             result.IsSuccess ? JobStatus.Succeeded : JobStatus.Failed,
             error: result.Error,

@@ -30,19 +30,19 @@ public sealed class EvidenceRunner(WorkingSet workingSet, IDetectorSet detectors
 {
     public async Task<EvidenceResult> RunAsync(WorkOrder order, CancellationToken ct = default)
     {
-        if (workingSet.HasEvidence(order.VideoId))
+        if (workingSet.HasEvidence(order.TrackKey))
             return EvidenceResult.Succeeded(
-                workingSet.EvidencePathFor(order.VideoId),
+                workingSet.EvidencePathFor(order.TrackKey),
                 "evidence was already on file"
             );
 
-        if (!workingSet.TryGetSource(order.VideoId, out var audio))
+        if (!workingSet.TryGetSource(order.TrackKey, out var audio))
             return EvidenceResult.Failed("no audio in the working set to detect over");
 
         return await DetectAsync(
             audio,
             window: null,
-            workingSet.EvidencePathFor(order.VideoId),
+            workingSet.EvidencePathFor(order.TrackKey),
             ct
         );
     }

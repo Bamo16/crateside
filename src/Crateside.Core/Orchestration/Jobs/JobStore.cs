@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Core.Orchestration.Jobs;
@@ -33,10 +34,10 @@ public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, St
     }
 
     /// <summary>The current state of one job, if crateside has ever run this stage for it.</summary>
-    public bool TryGet(string videoId, JobStage stage, [NotNullWhen(true)] out TrackJob? job)
+    public bool TryGet(string trackKey, JobStage stage, [NotNullWhen(true)] out TrackJob? job)
     {
         lock (_gate)
-            return Projection().TryGetValue(IdFor(videoId, stage), out job);
+            return Projection().TryGetValue(IdFor(trackKey, stage), out job);
     }
 
     /// <summary>
@@ -52,15 +53,15 @@ public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, St
     /// <summary>
     /// Puts a track a stage has given up on back in line, its strikes kept on the record.
     /// </summary>
-    public TrackJob Forgive(string videoId, JobStage stage) =>
-        Record(videoId, stage, JobStatus.Canceled, error: "put back in line by hand");
+    public TrackJob Forgive(string trackKey, JobStage stage) =>
+        Record(trackKey, stage, JobStatus.Canceled, error: "put back in line by hand");
 
     /// <summary>
     /// Appends an update and returns the job as it now stands. The only way state changes —
     /// nothing rewrites or removes a line.
     /// </summary>
     public TrackJob Record(
-        string videoId,
+        string trackKey,
         JobStage stage,
         JobStatus status,
         int? processId = null,
@@ -74,8 +75,8 @@ public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, St
     {
         var update = new JobUpdate
         {
-            Id = IdFor(videoId, stage),
-            VideoId = videoId,
+            Id = IdFor(trackKey, stage),
+            TrackKey = trackKey,
             Stage = stage,
             Status = status,
             Timestamp = _time.GetUtcNow(),
@@ -102,16 +103,16 @@ public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, St
 
         // Outside the lock on purpose: a subscriber that reads the store would deadlock the
         // writer it is reacting to.
-        hub?.Publish(new StageChange { Stage = stage, VideoId = videoId });
+        hub?.Publish(new StageChange { Stage = stage, TrackKey = trackKey });
 
         return job;
     }
 
     /// <summary>Every recorded change to one track's jobs, oldest first, read off disk.</summary>
-    public IReadOnlyList<JobUpdate> History(string videoId) =>
+    public IReadOnlyList<JobUpdate> History(string trackKey) =>
         [
             .. ReadUpdates()
-                .Where(update => update.VideoId.Equals(videoId, StringComparison.Ordinal)),
+                .Where(update => update.TrackKey.Equals(trackKey, StringComparison.Ordinal)),
         ];
 
     /// <summary>Every recorded change to every job, oldest first, read off disk.</summary>
@@ -124,7 +125,7 @@ public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, St
             _cached = null;
     }
 
-    private static string IdFor(string videoId, JobStage stage) => $"{videoId}:{stage}";
+    private static string IdFor(string trackKey, JobStage stage) => $"{trackKey}:{stage}";
 
     /// <summary>
     /// Folds one update onto what came before. Strikes accumulate here rather than being
@@ -134,7 +135,7 @@ public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, St
         new()
         {
             Id = update.Id,
-            VideoId = update.VideoId,
+            TrackKey = update.TrackKey,
             Stage = update.Stage,
             Status = update.Status,
             UpdatedAt = update.Timestamp,
@@ -237,7 +238,9 @@ public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, St
 public sealed record JobUpdate
 {
     public required string Id { get; init; }
-    public required string VideoId { get; init; }
+
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
     public required JobStage Stage { get; init; }
     public required JobStatus Status { get; init; }
     public required DateTimeOffset Timestamp { get; init; }

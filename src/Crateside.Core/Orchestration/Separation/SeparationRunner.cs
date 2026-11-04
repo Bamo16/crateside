@@ -28,13 +28,13 @@ public sealed class SeparationRunner(
         // Stems inherit the source's provenance, which is how the handoff finds them: a retained
         // file without it is fetched again by URL rather than cut into stems that join to nothing.
         var retained =
-            workingSet.TryGetSource(order.VideoId, out var path)
-            && StemTagReader.Read(path) is { SourceVideoId.Length: > 0 }
+            workingSet.TryGetSource(order.TrackKey, out var path)
+            && StemTagReader.Read(path) is { SourceTrackKey.Length: > 0 }
                 ? path
                 : null;
 
         if (interlock.TryGetLive(out var live))
-            return SeparationResult.Refused($"already separating {live.VideoId}");
+            return SeparationResult.Refused($"already separating {live.TrackKey}");
 
         // No forceful token: ct must not kill the separation, only stop us waiting for it.
         var running = Start(order, retained);
@@ -43,7 +43,7 @@ public sealed class SeparationRunner(
         // Start — there is a gap between them since claiming needs the process to exist,
         // harmless only because one worker drives this loop.
         interlock.Claim(
-            order.VideoId,
+            order.TrackKey,
             running.ProcessId,
             StartTimeOf(running.ProcessId),
             new SeparationPromise(order.Recipe.ExpectedOutputs, order.Destination)
@@ -65,7 +65,7 @@ public sealed class SeparationRunner(
         }
 
         interlock.Release(
-            order.VideoId,
+            order.TrackKey,
             error,
             error is null ? Summarize(order.Recipe, outputs.Count) : null
         );

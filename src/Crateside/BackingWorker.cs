@@ -112,9 +112,9 @@ public sealed class BackingWorker(
         var settled = genres.Read();
         var reach = familiarity.Read();
 
-        IReadOnlyList<string> OwnedOf(string videoId)
+        IReadOnlyList<string> OwnedOf(string trackKey)
         {
-            var song = ledger.SongFor(videoId) ?? videoId;
+            var song = ledger.SongFor(trackKey) ?? trackKey;
 
             return
             [

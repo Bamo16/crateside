@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Serialization;
 using Crateside.Core.Ableton;
 using Crateside.Core.Beats;
 using Crateside.Core.Familiarity;
@@ -22,10 +23,11 @@ public sealed record TrackRow
 {
     private static readonly CultureInfo English = CultureInfo.GetCultureInfo("en");
 
-    public required string VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
 
     /// <summary>The page-relative link to Track details.</summary>
-    public string DetailsHref => $"song/{Uri.EscapeDataString(VideoId)}";
+    public string DetailsHref => $"song/{Uri.EscapeDataString(TrackKey)}";
 
     /// <summary>
     /// The playlist entry, which is what removing the track targets. Null once it has none.
@@ -42,7 +44,7 @@ public sealed record TrackRow
 
     public bool IsRenamed => DerivedTitle is not null;
 
-    /// <summary>The upload this track is cut from, when it is not the one <see cref="VideoId"/> names.</summary>
+    /// <summary>The upload this track is cut from, when it is not the one <see cref="TrackKey"/> names.</summary>
     public string? StatedSourceUrl { get; init; }
 
     public bool IsSourceSwapped => StatedSourceUrl is { Length: > 0 };
@@ -51,10 +53,10 @@ public sealed record TrackRow
     public int SamplesLeftInLibrary => Samples.Count(sample => sample.IsInLibrary);
 
     /// <summary>Whether an upload is one the user attached rather than one cut from (ADR 0019).</summary>
-    public bool IsAddedSource(string? videoId) =>
-        videoId is { Length: > 0 }
+    public bool IsAddedSource(string? trackKey) =>
+        trackKey is { Length: > 0 }
         && Plan.AddedSources.Any(source =>
-            source.VideoId.Equals(videoId, StringComparison.Ordinal)
+            source.TrackKey.Equals(trackKey, StringComparison.Ordinal)
         );
 
     /// <summary>Every upload this track has used, the one it is cut from first, each with its role; none without an upload.</summary>
@@ -65,7 +67,7 @@ public sealed record TrackRow
                 .. Facts
                     .Uploads.Prepend(CutFrom)
                     .Distinct(StringComparer.Ordinal)
-                    .Select(videoId => new TrackUpload(videoId, UploadRole(videoId))),
+                    .Select(trackKey => new TrackUpload(trackKey, UploadRole(trackKey))),
             ]
             : [];
 
@@ -73,14 +75,14 @@ public sealed record TrackRow
     private string CutFrom =>
         StatedSourceUrl is { } stated && YouTubeUrl.TryGetVideoId(stated, out var swapped)
             ? swapped
-            : VideoId;
+            : TrackKey;
 
-    private string UploadRole(string videoId) =>
-        Plan.AddedSources.FirstOrDefault(source => source.VideoId == videoId) switch
+    private string UploadRole(string trackKey) =>
+        Plan.AddedSources.FirstOrDefault(source => source.TrackKey == trackKey) switch
         {
             { } added => $"added source · {added.Label}",
-            null when videoId == CutFrom => "cut from",
-            null when videoId == VideoId => "the playlist's upload",
+            null when trackKey == CutFrom => "cut from",
+            null when trackKey == TrackKey => "the playlist's upload",
             _ => "old upload",
         };
 
@@ -89,7 +91,8 @@ public sealed record TrackRow
     /// so on each of them worth the room (ADR 0014).
     /// </summary>
     public bool HasSeveralUploads =>
-        Samples.Select(sample => sample.SourceVideoId).Distinct(StringComparer.Ordinal).Count() > 1;
+        Samples.Select(sample => sample.SourceTrackKey).Distinct(StringComparer.Ordinal).Count()
+        > 1;
 
     public TrackNameSource NameSource { get; init; }
 
@@ -136,7 +139,7 @@ public sealed record TrackRow
     /// What the genre store knows this song by: the ledger's identity, or the upload for a song it
     /// never judged (ADR 0030).
     /// </summary>
-    public string Song => Verdict?.Song ?? VideoId;
+    public string Song => Verdict?.Song ?? TrackKey;
 
     /// <summary>The song's genre as settled or suggested, or null when nothing has asked yet.</summary>
     public GenreRecord? Genre { get; init; }
@@ -221,7 +224,7 @@ public sealed record TrackRow
     public bool IsLibraryOnly { get; init; }
 
     /// <summary>False for a song StemForge cut without recording a source: its key is a file name, not a video ID (#94).</summary>
-    public bool HasUpload => !SourcelessSongs.IsKey(VideoId);
+    public bool HasUpload => !SourcelessSongs.IsKey(TrackKey);
 
     /// <summary>Which files the user wants made for this track.</summary>
     public StemPlan Plan { get; init; } = StemPlan.Default;
@@ -330,16 +333,16 @@ public sealed record TrackRow
     public TrackRowFacts Facts =>
         new()
         {
-            VideoId = VideoId,
+            TrackKey = TrackKey,
             Song = Verdict?.Song,
             Key = Key,
             Plan = Plan,
             Uploads = HasUpload
                 ?
                 [
-                    VideoId,
-                    .. Samples.Select(sample => sample.SourceVideoId).OfType<string>(),
-                    .. Plan.AddedSources.Select(source => source.VideoId),
+                    TrackKey,
+                    .. Samples.Select(sample => sample.SourceTrackKey).OfType<string>(),
+                    .. Plan.AddedSources.Select(source => source.TrackKey),
                 ]
                 : [],
             IsLibraryOnly = IsLibraryOnly,
@@ -546,7 +549,10 @@ public sealed record TrackRow
 }
 
 /// <summary>One upload a track has used, and what it is to the track: <c>cut from</c>, an added source, an old upload.</summary>
-public sealed record TrackUpload(string VideoId, string Role);
+public sealed record TrackUpload(
+    [property: JsonPropertyName("videoId")] string TrackKey,
+    string Role
+);
 
 /// <summary>Where a track's derived name came from, best first.</summary>
 public enum TrackNameSource
@@ -566,7 +572,7 @@ public enum TrackNameSource
     /// <summary>The playlist entry's title, which is whatever the uploader typed.</summary>
     Playlist,
 
-    /// <summary>Nothing named it. The video ID is all there is.</summary>
+    /// <summary>Nothing named it. The track's key is all there is.</summary>
     VideoId,
 }
 
@@ -623,5 +629,6 @@ public sealed record TrackSample
     /// The upload this file was cut from. A song that has been source-swapped holds samples from
     /// more than one, and their filenames need not differ (ADR 0014).
     /// </summary>
-    public string? SourceVideoId { get; init; }
+    [JsonPropertyName("sourceVideoId")]
+    public string? SourceTrackKey { get; init; }
 }

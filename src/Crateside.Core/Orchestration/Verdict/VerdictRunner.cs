@@ -80,17 +80,17 @@ public sealed partial class VerdictRunner(
                 nameof(direction)
             );
 
-        if (!workingSet.HasEvidence(order.VideoId))
+        if (!workingSet.HasEvidence(order.TrackKey))
         {
             if (direction is null)
                 return VerdictResult.Failed("no evidence to judge");
 
             step(new JudgeStep.DetectingWhole());
-            workingSet.Prepare(order.VideoId);
+            workingSet.Prepare(order.TrackKey);
 
             var whole = await detector.DetectWholeAsync(
                 direction.Audio,
-                workingSet.EvidencePathFor(order.VideoId),
+                workingSet.EvidencePathFor(order.TrackKey),
                 ct
             );
 
@@ -98,7 +98,7 @@ public sealed partial class VerdictRunner(
                 return VerdictResult.Failed($"detecting the whole track failed: {whole.Error}");
         }
 
-        var folder = workingSet.Prepare(order.VideoId);
+        var folder = workingSet.Prepare(order.TrackKey);
         var verdictPath = Path.Combine(folder, VerdictFileName);
         var session = Guid.NewGuid().ToString();
         var audio = direction?.Audio ?? SourceFor(order);
@@ -233,7 +233,7 @@ public sealed partial class VerdictRunner(
             string.Empty,
             $"- title: {order.Title}",
             $"- source_url: {order.SourceUrl}",
-            $"- evidence: {workingSet.EvidencePathFor(order.VideoId)}",
+            $"- evidence: {workingSet.EvidencePathFor(order.TrackKey)}",
             $"- verdict file: {verdictPath}",
         ];
 
@@ -249,7 +249,7 @@ public sealed partial class VerdictRunner(
 
         lines.AddRange(PagesLines(lookups));
 
-        if (workingSet.TryReadEvidence(order.VideoId, out var evidence))
+        if (workingSet.TryReadEvidence(order.TrackKey, out var evidence))
             lines.AddRange([
                 string.Empty,
                 "The evidence:",
@@ -357,8 +357,8 @@ public sealed partial class VerdictRunner(
         if (tab.IsThin)
             yield return "THIN PAGE: one contributor and one or two sections";
 
-        var other = tab.Sections.Count(section => section.VideoId is not null);
-        var synced = tab.SyncedVideoId is { } video
+        var other = tab.Sections.Count(section => section.TrackKey is not null);
+        var synced = tab.SyncedTrackKey is { } video
             ? $"synced to YouTube {video}"
             : "not synced to a video";
 
@@ -541,8 +541,8 @@ public sealed partial class VerdictRunner(
         tally.Seconds += result["duration_ms"]?.GetValue<double>() / 1000 ?? 0;
 
         log.LogInformation(
-            "Judge session for {VideoId} on {Model}: {Turns} turns, {Seconds:0} s",
-            order.VideoId,
+            "Judge session for {TrackKey} on {Model}: {Turns} turns, {Seconds:0} s",
+            order.TrackKey,
             _options.Model,
             result["num_turns"]?.GetValue<int>(),
             result["duration_ms"]?.GetValue<double>() / 1000
@@ -651,7 +651,7 @@ public sealed partial class VerdictRunner(
         IReadOnlyList<DetectedWindow> detected
     )
     {
-        workingSet.TryReadEvidence(order.VideoId, out var evidence);
+        workingSet.TryReadEvidence(order.TrackKey, out var evidence);
 
         return run with
         {
@@ -720,7 +720,7 @@ public sealed partial class VerdictRunner(
     private void LogNotes(RunRecord run, WorkOrder order)
     {
         foreach (var note in RunValidation.Notes(run))
-            log.LogWarning("Verdict for {VideoId}: {Note}", order.VideoId, note);
+            log.LogWarning("Verdict for {TrackKey}: {Note}", order.TrackKey, note);
     }
 
     /// <param name="lookups">Kept with the run, cited or not (#176).</param>

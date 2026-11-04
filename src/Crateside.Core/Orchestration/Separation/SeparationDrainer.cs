@@ -75,7 +75,7 @@ public sealed class SeparationDrainer(
             StemLanding.Reconcile(
                 _paths,
                 store.Read(),
-                settled.Job.VideoId,
+                settled.Job.TrackKey,
                 settled.Promise.Destination,
                 settled.OutputFiles
             );
@@ -96,20 +96,20 @@ public static class StemLanding
         KeyLedger ledger,
         WorkOrder order,
         IReadOnlyList<string> outputs
-    ) => Reconcile(paths, ledger, order.VideoId, order.Destination, outputs);
+    ) => Reconcile(paths, ledger, order.TrackKey, order.Destination, outputs);
 
     /// <inheritdoc cref="Reconcile(CratesidePaths, KeyLedger, WorkOrder, IReadOnlyList{string})"/>
     public static IReadOnlyList<string> Reconcile(
         CratesidePaths paths,
         KeyLedger ledger,
-        string videoId,
+        string trackKey,
         StemDestination destination,
         IReadOnlyList<string> outputs
     )
     {
         if (
             destination is not StemDestination.UnresolvedKey
-            || !ledger.TryGetLatestByVideoId(videoId, out var run)
+            || !ledger.TryGetLatestByTrackKey(trackKey, out var run)
             || !run.HasTaggableKey
         )
             return [];
@@ -137,11 +137,11 @@ public static class StemLanding
             .Select(StemTagReader.Read)
             .OfType<StemTags>()
             .Where(tags =>
-                tags.SourceVideoId is { } videoId
-                && ledger.TryGetLatestByVideoId(videoId, out var run)
+                tags.SourceTrackKey is { } trackKey
+                && ledger.TryGetLatestByTrackKey(trackKey, out var run)
                 && run.HasTaggableKey
                 // A separation still writing here moves its own outputs when it lands.
-                && !(jobs.TryGet(videoId, JobStage.Separation, out var job) && job.IsOpen)
+                && !(jobs.TryGet(trackKey, JobStage.Separation, out var job) && job.IsOpen)
             )
             .Select(tags => tags.Path)
             .ToArray();

@@ -34,7 +34,7 @@ public sealed class StemPickerTests
     ) =>
         new()
         {
-            VideoId = "aaaaaaaaaaa",
+            TrackKey = "aaaaaaaaaaa",
             Title = "Rob Dougan - Furious Angels",
             Plan = plan ?? StemPlan.Default,
             HasWarpGuide = hasWarpGuide,
@@ -323,11 +323,11 @@ public sealed class StemPickerTests
                 false,
                 Made("vocal_full", "Vocal - Full") with
                 {
-                    SourceVideoId = "aaaaaaaaaaa",
+                    SourceTrackKey = "aaaaaaaaaaa",
                 },
                 Made("vocal_full", "Vocal - Full") with
                 {
-                    SourceVideoId = "bbbbbbbbbbb",
+                    SourceTrackKey = "bbbbbbbbbbb",
                 }
             ),
             Catalog

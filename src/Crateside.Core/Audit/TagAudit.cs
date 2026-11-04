@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using AbleKit.Tags;
 using Crateside.Core.Ableton;
@@ -51,11 +52,11 @@ public static class TagAudit
 
                 if (
                     StemTagReader.Read(path)?.Provenance
-                    is not { SourceVideoId: { } videoId } provenance
+                    is not { SourceTrackKey: { } trackKey } provenance
                 )
                     continue;
 
-                var hasVerdict = ledger.TryGetLatestByVideoId(videoId, out var run);
+                var hasVerdict = ledger.TryGetLatestByTrackKey(trackKey, out var run);
                 folderInfo.TryGet(path, out var applied);
 
                 stems.Add(
@@ -64,7 +65,7 @@ public static class TagAudit
                         Path = path,
                         FileName = Path.GetFileName(path),
                         Root = root.Path,
-                        SourceVideoId = videoId,
+                        SourceTrackKey = trackKey,
                         Song = run?.Song,
                         LedgerKey = run?.Key,
                         HasTaggableVerdict = hasVerdict && run!.HasTaggableKey,
@@ -153,14 +154,14 @@ public sealed partial class TagAuditReport(IReadOnlyList<TaggedStem> stems)
         [
             .. stems
                 .Where(s => s.AppliedKey is not null)
-                .GroupBy(s => s.SourceVideoId, StringComparer.Ordinal)
+                .GroupBy(s => s.SourceTrackKey, StringComparer.Ordinal)
                 .Where(g =>
                     g.Select(s => s.AppliedKey).Distinct(StringComparer.OrdinalIgnoreCase).Count()
                     > 1
                 )
                 .Select(g => new InconsistentSong
                 {
-                    SourceVideoId = g.Key,
+                    SourceTrackKey = g.Key,
                     Label =
                         g.Select(s => s.Song).FirstOrDefault(s => s is not null)
                         ?? StripPresetSuffix(g.First().FileName),
@@ -185,7 +186,8 @@ public sealed record TaggedStem
 
     public required string Root { get; init; }
 
-    public required string SourceVideoId { get; init; }
+    [JsonPropertyName("sourceVideoId")]
+    public required string SourceTrackKey { get; init; }
 
     /// <summary>The ledger identity, or null when the ledger has never seen this stem.</summary>
     public string? Song { get; init; }
@@ -214,7 +216,8 @@ public sealed record TaggedStem
 
 public sealed record InconsistentSong
 {
-    public required string SourceVideoId { get; init; }
+    [JsonPropertyName("sourceVideoId")]
+    public required string SourceTrackKey { get; init; }
 
     /// <summary>The ledger identity where there is one, else the filename minus its preset.</summary>
     public required string Label { get; init; }

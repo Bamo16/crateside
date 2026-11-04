@@ -63,7 +63,7 @@ public sealed record StemPicker
         var added = sources
             .Where(sample =>
                 plan.AddedSources.Any(source =>
-                    source.VideoId.Equals(sample.SourceVideoId, StringComparison.Ordinal)
+                    source.TrackKey.Equals(sample.SourceTrackKey, StringComparison.Ordinal)
                 )
             )
             .ToHashSet();
@@ -114,8 +114,8 @@ public sealed record StemPicker
                         Files =
                         [
                             .. sources.Where(sample =>
-                                source.VideoId.Equals(
-                                    sample.SourceVideoId,
+                                source.TrackKey.Equals(
+                                    sample.SourceTrackKey,
                                     StringComparison.Ordinal
                                 )
                             ),
@@ -198,7 +198,7 @@ public sealed record StemPicker
                 || row.Samples.Any(sample =>
                     sample is { Kind: StemKind.Source, IsInLibrary: true }
                     && !plan.AddedSources.Any(added =>
-                        added.VideoId.Equals(sample.SourceVideoId, StringComparison.Ordinal)
+                        added.TrackKey.Equals(sample.SourceTrackKey, StringComparison.Ordinal)
                     )
                 ),
         };
@@ -268,7 +268,7 @@ public sealed record StemChoice
     public IReadOnlyList<string> Uploads =>
         [
             .. Files
-                .Select(file => file.SourceVideoId)
+                .Select(file => file.SourceTrackKey)
                 .OfType<string>()
                 .Distinct(StringComparer.Ordinal),
         ];

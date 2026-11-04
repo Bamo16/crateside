@@ -68,12 +68,12 @@ public sealed class VerdictControlTests
 
         control.ReportJudging("abc123", "Judging abc123");
 
-        Assert.Equal("abc123", control.JudgingVideoId);
+        Assert.Equal("abc123", control.JudgingTrackKey);
         Assert.Equal("Judging abc123", control.Activity);
 
         control.ReportIdle();
 
-        Assert.Null(control.JudgingVideoId);
+        Assert.Null(control.JudgingTrackKey);
         Assert.Null(control.Activity);
     }
 }

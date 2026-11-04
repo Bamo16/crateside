@@ -8,7 +8,7 @@ namespace Crateside.Tests.Orchestration.Verdict;
 
 public sealed class PageLookupsTests : IDisposable
 {
-    private const string VideoId = "IijgrkA_P50";
+    private const string TrackKey = "IijgrkA_P50";
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
@@ -31,7 +31,7 @@ public sealed class PageLookupsTests : IDisposable
         new(_pages, new WorkingSet(Path.Combine(_directory, "working")), _store, names);
 
     private WorkOrder Order(string title) =>
-        WorkOrder.Compose(new WorkItem { VideoId = VideoId, Title = title }, _store.Read());
+        WorkOrder.Compose(new WorkItem { TrackKey = TrackKey, Title = title }, _store.Read());
 
     [Fact]
     public async Task A_title_naming_its_artist_is_looked_up_by_it()
@@ -46,7 +46,7 @@ public sealed class PageLookupsTests : IDisposable
     {
         var names = new ResolvedNameStore(Path.Combine(_directory, "names.json"));
         names.Save(
-            VideoId,
+            TrackKey,
             new ResolvedName { DisplayTitle = "TaQ - sync", BaseName = "TaQ - sync" }
         );
 

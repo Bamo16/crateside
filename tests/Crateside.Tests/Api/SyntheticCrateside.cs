@@ -142,7 +142,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
                 ),
             }
         );
-        ledger.Read().TryGetLatestByVideoId(Judged, out var verdict);
+        ledger.Read().TryGetLatestByTrackKey(Judged, out var verdict);
 
         var written = new WrittenWarps();
         File.WriteAllBytes(Instrumental, [1, 2, 3]);
@@ -202,7 +202,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
             [
                 new TrackRow
                 {
-                    VideoId = Judged,
+                    TrackKey = Judged,
                     Title = "The Examples - Synthetic Song",
                     Verdict = verdict,
                     Familiarity = familiarity.Read()[Song],
@@ -218,10 +218,10 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
                         },
                     ],
                 },
-                new TrackRow { VideoId = Waiting, Title = "The Examples - Another Song" },
+                new TrackRow { TrackKey = Waiting, Title = "The Examples - Another Song" },
                 new TrackRow
                 {
-                    VideoId = Filed,
+                    TrackKey = Filed,
                     Title = "The Examples - Filed Song",
                     Samples =
                     [

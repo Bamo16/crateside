@@ -41,7 +41,7 @@ public static class ClipColors
     {
         var provenance = StemTagReader.Read(audioPath)?.Provenance;
         var preset = StemTagReader.PresetOf(audioPath);
-        var song = provenance?.SourceVideoId ?? StemFileName.WithoutPreset(audioPath);
+        var song = provenance?.SourceTrackKey ?? StemFileName.WithoutPreset(audioPath);
 
         if (StagedFile.IsWarpGuidePreset(preset))
             return Drums;

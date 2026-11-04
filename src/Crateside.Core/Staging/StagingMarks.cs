@@ -78,10 +78,10 @@ public sealed class StagingMarks(
         LedgerRun? verdict = null;
         IReadOnlyCollection<TrackMark> mine = [];
 
-        if (StemTagReader.Read(stem.Path)?.SourceVideoId is { } videoId)
+        if (StemTagReader.Read(stem.Path)?.SourceTrackKey is { } trackKey)
         {
-            ledger.TryGetLatestByVideoId(videoId, out verdict);
-            mine = marked.GetValueOrDefault(verdict?.Song ?? videoId)?.Marks ?? [];
+            ledger.TryGetLatestByTrackKey(trackKey, out verdict);
+            mine = marked.GetValueOrDefault(verdict?.Song ?? trackKey)?.Marks ?? [];
         }
 
         var marks = BrowserCollections.TrackMarksFor(verdict, mine);

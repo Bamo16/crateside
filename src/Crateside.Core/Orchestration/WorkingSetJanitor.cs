@@ -24,21 +24,24 @@ public sealed class WorkingSetJanitor(
     /// <summary>Discards what is finished with and past its retention, and reports how many went.</summary>
     public int Sweep()
     {
-        if (workingSet.VideoIds is not { Count: > 0 } held)
+        if (workingSet.TrackKeys is not { Count: > 0 } held)
             return 0;
 
         var running = jobs.All()
             .Where(job => job.Status is JobStatus.Running)
-            .Select(job => job.VideoId)
+            .Select(job => job.TrackKey)
             .ToHashSet();
 
         // Its evidence and pages are what the person decides from.
         var waiting = jobs.All()
             .Where(job => job is { Stage: JobStage.Verdict, Status: JobStatus.AwaitingPerson })
-            .Select(job => job.VideoId)
+            .Select(job => job.TrackKey)
             .ToHashSet();
 
-        held = [.. held.Where(videoId => !running.Contains(videoId) && !waiting.Contains(videoId))];
+        held =
+        [
+            .. held.Where(trackKey => !running.Contains(trackKey) && !waiting.Contains(trackKey)),
+        ];
 
         var ledger = store.Read();
         var staged = ProcessedTracks.Scan(ledger, [_paths.StagingFolder]);
@@ -49,44 +52,46 @@ public sealed class WorkingSetJanitor(
 
         List<string> discarded = [];
 
-        foreach (var videoId in held.Where(videoId => IsFinishedWith(videoId, staged)))
+        foreach (var trackKey in held.Where(trackKey => IsFinishedWith(trackKey, staged)))
         {
-            if (workingSet.LeftStagingAt(videoId) is not { } left)
-                workingSet.RecordLeftStaging(videoId, left = now);
+            if (workingSet.LeftStagingAt(trackKey) is not { } left)
+                workingSet.RecordLeftStaging(trackKey, left = now);
 
             // The library already holds this audio (the same decode, MEASURED in #133).
             if (
                 keeping.HasLapsed(left, now)
-                || everywhere.Value.StemsFor(videoId).Any(stem => stem.IsVerbatimSource)
+                || everywhere.Value.StemsFor(trackKey).Any(stem => stem.IsVerbatimSource)
             )
-                discarded.Add(videoId);
+                discarded.Add(trackKey);
         }
 
         // Back in staging: the clock restarts when the stems leave again.
-        foreach (var videoId in held.Where(videoId => staged.StemsFor(videoId) is { Count: > 0 }))
-            workingSet.ClearLeftStaging(videoId);
+        foreach (
+            var trackKey in held.Where(trackKey => staged.StemsFor(trackKey) is { Count: > 0 })
+        )
+            workingSet.ClearLeftStaging(trackKey);
 
         // Opening every file in the library is costly, so only when something could be judge-only.
         // Its clock starts once the library files carry its video ID, unless a backfill started it first.
         foreach (
-            var videoId in held.Except(discarded)
-                .Where(videoId => MayBeJudgeOnly(videoId, ledger))
-                .Where(videoId => everywhere.Value.IsFullyProcessed(videoId))
+            var trackKey in held.Except(discarded)
+                .Where(trackKey => MayBeJudgeOnly(trackKey, ledger))
+                .Where(trackKey => everywhere.Value.IsFullyProcessed(trackKey))
                 .ToList()
         )
         {
-            if (workingSet.LeftStagingAt(videoId) is not { } left)
-                workingSet.RecordLeftStaging(videoId, left = now);
+            if (workingSet.LeftStagingAt(trackKey) is not { } left)
+                workingSet.RecordLeftStaging(trackKey, left = now);
 
             if (
                 keeping.HasLapsed(left, now)
-                || everywhere.Value.StemsFor(videoId).Any(stem => stem.IsVerbatimSource)
+                || everywhere.Value.StemsFor(trackKey).Any(stem => stem.IsVerbatimSource)
             )
-                discarded.Add(videoId);
+                discarded.Add(trackKey);
         }
 
-        foreach (var videoId in discarded)
-            workingSet.Discard(videoId);
+        foreach (var trackKey in discarded)
+            workingSet.Discard(trackKey);
 
         return discarded.Count;
     }
@@ -94,29 +99,29 @@ public sealed class WorkingSetJanitor(
     /// <summary>
     /// Separated and nothing left in staging — either alone is also true of unfinished tracks.
     /// </summary>
-    private bool IsFinishedWith(string videoId, ProcessedTracks staged) =>
-        jobs.TryGet(videoId, JobStage.Separation, out var job)
+    private bool IsFinishedWith(string trackKey, ProcessedTracks staged) =>
+        jobs.TryGet(trackKey, JobStage.Separation, out var job)
         && job is { Status: JobStatus.Succeeded }
-        && staged.StemsFor(videoId) is { Count: 0 }
+        && staged.StemsFor(trackKey) is { Count: 0 }
         // A source a re-cut fetched is copied on the next pass; sweeping it first starts a loop.
-        && !StageEligibility.Owes(jobs, videoId, JobStage.Handoff)
-        && IsSettled(videoId);
+        && !StageEligibility.Owes(jobs, trackKey, JobStage.Handoff)
+        && IsSettled(trackKey);
 
-    private bool IsSettled(string videoId) =>
+    private bool IsSettled(string trackKey) =>
         CutRequests.IsSettled(
             instructions
                 ?.Read()
-                .FirstOrDefault(track => track.VideoId.Equals(videoId, StringComparison.Ordinal))
+                .FirstOrDefault(track => track.TrackKey.Equals(trackKey, StringComparison.Ordinal))
                 ?.CutRequestedAt,
-            jobs.TryGet(videoId, JobStage.Handoff, out var handoff) ? handoff : null
+            jobs.TryGet(trackKey, JobStage.Handoff, out var handoff) ? handoff : null
         );
 
     /// <summary>
     /// Judged, and never given a separation: a track queued only to judge files the library
     /// already holds (#47), once those files carry its video ID.
     /// </summary>
-    private bool MayBeJudgeOnly(string videoId, KeyLedger ledger) =>
-        ledger.HasRunFor(videoId)
-        && !jobs.TryGet(videoId, JobStage.Separation, out _)
-        && !StageEligibility.Owes(jobs, videoId, JobStage.Handoff);
+    private bool MayBeJudgeOnly(string trackKey, KeyLedger ledger) =>
+        ledger.HasRunFor(trackKey)
+        && !jobs.TryGet(trackKey, JobStage.Separation, out _)
+        && !StageEligibility.Owes(jobs, trackKey, JobStage.Handoff);
 }

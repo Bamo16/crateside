@@ -92,7 +92,7 @@ public sealed class TrackSwapTests : IDisposable
         var plan = Swap().PlanFor(Video, Replacement);
 
         Assert.True(plan.IsPossible);
-        Assert.Equal("NSLYAT7sjAA", plan.NewVideoId);
+        Assert.Equal("NSLYAT7sjAA", plan.NewTrackKey);
         Assert.Equal(2, plan.Removing.Count);
     }
 
@@ -136,8 +136,8 @@ public sealed class TrackSwapTests : IDisposable
 
         var ledger = Ledger.Read();
 
-        Assert.True(ledger.TryGetLatestByVideoId(Video, out var viaOld));
-        Assert.True(ledger.TryGetLatestByVideoId("NSLYAT7sjAA", out var viaNew));
+        Assert.True(ledger.TryGetLatestByTrackKey(Video, out var viaOld));
+        Assert.True(ledger.TryGetLatestByTrackKey("NSLYAT7sjAA", out var viaNew));
         Assert.Equal("C minor", viaOld.Key);
         Assert.Equal(viaOld.Key, viaNew.Key);
     }
@@ -160,14 +160,14 @@ public sealed class TrackSwapTests : IDisposable
                     new WorkItem
                     {
                         PlaylistItemId = "PLI1",
-                        VideoId = Video,
+                        TrackKey = Video,
                         Title = "Rob Dougan - Furious Angels",
                     },
                 ],
                 new HashSet<string>(),
                 new HashSet<string>(),
                 new HashSet<string>(),
-                settings.Read().ToDictionary(t => t.VideoId, StringComparer.Ordinal)
+                settings.Read().ToDictionary(t => t.TrackKey, StringComparer.Ordinal)
             )
             .Items.Single();
 
@@ -184,7 +184,7 @@ public sealed class TrackSwapTests : IDisposable
         var plan = Swap().PlanFor(Video, "NSLYAT7sjAA");
 
         Assert.True(plan.IsPossible);
-        Assert.Equal("NSLYAT7sjAA", plan.NewVideoId);
+        Assert.Equal("NSLYAT7sjAA", plan.NewTrackKey);
         Assert.Equal("https://music.youtube.com/watch?v=NSLYAT7sjAA", plan.Url);
     }
 
@@ -200,7 +200,7 @@ public sealed class TrackSwapTests : IDisposable
 
         Swap(settings).Apply(Video, Replacement);
 
-        var reopened = new WorkItem { VideoId = Video, Title = "Rob Dougan - Furious Angels" };
+        var reopened = new WorkItem { TrackKey = Video, Title = "Rob Dougan - Furious Angels" };
 
         var item = WorkListsView
             .Compose(
@@ -208,7 +208,7 @@ public sealed class TrackSwapTests : IDisposable
                 new HashSet<string>(),
                 new HashSet<string>(),
                 new HashSet<string>(),
-                settings.Read().ToDictionary(t => t.VideoId, StringComparer.Ordinal),
+                settings.Read().ToDictionary(t => t.TrackKey, StringComparer.Ordinal),
                 [reopened]
             )
             .AwaitingSeparation.Single();
@@ -291,7 +291,7 @@ public sealed class TrackSwapTests : IDisposable
 
     private void WriteLedger(params string[] lines) => File.WriteAllLines(LedgerPath, lines);
 
-    private static string Line(string timestamp, string song, string videoId) =>
+    private static string Line(string timestamp, string song, string trackKey) =>
         JsonSerializer.Serialize(
             new
             {
@@ -299,7 +299,7 @@ public sealed class TrackSwapTests : IDisposable
                 song,
                 artist = "Rob Dougan",
                 title = "Furious Angels",
-                source_url = $"https://www.youtube.com/watch?v={videoId}",
+                source_url = $"https://www.youtube.com/watch?v={trackKey}",
                 verdict = new { key = "C minor", confidence = "HIGH" },
                 bpm = new { value = 145 },
             }

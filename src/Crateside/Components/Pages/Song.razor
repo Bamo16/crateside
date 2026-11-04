@@ -1,4 +1,4 @@
-@page "/song/{VideoId}"
+@page "/song/{TrackKey}"
 @layout Crateside.Components.Layout.BareLayout
 @rendermode InteractiveServer
 @implements IDisposable
@@ -26,7 +26,7 @@
     {
         <h1>Track details</h1>
         <p class="notice">
-            @(Tracks.Current is null ? "Reading tracks…" : $"crateside has no track for {VideoId}.")
+            @(Tracks.Current is null ? "Reading tracks…" : $"crateside has no track for {TrackKey}.")
         </p>
     }
     else
@@ -67,7 +67,7 @@
             </div>
             <div class="cell">
                 <span class="label">Confidence</span>
-                @if (Judging.Of(VideoId) is { IsRunning: true } running)
+                @if (Judging.Of(TrackKey) is { IsRunning: true } running)
                 {
                     <span class="judging-chip"><span class="dot"></span>judging from bars</span>
                     <span class="sub">
@@ -119,7 +119,7 @@
                 }
                 @if (HasEvidenceSection)
                 {
-                    <a class="why" href="@($"song/{Uri.EscapeDataString(VideoId)}#evidence")">Why @Verdicted ↓</a>
+                    <a class="why" href="@($"song/{Uri.EscapeDataString(TrackKey)}#evidence")">Why @Verdicted ↓</a>
                 }
             </div>
         </section>
@@ -186,7 +186,7 @@
     private string WarpViewLink => $"{new Uri(Navigation.Uri).GetLeftPart(UriPartial.Query)}#warp-view";
 
     [Parameter]
-    public required string VideoId { get; set; }
+    public required string TrackKey { get; set; }
 
     private TrackRow? _row;
     private RunEvidence? _run;
@@ -325,7 +325,7 @@
     private bool IsTaggedWithKey(TrackSample sample) =>
         Key is { } key && key.Equals(sample.AbletonKey, StringComparison.OrdinalIgnoreCase);
 
-    private void Read() => (_row, _run) = Details.Find(VideoId);
+    private void Read() => (_row, _run) = Details.Find(TrackKey);
 
     // Raised on a worker thread, never the circuit's, so the render is marshalled back.
     private void OnChanged() =>
@@ -338,7 +338,7 @@
     private IReadOnlyList<string> CopyHeader(TrackRow row) =>
         [
             row.Title,
-            row.HasUpload ? $"video {row.VideoId}" : "no source recorded",
+            row.HasUpload ? $"video {row.TrackKey}" : "no source recorded",
             $"state {row.ChipLabel}",
             $"verdict {KeyText.Spell(Key) ?? "—"} · {KeyText.Confidence(Confidence)}",
         ];

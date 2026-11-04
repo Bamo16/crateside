@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
 using Crateside.Core.Samples;
 using Crateside.Core.Staging;
@@ -11,12 +12,12 @@ namespace Crateside.Core.WorkLists;
 public sealed class ProcessedTracks
 {
     private ProcessedTracks(
-        Dictionary<string, List<StemOnDisk>> stemsByVideoId,
+        Dictionary<string, List<StemOnDisk>> stemsByTrackKey,
         IReadOnlySet<string> fullyProcessed,
         IReadOnlySet<string> verdictWithoutStems
     )
     {
-        StemsByVideoId = stemsByVideoId.ToDictionary(
+        StemsByTrackKey = stemsByTrackKey.ToDictionary(
             entry => entry.Key,
             entry => (IReadOnlyList<StemOnDisk>)entry.Value,
             StringComparer.Ordinal
@@ -26,7 +27,7 @@ public sealed class ProcessedTracks
     }
 
     /// <summary>Every file the scan found, by the video ID it came from.</summary>
-    public IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>> StemsByVideoId { get; }
+    public IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>> StemsByTrackKey { get; }
 
     /// <summary>Video IDs that satisfy both halves of the test.</summary>
     public IReadOnlySet<string> FullyProcessed { get; }
@@ -38,10 +39,10 @@ public sealed class ProcessedTracks
     public IReadOnlySet<string> VerdictWithoutStems { get; }
 
     /// <summary>Where the stems for a video ID live. Empty when none are on disk.</summary>
-    public IReadOnlyList<StemOnDisk> StemsFor(string videoId) =>
-        StemsByVideoId.GetValueOrDefault(videoId) ?? [];
+    public IReadOnlyList<StemOnDisk> StemsFor(string trackKey) =>
+        StemsByTrackKey.GetValueOrDefault(trackKey) ?? [];
 
-    public bool IsFullyProcessed(string videoId) => FullyProcessed.Contains(videoId);
+    public bool IsFullyProcessed(string trackKey) => FullyProcessed.Contains(trackKey);
 
     /// <summary>
     /// When a file arrived, or null where the filesystem will not say — which Windows reports as
@@ -70,7 +71,7 @@ public sealed class ProcessedTracks
     /// </param>
     public static ProcessedTracks Scan(KeyLedger ledger, IEnumerable<string> stemRoots)
     {
-        var stemsByVideoId = new Dictionary<string, List<StemOnDisk>>(StringComparer.Ordinal);
+        var stemsByTrackKey = new Dictionary<string, List<StemOnDisk>>(StringComparer.Ordinal);
 
         foreach (var root in stemRoots.Where(Directory.Exists))
         {
@@ -81,11 +82,11 @@ public sealed class ProcessedTracks
                 if (!SampleFiles.IsAudio(file.Name))
                     continue;
 
-                if (StemTagReader.Read(file)?.Provenance is not { SourceVideoId: { } videoId } p)
+                if (StemTagReader.Read(file)?.Provenance is not { SourceTrackKey: { } trackKey } p)
                     continue;
 
-                if (!stemsByVideoId.TryGetValue(videoId, out var found))
-                    stemsByVideoId[videoId] = found = [];
+                if (!stemsByTrackKey.TryGetValue(trackKey, out var found))
+                    stemsByTrackKey[trackKey] = found = [];
 
                 found.Add(
                     new StemOnDisk
@@ -97,7 +98,7 @@ public sealed class ProcessedTracks
                         Label = p.Label,
                         IsAdopted = p.IsAdopted,
                         IsPremium = p.IsPremium,
-                        SourceVideoId = videoId,
+                        SourceTrackKey = trackKey,
                         CreatedAt = CreationTimeOf(file),
                     }
                 );
@@ -105,15 +106,15 @@ public sealed class ProcessedTracks
         }
 
         var withVerdict = ledger
-            .Runs.Select(run => run.SourceVideoId)
+            .Runs.Select(run => run.SourceTrackKey)
             .OfType<string>()
             .ToHashSet(StringComparer.Ordinal);
 
         return new ProcessedTracks(
-            stemsByVideoId,
-            withVerdict.Where(stemsByVideoId.ContainsKey).ToHashSet(StringComparer.Ordinal),
+            stemsByTrackKey,
+            withVerdict.Where(stemsByTrackKey.ContainsKey).ToHashSet(StringComparer.Ordinal),
             withVerdict
-                .Where(id => !stemsByVideoId.ContainsKey(id))
+                .Where(id => !stemsByTrackKey.ContainsKey(id))
                 .ToHashSet(StringComparer.Ordinal)
         );
     }
@@ -154,7 +155,8 @@ public sealed record StemOnDisk
     /// The upload this file was cut or downloaded from — what tells a separation source from an
     /// added one (ADR 0019).
     /// </summary>
-    public string? SourceVideoId { get; init; }
+    [JsonPropertyName("sourceVideoId")]
+    public string? SourceTrackKey { get; init; }
 
     /// <summary>
     /// When the file appeared in <see cref="Root"/>, which is when it arrived rather than when it
@@ -166,13 +168,13 @@ public sealed record StemOnDisk
     /// A staged file as the scanner would have found it, so one classifier answers for both
     /// readers.
     /// </summary>
-    public static StemOnDisk Of(StagedFile stem, string? sourceVideoId = null) =>
+    public static StemOnDisk Of(StagedFile stem, string? sourceTrackKey = null) =>
         new()
         {
             Path = stem.Path,
             Root = System.IO.Path.GetDirectoryName(stem.Path) ?? string.Empty,
             Preset = stem.Preset,
             IsPremium = stem.IsPremium,
-            SourceVideoId = sourceVideoId,
+            SourceTrackKey = sourceTrackKey,
         };
 }

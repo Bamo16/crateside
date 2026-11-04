@@ -567,9 +567,9 @@
     private int _openRequestsSeen;
     private DateTimeOffset? _reopenedAfter;
 
-    private BarRun? BarRun => Judging.Of(Row.VideoId);
+    private BarRun? BarRun => Judging.Of(Row.TrackKey);
 
-    private string EvidenceLink => $"song/{Uri.EscapeDataString(Row.VideoId)}#evidence";
+    private string EvidenceLink => $"song/{Uri.EscapeDataString(Row.TrackKey)}#evidence";
 
     private string EarHint =>
         Judge.Value.Ear is EarWeight.HumanSource
@@ -981,7 +981,7 @@
     private List<string> LanePaths()
     {
         var upload = Row
-            .Samples.GroupBy(sample => sample.SourceVideoId)
+            .Samples.GroupBy(sample => sample.SourceTrackKey)
             .OrderByDescending(cut => cut.Count())
             .Select(cut => cut.Key)
             .FirstOrDefault();
@@ -989,7 +989,7 @@
         return
         [
             .. Row
-                .Samples.Where(sample => sample.SourceVideoId == upload && sample.Path is { Length: > 0 })
+                .Samples.Where(sample => sample.SourceTrackKey == upload && sample.Path is { Length: > 0 })
                 .Select(sample => sample.Path),
         ];
     }

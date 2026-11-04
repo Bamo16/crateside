@@ -83,7 +83,7 @@ public sealed class StemLandingTests : IDisposable
     private static WorkOrder Order(StemDestination destination) =>
         new()
         {
-            VideoId = Video,
+            TrackKey = Video,
             Title = "High Contrast, Boy Matthews - Questions",
             SourceUrl = $"https://music.youtube.com/watch?v={Video}",
             Destination = destination,

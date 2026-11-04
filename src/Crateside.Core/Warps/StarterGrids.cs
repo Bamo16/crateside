@@ -13,5 +13,5 @@ public interface IStarterGrids
 public sealed class StarterGrids(BeatReader beats) : IStarterGrids
 {
     public StarterGrid? Of(SiblingFile cut) =>
-        StarterGrid.Of(beats.ReadFor(cut.SourceVideoId, cut.Path));
+        StarterGrid.Of(beats.ReadFor(cut.SourceTrackKey, cut.Path));
 }

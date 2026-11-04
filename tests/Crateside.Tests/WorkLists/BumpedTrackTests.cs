@@ -10,7 +10,7 @@ public sealed class BumpedTrackTests
     private const string Third = "ccccccccccc";
 
     [Fact]
-    public void Nothing_is_bumped_to_begin_with() => Assert.Null(new BumpedTrack().VideoId);
+    public void Nothing_is_bumped_to_begin_with() => Assert.Null(new BumpedTrack().TrackKey);
 
     [Fact]
     public void Bumping_another_track_replaces_the_first()
@@ -20,7 +20,7 @@ public sealed class BumpedTrackTests
         bumped.Bump(First);
         bumped.Bump(Second);
 
-        Assert.Equal(Second, bumped.VideoId);
+        Assert.Equal(Second, bumped.TrackKey);
     }
 
     [Fact]
@@ -31,7 +31,7 @@ public sealed class BumpedTrackTests
 
         bumped.Clear();
 
-        Assert.Null(bumped.VideoId);
+        Assert.Null(bumped.TrackKey);
     }
 
     [Fact]
@@ -86,14 +86,14 @@ public sealed class BumpedTrackTests
             bumped: bumped
         );
 
-    private static WorkItem Item(string videoId) =>
+    private static WorkItem Item(string trackKey) =>
         new()
         {
-            VideoId = videoId,
-            PlaylistItemId = $"PLI-{videoId}",
-            Title = videoId,
+            TrackKey = trackKey,
+            PlaylistItemId = $"PLI-{trackKey}",
+            Title = trackKey,
         };
 
     private static IReadOnlyList<string> Ids(IEnumerable<WorkItem> items) =>
-        [.. items.Select(item => item.VideoId)];
+        [.. items.Select(item => item.TrackKey)];
 }

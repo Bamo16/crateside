@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
 
@@ -12,7 +13,8 @@ public sealed record WorkItem
     /// </summary>
     public string? PlaylistItemId { get; init; }
 
-    public required string VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
 
     public required string Title { get; init; }
 
@@ -59,7 +61,7 @@ public sealed record WorkItem
     public StemInventory Inventory { get; init; } = StemInventory.Empty;
 
     /// <summary>
-    /// The upload to fetch instead of this entry's own video, or null; <see cref="VideoId"/> stays
+    /// The upload to fetch instead of this entry's own video, or null; <see cref="TrackKey"/> stays
     /// the join key.
     /// </summary>
     public string? StatedSourceUrl { get; init; }
@@ -76,7 +78,7 @@ public sealed record WorkItem
     /// <summary>Judged only in the weekly spend-down, unless the user asks for it first (ADR 0063).</summary>
     public bool IsBackfill { get; init; }
 
-    public string WatchUrl => $"https://www.youtube.com/watch?v={VideoId}";
+    public string WatchUrl => $"https://www.youtube.com/watch?v={TrackKey}";
 }
 
 /// <summary>The Queue as work: what is in the playlist, what is done, what is new.</summary>
@@ -120,7 +122,7 @@ public sealed record WorkListsView
         // second list of instruction fields, and the source-URL override was missing from it.
         WorkItem Described(WorkItem item)
         {
-            var instruction = instructions.GetValueOrDefault(item.VideoId);
+            var instruction = instructions.GetValueOrDefault(item.TrackKey);
 
             return item with
             {
@@ -130,7 +132,7 @@ public sealed record WorkListsView
                 AcceptedUpload = instruction?.AcceptedUpload,
                 CutRequestedAt = instruction?.CutRequestedAt,
                 IsBackfill = instruction?.Backfill is true,
-                Inventory = inventories?.GetValueOrDefault(item.VideoId) ?? StemInventory.Empty,
+                Inventory = inventories?.GetValueOrDefault(item.TrackKey) ?? StemInventory.Empty,
             };
         }
 
@@ -144,19 +146,19 @@ public sealed record WorkListsView
             // half is only its source owes a copy, which the download stage makes, and being
             // in this list would queue it for a GPU it never reaches (ADR 0019).
             .. described.Where(i =>
-                !separatedWithoutKey.Contains(i.VideoId)
+                !separatedWithoutKey.Contains(i.TrackKey)
                 && (
-                    verdictWithoutStems.Contains(i.VideoId)
-                    || awaitingPerson?.Contains(i.VideoId) is true
-                    || awaitingCut?.Contains(i.VideoId) is true
+                    verdictWithoutStems.Contains(i.TrackKey)
+                    || awaitingPerson?.Contains(i.TrackKey) is true
+                    || awaitingCut?.Contains(i.TrackKey) is true
                 )
                 && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory).Passes > 0
             ),
             // A kept source staged before its guide was cut owes only the guide (#55). Nothing
             // else re-enters this way: a missing stem is stated, never re-cut (ADR 0027).
             .. described.Where(i =>
-                fullyProcessed.Contains(i.VideoId)
-                && !separatedWithoutKey.Contains(i.VideoId)
+                fullyProcessed.Contains(i.TrackKey)
+                && !separatedWithoutKey.Contains(i.TrackKey)
                 && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory)
                     is { Presets.Count: 0, ExtractDrums: true }
             ),
@@ -167,8 +169,8 @@ public sealed record WorkListsView
             // No awaitingCut means the caller has not said which of them owe a cut, not that
             // none do, so they all still count.
             .. reopenedItems.Where(i =>
-                !separatedWithoutKey.Contains(i.VideoId)
-                && (awaitingCut is null || awaitingCut.Contains(i.VideoId))
+                !separatedWithoutKey.Contains(i.TrackKey)
+                && (awaitingCut is null || awaitingCut.Contains(i.TrackKey))
                 && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory).Passes > 0
             ),
         ];
@@ -176,19 +178,20 @@ public sealed record WorkListsView
         return new WorkListsView
         {
             Items = described,
-            FullyProcessed = [.. described.Where(i => fullyProcessed.Contains(i.VideoId))],
+            FullyProcessed = [.. described.Where(i => fullyProcessed.Contains(i.TrackKey))],
             // A drums-only cut in flight is in two of these at once: its source is staged, and it
             // still owes the cut.
             AwaitingSeparation =
             [
-                .. awaitingSeparation.DistinctBy(i => i.VideoId, StringComparer.Ordinal),
+                .. awaitingSeparation.DistinctBy(i => i.TrackKey, StringComparer.Ordinal),
             ],
             Reopened = reopenedItems,
-            AwaitingKey = [.. described.Where(i => separatedWithoutKey.Contains(i.VideoId))],
+            AwaitingKey = [.. described.Where(i => separatedWithoutKey.Contains(i.TrackKey))],
             Outstanding =
             [
                 .. described.Where(i =>
-                    !fullyProcessed.Contains(i.VideoId) && !verdictWithoutStems.Contains(i.VideoId)
+                    !fullyProcessed.Contains(i.TrackKey)
+                    && !verdictWithoutStems.Contains(i.TrackKey)
                 ),
             ],
         }.WithBumpedFirst(bumped);
@@ -199,17 +202,17 @@ public sealed record WorkListsView
     /// it was (ADR 0015).
     /// </summary>
     private WorkListsView WithBumpedFirst(string? bumped) =>
-        bumped is not { Length: > 0 } videoId
+        bumped is not { Length: > 0 } trackKey
             ? this
             : this with
             {
-                Bumped = videoId,
-                Outstanding = First(Outstanding, videoId),
-                AwaitingSeparation = First(AwaitingSeparation, videoId),
+                Bumped = trackKey,
+                Outstanding = First(Outstanding, trackKey),
+                AwaitingSeparation = First(AwaitingSeparation, trackKey),
             };
 
-    private static IReadOnlyList<WorkItem> First(IReadOnlyList<WorkItem> items, string videoId) =>
-        items.FirstOrDefault(i => i.VideoId.Equals(videoId, StringComparison.Ordinal))
+    private static IReadOnlyList<WorkItem> First(IReadOnlyList<WorkItem> items, string trackKey) =>
+        items.FirstOrDefault(i => i.TrackKey.Equals(trackKey, StringComparison.Ordinal))
             is not { } bumped
             ? items
             : [bumped, .. items.Where(i => !ReferenceEquals(i, bumped))];
@@ -268,7 +271,7 @@ public sealed record WorkListsView
             .Concat(AwaitingSeparation)
             .Concat(Reopened)
             .Concat(AwaitingKey)
-            .DistinctBy(item => item.VideoId, StringComparer.Ordinal);
+            .DistinctBy(item => item.TrackKey, StringComparer.Ordinal);
 
     /// <summary>
     /// Separated already, and parked for want of a key worth tagging with. Nothing automatic moves

@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.WorkLists;
@@ -27,23 +28,23 @@ public sealed class SourceBackfill(
             [paths.StagingFolder, paths.LibraryFolder]
         );
         var held = workingSet
-            .VideoIds.Where(videoId => workingSet.TryGetSource(videoId, out _))
+            .TrackKeys.Where(trackKey => workingSet.TryGetSource(trackKey, out _))
             .ToHashSet(StringComparer.Ordinal);
 
         return
         [
             .. processed
-                .StemsByVideoId.Keys.Where(videoId =>
-                    !held.Contains(videoId)
+                .StemsByTrackKey.Keys.Where(trackKey =>
+                    !held.Contains(trackKey)
                     && processed
-                        .StemsFor(videoId)
+                        .StemsFor(trackKey)
                         .Any(stem =>
                             stem.Root.Equals(
                                 paths.LibraryFolder,
                                 StringComparison.OrdinalIgnoreCase
                             )
                         )
-                    && !processed.StemsFor(videoId).Any(stem => stem.IsVerbatimSource)
+                    && !processed.StemsFor(trackKey).Any(stem => stem.IsVerbatimSource)
                 )
                 .Order(StringComparer.Ordinal),
         ];
@@ -51,34 +52,34 @@ public sealed class SourceBackfill(
 
     /// <summary>Downloads each in turn, stopping when canceled; <paramref name="onEach"/> hears every result.</summary>
     public async Task<IReadOnlyList<BackfillResult>> RunAsync(
-        IReadOnlyList<string> videoIds,
+        IReadOnlyList<string> trackKeys,
         Action<BackfillResult>? onEach = null,
         CancellationToken ct = default
     )
     {
         List<BackfillResult> results = [];
 
-        foreach (var videoId in videoIds)
+        foreach (var trackKey in trackKeys)
         {
             if (ct.IsCancellationRequested)
                 break;
 
             // First, so the janitor reads the folder as joined to the store and not as a judging run's.
-            workingSet.Prepare(videoId);
-            workingSet.RecordLeftStaging(videoId, time.GetUtcNow());
+            workingSet.Prepare(trackKey);
+            workingSet.RecordLeftStaging(trackKey, time.GetUtcNow());
 
             var download = await downloads.RunAsync(
-                $"https://www.youtube.com/watch?v={videoId}",
-                workingSet.Prepare(videoId),
+                $"https://www.youtube.com/watch?v={trackKey}",
+                workingSet.Prepare(trackKey),
                 ct: ct
             );
 
             if (download is { IsSuccess: true, Acquisition: { } acquisition })
-                workingSet.SaveAcquisition(videoId, acquisition);
+                workingSet.SaveAcquisition(trackKey, acquisition);
             else
-                workingSet.Discard(videoId);
+                workingSet.Discard(trackKey);
 
-            var result = new BackfillResult(videoId, download.Error);
+            var result = new BackfillResult(trackKey, download.Error);
 
             results.Add(result);
             onEach?.Invoke(result);
@@ -89,4 +90,7 @@ public sealed class SourceBackfill(
 }
 
 /// <param name="Error">Null when the source was downloaded.</param>
-public sealed record BackfillResult(string VideoId, string? Error);
+public sealed record BackfillResult(
+    [property: JsonPropertyName("videoId")] string TrackKey,
+    string? Error
+);

@@ -35,35 +35,35 @@ public sealed class VerdictRunnerRealDataTests
             NullLogger<VerdictRunner>.Instance
         );
 
-    private static WorkOrder Order(string videoId) =>
+    private static WorkOrder Order(string trackKey) =>
         WorkOrder.Compose(
             new WorkItem
             {
-                PlaylistItemId = $"PLI-{videoId}",
-                VideoId = videoId,
-                Title = videoId,
+                PlaylistItemId = $"PLI-{trackKey}",
+                TrackKey = trackKey,
+                Title = trackKey,
             },
             TestLedger.From("does-not-exist")
         );
 
-    private static List<string> Detected => [.. Set.VideoIds.Where(Set.HasEvidence)];
+    private static List<string> Detected => [.. Set.TrackKeys.Where(Set.HasEvidence)];
 
     [Fact]
     public void Real_evidence_is_small_enough_to_carry()
     {
         Assert.SkipWhen(Detected.Count is 0, "no working sets on this machine");
 
-        foreach (var videoId in Detected)
+        foreach (var trackKey in Detected)
         {
             Assert.True(
-                Set.TryReadEvidence(videoId, out var evidence),
-                $"{videoId} produced evidence too large to inline"
+                Set.TryReadEvidence(trackKey, out var evidence),
+                $"{trackKey} produced evidence too large to inline"
             );
 
             // Roughly four characters to the token; the order of magnitude is what matters.
             Assert.True(
                 evidence.Length / 4 < RoundTripTokens,
-                $"{videoId} evidence is ~{evidence.Length / 4} tokens a turn"
+                $"{trackKey} evidence is ~{evidence.Length / 4} tokens a turn"
             );
         }
     }
@@ -73,9 +73,9 @@ public sealed class VerdictRunnerRealDataTests
     {
         Assert.SkipWhen(Detected.Count is 0, "no working sets on this machine");
 
-        foreach (var videoId in Detected)
+        foreach (var trackKey in Detected)
         {
-            var prompt = Runner.Prompt(Order(videoId), VerdictRunner.VerdictFileName, []);
+            var prompt = Runner.Prompt(Order(trackKey), VerdictRunner.VerdictFileName, []);
 
             Assert.Contains("\"algorithms\"", prompt);
             Assert.Contains("```json", prompt);

@@ -74,7 +74,7 @@ public sealed class TracksViewCompositionTests : IDisposable
     private static StagedSong Staged(params StagedFile[] stems) =>
         new()
         {
-            SourceVideoId = Video,
+            SourceTrackKey = Video,
             DisplayName = "Rob Dougan - Furious Angels",
             Stems = stems,
         };
@@ -113,11 +113,11 @@ public sealed class TracksViewCompositionTests : IDisposable
             CreatedAt = created,
         };
 
-    private static WorkItem Item(string videoId = Video) =>
+    private static WorkItem Item(string trackKey = Video) =>
         new()
         {
-            PlaylistItemId = $"PLI-{videoId}",
-            VideoId = videoId,
+            PlaylistItemId = $"PLI-{trackKey}",
+            TrackKey = trackKey,
             Title = "Rob Dougan - Furious Angels",
         };
 
@@ -132,7 +132,7 @@ public sealed class TracksViewCompositionTests : IDisposable
             new HashSet<string>(),
             verdictWithoutStems ?? new HashSet<string>(),
             separatedWithoutKey ?? new HashSet<string>(),
-            instructions.ToDictionary(t => t.VideoId, StringComparer.Ordinal)
+            instructions.ToDictionary(t => t.TrackKey, StringComparer.Ordinal)
         );
 
     private IReadOnlyList<TrackRow> Compose(
@@ -152,7 +152,7 @@ public sealed class TracksViewCompositionTests : IDisposable
                 onDisk ?? new Dictionary<string, IReadOnlyList<StemOnDisk>>(),
                 FinishedRoot,
                 jobs ?? Jobs(),
-                instructions.ToDictionary(t => t.VideoId, StringComparer.Ordinal),
+                instructions.ToDictionary(t => t.TrackKey, StringComparer.Ordinal),
                 new TrackAnnotations
                 {
                     Acquisitions = acquisitions ?? TrackAnnotations.None.Acquisitions,
@@ -265,7 +265,7 @@ public sealed class TracksViewCompositionTests : IDisposable
                             new Deletion
                             {
                                 At = DateTimeOffset.Parse("2026-09-24T12:00:00+00:00"),
-                                VideoId = Old,
+                                TrackKey = Old,
                                 FileName = "Rob Dougan - Furious Angels (Vocal - Full).flac",
                                 Reason = "superseded by a source swap",
                             },
@@ -286,7 +286,7 @@ public sealed class TracksViewCompositionTests : IDisposable
     {
         var row = Assert.Single(Compose());
 
-        Assert.Equal(Video, row.VideoId);
+        Assert.Equal(Video, row.TrackKey);
         Assert.Equal("Rob Dougan - Furious Angels", row.Title);
         Assert.Equal(TrackState.Queued, row.State);
     }
@@ -501,7 +501,7 @@ public sealed class TracksViewCompositionTests : IDisposable
             Compose(view: View([]), staging: [Staged(Stem("Vocal - Full", tagged: true))])
         );
 
-        Assert.Equal(Video, row.VideoId);
+        Assert.Equal(Video, row.TrackKey);
         Assert.Equal(TrackState.ReadyToWarp, row.State);
 
         Assert.Null(row.PlaylistItemId);
@@ -512,7 +512,7 @@ public sealed class TracksViewCompositionTests : IDisposable
     {
         var rows = Compose(staging: [Staged(Stem("Vocal - Full", tagged: true))]);
 
-        Assert.Equal(Video, Assert.Single(rows).VideoId);
+        Assert.Equal(Video, Assert.Single(rows).TrackKey);
         Assert.Equal($"PLI-{Video}", rows[0].PlaylistItemId);
     }
 
@@ -572,7 +572,7 @@ public sealed class TracksViewCompositionTests : IDisposable
                 staging: [Staged(Stem("Drums"))],
                 instructions: new TrackInstruction
                 {
-                    VideoId = Video,
+                    TrackKey = Video,
                     Plan = StemPlan.InstrumentalRelease,
                 }
             )
@@ -803,7 +803,7 @@ public sealed class TracksViewCompositionTests : IDisposable
         var row = Assert.Single(
             Compose(
                 ledger: LedgerWith("C minor", "HIGH", 120),
-                instructions: new TrackInstruction { VideoId = Video, Name = "Better Name" }
+                instructions: new TrackInstruction { TrackKey = Video, Name = "Better Name" }
             )
         );
 
@@ -830,7 +830,7 @@ public sealed class TracksViewCompositionTests : IDisposable
             Compose(
                 View([]),
                 staging: [Staged(Stem("Vocal - Full"), Stem("Drums"))],
-                instructions: new TrackInstruction { VideoId = Video, Name = "track" }
+                instructions: new TrackInstruction { TrackKey = Video, Name = "track" }
             )
         );
 
@@ -842,7 +842,7 @@ public sealed class TracksViewCompositionTests : IDisposable
             Compose(
                 View([]),
                 staging: [Staged(Stem("Vocal - Full"), Stem("Drums"))],
-                instructions: new TrackInstruction { VideoId = Video, Name = "Something Else" }
+                instructions: new TrackInstruction { TrackKey = Video, Name = "Something Else" }
             )
         );
 

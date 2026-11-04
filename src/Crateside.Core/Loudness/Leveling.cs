@@ -60,8 +60,8 @@ public sealed class Leveling(
             {
                 leveled.Add(path);
 
-                if (StemTagReader.Read(path)?.SourceVideoId is { } videoId)
-                    notes?.Record(videoId, "Loudness", ClipGainSummary.Of(path, gain, target));
+                if (StemTagReader.Read(path)?.SourceTrackKey is { } trackKey)
+                    notes?.Record(trackKey, "Loudness", ClipGainSummary.Of(path, gain, target));
             }
 
             // A sidecar that could not be written is locked by Live, whose write changes its stamp.

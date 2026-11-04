@@ -47,7 +47,7 @@ public sealed class RemovalFailureTests : IDisposable
 
         var left = Assert.Single(Store().Read(), record => record.RemovalFailure is not null);
 
-        Assert.Equal(Track, left.VideoId);
+        Assert.Equal(Track, left.TrackKey);
         Assert.False(left.RemovalFailure!.CanSucceedLater);
     }
 
@@ -128,10 +128,10 @@ public sealed class RemovalFailureTests : IDisposable
 
     private IntakeStore Store() => new(Path.Combine(_directory, "intake.json"));
 
-    private static WorkItem Item(string videoId) =>
+    private static WorkItem Item(string trackKey) =>
         new()
         {
-            VideoId = videoId,
+            TrackKey = trackKey,
             Title = "Light Years Away",
             AddedAt = DateTimeOffset.Parse("2026-09-17T18:40:00+00:00"),
         };

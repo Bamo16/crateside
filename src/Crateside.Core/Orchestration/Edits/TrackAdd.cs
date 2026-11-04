@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Download;
@@ -26,9 +27,9 @@ public sealed class TrackAdd(
         KeyLedger ledger
     )
     {
-        YouTubeUrl.TryGetVideoId(url, out var videoId);
+        YouTubeUrl.TryGetVideoId(url, out var trackKey);
 
-        return videoId switch
+        return trackKey switch
         {
             null => new AddTrackPlan
             {
@@ -37,31 +38,31 @@ public sealed class TrackAdd(
             // A library-only row means the files are here and nothing ever judged them, which is
             // the one case where adding an upload crateside "has" is the point rather than a
             // duplicate. Separation skips it: the inventory already satisfies the plan.
-            _ when Holder(known, videoId) is { IsLibraryOnly: true, HasVerdict: false } holder
-                    && !IsAddedSource(holder, videoId) => new AddTrackPlan
+            _ when Holder(known, trackKey) is { IsLibraryOnly: true, HasVerdict: false } holder
+                    && !IsAddedSource(holder, trackKey) => new AddTrackPlan
             {
-                VideoId = videoId,
-                Song = ledger.SongFor(videoId),
+                TrackKey = trackKey,
+                Song = ledger.SongFor(trackKey),
                 JudgesWhatIsHere = true,
             },
-            _ when Holder(known, videoId) is not null => new AddTrackPlan
+            _ when Holder(known, trackKey) is not null => new AddTrackPlan
             {
                 Refusal = "crateside already has that upload.",
             },
-            _ => new AddTrackPlan { VideoId = videoId, Song = ledger.SongFor(videoId) },
+            _ => new AddTrackPlan { TrackKey = trackKey, Song = ledger.SongFor(trackKey) },
         };
     }
 
-    private static TrackRowFacts? Holder(IReadOnlyList<TrackRowFacts> known, string videoId) =>
-        known.FirstOrDefault(track => track.Uploads.Contains(videoId, StringComparer.Ordinal));
+    private static TrackRowFacts? Holder(IReadOnlyList<TrackRowFacts> known, string trackKey) =>
+        known.FirstOrDefault(track => track.Uploads.Contains(trackKey, StringComparer.Ordinal));
 
     /// <summary>
     /// Whether this upload is one the row merely carries, and so must never be judged as a track
     /// of its own (ADR 0019).
     /// </summary>
-    private static bool IsAddedSource(TrackRowFacts holder, string videoId) =>
+    private static bool IsAddedSource(TrackRowFacts holder, string trackKey) =>
         holder.Plan.AddedSources.Any(source =>
-            source.VideoId.Equals(videoId, StringComparison.Ordinal)
+            source.TrackKey.Equals(trackKey, StringComparison.Ordinal)
         );
 
     /// <summary>
@@ -72,15 +73,15 @@ public sealed class TrackAdd(
     {
         var unjudged = known
             .Where(track => track is { IsLibraryOnly: true, HasVerdict: false, HasUpload: true })
-            .Select(track => track.VideoId)
+            .Select(track => track.TrackKey)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
 
-        foreach (var videoId in unjudged)
+        foreach (var trackKey in unjudged)
         {
-            instructions.AddByUrl(videoId);
-            instructions.AcceptUpload(videoId, videoId);
-            instructions.MarkBackfill(videoId);
+            instructions.AddByUrl(trackKey);
+            instructions.AcceptUpload(trackKey, trackKey);
+            instructions.MarkBackfill(trackKey);
         }
 
         return unjudged.Length;
@@ -102,7 +103,10 @@ public sealed class TrackAdd(
         if (plan.Refusal is { } refusal)
             return new AddTrackOutcome { Problem = refusal };
 
-        var probed = await probe.ReadAsync($"https://music.youtube.com/watch?v={plan.VideoId}", ct);
+        var probed = await probe.ReadAsync(
+            $"https://music.youtube.com/watch?v={plan.TrackKey}",
+            ct
+        );
 
         if (!probed.IsReadable)
             return new AddTrackOutcome { Problem = probed.Problem };
@@ -110,13 +114,13 @@ public sealed class TrackAdd(
         if (probed.FallsShort && !anyway)
             return new AddTrackOutcome { Shortfall = probed };
 
-        instructions.AddByUrl(plan.VideoId!);
+        instructions.AddByUrl(plan.TrackKey!);
 
         // The probe already resolved the name, so keeping it is what stops a pasted row reading
         // as its own video ID until the name worker gets round to asking the same question.
         if (probed is { Title: { Length: > 0 } title })
             names.Save(
-                plan.VideoId!,
+                plan.TrackKey!,
                 new ResolvedName
                 {
                     DisplayTitle = title,
@@ -124,14 +128,15 @@ public sealed class TrackAdd(
                 }
             );
 
-        return new AddTrackOutcome { VideoId = plan.VideoId, Title = probed.Title };
+        return new AddTrackOutcome { TrackKey = plan.TrackKey, Title = probed.Title };
     }
 }
 
 /// <summary>What adding a track would do. Read before it happens, to say so on screen.</summary>
 public sealed record AddTrackPlan
 {
-    public string? VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public string? TrackKey { get; init; }
 
     /// <summary>What the ledger already calls this video, when it has seen it.</summary>
     public string? Song { get; init; }
@@ -143,13 +148,14 @@ public sealed record AddTrackPlan
     /// </summary>
     public bool JudgesWhatIsHere { get; init; }
 
-    public bool IsPossible => Refusal is null && VideoId is not null;
+    public bool IsPossible => Refusal is null && TrackKey is not null;
 }
 
 /// <summary>What adding a track actually did.</summary>
 public sealed record AddTrackOutcome
 {
-    public string? VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public string? TrackKey { get; init; }
 
     public string? Title { get; init; }
 

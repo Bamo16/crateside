@@ -82,7 +82,7 @@
                         <span class="stack-label">@(uploads.Count is 1 ? "Upload" : "Uploads")</span>
                         @foreach (var (id, role) in uploads)
                         {
-                            <UploadCard @key="id" VideoId="@id" Role="@role" />
+                            <UploadCard @key="id" TrackKey="@id" Role="@role" />
                         }
                     </div>
                 }
@@ -143,10 +143,10 @@
     // Track details moves to another track without remounting, and an open box would follow it.
     protected override void OnParametersSet()
     {
-        if (_editingFor != Row.VideoId)
+        if (_editingFor != Row.TrackKey)
             _editing.Close();
 
-        _editingFor = Row.VideoId;
+        _editingFor = Row.TrackKey;
     }
 
     public void Dispose()

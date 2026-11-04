@@ -61,8 +61,8 @@ public sealed class SwappedSourceTests : IDisposable
         var samples = Compose().Single().Samples;
 
         Assert.Equal(4, samples.Count);
-        Assert.Equal(2, samples.Count(s => s.SourceVideoId == Replacement));
-        Assert.Equal(2, samples.Count(s => s.SourceVideoId == Original));
+        Assert.Equal(2, samples.Count(s => s.SourceTrackKey == Replacement));
+        Assert.Equal(2, samples.Count(s => s.SourceTrackKey == Original));
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class SwappedSourceTests : IDisposable
 
     [Fact]
     public void Every_sample_says_which_upload_it_came_from() =>
-        Assert.All(Compose().Single().Samples, sample => Assert.NotNull(sample.SourceVideoId));
+        Assert.All(Compose().Single().Samples, sample => Assert.NotNull(sample.SourceTrackKey));
 
     [Fact]
     public void The_old_uploads_samples_are_the_ones_already_in_the_library()
@@ -79,11 +79,11 @@ public sealed class SwappedSourceTests : IDisposable
         var samples = Compose().Single().Samples;
 
         Assert.All(
-            samples.Where(s => s.SourceVideoId == Original),
+            samples.Where(s => s.SourceTrackKey == Original),
             sample => Assert.True(sample.IsInLibrary)
         );
         Assert.All(
-            samples.Where(s => s.SourceVideoId == Replacement),
+            samples.Where(s => s.SourceTrackKey == Replacement),
             sample => Assert.False(sample.IsInLibrary)
         );
     }
@@ -157,7 +157,7 @@ public sealed class SwappedSourceTests : IDisposable
     private static StagedSong Staged() =>
         new()
         {
-            SourceVideoId = Replacement,
+            SourceTrackKey = Replacement,
             DisplayName = "Ludacris, Pharrell - Southern Hospitality",
             Stems =
             [
@@ -200,11 +200,11 @@ public sealed class SwappedSourceTests : IDisposable
             Preset = preset,
         };
 
-    private static TrackJob Job(string videoId, JobStage stage, JobStatus status, string at) =>
+    private static TrackJob Job(string trackKey, JobStage stage, JobStatus status, string at) =>
         new()
         {
-            Id = $"{videoId}:{stage}",
-            VideoId = videoId,
+            Id = $"{trackKey}:{stage}",
+            TrackKey = trackKey,
             Stage = stage,
             Status = status,
             UpdatedAt = DateTimeOffset.Parse($"2026-09-10T{at}+00:00"),
@@ -226,7 +226,7 @@ public sealed class SwappedSourceTests : IDisposable
         return TestLedger.From(path);
     }
 
-    private static string Line(string timestamp, string videoId, string? restates) =>
+    private static string Line(string timestamp, string trackKey, string? restates) =>
         JsonSerializer.Serialize(
             new
             {
@@ -234,7 +234,7 @@ public sealed class SwappedSourceTests : IDisposable
                 song = Song,
                 artist = "Ludacris, Pharrell",
                 title = "Southern Hospitality",
-                source_url = $"https://music.youtube.com/watch?v={videoId}",
+                source_url = $"https://music.youtube.com/watch?v={trackKey}",
                 verdict = new { key = "B major", confidence = "MEDIUM" },
                 bpm = new { value = 95.0 },
                 restates,

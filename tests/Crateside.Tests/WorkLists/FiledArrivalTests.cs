@@ -42,7 +42,7 @@ public sealed class FiledArrivalTests : IDisposable
 
         var arrivals = store.Arrive([Item(Filed, "entry-1"), Item(NewSong, "entry-2")]);
 
-        Assert.Equal([NewSong], arrivals.Select(item => item.VideoId));
+        Assert.Equal([NewSong], arrivals.Select(item => item.TrackKey));
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public sealed class FiledArrivalTests : IDisposable
 
         var arrivals = store.Arrive([Item(Filed, "entry-9")]);
 
-        Assert.Equal([Filed], arrivals.Select(item => item.VideoId));
+        Assert.Equal([Filed], arrivals.Select(item => item.TrackKey));
         Assert.Null(Assert.Single(Store().Read()).RemovalAttemptedAt);
     }
 
@@ -158,23 +158,23 @@ public sealed class FiledArrivalTests : IDisposable
         return TestLedger.From(path);
     }
 
-    private static void Stem(string root, string name, string videoId)
+    private static void Stem(string root, string name, string trackKey)
     {
         var path = Path.Combine(root, name);
         File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), path);
 
         using var file = TagLib.File.Create(path);
         file.Tag.Comment =
-            $"stemforge/0.4.0.0 | preset: Vocal - Full | source: https://www.youtube.com/watch?v={videoId}";
+            $"stemforge/0.4.0.0 | preset: Vocal - Full | source: https://www.youtube.com/watch?v={trackKey}";
         file.Save();
     }
 
     private IntakeStore Store() => new(Path.Combine(_directory, "intake.json"));
 
-    private static WorkItem Item(string videoId, string entry, string title = "Some Song") =>
+    private static WorkItem Item(string trackKey, string entry, string title = "Some Song") =>
         new()
         {
-            VideoId = videoId,
+            TrackKey = trackKey,
             Title = title,
             PlaylistItemId = entry,
         };

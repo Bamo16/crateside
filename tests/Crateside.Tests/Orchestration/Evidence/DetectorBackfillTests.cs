@@ -10,7 +10,7 @@ namespace Crateside.Tests.Orchestration.Evidence;
 
 public sealed class DetectorBackfillTests : IDisposable
 {
-    private const string VideoId = "NSLYAT7sjAA";
+    private const string TrackKey = "NSLYAT7sjAA";
     private const string Song = "rob dougan - furious angels";
 
     private const string Before =
@@ -51,7 +51,7 @@ public sealed class DetectorBackfillTests : IDisposable
     {
         WorkingSet set = new(Path.Combine(_root, "working"));
 
-        File.WriteAllText(Path.Combine(set.Prepare(VideoId), "source.flac"), "audio");
+        File.WriteAllText(Path.Combine(set.Prepare(TrackKey), "source.flac"), "audio");
 
         return new(
             _store,
@@ -69,7 +69,7 @@ public sealed class DetectorBackfillTests : IDisposable
                 {
                     RecordedAt = DateTimeOffset.Parse("2026-10-01T00:00:00+00:00"),
                     Song = Song,
-                    SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
+                    SourceUrl = $"https://music.youtube.com/watch?v={TrackKey}",
                     Confidence = KeyConfidence.High,
                     Center = new TonalCenter("A", DiatonicMode.Aeolian),
                     Evidence = evidence,
@@ -223,7 +223,7 @@ public sealed class DetectorBackfillTests : IDisposable
             TestContext.Current.CancellationToken
         );
         File.SetLastWriteTimeUtc(
-            Path.Combine(_root, "working", VideoId, "source.flac"),
+            Path.Combine(_root, "working", TrackKey, "source.flac"),
             DateTime.UtcNow.AddHours(1)
         );
 
@@ -366,7 +366,7 @@ public sealed class DetectorBackfillTests : IDisposable
             {
                 RecordedAt = DateTimeOffset.Parse("2026-10-24T23:00:00-05:00"),
                 Song = Song,
-                SourceUrl = $"https://music.youtube.com/watch?v={VideoId}",
+                SourceUrl = $"https://music.youtube.com/watch?v={TrackKey}",
                 Confidence = KeyConfidence.High,
                 Center = new TonalCenter("A", DiatonicMode.Aeolian),
                 Evidence = ReadBy("new"),

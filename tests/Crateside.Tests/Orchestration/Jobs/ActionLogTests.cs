@@ -33,7 +33,7 @@ public sealed class ActionLogTests : IDisposable
         );
 
         var action = Assert.Single(new ActionLog(LogPath).All());
-        Assert.Equal("aaaaaaaaaaa", action.VideoId);
+        Assert.Equal("aaaaaaaaaaa", action.TrackKey);
         Assert.Equal(UserActionKind.Recut, action.Kind);
         Assert.Equal("Cut 2 more files", action.Detail);
         Assert.Equal(JobStage.Separation, action.PassFrom);

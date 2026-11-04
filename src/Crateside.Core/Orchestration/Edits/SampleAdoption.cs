@@ -52,11 +52,13 @@ public sealed class SampleAdoption(
         if (plan is not { Label: { } label })
             return plan.Refusal;
 
-        if (!StemAdoption.TryAdopt(path!, track.VideoId, label, type!.Value, time, out var problem))
+        if (
+            !StemAdoption.TryAdopt(path!, track.TrackKey, label, type!.Value, time, out var problem)
+        )
             return problem;
 
         instructions.SetPlan(
-            track.VideoId,
+            track.TrackKey,
             track.Plan.Keeping(new AdoptedSample { Label = label })
         );
 

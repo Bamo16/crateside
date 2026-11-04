@@ -164,7 +164,7 @@ internal sealed class DemoLibrary
         intake.Record([
             .. DemoCast.All.Select(track => new WorkItem
             {
-                VideoId = track.VideoId,
+                TrackKey = track.VideoId,
                 Title = track.Title,
                 ChannelTitle = $"{track.Artist} - Topic",
                 AddedAt = StartOf(track),

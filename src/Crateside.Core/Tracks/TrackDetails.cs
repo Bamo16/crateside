@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
 
@@ -6,7 +7,8 @@ namespace Crateside.Core.Tracks;
 /// <summary>Everything crateside knows about one track, gathered from the stores the pages read (#167).</summary>
 public sealed record TrackDetails
 {
-    public required string VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
 
     /// <summary>The track's row, as the Tracks page and Track details draw it; null when crateside has no row for it.</summary>
     public TrackRow? Row { get; init; }
@@ -41,39 +43,39 @@ public sealed class TrackDetailsReader(
 )
 {
     /// <summary>The row from the rows as last built, and the evidence of its song, else of the video ID's.</summary>
-    public TrackPage Find(string videoId)
+    public TrackPage Find(string trackKey)
     {
         var row = tracks.Current?.Rows.FirstOrDefault(row =>
-            row.VideoId.Equals(videoId, StringComparison.Ordinal)
+            row.TrackKey.Equals(trackKey, StringComparison.Ordinal)
         );
 
         return new(
             row,
             row is { Verdict.Song: var song }
                 ? ledger.EvidenceFor(song)
-                : ledger.EvidenceForVideoId(videoId)
+                : ledger.EvidenceForTrackKey(trackKey)
         );
     }
 
     /// <summary>Everything about the track, or null when crateside has neither a row nor a verdict for it.</summary>
-    public TrackDetails? Read(string videoId)
+    public TrackDetails? Read(string trackKey)
     {
-        var (row, evidence) = Find(videoId);
+        var (row, evidence) = Find(trackKey);
 
         if (row is null && evidence is null)
             return null;
 
         var uploads = new HashSet<string>(
-            [videoId, .. row?.Facts.Uploads ?? []],
+            [trackKey, .. row?.Facts.Uploads ?? []],
             StringComparer.Ordinal
         );
 
         return new()
         {
-            VideoId = videoId,
+            TrackKey = trackKey,
             Row = row,
             Evidence = evidence,
-            Jobs = [.. jobs.Updates().Where(update => uploads.Contains(update.VideoId))],
+            Jobs = [.. jobs.Updates().Where(update => uploads.Contains(update.TrackKey))],
             StageNotes = stageNotes.For(uploads),
             Stems = [.. (row?.Samples ?? []).Select(stems.Read)],
             Records = records.Read([

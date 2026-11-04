@@ -86,7 +86,7 @@ public sealed class PastedTrackTests : IDisposable
 
         store.SetPlan(
             Pasted,
-            StemPlan.Default.Adding(new AddedSource { VideoId = "bbbbbbbbbbb", Label = "Live" })
+            StemPlan.Default.Adding(new AddedSource { TrackKey = "bbbbbbbbbbb", Label = "Live" })
         );
 
         var json = File.ReadAllText(Path.Combine(_directory, "queue.json"));

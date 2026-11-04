@@ -90,8 +90,8 @@ public sealed class HandoffSidecars(
             await beats.RefreshBuildAsync(ct);
 
         var reading =
-            beats.ReadFor(stem.SourceVideoId, stem.Path)
-            ?? await beats.MeasureAsync(beats.ReferenceFor(stem.SourceVideoId, stem.Path), ct);
+            beats.ReadFor(stem.SourceTrackKey, stem.Path)
+            ?? await beats.MeasureAsync(beats.ReferenceFor(stem.SourceTrackKey, stem.Path), ct);
 
         return StarterGrid.Of(reading);
     }

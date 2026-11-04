@@ -20,39 +20,40 @@ public sealed class SourceIndex(WorkingSet workingSet, CratesidePaths paths) : I
     internal SourceIndex(WorkingSet workingSet, string path)
         : this(workingSet, new CratesidePaths { SourceIndexFile = path }) { }
 
-    public string? PathOf(string videoId) =>
-        workingSet.TryGetSource(videoId, out var held) ? held
-        : (_known ??= KnownFromFile()).GetValueOrDefault(videoId) is { } known && File.Exists(known)
+    public string? PathOf(string trackKey) =>
+        workingSet.TryGetSource(trackKey, out var held) ? held
+        : (_known ??= KnownFromFile()).GetValueOrDefault(trackKey) is { } known
+        && File.Exists(known)
             ? known
         : null;
 
     /// <summary>The full mix an order is judged from: the row's upload, else the one the order states.</summary>
     public string? PathFor(WorkOrder order) =>
-        PathOf(order.VideoId)
-        ?? (YouTubeUrl.TryGetVideoId(order.SourceUrl, out var stated) ? PathOf(stated) : null);
+        PathOf(order.TrackKey)
+        ?? (TrackKeys.TryParse(order.SourceUrl, out var stated) ? PathOf(stated) : null);
 
     /// <summary>Every source on disk: the working set's downloads first, then the samples kept.</summary>
     public IReadOnlyList<SourceEntry> Entries(ProcessedTracks processed, KeyLedger ledger) =>
         [
             .. workingSet
-                .VideoIds.Where(videoId => workingSet.TryGetSource(videoId, out _))
-                .Select(videoId =>
+                .TrackKeys.Where(trackKey => workingSet.TryGetSource(trackKey, out _))
+                .Select(trackKey =>
                 {
-                    workingSet.TryGetSource(videoId, out var held);
+                    workingSet.TryGetSource(trackKey, out var held);
 
                     return new SourceEntry(
-                        videoId,
-                        ledger.SongFor(videoId) ?? Path.GetFileNameWithoutExtension(held),
+                        trackKey,
+                        ledger.SongFor(trackKey) ?? Path.GetFileNameWithoutExtension(held),
                         SourceLocation.WorkingSet,
                         held
                     );
                 }),
             .. processed
-                .StemsByVideoId.SelectMany(found => found.Value)
-                .Where(stem => stem is { IsVerbatimSource: true, SourceVideoId: not null })
+                .StemsByTrackKey.SelectMany(found => found.Value)
+                .Where(stem => stem is { IsVerbatimSource: true, SourceTrackKey: not null })
                 .Select(stem => new SourceEntry(
-                    stem.SourceVideoId!,
-                    ledger.SongFor(stem.SourceVideoId!)
+                    stem.SourceTrackKey!,
+                    ledger.SongFor(stem.SourceTrackKey!)
                         ?? Path.GetFileNameWithoutExtension(stem.Path),
                     SourceLocation.KeptSample,
                     stem.Path
@@ -64,10 +65,10 @@ public sealed class SourceIndex(WorkingSet workingSet, CratesidePaths paths) : I
     {
         var entries = Entries(processed, ledger);
 
-        _known = ByVideoId(entries);
+        _known = ByTrackKey(entries);
 
         var json = JsonSerializer.Serialize(
-            [.. entries.OrderBy(entry => entry.Song).ThenBy(entry => entry.VideoId)],
+            [.. entries.OrderBy(entry => entry.Song).ThenBy(entry => entry.TrackKey)],
             SourceIndexJsonContext.Default.ListSourceEntry
         );
 
@@ -87,14 +88,14 @@ public sealed class SourceIndex(WorkingSet workingSet, CratesidePaths paths) : I
         }
     }
 
-    private static Dictionary<string, string> ByVideoId(IEnumerable<SourceEntry> entries) =>
+    private static Dictionary<string, string> ByTrackKey(IEnumerable<SourceEntry> entries) =>
         entries
-            .GroupBy(entry => entry.VideoId)
+            .GroupBy(entry => entry.TrackKey)
             .ToDictionary(group => group.Key, group => group.First().Path);
 
     private Dictionary<string, string> KnownFromFile() =>
         SourceIndexJsonContext.Default.ListSourceEntry.ReadFileOrDefault(_path) is { } listed
-            ? ByVideoId(listed)
+            ? ByTrackKey(listed)
             : [];
 }
 
@@ -102,11 +103,16 @@ public sealed class SourceIndex(WorkingSet workingSet, CratesidePaths paths) : I
 public interface ISourceLocator
 {
     /// <summary>The working set's download, else the sample kept, as last indexed; null when neither is on disk.</summary>
-    string? PathOf(string videoId);
+    string? PathOf(string trackKey);
 }
 
 /// <summary>One source on disk: <paramref name="Path"/> is the file itself.</summary>
-public sealed record SourceEntry(string VideoId, string Song, SourceLocation Location, string Path);
+public sealed record SourceEntry(
+    [property: JsonPropertyName("videoId")] string TrackKey,
+    string Song,
+    SourceLocation Location,
+    string Path
+);
 
 /// <summary>Whether a source is the working set's download or a sample kept in Staging or the library.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<SourceLocation>))]

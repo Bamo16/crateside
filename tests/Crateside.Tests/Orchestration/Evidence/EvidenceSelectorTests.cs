@@ -25,21 +25,21 @@ public sealed class EvidenceSelectorTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private void GiveEvidence(string videoId)
+    private void GiveEvidence(string trackKey)
     {
-        GiveAudio(videoId);
-        File.WriteAllText(Set.EvidencePathFor(videoId), "{}");
+        GiveAudio(trackKey);
+        File.WriteAllText(Set.EvidencePathFor(trackKey), "{}");
     }
 
-    private void GiveAudio(string videoId) =>
-        File.WriteAllText(Path.Combine(Set.Prepare(videoId), "track.flac"), "audio");
+    private void GiveAudio(string trackKey) =>
+        File.WriteAllText(Path.Combine(Set.Prepare(trackKey), "track.flac"), "audio");
 
-    private static WorkItem Item(string videoId, bool unavailable = false) =>
+    private static WorkItem Item(string trackKey, bool unavailable = false) =>
         new()
         {
-            PlaylistItemId = $"PLI-{videoId}",
-            VideoId = videoId,
-            Title = $"Track {videoId}",
+            PlaylistItemId = $"PLI-{trackKey}",
+            TrackKey = trackKey,
+            Title = $"Track {trackKey}",
             IsUnavailable = unavailable,
         };
 
@@ -47,7 +47,7 @@ public sealed class EvidenceSelectorTests : IDisposable
     private WorkListsView View(params WorkItem[] outstanding)
     {
         foreach (var item in outstanding)
-            GiveAudio(item.VideoId);
+            GiveAudio(item.TrackKey);
 
         return new WorkListsView
         {
@@ -72,7 +72,7 @@ public sealed class EvidenceSelectorTests : IDisposable
         );
 
         Assert.True(picked);
-        Assert.Equal("aaaaaaaaaaa", next.VideoId);
+        Assert.Equal("aaaaaaaaaaa", next.TrackKey);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public sealed class EvidenceSelectorTests : IDisposable
             out var next
         );
 
-        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+        Assert.Equal("bbbbbbbbbbb", next.TrackKey);
     }
 
     [Theory]
@@ -101,7 +101,7 @@ public sealed class EvidenceSelectorTests : IDisposable
             out var next
         );
 
-        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+        Assert.Equal("bbbbbbbbbbb", next.TrackKey);
     }
 
     [Theory]
@@ -116,7 +116,7 @@ public sealed class EvidenceSelectorTests : IDisposable
             out var next
         );
 
-        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+        Assert.Equal("bbbbbbbbbbb", next.TrackKey);
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public sealed class EvidenceSelectorTests : IDisposable
 
         new EvidenceSelector(Jobs, Set).TryPickNext(View(Item("aaaaaaaaaaa")), out var next);
 
-        Assert.Equal("aaaaaaaaaaa", next.VideoId);
+        Assert.Equal("aaaaaaaaaaa", next.TrackKey);
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public sealed class EvidenceSelectorTests : IDisposable
         Assert.True(
             new EvidenceSelector(Jobs, Set).TryPickNext(View(Item("aaaaaaaaaaa")), out var next)
         );
-        Assert.Equal("aaaaaaaaaaa", next.VideoId);
+        Assert.Equal("aaaaaaaaaaa", next.TrackKey);
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public sealed class EvidenceSelectorTests : IDisposable
 
         var view = View(waiting);
 
-        Directory.Delete(Set.Prepare(waiting.VideoId), recursive: true);
+        Directory.Delete(Set.Prepare(waiting.TrackKey), recursive: true);
 
         Assert.False(new EvidenceSelector(Jobs, Set).TryPickNext(view, out _));
     }
@@ -189,6 +189,6 @@ public sealed class EvidenceSelectorTests : IDisposable
             out var next
         );
 
-        Assert.Equal("bbbbbbbbbbb", next.VideoId);
+        Assert.Equal("bbbbbbbbbbb", next.TrackKey);
     }
 }

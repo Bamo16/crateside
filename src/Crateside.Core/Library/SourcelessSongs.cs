@@ -36,7 +36,7 @@ public static class SourcelessSongs
                     (Path: file.FullName, Provenance: StemTagReader.Read(file)?.Provenance)
                 )
                 .Where(file =>
-                    file.Provenance is { SourceVideoId: null, IsAdopted: false, Label: null }
+                    file.Provenance is { SourceTrackKey: null, IsAdopted: false, Label: null }
                 )
                 .GroupBy(file => KeyOf(file.Path), StringComparer.Ordinal)
                 .ToDictionary(

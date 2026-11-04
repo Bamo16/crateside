@@ -34,12 +34,12 @@ public sealed class SourceBackfillRealLibraryTests
 
         Assert.All(
             missing,
-            videoId =>
+            trackKey =>
             {
-                Assert.False(set.TryGetSource(videoId, out _));
-                Assert.DoesNotContain(processed.StemsFor(videoId), stem => stem.IsVerbatimSource);
+                Assert.False(set.TryGetSource(trackKey, out _));
+                Assert.DoesNotContain(processed.StemsFor(trackKey), stem => stem.IsVerbatimSource);
                 Assert.Contains(
-                    processed.StemsFor(videoId),
+                    processed.StemsFor(trackKey),
                     stem =>
                         stem.Root.Equals(paths.LibraryFolder, StringComparison.OrdinalIgnoreCase)
                 );

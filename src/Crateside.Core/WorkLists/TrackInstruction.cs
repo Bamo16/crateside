@@ -9,7 +9,8 @@ namespace Crateside.Core.WorkLists;
 /// </summary>
 public sealed record TrackInstruction
 {
-    public required string VideoId { get; init; }
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
 
     /// <summary>
     /// Which files the user wants made for this track. Null means they have not said, which is

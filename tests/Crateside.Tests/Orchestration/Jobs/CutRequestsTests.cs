@@ -16,7 +16,7 @@ public sealed class CutRequestsTests
         new()
         {
             Id = $"aaaaaaaaaaa:{stage}",
-            VideoId = "aaaaaaaaaaa",
+            TrackKey = "aaaaaaaaaaa",
             Stage = stage,
             Status = status,
             UpdatedAt = at,

@@ -62,7 +62,7 @@ public sealed class StemTagReaderTests : IDisposable
         StemTagReader.Load(cache);
 
         Assert.Equal("Kept", StemTagReader.Read(_path)?.Title);
-        Assert.Equal("dQw4w9WgXcQ", StemTagReader.Read(_path)?.SourceVideoId);
+        Assert.Equal("dQw4w9WgXcQ", StemTagReader.Read(_path)?.SourceTrackKey);
     }
 
     [Fact]

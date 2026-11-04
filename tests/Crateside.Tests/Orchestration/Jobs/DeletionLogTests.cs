@@ -20,14 +20,14 @@ public sealed class DeletionLogTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private string Sample(string name, string videoId)
+    private string Sample(string name, string trackKey)
     {
         var path = Path.Combine(_root, name);
         File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), path);
 
         using var file = TagLib.File.Create(path);
         file.Tag.Comment =
-            $"stemforge/0.3.1.0 | preset: Vocal - Full | source: https://www.youtube.com/watch?v={videoId}";
+            $"stemforge/0.3.1.0 | preset: Vocal - Full | source: https://www.youtube.com/watch?v={trackKey}";
         file.Save();
 
         return path;
@@ -46,7 +46,7 @@ public sealed class DeletionLogTests : IDisposable
         Assert.False(File.Exists(path));
 
         var deletion = Assert.Single(new DeletionLog(Path.Combine(_root, "deletions.jsonl")).All());
-        Assert.Equal("aaaaaaaaaaa", deletion.VideoId);
+        Assert.Equal("aaaaaaaaaaa", deletion.TrackKey);
         Assert.Equal("Song (Vocal - Full).flac", deletion.FileName);
         Assert.Equal("superseded by a swap", deletion.Reason);
     }

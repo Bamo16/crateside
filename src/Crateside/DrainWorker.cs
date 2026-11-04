@@ -69,8 +69,8 @@ public sealed class DrainWorker(
 
         foreach (var job in reconciliation.Adopted)
             logger.LogInformation(
-                "Adopted separation of {VideoId} still running as process {ProcessId}",
-                job.VideoId,
+                "Adopted separation of {TrackKey} still running as process {ProcessId}",
+                job.TrackKey,
                 job.ProcessId
             );
 
@@ -81,15 +81,15 @@ public sealed class DrainWorker(
     {
         foreach (var settled in reconciliation.Finished)
             logger.LogInformation(
-                "Separation of {VideoId} finished while nobody was watching ({Count} stems)",
-                settled.Job.VideoId,
+                "Separation of {TrackKey} finished while nobody was watching ({Count} stems)",
+                settled.Job.TrackKey,
                 settled.OutputFiles.Count
             );
 
         foreach (var job in reconciliation.Abandoned)
             logger.LogWarning(
-                "Separation of {VideoId} did not finish: {Error}",
-                job.VideoId,
+                "Separation of {TrackKey} did not finish: {Error}",
+                job.TrackKey,
                 job.Error
             );
 

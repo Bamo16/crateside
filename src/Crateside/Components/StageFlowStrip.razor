@@ -8,7 +8,7 @@
         <span>Pass @_flow.Pass · @_flow.Reason</span>
         @if (_flow.Pass > 1)
         {
-            <a href="@($"song/{Uri.EscapeDataString(Row.VideoId)}#activity")">@("earlier pass".ToQuantity(_flow.Pass - 1)) ↓</a>
+            <a href="@($"song/{Uri.EscapeDataString(Row.TrackKey)}#activity")">@("earlier pass".ToQuantity(_flow.Pass - 1)) ↓</a>
         }
     </div>
 
@@ -35,8 +35,8 @@
     protected override void OnParametersSet() =>
         _flow = StageFlow.For(
             Row,
-            stage => Jobs.TryGet(Row.VideoId, stage, out var job) ? job : null,
-            Actions.For(Row.VideoId)
+            stage => Jobs.TryGet(Row.TrackKey, stage, out var job) ? job : null,
+            Actions.For(Row.TrackKey)
         );
 
     private static string Glyph(FlowState state) =>

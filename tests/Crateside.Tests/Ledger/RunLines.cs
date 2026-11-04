@@ -14,16 +14,16 @@ internal static class RunLines
         if (!File.Exists(path))
             return;
 
-        Dictionary<string, string> videoIds = new(StringComparer.Ordinal);
+        Dictionary<string, string> trackKeys = new(StringComparer.Ordinal);
 
         foreach (var line in Read(path))
         {
             if (line.Restates is { } restates)
             {
-                if (videoIds.TryGetValue(restates, out var videoId) && line.SourceUrl is { } url)
+                if (trackKeys.TryGetValue(restates, out var trackKey) && line.SourceUrl is { } url)
                 {
                     time.SetUtcNow(DateTimeOffset.Parse(line.Timestamp!));
-                    store.Restate(videoId, url);
+                    store.Restate(trackKey, url);
                 }
 
                 continue;
@@ -34,9 +34,9 @@ internal static class RunLines
             if (
                 store.Record(run) is RecordOutcome.Recorded
                 && run.SourceUrl is { } source
-                && YouTubeUrl.TryGetVideoId(source, out var id)
+                && TrackKeys.TryParse(source, out var id)
             )
-                videoIds[line.Timestamp!] = id;
+                trackKeys[line.Timestamp!] = id;
         }
     }
 

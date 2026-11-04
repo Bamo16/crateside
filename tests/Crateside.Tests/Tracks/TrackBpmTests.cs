@@ -59,7 +59,7 @@ public sealed class TrackBpmTests
     private static TrackRow Row(params TrackSample[] samples) =>
         new()
         {
-            VideoId = "aaaaaaaaaaa",
+            TrackKey = "aaaaaaaaaaa",
             Title = "Track one",
             Verdict = Verdict,
             Samples = samples,

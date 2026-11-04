@@ -38,14 +38,14 @@ public sealed class UnreadablePlaylistTests : IDisposable
             new WorkItem
             {
                 PlaylistItemId = "PLI-known",
-                VideoId = Known,
+                TrackKey = Known,
                 Title = "Eminem - Medicine Ball",
             },
         ]);
 
         var view = await Unreadable(intake, out _).ReadAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(Known, Assert.Single(view.Items).VideoId);
+        Assert.Equal(Known, Assert.Single(view.Items).TrackKey);
     }
 
     [Fact]

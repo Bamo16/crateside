@@ -30,7 +30,8 @@ public sealed class NameWorker(
     private readonly NewWork _newWork = new(
         tracks,
         rows =>
-            rows.Where(row => row.NameSource is TrackNameSource.Playlist).Select(row => row.VideoId)
+            rows.Where(row => row.NameSource is TrackNameSource.Playlist)
+                .Select(row => row.TrackKey)
     );
 
     public override void Dispose()
@@ -70,7 +71,7 @@ public sealed class NameWorker(
 
         var unresolved = scan
             .View.Items.Where(item =>
-                !known.ContainsKey(item.VideoId) && !_unresolvable.Contains(item.VideoId)
+                !known.ContainsKey(item.TrackKey) && !_unresolvable.Contains(item.TrackKey)
             )
             .ToArray();
 
@@ -89,19 +90,19 @@ public sealed class NameWorker(
 
             if (await resolver.ResolveAsync(url, stoppingToken) is not { } resolved)
             {
-                _unresolvable.Add(item.VideoId);
+                _unresolvable.Add(item.TrackKey);
 
-                logger.LogInformation("No name resolved for {VideoId}", item.VideoId);
+                logger.LogInformation("No name resolved for {TrackKey}", item.TrackKey);
 
                 continue;
             }
 
-            store.Save(item.VideoId, resolved);
+            store.Save(item.TrackKey, resolved);
             named++;
 
             logger.LogInformation(
-                "{VideoId} will be called {Name}",
-                item.VideoId,
+                "{TrackKey} will be called {Name}",
+                item.TrackKey,
                 resolved.DisplayTitle
             );
         }
