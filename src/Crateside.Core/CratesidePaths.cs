@@ -294,10 +294,41 @@ public sealed class CratesidePaths
         set;
     }
 
+    /// <summary>The audio of tracks that are not on YouTube, one folder per track key; never pruned (ADR 0077).</summary>
+    public string ImportsFolder
+    {
+        get => field ?? Local("imports");
+        set;
+    }
+
+    /// <summary>The cover art taken from imported files and sites, one file per track key.</summary>
+    public string CoversFolder
+    {
+        get => field ?? Local("covers");
+        set;
+    }
+
+    /// <summary>The folder crateside consumes: audio files and zips saved here become tracks (ADR 0077).</summary>
+    public string Inbox
+    {
+        get =>
+            field is { Length: > 0 } chosen ? chosen
+            : DataRoot is { Length: > 0 } root ? Path.Combine(root, "Inbox")
+            : Environment.SpecialFolder.MyMusic.GetFolderPath("crateside inbox");
+        set;
+    } = string.Empty;
+
     /// <summary>The folders the user changed in Settings.</summary>
     public string PathOverridesFile
     {
         get => field ?? Roaming("paths.json");
+        set;
+    }
+
+    /// <summary>The recipe a new track is taken in with, chosen in Settings.</summary>
+    public string RecipeFile
+    {
+        get => field ?? Roaming("recipe.json");
         set;
     }
 

@@ -38,6 +38,7 @@ public sealed class DownloadSelector(
             .DistinctBy(item => item.TrackKey, StringComparer.Ordinal)
             .Where(item =>
                 !item.IsUnavailable
+                && item.CanBeFetched
                 && !workingSet.TryGetSource(item.TrackKey, out _)
                 && !IsSweptUp(item)
                 && IsEligible(item.TrackKey)
@@ -81,6 +82,7 @@ public sealed class DownloadSelector(
             IsSweptUp(item)
                 && CutRequests.IsSettled(item, jobs)
                 && !StageEligibility.Owes(jobs, item.TrackKey, JobStage.Handoff)
+            || !item.CanBeFetched
             || !IsEligible(item.TrackKey)
         )
             return null;

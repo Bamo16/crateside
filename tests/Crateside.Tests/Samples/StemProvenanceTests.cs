@@ -1,3 +1,4 @@
+using Crateside.Core.Imports;
 using Crateside.Core.Samples;
 
 namespace Crateside.Tests.Samples;
@@ -70,5 +71,64 @@ public sealed class StemProvenanceTests
         Assert.Null(
             StemProvenance.Parse("stemforge/0.1.0.0 | model: x | date: 2026-05-29")?.IsPremium
         );
+    }
+
+    [Fact]
+    public void A_kept_copy_of_a_track_not_on_youtube_reads_as_that_track_and_is_not_adopted()
+    {
+        var provenance = StemProvenance.Parse(
+            KeptSourceStamp.Comment("file~3fa9c0d12be84471", new DateOnly(2026, 11, 4))
+        );
+
+        Assert.Equal("file~3fa9c0d12be84471", provenance?.SourceTrackKey);
+        Assert.Equal("track:file~3fa9c0d12be84471", provenance?.SourceUrl);
+        Assert.False(provenance?.IsAdopted);
+    }
+
+    [Fact]
+    public void A_labelled_crateside_comment_is_an_adopted_sample()
+    {
+        Assert.True(
+            StemProvenance
+                .Parse(
+                    "crateside/1.0 | label: Mix | source: https://www.youtube.com/watch?v=vfBJjufAG1E"
+                )
+                ?.IsAdopted
+        );
+    }
+
+    [Fact]
+    public void Stamping_a_copy_leaves_the_original_comment_where_it_was()
+    {
+        var original = Path.Combine(Path.GetTempPath(), $"crateside-tests-{Guid.NewGuid():n}.flac");
+        var copy = Path.Combine(Path.GetTempPath(), $"crateside-tests-{Guid.NewGuid():n}.flac");
+
+        try
+        {
+            File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "silence.flac"), original);
+
+            using (var file = TagLib.File.Create(original))
+            {
+                file.Tag.Comment = "ripped by someone";
+                file.Save();
+            }
+
+            File.Copy(original, copy);
+
+            Assert.True(
+                KeptSourceStamp.TryWrite(copy, "file~aa", new DateOnly(2026, 11, 4), out _)
+            );
+
+            using var stamped = TagLib.File.Create(copy);
+            using var untouched = TagLib.File.Create(original);
+
+            Assert.Equal("file~aa", StemProvenance.Parse(stamped.Tag.Comment)?.SourceTrackKey);
+            Assert.Equal("ripped by someone", untouched.Tag.Comment);
+        }
+        finally
+        {
+            File.Delete(original);
+            File.Delete(copy);
+        }
     }
 }

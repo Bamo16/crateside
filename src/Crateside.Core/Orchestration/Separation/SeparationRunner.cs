@@ -36,8 +36,16 @@ public sealed class SeparationRunner(
         if (interlock.TryGetLive(out var live))
             return SeparationResult.Refused($"already separating {live.TrackKey}");
 
+        var ownKey = IsOwnKey(order);
+
+        if (ownKey && !workingSet.TryGetSource(order.TrackKey, out retained))
+            return SeparationResult.Failed($"the audio for {order.TrackKey} is not on disk");
+
+        if (ownKey && !await SupportsSourceUrlAsync(ct))
+            return SeparationResult.Failed(StemForgeTooOld);
+
         // No forceful token: ct must not kill the separation, only stop us waiting for it.
-        var running = Start(order, retained);
+        var running = Start(order, retained, ownKey);
 
         // The check above and this claim must stay adjacent, and only this method may call
         // Start — there is a gap between them since claiming needs the process to exist,
@@ -71,6 +79,34 @@ public sealed class SeparationRunner(
         );
 
         return error is null ? SeparationResult.Succeeded(outputs) : SeparationResult.Failed(error);
+    }
+
+    /// <summary>The message when the installed stemforge-cli cannot be told which track a file is.</summary>
+    public const string StemForgeTooOld =
+        "StemForge is too old: stemforge-cli separate needs --source-url. "
+        + "Update stemforge-cli (StemForge's install task), then retry.";
+
+    private bool _supportsSourceUrl;
+
+    /// <summary>A track not on YouTube, cut from audio crateside holds and tells StemForge the key of (ADR 0077).</summary>
+    private static bool IsOwnKey(WorkOrder order) =>
+        !TrackKeys.IsVideoId(order.TrackKey)
+        && order.SourceUrl.Equals(TrackKeys.ProvenanceOf(order.TrackKey), StringComparison.Ordinal);
+
+    private async Task<bool> SupportsSourceUrlAsync(CancellationToken ct)
+    {
+        if (_supportsSourceUrl)
+            return true;
+
+        var help = await Cli.Wrap(fileName)
+            .WithArguments(["separate", "--help"])
+            .WithValidation(CommandResultValidation.None)
+            .ExecuteBufferedAsync(Encoding.UTF8, ct);
+
+        return _supportsSourceUrl = help.StandardOutput.Contains(
+            "--source-url",
+            StringComparison.Ordinal
+        );
     }
 
     /// <summary>What a finished run cut, for the activity feed (#170); the feed adds how long it took.</summary>
@@ -166,13 +202,20 @@ public sealed class SeparationRunner(
         }
     }
 
-    private CommandTask<BufferedCommandResult> Start(WorkOrder order, string? retained) =>
+    private CommandTask<BufferedCommandResult> Start(
+        WorkOrder order,
+        string? retained,
+        bool ownKey
+    ) =>
         Cli.Wrap(fileName)
             .WithArguments(args =>
             {
                 args.Add("separate");
 
                 args.Add(retained ?? order.SourceUrl);
+
+                if (ownKey)
+                    args.Add("--source-url").Add(order.SourceUrl);
 
                 foreach (var preset in order.Recipe.Presets)
                     args.Add("--preset").Add(preset);
