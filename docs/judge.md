@@ -93,6 +93,7 @@ Under `Judge` in `appsettings.json`, user-secrets or the environment (`Judge__Mo
 
 | setting | default | what it does |
 |---|---|---|
+| `Kind` | `ClaudeCode` if a `claude` executable is on PATH, else `None` | which judge runs what crateside's rules leave open: `ClaudeCode` or `None`. With `None` no session ever runs and the song page asks the person; Re-judge and Judge from these bars are not offered ([ADR 0076](adr/0076-crateside-rules-first-and-the-person-is-the-judge-of-the-rest.md)). Read once at start |
 | `Model` | `sonnet` | passed to `claude --model` |
 | `Ear` | `Hint` | how much the user's own reading of a key counts: `Hint` (weighed, never raising confidence by itself) or `HumanSource` (counted like an authoritative source). Settings → **Your ear** overrides it, and is read on every run |
 | `Environment` | empty | variables set for the judge process only |

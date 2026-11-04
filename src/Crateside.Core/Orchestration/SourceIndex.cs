@@ -26,6 +26,11 @@ public sealed class SourceIndex(WorkingSet workingSet, CratesidePaths paths) : I
             ? known
         : null;
 
+    /// <summary>The full mix an order is judged from: the row's upload, else the one the order states.</summary>
+    public string? PathFor(WorkOrder order) =>
+        PathOf(order.VideoId)
+        ?? (YouTubeUrl.TryGetVideoId(order.SourceUrl, out var stated) ? PathOf(stated) : null);
+
     /// <summary>Every source on disk: the working set's downloads first, then the samples kept.</summary>
     public IReadOnlyList<SourceEntry> Entries(ProcessedTracks processed, KeyLedger ledger) =>
         [

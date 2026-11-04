@@ -27,7 +27,7 @@ public sealed partial class VerdictRunner(
     TimeProvider time,
     ILogger<VerdictRunner> log,
     string fileName = "claude"
-)
+) : IVerdictJudge
 {
     public const string VerdictFileName = "verdict.json";
 
@@ -54,6 +54,13 @@ public sealed partial class VerdictRunner(
     /// <summary>Judges one track: records its verdict, or says why there is none.</summary>
     public Task<VerdictResult> RunAsync(WorkOrder order, CancellationToken ct = default) =>
         RunAsync(order, direction: null, onStep: null, ct);
+
+    public Task<VerdictResult> JudgeAsync(
+        WorkOrder order,
+        JudgeDirection? direction,
+        Action<JudgeStep> onStep,
+        CancellationToken ct = default
+    ) => RunAsync(order, direction, onStep, ct);
 
     /// <summary>Judges one track, from the windows the user gave where there is a <paramref name="direction"/> (#116).</summary>
     public async Task<VerdictResult> RunAsync(
@@ -208,13 +215,7 @@ public sealed partial class VerdictRunner(
     ) => Prompt(order, verdictPath, lookups, direction: null, given: [], SourceFor(order));
 
     /// <summary>The full mix the order is judged from: the working set's download, else the source the library keeps, by the row's upload or the stated one.</summary>
-    public string? SourceFor(WorkOrder order) =>
-        sources.PathOf(order.VideoId)
-        ?? (
-            YouTubeUrl.TryGetVideoId(order.SourceUrl, out var stated)
-                ? sources.PathOf(stated)
-                : null
-        );
+    public string? SourceFor(WorkOrder order) => sources.PathFor(order);
 
     private string Prompt(
         WorkOrder order,
