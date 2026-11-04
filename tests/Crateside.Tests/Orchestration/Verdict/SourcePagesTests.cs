@@ -358,6 +358,25 @@ public sealed class SourcePagesTests
         );
     }
 
+    [Theory]
+    [InlineData("Around the World (Radio Edit)")]
+    [InlineData("Around the World [Remastered] (feat. Nobody)")]
+    public async Task A_bracketed_tail_on_the_title_is_left_out_of_the_lookup(string title)
+    {
+        var handler = new RecordedSites(new() { ["www.hooktheory.com"] = null });
+
+        await new SourcePages(new FixedHttpClientFactory(new HttpClient(handler))).FetchAsync(
+            "Daft Punk",
+            title,
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Contains(
+            handler.Requests,
+            uri => uri.AbsolutePath == "/theorytab/view/daft-punk/around-the-world"
+        );
+    }
+
     [Fact]
     public async Task A_site_that_cannot_be_reached_says_so_and_the_others_still_answer()
     {

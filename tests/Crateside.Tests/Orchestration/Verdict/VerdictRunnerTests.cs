@@ -1065,27 +1065,6 @@ public sealed class VerdictRunnerTests : IDisposable
         Assert.Empty(Pages.Asked);
     }
 
-    [Fact]
-    public async Task A_bracketed_tail_is_left_out_of_the_lookup()
-    {
-        GiveEvidence();
-        Session(Verdict);
-
-        await RunAsync(
-            WorkOrder.Compose(
-                new WorkItem
-                {
-                    PlaylistItemId = "PLI1",
-                    VideoId = VideoId,
-                    Title = "Yes - Owner of a Lonely Heart (2003 Remaster) [Official Video]",
-                },
-                TestLedger.From("does-not-exist")
-            )
-        );
-
-        Assert.Equal(("Yes", "Owner of a Lonely Heart"), Assert.Single(Pages.Asked));
-    }
-
     private static string After(ProcessRequest request, string flag) =>
         request.Arguments[request.Arguments.ToList().IndexOf(flag) + 1];
 

@@ -20,7 +20,8 @@ the file and records it in the [ledger](ledger.md). Decided in
 ## Pages fetched before the session
 
 Before a track's first session crateside looks the song up by artist and title (the ledger's
-names for a song judged before, otherwise the row's `Artist - Title` without a bracketed tail)
+names for a song judged before, otherwise the row's `Artist - Title`, either way without a bracketed
+tail on the title such as `(feat. …)` or `(Remaster)`)
 and puts what it finds in the work order:
 
 | site | requests | what is kept |
