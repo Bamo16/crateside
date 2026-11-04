@@ -471,9 +471,8 @@ public sealed record TrackRow
             { Verdict: null, WaitingForPerson: true } =>
                 "No ruling and no judge: decide its key on its page.",
             { Verdict: null } => "Never judged.",
-            { Verdict: { DecidedBy: Ledger.DecidedBy.Person }, Key: { } key } =>
-                $"Your call: {key}.",
-            { Verdict: { DecidedBy: Ledger.DecidedBy.Rules }, Key: { } key } =>
+            { Verdict.DecidedBy: Ledger.DecidedBy.Person, Key: { } key } => $"Your call: {key}.",
+            { Verdict.DecidedBy: Ledger.DecidedBy.Rules, Key: { } key } =>
                 $"Ruled {key} by crateside, {Spoken(Confidence)} confidence.",
             { Key: { } key } => $"Judged {key}, {Spoken(Confidence)} confidence.",
             _ =>
