@@ -25,7 +25,10 @@ start. Enums are stored by name (`Dorian`, `ChordRecognizer`); times as round-tr
 - **Runs**: one verdict each. `Song` is the identity a later run supersedes (latest
   `RecordedAt` wins), compared without case. The verdict is `Confidence` (`High`, `Medium`,
   `Low`, `Withheld`) and a tonal center, `Tonic` (sharps only: `C#`, never `Db`) and `Mode`
-  (one of the seven diatonic modes), both null only when withheld. `Mixed` marks two modes on
+  (one of the seven diatonic modes), both null only when withheld. `DecidedBy` is who made the verdict:
+  `Judge` (an agent session; every run recorded before the column, the imported history
+  included), `Rules` (crateside's rules, which rule only on what the evidence and the pages agree on)
+  or `Person` (the key chosen on the song page); ADR 0076. `Mixed` marks two modes on
   one tonic, the center being the harmony's. `SourceUrl` is the upload the audio came from,
   null only with `LocalSource`. `WithheldReasoning` is the reasoning of the first pass when it asked for windows, kept once here. `Direction` is the user's note sent with windows. `Evidence`
   is the detectors' report as JSON. `Lookups` is what the lookup found on each site before the

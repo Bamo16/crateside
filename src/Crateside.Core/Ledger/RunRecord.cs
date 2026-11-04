@@ -28,6 +28,8 @@ public sealed record RunRecord
 
     public required KeyConfidence Confidence { get; init; }
 
+    public DecidedBy DecidedBy { get; init; } = DecidedBy.Judge;
+
     /// <summary>The primary tonal center; null only when withheld.</summary>
     public TonalCenter? Center { get; init; }
 
@@ -108,6 +110,14 @@ public sealed record BarSpan(int First, int Last);
 
 /// <summary>Bars as typed: a null side is open, to the start or end of the file.</summary>
 public sealed record BarRange(int? First, int? Last);
+
+/// <summary>Who made a verdict: an agent session, crateside's rules, or the person (ADR 0076).</summary>
+public enum DecidedBy
+{
+    Judge,
+    Rules,
+    Person,
+}
 
 /// <summary>Who asked for a window. Null on a window imported from history, which never said.</summary>
 public enum WindowAsker

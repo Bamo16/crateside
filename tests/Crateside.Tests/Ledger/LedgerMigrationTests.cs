@@ -12,7 +12,8 @@ public sealed class LedgerMigrationTests : IDisposable
     private const string BeforeSpelling = "20261024201525_SectionStart";
     private const string SpellingMigration = "20261025192752_AmericanSpelling";
     private const string LateReadingMigration = "20261029013237_InheritedLateReading";
-    private const string NewestMigration = "20261101225614_LookupsKept";
+    private const string LookupsMigration = "20261101225614_LookupsKept";
+    private const string NewestMigration = "20261104052541_DecidedByKept";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -226,5 +227,53 @@ public sealed class LedgerMigrationTests : IDisposable
         using (var store = new LedgerStore(DatabasePath, _time)) { }
 
         Assert.False(Directory.Exists(Path.Combine(_root, "ledger-backups")));
+    }
+
+    [Fact]
+    public void Every_run_from_before_the_column_comes_out_judged_and_the_ledger_is_copied_aside_first()
+    {
+        using (var connection = new SqliteConnection($"Data Source={DatabasePath}"))
+        {
+            connection.Open();
+
+            var options = new DbContextOptionsBuilder<LedgerContext>()
+                .UseSqlite(connection)
+                .Options;
+
+            using (var context = new LedgerContext(options))
+                context.GetService<IMigrator>().Migrate(LookupsMigration);
+
+            Execute(
+                connection,
+                """
+                INSERT INTO Runs (Id, Song, Confidence, Mixed, LocalSource, SourceUrl, RecordedAt, Tonic, Mode) VALUES
+                  (1, 'a - one', 'High', 0, 0, 'https://www.youtube.com/watch?v=aaaaaaaaaaa', '2026-10-28T16:40:28+00:00', 'A', 'Aeolian'),
+                  (2, 'b - two', 'Withheld', 0, 0, 'https://www.youtube.com/watch?v=bbbbbbbbbbb', '2026-10-28T16:41:28+00:00', NULL, NULL);
+                """
+            );
+        }
+
+        using var store = new LedgerStore(DatabasePath, _time);
+
+        Assert.All(store.Read().Runs, run => Assert.Equal(DecidedBy.Judge, run.DecidedBy));
+        Assert.Equal(2, store.Read().Runs.Count);
+
+        var backup = Assert.Single(
+            Directory.GetFiles(store.BackupFolder!, $"before-{NewestMigration}.db")
+        );
+
+        Assert.Equal(2, CountRunsIn(backup));
+    }
+
+    private static int CountRunsIn(string path)
+    {
+        using var connection = new SqliteConnection($"Data Source={path};Pooling=False");
+        connection.Open();
+
+        using var command = connection.CreateCommand();
+
+        command.CommandText = "SELECT COUNT(*) FROM Runs";
+
+        return (int)(long)command.ExecuteScalar()!;
     }
 }

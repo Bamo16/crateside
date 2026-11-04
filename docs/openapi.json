@@ -593,6 +593,14 @@
         },
         "description": "One of a track's files, and what it is to the plan."
       },
+      "DecidedBy": {
+        "enum": [
+          "Judge",
+          "Rules",
+          "Person"
+        ],
+        "description": "Who made a verdict: an agent session, crateside's rules, or the person (ADR 0076)."
+      },
       "Deletion": {
         "required": [
           "at",
@@ -1371,6 +1379,9 @@
           },
           "confidence": {
             "$ref": "#/components/schemas/KeyConfidence"
+          },
+          "decidedBy": {
+            "$ref": "#/components/schemas/DecidedBy"
           },
           "bpm": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
