@@ -40,6 +40,13 @@ public sealed class RunSummaryTests
     }
 
     [Fact]
+    public void A_ruling_with_no_sources_claims_no_chord_check() =>
+        Assert.Equal(
+            "No human sources; 2 detectors.",
+            RunSummary.Of(Run(Detectors) with { DecidedBy = DecidedBy.Rules })
+        );
+
+    [Fact]
     public void A_run_with_readings_counts_them() =>
         Assert.Equal(
             "No human sources; 2 detectors and the chord check.",

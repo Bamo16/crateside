@@ -9,6 +9,9 @@ public static class RunSummary
         (run.Sources.Count, run.Algorithms.Count) switch
         {
             (0, 0) => "No human sources and no detector readings; the chord check only.",
+            // A ruling makes no chord check (ADR 0076).
+            (0, var detectors) when run.DecidedBy is DecidedBy.Rules =>
+                $"No human sources; {"detector".ToQuantity(detectors)}.",
             (0, var detectors) =>
                 $"No human sources; {"detector".ToQuantity(detectors)} and the chord check.",
             (var sources, 0) =>

@@ -1,3 +1,4 @@
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Tracks;
 
@@ -151,5 +152,28 @@ public sealed class StageFlowTests
 
         Assert.Equal(FlowState.YourTurn, judge.State);
         Assert.Equal("waiting for you", judge.Note);
+    }
+
+    [Fact]
+    public void A_ruled_verdicts_chip_says_the_rules_decided_it()
+    {
+        var flow = StageFlow.For(
+            Row with
+            {
+                Verdict = new LedgerRun
+                {
+                    Timestamp = DateTimeOffset.UnixEpoch,
+                    Song = "song",
+                    DecidedBy = DecidedBy.Rules,
+                },
+            },
+            Succeeded(JobStage.Download, JobStage.Evidence, JobStage.Verdict),
+            []
+        );
+
+        Assert.Equal(
+            ["Download", "Detect", "Rules", "Separate", "Stage & tag", "Warp"],
+            flow.Steps.Select(step => step.Label)
+        );
     }
 }

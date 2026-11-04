@@ -24,6 +24,10 @@ public static class KeyText
             _ => Confidence(confidence),
         };
 
+    /// <summary>The song page's confidence tile: the band, or "your call", since the line under it names who decided.</summary>
+    public static string Headline(DecidedBy? by, KeyConfidence confidence) =>
+        by is DecidedBy.Person ? Byline(DecidedBy.Person) : Confidence(confidence);
+
     /// <summary>Who made the verdict, in a few words.</summary>
     public static string Byline(DecidedBy by) =>
         by switch

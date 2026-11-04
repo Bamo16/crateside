@@ -35,7 +35,7 @@ public sealed record StageFlow(int Pass, string Reason, IReadOnlyList<FlowStep> 
             .. Order.Select(step =>
                 Step(
                     row,
-                    step.Label,
+                    Label(row, step.Label),
                     [.. step.Stages.Select(job).OfType<TrackJob>()],
                     step.Stages,
                     from
@@ -50,6 +50,15 @@ public sealed record StageFlow(int Pass, string Reason, IReadOnlyList<FlowStep> 
             steps
         );
     }
+
+    /// <summary>The verdict's chip names who decided it, once someone has (ADR 0076).</summary>
+    private static string Label(TrackRow row, string label) =>
+        (label, row.DecidedBy) switch
+        {
+            ("Judge", Ledger.DecidedBy.Rules) => "Rules",
+            ("Judge", Ledger.DecidedBy.Person) => "You",
+            _ => label,
+        };
 
     private static FlowStep Step(
         TrackRow row,

@@ -76,7 +76,7 @@
                 }
                 else
                 {
-                    <span class="mono value conf @KeyText.ConfidenceTone(Confidence) @(Verdict?.DecidedBy is DecidedBy.Person ? "call" : null)">@KeyText.Decided(Verdict?.DecidedBy, Confidence)</span>
+                    <span class="mono value conf @KeyText.ConfidenceTone(Confidence) @(Verdict?.DecidedBy is DecidedBy.Person ? "call" : null)">@KeyText.Headline(Verdict?.DecidedBy, Confidence)</span>
                     <span class="sub">@ConfidenceNote</span>
                     @if (Invitation is { } invitation)
                     {
