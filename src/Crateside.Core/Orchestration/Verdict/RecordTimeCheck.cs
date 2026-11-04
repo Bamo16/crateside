@@ -142,7 +142,7 @@ internal static class RecordTimeCheck
         [KeyOf(source.StatesKey), KeyOf(source.States)];
 
     /// <summary>A key in any usual spelling, a mode collapsed to its major or minor as the ledger does.</summary>
-    private static MusicKey? KeyOf(string? text) =>
+    internal static MusicKey? KeyOf(string? text) =>
         MusicKey.FromString(text)
         ?? MusicKey.FromString(
             LedgerVocabulary.NormalizeKey(text) ?? LedgerVocabulary.CollapseModalStatement(text)
