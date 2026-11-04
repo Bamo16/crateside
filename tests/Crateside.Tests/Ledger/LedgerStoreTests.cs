@@ -275,4 +275,34 @@ public sealed class LedgerStoreTests : IDisposable
         Assert.Equal("Am", lines[0].GetProperty("evidence").GetProperty("chords")[0].GetString());
         Assert.Equal(Song, lines[1].GetProperty("restatement").GetProperty("song").GetString());
     }
+
+    [Fact]
+    public void Who_decided_a_run_is_kept_and_a_run_that_does_not_say_was_judged()
+    {
+        Store.Record(Run() with { DecidedBy = DecidedBy.Person });
+        Store.Record(
+            Run() with
+            {
+                Song = "other - song",
+                SourceUrl = $"https://music.youtube.com/watch?v={Other}",
+            }
+        );
+
+        Assert.Equal(
+            [DecidedBy.Person, DecidedBy.Judge],
+            Store.Read().Runs.OrderBy(run => run.Song == Song ? 0 : 1).Select(run => run.DecidedBy)
+        );
+    }
+
+    [Fact]
+    public void The_export_says_who_decided_each_run()
+    {
+        using var store = new LedgerStore(Path.Combine(_root, "ledger.db"), _time);
+
+        store.Record(Run() with { DecidedBy = DecidedBy.Rules });
+
+        var line = JsonDocument.Parse(File.ReadAllLines(store.ExportPath!).Single()).RootElement;
+
+        Assert.Equal("Rules", line.GetProperty("run").GetProperty("decidedBy").GetString());
+    }
 }

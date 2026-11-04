@@ -59,6 +59,8 @@ public sealed record LedgerRun
 
     public KeyConfidence Confidence { get; init; }
 
+    public DecidedBy DecidedBy { get; init; } = DecidedBy.Judge;
+
     /// <summary>The old BPM estimate, a warp starting point. Never written by a new run.</summary>
     public double? Bpm { get; init; }
 

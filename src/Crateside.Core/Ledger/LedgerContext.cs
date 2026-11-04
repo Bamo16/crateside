@@ -17,6 +17,7 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
         conventions.Properties<DiatonicMode>().HaveConversion<string>();
         conventions.Properties<SourceKind>().HaveConversion<string>();
         conventions.Properties<WindowAsker>().HaveConversion<string>();
+        conventions.Properties<DecidedBy>().HaveConversion<string>();
         // Round-trip text in UTC, so that ordering by the column is ordering in time.
         conventions.Properties<DateTimeOffset>().HaveConversion<UtcTextConverter>();
     }
@@ -125,6 +126,7 @@ internal sealed class RunRow
     public string? InputKind { get; set; }
     public bool? HasVocals { get; set; }
     public KeyConfidence Confidence { get; set; }
+    public DecidedBy DecidedBy { get; set; }
     public string? Tonic { get; set; }
     public DiatonicMode? Mode { get; set; }
     public bool Mixed { get; set; }
@@ -163,6 +165,7 @@ internal sealed class RunRow
             InputKind = run.InputKind,
             HasVocals = run.HasVocals,
             Confidence = run.Confidence,
+            DecidedBy = run.DecidedBy,
             Tonic = run.Center?.Tonic,
             Mode = run.Center?.Mode,
             Mixed = run.Mixed,
@@ -251,6 +254,7 @@ internal sealed class RunRow
             InputKind = InputKind,
             HasVocals = HasVocals,
             Confidence = Confidence,
+            DecidedBy = DecidedBy,
             Center = Center,
             Mixed = Mixed,
             Direction = Direction,
