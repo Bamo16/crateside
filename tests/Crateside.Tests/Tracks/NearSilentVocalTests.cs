@@ -96,7 +96,7 @@ public sealed class NearSilentVocalTests : IDisposable
 
         File.WriteAllText(path, string.Empty);
 
-        StemOnDisk Stem(string preset) =>
+        static StemOnDisk Stem(string preset) =>
             new()
             {
                 Path = Path.Combine(FinishedRoot, $"Some Track ({preset}).flac"),

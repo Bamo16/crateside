@@ -31,7 +31,19 @@ the views, and running the workflow.
   song-level. Always derived from the artist and title beside it, never authored, and computed
   only from names already repaired of encoding damage. It says *which song*, never *how a run
   was done*: a method note belongs in the reasoning, not appended to the identity.
-- **Source video ID** — the YouTube video identifier a track came from, embedded in each stem
+- **Track key** — the one string a track is worked by: its YouTube video ID, or `<source>~<id>` for
+  a track that is not on YouTube (`soundcloud~…`, `file~` and the start of the file's SHA-256).
+  Stems of such a track carry `source: track:<key>`. `TrackKeys` is the one parser (ADR 0077).
+- **Import** — the audio of a track that is not on YouTube, kept under `imports\<key>` and never
+  pruned. It is the track's separation source.
+- **Recipe** — a named plan a track is taken in with: Standard (vocal, instrumental, drum guide)
+  or Instrumental (the source and the drum guide). Settings chooses the default; an inbox
+  subfolder named for one gives its files that recipe (ADR 0077).
+- **Release** — what a track's source says about the release it came from: album, album artist,
+  track and disc numbers, genre, composer, organization, a year that says whether it is a release
+  year or an upload date, and the cover.
+- **Inbox** — the folder crateside consumes: audio files and zips saved there become tracks.
+- **Source video ID** — the YouTube video identifier a YouTube track came from, embedded in each stem
   file at separation time and so surviving renames. The durable anchor from a stem on disk back
   to its **song identity**. A song may have several; all keep resolving (see **Restatement**).
 - **Queue** — the YouTube playlist the user adds tracks to as they think of them. Unordered and

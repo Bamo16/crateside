@@ -20,6 +20,13 @@ seconds old, as opening a page does.
 Names are camelCase and enums are written by name (`"ReadyToWarp"`). Every property is written,
 `null` included, so a missing field means the shape changed rather than that a value is absent.
 
+A track's key is its **work key**: a YouTube video ID, or `<source>~<id>` for a track that is not on
+YouTube (`soundcloud~242136202`, `file~3fa9c0d12be84471`; ADR 0077). Every `videoId` below holds
+one, and `{trackKey}` in a path is one. A row also carries `release` (album, album artist, track and
+disc numbers, genre, composer, organization, `ost`, a year with its `yearKind` of `Release` or
+`Upload`, and `cover`'s file name) for a track taken in from a file or a site, and
+`hasNearSilentVocal`, true when its vocal stem is more than 16 dB quieter than its instrumental.
+
 ## `GET /api/tracks`
 
 The Tracks page's rows, narrowed by the page's own filters:
@@ -235,7 +242,7 @@ track, the same state the API's tests stand on. Each row is the whole `TrackRow`
 }
 ```
 
-## `GET /api/tracks/{videoId}`
+## `GET /api/tracks/{trackKey}`
 
 Everything crateside knows about one track, or a 404 with a problem body when it has neither a row
 nor a verdict for the video ID:
@@ -247,7 +254,9 @@ nor a verdict for the video ID:
   TheoryTab carries the tab as the lookup parsed it (`tab`: its sections in order, each section's
   keys with the beat they start at, its sync span, and the share of the video they cover).
   `lookups` holds every page the lookup handed the judge, site by site, cited or not, so what the
-  judge passed over can be read beside what it used. Runs recorded before 2026-11-01 have neither.
+  judge passed over can be read beside what it used. A lookup's `candidates`, when it has any, are
+  pages with the exact title under no artist the track credits: unconfirmed, shown to the judge, and
+  never a source for a rule. Runs recorded before 2026-11-01 have neither.
 - **`jobs`**: every line of `jobs.jsonl` for any of the track's uploads, oldest first. A stage that
   finished well says what it did in `summary` ("D major, HIGH, 2 sections; 3 turns, 150 s"); lines
   written before summaries existed, and every line that is not a success, have none.
