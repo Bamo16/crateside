@@ -25,10 +25,18 @@ public sealed class VerdictSelector(
     /// has judged, undetected, in flight, given up on, parked, or looking like a judged song.
     /// The library backfill waits for the weekly spend-down unless the user asked for it (ADR 0063).
     /// </summary>
-    public bool TryPickNext(WorkListsView view, KeyLedger ledger, out WorkItem next)
+    /// <param name="skip">Tracks to pass over, as the rule pass does with those it has tried.</param>
+    public bool TryPickNext(
+        WorkListsView view,
+        KeyLedger ledger,
+        out WorkItem next,
+        IReadOnlySet<string>? skip = null
+    )
     {
         next = view.Outstanding.FirstOrDefault(i =>
-            (!i.IsBackfill || i.VideoId == view.Bumped) && IsJudgeable(i, ledger)
+            (!i.IsBackfill || i.VideoId == view.Bumped)
+            && skip?.Contains(i.VideoId) is not true
+            && IsJudgeable(i, ledger)
         )!;
 
         return next is not null;

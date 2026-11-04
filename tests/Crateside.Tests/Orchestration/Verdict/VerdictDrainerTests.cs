@@ -331,6 +331,72 @@ public sealed class VerdictDrainerTests : IDisposable
         );
     }
 
+    private static WorkListsView Intake(params (string VideoId, string Title)[] tracks) =>
+        WorkListsView.Compose(
+            [
+                .. tracks.Select(track => new WorkItem
+                {
+                    VideoId = track.VideoId,
+                    Title = track.Title,
+                }),
+            ],
+            new HashSet<string>(),
+            new HashSet<string>(),
+            new HashSet<string>(),
+            new Dictionary<string, TrackInstruction>()
+        );
+
+    private void Detected(string videoId, string evidence)
+    {
+        _set.Prepare(videoId);
+        File.WriteAllText(_set.EvidencePathFor(videoId), evidence);
+    }
+
+    [Fact]
+    public async Task Paused_judging_still_lets_the_rules_rule_on_new_intake()
+    {
+        Detected("intake001", AgreedEvidence);
+        _control.Pause();
+
+        await _drainer.RuleNextAsync(
+            Intake(("intake001", "Artist - Song")),
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(DecidedBy.Rules, Assert.Single(_store.Read().Runs).DecidedBy);
+        Assert.Empty(_sessions.Prompts);
+    }
+
+    [Fact]
+    public async Task A_refusing_judge_endpoint_does_not_hold_the_rules()
+    {
+        Detected("intake001", AgreedEvidence);
+        _control.Backoff.Refused("the judge's endpoint refused its key", TimeSpan.FromHours(1));
+
+        await _drainer.RuleNextAsync(
+            Intake(("intake001", "Artist - Song")),
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal(DecidedBy.Rules, Assert.Single(_store.Read().Runs).DecidedBy);
+    }
+
+    [Fact]
+    public async Task A_track_the_rules_leave_open_does_not_keep_the_next_one_from_its_turn()
+    {
+        Detected("intake001", FullEvidence);
+        Detected("intake002", AgreedEvidence);
+        _control.Pause();
+
+        await _drainer.RuleNextAsync(
+            Intake(("intake001", "Artist - Open"), ("intake002", "Artist - Agreed")),
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.Equal("artist - agreed", Assert.Single(_store.Read().Runs).Song);
+        Assert.Empty(_sessions.Prompts);
+    }
+
     [Fact]
     public async Task A_track_the_rules_leave_open_goes_to_the_judge_when_one_is_set_up()
     {
