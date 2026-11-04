@@ -139,4 +139,5 @@ public enum UserActionKind
     ArrivedAlreadyFiled,
     PassedTheHold,
     PassCleared,
+    KeyChosen,
 }

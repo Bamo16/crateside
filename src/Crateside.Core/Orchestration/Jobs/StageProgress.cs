@@ -21,6 +21,9 @@ public sealed record StageProgress
     /// <summary>A stage whose latest attempt failed with strikes left, so it is owed another.</summary>
     public StageFailure? Retrying { get; init; }
 
+    /// <summary>The verdict stage has left the key to the person (ADR 0076).</summary>
+    public bool AwaitingPerson { get; init; }
+
     public static StageProgress For(JobStore jobs, string videoId) => For(jobs, [videoId]);
 
     /// <summary>
@@ -37,11 +40,15 @@ public sealed record StageProgress
         var gaveUpStrikes = 0;
         string? gaveUpFor = null;
         StageFailure? retrying = null;
+        var awaitingPerson = false;
 
         foreach (var stage in Stages)
         {
             if (Latest(jobs, ids, stage) is not { } job)
                 continue;
+
+            if (job is { Stage: JobStage.Verdict, Status: JobStatus.AwaitingPerson })
+                awaitingPerson = true;
 
             if (job.Status is JobStatus.Running)
             {
@@ -73,6 +80,7 @@ public sealed record StageProgress
             GaveUpStrikes = gaveUpStrikes,
             GaveUpFor = gaveUpFor,
             Retrying = retrying,
+            AwaitingPerson = awaitingPerson,
         };
     }
 

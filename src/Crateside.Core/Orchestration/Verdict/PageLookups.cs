@@ -13,12 +13,7 @@ public sealed class PageLookups(ISourcePages pages, WorkingSet workingSet, Ledge
         CancellationToken ct = default
     )
     {
-        var path = Path.Combine(workingSet.Prepare(order.VideoId), SourcesFileName);
-
-        if (
-            SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.ReadFileOrDefault(path) is
-            { } cached
-        )
+        if (CachedFor(order) is { } cached)
             return cached;
 
         if (NamesOf(order) is not var (artist, title))
@@ -27,10 +22,22 @@ public sealed class PageLookups(ISourcePages pages, WorkingSet workingSet, Ledge
         var lookups = await pages.FetchAsync(artist, title, ct);
 
         if (!lookups.Any(VerdictRules.MayHoldAnotherKey))
-            SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.WriteFile(path, lookups);
+            SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.WriteFile(
+                Path.Combine(workingSet.Prepare(order.VideoId), SourcesFileName),
+                lookups
+            );
 
         return lookups;
     }
+
+    /// <summary>What an earlier lookup kept for this track, or null when there is none.</summary>
+    public IReadOnlyList<SiteLookup>? CachedFor(WorkOrder order) =>
+        SiteLookupJsonContext.Default.IReadOnlyListSiteLookup.ReadFileOrDefault(
+            Path.Combine(
+                Path.GetDirectoryName(workingSet.EvidencePathFor(order.VideoId))!,
+                SourcesFileName
+            )
+        );
 
     /// <summary>The ledger's names for a song judged before, else the row's <c>Artist - Title</c>.</summary>
     public (string Artist, string Title)? NamesOf(WorkOrder order) =>

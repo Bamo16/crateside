@@ -242,6 +242,9 @@ public sealed record TrackRow
     /// <summary>Detected and never judged: the judge has it, nothing about its key is missing yet.</summary>
     public bool WaitingForJudge { get; init; }
 
+    /// <summary>The rules left its key open and there is no judge, so the person decides it on its page (ADR 0076).</summary>
+    public bool WaitingForPerson { get; init; }
+
     /// <summary>
     /// How the held download turned out, or null when there is none; a finding only when
     /// <see cref="Acquisition.Stops"/> says so, not by being here.
