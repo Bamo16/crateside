@@ -79,7 +79,9 @@ For a new track or a Library backfill track, once its evidence is complete (ADR 
 2. **Rules.** A ruling is recorded and the track goes on to separation like any judged track. No
    judge session runs, whatever judge is configured: the maintainer chose rules first always
    (2026-11-03), since they agreed with the judge on 97–99% of what they ruled on and spare about
-   37k tokens a track.
+   37k tokens a track. The rules run whether judging is paused, held by a refusing endpoint, or
+   held by the quota guard: those hold only the judge. Each new track gets one try per start of
+   crateside, so a track they leave open never keeps the next from its turn.
 3. **The judge**, if one is configured, gets what the rules left.
 4. **The person**, if there is no judge: the track's Verdict job records the new status
    `AwaitingPerson`. It is not a strike and not a hold. The selector skips it, separation goes on,

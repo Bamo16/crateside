@@ -38,6 +38,9 @@ public sealed class VerdictDrainer(
     private readonly bool _spendsClaudeQuota = options.Value.SpendsClaudeQuota;
     private readonly SemaphoreSlim _oneAtATime = new(1, 1);
 
+    // Tracks the rule pass has tried since the start, so one it leaves open never blocks the next.
+    private readonly HashSet<string> _triedByRules = [];
+
     public JobStage Stage => JobStage.Verdict;
 
     /// <summary>Judges the next detected-but-unjudged track, if there is one.</summary>
@@ -47,6 +50,11 @@ public sealed class VerdictDrainer(
 
         try
         {
+            // Rules cost nothing, so the pause, a refusing endpoint and the quota guard hold only
+            // the judge (ADR 0076).
+            if (await RuleNextAsync(ct) is { } ruled)
+                return ruled;
+
             if (control.IsPaused)
             {
                 control.SetHold(null);
@@ -206,6 +214,71 @@ public sealed class VerdictDrainer(
             : order;
     }
 
+    private async Task<StageTick?> RuleNextAsync(CancellationToken ct)
+    {
+        try
+        {
+            return await RuleNextAsync(await queue.ReadAsync(ct), ct);
+        }
+        catch (PlaylistUnavailableException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Rules on the next new track the rules have not tried yet; null when none was ruled on or left to the person.</summary>
+    internal async Task<StageTick?> RuleNextAsync(WorkListsView view, CancellationToken ct)
+    {
+        var ledger = store.Read();
+
+        while (selector.TryPickNext(view, ledger, out var item, skip: _triedByRules))
+        {
+            _triedByRules.Add(item.VideoId);
+
+            var order = WorkOrder.Compose(item, ledger);
+
+            // The judge's pass reports what is missing, as a failure of its own.
+            if (await completer.CompleteAsync(item.VideoId, ct: ct) is not null)
+                continue;
+
+            if (await rules.TryRuleAsync(order, ct) is { } ruled)
+                return Ruled(item, order, ruled);
+
+            if (!_hasJudge)
+                return WaitsForPerson(item, order);
+        }
+
+        return null;
+    }
+
+    private StageTick Ruled(WorkItem item, WorkOrder order, VerdictResult ruled)
+    {
+        jobs.Record(
+            item.VideoId,
+            JobStage.Verdict,
+            ruled.IsSuccess ? JobStatus.Succeeded : JobStatus.Failed,
+            error: ruled.Error,
+            summary: ruled.Summary
+        );
+
+        return StageTick.Ran(order, ruled.IsSuccess, ruled.Error);
+    }
+
+    private StageTick WaitsForPerson(WorkItem item, WorkOrder order)
+    {
+        jobs.Record(
+            item.VideoId,
+            JobStage.Verdict,
+            JobStatus.AwaitingPerson,
+            summary: "no ruling, and no judge: waiting for your call"
+        );
+
+        return StageTick.Ran(order, true, null) with
+        {
+            Note = "waiting for you",
+        };
+    }
+
     private async Task<StageTick> JudgeNextAsync(bool backfill, CancellationToken ct)
     {
         var hold = backfill ? null : await guard.CheckAsync(ct);
@@ -308,32 +381,10 @@ public sealed class VerdictDrainer(
             }
 
             if (!isRejudge && await rules.TryRuleAsync(order, ct) is { } ruled)
-            {
-                jobs.Record(
-                    item.VideoId,
-                    JobStage.Verdict,
-                    ruled.IsSuccess ? JobStatus.Succeeded : JobStatus.Failed,
-                    error: ruled.Error,
-                    summary: ruled.Summary
-                );
-
-                return StageTick.Ran(order, ruled.IsSuccess, ruled.Error);
-            }
+                return Ruled(item, order, ruled);
 
             if (!isRejudge && !_hasJudge)
-            {
-                jobs.Record(
-                    item.VideoId,
-                    JobStage.Verdict,
-                    JobStatus.AwaitingPerson,
-                    summary: "no ruling, and no judge: waiting for your call"
-                );
-
-                return StageTick.Ran(order, true, null) with
-                {
-                    Note = "waiting for you",
-                };
-            }
+                return WaitsForPerson(item, order);
 
             var result = await judge.JudgeAsync(order, direction: null, _ => { }, ct);
 
