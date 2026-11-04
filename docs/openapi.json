@@ -1540,6 +1540,118 @@
         },
         "description": "A downbeat as the filter read it, in seconds into the file."
       },
+      "Release": {
+        "type": "object",
+        "properties": {
+          "album": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "albumArtist": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "track": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "trackCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "disc": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "discCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "genre": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "composer": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "organization": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ost": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The catalogue number of the official soundtrack a gamerip carries."
+          },
+          "year": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "yearText": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The date as the file or site wrote it."
+          },
+          "yearKind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/YearKind"
+              }
+            ]
+          },
+          "cover": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The cover's file name in the covers folder."
+          }
+        },
+        "description": "What a track's source says about the release it came from, kept whatever the source (ADR 0077)."
+      },
       "ResolvedName": {
         "required": [
           "displayTitle",
@@ -2979,6 +3091,17 @@
           "nameSource": {
             "$ref": "#/components/schemas/TrackNameSource"
           },
+          "release": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "What the source said about the release this track is from; null for a playlist track.",
+                "$ref": "#/components/schemas/Release"
+              }
+            ]
+          },
           "awaitingRename": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -4263,6 +4386,13 @@
           }
         },
         "description": "A sidecar crateside wrote: a sibling's warp, a starter warp, or a clip with Warp off."
+      },
+      "YearKind": {
+        "enum": [
+          "Release",
+          "Upload",
+          null
+        ]
       }
     }
   },

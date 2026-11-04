@@ -708,6 +708,28 @@
     color: var(--red);
 }
 
+/* A file input stretched over the whole strip, so a drop anywhere on it lands on the input. */
+.drop-files {
+    position: relative;
+    display: block;
+    max-width: var(--table-tracks);
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-40);
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+}
+
+.drop-files ::deep input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
 /* Sits under the filter bar rather than in a popover: it is one field and a sentence, and a
    layer that has to be dismissed would be heavier than what it holds. */
 .add-track {

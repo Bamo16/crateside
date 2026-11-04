@@ -1,5 +1,6 @@
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
+using Crateside.Core.Imports;
 using Crateside.Core.Marks;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Download;
@@ -18,6 +19,10 @@ public sealed record TrackAnnotations
     /// <summary>How each retained download turned out, by video ID — what a row is parked over.</summary>
     public IReadOnlyDictionary<string, Acquisition> Acquisitions { get; init; } =
         new Dictionary<string, Acquisition>();
+
+    /// <summary>What the source of a track not taken from the playlist said about its release, by track key.</summary>
+    public IReadOnlyDictionary<string, Release> Releases { get; init; } =
+        new Dictionary<string, Release>();
 
     public IReadOnlyList<Deletion> Deletions { get; init; } = [];
 

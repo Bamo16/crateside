@@ -262,15 +262,20 @@
             ? row.Samples.Select(sample => sample.AbletonKey).OfType<string>().FirstOrDefault()
             : null;
 
-    private string Meta =>
-        string.Join(
-            " · ",
-            new[]
-            {
+    private string Meta
+    {
+        get
+        {
+            string?[] parts =
+            [
                 _row?.Genre?.Written ?? _row?.Genre?.Suggested,
-                _row is null ? null : "upload".ToQuantity(_row.Uploads.Count),
-            }.OfType<string>()
-        );
+                .. _row?.Release?.Describe() ?? [],
+                _row is { Uploads.Count: > 0 } ? "upload".ToQuantity(_row.Uploads.Count) : null,
+            ];
+
+            return string.Join(" · ", parts.OfType<string>());
+        }
+    }
 
     private string KeyNote =>
         _row switch

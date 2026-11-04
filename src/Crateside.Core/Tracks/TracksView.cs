@@ -261,6 +261,7 @@ public sealed record TracksView
                     && !(progress.AwaitingPerson && verdict is null),
                 WaitingForPerson = progress.AwaitingPerson && verdict is null,
                 Acquisition = acquisition,
+                Release = known.Releases.GetValueOrDefault(primary.TrackKey),
                 GpuPosition = members
                     .Select(seed =>
                         gpuLine.TryGetValue(seed.TrackKey, out var position) ? position : (int?)null

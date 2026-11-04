@@ -5,6 +5,7 @@ using Crateside.Core.Marks;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Playlist;
 
 namespace Crateside.Core.Tracks;
 
@@ -14,7 +15,8 @@ public sealed class TrackAnnotationReader(
     DeletionLog deletions,
     GenreStore genres,
     FamiliarityStore familiarity,
-    TrackMarkStore marks
+    TrackMarkStore marks,
+    IntakeStore? intake = null
 )
 {
     /// <summary>Everything recorded about the tracks, once what was kept under a judged upload has moved to its song.</summary>
@@ -30,6 +32,12 @@ public sealed class TrackAnnotationReader(
             Genres = genres.Read(),
             Familiarity = familiarity.Read(),
             Marks = marks.Read(),
+            Releases =
+                intake
+                    ?.Read()
+                    .Where(record => record.Release is not null)
+                    .ToDictionary(record => record.TrackKey, record => record.Release!)
+                ?? [],
         };
     }
 
