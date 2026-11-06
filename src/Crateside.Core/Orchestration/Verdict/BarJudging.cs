@@ -35,9 +35,12 @@ public sealed class BarJudging(
         {
             TrackKey = row.TrackKey,
             Title = row.Title,
-            SourceUrl = row.StatedSourceUrl is { Length: > 0 } stated
-                ? stated
-                : $"https://music.youtube.com/watch?v={row.TrackKey}",
+            SourceUrl = row switch
+            {
+                { StatedSourceUrl: { Length: > 0 } stated } => stated,
+                { TrackKey: var key } when !TrackKeys.IsVideoId(key) => TrackKeys.ProvenanceOf(key),
+                _ => $"https://music.youtube.com/watch?v={row.TrackKey}",
+            },
             Destination = row.Verdict?.HasTaggableKey is true
                 ? StemDestination.KeyIdentified
                 : StemDestination.UnresolvedKey,
