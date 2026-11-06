@@ -31,6 +31,10 @@ public static partial class TrackKeys
         return key is not null;
     }
 
+    public static bool IsProvenance(string? input) =>
+        input?.StartsWith(ProvenancePrefix, StringComparison.Ordinal) is true
+        && TryParse(input, out _);
+
     public static bool IsVideoId(string? key) => key is { Length: > 0 } && !key.Contains('~');
 
     public static string ProvenanceOf(string key) => $"{ProvenancePrefix}{key}";

@@ -97,8 +97,8 @@ internal static partial class RunValidation
                 "the URL this run's audio came from; say local_source for a file with none"
             );
 
-        if (run is { SourceUrl: { } url } && !IsHttp(url))
-            return new("source_url", $"{url} is not an http(s) URL");
+        if (run is { SourceUrl: { } url } && !IsHttp(url) && !TrackKeys.IsProvenance(url))
+            return new("source_url", $"{url} is not an http(s) URL or a track:<key>");
 
         if (run is { InputKind: { } kind } && !InputKinds.Contains(kind))
             return new("input_kind", $"expected {string.Join(" | ", InputKinds)}");
