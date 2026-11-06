@@ -550,6 +550,9 @@ public sealed class StemEditor(
 
         try
         {
+            // Some work starts with seconds of synchronous file work; yield first so the page
+            // shows it is busy before that begins.
+            await Task.Yield();
             await work();
         }
         catch (OperationCanceledException) { }

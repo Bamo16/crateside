@@ -385,9 +385,9 @@
                     {
                         <span class="flag" title="The vocal stem is more than @NearSilentVocal.ThresholdDb dB quieter than the instrumental, so there may be nothing to separate.">vocals near-silent</span>
                         <button class="outline small" @onclick="() => _stems.SwitchToInstrumentalAsync(row)"
-                                @onclick:stopPropagation="true"
+                                @onclick:stopPropagation="true" disabled="@_stems.Working"
                                 title="Re-cut as the source and a drum guide, with no vocal or instrumental stem.">
-                            Switch to Instrumental
+                            @(_stems.Working ? "Switching…" : "Switch to Instrumental")
                         </button>
                     }
                     @if (row.IsAddedByUrl)
