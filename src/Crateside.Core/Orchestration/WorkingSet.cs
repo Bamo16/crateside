@@ -8,7 +8,7 @@ namespace Crateside.Core.Orchestration;
 /// Everything crateside is holding about one track while that track is in flight: the source
 /// audio it acquired and the evidence it produced from it.
 /// </summary>
-public sealed class WorkingSet(CratesidePaths paths)
+public sealed class WorkingSet(CratesidePaths paths, TimeProvider? time = null)
 {
     /// <summary>The evidence from the whole-file detection — the one a verdict run starts from.</summary>
     public const string EvidenceFileName = "evidence.json";
@@ -24,19 +24,29 @@ public sealed class WorkingSet(CratesidePaths paths)
         (DateTime Written, Acquisition? Acquisition)
     > _acquisitions = new(StringComparer.Ordinal);
 
+    /// <summary>A folder modified this recently is listed again whatever it was last read at, since a second change can land in the same timestamp tick.</summary>
+    private static readonly TimeSpan Racy = TimeSpan.FromSeconds(2);
+
+    private readonly ConcurrentDictionary<string, (DateTime Written, string? Source)> _listed = new(
+        StringComparer.Ordinal
+    );
+
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
+
     /// <summary>The largest evidence file worth carrying rather than pointing at.</summary>
     private const long MaxInlineBytes = 32 * 1024;
 
     private readonly string _root = paths.WorkingFolder;
     private readonly string _imports = paths.ImportsFolder;
 
-    internal WorkingSet(string root)
+    internal WorkingSet(string root, TimeProvider? time = null)
         : this(
             new CratesidePaths
             {
                 WorkingFolder = root,
                 ImportsFolder = Path.Combine(Path.GetDirectoryName(root) ?? root, "imports"),
-            }
+            },
+            time
         ) { }
 
     /// <summary>Every video ID currently holding a working set.</summary>
@@ -177,26 +187,70 @@ public sealed class WorkingSet(CratesidePaths paths)
     {
         var directory = DirectoryFor(trackKey);
 
-        path = (
-            Directory.Exists(directory)
-                ? Directory
-                    .EnumerateFiles(directory)
-                    .Where(f =>
-                        !f.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
-                        && !f.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)
-                    )
-                    .ToList()
-                : []
-        )
-            is [var only]
-            ? only
-            : null!;
+        path = (Directory.Exists(directory) ? OnlySourceIn(directory) : null)!;
 
         if (path is null && ImportStore.TryFind(_imports, trackKey, out var imported))
             path = imported;
 
         return path is not null;
     }
+
+    /// <summary>
+    /// <see cref="TryGetSource"/> for every track at once, in one listing of each root. A folder's
+    /// files are listed again only when its modified time moves, because opening a folder costs
+    /// about a third of a millisecond on this machine and there is one per track.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Sources()
+    {
+        var found = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        foreach (var directory in FoldersIn(_root))
+            if (Listed("working", directory, OnlySourceIn) is { } source)
+                found[directory.Name] = source;
+
+        foreach (var directory in FoldersIn(_imports))
+            if (
+                !found.ContainsKey(directory.Name)
+                && Listed("imports", directory, FirstFileIn) is { } imported
+            )
+                found[directory.Name] = imported;
+
+        return found;
+    }
+
+    private string? Listed(string kind, DirectoryInfo directory, Func<string, string?> read)
+    {
+        var key = $"{kind}/{directory.FullName}";
+        var written = directory.LastWriteTimeUtc;
+
+        if (_listed.TryGetValue(key, out var kept) && kept.Written == written)
+            return kept.Source;
+
+        var source = read(directory.FullName);
+
+        if (_time.GetUtcNow().UtcDateTime - written > Racy)
+            _listed[key] = (written, source);
+
+        return source;
+    }
+
+    private static IEnumerable<DirectoryInfo> FoldersIn(string root) =>
+        Directory.Exists(root) ? new DirectoryInfo(root).EnumerateDirectories() : [];
+
+    private static string? OnlySourceIn(string directory) =>
+        Directory
+            .EnumerateFiles(directory)
+            .Where(f =>
+                !f.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
+                && !f.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)
+            )
+            .ToList()
+            is [var only]
+            ? only
+            : null;
+
+    private static string? FirstFileIn(string directory) =>
+        Directory.EnumerateFiles(directory).FirstOrDefault();
 
     /// <summary>When the track left staging, or null while no clock is running for it.</summary>
     public DateTimeOffset? LeftStagingAt(string trackKey) =>

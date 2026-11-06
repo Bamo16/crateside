@@ -110,6 +110,39 @@ public sealed partial class BeatReader
     public BeatReading? ReadFor(string? trackKey, string stemPath) =>
         Read(ReferenceFor(trackKey, stemPath)) ?? Read(stemPath);
 
+    /// <summary>
+    /// <see cref="ReadFor"/> for one pass over many stems. Sources are listed once, and a file's size
+    /// and time come from <paramref name="known"/> where it is there, instead of a lookup each.
+    /// </summary>
+    public Func<string?, string, BeatReading?> ReadForPass(IEnumerable<FileInfo> known)
+    {
+        var files = new ConcurrentDictionary<string, FileInfo>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var file in known)
+            files.TryAdd(file.FullName, file);
+
+        var sources = _sources?.Snapshot();
+
+        if (sources is not null)
+            Parallel.ForEach(
+                sources.Values.Distinct().Where(source => !files.ContainsKey(source)),
+                source => FileOf(source).Refresh()
+            );
+
+        return (trackKey, stemPath) =>
+            (Kept(ReferenceOf(trackKey, stemPath)) ?? Kept(stemPath))?.Reading;
+
+        FileInfo FileOf(string path) => files.GetOrAdd(path, static path => new FileInfo(path));
+
+        string ReferenceOf(string? trackKey, string stemPath) =>
+            trackKey is null ? stemPath
+            : sources is null ? ReferenceFor(trackKey, stemPath)
+            : sources.TryGetValue(trackKey, out var source) && FileOf(source).Exists ? source
+            : stemPath;
+
+        BeatEntry? Kept(string path) => KeptFor(FileOf(path));
+    }
+
     /// <summary>The kept reading, whichever build made it, or null when the file changed since.</summary>
     public BeatReading? Read(string audioPath) => Kept(audioPath)?.Reading;
 
@@ -304,8 +337,10 @@ public sealed partial class BeatReader
 
     private string PinnedFileName => _builds?.Pinned(FfmpegFilter.Beatdetect)?.Path ?? _fileName;
 
-    private BeatEntry? Kept(string audioPath) =>
-        new FileInfo(audioPath) is { Exists: true } file
+    private BeatEntry? Kept(string audioPath) => KeptFor(new FileInfo(audioPath));
+
+    private BeatEntry? KeptFor(FileInfo file) =>
+        file is { Exists: true }
         && _read.TryGetValue(file.FullName, out var entry)
         && entry.Stamp == BeatStamp.Of(file)
             ? entry
