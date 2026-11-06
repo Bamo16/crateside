@@ -101,6 +101,31 @@ public sealed class EvidenceRunnerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_track_taken_in_from_a_file_gets_its_evidence_without_a_working_folder()
+    {
+        const string fileKey = "file~25edb68200c05e82";
+        var imported = Path.Combine(_directory, "imports", fileKey);
+        Directory.CreateDirectory(imported);
+        File.WriteAllText(Path.Combine(imported, "Dave Wise - Lockjaw's Saga.flac"), "audio");
+        Assert.False(Directory.Exists(Path.Combine(Working, fileKey)));
+        var order = WorkOrder.Compose(
+            new WorkItem
+            {
+                PlaylistItemId = "PLI2",
+                TrackKey = fileKey,
+                Title = "Dave Wise - Lockjaw's Saga",
+            },
+            TestLedger.From("does-not-exist")
+        );
+
+        var result = await Runner(new FakeFfmpeg(KeydetectSummary))
+            .RunAsync(order, TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsSuccess, result.Error);
+        Assert.True(Set.HasEvidence(fileKey));
+    }
+
+    [Fact]
     public async Task Evidence_already_on_disk_is_not_produced_again()
     {
         Held();
