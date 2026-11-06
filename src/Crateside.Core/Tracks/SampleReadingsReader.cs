@@ -23,8 +23,14 @@ public sealed class SampleReadingsReader(
             Presets = await presets.ReadAsync(ct),
             LibraryTags = AbletonReads.TagsOrEmpty(fileIndex.Read, paths.LibraryFolder),
             TempoOf = warpTempos.Read,
-            BeatsOf = beats.ReadFor,
+            BeatsOf = beats.ReadForPass([
+                .. FilesUnder(paths.LibraryFolder, SearchOption.AllDirectories),
+                .. FilesUnder(paths.StagingFolder, SearchOption.TopDirectoryOnly),
+            ]),
             WrittenWarp = written.Of,
             LufsOf = loudness is null ? null : path => loudness.Read(path)?.IntegratedLufs,
         };
+
+    private static IEnumerable<FileInfo> FilesUnder(string folder, SearchOption option) =>
+        Directory.Exists(folder) ? new DirectoryInfo(folder).EnumerateFiles("*", option) : [];
 }

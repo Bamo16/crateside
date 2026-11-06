@@ -76,6 +76,51 @@ public sealed class BeatReferenceTests : IDisposable
     }
 
     [Fact]
+    public async Task A_pass_reads_what_ReadFor_reads()
+    {
+        await _reader.MeasureAsync(_instrumental, TestContext.Current.CancellationToken);
+        var pass = _reader.ReadForPass([]);
+
+        Assert.Same(_reader.Read(_instrumental), pass(TrackKey, _instrumental));
+
+        _sources[TrackKey] = _source;
+        await _reader.MeasureAsync(_source, TestContext.Current.CancellationToken);
+        pass = _reader.ReadForPass([]);
+
+        Assert.Same(_reader.Read(_source), pass(TrackKey, _instrumental));
+        Assert.Same(_reader.Read(_instrumental), pass(null, _instrumental));
+    }
+
+    [Fact]
+    public async Task A_pass_falls_back_to_the_instrumental_when_the_source_has_gone_or_changed()
+    {
+        _sources[TrackKey] = _source;
+        await _reader.MeasureAsync(_instrumental, TestContext.Current.CancellationToken);
+        await _reader.MeasureAsync(_source, TestContext.Current.CancellationToken);
+
+        await File.WriteAllTextAsync(_source, "new audio", TestContext.Current.CancellationToken);
+
+        Assert.Same(_reader.Read(_instrumental), _reader.ReadForPass([])(TrackKey, _instrumental));
+
+        File.Delete(_source);
+
+        Assert.Same(_reader.Read(_instrumental), _reader.ReadForPass([])(TrackKey, _instrumental));
+    }
+
+    [Fact]
+    public async Task A_pass_over_a_locator_that_answers_one_at_a_time_reads_the_same()
+    {
+        var reader = new BeatReader(new FixedBpm(), sources: new OneAtATimeLocator(_sources));
+        _sources[TrackKey] = _source;
+        await reader.MeasureAsync(_source, TestContext.Current.CancellationToken);
+
+        Assert.Same(
+            reader.Read(_source),
+            reader.ReadForPass([new FileInfo(_source)])(TrackKey, _instrumental)
+        );
+    }
+
+    [Fact]
     public async Task A_changed_reference_file_is_read_again()
     {
         _sources[TrackKey] = _source;
@@ -96,6 +141,14 @@ public sealed class BeatReferenceTests : IDisposable
     }
 
     private sealed class Locator(Dictionary<string, string> sources) : ISourceLocator
+    {
+        public string? PathOf(string trackKey) => sources.GetValueOrDefault(trackKey);
+
+        public IReadOnlyDictionary<string, string> Snapshot() =>
+            new Dictionary<string, string>(sources);
+    }
+
+    private sealed class OneAtATimeLocator(Dictionary<string, string> sources) : ISourceLocator
     {
         public string? PathOf(string trackKey) => sources.GetValueOrDefault(trackKey);
     }

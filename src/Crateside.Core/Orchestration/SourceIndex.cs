@@ -28,40 +28,45 @@ public sealed class SourceIndex(WorkingSet workingSet, CratesidePaths paths) : I
             ? known
         : null;
 
+    /// <summary>Every upload's source from one listing of the working set, the samples kept filling in for those it holds none of.</summary>
+    public IReadOnlyDictionary<string, string> Snapshot()
+    {
+        var sources = workingSet.Sources();
+
+        return (_known ??= KnownFromFile())
+            .Where(entry => !sources.ContainsKey(entry.Key))
+            .Concat(sources)
+            .ToDictionary(entry => entry.Key, entry => entry.Value, StringComparer.Ordinal);
+    }
+
     /// <summary>The full mix an order is judged from: the row's upload, else the one the order states.</summary>
     public string? PathFor(WorkOrder order) =>
         PathOf(order.TrackKey)
         ?? (TrackKeys.TryParse(order.SourceUrl, out var stated) ? PathOf(stated) : null);
 
     /// <summary>Every source on disk: the working set's downloads first, then the samples kept.</summary>
-    public IReadOnlyList<SourceEntry> Entries(ProcessedTracks processed, KeyLedger ledger) =>
+    public IReadOnlyList<SourceEntry> Entries(ProcessedTracks processed, KeyLedger ledger)
+    {
+        var sources = workingSet.Sources();
+
+        return
         [
             .. workingSet
-                .TrackKeys.Where(trackKey => workingSet.TryGetSource(trackKey, out _))
-                .Select(trackKey =>
-                {
-                    workingSet.TryGetSource(trackKey, out var held);
-
-                    return new SourceEntry(
-                        trackKey,
-                        ledger.SongFor(trackKey) ?? Path.GetFileNameWithoutExtension(held),
-                        SourceLocation.WorkingSet,
-                        held
-                    );
-                }),
+                .TrackKeys.Where(sources.ContainsKey)
+                .Select(trackKey => new SourceEntry(
+                    trackKey,
+                    ledger.SongFor(trackKey) ?? Path.GetFileNameWithoutExtension(sources[trackKey]),
+                    SourceLocation.WorkingSet,
+                    sources[trackKey]
+                )),
             .. new ImportStore(paths)
-                .TrackKeys.Where(trackKey => workingSet.TryGetSource(trackKey, out _))
-                .Select(trackKey =>
-                {
-                    workingSet.TryGetSource(trackKey, out var imported);
-
-                    return new SourceEntry(
-                        trackKey,
-                        ledger.SongFor(trackKey) ?? Path.GetFileNameWithoutExtension(imported),
-                        SourceLocation.Import,
-                        imported
-                    );
-                }),
+                .TrackKeys.Where(sources.ContainsKey)
+                .Select(trackKey => new SourceEntry(
+                    trackKey,
+                    ledger.SongFor(trackKey) ?? Path.GetFileNameWithoutExtension(sources[trackKey]),
+                    SourceLocation.Import,
+                    sources[trackKey]
+                )),
             .. processed
                 .StemsByTrackKey.SelectMany(found => found.Value)
                 .Where(stem => stem is { IsVerbatimSource: true, SourceTrackKey: not null })
@@ -73,6 +78,7 @@ public sealed class SourceIndex(WorkingSet workingSet, CratesidePaths paths) : I
                     stem.Path
                 )),
         ];
+    }
 
     /// <summary>Rewrites the file when what it lists has changed.</summary>
     public void Refresh(ProcessedTracks processed, KeyLedger ledger)
@@ -118,6 +124,12 @@ public interface ISourceLocator
 {
     /// <summary>The working set's download, else the sample kept, as last indexed; null when neither is on disk.</summary>
     string? PathOf(string trackKey);
+
+    /// <summary>
+    /// A path for every upload that has one, which may no longer exist, from one pass rather than a
+    /// lookup each; null when the locator can only answer one at a time.
+    /// </summary>
+    IReadOnlyDictionary<string, string>? Snapshot() => null;
 }
 
 /// <summary>One source on disk: <paramref name="Path"/> is the file itself.</summary>
