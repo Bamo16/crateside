@@ -55,7 +55,17 @@ public sealed class EvidenceDrainer(
         // absent, distinguishing an interrupted attempt from one never made.
         jobs.Record(item.TrackKey, JobStage.Evidence, JobStatus.Running);
 
-        var result = await runner.RunAsync(order, ct);
+        EvidenceResult result;
+
+        try
+        {
+            result = await runner.RunAsync(order, ct);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Left Running, the job would hold the track out of the queue until a restart.
+            result = EvidenceResult.Failed(ex.Message);
+        }
 
         jobs.Record(
             item.TrackKey,

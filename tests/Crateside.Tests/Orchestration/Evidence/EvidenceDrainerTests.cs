@@ -120,6 +120,24 @@ public sealed class EvidenceDrainerTests : IDisposable
     }
 
     [Fact]
+    public async Task A_detection_that_cannot_write_fails_the_job_rather_than_leaving_it_running()
+    {
+        // An import is the only source, so the fake detector finds no working folder to write into.
+        const string fileKey = "file~25edb68200c05e82";
+        var imported = Path.Combine(_root, "imports", fileKey);
+        Directory.CreateDirectory(imported);
+        File.WriteAllText(Path.Combine(imported, "Lockjaw's Saga.flac"), "audio");
+
+        var tick = await _drainer.DrainAsync(Queue(fileKey), TestContext.Current.CancellationToken);
+
+        Assert.Equal(StageOutcome.Ran, tick.Outcome);
+        Assert.False(tick.IsSuccess);
+        Assert.True(_jobs.TryGet(fileKey, JobStage.Evidence, out var job));
+        Assert.Equal(JobStatus.Failed, job.Status);
+        Assert.Contains("Could not find a part of the path", job.Error);
+    }
+
+    [Fact]
     public async Task New_intake_is_detected_before_any_backfill()
     {
         File.WriteAllText(Path.Combine(_set.Prepare(NewId), "source.flac"), "audio");
