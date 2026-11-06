@@ -72,6 +72,29 @@ public sealed class LedgerStoreTests : IDisposable
     }
 
     [Fact]
+    public void A_file_keyed_track_is_recorded_under_its_track_key()
+    {
+        const string key = "file~25edb68200c05e82";
+
+        Assert.IsType<RecordOutcome.Recorded>(Store.Record(Run(url: $"track:{key}")));
+
+        Assert.True(Store.Read().TryGetLatestByTrackKey(key, out var run));
+        Assert.Equal($"track:{key}", run.SourceUrl);
+    }
+
+    [Theory]
+    [InlineData("track:")]
+    [InlineData("track:not a key")]
+    [InlineData("ftp://example.com/song.flac")]
+    [InlineData("file~25edb68200c05e82")]
+    public void A_source_that_is_neither_a_link_nor_a_track_key_is_refused(string url)
+    {
+        var refused = Assert.IsType<RecordOutcome.Refused>(Store.Record(Run(url: url)));
+
+        Assert.Equal("source_url", refused.Field);
+    }
+
+    [Fact]
     public void Only_a_withheld_verdict_may_name_no_center()
     {
         Assert.Equal(

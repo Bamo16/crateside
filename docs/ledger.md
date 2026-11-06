@@ -61,7 +61,7 @@ worse than no run:
 
 - a confidence outside the four, or a center missing on a verdict that is not withheld;
 - a tonic not in the sharp spelling, or a mode outside the seven;
-- no source URL without `LocalSource`, or a source URL that is not http(s);
+- no source URL without `LocalSource`, or a source URL that is neither http(s) nor a `track:<key>`;
 - a source kind outside the five;
 - a song, artist or title still mis-encoded after repair. UTF-8 read as CP1252
   (`RÃ¶yksopp`) is repaired on the way in; what cannot be repaired is refused, because a

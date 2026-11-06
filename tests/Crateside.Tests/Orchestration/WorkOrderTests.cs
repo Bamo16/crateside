@@ -125,6 +125,29 @@ public sealed class WorkOrderTests : IDisposable
     }
 
     [Fact]
+    public void A_file_keyed_track_is_stated_by_its_track_key_and_the_ledger_takes_it()
+    {
+        const string key = "file~25edb68200c05e82";
+        using var store = TestLedger.Store();
+
+        var order = WorkOrder.Compose(Item() with { TrackKey = key }, TestLedger.From(_ledgerPath));
+
+        Assert.Equal($"track:{key}", order.SourceUrl);
+        Assert.IsType<RecordOutcome.Recorded>(
+            store.Record(
+                new RunRecord
+                {
+                    RecordedAt = DateTimeOffset.Parse("2026-11-06T00:00:00+00:00"),
+                    Song = "dave wise - lockjaw's saga",
+                    SourceUrl = order.SourceUrl,
+                    Confidence = KeyConfidence.High,
+                    Center = new TonalCenter("C", DiatonicMode.Aeolian),
+                }
+            )
+        );
+    }
+
+    [Fact]
     public void An_art_track_gets_the_music_url()
     {
         var order = WorkOrder.Compose(Item(PremiumOutlook.ArtTrack), Ledger("A minor"));

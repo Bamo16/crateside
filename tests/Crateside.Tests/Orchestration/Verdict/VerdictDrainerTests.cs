@@ -331,6 +331,26 @@ public sealed class VerdictDrainerTests : IDisposable
         );
     }
 
+    [Fact]
+    public async Task A_file_keyed_track_the_rules_settle_is_recorded_under_its_track_key()
+    {
+        const string fileKey = "file~25edb68200c05e82";
+        Detected(fileKey, AgreedEvidence);
+
+        var tick = await _drainer.RuleNextAsync(
+            Intake((fileKey, "Dave Wise - Lockjaw's Saga")),
+            TestContext.Current.CancellationToken
+        );
+
+        Assert.True(tick?.IsSuccess);
+
+        var run = Assert.Single(_store.Read().Runs);
+
+        Assert.Equal(DecidedBy.Rules, run.DecidedBy);
+        Assert.Equal($"track:{fileKey}", run.SourceUrl);
+        Assert.Equal(fileKey, run.SourceTrackKey);
+    }
+
     private static WorkListsView Intake(params (string TrackKey, string Title)[] tracks) =>
         WorkListsView.Compose(
             [
