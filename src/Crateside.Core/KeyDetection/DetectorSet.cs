@@ -56,6 +56,8 @@ public sealed class DetectorSet(PcmDecoder decoder, KeydetectFilter keydetect, M
         switch (await ReadAsync(audioPath, window, ct))
         {
             case EvidenceReading.Read(var json) reading:
+                // A track taken in from a file holds its audio in imports, so no folder is made for it yet.
+                Directory.CreateDirectory(Path.GetDirectoryName(evidencePath)!);
                 await File.WriteAllTextAsync(evidencePath, json, ct);
 
                 return new DetectionOutcome.Written(evidencePath) { Summary = reading.Summary };
