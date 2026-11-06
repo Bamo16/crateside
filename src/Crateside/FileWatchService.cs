@@ -12,7 +12,7 @@ public sealed class FileWatchService(
 {
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (paths is not { StagingFolder: { Length: > 0 }, LibraryFolder: { Length: > 0 } })
+        if (paths is not { StagingFolder.Length: > 0, LibraryFolder.Length: > 0 })
             logger.LogWarning(
                 "The Staging or Library folder is not set; choose them in Settings and restart"
             );
