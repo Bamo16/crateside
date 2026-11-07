@@ -155,7 +155,7 @@
         }
         <div class="search">
             <input type="search" placeholder="Find a track" aria-label="Find a track"
-                   value="@_search" @oninput="OnSearch" />
+                   @key="_searchBox" @oninput="OnSearch" />
             @if (_search.Length > 0)
             {
                 <button class="clear" @onclick="ClearSearch" title="Clear">×</button>
@@ -303,7 +303,7 @@
     {
         <p class="notice error">The playlist could not be read: @error</p>
     }
-    else if (!Shown.Any())
+    else if (Shown.ToList() is not { Count: > 0 } shown)
     {
         @if (_search.Length is 0)
         {
@@ -316,7 +316,7 @@
     }
     else
     {
-        @foreach (var row in Shown)
+        @foreach (var row in shown)
         {
             var open = _expanded == row.TrackKey;
             var bpm = row.Bpm is { } tempo ? TempoFormat.Format(tempo) : null;
@@ -552,6 +552,12 @@
     private string? _problem;
 
     private string _search = string.Empty;
+
+    /// <summary>
+    /// The search box is left uncontrolled, so a render that lands after more keystrokes cannot
+    /// write an older value over them; a new key gives a fresh, empty box when the code clears the search.
+    /// </summary>
+    private int _searchBox;
 
     private readonly List<TrackRow> _toasts = [];
     private readonly List<(UserAction Action, TrackRow? Row)> _filed = [];
@@ -797,7 +803,7 @@
     private async Task ShowFamiliarity(string value)
     {
         _familiarity = _familiarity == value && !Searching ? null : value;
-        _search = string.Empty;
+        EmptySearch();
         _held.Clear();
 
         await ResetSpacerAsync();
@@ -807,7 +813,7 @@
     {
         _filter = filter;
         _held.Clear();
-        _search = string.Empty;
+        EmptySearch();
 
         await ResetSpacerAsync();
     }
@@ -980,9 +986,15 @@
         await ResetSpacerAsync();
     }
 
-    private async Task ClearSearch()
+    private void EmptySearch()
     {
         _search = string.Empty;
+        _searchBox++;
+    }
+
+    private async Task ClearSearch()
+    {
+        EmptySearch();
 
         await ResetSpacerAsync();
     }
@@ -998,7 +1010,7 @@
     {
         // All, and no search, because the anchor has to be in the list for the browser to reach it.
         _filter = TrackFilter.All;
-        _search = string.Empty;
+        EmptySearch();
         _familiarity = null;
         _expanded = row.TrackKey;
         _problem = null;
