@@ -91,7 +91,13 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
         }
 
         return NotSlug
-            .Replace(Apostrophes.Replace(plain.ToString().ToLowerInvariant(), string.Empty), "-")
+            .Replace(
+                Apostrophes.Replace(
+                    InitialismDots.Replace(plain.ToString().ToLowerInvariant(), string.Empty),
+                    string.Empty
+                ),
+                "-"
+            )
             .Trim('-');
     }
 
@@ -551,6 +557,9 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
 
     [GeneratedRegex(@"['’]")]
     private static partial Regex Apostrophes { get; }
+
+    [GeneratedRegex(@"(?<=\b[a-z])\.")]
+    private static partial Regex InitialismDots { get; }
 }
 
 /// <summary>What one site gave for a song.</summary>
