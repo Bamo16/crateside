@@ -123,13 +123,17 @@
 
     private RenderFragment ChoiceList() =>
         @<div class="choices">
-            @foreach (var choice in Choices)
-            {
-                <button class="choice" disabled="@_working" @onclick="() => Choose(choice.Key, choice.Mode)">
-                    <span class="mono key">@KeyText.Spell(choice.Mode is null ? choice.Key.LedgerName : choice.Center.Name)</span>
-                    <span class="by">@string.Join(", ", choice.NamedBy)</span>
-                </button>
-            }
+            <div class="grid">
+                @foreach (var choice in Choices)
+                {
+                    var namedBy = string.Join(", ", choice.NamedBy);
+
+                    <button class="choice" disabled="@_working" title="@namedBy" @onclick="() => Choose(choice.Key, choice.Mode)">
+                        <span class="mono key">@KeyText.Spell(choice.Mode is null ? choice.Key.LedgerName : choice.Center.Name)</span>
+                        <span class="by">@namedBy</span>
+                    </button>
+                }
+            </div>
             <div class="any">
                 <label for="any-key">Any key</label>
                 <select id="any-key" @bind="_other">
