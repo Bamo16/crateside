@@ -40,8 +40,8 @@
                 </ul>
             }
 
-            <h3>Why this key</h3>
-            @if (Run is { Candidates: [], TonicCheck: null, DecidedBy: DecidedBy.Judge })
+            <h3>@(Pending ? "Why the rules gave no ruling" : "Why this key")</h3>
+            @if (!Pending && Run is { Candidates: [], TonicCheck: null, DecidedBy: DecidedBy.Judge })
             {
                 <p class="older">An older verdict: one paragraph, as the judge wrote it, through the formatter.</p>
             }
@@ -72,8 +72,15 @@
             @if (Run.Sources.Count == 0)
             {
                 <p class="muted">
-                    None found. Underground, non-Anglophone and recent album tracks often have no
-                    human analysis at all — the verdict rests on the detectors@(Run.DecidedBy is DecidedBy.Rules ? "" : " and the chord check").
+                    @if (Pending)
+                    {
+                        <text>None found.</text>
+                    }
+                    else
+                    {
+                        <text>None found. Underground, non-Anglophone and recent album tracks often have no
+                    human analysis at all — the verdict rests on the detectors@(Run.DecidedBy is DecidedBy.Rules ? "" : " and the chord check").</text>
+                    }
                 </p>
             }
             else
@@ -288,6 +295,10 @@
     /// <summary>What the verdict rested on, in one line under the head.</summary>
     [Parameter]
     public string? Summary { get; set; }
+
+    /// <summary>Whether the run is no verdict at all: the evidence of a track the rules left open.</summary>
+    [Parameter]
+    public bool Pending { get; set; }
 
     /// <summary>Whether the verdict is WITHHELD, whose Considered keys are still open.</summary>
     [Parameter]

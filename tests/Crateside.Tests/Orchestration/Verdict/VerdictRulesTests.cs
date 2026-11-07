@@ -317,6 +317,44 @@ public sealed class VerdictRulesTests
         );
     }
 
+    private static string WhyOpen(string evidence, params SiteLookup[] lookups) =>
+        Assert.IsType<RulesOutcome.Open>(VerdictRules.Decide(evidence, lookups)).Reason;
+
+    [Fact]
+    public void A_split_between_detectors_and_a_page_says_who_named_which_key()
+    {
+        Assert.Equal(
+            "C major from madmom and Essentia; A minor from keydetect and Hooktheory. Tier A needs two detectors and the pages on one key.",
+            WhyOpen(Evidence("A minor", "C major", "C major"), Hooktheory("A minor"))
+        );
+    }
+
+    [Fact]
+    public void Without_a_page_the_reason_gives_the_bar_and_keydetects_r()
+    {
+        Assert.Equal(
+            "A minor from keydetect and madmom; C major from Essentia. No Hooktheory or Musicnotes page states a key. Without one, all three detectors must name one key, or keydetect and one more with r of at least 0.80 (here 0.70).",
+            WhyOpen(Evidence("A minor", "A minor", "C major", r: 0.7))
+        );
+    }
+
+    [Fact]
+    public void An_unreachable_counted_site_is_named_as_the_reason()
+    {
+        Assert.Equal(
+            "Musicnotes could not be reached, and a page there may name another key, so nothing is ruled without it.",
+            WhyOpen(Evidence("A minor", "A minor", "A minor"), Unreachable("Musicnotes"))
+        );
+    }
+
+    [Fact]
+    public void A_ruling_carries_no_reason()
+    {
+        Assert.IsType<RulesOutcome.Ruled>(
+            VerdictRules.Decide(Evidence("A minor", "A minor", "A minor"), [])
+        );
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

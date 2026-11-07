@@ -117,6 +117,43 @@ public sealed class PersonsKeyTests : IDisposable
     }
 
     [Fact]
+    public void A_track_nothing_has_ruled_on_shows_its_detectors_its_pages_and_why_the_rules_declined()
+    {
+        HoldEvidenceAndPages();
+
+        var pending = _person.PendingFor(Order);
+
+        Assert.NotNull(pending);
+        Assert.Equal(
+            ["keydetect", "madmom", "Essentia"],
+            pending.Algorithms.Select(algorithm => algorithm.Label)
+        );
+        Assert.Equal(
+            "A minor from keydetect and madmom; D major from Essentia; C major from Hooktheory; B minor from Hooktheory. Tier A needs two detectors and the pages on one key.",
+            pending.Reasoning
+        );
+
+        var hooktheory = pending.Sources.Single(source => source.Url!.Contains("hooktheory"));
+        var guitar = pending.Sources.Single(source => source.Url!.Contains("ultimate-guitar"));
+
+        Assert.Equal("authoritative", hooktheory.RecordedKind);
+        Assert.Contains("Shown, not counted", guitar.Note);
+    }
+
+    [Fact]
+    public void A_track_whose_pages_were_not_looked_up_says_so_instead_of_claiming_there_are_none()
+    {
+        _set.Prepare(TrackKey);
+        File.WriteAllText(_set.EvidencePathFor(TrackKey), Evidence);
+
+        Assert.Contains("not been looked up", _person.PendingFor(Order)!.Reasoning);
+    }
+
+    [Fact]
+    public void A_track_with_no_evidence_has_nothing_pending() =>
+        Assert.Null(_person.PendingFor(Order));
+
+    [Fact]
     public void A_track_with_no_evidence_offers_nothing()
     {
         Assert.Empty(_person.ChoicesFor(Order, run: null));

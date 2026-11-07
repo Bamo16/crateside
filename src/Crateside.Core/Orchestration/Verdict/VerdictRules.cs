@@ -31,20 +31,84 @@ internal static class VerdictRules
         [NotNullWhen(true)] out Ruling? ruling
     )
     {
-        ruling = null;
-
-        if (Parse(evidence) is not { } root)
-            return false;
-
-        var readings = Readings(root);
-        var stated = StatedKeys(lookups);
-
-        if (stated is [])
-            ruling = lookups.Any(MayHoldAnotherKey) ? null : DetectorsAlone(root, readings);
-        else if (Agreed(readings) is { } key && stated.All(page => page.Key == key))
-            ruling = BackedByPages(key, readings, stated);
+        ruling = Decide(evidence, lookups) is RulesOutcome.Ruled(var ruled) ? ruled : null;
 
         return ruling is not null;
+    }
+
+    /// <summary>The ruling, or in one plain line why the rules left the track open.</summary>
+    public static RulesOutcome Decide(string? evidence, IReadOnlyList<SiteLookup> lookups)
+    {
+        if (Parse(evidence) is not { } root || Readings(root) is not [_, ..] readings)
+            return new RulesOutcome.Open("The evidence holds no detector readings.");
+
+        var stated = StatedKeys(lookups);
+        var ruling = stated switch
+        {
+            [] when lookups.Any(MayHoldAnotherKey) => null,
+            [] => DetectorsAlone(root, readings),
+            _ when Agreed(readings) is { } key && stated.All(page => page.Key == key) =>
+                BackedByPages(key, readings, stated),
+            _ => null,
+        };
+
+        return ruling is not null
+            ? new RulesOutcome.Ruled(ruling)
+            : new RulesOutcome.Open(WhyOpen(root, readings, stated, lookups));
+    }
+
+    private static string WhyOpen(
+        JsonObject root,
+        List<Reading> readings,
+        List<Stated> stated,
+        IReadOnlyList<SiteLookup> lookups
+    )
+    {
+        if (lookups.FirstOrDefault(MayHoldAnotherKey) is { } unreachable)
+            return $"{unreachable.Site} could not be reached, and a page there may name another key, so nothing is ruled without it.";
+
+        var named = readings
+            .GroupBy(reading => reading.Key)
+            .Select(key =>
+                (
+                    Key: key.Key,
+                    Detectors: key.Select(reading => reading.Detector).ToList(),
+                    Pages: stated
+                        .Where(page => page.Key == key.Key)
+                        .Select(page => page.Page.Site)
+                        .Distinct()
+                        .ToList()
+                )
+            )
+            .Concat(
+                stated
+                    .Where(page =>
+                        page.Key is { } key && readings.All(reading => reading.Key != key)
+                    )
+                    .GroupBy(page => page.Key)
+                    .Where(group => group.Key is not null)
+                    .Select(group =>
+                        (
+                            Key: group.Key!,
+                            Detectors: new List<string>(),
+                            Pages: group.Select(page => page.Page.Site).Distinct().ToList()
+                        )
+                    )
+            )
+            .OrderByDescending(entry => entry.Detectors.Count)
+            .ThenByDescending(entry => entry.Pages.Count)
+            .Select(entry =>
+                $"{entry.Key.LedgerName} from {Named([.. entry.Detectors, .. entry.Pages])}"
+            );
+
+        var tail = stated is []
+            ? string.Create(
+                CultureInfo.InvariantCulture,
+                $"No Hooktheory or Musicnotes page states a key. Without one, all three detectors must name one key, or keydetect and one more with r of at least {ConfidentKeydetect:0.00}{(Correlation(root) is { } r ? $" (here {r:0.00})" : null)}."
+            )
+            : "Tier A needs two detectors and the pages on one key.";
+
+        return $"{string.Join("; ", named)}. {tail}";
     }
 
     private static Ruling? DetectorsAlone(JsonObject root, List<Reading> readings) =>
@@ -131,7 +195,7 @@ internal static class VerdictRules
             ? null
             : LedgerVocabulary.ParseMode(raw);
 
-    private static bool IsUserArrangement(FetchedPage page) =>
+    internal static bool IsUserArrangement(FetchedPage page) =>
         page is { Site: "Musicnotes", Note: { } note }
         && note.StartsWith("user arrangement", StringComparison.OrdinalIgnoreCase);
 
@@ -205,6 +269,16 @@ internal static class VerdictRules
     private sealed record Reading(string Detector, MusicKey Key);
 
     private sealed record Stated(FetchedPage Page, string Raw, MusicKey? Key);
+}
+
+/// <summary>What the rules made of a track: a ruling, or the reason they left it open.</summary>
+internal abstract record RulesOutcome
+{
+    private RulesOutcome() { }
+
+    public sealed record Ruled(Ruling Ruling) : RulesOutcome;
+
+    public sealed record Open(string Reason) : RulesOutcome;
 }
 
 /// <summary>A key crateside ruled on, and what it stood on.</summary>
