@@ -51,6 +51,28 @@ start. Enums are stored by name (`Dorian`, `ChordRecognizer`); times as round-tr
 - **Restatements**: "this upload is that song": a `SourceUrl` and the `RunId` whose verdict
   it carries over. It never changes an answer; the song's latest run is still its verdict.
 
+## The person's decisions
+
+Beside `Runs`, never inside it, the same database keeps what the person decided
+([ADR 0082](adr/0082-the-persons-decisions-live-in-the-ledger-database.md)), so a ledger backup
+restores both. They change; a run does not.
+
+- **PageChoices**: a page rejected, counted or added for a track (ADR 0078), by `TrackKey`: `Url`,
+  `Kind` (`Rejected`, `Promoted`, `Added`), `Page` (the page as the person saw it, JSON), `At` and
+  `UndoneAt`. An undone choice stays.
+- **SourceRemovals**: a recorded source taken off a track (ADR 0081), by `TrackKey`: `Source`, `At`,
+  `UndoneAt`.
+- **TrackMarks**: a mark on a song (`ChangesKey`, `OddBars`), one row each, by `Song`.
+- **Genres**: a song's genre as the person settled it and as the sources suggested it (`Heard` is a
+  JSON list), by `Song`.
+- **Familiarities**: a song's reach as Deezer measured it and the familiarity the person settled, by
+  `Song`.
+
+A `Song` is the song identity, or the upload's video ID for a song never judged; it moves to the song
+when the verdict arrives (ADR 0071). At start, a pending `page-choices.json`, `track-marks.json`,
+`genres.json` or `familiarity.json` is imported once into an empty table and renamed
+`<name>.imported-<yyyyMMdd>`.
+
 The 24-key tag is never stored. It is the **collapse** of the center: the tonic kept, the
 mode reduced to major or minor (A Dorian is tagged A minor).
 

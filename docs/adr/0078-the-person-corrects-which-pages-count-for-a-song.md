@@ -8,6 +8,8 @@
   (title-only candidates are shown and never counted).
 - Amended 2026-11-07 by [ADR 0081](0081-the-person-removes-a-recorded-human-source.md): a recorded
   human source can be removed too, and is kept in the same file.
+- Amended 2026-11-08 by [ADR 0082](0082-the-persons-decisions-live-in-the-ledger-database.md): the
+  choices are kept in the ledger database, in `PageChoices`, not in `page-choices.json`.
 
 ## Context
 

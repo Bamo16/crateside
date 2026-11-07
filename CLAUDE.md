@@ -53,7 +53,7 @@ warp with crateside's records about that warp, and its entry in every per-song s
 it is filed under. `/api/tracks?filter=<filter>` gives the Tracks page's rows. Shapes and examples
 are in [docs/api.md](docs/api.md); `/scalar` browses them. The API only reads.
 
-Fall back to the files (`ledger.db`, `jobs.jsonl`, the stores under `%APPDATA%\crateside`, the
+Fall back to the files (`ledger.db`, which holds the person's decisions as well as the verdicts, `jobs.jsonl`, the stores under `%APPDATA%\crateside`, the
 `.asd` sidecars through AbleKit) when the app is not running, or for what the API does not serve:
 the log, the source index, ledger runs before the latest. Never start the app to use the API.
 

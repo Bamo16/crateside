@@ -5,6 +5,9 @@
 - Amends [ADR 0030](0030-genre-is-a-tag-group-of-our-own-settled-by-the-user.md) ("a song the
   ledger never judged is keyed by its upload") and applies
   [ADR 0014](0014-the-song-is-the-identity-and-the-name-is-not.md) to the per-song stores.
+- Amended 2026-11-08 by [ADR 0082](0082-the-persons-decisions-live-in-the-ledger-database.md): the
+  records are rows in `ledger.db`, so the `.bak-` copy of a file before a move is gone; the
+  start-up ledger backup covers it.
 
 ## Context
 

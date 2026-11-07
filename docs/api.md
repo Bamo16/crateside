@@ -1,7 +1,7 @@
 # The API
 
 crateside serves what its pages show as read-only JSON, so a script or an agent can ask what state a
-track is in without reading `ledger.db`, `jobs.jsonl`, the stores under `%APPDATA%\crateside` and
+track is in without reading `ledger.db` (which holds the person's decisions too), `jobs.jsonl`, the stores under `%APPDATA%\crateside` and
 the `.asd` sidecars one by one. It is on the app's own listener, `http://localhost:5027` when started
 from the `run` task, and like the pages it answers on this machine only.
 
