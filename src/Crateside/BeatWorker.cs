@@ -7,8 +7,8 @@ using Humanizer;
 namespace Crateside;
 
 /// <summary>
-/// Reads <c>beatdetect</c> on each upload's reference file, its source else its instrumental, when it
-/// has no current reading, then again on those read by an older build than the pin, staging before
+/// Reads <c>beatdetect</c> on each upload's reference file, its source else its instrumental, and on the
+/// source of an upload with no stems yet (ADR 0080), when it has no current reading, then again on those read by an older build than the pin, staging before
 /// the library. Never paused: it runs on the CPU and contends for nothing, like detection (#75, #76, ADR 0065).
 /// </summary>
 public sealed class BeatWorker(
@@ -35,7 +35,7 @@ public sealed class BeatWorker(
                             "Instrumental",
                             StringComparison.OrdinalIgnoreCase
                         )
-                    )
+                    ) || row is { Samples.Count: 0, FullMixBeats: null }
                 )
                 .Select(row => row.TrackKey)
     );
@@ -84,7 +84,12 @@ public sealed class BeatWorker(
 
         string[] toRead =
         [
-            .. reader.ToRead([.. reader.ReferencesOf(BeatReader.Instrumentals(paths, folderInfo))]),
+            .. reader.ToRead([
+                .. reader
+                    .ReferencesOf(BeatReader.Instrumentals(paths, folderInfo))
+                    .Concat(reader.Sources())
+                    .Distinct(StringComparer.OrdinalIgnoreCase),
+            ]),
         ];
 
         reader.Begin(toRead.Length);

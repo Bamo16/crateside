@@ -114,7 +114,17 @@ public sealed partial class BeatReader
     /// <see cref="ReadFor"/> for one pass over many stems. Sources are listed once, and a file's size
     /// and time come from <paramref name="known"/> where it is there, instead of a lookup each.
     /// </summary>
-    public Func<string?, string, BeatReading?> ReadForPass(IEnumerable<FileInfo> known)
+    public Func<string?, string, BeatReading?> ReadForPass(IEnumerable<FileInfo> known) =>
+        ReadPass(known).ReadFor;
+
+    /// <summary>
+    /// <see cref="ReadForPass"/> with the upload's source reading alone as well, which a track with
+    /// no stems yet shows as a provisional tempo (ADR 0080).
+    /// </summary>
+    public (
+        Func<string?, string, BeatReading?> ReadFor,
+        Func<string, BeatReading?> ReadSource
+    ) ReadPass(IEnumerable<FileInfo> known)
     {
         var files = new ConcurrentDictionary<string, FileInfo>(StringComparer.OrdinalIgnoreCase);
 
@@ -129,19 +139,35 @@ public sealed partial class BeatReader
                 source => FileOf(source).Refresh()
             );
 
-        return (trackKey, stemPath) =>
-            (Kept(ReferenceOf(trackKey, stemPath)) ?? Kept(stemPath))?.Reading;
+        return (
+            (trackKey, stemPath) =>
+                (Kept(ReferenceOf(trackKey, stemPath)) ?? Kept(stemPath))?.Reading,
+            trackKey =>
+                SourceOf(trackKey) is { } source && Kept(source) is { } kept ? kept.Reading : null
+        );
 
         FileInfo FileOf(string path) => files.GetOrAdd(path, static path => new FileInfo(path));
 
         string ReferenceOf(string? trackKey, string stemPath) =>
-            trackKey is null ? stemPath
-            : sources is null ? ReferenceFor(trackKey, stemPath)
-            : sources.TryGetValue(trackKey, out var source) && FileOf(source).Exists ? source
-            : stemPath;
+            trackKey is not null && SourceOf(trackKey) is { } source ? source : stemPath;
+
+        string? SourceOf(string trackKey) =>
+            sources is null
+                ? _sources?.PathOf(trackKey) is { } found && File.Exists(found)
+                    ? found
+                    : null
+                : sources.TryGetValue(trackKey, out var source) && FileOf(source).Exists
+                    ? source
+                    : null;
 
         BeatEntry? Kept(string path) => KeptFor(FileOf(path));
     }
+
+    /// <summary>The sources on disk of uploads, which have a reading to be made even where they have no stems yet.</summary>
+    public IEnumerable<string> Sources() =>
+        (_sources?.Snapshot()?.Values ?? [])
+            .Where(File.Exists)
+            .Distinct(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>The kept reading, whichever build made it, or null when the file changed since.</summary>
     public BeatReading? Read(string audioPath) => Kept(audioPath)?.Reading;

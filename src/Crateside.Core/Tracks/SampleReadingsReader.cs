@@ -17,19 +17,24 @@ public sealed class SampleReadingsReader(
     LoudnessReader? loudness = null
 )
 {
-    public async Task<SampleReadings> ReadAsync(CancellationToken ct = default) =>
-        new()
+    public async Task<SampleReadings> ReadAsync(CancellationToken ct = default)
+    {
+        var (readFor, readSource) = beats.ReadPass([
+            .. FilesUnder(paths.LibraryFolder, SearchOption.AllDirectories),
+            .. FilesUnder(paths.StagingFolder, SearchOption.TopDirectoryOnly),
+        ]);
+
+        return new()
         {
             Presets = await presets.ReadAsync(ct),
             LibraryTags = AbletonReads.TagsOrEmpty(fileIndex.Read, paths.LibraryFolder),
             TempoOf = warpTempos.Read,
-            BeatsOf = beats.ReadForPass([
-                .. FilesUnder(paths.LibraryFolder, SearchOption.AllDirectories),
-                .. FilesUnder(paths.StagingFolder, SearchOption.TopDirectoryOnly),
-            ]),
+            BeatsOf = readFor,
+            FullMixBeatsOf = readSource,
             WrittenWarp = written.Of,
             LufsOf = loudness is null ? null : path => loudness.Read(path)?.IntegratedLufs,
         };
+    }
 
     private static IEnumerable<FileInfo> FilesUnder(string folder, SearchOption option) =>
         Directory.Exists(folder) ? new DirectoryInfo(folder).EnumerateFiles("*", option) : [];

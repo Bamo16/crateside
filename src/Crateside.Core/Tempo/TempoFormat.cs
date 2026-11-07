@@ -10,6 +10,7 @@ public static class TempoFormat
 {
     private const string FromWarp = "from your warp";
     private const string FromReading = "crateside's reading";
+    private const string FromFullMix = "from the full mix";
     private const string FromEstimate = "ledger's estimate";
     private const double RelatedWithin = 2;
 
@@ -143,6 +144,10 @@ public static class TempoFormat
             { Off: { } off } => Join("off its tempo", OffBy(tempo, off), Source(tempo)),
             { Unconfirmed.Reason: TrueUpReason.Steps } => Join("steps in its grid", Source(tempo)),
             { Unconfirmed: not null } => Join("grid not confirmed", Source(tempo)),
+            { Source: TempoSource.Reading, IsFromFullMix: true } => Join(
+                FromFullMix,
+                "until the stems are cut"
+            ),
             { Source: TempoSource.Reading, IsVouched: true } => Join(
                 FromReading,
                 "steady to the hundredth"
@@ -249,11 +254,12 @@ public static class TempoFormat
         percent < 1 ? "<1%" : $"{Math.Round(percent, MidpointRounding.AwayFromZero):0}%";
 
     private static string Source(TrackTempo tempo) =>
-        tempo.Source switch
+        tempo switch
         {
-            TempoSource.Warp => FromWarp,
-            TempoSource.Reading => FromReading,
-            TempoSource.Estimate => FromEstimate,
+            { IsFromFullMix: true } => FromFullMix,
+            { Source: TempoSource.Warp } => FromWarp,
+            { Source: TempoSource.Reading } => FromReading,
+            { Source: TempoSource.Estimate } => FromEstimate,
             _ => string.Empty,
         };
 

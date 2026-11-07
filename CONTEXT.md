@@ -212,7 +212,9 @@ by hand; everything below describes candidates against it.
 - **Headline tempo** — the one BPM shown for a track everywhere: the **warped BPM** where there is
   one, else crateside's reading, else the **ledger's estimate** (the BPM of imported history, a warp
   starting point that no new run writes)
-  ([ADR 0049](docs/adr/0049-a-bpm-shows-only-the-precision-crateside-can-vouch-for.md)).
+  ([ADR 0049](docs/adr/0049-a-bpm-shows-only-the-precision-crateside-can-vouch-for.md)). A track
+  with no stems yet shows the reading of its source marked **from the full mix**, approximate
+  and for display only ([ADR 0080](docs/adr/0080-a-track-shows-a-tempo-from-its-source-before-it-has-stems.md)).
 - **Vouched** — a BPM known to the hundredth: a steady warp whose grid holds against the track's
   transients (`GridCheck`: no step, no drift beyond the noise), or a reading whose 30 s windows
   agree within 0.02%. Written bare (`128`, `119.50`); anything else is **approximate** and

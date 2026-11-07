@@ -19,6 +19,9 @@ public sealed record SampleReadings
 
     public Func<string?, string, BeatReading?>? BeatsOf { get; init; }
 
+    /// <summary>beatdetect's reading of a track's source alone, whether or not it has stems.</summary>
+    public Func<string, BeatReading?>? FullMixBeatsOf { get; init; }
+
     public Func<string, WrittenWarp?>? WrittenWarp { get; init; }
 
     /// <summary>The integrated loudness kept for a file, or null when none is.</summary>

@@ -293,6 +293,9 @@ public sealed record TracksView
                 GaveUpFor = progress.GaveUpFor,
                 Retrying = progress.Retrying,
                 Samples = samples,
+                FullMixBeats = members
+                    .Select(seed => read.FullMixBeatsOf?.Invoke(seed.TrackKey))
+                    .FirstOrDefault(reading => reading is not null),
                 HasNearSilentVocal =
                     read.LufsOf is { } lufsOf
                     && NearSilentVocal.AsksForVocal(instruction?.Plan ?? StemPlan.Default)
