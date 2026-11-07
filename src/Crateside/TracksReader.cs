@@ -2,9 +2,11 @@ using System.Diagnostics;
 using Crateside.Core;
 using Crateside.Core.Library;
 using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
 using Crateside.Core.WorkLists;
+using Microsoft.Extensions.Options;
 
 namespace Crateside;
 
@@ -16,6 +18,8 @@ public sealed class TracksReader(
     JobStore jobs,
     TrackAnnotationReader annotations,
     SampleReadingsReader samples,
+    VerdictControl verdict,
+    IOptions<JudgeOptions> judge,
     ILogger<TracksReader> logger
 ) : ITracksReader
 {
@@ -37,7 +41,8 @@ public sealed class TracksReader(
                 jobs,
                 scan.Instructions,
                 annotations.Read(scan.Ledger),
-                await samples.ReadAsync(ct)
+                await samples.ReadAsync(ct),
+                judge.Value.Standing(verdict.IsPaused)
             );
 
             if (Stopwatch.GetElapsedTime(started) is { TotalSeconds: >= 1 } took)

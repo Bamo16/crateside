@@ -15,6 +15,7 @@
 @inject BarJudging Judging
 @inject PersonsKey Person
 @inject IOptions<JudgeOptions> Judge
+@inject VerdictControl Verdicts
 
 <PageTitle>@(Name ?? "Track details") · crateside</PageTitle>
 
@@ -247,6 +248,8 @@
             ({ } decided, _) =>
                 $"{KeyText.Byline(decided.DecidedBy)} · {decided.Timestamp.ToLocalTime():yyyy-MM-dd}",
             _ when _row?.WaitingForPerson is true => "waiting for you",
+            _ when _row is { WaitingForJudge: true, Judge: JudgeStanding.Paused } =>
+                "waiting for the judge or you",
             _ when _pending is not null => "no ruling yet",
             _ => "never judged",
         };
@@ -303,6 +306,7 @@
         _stems.Changed += OnStemsChanged;
         Tracks.Changed += OnChanged;
         Judging.Changed += OnChanged;
+        Verdicts.Changed += OnChanged;
 
         await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
         Read();
@@ -317,6 +321,7 @@
     {
         Tracks.Changed -= OnChanged;
         Judging.Changed -= OnChanged;
+        Verdicts.Changed -= OnChanged;
         _stems.Changed -= OnStemsChanged;
         _stems.Dispose();
         _clock?.Dispose();
@@ -342,6 +347,9 @@
     private void Read()
     {
         (_row, _run) = Details.Find(TrackKey);
+
+        // Pausing judging does not rebuild the rows, so the standing is read live.
+        _row = _row is null ? null : _row with { Judge = Judge.Value.Standing(Verdicts.IsPaused) };
         _pending = _run is null && _row is { Verdict: null, HasUpload: true }
             ? Person.PendingFor(BarJudging.OrderFor(_row))
             : null;

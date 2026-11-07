@@ -1,3 +1,5 @@
+using Crateside.Core.Tracks;
+
 namespace Crateside.Core.Orchestration.Verdict;
 
 /// <summary>How the judge is run: its model, its endpoint, and how much the user's ear counts (docs/judge.md).</summary>
@@ -18,6 +20,15 @@ public sealed class JudgeOptions
 
     /// <summary>Whether any judge is set up; without one, crateside rules where it can and the person decides the rest (ADR 0076).</summary>
     public bool IsConfigured => Kind is not JudgeKind.None;
+
+    /// <summary>Whether a judge will reach the tracks the rules leave open, given whether the user has paused judging.</summary>
+    public JudgeStanding Standing(bool judgingPaused) =>
+        (IsConfigured, judgingPaused) switch
+        {
+            (false, _) => JudgeStanding.Absent,
+            (true, true) => JudgeStanding.Paused,
+            (true, false) => JudgeStanding.Running,
+        };
 
     /// <summary>Whether the judge runs on Claude Code's own login, and so spends the weekly Claude limit (ADR 0067).</summary>
     public bool SpendsClaudeQuota =>

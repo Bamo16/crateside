@@ -335,6 +335,62 @@ public sealed class TracksViewCompositionTests : IDisposable
         Assert.True(row.Matches(TrackFilter.NeedsAttention));
     }
 
+    private TrackRow WaitingForJudge(JudgeStanding judge) =>
+        Assert.Single(
+            TracksView
+                .Compose(
+                    View(separatedWithoutKey: new HashSet<string> { Video }),
+                    Ledger(),
+                    [],
+                    new Dictionary<string, IReadOnlyList<StemOnDisk>>(),
+                    FinishedRoot,
+                    Jobs(),
+                    new Dictionary<string, TrackInstruction>(),
+                    judge: judge
+                )
+                .Rows
+        );
+
+    [Theory]
+    [InlineData(JudgeStanding.Running)]
+    [InlineData(JudgeStanding.Paused)]
+    public void A_track_waiting_for_a_configured_judge_may_be_decided_by_the_person(
+        JudgeStanding judge
+    )
+    {
+        var row = WaitingForJudge(judge);
+
+        Assert.True(row.WaitingForJudge);
+        Assert.False(row.WaitingForPerson);
+        Assert.True(row.PersonMayDecide(hasEvidence: true));
+    }
+
+    [Fact]
+    public void A_track_without_complete_evidence_is_not_offered_to_the_person_while_a_judge_is_set_up()
+    {
+        Assert.False(WaitingForJudge(JudgeStanding.Paused).PersonMayDecide(hasEvidence: false));
+    }
+
+    [Fact]
+    public void A_track_with_a_verdict_is_not_offered_the_waiting_picker()
+    {
+        var row = Assert.Single(Compose(ledger: LedgerWith("A minor", "HIGH", 120)));
+
+        Assert.False(row.PersonMayDecide(hasEvidence: true));
+    }
+
+    [Fact]
+    public void A_paused_judge_makes_the_wait_read_the_judge_or_you_and_a_running_one_does_not()
+    {
+        var paused = WaitingForJudge(JudgeStanding.Paused);
+        var running = WaitingForJudge(JudgeStanding.Running);
+
+        Assert.Equal("waiting for the judge or you", paused.ChipLabel);
+        Assert.Contains("paused", paused.Next);
+        Assert.Equal("waiting to be judged", running.ChipLabel);
+        Assert.Contains("when the judge reaches it", running.Next);
+    }
+
     [Fact]
     public void A_track_waiting_for_you_with_its_stems_parked_still_reads_waiting_for_you()
     {

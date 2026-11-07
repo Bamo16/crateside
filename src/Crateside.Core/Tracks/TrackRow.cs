@@ -262,6 +262,19 @@ public sealed record TrackRow
     /// <summary>The rules left its key open and there is no judge, so the person decides it on its page (ADR 0076).</summary>
     public bool WaitingForPerson { get; init; }
 
+    /// <summary>Whether a judge is set up and running, paused, or absent; the wording of a wait for a key follows it.</summary>
+    public JudgeStanding Judge { get; init; }
+
+    /// <summary>
+    /// Whether the song page offers the person the key picker for want of a verdict: the rules left
+    /// it open, its evidence is complete, and no judge is mid-session on it. A configured judge,
+    /// running or paused, does not take that away (ADR 0076).
+    /// </summary>
+    public bool PersonMayDecide(bool hasEvidence) =>
+        HasUpload
+        && this is { Verdict: null, State: not TrackState.Judging }
+        && (WaitingForPerson || hasEvidence);
+
     /// <summary>
     /// How the held download turned out, or null when there is none; a finding only when
     /// <see cref="Acquisition.Stops"/> says so, not by being here.
@@ -381,7 +394,9 @@ public sealed record TrackRow
         {
             TrackState.Queued or TrackState.JudgedInLine when WaitingForPerson => "waiting for you",
             TrackState.Queued when Lookalike is not null => "same song?",
-            TrackState.Queued when WaitingForJudge => "waiting to be judged",
+            TrackState.Queued when WaitingForJudge => Judge is JudgeStanding.Paused
+                ? "waiting for the judge or you"
+                : "waiting to be judged",
             TrackState.Queued => "queued",
             TrackState.Downloading => "downloading",
             TrackState.Detecting => "detecting key",
@@ -435,7 +450,12 @@ public sealed record TrackRow
                 "decide its key on its page",
             TrackState.Queued when Lookalike is { } like =>
                 $"is this {like.DisplayName}? judging waits for your answer",
-            TrackState.Queued when WaitingForJudge => "then judged, when the judge reaches it",
+            TrackState.Queued when WaitingForJudge => Judge switch
+            {
+                JudgeStanding.Paused =>
+                    "judging is paused: decide its key on its page, or resume the judge",
+                _ => "then judged, when the judge reaches it, or decide its key on its page",
+            },
             TrackState.Queued when IsBackfill => "waiting for Library backfill",
             TrackState.Downloading or TrackState.Detecting when IsBackfill =>
                 "then judged by Library backfill",
@@ -484,6 +504,8 @@ public sealed record TrackRow
         {
             { Verdict: null, WaitingForPerson: true } =>
                 "No ruling and no judge: decide its key on its page.",
+            { Verdict: null, WaitingForJudge: true, Judge: JudgeStanding.Paused } =>
+                "No ruling yet, and judging is paused: the judge or you can decide its key.",
             { Verdict: null } => "Never judged.",
             { Verdict.DecidedBy: Ledger.DecidedBy.Person, Key: { } key } => $"Your call: {key}.",
             { Verdict.DecidedBy: Ledger.DecidedBy.Rules, Key: { } key } =>
