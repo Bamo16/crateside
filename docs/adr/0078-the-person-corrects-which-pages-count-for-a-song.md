@@ -6,6 +6,8 @@
   rules count Hooktheory and Musicnotes pages) and
   [ADR 0077](0077-a-track-that-is-not-on-youtube-is-keyed-by-its-source-and-named-from-its-tags.md)
   (title-only candidates are shown and never counted).
+- Amended 2026-11-07 by [ADR 0081](0081-the-person-removes-a-recorded-human-source.md): a recorded
+  human source can be removed too, and is kept in the same file.
 
 ## Context
 

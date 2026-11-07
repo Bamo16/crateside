@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Verdict;
 
 namespace Crateside.Core.Tracks;
 
@@ -39,7 +40,8 @@ public sealed class TrackDetailsReader(
     JobStore jobs,
     StageNotes stageNotes,
     StemDetailsReader stems,
-    FiledRecordsReader records
+    FiledRecordsReader records,
+    PageChoiceStore choices
 )
 {
     /// <summary>The row from the rows as last built, and the evidence of its song, else of the video ID's.</summary>
@@ -51,9 +53,14 @@ public sealed class TrackDetailsReader(
 
         return new(
             row,
-            row is { Verdict.Song: var song }
-                ? ledger.EvidenceFor(song)
-                : ledger.EvidenceForTrackKey(trackKey)
+            (
+                row is { Verdict.Song: var song }
+                    ? ledger.EvidenceFor(song)
+                    : ledger.EvidenceForTrackKey(trackKey)
+            )
+                is { } evidence
+                ? choices.Marked(trackKey, evidence)
+                : null
         );
     }
 
