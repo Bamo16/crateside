@@ -202,6 +202,13 @@
           "isRelative": {
             "type": "boolean",
             "description": "The dangerous outcome: relative keys share every note, so only the cadence or a human\r\nsource can break it."
+          },
+          "detectors": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The pair's detectors by the names on screen: `madmom and keydetect`."
           }
         },
         "description": "Whether two detectors agreed, and how they differed when they did not."

@@ -363,11 +363,6 @@
     margin-right: 0.3rem;
 }
 
-.pair {
-    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-    font-size: 0.85rem;
-}
-
 /* The progression, folded to its loops: each run reads whole, then its count. */
 .chords-head {
     display: flex;

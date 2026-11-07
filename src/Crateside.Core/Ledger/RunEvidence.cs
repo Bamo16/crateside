@@ -474,12 +474,16 @@ public sealed record AlgorithmResult
     public required string Name { get; init; }
 
     /// <summary>The name on screen: keydetect, madmom, Essentia. <see cref="Name"/> goes in the row's tooltip.</summary>
-    public string Label =>
-        Name switch
+    public string Label => LabelOf(Name);
+
+    /// <summary>The on-screen name for a detector as the evidence spells it, in a result's name or in a pair's (<c>madmom+ffmpeg</c>).</summary>
+    public static string LabelOf(string name) =>
+        name switch
         {
-            "ffmpeg keydetect" => "keydetect",
-            "Essentia edma" => "Essentia",
-            _ => Name,
+            "ffmpeg keydetect" or "ffmpeg" or "ffmpeg_keydetect" => "keydetect",
+            "Essentia edma" or "edma" or "essentia_edma" => "Essentia",
+            "crema" => "CREMA",
+            _ => name,
         };
 
     public string? Key { get; init; }
@@ -594,6 +598,10 @@ public sealed record AgreementPair
     /// source can break it.
     /// </summary>
     public bool IsRelative => Status.Equals("relative", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>The pair's detectors by the names on screen: <c>madmom and keydetect</c>.</summary>
+    public string Detectors =>
+        string.Join(" and ", Pair.Split('+').Select(AlgorithmResult.LabelOf));
 }
 
 /// <summary>A point where the running key estimate changed.</summary>
