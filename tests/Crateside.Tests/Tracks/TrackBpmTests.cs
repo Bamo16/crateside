@@ -56,6 +56,48 @@ public sealed class TrackBpmTests
         Assert.Equal(173.9, row.Bpm?.Value);
     }
 
+    private static readonly BeatReading FullMix = new()
+    {
+        Bpm = 139.3,
+        Windows = [139.3, 139.3, 139.3],
+    };
+
+    [Fact]
+    public void A_track_with_no_stems_shows_the_full_mix_reading_marked_as_such()
+    {
+        var row = Row() with { FullMixBeats = FullMix };
+        var shown = TempoFormat.Format(row.Bpm!);
+
+        Assert.Equal((TempoSource.Reading, 139.3), (row.Bpm?.Source, row.Bpm?.Value));
+        Assert.Equal("~139", shown.Text);
+        Assert.Contains("from the full mix", shown.Note);
+    }
+
+    [Fact]
+    public void The_full_mix_reading_outranks_the_ledgers_estimate_only_until_a_stem_is_read()
+    {
+        var provisional = Row() with { FullMixBeats = FullMix };
+        var stems = Row(new TrackSample { Label = "Instrumental - Full", Beats = FullMix }) with
+        {
+            FullMixBeats = FullMix,
+        };
+
+        Assert.True(provisional.Bpm?.IsFromFullMix);
+        Assert.False(stems.Bpm?.IsFromFullMix);
+        Assert.DoesNotContain("full mix", TempoFormat.Format(stems.Bpm!).Note);
+    }
+
+    [Fact]
+    public void The_full_mix_reading_feeds_the_display_and_nothing_a_stem_reading_does()
+    {
+        var row = Row() with { FullMixBeats = FullMix with { Windows = [100, 139, 170] } };
+
+        Assert.Null(row.Beats);
+        Assert.False(row.TempoDrifts);
+        Assert.Null(TrackTempo.StarterBpm(row.Beats));
+        Assert.False(row.Bpm!.IsVouched);
+    }
+
     private static TrackRow Row(params TrackSample[] samples) =>
         new()
         {

@@ -186,7 +186,17 @@ public sealed record TrackRow
     public DecidedBy? DecidedBy => Verdict?.DecidedBy;
 
     /// <summary>The headline tempo: the finished warp's, else crateside's reading, else the ledger's estimate (ADR 0049).</summary>
-    public TrackTempo? Bpm => TrackTempo.Of(Tempo, Beats, Verdict?.Bpm);
+    public TrackTempo? Bpm =>
+        (Tempo, Beats, FullMixBeats) switch
+        {
+            (null, null, { Bpm: > 0 } mix) => TrackTempo
+                .Of(null, mix, Verdict?.Bpm)
+                ?.AsFromFullMix(),
+            _ => TrackTempo.Of(Tempo, Beats, Verdict?.Bpm),
+        };
+
+    /// <summary>beatdetect's reading of the upload's source, read before any stem exists; it feeds the tempo shown and nothing else (ADR 0080).</summary>
+    public BeatReading? FullMixBeats { get; init; }
 
     /// <summary>The tempo of a finished warp, the instrumental's where there is one.</summary>
     public WarpTempo? Tempo =>

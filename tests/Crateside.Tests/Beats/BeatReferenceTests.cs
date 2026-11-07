@@ -92,6 +92,31 @@ public sealed class BeatReferenceTests : IDisposable
     }
 
     [Fact]
+    public async Task A_source_with_no_stems_is_queued_and_its_reading_is_served_on_its_own()
+    {
+        _sources[TrackKey] = _source;
+
+        Assert.Equal([_source], _reader.Sources());
+        Assert.Equal([_source], _reader.ToRead([.. _reader.Sources()]));
+        Assert.Null(_reader.ReadPass([]).ReadSource(TrackKey));
+
+        await _reader.MeasureAsync(_source, TestContext.Current.CancellationToken);
+
+        Assert.Empty(_reader.ToRead([.. _reader.Sources()]));
+        Assert.Same(_reader.Read(_source), _reader.ReadPass([]).ReadSource(TrackKey));
+        Assert.Null(_reader.ReadPass([]).ReadSource("zzzzzzzzzzz"));
+    }
+
+    [Fact]
+    public async Task The_sources_reading_is_never_the_instrumentals()
+    {
+        await _reader.MeasureAsync(_instrumental, TestContext.Current.CancellationToken);
+        _sources[TrackKey] = _source;
+
+        Assert.Null(_reader.ReadPass([]).ReadSource(TrackKey));
+    }
+
+    [Fact]
     public async Task A_pass_falls_back_to_the_instrumental_when_the_source_has_gone_or_changed()
     {
         _sources[TrackKey] = _source;

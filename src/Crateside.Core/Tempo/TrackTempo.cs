@@ -24,6 +24,9 @@ public sealed record TrackTempo
 
     public BeatReading? Reading { get; init; }
 
+    /// <summary>Read from the source before any stem exists, so shown as approximate and never acted on (ADR 0080).</summary>
+    public bool IsFromFullMix { get; init; }
+
     /// <summary>The ledger's estimate.</summary>
     public double? Estimate { get; init; }
 
@@ -45,6 +48,7 @@ public sealed record TrackTempo
     /// <summary>Known to the hundredth: a steady warp whose grid holds against the audio, any other warp that holds, a typed figure, or a reading whose windows agree tightly.</summary>
     public bool IsVouched =>
         !Drifts
+        && !IsFromFullMix
         && this switch
         {
             { Source: TempoSource.Warp, Warp: { Shape: TempoShape.Steady, Grid: var grid } } => grid
@@ -165,6 +169,8 @@ public sealed record TrackTempo
             TempoSource.Estimate => Of(null, null, Estimate),
             _ => null,
         };
+
+    public TrackTempo AsFromFullMix() => this with { IsFromFullMix = true };
 
     /// <summary>The same tempo shifted by <paramref name="semitones"/> without warping, as Re-Pitch plays it.</summary>
     public TrackTempo Shifted(int semitones) =>

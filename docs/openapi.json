@@ -3266,6 +3266,17 @@
             "description": "The headline tempo: the finished warp's, else crateside's reading, else the ledger's estimate (ADR 0049).",
             "$ref": "#/components/schemas/TrackTempo"
           },
+          "fullMixBeats": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "beatdetect's reading of the upload's source, read before any stem exists; it feeds the tempo shown and nothing else (ADR 0080).",
+                "$ref": "#/components/schemas/BeatReading"
+              }
+            ]
+          },
           "tempo": {
             "description": "The tempo of a finished warp, the instrumental's where there is one.",
             "$ref": "#/components/schemas/WarpTempo"
@@ -3756,6 +3767,10 @@
                 "$ref": "#/components/schemas/BeatReading"
               }
             ]
+          },
+          "isFromFullMix": {
+            "type": "boolean",
+            "description": "Read from the source before any stem exists, so shown as approximate and never acted on (ADR 0080)."
           },
           "estimate": {
             "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
