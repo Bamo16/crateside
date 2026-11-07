@@ -13,6 +13,7 @@
 @inject IServiceProvider Services
 @inject NavigationManager Navigation
 @inject BarJudging Judging
+@inject PersonsKey Person
 @inject IOptions<JudgeOptions> Judge
 
 <PageTitle>@(Name ?? "Track details") · crateside</PageTitle>
@@ -142,13 +143,18 @@
 
                 @if (_row is not null)
                 {
-                    <KeyPicker Row="_row" Run="_run" />
+                    <KeyPicker Row="_row" Run="_run ?? _pending" />
                 }
 
                 @if (HasEvidenceSection)
                 {
                     <section id="evidence" class="evidence-section">
-                        @if (_run is null)
+                        @if (_run is null && _pending is { } pending)
+                        {
+                            <Evidence Run="pending" Heading="What was found" Summary="Nothing is decided yet: the detectors' readings and the pages the lookup found."
+                                      Withheld="true" Pending="true" />
+                        }
+                        else if (_run is null)
                         {
                             <h2>Why @Verdicted</h2>
                             <p class="summary">
@@ -190,6 +196,7 @@
 
     private TrackRow? _row;
     private RunEvidence? _run;
+    private RunEvidence? _pending;
     private StemEditor _stems = null!;
     private Timer? _clock;
     private string? _selectedWarp;
@@ -202,7 +209,8 @@
     private string? Key => _row is null ? _run?.Key : _row.Key ?? LibraryKey;
 
     private string Verdicted =>
-        Center is { IsModal: true } modal ? ModeText.Named(modal) : KeyText.Spell(Key) ?? "this verdict";
+        _pending is not null ? "no ruling"
+        : Center is { IsModal: true } modal ? ModeText.Named(modal) : KeyText.Spell(Key) ?? "this verdict";
 
     /// <summary>The head of Why: the key in full, since the band keeps the short form beside it.</summary>
     private string HeadingKey =>
@@ -224,7 +232,7 @@
     /// <summary>A library-only track never ran through crateside, so it has no stages to draw.</summary>
     private bool HasFlow => _row is { IsLibraryOnly: false };
 
-    private bool HasEvidenceSection => Verdict is not null || _run is not null;
+    private bool HasEvidenceSection => Verdict is not null || _run is not null || _pending is not null;
 
     private KeyConfidence Confidence => _row?.Confidence ?? KeyConfidence.Unknown;
 
@@ -239,6 +247,7 @@
             ({ } decided, _) =>
                 $"{KeyText.Byline(decided.DecidedBy)} · {decided.Timestamp.ToLocalTime():yyyy-MM-dd}",
             _ when _row?.WaitingForPerson is true => "waiting for you",
+            _ when _pending is not null => "no ruling yet",
             _ => "never judged",
         };
 
@@ -330,7 +339,13 @@
     private bool IsTaggedWithKey(TrackSample sample) =>
         Key is { } key && key.Equals(sample.AbletonKey, StringComparison.OrdinalIgnoreCase);
 
-    private void Read() => (_row, _run) = Details.Find(TrackKey);
+    private void Read()
+    {
+        (_row, _run) = Details.Find(TrackKey);
+        _pending = _run is null && _row is { Verdict: null, HasUpload: true }
+            ? Person.PendingFor(BarJudging.OrderFor(_row))
+            : null;
+    }
 
     // Raised on a worker thread, never the circuit's, so the render is marshalled back.
     private void OnChanged() =>

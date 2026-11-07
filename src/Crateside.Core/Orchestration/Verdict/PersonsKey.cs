@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Jobs;
@@ -23,7 +24,7 @@ public sealed class PersonsKey(
     /// <summary>Each distinct key the detectors, keydetect's runner-up and the Hooktheory and Musicnotes pages name, most-named first.</summary>
     public IReadOnlyList<KeyChoice> ChoicesFor(WorkOrder order, RunEvidence? run)
     {
-        if ((run ?? Pending(order)) is not { } evidence)
+        if ((run ?? PendingFor(order)) is not { } evidence)
             return [];
 
         List<(MusicKey Key, string By)> named = [];
@@ -144,18 +145,51 @@ public sealed class PersonsKey(
         return outcome;
     }
 
-    /// <summary>The evidence and pages kept for a track that has no run to read them from.</summary>
-    private RunEvidence? Pending(WorkOrder order) =>
-        workingSet.TryReadEvidence(order.TrackKey, out var evidence)
-            ? RunEvidence.From(
-                new RunRecord
-                {
-                    RecordedAt = time.GetUtcNow(),
-                    Song = order.TrackKey,
-                    Confidence = KeyConfidence.Withheld,
-                    Evidence = evidence,
-                    Lookups = VerdictRecording.Serialized(lookups.CachedFor(order) ?? []),
-                }
-            )
-            : null;
+    /// <summary>What the song page shows for a track with no run yet: the kept evidence and pages, and why the rules gave no ruling. Null when no evidence is kept.</summary>
+    public RunEvidence? PendingFor(WorkOrder order)
+    {
+        if (!workingSet.TryReadEvidence(order.TrackKey, out var evidence))
+            return null;
+
+        var found = lookups.CachedFor(order);
+
+        return RunEvidence.From(
+            new RunRecord
+            {
+                RecordedAt = time.GetUtcNow(),
+                Song = order.TrackKey,
+                Confidence = KeyConfidence.Withheld,
+                Evidence = evidence,
+                Lookups = VerdictRecording.Serialized(found ?? []),
+                Sources = [.. (found ?? []).SelectMany(PageSources)],
+                Reasoning = found is null
+                    ? "The Hooktheory, Musicnotes and Ultimate Guitar pages have not been looked up yet."
+                    : VerdictRules.Decide(evidence, found) switch
+                    {
+                        RulesOutcome.Ruled(var ruling) =>
+                            $"The rules would rule {ruling.Center.Name}, {ruling.Confidence.ToString().ToUpperInvariant()}: {ruling.Reasoning}",
+                        RulesOutcome.Open(var reason) => reason,
+                        _ => throw new UnreachableException(),
+                    },
+            }
+        );
+    }
+
+    private static IEnumerable<RunSource> PageSources(SiteLookup lookup) =>
+        lookup.Pages.Select(page => new RunSource
+        {
+            Url = page.Url,
+            Via = "found by crateside's lookup",
+            Kind =
+                CountedSites.Contains(lookup.Site) && !VerdictRules.IsUserArrangement(page)
+                    ? SourceKind.Authoritative
+                    : SourceKind.Corroborating,
+            States = string.Join("; ", page.Keys.Select(key => key.Key).Distinct()),
+            StatesKey = page
+                .Keys.Select(key => RecordTimeCheck.KeyOf(key.Key)?.LedgerName)
+                .FirstOrDefault(name => name is not null),
+            Note = CountedSites.Contains(lookup.Site)
+                ? page.Note
+                : "Shown, not counted: the rules leave Ultimate Guitar out (ADR 0076).",
+        });
 }
