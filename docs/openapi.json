@@ -883,6 +883,17 @@
                 "$ref": "#/components/schemas/HooktheoryTab"
               }
             ]
+          },
+          "chosen": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Set where the person, not the lookup, put the page among those that count (ADR 0078).",
+                "$ref": "#/components/schemas/PageChoiceKind"
+              }
+            ]
           }
         },
         "description": "A page found by artist and title; whether it is this recording is the judge's call."
@@ -1429,6 +1440,14 @@
           "Found",
           "NotFound",
           "Unreachable"
+        ]
+      },
+      "PageChoiceKind": {
+        "enum": [
+          "Rejected",
+          "Promoted",
+          "Added",
+          null
         ]
       },
       "PageKey": {
@@ -2117,6 +2136,16 @@
               "null",
               "string"
             ]
+          },
+          "rejected": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/FetchedPage"
+            },
+            "description": "Pages the person said are not this song: left out of what counts, and kept so they can be taken back (ADR 0078)."
           },
           "candidates": {
             "type": [

@@ -10,7 +10,8 @@ public sealed class PageLookups(
     WorkingSet workingSet,
     LedgerStore store,
     ResolvedNameStore? names = null,
-    IntakeStore? intake = null
+    IntakeStore? intake = null,
+    PageChoiceStore? choices = null
 )
 {
     public const string SourcesFileName = "sources.json";
@@ -37,6 +38,10 @@ public sealed class PageLookups(
 
         return lookups;
     }
+
+    /// <summary>The pages as the rules and the judge are to read them: the lookup's, with the person's choices applied (ADR 0078).</summary>
+    public IReadOnlyList<SiteLookup> Effective(string trackKey, IReadOnlyList<SiteLookup> found) =>
+        choices is null ? found : PageChoiceEffect.Apply(found, choices.ActiveFor(trackKey));
 
     /// <summary>What an earlier lookup kept for this track, or null when there is none.</summary>
     public IReadOnlyList<SiteLookup>? CachedFor(WorkOrder order) =>

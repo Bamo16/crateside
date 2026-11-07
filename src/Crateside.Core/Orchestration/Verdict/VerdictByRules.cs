@@ -22,7 +22,11 @@ public sealed class VerdictByRules(
 
         if (
             lookups.NamesOf(order) is not var (artist, title)
-            || !VerdictRules.TryRule(evidence, found, out var ruling)
+            || !VerdictRules.TryRule(
+                evidence,
+                lookups.Effective(order.TrackKey, found),
+                out var ruling
+            )
         )
             return null;
 

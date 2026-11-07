@@ -180,7 +180,7 @@ internal static class VerdictRules
         new()
         {
             Url = keys[0].Page.Url,
-            Via = "found by crateside's lookup",
+            Via = ViaOf(keys[0].Page),
             Kind = IsUserArrangement(keys[0].Page)
                 ? SourceKind.Corroborating
                 : SourceKind.Authoritative,
@@ -188,6 +188,14 @@ internal static class VerdictRules
             StatesKey = key.LedgerName,
             StatesMode = ModeOf(keys[0].Raw),
             Note = keys[0].Page.Note,
+        };
+
+    internal static string ViaOf(FetchedPage page) =>
+        page.Chosen switch
+        {
+            PageChoiceKind.Promoted => "counted at your say",
+            PageChoiceKind.Added => "added by you",
+            _ => "found by crateside's lookup",
         };
 
     private static DiatonicMode? ModeOf(string raw) =>

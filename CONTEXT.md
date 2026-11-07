@@ -311,6 +311,11 @@ by hand; everything below describes candidates against it.
 - **Track mark** — a yes/no the user sets on a track in crateside (*Changes key*, *Odd bars*), kept
   in `track-marks.json` by song and never read from Ableton. It records no place and no amount, and
   "not marked" means "not noticed yet". Live shows it as the matching **Collection**.
+- **Page choice** — the person's correction to a track's lookup, on the song page: *Not this song* on
+  a counted page, *Count this page* on a title-only candidate, or a Hooktheory or Musicnotes page
+  *added* by address. Kept in `page-choices.json` by track, apart from the lookup's own result; the
+  rules and the judge read the **effective pages** (the lookup's, with the choices applied)
+  ([ADR 0078](docs/adr/0078-the-person-corrects-which-pages-count-for-a-song.md)).
 - **Index** — Ableton's own file database, `Live-files-<schema>.db` under
   `%LOCALAPPDATA%\Ableton\Live Database`. The authoritative tag state, and the thing the
   browser shows. Read-only to crateside, and read while Live is running

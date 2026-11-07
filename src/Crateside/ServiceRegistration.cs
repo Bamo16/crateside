@@ -332,6 +332,8 @@ public static class ServiceRegistration
         services.AddSingleton<ISourcePages, SourcePages>();
         services.AddSingleton<PageLookups>();
         services.AddSingleton<VerdictByRules>();
+        services.AddSingleton<PageChoiceStore>();
+        services.AddSingleton<PageChoices>();
         services.AddSingleton<PersonsKey>();
         services.AddSingleton<IVerdictJudge, VerdictRunner>();
         services.AddSingleton<VerdictDrainer>();
