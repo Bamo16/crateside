@@ -24,21 +24,18 @@ internal sealed class SongKeyFixture : IDisposable
     public string Folder { get; } =
         Path.Combine(Path.GetTempPath(), "crateside-tests", Guid.NewGuid().ToString("n"));
 
-    public string GenresPath => Path.Combine(Folder, "genres.json");
+    /// <summary>Where the per-song stores keep their records, so a new store over it reads as after a restart.</summary>
+    public LedgerStore Decisions { get; } = new(LedgerStore.InMemory, TimeProvider.System);
 
-    public string FamiliarityPath => Path.Combine(Folder, "familiarity.json");
-
-    public string MarksPath => Path.Combine(Folder, "track-marks.json");
-
-    /// <summary>A reader over the stores given, else fresh instances over the same files, as after a restart.</summary>
+    /// <summary>A reader over the stores given, else fresh instances over the same ledger, as after a restart.</summary>
     public TrackAnnotationReader Reader(GenreStore? genres = null) =>
         new(
             new ResolvedNameStore(Path.Combine(Folder, "names.json")),
             new WorkingSet(Path.Combine(Folder, "working")),
             new DeletionLog(Path.Combine(Folder, "deletions.jsonl")),
-            genres ?? new GenreStore(GenresPath),
-            new FamiliarityStore(FamiliarityPath),
-            new TrackMarkStore(MarksPath)
+            genres ?? new GenreStore(Decisions),
+            new FamiliarityStore(Decisions),
+            new TrackMarkStore(Decisions)
         );
 
     /// <summary>The ledger lines in which <see cref="Video"/> is judged as <see cref="Song"/>.</summary>
@@ -65,6 +62,8 @@ internal sealed class SongKeyFixture : IDisposable
 
     public void Dispose()
     {
+        Decisions.Dispose();
+
         if (Directory.Exists(Folder))
             Directory.Delete(Folder, recursive: true);
     }

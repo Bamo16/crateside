@@ -45,8 +45,8 @@ public sealed class TrackAnnotationReader(
     /// Moves every genre, familiarity and mark record kept under a video ID onto the song the
     /// ledger has since judged it as; returns how many moved (ADR 0071).
     /// </summary>
-    public int FollowSongs(KeyLedger ledger, Action<string>? beforeWrite = null) =>
-        genres.FollowSongs(ledger.SongFor, beforeWrite)
-        + familiarity.FollowSongs(ledger.SongFor, beforeWrite)
-        + marks.FollowSongs(ledger.SongFor, beforeWrite);
+    public int FollowSongs(KeyLedger ledger) =>
+        genres.FollowSongs(ledger.SongFor)
+        + familiarity.FollowSongs(ledger.SongFor)
+        + marks.FollowSongs(ledger.SongFor);
 }

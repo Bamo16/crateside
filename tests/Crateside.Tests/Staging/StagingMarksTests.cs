@@ -31,7 +31,7 @@ public sealed class StagingMarksTests : IDisposable
         _paths = new CratesidePaths { StagingFolder = Path.Combine(_root, "Staging") };
         Directory.CreateDirectory(_paths.StagingFolder);
 
-        _trackMarks = new TrackMarkStore(Path.Combine(_root, "track-marks.json"));
+        _trackMarks = new TrackMarkStore(TestLedger.Store());
         var origins = new TransientOrigins();
         _marks = new StagingMarks(
             _paths,

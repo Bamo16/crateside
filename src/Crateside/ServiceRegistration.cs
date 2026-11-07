@@ -244,7 +244,7 @@ public static class ServiceRegistration
         services.AddSingleton<IDetectorSet, DetectorSet>();
 
     private static IServiceCollection AddLedger(this IServiceCollection services) =>
-        services.AddSingleton<LedgerStore>();
+        services.AddSingleton<LedgerStore>().AddSingleton<DecisionsImport>();
 
     private static IServiceCollection AddLibrary(this IServiceCollection services)
     {

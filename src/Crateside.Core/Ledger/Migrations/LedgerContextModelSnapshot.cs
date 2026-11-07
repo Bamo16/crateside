@@ -16,6 +16,101 @@ namespace Crateside.Core.Ledger.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
 
+            modelBuilder.Entity("Crateside.Core.Ledger.FamiliarityRow", b =>
+                {
+                    b.Property<string>("Song")
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
+
+                    b.Property<string>("Artist")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long?>("ArtistFans")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LookedUpAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LookupVersion")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Settled")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("SongRank")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Song");
+
+                    b.ToTable("Familiarities", (string)null);
+                });
+
+            modelBuilder.Entity("Crateside.Core.Ledger.GenreRow", b =>
+                {
+                    b.Property<string>("Song")
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
+
+                    b.Property<string>("Genre")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Heard")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsSettled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LearnedFrom")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LookedUpAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Suggested")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Song");
+
+                    b.ToTable("Genres", (string)null);
+                });
+
+            modelBuilder.Entity("Crateside.Core.Ledger.PageChoiceRow", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("At")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Page")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TrackKey")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UndoneAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TrackKey");
+
+                    b.ToTable("PageChoices", (string)null);
+                });
+
             modelBuilder.Entity("Crateside.Core.Ledger.RestatementRow", b =>
                 {
                     b.Property<long>("Id")
@@ -130,6 +225,48 @@ namespace Crateside.Core.Ledger.Migrations
 
                             t.HasCheckConstraint("CK_Runs_Source", "SourceUrl IS NOT NULL OR LocalSource = 1");
                         });
+                });
+
+            modelBuilder.Entity("Crateside.Core.Ledger.SourceRemovalRow", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("At")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TrackKey")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UndoneAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TrackKey");
+
+                    b.ToTable("SourceRemovals", (string)null);
+                });
+
+            modelBuilder.Entity("Crateside.Core.Ledger.TrackMarkRow", b =>
+                {
+                    b.Property<string>("Song")
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
+
+                    b.Property<string>("Mark")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Song", "Mark");
+
+                    b.ToTable("TrackMarks", (string)null);
                 });
 
             modelBuilder.Entity("Crateside.Core.Ledger.RestatementRow", b =>

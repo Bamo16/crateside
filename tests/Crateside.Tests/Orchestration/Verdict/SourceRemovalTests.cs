@@ -10,21 +10,9 @@ public sealed class SourceRemovalTests : IDisposable
 
     private static readonly DateTimeOffset At = DateTimeOffset.Parse("2026-11-07T12:00:00+00:00");
 
-    private readonly string _root = Path.Combine(
-        Path.GetTempPath(),
-        "crateside-tests",
-        Guid.NewGuid().ToString("n")
-    );
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
-    private string File => Path.Combine(_root, "page-choices.json");
-
-    public SourceRemovalTests() => Directory.CreateDirectory(_root);
-
-    public void Dispose()
-    {
-        Directory.Delete(_root, recursive: true);
-        GC.SuppressFinalize(this);
-    }
+    public void Dispose() => _ledger.Dispose();
 
     private static RunEvidence Run() =>
         new()
@@ -57,7 +45,7 @@ public sealed class SourceRemovalTests : IDisposable
     [Fact]
     public void A_removed_source_is_marked_and_the_others_are_not()
     {
-        var store = new PageChoiceStore(File);
+        var store = new PageChoiceStore(_ledger);
 
         Assert.True(store.RemoveSource(Track, Article.TrimEnd('/'), At));
 
@@ -70,9 +58,9 @@ public sealed class SourceRemovalTests : IDisposable
     [Fact]
     public void A_removal_survives_a_restart_and_only_touches_its_own_track()
     {
-        new PageChoiceStore(File).RemoveSource(Track, Article, At);
+        new PageChoiceStore(_ledger).RemoveSource(Track, Article, At);
 
-        var reread = new PageChoiceStore(File);
+        var reread = new PageChoiceStore(_ledger);
 
         Assert.Equal([Article], reread.RemovedFor(Track));
         Assert.Empty(reread.RemovedFor("another"));
@@ -82,7 +70,7 @@ public sealed class SourceRemovalTests : IDisposable
     [Fact]
     public void Restoring_a_source_counts_it_again()
     {
-        var store = new PageChoiceStore(File);
+        var store = new PageChoiceStore(_ledger);
 
         store.RemoveSource(Track, Article, At);
 
@@ -95,7 +83,7 @@ public sealed class SourceRemovalTests : IDisposable
     [Fact]
     public void A_source_found_only_by_how_it_was_found_can_be_removed()
     {
-        var store = new PageChoiceStore(File);
+        var store = new PageChoiceStore(_ledger);
 
         store.RemoveSource(Track, "web search", At);
 
@@ -108,7 +96,7 @@ public sealed class SourceRemovalTests : IDisposable
     [Fact]
     public void Removing_a_source_leaves_the_page_choices_in_the_same_file_alone()
     {
-        var store = new PageChoiceStore(File);
+        var store = new PageChoiceStore(_ledger);
         var page = new FetchedPage { Site = "Hooktheory", Url = Article };
 
         store.Choose(
@@ -123,7 +111,7 @@ public sealed class SourceRemovalTests : IDisposable
         );
         store.RemoveSource(Track, Article, At);
 
-        var reread = new PageChoiceStore(File);
+        var reread = new PageChoiceStore(_ledger);
 
         Assert.Single(reread.ActiveFor(Track));
         Assert.Equal([Article], reread.RemovedFor(Track));

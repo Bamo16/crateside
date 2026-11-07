@@ -1,22 +1,16 @@
 using Crateside.Core.Genres;
+using Crateside.Core.Ledger;
 using Crateside.Core.Tracks;
 
 namespace Crateside.Tests.Genres;
 
 public sealed class GenreByArtistTests : IDisposable
 {
-    private readonly string _directory = Path.Combine(
-        Path.GetTempPath(),
-        "crateside-tests",
-        Guid.NewGuid().ToString("n")
-    );
-
-    private string StorePath => Path.Combine(_directory, "genres.json");
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
     public void Dispose()
     {
-        if (Directory.Exists(_directory))
-            Directory.Delete(_directory, recursive: true);
+        _ledger.Dispose();
 
         GC.SuppressFinalize(this);
     }
@@ -55,7 +49,7 @@ public sealed class GenreByArtistTests : IDisposable
     [Fact]
     public void A_learned_genre_never_overrides_the_users_answer_and_can_be_taken_back()
     {
-        var store = new GenreStore(StorePath);
+        var store = new GenreStore(_ledger);
 
         store.Settle("answered", "Pop");
         store.SettleFromArtist("answered", "Hip Hop", "Kanye West");
@@ -70,7 +64,7 @@ public sealed class GenreByArtistTests : IDisposable
         store.Unlearn("learned");
         store.Unlearn("answered");
 
-        records = new GenreStore(StorePath).Read();
+        records = new GenreStore(_ledger).Read();
         Assert.Null(records["learned"].Written);
         Assert.Equal("Pop", records["answered"].Written);
     }
@@ -78,7 +72,7 @@ public sealed class GenreByArtistTests : IDisposable
     [Fact]
     public void Answering_a_learned_song_makes_it_the_users_own()
     {
-        var store = new GenreStore(StorePath);
+        var store = new GenreStore(_ledger);
 
         store.SettleFromArtist("song", "Hip Hop", "Kanye West");
         store.Settle("song", "Pop");

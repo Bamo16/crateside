@@ -76,6 +76,29 @@ public sealed class LedgerStore : IDisposable
         }
     }
 
+    /// <summary>Reads the person's decision tables under the store's lock.</summary>
+    internal T Query<T>(Func<LedgerContext, T> read)
+    {
+        lock (_gate)
+        {
+            using var context = Context();
+
+            return read(context);
+        }
+    }
+
+    /// <summary>Changes the person's decision tables and saves them in one transaction.</summary>
+    internal void Save(Action<LedgerContext> change)
+    {
+        lock (_gate)
+        {
+            using var context = Context();
+
+            change(context);
+            context.SaveChanges();
+        }
+    }
+
     /// <summary>The ledger as it stands.</summary>
     public KeyLedger Read()
     {

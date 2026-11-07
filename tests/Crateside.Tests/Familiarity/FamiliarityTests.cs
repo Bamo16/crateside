@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text;
 using Crateside.Core.Familiarity;
+using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Familiarity;
 
@@ -21,18 +22,11 @@ public sealed class FamiliarityVocabularyTests
 
 public sealed class FamiliarityStoreTests : IDisposable
 {
-    private readonly string _root = Path.Combine(
-        Path.GetTempPath(),
-        "crateside-tests",
-        Guid.NewGuid().ToString("n")
-    );
-
-    private string StorePath => Path.Combine(_root, "familiarity.json");
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
     public void Dispose()
     {
-        if (Directory.Exists(_root))
-            Directory.Delete(_root, recursive: true);
+        _ledger.Dispose();
 
         GC.SuppressFinalize(this);
     }
@@ -40,14 +34,14 @@ public sealed class FamiliarityStoreTests : IDisposable
     [Fact]
     public void A_measured_song_suggests_and_writes_what_the_numbers_settle()
     {
-        new FamiliarityStore(StorePath).Measure(
+        new FamiliarityStore(_ledger).Measure(
             "song",
             new FamiliarityReading("Moe Shop", 17_522, 167_703),
             DateTimeOffset.UtcNow,
             FamiliarityLookup.Version
         );
 
-        var record = new FamiliarityStore(StorePath).Read()["song"];
+        var record = new FamiliarityStore(_ledger).Read()["song"];
 
         Assert.Equal("Obscure", record.Suggested);
         Assert.Equal("Obscure", record.Written);
@@ -56,7 +50,7 @@ public sealed class FamiliarityStoreTests : IDisposable
     [Fact]
     public void The_users_answer_outranks_the_numbers_and_survives_a_new_measurement()
     {
-        var store = new FamiliarityStore(StorePath);
+        var store = new FamiliarityStore(_ledger);
 
         store.Settle("song", "Mainstream");
         store.Measure(
@@ -66,13 +60,13 @@ public sealed class FamiliarityStoreTests : IDisposable
             FamiliarityLookup.Version
         );
 
-        Assert.Equal("Mainstream", new FamiliarityStore(StorePath).Read()["song"].Written);
+        Assert.Equal("Mainstream", new FamiliarityStore(_ledger).Read()["song"].Written);
     }
 
     [Fact]
     public void A_song_in_the_middle_band_writes_nothing_until_the_user_answers()
     {
-        var store = new FamiliarityStore(StorePath);
+        var store = new FamiliarityStore(_ledger);
 
         store.Measure(
             "song",
@@ -87,7 +81,7 @@ public sealed class FamiliarityStoreTests : IDisposable
     [Fact]
     public void A_song_an_older_lookup_missed_is_owed_another_but_one_it_found_is_not()
     {
-        var store = new FamiliarityStore(StorePath);
+        var store = new FamiliarityStore(_ledger);
 
         store.Measure("missed", FamiliarityReading.Unknown, DateTimeOffset.UtcNow, version: 1);
         store.Measure(
@@ -104,7 +98,7 @@ public sealed class FamiliarityStoreTests : IDisposable
     [Fact]
     public void Settling_anything_but_the_two_values_is_refused() =>
         Assert.Throws<ArgumentException>(() =>
-            new FamiliarityStore(StorePath).Settle("song", "Famous")
+            new FamiliarityStore(_ledger).Settle("song", "Famous")
         );
 }
 

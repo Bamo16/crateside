@@ -1,27 +1,25 @@
 using System.Text.Json.Serialization;
+using Crateside.Core.Ledger;
+using Microsoft.EntityFrameworkCore;
 
 namespace Crateside.Core.Genres;
 
 /// <summary>
-/// Each song's genre as the user settled it and as the sources suggested it, kept in
-/// <c>%APPDATA%\crateside\genres.json</c> by song identity, as the ledger keeps its key (ADR 0030).
+/// Each song's genre as the user settled it and as the sources suggested it, kept in the ledger
+/// by song identity, as it keeps the key (ADR 0030, 0082).
 /// </summary>
-public sealed class GenreStore(CratesidePaths paths)
+public sealed class GenreStore(LedgerStore ledger)
 {
-    private readonly string _path = paths.GenresFile;
     private readonly Lock _gate = new();
-
-    internal GenreStore(string path)
-        : this(new CratesidePaths { GenresFile = path }) { }
 
     private Dictionary<string, GenreRecord>? _cached;
 
-    /// <summary>Every record, by song identity. Never throws: an unreadable file reads as empty.</summary>
+    /// <summary>Every record, by song identity.</summary>
     public IReadOnlyDictionary<string, GenreRecord> Read()
     {
         lock (_gate)
             return new Dictionary<string, GenreRecord>(
-                _cached ??= TryReadFile(),
+                _cached ??= Load(),
                 StringComparer.OrdinalIgnoreCase
             );
     }
@@ -89,16 +87,14 @@ public sealed class GenreStore(CratesidePaths paths)
                     }
         );
 
-    /// <summary>
-    /// Moves each record kept under a video ID onto the song the ledger has since judged it as,
-    /// calling <paramref name="beforeWrite"/> with the file's path first; returns how many moved.
-    /// </summary>
-    public int FollowSongs(Func<string, string?> songFor, Action<string>? beforeWrite = null)
+    /// <summary>Moves each record kept under a video ID onto the song the ledger has since judged it as; returns how many moved.</summary>
+    public int FollowSongs(Func<string, string?> songFor)
     {
         lock (_gate)
         {
+            var before = _cached ??= Load();
             var records = new Dictionary<string, GenreRecord>(
-                _cached ??= TryReadFile(),
+                before,
                 StringComparer.OrdinalIgnoreCase
             );
 
@@ -107,17 +103,23 @@ public sealed class GenreStore(CratesidePaths paths)
             if (moved is 0)
                 return 0;
 
-            try
-            {
-                beforeWrite?.Invoke(_path);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                return 0;
-            }
-
             _cached = records;
-            Write(records);
+            ledger.Save(context =>
+            {
+                foreach (var gone in before.Keys.Where(song => !records.ContainsKey(song)))
+                    context.Genres.RemoveRange(context.Genres.Where(row => row.Song == gone));
+
+                foreach (
+                    var record in records.Values.Where(record =>
+                        !before.TryGetValue(record.Song, out var old) || old != record
+                    )
+                )
+                    context.Upsert(
+                        context.Genres,
+                        row => row.Song == record.Song,
+                        GenreRow.From(record)
+                    );
+            });
 
             return moved;
         }
@@ -148,33 +150,26 @@ public sealed class GenreStore(CratesidePaths paths)
     {
         lock (_gate)
         {
-            var records = _cached ??= TryReadFile();
-
-            records[song] = change(
+            var records = _cached ??= Load();
+            var changed = change(
                 records.GetValueOrDefault(song) ?? new GenreRecord { Song = song }
             );
 
-            Write(records);
-        }
-    }
-
-    private void Write(Dictionary<string, GenreRecord> records)
-    {
-        try
-        {
-            GenreJsonContext.Default.ListGenreRecord.WriteFile(
-                _path,
-                [.. records.Values.OrderBy(r => r.Song)]
+            records[song] = changed;
+            ledger.Save(context =>
+                context.Upsert(
+                    context.Genres,
+                    row => row.Song == changed.Song,
+                    GenreRow.From(changed)
+                )
             );
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
-    private Dictionary<string, GenreRecord> TryReadFile() =>
-        (GenreJsonContext.Default.ListGenreRecord.ReadFileOrDefault(_path) ?? []).ToDictionary(
-            r => r.Song,
-            StringComparer.OrdinalIgnoreCase
-        );
+    private Dictionary<string, GenreRecord> Load() =>
+        ledger
+            .Query(context => context.Genres.AsNoTracking().ToList())
+            .ToDictionary(row => row.Song, row => row.ToRecord(), StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>One song's genre, settled or suggested.</summary>

@@ -57,7 +57,7 @@ public sealed class PageChoicesTests : IDisposable
         Directory.CreateDirectory(_root);
 
         _set = new WorkingSet(Path.Combine(_root, "working"));
-        _choices = new PageChoiceStore(Path.Combine(_root, "page-choices.json"));
+        _choices = new PageChoiceStore(_store);
         _jobs = new JobStore(Path.Combine(_root, "jobs.jsonl"));
         _service = ServiceOver(new Pages());
     }
@@ -308,7 +308,7 @@ public sealed class PageChoicesTests : IDisposable
             new Pages(Hooktheory([rejected]), NothingOnMusicnotes),
             _set,
             _store,
-            choices: new PageChoiceStore(Path.Combine(_root, "page-choices.json"))
+            choices: new PageChoiceStore(_store)
         );
         var found = await restarted.LookUpAsync(swapped, TestContext.Current.CancellationToken);
         var effective = restarted.Effective(TrackKey, found);
