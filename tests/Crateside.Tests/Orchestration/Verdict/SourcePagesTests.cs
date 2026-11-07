@@ -322,6 +322,10 @@ public sealed class SourcePagesTests
     [InlineData("Don't Stop Me Now", "dont-stop-me-now")]
     [InlineData("perfume!", "perfume")]
     [InlineData("AC/DC", "ac-dc")]
+    [InlineData("Party In The U.S.A.", "party-in-the-usa")]
+    [InlineData("t.A.T.u.", "tatu")]
+    [InlineData("J. Cole", "j-cole")]
+    [InlineData("Mr. Brightside", "mr-brightside")]
     public void A_name_becomes_the_slug_the_sites_use(string name, string slug) =>
         Assert.Equal(slug, SourcePages.Slug(name));
 
