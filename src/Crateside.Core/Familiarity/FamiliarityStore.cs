@@ -1,27 +1,25 @@
 using System.Text.Json.Serialization;
+using Crateside.Core.Ledger;
+using Microsoft.EntityFrameworkCore;
 
 namespace Crateside.Core.Familiarity;
 
 /// <summary>
-/// Each song's reach as Deezer measured it and the familiarity the user settled, kept in
-/// <c>%APPDATA%\crateside\familiarity.json</c> by song identity, as genre is (#52).
+/// Each song's reach as Deezer measured it and the familiarity the user settled, kept in the
+/// ledger by song identity, as genre is (#52, ADR 0082).
 /// </summary>
-public sealed class FamiliarityStore(CratesidePaths paths)
+public sealed class FamiliarityStore(LedgerStore ledger)
 {
-    private readonly string _path = paths.FamiliarityFile;
     private readonly Lock _gate = new();
-
-    internal FamiliarityStore(string path)
-        : this(new CratesidePaths { FamiliarityFile = path }) { }
 
     private Dictionary<string, FamiliarityRecord>? _cached;
 
-    /// <summary>Every record, by song identity. Never throws: an unreadable file reads as empty.</summary>
+    /// <summary>Every record, by song identity.</summary>
     public IReadOnlyDictionary<string, FamiliarityRecord> Read()
     {
         lock (_gate)
             return new Dictionary<string, FamiliarityRecord>(
-                _cached ??= TryReadFile(),
+                _cached ??= Load(),
                 StringComparer.OrdinalIgnoreCase
             );
     }
@@ -50,16 +48,14 @@ public sealed class FamiliarityStore(CratesidePaths paths)
         Update(song, record => record with { Settled = value });
     }
 
-    /// <summary>
-    /// Moves each record kept under a video ID onto the song the ledger has since judged it as,
-    /// calling <paramref name="beforeWrite"/> with the file's path first; returns how many moved.
-    /// </summary>
-    public int FollowSongs(Func<string, string?> songFor, Action<string>? beforeWrite = null)
+    /// <summary>Moves each record kept under a video ID onto the song the ledger has since judged it as; returns how many moved.</summary>
+    public int FollowSongs(Func<string, string?> songFor)
     {
         lock (_gate)
         {
+            var before = _cached ??= Load();
             var records = new Dictionary<string, FamiliarityRecord>(
-                _cached ??= TryReadFile(),
+                before,
                 StringComparer.OrdinalIgnoreCase
             );
 
@@ -68,17 +64,25 @@ public sealed class FamiliarityStore(CratesidePaths paths)
             if (moved is 0)
                 return 0;
 
-            try
-            {
-                beforeWrite?.Invoke(_path);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                return 0;
-            }
-
             _cached = records;
-            Write(records);
+            ledger.Save(context =>
+            {
+                foreach (var gone in before.Keys.Where(song => !records.ContainsKey(song)))
+                    context.Familiarities.RemoveRange(
+                        context.Familiarities.Where(row => row.Song == gone)
+                    );
+
+                foreach (
+                    var record in records.Values.Where(record =>
+                        !before.TryGetValue(record.Song, out var old) || old != record
+                    )
+                )
+                    context.Upsert(
+                        context.Familiarities,
+                        row => row.Song == record.Song,
+                        FamiliarityRow.From(record)
+                    );
+            });
 
             return moved;
         }
@@ -105,32 +109,26 @@ public sealed class FamiliarityStore(CratesidePaths paths)
     {
         lock (_gate)
         {
-            var records = _cached ??= TryReadFile();
-
-            records[song] = change(
+            var records = _cached ??= Load();
+            var changed = change(
                 records.GetValueOrDefault(song) ?? new FamiliarityRecord { Song = song }
             );
 
-            Write(records);
-        }
-    }
-
-    private void Write(Dictionary<string, FamiliarityRecord> records)
-    {
-        try
-        {
-            FamiliarityJsonContext.Default.ListFamiliarityRecord.WriteFile(
-                _path,
-                [.. records.Values.OrderBy(r => r.Song)]
+            records[song] = changed;
+            ledger.Save(context =>
+                context.Upsert(
+                    context.Familiarities,
+                    row => row.Song == changed.Song,
+                    FamiliarityRow.From(changed)
+                )
             );
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
-    private Dictionary<string, FamiliarityRecord> TryReadFile() =>
-        (
-            FamiliarityJsonContext.Default.ListFamiliarityRecord.ReadFileOrDefault(_path) ?? []
-        ).ToDictionary(r => r.Song, StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, FamiliarityRecord> Load() =>
+        ledger
+            .Query(context => context.Familiarities.AsNoTracking().ToList())
+            .ToDictionary(row => row.Song, row => row.ToRecord(), StringComparer.OrdinalIgnoreCase);
 }
 
 /// <summary>One song's familiarity: measured, settled, or both.</summary>

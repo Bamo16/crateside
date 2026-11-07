@@ -44,10 +44,14 @@ internal sealed class DemoLibrary
                 WriteStems(track, index);
         }
 
-        WriteLedger();
+        using (var ledger = new LedgerStore(_paths, _clock))
+        {
+            WriteLedger(ledger);
+            WriteSongRecords(ledger);
+        }
+
         WriteIntake();
         WriteJobs();
-        WriteSongRecords();
         WriteNames();
         WriteReadings();
     }
@@ -147,10 +151,8 @@ internal sealed class DemoLibrary
     private static List<string> StemKeywords(List<string> keywords, DemoStem stem) =>
         [.. keywords, $"Type|{stem}"];
 
-    private void WriteLedger()
+    private void WriteLedger(LedgerStore ledger)
     {
-        using var ledger = new LedgerStore(_paths, _clock);
-
         foreach (var track in DemoCast.All.Where(track => track.HasVerdict))
             ledger.Record(
                 DemoRuns.For(track, track.Verdict!, StartOf(track) + TimeSpan.FromMinutes(11))
@@ -262,11 +264,11 @@ internal sealed class DemoLibrary
         BeatJsonContext.Default.BeatFile.WriteFile(_paths.BeatCache, new BeatFile(2, _beats));
     }
 
-    private void WriteSongRecords()
+    private static void WriteSongRecords(LedgerStore ledger)
     {
-        var genres = new GenreStore(_paths);
-        var familiarity = new FamiliarityStore(_paths);
-        var marks = new TrackMarkStore(_paths.TrackMarksFile);
+        var genres = new GenreStore(ledger);
+        var familiarity = new FamiliarityStore(ledger);
+        var marks = new TrackMarkStore(ledger);
 
         foreach (var track in DemoCast.All)
         {

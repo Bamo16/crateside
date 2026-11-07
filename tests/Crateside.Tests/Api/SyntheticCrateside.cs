@@ -177,13 +177,13 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         jobs.Record(Judged, JobStage.Download, JobStatus.Succeeded);
         jobs.Record(Waiting, JobStage.Download, JobStatus.Queued);
 
-        var genres = new GenreStore(Path.Combine(_root, "genres.json"));
+        var genres = new GenreStore(ledger);
         genres.Suggest(Judged, ["synthwave"], At);
 
-        var familiarity = new FamiliarityStore(Path.Combine(_root, "familiarity.json"));
+        var familiarity = new FamiliarityStore(ledger);
         familiarity.Measure(Song, new FamiliarityReading("The Examples", 1_200, 50_000), At, 1);
 
-        var marks = new TrackMarkStore(Path.Combine(_root, "track-marks.json"));
+        var marks = new TrackMarkStore(ledger);
         marks.Set(Song, TrackMark.OddBars, marked: true);
 
         var names = new ResolvedNameStore(Path.Combine(_root, "names.json"));
@@ -264,7 +264,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
                     )
                 )
             ),
-            new PageChoiceStore(Path.Combine(_root, "page-choices.json"))
+            new PageChoiceStore(ledger)
         );
 
         var builder = WebApplication.CreateBuilder(

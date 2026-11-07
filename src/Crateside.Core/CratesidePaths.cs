@@ -119,14 +119,14 @@ public sealed class CratesidePaths
         set;
     }
 
-    /// <summary>The marks the user has put on songs.</summary>
+    /// <summary>The file the marks were kept in, read once by the import (ADR 0082).</summary>
     public string TrackMarksFile
     {
         get => field ?? Roaming("track-marks.json");
         set;
     }
 
-    /// <summary>The pages the user has rejected, counted or added for tracks (ADR 0078).</summary>
+    /// <summary>The file the page choices were kept in, read once by the import (ADR 0082).</summary>
     public string PageChoicesFile
     {
         get => field ?? Roaming("page-choices.json");
@@ -217,14 +217,14 @@ public sealed class CratesidePaths
         set;
     }
 
-    /// <summary>Each song's genre, as the user settled it and as the sources suggested it.</summary>
+    /// <summary>The file the genres were kept in, read once by the import (ADR 0082).</summary>
     public string GenresFile
     {
         get => field ?? Roaming("genres.json");
         set;
     }
 
-    /// <summary>Each song's familiarity, as Deezer measured it and as the user settled it.</summary>
+    /// <summary>The file the familiarities were kept in, read once by the import (ADR 0082).</summary>
     public string FamiliarityFile
     {
         get => field ?? Roaming("familiarity.json");

@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Crateside.Core.Ledger;
 using Crateside.Core.Watching;
+using Microsoft.EntityFrameworkCore;
 
 namespace Crateside.Core.Orchestration.Verdict;
 
@@ -41,10 +42,10 @@ public sealed record SourceRemoval(string Source, DateTimeOffset At)
     public bool IsActive => UndoneAt is null;
 }
 
-/// <summary>The pages the person has rejected, counted or added, kept in <c>%APPDATA%\crateside\page-choices.json</c> by track key (ADR 0078).</summary>
+/// <summary>The pages the person has rejected, counted or added, and the recorded sources removed, kept in the ledger by track key (ADR 0078, 0081, 0082).</summary>
 public sealed class PageChoiceStore
 {
-    private readonly string _path;
+    private readonly LedgerStore _ledger;
     private readonly Lock _gate = new();
 
     private Dictionary<string, List<PageChoice>>? _cached;
@@ -53,10 +54,10 @@ public sealed class PageChoiceStore
     /// <summary>Raised after a choice is made or undone, with the track it was made on.</summary>
     public event Action<string>? Changed;
 
-    public PageChoiceStore(CratesidePaths paths, FileChanges changes)
-        : this(paths.PageChoicesFile) => Changed += _ => changes.NotifyNow();
+    public PageChoiceStore(LedgerStore ledger, FileChanges changes)
+        : this(ledger) => Changed += _ => changes.NotifyNow();
 
-    internal PageChoiceStore(string path) => _path = path;
+    internal PageChoiceStore(LedgerStore ledger) => _ledger = ledger;
 
     /// <summary>The choices in force for the track.</summary>
     public IReadOnlyList<PageChoice> ActiveFor(string trackKey)
@@ -104,7 +105,7 @@ public sealed class PageChoiceStore
                 choice,
             ];
 
-            Write(records);
+            Persist(trackKey);
         }
 
         Changed?.Invoke(trackKey);
@@ -135,7 +136,7 @@ public sealed class PageChoiceStore
                 ),
             ];
 
-            Write(records);
+            Persist(trackKey);
         }
 
         Changed?.Invoke(trackKey);
@@ -164,7 +165,7 @@ public sealed class PageChoiceStore
     {
         lock (_gate)
         {
-            var records = Records();
+            Records();
 
             if (
                 Removals(trackKey)
@@ -173,7 +174,7 @@ public sealed class PageChoiceStore
                 return false;
 
             _removals[trackKey] = [.. Removals(trackKey), new SourceRemoval(source, at)];
-            Write(records);
+            Persist(trackKey);
         }
 
         Changed?.Invoke(trackKey);
@@ -186,7 +187,7 @@ public sealed class PageChoiceStore
     {
         lock (_gate)
         {
-            var records = Records();
+            Records();
 
             if (
                 !Removals(trackKey)
@@ -206,7 +207,7 @@ public sealed class PageChoiceStore
                             : removal
                     ),
             ];
-            Write(records);
+            Persist(trackKey);
         }
 
         Changed?.Invoke(trackKey);
@@ -239,56 +240,51 @@ public sealed class PageChoiceStore
     internal static bool SameUrl(string a, string b) =>
         a.TrimEnd('/').Equals(b.TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
 
-    private Dictionary<string, List<PageChoice>> Records() => _cached ??= TryReadFile();
+    private Dictionary<string, List<PageChoice>> Records() => _cached ??= Load();
 
-    private void Write(Dictionary<string, List<PageChoice>> records)
+    private void Persist(string trackKey)
     {
-        try
+        var choices = _cached!.GetValueOrDefault(trackKey) ?? [];
+        var removals = Removals(trackKey);
+
+        _ledger.Save(context =>
         {
-            PageChoiceJsonContext.Default.ListPageChoicesRecord.WriteFile(
-                _path,
-                [
-                    .. records
-                        .Keys.Union(_removals.Keys)
-                        .Order(StringComparer.Ordinal)
-                        .Select(trackKey => new PageChoicesRecord(
-                            trackKey,
-                            records.GetValueOrDefault(trackKey) ?? []
-                        )
-                        {
-                            Removed = Removals(trackKey) is [_, ..] removed ? removed : null,
-                        }),
-                ]
+            context.PageChoices.RemoveRange(
+                context.PageChoices.Where(row => row.TrackKey == trackKey)
             );
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+            context.SourceRemovals.RemoveRange(
+                context.SourceRemovals.Where(row => row.TrackKey == trackKey)
+            );
+            context.PageChoices.AddRange(
+                choices.Select(choice => PageChoiceRow.From(trackKey, choice))
+            );
+            context.SourceRemovals.AddRange(
+                removals.Select(removal => SourceRemovalRow.From(trackKey, removal))
+            );
+        });
     }
 
-    private Dictionary<string, List<PageChoice>> TryReadFile()
+    private Dictionary<string, List<PageChoice>> Load()
     {
-        var file =
-            PageChoiceJsonContext.Default.ListPageChoicesRecord.ReadFileOrDefault(_path) ?? [];
+        var (choices, removals) = _ledger.Query(context =>
+            (
+                context.PageChoices.AsNoTracking().OrderBy(row => row.Id).ToList(),
+                context.SourceRemovals.AsNoTracking().OrderBy(row => row.Id).ToList()
+            )
+        );
 
-        _removals = file.Where(record => record.Removed is [_, ..])
-            .ToDictionary(record => record.TrackKey, record => record.Removed!);
+        _removals = removals
+            .GroupBy(row => row.TrackKey)
+            .ToDictionary(
+                track => track.Key,
+                track => track.Select(row => row.ToRemoval()).ToList()
+            );
 
-        return file.Where(record => record.Choices.Count > 0)
-            .ToDictionary(record => record.TrackKey, record => record.Choices);
+        return choices
+            .GroupBy(row => row.TrackKey)
+            .ToDictionary(
+                track => track.Key,
+                track => track.Select(row => row.ToChoice()).ToList()
+            );
     }
 }
-
-/// <summary>One track's choices, as the file keeps them.</summary>
-public sealed record PageChoicesRecord(string TrackKey, List<PageChoice> Choices)
-{
-    /// <summary>Recorded sources the person removed (ADR 0081); absent for a track with none.</summary>
-    public List<SourceRemoval>? Removed { get; init; }
-}
-
-[JsonSourceGenerationOptions(
-    WriteIndented = true,
-    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    UseStringEnumConverter = true
-)]
-[JsonSerializable(typeof(List<PageChoicesRecord>))]
-internal sealed partial class PageChoiceJsonContext : JsonSerializerContext { }

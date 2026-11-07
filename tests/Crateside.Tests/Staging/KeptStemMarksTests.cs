@@ -27,7 +27,7 @@ public sealed class KeptStemMarksTests : IDisposable
         _paths = new CratesidePaths { KeptWarpGuides = Path.Combine(_root, "Drums") };
         Directory.CreateDirectory(_paths.KeptWarpGuides);
 
-        _trackMarks = new TrackMarkStore(Path.Combine(_root, "track-marks.json"));
+        _trackMarks = new TrackMarkStore(TestLedger.Store());
         _marks = new KeptStemMarks(
             _paths,
             TestLedger.Store(),

@@ -128,7 +128,7 @@ public sealed class PersonsKeyTests : IDisposable
     {
         HoldEvidenceAndPages();
 
-        var choices = new PageChoiceStore(Path.Combine(_root, "page-choices.json"));
+        var choices = new PageChoiceStore(_store);
         var lookups = new PageLookups(new NoPages(), _set, _store, choices: choices);
         var person = new PersonsKey(
             _store,

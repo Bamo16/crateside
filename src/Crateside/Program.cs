@@ -41,7 +41,7 @@ app.MapCratesideApi();
 
 app.Run();
 
-// What each start does before serving: respell, back up and migrate the stores, seed the builds.
+// What each start does before serving: respell, back up and migrate the stores, import the person's decisions, seed the builds.
 static async Task StartAsync(WebApplication app)
 {
     var respelled = app
@@ -52,6 +52,16 @@ static async Task StartAsync(WebApplication app)
         app.Logger.LogInformation("Respelled {Count} job lines to American spelling", respelled);
 
     app.Services.GetRequiredService<Crateside.Core.Ledger.LedgerStore>().Start();
+
+    foreach (
+        var file in app.Services.GetRequiredService<Crateside.Core.Ledger.DecisionsImport>().Run()
+    )
+        app.Logger.LogInformation(
+            "Decisions import: {File} {Outcome}, {Rows} rows",
+            file.File,
+            file.Outcome,
+            file.Rows
+        );
 
     var followed = app.Services.GetRequiredService<Crateside.Core.Tracks.SongKeyMigration>().Run();
 

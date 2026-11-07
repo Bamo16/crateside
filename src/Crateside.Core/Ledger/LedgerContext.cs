@@ -1,4 +1,7 @@
 using System.Globalization;
+using System.Linq.Expressions;
+using Crateside.Core.Marks;
+using Crateside.Core.Orchestration.Verdict;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -11,6 +14,26 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
 
     public DbSet<RestatementRow> Restatements => Set<RestatementRow>();
 
+    public DbSet<PageChoiceRow> PageChoices => Set<PageChoiceRow>();
+
+    public DbSet<SourceRemovalRow> SourceRemovals => Set<SourceRemovalRow>();
+
+    public DbSet<TrackMarkRow> TrackMarks => Set<TrackMarkRow>();
+
+    public DbSet<GenreRow> Genres => Set<GenreRow>();
+
+    public DbSet<FamiliarityRow> Familiarities => Set<FamiliarityRow>();
+
+    /// <summary>Updates the row <paramref name="match"/> finds, or adds <paramref name="row"/> when there is none.</summary>
+    public void Upsert<TRow>(DbSet<TRow> rows, Expression<Func<TRow, bool>> match, TRow row)
+        where TRow : class
+    {
+        if (rows.FirstOrDefault(match) is { } existing)
+            Entry(existing).CurrentValues.SetValues(row);
+        else
+            rows.Add(row);
+    }
+
     protected override void ConfigureConventions(ModelConfigurationBuilder conventions)
     {
         conventions.Properties<KeyConfidence>().HaveConversion<string>();
@@ -18,6 +41,8 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
         conventions.Properties<SourceKind>().HaveConversion<string>();
         conventions.Properties<WindowAsker>().HaveConversion<string>();
         conventions.Properties<DecidedBy>().HaveConversion<string>();
+        conventions.Properties<PageChoiceKind>().HaveConversion<string>();
+        conventions.Properties<TrackMark>().HaveConversion<string>();
         // Round-trip text in UTC, so that ordering by the column is ordering in time.
         conventions.Properties<DateTimeOffset>().HaveConversion<UtcTextConverter>();
     }
@@ -86,6 +111,40 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
         {
             restatement.ToTable("Restatements");
             restatement.HasOne<RunRow>().WithMany().HasForeignKey(row => row.RunId);
+        });
+
+        // The person's decisions sit beside the runs, never inside them (ADR 0082).
+        model.Entity<PageChoiceRow>(choice =>
+        {
+            choice.ToTable("PageChoices");
+            choice.HasIndex(row => row.TrackKey);
+        });
+
+        model.Entity<SourceRemovalRow>(removal =>
+        {
+            removal.ToTable("SourceRemovals");
+            removal.HasIndex(row => row.TrackKey);
+        });
+
+        model.Entity<TrackMarkRow>(mark =>
+        {
+            mark.ToTable("TrackMarks");
+            mark.HasKey(row => new { row.Song, row.Mark });
+            mark.Property(row => row.Song).UseCollation("NOCASE");
+        });
+
+        model.Entity<GenreRow>(genre =>
+        {
+            genre.ToTable("Genres");
+            genre.HasKey(row => row.Song);
+            genre.Property(row => row.Song).UseCollation("NOCASE");
+        });
+
+        model.Entity<FamiliarityRow>(familiarity =>
+        {
+            familiarity.ToTable("Familiarities");
+            familiarity.HasKey(row => row.Song);
+            familiarity.Property(row => row.Song).UseCollation("NOCASE");
         });
     }
 
