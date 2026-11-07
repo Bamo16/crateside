@@ -3,6 +3,7 @@ using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Orchestration.Separation;
+using Crateside.Core.Samples;
 using Crateside.Core.Warps;
 using Crateside.Core.WorkLists;
 using Humanizer;
@@ -86,18 +87,30 @@ public sealed class HandoffDrainer(
             .Select(source => source.TrackKey)
             .ToHashSet(StringComparer.Ordinal);
 
+    private string? NameFor(string trackKey) => NameFor(trackKey, Owner(trackKey), names.Read());
+
     /// <summary>
     /// What the user calls the track this file belongs to — through its owner, for an added
-    /// source — or null when they have not said (ADR 0014).
+    /// source — else, for audio crateside holds, the name its tags gave it (ADR 0014, ADR 0077).
     /// </summary>
-    private string? NameFor(string trackKey) =>
-        Owner(trackKey) switch
+    internal static string? NameFor(
+        string trackKey,
+        TrackInstruction? owner,
+        IReadOnlyDictionary<string, ResolvedName> names
+    ) =>
+        (owner, TrackKeys.IsVideoId(trackKey)) switch
         {
-            null => null,
-            { Name: { Length: > 0 } stated } => stated,
-            // A track's own download already arrives under the name the separator was asked for.
-            { TrackKey: var owner } when owner.Equals(trackKey, StringComparison.Ordinal) => null,
-            { TrackKey: var owner } => names.Read().GetValueOrDefault(owner)?.BaseName,
+            ({ Name: { Length: > 0 } stated }, _) => stated,
+            // A YouTube track's own download already arrives under the name the separator was asked for.
+            ({ TrackKey: var key }, true) when key.Equals(trackKey, StringComparison.Ordinal) =>
+                null,
+            ({ TrackKey: var key }, _) when !key.Equals(trackKey, StringComparison.Ordinal) => names
+                .GetValueOrDefault(key)
+                ?.BaseName,
+            (_, false) => names.GetValueOrDefault(trackKey)?.DisplayTitle is { Length: > 0 } tagged
+                ? StemFileName.FileSafe(tagged)
+                : null,
+            _ => null,
         };
 
     private TrackInstruction? Owner(string trackKey) =>

@@ -62,6 +62,10 @@ public static partial class StemFileName
     public static bool IsUsable([NotNullWhen(true)] string? name) =>
         !string.IsNullOrWhiteSpace(name) && name.IndexOfAny(Path.GetInvalidFileNameChars()) < 0;
 
+    /// <summary>The name with every character a file name cannot hold replaced by an underscore.</summary>
+    public static string FileSafe(string name) =>
+        string.Concat(name.Select(c => Path.GetInvalidFileNameChars().Contains(c) ? '_' : c));
+
     [GeneratedRegex(@"\s*\((?<preset>[^()]*)\)\s*$")]
     private static partial Regex PresetSuffix { get; }
 }

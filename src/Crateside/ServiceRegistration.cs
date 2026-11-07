@@ -234,6 +234,8 @@ public static class ServiceRegistration
         services.AddSingleton<LinkIntake>();
         services.AddSingleton<InboxScanner>();
         services.AddHostedService<InboxWorker>();
+        services.AddSingleton<ImportNameRepair>();
+        services.AddHostedService<ImportNameWorker>();
 
         return services;
     }
