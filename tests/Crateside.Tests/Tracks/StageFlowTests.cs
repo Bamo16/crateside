@@ -1,0 +1,179 @@
+using Crateside.Core.Ledger;
+using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Tracks;
+
+namespace Crateside.Tests.Tracks;
+
+public sealed class StageFlowTests
+{
+    private static readonly DateTimeOffset Start = new(2026, 9, 25, 12, 0, 0, TimeSpan.Zero);
+
+    private static readonly TrackRow Row = new() { TrackKey = "v", Title = "Song" };
+
+    private static Func<JobStage, TrackJob?> Succeeded(params JobStage[] stages) =>
+        stage =>
+            stages.Contains(stage)
+                ? new TrackJob
+                {
+                    Id = $"v:{stage}",
+                    TrackKey = "v",
+                    Stage = stage,
+                    Status = JobStatus.Succeeded,
+                    UpdatedAt = Start.AddMinutes((int)stage),
+                    Strikes = 0,
+                }
+                : null;
+
+    [Fact]
+    public void A_first_run_that_has_judged_shows_those_stages_done_and_the_rest_not_yet()
+    {
+        var flow = StageFlow.For(
+            Row,
+            Succeeded(JobStage.Download, JobStage.Evidence, JobStage.Verdict),
+            []
+        );
+
+        Assert.Equal(1, flow.Pass);
+        Assert.Equal("First run", flow.Reason);
+        Assert.Equal(
+            ["Download", "Detect", "Judge", "Separate", "Stage & tag", "Warp"],
+            flow.Steps.Select(step => step.Label)
+        );
+        Assert.Equal(
+            [FlowState.Done, FlowState.Done, FlowState.Done],
+            flow.Steps.Take(3).Select(step => step.State)
+        );
+        Assert.Equal(FlowState.NotYet, flow.Steps[4].State);
+    }
+
+    [Fact]
+    public void Stage_and_tag_is_done_only_once_both_of_its_stages_are()
+    {
+        var flow = StageFlow.For(Row, Succeeded(JobStage.Handoff), []);
+
+        Assert.Equal(FlowState.NotYet, flow.Steps[4].State);
+    }
+
+    [Fact]
+    public void A_recut_opens_the_next_pass_and_skips_the_stages_before_separation()
+    {
+        var flow = StageFlow.For(
+            Row,
+            Succeeded(JobStage.Download, JobStage.Evidence, JobStage.Verdict),
+            [
+                new UserAction
+                {
+                    At = Start,
+                    TrackKey = "v",
+                    Kind = UserActionKind.Recut,
+                    PassFrom = JobStage.Separation,
+                },
+            ]
+        );
+
+        Assert.Equal(2, flow.Pass);
+        Assert.Equal("Recut", flow.Reason);
+        Assert.All(flow.Steps.Take(3), step => Assert.Equal(FlowState.Skipped, step.State));
+    }
+
+    [Fact]
+    public void The_running_stage_shows_as_running()
+    {
+        var running = StageFlow.For(
+            Row with
+            {
+                RunningStage = JobStage.Separation,
+                RunningSince = Start,
+            },
+            Succeeded(),
+            []
+        );
+
+        Assert.Equal(FlowState.Running, running.Steps[3].State);
+    }
+
+    [Fact]
+    public void A_stage_that_ran_out_of_strikes_shows_where_it_stopped()
+    {
+        var flow = StageFlow.For(
+            Row with
+            {
+                GaveUpAt = JobStage.Handoff,
+                GaveUpStrikes = 3,
+            },
+            Succeeded(JobStage.Download),
+            []
+        );
+
+        Assert.Equal(FlowState.GaveUp, flow.Steps[4].State);
+        Assert.Equal("gave up ×3", flow.Steps[4].Note);
+    }
+
+    [Theory]
+    [InlineData(false, FlowState.YourTurn, null)]
+    [InlineData(true, FlowState.Done, "ready to move")]
+    public void The_warp_step_is_done_once_every_staged_sample_has_its_default_clip(
+        bool saved,
+        FlowState expected,
+        string? note
+    )
+    {
+        var row = Row with
+        {
+            Samples =
+            [
+                new TrackSample
+                {
+                    Label = "Vocal - Full",
+                    AbletonKey = "C minor",
+                    HasDefaultClip = saved,
+                },
+            ],
+        };
+
+        var warp = StageFlow.For(row, Succeeded(), []).Steps[^1];
+
+        Assert.Equal(new FlowStep("Warp", expected, note), warp);
+    }
+
+    [Fact]
+    public void A_track_left_to_the_person_shows_its_judge_step_as_theirs()
+    {
+        var flow = StageFlow.For(
+            Row with
+            {
+                WaitingForPerson = true,
+            },
+            Succeeded(JobStage.Download, JobStage.Evidence),
+            []
+        );
+
+        var judge = Assert.Single(flow.Steps, step => step.Label == "Judge");
+
+        Assert.Equal(FlowState.YourTurn, judge.State);
+        Assert.Equal("waiting for you", judge.Note);
+    }
+
+    [Fact]
+    public void A_ruled_verdicts_chip_says_the_rules_decided_it()
+    {
+        var flow = StageFlow.For(
+            Row with
+            {
+                Verdict = new LedgerRun
+                {
+                    Timestamp = DateTimeOffset.UnixEpoch,
+                    Song = "song",
+                    DecidedBy = DecidedBy.Rules,
+                },
+            },
+            Succeeded(JobStage.Download, JobStage.Evidence, JobStage.Verdict),
+            []
+        );
+
+        Assert.Equal(
+            ["Download", "Detect", "Rules", "Separate", "Stage & tag", "Warp"],
+            flow.Steps.Select(step => step.Label)
+        );
+    }
+}

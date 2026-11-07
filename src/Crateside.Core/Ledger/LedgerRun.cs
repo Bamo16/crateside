@@ -1,15 +1,8 @@
 using System.Text.Json.Serialization;
-using Crateside.Core.Staging;
 
 namespace Crateside.Core.Ledger;
 
-/// <summary>
-/// One recorded detect-key run — a single line of keytag's <c>results/runs.jsonl</c>.
-/// </summary>
-/// <remarks>
-/// Append-only, and a re-run is a supersede: the latest line for a given <see cref="Song"/>
-/// wins. crateside reads it and never writes it.
-/// </remarks>
+/// <summary>One recorded verdict for a song, or a restatement carrying one over to another upload.</summary>
 public sealed record LedgerRun
 {
     public required DateTimeOffset Timestamp { get; init; }
@@ -33,43 +26,49 @@ public sealed record LedgerRun
             : Song;
 
     /// <summary>Usually a YouTube Music URL. Null for runs recorded from a local file.</summary>
-    public string? SourceUrl { get; init; }
+    public string? SourceUrl
+    {
+        get;
+        init
+        {
+            field = value;
+            SourceTrackKey = TrackKeys.TryParse(value, out var trackKey) ? trackKey : null;
+        }
+    }
 
     /// <summary>
-    /// The video ID from <see cref="SourceUrl"/> — the join onto a stem on disk.
+    /// The work key from <see cref="SourceUrl"/> — the join onto a stem on disk.
     /// </summary>
-    public string? SourceVideoId { get; init; }
+    [JsonPropertyName("sourceVideoId")]
+    public string? SourceTrackKey { get; private init; }
 
-    /// <summary>The tagged key in ASCII spelling (<c>G# major</c>), or null when withheld.</summary>
-    public string? Key { get; init; }
+    /// <summary>The verdict's primary tonal center, or null when withheld.</summary>
+    public TonalCenter? Center { get; init; }
 
-    /// <summary>
-    /// The diatonic mode, where a human source established one. Null means nobody looked, not
-    /// that the song is plain major/minor.
-    /// </summary>
-    public string? Mode { get; init; }
+    public bool Mixed { get; init; }
 
-    /// <summary>
-    /// True when the tagged key is a <em>collapse</em> of something else — the track is modal,
-    /// and <see cref="Key"/> is its parallel major or minor.
-    /// </summary>
-    /// <remarks>
-    /// A collapsed key is one note away from what the track actually plays (Dorian's natural
-    /// sixth, Mixolydian's flat seventh) — a candidate explanation when a pairing sounds wrong.
-    /// </remarks>
-    public bool IsCollapsed => Mode is not null and not "major" and not "minor";
+    public IReadOnlyList<Section> Sections { get; init; } = [];
 
-    /// <summary>The key as the song actually plays it (<c>D Dorian</c>), when that is known.</summary>
-    /// <remarks>Reconstructed rather than stored, so a second field can't drift from the tagged key.</remarks>
-    public string? ModalKey =>
-        IsCollapsed && Key?.Split(' ') is [var tonic, ..] && Mode is { Length: > 0 } mode
-            ? $"{tonic} {char.ToUpperInvariant(mode[0])}{mode[1..]}"
-            : null;
+    /// <summary>The tagged key in ASCII spelling (<c>G# major</c>): the collapse of <see cref="Center"/>.</summary>
+    public string? Key => Center?.Collapsed;
+
+    public DiatonicMode? Mode => Center?.Mode;
+
+    /// <summary>True when the tagged key loses the mode: the track is modal, and <see cref="Key"/> keeps only its tonic.</summary>
+    public bool IsCollapsed => Center is { IsModal: true };
+
+    /// <summary>The key as the song actually plays it (<c>D Dorian</c>), when it is modal.</summary>
+    public string? ModalKey => Center is { IsModal: true, Name: var name } ? name : null;
 
     public KeyConfidence Confidence { get; init; }
 
-    /// <summary>The warp starting point, not a tagged value. Rough by design.</summary>
+    public DecidedBy DecidedBy { get; init; } = DecidedBy.Judge;
+
+    /// <summary>The old BPM estimate, a warp starting point. Never written by a new run.</summary>
     public double? Bpm { get; init; }
+
+    /// <summary>When this is a restatement: the time of the run whose verdict it carries over.</summary>
+    public DateTimeOffset? Restates { get; init; }
 
     /// <summary>
     /// Whether this run produced a key the user would actually tag with. A LOW verdict may
@@ -78,30 +77,8 @@ public sealed record LedgerRun
     public bool HasTaggableKey =>
         Key is not null && Confidence is KeyConfidence.High or KeyConfidence.Medium;
 
-    internal static LedgerRun? FromDto(LedgerRunDto dto)
-    {
-        if (dto.Timestamp is null || dto.Song is not { Length: > 0 } song)
-            return null;
-
-        return new LedgerRun
-        {
-            Timestamp = dto.Timestamp.Value,
-            Song = song,
-            Artist = dto.Artist,
-            Title = dto.Title,
-            SourceUrl = dto.SourceUrl,
-            SourceVideoId = YouTubeUrl.TryGetVideoId(dto.SourceUrl, out var videoId)
-                ? videoId
-                : null,
-            Key = dto.Verdict?.Key,
-            Mode = dto.Verdict?.Mode,
-            Confidence = ParseConfidence(dto.Verdict?.Confidence),
-            Bpm = dto.Bpm?.Value,
-        };
-    }
-
-    private static KeyConfidence ParseConfidence(string? value) =>
-        value?.ToUpperInvariant() switch
+    internal static KeyConfidence ParseConfidence(string? value) =>
+        value?.Trim().ToUpperInvariant() switch
         {
             "HIGH" => KeyConfidence.High,
             "MEDIUM" => KeyConfidence.Medium,
@@ -111,10 +88,10 @@ public sealed record LedgerRun
         };
 }
 
-/// <summary>How much the detect-key run trusts its own verdict.</summary>
+/// <summary>How much the judge trusts its own verdict.</summary>
 public enum KeyConfidence
 {
-    /// <summary>The line carried a confidence crateside does not know. Treated as no key.</summary>
+    /// <summary>A confidence crateside does not know. Treated as no key, and never stored.</summary>
     Unknown,
 
     /// <summary>No single safe tag was given; <see cref="LedgerRun.Key"/> is null.</summary>
@@ -122,47 +99,4 @@ public enum KeyConfidence
     Low,
     Medium,
     High,
-}
-
-// Only the fields crateside reads. The `machine` block is deliberately not deserialized.
-internal sealed record LedgerRunDto
-{
-    [JsonPropertyName("timestamp")]
-    public DateTimeOffset? Timestamp { get; init; }
-
-    [JsonPropertyName("song")]
-    public string? Song { get; init; }
-
-    [JsonPropertyName("artist")]
-    public string? Artist { get; init; }
-
-    [JsonPropertyName("title")]
-    public string? Title { get; init; }
-
-    [JsonPropertyName("source_url")]
-    public string? SourceUrl { get; init; }
-
-    [JsonPropertyName("verdict")]
-    public VerdictDto? Verdict { get; init; }
-
-    [JsonPropertyName("bpm")]
-    public BpmDto? Bpm { get; init; }
-
-    internal sealed record VerdictDto
-    {
-        [JsonPropertyName("key")]
-        public string? Key { get; init; }
-
-        [JsonPropertyName("mode")]
-        public string? Mode { get; init; }
-
-        [JsonPropertyName("confidence")]
-        public string? Confidence { get; init; }
-    }
-
-    internal sealed record BpmDto
-    {
-        [JsonPropertyName("value")]
-        public double? Value { get; init; }
-    }
 }

@@ -1,0 +1,72 @@
+using Crateside.Core.WorkLists;
+
+namespace Crateside.Core.Orchestration.Jobs;
+
+/// <summary>
+/// What a re-cut or swap the user asked for still owes, read from the request on the track's
+/// instruction against the outcomes that answer it, never from job history as intent (#50).
+/// </summary>
+public static class CutRequests
+{
+    /// <summary>
+    /// A separation is owed: nothing has succeeded since the request and none is in hand. A failure
+    /// since the request is left to the strikes.
+    /// </summary>
+    public static bool OwesCut(DateTimeOffset? requestedAt, TrackJob? separation) =>
+        requestedAt is { } asked
+        && separation switch
+        {
+            null => true,
+            { IsOpen: true } => false,
+            { UpdatedAt: var at } when at < asked => true,
+            _ => false,
+        };
+
+    /// <summary>
+    /// The request has been carried all the way through: a handoff has succeeded since it, which a
+    /// cut and a kept-source copy both end in.
+    /// </summary>
+    public static bool IsSettled(DateTimeOffset? requestedAt, TrackJob? handoff) =>
+        requestedAt is not { } asked
+        || handoff is { Status: JobStatus.Succeeded, UpdatedAt: var at } && at >= asked;
+
+    public static bool OwesCut(WorkItem item, JobStore jobs) =>
+        OwesCut(item.CutRequestedAt, Latest(jobs, item.TrackKey, JobStage.Separation));
+
+    public static bool IsSettled(WorkItem item, JobStore jobs) =>
+        IsSettled(item.CutRequestedAt, Latest(jobs, item.TrackKey, JobStage.Handoff));
+
+    /// <summary>Video IDs whose request still owes a separation.</summary>
+    public static IReadOnlySet<string> Cutting(
+        IReadOnlyList<TrackInstruction> instructions,
+        JobStore jobs
+    ) =>
+        Where(
+            instructions,
+            track =>
+                OwesCut(track.CutRequestedAt, Latest(jobs, track.TrackKey, JobStage.Separation))
+        );
+
+    /// <summary>Video IDs whose request is not yet carried through, which keeps their rows.</summary>
+    public static IReadOnlySet<string> Unsettled(
+        IReadOnlyList<TrackInstruction> instructions,
+        JobStore jobs
+    ) =>
+        Where(
+            instructions,
+            track =>
+                !IsSettled(track.CutRequestedAt, Latest(jobs, track.TrackKey, JobStage.Handoff))
+        );
+
+    private static HashSet<string> Where(
+        IReadOnlyList<TrackInstruction> instructions,
+        Func<TrackInstruction, bool> owing
+    ) =>
+        instructions
+            .Where(track => track.CutRequestedAt is not null && owing(track))
+            .Select(track => track.TrackKey)
+            .ToHashSet(StringComparer.Ordinal);
+
+    private static TrackJob? Latest(JobStore jobs, string trackKey, JobStage stage) =>
+        jobs.TryGet(trackKey, stage, out var job) ? job : null;
+}

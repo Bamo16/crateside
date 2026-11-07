@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: crateside
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: crateside
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: crateside/global.json
+
+      - run: dotnet tool restore
+      - run: dotnet restore Crateside.slnx
+      - run: dotnet build Crateside.slnx --no-restore
+      - run: dotnet test --solution Crateside.slnx --no-build
+      - run: dotnet csharpier check .

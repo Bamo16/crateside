@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#0c0b09;color:#ece7dc;font-family:'IBM Plex Sans',sans-serif}a{color:#ece7dc}a:hover{color:#fff}button{cursor:pointer}</style>
+</helmet>
+
+<section style="padding:56px;display:flex;flex-direction:column;gap:40px">
+  <header style="display:flex;flex-direction:column;gap:8px;max-width:860px">
+    <div style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">Brief 06 · actions layout · built against 3ecb2e7</div>
+    <h1 style="margin:0;font:600 28px 'IBM Plex Sans',sans-serif">One side stack, mounted in the row and in the rail</h1>
+    <p style="margin:0;font:400 14px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.7);text-wrap:pretty">The row's right column (340px) and Track details' rail (19rem) become the same thing: a stack of labeled groups in one fixed order. Tags leave the top of the row, so the samples start at the top. Status sits on its own line under a label; the label's line carries the one action. Destructive acts go last, under a rule, with the source they would replace.</p>
+  </header>
+
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+
+    <div id="1a" style="display:flex;flex-direction:column;gap:12px;width:380px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1a</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">The order</span></div>
+      <div style="background:#1b1a15;border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:0">
+        <div style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:4px 10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">0</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Confirm <span style="font-weight:400;color:rgba(236,231,220,.5)">· StemConfirm, only while a tick has moved</span></span></div>
+        <div style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:4px 10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">1</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Go <span style="font-weight:400;color:rgba(236,231,220,.5)">· TrackActions Part=Go: Open folder, Track details</span></span></div>
+        <div style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:4px 10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">2</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Next <span style="font-weight:400;color:rgba(236,231,220,.5)">· TrackActions Part=Queue: the sentence, Retry, Cut what is missing, Work this first</span></span></div>
+        <div style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:4px 10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">3</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Tags <span style="font-weight:400;color:rgba(236,231,220,.5)">· GenreStrip, FamiliarityStrip</span></span></div>
+        <div style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:4px 10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">4</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Name <span style="font-weight:400;color:rgba(236,231,220,.5)">· TrackEdits Part=Name</span></span></div>
+        <div style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:4px 10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">5</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Uploads <span style="font-weight:400;color:rgba(236,231,220,.5)">· UploadCard, rail only</span></span></div>
+        <div style="height:10px;border-bottom:1px solid rgba(255,255,255,.14)"></div>
+        <div style="display:grid;grid-template-columns:22px minmax(0,1fr);gap:4px 10px;padding:12px 0 10px"><span style="font:500 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">6</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Start over <span style="font-weight:400;color:rgba(236,231,220,.5)">· TrackEdits Part=Source, then TrackActions Part=Remove</span></span></div>
+      </div>
+      <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);text-wrap:pretty">A group with nothing to say is not drawn, label included. <strong style="color:#ece7dc;font-weight:500">Finding</strong> stays full width above everything in the row and above the columns on Track details. <strong style="color:#ece7dc;font-weight:500">Change what is cut / Add a source / Adopt a file</strong> stay in StemList, beside the samples they change.</p>
+    </div>
+
+    <div id="1b" style="display:flex;flex-direction:column;gap:12px;width:460px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1b</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Status + action, and tags collapsed vs open</span></div>
+      <div style="background:#1b1a15;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:22px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(224,122,109,.9)">Today</div>
+          <div style="width:304px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);border:1px dashed rgba(255,255,255,.12);border-radius:6px;padding:8px">cut from the playlist entry's own <button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Swap source</button> video</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(127,207,154,.9)">Now · label line carries the action</div>
+          <div style="width:304px;display:flex;flex-direction:column;gap:4px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Name</span><div style="display:flex;gap:6px"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Revert</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Rename</button></div></div>
+            <div style="font:500 13px 'IBM Plex Sans',sans-serif">1991 – Seraph</div>
+            <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);text-wrap:pretty">renamed by you · was <span style="color:rgba(236,231,220,.75)">1991 - Seraph (Official Video) [HD]</span></div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Tag, settled → one line</div>
+          <div style="width:304px;display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><div style="display:flex;align-items:baseline;gap:10px;min-width:0"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5);width:78px;flex:none">Genre</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Drum &amp; Bass</span></div><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Change</button></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Tag, unsettled or Change pressed → every option</div>
+          <div style="width:304px;display:flex;flex-direction:column;gap:8px">
+            <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Genre</span>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <sc-for list="{{ genresSuggestHipHop }}" as="g" hint-placeholder-count="8"><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:{{ g.fg }};background:{{ g.bg }};border:1px {{ g.bs }} {{ g.bc }};border-radius:999px;padding:3px 10px">{{ g.t }}</span></sc-for>
+            </div>
+            <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">heard: hip hop, rap, trap, west coast</div>
+          </div>
+        </div>
+      </div>
+      <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);text-wrap:pretty">The label line holds only a word and one or two short buttons, so it never wraps at 19rem. The status beneath is prose and wraps like prose. A settled tag is a fact with a Change button; unsettled means your turn, so it opens with the amber-dashed suggestion as it does today. After a pick it collapses again.</p>
+    </div>
+
+  </div>
+
+  <div id="1c" style="display:flex;flex-direction:column;gap:12px;max-width:1180px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1c</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Row · a finding waiting</span></div>
+    <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font:500 14px 'IBM Plex Sans',sans-serif">Pendulum – Watercolor</span><span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#0f0e0c;background:#e8b45a;border-radius:999px;padding:3px 9px">your turn · same song?</span><span style="margin-left:auto;font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.4)">—</span></div>
+      <div style="background:#1b1a15;padding:18px 20px;display:flex;flex-direction:column;gap:18px">
+        <div style="border:1px solid rgba(232,180,90,.45);border-radius:8px;padding:12px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px">
+          <div style="flex:1 1 360px;font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty"><strong style="color:#ece7dc;font-weight:500">This looks like Pendulum – Watercolor (2010), which is already judged.</strong> Judging waits until you say whether it is the same song.</div>
+          <div style="display:flex;gap:8px"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Same song</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Different song</button></div>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Samples</div>
+            <div style="border:1px dashed rgba(255,255,255,.14);border-radius:8px;padding:28px;font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);text-align:center">Nothing judged yet · slots appear once you answer</div>
+          </div>
+          <div style="display:flex;flex-direction:column">
+            <div style="display:flex;gap:8px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06)"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Track details</button></div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+              <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Next</span>
+              <div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75)">Judging waits for your answer above.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5);width:78px">Genre</span><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">not looked up yet</span></div></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5);width:78px">Familiarity</span><span style="font:400 13px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">not looked up yet</span></div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;padding:14px 0 18px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Name</span><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Rename</button></div>
+              <div style="font:500 13px 'IBM Plex Sans',sans-serif">Pendulum – Watercolor</div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">named from the playlist title</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14)">
+              <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Start over</span>
+              <div style="display:flex;flex-direction:column;gap:4px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Source</span><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Swap source</button></div>
+                <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">cut from the playlist entry's own video</div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Track</span><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Remove from playlist</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:860px;text-wrap:pretty">No folder yet, so Go holds only Track details. Next carries the row's existing sentence; on Track details the stage flow says it, so Next there shows buttons only (ShowNextSentence=false). Tags with nothing to choose from are one quiet line each.</p>
+  </div>
+
+  <div id="1d" style="display:flex;flex-direction:column;gap:12px;max-width:1180px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1d</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Row · ready to warp</span></div>
+    <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font:500 14px 'IBM Plex Sans',sans-serif">1991 – Seraph</span><span style="font:500 11px 'IBM Plex Sans',sans-serif;color:#0f0e0c;background:#e8b45a;border-radius:999px;padding:3px 9px">your turn · warp</span><span style="margin-left:auto;font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.6)">174 · F♯m</span></div>
+      <div style="background:#1b1a15;padding:18px 20px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:28px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Samples</span><div style="display:flex;gap:6px"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Change what is cut</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Add a source</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Adopt a file</button></div></div>
+          <div style="display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,.06)">
+            <sc-for list="{{ stemsReady }}" as="s" hint-placeholder-count="5"><div style="display:grid;grid-template-columns:minmax(0,1fr) 70px 90px;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font:400 13px 'IBM Plex Mono',monospace">{{ s.f }}</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5);text-align:right">{{ s.d }}</span><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(127,207,154,.9);text-align:right">staged</span></div></sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <div style="display:flex;gap:8px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06)"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Open folder</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Track details</button></div>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+            <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Next</span>
+            <div style="font:400 13px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty">Staged in Mashup Staging. Warp it in Ableton; crateside picks it up once it lands in the library.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5);width:78px">Genre</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Drum &amp; Bass</span></div><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Change</button></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><div style="display:flex;align-items:baseline;gap:10px;min-width:0"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5);width:78px;flex:none">Familiarity</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Obscure</span></div><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Change</button></div>
+            <div style="padding-left:88px;font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)"><span style="font-family:'IBM Plex Mono',monospace">4,944</span> fans · song rank <span style="font-family:'IBM Plex Mono',monospace">317,277</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;padding:14px 0 18px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Name</span><div style="display:flex;gap:6px"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Revert</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Rename</button></div></div>
+            <div style="font:500 13px 'IBM Plex Sans',sans-serif">1991 – Seraph</div>
+            <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);text-wrap:pretty">renamed by you · was <span style="color:rgba(236,231,220,.75)">1991 - Seraph (Official Video) [HD]</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14)">
+            <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Start over</span>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Source</span><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Swap source</button></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);text-wrap:pretty">source swapped · cut from <span style="font-family:'IBM Plex Mono',monospace;color:rgba(236,231,220,.75)">youtu.be/Qm3aX9…</span></div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Track</span><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Remove from playlist</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:860px;text-wrap:pretty">Nothing to queue, so Next is the sentence alone. Both tags settled, so both are one line; familiarity's numbers sit under it, indented to the value. The samples start at the top of the panel, level with Go. StemList's own three acts sit on its label line, by the same pattern.</p>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+
+    <div id="1e" style="display:flex;flex-direction:column;gap:12px;width:400px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1e</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Side stack · library-only</span></div>
+      <div style="background:#1b1a15;border-radius:10px;padding:18px 20px">
+        <div style="width:340px;display:flex;flex-direction:column">
+          <div style="display:flex;gap:8px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06)"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Open folder</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Track details</button></div>
+          <div style="display:flex;flex-direction:column;gap:14px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Genre</span>
+              <div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ genresSuggestHipHop }}" as="g" hint-placeholder-count="8"><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:{{ g.fg }};background:{{ g.bg }};border:1px {{ g.bs }} {{ g.bc }};border-radius:999px;padding:3px 10px">{{ g.t }}</span></sc-for></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">heard: hip hop, rap, trap</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Familiarity</span>
+              <div style="display:flex;gap:6px"><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:3px 10px">Mainstream</span><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:3px 10px">Obscure</span></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">your call</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px;padding:14px 0 18px">
+            <div style="display:flex;align-items:center;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Name</span></div>
+            <div style="font:500 13px 'IBM Plex Sans',sans-serif">Kendrick Lamar – HUMBLE.</div>
+            <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);text-wrap:pretty">named from the file names · a sample is in the library, so rename it in Ableton</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14)">
+            <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Start over</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Track</span><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Remove</button></div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid rgba(255,255,255,.1);border-radius:8px">
+              <div style="font:400 12.5px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.75);text-wrap:pretty">Drop crateside's record of this track? No file is touched.</div>
+              <div style="display:flex;gap:8px"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#e07a6d;background:rgba(224,122,109,.18);border:1px solid rgba(224,122,109,.45);border-radius:6px;padding:7px 12px">Remove</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Keep</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);text-wrap:pretty">No rename and no swap: Name keeps its label with an empty action slot and says why; Source is not drawn, so Start over holds only Track. Both tags open: genre has a suggestion, familiarity is your call. The Remove confirm opens below its button, never beside it. Shown with the confirm open.</p>
+    </div>
+
+    <div id="1f" style="display:flex;flex-direction:column;gap:12px;width:400px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1f</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Side stack · rename open</span></div>
+      <div style="background:#1b1a15;border-radius:10px;padding:18px 20px">
+        <div style="width:340px;display:flex;flex-direction:column">
+          <div style="display:flex;gap:8px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06)"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Open folder</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Track details</button></div>
+          <div style="display:flex;flex-direction:column;gap:6px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5);width:78px">Genre</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Drum &amp; Bass</span></div><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Change</button></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5);width:78px">Familiarity</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Obscure</span></div><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Change</button></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;padding:14px 0 18px">
+            <div style="display:flex;align-items:center;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#e8b45a">Name · renaming</span></div>
+            <div style="font:400 13px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:#23211a;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:7px 10px">1991 – Seraph</div>
+            <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);text-wrap:pretty">Derived <strong style="color:#ece7dc;font-weight:500">1991 - Seraph (Official Video) [HD]</strong> · from the file names. Your name wins over the ledger, the staging board and the playlist.</div>
+            <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5);text-wrap:pretty">4 staged files and the folder are renamed. Nothing in Mashup Samples.</div>
+            <div style="display:flex;gap:8px;padding-top:2px"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#0f0e0c;background:#ece7dc;border:0;border-radius:6px;padding:7px 12px">Rename · <span style="font-family:'IBM Plex Mono',monospace">4</span> files</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Cancel</button></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14);opacity:.45">
+            <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Start over</span>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Source</span><button disabled style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Swap source</button></div>
+              <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.5)">cut from the playlist entry's own video</div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Track</span><button disabled style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Remove from playlist</button></div>
+          </div>
+        </div>
+      </div>
+      <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);text-wrap:pretty">The editor replaces the group's body in place: box, the sentence, the detail, then confirm + cancel on their own line. The label turns amber while it is your turn. Start over dims while an editor is open (the two share TrackEdits' one-at-a-time rule). Swap source opens the same way; its confirm is the red one.</p>
+    </div>
+
+  </div>
+
+  <div id="1g" style="display:flex;flex-direction:column;gap:12px;max-width:1180px">
+    <div style="display:flex;align-items:center;gap:10px"><span style="font:600 12px 'IBM Plex Mono',monospace;background:#ece7dc;color:#0f0e0c;border-radius:4px;padding:2px 7px">1g</span><span style="font:500 14px 'IBM Plex Sans',sans-serif">Track details · rail with the picker confirm open</span></div>
+    <div style="background:#141310;border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:22px 24px;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="font:600 20px 'IBM Plex Sans',sans-serif">1991 – Seraph</span><span style="font:400 12px 'IBM Plex Mono',monospace;color:rgba(236,231,220,.5)">174 · F♯m</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{ flow }}" as="c" hint-placeholder-count="6"><span style="font:{{ c.w }} 12px 'IBM Plex Sans',sans-serif;color:{{ c.fg }};background:{{ c.bg }};border:1px {{ c.bs }} {{ c.bc }};border-radius:999px;padding:4px 11px;opacity:{{ c.o }}">{{ c.t }}</span></sc-for></div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) 19rem;gap:32px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#e8b45a">Samples · changing what is cut</span></div>
+          <div style="display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,.06)">
+            <sc-for list="{{ stemsPick }}" as="s" hint-placeholder-count="6"><div style="display:grid;grid-template-columns:18px minmax(0,1fr) 110px;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span style="width:14px;height:14px;border-radius:3px;border:1px solid {{ s.bc }};background:{{ s.bg }}"></span><span style="font:400 13px 'IBM Plex Mono',monospace;color:{{ s.fg }};text-decoration:{{ s.td }}">{{ s.f }}</span><span style="font:400 12px 'IBM Plex Sans',sans-serif;color:{{ s.nfg }};text-align:right">{{ s.n }}</span></div></sc-for>
+          </div>
+          <div style="font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4)">Evidence and Activity follow, unchanged.</div>
+        </div>
+        <div style="display:flex;flex-direction:column">
+          <div style="display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid rgba(232,180,90,.45);border-radius:8px;margin-bottom:14px">
+            <div style="font:500 13px 'IBM Plex Sans',sans-serif">Cut <span style="font-family:'IBM Plex Mono',monospace">1</span> more · recycle <span style="font-family:'IBM Plex Mono',monospace">1</span></div>
+            <div style="font:400 12px/1.5 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);text-wrap:pretty">Other is cut from the stored audio. Vocals goes to the Recycle Bin. The rest stay as they are.</div>
+            <div style="display:flex;gap:8px"><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#0f0e0c;background:#ece7dc;border:0;border-radius:6px;padding:7px 12px">Confirm</button><button style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Cancel</button></div>
+          </div>
+          <div style="display:flex;flex-direction:column;opacity:.45">
+            <div style="display:flex;gap:8px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.06)"><button disabled style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Open folder</button></div>
+            <div style="display:flex;flex-direction:column;gap:6px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5);width:78px">Genre</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Drum &amp; Bass</span></div><button disabled style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Change</button></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><div style="display:flex;align-items:baseline;gap:10px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5);width:78px">Familiarity</span><span style="font:500 13px 'IBM Plex Sans',sans-serif">Obscure</span></div><button disabled style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Change</button></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06)">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Name</span><button disabled style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Rename</button></div>
+              <div style="font:500 13px 'IBM Plex Sans',sans-serif">1991 – Seraph</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;padding:14px 0 18px">
+              <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Uploads</span>
+              <div style="height:96px;border:1px dashed rgba(255,255,255,.14);border-radius:6px;display:flex;align-items:center;justify-content:center;font:400 12px 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.4)">UploadCard · click to load</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14)">
+              <span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.4)">Start over</span>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Source</span><button disabled style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Swap source</button></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px"><span style="font:500 11px 'IBM Plex Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(236,231,220,.5)">Track</span><button disabled style="font:500 12px 'IBM Plex Sans',sans-serif;color:#ece7dc;background:transparent;border:1px solid rgba(255,255,255,.18);border-radius:6px;padding:5px 10px">Remove from playlist</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="margin:0;font:400 12.5px/1.6 'IBM Plex Sans',sans-serif;color:rgba(236,231,220,.6);max-width:860px;text-wrap:pretty">StemConfirm takes slot 0, the top of the rail, level with the list it confirms; the rest of the stack dims and disables until confirm or cancel (TrackEdits.Close() already runs when the picker opens). No Next group here: nothing to queue, and the stage flow carries the sentence. In the row the confirm takes the same slot 0 of the side column.</p>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const G = ['Drum & Bass', 'Future Bass', 'Hip Hop', 'J-Pop', 'K-Pop', 'Pop', 'Rock', 'none of these'];
+    const chip = (t, tone) => tone === 'suggested'
+      ? { t, fg: '#e8b45a', bg: 'transparent', bs: 'dashed', bc: '#e8b45a' }
+      : { t, fg: 'rgba(236,231,220,.75)', bg: 'transparent', bs: 'solid', bc: 'rgba(255,255,255,.12)' };
+    const stem = (f, d) => ({ f, d });
+    const pick = (f, st) => ({
+      keep: { f, bg: '#ece7dc', bc: '#ece7dc', fg: '#ece7dc', td: 'none', n: 'kept', nfg: 'rgba(236,231,220,.5)' },
+      add: { f, bg: '#6fc7d6', bc: '#6fc7d6', fg: '#6fc7d6', td: 'none', n: '+ will cut', nfg: '#6fc7d6' },
+      drop: { f, bg: 'transparent', bc: 'rgba(224,122,109,.7)', fg: '#e07a6d', td: 'line-through', n: '− will recycle', nfg: '#e07a6d' },
+      off: { f, bg: 'transparent', bc: 'rgba(255,255,255,.25)', fg: 'rgba(236,231,220,.5)', td: 'none', n: '', nfg: 'transparent' },
+    })[st];
+    const fc = (t, s) => ({
+      done: { t: '✓ ' + t, w: 400, fg: '#7fcf9a', bg: 'transparent', bs: 'solid', bc: 'rgba(127,207,154,.5)', o: 1 },
+      skip: { t: '– ' + t, w: 400, fg: 'rgba(236,231,220,.6)', bg: 'transparent', bs: 'dashed', bc: 'rgba(255,255,255,.2)', o: .55 },
+      turn: { t: '● ' + t, w: 600, fg: '#0f0e0c', bg: '#e8b45a', bs: 'solid', bc: '#e8b45a', o: 1 },
+    })[s];
+    return {
+      genresSuggestHipHop: G.map(g => chip(g, g === 'Hip Hop' ? 'suggested' : null)),
+      stemsReady: [stem('1991 – Seraph (Drums).wav', '4:12'), stem('1991 – Seraph (Bass).wav', '4:12'), stem('1991 – Seraph (Instrumental).wav', '4:12'), stem('1991 – Seraph (Vocals).wav', '4:12')],
+      stemsPick: [pick('Drums', 'keep'), pick('Bass', 'keep'), pick('Instrumental', 'keep'), pick('Vocals', 'drop'), pick('Other', 'add'), pick('Piano', 'off')],
+      flow: [fc('Download', 'done'), fc('Detect', 'done'), fc('Judge', 'done'), fc('Separate', 'done'), fc('Stage & tag', 'done'), fc('Warp', 'turn')],
+    };
+  }
+}
+</script>
+</body>
+</html>

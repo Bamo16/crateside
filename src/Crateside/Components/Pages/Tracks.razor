@@ -1,30 +1,46 @@
-@page "/"
 @page "/tracks"
 @layout Crateside.Components.Layout.BareLayout
 @rendermode InteractiveServer
-@implements IDisposable
+@implements IAsyncDisposable
 
 @using System.Diagnostics
+@using Crateside.Core
+@using Crateside.Core.Familiarity
+@using Crateside.Core.Genres
+@using Crateside.Core.Imports
+@using Crateside.Core.Loudness
+@using Microsoft.Extensions.Options
 @using Crateside.Core.Ledger
-@using Crateside.Core.Orchestration
-@using Crateside.Core.Queue
+@using Crateside.Core.Orchestration.Download
+@using Crateside.Core.Orchestration.Edits
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Orchestration.Loop
+@using Crateside.Core.Orchestration.Verdict
+@using Crateside.Core.Playlist
+@using Crateside.Core.Tempo
 @using Crateside.Core.Quota
-@using Crateside.Core.Staging
 @using Crateside.Core.Tracks
+@using Crateside.Core.WorkLists
 @using Humanizer
 
 @inject TracksService Source
-@inject QueueService Playlist
+@inject CachedPlaylist Playlist
 @inject JobStore Jobs
-@inject StemRecut Recut
-@inject TrackRename Rename
-@inject TrackSwap Swap
+@inject TrackAdd Adding
+@inject LinkIntake Links
+@inject TrackIntake Files
+@inject IOptions<CratesidePaths> Paths
 @inject DrainControl Separation
+@inject StageSignals Signals
+@inject PlaylistWriteAccess Access
 @inject VerdictControl Judging
-@inject WorkingSet Held
-@inject QuotaReader Quota
+@inject PauseStore Paused
+@inject IQuotaReader Quota
+@inject IJSRuntime Js
+@inject IServiceProvider Services
+@inject ActionLog Actions
 
-<PageTitle>Tracks</PageTitle>
+<PageTitle>Tracks · crateside</PageTitle>
 
 <div class="tracks">
     <PageHeader Active="BrandNav.Tab.Tracks" Shape="PageHeader.Shapes.Shade">
@@ -42,7 +58,7 @@
                 <span class="subject">@(separating?.Title ?? (Separation.IsPaused ? "paused" : "idle"))</span>
                 @if (separating?.RunningSince is { } since)
                 {
-                    <span class="mono elapsed">@Elapsed(since) elapsed</span>
+                    <span class="mono elapsed">@Clock.Elapsed(since) elapsed</span>
                 }
                 <button class="outline" @onclick="ToggleSeparation">
                     @(Separation.IsPaused ? "Resume" : "Pause")
@@ -59,17 +75,17 @@
         <div class="cell activity">
             <div class="label-row">
                 <span class="label">Judging</span>
-                <span class="mono waiting">@Waiting(TrackState.Queued) waiting</span>
+                <span class="mono waiting">@Rows.Count(row => row.IsAwaitingJudgment) waiting</span>
             </div>
             @{
                 var judging = RowIn(TrackState.Judging);
             }
             <div class="activity-line">
                 <span class="dot @(Judging.IsPaused ? "amber" : judging is null ? "idle" : "teal")"></span>
-                <span class="subject">@(judging?.Title ?? (Judging.IsPaused ? "paused" : "idle"))</span>
+                <span class="subject">@(judging?.Title ?? (Judging.IsPaused ? "paused" : QuotaGuard.HoldOf(_quota, DateTimeOffset.UtcNow) is not null ? "held at the weekly limit" : "idle"))</span>
                 @if (judging?.RunningSince is { } judgingSince)
                 {
-                    <span class="mono elapsed">@Elapsed(judgingSince) elapsed</span>
+                    <span class="mono elapsed">@Clock.Elapsed(judgingSince) elapsed</span>
                 }
                 <button class="outline" @onclick="ToggleJudging">
                     @(Judging.IsPaused ? "Resume" : "Pause")
@@ -86,17 +102,30 @@
         <div class="cell quota">
             <div class="label-row">
                 <span class="label">Claude quota</span>
-                @if (_quota.ResetsAt is { } resets)
-                {
-                    <span class="mono waiting">resets @resets.ToLocalTime().ToString("h:mm tt").ToLowerInvariant()</span>
-                }
+                <span class="mono waiting" title="When the 5-hour and weekly windows reset">
+                    @(_quota.ResetsAt is { } resets ? resets.ToLocalTime().ToString("h:mm tt").ToLowerInvariant() : "—")
+                    · @(_quota.WeeklyResetsAt is { } weekResets ? weekResets.ToLocalTime().ToString("ddd h:mm tt").ToLowerInvariant() : "—")
+                </span>
             </div>
-            <div class="quota-figure">
-                <span class="mono percent">@(_quota.Utilization is { } used ? $"{used:N0}%" : "—")</span>
-                <span class="of">of this 5-hour window</span>
-            </div>
-            <div class="bar">
-                <div class="fill" style="width: @($"{Math.Clamp(_quota.Utilization ?? 0, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
+            <div class="quota-pair">
+                <div class="quota-window">
+                    <div class="quota-figure">
+                        <span class="mono percent">@(_quota.Utilization is { } used ? $"{used:N0}%" : "—")</span>
+                        <span class="of">5-hour</span>
+                    </div>
+                    <div class="bar">
+                        <div class="fill" style="width: @($"{Math.Clamp(_quota.Utilization ?? 0, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
+                    </div>
+                </div>
+                <div class="quota-window">
+                    <div class="quota-figure">
+                        <span class="mono percent">@(_quota.WeeklyUtilization is { } week ? $"{week:N0}%" : "—")</span>
+                        <span class="of">weekly</span>
+                    </div>
+                    <div class="bar">
+                        <div class="fill" style="width: @($"{Math.Clamp(_quota.WeeklyUtilization ?? 0, 0, 100).ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </PageHeader>
@@ -104,37 +133,167 @@
     <div class="filters">
         @foreach (var filter in Enum.GetValues<TrackFilter>())
         {
-            <button class="pill @(filter == _filter ? "on " + Tone(filter) : "off")"
-                    @onclick="() => _filter = filter">
+            <button class="pill @(filter == Viewing ? "on " + Tone(filter) : "off")"
+                    @onclick="() => ShowFilter(filter)">
                 @Name(filter)
                 <span class="mono count @Tone(filter)">@Rows.Count(filter)</span>
             </button>
         }
+        <span class="rule" aria-hidden="true"></span>
+        @foreach (var value in FamiliarityVocabulary.All)
+        {
+            <button class="pill @(_familiarity == value && !Searching ? "on plain" : "off")"
+                    title="Only tracks tagged @value"
+                    @onclick="() => ShowFamiliarity(value)">
+                @value
+                <span class="mono count plain">@Rows.Count(row => row.HasFamiliarity(value))</span>
+            </button>
+        }
+        @if (Viewing is TrackFilter.OffItsTempo)
+        {
+            <span class="gist">steady warps whose grid falls away from the audio · furthest first</span>
+        }
         <div class="search">
             <input type="search" placeholder="Find a track" aria-label="Find a track"
-                   value="@_search" @oninput="OnSearch" />
+                   @key="_searchBox" @oninput="OnSearch" />
             @if (_search.Length > 0)
             {
                 <button class="clear" @onclick="ClearSearch" title="Clear">×</button>
             }
         </div>
-        <button class="status" @onclick="Resync" disabled="@_syncing">
-            @(_syncing ? "checking the playlist…" : Synced)
+        <button class="pill off" @onclick="ToggleAddTrack" disabled="@_working">
+            + Add track
         </button>
+        <span class="status">
+            playlist @Synced
+            <RefreshButton Title="Check the playlist now" Busy="_syncing" OnClick="Resync" />
+        </span>
     </div>
 
-    <div class="heads @(_filter is TrackFilter.InStaging ? "roomy" : null)">
-        <span></span>
-        <span>Song</span>
-        <span>Key</span>
-        <span>Confidence</span>
-        <span class="right">BPM</span>
-        <span>State</span>
-        @if (_filter is TrackFilter.InStaging)
-        {
-            <span>Since</span>
-        }
-    </div>
+    <label class="drop-files">
+        <span>@(_dropNote ?? "Drop audio files or a zip here to take them in, or click to choose. The originals stay where they are.")</span>
+        <InputFile OnChange="Dropped" multiple accept=".flac,.mp3,.m4a,.ogg,.opus,.wav,.aif,.aiff,.zip" disabled="@_working" />
+    </label>
+
+    @if (_addingTrack)
+    {
+        <div class="add-track">
+            <label>
+                <span>YouTube URL or video ID, or a link to a track elsewhere</span>
+                <input class="mono" @ref="_trackBox" value="@_trackUrl"
+                       @oninput="e => OnAddTrack(e.Value?.ToString())"
+                       @onkeydown="OnAddTrackKey" />
+            </label>
+
+            <p class="add-note @(_trackPlan?.Refusal is null && _trackShortfall is null && _linkProblem is null ? null : "bad")">
+                @if (_linkProblem is { } linkProblem)
+                {
+                    @linkProblem
+                }
+                else if (_isLink)
+                {
+                    <text>
+                        Not a YouTube link. StemForge downloads it and says what it is, and crateside
+                        names it from its tags. Judging spends Claude quota. Nothing is added to the
+                        playlist.
+                    </text>
+                }
+                else if (_trackShortfall is { } poor)
+                {
+                    <text>
+                        This upload offers no premium format. The best it has is @poor.Quality.
+                    </text>
+                }
+                else if (_trackPlan?.Refusal is { } why)
+                {
+                    @why
+                }
+                else if (_trackPlan?.JudgesWhatIsHere is true)
+                {
+                    <text>
+                        The library already holds this track's samples, unjudged. Buys a verdict,
+                        not a separation. Judging spends Claude quota.
+                    </text>
+                }
+                else
+                {
+                    <text>
+                        Runs the whole workflow — download, detect, judge, separate, stage, tag.
+                        Judging spends Claude quota. It is not added to the playlist; crateside
+                        keeps its own record of it.
+                        @if (_trackPlan?.Song is { } song)
+                        {
+                            <text>the ledger already has this video as <strong>@song</strong>.</text>
+                        }
+                    </text>
+                }
+            </p>
+
+            <div class="actions">
+                @if (_trackShortfall is not null)
+                {
+                    <button class="danger" disabled="@_working"
+                            @onclick="() => ConfirmAddTrack(anyway: true)">
+                        @(_working ? "Adding…" : "Add it anyway")
+                    </button>
+                }
+                else
+                {
+                    <button class="primary" disabled="@(_working || (!_isLink && _trackPlan?.IsPossible is not true))"
+                            @onclick="() => ConfirmAddTrack()">
+                        @(_working ? (_isLink ? "Downloading…" : "Reading the upload…") : "Add")
+                    </button>
+                }
+                <button class="outline" @onclick="CancelAddTrack" disabled="@_working">Cancel</button>
+            </div>
+        </div>
+    }
+
+    @if (Viewing is TrackFilter.TagsToAnswer)
+    {
+        <div class="heads tags">
+            <span></span>
+            <span>Song</span>
+            <span>Genre</span>
+            <span>Familiarity</span>
+        </div>
+    }
+    else if (Viewing is TrackFilter.OffItsTempo)
+    {
+        <div class="heads off">
+            <span></span>
+            <span>Song</span>
+            <span>Key</span>
+            <span class="right">BPM</span>
+            <span class="right">Runs</span>
+            <span class="right">By the end</span>
+            <span>State</span>
+        </div>
+    }
+    else
+    {
+        <div class="heads @(Viewing is TrackFilter.InStaging ? "roomy" : null)">
+            <span></span>
+            <span>Song</span>
+            <span>Key</span>
+            <span>Confidence</span>
+            <span class="right">BPM</span>
+            <span>Genre</span>
+            <span>State</span>
+            @if (Viewing is TrackFilter.InStaging)
+            {
+                <span>Since</span>
+            }
+        </div>
+    }
+
+    @if (_view is { PlaylistProblem: { } stale })
+    {
+        @* The rows below are built from what crateside has taken on, so they stand. *@
+        <p class="notice error">
+            The playlist could not be read, so nothing new can arrive: @stale
+        </p>
+    }
 
     @if (_view is null)
     {
@@ -144,24 +303,11 @@
     {
         <p class="notice error">The playlist could not be read: @error</p>
     }
-    else if (!Shown.Any())
+    else if (Shown.ToList() is not { Count: > 0 } shown)
     {
         @if (_search.Length is 0)
         {
             <p class="notice">Nothing in this view.</p>
-        }
-        else if (Rows.Holding(_search) is { Count: > 0 } elsewhere)
-        {
-            <p class="notice">
-                Nothing matching <strong>@_search</strong> in @Name(_filter). Found in
-                @foreach (var filter in elsewhere)
-                {
-                    <button class="jump" @onclick="() => _filter = filter">
-                        @Name(filter)
-                        <span class="mono">@Found.Count(filter)</span>
-                    </button>
-                }
-            </p>
         }
         else
         {
@@ -170,17 +316,63 @@
     }
     else
     {
-        @foreach (var row in Shown)
+        @foreach (var row in shown)
         {
-            var open = _expanded == row.VideoId;
+            var open = _expanded == row.TrackKey;
+            var bpm = row.Bpm is { } tempo ? TempoFormat.Format(tempo) : null;
 
+            @if (Viewing is TrackFilter.TagsToAnswer)
+            {
+                <div id="@Anchor(row)" class="row tags @(open ? "open" : null) @(row.HasTagsToAnswer ? null : "answered")"
+                     @onclick="() => Expand(row)">
+                    <span class="chevron mono">@(open ? "⌄" : "›")</span>
+
+                    <span class="song-cell">
+                        <span class="song"><a class="title" href="@row.DetailsHref" @onclick:stopPropagation="true">@row.Title</a></span>
+                        <span class="tag-note">@TagNote(row)</span>
+                    </span>
+
+                    <span class="tag-cell" @onclick:stopPropagation="true">
+                        <GenreStrip Row="row" Shape="GenreStrip.Shapes.Chips" />
+                    </span>
+
+                    <span class="tag-cell" @onclick:stopPropagation="true">
+                        <FamiliarityStrip Row="row" Inline="true" />
+                    </span>
+                </div>
+            }
+            else if (Viewing is TrackFilter.OffItsTempo && row.Bpm is { } off)
+            {
+                <div id="@Anchor(row)" class="row off @(open ? "open" : null)" @onclick="() => Expand(row)">
+                    <span class="chevron mono">@(open ? "⌄" : "›")</span>
+
+                    <span class="song-cell">
+                        <span class="song"><a class="title" href="@row.DetailsHref" @onclick:stopPropagation="true">@row.Title</a></span>
+                    </span>
+
+                    <span class="mono key @(row.Key is null ? "none" : null)">@(KeyText.Spell(row.Key) ?? "—")</span>
+
+                    <span class="mono bpm right approx" title="@bpm?.Note">@bpm?.Text<span class="pad">@bpm?.Padding@if (bpm is { Mark: not OffMark.None })
+                    {<OffMarkGlyph Mark="bpm.Mark" />}</span></span>
+
+                    <span class="mono runs right">@TempoFormat.Runs(off)</span>
+
+                    <span class="mono by-the-end right @(bpm?.Mark is OffMark.Hollow ? "small" : null)">@TempoFormat.ByTheEnd(off)</span>
+
+                    <span>
+                        <StateChip Row="row" />
+                    </span>
+                </div>
+            }
+            else
+            {
             <div id="@Anchor(row)"
-                 class="row @(_filter is TrackFilter.InStaging ? "roomy" : null) @(open ? "open" : null)"
+                 class="row @(Viewing is TrackFilter.InStaging ? "roomy" : null) @(open ? "open" : null)"
                  @onclick="() => Expand(row)">
                 <span class="chevron mono">@(open ? "⌄" : "›")</span>
 
                 <span class="song">
-                    @row.Title
+                    <a class="title" href="@row.DetailsHref" @onclick:stopPropagation="true">@row.Title</a>
                     @if (row.AuditNote is { } note)
                     {
                         <span class="flag">@note</span>
@@ -189,474 +381,122 @@
                     {
                         <span class="flag">@("file".ToQuantity(row.AwaitingRename)) not renamed</span>
                     }
-                    else if (row.IsRenamed)
+                    @if (row.HasNearSilentVocal)
                     {
-                        <span class="flag neutral">renamed</span>
+                        <span class="flag" title="The vocal stem is more than @NearSilentVocal.ThresholdDb dB quieter than the instrumental, so there may be nothing to separate.">vocals near-silent</span>
+                        <button class="outline small" @onclick="() => _stems.SwitchToInstrumentalAsync(row)"
+                                @onclick:stopPropagation="true" disabled="@_stems.Working"
+                                title="Re-cut as the source and a drum guide, with no vocal or instrumental stem.">
+                            @(_stems.Working ? "Switching…" : "Switch to Instrumental")
+                        </button>
+                    }
+                    @if (row.IsAddedByUrl)
+                    {
+                        <span class="flag neutral">added by URL</span>
+                    }
+                    @if (row.NameSource is TrackNameSource.Playlist)
+                    {
+                        <span class="flag neutral" title="StemForge has not named this track yet, so the name will change. Rename once it has.">name pending</span>
+                    }
+                    @if (bpm?.Flag is { } flag)
+                    {
+                        <span class="flag neutral" title="@bpm.Note">@flag.Words@if (flag.Spread is { } spread)
+                        {<text> </text><span class="mono">@spread</span>}</span>
                     }
                 </span>
 
-                <span class="mono key @(row.Key is null ? "none" : null)">@(Spell(row.Key) ?? "—")</span>
+                <span class="key-cell" title="@KeyTitle(row)">
+                    <span class="mono key @(row.Key is null ? "none" : null)">@(KeyText.Spell(row.Key) ?? "—")</span>
+                    @if (ModeBadge(row) is { } badge)
+                    {
+                        <span class="mono mode-badge">@badge</span>
+                    }
+                </span>
 
-                <span class="mono conf @ConfidenceTone(row.Confidence)">@Confidence(row.Confidence)</span>
+                <span class="mono conf @KeyText.ConfidenceTone(row.Confidence)" title="@(row.DecidedBy is { } by ? KeyText.Byline(by) : null)">@KeyText.Decided(row.DecidedBy, row.Confidence)</span>
 
-                <span class="mono bpm right @(row.State is TrackState.ReadyToWarp ? "ready" : null) @(row.Bpm is null ? "none" : null)">
-                    @(row.Bpm is { } bpm ? bpm.ToString("N0") : "—")
+                <span class="mono bpm right @(row.State is TrackState.ReadyToWarp ? "ready" : null) @(bpm is null ? "none" : null) @(bpm?.IsApproximate is true ? "approx" : null) @(bpm?.IsEstimate is true ? "estimate" : null)" title="@bpm?.Note">@(bpm?.Text ?? "—")<span class="pad">@bpm?.Padding@if (bpm is { Mark: not OffMark.None })
+                {<OffMarkGlyph Mark="bpm.Mark" />}</span></span>
+
+                <span class="genre-cell">
+                    <GenreStrip Row="row" Shape="GenreStrip.Shapes.Cell" />
                 </span>
 
                 <span>
-                    <span class="chip @ChipClass(row.ChipStyle)">
-                        @if (row.ChipHasDot)
-                        {
-                            <span class="chip-dot"></span>
-                        }
-                        @row.ChipLabel
-                    </span>
+                    <StateChip Row="row" />
                 </span>
 
-                @if (_filter is TrackFilter.InStaging)
+                @if (Viewing is TrackFilter.InStaging)
                 {
                     <span class="since">
                         @(row.StagedSince is { } staged ? $"staged {staged.Humanize()}" : "—")
                     </span>
                 }
             </div>
+            }
 
-            @if (open)
+            @if (open || _closing.Contains(row.TrackKey))
             {
-                <div class="panel">
-                    @if (row.ParkedFor is ParkReason.PremiumShortfall)
-                    {
-                        <div class="finding">
-                            <div class="finding-said">
-                                <strong>The download did not get premium audio.</strong>
-                                @row.Acquisition?.Advisory
-                            </div>
+                <div class="reveal @(open ? null : "closing")" @key="row.TrackKey">
+                    <div class="panel">
+                        <TrackFindings Row="row" />
 
-                            <button class="outline" @onclick="() => UseAnyway(row)" disabled="@_working">
-                                Use it anyway
-                            </button>
-                        </div>
-                    }
-                    <div class="edits">
-                        <div class="name-strip @(_renaming == row.VideoId ? "editing" : null)">
-                            @if (_renaming == row.VideoId)
+                        <StemList Editor="_stems" Row="row" FormsBeside="true" Headed="false" />
+
+                        <div class="side">
+                            <SideStack Row="row" Editor="_stems" Columns="2" PicksBeside="true" Removed="OnRemoved" />
+
+                            @if (_problem is { } problem)
                             {
-                                <div class="name-edit">
-                                    <input class="name-input" @ref="_nameBox" value="@_name"
-                                           @oninput="e => _name = e.Value?.ToString() ?? string.Empty"
-                                           @onkeydown="e => OnRenameKey(e, row)" />
-                                    <p class="name-note">
-                                        Derived <strong>@Derived(row)</strong> · from @From(row.NameSource).
-                                        Your name wins over the ledger, the staging board and the playlist.
-                                    </p>
-                                </div>
-
-                                <div class="name-side">
-                                    <p class="detail">@row.RenameDetail</p>
-
-                                    <div class="actions">
-                                        <button class="primary" disabled="@(_working || !StemFileName.IsUsable(_name))"
-                                                @onclick="() => ConfirmRename(row)">
-                                            Rename · @row.RenameScope
-                                        </button>
-                                        <button class="outline" @onclick="CancelRename" disabled="@_working">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            }
-                            else
-                            {
-                                <span class="name-from">
-                                    @if (row.DerivedTitle is { } derived)
-                                    {
-                                        <text>renamed by you · was <strong>@derived</strong></text>
-                                    }
-                                    else
-                                    {
-                                        <text>named from @From(row.NameSource)</text>
-                                    }
-                                </span>
-
-                                @if (row.CanRename)
-                                {
-                                    <button class="outline" @onclick="() => StartRename(row)" disabled="@_working">
-                                        Rename
-                                    </button>
-                                    @if (row.IsRenamed)
-                                    {
-                                        <button class="outline" @onclick="() => RevertRename(row)" disabled="@_working">
-                                            Revert
-                                        </button>
-                                    }
-                                }
-                                else
-                                {
-                                    <span class="name-from">· rename it in Ableton</span>
-                                }
+                                <p class="problem">@problem</p>
                             }
                         </div>
-
-                        <div class="name-strip @(_swapping == row.VideoId ? "editing" : null)">
-                            @if (_swapping == row.VideoId)
-                            {
-                                <div class="name-edit">
-                                    <input class="name-input" @ref="_swapBox" value="@_swapUrl" placeholder="https://www.youtube.com/watch?v=…"
-                                           @oninput="e => OnSwapUrl(row, e)"
-                                           @onkeydown="e => OnSwapKey(e, row)" />
-                                    <p class="name-note">
-                                        A better upload of the same song. The playlist entry stays as it is.
-                                    </p>
-                                </div>
-
-                                <div class="name-side">
-                                    <p class="detail">
-                                        @(_swapPlan?.Refusal ?? _swapPlan?.Detail ?? SwapPlan.DetailFor(row.Verdict is not null))
-                                        @if (row.SamplesLeftInLibrary > 0)
-                                        {
-                                            <text>
-                                                @("sample".ToQuantity(row.SamplesLeftInLibrary)) of the old upload are in
-                                                Mashup Samples; crateside never writes there, so remove them yourself.
-                                            </text>
-                                        }
-                                    </p>
-
-                                    <div class="actions">
-                                        <button class="danger" disabled="@(_working || _swapPlan?.IsPossible is not true)"
-                                                @onclick="() => ConfirmSwap(row)">
-                                            @(_working ? "Swapping…" : SwapScope(_swapPlan))
-                                        </button>
-                                        <button class="outline" @onclick="CancelSwap" disabled="@_working">
-                                            Cancel
-                                        </button>
-                                    </div>
-                                </div>
-                            }
-                            else
-                            {
-                                <span class="name-from">
-                                    @if (row.IsSourceSwapped)
-                                    {
-                                        <text>source swapped · cut from <strong>@row.StatedSourceUrl</strong></text>
-                                    }
-                                    else
-                                    {
-                                        <text>cut from the playlist entry's own video</text>
-                                    }
-                                </span>
-
-                                <button class="outline" @onclick="() => StartSwap(row)" disabled="@_working">
-                                    Swap source
-                                </button>
-                            }
-                        </div>
-                    </div>
-
-                    @if (row.CanChangePlan)
-                    {
-                        <div class="stems">
-                            <div class="panel-head">Will separate into</div>
-
-                            <div class="stem-heads">
-                                <span>Stem</span>
-                                <span>Status</span>
-                                <span></span>
-                                <span></span>
-                            </div>
-
-                            @foreach (var preset in SeparationRecipe.Standard.Presets)
-                            {
-                                var kept = row.Recipe.Presets.Contains(preset, StringComparer.Ordinal);
-
-                                <div class="stem @(kept ? null : "skipped")">
-                                    <span class="stem-label mono">@preset</span>
-                                    <span class="mono stem-tag">@(kept ? "not yet" : "skipped")</span>
-                                    <span></span>
-                                    <span class="stem-note">
-                                        @(kept ? null : "instrumental source — no vocal to lift")
-                                    </span>
-                                </div>
-                            }
-
-                            @if (row.Recipe.KeepSource)
-                            {
-                                <div class="stem">
-                                    <span class="stem-label mono">source</span>
-                                    <span class="mono stem-tag">not yet</span>
-                                    <span></span>
-                                    <span class="stem-note">the release itself, kept whole</span>
-                                </div>
-                            }
-
-                            @if (row.Recipe.ExtractDrums)
-                            {
-                                <div class="stem guide">
-                                    <span class="stem-label mono">
-                                        drums <span class="kind">warp guide</span>
-                                    </span>
-                                    <span class="mono stem-tag">not yet</span>
-                                    <span></span>
-                                    <span class="stem-note">
-                                        for placing markers; deleted after warping
-                                    </span>
-                                </div>
-                            }
-
-                            <div class="release">
-                                <span class="release-label">Release</span>
-                                <select value="@Chosen(row.IsInstrumentalRelease)"
-                                        @onchange="e => SetInstrumental(row, e)">
-                                    <option value="false">has vocals</option>
-                                    <option value="true">no vocals</option>
-                                </select>
-                                <span class="release-hint">the stems follow from this</span>
-                            </div>
-                        </div>
-                    }
-                    else if (row.Samples.Count > 0 || row.HasWarpGuide)
-                    {
-                        var pending = PendingFor(row);
-
-                        <div class="stems">
-                            <div class="panel-head">
-                                @StemsHeading(row)@if (pending is not null)
-                                {
-                                    <span class="pending"> · re-cut pending</span>
-                                }
-                            </div>
-
-                            <div class="stem-heads">
-                                <span>Sample</span>
-                                <span>Ableton key</span>
-                                <span>Where it is</span>
-                                <span></span>
-                            </div>
-
-                            @foreach (var sample in row.Samples)
-                            {
-                                <div class="stem @(pending is null ? null : "going")">
-                                    <span class="stem-label">@sample.Label</span>
-                                    <span class="mono stem-tag @TagTone(sample)">@Tag(sample)</span>
-                                    @if (pending is null)
-                                    {
-                                        <span class="mono stem-where @(sample.IsInLibrary ? "good" : null)">
-                                            @(sample.IsInLibrary ? "Mashup Samples" : "Sample Staging")
-                                        </span>
-                                        <span class="stem-note">
-                                            @if (row.HasSeveralUploads)
-                                            {
-                                                var current = sample.SourceVideoId == row.VideoId;
-
-                                                <span class="upload @(current ? "current" : "superseded")">
-                                                    @(current ? "new upload" : "old upload")
-                                                    <span class="mono">@sample.SourceVideoId</span>
-                                                </span>
-                                            }
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="mono stem-where gone">removed</span>
-                                        <span class="stem-note">deleted from Sample Staging</span>
-                                    }
-                                </div>
-                            }
-
-                            @if (row.HasWarpGuide)
-                            {
-                                <div class="stem guide">
-                                    <span class="stem-label">
-                                        Drums <span class="kind">warp guide</span>
-                                    </span>
-                                    <span class="mono stem-tag dim">—</span>
-                                    @if (pending is null)
-                                    {
-                                        <span class="mono stem-where">Sample Staging</span>
-                                        <span class="stem-note">
-                                            for placing markers; deleted after warping
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="mono stem-where gone">removed</span>
-                                        <span class="stem-note">re-made below</span>
-                                    }
-                                </div>
-                            }
-
-                            @if (pending is { } plan)
-                            {
-                                var first = true;
-
-                                foreach (var preset in plan.Recipe.Presets)
-                                {
-                                    <div class="stem coming">
-                                        <span class="stem-label mono">@preset</span>
-                                        <span class="mono stem-tag">@(Spell(row.Key) ?? "—")</span>
-                                        <span class="mono stem-where new">new</span>
-                                        <span class="stem-note">
-                                            @(first ? "tagged from the existing verdict" : null)
-                                        </span>
-                                    </div>
-
-                                    first = false;
-                                }
-
-                                if (plan.Recipe.KeepSource)
-                                {
-                                    <div class="stem coming">
-                                        <span class="stem-label mono">source</span>
-                                        <span class="mono stem-tag">@(Spell(row.Key) ?? "—")</span>
-                                        <span class="mono stem-where new">new</span>
-                                        <span class="stem-note">the release itself, kept whole</span>
-                                    </div>
-                                }
-
-                                if (plan.Recipe.ExtractDrums)
-                                {
-                                    <div class="stem coming guide">
-                                        <span class="stem-label mono">
-                                            drums <span class="kind">warp guide</span>
-                                        </span>
-                                        <span class="mono stem-tag">@(Spell(row.Key) ?? "—")</span>
-                                        <span class="mono stem-where new">new</span>
-                                        <span class="stem-note">
-                                            for placing markers; deleted after warping
-                                        </span>
-                                    </div>
-                                }
-                            }
-
-                            @if (row.Samples.Any(sample => sample.IsInLibrary))
-                            {
-                                <div class="release">
-                                    <span class="release-label">Release</span>
-                                    <span class="locked">@ReleaseWord(row.IsInstrumentalRelease)</span>
-                                    <span class="release-hint">
-                                        @("file".ToQuantity(row.Samples.Count(s => s.IsInLibrary)))
-                                        in Mashup Samples. Move them back to Sample Staging to
-                                        change this.
-                                    </span>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="release">
-                                    <span class="release-label">Release</span>
-                                    <select value="@Chosen(pending is null ? row.IsInstrumentalRelease : !row.IsInstrumentalRelease)"
-                                            class="@(pending is null ? null : "changed")"
-                                            @onchange="e => ProposeRecut(row, e)">
-                                        <option value="false">has vocals</option>
-                                        <option value="true">no vocals</option>
-                                    </select>
-                                    @if (pending is null)
-                                    {
-                                        <span class="release-hint">
-                                            the stems follow from this · changing it re-cuts
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="release-hint">
-                                            was <strong>@ReleaseWord(row.IsInstrumentalRelease)</strong>
-                                        </span>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    }
-
-                    <div class="side">
-                        @if (PendingFor(row) is { } confirm)
-                        {
-                            <p class="warning">
-                                @if (confirm.Refusal is { } refusal)
-                                {
-                                    @refusal
-                                }
-                                else
-                                {
-                                    <text>
-                                        Re-cutting removes
-                                        @("file".ToQuantity(confirm.Removing.Count))
-                                        from Sample Staging.
-                                    </text>
-                                }
-                            </p>
-
-                            <p class="detail">
-                                Anything you have done to them in Ableton is lost.
-                                @if (row.Key is { } key)
-                                {
-                                    <text>The key stays @Spell(key) — </text>
-                                }
-                                detection does not run again, so no quota is spent.
-                                @confirm.AudioDetail About
-                                @confirm.Recipe.Estimate.Humanize() on the GPU.
-                            </p>
-
-                            <div class="actions">
-                                @if (confirm.IsPossible)
-                                {
-                                    <button class="danger" @onclick="() => ConfirmRecut(row)" disabled="@_working">
-                                        @(_working
-                                            ? "Re-cutting…"
-                                            : $"Re-cut · remove {"file".ToQuantity(confirm.Removing.Count)}")
-                                    </button>
-                                }
-                                <button class="outline" @onclick="CancelRecut" disabled="@_working">
-                                    Keep as is
-                                </button>
-                            </div>
-                        }
-                        else
-                        {
-                        <p class="what-next @NextTone(row)">@row.Next</p>
-                        <p class="detail">@row.Detail</p>
-
-                        <div class="actions">
-                            @if (row.Folder is not null)
-                            {
-                                <button class="outline" @onclick="() => OpenFolder(row)">Open folder</button>
-                            }
-                            @if (row.Verdict is not null)
-                            {
-                                <a class="outline" href="@($"song/{row.VideoId}")">Why this key</a>
-                            }
-                            @if (row.GaveUpAt is not null)
-                            {
-                                <button class="outline" @onclick="() => Retry(row)">Retry</button>
-                            }
-                            @if (Playlist.BumpedVideoId == row.VideoId)
-                            {
-                                <button class="primary" @onclick="ClearBump">Stop doing this next</button>
-                            }
-                            else if (row.State is TrackState.Queued or TrackState.JudgedInLine)
-                            {
-                                <button class="outline" @onclick="() => Bump(row)">Do this next</button>
-                            }
-                            @if (row.PlaylistItemId is { } playlistItemId && Playlist.IsAuthorized)
-                            {
-                                <button class="outline" @onclick="() => Remove(row, playlistItemId)">
-                                    Remove from playlist
-                                </button>
-                            }
-                        </div>
-                        }
-
-                        @if (_problem is { } problem)
-                        {
-                            <p class="problem">@problem</p>
-                        }
                     </div>
                 </div>
             }
         }
     }
 
-    @if (_toasts.Count > 0)
+    <div class="spacer" @ref="_spacer"></div>
+
+    @if (_toasts.Count > 0 || _consentToast || _removed is not null || _filed.Count > 0)
     {
         <div class="toasts">
+            @foreach (var filed in _filed)
+            {
+                <div class="toast">
+                    <span class="eyebrow">Already filed</span>
+                    <span class="toast-song">@(filed.Row?.Title ?? filed.Action.TrackKey)</span>
+                    <span class="toast-foot">
+                        @Sentence(filed.Action.Detail ?? "already filed")
+                        @if (filed.Row is { } row)
+                        {
+                            <a class="show" href="@($"tracks#{Anchor(row)}")" @onclick="() => Show(row)">
+                                Show row
+                            </a>
+                        }
+                    </span>
+                </div>
+            }
+            @if (_removed is { } removed)
+            {
+                <div class="toast">
+                    <span class="eyebrow">Removed</span>
+                    <span class="toast-song">@removed.Title</span>
+                    <span class="toast-foot">@removed.Note</span>
+                </div>
+            }
+            @if (_consentToast)
+            {
+                <div class="toast lapsed">
+                    <span class="eyebrow">Playlist access expired</span>
+                    <span class="toast-song">crateside cannot empty the playlist</span>
+                    <span class="toast-foot">
+                        @Lapsed()
+                        <a class="show" href="/settings">Refresh access</a>
+                    </span>
+                </div>
+            }
             @foreach (var toast in _toasts)
             {
                 <div class="toast">
@@ -665,7 +505,7 @@
                     <span class="mono toast-figure">@Figure(toast)</span>
                     <span class="toast-foot">
                         @Waiting(toast)
-                        <a class="show" href="@($"#{Anchor(toast)}")" @onclick="() => Show(toast)">
+                        <a class="show" href="@($"tracks#{Anchor(toast)}")" @onclick="() => Show(toast)">
                             Show row
                         </a>
                     </span>
@@ -678,9 +518,33 @@
 @code {
     private TracksView? _view;
     private TrackFilter _filter = TrackFilter.Unfinished;
+    private string? _familiarity;
+
+    /// <summary>A filter to open on, by name, as Counts links to Tags to answer.</summary>
+    [SupplyParameterFromQuery(Name = "filter")]
+    public string? OpenOn { get; set; }
     private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
 
+    private static string? ModeBadge(TrackRow row) =>
+        row is { Key: not null, Verdict: { Center: { } center, Mixed: var mixed } }
+            ? ModeText.Abbreviation(center, mixed)
+            : null;
+
+    private static string? KeyTitle(TrackRow row) =>
+        row is { Key: not null, Verdict: { } verdict } ? ModeText.Hover(verdict) : null;
+
     private static readonly TimeSpan ToastLife = TimeSpan.FromSeconds(20);
+
+    /// <summary>The panel's closing animation, in Tracks.razor.css.</summary>
+    private static readonly TimeSpan Closing = TimeSpan.FromMilliseconds(220);
+
+    /// <summary>
+    /// How often the lapsed-access toast comes back. Nothing automatic renews the token, so it
+    /// is said again rather than once.
+    /// </summary>
+    private static readonly TimeSpan TellEvery = TimeSpan.FromMinutes(30);
+
+    private DateTimeOffset _consentUntil;
 
     private static readonly TimeSpan Tick = TimeSpan.FromSeconds(1);
 
@@ -689,7 +553,14 @@
 
     private string _search = string.Empty;
 
+    /// <summary>
+    /// The search box is left uncontrolled, so a render that lands after more keystrokes cannot
+    /// write an older value over them; a new key gives a fresh, empty box when the code clears the search.
+    /// </summary>
+    private int _searchBox;
+
     private readonly List<TrackRow> _toasts = [];
+    private readonly List<(UserAction Action, TrackRow? Row)> _filed = [];
 
     private readonly CancellationTokenSource _circuit = new();
 
@@ -697,47 +568,306 @@
     private bool _syncing;
     private bool _working;
 
-    private string? _recutting;
-    private RecutPlan? _plan;
+    /// <summary>The add-a-track form, which is the second way into the work lists (ADR 0010).</summary>
+    private bool _addingTrack;
 
-    private string? _renaming;
-    private string _name = string.Empty;
+    private string _trackUrl = string.Empty;
+    private AddTrackPlan? _trackPlan;
+    private ProbedSource? _trackShortfall;
+    private bool _isLink;
+    private string? _linkProblem;
+    private string? _dropNote;
 
-    private ElementReference _nameBox;
-    private ElementReference _swapBox;
-    private bool _focusName;
-    private bool _focusSwap;
+    private void ToggleAddTrack()
+    {
+        if (_addingTrack)
+        {
+            CancelAddTrack();
+            return;
+        }
 
-    private string? _swapping;
-    private string _swapUrl = string.Empty;
-    private SwapPlan? _swapPlan;
+        _addingTrack = true;
+        _problem = null;
+        _focusTrack = true;
+    }
+
+    private void CancelAddTrack()
+    {
+        _addingTrack = false;
+        _trackUrl = string.Empty;
+        _trackPlan = null;
+        _trackShortfall = null;
+        _isLink = false;
+        _linkProblem = null;
+    }
+
+    private void OnAddTrack(string? url)
+    {
+        _trackUrl = url ?? string.Empty;
+        _trackShortfall = null;
+        _linkProblem = null;
+        _isLink =
+            !TrackKeys.TryParse(_trackUrl, out _) && YouTubeUrl.TryNormalize(_trackUrl, out _);
+        _trackPlan = _isLink ? null : Adding.PlanFor(_trackUrl, [.. Rows.Select(row => row.Facts)]);
+    }
+
+    /// <summary>Enter does what the button would, so on an upload found wanting it is the acceptance.</summary>
+    private async Task OnAddTrackKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Escape")
+            CancelAddTrack();
+        else if (e.Key is "Enter" && (_isLink || _trackPlan?.IsPossible is true))
+            await ConfirmAddTrack(anyway: _trackShortfall is not null);
+    }
+
+    private async Task ConfirmAddTrack(bool anyway = false)
+    {
+        _working = true;
+        _problem = null;
+
+        try
+        {
+            if (_isLink)
+            {
+                await TakeInLinkAsync();
+
+                return;
+            }
+
+            var outcome = await Adding.ApplyAsync(
+                _trackUrl,
+                [.. Rows.Select(row => row.Facts)],
+                anyway,
+                _circuit.Token
+            );
+
+            _problem = outcome.Problem;
+            _trackShortfall = outcome.Shortfall;
+
+            if (outcome.Succeeded)
+            {
+                if (YouTubeUrl.TryGetVideoId(_trackUrl, out var added))
+                    Actions.Record(added, UserActionKind.Added, _trackUrl);
+
+                // Otherwise the stage finishes its idle wait before it looks at the new track.
+                Signals.Wake(JobStage.Download);
+
+                CancelAddTrack();
+            }
+
+            await Source.RefreshAsync(_circuit.Token);
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private async Task TakeInLinkAsync()
+    {
+        switch (await Links.TakeInAsync(_trackUrl.Trim(), ct: _circuit.Token))
+        {
+            case IntakeOutcome.TakenIn(var key, _):
+                Actions.Record(key, UserActionKind.Added, _trackUrl);
+                Signals.Wake(JobStage.Download, JobStage.Evidence);
+                CancelAddTrack();
+
+                break;
+            case IntakeOutcome.AlreadyHeld(_, var name):
+                _linkProblem = $"crateside already has that track, as {name}.";
+
+                break;
+            case IntakeOutcome.Refused(var reason):
+                _linkProblem = reason;
+
+                break;
+        }
+
+        await Source.RefreshAsync(_circuit.Token);
+    }
+
+    private const long MaxDroppedBytes = 4L * 1024 * 1024 * 1024;
+
+    private async Task Dropped(InputFileChangeEventArgs e)
+    {
+        _working = true;
+        _dropNote = null;
+
+        var taken = 0;
+        var problems = new List<string>();
+        var incoming = Path.Combine(
+            Paths.Value.ImportsFolder,
+            ".incoming",
+            $"drop-{Guid.NewGuid():n}"
+        );
+
+        try
+        {
+            Directory.CreateDirectory(incoming);
+
+            foreach (var file in e.GetMultipleFiles(maximumFileCount: 1000))
+            {
+                var path = Path.Combine(incoming, Path.GetFileName(file.Name));
+
+                await using (var target = File.Create(path))
+                await using (var source = file.OpenReadStream(MaxDroppedBytes, _circuit.Token))
+                    await source.CopyToAsync(target, _circuit.Token);
+
+                IReadOnlyList<IntakeOutcome> outcomes = path.EndsWith(
+                    ".zip",
+                    StringComparison.OrdinalIgnoreCase
+                )
+                    ? Files.TakeInZip(path)
+                    : TrackIntake.IsAudioFile(path)
+                        ? [Files.TakeInFile(path, IntakeMode.Move)]
+                        : [new IntakeOutcome.Refused($"{file.Name} is not audio crateside takes in")];
+
+                taken += outcomes.OfType<IntakeOutcome.TakenIn>().Count();
+                problems.AddRange(
+                    outcomes.OfType<IntakeOutcome.Refused>().Select(refused => refused.Reason)
+                );
+            }
+        }
+        catch (Exception ex)
+            when (ex is IOException or UnauthorizedAccessException or OperationCanceledException)
+        {
+            problems.Add(ex.Message);
+        }
+        finally
+        {
+            try
+            {
+                Directory.Delete(incoming, recursive: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+
+            _working = false;
+        }
+
+        _dropNote = string.Join(
+            " ",
+            new[] { taken > 0 ? $"Took in {"track".ToQuantity(taken)}." : null }
+                .Concat(problems)
+                .OfType<string>()
+        );
+
+        if (taken > 0)
+            Signals.Wake(JobStage.Download, JobStage.Evidence);
+
+        await Source.RefreshAsync(_circuit.Token);
+    }
+
+    /// <summary>The last track removed, said once because its row is no longer there to say it.</summary>
+    private (string Title, string Note)? _removed;
+
+    private bool _focusTrack;
+    private ElementReference _trackBox;
+    private ElementReference _spacer;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _placeKeeper;
+
+    /// <summary>Rows whose panel is still animating shut, so it stays in the page until it has.</summary>
+    private readonly HashSet<string> _closing = new(StringComparer.Ordinal);
+
+    private StemEditor _stems = null!;
 
     private IReadOnlyList<TrackRow> Rows => _view?.Rows ?? [];
 
     /// <summary>Everything answering the search, before the filter narrows it.</summary>
     private IEnumerable<TrackRow> Found => Rows.Where(row => row.Matches(_search));
 
-    private IEnumerable<TrackRow> Shown => Found.Where(row => row.Matches(_filter));
+    /// <summary>
+    /// Rows the Tags to answer view has shown, kept in place once answered so nothing moves under
+    /// the cursor until the view is left.
+    /// </summary>
+    private readonly HashSet<string> _held = new(StringComparer.Ordinal);
+
+    private bool Searching => !string.IsNullOrWhiteSpace(_search);
+
+    /// <summary>A search looks through every track, so the chip and the familiarity wait until it is cleared (#142).</summary>
+    private TrackFilter Viewing => Searching ? TrackFilter.All : _filter;
+
+    private IEnumerable<TrackRow> Shown =>
+        Viewing is TrackFilter.TagsToAnswer
+            ? Answering().Where(row => row.HasFamiliarity(_familiarity))
+            : Rows.Narrow(_filter, _search, _familiarity);
+
+    private IEnumerable<TrackRow> Answering()
+    {
+        foreach (var row in Found.Where(row => row.HasTagsToAnswer))
+            _held.Add(row.TrackKey);
+
+        return Found.Where(row => _held.Contains(row.TrackKey));
+    }
+
+    private async Task ShowFamiliarity(string value)
+    {
+        _familiarity = _familiarity == value && !Searching ? null : value;
+        EmptySearch();
+        _held.Clear();
+
+        await ResetSpacerAsync();
+    }
+
+    private async Task ShowFilter(TrackFilter filter)
+    {
+        _filter = filter;
+        _held.Clear();
+        EmptySearch();
+
+        await ResetSpacerAsync();
+    }
+
+    private static string TagNote(TrackRow row) =>
+        string.Join(
+            " · ",
+            new[]
+            {
+                row.Genre is { IsSettled: false } ? GenreStrip.Heard(row.Genre) : null,
+                row.Familiarity is { Written: null, LookedUpAt: not null } ? "your call on familiarity" : null,
+            }.OfType<string>()
+        );
 
     protected override async Task OnInitializedAsync()
     {
+        _stems = ActivatorUtilities.CreateInstance<StemEditor>(Services);
+        _stems.Changed += OnStemsChanged;
+
         Source.Changed += OnChanged;
         Source.ReadyToWarp += OnReadyToWarp;
+        Source.AlreadyFiled += OnAlreadyFiled;
         Separation.Changed += OnChanged;
         Judging.Changed += OnChanged;
+
+        if (Enum.TryParse<TrackFilter>(OpenOn, ignoreCase: true, out var filter))
+            _filter = filter;
 
         await Source.EnsureFreshAsync(TimeSpan.FromSeconds(30));
 
         _view = Source.Current;
         _quota = await Quota.ReadAsync();
+        await _stems.LoadAsync();
 
         _clock = new System.Threading.Timer(_ => Redraw(), null, Tick, Tick);
     }
+
+    private bool _consentToast => DateTimeOffset.UtcNow < _consentUntil;
+
+    /// <summary>How long access has been lapsed, for the toast to say.</summary>
+    private string Lapsed() =>
+        Access.LapsedAt is { } at
+            ? $"expired {(DateTimeOffset.UtcNow - at).Humanize()} ago"
+            : "expired";
 
     private void Redraw()
     {
         if (_circuit.IsCancellationRequested)
             return;
+
+        // On the clock the page already runs, so a lapse that began while this page was open
+        // still surfaces without a second timer.
+        if (!_consentToast && Access.ShouldTell(TellEvery))
+            _consentUntil = DateTimeOffset.UtcNow + ToastLife;
 
         try
         {
@@ -757,6 +887,9 @@
             Playlist.Invalidate();
 
             await Source.RefreshAsync(_circuit.Token);
+
+            // Otherwise a new entry waits out the download stage's idle interval.
+            Signals.Wake(JobStage.Download);
         }
         finally
         {
@@ -764,22 +897,36 @@
         }
     }
 
-    private string Synced =>
-        _view?.ReadAt is not { } read ? "playlist not read yet"
-        : DateTimeOffset.UtcNow - read is { TotalMinutes: < 1 } ? "playlist synced just now"
-        : $"playlist synced {(DateTimeOffset.UtcNow - read).Humanize(minUnit: TimeUnit.Minute)} ago";
+    private string Synced => _view?.ReadAt is { } read ? $"checked {Clock.Ago(read)}" : "not read yet";
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         Source.Changed -= OnChanged;
         Source.ReadyToWarp -= OnReadyToWarp;
+        Source.AlreadyFiled -= OnAlreadyFiled;
         Separation.Changed -= OnChanged;
         Judging.Changed -= OnChanged;
 
         _clock?.Dispose();
+        _stems.Changed -= OnStemsChanged;
+        _stems.Dispose();
 
         _circuit.Cancel();
         _circuit.Dispose();
+
+        try
+        {
+            if (_placeKeeper is not null)
+            {
+                await _placeKeeper.InvokeVoidAsync("dispose");
+                await _placeKeeper.DisposeAsync();
+            }
+
+            if (_module is not null)
+                await _module.DisposeAsync();
+        }
+        // The circuit is already gone when the tab is closed.
+        catch (JSDisconnectedException) { }
     }
 
     private void OnReadyToWarp(TrackRow row)
@@ -805,33 +952,108 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private void OnSearch(ChangeEventArgs e) => _search = e.Value?.ToString() ?? string.Empty;
+    private void OnAlreadyFiled(UserAction action)
+    {
+        var filed = (action, Source.Current?.Rows.FirstOrDefault(row => row.TrackKey == action.TrackKey));
 
-    private void ClearSearch() => _search = string.Empty;
+        _filed.Insert(0, filed);
+        _ = InvokeAsync(StateHasChanged);
+        _ = DismissFiled(filed);
+    }
+
+    private static string Sentence(string text) => $"{char.ToUpperInvariant(text[0])}{text[1..]}.";
+
+    private async Task DismissFiled((UserAction Action, TrackRow? Row) filed)
+    {
+        try
+        {
+            await Task.Delay(ToastLife, _circuit.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        _filed.Remove(filed);
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnSearch(ChangeEventArgs e)
+    {
+        _search = e.Value?.ToString() ?? string.Empty;
+
+        await ResetSpacerAsync();
+    }
+
+    private void EmptySearch()
+    {
+        _search = string.Empty;
+        _searchBox++;
+    }
+
+    private async Task ClearSearch()
+    {
+        EmptySearch();
+
+        await ResetSpacerAsync();
+    }
+
+    /// <summary>A closed panel's spacer holds the page still only until the list changes under it.</summary>
+    private async Task ResetSpacerAsync()
+    {
+        if (_placeKeeper is not null)
+            await _placeKeeper.InvokeVoidAsync("reset");
+    }
 
     private void Show(TrackRow row)
     {
         // All, and no search, because the anchor has to be in the list for the browser to reach it.
         _filter = TrackFilter.All;
-        _search = string.Empty;
-        _expanded = row.VideoId;
+        EmptySearch();
+        _familiarity = null;
+        _expanded = row.TrackKey;
         _problem = null;
 
         _toasts.Remove(row);
     }
 
-    private static string Anchor(TrackRow row) => $"track-{row.VideoId}";
+    private static string Anchor(TrackRow row) => $"track-{row.TrackKey}";
 
     private static string Figure(TrackRow row) =>
         string.Join(
             " · ",
-            new[] { Spell(row.Key), row.Bpm?.ToString("N0") }.OfType<string>()
+            new[] { KeyText.Spell(row.Key), row.Bpm is { } tempo ? TempoFormat.Format(tempo).Text : null }.OfType<string>()
         );
 
     private static string Waiting(TrackRow row) =>
-        $"{"sample".ToQuantity(row.Samples.Count(sample => !sample.IsInLibrary))} in Sample Staging, key-tagged.";
+        $"{"sample".ToQuantity(row.Samples.Count(sample => !sample.IsInLibrary))} in Staging, key-tagged.";
 
     // Raised on a worker thread, never the circuit's, so the render is marshalled back.
+    private void OnStemsChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void OnRemoved((string Title, string Note) removed)
+    {
+        _removed = removed;
+        _ = ForgetRemovedLater();
+    }
+
+    private async Task ForgetRemovedLater()
+    {
+        try
+        {
+            await Task.Delay(ToastLife, _circuit.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        _removed = null;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
     private void OnChanged()
     {
         _view = Source.Current;
@@ -840,359 +1062,52 @@
 
     private void Expand(TrackRow row)
     {
-        _expanded = _expanded == row.VideoId ? null : row.VideoId;
+        if (_expanded is { } closing)
+            _ = CloseLater(closing);
+
+        _expanded = _expanded == row.TrackKey ? null : row.TrackKey;
         _problem = null;
 
-        CancelRecut();
-        CancelRename();
+        _stems.Reset();
+    }
+
+    private async Task CloseLater(string trackKey)
+    {
+        _closing.Add(trackKey);
+
+        try
+        {
+            await Task.Delay(Closing, _circuit.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        _closing.Remove(trackKey);
+
+        await InvokeAsync(StateHasChanged);
     }
 
     /// <summary>
-    /// A box that has just opened takes the cursor, so the user can type without clicking into it
-    /// first. Set here and acted on after the render, because an element cannot be focused before
-    /// it exists.
+    /// A box that has just opened takes the cursor — after the render, since an element cannot be
+    /// focused before it exists.
     /// </summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_focusName)
+        if (firstRender)
         {
-            _focusName = false;
-
-            await _nameBox.FocusAsync();
+            _module = await Js.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/Tracks.razor.js");
+            _placeKeeper = await _module.InvokeAsync<IJSObjectReference>("keepPlace", _spacer);
         }
 
-        if (_focusSwap)
+        if (_focusTrack)
         {
-            _focusSwap = false;
+            _focusTrack = false;
 
-            await _swapBox.FocusAsync();
+            await _trackBox.FocusAsync();
         }
     }
-
-    /// <remarks>
-    /// Closes the swap box, because the two share the row: one open at a time is the decision,
-    /// and it used to be possible to have both (#19).
-    /// </remarks>
-    private void StartRename(TrackRow row)
-    {
-        _problem = null;
-        CancelSwap();
-        _renaming = row.VideoId;
-        _name = row.Title;
-        _focusName = true;
-    }
-
-    private void CancelRename()
-    {
-        _renaming = null;
-        _name = string.Empty;
-    }
-
-    private async Task ConfirmRename(TrackRow row)
-    {
-        if (!StemFileName.IsUsable(_name))
-            return;
-
-        await Renaming(() => Rename.Apply(row.VideoId, _name));
-    }
-
-    private async Task RevertRename(TrackRow row) =>
-        await Renaming(() => Rename.Revert(row.VideoId, row.DerivedTitle ?? row.Title));
-
-    private async Task Renaming(Func<RenameOutcome> rename)
-    {
-        _working = true;
-        _problem = null;
-
-        try
-        {
-            var outcome = rename();
-
-            _problem = outcome.Problem ?? outcome.Note;
-
-            if (outcome.Succeeded)
-                CancelRename();
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
-    private async Task OnRenameKey(KeyboardEventArgs e, TrackRow row)
-    {
-        if (e.Key is "Enter")
-            await ConfirmRename(row);
-        else if (e.Key is "Escape")
-            CancelRename();
-    }
-
-    private void StartSwap(TrackRow row)
-    {
-        _problem = null;
-        CancelRename();
-        _swapping = row.VideoId;
-        _swapUrl = string.Empty;
-        _swapPlan = null;
-        _focusSwap = true;
-    }
-
-    private void CancelSwap()
-    {
-        _swapping = null;
-        _swapUrl = string.Empty;
-        _swapPlan = null;
-    }
-
-    /// <summary>Re-plans as the URL is typed, so the button says what it would do.</summary>
-    private void OnSwapUrl(TrackRow row, ChangeEventArgs e)
-    {
-        _swapUrl = e.Value?.ToString() ?? string.Empty;
-        _swapPlan = _swapUrl.Length is 0 ? null : Swap.PlanFor(row.VideoId, _swapUrl);
-    }
-
-    private async Task OnSwapKey(KeyboardEventArgs e, TrackRow row)
-    {
-        if (e.Key is "Enter")
-            await ConfirmSwap(row);
-        else if (e.Key is "Escape")
-            CancelSwap();
-    }
-
-    private async Task ConfirmSwap(TrackRow row)
-    {
-        _working = true;
-        _problem = null;
-
-        try
-        {
-            var outcome = await Swap.ApplyAsync(row.VideoId, _swapUrl, _circuit.Token);
-
-            _problem = outcome.Problem;
-
-            if (outcome.Succeeded)
-            {
-                CancelSwap();
-                Separation.Wake();
-            }
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
-    /// <summary>Accepts this download's audio, so the track goes on to the verdict.</summary>
-    private async Task UseAnyway(TrackRow row)
-    {
-        _working = true;
-        _problem = null;
-
-        try
-        {
-            if (!Held.AcceptAcquisition(row.VideoId))
-                _problem = "There is no downloaded audio for this track any more, so it will be fetched again.";
-
-            // Judging is paused by default, so this only puts the track back in line for it.
-            Judging.Wake();
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
-    private static string SwapScope(SwapPlan? plan) =>
-        plan?.Removing is { Count: > 0 } removing
-            ? $"Swap source · remove {"file".ToQuantity(removing.Count)}"
-            : "Swap source";
-
-    private static string Derived(TrackRow row) => row.DerivedTitle ?? row.Title;
-
-    private static string From(TrackNameSource source) =>
-        source switch
-        {
-            TrackNameSource.Files => "the file names",
-            TrackNameSource.Ledger => "the ledger",
-            TrackNameSource.Resolved => "what StemForge will call it",
-            TrackNameSource.Playlist => "the playlist title",
-            _ => "the video ID",
-        };
-
-    private RecutPlan? PendingFor(TrackRow row) =>
-        _recutting == row.VideoId ? _plan : null;
-
-    /// <summary>The other of the two plans the Release select can express.</summary>
-    /// <remarks>Interim: the picker offers all of them, and this goes with the select (#22).</remarks>
-    private static StemPlan Flipped(TrackRow row) =>
-        row.IsInstrumentalRelease ? StemPlan.Default : StemPlan.InstrumentalRelease;
-
-    private void ProposeRecut(TrackRow row, ChangeEventArgs e)
-    {
-        _problem = null;
-
-        if (Wanted(e) == row.IsInstrumentalRelease)
-        {
-            CancelRecut();
-            return;
-        }
-
-        _recutting = row.VideoId;
-        _plan = Recut.PlanFor(row.VideoId, Flipped(row));
-    }
-
-    private void CancelRecut()
-    {
-        _recutting = null;
-        _plan = null;
-    }
-
-    private async Task ConfirmRecut(TrackRow row)
-    {
-        _working = true;
-        _problem = null;
-
-        try
-        {
-            var outcome = Recut.Apply(row.VideoId, Flipped(row));
-
-            _problem = outcome.Problem;
-
-            if (outcome.Succeeded)
-                CancelRecut();
-
-            // A worker part-way through its two-minute idle wait would not look again.
-            Separation.Wake();
-
-            await Source.RefreshAsync(_circuit.Token);
-        }
-        finally
-        {
-            _working = false;
-        }
-    }
-
-    // bool.ToString() is "True" and the option values are "true", so the select matches neither.
-    private static string Chosen(bool isInstrumentalRelease) =>
-        isInstrumentalRelease ? "true" : "false";
-
-    private static bool Wanted(ChangeEventArgs e) =>
-        bool.TryParse(e.Value?.ToString(), out var wanted) && wanted;
-
-    private static string ReleaseWord(bool isInstrumentalRelease) =>
-        isInstrumentalRelease ? "no vocals" : "has vocals";
-
-    private void OpenFolder(TrackRow row)
-    {
-        if (row.Folder is not { } folder)
-            return;
-
-        try
-        {
-            Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true });
-        }
-        catch (Exception e)
-        {
-            _problem = $"Could not open {folder}: {e.Message}";
-        }
-    }
-
-    /// <summary>
-    /// Waiting is the only time this means anything: once a stage has the track, the work lists
-    /// have already been read.
-    /// </summary>
-    private async Task Bump(TrackRow row)
-    {
-        Playlist.Bump(row.VideoId);
-
-        await Source.RefreshAsync(_circuit.Token);
-    }
-
-    private async Task ClearBump()
-    {
-        Playlist.ClearBump();
-
-        await Source.RefreshAsync(_circuit.Token);
-    }
-
-    private async Task SetInstrumental(TrackRow row, ChangeEventArgs e)
-    {
-        Playlist.SetPlan(
-            row.VideoId,
-            Wanted(e) ? StemPlan.InstrumentalRelease : StemPlan.Default
-        );
-
-        await Source.RefreshAsync(_circuit.Token);
-    }
-
-    private async Task Retry(TrackRow row)
-    {
-        foreach (var stage in Enum.GetValues<JobStage>())
-            if (Jobs.TryGet(row.VideoId, stage, out var job) && job is { Status: JobStatus.Failed })
-                Jobs.Forgive(row.VideoId, stage);
-
-        Separation.Wake();
-        Judging.Wake();
-
-        await Source.RefreshAsync();
-    }
-
-    private async Task Remove(TrackRow row, string playlistItemId)
-    {
-        _problem = null;
-
-        try
-        {
-            var results = await Playlist.RemoveAsync(
-                [
-                    new QueueItem
-                    {
-                        PlaylistItemId = playlistItemId,
-                        VideoId = row.VideoId,
-                        Title = row.Title,
-                    },
-                ]
-            );
-
-            _problem = results.FirstOrDefault(result => !result.Removed)?.Reason;
-
-            await Source.RefreshAsync();
-        }
-        catch (QueueUnavailableException e)
-        {
-            _problem = e.Message;
-        }
-    }
-
-    private static string StemsHeading(TrackRow row) =>
-        row.Folder is { } folder
-            ? $"Stems · {Path.GetFileName(folder)} / {row.Title}"
-            : $"Stems · {row.Title}";
-
-    // The key Ableton holds, never the verdict's — on a row where they disagree, the verdict
-    // with a tick beside it would say the opposite of what is true.
-    private static string Tag(TrackSample sample) =>
-        sample switch
-        {
-            { AbletonKey: { } key } => $"{Spell(key)} ✓",
-            { IsInLibrary: true } => "—",
-            _ => "not tagged",
-        };
-
-    // Dim, not red: nothing read this file's tag, so "not tagged" would be a claim (ADR 0003).
-    private static string TagTone(TrackSample sample) =>
-        sample switch
-        {
-            { IsKeyTagged: true } => "good",
-            { IsInLibrary: true } => "dim",
-            _ => "bad",
-        };
 
     private void ToggleSeparation()
     {
@@ -1200,6 +1115,8 @@
             Separation.Resume();
         else
             Separation.Pause();
+
+        Paused.RememberSeparation(Separation.IsPaused);
     }
 
     private void ToggleJudging()
@@ -1208,20 +1125,13 @@
             Judging.Resume();
         else
             Judging.Pause();
+
+        Paused.RememberJudging(Judging.IsPaused);
     }
 
     private TrackRow? RowIn(TrackState state) => Rows.FirstOrDefault(row => row.State == state);
 
     private int Waiting(TrackState state) => Rows.Count(row => row.State == state);
-
-    private static string Elapsed(DateTimeOffset since)
-    {
-        var span = DateTimeOffset.UtcNow - since;
-
-        return span.TotalHours >= 1
-            ? $"{(int)span.TotalHours}:{span.Minutes:00}:{span.Seconds:00}"
-            : $"{(int)span.TotalMinutes}:{span.Seconds:00}";
-    }
 
     private static string Name(TrackFilter filter) =>
         filter switch
@@ -1229,6 +1139,9 @@
             TrackFilter.InStaging => "In staging",
             TrackFilter.InFlight => "In flight",
             TrackFilter.NeedsAttention => "Needs attention",
+            TrackFilter.TagsToAnswer => "Tags to answer",
+            TrackFilter.TempoDrifts => "Tempo drifts",
+            TrackFilter.OffItsTempo => "Off its tempo",
             _ => filter.ToString(),
         };
 
@@ -1241,42 +1154,4 @@
             _ => "plain",
         };
 
-    private static string ChipClass(TrackChipStyle style) =>
-        style switch
-        {
-            TrackChipStyle.TealFilled => "teal-filled",
-            TrackChipStyle.TealOutline => "teal-outline",
-            TrackChipStyle.AmberFilled => "amber-filled",
-            TrackChipStyle.RedOutline => "red-outline",
-            TrackChipStyle.RedFilled => "red-filled",
-            TrackChipStyle.GreenOutline => "green-outline",
-            TrackChipStyle.DashedOutline => "dashed-outline",
-            _ => "neutral-outline",
-        };
-
-    private static string NextTone(TrackRow row) =>
-        row.State switch
-        {
-            TrackState.ReadyToWarp => "amber",
-            TrackState.Parked or TrackState.GaveUp => "attention",
-            _ => string.Empty,
-        };
-
-    private static string Confidence(KeyConfidence confidence) =>
-        confidence is KeyConfidence.Unknown ? "—" : confidence.ToString().ToUpperInvariant();
-
-    private static string ConfidenceTone(KeyConfidence confidence) =>
-        confidence switch
-        {
-            KeyConfidence.High => "high",
-            KeyConfidence.Medium => "medium",
-            KeyConfidence.Low or KeyConfidence.Withheld => "weak",
-            _ => "none",
-        };
-
-    // The ledger spells keys in ASCII so they survive a filename. The screen is not one.
-    private static string? Spell(string? key) =>
-        key?.Replace("#", "♯", StringComparison.Ordinal)
-            .Replace(" major", " maj", StringComparison.Ordinal)
-            .Replace(" minor", " min", StringComparison.Ordinal);
 }

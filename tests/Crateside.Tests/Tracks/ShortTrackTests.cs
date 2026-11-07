@@ -1,0 +1,125 @@
+using Crateside.Core.Orchestration.Separation;
+using Crateside.Core.Plans;
+using Crateside.Core.Tracks;
+using Crateside.Core.WorkLists;
+
+namespace Crateside.Tests.Tracks;
+
+/// <summary>A track whose plan asks for files not on disk says so (ADR 0027).</summary>
+public sealed class ShortTrackTests
+{
+    private static readonly PresetCatalog Catalog = PresetCatalogReader.Parse(
+        """
+        [
+          {"id":"vocal_full","displayName":"Vocal - Full","category":"Vocals"},
+          {"id":"instrumental_full","displayName":"Instrumental - Full","category":"Instrumentals"}
+        ]
+        """
+    );
+
+    [Fact]
+    public void A_cut_track_missing_a_planned_preset_is_short_rather_than_ready_to_warp()
+    {
+        var row = Row(inLibrary: false, "Vocal - Full");
+
+        Assert.Equal(TrackState.Short, row.State);
+        Assert.Equal(["instrumental_full"], row.Shortfall.Presets);
+        Assert.Equal("short · 1 file missing", row.ChipLabel);
+    }
+
+    [Fact]
+    public void A_track_whose_files_all_reached_the_library_is_still_short_if_one_never_existed()
+    {
+        // Everything present is in the library, which otherwise reads as done (#38).
+        Assert.Equal(TrackState.Short, Row(inLibrary: true, "Vocal - Full").State);
+    }
+
+    [Fact]
+    public void A_track_with_everything_its_plan_asks_for_is_not_short()
+    {
+        var row = Row(inLibrary: false, "Vocal - Full", "Instrumental - Full");
+
+        Assert.False(row.IsShort);
+        Assert.Equal(TrackState.ReadyToWarp, row.State);
+    }
+
+    [Fact]
+    public void A_missing_kept_source_alone_is_not_short()
+    {
+        var row = Row(inLibrary: false, "Vocal - Full", "Instrumental - Full") with
+        {
+            Plan = StemPlan.Default with { KeepSource = true },
+        };
+
+        Assert.False(row.IsShort);
+    }
+
+    [Fact]
+    public void A_track_never_cut_is_not_short()
+    {
+        var row = new TrackRow { TrackKey = "_DiMKyZwaA0", Title = "Moe Shop - HARDCODED" };
+
+        Assert.False(row.IsShort);
+    }
+
+    [Fact]
+    public void A_track_crateside_never_planned_is_not_short()
+    {
+        var row = Row(inLibrary: true, "Vocal - Full") with { IsLibraryOnly = true };
+
+        Assert.False(row.IsShort);
+        Assert.Equal(TrackState.Done, row.State);
+    }
+
+    [Fact]
+    public void A_track_read_without_a_catalog_is_not_short()
+    {
+        var row = Row(inLibrary: false, "Vocal - Full") with
+        {
+            Inventory = StemInventory.Of([], PresetCatalog.Empty),
+        };
+
+        Assert.False(row.IsShort);
+    }
+
+    [Fact]
+    public void Being_parked_says_more_than_being_short()
+    {
+        var row = Row(inLibrary: false, "Vocal - Full") with { ParkedFor = ParkReason.NoKey };
+
+        Assert.Equal(TrackState.Parked, row.State);
+    }
+
+    [Fact]
+    public void A_short_track_needs_attention()
+    {
+        Assert.True(Row(inLibrary: false, "Vocal - Full").Matches(TrackFilter.NeedsAttention));
+        Assert.False(Row(inLibrary: false, "Vocal - Full").Matches(TrackFilter.InStaging));
+    }
+
+    private static TrackRow Row(bool inLibrary, params string[] presets) =>
+        new()
+        {
+            TrackKey = "_DiMKyZwaA0",
+            Title = "Moe Shop - HARDCODED",
+            Plan = StemPlan.Default,
+            Samples =
+            [
+                .. presets.Select(preset => new TrackSample
+                {
+                    Label = preset,
+                    AbletonKey = "D# minor",
+                    IsInLibrary = inLibrary,
+                }),
+            ],
+            Inventory = StemInventory.Of(
+                presets.Select(preset => new StemOnDisk
+                {
+                    Path = $@"D:\Music\Sample Staging\Moe Shop - HARDCODED ({preset}).flac",
+                    Root = @"D:\Music\Sample Staging",
+                    Preset = preset,
+                }),
+                Catalog
+            ),
+        };
+}

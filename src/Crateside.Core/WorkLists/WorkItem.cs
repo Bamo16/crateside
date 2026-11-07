@@ -1,0 +1,292 @@
+using System.Text.Json.Serialization;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
+
+namespace Crateside.Core.WorkLists;
+
+/// <summary>One entry in the Queue playlist.</summary>
+public sealed record WorkItem
+{
+    /// <summary>
+    /// The playlist item's own ID, which deletion targets and one video can have two of. Null once
+    /// the playlist no longer holds the track.
+    /// </summary>
+    public string? PlaylistItemId { get; init; }
+
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
+
+    public required string Title { get; init; }
+
+    /// <summary>The uploading channel, for telling two versions of a track apart.</summary>
+    public string? ChannelTitle { get; init; }
+
+    /// <summary>
+    /// What a row is called until StemForge names it: the uploader before a title that does not
+    /// name an artist, as YouTube Music's <c>Artist - Topic</c> uploads do not.
+    /// </summary>
+    public string StandInTitle =>
+        ChannelTitle is { Length: > 0 } channel && !Title.Contains(" - ", StringComparison.Ordinal)
+            ? $"{(channel.EndsWith(" - Topic", StringComparison.Ordinal) ? channel[..^8] : channel)} - {Title}"
+            : Title;
+
+    /// <summary>
+    /// When the item was added — the queue order, since <see cref="Position"/> can mean opposite
+    /// things across playlists.
+    /// </summary>
+    public DateTimeOffset? AddedAt { get; init; }
+
+    /// <summary>Where the item sits in the playlist. Display only; see <see cref="AddedAt"/>.</summary>
+    public int? Position { get; init; }
+
+    /// <summary>Whether this is likely to download at Premium quality.</summary>
+    public PremiumOutlook PremiumOutlook { get; init; }
+
+    /// <summary>
+    /// True when the video was deleted or made private upstream; YouTube keeps the entry, so it
+    /// can never become processed.
+    /// </summary>
+    public bool IsUnavailable { get; init; }
+
+    /// <summary>
+    /// Which files the user wants made for this track, from their standing instruction, or
+    /// <see cref="StemPlan.Default"/> when they have not said.
+    /// </summary>
+    public StemPlan Plan { get; init; } = StemPlan.Default;
+
+    /// <summary>
+    /// What this track already has on disk, which is what makes a cut additive. Empty means it
+    /// owes the whole plan.
+    /// </summary>
+    public StemInventory Inventory { get; init; } = StemInventory.Empty;
+
+    /// <summary>
+    /// The upload to fetch instead of this entry's own video, or null; <see cref="TrackKey"/> stays
+    /// the join key.
+    /// </summary>
+    public string? StatedSourceUrl { get; init; }
+
+    /// <summary>The ledger song the user said this track is not, despite its name (#41).</summary>
+    public string? DifferentFrom { get; init; }
+
+    /// <summary>The upload whose audio the user accepted short of premium (#31).</summary>
+    public string? AcceptedUpload { get; init; }
+
+    /// <summary>When the user last asked for this track's files to be made again (#50).</summary>
+    public DateTimeOffset? CutRequestedAt { get; init; }
+
+    /// <summary>Judged only in the weekly spend-down, unless the user asks for it first (ADR 0063).</summary>
+    public bool IsBackfill { get; init; }
+
+    /// <summary>The page a track not on YouTube is fetched from; null for a file and for YouTube.</summary>
+    public string? PageUrl { get; init; }
+
+    /// <summary>False for a track with no upload or page to fetch its audio from again.</summary>
+    [JsonIgnore]
+    public bool CanBeFetched =>
+        TrackKeys.IsVideoId(TrackKey) || PageUrl is not null || StatedSourceUrl is { Length: > 0 };
+
+    public string WatchUrl =>
+        TrackKeys.IsVideoId(TrackKey)
+            ? $"https://www.youtube.com/watch?v={TrackKey}"
+            : PageUrl ?? TrackKeys.ProvenanceOf(TrackKey);
+}
+
+/// <summary>The Queue as work: what is in the playlist, what is done, what is new.</summary>
+public sealed record WorkListsView
+{
+    public required IReadOnlyList<WorkItem> Items { get; init; }
+
+    /// <summary>
+    /// Sorts the playlist into the work lists each stage reads.
+    /// </summary>
+    /// <param name="separatedWithoutKey">
+    /// Video IDs parked in the unresolved-key root, waiting on a verdict good enough to tag with.
+    /// </param>
+    /// <param name="reopened">
+    /// Kept out of <see cref="Items"/> and <see cref="Outstanding"/>, so a re-cut cannot cost quota.
+    /// </param>
+    /// <param name="awaitingCut">
+    /// Video IDs whose separation is owed with their files left where they are.
+    /// </param>
+    /// <param name="awaitingPerson">
+    /// Video IDs with no verdict that the person is to decide; their stems are cut and parked
+    /// without waiting for one (ADR 0076).
+    /// </param>
+    public static WorkListsView Compose(
+        IReadOnlyList<WorkItem> items,
+        IReadOnlySet<string> fullyProcessed,
+        IReadOnlySet<string> verdictWithoutStems,
+        IReadOnlySet<string> separatedWithoutKey,
+        IReadOnlyDictionary<string, TrackInstruction> instructions,
+        IReadOnlyList<WorkItem>? reopened = null,
+        string? bumped = null,
+        IReadOnlySet<string>? awaitingCut = null,
+        IReadOnlyDictionary<string, StemInventory>? inventories = null,
+        IReadOnlySet<string>? awaitingPerson = null
+    )
+    {
+        var described = items.Select(Described).ToArray();
+        var reopenedItems = (reopened ?? []).Select(Described).ToArray();
+
+        // Reopened tracks are described here too. Doing it where they are built instead meant a
+        // second list of instruction fields, and the source-URL override was missing from it.
+        WorkItem Described(WorkItem item)
+        {
+            var instruction = instructions.GetValueOrDefault(item.TrackKey);
+
+            return item with
+            {
+                Plan = instruction?.Plan ?? StemPlan.Default,
+                StatedSourceUrl = instruction?.SourceUrl,
+                DifferentFrom = instruction?.DifferentFrom,
+                AcceptedUpload = instruction?.AcceptedUpload,
+                CutRequestedAt = instruction?.CutRequestedAt,
+                IsBackfill = instruction?.Backfill is true,
+                Inventory = inventories?.GetValueOrDefault(item.TrackKey) ?? StemInventory.Empty,
+            };
+        }
+
+        IEnumerable<WorkItem> awaitingSeparation =
+        [
+            // Two ways in: nothing of the track is on disk, or the user asked for a cut it
+            // has not had. The second is what makes adding to a track possible at all —
+            // deleting every file used to be the only way back into this list.
+            //
+            // Either way the separator must have something to do. A plan whose outstanding
+            // half is only its source owes a copy, which the download stage makes, and being
+            // in this list would queue it for a GPU it never reaches (ADR 0019).
+            .. described.Where(i =>
+                !separatedWithoutKey.Contains(i.TrackKey)
+                && (
+                    verdictWithoutStems.Contains(i.TrackKey)
+                    || awaitingPerson?.Contains(i.TrackKey) is true
+                    || awaitingCut?.Contains(i.TrackKey) is true
+                )
+                && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory).Passes > 0
+            ),
+            // A kept source staged before its guide was cut owes only the guide (#55). Nothing
+            // else re-enters this way: a missing stem is stated, never re-cut (ADR 0027).
+            .. described.Where(i =>
+                fullyProcessed.Contains(i.TrackKey)
+                && !separatedWithoutKey.Contains(i.TrackKey)
+                && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory)
+                    is { Presets.Count: 0, ExtractDrums: true }
+            ),
+            // Filtered, not appended bare: a reopened track owing only a handoff or a tagging
+            // needs no GPU, and one whose stems are parked for want of a key must not be in
+            // the line at the same time as it is parked (#32).
+            //
+            // No awaitingCut means the caller has not said which of them owe a cut, not that
+            // none do, so they all still count.
+            .. reopenedItems.Where(i =>
+                !separatedWithoutKey.Contains(i.TrackKey)
+                && (awaitingCut is null || awaitingCut.Contains(i.TrackKey))
+                && Orchestration.SeparationRecipe.For(i.Plan, i.Inventory).Passes > 0
+            ),
+        ];
+
+        return new WorkListsView
+        {
+            Items = described,
+            FullyProcessed = [.. described.Where(i => fullyProcessed.Contains(i.TrackKey))],
+            // A drums-only cut in flight is in two of these at once: its source is staged, and it
+            // still owes the cut.
+            AwaitingSeparation =
+            [
+                .. awaitingSeparation.DistinctBy(i => i.TrackKey, StringComparer.Ordinal),
+            ],
+            Reopened = reopenedItems,
+            AwaitingKey = [.. described.Where(i => separatedWithoutKey.Contains(i.TrackKey))],
+            Outstanding =
+            [
+                .. described.Where(i =>
+                    !fullyProcessed.Contains(i.TrackKey)
+                    && !verdictWithoutStems.Contains(i.TrackKey)
+                ),
+            ],
+        }.WithBumpedFirst(bumped);
+    }
+
+    /// <summary>
+    /// The two lists a stage picks from, with the bumped track first and every other item where
+    /// it was (ADR 0015).
+    /// </summary>
+    private WorkListsView WithBumpedFirst(string? bumped) =>
+        bumped is not { Length: > 0 } trackKey
+            ? this
+            : this with
+            {
+                Bumped = trackKey,
+                Outstanding = First(Outstanding, trackKey),
+                AwaitingSeparation = First(AwaitingSeparation, trackKey),
+            };
+
+    private static IReadOnlyList<WorkItem> First(IReadOnlyList<WorkItem> items, string trackKey) =>
+        items.FirstOrDefault(i => i.TrackKey.Equals(trackKey, StringComparison.Ordinal))
+            is not { } bumped
+            ? items
+            : [bumped, .. items.Where(i => !ReferenceEquals(i, bumped))];
+
+    /// <summary>Items whose video is fully processed — the ones deletion would remove.</summary>
+    public required IReadOnlyList<WorkItem> FullyProcessed { get; init; }
+
+    /// <summary>
+    /// Items with no verdict yet: the actual work list, oldest-added first.
+    /// </summary>
+    public required IReadOnlyList<WorkItem> Outstanding { get; init; }
+
+    /// <summary>
+    /// The next <paramref name="size"/> items to work, plus anything pinned — on top of the size,
+    /// never instead.
+    /// </summary>
+    public IReadOnlyList<WorkItem> NextBatch(int size, ISet<string>? pinned = null)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(size);
+
+        var picked = Outstanding.Take(size).ToList();
+        var taken = picked
+            .Select(i => i.PlaylistItemId)
+            .OfType<string>()
+            .ToHashSet(StringComparer.Ordinal);
+
+        picked.AddRange(
+            Outstanding.Where(i =>
+                i.PlaylistItemId is { } id && pinned?.Contains(id) is true && !taken.Contains(id)
+            )
+        );
+
+        return picked;
+    }
+
+    /// <summary>
+    /// Items with a verdict and no stems on disk: the separation work list, oldest-added first.
+    /// </summary>
+    public required IReadOnlyList<WorkItem> AwaitingSeparation { get; init; }
+
+    /// <summary>
+    /// Tracks the playlist no longer holds that still owe some stage — which keeps their rows, not
+    /// their place in <see cref="AwaitingSeparation"/>.
+    /// </summary>
+    public IReadOnlyList<WorkItem> Reopened { get; init; } = [];
+
+    /// <summary>The track the user asked to be worked first, or null.</summary>
+    public string? Bumped { get; init; }
+
+    /// <summary>
+    /// Every item the read produced, once each — what a stage that works any track reads, since a
+    /// source can be added even to a finished one (ADR 0019).
+    /// </summary>
+    public IEnumerable<WorkItem> Everything =>
+        Items
+            .Concat(AwaitingSeparation)
+            .Concat(Reopened)
+            .Concat(AwaitingKey)
+            .DistinctBy(item => item.TrackKey, StringComparer.Ordinal);
+
+    /// <summary>
+    /// Separated already, and parked for want of a key worth tagging with. Nothing automatic moves
+    /// these on.
+    /// </summary>
+    public required IReadOnlyList<WorkItem> AwaitingKey { get; init; }
+}

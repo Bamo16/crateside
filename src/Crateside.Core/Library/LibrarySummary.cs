@@ -1,24 +1,32 @@
 namespace Crateside.Core.Library;
 
 /// <summary>
-/// Holds the last distribution read, so the page does not re-scan the library to render.
+/// Holds the last distribution read, with no expiry, so the page does not re-scan the library to
+/// render.
 /// </summary>
-/// <remarks>
-/// Deliberately has no expiry. The library changes when the user finishes a track, which is
-/// minutes of work apart, so a stale count is corrected by asking rather than by a timer.
-/// </remarks>
-public sealed class LibrarySummary(LibraryKeyReader reader)
+public sealed class LibrarySummary(LibraryKeyReader reader, TimeProvider time)
 {
     private readonly Lock _gate = new();
 
     private KeyDistribution? _current;
+
+    /// <summary>When the distribution held was read.</summary>
+    public DateTimeOffset ReadAt { get; private set; }
 
     public KeyDistribution Current
     {
         get
         {
             lock (_gate)
-                return _current ??= reader.Read();
+            {
+                if (_current is null)
+                {
+                    _current = reader.Read();
+                    ReadAt = time.GetUtcNow();
+                }
+
+                return _current;
+            }
         }
     }
 
@@ -27,6 +35,10 @@ public sealed class LibrarySummary(LibraryKeyReader reader)
         var read = reader.Read();
 
         lock (_gate)
+        {
+            ReadAt = time.GetUtcNow();
+
             return _current = read;
+        }
     }
 }

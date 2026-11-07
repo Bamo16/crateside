@@ -1,6 +1,6 @@
 # 0002 — there is no reliable "warped" signal, so the board does not claim one
 
-- Status: Accepted
+- Status: Accepted; the decision superseded by [ADR 0037](0037-a-saved-default-clip-is-a-finished-warp.md) on 2026-09-26
 - Date: 2026-08-12 (recorded 2026-08-14, distilled from the first-build handoff)
 
 ## Context
@@ -17,7 +17,7 @@ files in the library, and the design assumed its presence meant the file had bee
 warped. A reader was built on that assumption.
 
 **It is wrong, and it was corrected by the user on 2026-08-12 after the code existed.**
-A `.asd` means only that Ableton has *analysed* the file. It was observed present on stems
+A `.asd` means only that Ableton has *analyzed* the file. It was observed present on stems
 where the user had opened the file, started to think about warping, and stopped because
 they were not ready to do the work. So the sidecar fires on *intent to look*, not on *work
 completed*.
@@ -26,7 +26,7 @@ completed*.
 happens "on dragging a clip into Arrangement view". While testing something unrelated on
 2026-08-14, a `.asd` appeared for a file created minutes earlier that had never been
 warped, opened in a project, or dragged anywhere — **a single click in the browser to
-preview it was enough**, because Ableton analyses the file to render the waveform. The
+preview it was enough**, because Ableton analyzes the file to render the waveform. The
 signal is even further from "warped" than the correction assumed.
 
 This matters more than an ordinary wrong reading, because the error is directionally

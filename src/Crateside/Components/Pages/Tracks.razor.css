@@ -1,13 +1,3 @@
-/* One page, one list, one row per track. The row never moves: state is a column rather than an
-   address, which is the whole argument for replacing the sections this page came from. */
-
-/* Every number, key, timestamp and count. They are read as values and compared down a column,
-   which proportional digits defeat — a BPM of 111 and one of 128 should be the same width. */
-.mono {
-    font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
-}
-
 /* ── the header's cells ────────────────────────────────────────────────────────────────── */
 
 .cell {
@@ -27,6 +17,8 @@
 }
 
 .label-row {
+    white-space: nowrap;
+    gap: 16px;
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -83,23 +75,6 @@
     color: var(--text-60);
 }
 
-.outline {
-    flex: none;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text);
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 6px;
-    padding: 5px 10px;
-    cursor: pointer;
-}
-
-.outline:hover {
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
 /* 3px because it is a status line rather than a control: present enough to read at a glance from
    across the room, quiet enough not to compete with the track name above it. */
 .bar {
@@ -133,7 +108,21 @@
     }
 }
 
+.quota-pair {
+    display: flex;
+    gap: 24px;
+}
+
+
+.quota-window {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .quota-figure {
+    white-space: nowrap;
     display: flex;
     align-items: baseline;
     gap: 8px;
@@ -168,48 +157,20 @@
     border-bottom: 1px solid var(--line);
 }
 
-.pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 500;
-    border-radius: 999px;
-    padding: 6px 12px;
-    cursor: pointer;
-}
-
-.pill.off {
-    color: var(--text-75);
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.pill.on {
-    border: 1px solid transparent;
-    color: var(--ink);
-}
-
-.pill.on.amber {
-    background: var(--amber);
-}
-
-.pill.on.red {
-    background: var(--red);
-}
-
-.pill.on.teal,
-.pill.on.plain {
-    background: var(--text);
+/* The status text grows as time passes, so only the search box gives way to it: a chip that
+   shrank would wrap its label onto two lines (#143). */
+.filters .pill,
+.status {
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .count {
     font-size: 11px;
 }
 
-/* The count keeps its meaning-colour only while the pill is not filled; on a filled pill it would
-   be colour on colour and unreadable. */
+/* The count keeps its meaning-color only while the pill is not filled; on a filled pill it would
+   be color on color and unreadable. */
 .pill.off .count.amber {
     color: var(--amber);
 }
@@ -231,8 +192,6 @@
     opacity: 0.65;
 }
 
-/* A button, but drawn as the status line it replaced: pressing it is a refinement of reading it,
-   not a separate control competing with the filter pills. */
 /* The search takes the free space so it sits away from the pills, and the status stays at the
    far right where it was. */
 .search {
@@ -240,13 +199,20 @@
     margin-left: auto;
     display: flex;
     align-items: center;
+    flex: 1 1 18rem;
+    min-width: 10rem;
+    max-width: 24rem;
 }
 
 .search input {
-    width: 15rem;
-    padding: 5px 22px 5px 10px;
+    appearance: none;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 6px 24px 6px 12px;
     font: inherit;
     font-size: 12px;
+    font-weight: 500;
     color: var(--text);
     background: var(--bg);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -306,23 +272,8 @@
 
 .status {
     margin-left: 16px;
-    font: inherit;
     font-size: 12px;
     color: var(--text-40);
-    background: transparent;
-    border: 0;
-    padding: 0;
-    cursor: pointer;
-}
-
-.status:hover:not(:disabled) {
-    color: var(--text-75);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-}
-
-.status:disabled {
-    cursor: default;
 }
 
 /* ── the list ──────────────────────────────────────────────────────────────────────────────── */
@@ -334,7 +285,7 @@
 .heads,
 .row {
     display: grid;
-    grid-template-columns: 24px 1fr 90px 100px 80px 190px;
+    grid-template-columns: 24px 1fr 112px 100px 84px 150px 190px;
     gap: 14px;
     align-items: center;
     max-width: var(--table-tracks);
@@ -345,7 +296,7 @@
    the one thing worth saying about a state a track rests in for weeks. */
 .heads.roomy,
 .row.roomy {
-    grid-template-columns: 24px 1fr 90px 100px 80px 190px 1fr;
+    grid-template-columns: 24px 1fr 112px 100px 84px 150px 190px 1fr;
 }
 
 .heads {
@@ -362,6 +313,69 @@
     height: 46px;
     border-top: 1px solid var(--line);
     cursor: pointer;
+}
+
+.genre-cell {
+    min-width: 0;
+}
+
+/* Off its tempo: how far each warp has fallen, the furthest first (#96). */
+.heads.off,
+.row.off {
+    grid-template-columns: 24px 1fr 90px 84px 110px 110px 190px;
+}
+
+.row.off .runs {
+    font-size: 13px;
+    color: var(--text-75);
+}
+
+.row.off .by-the-end {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.row.off .by-the-end.small {
+    color: var(--text-50);
+}
+
+.gist {
+    font-size: 13px;
+    color: var(--text-50);
+}
+
+/* Tags to answer: every chip in reach, so a song is one click (#65). */
+.heads.tags,
+.row.tags {
+    grid-template-columns: 24px minmax(0, 300px) minmax(0, 1fr) 220px;
+}
+
+.row.tags {
+    height: auto;
+    min-height: 46px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.row.tags.answered {
+    opacity: 0.45;
+}
+
+.song-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.tag-note {
+    font-size: 12px;
+    color: var(--text-50);
+}
+
+.tag-cell {
+    min-width: 0;
+    cursor: default;
 }
 
 /* The warping view is the one the user lives in, so it gets room. */
@@ -405,7 +419,7 @@
     padding: 1px 6px;
 }
 
-/* A statement of fact rather than a finding, so it takes the same shape without the colour that
+/* A statement of fact rather than a finding, so it takes the same shape without the color that
    would put it in the same class as one. */
 .flag.neutral {
     color: var(--text-60);
@@ -419,6 +433,24 @@
 
 .row.roomy .key {
     font-size: 14px;
+}
+
+.key-cell {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+}
+
+/* A modal verdict says so after its tag, outlined like a corroborating badge; no color. */
+.mode-badge {
+    padding: 2px 4px 3px;
+    border: 1px solid color-mix(in srgb, var(--text) 45%, transparent);
+    border-radius: 3px;
+    font-size: 10.5px;
+    font-weight: 500;
+    line-height: 1.1;
+    color: color-mix(in srgb, var(--text) 85%, transparent);
 }
 
 .key.none,
@@ -462,72 +494,31 @@
     color: var(--amber);
 }
 
+/* An approximate figure is marked twice, tilde and weight, so either survives on an amber row. */
+.bpm.approx {
+    font-weight: 400;
+}
+
+.bpm.estimate {
+    color: var(--text-50);
+}
+
+/* A whole figure carries an invisible .00, so every figure aligns on its decimal point. */
+.bpm .pad {
+    visibility: hidden;
+    position: relative;
+}
+
+/* The off-its-tempo pennant sits in the invisible .00's slot, so the column keeps its width. */
+.bpm .pad ::deep .pennant {
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
 .right {
     text-align: right;
-}
-
-.chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    border-radius: 999px;
-    padding: 4px 10px;
-    border: 1px solid transparent;
-    white-space: nowrap;
-}
-
-.chip-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-}
-
-.chip.neutral-outline {
-    color: var(--text-75);
-    border-color: rgba(255, 255, 255, 0.14);
-}
-
-.chip.teal-filled {
-    color: var(--teal);
-    background: rgba(111, 199, 214, 0.14);
-    border-color: rgba(111, 199, 214, 0.3);
-}
-
-.chip.teal-outline {
-    color: var(--teal);
-    border-color: rgba(111, 199, 214, 0.3);
-}
-
-.chip.amber-filled {
-    color: var(--amber);
-    background: rgba(232, 180, 90, 0.16);
-    border-color: rgba(232, 180, 90, 0.35);
-}
-
-.chip.red-outline {
-    color: var(--red);
-    border-color: rgba(224, 122, 109, 0.45);
-}
-
-.chip.red-filled {
-    color: var(--red);
-    background: rgba(224, 122, 109, 0.18);
-    border-color: rgba(224, 122, 109, 0.45);
-}
-
-.chip.green-outline {
-    color: var(--green);
-    border-color: rgba(127, 207, 154, 0.3);
-}
-
-/* Dashed, because a hold is a deliberate absence rather than a state something put it in. */
-.chip.dashed-outline {
-    color: var(--text-75);
-    border-style: dashed;
-    border-color: rgba(255, 255, 255, 0.3);
 }
 
 .since {
@@ -536,21 +527,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-/* The sentence the Next column used to carry, now read on purpose rather than skimmed. */
-.what-next {
-    margin: 0;
-    font-size: 13px;
-    color: var(--text-60);
-}
-
-.what-next.amber {
-    color: var(--amber);
-}
-
-.what-next.attention {
-    color: var(--text);
 }
 
 /* Sits where the list would, so it is bounded like the list. */
@@ -571,373 +547,80 @@
    above it rather than as another row. */
 /* Capped with the rows, so the panel's right-hand column stays under the row's own instead of
    drifting off toward the window edge. */
+/* Opening and closing a row (handoff 13): the height eases between 0fr and 1fr, and the panel
+   clips only while it moves, so nothing inside it is cut off once it has opened. */
+.reveal {
+    display: grid;
+    grid-template-rows: 1fr;
+    animation: reveal-open 220ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.reveal > .panel {
+    min-height: 0;
+    animation: clip 220ms;
+}
+
+.reveal.closing {
+    grid-template-rows: 0fr;
+    pointer-events: none;
+    animation: reveal-close 220ms cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.reveal.closing > .panel {
+    overflow: hidden;
+}
+
+@keyframes reveal-open {
+    from {
+        grid-template-rows: 0fr;
+    }
+}
+
+@keyframes reveal-close {
+    from {
+        grid-template-rows: 1fr;
+    }
+}
+
+@keyframes clip {
+    from,
+    to {
+        overflow: hidden;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .reveal,
+    .reveal > .panel {
+        animation: none;
+    }
+
+    .reveal.closing {
+        display: none;
+    }
+}
+
 .panel {
     display: grid;
-    grid-template-columns: 1fr 340px;
+    grid-template-columns: minmax(0, 1fr) 340px;
     gap: 32px;
     max-width: var(--table-tracks);
     padding: 6px 22px 20px 60px;
 }
 
-/* Above the name, because it is the reason the row stopped and everything else is secondary to
-   resolving it. Red to match the chip that led the user here. */
-.finding {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 10px;
-    padding: 10px 14px;
-    border: 1px solid var(--red);
-    border-radius: 4px;
+/* Wide enough for the side stack's two columns (handoff 07), picking included (handoff 13b). */
+@media (min-width: 1200px) {
+    .panel {
+        grid-template-columns: minmax(0, 1fr) 680px;
+    }
 }
 
-.finding-said {
-    color: var(--text-75);
-    line-height: 1.5;
-}
-
-.finding-said strong {
-    color: var(--text);
-}
-
-/* Spans both panel columns, above everything: what the track is called and what it is cut from
-   are the two things every state of a track has.
-
-   Side by side rather than stacked. They are two rarely-used controls, a swap especially, and
-   stacked they took a large share of the panel for what is usually just two lines of status
-   (#19). */
-.edits {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 32px;
-    margin-bottom: 6px;
-}
-
-.name-strip {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-/* The one being edited takes the whole row and the other keeps its place below, so the box has
-   room without the panel growing by a second one. Only ever one at a time — opening either
-   closes the other. */
-.name-strip.editing {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    align-items: start;
-    gap: 32px;
-}
-
-/* Left-aligned and not pushed to the far edge: the offer belongs beside the name it is about,
-   which is in the column directly above it. */
-.name-from {
-    font-size: 12px;
-    color: var(--text-50);
-}
-
-.name-from strong {
-    font-weight: 500;
-    color: var(--text-75);
-}
-
-.name-input {
-    width: 100%;
-    font: inherit;
-    font-size: 15px;
-    font-weight: 500;
-    color: var(--text);
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: 6px;
-    padding: 8px 12px;
-}
-
-.name-note {
-    margin: 6px 0 0;
-    font-size: 12px;
-    color: var(--text-50);
-}
-
-.name-side {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.panel-head {
-    margin-bottom: 8px;
-    font-size: 10.5px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-40);
-}
-
-.stem-heads,
-.stem {
-    display: grid;
-    grid-template-columns: 1fr 120px 140px 1fr;
-    gap: 14px;
-    align-items: center;
-    margin-bottom: 4px;
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 6px;
-}
-
-/* Dashed, unfilled and dimmed, so it cannot be read as one of the samples. A warp guide is used
-   up rather than kept, and a line drawn like the others would put a file in the library that is
-   never going to be there. */
-.stem.guide {
-    background: transparent;
-    border-style: dashed;
-    opacity: 0.55;
-}
-
-/* A re-cut is destructive, so the panel shows the trade before it happens rather than a sentence
-   about it: what goes, in red and struck through, and what arrives, in the teal that means the
-   machine is about to work. */
-.pending {
-    color: var(--red);
-}
-
-.stem.going {
-    background: transparent;
-    border-color: rgba(224, 122, 109, 0.35);
-    opacity: 0.6;
-}
-
-.stem.going .stem-label,
-.stem.going .stem-tag {
-    text-decoration: line-through;
-}
-
-.stem.going.guide {
-    border-style: dashed;
-    opacity: 0.5;
-}
-
-.stem.coming {
-    background: rgba(111, 199, 214, 0.06);
-    border-color: rgba(111, 199, 214, 0.3);
-}
-
-.stem.coming.guide {
-    background: transparent;
-    border-style: dashed;
-    opacity: 0.7;
-}
-
-.stem-where.gone {
-    color: var(--red);
-}
-
-.stem-where.new {
-    color: var(--teal);
-}
-
-.stem.skipped {
-    background: transparent;
-    opacity: 0.45;
-    text-decoration: line-through;
-}
-
-.stem-heads {
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 6px;
-    padding: 0 12px;
-    font-size: 10.5px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-40);
-}
-
-.stem-label {
-    font-size: 13px;
-    font-weight: 500;
-}
-
-.kind {
-    margin-left: 6px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 400;
-    color: var(--text-50);
-}
-
-.stem-tag,
-.stem-where {
-    font-size: 12px;
-    color: var(--text-60);
-}
-
-.stem-tag.good,
-.stem-where.good {
-    color: var(--green);
-}
-
-.stem-tag.bad {
-    color: var(--red);
-}
-
-.stem-tag.dim {
-    color: var(--text-30);
-}
-
-.stem-note {
-    font-size: 12px;
-    font-style: italic;
-    color: var(--text-50);
-}
-
-/* Shown only where a song has been cut from more than one upload. The filenames are frequently
-   identical across a swap, so the video ID is the only thing that tells two samples apart. */
-.upload {
-    font-style: normal;
-    white-space: nowrap;
-}
-
-.upload .mono {
-    margin-left: 6px;
-    font-size: 11px;
-    color: var(--text-40);
-}
-
-.upload.current {
-    color: var(--text-75);
-}
-
-.upload.superseded {
-    color: var(--warn);
-}
-
-/* The one control over what gets separated. A select rather than a toggle because the question is
-   which release this is, not whether a switch is on — and because the preset picker that lands
-   here later is the same box with more in it. */
-.release {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 16px;
-}
-
-.release-label {
-    font-size: 10.5px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-40);
-}
-
-.release select {
-    font: inherit;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text);
-    background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 6px;
-    padding: 6px 11px;
-    cursor: pointer;
-}
-
-.release select:hover,
-.release select.changed {
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-/* Inert rather than absent once files have left for the library: the answer is still worth
-   reading, and dashed says it is not yours to change from here. */
-.locked {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-50);
-    border: 1px dashed rgba(255, 255, 255, 0.18);
-    border-radius: 6px;
-    padding: 6px 11px;
-}
-
-.release-hint {
-    font-size: 12px;
-    color: var(--text-50);
-}
-
+/* Pinned, since the sample list draws nothing for a track with no samples yet. */
 .side {
+    grid-column: 2;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding-top: 22px;
-}
-
-.detail {
-    margin: 0;
-    font-size: 12.5px;
-    line-height: 1.5;
-    color: var(--text-75);
-}
-
-.actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-/* The evidence link is an anchor because it navigates; it is drawn as a button because it sits in
-   a row of them and nothing about it is a different kind of act. */
-a.outline {
-    display: inline-flex;
-    align-items: center;
-    text-decoration: none;
-}
-
-/* Filled, because releasing a hold is the one thing on this panel the user came to do. */
-.primary {
-    flex: none;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--ink);
-    background: var(--text);
-    border: 0;
-    border-radius: 6px;
-    padding: 7px 12px;
-    cursor: pointer;
-}
-
-/* The consequence, said once and in the colour that means it. */
-.warning {
-    margin: 0;
-    font-size: 13px;
-    color: var(--red);
-}
-
-.danger {
-    flex: none;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--red);
-    background: rgba(224, 122, 109, 0.18);
-    border: 1px solid rgba(224, 122, 109, 0.45);
-    border-radius: 6px;
-    padding: 7px 12px;
-    cursor: pointer;
-}
-
-.danger:disabled {
-    cursor: default;
-    opacity: 0.6;
 }
 
 .problem {
@@ -1014,13 +697,116 @@ a.outline {
     scroll-margin-top: 200px;
 }
 
-/* The popup is drawn by the OS, which does not inherit the page's palette — without these it
-   renders light text on a white list. */
-.release select {
-    color-scheme: dark;
+.add-note {
+    margin: 10px 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--text-75);
 }
 
-.release option {
+.add-note.bad {
+    color: var(--red);
+}
+
+/* A file input stretched over the whole strip, so a drop anywhere on it lands on the input. */
+.drop-files {
+    position: relative;
+    display: block;
+    max-width: var(--table-tracks);
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-40);
+    border: 1px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+}
+
+.drop-files ::deep input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Sits under the filter bar rather than in a popover: it is one field and a sentence, and a
+   layer that has to be dismissed would be heavier than what it holds. */
+.add-track {
+    max-width: var(--table-tracks);
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    background: var(--raised);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+}
+
+.add-track label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.add-track label span {
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-40);
+}
+
+.add-track input {
+    width: 100%;
+    font: inherit;
+    font-size: 13px;
     color: var(--text);
-    background: var(--surface);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 8px 11px;
+    outline: none;
+}
+
+.add-track input:focus {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* The lapsed-access toast is a fault, not a result, so it does not borrow the amber the
+   ready-to-warp toast uses to mean "your turn". */
+.toast.lapsed {
+    border-color: rgba(220, 90, 90, 0.5);
+}
+
+.toast.lapsed .eyebrow {
+    color: var(--warn);
+}
+
+.flag .mono {
+    margin-left: 0.4em;
+}
+
+/* The song name is the way to Track details; the rest of the row opens it in place (#142). */
+.song .title {
+    color: inherit;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.song .title:hover {
+    text-decoration: underline;
+}
+
+.rule {
+    flex: none;
+    align-self: stretch;
+    width: 1px;
+    margin: 4px 6px;
+    background: var(--line);
+}
+
+.song button.outline.small {
+    margin-left: 6px;
+    padding: 1px 8px;
+    font-size: 11px;
 }

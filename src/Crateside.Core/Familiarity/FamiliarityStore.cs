@@ -1,0 +1,180 @@
+using System.Text.Json.Serialization;
+
+namespace Crateside.Core.Familiarity;
+
+/// <summary>
+/// Each song's reach as Deezer measured it and the familiarity the user settled, kept in
+/// <c>%APPDATA%\crateside\familiarity.json</c> by song identity, as genre is (#52).
+/// </summary>
+public sealed class FamiliarityStore(CratesidePaths paths)
+{
+    private readonly string _path = paths.FamiliarityFile;
+    private readonly Lock _gate = new();
+
+    internal FamiliarityStore(string path)
+        : this(new CratesidePaths { FamiliarityFile = path }) { }
+
+    private Dictionary<string, FamiliarityRecord>? _cached;
+
+    /// <summary>Every record, by song identity. Never throws: an unreadable file reads as empty.</summary>
+    public IReadOnlyDictionary<string, FamiliarityRecord> Read()
+    {
+        lock (_gate)
+            return new Dictionary<string, FamiliarityRecord>(
+                _cached ??= TryReadFile(),
+                StringComparer.OrdinalIgnoreCase
+            );
+    }
+
+    /// <summary>Records what Deezer said, leaving anything the user settled alone.</summary>
+    public void Measure(string song, FamiliarityReading reading, DateTimeOffset at, int version) =>
+        Update(
+            song,
+            record =>
+                record with
+                {
+                    Artist = reading.Artist,
+                    ArtistFans = reading.ArtistFans,
+                    SongRank = reading.SongRank,
+                    LookedUpAt = at,
+                    LookupVersion = version,
+                }
+        );
+
+    /// <summary>The user's answer, which outranks whatever the numbers say.</summary>
+    public void Settle(string song, string value)
+    {
+        if (!FamiliarityVocabulary.IsValue(value))
+            throw new ArgumentException($"'{value}' is not a familiarity.", nameof(value));
+
+        Update(song, record => record with { Settled = value });
+    }
+
+    /// <summary>
+    /// Moves each record kept under a video ID onto the song the ledger has since judged it as,
+    /// calling <paramref name="beforeWrite"/> with the file's path first; returns how many moved.
+    /// </summary>
+    public int FollowSongs(Func<string, string?> songFor, Action<string>? beforeWrite = null)
+    {
+        lock (_gate)
+        {
+            var records = new Dictionary<string, FamiliarityRecord>(
+                _cached ??= TryReadFile(),
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            var moved = SongKeys.Follow(records, songFor, Merged);
+
+            if (moved is 0)
+                return 0;
+
+            try
+            {
+                beforeWrite?.Invoke(_path);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return 0;
+            }
+
+            _cached = records;
+            Write(records);
+
+            return moved;
+        }
+    }
+
+    /// <summary>The song's measurement where it has one, and the user's answer wherever it was given.</summary>
+    private static FamiliarityRecord Merged(
+        string song,
+        FamiliarityRecord moved,
+        FamiliarityRecord? held
+    ) =>
+        held switch
+        {
+            null => moved with { Song = song },
+            { LookedUpAt: null } => moved with
+            {
+                Song = song,
+                Settled = held.Settled ?? moved.Settled,
+            },
+            _ => held with { Settled = held.Settled ?? moved.Settled },
+        };
+
+    private void Update(string song, Func<FamiliarityRecord, FamiliarityRecord> change)
+    {
+        lock (_gate)
+        {
+            var records = _cached ??= TryReadFile();
+
+            records[song] = change(
+                records.GetValueOrDefault(song) ?? new FamiliarityRecord { Song = song }
+            );
+
+            Write(records);
+        }
+    }
+
+    private void Write(Dictionary<string, FamiliarityRecord> records)
+    {
+        try
+        {
+            FamiliarityJsonContext.Default.ListFamiliarityRecord.WriteFile(
+                _path,
+                [.. records.Values.OrderBy(r => r.Song)]
+            );
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+    }
+
+    private Dictionary<string, FamiliarityRecord> TryReadFile() =>
+        (
+            FamiliarityJsonContext.Default.ListFamiliarityRecord.ReadFileOrDefault(_path) ?? []
+        ).ToDictionary(r => r.Song, StringComparer.OrdinalIgnoreCase);
+}
+
+/// <summary>One song's familiarity: measured, settled, or both.</summary>
+public sealed record FamiliarityRecord
+{
+    /// <summary>The ledger's song identity, or the upload's video ID for a song it never judged.</summary>
+    public required string Song { get; init; }
+
+    /// <summary>The most-followed artist credited on the song Deezer matched.</summary>
+    public string? Artist { get; init; }
+
+    public long? ArtistFans { get; init; }
+
+    /// <summary>Deezer's popularity figure for the song itself, 0 to about 1,000,000.</summary>
+    public int? SongRank { get; init; }
+
+    /// <summary>When Deezer was last asked, or null when it never has been.</summary>
+    public DateTimeOffset? LookedUpAt { get; init; }
+
+    /// <summary>Which <see cref="FamiliarityLookup.Version"/> asked; zero for the first.</summary>
+    public int LookupVersion { get; init; }
+
+    /// <summary>
+    /// Worth asking again: never asked, or not found by a lookup older than the current one.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsOwedALookup =>
+        LookedUpAt is null || (SongRank is null && LookupVersion < FamiliarityLookup.Version);
+
+    /// <summary>The user's answer, or null when they have not given one.</summary>
+    public string? Settled { get; init; }
+
+    /// <summary>What the numbers settle on their own, or null for the band that asks the user.</summary>
+    [JsonIgnore]
+    public string? Suggested =>
+        LookedUpAt is null ? null : FamiliarityVocabulary.FromReach(ArtistFans, SongRank);
+
+    /// <summary>The value to tag with: the user's, else one the numbers settled; null means ask.</summary>
+    [JsonIgnore]
+    public string? Written => Settled ?? Suggested;
+}
+
+/// <summary>What Deezer said about one song, or all nulls when it did not know it.</summary>
+public sealed record FamiliarityReading(string? Artist, long? ArtistFans, int? SongRank)
+{
+    public static FamiliarityReading Unknown { get; } = new(null, null, null);
+}

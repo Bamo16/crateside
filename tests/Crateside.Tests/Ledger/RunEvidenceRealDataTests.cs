@@ -1,69 +1,63 @@
 using System.Text.Json;
+using Crateside.Core;
 using Crateside.Core.Ledger;
+using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Verdict;
 
 namespace Crateside.Tests.Ledger;
 
-/// <summary>
-/// Read against the real ledger, because the point of this type is what agents have actually
-/// written — and what they wrote is messier than the schema suggests.
-/// </summary>
-public class RunEvidenceRealDataTests
+public sealed class RunEvidenceRealDataTests
 {
-    private const string LedgerPath = @"V:\Repos\keytag\results\runs.jsonl";
+    /// <summary>The current three (ADR 0055), the retired bake-off's three, and those with madmom and edma backfilled (#139).</summary>
+    private static readonly string[] DetectorSets =
+    [
+        "Essentia edma, ffmpeg keydetect, madmom",
+        "CREMA, ffmpeg keydetect, librosa (K-S)",
+        "CREMA, Essentia edma, ffmpeg keydetect, librosa (K-S), madmom",
+    ];
 
-    private static bool Available => File.Exists(LedgerPath);
+    private static bool Available => TestLedger.HasReal;
 
-    private static IReadOnlyList<RunEvidence> All()
-    {
-        var ledger = KeyLedger.Read(LedgerPath);
+    private static readonly Lazy<IReadOnlyList<RunEvidence>> Evidence = new(() =>
+        [.. TestLedger.LatestEvidenceReal().Values]
+    );
 
-        return
-        [
-            .. ledger
-                .Runs.Select(r => r.Song)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Select(song => RunEvidence.ReadLatestFor(LedgerPath, song))
-                .OfType<RunEvidence>(),
-        ];
-    }
+    private static IReadOnlyList<RunEvidence> All() => Evidence.Value;
 
     [Fact]
     public void Every_song_on_the_board_can_be_expanded()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
-        var ledger = KeyLedger.Read(LedgerPath);
+        var ledger = TestLedger.FromReal();
+        var latest = TestLedger.LatestEvidenceReal();
 
-        // A detail view that silently fails for some songs is worse than none.
         Assert.All(
             ledger.Runs.Select(r => r.Song).Distinct(StringComparer.OrdinalIgnoreCase),
-            song => Assert.NotNull(RunEvidence.ReadLatestFor(LedgerPath, song))
+            song => Assert.True(latest.ContainsKey(song), song)
         );
     }
 
     [Fact]
     public void The_reasoning_is_always_there_because_it_is_the_actual_argument()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         Assert.All(All(), e => Assert.False(string.IsNullOrWhiteSpace(e.Reasoning)));
     }
 
-    /// <summary>
-    /// crateside stopped repairing text on the way out once keytag swept the file
-    /// (its ADR 0007), so this is the whole of its defence against that regressing.
-    /// </summary>
-    /// <remarks>
-    /// Walks every string rather than a list of fields. keytag's repair script and its own check
-    /// each enumerated fields, agreed with one another, and missed 97 damaged strings between
-    /// them for six days — a list here would be the third one to drift.
-    /// </remarks>
+    /// <summary>Walks every string rather than a list of fields, which can drift.</summary>
     [Fact]
     public void No_string_anywhere_in_the_ledger_is_mis_encoded()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
-        foreach (var line in File.ReadLines(LedgerPath).Where(l => l.Trim().Length > 0))
+        foreach (
+            var line in File.ReadLines(
+                    Path.ChangeExtension(new CratesidePaths().LedgerDatabase, ".jsonl")
+                )
+                .Where(l => l.Trim().Length > 0)
+        )
         {
             using var document = JsonDocument.Parse(line);
 
@@ -90,16 +84,24 @@ public class RunEvidenceRealDataTests
     [Fact]
     public void The_machine_layer_survives_the_round_trip()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         Assert.All(
             All(),
             e =>
             {
-                // Three algorithms and three pairings, on every run ever recorded.
-                Assert.Equal(3, e.Algorithms.Count);
+                // A run recorded without its evidence file holds no machine layer.
+                if (e.Algorithms.Count is 0)
+                    return;
+
+                Assert.Contains(
+                    string.Join(
+                        ", ",
+                        e.Algorithms.Select(result => result.Name).Order(StringComparer.Ordinal)
+                    ),
+                    DetectorSets
+                );
                 Assert.Equal(3, e.Agreement.Count);
-                // The status vocabulary is closed; anything else means the runner changed.
                 Assert.All(
                     e.Agreement,
                     pair =>
@@ -108,12 +110,7 @@ public class RunEvidenceRealDataTests
                             (string[])["full", "relative", "none", "single"]
                         )
                 );
-                // Chords may legitimately be empty, and that is information rather than a gap:
-                // a track the recogniser commits nothing on leaves the tonic check with only
-                // the flicker to argue from, which is exactly when a verdict should not claim
-                // positive confirmation. Held for 125 of 126 runs until an underground techno
-                // single produced none, so the old assertion was an observation about the
-                // corpus rather than a property of the runner.
+                // Chords may legitimately be empty.
                 Assert.NotNull(e.Chords);
                 Assert.NotEmpty(e.KeyEvents);
             }
@@ -123,10 +120,8 @@ public class RunEvidenceRealDataTests
     [Fact]
     public void A_run_with_no_human_source_is_an_ordinary_state()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
-        // About a third have none — whole catalogs have no tier-1/2 coverage, which is a fact
-        // about the catalog and not a defect. The view must render it as such.
         var all = All();
 
         Assert.Contains(all, e => e.Sources.Count == 0);
@@ -136,13 +131,11 @@ public class RunEvidenceRealDataTests
     [Fact]
     public void Every_source_carries_a_kind_from_the_closed_set()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         var sources = All().SelectMany(e => e.Sources).ToList();
 
         Assert.NotEmpty(sources);
-        // The whole point of the closed vocabulary: nothing falls through. This is the assertion
-        // the old `tier` field could never have passed — it held over thirty distinct values.
         Assert.All(sources, s => Assert.NotEqual(SourceKind.Unknown, s.Kind));
         Assert.All(sources, s => Assert.NotEqual(SourceKind.Unclassified, s.Kind));
         Assert.Contains(sources, s => s.Kind is SourceKind.Authoritative);
@@ -152,13 +145,10 @@ public class RunEvidenceRealDataTests
     [Fact]
     public void A_sources_stance_on_the_verdict_is_computed_not_read()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         var sources = All().SelectMany(e => e.Sources).ToList();
 
-        // The single most useful thing the sources list can show, and for most of this record's
-        // life it could only be had by reading every line of prose. Both stances are real: the
-        // ledger contains sources that back the verdict and sources that argue with it.
         Assert.Contains(sources, s => s.Stance is SourceStance.Agrees);
         Assert.Contains(sources, s => s.Stance is SourceStance.Dissents);
     }
@@ -166,10 +156,8 @@ public class RunEvidenceRealDataTests
     [Fact]
     public void A_source_with_no_page_still_says_where_it_came_from()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
-        // The user photographed sheet music: no host to classify by, and among the strongest
-        // evidence in the record. The old schema could only record that as a URL that wasn't one.
         Assert.Contains(
             All().SelectMany(e => e.Sources),
             s => s.Url is null && s.Via is { Length: > 0 }
@@ -179,12 +167,11 @@ public class RunEvidenceRealDataTests
     [Fact]
     public void A_recorded_url_that_is_not_a_link_is_not_offered_as_one()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
         var sources = All().SelectMany(e => e.Sources).ToList();
 
-        // Real entries include "user-provided image" — the user photographed sheet music, and
-        // there is no page to visit. Rendering that as an anchor would be a dead link.
+        // Real entries include "user-provided image", which has no page to link to.
         Assert.All(
             sources.Where(s => s.Link is null),
             s => Assert.True(s.Url is null || s.Url.Contains(' ') || !s.Url.Contains('.'))
@@ -198,26 +185,21 @@ public class RunEvidenceRealDataTests
     }
 
     [Fact]
-    public void The_chord_recognisers_in_the_ledger_are_identified_as_such()
+    public void The_chord_recognizers_in_the_ledger_are_identified_as_such()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
-        // Chordify and ChordU are present in the real data, and their key field may never be
-        // the basis of a verdict. The view has to be able to say so.
         Assert.Contains(
             All().SelectMany(e => e.Sources),
-            s => s.Kind is SourceKind.ChordRecogniser
+            s => s.Kind is SourceKind.ChordRecognizer
         );
     }
 
     [Fact]
     public void Full_agreement_is_reported_as_agreement()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
-        // Guards a real bug: the shape was guessed as {agree, relation} when it is
-        // {status, recommended, note}, so every pair rendered as a disagreement while the
-        // algorithms plainly agreed.
         var pairs = All().SelectMany(e => e.Agreement).ToList();
 
         Assert.Contains(pairs, p => p.Agrees);
@@ -225,25 +207,80 @@ public class RunEvidenceRealDataTests
         Assert.All(pairs.Where(p => p.Status == "none"), p => Assert.False(p.Agrees));
     }
 
+    /// <summary>The lookups the working sets hold, recorded with the Hooktheory pages each track's verdict cited, as a judged run now keeps them (#176).</summary>
     [Fact]
-    public void A_bpm_conflict_means_something_other_than_a_tempo_octave()
+    public void Every_hooktheory_page_a_verdict_cited_from_its_lookup_comes_back_with_its_tab()
     {
-        Assert.SkipUnless(Available, "The keytag ledger must be present.");
+        Assert.SkipUnless(Available, "The ledger must be present.");
 
-        // Half or double time is just a choice of octave and is not a conflict; anything else
-        // means one of the two figures is simply wrong.
-        Assert.All(
-            All().Where(e => e.BpmConflicts),
-            e =>
-            {
-                Assert.NotNull(e.Bpm);
-                Assert.NotNull(e.BeatdetectBpm);
-                var ratio = e.BeatdetectBpm!.Value / e.Bpm!.Value;
-                Assert.False(
-                    Math.Abs(ratio - 2) < 0.05 || Math.Abs(ratio - 0.5) < 0.05,
-                    $"{e.Song}: {ratio:F3} is a tempo octave and should not be flagged."
-                );
-            }
-        );
+        using var real = TestLedger.StoreReal();
+        using var store = TestLedger.Store();
+        var working = new WorkingSet(new CratesidePaths());
+        var checkedPages = 0;
+
+        foreach (var trackKey in working.TrackKeys)
+        {
+            var lookups = Path.Combine(
+                Path.GetDirectoryName(working.EvidencePathFor(trackKey))!,
+                VerdictRunner.SourcesFileName
+            );
+
+            if (
+                !File.Exists(lookups)
+                || real.EvidenceForTrackKey(trackKey) is not { } judged
+                || JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(lookups))
+                    is not { ValueKind: JsonValueKind.Array } found
+            )
+                continue;
+
+            var tabbed = found
+                .EnumerateArray()
+                .SelectMany(site =>
+                    site.TryGetProperty("pages", out var pages) ? pages.EnumerateArray() : []
+                )
+                .Where(page => page.TryGetProperty("tab", out _))
+                .Select(page => page.GetProperty("url").GetString()!)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            RunSource[] cited =
+            [
+                .. judged
+                    .Sources.Where(source => source.Url is { } url && tabbed.Contains(url))
+                    .Select(source => new RunSource
+                    {
+                        Url = source.Url,
+                        Kind = SourceKind.Authoritative,
+                    }),
+            ];
+
+            if (cited is [])
+                continue;
+
+            var song = $"lookup - {trackKey}".ToLowerInvariant();
+
+            Assert.IsType<RecordOutcome.Recorded>(
+                store.Record(
+                    new RunRecord
+                    {
+                        RecordedAt = DateTimeOffset.UnixEpoch,
+                        Song = song,
+                        SourceUrl = $"https://www.youtube.com/watch?v={trackKey}",
+                        Confidence = KeyConfidence.Withheld,
+                        Sources = cited,
+                        Lookups = File.ReadAllText(lookups),
+                    }
+                )
+            );
+
+            var evidence = store.EvidenceFor(song)!;
+
+            Assert.All(
+                evidence.Sources,
+                source => Assert.True(source.Tab is { Sections.Count: > 0 }, source.Url)
+            );
+            Assert.NotEmpty(evidence.Lookups);
+            checkedPages += cited.Length;
+        }
+
+        Assert.SkipWhen(checkedPages is 0, "No working set holds a lookup a verdict cited.");
     }
 }

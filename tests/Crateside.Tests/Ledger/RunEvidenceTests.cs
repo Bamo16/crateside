@@ -1,9 +1,8 @@
 using System.Text.Json;
-using Crateside.Core.Ledger;
 
 namespace Crateside.Tests.Ledger;
 
-public class RunEvidenceTests : IDisposable
+public sealed class RunEvidenceTests : IDisposable
 {
     private const string Song = "a - b";
 
@@ -26,12 +25,10 @@ public class RunEvidenceTests : IDisposable
     [Fact]
     public void A_restatement_does_not_become_the_evidence_for_its_song()
     {
-        // A restatement carries the verdict under a new source URL and no machine layer at all
-        // (keytag ADR 0008). Taken as the latest line it would empty this view the first time a
-        // track's source was swapped -- the one place the two resolvers had to differ.
+        // A restatement carries no machine layer at all (ADR 0055).
         File.WriteAllLines(_path, [Run("2026-09-01T00:00:00+00:00"), Restatement()]);
 
-        var evidence = RunEvidence.ReadLatestFor(_path, Song);
+        var evidence = TestLedger.EvidenceFor(_path, Song);
 
         Assert.NotNull(evidence);
         Assert.Equal("the argument", evidence.Reasoning);
@@ -50,7 +47,7 @@ public class RunEvidenceTests : IDisposable
             ]
         );
 
-        Assert.Equal("the newer argument", RunEvidence.ReadLatestFor(_path, Song)?.Reasoning);
+        Assert.Equal("the newer argument", TestLedger.EvidenceFor(_path, Song)?.Reasoning);
     }
 
     private static string Run(string timestamp, string reasoning = "the argument") =>

@@ -1,16 +1,14 @@
+using AbleKit.Tags;
 using Crateside.Core;
+using Crateside.Core.Ableton;
 using Crateside.Core.Library;
-using Crateside.Core.Staging;
+using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Library;
 
-/// <summary>
-/// The cache in front of the reader, exercised against a real folder rather than a counting
-/// double — what the page needs is that adding a file does not change the count until someone
-/// asks, which is observable without one.
-/// </summary>
-public class LibrarySummaryTests : IDisposable
+/// <summary>The cache in front of the reader, exercised against a real folder.</summary>
+public sealed class LibrarySummaryTests : IDisposable
 {
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -57,18 +55,37 @@ public class LibrarySummaryTests : IDisposable
         var distribution = Summary().Current;
 
         Assert.Equal(2, distribution.Unkeyed.Count);
-        Assert.Equal(0, distribution.KeyedCount);
-        Assert.All(distribution.Counts, c => Assert.Equal(0, c.Files));
+        Assert.Equal(0, distribution.KeyedTrackCount);
+        Assert.All(distribution.Counts, c => Assert.Equal(0, c.Tracks));
+    }
+
+    [Fact]
+    public void A_songs_samples_count_as_one_track()
+    {
+        Add("Yes - Owner of a Lonely Heart (Vocal - Full).flac");
+        Add("Yes - Owner of a Lonely Heart (Instrumental - Full).flac");
+
+        var distribution = Summary().Current;
+
+        Assert.Equal(4, distribution.FileCount);
+        Assert.Equal(3, distribution.TrackCount);
+        Assert.Equal(3, distribution.UngenredCount);
     }
 
     [Fact]
     public void A_root_that_does_not_exist_reads_as_nothing_rather_than_throwing()
     {
         var paths = Options.Create(
-            new CratesidePaths { MashupSamples = Path.Combine(_root, "gone") }
+            new CratesidePaths { LibraryFolder = Path.Combine(_root, "gone") }
         );
 
-        var distribution = new LibraryKeyReader(paths, new AbletonIndexReader(paths)).Read();
+        var distribution = new LibraryKeyReader(
+            TestLedger.Store(),
+            paths,
+            new FileIndexReader(paths.Value.AbletonIndex),
+            new FolderInfoReader(),
+            new WarpTempoReader()
+        ).Read();
 
         Assert.Equal(0, distribution.FileCount);
         Assert.Empty(distribution.Counts);
@@ -76,9 +93,18 @@ public class LibrarySummaryTests : IDisposable
 
     private LibrarySummary Summary()
     {
-        var paths = Options.Create(new CratesidePaths { MashupSamples = _root });
+        var paths = Options.Create(new CratesidePaths { LibraryFolder = _root });
 
-        return new LibrarySummary(new LibraryKeyReader(paths, new AbletonIndexReader(paths)));
+        return new LibrarySummary(
+            new LibraryKeyReader(
+                TestLedger.Store(),
+                paths,
+                new FileIndexReader(paths.Value.AbletonIndex),
+                new FolderInfoReader(),
+                new WarpTempoReader()
+            ),
+            TimeProvider.System
+        );
     }
 
     private void Add(string name) => File.WriteAllText(Path.Combine(_root, name), string.Empty);

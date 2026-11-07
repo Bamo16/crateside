@@ -3,29 +3,33 @@ using System.Text.Json;
 
 namespace Crateside.Core.Quota;
 
-/// <summary>
-/// Reads the user's five-hour Claude window from Anthropic's usage endpoint.
-/// </summary>
-/// <remarks>
-/// The endpoint is undocumented, with internal codenames among its top-level keys and field
-/// names that differ from other tools reading the same data. Every read here is defensive, and
-/// every failure is <see cref="QuotaSnapshot.Unknown"/> rather than an exception.
-/// </remarks>
-public sealed class QuotaReader(HttpClient client)
+/// <summary>Reads the user's Claude usage windows.</summary>
+public interface IQuotaReader
 {
+    /// <summary>The current windows, or <see cref="QuotaSnapshot.Unknown"/> if they cannot be read.</summary>
+    Task<QuotaSnapshot> ReadAsync(CancellationToken ct = default);
+}
+
+/// <summary>
+/// Reads the user's five-hour Claude window from Anthropic's usage endpoint, which is undocumented.
+/// </summary>
+public sealed class QuotaReader(IHttpClientFactory clients, CratesidePaths paths) : IQuotaReader
+{
+    public const string ClientName = "anthropic-usage";
+
     private const string UsagePath = "/api/oauth/usage";
 
     /// <summary>The beta opt-in the endpoint requires.</summary>
     private const string BetaHeader = "oauth-2025-04-20";
 
     /// <summary>Where Claude Code keeps its credentials. Settable so a test needs no real one.</summary>
-    public string CredentialsPath { get; init; } = DefaultCredentialsPath();
+    public string CredentialsPath { get; init; } = paths.ClaudeCredentialsFile;
 
     /// <summary>
-    /// The current window, or <see cref="QuotaSnapshot.Unknown"/> if it cannot be read.
+    /// The current window, or <see cref="QuotaSnapshot.Unknown"/> — never an exception — if it
+    /// cannot be read.
     /// </summary>
-    /// <remarks>Never throws. Every failure is the same answer: nothing to show.</remarks>
-    public async Task<QuotaSnapshot> ReadAsync(CancellationToken cancellationToken = default)
+    public async Task<QuotaSnapshot> ReadAsync(CancellationToken ct = default)
     {
         if (ReadAccessToken() is not { Length: > 0 } token)
             return QuotaSnapshot.Unknown;
@@ -37,41 +41,50 @@ public sealed class QuotaReader(HttpClient client)
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             request.Headers.Add("anthropic-beta", BetaHeader);
 
-            using var response = await client.SendAsync(request, cancellationToken);
+            using var response = await clients.CreateClient(ClientName).SendAsync(request, ct);
 
             if (!response.IsSuccessStatusCode)
                 return QuotaSnapshot.Unknown;
 
-            return Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+            return Parse(await response.Content.ReadAsStringAsync(ct));
         }
-        catch (Exception e)
-            when (e is HttpRequestException or TaskCanceledException or JsonException)
+        catch (Exception ex)
+            when (ex is HttpRequestException or TaskCanceledException or JsonException)
         {
             return QuotaSnapshot.Unknown;
         }
     }
 
     /// <summary>
-    /// Picks the window out of a payload whose shape is not promised: <c>five_hour</c> first,
-    /// then the <c>session</c> entry of <c>limits</c>.
+    /// Picks the windows out of a payload whose shape is not promised: <c>five_hour</c> first,
+    /// then the <c>session</c> entry of <c>limits</c>; <c>seven_day</c>, then <c>weekly_all</c>.
     /// </summary>
     internal static QuotaSnapshot Parse(string payload)
     {
         try
         {
             using var document = JsonDocument.Parse(payload);
-
-            if (
-                document.RootElement.TryGetProperty("five_hour", out var window)
+            var root = document.RootElement;
+            var session =
+                root.TryGetProperty("five_hour", out var window)
                 && Percentage(window, "utilization") is { } utilization
-            )
-                return new QuotaSnapshot
-                {
-                    Utilization = utilization,
-                    ResetsAt = ResetTimeOf(window),
-                };
+                    ? new QuotaSnapshot
+                    {
+                        Utilization = utilization,
+                        ResetsAt = ResetTimeOf(window),
+                    }
+                    : Limit(root, "session");
+            var weekly =
+                root.TryGetProperty("seven_day", out var week)
+                && Percentage(week, "utilization") is { } used
+                    ? new QuotaSnapshot { Utilization = used, ResetsAt = ResetTimeOf(week) }
+                    : Limit(root, "weekly_all");
 
-            return SessionLimit(document.RootElement);
+            return session with
+            {
+                WeeklyUtilization = weekly.Utilization,
+                WeeklyResetsAt = weekly.ResetsAt,
+            };
         }
         catch (JsonException)
         {
@@ -80,10 +93,10 @@ public sealed class QuotaReader(HttpClient client)
     }
 
     /// <summary>
-    /// The five-hour window as <c>limits</c> spells it, if it is there. A fallback only:
-    /// its <c>percent</c> is a coarser reading than <c>five_hour.utilization</c>.
+    /// A window as <c>limits</c> spells it, if it is there. A fallback only: its <c>percent</c>
+    /// is a coarser reading than <c>utilization</c>.
     /// </summary>
-    private static QuotaSnapshot SessionLimit(JsonElement root)
+    private static QuotaSnapshot Limit(JsonElement root, string wanted)
     {
         if (
             !root.TryGetProperty("limits", out var limits)
@@ -96,7 +109,7 @@ public sealed class QuotaReader(HttpClient client)
             if (
                 limit.TryGetProperty("kind", out var kind)
                 && kind.ValueKind is JsonValueKind.String
-                && kind.GetString() == "session"
+                && kind.GetString() == wanted
                 && Percentage(limit, "percent") is { } percent
             )
                 return new QuotaSnapshot { Utilization = percent, ResetsAt = ResetTimeOf(limit) };
@@ -141,22 +154,16 @@ public sealed class QuotaReader(HttpClient client)
                 ? token.GetString()
                 : null;
         }
-        catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException)
+        catch (Exception ex)
+            when (ex is IOException or JsonException or UnauthorizedAccessException)
         {
             return null;
         }
     }
-
-    private static string DefaultCredentialsPath() =>
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".claude",
-            ".credentials.json"
-        );
 }
 
 /// <summary>
-/// The five-hour window as last read, or nothing at all. Carries no error text on purpose,
+/// The five-hour and weekly windows as last read, or nothing at all. Carries no error text on purpose,
 /// since the only failure here involves a live credential.
 /// </summary>
 public sealed record QuotaSnapshot
@@ -166,6 +173,11 @@ public sealed record QuotaSnapshot
 
     /// <summary>When the window rolls over.</summary>
     public DateTimeOffset? ResetsAt { get; init; }
+
+    /// <summary>How much of the weekly limit is spent, on the same scale as <see cref="Utilization"/>.</summary>
+    public double? WeeklyUtilization { get; init; }
+
+    public DateTimeOffset? WeeklyResetsAt { get; init; }
 
     /// <summary>Whether there is anything to show. False is an ordinary state, not a failure.</summary>
     public bool IsKnown => Utilization is not null;

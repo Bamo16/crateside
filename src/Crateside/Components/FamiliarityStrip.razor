@@ -1,0 +1,72 @@
+@using Crateside.Core.Familiarity
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Tracks
+@inject FamiliarityStore Familiarity
+@inject TracksService Tracks
+@inject ActionLog Actions
+
+<ChoiceStrip Label="Familiarity" Choices="Choices" Value="@Row.Familiarity?.Written"
+             Quiet="Row.Familiarity is null or { Written: null, LookedUpAt: null }"
+             Note="@Note(Row.Familiarity)" Disabled="_working" OnChoose="Settle" Inline="Inline" />
+
+@code {
+    private bool _working;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    /// <summary>Chips alone, for the Tags to answer view.</summary>
+    [Parameter]
+    public bool Inline { get; set; }
+
+    private IReadOnlyList<ChoiceStrip.Choice> Choices =>
+        [
+            .. FamiliarityVocabulary.All.Select(value => new ChoiceStrip.Choice(
+                value,
+                value,
+                Row.Familiarity?.Written == value ? "settled" : null
+            )),
+        ];
+
+    /// <summary>What the value rests on: the loudest credited artist and the song's own rank.</summary>
+    private static string Note(FamiliarityRecord? record) =>
+        record switch
+        {
+            null or { LookedUpAt: null } => "not looked up yet",
+            { Artist: null, SongRank: null } => "Deezer does not know it · your call",
+            _ => string.Join(
+                " · ",
+                new[]
+                {
+                    record.Artist is { } artist ? $"{artist} {record.ArtistFans:N0} fans" : null,
+                    record.SongRank is { } rank ? $"song rank {rank:N0}" : null,
+                    record switch
+                    {
+                        { Settled: not null } => null,
+                        { Suggested: null } => "your call",
+                        _ => "from these numbers",
+                    },
+                }.OfType<string>()
+            ),
+        };
+
+    private async Task Settle(string? value)
+    {
+        if (value is null)
+            return;
+
+        _working = true;
+
+        try
+        {
+            Familiarity.Settle(Row.Song, value);
+            Actions.Record(Row.TrackKey, UserActionKind.FamiliaritySettled, value);
+
+            await Tracks.RefreshAsync();
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
+}

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Archivo+Black&family=Bungee&family=Cooper+Hewitt&family=Righteous&family=Space+Grotesk:wght@700&family=Big+Shoulders+Display:wght@800&family=Caveat+Brush&family=Rubik+Mono+One&family=Anton&display=swap" rel="stylesheet"><style>html{background:#0f0e0c}body{margin:0;min-height:100%;background:#0f0e0c;font-family:"IBM Plex Sans",system-ui,sans-serif;color:#ece7dc}a{color:#e8b45a}a:hover{color:#f3cd86}.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(255,255,255,.08)}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}.dv-tid{font:600 10px "IBM Plex Mono",monospace;padding:3px 7px;background:#ece7dc;color:#0f0e0c;border-radius:4px;text-decoration:none}.dv-tname{font:600 13px/1.2 "IBM Plex Sans",sans-serif}.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}.dv-oid{font:600 10.5px "IBM Plex Mono",monospace;padding:3px 7px;background:rgba(255,255,255,.1);color:#ece7dc;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11.5px/1.3 "IBM Plex Sans",sans-serif;color:rgba(236,231,220,.6);max-width:600px}.dv-card{background:#17160f;border:1px solid rgba(255,255,255,.1);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.5);overflow:hidden}.dv-opt:target .dv-oid{background:#e8b45a;color:#0f0e0c}.dv-notes{max-width:760px;font:13px/1.55 "IBM Plex Sans",sans-serif;color:rgba(236,231,220,.7);margin:0 0 28px}.dv-notes b{color:#ece7dc;font-weight:600}.dv-notes p{margin:0 0 8px}.dv-next{margin:22px 0 0;font:12px/1.5 "IBM Plex Sans",sans-serif;color:rgba(236,231,220,.5)}</style></helmet>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">round 2 — fifteen, with spread</span></div>
+<div class="dv-notes">
+<p><b>What changed.</b> Round 1 was five literal objects at one thin stroke. This round spreads across five registers — <b>stencil</b> (<a class="dv-oid" href="#2a">2a</a>–<a class="dv-oid" href="#2c">2c</a>), <b>record-shop</b> (<a class="dv-oid" href="#2d">2d</a>–<a class="dv-oid" href="#2f">2f</a>), <b>hardware</b> (<a class="dv-oid" href="#2g">2g</a>–<a class="dv-oid" href="#2i">2i</a>), <b>abstract</b> (<a class="dv-oid" href="#2j">2j</a>–<a class="dv-oid" href="#2l">2l</a>), <b>retro type</b> (<a class="dv-oid" href="#2m">2m</a>–<a class="dv-oid" href="#2o">2o</a>) — and lets the type carry more of the work, because the round-1 marks that half-worked were the ones with the least drawing in them. Casing: lowercase or CAPS; CrateSide once, where the two-word read is the idea.</p>
+<p><b>Same rule as before:</b> amber stays the accent (it is "your turn" in the app), everything shown in the real header cell at 18px and as a 64/32 tile. 1a's slats are pushed in <a class="dv-oid" href="#2a">2a</a>, <a class="dv-oid" href="#2j">2j</a> and <a class="dv-oid" href="#2n">2n</a>. Dark only.</p>
+</div>
+<div class="dv-opts">
+
+<!-- helper: each option = card 560 wide: lockup row, then header cell + tiles -->
+
+<!-- 2a stencil slats -->
+<div class="dv-opt" id="2a"><div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Stencil · 1a pushed. Slats become the E in a stencilled CRATESIDE; the pulled record is the amber slat.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;align-items:center;gap:0;font:800 42px/1 'Big Shoulders Display',sans-serif;letter-spacing:.06em;color:#ece7dc">CRAT<span style="display:inline-flex;flex-direction:column;gap:4px;width:.62em;margin:0 .04em;position:relative;top:1px"><span style="height:.16em;background:#ece7dc"></span><span style="height:.16em;background:#e8b45a;width:80%"></span><span style="height:.16em;background:#ece7dc"></span></span>SIDE</div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;font:800 17px/1 'Big Shoulders Display',sans-serif;letter-spacing:.08em;color:#ece7dc">CRAT<span style="display:inline-flex;flex-direction:column;gap:2px;width:.62em;margin:0 .05em"><span style="height:.16em;background:#ece7dc"></span><span style="height:.16em;background:#e8b45a;width:80%"></span><span style="height:.16em;background:#ece7dc"></span></span>SIDE</div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;justify-content:center;gap:6px;padding:0 14px;box-sizing:border-box"><span style="height:6px;background:#ece7dc"></span><span style="height:6px;background:#e8b45a;width:78%"></span><span style="height:6px;background:#ece7dc"></span></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;justify-content:center;gap:3px;padding:0 7px;box-sizing:border-box"><span style="height:3px;background:#ece7dc"></span><span style="height:3px;background:#e8b45a;width:78%"></span><span style="height:3px;background:#ece7dc"></span></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2b stencil bracket -->
+<div class="dv-opt" id="2b"><div class="dv-olabel"><a class="dv-oid" href="#2b">2b</a>Stencil · shipping-crate label. Condensed caps in a stencil-bridged box, an amber "THIS SIDE UP" arrow doing double duty as the mark.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;align-items:center;gap:14px">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" style="color:#e8b45a"><path d="M12 4v16M5 11l7-7 7 7" stroke="currentColor" stroke-width="3" stroke-linecap="square"/></svg>
+    <span style="display:inline-block;padding:9px 17px 7px;font:800 36px/1 'Big Shoulders Display',sans-serif;letter-spacing:.14em;color:#ece7dc;background:linear-gradient(90deg,#ece7dc 0 32%,transparent 32% 68%,#ece7dc 68%) top/100% 3px no-repeat,linear-gradient(90deg,#ece7dc 0 32%,transparent 32% 68%,#ece7dc 68%) bottom/100% 3px no-repeat,linear-gradient(#ece7dc,#ece7dc) left/3px 100% no-repeat,linear-gradient(#ece7dc,#ece7dc) right/3px 100% no-repeat">CRATESIDE</span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:7px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="color:#e8b45a"><path d="M12 4v16M5 11l7-7 7 7" stroke="currentColor" stroke-width="3.5" stroke-linecap="square"/></svg><span style="font:800 16px/1 'Big Shoulders Display',sans-serif;letter-spacing:.14em;color:#ece7dc">CRATESIDE</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" style="color:#e8b45a"><path d="M12 4v16M5 11l7-7 7 7" stroke="currentColor" stroke-width="3" stroke-linecap="square"/></svg></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="color:#e8b45a"><path d="M12 4v16M5 11l7-7 7 7" stroke="currentColor" stroke-width="3.5" stroke-linecap="square"/></svg></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2c stencil mono tag -->
+<div class="dv-opt" id="2c"><div class="dv-olabel"><a class="dv-oid" href="#2c">2c</a>Stencil · inventory tag. Mono caps with a lot number; the amber block is the mark and the word sits on it like a label on a crate.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:inline-flex;align-items:stretch;width:fit-content">
+    <span style="background:#e8b45a;color:#0f0e0c;font:700 30px/1 'IBM Plex Mono',monospace;padding:10px 14px;display:flex;align-items:center">CS</span>
+    <span style="border:2px solid #ece7dc;border-left:0;padding:8px 16px;display:flex;flex-direction:column;justify-content:center;gap:4px"><span style="font:700 22px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#ece7dc">CRATESIDE</span><span style="font:400 10px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:rgba(236,231,220,.5)">SAMPLE STAGING · LOT 0433</span></span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:inline-flex;align-items:stretch;width:fit-content"><span style="background:#e8b45a;color:#0f0e0c;font:700 12px/1 'IBM Plex Mono',monospace;padding:4px 6px;display:flex;align-items:center">CS</span><span style="border:1.5px solid #ece7dc;border-left:0;padding:0 8px;display:flex;align-items:center;font:700 12px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#ece7dc">CRATESIDE</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#e8b45a;display:grid;place-items:center;font:700 28px 'IBM Plex Mono',monospace;color:#0f0e0c">CS</div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#e8b45a;display:grid;place-items:center;font:700 13px 'IBM Plex Mono',monospace;color:#0f0e0c">CS</div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2d record-shop sticker -->
+<div class="dv-opt" id="2d"><div class="dv-olabel"><a class="dv-oid" href="#2d">2d</a>Record-shop · price sticker. A circle sticker slapped on a sleeve; bold rounded caps, amber ground. The one option where the mark is a solid amber disc.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;align-items:center;gap:16px">
+    <span style="width:72px;height:72px;border-radius:50%;background:#e8b45a;display:grid;place-items:center;transform:rotate(-8deg);font:400 15px/1 'Bungee',sans-serif;color:#0f0e0c;text-align:center;line-height:.95">CRATE<br>SIDE</span>
+    <span style="font:400 36px/1 'Bungee',sans-serif;color:#ece7dc">CRATESIDE</span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="width:18px;height:18px;border-radius:50%;background:#e8b45a;display:inline-block"></span><span style="font:400 14px/1 'Bungee',sans-serif;color:#ece7dc">CRATESIDE</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><span style="width:48px;height:48px;border-radius:50%;background:#e8b45a;display:grid;place-items:center;transform:rotate(-8deg);font:400 10px/.95 'Bungee',sans-serif;color:#0f0e0c;text-align:center">CRATE<br>SIDE</span></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><span style="width:22px;height:22px;border-radius:50%;background:#e8b45a;display:grid;place-items:center;font:400 9px 'Bungee',sans-serif;color:#0f0e0c">C</span></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2e record-shop stamp -->
+<div class="dv-opt" id="2e"><div class="dv-olabel"><a class="dv-oid" href="#2e">2e</a>Record-shop · rubber stamp. "crateside" in a double-rule box, slightly off-square, amber ink. Reads as a used-bin stamp on a sleeve.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:inline-block;width:fit-content;transform:rotate(-2deg);border:3px double #e8b45a;padding:8px 18px;color:#e8b45a;font:700 32px/1 'Space Grotesk',sans-serif;letter-spacing:.02em">crateside<span style="display:block;font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;margin-top:6px;text-align:center;opacity:.85">INSPECTED · KEYED · STAGED</span></div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:inline-block;width:fit-content;border:2px double #e8b45a;padding:3px 8px;color:#e8b45a;font:700 13px/1 'Space Grotesk',sans-serif">crateside</div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><span style="border:3px double #e8b45a;padding:4px 7px;color:#e8b45a;font:700 22px/1 'Space Grotesk',sans-serif;transform:rotate(-4deg)">cs</span></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><span style="border:2px double #e8b45a;padding:1px 3px;color:#e8b45a;font:700 11px/1 'Space Grotesk',sans-serif">cs</span></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2f record-shop hand-lettered -->
+<div class="dv-opt" id="2f"><div class="dv-olabel"><a class="dv-oid" href="#2f">2f</a>Record-shop · marker on a divider card. Brush lettering with the amber underline a shop clerk drew; the mark is the divider tab itself.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;align-items:flex-end;gap:16px">
+    <span style="display:inline-flex;flex-direction:column;width:64px"><span style="width:38px;height:14px;background:#ece7dc;border-radius:3px 3px 0 0"></span><span style="height:50px;background:#ece7dc;border-radius:0 3px 3px 3px;display:grid;place-items:center;font:400 24px 'Caveat Brush',cursive;color:#0f0e0c">cs</span></span>
+    <span style="font:400 48px/1 'Caveat Brush',cursive;color:#ece7dc;position:relative;padding-bottom:8px">crateside<span style="position:absolute;left:2px;right:6px;bottom:0;height:5px;background:#e8b45a;border-radius:3px;transform:rotate(-1deg)"></span></span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;flex-direction:column;width:16px"><span style="width:9px;height:4px;background:#ece7dc;border-radius:1px 1px 0 0"></span><span style="height:12px;background:#ece7dc;border-radius:0 1px 1px 1px"></span></span><span style="font:400 20px/1 'Caveat Brush',cursive;color:#ece7dc;border-bottom:2px solid #e8b45a">crateside</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><span style="display:inline-flex;flex-direction:column;width:36px"><span style="width:20px;height:8px;background:#ece7dc;border-radius:2px 2px 0 0"></span><span style="height:28px;background:#ece7dc;border-radius:0 2px 2px 2px;display:grid;place-items:center;font:400 16px 'Caveat Brush',cursive;color:#0f0e0c">cs</span></span></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><span style="display:inline-flex;flex-direction:column;width:18px"><span style="width:10px;height:4px;background:#ece7dc;border-radius:1px 1px 0 0"></span><span style="height:13px;background:#e8b45a;border-radius:0 1px 1px 1px"></span></span></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2g hardware fader -->
+<div class="dv-opt" id="2g"><div class="dv-olabel"><a class="dv-oid" href="#2g">2g</a>Hardware · channel strip. A fader at the top of its throw beside panel-legend caps. The amber cap is the mark; a fader at 0 dB is a thing that is ready.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;align-items:center;gap:18px">
+    <svg width="28" height="60" viewBox="0 0 14 30" fill="none"><rect x="6" y="2" width="2" height="26" rx="1" fill="rgba(236,231,220,.35)"/><path d="M2 8h10M2 14h10M2 20h10M2 26h10" stroke="rgba(236,231,220,.25)" stroke-width=".8"/><rect x="1" y="5" width="12" height="7" rx="1.2" fill="#e8b45a"/><rect x="1" y="8" width="12" height="1" fill="#0f0e0c"/></svg>
+    <span style="display:flex;flex-direction:column;gap:6px"><span style="font:600 30px/1 'IBM Plex Sans',sans-serif;letter-spacing:.14em;color:#ece7dc">CRATESIDE</span><span style="font:500 10px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:rgba(236,231,220,.45)">STAGING · KEY · WARP</span></span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><svg width="9" height="18" viewBox="0 0 14 30" fill="none"><rect x="6" y="2" width="2" height="26" rx="1" fill="rgba(236,231,220,.35)"/><rect x="0" y="4" width="14" height="9" rx="1.5" fill="#e8b45a"/></svg><span style="font:600 13px/1 'IBM Plex Sans',sans-serif;letter-spacing:.14em;color:#ece7dc">CRATESIDE</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="22" height="46" viewBox="0 0 14 30" fill="none"><rect x="6" y="2" width="2" height="26" rx="1" fill="rgba(236,231,220,.35)"/><path d="M2 8h10M2 14h10M2 20h10M2 26h10" stroke="rgba(236,231,220,.25)" stroke-width=".8"/><rect x="1" y="5" width="12" height="7" rx="1.2" fill="#e8b45a"/><rect x="1" y="8" width="12" height="1" fill="#0f0e0c"/></svg></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="11" height="24" viewBox="0 0 14 30" fill="none"><rect x="6" y="2" width="2" height="26" rx="1" fill="rgba(236,231,220,.35)"/><rect x="0" y="4" width="14" height="9" rx="1.5" fill="#e8b45a"/></svg></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2h hardware knob -->
+<div class="dv-opt" id="2h"><div class="dv-olabel"><a class="dv-oid" href="#2h">2h</a>Hardware · knob with a legend. A chicken-head pointer at one o'clock inside a tick ring; the word set as a panel legend beneath. Reads like a rack unit's faceplate.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;align-items:center;gap:18px">
+    <svg width="64" height="64" viewBox="0 0 32 32" fill="none"><g stroke="rgba(236,231,220,.4)" stroke-width="1.2"><path d="M16 2v3M16 27v3M2 16h3M27 16h3M6.1 6.1l2.1 2.1M23.8 23.8l2.1 2.1M6.1 25.9l2.1-2.1M23.8 8.2l2.1-2.1"/></g><circle cx="16" cy="16" r="9" fill="#ece7dc"/><path d="M16 16 20.5 8.5" stroke="#e8b45a" stroke-width="2.6" stroke-linecap="round"/></svg>
+    <span style="display:flex;flex-direction:column;gap:5px"><span style="font:600 28px/1 'IBM Plex Sans',sans-serif;letter-spacing:.1em;color:#ece7dc">CRATESIDE</span><span style="display:flex;justify-content:space-between;font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:rgba(236,231,220,.45)"><span>IN</span><span>KEY</span><span>SEP</span><span>STAGE</span><span>OUT</span></span></span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="11" fill="#ece7dc"/><path d="M16 16 21.5 7" stroke="#e8b45a" stroke-width="3.6" stroke-linecap="round"/></svg><span style="font:600 13px/1 'IBM Plex Sans',sans-serif;letter-spacing:.1em;color:#ece7dc">CRATESIDE</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="46" height="46" viewBox="0 0 32 32" fill="none"><g stroke="rgba(236,231,220,.4)" stroke-width="1.2"><path d="M16 2v3M16 27v3M2 16h3M27 16h3M6.1 6.1l2.1 2.1M23.8 23.8l2.1 2.1M6.1 25.9l2.1-2.1M23.8 8.2l2.1-2.1"/></g><circle cx="16" cy="16" r="9" fill="#ece7dc"/><path d="M16 16 20.5 8.5" stroke="#e8b45a" stroke-width="2.6" stroke-linecap="round"/></svg></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="22" height="22" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="11" fill="#ece7dc"/><path d="M16 16 21.5 7" stroke="#e8b45a" stroke-width="3.6" stroke-linecap="round"/></svg></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2i hardware LED -->
+<div class="dv-opt" id="2i"><div class="dv-olabel"><a class="dv-oid" href="#2i">2i</a>Hardware · status LED. Lowercase Plex Mono with a lit amber LED where a power light would be. The whole brand is "there is a light on".</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;align-items:center;gap:16px">
+    <span style="width:22px;height:22px;border-radius:50%;background:#e8b45a;box-shadow:0 0 0 4px #23211a,0 0 0 5px rgba(236,231,220,.25),0 0 18px rgba(232,180,90,.7)"></span>
+    <span style="font:500 36px/1 'IBM Plex Mono',monospace;color:#ece7dc;letter-spacing:-.02em">crateside</span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:9px"><span style="width:8px;height:8px;border-radius:50%;background:#e8b45a;box-shadow:0 0 0 2px #23211a,0 0 0 2.5px rgba(236,231,220,.25),0 0 8px rgba(232,180,90,.7)"></span><span style="font:500 15px/1 'IBM Plex Mono',monospace;color:#ece7dc">crateside</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><span style="width:18px;height:18px;border-radius:50%;background:#e8b45a;box-shadow:0 0 0 4px #17160f,0 0 0 5px rgba(236,231,220,.25),0 0 16px rgba(232,180,90,.7)"></span></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><span style="width:10px;height:10px;border-radius:50%;background:#e8b45a;box-shadow:0 0 0 2px #17160f,0 0 0 3px rgba(236,231,220,.25),0 0 8px rgba(232,180,90,.7)"></span></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2j abstract slats-as-C -->
+<div class="dv-opt" id="2j"><div class="dv-olabel"><a class="dv-oid" href="#2j">2j</a>Abstract · 1a pushed further. Three slats bent into a C; the pulled one breaks the curve in amber. No crate, no record, just the gesture of pulling one out.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;align-items:center;gap:16px">
+    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke-linecap="round"><path d="M17 5.5H10a6.5 6.5 0 0 0 0 13h7" stroke="#ece7dc" stroke-width="2.6"/><path d="M19.5 12H10" stroke="#e8b45a" stroke-width="2.6"/></svg>
+    <span style="font:700 40px/1 'IBM Plex Sans',sans-serif;letter-spacing:-.02em;color:#ece7dc">crateside</span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-linecap="round"><path d="M17 5.5H10a6.5 6.5 0 0 0 0 13h7" stroke="#ece7dc" stroke-width="3"/><path d="M19.5 12H10" stroke="#e8b45a" stroke-width="3"/></svg><span style="font:700 15px/1 'IBM Plex Sans',sans-serif;letter-spacing:-.01em;color:#ece7dc">crateside</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke-linecap="round"><path d="M17 5.5H10a6.5 6.5 0 0 0 0 13h7" stroke="#ece7dc" stroke-width="2.6"/><path d="M19.5 12H10" stroke="#e8b45a" stroke-width="2.6"/></svg></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-linecap="round"><path d="M17 5.5H10a6.5 6.5 0 0 0 0 13h7" stroke="#ece7dc" stroke-width="3"/><path d="M19.5 12H10" stroke="#e8b45a" stroke-width="3"/></svg></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2k abstract two squares -->
+<div class="dv-opt" id="2k"><div class="dv-olabel"><a class="dv-oid" href="#2k">2k</a>Abstract · two blocks, one shifted. Crate and side: a cream square and an amber square offset by half. Also reads as a key-shift, which is the Partners page.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;align-items:center;gap:18px">
+    <svg width="60" height="60" viewBox="0 0 24 24"><rect x="3" y="3" width="12" height="12" rx="2" fill="#ece7dc"/><rect x="9" y="9" width="12" height="12" rx="2" fill="#e8b45a"/></svg>
+    <span style="font:700 40px/1 'IBM Plex Sans',sans-serif;letter-spacing:-.02em;color:#ece7dc">Crate<span style="color:#e8b45a">Side</span></span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="3" width="12" height="12" rx="2" fill="#ece7dc"/><rect x="9" y="9" width="12" height="12" rx="2" fill="#e8b45a"/></svg><span style="font:700 15px/1 'IBM Plex Sans',sans-serif;letter-spacing:-.01em;color:#ece7dc">Crate<span style="color:#e8b45a">Side</span></span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="42" height="42" viewBox="0 0 24 24"><rect x="3" y="3" width="12" height="12" rx="2" fill="#ece7dc"/><rect x="9" y="9" width="12" height="12" rx="2" fill="#e8b45a"/></svg></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="20" height="20" viewBox="0 0 24 24"><rect x="3" y="3" width="12" height="12" rx="2" fill="#ece7dc"/><rect x="9" y="9" width="12" height="12" rx="2" fill="#e8b45a"/></svg></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2l abstract half-circle -->
+<div class="dv-opt" id="2l"><div class="dv-olabel"><a class="dv-oid" href="#2l">2l</a>Abstract · the horizon. A cream half-disc on a hard amber line: a record's edge rising over the rim of the crate, reduced to two shapes. Wordmark in heavy grotesque caps.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;align-items:center;gap:18px">
+    <svg width="60" height="60" viewBox="0 0 24 24"><path d="M4 14a8 8 0 0 1 16 0z" fill="#ece7dc"/><rect x="2" y="14" width="20" height="3" fill="#e8b45a"/></svg>
+    <span style="font:400 34px/1 'Archivo Black',sans-serif;letter-spacing:.02em;color:#ece7dc">CRATESIDE</span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 14a8 8 0 0 1 16 0z" fill="#ece7dc"/><rect x="2" y="14" width="20" height="3.5" fill="#e8b45a"/></svg><span style="font:400 13px/1 'Archivo Black',sans-serif;letter-spacing:.03em;color:#ece7dc">CRATESIDE</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="42" height="42" viewBox="0 0 24 24"><path d="M4 14a8 8 0 0 1 16 0z" fill="#ece7dc"/><rect x="2" y="14" width="20" height="3" fill="#e8b45a"/></svg></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M4 14a8 8 0 0 1 16 0z" fill="#ece7dc"/><rect x="2" y="14" width="20" height="3.5" fill="#e8b45a"/></svg></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2m retro 70s -->
+<div class="dv-opt" id="2m"><div class="dv-olabel"><a class="dv-oid" href="#2m">2m</a>Retro · 70s label. Rounded soft-serif lowercase with an amber band running through the counters — the Stax / Casablanca record-label register.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="position:relative;display:inline-block;width:fit-content;padding:0 6px"><span style="position:absolute;left:0;right:0;bottom:.02em;height:.16em;background:#e8b45a"></span><span style="position:relative;font:400 46px/1 'Righteous',sans-serif;color:#ece7dc;letter-spacing:.01em">crateside</span></div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="position:relative;display:inline-block;width:fit-content;padding:0 3px"><span style="position:absolute;left:0;right:0;bottom:.02em;height:.16em;background:#e8b45a"></span><span style="position:relative;font:400 17px/1 'Righteous',sans-serif;color:#ece7dc">crateside</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center;position:relative;overflow:hidden"><span style="position:absolute;left:0;right:0;bottom:34%;height:5px;background:#e8b45a"></span><span style="position:relative;font:400 38px/1 'Righteous',sans-serif;color:#ece7dc">c</span></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center;position:relative;overflow:hidden"><span style="position:absolute;left:0;right:0;bottom:.02em;height:.16em;background:#e8b45a"></span><span style="position:relative;font:400 19px/1 'Righteous',sans-serif;color:#ece7dc">c</span></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2n retro 80s slats -->
+<div class="dv-opt" id="2n"><div class="dv-olabel"><a class="dv-oid" href="#2n">2n</a>Retro · 80s cassette spine. 1a's slats become speed-lines trailing off a heavy italic wordmark; the amber line is the pulled one. Reads at 16px as three bars.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="display:flex;align-items:center;gap:14px">
+    <span style="display:inline-flex;flex-direction:column;gap:5px;align-items:flex-end"><span style="width:44px;height:7px;background:#ece7dc;transform:skewX(-18deg)"></span><span style="width:60px;height:7px;background:#e8b45a;transform:skewX(-18deg)"></span><span style="width:30px;height:7px;background:#ece7dc;transform:skewX(-18deg)"></span></span>
+    <span style="font:400 40px/1 'Anton',sans-serif;font-style:italic;letter-spacing:.04em;color:#ece7dc;transform:skewX(-8deg);display:inline-block">CRATESIDE</span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:7px"><span style="display:inline-flex;flex-direction:column;gap:2px;align-items:flex-end"><span style="width:12px;height:3px;background:#ece7dc;transform:skewX(-18deg)"></span><span style="width:17px;height:3px;background:#e8b45a;transform:skewX(-18deg)"></span><span style="width:9px;height:3px;background:#ece7dc;transform:skewX(-18deg)"></span></span><span style="font:400 16px/1 'Anton',sans-serif;letter-spacing:.06em;color:#ece7dc;transform:skewX(-8deg);display:inline-block">CRATESIDE</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><span style="display:inline-flex;flex-direction:column;gap:5px;align-items:flex-end"><span style="width:26px;height:6px;background:#ece7dc;transform:skewX(-18deg)"></span><span style="width:38px;height:6px;background:#e8b45a;transform:skewX(-18deg)"></span><span style="width:18px;height:6px;background:#ece7dc;transform:skewX(-18deg)"></span></span></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><span style="display:inline-flex;flex-direction:column;gap:2px;align-items:flex-end"><span style="width:12px;height:3px;background:#ece7dc;transform:skewX(-18deg)"></span><span style="width:18px;height:3px;background:#e8b45a;transform:skewX(-18deg)"></span><span style="width:8px;height:3px;background:#ece7dc;transform:skewX(-18deg)"></span></span></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 2o retro 90s -->
+<div class="dv-opt" id="2o"><div class="dv-olabel"><a class="dv-oid" href="#2o">2o</a>Retro · 90s white-label. Ultra-wide mono-weight caps with the middle letter knocked out in amber — the "12-inch promo, no sleeve art" register. Wordmark only; the mark is the knocked-out E.</div>
+<div class="dv-card" style="width:560px;padding:26px;display:flex;flex-direction:column;gap:22px">
+  <div style="font:400 30px/1 'Rubik Mono One',sans-serif;color:#ece7dc;letter-spacing:.02em">CRAT<span style="color:#e8b45a">E</span>SIDE</div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div style="font:400 12px/1 'Rubik Mono One',sans-serif;color:#ece7dc;letter-spacing:.02em">CRAT<span style="color:#e8b45a">E</span>SIDE</div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5)">Library</span><span style="color:rgba(236,231,220,.5)">Partners</span><span style="color:rgba(236,231,220,.5)">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center;font:400 34px/1 'Rubik Mono One',sans-serif;color:#e8b45a">E</div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center;font:400 16px/1 'Rubik Mono One',sans-serif;color:#e8b45a">E</div>
+    </div>
+  </div>
+</div></div>
+
+</div>
+<p class="dv-next">Try next: "shortlist to three and refine" · "2j mark with 2g's wordmark" · "2k in lowercase" · "export the shortlist as SVG"</p>
+</section>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">crateside — mark and wordmark</span></div>
+<div class="dv-notes">
+<p><b>Constraints I set.</b> It has to work at 18px in the header's brand cell, at 16px as a favicon, and at 64px as an app tile. Same palette as the app: ink on <code>--surface</code>, one accent, no gradients. Type is the app's type — IBM Plex — so the wordmark is the word the header already shows, made deliberate. Marks are geometry only, one stroke weight, so they survive the sizes.</p>
+<p><b>Amber, not teal.</b> In the app amber means "your turn". The brand is the thing you look at when it is your turn, so the accent is amber everywhere — teal would claim the machine is working.</p>
+<p><b>Five directions, one image each.</b> <a class="dv-oid" href="#1a">1a</a> the side of a crate, <a class="dv-oid" href="#1b">1b</a> a record in a crate, <a class="dv-oid" href="#1c">1c</a> a warp marker, <a class="dv-oid" href="#1d">1d</a> a groove monogram, <a class="dv-oid" href="#1e">1e</a> type only. Each shown as lockup, in the header cell at its built geometry (<code>BrandNav.razor.css</code>: max-content width, 18/22 padding, 15px/600 brand, 12px/500 tabs, amber underline), and as tiles at 64/32/16. Tab names are the four pages in the repo.</p>
+</div>
+<div class="dv-opts">
+
+<!-- 1a side of a crate -->
+<div class="dv-opt" id="1a"><div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Crate, side on — records seen edge-on, one pulled forward. The most literal reading of the name and the quietest mark.</div>
+<div class="dv-card" style="width:600px;padding:28px;display:flex;flex-direction:column;gap:26px">
+  <div style="display:flex;align-items:center;gap:16px">
+    <svg width="56" height="56" viewBox="0 0 24 24" style="color:#ece7dc"><rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="currentColor"/><rect x="3" y="10.8" width="14" height="2.4" rx="1.2" fill="#e8b45a"/><rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="currentColor"/></svg>
+    <span style="font:600 40px/1 'IBM Plex Sans',sans-serif;letter-spacing:-.01em">crateside</span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="width:max-content;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-right-color:rgba(255,255,255,.08);border-radius:6px 0 0 6px;padding:18px 22px;display:flex;flex-direction:column;justify-content:space-between;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" style="color:#ece7dc"><rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="currentColor"/><rect x="3" y="10.8" width="14" height="2.4" rx="1.2" fill="#e8b45a"/><rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="currentColor"/></svg><span style="font:600 15px/1 'IBM Plex Sans',sans-serif">crateside</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="color:#ece7dc;border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Library</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Partners</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="40" height="40" viewBox="0 0 24 24" style="color:#ece7dc"><rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="currentColor"/><rect x="3" y="10.8" width="14" height="2.4" rx="1.2" fill="#e8b45a"/><rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="currentColor"/></svg></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="20" height="20" viewBox="0 0 24 24" style="color:#ece7dc"><rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="currentColor"/><rect x="3" y="10.8" width="14" height="2.4" rx="1.2" fill="#e8b45a"/><rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="currentColor"/></svg></div>
+      <div style="width:16px;height:16px;border-radius:3px;background:#23211a;display:grid;place-items:center"><svg width="14" height="14" viewBox="0 0 24 24" style="color:#ece7dc"><rect x="3" y="6" width="18" height="2.4" rx="1.2" fill="currentColor"/><rect x="3" y="10.8" width="14" height="2.4" rx="1.2" fill="#e8b45a"/><rect x="3" y="15.6" width="18" height="2.4" rx="1.2" fill="currentColor"/></svg></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 1b record in a crate -->
+<div class="dv-opt" id="1b"><div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>A record in a crate — the digger's image. Amber disc rising out of an ink crate with two slats; the most recognizable at a glance, the busiest at 16px.</div>
+<div class="dv-card" style="width:600px;padding:28px;display:flex;flex-direction:column;gap:26px">
+  <div style="display:flex;align-items:center;gap:16px">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:#ece7dc"><path d="M6.5 12.5a5.5 5.5 0 0 1 11 0" stroke="#e8b45a"/><path d="M4 12.5h16v8H4z" stroke="currentColor"/><path d="M9.3 12.5v8M14.7 12.5v8" stroke="currentColor"/></svg>
+    <span style="font:600 40px/1 'IBM Plex Sans',sans-serif;letter-spacing:-.01em">crateside</span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="width:max-content;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-right-color:rgba(255,255,255,.08);border-radius:6px 0 0 6px;padding:18px 22px;display:flex;flex-direction:column;justify-content:space-between;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#ece7dc"><path d="M6.5 12.5a5.5 5.5 0 0 1 11 0" stroke="#e8b45a"/><path d="M4 12.5h16v8H4z" stroke="currentColor"/><path d="M9.3 12.5v8M14.7 12.5v8" stroke="currentColor"/></svg><span style="font:600 15px/1 'IBM Plex Sans',sans-serif">crateside</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="color:#ece7dc;border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Library</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Partners</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:#ece7dc"><path d="M6.5 12.5a5.5 5.5 0 0 1 11 0" stroke="#e8b45a"/><path d="M4 12.5h16v8H4z" stroke="currentColor"/><path d="M9.3 12.5v8M14.7 12.5v8" stroke="currentColor"/></svg></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#ece7dc"><path d="M6.5 12.5a5.5 5.5 0 0 1 11 0" stroke="#e8b45a"/><path d="M4 12.5h16v8H4z" stroke="currentColor"/><path d="M9.3 12.5v8M14.7 12.5v8" stroke="currentColor"/></svg></div>
+      <div style="width:16px;height:16px;border-radius:3px;background:#23211a;display:grid;place-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="color:#ece7dc"><path d="M6.5 12.5a5.5 5.5 0 0 1 11 0" stroke="#e8b45a"/><path d="M4 12.5h16v8H4z" stroke="currentColor"/><path d="M12 12.5v8" stroke="currentColor"/></svg></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 1c warp marker -->
+<div class="dv-opt" id="1c"><div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Warp marker — the one thing every track passes through by hand. An amber marker on a ruled line; the mark that says what the tool is for rather than what it is named.</div>
+<div class="dv-card" style="width:600px;padding:28px;display:flex;flex-direction:column;gap:26px">
+  <div style="display:flex;align-items:center;gap:16px">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke-linecap="round" style="color:#ece7dc"><path d="M3 17.5h18" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 17.5v-2.5M17.5 17.5v-2.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 15.5 8.2 6h7.6z" fill="#e8b45a"/></svg>
+    <span style="font:600 40px/1 'IBM Plex Sans',sans-serif;letter-spacing:-.01em">crateside</span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="width:max-content;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-right-color:rgba(255,255,255,.08);border-radius:6px 0 0 6px;padding:18px 22px;display:flex;flex-direction:column;justify-content:space-between;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-linecap="round" style="color:#ece7dc"><path d="M3 17.5h18" stroke="currentColor" stroke-width="2"/><path d="M6.5 17.5v-2.5M17.5 17.5v-2.5" stroke="currentColor" stroke-width="1.8"/><path d="M12 15.5 8.2 6h7.6z" fill="#e8b45a"/></svg><span style="font:600 15px/1 'IBM Plex Sans',sans-serif">crateside</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="color:#ece7dc;border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Library</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Partners</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-linecap="round" style="color:#ece7dc"><path d="M3 17.5h18" stroke="currentColor" stroke-width="1.8"/><path d="M6.5 17.5v-2.5M17.5 17.5v-2.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 15.5 8.2 6h7.6z" fill="#e8b45a"/></svg></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-linecap="round" style="color:#ece7dc"><path d="M3 17.5h18" stroke="currentColor" stroke-width="2"/><path d="M12 15.5 8.2 6h7.6z" fill="#e8b45a"/></svg></div>
+      <div style="width:16px;height:16px;border-radius:3px;background:#23211a;display:grid;place-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-linecap="round" style="color:#ece7dc"><path d="M3 18h18" stroke="currentColor" stroke-width="2.6"/><path d="M12 15.5 7.5 5h9z" fill="#e8b45a"/></svg></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 1d groove monogram -->
+<div class="dv-opt" id="1d"><div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Groove monogram — a "c" that is also a record's groove, amber spindle. Can stand alone or take the c's place in the word.</div>
+<div class="dv-card" style="width:600px;padding:28px;display:flex;flex-direction:column;gap:26px">
+  <div style="display:flex;align-items:center;gap:22px">
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke-linecap="round" style="color:#ece7dc"><path d="M18 7.2A8 8 0 1 0 18 16.8" stroke="currentColor" stroke-width="2.2"/><path d="M15.2 9.6A4 4 0 1 0 15.2 14.4" stroke="currentColor" stroke-width="1.3" opacity=".55"/><circle cx="12" cy="12" r="1.5" fill="#e8b45a"/></svg>
+    <span style="display:inline-flex;align-items:center;font:600 40px/1 'IBM Plex Sans',sans-serif;letter-spacing:-.01em"><svg width="30" height="30" viewBox="3 3 18 18" fill="none" stroke-linecap="round" style="color:#ece7dc;margin-right:-1px;position:relative;top:2px"><path d="M17.6 7.6A7.6 7.6 0 1 0 17.6 16.4" stroke="currentColor" stroke-width="3.4"/><circle cx="12" cy="12" r="1.8" fill="#e8b45a"/></svg>rateside</span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="width:max-content;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-right-color:rgba(255,255,255,.08);border-radius:6px 0 0 6px;padding:18px 22px;display:flex;flex-direction:column;justify-content:space-between;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-linecap="round" style="color:#ece7dc"><path d="M18 7.2A8 8 0 1 0 18 16.8" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="1.8" fill="#e8b45a"/></svg><span style="font:600 15px/1 'IBM Plex Sans',sans-serif">crateside</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="color:#ece7dc;border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Library</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Partners</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-linecap="round" style="color:#ece7dc"><path d="M18 7.2A8 8 0 1 0 18 16.8" stroke="currentColor" stroke-width="2.2"/><path d="M15.2 9.6A4 4 0 1 0 15.2 14.4" stroke="currentColor" stroke-width="1.3" opacity=".55"/><circle cx="12" cy="12" r="1.5" fill="#e8b45a"/></svg></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-linecap="round" style="color:#ece7dc"><path d="M18 7.2A8 8 0 1 0 18 16.8" stroke="currentColor" stroke-width="2.4"/><circle cx="12" cy="12" r="1.8" fill="#e8b45a"/></svg></div>
+      <div style="width:16px;height:16px;border-radius:3px;background:#23211a;display:grid;place-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-linecap="round" style="color:#ece7dc"><path d="M18 7.2A8 8 0 1 0 18 16.8" stroke="currentColor" stroke-width="3"/><circle cx="12" cy="12" r="2.2" fill="#e8b45a"/></svg></div>
+    </div>
+  </div>
+</div></div>
+
+<!-- 1e type only -->
+<div class="dv-opt" id="1e"><div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Type only — the word as it is, with the i's dot replaced by an amber warp marker. No mark to maintain; the favicon is the marker alone.</div>
+<div class="dv-card" style="width:600px;padding:28px;display:flex;flex-direction:column;gap:26px">
+  <div style="display:flex;align-items:center;gap:16px">
+    <span style="font:600 40px/1 'IBM Plex Sans',sans-serif;letter-spacing:-.01em">crates<span style="position:relative;display:inline-block">ı<svg style="position:absolute;left:50%;transform:translateX(-50%);bottom:.58em;width:.38em;height:.26em" viewBox="0 0 10 8"><path d="M0 0h10L5 8z" fill="#e8b45a"/></svg></span>de</span>
+  </div>
+  <div style="display:flex;gap:18px;align-items:flex-start">
+    <div style="width:max-content;background:#1b1a15;border:1px solid rgba(255,255,255,.08);border-right-color:rgba(255,255,255,.08);border-radius:6px 0 0 6px;padding:18px 22px;display:flex;flex-direction:column;justify-content:space-between;gap:14px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font:600 15px/1 'IBM Plex Sans',sans-serif">crates<span style="position:relative;display:inline-block">ı<svg style="position:absolute;left:50%;transform:translateX(-50%);bottom:.58em;width:.4em;height:.28em" viewBox="0 0 10 8"><path d="M0 0h10L5 8z" fill="#e8b45a"/></svg></span>de</span></div>
+      <div style="display:flex;gap:14px;font:500 12px 'IBM Plex Sans',sans-serif"><span style="color:#ece7dc;border-bottom:2px solid #e8b45a;padding-bottom:3px">Tracks</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Library</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Partners</span><span style="color:rgba(236,231,220,.5);border-bottom:2px solid transparent;padding-bottom:3px">Settings</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end">
+      <div style="width:64px;height:64px;border-radius:14px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><span style="font:600 44px/1 'IBM Plex Sans',sans-serif;position:relative;display:inline-block;top:2px">ı<svg style="position:absolute;left:50%;transform:translateX(-50%);top:-.1em;width:.42em;height:.32em" viewBox="0 0 10 8"><path d="M0 0h10L5 8z" fill="#e8b45a"/></svg></span></div>
+      <div style="width:32px;height:32px;border-radius:7px;background:#23211a;border:1px solid rgba(255,255,255,.08);display:grid;place-items:center"><span style="font:600 22px/1 'IBM Plex Sans',sans-serif;position:relative;display:inline-block;top:1px">ı<svg style="position:absolute;left:50%;transform:translateX(-50%);top:-.1em;width:.42em;height:.32em" viewBox="0 0 10 8"><path d="M0 0h10L5 8z" fill="#e8b45a"/></svg></span></div>
+      <div style="width:16px;height:16px;border-radius:3px;background:#23211a;display:grid;place-items:center"><svg width="12" height="12" viewBox="0 0 10 8"><path d="M0 0h10L5 8z" fill="#e8b45a"/></svg></div>
+    </div>
+  </div>
+</div></div>
+
+</div>
+<p class="dv-next">Try next: "1a with the amber bar on top" · "1c wordmark in Plex Mono" · "put 1d's monogram in the word at header size" · "light-on-amber version for an app icon"</p>
+</section>
+</x-dc>
+</body>
+</html>

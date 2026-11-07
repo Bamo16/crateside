@@ -1,41 +1,31 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Loop;
 
 namespace Crateside.Core.Naming;
 
 /// <summary>
-/// Asks StemForge what it will call a track's files, before any work runs.
+/// Asks StemForge what it will call a track's files, before any work runs. Never rebuild either
+/// name from parts (ADR 0014).
 /// </summary>
-/// <remarks>
-/// <c>download --list-formats</c> resolves yt-dlp's metadata without fetching audio. Neither
-/// field is ever composed here: a display title is deliberately lossier than
-/// <c>{artist} - {title}</c> — it collapses credits YouTube Music repeats per role, and drops one
-/// the title already carries — so rebuilding it from parts reproduces neither (ADR 0014).
-/// </remarks>
-public sealed class NameResolver(string stemforge = "stemforge-cli")
+public sealed class NameResolver(IProcessRunner processes, string stemforge = "stemforge-cli")
 {
     /// <summary>
     /// What the files will be called, or null when the upload could not be resolved. Never
     /// throws: a private, removed or unavailable video is an answer, not a fault.
     /// </summary>
-    public async Task<ResolvedName?> ResolveAsync(
-        string sourceUrl,
-        CancellationToken cancellationToken = default
-    )
+    public async Task<ResolvedName?> ResolveAsync(string sourceUrl, CancellationToken ct = default)
     {
         ProcessOutcome outcome;
 
         try
         {
-            outcome = await ExternalProcess.RunAsync(
-                stemforge,
-                ["download", sourceUrl, "--list-formats", "--json"],
-                workingDirectory: null,
-                cancellationToken
+            outcome = await processes.RunAsync(
+                new ProcessRequest(stemforge, ["download", sourceUrl, "--list-formats", "--json"]),
+                ct
             );
         }
-        catch (Exception e) when (e is IOException or System.ComponentModel.Win32Exception)
+        catch (Exception ex) when (ex is IOException or System.ComponentModel.Win32Exception)
         {
             return null;
         }
@@ -53,7 +43,7 @@ public sealed class NameResolver(string stemforge = "stemforge-cli")
             : null;
     }
 
-    private static IReadOnlyList<FormatListOutput>? Parse(string stdout)
+    private static List<FormatListOutput>? Parse(string stdout)
     {
         var start = stdout.IndexOf('[');
 
@@ -62,7 +52,10 @@ public sealed class NameResolver(string stemforge = "stemforge-cli")
 
         try
         {
-            return JsonSerializer.Deserialize<List<FormatListOutput>>(stdout[start..]);
+            return JsonSerializer.Deserialize(
+                stdout[start..],
+                StemForgeJsonContext.Default.ListFormatListOutput
+            );
         }
         catch (JsonException)
         {
@@ -78,9 +71,7 @@ public sealed record ResolvedName
     public required string DisplayTitle { get; init; }
 
     /// <summary>
-    /// The filename the source is given, without extension. Stems are conventionally
-    /// <c>"{BaseName} ({stem})"</c>, but that is StemForge's documented default rather than a
-    /// promise — a preset may template it and a collision may suffix it.
+    /// The filename the source is given, without extension.
     /// </summary>
     public required string BaseName { get; init; }
 }
@@ -88,15 +79,11 @@ public sealed record ResolvedName
 /// <summary>One element of <c>download --list-formats --json</c>.</summary>
 internal sealed record FormatListOutput
 {
-    [JsonPropertyName("succeeded")]
     public bool Succeeded { get; init; }
 
-    [JsonPropertyName("displayTitle")]
     public string? DisplayTitle { get; init; }
 
-    [JsonPropertyName("baseName")]
     public string? BaseName { get; init; }
 
-    [JsonPropertyName("error")]
     public string? Error { get; init; }
 }

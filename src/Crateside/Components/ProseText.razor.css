@@ -1,0 +1,23 @@
+.prose {
+    max-width: 62ch;
+}
+
+.prose p {
+    margin: 0;
+}
+
+.prose p + p {
+    margin-top: 0.6rem;
+}
+
+/* A key or chord inside a sentence: the body face, told apart by weight and ink alone. */
+.token {
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.confidence {
+    font-variant-caps: all-small-caps;
+    letter-spacing: 0.05em;
+}

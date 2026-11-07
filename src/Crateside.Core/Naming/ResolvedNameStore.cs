@@ -1,36 +1,18 @@
-using System.Text.Json;
-
 namespace Crateside.Core.Naming;
 
 /// <summary>
-/// The names StemForge has already been asked for, kept between runs.
+/// The names StemForge has already been asked for, kept in <c>%APPDATA%\crateside\names.json</c>
+/// apart from the user's own (ADR 0014).
 /// </summary>
-/// <remarks>
-/// Stored in <c>%APPDATA%\crateside\names.json</c>. Deliberately not in <c>queue.json</c> beside
-/// the user's instructions: a stated name is something the user owns and a resolved one is a fact
-/// about an upload, and ADR 0014 turns on not confusing the two.
-/// </remarks>
-public sealed class ResolvedNameStore
+public sealed class ResolvedNameStore(CratesidePaths paths)
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-    };
-
-    private readonly string _path;
+    private readonly string _path = paths.ResolvedNamesFile;
     private readonly Lock _gate = new();
 
-    private Dictionary<string, ResolvedName>? _cached;
+    internal ResolvedNameStore(string path)
+        : this(new CratesidePaths { ResolvedNamesFile = path }) { }
 
-    public ResolvedNameStore(string? path = null) =>
-        _path =
-            path
-            ?? Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "crateside",
-                "names.json"
-            );
+    private Dictionary<string, ResolvedName>? _cached;
 
     /// <summary>Never throws — an unreadable or corrupt file reads as nothing resolved yet.</summary>
     public IReadOnlyDictionary<string, ResolvedName> Read()
@@ -39,40 +21,25 @@ public sealed class ResolvedNameStore
             return _cached ??= TryReadFile();
     }
 
-    public void Save(string videoId, ResolvedName name)
+    public void Save(string trackKey, ResolvedName name)
     {
         lock (_gate)
         {
             var names = _cached ??= TryReadFile();
 
-            names[videoId] = name;
+            names[trackKey] = name;
 
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-                File.WriteAllText(_path, JsonSerializer.Serialize(names, SerializerOptions));
+                NamingJsonContext.Default.DictionaryStringResolvedName.WriteFile(_path, names);
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 // The name is still in memory, and re-resolving costs one metadata fetch.
             }
         }
     }
 
-    private Dictionary<string, ResolvedName> TryReadFile()
-    {
-        try
-        {
-            return File.Exists(_path)
-                ? JsonSerializer.Deserialize<Dictionary<string, ResolvedName>>(
-                    File.ReadAllText(_path),
-                    SerializerOptions
-                ) ?? []
-                : [];
-        }
-        catch (Exception e) when (e is IOException or JsonException)
-        {
-            return [];
-        }
-    }
+    private Dictionary<string, ResolvedName> TryReadFile() =>
+        NamingJsonContext.Default.DictionaryStringResolvedName.ReadFileOrDefault(_path) ?? [];
 }

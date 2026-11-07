@@ -3,10 +3,6 @@ namespace Crateside.Core.Tracks;
 /// <summary>
 /// How the one list is narrowed.
 /// </summary>
-/// <remarks>
-/// Counts are taken over every row, never the filtered set, so the pills say what is out there
-/// rather than what is currently shown.
-/// </remarks>
 public enum TrackFilter
 {
     /// <summary>
@@ -23,6 +19,15 @@ public enum TrackFilter
     /// <summary>Stopped, parked, or carrying a finding.</summary>
     NeedsAttention,
 
+    /// <summary>A genre with no answer, or a familiarity the numbers leave to the user (#65).</summary>
+    TagsToAnswer,
+
+    /// <summary>Not warped yet, and beatdetect reads the tempo drifting: expect a hard warp (#75).</summary>
+    TempoDrifts,
+
+    /// <summary>A steady warp whose grid falls away from the audio, which a retype fixes (#96).</summary>
+    OffItsTempo,
+
     /// <summary>
     /// Every row there is, the finished library included. Answers "do I have this track in any
     /// shape or form", which is a search question.
@@ -32,41 +37,60 @@ public enum TrackFilter
 
 public static class TrackFilters
 {
-    /// <summary>
-    /// The filters that name somewhere a track *is*, as against a set that merely contains it.
-    /// Every state but <see cref="TrackState.Done"/> falls in exactly one of them.
-    /// </summary>
-    private static readonly TrackFilter[] Named =
-    [
-        TrackFilter.InStaging,
-        TrackFilter.InFlight,
-        TrackFilter.NeedsAttention,
-    ];
-
-    /// <remarks>
-    /// Not a partition, deliberately. <see cref="TrackFilter.NeedsAttention"/> also catches a
-    /// finding or an unrenamed file whatever the state, so a staged track awaiting a rename is in
-    /// two views at once — which is wanted, because it is both.
-    /// </remarks>
+    /// <summary>Not a partition: a row can be in two views at once.</summary>
     public static bool Matches(this TrackRow row, TrackFilter filter) =>
         filter switch
         {
             TrackFilter.Unfinished => row.State is not TrackState.Done,
-            TrackFilter.InStaging => row.State is TrackState.ReadyToWarp,
+            TrackFilter.InStaging => row.State is TrackState.ReadyToWarp or TrackState.ReadyToMove,
             TrackFilter.InFlight => row.State
                 is TrackState.Queued
+                    or TrackState.Downloading
                     or TrackState.Detecting
                     or TrackState.Judging
                     or TrackState.JudgedInLine
                     or TrackState.Separating
                     or TrackState.Staging
                     or TrackState.Tagging,
-            TrackFilter.NeedsAttention => row.State is TrackState.Parked or TrackState.GaveUp
+            TrackFilter.NeedsAttention => row.State
+                is TrackState.Parked
+                    or TrackState.GaveUp
+                    or TrackState.Short
                 || row.AuditNote is not null
+                || row.Lookalike is not null
+                || row.WaitingForPerson
                 || row.AwaitingRename > 0,
+            TrackFilter.TagsToAnswer => row.HasTagsToAnswer,
+            TrackFilter.TempoDrifts => row.TempoDrifts,
+            TrackFilter.OffItsTempo => row.OffItsTempo,
             TrackFilter.All => true,
             _ => false,
         };
+
+    /// <summary>
+    /// The rows a view shows: a search looks through every track and ignores familiarity (#142),
+    /// and Off its tempo puts the furthest off first.
+    /// </summary>
+    public static IEnumerable<TrackRow> Narrow(
+        this IEnumerable<TrackRow> rows,
+        TrackFilter filter,
+        string? search = null,
+        string? familiarity = null
+    )
+    {
+        if (!string.IsNullOrWhiteSpace(search))
+            return rows.Where(row => row.Matches(search));
+
+        var shown = rows.Where(row => row.Matches(filter) && row.HasFamiliarity(familiarity));
+
+        return filter is TrackFilter.OffItsTempo
+            ? shown.OrderByDescending(row => Math.Abs(row.Bpm?.Off?.DriftMs ?? 0))
+            : shown;
+    }
+
+    /// <summary>Whether this row's familiarity, as it is tagged, is <paramref name="value"/>; every row when none is asked for.</summary>
+    public static bool HasFamiliarity(this TrackRow row, string? value) =>
+        value is null || row.Familiarity?.Written == value;
 
     /// <summary>How many rows are in each filter, over the whole list.</summary>
     public static int Count(this IEnumerable<TrackRow> rows, TrackFilter filter) =>
@@ -76,46 +100,18 @@ public static class TrackFilters
     /// Whether a row answers a search: the name the list shows it under, the name it arrived
     /// with, its key, and its video ID. An empty search matches everything.
     /// </summary>
-    /// <remarks>
-    /// The two names are both searched because a renamed track is findable by either, and the
-    /// user knows only one of them.
-    /// </remarks>
     public static bool Matches(this TrackRow row, string? search) =>
         search?.Trim() is not { Length: > 0 } term
         || Contains(row.DerivedTitle, term)
         || Contains(row.Title, term)
         || Contains(row.Verdict?.Key, term)
-        || Contains(row.VideoId, term);
-
-    /// <summary>
-    /// Where else a search would find something, so a fruitless one can point somewhere.
-    /// </summary>
-    /// <remarks>
-    /// The named views first. <see cref="TrackFilter.All"/> is offered only when nothing more
-    /// specific holds it, which is what a finished track looks like now that there is no
-    /// <c>Done</c> view to send anyone to. <see cref="TrackFilter.Unfinished"/> is never offered:
-    /// anything in it is already in one of the named views, which is the better answer.
-    /// </remarks>
-    public static IReadOnlyList<TrackFilter> Holding(
-        this IEnumerable<TrackRow> rows,
-        string? search
-    )
-    {
-        var matched = rows.Where(row => row.Matches(search)).ToArray();
-
-        if (matched.Length is 0)
-            return [];
-
-        TrackFilter[] named = [.. Named.Where(filter => matched.Any(row => row.Matches(filter)))];
-
-        return named.Length > 0 ? named : [TrackFilter.All];
-    }
+        || Contains(row.TrackKey, term);
 
     private static bool Contains(string? value, string term) =>
         value?.Contains(term, StringComparison.OrdinalIgnoreCase) is true;
 }
 
-/// <summary>How a state chip is drawn. Four colours, each meaning one thing.</summary>
+/// <summary>How a state chip is drawn. Four colors, each meaning one thing.</summary>
 public enum TrackChipStyle
 {
     /// <summary>Nothing has happened yet.</summary>

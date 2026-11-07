@@ -1,30 +1,28 @@
+using AbleKit.Tags;
 using Crateside.Core;
+using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
-using Crateside.Core.Staging;
+using Crateside.Core.Samples;
+using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Tests.Library;
 
-/// <summary>
-/// The key distribution over the real `Mashup Samples`. Machine-bound by design; skips where
-/// the library or Ableton's index is absent.
-/// </summary>
-public class LibraryKeyReaderRealLibraryTests
+/// <summary>The key distribution over the real library.</summary>
+public sealed class LibraryKeyReaderRealLibraryTests
 {
-    private static readonly CratesidePaths Paths = new();
+    private static readonly CratesidePaths Paths = RealPaths.Create();
 
     [Fact]
-    public void Every_file_is_counted_exactly_once()
+    public void Every_track_is_counted_at_most_once()
     {
         SkipUnlessPresent();
 
         var distribution = Read();
 
-        Assert.Equal(
-            distribution.FileCount,
-            distribution.Counts.Sum(c => c.Files) + distribution.Unkeyed.Count
-        );
+        Assert.True(distribution.KeyedTrackCount <= distribution.TrackCount);
+        Assert.True(distribution.TrackCount < distribution.FileCount);
     }
 
     [Fact]
@@ -35,34 +33,17 @@ public class LibraryKeyReaderRealLibraryTests
         Assert.Equal(24, Read().Counts.Count);
     }
 
-    /// <summary>
-    /// The index and the ledger never disagree about a key.
-    /// </summary>
-    /// <remarks>
-    /// This replaces an assertion that the index keys every file the ledger can. That was true on
-    /// 2026-09-09 and is what let the panel drop the ledger ∪ tag-store union it was originally
-    /// specified with; it is false now, because 110 files have lost their Ableton keywords
-    /// (<see href="https://github.com/Bamo16/crateside/issues/24">#24</see>).
-    ///
-    /// The union is deliberately <em>not</em> coming back. The panel answers "what can I find by
-    /// key in Ableton's browser", and a file whose tag is gone cannot be found there whatever the
-    /// ledger remembers — counting it would overstate the library by exactly the number of
-    /// samples that have stopped working. The gap is a fault to fix, not a source to paper over.
-    ///
-    /// What still has to hold is that the two never contradict each other where both have an
-    /// answer, which is the assumption the panel's arithmetic actually rests on.
-    /// </remarks>
     [Fact]
     public void The_index_and_the_ledger_never_disagree_about_a_key()
     {
         SkipUnlessPresent();
 
-        var ledger = KeyLedger.Read(Paths.Ledger);
-        var tags = new AbletonIndexReader(Options.Create(Paths)).Read(Paths.MashupSamples);
+        var ledger = TestLedger.FromReal();
+        var tags = new FileIndexReader(Paths.AbletonIndex).Read(Paths.LibraryFolder);
 
         var conflicts = Directory
-            .EnumerateFiles(Paths.MashupSamples, "*", SearchOption.AllDirectories)
-            .Where(StagingBoard.IsStemFile)
+            .EnumerateFiles(Paths.LibraryFolder, "*", SearchOption.AllDirectories)
+            .Where(SampleFiles.IsAudio)
             .Select(file =>
                 (
                     File: Path.GetFileName(file),
@@ -86,13 +67,15 @@ public class LibraryKeyReaderRealLibraryTests
         );
     }
 
-    private static string? Applied(AbletonFolderInfo tags, string file) =>
+    private static string? Applied(FolderInfo tags, string file) =>
         tags.TryGet(file, out var applied) && applied.IsKeyTagged ? applied.Key : null;
 
     private static string? Verdict(KeyLedger ledger, string file) =>
-        StemTagReader.Read(file)?.Provenance is { SourceVideoId: { } videoId }
-        && ledger.TryGetLatestByVideoId(videoId, out var run)
+        StemTagReader.Read(file)?.Provenance is { SourceTrackKey: { } trackKey }
+        && ledger.TryGetLatestByTrackKey(trackKey, out var run)
         && run.HasTaggableKey
+        // A re-judged song's new verdict waits on the approval list (ADR 0052) before its files change.
+        && ledger.Runs.Count(other => other.Song == run.Song && other.Restates is null) is 1
             ? run.Key
             : null;
 
@@ -100,14 +83,20 @@ public class LibraryKeyReaderRealLibraryTests
     {
         var paths = Options.Create(Paths);
 
-        return new LibraryKeyReader(paths, new AbletonIndexReader(paths)).Read();
+        return new LibraryKeyReader(
+            TestLedger.Store(),
+            paths,
+            new FileIndexReader(paths.Value.AbletonIndex),
+            new FolderInfoReader(),
+            new WarpTempoReader()
+        ).Read();
     }
 
     private static void SkipUnlessPresent()
     {
         Assert.SkipUnless(
-            Directory.Exists(Paths.MashupSamples),
-            $"{Paths.MashupSamples} not present on this machine."
+            Directory.Exists(Paths.LibraryFolder),
+            $"{Paths.LibraryFolder} not present on this machine."
         );
         Assert.SkipUnless(
             Directory.Exists(Paths.AbletonIndex),

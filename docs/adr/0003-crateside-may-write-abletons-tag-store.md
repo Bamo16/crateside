@@ -1,6 +1,6 @@
 # 0003 — crateside may write Ableton's tag store
 
-- Status: Accepted
+- Status: Accepted; the library rule narrowed by [ADR 0039](0039-crateside-renames-in-the-library-and-warns-about-sets.md) on 2026-09-27 (renames may write it)
 - Date: 2026-08-14
 - Supersedes the first decision of keytag ADR 0001 ("do not write the Ableton XMP"),
   on measurement. That ADR's other decisions stand.
@@ -55,7 +55,7 @@ back after each.
    one, every tag not in the new file vanished from the browser's filters. Ableton did not
    defend its own earlier writes.
 6. **crateside can create the file from nothing** — directory included — for a file
-   Ableton had never indexed, and Ableton honoured it.
+   Ableton had never indexed, and Ableton honored it.
 7. **Quitting flushes nothing.** The file was byte-identical after shutdown.
 8. **A malformed keyword permanently pollutes the tag vocabulary.** A `Key|F#` written
    with ASCII `#` instead of U+266F was not rejected and did not fail — Ableton registered
@@ -84,7 +84,7 @@ back after each.
   writer, where an escaping bug would cost far more than the cosmetic difference it fixed.
   **The rules that are load-bearing are UTF-8, no BOM, no declaration, LF endings and a
   trailing newline** — all measured off the real file and all met. Finding 5 is what makes
-  the rest cosmetic: disk is authoritative and Ableton honoured a hand-written file, and by
+  the rest cosmetic: disk is authoritative and Ableton honored a hand-written file, and by
   finding 4 it reformats to its own style on its next merge anyway. The round-trip test
   asserts entries, order and keywords survive, plus those five byte-level rules.
 - **Read-modify-write**, preserving entries crateside did not create; create the directory
@@ -137,7 +137,7 @@ browser, which is where the filtering happens. Still worth doing one day; not a 
 
 - **Tagging leaves the "human-limited steps."** That term is defined in keytag's
   `CONTEXT.md` as warping, tagging and sometimes renaming, and it is part of what this
-  whole project is organised around. Warping remains, and the user still opens the stems in
+  whole project is organized around. Warping remains, and the user still opens the stems in
   Ableton, so the saving is the clicks and — more valuable — the elimination of a real
   error class. **keytag's `CONTEXT.md` needs amending**, along with ADR 0001 itself.
 - **crateside now writes into the library.** `CratesidePaths` documented that it writes
@@ -153,7 +153,7 @@ browser, which is where the filtering happens. Still worth doing one day; not a 
 - **Untested: file removal.** Adding a file was covered (finding 6); removing one, and the
   user's report that emptying a folder deletes the XMP entirely, were not. crateside
   already treats an absent XMP as an ordinary empty state, so the risk is low.
-- The test folder `P:\RYAN\Ableton\Crateside XMP Test` and its five `XMPTEST-*.flac` files
+- The test folder `Crateside XMP Test` and its five `XMPTEST-*.flac` files
   exist only for this and should be deleted, and the watched folder removed in Ableton.
 
 ## Postscript
@@ -219,7 +219,7 @@ Moving a tagged one — `Alan Gomez - Mission 15 (Vocal - Full).flac`, carrying 
 *Not* unmeasured, though it was briefly written up here as if it were: **whether Ableton keeps
 watching a file that crateside replaces rather than edits in place.** Finding 5 already settles
 it — that test *deleted* the XMP and put a hand-written one in its place, which is a harder
-identity change than a rename-over, and Ableton honoured the new content. Confirmed again on
+identity change than a rename-over, and Ableton honored the new content. Confirmed again on
 2026-08-20 when the tag writer's first real run replaced the file (its id changed) and the tags
 appeared in a browser that was already open.
 
@@ -280,3 +280,39 @@ a root crateside has never written. Recorded as a thing to check, not as a findi
 - **Location beats tags as a completion signal**, which is what
   [ADR 0002](0002-there-is-no-warped-signal.md) concluded by a different route. Across this
   evening the file's whereabouts were right every time the tag store was wrong.
+
+## This ADR is about tags, not files — 2026-09-12
+
+`TrackRename.CanRename` and the stem picker both cited this ADR for a rule it does not contain:
+that crateside may not *delete* a file from `Mashup Samples`. What is decided here is narrower —
+crateside writes the **tag store** of `Sample Staging` and never of `Mashup Samples`.
+
+The file rule is real and is stated in
+[ADR 0019](0019-a-track-has-many-sources-and-one-of-them-is-the-separation-source.md), with its
+own reason: those files are warped and carry `.asd` sidecars. Separating the two matters because
+they were being weighed as one — the tag rule costs nothing in practice, and only the file rule
+was making the picker inconvenient.
+
+## The tag store is no longer the only thing crateside writes — 2026-09-19
+
+This ADR is quoted elsewhere as "crateside writes exactly one thing". That reading is now false:
+[ADR 0022](0022-an-adopted-sample-is-a-file-crateside-did-not-make.md) has crateside write a
+`COMMENT` tag into a file the user made, so the file can be joined to a track at all.
+
+It does not weaken what is decided here. The two writes differ on every axis that made this one
+cautious:
+
+- **The tag store** is Ableton's, shared, written continuously, and read back by a program that
+  also writes it. The care in this ADR is about that contention.
+- **An adopted file's comment** is written once, to a file the user has just handed over, at the
+  moment they ask, and never again. Nothing else writes it and nothing races for it.
+
+The rule that has not moved: crateside still never writes the tag store of `Mashup Samples`, and
+still never deletes a file from it.
+
+## The library's keys can be corrected — 2026-10-07
+
+[ADR 0052](0052-crateside-corrects-a-library-key-to-its-verdict.md) lets crateside rewrite a library
+file's key to its verdict (since 2026-11-01, without the user's approval). The premise above, that the library holds
+hand-applied tags crateside knows nothing about, no longer holds: the user tags by hand in neither
+root. crateside still never deletes a file from the library.

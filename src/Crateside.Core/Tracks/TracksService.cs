@@ -1,9 +1,14 @@
-using Crateside.Core.Orchestration;
+using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Loop;
+using Crateside.Core.Playlist;
 
 namespace Crateside.Core.Tracks;
 
 /// <summary>Produces a fresh <see cref="TracksView"/>. The expensive part, behind a name.</summary>
-public delegate Task<TracksView> ReadTracks(CancellationToken cancellationToken);
+public interface ITracksReader
+{
+    Task<TracksView> ReadAsync(CancellationToken ct = default);
+}
 
 /// <summary>Holds the composed rows, and decides when they are worth rebuilding.</summary>
 public sealed class TracksService : IDisposable
@@ -17,8 +22,9 @@ public sealed class TracksService : IDisposable
     /// <summary>Tracks already announced as ready to warp, so each is announced once.</summary>
     private readonly HashSet<string> _announced = new(StringComparer.Ordinal);
 
-    private readonly ReadTracks _read;
-    private readonly Func<TimeSpan> _freshness;
+    private readonly Lock _gate = new();
+    private readonly ITracksReader _reader;
+    private readonly PlaylistSettingsStore? _settings;
     private readonly StageHub _hub;
     private readonly TimeProvider _time;
     private readonly ITimer _timer;
@@ -27,20 +33,28 @@ public sealed class TracksService : IDisposable
     /// <summary>Whether a read has landed yet, which is what makes the first one different.</summary>
     private bool _seeded;
 
-    /// <param name="freshness">
-    /// How stale the rows may get with nothing announced. Zero turns the poll off.
-    /// </param>
+    private TaskCompletionSource? _running;
+    private TaskCompletionSource? _next;
+    private DateTimeOffset _runningSince;
+
+    private readonly ActionLog? _actions;
+    private DateTimeOffset _filedSince;
+
+    /// <param name="settings">How stale the rows may get with nothing announced; without it the poll is off.</param>
     public TracksService(
-        ReadTracks read,
+        ITracksReader reader,
         StageHub hub,
         TimeProvider? time = null,
-        Func<TimeSpan>? freshness = null
+        PlaylistSettingsStore? settings = null,
+        ActionLog? actions = null
     )
     {
-        _read = read;
-        _freshness = freshness ?? (() => TimeSpan.Zero);
+        _reader = reader;
+        _actions = actions;
+        _settings = settings;
         _hub = hub;
         _time = time ?? TimeProvider.System;
+        _filedSince = _time.GetUtcNow();
 
         _timer = _time.CreateTimer(
             _ => _ = RefreshAsync(),
@@ -60,17 +74,27 @@ public sealed class TracksService : IDisposable
     /// <summary>Raised the first time a track is seen to be ready to warp, once per track.</summary>
     public event Action<TrackRow>? ReadyToWarp;
 
+    /// <summary>Raised once for each track taken from the playlist whose song was already filed (#84).</summary>
+    public event Action<UserAction>? AlreadyFiled;
+
     /// <summary>The rows as last built, or null before the first read.</summary>
     public TracksView? Current { get; private set; }
 
     /// <summary>When the rows were last rebuilt, whether or not that rebuild succeeded.</summary>
     public DateTimeOffset? LastReadAt { get; private set; }
 
-    /// <summary>Rebuilds if the rows are older than <paramref name="maxAge"/>.</summary>
-    public Task EnsureFreshAsync(TimeSpan maxAge, CancellationToken cancellationToken = default) =>
-        Current is not null && LastReadAt is { } read && _time.GetUtcNow() - read < maxAge
-            ? Task.CompletedTask
-            : RefreshAsync(cancellationToken);
+    /// <summary>Rebuilds if the rows are older than <paramref name="maxAge"/>, joining a read already in flight that began within it.</summary>
+    public Task EnsureFreshAsync(TimeSpan maxAge, CancellationToken ct = default)
+    {
+        if (Current is not null && LastReadAt is { } read && _time.GetUtcNow() - read < maxAge)
+            return Task.CompletedTask;
+
+        lock (_gate)
+            if (_running is { } running && _time.GetUtcNow() - _runningSince < maxAge)
+                return Settled(running.Task, ct);
+
+        return RefreshAsync(ct);
+    }
 
     /// <summary>Why the last rebuild failed, or null if it did not.</summary>
     public string? LastError { get; private set; }
@@ -82,21 +106,87 @@ public sealed class TracksService : IDisposable
         _poll.Dispose();
     }
 
-    /// <summary>Rebuilds now, whatever the timer was going to do.</summary>
-    public async Task RefreshAsync(CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Rebuilds now, whatever the timer was going to do. A call that arrives mid-read waits for one
+    /// follow-up read, which all such callers share, since the read in flight may predate their change.
+    /// </summary>
+    public Task RefreshAsync(CancellationToken ct = default)
+    {
+        lock (_gate)
+        {
+            if (_running is null)
+            {
+                _running = NewRead();
+                _runningSince = _time.GetUtcNow();
+                _ = Task.Run(ReadUntilIdleAsync, CancellationToken.None);
+
+                return Settled(_running.Task, ct);
+            }
+
+            return Settled((_next ??= NewRead()).Task, ct);
+        }
+    }
+
+    private static TaskCompletionSource NewRead() =>
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>A caller giving up stops waiting; the shared read carries on for the others.</summary>
+    private static async Task Settled(Task read, CancellationToken ct)
     {
         try
         {
-            Current = await _read(cancellationToken);
+            await read.WaitAsync(ct);
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task ReadUntilIdleAsync()
+    {
+        while (true)
+        {
+            try
+            {
+                await ReadOnceAsync();
+            }
+            catch (Exception ex)
+            {
+                // A handler of Changed threw; the waiters must still be released.
+                LastError = ex.Message;
+            }
+
+            TaskCompletionSource done;
+            bool again;
+
+            lock (_gate)
+            {
+                done = _running!;
+                again = _next is not null;
+                _running = _next;
+                _next = null;
+                _runningSince = _time.GetUtcNow();
+            }
+
+            done.SetResult();
+
+            if (!again)
+                return;
+        }
+    }
+
+    private async Task ReadOnceAsync()
+    {
+        try
+        {
+            Current = await _reader.ReadAsync();
             LastError = null;
         }
         catch (OperationCanceledException)
         {
             return;
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            LastError = e.Message;
+            LastError = ex.Message;
         }
 
         // Stamped on failure too.
@@ -104,6 +194,8 @@ public sealed class TracksService : IDisposable
 
         if (Current is { } current)
             Announce(current);
+
+        AnnounceFiled();
 
         Changed?.Invoke();
     }
@@ -122,24 +214,53 @@ public sealed class TracksService : IDisposable
                 _seeded = true;
 
                 foreach (var row in ready)
-                    _announced.Add(row.VideoId);
+                    _announced.Add(row.TrackKey);
 
                 return;
             }
 
             // A track leaving ready-to-warp and returning counts as arriving again — e.g. after a
             // re-cut.
-            _announced.IntersectWith(ready.Select(row => row.VideoId));
+            _announced.IntersectWith(ready.Select(row => row.TrackKey));
 
-            fresh = [.. ready.Where(row => _announced.Add(row.VideoId))];
+            fresh = [.. ready.Where(row => _announced.Add(row.TrackKey))];
         }
 
         foreach (var row in fresh)
             ReadyToWarp?.Invoke(row);
     }
 
+    private void AnnounceFiled()
+    {
+        if (_actions is null)
+            return;
+
+        List<UserAction> filed;
+
+        lock (_announced)
+        {
+            filed =
+            [
+                .. _actions
+                    .All()
+                    .Where(action =>
+                        action is { Kind: UserActionKind.ArrivedAlreadyFiled }
+                        && action.At > _filedSince
+                    ),
+            ];
+
+            if (filed is [.., { At: var lastFiled }])
+                _filedSince = lastFiled;
+        }
+
+        foreach (var action in filed)
+            AlreadyFiled?.Invoke(action);
+    }
+
     private Task PollAsync() =>
-        _freshness() is { Ticks: > 0 } freshness ? EnsureFreshAsync(freshness) : Task.CompletedTask;
+        _settings?.Read().RefreshInterval is { Ticks: > 0 } freshness
+            ? EnsureFreshAsync(freshness)
+            : Task.CompletedTask;
 
     /// <summary>Restarts the quiet period, so a burst of announcements costs one rebuild.</summary>
     private void OnStageChanged(StageChange change) =>

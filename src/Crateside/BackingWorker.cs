@@ -1,0 +1,231 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using AbleKit.Tags;
+using Crateside.Core;
+using Crateside.Core.Ableton;
+using Crateside.Core.Familiarity;
+using Crateside.Core.Genres;
+using Crateside.Core.Ledger;
+using Crateside.Core.Marks;
+using Crateside.Core.Orchestration.Handoff;
+using Microsoft.Extensions.Options;
+
+namespace Crateside;
+
+/// <summary>
+/// Keeps the library's keys backed against hand-applied tags (ADR 0023) and every keyed file's
+/// genre (ADR 0030) and familiarity (#52) written. Never paused: it contends for nothing.
+/// </summary>
+public sealed class BackingWorker(
+    BackingRunner runner,
+    GenreStore genres,
+    FamiliarityStore familiarity,
+    TrackMarkStore trackMarks,
+    TagStoreBackups backups,
+    FileIndexReader index,
+    IOptions<CratesidePaths> paths,
+    LedgerStore store,
+    ILogger<BackingWorker> logger
+) : BackgroundService
+{
+    private static readonly TimeSpan IdleDelay = TimeSpan.FromMinutes(5);
+
+    private static readonly TimeSpan AfterFailure = TimeSpan.FromMinutes(15);
+
+    /// <summary>A stale write lost a race with Ableton, so it is worth retrying promptly.</summary>
+    private static readonly TimeSpan AfterStale = TimeSpan.FromSeconds(30);
+
+    private readonly CratesidePaths _paths = paths.Value;
+
+    private readonly WakeSignal _marked = new();
+
+    private readonly ConcurrentQueue<string> _markedSongs = [];
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        trackMarks.Changed += OnMarked;
+
+        try
+        {
+            await RunAsync(stoppingToken);
+        }
+        finally
+        {
+            trackMarks.Changed -= OnMarked;
+        }
+    }
+
+    private async Task RunAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var marked = _marked.Arm();
+            TimeSpan delay;
+            try
+            {
+                var afterMarks = BackMarked();
+                var afterPass = Tick();
+
+                delay = afterMarks < afterPass ? afterMarks : afterPass;
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Backing the library failed; trying again later");
+
+                delay = AfterFailure;
+            }
+
+            // A mark cuts the wait short, so it lands while the user is looking.
+            await WaitAsync(delay, marked, stoppingToken);
+        }
+    }
+
+    private async Task WaitAsync(TimeSpan delay, Task marked, CancellationToken stoppingToken)
+    {
+        using var cut = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+        var waiting = Task.Delay(delay, cut.Token);
+
+        // Canceled rather than abandoned, so the timer does not outlive the wait.
+        if (await Task.WhenAny(waiting, marked) == marked)
+            await cut.CancelAsync();
+
+        try
+        {
+            await waiting;
+        }
+        catch (OperationCanceledException) when (!stoppingToken.IsCancellationRequested) { }
+    }
+
+    private void OnMarked(string song)
+    {
+        _markedSongs.Enqueue(song);
+        _marked.Set();
+    }
+
+    private TimeSpan Tick()
+    {
+        var ledger = store.Read();
+        var settled = genres.Read();
+        var reach = familiarity.Read();
+
+        IReadOnlyList<string> OwnedOf(string trackKey)
+        {
+            var song = ledger.SongFor(trackKey) ?? trackKey;
+
+            return
+            [
+                .. settled.GetValueOrDefault(song)?.Written is { } genre
+                    ? [GenreVocabulary.Keyword(genre)]
+                    : Array.Empty<string>(),
+                .. reach.GetValueOrDefault(song)?.Written is { } known
+                    ? [FamiliarityVocabulary.Keyword(known)]
+                    : Array.Empty<string>(),
+            ];
+        }
+
+        var libraryIndex = ReadLibraryIndex();
+        var started = Stopwatch.GetTimestamp();
+
+        var library = Report(
+            runner.Run(
+                _paths.LibraryFolder,
+                ledger,
+                OwnedOf,
+                index: libraryIndex,
+                marksOf: trackMarks.Of,
+                beforeWrite: backups.Save
+            ),
+            "the library",
+            started
+        );
+
+        started = Stopwatch.GetTimestamp();
+
+        var staging = Report(
+            runner.Run(_paths.StagingFolder, ledger, OwnedOf, backKeys: false),
+            "Staging",
+            started
+        );
+
+        return library < staging ? library : staging;
+    }
+
+    /// <summary>Writes the Collections of each song marked since the last pass, ahead of the whole pass (#144).</summary>
+    private TimeSpan BackMarked()
+    {
+        var delay = IdleDelay;
+
+        if (_markedSongs.IsEmpty || ReadLibraryIndex() is not { } libraryIndex)
+            return delay;
+
+        var ledger = store.Read();
+
+        while (_markedSongs.TryDequeue(out var song))
+        {
+            var started = Stopwatch.GetTimestamp();
+            var outcome = runner.Run(
+                _paths.LibraryFolder,
+                ledger,
+                index: libraryIndex,
+                marksOf: trackMarks.Of,
+                beforeWrite: backups.Save,
+                song: song
+            );
+            var next = Report(outcome, "the library", started);
+
+            if (next < delay)
+                delay = next;
+        }
+
+        return delay;
+    }
+
+    // Null when it cannot be read: read as empty, an imported file would lose its Collections.
+    private FolderInfo? ReadLibraryIndex()
+    {
+        try
+        {
+            return index.Read(_paths.LibraryFolder);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    private TimeSpan Report(TagWriteOutcome outcome, string root, long started)
+    {
+        switch (outcome)
+        {
+            case TagWriteOutcome.Written(0):
+                return IdleDelay;
+
+            case TagWriteOutcome.Written(var applied):
+                logger.LogInformation(
+                    "Backed {Applied} entries in {Root} against the tag store in {Elapsed} ms",
+                    applied,
+                    root,
+                    (long)Stopwatch.GetElapsedTime(started).TotalMilliseconds
+                );
+
+                return IdleDelay;
+
+            case TagWriteOutcome.Stale:
+                logger.LogInformation("The tag store moved while backing {Root}; retrying", root);
+
+                return AfterStale;
+
+            case TagWriteOutcome.Rejected(var error):
+                logger.LogWarning("Could not back {Root}: {Error}", root, error);
+
+                return AfterFailure;
+
+            default:
+                throw new UnreachableException();
+        }
+    }
+}

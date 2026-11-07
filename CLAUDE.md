@@ -4,6 +4,8 @@
 
 **Commit directly to `master` and push to `origin`.** No PR flow, no branch, and do not ask
 each time. This is solo work. Finished work is committed *and pushed*, not left sitting local.
+This holds in a cloud session too. A `claude/...` branch the session assigns is not used:
+commit on `master` and push nothing else.
 
 ## Tests and tooling
 
@@ -12,10 +14,66 @@ dotnet test --solution Crateside.slnx      # not --nologo: it is forwarded to th
 dotnet csharpier check .                   # must be clean before every commit
 ```
 
-Many tests **assert against the real library** — the Ableton roots under `P:\RYAN\Ableton`, the
-keytag ledger, this machine's working sets — and skip when those are absent. That has caught
+**Read the app's log from its file, not the terminal.** `%LOCALAPPDATA%\crateside\logs\crateside-<yyyyMMdd>.log` holds every entry, one line each with the full date and time; the last 14 days are kept.
+
+**Downloads go through `stemforge-cli`, and only through it.** Never `yt-dlp` directly and never
+crateside's own HTTP fetch: StemForge carries the provenance, album art and cookie support. When
+it lacks something crateside needs, the change goes into StemForge, not around it. Local files (the
+inbox, a drop) are copied or moved, not downloaded.
+
+**Find a track's source without searching.** `%LOCALAPPDATA%\crateside\source-index.json` lists
+every source on disk, by `videoId` and `song`, with its `path`: the full-mix download in the working
+set (`location: WorkingSet`, kept for the retention set in Settings after the stems reach the
+library), or the sample the library keeps (`KeptSample`), or the file a track that is not on YouTube was taken
+in as (`Import`, under `imports\<key>`, never pruned). The working set's folders are named by
+video ID, not by song (the ID is in the stem's `COMMENT` tag or the ledger's `sourceUrl`). Look in
+the index before downloading again, and never search directories by song name. To download
+one, use `stemforge-cli download <url> --format flac --output <dir>`, never `yt-dlp`: stemforge
+fetches the Premium format the stems were cut from, and gives the identical file. Plain `yt-dlp`
+fetched a free format whose audio started 36 ms off (#133).
+
+**Building `src/Crateside` rewrites [docs/openapi.json](docs/openapi.json)** from the API's code, wherever
+the output goes. Commit it with the change that moved it; CI does not rewrite it, and a test fails
+there when it is stale.
+
+**A detector runs on the source**, the full mix from the source index. Run it on a stem (instrumental,
+drums) only when the question is how that detector does on that stem, and say so. A measurement on a
+stem standing in for the source is a shortcut that a filter's author cannot repeat like-for-like.
+
+Many tests **assert against the real library** — the Ableton roots chosen in Settings, the
+ledger, this machine's working sets — and skip when those are absent. That has caught
 things fixtures could not, repeatedly. Prefer a real-data test over a mock when the question is
 "what is actually true on this machine".
+
+## Investigating a track starts with the API
+
+When the app is running, ask it before reading any store: `curl http://localhost:5027/api/tracks/<videoId>`
+gives the track's row, the evidence behind its verdict, its job history, each stem's tags and parsed
+warp with crateside's records about that warp, and its entry in every per-song store under each key
+it is filed under. `/api/tracks?filter=<filter>` gives the Tracks page's rows. Shapes and examples
+are in [docs/api.md](docs/api.md); `/scalar` browses them. The API only reads.
+
+Fall back to the files (`ledger.db`, `jobs.jsonl`, the stores under `%APPDATA%\crateside`, the
+`.asd` sidecars through AbleKit) when the app is not running, or for what the API does not serve:
+the log, the source index, ledger runs before the latest. Never start the app to use the API.
+
+## The AbleKit library
+
+Reading Ableton's files is its own repo, `Bamo16/AbleKit` (formerly AbletonSampleData), checked out
+beside this repo (`..\AbleKit`) for editing and consumed by `Crateside.Core` as the `AbleKit` NuGet package
+(a preview; the version is in `Directory.Packages.props`). The sibling project reference was
+dropped on 2026-10-25, so a library change is committed and released there (tag, then NuGet) and
+the version bumped here. Library changes are committed there, on `main`, with its own CI. Crateside's interpretation
+of Live's data (key spelling, genre, the keyword whitelist) stays in `src/Crateside.Core/Ableton/`.
+Nothing goes public with the user's surname on it: see memory `keep-real-name-off-public-work`.
+
+## Hooktheory is read here first
+
+crateside's C# owns fetching and parsing Hooktheory (`HooktheoryTab.cs`, `SourcePages.cs`,
+`HookpadChord.cs` in `Orchestration/Verdict/`). keydetect-harness mirrors it in Python
+(`hooktheory.py`, `chord_truth.py`) so it runs without .NET. A change to what is read or how a
+chord is named starts here; then update `Fixtures/SourcePages/hookpad-labels.json` and its identical
+copy in the harness (`chords/mirror/`), and make the harness's `scripts/check_mirror.py` pass.
 
 ## Do not run the app while editing it
 
@@ -41,13 +99,16 @@ The workflow that works:
   long-running is in flight.
 
 **Do not launch the app yourself.** Ask the user to run the task, so output lands in their
-terminal where they can see it and stop it.
+terminal where they can see it and stop it. The exception is `scripts/screenshots.py`, which starts
+its own instance on port 5099 over a demo library and stops it (CONTRIBUTING.md); it never touches
+the user's instance or data.
 
 ## The GPU is the user's to spend
 
 Separation is ~6–7 minutes of GPU per track and **more than one at a time makes the machine
-unusable**. Never start a GPU-capable process without asking. Draining starts paused; so does
-judging, which spends Claude quota (~37k tokens of session start-up per track).
+unusable**. Never start a GPU-capable process without asking. Separation and judging (which spends
+Claude quota, ~37k tokens of session start-up per track) run as soon as the app starts unless the
+user paused them, and a pause of theirs survives a restart.
 
 Detection is not in this category — it contends for nothing and runs unattended by design.
 
@@ -71,14 +132,23 @@ several rows and each carries the same usage object.
 
 ## Documents hold one kind of content each
 
-Same rule as keytag ([its ADR 0005](../keytag/docs/adr/0005-instructions-carry-no-history.md)):
+Each kind of document holds one kind of content:
 
 - **`docs/adr/`** holds history. Append-only, dated, superseded in place, never pruned.
 - **`CONTEXT.md`** holds current definitions. A glossary and nothing else.
 - **This file** holds current instruction, plus at most a one-line pointer to an ADR.
 - **`docs/agents/`** holds how an agent should use this repo — where issues live, the triage
   label vocabulary, the domain doc layout. Not domain content itself.
+- **`docs/*.md`** holds how-to and reference for a human (setup, secrets, the manual workflow),
+  kept current and edited in place. A decision found in one moves to an ADR.
+- **`docs/notes/`** holds research and observations, named by date and frozen like an ADR, but
+  deciding nothing. A note that settles something is cited by the ADR that does the deciding.
+- **`docs/design/`** holds the Claude Design round trip: see `docs/agents/design.md`.
 - **Code** holds what the code cannot say itself. See below.
+
+**A change to how a starter warp is made, gated or written updates
+[docs/starter-warps.md](docs/starter-warps.md) in the same commit.** It is the one place the whole
+pipeline is described as it stands; the ADRs say how it got there.
 
 ## Comments are the exception, not the default
 
@@ -87,12 +157,18 @@ code cannot. **When in doubt, no comment.**
 
 - **Nothing requires a doc comment** — not public members, not records, not properties. Most
   members should have none. Write a `<summary>` only where the name does not already say it.
-- **`<remarks>` only for a caveat that would cause a bug if missed** — a value that is not what
-  its name suggests, a guarantee that holds only under a condition, an ordering that matters. One
-  or two lines. A `<remarks>` with `<para>` in it is always wrong.
+- **A `<summary>` is one sentence and at most two lines.** Needing a third is the member asking to
+  be split, not the summary asking for more room.
+- **No `<remarks>`, ever.** A caveat that would cause a bug if missed goes in the `<summary>`, within
+  its limit, or in a one-line `//` at the place the bug would happen. An ADR pointer goes at the
+  end of the summary: `… (ADR 0027).` Anything that fits neither is narration, and belongs in a
+  commit message or an ADR.
+- **No `<param>`, `<returns>` or `<exception>`** unless it carries something the signature cannot
+  — a unit, a range, a null that means something. The name is the documentation.
 - **Never narrate.** How a bug was found, what was tried, what a measurement was on a given day,
   why an earlier design was wrong, why an alternative was rejected — none of it belongs in code.
-  It goes in the commit message, or in an ADR if it is a decision.
+  It goes in the commit message, or in an ADR if it is a decision. Before cutting an argument out
+  of a comment, check it is already in one of those two — if it is not, move it there first.
 - **Never restate the signature.** `/// <summary>The video ID.</summary>` on `VideoId` is noise.
 - **Inline comments face the same bar.** If one is genuinely needed, make it one short line saying
   *what*, not why the design is what it is. A statement that needs a comment to be understood is
@@ -113,5 +189,35 @@ The five canonical names, unchanged. See `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
-Single-context — `CONTEXT.md` and `docs/adr/` at the root, with shared vocabulary in keytag's
-`CONTEXT.md`. See `docs/agents/domain.md`.
+Single-context — `CONTEXT.md` and `docs/adr/` at the root, See `docs/agents/domain.md`.
+
+### Design
+
+Page design goes to a Claude Design session, which reads the repo and issues and commits its own
+result (ADR 0057). Briefs out and results back: see `docs/agents/design.md`.
+
+## This repository is going public
+
+The maintainer intends to publish it ([#107](https://github.com/Bamo16/crateside/issues/107)).
+Until then, new work must not add to what has to be undone: no new machine-specific paths, no new
+dependency on a sibling checkout, no surname or personal circumstances anywhere (handle `Bamo16`
+only), paid services behind a switchable interface, nothing listening beyond localhost without
+authentication. Write issues and docs in the public voice ("the maintainer"). The full list and
+the pre-publication checklist are in #107.
+
+**People.** The detection filters are NoMercy's in description: "NoMercy's `beatdetect`
+filter", linking [nomercy-ffmpeg](https://github.com/NoMercy-Entertainment/nomercy-ffmpeg) the
+first time. Name a person where the authorship is the point (the README's Credits, a note measuring
+a build of his source), linked the first time, then plain "FiLL" (always that spelling, whatever
+his handle on a given site). The maintainer is "the
+maintainer" in process rules and "Bamo" in prose; `Bamo16` only where it is the account (a GitHub
+link, the licence). Never narrate a conversation ("FiLL said on Discord", "Bamo asked for"), and
+never quote a private message: write the decision or the measured fact and link its public source
+(a release, an issue).
+
+**Songs.** Lead with what the song shows, then name it, so a reader without the song still gets
+the point: "a song that modulates up a whole step for the last chorus (Whitney Houston – *I Wanna
+Dance with Somebody*, `eH3giaIzONA`)". Write `Artist – *Title*` (plain artist, en dash, italic
+title; a title in another script gets its romanization beside it) and give the video ID wherever
+there is one, since anyone can fetch it. Otherwise describe the song and leave the name out.
+Existing issues are not rewritten for this.

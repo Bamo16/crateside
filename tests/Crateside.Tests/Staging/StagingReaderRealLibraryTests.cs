@@ -1,0 +1,105 @@
+using Crateside.Core.Staging;
+using Crateside.Tests.Ledger;
+
+namespace Crateside.Tests.Staging;
+
+/// <summary>Staging read against the real staging folder and the real ledger.</summary>
+public sealed class StagingReaderRealLibraryTests
+{
+    private static string StagingWithStems()
+    {
+        var staging = RealPaths.Staging();
+        Assert.SkipUnless(
+            RealLibrary.HasStems(staging) && TestLedger.HasReal,
+            "Staging must hold stems, and the ledger must be present."
+        );
+
+        return staging;
+    }
+
+    private static IReadOnlyList<StagedSong> Staged() =>
+        new StagingReader(TestLedger.Store()).Build(StagingWithStems(), TestLedger.FromReal());
+
+    [Fact]
+    public void Rolls_the_staged_stems_up_into_songs()
+    {
+        var songs = Staged();
+
+        Assert.NotEmpty(songs);
+        Assert.Equal(
+            Directory.GetFiles(StagingWithStems(), "*.flac").Length,
+            songs.Sum(s => s.Stems.Count)
+        );
+        Assert.All(songs, song => Assert.NotEmpty(song.Stems));
+        Assert.All(songs, song => Assert.NotEmpty(song.DisplayName));
+    }
+
+    [Fact]
+    public void Every_staged_song_resolves_to_a_ledger_verdict()
+    {
+        var songs = Staged();
+
+        Assert.All(songs, song => Assert.NotNull(song.SourceTrackKey));
+        Assert.DoesNotContain(songs, s => s.AwaitingDetection);
+    }
+
+    [Fact]
+    public void The_row_is_named_from_the_ledger_identity_not_the_filename()
+    {
+        var song = Staged()
+            .SingleOrDefault(s =>
+                s.Stems.Any(stem => stem.FileName.StartsWith("Alan Gomez - Mission 15"))
+            );
+
+        Assert.SkipWhen(song is null, "The Mission 15 stems are no longer staged.");
+        Assert.Contains("Luck Ra", song.DisplayName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Unfinished_songs_sort_above_finished_ones()
+    {
+        var songs = Staged();
+        var firstFinished = songs.ToList().FindIndex(s => s.IsFullyTagged);
+
+        Assert.SkipWhen(firstFinished < 0, "Nothing in staging is fully tagged.");
+        Assert.All(songs.Take(firstFinished), song => Assert.False(song.IsFullyTagged));
+    }
+
+    [Fact]
+    public void Reports_per_stem_tagging_without_inventing_a_key()
+    {
+        foreach (var song in Staged())
+        {
+            Assert.InRange(song.TaggedStemCount, 0, song.Stems.Count);
+            Assert.All(
+                song.Stems,
+                stem =>
+                {
+                    Assert.Equal(stem.AbletonKey is not null, stem.IsKeyTagged);
+                    Assert.False(stem.HasPartialKey && stem.IsKeyTagged);
+                }
+            );
+        }
+    }
+
+    [Fact]
+    public void No_row_carries_a_stem_that_is_not_on_disk()
+    {
+        // The store keeps entries for files that have left (ADR 0003); none may be read back.
+        Assert.All(
+            Staged().SelectMany(song => song.Stems),
+            stem => Assert.True(File.Exists(stem.Path), $"{stem.FileName} is not on disk")
+        );
+    }
+
+    [Fact]
+    public void An_absent_staging_folder_yields_an_empty_board()
+    {
+        var songs = new StagingReader(TestLedger.Store()).Build(
+            Path.Combine(Path.GetTempPath(), "no-such-staging-root"),
+            TestLedger.From("")
+        );
+
+        Assert.Empty(songs);
+    }
+}

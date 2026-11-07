@@ -1,0 +1,32 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="AbleKit" Version="0.1.0-preview.2" />
+    <PackageVersion Include="CliWrap" Version="3.10.5" />
+    <PackageVersion Include="Google.Apis.Auth" Version="1.75.0" />
+    <PackageVersion Include="Google.Apis.YouTube.v3" Version="1.75.0.4234" />
+    <PackageVersion Include="Humanizer.Core" Version="3.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Extensions" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.Extensions.ApiDescription.Server" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.9.0" />
+    <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.30.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="Scalar.AspNetCore" Version="2.18.0" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageVersion Include="TagLibSharp" Version="2.3.0" />
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+  </ItemGroup>
+</Project>

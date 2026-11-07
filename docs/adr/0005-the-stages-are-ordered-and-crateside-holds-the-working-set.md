@@ -10,7 +10,7 @@ run**, **verdict run**, **separation** — and built only the third. `Separation
 exists; nothing produces evidence and nothing produces a verdict. So crateside orchestrates
 the one stage that needs an agent least and cannot run the two that come before it.
 
-The gap is not cosmetic. On 2026-08-16 the drainer separated a track titled *"Eat Sleep
+The gap is not cosmetic. On 2026-08-16 the drainer separated a track titled 電音部 – *"Eat Sleep
 Dance (feat. Moe Shop) **Instrumental**"* with `--preset vocal_full --preset
 instrumental_full`, producing a vocal stem of a track with no vocals. It could not have
 known better: `SeparationRecipe` is fixed at `Standard`, and the ledger held no line for a
@@ -75,7 +75,7 @@ resulting ledger line is identical to today's.
 audio with `stemforge-cli download`; detection reads it; separation is handed the **local
 path** rather than the URL.
 
-This survives only because of a StemForge behaviour worth writing down, since crateside's own
+This survives only because of a StemForge behavior worth writing down, since crateside's own
 ported comment said the opposite: `AudioTagger.ReadSourceTagInfo` parses provenance out of a
 local input's `COMMENT` and carries `SourceUrl` forward into the stems it writes — its doc
 names the case, *"download once, then separate on the saved path"*. So the **source video ID
@@ -146,7 +146,7 @@ separation — that it does not earn a control.~~ *(Reversed the next day — se
 stage earns a control after all** below. Evidence still has none.)*
 
 The implementation is not three of anything: `DrainWorker` is thin and every decision already
-lives in a drainer plus a selector, so this is one worker parameterised by stage and three
+lives in a drainer plus a selector, so this is one worker parameterized by stage and three
 selectors.
 
 **9. A verdict run succeeded iff a ledger line exists for the video ID.** The same idiom
@@ -226,7 +226,7 @@ answer was owned rather than observed.)*
 **Detecting instrumental releases by title.** Would have caught Eat Sleep Dance exactly, since
 its title said so. Rejected as an unmeasured heuristic, which is the failure mode this project
 keeps hitting — and the manual workflow already records that *official instrumentals* and
-*instrumental releases* are different things not yet modelled, with 2 instances in 435 files,
+*instrumental releases* are different things not yet modeled, with 2 instances in 435 files,
 so a title match would conflate them.
 
 **Building the recipe override now.** Rejected as designing a picker before there is a case
@@ -255,7 +255,7 @@ with an observed reason to stop is the one that spins the GPU.
   but unlike the job store it is scratch, not a record. Losing it costs a re-run, never a
   fact, and it should be safe to delete by hand at any time.
 - **`SeparationRecipe` gains a variant** and stops being a constant. The instrumental-release
-  recipe is drums-only with a kept source; `c6e115d` taught the *board* to recognise a kept
+  recipe is drums-only with a kept source; `c6e115d` taught the *board* to recognize a kept
   source but nothing yet asks for one.
 - **The Queue view gains a second per-track instruction** beside holds. `queue.json`'s stated
   rule — *"a standing instruction about what to work, not a record that anything ran"* —
@@ -315,3 +315,12 @@ reads without error, because unknown properties are skipped rather than refused.
 
 Nothing about decision 4 changes: the fact is still the fact, and the plan is still derived from
 it.
+
+## The download moves out of the evidence run — 2026-09-12
+
+§4 says "the evidence run acquires the audio with `stemforge-cli download`". That call becomes a
+stage of its own, shared with added sources
+([ADR 0019](0019-a-track-has-many-sources-and-one-of-them-is-the-separation-source.md)).
+
+**§4's decision is unaffected.** Its two load-bearing halves — one download per track, and it must
+be StemForge's so provenance survives — are properties of the call, not of which stage makes it.

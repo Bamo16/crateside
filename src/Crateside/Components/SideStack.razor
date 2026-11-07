@@ -1,0 +1,159 @@
+@using Crateside.Core.Marks
+@using Crateside.Core.Playlist
+@using Crateside.Core.Tracks
+@using Crateside.Core.WorkLists
+@implements IDisposable
+@inject PlaylistAuthorizer Authorizer
+
+@{
+    var confirming = Editor.IsConfirming(Row);
+    var renaming = _editing.Open is TrackEdit.Rename;
+    var swapping = _editing.Open is TrackEdit.Swap;
+    var hasSource = TrackEdits.HasSource(Row);
+    var hasRemove = TrackActions.HasRemove(Row, Authorizer);
+    var beside = PicksBeside && IsPickingBeside(Editor, Row);
+    var holding = confirming && !PicksBeside;
+}
+
+<div class="stack">
+    @if (holding)
+    {
+        <div class="confirm-slot">
+            <StemConfirm Editor="Editor" Row="Row" />
+        </div>
+    }
+    @if (Editor.Problem is { } problem)
+    {
+        <p class="problem">@problem</p>
+    }
+
+    <div class="stack-body @(Columns is 2 ? "two" : null) @(holding ? "dimmed" : null)" inert="@holding">
+        <div class="stack-col">
+            @if (beside)
+            {
+                <div class="group picking">
+                    <p class="lead">
+                        @if (Editor.PickerFor(Row) is { IsAdditive: false, ChangesAnything: true })
+                        {
+                            <span class="pending">Re-cut pending. </span>
+                        }
+                        Tick what should exist. Nothing changes until you confirm.
+                    </p>
+
+                    @if (SourceForms.IsOpen(Editor, Row))
+                    {
+                        <SourceForms Editor="Editor" Row="Row" Stacked="true" />
+                    }
+                    else if (confirming)
+                    {
+                        <StemConfirm Editor="Editor" Row="Row" />
+                    }
+                    else
+                    {
+                        <div class="actions">
+                            <button class="outline" @onclick="Editor.CancelPicking" disabled="@Editor.Working">
+                                Cancel
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <TrackActions Part="TrackActions.Parts.Go" Row="Row" Editor="Editor" ShowDetailsLink="!OnTrackDetails" />
+                <TrackActions Part="TrackActions.Parts.Queue" Row="Row" Editor="Editor" ShowNextSentence="!OnTrackDetails" />
+            }
+
+            <div class="group tags">
+                <GenreStrip Row="Row" />
+                <FamiliarityStrip Row="Row" />
+                <TrackMarkStrip Row="Row" Mark="TrackMark.ChangesKey" />
+                <TrackMarkStrip Row="Row" Mark="TrackMark.OddBars" />
+            </div>
+        </div>
+
+        <div class="stack-col">
+            <TrackEdits Part="TrackEdits.Parts.Name" Row="Row" Editing="_editing" />
+
+            <div class="below-name @(renaming ? "dimmed" : null)" inert="@renaming">
+                @if (Uploads is { Count: > 0 } uploads)
+                {
+                    <div class="group">
+                        <span class="stack-label">@(uploads.Count is 1 ? "Upload" : "Uploads")</span>
+                        @foreach (var (id, role) in uploads)
+                        {
+                            <UploadCard @key="id" TrackKey="@id" Role="@role" />
+                        }
+                    </div>
+                }
+
+                @if (hasSource || hasRemove)
+                {
+                    <div class="start-over">
+                        <span class="stack-label faint">Start over</span>
+                        <TrackEdits Part="TrackEdits.Parts.Source" Row="Row" Editing="_editing" />
+                        <div class="@(swapping ? "dimmed" : null)" inert="@swapping">
+                            <TrackActions Part="TrackActions.Parts.Remove" Row="Row" Editor="Editor" Removed="Removed" />
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly TrackEditing _editing = new();
+    private string? _editingFor;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    [Parameter, EditorRequired]
+    public required StemEditor Editor { get; set; }
+
+    /// <summary>Track details, where the page itself is the details link and the stage flow says what is next.</summary>
+    [Parameter]
+    public bool OnTrackDetails { get; set; }
+
+    /// <summary>Every upload the track has used, with its role; drawn only where it is given.</summary>
+    [Parameter]
+    public IReadOnlyList<TrackUpload>? Uploads { get; set; }
+
+    [Parameter]
+    public EventCallback<(string Title, string Note)> Removed { get; set; }
+
+    /// <summary>2 in the row, which is wide enough to wrap the stack once; 1 in Track details' rail.</summary>
+    [Parameter]
+    public int Columns { get; set; } = 1;
+
+    /// <summary>In the row, picking after separation or an open source form takes the action block's place (handoff 13b).</summary>
+    [Parameter]
+    public bool PicksBeside { get; set; }
+
+    private static bool IsPickingBeside(StemEditor editor, TrackRow row) =>
+        editor.IsPicking(row) && !row.CanChangePlan || SourceForms.IsOpen(editor, row);
+
+    protected override void OnInitialized()
+    {
+        _editing.Changed += OnEditing;
+        Editor.Opened += _editing.Close;
+    }
+
+    // Track details moves to another track without remounting, and an open box would follow it.
+    protected override void OnParametersSet()
+    {
+        if (_editingFor != Row.TrackKey)
+            _editing.Close();
+
+        _editingFor = Row.TrackKey;
+    }
+
+    public void Dispose()
+    {
+        _editing.Changed -= OnEditing;
+        Editor.Opened -= _editing.Close;
+    }
+
+    private void OnEditing() => _ = InvokeAsync(StateHasChanged);
+}

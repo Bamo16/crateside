@@ -1,0 +1,4425 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "crateside",
+    "description": "Read-only JSON over what crateside's pages show, on localhost only. See docs/api.md.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/tracks": {
+      "get": {
+        "tags": [
+          "Tracks"
+        ],
+        "summary": "The Tracks page's rows, narrowed as its filters narrow them.",
+        "operationId": "ListTracks",
+        "parameters": [
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "The Tracks page's view: Unfinished when not given.",
+            "schema": {
+              "default": "Unfinished",
+              "$ref": "#/components/schemas/TrackFilter"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Matches a name, key or video ID across every track, ignoring the filter, as the page's search does.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "familiarity",
+            "in": "query",
+            "description": "Only rows tagged with this familiarity.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TracksView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/tracks/{trackKey}": {
+      "get": {
+        "tags": [
+          "Tracks"
+        ],
+        "summary": "One track: its row, verdict evidence, job history, stems with their warps, and its store records.",
+        "operationId": "GetTrack",
+        "parameters": [
+          {
+            "name": "trackKey",
+            "in": "path",
+            "description": "The track key, as in /song/{trackKey}: a YouTube video ID, or what ADR 0077 keys any other source by.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Acquisition": {
+        "type": "object",
+        "properties": {
+          "premiumStatus": {
+            "$ref": "#/components/schemas/PremiumStatus"
+          },
+          "isPremium": {
+            "type": "boolean",
+            "description": "Whether the format actually fetched was a premium one."
+          },
+          "isAccepted": {
+            "type": "boolean",
+            "description": "The user has seen the shortfall of this download, not the track, and said to go on anyway."
+          },
+          "stops": {
+            "type": "boolean",
+            "description": "Whether this download is a finding the user has to resolve before anything else runs."
+          },
+          "advisory": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What to tell a user choosing an upload, or null when there is nothing worth saying."
+          }
+        },
+        "description": "How the download crateside is holding for one track turned out, kept beside the audio so it\r\ndies with it."
+      },
+      "AddedSource": {
+        "required": [
+          "videoId",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "videoId": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string",
+            "description": "What the user called it, which becomes the file's parenthesized suffix — unique per track,\r\nsince it tells two added sources apart on disk (ADR 0019)."
+          },
+          "type": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Null only on a source added before the user was asked (ADR 0028).",
+                "$ref": "#/components/schemas/SampleType"
+              }
+            ]
+          }
+        },
+        "description": "A whole file of this song the user attached: downloaded, staged, tagged, never cut."
+      },
+      "AdoptedSample": {
+        "required": [
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "What the user calls it, which is also the file's parenthesized suffix."
+          }
+        },
+        "description": "A file of this song the user made themselves, kept as a sample and never separated. It came\r\nfrom no upload, so its label is its identity (ADR 0022)."
+      },
+      "AgreementPair": {
+        "required": [
+          "pair",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "pair": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "description": "`full`, `relative`, `none`, or `single` when only one of the two\r\n        produced an answer at all."
+          },
+          "recommended": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The key the pair settled on, when they settled on one."
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What each said, when they disagreed outright."
+          },
+          "agrees": {
+            "type": "boolean"
+          },
+          "isRelative": {
+            "type": "boolean",
+            "description": "The dangerous outcome: relative keys share every note, so only the cadence or a human\r\nsource can break it."
+          },
+          "detectors": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The pair's detectors by the names on screen: `madmom and keydetect`."
+          }
+        },
+        "description": "Whether two detectors agreed, and how they differed when they did not."
+      },
+      "AlgorithmResult": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name on screen: keydetect, madmom, Essentia. string AlgorithmResult.Name goes in the row's tooltip."
+          },
+          "key": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "confidence": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "The algorithm's own confidence, where it reports a meaningful one.",
+            "format": "double"
+          },
+          "runnerUpKey": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "CREMA's runner-up. Its winner is always 1.0, so the gap to this is the signal; a near-tie\r\nagainst the relative key is a swap warning."
+          },
+          "runnerUpRatio": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "runnerUpConfidence": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "keydetect's correlation for its runner-up.",
+            "format": "double"
+          },
+          "reranked": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether keydetect's chord rerank changed its answer."
+          },
+          "flag": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "ffmpeg's banding on its correlation: below 0.70 distrust, above 0.75 usually right."
+          },
+          "flagChip": {
+            "$ref": "#/components/schemas/FlagChip"
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "One detector's answer."
+      },
+      "AudioLoop": {
+        "required": [
+          "start",
+          "end",
+          "on"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "end": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "on": {
+            "type": "boolean"
+          }
+        },
+        "description": "A clip's loop in seconds of audio, and whether it is on."
+      },
+      "AudioSpan": {
+        "required": [
+          "start",
+          "end"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "end": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "A stretch of audio, in seconds."
+      },
+      "AwaitedAnalysis": {
+        "required": [
+          "backup",
+          "from",
+          "wasStarter",
+          "sent"
+        ],
+        "type": "object",
+        "properties": {
+          "backup": {
+            "type": "string",
+            "description": "The sidecar as it was before it went to the Recycle Bin, whose clip and warp are put back."
+          },
+          "from": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The sibling it was borrowed from, or null."
+          },
+          "wasStarter": {
+            "type": "boolean",
+            "description": "Whether it held a starter warp crateside wrote."
+          },
+          "sent": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "wasUnwarped": {
+            "type": "boolean",
+            "description": "Whether it held a clip crateside saved with Warp off.",
+            "default": false
+          },
+          "starter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WrittenStarter"
+              }
+            ]
+          }
+        },
+        "description": "A sidecar sent to the Recycle Bin for Live to analyze again, and what to put back once it has."
+      },
+      "BarSpan": {
+        "required": [
+          "first",
+          "last"
+        ],
+        "type": "object",
+        "properties": {
+          "first": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "last": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "Bars int BarSpan.First to int BarSpan.Last, both included."
+      },
+      "BeatCandidate": {
+        "required": [
+          "bpm",
+          "score",
+          "offsetMs"
+        ],
+        "type": "object",
+        "properties": {
+          "bpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "score": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "offsetMs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "One tempo the filter considered: its score, and where the first beat falls under it."
+      },
+      "BeatReading": {
+        "type": "object",
+        "properties": {
+          "bpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "The whole file's tempo, or null when the filter reported none.",
+            "format": "double"
+          },
+          "confidence": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "tempoSpread": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "The filter's own drift figure, as a percentage; null from a build without it, or where it could not tell.",
+            "format": "double"
+          },
+          "beatOffsetMs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "Where the first beat falls, in ms from the start of the file; null from a build without it.",
+            "format": "double"
+          },
+          "downbeatOffsetMs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "Where the first bar's downbeat falls, in ms; null from a build without it.",
+            "format": "double"
+          },
+          "downbeatConfidence": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "How sure the filter is of the downbeat; double StarterGrid.DownbeatSureAt and up is the working threshold.",
+            "format": "double"
+          },
+          "beatsPerBar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "tempoWander": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "How far the tempo moves through the file, as the filter reports it.",
+            "format": "double"
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BeatCandidate"
+            },
+            "description": "The tempos the filter considered, the octave alternatives among them."
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TempoSegment"
+            },
+            "description": "The stretches over which the filter held one tempo."
+          },
+          "windows": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "double"
+            },
+            "description": "Each consecutive full 30 s window's tempo, from its beat interval."
+          }
+        },
+        "description": "What ffmpeg's `beatdetect` reads on one file, an upload's source or instrumental: the whole file, and each 30 s of it."
+      },
+      "ClassifiedStem": {
+        "required": [
+          "file",
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "file": {
+            "$ref": "#/components/schemas/StemOnDisk"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/StemKind"
+          },
+          "presetId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the plan would ask for to make this file, or null when it cannot ask."
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the separator called it, the user's label, or null for a source download."
+          }
+        },
+        "description": "One of a track's files, and what it is to the plan."
+      },
+      "DecidedBy": {
+        "enum": [
+          "Judge",
+          "Rules",
+          "Person"
+        ],
+        "description": "Who made a verdict: an agent session, crateside's rules, or the person (ADR 0076)."
+      },
+      "Deletion": {
+        "required": [
+          "at",
+          "fileName",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "videoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The upload the file was of. Null for a file that carried no provenance."
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "description": "One sample crateside recycled."
+      },
+      "DiatonicMode": {
+        "enum": [
+          "Ionian",
+          "Dorian",
+          "Phrygian",
+          "Lydian",
+          "Mixolydian",
+          "Aeolian",
+          "Locrian"
+        ],
+        "description": "One of the seven rotations of the major scale."
+      },
+      "EvidenceSource": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The page, or null when there was none to visit."
+          },
+          "via": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "How the source was obtained, when not simply \"this link\" — `\"user-provided image\"` is a\r\nphotograph of sheet music."
+          },
+          "states": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Everything the source said about the key, verbatim."
+          },
+          "statesKey": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the source said, in the verdict's own spelling — so it compares. Null when the\r\nsource said something that is not a key."
+          },
+          "statesMode": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The diatonic mode the source named, where it named one."
+          },
+          "recordedKind": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The kind as recorded, from the ledger's closed set."
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Anything else the agent said about this source: how strong it is, and how a dissent\r\nwas handled."
+          },
+          "sections": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "The labels of the sections the source covered; null when it did not say."
+          },
+          "covers": {
+            "type": "string",
+            "description": "What the source covered: `whole song`, `chorus only`."
+          },
+          "relation": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "How its key relates to the part it covered, when that is not the whole song."
+          },
+          "verdictKey": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The key this source is judged against: the verdict's, or the section it covered."
+          },
+          "tab": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The TheoryTab as the lookup parsed it, where the source is one; null on runs recorded before #176.",
+                "$ref": "#/components/schemas/HooktheoryTab"
+              }
+            ]
+          },
+          "link": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "string? EvidenceSource.Url as something safe to render as a link, or null when it is not one.",
+            "format": "uri"
+          },
+          "host": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "stance": {
+            "description": "Whether this source agreed with the verdict.",
+            "$ref": "#/components/schemas/SourceStance"
+          },
+          "kind": {
+            "description": "What the source is worth on the tonic: the recorded kind, or the host when a line\r\npredates the field.",
+            "$ref": "#/components/schemas/SourceKind"
+          },
+          "kindFromHost": {
+            "description": "The kind the host implies — a cross-check, not the authority, since a host cannot tell an\r\nanalysis from a bare assertion on the same site.",
+            "$ref": "#/components/schemas/SourceKind"
+          },
+          "kindDisagreesWithHost": {
+            "type": "boolean",
+            "description": "True when the agent's kind and the host's catalog entry disagree."
+          }
+        },
+        "description": "An external source consulted for a verdict."
+      },
+      "FamiliarityRecord": {
+        "required": [
+          "song"
+        ],
+        "type": "object",
+        "properties": {
+          "song": {
+            "type": "string",
+            "description": "The ledger's song identity, or the upload's video ID for a song it never judged."
+          },
+          "artist": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The most-followed artist credited on the song Deezer matched."
+          },
+          "artistFans": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "songRank": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "Deezer's popularity figure for the song itself, 0 to about 1,000,000.",
+            "format": "int32"
+          },
+          "lookedUpAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When Deezer was last asked, or null when it never has been.",
+            "format": "date-time"
+          },
+          "lookupVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Which int FamiliarityLookup.Version asked; zero for the first.",
+            "format": "int32"
+          },
+          "settled": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The user's answer, or null when they have not given one."
+          }
+        },
+        "description": "One song's familiarity: measured, settled, or both."
+      },
+      "FetchedPage": {
+        "required": [
+          "site",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "site": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "heading": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the page calls itself, so the judge can tell whether it is this song."
+          },
+          "arrangement": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PageKey"
+            }
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tab": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "A TheoryTab's contributors, sections and sync, where the page is one.",
+                "$ref": "#/components/schemas/HooktheoryTab"
+              }
+            ]
+          }
+        },
+        "description": "A page found by artist and title; whether it is this recording is the judge's call."
+      },
+      "FiledRecords": {
+        "type": "object",
+        "properties": {
+          "genres": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/GenreRecord"
+            }
+          },
+          "familiarity": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FamiliarityRecord"
+            }
+          },
+          "marks": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TrackMarkRecord"
+            }
+          },
+          "resolvedNames": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ResolvedName"
+            },
+            "description": "The names StemForge gave when asked, by video ID (ADR 0014)."
+          },
+          "instructions": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TrackInstruction"
+            },
+            "description": "The user's standing instructions, the name they gave included, by video ID."
+          }
+        },
+        "description": "A track's entry in each per-song store, by the key it is filed under: a video ID or its song (ADR 0071)."
+      },
+      "FileTags": {
+        "required": [
+          "relativePath",
+          "keywords"
+        ],
+        "type": "object",
+        "properties": {
+          "relativePath": {
+            "type": "string"
+          },
+          "keywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "hiddenKeywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "collections": {
+            "type": "array",
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        }
+      },
+      "FlagChip": {
+        "required": [
+          "text",
+          "tooltip"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "tooltip": {
+            "type": "string"
+          }
+        },
+        "description": "keydetect's flag as a short chip, with the band it names in its tooltip (ADR 0064)."
+      },
+      "GenreRecord": {
+        "required": [
+          "song"
+        ],
+        "type": "object",
+        "properties": {
+          "song": {
+            "type": "string",
+            "description": "The ledger's song identity, or the upload's video ID for a song it never judged."
+          },
+          "genre": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the user settled on, or null — which, once settled, means none of the list."
+          },
+          "isSettled": {
+            "type": "boolean"
+          },
+          "learnedFrom": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The artist whose other tracks settled this one, or null when the user settled it or nobody has."
+          },
+          "suggested": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The first thing the sources said that maps onto the list, or null."
+          },
+          "heard": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Everything the sources said, verbatim, whether it maps onto the list or not."
+          },
+          "lookedUpAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the sources were last asked, or null when they never have been.",
+            "format": "date-time"
+          }
+        },
+        "description": "One song's genre, settled or suggested."
+      },
+      "GridLine": {
+        "required": [
+          "firstSeconds",
+          "firstBeat",
+          "lastSeconds",
+          "lastBeat"
+        ],
+        "type": "object",
+        "properties": {
+          "firstSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "firstBeat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "lastSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "lastBeat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "Two points on a warp's beat line, in seconds into the audio and beats on Live's ruler."
+      },
+      "HooktheoryTab": {
+        "type": "object",
+        "properties": {
+          "contributors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The analysts, without the site's own account and deleted users."
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TabSection"
+            }
+          },
+          "allKeys": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The keys of the whole song as the site summarizes them, such as `B dorian, B minor`."
+          },
+          "syncedVideoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The YouTube video the sections are synced to, often not the recording being judged."
+          },
+          "coverage": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "The share of the synced video, 0 to 1, that the sections synced to it span together; null when none is.",
+            "format": "double"
+          },
+          "isThin": {
+            "type": "boolean",
+            "description": "One contributor and one or two sections; Rule 1 of the judge's prompt does not cap on such a page (ADR 0062)."
+          }
+        },
+        "description": "What a TheoryTab says beyond each section's first key (#124)."
+      },
+      "JobStage": {
+        "enum": [
+          "Download",
+          "Evidence",
+          "Verdict",
+          "Separation",
+          "Handoff",
+          "Tagging",
+          null
+        ]
+      },
+      "JobStatus": {
+        "enum": [
+          "Queued",
+          "Running",
+          "Succeeded",
+          "Failed",
+          "Canceled",
+          "Held",
+          "AwaitingPerson"
+        ],
+        "description": "How a job is currently going."
+      },
+      "JobUpdate": {
+        "required": [
+          "id",
+          "videoId",
+          "stage",
+          "status",
+          "timestamp"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "videoId": {
+            "type": "string"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/JobStage"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "processId": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "processStartedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "adopted": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "True on the line a restarted crateside wrote on finding the process still alive."
+          },
+          "expectedOutputs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "How many files the launched separation should write; on its launch line only.",
+            "format": "int32"
+          },
+          "destination": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StemDestination"
+              }
+            ]
+          },
+          "heldUntil": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When a held attempt will be tried again, where the endpoint said.",
+            "format": "date-time"
+          },
+          "summary": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "One line on what a finished stage did, which the activity feed shows in place of \"succeeded\" (#170); lines written before it have none."
+          }
+        },
+        "description": "One appended line: a single state change to a job. Lines are never edited or removed, so the\r\nfile is a history and TrackJob is the fold over it."
+      },
+      "KeyConfidence": {
+        "enum": [
+          "Unknown",
+          "Withheld",
+          "Low",
+          "Medium",
+          "High"
+        ],
+        "description": "How much the judge trusts its own verdict."
+      },
+      "KeyEvent": {
+        "required": [
+          "key"
+        ],
+        "type": "object",
+        "properties": {
+          "seconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "key": {
+            "type": "string"
+          },
+          "r": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "A point where the running key estimate changed."
+      },
+      "LateReading": {
+        "required": [
+          "at",
+          "sha256"
+        ],
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "sha256": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "That a run's detector readings were written into its evidence after the verdict, so the judge never saw them (ADR 0066)."
+      },
+      "LedgerRun": {
+        "required": [
+          "timestamp",
+          "song"
+        ],
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "song": {
+            "type": "string",
+            "description": "The song identity — normalized `artist - title`, lowercased, stem suffix\r\nstripped. What a supersede is filed under."
+          },
+          "artist": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What to call this song on screen — not string LedgerRun.Song, which is a lowercase slug.\r\nFalls back to the identity when a run recorded neither artist nor title."
+          },
+          "sourceUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Usually a YouTube Music URL. Null for runs recorded from a local file."
+          },
+          "sourceVideoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The work key from string? LedgerRun.SourceUrl — the join onto a stem on disk."
+          },
+          "center": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The verdict's primary tonal center, or null when withheld.",
+                "$ref": "#/components/schemas/TonalCenter"
+              }
+            ]
+          },
+          "mixed": {
+            "type": "boolean"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Section"
+            }
+          },
+          "key": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The tagged key in ASCII spelling (`G# major`): the collapse of TonalCenter? LedgerRun.Center."
+          },
+          "mode": {
+            "$ref": "#/components/schemas/DiatonicMode"
+          },
+          "isCollapsed": {
+            "type": "boolean",
+            "description": "True when the tagged key loses the mode: the track is modal, and string? LedgerRun.Key keeps only its tonic."
+          },
+          "modalKey": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The key as the song actually plays it (`D Dorian`), when it is modal."
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/KeyConfidence"
+          },
+          "decidedBy": {
+            "$ref": "#/components/schemas/DecidedBy"
+          },
+          "bpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "The old BPM estimate, a warp starting point. Never written by a new run.",
+            "format": "double"
+          },
+          "restates": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When this is a restatement: the time of the run whose verdict it carries over.",
+            "format": "date-time"
+          },
+          "hasTaggableKey": {
+            "type": "boolean",
+            "description": "Whether this run produced a key the user would actually tag with. A LOW verdict may\r\ncarry candidates, but only HIGH and MEDIUM count as an answer."
+          }
+        },
+        "description": "One recorded verdict for a song, or a restatement carrying one over to another upload."
+      },
+      "LookupStatus": {
+        "enum": [
+          "Found",
+          "NotFound",
+          "Unreachable"
+        ]
+      },
+      "PageKey": {
+        "required": [
+          "key",
+          "section",
+          "tempo"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "section": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tempo": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "A key as the page writes it, with the section it covers where the page says."
+      },
+      "ParkReason": {
+        "enum": [
+          "NoKey",
+          "PremiumShortfall",
+          null
+        ]
+      },
+      "PremiumStatus": {
+        "enum": [
+          "Unreported",
+          "NotApplicable",
+          "Premium",
+          "PremiumNotSelected",
+          "AccountNotPremium",
+          "NotSignedIn",
+          "SourceHasNoPremiumAudio",
+          "NoPremiumLadder"
+        ],
+        "description": "How an acquisition compared against the premium audio the user's cookies entitle them to:\r\nStemForge's `PremiumStatus`, by the names it serializes."
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ReadDownbeat": {
+        "required": [
+          "seconds",
+          "confidence",
+          "beatsPerBar"
+        ],
+        "type": "object",
+        "properties": {
+          "seconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "confidence": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "beatsPerBar": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "A downbeat as the filter read it, in seconds into the file."
+      },
+      "Release": {
+        "type": "object",
+        "properties": {
+          "album": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "albumArtist": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "track": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "trackCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "disc": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "discCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "genre": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "composer": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "organization": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ost": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The catalogue number of the official soundtrack a gamerip carries."
+          },
+          "year": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "yearText": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The date as the file or site wrote it."
+          },
+          "yearKind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/YearKind"
+              }
+            ]
+          },
+          "cover": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The cover's file name in the covers folder."
+          }
+        },
+        "description": "What a track's source says about the release it came from, kept whatever the source (ADR 0077)."
+      },
+      "ResolvedName": {
+        "required": [
+          "displayTitle",
+          "baseName"
+        ],
+        "type": "object",
+        "properties": {
+          "displayTitle": {
+            "type": "string",
+            "description": "The human name — what a row shows, and what a rename starts from."
+          },
+          "baseName": {
+            "type": "string",
+            "description": "The filename the source is given, without extension."
+          }
+        },
+        "description": "What StemForge will call one track's files."
+      },
+      "RetypedWarp": {
+        "required": [
+          "bpm",
+          "length",
+          "written",
+          "at"
+        ],
+        "type": "object",
+        "properties": {
+          "bpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "length": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The sidecar's size as written, to tell whether Live has saved over it.",
+            "format": "int64"
+          },
+          "written": {
+            "type": "string",
+            "description": "The sidecar's last write time (UTC) as written.",
+            "format": "date-time"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A warp crateside retyped to a truer tempo, and the sidecar as it wrote it."
+      },
+      "RunCandidate": {
+        "required": [
+          "key",
+          "why"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "description": "A key the judge weighed besides the verdict's, and why in one sentence."
+      },
+      "RunEvidence": {
+        "required": [
+          "timestamp",
+          "song"
+        ],
+        "type": "object",
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "song": {
+            "type": "string"
+          },
+          "artist": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What to call this song on screen — see string LedgerRun.DisplayName."
+          },
+          "key": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The verdict's key, so a source's own answer can be compared against it."
+          },
+          "center": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TonalCenter"
+              }
+            ]
+          },
+          "mode": {
+            "$ref": "#/components/schemas/DiatonicMode"
+          },
+          "mixed": {
+            "type": "boolean"
+          },
+          "decidedBy": {
+            "$ref": "#/components/schemas/DecidedBy"
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Section"
+            }
+          },
+          "windows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunWindow"
+            },
+            "description": "The stretches detected on their own, where the evidence is not the whole track's."
+          },
+          "direction": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The user's note to the judge, sent with the windows."
+          },
+          "readings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WindowReading"
+            },
+            "description": "What the detectors read in each window, in the order the windows were detected."
+          },
+          "tonicCheck": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The argument that the tonic is not its relative. Null on older runs, whose prose is in\r\nstring? RunEvidence.Reasoning."
+          },
+          "reasoning": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The confidence rationale, and anything else the agent thought worth saying."
+          },
+          "candidates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RunCandidate"
+            },
+            "description": "The keys the judge weighed besides the verdict's. Empty on runs judged before ADR 0064."
+          },
+          "withheldReasoning": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The reasoning of the first pass, which asked for windows; null on older runs, whose windows carry copies of it."
+          },
+          "firstPass": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The first pass's reasoning once: kept on the run, or the copy every judge-asked window carried before ADR 0064."
+          },
+          "inputKind": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Which file was analyzed and what kind it was. Worth showing: a verdict reached on an\r\ninstrumental is weaker, because the vocal anchors the tonic."
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EvidenceSource"
+            },
+            "description": "External sources consulted. Often empty — not a defect, many releases have no human\r\ncoverage at all."
+          },
+          "lookups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SiteLookup"
+            },
+            "description": "Every page the lookup handed the judge, by site, cited or not; empty on runs recorded before #176."
+          },
+          "algorithms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlgorithmResult"
+            }
+          },
+          "lateReading": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Set when the readings in IReadOnlyList&lt;AlgorithmResult&gt; RunEvidence.Algorithms were taken after the verdict.",
+                "$ref": "#/components/schemas/LateReading"
+              }
+            ]
+          },
+          "agreement": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AgreementPair"
+            },
+            "description": "Which detectors agreed. Weighted, not counted: two of the same method family agreeing\r\nis weak, because they share their failure modes."
+          },
+          "backers": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Which of madmom and edma named keydetect's key; null on a run detected before the port\r\n(#113), or when keydetect read nothing."
+          },
+          "chords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The committed chord progression — the cheap check for a relative-key swap."
+          },
+          "keyEvents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KeyEvent"
+            },
+            "description": "Every time the running key estimate changed. Early instability is often just a sparse intro."
+          },
+          "bpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "The old BPM estimate, a warp starting point.",
+            "format": "double"
+          }
+        },
+        "description": "The full evidence behind one verdict — conclusion, sources and every detector's report — read\r\nfor one song on demand, never with the whole ledger."
+      },
+      "RunWindow": {
+        "required": [
+          "start",
+          "end",
+          "label",
+          "askedBy"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "end": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "askedBy": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WindowAsker"
+              }
+            ]
+          },
+          "bars": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The bars the user gave, as Live counts them; null when given in time or asked for by the judge.",
+                "$ref": "#/components/schemas/BarSpan"
+              }
+            ]
+          },
+          "why": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the judge wanted the window to settle, in one sentence."
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the window's section is called: its label, else its span."
+          }
+        },
+        "description": "A stretch of the track detected on its own, in seconds."
+      },
+      "SampleType": {
+        "enum": [
+          "Vocal",
+          "Instrumental",
+          null
+        ]
+      },
+      "Section": {
+        "required": [
+          "label",
+          "center"
+        ],
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "center": {
+            "$ref": "#/components/schemas/TonalCenter"
+          },
+          "start": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "A part of a song with its own tonal center; `Start` is seconds into the track, null on verdicts from before ADR 0064."
+      },
+      "SeparationRecipe": {
+        "required": [
+          "presets",
+          "extractDrums"
+        ],
+        "type": "object",
+        "properties": {
+          "presets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "extractDrums": {
+            "type": "boolean"
+          },
+          "keepSource": {
+            "type": "boolean",
+            "description": "Whether the source track is itself a keeper, and belongs in the destination."
+          },
+          "format": {
+            "type": "string"
+          },
+          "expectedOutputs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "How many files the separator should produce — one per preset, plus the warp guide. A kept\r\nsource is not among them: the download stage copies it (ADR 0019).",
+            "format": "int32"
+          },
+          "passes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "How many passes the separator makes. A kept source is not one of them: it is copied.",
+            "format": "int32"
+          },
+          "estimate": {
+            "pattern": "^-?(\\d+\\.)?\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?$",
+            "type": "string",
+            "description": "Roughly how long the GPU will be busy — an assumed shape, not a measurement, so build no\r\nlogic on it."
+          }
+        },
+        "description": "What to ask the separator for: which stems, in what form."
+      },
+      "SiteLookup": {
+        "required": [
+          "site",
+          "status",
+          "pages"
+        ],
+        "type": "object",
+        "properties": {
+          "site": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/LookupStatus"
+          },
+          "pages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FetchedPage"
+            }
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "candidates": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/FetchedPage"
+            },
+            "description": "Pages with the exact title under no artist the track credits: shown to the judge and the person, and never a source for a rule (ADR 0077)."
+          }
+        },
+        "description": "What one site gave for a song."
+      },
+      "SourceKind": {
+        "enum": [
+          "Unknown",
+          "Unclassified",
+          "Ear",
+          "Algorithmic",
+          "ChordRecognizer",
+          "Corroborating",
+          "Authoritative"
+        ],
+        "description": "What a source is worth on the tonic. Ordered by weight: the view sorts on it, so the\r\nstrongest evidence leads."
+      },
+      "SourceStance": {
+        "enum": [
+          "Unstated",
+          "Dissents",
+          "Agrees"
+        ],
+        "description": "Whether a source backed the verdict or argued against it."
+      },
+      "StableTempo": {
+        "type": "object",
+        "properties": {
+          "bpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "bars": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        },
+        "description": "One stable tempo in a warp and how many audible bars hold it."
+      },
+      "StageFailure": {
+        "required": [
+          "stage",
+          "strikes",
+          "error"
+        ],
+        "type": "object",
+        "properties": {
+          "stage": {
+            "$ref": "#/components/schemas/JobStage"
+          },
+          "strikes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "error": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A stage that failed and will be tried again: its strikes so far and its last error."
+      },
+      "StageNote": {
+        "required": [
+          "at",
+          "videoId",
+          "stage",
+          "summary"
+        ],
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "videoId": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string",
+            "description": "The pass's name as the activity feed shows it: `Warp` or `Loudness`."
+          },
+          "summary": {
+            "type": "string"
+          }
+        },
+        "description": "What one pass did to one song, in about eighty characters."
+      },
+      "StarterBar": {
+        "enum": [
+          "Downbeat",
+          "UnsureDownbeat",
+          "NotInFours",
+          "NoDownbeat"
+        ],
+        "description": "How a starter's marker was numbered within its bar."
+      },
+      "StarterBeat": {
+        "enum": [
+          "ReadingRefinedByFold",
+          "FoldAlone"
+        ],
+        "description": "Where a starter's marker took its beat from."
+      },
+      "StemDestination": {
+        "enum": [
+          "KeyIdentified",
+          "UnresolvedKey",
+          null
+        ]
+      },
+      "StemDetails": {
+        "required": [
+          "path",
+          "label",
+          "warp"
+        ],
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string",
+            "description": "What the separator called the file, such as `Vocal - Full`, or `source`."
+          },
+          "isInLibrary": {
+            "type": "boolean"
+          },
+          "tags": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The keywords and Collections Live holds for the file; null when it holds none.",
+                "$ref": "#/components/schemas/FileTags"
+              }
+            ]
+          },
+          "warp": {
+            "$ref": "#/components/schemas/StemWarpDetails"
+          }
+        },
+        "description": "One sample of a track: its file, the tags Live holds for it, and its warp."
+      },
+      "StemInventory": {
+        "required": [
+          "files"
+        ],
+        "type": "object",
+        "properties": {
+          "files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClassifiedStem"
+            },
+            "description": "Every file of this track, with what each one is."
+          },
+          "isClassified": {
+            "type": "boolean",
+            "description": "Read against a catalog that could say which preset each file is. When false, the whole plan\r\nlooks missing and must not be believed."
+          },
+          "presets": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "The presets this track already has a file for."
+          },
+          "hasSource": {
+            "type": "boolean",
+            "description": "The source track is on disk as a sample in its own right."
+          },
+          "isFinished": {
+            "type": "boolean",
+            "description": "A file of the track has reached the library, so its warping is done."
+          },
+          "hasWarpGuide": {
+            "type": "boolean",
+            "description": "A warp guide is on disk, so a re-cut need not make another (ADR 0018)."
+          },
+          "unrecognized": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ClassifiedStem"
+            },
+            "description": "Files carrying a preset the separator no longer offers, which can be removed but never\r\nasked for again."
+          }
+        },
+        "description": "What a track already has, read off disk on every read and said in the vocabulary the plan\r\nspeaks."
+      },
+      "StemKind": {
+        "enum": [
+          "Preset",
+          "Source",
+          "WarpGuide",
+          "Unrecognized",
+          "Adopted"
+        ],
+        "description": "What a file on disk is to the plan."
+      },
+      "StemOnDisk": {
+        "required": [
+          "path",
+          "root"
+        ],
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "root": {
+            "type": "string",
+            "description": "The stem root it was found under, which is the completion signal (ADR 0002)."
+          },
+          "preset": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The StemForge preset — `Vocal - Full`, `Drums`. Null for a verbatim source\r\ndownload, which is how a kept source reads."
+          },
+          "isVerbatimSource": {
+            "type": "boolean",
+            "description": "A verbatim copy of the download, which is how a kept source reads."
+          },
+          "isCut": {
+            "type": "boolean",
+            "description": "An early stem names the models that cut it where a later one names a preset."
+          },
+          "label": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the user calls an adopted sample. Null for anything crateside made."
+          },
+          "isAdopted": {
+            "type": "boolean",
+            "description": "crateside took this file into the track rather than making it (ADR 0022)."
+          },
+          "isPremium": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether it was downloaded as premium audio. Null when the file does not say."
+          },
+          "sourceVideoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The upload this file was cut or downloaded from — what tells a separation source from an\r\nadded one (ADR 0019)."
+          },
+          "createdAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the file appeared in string StemOnDisk.Root, which is when it arrived rather than when it\r\nwas made (ADR 0008).",
+            "format": "date-time"
+          }
+        },
+        "description": "One file carrying a track's provenance, and where the scan found it."
+      },
+      "StemPlan": {
+        "required": [
+          "presets"
+        ],
+        "type": "object",
+        "properties": {
+          "presets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The separator presets to run, one file each. crateside's own names, not the separator's\r\ndisplay names — `vocal_full`, never `Vocal - Full`."
+          },
+          "keepSource": {
+            "type": "boolean",
+            "description": "Whether the separation source is itself one of the track's samples."
+          },
+          "addedSources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AddedSource"
+            },
+            "description": "Whole files of this song the user attached, which nothing separates (ADR 0019)."
+          },
+          "adoptedSamples": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdoptedSample"
+            },
+            "description": "Files of this song the user made and gave to crateside (ADR 0022)."
+          }
+        },
+        "description": "Which files the user wants made for one track: the separator presets to run, and whether the\r\nsource track is itself a keeper (ADR 0018)."
+      },
+      "StemWarpDetails": {
+        "required": [
+          "owner",
+          "clip"
+        ],
+        "type": "object",
+        "properties": {
+          "owner": {
+            "description": "Whose warp the sidecar holds.",
+            "$ref": "#/components/schemas/WarpOwner"
+          },
+          "hasSidecar": {
+            "type": "boolean",
+            "description": "False when there is no sidecar, or it cannot be read."
+          },
+          "isWarped": {
+            "type": "boolean",
+            "description": "Whether Live applies the warp: the default clip is saved, with Warp on."
+          },
+          "isDefaultClipSaved": {
+            "type": "boolean"
+          },
+          "sampleRate": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "seconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The audio's length in seconds, 0 when nothing says.",
+            "format": "double"
+          },
+          "markers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WarpMarker"
+            },
+            "description": "The markers Live shows, each at a time in the audio and a beat."
+          },
+          "tempo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The tempo the warp holds, bar by bar across the default clip; null without a saved clip.",
+                "$ref": "#/components/schemas/WarpTempo"
+              }
+            ]
+          },
+          "clip": {
+            "description": "The default clip's start and end in seconds of audio; the whole file when no clip is saved.",
+            "$ref": "#/components/schemas/AudioSpan"
+          },
+          "loop": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The loop in seconds of audio; null without a saved clip.",
+                "$ref": "#/components/schemas/AudioLoop"
+              }
+            ]
+          },
+          "transientOrigin": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Whose transients the sidecar holds: Live's unless crateside wrote them.",
+                "$ref": "#/components/schemas/TransientOrigin"
+              }
+            ]
+          },
+          "isAuthority": {
+            "type": "boolean",
+            "description": "Whether this sample's warp is the one its siblings take: an instrumental, karaoke or the kept source."
+          },
+          "written": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The warp crateside wrote that the sidecar still holds; null once Live or the user saved over it.",
+                "$ref": "#/components/schemas/WrittenWarp"
+              }
+            ]
+          },
+          "lastWritten": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The warp crateside last wrote into the sidecar, even if it has been saved over since.",
+                "$ref": "#/components/schemas/WrittenWarp"
+              }
+            ]
+          },
+          "retyped": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The retype to a truer tempo the sidecar still holds, or null (#99).",
+                "$ref": "#/components/schemas/RetypedWarp"
+              }
+            ]
+          },
+          "backups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The copies of the sidecar crateside kept before replacing or recycling it, oldest first."
+          }
+        },
+        "description": "A sample's `.asd` sidecar as parsed, and crateside's records about the warp it holds."
+      },
+      "TabChord": {
+        "required": [
+          "beat",
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "beat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "description": "A chord of a section's score, as a Harte label such as `C:maj7/3`."
+      },
+      "TabKey": {
+        "required": [
+          "beat",
+          "key"
+        ],
+        "type": "object",
+        "properties": {
+          "beat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "key": {
+            "type": "string"
+          }
+        }
+      },
+      "TabSection": {
+        "required": [
+          "name",
+          "progression",
+          "percentChord",
+          "percentMelody"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "progression": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "percentChord": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "percentMelody": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TabKey"
+            },
+            "description": "Every key the section is in, with the beat it starts at; more than one means it modulates inside the section."
+          },
+          "chords": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "harmony": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TabChord"
+            },
+            "description": "The chords as its score names them, by the key in force at each beat; the page's numerals stay in the section's first key."
+          },
+          "videoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The video the section is synced to, when it is not the song's."
+          },
+          "syncStart": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "Where the section starts and ends in its video, as fractions of the video's length.",
+            "format": "double"
+          },
+          "syncEnd": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "One section of a TheoryTab; the percentages say how much of it is filled in."
+      },
+      "TempoOff": {
+        "required": [
+          "bpm",
+          "driftMs"
+        ],
+        "type": "object",
+        "properties": {
+          "bpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The tempo the warp should be at.",
+            "format": "double"
+          },
+          "driftMs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "What the warp drifts over the track, positive when it runs fast; null where a reading, not the grid, says so.",
+            "format": "double"
+          }
+        },
+        "description": "A warp that is off its tempo, and by how much."
+      },
+      "TempoSegment": {
+        "required": [
+          "startMs",
+          "endMs",
+          "bpm"
+        ],
+        "type": "object",
+        "properties": {
+          "startMs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "endMs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "bpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "A stretch of the file, in ms, over which the filter held one tempo."
+      },
+      "TempoShape": {
+        "enum": [
+          "Steady",
+          "MostlySteady",
+          "Drifting"
+        ]
+      },
+      "TempoSource": {
+        "enum": [
+          "Warp",
+          "Reading",
+          "Estimate",
+          "Typed"
+        ]
+      },
+      "TempoWindow": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "end": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "bpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        },
+        "description": "A stretch of the audio and its tempo; times in seconds from the file's start."
+      },
+      "TonalCenter": {
+        "required": [
+          "tonic",
+          "mode"
+        ],
+        "type": "object",
+        "properties": {
+          "tonic": {
+            "type": "string"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/DiatonicMode"
+          },
+          "collapsed": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The 24-key form Ableton is tagged with, keeping the tonic: `A minor` for A Dorian."
+          },
+          "isModal": {
+            "type": "boolean",
+            "description": "Whether the collapse loses anything: a mode other than Ionian or Aeolian."
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "`A Dorian`, or `A minor` where the mode is plain."
+          }
+        },
+        "description": "A tonic and a diatonic mode: what the music is, before the collapse to a tag."
+      },
+      "TrackChipStyle": {
+        "enum": [
+          "NeutralOutline",
+          "TealFilled",
+          "TealOutline",
+          "AmberFilled",
+          "RedOutline",
+          "RedFilled",
+          "GreenOutline",
+          "DashedOutline"
+        ],
+        "description": "How a state chip is drawn. Four colors, each meaning one thing."
+      },
+      "TrackDetails": {
+        "required": [
+          "videoId",
+          "records"
+        ],
+        "type": "object",
+        "properties": {
+          "videoId": {
+            "type": "string"
+          },
+          "row": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The track's row, as the Tracks page and Track details draw it; null when crateside has no row for it.",
+                "$ref": "#/components/schemas/TrackRow"
+              }
+            ]
+          },
+          "evidence": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The evidence behind the latest verdict: its sources, sections and every detector's readings.",
+                "$ref": "#/components/schemas/RunEvidence"
+              }
+            ]
+          },
+          "jobs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JobUpdate"
+            },
+            "description": "Every line `jobs.jsonl` holds for any of the track's uploads, oldest first."
+          },
+          "stageNotes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StageNote"
+            },
+            "description": "What the warp pass and loudness did to the track's samples, one line each, oldest first."
+          },
+          "stems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StemDetails"
+            },
+            "description": "Each sample on disk, with its tags, its parsed warp and crateside's records about that warp."
+          },
+          "records": {
+            "description": "The track's entry in each per-song store, under every key it is filed under.",
+            "$ref": "#/components/schemas/FiledRecords"
+          }
+        },
+        "description": "Everything crateside knows about one track, gathered from the stores the pages read (#167)."
+      },
+      "TrackFilter": {
+        "enum": [
+          "Unfinished",
+          "InStaging",
+          "InFlight",
+          "NeedsAttention",
+          "TagsToAnswer",
+          "TempoDrifts",
+          "OffItsTempo",
+          "All"
+        ],
+        "description": "How the one list is narrowed."
+      },
+      "TrackInstruction": {
+        "required": [
+          "videoId"
+        ],
+        "type": "object",
+        "properties": {
+          "videoId": {
+            "type": "string"
+          },
+          "plan": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Which files the user wants made for this track. Null means they have not said, which is\r\nStemPlan StemPlan.Default and is not the same as having chosen it.",
+                "$ref": "#/components/schemas/StemPlan"
+              }
+            ]
+          },
+          "instrumentalRelease": {
+            "type": "boolean",
+            "description": "The pre-StemPlan fact, read so an existing `queue.json` converts itself\r\nand never written back."
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the user calls this track, which beats every derived name — a name, not a filename.\r\nNull when they have not said."
+          },
+          "sourceUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The upload to fetch instead of the playlist entry's own video. Null when it still is the\r\nsource."
+          },
+          "addedByUrl": {
+            "type": "boolean",
+            "description": "crateside was told to work this track by something other than the playlist (ADR 0010)."
+          },
+          "differentFrom": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A song the ledger knows that the user said this track is not, though its name looks like\r\nit (#41)."
+          },
+          "acceptedUpload": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The upload whose short-of-premium audio the user said to use anyway, kept here because the\r\nworking set holding the download does not last (#31)."
+          },
+          "cutRequestedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the user last asked for this track's files to be made again, by a re-cut or a swap —\r\na request, answered by the outcomes that follow it (#50).",
+            "format": "date-time"
+          },
+          "backfill": {
+            "type": "boolean",
+            "description": "Queued from the Library to be judged in the weekly spend-down (ADR 0035, ADR 0063)."
+          }
+        },
+        "description": "A standing instruction about how crateside should work one track, keyed by video ID because an\r\nundetected track has no song to key on."
+      },
+      "TrackMark": {
+        "enum": [
+          "ChangesKey",
+          "OddBars"
+        ],
+        "description": "A yes/no the maintainer sets on a track in crateside; Live shows it as a Collection."
+      },
+      "TrackMarkRecord": {
+        "required": [
+          "song",
+          "marks"
+        ],
+        "type": "object",
+        "properties": {
+          "song": {
+            "type": "string",
+            "description": "The ledger's song identity, or the upload's video ID for a song it never judged."
+          },
+          "marks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackMark"
+            }
+          }
+        },
+        "description": "One song's marks, as the store files them."
+      },
+      "TrackNameSource": {
+        "enum": [
+          "Files",
+          "Ledger",
+          "Resolved",
+          "Playlist",
+          "VideoId"
+        ],
+        "description": "Where a track's derived name came from, best first."
+      },
+      "TrackRow": {
+        "required": [
+          "videoId",
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "videoId": {
+            "type": "string"
+          },
+          "detailsHref": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The page-relative link to Track details."
+          },
+          "playlistItemId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The playlist entry, which is what removing the track targets. Null once it has none."
+          },
+          "title": {
+            "type": "string",
+            "description": "What the track is called: the user's name for it, or the derived one."
+          },
+          "derivedTitle": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What it would be called if the user had not named it — and null when they have not."
+          },
+          "isRenamed": {
+            "type": "boolean"
+          },
+          "statedSourceUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The upload this track is cut from, when it is not the one string TrackRow.TrackKey names."
+          },
+          "isSourceSwapped": {
+            "type": "boolean"
+          },
+          "samplesLeftInLibrary": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "This track's samples a swap cannot reach, because crateside never writes there.",
+            "format": "int32"
+          },
+          "uploads": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/TrackUpload"
+            },
+            "description": "Every upload this track has used, the one it is cut from first, each with its role; none without an upload."
+          },
+          "hasSeveralUploads": {
+            "type": "boolean",
+            "description": "Whether this row's samples were cut from more than one upload, which is what makes saying\r\nso on each of them worth the room (ADR 0014)."
+          },
+          "nameSource": {
+            "$ref": "#/components/schemas/TrackNameSource"
+          },
+          "hasNearSilentVocal": {
+            "type": "boolean",
+            "description": "The vocal stem is more than double NearSilentVocal.ThresholdDb dB quieter than the\r\ninstrumental, and the plan still asks for it: the track may want the Instrumental recipe."
+          },
+          "release": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "What the source said about the release this track is from; null for a playlist track.",
+                "$ref": "#/components/schemas/Release"
+              }
+            ]
+          },
+          "awaitingRename": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "Staged files not yet carrying the name the user stated — zero unless a rename was\r\ninterrupted part way.",
+            "format": "int32"
+          },
+          "renameScope": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What renaming would touch, for the button that offers it."
+          },
+          "renameDetail": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The sentence beside the button, saying what string TrackRow.RenameScope means."
+          },
+          "verdict": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The current verdict, or null when the ledger has never seen this track.",
+                "$ref": "#/components/schemas/LedgerRun"
+              }
+            ]
+          },
+          "lookalike": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The judged song this unjudged track's name looks like; judging waits until the user says\r\nwhether it is (#41).",
+                "$ref": "#/components/schemas/LedgerRun"
+              }
+            ]
+          },
+          "song": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the genre store knows this song by: the ledger's identity, or the upload for a song it\r\nnever judged (ADR 0030)."
+          },
+          "genre": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The song's genre as settled or suggested, or null when nothing has asked yet.",
+                "$ref": "#/components/schemas/GenreRecord"
+              }
+            ]
+          },
+          "familiarity": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "How far the song reaches, measured or settled, or null when nothing has asked yet.",
+                "$ref": "#/components/schemas/FamiliarityRecord"
+              }
+            ]
+          },
+          "marks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackMark"
+            },
+            "description": "What the maintainer has marked this track as."
+          },
+          "hasTagsToAnswer": {
+            "type": "boolean"
+          },
+          "artistAndTitle": {
+            "description": "The ledger's artist and title, else the row's own name split at its dash. Null while the row\r\nhas only the upload's title, whose artist is a guess.",
+            "$ref": "#/components/schemas/ValueTupleOfstringAndstring"
+          },
+          "key": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The key to tag with, or null when withheld, weak, or unknown."
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/KeyConfidence"
+          },
+          "decidedBy": {
+            "description": "Who made the current verdict; null when there is none (ADR 0076).",
+            "$ref": "#/components/schemas/DecidedBy"
+          },
+          "bpm": {
+            "description": "The headline tempo: the finished warp's, else crateside's reading, else the ledger's estimate (ADR 0049).",
+            "$ref": "#/components/schemas/TrackTempo"
+          },
+          "tempo": {
+            "description": "The tempo of a finished warp, the instrumental's where there is one.",
+            "$ref": "#/components/schemas/WarpTempo"
+          },
+          "beats": {
+            "description": "beatdetect's reading of the upload's source, else of its instrumental, once the worker has read it.",
+            "$ref": "#/components/schemas/BeatReading"
+          },
+          "tempoDrifts": {
+            "type": "boolean",
+            "description": "Not warped yet, and beatdetect reads the tempo drifting (#75)."
+          },
+          "offItsTempo": {
+            "type": "boolean",
+            "description": "A steady warp whose grid falls away from the audio (#96)."
+          },
+          "runningStage": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The stage crateside currently believes is working this track, if any.",
+                "$ref": "#/components/schemas/JobStage"
+              }
+            ]
+          },
+          "runningSince": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When JobStage? TrackRow.RunningStage started, for the header's elapsed clock.",
+            "format": "date-time"
+          },
+          "gaveUpAt": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The stage that ran out of strikes, if one has.",
+                "$ref": "#/components/schemas/JobStage"
+              }
+            ]
+          },
+          "gaveUpStrikes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "How many times JobStage? TrackRow.GaveUpAt failed before it stopped trying.",
+            "format": "int32"
+          },
+          "gaveUpFor": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Why no retry can help, such as `upload unavailable`; null when the strikes simply ran out."
+          },
+          "retrying": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/StageFailure"
+              }
+            ]
+          },
+          "deletions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Deletion"
+            },
+            "description": "Samples of this song crateside sent to the recycle bin, most recent first."
+          },
+          "isLibraryOnly": {
+            "type": "boolean",
+            "description": "The row exists only because the library has files for it: crateside never queued it and it\r\nis not in staging."
+          },
+          "hasUpload": {
+            "type": "boolean",
+            "description": "False for a song StemForge cut without recording a source: its key is a file name, not a video ID (#94)."
+          },
+          "plan": {
+            "description": "Which files the user wants made for this track.",
+            "$ref": "#/components/schemas/StemPlan"
+          },
+          "isAddedByUrl": {
+            "type": "boolean",
+            "description": "The user pasted this track in rather than adding it to the playlist (ADR 0010)."
+          },
+          "isBackfill": {
+            "type": "boolean",
+            "description": "Queued from the Library to be judged in the weekly spend-down (ADR 0035, ADR 0063)."
+          },
+          "canForget": {
+            "type": "boolean",
+            "description": "Whether Remove can take this track out of crateside (ADR 0027)."
+          },
+          "parkedFor": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Why crateside stopped and handed this track back, or null when it has not.",
+                "$ref": "#/components/schemas/ParkReason"
+              }
+            ]
+          },
+          "waitingForJudge": {
+            "type": "boolean",
+            "description": "Detected and never judged: the judge has it, nothing about its key is missing yet."
+          },
+          "waitingForPerson": {
+            "type": "boolean",
+            "description": "The rules left its key open and there is no judge, so the person decides it on its page (ADR 0076)."
+          },
+          "acquisition": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "How the held download turned out, or null when there is none; a finding only when\r\nbool Acquisition.Stops says so, not by being here.",
+                "$ref": "#/components/schemas/Acquisition"
+              }
+            ]
+          },
+          "gpuPosition": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "Its place in the line for the GPU, counting from one. Null when it is not in it.",
+            "format": "int32"
+          },
+          "samples": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackSample"
+            },
+            "description": "The files meant to be kept, warp guides excluded — usually stems, but for an instrumental\r\nrelease the source track itself (ADR 0004)."
+          },
+          "hasWarpGuide": {
+            "type": "boolean",
+            "description": "A warp guide is still on disk, so warping is outstanding; its absence claims nothing (ADR 0004)."
+          },
+          "folder": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The folder holding this track's files, staging first, or null when none are on disk yet."
+          },
+          "stagedSince": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When this track's files arrived in `Staging`, read off the files, or null once\r\nnone are left (ADR 0008).",
+            "format": "date-time"
+          },
+          "state": {
+            "description": "Where the track has got to — outstanding work outranks done, since a swapped track's old\r\nsamples can all be in the library while its replacement is still queued.",
+            "$ref": "#/components/schemas/TrackState"
+          },
+          "inventory": {
+            "description": "What this track already has on disk, which is what narrows the recipe.",
+            "$ref": "#/components/schemas/StemInventory"
+          },
+          "recipe": {
+            "description": "What separation will ask for, once it gets to this track.",
+            "$ref": "#/components/schemas/SeparationRecipe"
+          },
+          "shortfall": {
+            "description": "What the plan asks for that is not on disk (ADR 0027).",
+            "$ref": "#/components/schemas/StemPlan"
+          },
+          "isShort": {
+            "type": "boolean",
+            "description": "Cut once and missing presets its plan asks for, which only a re-cut the user asks for makes."
+          },
+          "canChangePlan": {
+            "type": "boolean",
+            "description": "Whether the plan can still change, which is until separation starts — read off what has\r\nhappened, not TrackState TrackRow.State, since only ParkReason.NoKey follows the GPU."
+          },
+          "isCutInFlight": {
+            "type": "boolean",
+            "description": "A change to this track's files is already being made, so the plan is not open to another."
+          },
+          "facts": {
+            "description": "What this row knows about itself that attaching another source needs.",
+            "$ref": "#/components/schemas/TrackRowFacts"
+          },
+          "auditNote": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A finding to flag beside the song name — for now an Ableton tag that no longer matches the\r\nledger — or null when there is nothing wrong."
+          },
+          "isAwaitingJudgment": {
+            "type": "boolean",
+            "description": "Headed for judging with nothing in its way: unjudged, and queued, downloading or detecting —\r\nthe same count whichever of those it is in."
+          },
+          "chipLabel": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the state chip reads."
+          },
+          "chipStyle": {
+            "description": "How the chip is drawn.",
+            "$ref": "#/components/schemas/TrackChipStyle"
+          },
+          "chipHasDot": {
+            "type": "boolean",
+            "description": "Whether the chip carries a dot — the mark of work happening right now."
+          },
+          "next": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What happens next, in plain English — or what is waiting on the user."
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The expanded row's sentence: what the verdict was, whether Ableton still agrees with it,\r\nand how long the track has been sitting in staging."
+          },
+          "retryNote": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Said while a stage is owed another attempt; its error is too long to inline."
+          }
+        },
+        "description": "One track, with everything known about it rolled up: the row the Tracks page draws."
+      },
+      "TrackRowFacts": {
+        "required": [
+          "videoId",
+          "plan",
+          "uploads"
+        ],
+        "type": "object",
+        "properties": {
+          "videoId": {
+            "type": "string"
+          },
+          "song": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The ledger identity every upload of this track resolves to."
+          },
+          "key": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The key an added source inherits, or null when there is none to inherit."
+          },
+          "plan": {
+            "$ref": "#/components/schemas/StemPlan"
+          },
+          "uploads": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Every upload this track already speaks for, so none is added twice."
+          },
+          "isLibraryOnly": {
+            "type": "boolean",
+            "description": "The row exists only because the library holds files for it."
+          },
+          "hasVerdict": {
+            "type": "boolean",
+            "description": "Whether the ledger has ever judged this track, even to a verdict that left\r\nstring? TrackRowFacts.Key null."
+          },
+          "hasUpload": {
+            "type": "boolean"
+          },
+          "labels": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Labels already in use, which a new one may not repeat."
+          }
+        },
+        "description": "What a row knows about itself that adding a source needs (ADR 0014)."
+      },
+      "TrackSample": {
+        "required": [
+          "label"
+        ],
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string",
+            "description": "What the separator called this file — `Vocal - Full` — or `source`."
+          },
+          "kind": {
+            "description": "Whether it is a stem, the source track kept whole, or neither any more.",
+            "$ref": "#/components/schemas/StemKind"
+          },
+          "presetId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The preset the plan would ask for to make this file again, or null when it cannot ask.\r\nNever parse it out of string TrackSample.Label, which can read like one when it is not."
+          },
+          "abletonKey": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The key Ableton holds on this file — from the tag store while staged, from its index once\r\nin the library (ADR 0013) — or null when it holds none."
+          },
+          "isKeyTagged": {
+            "type": "boolean",
+            "description": "Whether Ableton has a key on the file."
+          },
+          "isPremium": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether it was downloaded as premium audio. Null when the file does not say."
+          },
+          "isInLibrary": {
+            "type": "boolean",
+            "description": "Whether this sample has reached the library, which is what says it is done."
+          },
+          "hasDefaultClip": {
+            "type": "boolean",
+            "description": "Its default clip is saved, which only a finished warp gets. Read for staged samples only\r\n(ADR 0037)."
+          },
+          "warpBorrowedFrom": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The sibling whose warp crateside copied onto it, until the user saves over it (ADR 0043)."
+          },
+          "tempo": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The tempo its warp holds, once its default clip is saved (ADR 0038).",
+                "$ref": "#/components/schemas/WarpTempo"
+              }
+            ]
+          },
+          "beats": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "beatdetect's reading of the upload's reference file, its source else this file when it is the instrumental.",
+                "$ref": "#/components/schemas/BeatReading"
+              }
+            ]
+          },
+          "sourceVideoId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The upload this file was cut from. A song that has been source-swapped holds samples from\r\nmore than one, and their filenames need not differ (ADR 0014)."
+          }
+        },
+        "description": "One file of a track that is meant to be kept: tagged, then warped, then moved."
+      },
+      "TrackState": {
+        "enum": [
+          "Queued",
+          "Downloading",
+          "Detecting",
+          "Judging",
+          "JudgedInLine",
+          "Separating",
+          "Staging",
+          "Tagging",
+          "ReadyToWarp",
+          "ReadyToMove",
+          "Done",
+          "Parked",
+          "GaveUp",
+          "Short"
+        ],
+        "description": "Where a track has got to, as one value — derived, never stored."
+      },
+      "TracksView": {
+        "required": [
+          "rows"
+        ],
+        "type": "object",
+        "properties": {
+          "rows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackRow"
+            }
+          },
+          "readAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the playlist behind these rows was last fetched, set by the caller. Null if it never\r\nhas been.",
+            "format": "date-time"
+          },
+          "playlistProblem": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Why the playlist could not be read, or null when it could. Shown beside the rows, which\r\nstand either way (ADR 0021)."
+          }
+        },
+        "description": "The playlist as tracks: one row each, whatever state they are in — the work lists of\r\nWorkListsView put back together by track identity."
+      },
+      "TrackTempo": {
+        "required": [
+          "source",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/TempoSource"
+          },
+          "value": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The tempo as its source gives it, shifted if the track is.",
+            "format": "double"
+          },
+          "warp": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/WarpTempo"
+              }
+            ]
+          },
+          "reading": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BeatReading"
+              }
+            ]
+          },
+          "estimate": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "The ledger's estimate.",
+            "format": "double"
+          },
+          "measured": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The source's own figure, before any shift.",
+            "format": "double"
+          },
+          "drifts": {
+            "type": "boolean"
+          },
+          "isVouched": {
+            "type": "boolean",
+            "description": "Known to the hundredth: a steady warp whose grid holds against the audio, any other warp that holds, a typed figure, or a reading whose windows agree tightly."
+          },
+          "off": {
+            "description": "A steady warp that sits off the tempo the audio holds, and the tempo it should be at (#96).",
+            "$ref": "#/components/schemas/TempoOff"
+          },
+          "unconfirmed": {
+            "description": "A steady warp the audio gives no verdict on: a step in its grid, too few transients, or no tempo that holds.",
+            "$ref": "#/components/schemas/WarpGrid"
+          },
+          "changesTempo": {
+            "type": "boolean",
+            "description": "A warp with two or more stable tempos."
+          },
+          "partChanges": {
+            "type": "boolean",
+            "description": "A warp with one stable tempo and a ramp or drifting stretch besides."
+          },
+          "windows": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/TempoWindow"
+            },
+            "description": "The source's windows in the octave of double TrackTempo.Value: a warp's four bars, a reading's 30 s, less its off-tempo ones."
+          },
+          "range": {
+            "description": "The slowest and fastest window of a drifting tempo.",
+            "$ref": "#/components/schemas/ValueTupleOfdoubleAnddouble"
+          }
+        },
+        "description": "A BPM as crateside shows it: the value, where it came from, and the figures behind it (ADR 0049, 0050)."
+      },
+      "TrackUpload": {
+        "required": [
+          "videoId",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "videoId": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string"
+          }
+        },
+        "description": "One upload a track has used, and what it is to the track: `cut from`, an added source, an old upload."
+      },
+      "TransientOrigin": {
+        "required": [
+          "audio",
+          "detector",
+          "copiedFrom"
+        ],
+        "type": "object",
+        "properties": {
+          "audio": {
+            "type": "string",
+            "description": "The file it was written beside, by name."
+          },
+          "detector": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "crateside's detector and its version, such as `onsets 1`; null for a copy of Live's."
+          },
+          "copiedFrom": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The file whose Live-detected transients were copied, by name; null when detected."
+          }
+        },
+        "description": "Where the transients in a sidecar crateside wrote came from: its own detector, or a copy of Live's."
+      },
+      "TrueUpReason": {
+        "enum": [
+          "NoWarp",
+          "NotSteady",
+          "TooFewTransients",
+          "Steps",
+          "WithinNoise",
+          "DoesNotHold",
+          null
+        ]
+      },
+      "ValueTupleOfdoubleAnddouble": {
+        "type": "object",
+        "properties": {
+          "item1": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "item2": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "ValueTupleOfstringAndstring": {
+        "type": "object",
+        "properties": {
+          "item1": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "item2": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "WarpGrid": {
+        "required": [
+          "reason",
+          "trueBpm",
+          "driftMs"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/TrueUpReason"
+              }
+            ]
+          },
+          "trueBpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "The tempo that removes the warp's drift, when it is worth retyping.",
+            "format": "double"
+          },
+          "driftMs": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "What the warp drifts over the track at its own tempo, positive when it runs fast.",
+            "format": "double"
+          }
+        },
+        "description": "A steady warp checked against the audio: Reason is why it was left, null where\r\nTrueBpm would fit better."
+      },
+      "WarpMarker": {
+        "type": "object",
+        "properties": {
+          "seconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "beat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "WarpOwner": {
+        "required": [
+          "kind"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/WarpOwnerYours"
+          },
+          {
+            "$ref": "#/components/schemas/WarpOwnerBorrowed"
+          },
+          {
+            "$ref": "#/components/schemas/WarpOwnerStarter"
+          },
+          {
+            "$ref": "#/components/schemas/WarpOwnerUnwarped"
+          },
+          {
+            "$ref": "#/components/schemas/WarpOwnerLiveAnalysis"
+          },
+          {
+            "$ref": "#/components/schemas/WarpOwnerNone"
+          },
+          {
+            "$ref": "#/components/schemas/WarpOwnerWaitingForLive"
+          },
+          {
+            "$ref": "#/components/schemas/WarpOwnerPuttingBack"
+          }
+        ],
+        "description": "Whose warp a stem's sidecar holds.",
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "yours": "#/components/schemas/WarpOwnerYours",
+            "borrowed": "#/components/schemas/WarpOwnerBorrowed",
+            "starter": "#/components/schemas/WarpOwnerStarter",
+            "unwarped": "#/components/schemas/WarpOwnerUnwarped",
+            "liveAnalysis": "#/components/schemas/WarpOwnerLiveAnalysis",
+            "none": "#/components/schemas/WarpOwnerNone",
+            "waitingForLive": "#/components/schemas/WarpOwnerWaitingForLive",
+            "puttingBack": "#/components/schemas/WarpOwnerPuttingBack"
+          }
+        }
+      },
+      "WarpOwnerBorrowed": {
+        "required": [
+          "from",
+          "written"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "borrowed"
+            ],
+            "type": "string"
+          },
+          "from": {
+            "type": "string"
+          },
+          "written": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A sibling's warp crateside copied onto this stem (ADR 0043)."
+      },
+      "WarpOwnerLiveAnalysis": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "liveAnalysis"
+            ],
+            "type": "string"
+          }
+        },
+        "description": "Live analyzed the file but no warp was saved, so Live ignores its markers."
+      },
+      "WarpOwnerNone": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "none"
+            ],
+            "type": "string"
+          }
+        },
+        "description": "No sidecar: Live has never opened the file."
+      },
+      "WarpOwnerPuttingBack": {
+        "required": [
+          "awaited"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "puttingBack"
+            ],
+            "type": "string"
+          },
+          "awaited": {
+            "$ref": "#/components/schemas/AwaitedAnalysis"
+          }
+        },
+        "description": "Live has written a fresh sidecar, and crateside has yet to put the warp back into it."
+      },
+      "WarpOwnerStarter": {
+        "required": [
+          "written"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "starter"
+            ],
+            "type": "string"
+          },
+          "written": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A starter warp crateside wrote from beatdetect's reading, not yet saved over."
+      },
+      "WarpOwnerUnwarped": {
+        "required": [
+          "written"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "unwarped"
+            ],
+            "type": "string"
+          },
+          "written": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A clip crateside saved with Warp off, so the stem arrives at its gain and color for the user to warp (ADR 0059)."
+      },
+      "WarpOwnerWaitingForLive": {
+        "required": [
+          "awaited"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "waitingForLive"
+            ],
+            "type": "string"
+          },
+          "awaited": {
+            "$ref": "#/components/schemas/AwaitedAnalysis"
+          }
+        },
+        "description": "The sidecar is in the Recycle Bin until Live opens the stem again."
+      },
+      "WarpOwnerYours": {
+        "required": [
+          "saved",
+          "lentTo",
+          "savedOver"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "yours"
+            ],
+            "type": "string"
+          },
+          "saved": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lentTo": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The siblings crateside lent this warp to, whose sidecars still hold it."
+          },
+          "savedOver": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The warp crateside wrote that the user saved over, if any.",
+                "$ref": "#/components/schemas/WrittenWarp"
+              }
+            ]
+          }
+        },
+        "description": "A warp the user saved in Live."
+      },
+      "WarpTempo": {
+        "required": [
+          "bpm",
+          "shape",
+          "low",
+          "high",
+          "stable"
+        ],
+        "type": "object",
+        "properties": {
+          "bpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The stable tempo that holds for the most bars, or the median bar when none does.",
+            "format": "double"
+          },
+          "shape": {
+            "$ref": "#/components/schemas/TempoShape"
+          },
+          "low": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The slowest audible bar.",
+            "format": "double"
+          },
+          "high": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The fastest audible bar.",
+            "format": "double"
+          },
+          "stable": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StableTempo"
+            },
+            "description": "Each stable tempo and its audible bars, most bars first."
+          },
+          "audibleBars": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The bars int StableTempo.Bars counts against, so a main tempo's share of the track.",
+            "format": "int32"
+          },
+          "windows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TempoWindow"
+            },
+            "description": "Each audible run of four bars and its tempo, where a drifting warp's range is read."
+          },
+          "line": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The first and last bar line the clip spans, so a steady warp's beat at any time can be read off it.",
+                "$ref": "#/components/schemas/GridLine"
+              }
+            ]
+          },
+          "grid": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Where a steady warp's grid sits against the audio's transients; null for any other shape (ADR 0050).",
+                "$ref": "#/components/schemas/WarpGrid"
+              }
+            ]
+          }
+        },
+        "description": "The tempo a finished warp holds, read bar by bar across its default clip (ADR 0038)."
+      },
+      "WindowAsker": {
+        "enum": [
+          "User",
+          "Judge",
+          null
+        ]
+      },
+      "WindowReading": {
+        "required": [
+          "window",
+          "algorithms",
+          "backers",
+          "section"
+        ],
+        "type": "object",
+        "properties": {
+          "window": {
+            "$ref": "#/components/schemas/RunWindow"
+          },
+          "algorithms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AlgorithmResult"
+            }
+          },
+          "backers": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "section": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Section"
+              }
+            ]
+          }
+        },
+        "description": "One window's detector readings, and the section the verdict gave it, if any."
+      },
+      "WrittenStarter": {
+        "required": [
+          "bpm",
+          "readBpm",
+          "markerSeconds",
+          "markerBeat",
+          "readBeatSeconds",
+          "downbeat",
+          "barFrom",
+          "downbeatSureAt"
+        ],
+        "type": "object",
+        "properties": {
+          "bpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The tempo written: the reading's, refined on the transients (ADR 0050).",
+            "format": "double"
+          },
+          "readBpm": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The reading's tempo before it was refined.",
+            "format": "double"
+          },
+          "markerSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "markerBeat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The marker's beat within its bar, 0 being the downbeat.",
+            "format": "double"
+          },
+          "readBeatSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "The reading's beat, which picked the 16th the transients' fold placed the marker in; null when the fold chose alone.",
+            "format": "double"
+          },
+          "downbeat": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The reading's downbeat, used or not; null when it read none.",
+                "$ref": "#/components/schemas/ReadDownbeat"
+              }
+            ]
+          },
+          "barFrom": {
+            "$ref": "#/components/schemas/StarterBar"
+          },
+          "downbeatSureAt": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "description": "The confidence the downbeat had to reach to be used, when this was written.",
+            "format": "double"
+          },
+          "beatFrom": {
+            "$ref": "#/components/schemas/StarterBeat"
+          },
+          "readMarkerBeat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "description": "The marker's beat within its bar counting from the reading's downbeat, used or not; null without one.",
+            "format": "double"
+          }
+        },
+        "description": "A starter as written: its tempo and marker, the reading they came from, and why the marker got its beat (#176)."
+      },
+      "WrittenWarp": {
+        "required": [
+          "from",
+          "length",
+          "written"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The sibling's audio file, or null for a starter warp."
+          },
+          "length": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "description": "The sidecar's size as written, to tell whether Live has saved over it.",
+            "format": "int64"
+          },
+          "written": {
+            "type": "string",
+            "description": "The sidecar's last write time (UTC) as written.",
+            "format": "date-time"
+          },
+          "isUnwarped": {
+            "type": "boolean",
+            "description": "A clip with Warp off, for a stem that gets no starter: no warp at all (ADR 0059).",
+            "default": false
+          },
+          "starter": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "A starter's grid and why its marker got its beat; null for anything else, and for starters written before #176.",
+                "$ref": "#/components/schemas/WrittenStarter"
+              }
+            ]
+          }
+        },
+        "description": "A sidecar crateside wrote: a sibling's warp, a starter warp, or a clip with Warp off."
+      },
+      "YearKind": {
+        "enum": [
+          "Release",
+          "Upload",
+          null
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Tracks"
+    }
+  ]
+}

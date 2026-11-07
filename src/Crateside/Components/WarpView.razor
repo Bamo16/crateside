@@ -1,0 +1,1474 @@
+@using System.Globalization
+@using System.Text
+@using AbleKit.Analysis
+@using Crateside.Core
+@using Crateside.Core.Ableton
+@using Crateside.Core.Ledger
+@using Crateside.Core.Orchestration.Verdict
+@using Crateside.Core.Quota
+@using Crateside.Core.Tempo
+@using Crateside.Core.Tracks
+@using Crateside.Core.Warps
+@using Microsoft.Extensions.Options
+@implements IAsyncDisposable
+@inject StemWarpReader Reader
+@inject WarpActions Actions
+@inject WarpTrueUp TrueUp
+@inject LiveAnalyses Waiting
+@inject CratesidePaths Paths
+@inject TracksService Tracks
+@inject BarJudging Judging
+@inject QuotaGuard Guard
+@inject IOptions<JudgeOptions> Judge
+@inject IJSRuntime Js
+
+@if (_group is { } group && (group.Stems.Count > 0 || (Row.HasUpload && Judge.Value.IsConfigured)))
+{
+    var wording = Wording(group);
+    var (from, to) = View(group);
+    var selected = Selected(group);
+
+    <section class="warp" id="warp-view" @ref="_section" @onkeydown="OnKey">
+        <div class="head">
+            <span class="section-label">@(group.Stems.Count > 0 ? "Warp" : "Judge")</span>
+            @if (group.Stems.Count > 0)
+            {
+                <span class="group-line @(group.OnTheirOwn.Any() ? "loud" : null)">@GroupLine(group, wording)</span>
+            }
+            @if (Row.HasUpload && Judge.Value.IsConfigured && _form is null && BarRun is not { IsRunning: true })
+            {
+                <button class="outline small" @onclick="() => Open(group)">Judge again</button>
+            }
+            @if (group.Lender is not null)
+            {
+                <span class="zoom">
+                    @if (_zoom is not Zoom.Whole)
+                    {
+                        <span class="mono where-in">@ViewLabel(group, from, to)</span>
+                        <button class="outline mono nav" title="Earlier" @onclick="() => Move(group, -1)">‹</button>
+                        <button class="outline mono nav" title="Later" @onclick="() => Move(group, 1)">›</button>
+                    }
+                    @foreach (var zoom in Enum.GetValues<Zoom>())
+                    {
+                        <button class="pill @(zoom == _zoom ? "on plain" : "off")" @onclick="() => SetZoom(group, zoom)">@ZoomLabel(zoom)</button>
+                    }
+                </span>
+            }
+        </div>
+
+        @if (_form is { } form)
+        {
+            var unreadable = form.Unreadable(group);
+            var audio = Judging.AudioFor(Row);
+
+            <div class="judge-form">
+                <div class="form-head">
+                    <span class="form-label">@form.Title(group)</span>
+                    <span class="unit-note">
+                        @(form.InBars
+                            ? "Bars as Live's ruler numbers them: bar 1 is the warp's 1.1.1, and bars before it are -1, -2…"
+                            : "No warp yet, so ranges are in minutes and seconds. Warp it in Live and the form takes bars.")
+                    </span>
+                </div>
+                <div class="range-row heads">
+                    <span></span>
+                    <span>@(form.InBars ? "Bars" : "From – to")</span>
+                    <span>Label</span>
+                    <span>Note to the judge</span>
+                    <span></span>
+                </div>
+                @foreach (var (line, index) in form.Lines.Select((line, index) => (line, index)))
+                {
+                    <div class="range-row @(unreadable.Contains(index + 1) ? "unreadable" : null)">
+                        <span class="mono number">@(index + 1)</span>
+                        <input class="mono range-field" @bind="line.Range" @bind:event="oninput"
+                               placeholder="@(form.InBars ? "33–48, 106-end" : "0:45–1:07")" aria-label="Range @(index + 1)" />
+                        <input @bind="line.Label" @bind:event="oninput" placeholder="e.g. Opening, Final chorus" aria-label="Label" />
+                        <input @bind="line.Note" @bind:event="oninput" placeholder="Note to the judge (optional)"
+                               aria-label="Note to the judge" @onkeydown="key => AddOnEnter(key, form, index)" />
+                        <button class="remove" title="Remove this range" @onclick="() => form.Remove(line)">×</button>
+                        @if (form.Stretch(line, group) is { } stretch)
+                        {
+                            <span class="stretch faint">@stretch</span>
+                        }
+                    </div>
+                }
+                <div class="range-row add">
+                    <span></span>
+                    <button class="add-line" @onclick="form.Add">+ another range <span class="faint">@(group.Stems.Count > 0 ? "· or drag on the ruler below" : null)</span></button>
+                </div>
+                <div class="hear">
+                    <span></span>
+                    <span class="hear-label">What you hear</span>
+                    <span class="hear-fields">
+                        <input class="mono ear @(form.EarIsUnreadable ? "unreadable" : null)" @bind="form.Ear" @bind:event="oninput"
+                               placeholder="C♯ min" aria-label="What you hear" />
+                        <select @bind="form.EarMode" aria-label="Mode">
+                            <option value="">mode, if you know it</option>
+                            @foreach (var mode in Enum.GetValues<DiatonicMode>())
+                            {
+                                <option value="@mode">@mode</option>
+                            }
+                        </select>
+                        <span class="hint">optional · @EarHint (<a href="settings">Settings</a>)</span>
+                    </span>
+                </div>
+                <div class="cost">
+                    <span class="cost-line">
+                        @if (unreadable is [var first, ..])
+                        {
+                            <span class="problem">
+                                Range @first doesn't read as @(form.InBars ? "bars, such as 33–48" : "minutes and seconds, such as 0:45–1:07").
+                            </span>
+                        }
+                        else
+                        {
+                            @CostLine(form.Windows(group).Count, audio is null)
+                        }
+                    </span>
+                    <span class="actions">
+                        <button class="primary" disabled="@(unreadable.Count > 0 || form.EarIsUnreadable)"
+                                @onclick="() => StartRun(form, group, audio)">@form.Title(group)</button>
+                        <button class="outline" @onclick="() => _form = null">Cancel</button>
+                    </span>
+                </div>
+            </div>
+        }
+        else if (BarRun is { IsRunning: true } running)
+        {
+            <div class="judge-running">
+                <span class="steps">
+                    <span class="chip @(JudgeText.Phase(running) is 0 ? "running" : "done")">@(JudgeText.Phase(running) is 0 ? "●" : "✓") Detecting windows</span>
+                    <span class="chip @(JudgeText.Phase(running) is 1 ? "running" : null)">@(JudgeText.Phase(running) is 1 ? "●" : "○") Judging</span>
+                    <span class="chip">○ Recorded</span>
+                </span>
+                <span class="run-line">@JudgeText.Step(running, window => Span(group, window))</span>
+                <span class="leave">@JudgeText.Leave</span>
+            </div>
+        }
+        else if (BarRun is { Outcome: not null } finished && DoneLine(finished) is { } done)
+        {
+            <div class="judge-done">
+                <span class="done-line">@done</span>
+                @if (finished.Outcome.IsSuccess)
+                {
+                    <a href="@EvidenceLink">Why this key ↓</a>
+                }
+            </div>
+            @if (finished is { JudgeAsked: [_, ..] asked, JudgeAskedAt: { } askedAt })
+            {
+                <div class="judge-done">
+                    <span class="done-line faint">
+                        The judge asked for @string.Join(", ", asked.Select(window => Span(group, window))) (@askedAt.ToLocalTime().ToString("d MMM, h:mm tt"))
+                        and crateside ran them unattended. Yours are solid; the judge's are dashed.
+                    </span>
+                </div>
+            }
+        }
+
+        @if (group.Stems.Count > 0)
+        {
+            <div class="grid">
+                @if (_zoom is not Zoom.Whole && group.Stems.FirstOrDefault(stem => stem.Sidecar is not null) is { } whole)
+                {
+                    <span class="gutter faint">Whole track · click to move</span>
+                    <div class="strip">
+                        <svg viewBox="0 0 @Columns 20" preserveAspectRatio="none">
+                            <path d="@Wave(whole, 0, group.Seconds, 20, mono: true)" />
+                        </svg>
+                        <div class="view-box" style="left: @P(from / group.Seconds * 100)%; width: @P((to - from) / group.Seconds * 100)%"></div>
+                        <div class="strip-hits">
+                            @for (var i = 0; i < StripColumns; i++)
+                            {
+                                var at = (i + 0.5) / StripColumns * group.Seconds;
+                                <span @onpointerdown="() => CenterOn(group, at)" @onpointerenter="pointer => Drag(group, at, pointer)"></span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @{ var bands = Bands(group); var clipWord = ClipWord(group, from, to); }
+                <span class="gutter faint ruler-gutter">
+                    <span>@(group.Lender is null ? "Time" : "Bar")</span>
+                    @if (_form is not null)
+                    {
+                        <span class="drag-hint">drag here to add a range</span>
+                    }
+                </span>
+                <div class="ruler @(bands.Count > 0 || _form is not null ? "tall" : null) @(_form is not null ? "dragging" : null)"
+                     data-snaps="@(_form is null ? null : string.Join(',', SnapBounds(group, from, to).Select(F)))">
+                    @if (group.Lender is null)
+                    {
+                        @foreach (var at in TimeTicks(from, to))
+                        {
+                            <span class="tick numbered" style="left: @P(X(at, from, to))%"></span>
+                            <span class="mono bar-number" style="left: @P(X(at, from, to))%">@TempoFormat.Clock(at)</span>
+                        }
+                    }
+                    @BandsIn(bands, from, to, tags: true)
+                    @if (group.Lender?.Loop is { } loop)
+                    {
+                        var (loopLeft, loopRight) = (Math.Clamp(X(loop.Start, from, to), 0, 100), Math.Clamp(X(loop.End, from, to), 0, 100));
+                        @if (loopRight > loopLeft)
+                        {
+                            <div class="loop @(loop.On ? "on" : null) @(X(loop.Start, from, to) < 0 ? "open-left" : null) @(X(loop.End, from, to) > 100 ? "open-right" : null)"
+                                 style="left: @P(loopLeft)%; width: @P(loopRight - loopLeft)%"
+                                 title="@LoopTitle(loop)"></div>
+                        }
+                        @if (X(loop.End, from, to) is >= 0 and <= 92)
+                        {
+                            <span class="mono loop-word" style="left: calc(@P(X(loop.End, from, to))% + 4px)">@(loop.On ? "loop" : "loop off")</span>
+                        }
+                    }
+                    @foreach (var (at, bar, numbered, beat) in BarTicks(group, from, to))
+                    {
+                        <span class="tick @(numbered ? "numbered" : null) @(beat ? "beat" : null)" style="left: @P(X(at, from, to))%"></span>
+                        @if (numbered && !UnderClipWord(clipWord, X(at, from, to)))
+                        {
+                            <span class="mono bar-number" style="left: @P(X(at, from, to))%">@bar</span>
+                        }
+                    }
+                    @if (clipWord is var (clipX, toLeft))
+                    {
+                        <span class="notch" style="left: @P(clipX)%"
+                              title="Clip start · @WarpWording.Time(group.Lender!.Clip.Start) · bar @StartBar(group)"></span>
+                        <span class="mono clip-word @(toLeft ? "left" : null)" style="left: @P(clipX)%">clip start</span>
+                    }
+                    @if (_form is { } dragged)
+                    {
+                        @foreach (var (line, index) in dragged.Lines.Select((line, index) => (line, index)))
+                        {
+                            @if (dragged.Window(line, group) is { } window)
+                            {
+                                var (left, right) = (X(window.Start, from, to), X(window.End, from, to));
+                                @if (left is >= 0 and <= 100)
+                                {
+                                    <span class="edge" style="left: @P(left)%" data-line="@index" data-side="start" data-fixed="@F(right / 100)"></span>
+                                }
+                                @if (right is >= 0 and <= 100)
+                                {
+                                    <span class="edge" style="left: @P(right)%" data-line="@index" data-side="end" data-fixed="@F(left / 100)"></span>
+                                }
+                            }
+                        }
+                    }
+                </div>
+
+                @if (group.SharedAllMarkers is { Count: > 1 })
+                {
+                    var (figure, low, high, drifts) = TempoScale(group);
+                    <span class="gutter tempo-gutter">
+                        <span class="faint">Tempo from the markers</span>
+                        @if (Headline is { } headline)
+                        {
+                            <span><span class="mono figure">@headline.Text</span> <span class="note">@headline.Brief</span></span>
+                        }
+                    </span>
+                    <div class="tempo-line" title="@("marker".ToQuantity(group.SharedMarkers.Count)) · @Headline?.Note">
+                        <svg viewBox="0 0 @Columns 40" preserveAspectRatio="none">
+                            <line class="dashed" x1="0" x2="@Columns" y1="@P(Y(figure, low, high))" y2="@P(Y(figure, low, high))" />
+                            <path d="@TempoPath(group, from, to, low, high)" />
+                        </svg>
+                        @if (drifts)
+                        {
+                            <span class="mono range high">@((int)high)</span>
+                            <span class="mono range low">@((int)low)</span>
+                        }
+                        @BandsIn(bands, from, to, tags: false)
+                    </div>
+                }
+
+                @if (OffGrid(group) is { } off)
+                {
+                    <span class="gutter off-gutter">
+                        <span class="off-head">
+                            <span class="off-title">Off the grid</span>
+                            @if (off.CanTrueUp && _confirming is Confirming.None && _working is null && _trueUp is { Plan: TrueUpPlan.Retype })
+                            {
+                                <button class="outline small" @onclick="() => _confirming = Confirming.TrueUp">True up</button>
+                            }
+                        </span>
+                        <span class="mono off-figure">@off.Figure</span>
+                        @if (off.Runs is { } runs)
+                        {
+                            <span class="off-runs">@runs</span>
+                        }
+                    </span>
+                    <div class="off-line">
+                        <svg viewBox="0 0 @Columns 72" preserveAspectRatio="none">
+                            <line class="dashed" x1="0" x2="@Columns" y1="36" y2="36" />
+                            @if (off.Points(from, to) is { Count: > 1 } points)
+                            {
+                                <polyline points="@string.Join(' ', points.Select(point => $"{P(point.X / 100 * Columns)},{P(point.Y / 100 * 72)}"))" />
+                            }
+                        </svg>
+                        @foreach (var point in off.Points(from, to))
+                        {
+                            <span class="off-dot" style="left: @P(point.X)%; top: @P(point.Y)%"></span>
+                        }
+                        <span class="mono off-label top">audio early +30 ms</span>
+                        <span class="mono off-label bottom">late −30 ms</span>
+                        @BandsIn(bands, from, to, tags: false)
+                    </div>
+                    @if (off.CanTrueUp && Row.Bpm is { } tempo && group.Lender is { } canonical)
+                    {
+                        <div class="off-status">
+                            @if (Working(canonical))
+                            {
+                                <span class="working"><span class="dot"></span>@(_trueUp is { Plan: TrueUpPlan.Retype working } ? WarpWording.TrueUpWorking(working) : "Retyping the warp…")</span>
+                            }
+                            else if (_confirming is Confirming.TrueUp && _trueUp is { Plan: TrueUpPlan.Retype plan, Siblings: var siblings })
+                            {
+                                <div class="confirm">
+                                    <span class="control-label asking">True up the warp</span>
+                                    <span class="status">@wording.TrueUpQuestion(plan)</span>
+                                    <span class="actions">
+                                        <button class="danger" @onclick="() => TrueUpAsync(canonical, plan, siblings)">True up my warp</button>
+                                        <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
+                                    </span>
+                                </div>
+                            }
+                            else if (Done(canonical, Confirming.TrueUp) is { } done)
+                            {
+                                <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
+                            }
+                            else
+                            {
+                                <span class="status @(_working is null && _trueUp is { Plan: TrueUpPlan.Retype } ? null : "faint")">
+                                    @(_working is not null
+                                        ? "Not while a change is under way."
+                                        : _trueUp switch
+                                        {
+                                            null => "Checking the warp against the audio…",
+                                            { Plan: TrueUpPlan.Retype ready } => wording.TrueUpStatus(tempo, ready),
+                                            { Plan: var refused } => WarpWording.TrueUpRefusal(refused),
+                                        })
+                                </span>
+                            }
+                        </div>
+                    }
+                }
+
+                @foreach (var stem in group.Stems)
+                {
+                    var chip = Working(stem) ? new WarpChip("Writing", ChipStyle.Teal) : wording.Chip(stem);
+                    var isSelected = stem == selected;
+                    var parts = group.PartsFrom(stem);
+
+                    <div class="lane @(isSelected ? "selected" : null)" @onclick="() => Select(stem)">
+                        <span class="gutter lane-gutter">
+                            <span class="name">@NameOf(stem.Path)</span>
+                            <span class="wchip @Style(chip.Style)">@chip.Label</span>
+                            <span class="sub">@(Working(stem) ? $"writing {wording.Name(group.Lender!.Path)}'s warp" : wording.Sub(stem))</span>
+                        </span>
+                        <div class="plot">
+                            @if (stem.Sidecar is null)
+                            {
+                                <div class="empty @(stem.Owner is WarpOwner.WaitingForLive ? "waiting" : null)">
+                                    @(stem.Owner is WarpOwner.WaitingForLive ? "No warp · waiting for Live to open it" : "No overview · Live has not opened this file")
+                                </div>
+                            }
+                            else
+                            {
+                                <svg class="overview" viewBox="0 0 @Columns 45" preserveAspectRatio="none">
+                                    <path d="@Wave(stem, from, to, 45, mono: false)" />
+                                </svg>
+
+                                var markers = stem.Markers;
+                                var flags = FlagsFit(markers, from, to);
+                                @for (var i = 0; i < markers.Count; i++)
+                                {
+                                    var marker = markers[i];
+                                    var x = X(marker.Seconds, from, to);
+                                    if (x is < 0 or > 100)
+                                        continue;
+                                    <span class="marker-line @(flags ? null : "dense")" style="left: @P(x)%"></span>
+                                    <span class="@(flags ? "flag" : "flag-tick")" style="left: @P(x)%" title="@MarkerTitle(stem, i)"></span>
+                                }
+
+                                @if (_zoom is not Zoom.Whole)
+                                {
+                                    @foreach (var at in stem.TransientTimes)
+                                    {
+                                        var x = X(at, from, to);
+                                        if (x is < 0 or > 100)
+                                            continue;
+                                        <span class="transient" style="left: @P(x)%"></span>
+                                    }
+                                }
+
+                                @if (X(stem.Clip.Start, from, to) is >= 0 and <= 100 and var stemClipX)
+                                {
+                                    <div class="clip-line" style="left: @P(stemClipX)%"></div>
+                                }
+                            }
+                            @if (parts is { } parting && wording.Name(group.Lender!.Path) is var sibling)
+                            {
+                                <div class="differs" style="left: @P(Math.Max(0, X(parting, from, to)))%"
+                                     title="Differs from @sibling from @TempoFormat.Clock(parting)"></div>
+                            }
+                            @BandsIn(bands, from, to, tags: false)
+                        </div>
+                    </div>
+                }
+
+                @if (Run is not null)
+                {
+                    <KeyLane Run="Run" Seconds="group.Seconds" From="from" To="to" Bands="BandsIn(bands, from, to, tags: false)" />
+                }
+
+                <span class="gutter"></span>
+                <div class="axis">
+                    @foreach (var at in TimeTicks(from, to))
+                    {
+                        <span class="mono" style="left: @P(X(at, from, to))%">@TempoFormat.Clock(at)</span>
+                    }
+                </div>
+            </div>
+
+            @if (OpenReading is { } open)
+            {
+                <WindowDrawer Run="Run!" Reading="open.Reading" Index="open.Index" Span="@DrawerSpan(group, open.Reading.Window)"
+                              At="WindowCenter(group, open.Reading.Window)" OnClose="() => _openWindow = null" OnStep="StepWindow" />
+            }
+
+            @if (selected is not null)
+            {
+                var chip = Working(selected) ? new WarpChip("Writing", ChipStyle.Teal) : wording.Chip(selected);
+                var sample = Row.Samples.FirstOrDefault(sample => sample.Path == selected.Path);
+
+                <div class="detail">
+                    <div class="detail-head">
+                        <span class="file">@Path.GetFileName(selected.Path)</span>
+                        <span class="wchip @Style(chip.Style)">@chip.Label</span>
+                    </div>
+
+                    <div class="facts">
+                        @foreach (var (label, value, note, tone) in Facts(selected, sample, wording, group))
+                        {
+                            <div class="fact">
+                                <span class="fact-label">@label</span>
+                                <span class="mono fact-value @tone">@value</span>
+                                <span class="fact-note">@note</span>
+                            </div>
+                        }
+                    </div>
+
+                    <p class="provenance">@wording.Sentence(selected)</p>
+                    @if (selected.Starter is { } starter)
+                    {
+                        <p class="starter-why mono">@WarpWording.StarterWhy(starter)</p>
+                    }
+
+                    <div class="controls">
+                        <div class="control">
+                            <div class="label-line">
+                                <span class="control-label @(_confirming is Confirming.Reapply ? "asking" : null)">Re-apply crateside's warp</span>
+                                @if (wording.CanReapply(selected) && _confirming is Confirming.None && _working is null)
+                                {
+                                    <button class="outline" @onclick="() => _confirming = Confirming.Reapply">Re-apply</button>
+                                }
+                            </div>
+                            @if (Working(selected))
+                            {
+                                <span class="working"><span class="dot"></span>Writing @wording.Name(group.Lender!.Path)'s warp…</span>
+                                <span class="status">Your warp is backed up.</span>
+                            }
+                            else if (_confirming is Confirming.Reapply)
+                            {
+                                <span class="status">@wording.ReapplyQuestion(selected)</span>
+                                <span class="actions">
+                                    <button class="danger" @onclick="() => ReapplyAsync(selected)">@wording.ReapplyConfirm(selected)</button>
+                                    <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
+                                </span>
+                            }
+                            else if (Done(selected, Confirming.Reapply) is { } done)
+                            {
+                                <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
+                            }
+                            else
+                            {
+                                <span class="status @(wording.CanReapply(selected) && _working is null ? null : "faint")">
+                                    @(_working is not null ? "Not while a change is under way." : wording.ReapplyStatus(selected))
+                                </span>
+                            }
+                        </div>
+
+                        <div class="control">
+                            <div class="label-line">
+                                <span class="control-label @(_confirming is Confirming.LetLive || selected.Owner is WarpOwner.WaitingForLive ? "asking" : null)">Let Live analyze</span>
+                                @if (WarpWording.CanLetLiveAnalyze(selected) && _confirming is Confirming.None && _working is null)
+                                {
+                                    <button class="outline" @onclick="() => _confirming = Confirming.LetLive">Let Live analyze</button>
+                                }
+                            </div>
+                            @if (_confirming is Confirming.LetLive)
+                            {
+                                <span class="status">@wording.LetLiveQuestion(selected)</span>
+                                <span class="actions">
+                                    <button class="danger" @onclick="() => LetLiveAnalyze(selected)">Send to Recycle Bin</button>
+                                    <button class="outline" @onclick="() => _confirming = Confirming.None">Cancel</button>
+                                </span>
+                            }
+                            else if (selected.Owner is WarpOwner.PuttingBack)
+                            {
+                                <span class="working"><span class="dot"></span>@wording.LetLiveStatus(selected, Folder(selected))</span>
+                            }
+                            else if (Done(selected, Confirming.LetLive) is { } done)
+                            {
+                                <span class="status @(done.Good ? "done" : "failed")">@done.Text(Clock.Ago(done.At))</span>
+                            }
+                            else
+                            {
+                                <span class="status @(selected.Owner is WarpOwner.WaitingForLive ? "now" : WarpWording.CanLetLiveAnalyze(selected) && _working is null ? null : "faint")">
+                                    @(_working is not null && selected.Owner is not WarpOwner.WaitingForLive ? "Not while a change is under way." : wording.LetLiveStatus(selected, Folder(selected)))
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </section>
+}
+
+@code {
+    private const int Columns = 832;
+    private const int StripColumns = 100;
+
+    /// <summary>The pixels a plot is at the page's width cap, for deciding whether flags have room.</summary>
+    private const double PlotPixels = 832;
+
+    private const double FlagRoom = 9;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    /// <summary>The sample whose lane is selected, shared with the sample list.</summary>
+    [Parameter]
+    public string? SelectedPath { get; set; }
+
+    [Parameter]
+    public EventCallback<string> SelectedPathChanged { get; set; }
+
+    /// <summary>The verdict's evidence, whose windows are drawn as bands once recorded.</summary>
+    [Parameter]
+    public RunEvidence? Run { get; set; }
+
+    /// <summary>Raised by the band's invitation: each new value opens the form.</summary>
+    [Parameter]
+    public int OpenRequests { get; set; }
+
+    private BarForm? _form;
+    private int? _openWindow;
+    private ElementReference _section;
+    private IJSObjectReference? _drag;
+    private DotNetObjectReference<WarpView>? _self;
+    private int _openRequestsSeen;
+    private DateTimeOffset? _reopenedAfter;
+
+    private BarRun? BarRun => Judging.Of(Row.TrackKey);
+
+    private string EvidenceLink => $"song/{Uri.EscapeDataString(Row.TrackKey)}#evidence";
+
+    private string EarHint =>
+        Judge.Value.Ear is EarWeight.HumanSource
+            ? "counted as a human source: it can settle a split"
+            : "weighed as a hint, never raises confidence";
+
+    /// <param name="Line">The form's line the band is drawn for, which a drag on the ruler moves.</param>
+    /// <param name="Window">The recorded window the band is drawn for, whose tag opens its drawer.</param>
+    private sealed record Band(double Start, double End, string Tag, string Style, int? Line = null, int? Window = null);
+
+    private (WindowReading Reading, int Index)? OpenReading =>
+        _form is null && _openWindow is { } index && Run?.Readings is { } readings && index < readings.Count
+            ? (readings[index], index)
+            : null;
+
+    private void ToggleWindow(int index) => _openWindow = _openWindow == index ? null : index;
+
+    private void StepWindow(int by) =>
+        _openWindow = Math.Clamp((_openWindow ?? 0) + by, 0, Math.Max((Run?.Readings.Count ?? 1) - 1, 0));
+
+    private void OnKey(KeyboardEventArgs key)
+    {
+        if (key.Key is "Escape")
+            _openWindow = null;
+    }
+
+    private static string DrawerSpan(WarpGroup group, RunWindow window) =>
+        JudgeRanges.BarsOf(group, window.Start, window.End) is { } bars
+            ? $"bars {bars.First}–{bars.Last} · {JudgeText.Time(window)}"
+            : JudgeText.Time(window);
+
+    /// <summary>The middle of a window in the view, as a percentage of the plot, for the drawer's caret.</summary>
+    private double WindowCenter(WarpGroup group, RunWindow window)
+    {
+        var (from, to) = View(group);
+
+        return (Math.Clamp(X(window.Start, from, to), 0, 100) + Math.Clamp(X(window.End, from, to), 0, 100)) / 2;
+    }
+
+    private void Open(WarpGroup group)
+    {
+        _openWindow = null;
+        _form = new BarForm(group.Lender is not null);
+    }
+
+    private static void AddOnEnter(KeyboardEventArgs key, BarForm form, int index)
+    {
+        if (key.Key is "Enter" && index == form.Lines.Count - 1)
+            form.Add();
+    }
+
+    private string CostLine(int windows, bool download) =>
+        (download ? "crateside no longer holds this track's full mix, so it downloads it again first, without separating it. " : null)
+        + (windows is 0
+            ? "With no ranges it judges the whole track again: one judge session of about 37k tokens."
+            : $"Runs now, while you watch: the detectors over {"window".ToQuantity(windows)}, then one judge session of about 37k tokens.")
+        + (Guard.Hold is { Used: not null }
+            ? $" Background judging is paused at {QuotaGuard.WeeklyLimit:N0}% of the week; this one is yours, so it runs anyway."
+            : null);
+
+    private void StartRun(BarForm form, WarpGroup group, string? audio)
+    {
+        if (Judging.TryStart(BarJudging.OrderFor(Row), form.Direction(group, audio)))
+            _form = null;
+    }
+
+    /// <summary>A window's span in bars where the warp can say, else in time.</summary>
+    private static string Span(WarpGroup group, RunWindow window) =>
+        JudgeRanges.BarsOf(group, window.Start, window.End) is { } bars
+            ? $"bars {bars.First}–{bars.Last}"
+            : JudgeText.Span(window);
+
+    /// <summary>What the finished run came to, or null once there is nothing new to say.</summary>
+    private string? DoneLine(BarRun run)
+    {
+        if (run.Outcome is { IsSuccess: false, Error: var error })
+            return $"Not recorded: {error}. The form is open again with your ranges.";
+
+        if (Row.Verdict is not { } verdict || verdict.Timestamp < run.StartedAt)
+            return "Recorded. Reading it back…";
+
+        var ago = Clock.Ago(verdict.Timestamp);
+
+        if (verdict is { Confidence: KeyConfidence.Withheld })
+            return $"Withheld again {ago}. The form is open again with your ranges, so a second try is one edit away.";
+
+        var key = verdict.Center is { } center ? ModeText.Named(center) : KeyText.Spell(verdict.Key);
+        // A window in another center is a section of the song, not a dissent, so it is named rather than counted.
+        var yours = Run?.Readings.Where(reading => reading.Window.AskedBy is WindowAsker.User).ToList() ?? [];
+        var elsewhere = yours
+            .Where(reading => reading.Section is { } section && section.Center != verdict.Center)
+            .Select(reading => $"{reading.Section!.Label}: {ModeText.Named(reading.Section.Center)}")
+            .ToList();
+        var agreement = (yours.Count, elsewhere) switch
+        {
+            (0, _) => null,
+            (2, []) when yours.All(reading => reading.Section is not null) => " Both windows agreed.",
+            (_, []) when yours.All(reading => reading.Section is not null) => " Every window agreed.",
+            (_, []) => null,
+            _ => $" {string.Join("; ", elsewhere)}.",
+        };
+        var kept = (run.Direction.Note is not null, run.Direction.Ear is not null) switch
+        {
+            (true, true) => " Your note and your ear are kept with the run.",
+            (true, false) => " Your note is kept with the run.",
+            (false, true) => " Your ear is kept with the run.",
+            _ => null,
+        };
+
+        return $"Recorded {ago}: {key}, {KeyText.Confidence(verdict.Confidence)}.{agreement}{kept}";
+    }
+
+    /// <summary>A run that ended without a verdict reopens the form with its ranges, once.</summary>
+    private void ReopenIfWithheld()
+    {
+        if (
+            BarRun is not { FinishedAt: { } finishedAt } run
+            || finishedAt == _reopenedAfter
+            || _form is not null
+            || _group is null
+        )
+            return;
+
+        var withheld =
+            run.Outcome is { IsSuccess: false }
+            || Row.Verdict is { Confidence: KeyConfidence.Withheld } verdict && verdict.Timestamp >= run.StartedAt;
+
+        if (!withheld)
+            return;
+
+        _reopenedAfter = finishedAt;
+        _form = BarForm.From(run, _group.Lender is not null);
+    }
+
+    private void OnJudgingChanged() =>
+        _ = InvokeAsync(() =>
+        {
+            ReopenIfWithheld();
+            StateHasChanged();
+        });
+
+    private List<Band> Bands(WarpGroup group)
+    {
+        if (_form is { } form)
+            return
+            [
+                .. form
+                    .Lines.Select((line, index) => (Window: form.Window(line, group), Line: line, Number: index + 1))
+                    .Where(pair => pair.Window is not null)
+                    .Select(pair => new Band(pair.Window!.Start, pair.Window.End, $"{pair.Number} · {pair.Line.Range.Trim()}", "yours", pair.Number - 1)),
+            ];
+
+        if (BarRun is { IsRunning: true } run)
+        {
+            var reading = run.Step is JudgeStep.DetectingWindow(var number, _, _) ? number : 0;
+            var judgesTurn = run.JudgeAsked.Count > 0;
+            var detecting = JudgeText.Phase(run) is 0;
+
+            return
+            [
+                .. run.Direction.Windows.Select((window, index) =>
+                    (!judgesTurn && detecting, reading - (index + 1)) switch
+                    {
+                        (true, 0) => new Band(window.Start, window.End, $"{index + 1} · reading…", "reading"),
+                        (true, < 0) => new Band(window.Start, window.End, $"{index + 1} · {Span(group, window)}", "yours"),
+                        _ => new Band(window.Start, window.End, $"{index + 1} · read", "yours"),
+                    }
+                ),
+                .. run.JudgeAsked.Select((window, index) =>
+                    new Band(
+                        window.Start,
+                        window.End,
+                        $"judge · {Span(group, window)}",
+                        detecting && reading == index + 1 ? "reading" : "judge"
+                    )
+                ),
+            ];
+        }
+
+        return
+        [
+            .. Run?.Readings.Select((reading, index) =>
+                reading switch
+                {
+                    { Window.AskedBy: WindowAsker.User, Section: { } section } =>
+                        new Band(reading.Window.Start, reading.Window.End, $"{section.Label} · {ModeText.Tag(section.Center)}", "yours", Window: index),
+                    { Window: { AskedBy: WindowAsker.User, Label: { Length: > 0 } label } } =>
+                        new Band(reading.Window.Start, reading.Window.End, label, "yours", Window: index),
+                    { Window.AskedBy: WindowAsker.User } =>
+                        new Band(reading.Window.Start, reading.Window.End, Span(group, reading.Window), "yours", Window: index),
+                    _ => new Band(reading.Window.Start, reading.Window.End, $"judge · {Span(group, reading.Window)}", "judge", Window: index),
+                }
+            ) ?? [],
+        ];
+    }
+
+    private RenderFragment BandsIn(IReadOnlyList<Band> bands, double from, double to, bool tags) =>
+        @<text>
+            @foreach (var band in bands)
+            {
+                var (left, right) = (Math.Clamp(X(band.Start, from, to), 0, 100), Math.Clamp(X(band.End, from, to), 0, 100));
+                @if (right > left)
+                {
+                    <div class="jband @band.Style @(band.Window is { } window && window == _openWindow ? "open" : null)" style="left: @P(left)%; width: @P(right - left)%" data-line="@band.Line">
+                        @if (tags && band.Window is { } opens)
+                        {
+                            <button class="mono jtag" aria-expanded="@(opens == _openWindow ? "true" : "false")" title="@band.Tag · @(opens == _openWindow ? "close this window" : "what this window settled")" @onclick="() => ToggleWindow(opens)">@band.Tag</button>
+                        }
+                        else if (tags)
+                        {
+                            <span class="mono jtag" title="@band.Tag">@band.Tag</span>
+                        }
+                    </div>
+                }
+            }
+        </text>;
+
+    /// <summary>Where a drag on the ruler snaps, as fractions of the view: each bar line, or every few seconds without a warp.</summary>
+    private static IEnumerable<double> SnapBounds(WarpGroup group, double from, double to)
+    {
+        if (group.Lender is not null)
+        {
+            if (group.BeatAt(from) is not { } first || group.BeatAt(to) is not { } last)
+                yield break;
+
+            for (var index = group.Bars.IndexAt(first); index <= group.Bars.IndexAt(last) + 1; index++)
+            {
+                if (group.SecondsAt(index * group.Bars.BeatsPerBar) is { } at && X(at, from, to) is >= 0 and <= 100 and var x)
+                    yield return x / 100;
+            }
+
+            yield break;
+        }
+
+        var step = Math.Max(1, (int)Math.Ceiling((to - from) / 200));
+
+        for (var second = (int)Math.Ceiling(from / step) * step; second <= to; second += step)
+            yield return X(second, from, to) / 100;
+    }
+
+    /// <summary>A range let go on the ruler, as fractions of the view: whole bars, or whole seconds without a warp.</summary>
+    [JSInvokable]
+    public void DropRange(int line, double start, double end)
+    {
+        if (_form is not { } form || _group is not { } group)
+            return;
+
+        var (from, to) = View(group);
+        var (startSeconds, endSeconds) = (from + start * (to - from), from + end * (to - from));
+
+        if (!form.InBars)
+            form.Place(line, (int)Math.Round(startSeconds), (int)Math.Round(endSeconds));
+        else if (group.BeatAt(startSeconds) is { } first && group.BeatAt(endSeconds) is { } last)
+            form.Place(line, group.Bars.BarAt(first + 0.001), group.Bars.BarAt(last - 0.001));
+
+        StateHasChanged();
+    }
+
+    private GridReport? _offGrid;
+
+    /// <summary>The Off the grid row's content for the track's canonical warp, when it is a steady one the check ran on (#96).</summary>
+    private OffGridRow? OffGrid(WarpGroup group) =>
+        Row.Bpm is { Source: TempoSource.Warp, Warp.Shape: TempoShape.Steady } tempo
+        && _offGrid is { } report
+        && Wording(group) is var wording
+            ? new OffGridRow(tempo, report, wording.CanTrueUp(tempo))
+            : null;
+
+    private sealed record OffGridRow(TrackTempo Tempo, GridReport Report, bool CanTrueUp)
+    {
+        private const double ScaleMs = 30;
+
+        /// <summary>Each 10 s window's median offset as a point in the plot, in percent; early is up.</summary>
+        public IReadOnlyList<(double X, double Y)> Points(double from, double to) =>
+            [
+                .. Report
+                    .Windows.Select(window =>
+                        (
+                            X: ((window.Start + window.End) / 2 - from) / (to - from) * 100,
+                            Y: 50 + Math.Clamp(window.OffsetMs, -ScaleMs, ScaleMs) / ScaleMs * 50
+                        )
+                    )
+                    .Where(point => point.X is >= 0 and <= 100),
+            ];
+
+        public string Figure =>
+            (Tempo.Off, Tempo.Unconfirmed, Report.Windows.Count) switch
+            {
+                ({ DriftMs: { } _ }, _, _) => $"{TempoFormat.ByTheEnd(Tempo)} by the end",
+                (_, { Reason: TrueUpReason.Steps }, _) => "steps in its grid",
+                (_, not null, _) or (_, _, 0) => "too few transients",
+                _ => "holds",
+            };
+
+        public string? Runs =>
+            Tempo.Off is { DriftMs: { } ms }
+                ? $"runs {TempoFormat.Runs(Tempo)} · grid falls {(ms < 0 ? "behind" : "ahead")}"
+                : null;
+    }
+
+    private WarpGroup? _group;
+    private string? _stamp;
+    private Zoom _zoom = Zoom.Whole;
+    private double _centerBeat;
+    private Confirming _confirming;
+    private string? _working;
+    private ActionDone? _done;
+    private (TrueUpPlan Plan, WarpSiblings Siblings)? _trueUp;
+    private string? _trueUpKey;
+    private Timer? _poll;
+
+    private enum Zoom
+    {
+        Whole,
+        Bars32,
+        Bars8,
+    }
+
+    private enum Confirming
+    {
+        None,
+        Reapply,
+        LetLive,
+        TrueUp,
+    }
+
+    private sealed record ActionDone(string Path, Confirming Action, bool Good, DateTimeOffset At, Func<string, string> Text);
+
+    private FormattedTempo? Headline => Row.Bpm is { } tempo ? TempoFormat.Format(tempo) : null;
+
+    protected override void OnInitialized()
+    {
+        _poll = new Timer(_ => _ = InvokeAsync(Poll), null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(3));
+        Judging.Changed += OnJudgingChanged;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_openWindow >= (Run?.Readings.Count ?? 0))
+            _openWindow = null;
+
+        Reload(force: false);
+        EnsureTrueUp();
+
+        if (OpenRequests != _openRequestsSeen)
+        {
+            _openRequestsSeen = OpenRequests;
+
+            if (_group is { } group && _form is null && BarRun is not { IsRunning: true })
+                Open(group);
+        }
+
+        ReopenIfWithheld();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Judging.Changed -= OnJudgingChanged;
+        _poll?.Dispose();
+        _self?.Dispose();
+
+        try
+        {
+            if (_drag is not null)
+                await _drag.InvokeVoidAsync("dispose");
+        }
+        // The circuit is already gone when the page is closed.
+        catch (JSDisconnectedException) { }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_drag is not null || _section.Id is null)
+            return;
+
+        _self = DotNetObjectReference.Create(this);
+
+        var module = await Js.InvokeAsync<IJSObjectReference>("import", "./Components/WarpView.razor.js");
+
+        _drag = await module.InvokeAsync<IJSObjectReference>("rulerDrag", _section, _self);
+    }
+
+    private void Poll()
+    {
+        if (Reload(force: false))
+        {
+            EnsureTrueUp();
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>Re-reads the sidecars when any changed on disk; whether it did.</summary>
+    private bool Reload(bool force)
+    {
+        var paths = LanePaths();
+        var stamp = Stamp(paths);
+
+        if (!force && stamp == _stamp)
+            return false;
+
+        _stamp = stamp;
+        _group = WarpGroup.Of([.. paths.Select(Reader.Read)]);
+        _offGrid = _group.Lender is { } lender ? WarpTrueUp.Check(lender) : null;
+
+        return true;
+    }
+
+    /// <summary>The samples cut from the upload most of the track's samples share, in the sample list's order.</summary>
+    private List<string> LanePaths()
+    {
+        var upload = Row
+            .Samples.GroupBy(sample => sample.SourceTrackKey)
+            .OrderByDescending(cut => cut.Count())
+            .Select(cut => cut.Key)
+            .FirstOrDefault();
+
+        return
+        [
+            .. Row
+                .Samples.Where(sample => sample.SourceTrackKey == upload && sample.Path is { Length: > 0 })
+                .Select(sample => sample.Path),
+        ];
+    }
+
+    private string Stamp(IEnumerable<string> paths)
+    {
+        var stamp = new StringBuilder();
+
+        foreach (var path in paths)
+        {
+            var sidecar = new FileInfo($"{path}.asd");
+            stamp.Append(path)
+                .Append(sidecar.Exists ? $":{sidecar.Length}:{sidecar.LastWriteTimeUtc.Ticks}" : ":-")
+                .Append(Waiting.Of(path) is null ? null : ":w")
+                .Append('|');
+        }
+
+        return stamp.ToString();
+    }
+
+    private WarpWording Wording(WarpGroup group) => new(group, NameOf);
+
+    private string NameOf(string path) =>
+        Row.Samples.FirstOrDefault(sample => string.Equals(sample.Path, path, StringComparison.OrdinalIgnoreCase))?.Label
+        ?? Path.GetFileNameWithoutExtension(path);
+
+    private StemWarp? Selected(WarpGroup group) =>
+        group.Stems.FirstOrDefault(stem => string.Equals(stem.Path, SelectedPath, StringComparison.OrdinalIgnoreCase))
+        ?? group.OnTheirOwn.FirstOrDefault()
+        ?? group.Stems.FirstOrDefault(stem => stem.Owner is WarpOwner.Borrowed)
+        ?? group.Stems.FirstOrDefault();
+
+    private async Task Select(StemWarp stem)
+    {
+        if (stem.Path == SelectedPath)
+            return;
+
+        _confirming = Confirming.None;
+        SelectedPath = stem.Path;
+        await SelectedPathChanged.InvokeAsync(stem.Path);
+    }
+
+    private bool Working(StemWarp stem) => _working == stem.Path;
+
+    private ActionDone? Done(StemWarp stem, Confirming action) =>
+        _done is { } done && done.Path == stem.Path && done.Action == action ? done : null;
+
+    private string Folder(StemWarp stem) =>
+        Path.GetDirectoryName(stem.Path) is { } folder
+        && folder.Equals(Path.TrimEndingDirectorySeparator(Paths.LibraryFolder), StringComparison.OrdinalIgnoreCase)
+            ? "the library"
+            : "Staging";
+
+    private async Task ReapplyAsync(StemWarp stem)
+    {
+        _confirming = Confirming.None;
+        _working = stem.Path;
+        StateHasChanged();
+
+        var siblings = WarpSiblings.Of(Row.Samples.Select(sample => sample.Path).Where(path => path is { Length: > 0 }));
+        var target = WarpSiblings.Read(stem.Path);
+        var outcome = target is null
+            ? new WarpOutcome.Failed("its tags do not say which upload it was cut from")
+            : await Actions.ReapplyAsync(stem.Path, siblings.AuthoritiesFor(target), siblings.SameKindAs(target));
+
+        _working = null;
+        _done = new ActionDone(
+            stem.Path,
+            Confirming.Reapply,
+            outcome is WarpOutcome.Written,
+            DateTimeOffset.UtcNow,
+            ago => outcome switch
+            {
+                WarpOutcome.Written => $"Re-applied {ago}. Your previous warp is backed up.",
+                WarpOutcome.SiblingsDisagree => "Not re-applied: the stems it could take a warp from hold different ones.",
+                WarpOutcome.LengthsDiffer(var sibling, _, _) => $"Not re-applied: {NameOf(sibling)} is a different length.",
+                WarpOutcome.NoWarpedSibling => "Not re-applied: no stem of this upload has a saved warp.",
+                WarpOutcome.Failed(var error) => $"Not re-applied: {error}",
+                _ => "Not re-applied.",
+            }
+        );
+        Reload(force: true);
+        await Tracks.EnsureFreshAsync(TimeSpan.Zero);
+    }
+
+    /// <summary>Checks the track's warp once per change to it, so the control says up front whether a true-up is on offer.</summary>
+    private void EnsureTrueUp()
+    {
+        if (_group is not { Lender: { } lender } group || !Wording(group).CanTrueUp(Row.Bpm))
+        {
+            (_trueUpKey, _trueUp) = (null, null);
+
+            return;
+        }
+
+        var key = $"{_stamp}|{Row.Bpm?.Off?.Bpm}";
+
+        if (key == _trueUpKey)
+            return;
+
+        (_trueUpKey, _trueUp) = (key, null);
+        _ = PlanTrueUpAsync(lender.Path, key);
+    }
+
+    private async Task PlanTrueUpAsync(string path, string key)
+    {
+        var guides = Directory.Exists(Paths.KeptWarpGuides) ? Directory.EnumerateFiles(Paths.KeptWarpGuides) : [];
+        var siblings = WarpSiblings.Of(
+            Row.Samples
+                .Select(sample => sample.Path)
+                .Where(sample => sample is { Length: > 0 })
+                .Concat(guides)
+                .Where(file => !file.EndsWith(".asd", StringComparison.OrdinalIgnoreCase))
+        );
+        var plan = WarpSiblings.Read(path) is { } song
+            ? await Task.Run(() => TrueUp.Plan(siblings, song, rephase: true))
+            : new TrueUpPlan.Failed("its tags do not say which upload it was cut from");
+
+        if (key != _trueUpKey)
+            return;
+
+        _trueUp = (plan, siblings);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task TrueUpAsync(StemWarp stem, TrueUpPlan.Retype plan, WarpSiblings siblings)
+    {
+        _confirming = Confirming.None;
+        _working = stem.Path;
+        StateHasChanged();
+
+        var outcome = await TrueUp.ApplyAsync(plan, siblings);
+
+        _working = null;
+        _done = new ActionDone(
+            stem.Path,
+            Confirming.TrueUp,
+            outcome is TrueUpOutcome.Retyped,
+            DateTimeOffset.UtcNow,
+            ago => WarpWording.TrueUpDone(outcome, ago)
+        );
+        Reload(force: true);
+        await Tracks.EnsureFreshAsync(TimeSpan.Zero);
+    }
+
+    private async Task LetLiveAnalyze(StemWarp stem)
+    {
+        _confirming = Confirming.None;
+
+        var outcome = Actions.LetLiveAnalyze(stem.Path);
+
+        _done = outcome is LetLiveOutcome.Sent
+            ? null
+            : new ActionDone(
+                stem.Path,
+                Confirming.LetLive,
+                false,
+                DateTimeOffset.UtcNow,
+                _ => outcome is LetLiveOutcome.Failed(var error) ? $"Not sent: {error}" : "Not sent: it has no warp file."
+            );
+        Reload(force: true);
+        await Tracks.EnsureFreshAsync(TimeSpan.Zero);
+    }
+
+    private string GroupLine(WarpGroup group, WarpWording wording)
+    {
+        var stems = "stem".ToQuantity(group.Stems.Count);
+
+        return (group.OnTheirOwn.Select(stem => NameOf(stem.Path)).ToList(), group.Lender) switch
+        {
+            ([var one], _) => $"{stems} · {one} warped on its own",
+            ({ Count: > 1 } several, _) => $"{stems} · {several.Humanize()} warped on their own",
+            (_, { Sidecar.Warp.Mode: var mode } lender) =>
+                $"{stems} · one warp · {"marker".ToQuantity(lender.Markers.Count)} · {WarpWording.Mode(mode)}",
+            _ => $"{stems} · not warped yet",
+        };
+    }
+
+    private static string ZoomLabel(Zoom zoom) =>
+        zoom switch
+        {
+            Zoom.Bars32 => "32 bars",
+            Zoom.Bars8 => "8 bars",
+            _ => "Whole track",
+        };
+
+    private static int BarsOf(Zoom zoom) => zoom switch { Zoom.Bars32 => 32, Zoom.Bars8 => 8, _ => 0 };
+
+    private void SetZoom(WarpGroup group, Zoom zoom)
+    {
+        var fromWhole = _zoom is Zoom.Whole;
+
+        _zoom = zoom;
+
+        if (zoom is not Zoom.Whole)
+            _centerBeat = Clamped(
+                group,
+                fromWhole
+                    ? group.Bars.IndexAt(group.ClipStartBeat) * group.Bars.BeatsPerBar + BarsOf(zoom) * group.Bars.BeatsPerBar / 2.0
+                    : _centerBeat
+            );
+    }
+
+    private void Move(WarpGroup group, int direction) =>
+        _centerBeat = Clamped(group, _centerBeat + direction * BarsOf(_zoom) * group.Bars.BeatsPerBar / 2.0);
+
+    /// <summary>Follows the pointer across the strip while its button is held.</summary>
+    private void Drag(WarpGroup group, double seconds, PointerEventArgs pointer)
+    {
+        if ((pointer.Buttons & 1) is not 0)
+            CenterOn(group, seconds);
+    }
+
+    /// <summary>Centers the view near a point, starting it on a bar line so it reads in whole bars.</summary>
+    private void CenterOn(WarpGroup group, double seconds)
+    {
+        if (group.BeatAt(seconds) is not { } beat)
+            return;
+
+        var half = BarsOf(_zoom) * group.Bars.BeatsPerBar / 2.0;
+        var bar = Math.Round((beat - half) / group.Bars.BeatsPerBar);
+        _centerBeat = Clamped(group, bar * group.Bars.BeatsPerBar + half);
+    }
+
+    /// <summary>Keeps the whole window inside the track, so it never runs off either end.</summary>
+    private double Clamped(WarpGroup group, double centerBeat)
+    {
+        if (group.BeatAt(0) is not { } first || group.BeatAt(group.Seconds) is not { } last)
+            return centerBeat;
+
+        var half = BarsOf(_zoom) * group.Bars.BeatsPerBar / 2.0;
+
+        return first + half >= last - half ? (first + last) / 2 : Math.Clamp(centerBeat, first + half, last - half);
+    }
+
+    private (double From, double To) View(WarpGroup group)
+    {
+        if (_zoom is Zoom.Whole || group.Lender is null)
+            return (0, Math.Max(group.Seconds, 1));
+
+        var span = BarsOf(_zoom) * group.Bars.BeatsPerBar;
+
+        return group.SecondsAt(_centerBeat - span / 2.0) is { } start
+            && group.SecondsAt(_centerBeat + span / 2.0) is { } end
+            && end > start
+            ? (start, end)
+            : (0, Math.Max(group.Seconds, 1));
+    }
+
+    private static string ViewLabel(WarpGroup group, double from, double to) =>
+        JudgeRanges.BarsOf(group, from, to) is { } bars
+            ? $"bars {bars.First}–{bars.Last} · {TempoFormat.Clock(from)}–{TempoFormat.Clock(to)}"
+            : $"{TempoFormat.Clock(from)}–{TempoFormat.Clock(to)}";
+
+    private IEnumerable<(double At, int Bar, bool Numbered, bool Beat)> BarTicks(WarpGroup group, double from, double to)
+    {
+        if (group.Lender is null || group.BeatAt(from) is not { } first || group.BeatAt(to) is not { } last)
+            yield break;
+
+        var ruler = group.Bars;
+        var (tickEvery, numberEvery) = _zoom switch
+        {
+            Zoom.Whole => (4, 16),
+            Zoom.Bars32 => (1, 4),
+            _ => (1, 1),
+        };
+
+        for (var index = ruler.IndexAt(first); ; index++)
+        {
+            var beat = index * ruler.BeatsPerBar;
+            var bar = BarRuler.Number(index);
+
+            if (beat > last)
+                yield break;
+
+            if (group.SecondsAt(beat) is not { } at)
+                continue;
+
+            if (index % tickEvery is 0)
+                yield return (at, bar, index % numberEvery is 0, false);
+
+            if (_zoom is Zoom.Bars8)
+            {
+                // A beat as Live's ruler counts it: a quarter note in x/4, an eighth in x/8.
+                for (var i = 1; i < ruler.Numerator; i++)
+                {
+                    if (group.SecondsAt(beat + i * 4.0 / ruler.Denominator) is { } inBar)
+                        yield return (inBar, bar, false, true);
+                }
+            }
+        }
+    }
+
+    private IEnumerable<double> TimeTicks(double from, double to)
+    {
+        var every = _zoom switch
+        {
+            Zoom.Whole => 30,
+            Zoom.Bars32 => 10,
+            _ => 2,
+        };
+
+        for (var at = Math.Ceiling(from / every) * every; at <= to; at += every)
+            yield return at;
+    }
+
+    private (double Figure, double Low, double High, bool Drifts) TempoScale(WarpGroup group)
+    {
+        if (Row.Bpm is { Source: TempoSource.Warp, Range: { } range } drifting)
+            return (drifting.Value, TempoFormat.Edge(range.Low, up: false), TempoFormat.Edge(range.High, up: true), true);
+
+        var figure = Row.Bpm is { Source: TempoSource.Warp, Value: var value }
+            ? value
+            : group.Lender?.Sidecar?.Warp.TempoAt(group.Lender.Clip.Start) ?? 120;
+
+        return (figure, figure - 1, figure + 1, false);
+    }
+
+    private static double Y(double bpm, double low, double high) =>
+        Math.Clamp(40 - (bpm - low) / (high - low) * 40, 1, 39);
+
+    private static string TempoPath(WarpGroup group, double from, double to, double low, double high)
+    {
+        var markers = group.SharedAllMarkers;
+        var path = new StringBuilder();
+
+        for (var i = 0; i < markers.Count - 1; i++)
+        {
+            var span = markers[i + 1].Seconds - markers[i].Seconds;
+
+            if (span <= 0)
+                continue;
+
+            var bpm = (markers[i + 1].Beat - markers[i].Beat) / span * 60;
+            var start = i is 0 ? from : markers[i].Seconds;
+            var end = i == markers.Count - 2 ? to : markers[i + 1].Seconds;
+            var (x1, x2) = (Math.Clamp(X(start, from, to), 0, 100), Math.Clamp(X(end, from, to), 0, 100));
+
+            if (x2 <= x1)
+                continue;
+
+            var y = Y(bpm, low, high);
+            path.Append(path.Length is 0 ? 'M' : 'L')
+                .Append(P(x1 * Columns / 100)).Append(',').Append(P(y))
+                .Append('L').Append(P(x2 * Columns / 100)).Append(',').Append(P(y));
+        }
+
+        return path.ToString();
+    }
+
+    /// <summary>Each channel's envelope as one filled shape per channel, Left above Right.</summary>
+    private static string Wave(StemWarp stem, double from, double to, double height, bool mono)
+    {
+        var channels = stem.Overview(from, to, Columns);
+
+        if (channels is [])
+            return string.Empty;
+
+        IReadOnlyList<(float Min, float Max)[]> drawn = mono ? [Merged(channels)] : channels;
+        var gap = drawn.Count > 1 ? 2.0 : 0;
+        var each = (height - gap * (drawn.Count - 1)) / drawn.Count;
+        var path = new StringBuilder();
+
+        for (var channel = 0; channel < drawn.Count; channel++)
+        {
+            var center = channel * (each + gap) + each / 2;
+            var column = drawn[channel];
+
+            path.Append('M');
+            for (var x = 0; x < column.Length; x++)
+                path.Append(P(x + 0.5)).Append(',').Append(P(center - column[x].Max * each / 2)).Append(' ');
+            for (var x = column.Length - 1; x >= 0; x--)
+                path.Append(P(x + 0.5)).Append(',').Append(P(center - Math.Min(column[x].Min, column[x].Max - 0.02f) * each / 2)).Append(' ');
+            path.Append('Z');
+        }
+
+        return path.ToString();
+    }
+
+    private static (float Min, float Max)[] Merged(IReadOnlyList<(float Min, float Max)[]> channels) =>
+        [
+            .. Enumerable
+                .Range(0, channels[0].Length)
+                .Select(x => (channels.Min(channel => channel[x].Min), channels.Max(channel => channel[x].Max))),
+        ];
+
+    /// <summary>Whether every pair of visible markers is far enough apart to draw flags rather than ticks.</summary>
+    private static bool FlagsFit(IReadOnlyList<WarpMarker> markers, double from, double to)
+    {
+        var visible = markers.Select(marker => X(marker.Seconds, from, to)).Where(x => x is >= 0 and <= 100).ToList();
+
+        return visible.Zip(visible.Skip(1)).All(pair => (pair.Second - pair.First) / 100 * PlotPixels >= FlagRoom);
+    }
+
+    private static string MarkerTitle(StemWarp stem, int i)
+    {
+        var markers = stem.Sidecar!.Warp.Markers;
+        var marker = markers[i];
+        var head = $"Marker {i + 1} of {stem.Markers.Count} · {WarpWording.Time(marker.Seconds)}";
+
+        if (i == stem.Markers.Count - 1)
+            return head;
+
+        var span = markers[i + 1].Seconds - marker.Seconds;
+
+        return span > 0
+            ? $"{head} · {WarpWording.Tempo((markers[i + 1].Beat - marker.Beat) / span * 60)} to the next"
+            : head;
+    }
+
+    private static IEnumerable<(string Label, string Value, string Note, string? Tone)> Facts(
+        StemWarp stem,
+        TrackSample? sample,
+        WarpWording wording,
+        WarpGroup group
+    )
+    {
+        if (stem.Sidecar is not { } sidecar)
+        {
+            foreach (var label in new[] { "Tempo", "Mode", "Markers", "Transients", "Clip", "Loop", "Default clip" })
+                yield return (label, "—", string.Empty, "faint");
+
+            yield break;
+        }
+
+        var tempo = sample?.Tempo is { } warp ? TrackTempo.Of(warp, null, null) : null;
+        yield return tempo is not null && TempoFormat.Format(tempo) is var formatted
+            ? ("Tempo", formatted.Text, formatted.Brief, formatted.IsApproximate ? "approx" : null)
+            : sidecar.Warp.TempoAt(stem.Clip.Start) is { } own
+                ? ("Tempo", WarpWording.Tempo(own), stem.Owner is WarpOwner.Starter ? "crateside's reading" : string.Empty, null)
+                : ("Tempo", "—", string.Empty, "faint");
+
+        yield return ("Mode", WarpWording.Mode(sidecar.Warp.Mode), string.Empty, null);
+        yield return ("Markers", $"{stem.Markers.Count}", wording.MarkersNote(stem), null);
+        yield return ("Transients", $"{sidecar.Audio.Transients.Count}", WarpWording.TransientsNote(stem), null);
+
+        var (clipStart, clipEnd) = stem.Clip;
+        yield return (
+            "Clip",
+            $"{WarpWording.Time(clipStart)}–{WarpWording.Time(clipEnd)}",
+            stem.IsWarped ? StartsAt(group, clipStart) : string.Empty,
+            null
+        );
+
+        yield return stem.Loop is { } loop && loop is var (loopStart, loopEnd, on)
+            ? ("Loop", $"{WarpWording.Time(loopStart)}–{WarpWording.Time(loopEnd)}", on ? "on" : "off", null)
+            : ("Loop", "—", string.Empty, "faint");
+
+        yield return sidecar.IsDefaultClipSaved
+            ? ("Default clip", "saved", "Live uses it", null)
+            : ("Default clip", "not saved", "Live ignores it", null);
+    }
+
+    private static string StartsAt(WarpGroup group, double seconds) =>
+        group.BeatAt(seconds) is { } beat ? $"starts at bar {group.Bars.Position(beat)}" : string.Empty;
+
+    private static string StartBar(WarpGroup group) => group.Bars.Position(group.ClipStartBeat);
+
+    /// <summary>Where the clip start's label goes: right of its notch, or left of it near the view's right edge.</summary>
+    private static (double X, bool ToLeft)? ClipWord(WarpGroup group, double from, double to) =>
+        group.Lender is { } lender && X(lender.Clip.Start, from, to) is >= 0 and <= 100 and var x
+            ? (x, x > 100 - Px(72))
+            : null;
+
+    /// <summary>Whether a bar number at <paramref name="x"/> would run into the clip start's label, which then takes its place.</summary>
+    private static bool UnderClipWord((double X, bool ToLeft)? word, double x) =>
+        word is var (at, toLeft) && (toLeft ? x > at - Px(90) && x < at - Px(7) : x > at - Px(19) && x < at + Px(66));
+
+    private static double Px(double pixels) => pixels / PlotPixels * 100;
+
+    private static string LoopTitle((double Start, double End, bool On) loop) =>
+        $"Loop {WarpWording.Time(loop.Start)}–{WarpWording.Time(loop.End)}{(loop.On ? null : " · off")}";
+
+    private static double X(double seconds, double from, double to) => (seconds - from) / (to - from) * 100;
+
+    private static string P(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+
+    /// <summary>A fraction for the drag script, precise enough that an edge and its snap compare equal.</summary>
+    private static string F(double value) => value.ToString("0.######", CultureInfo.InvariantCulture);
+
+    private static string Style(ChipStyle style) => style.ToString().ToLowerInvariant();
+}

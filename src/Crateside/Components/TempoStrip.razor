@@ -1,0 +1,37 @@
+@using System.Globalization
+
+@if (Tempo.Windows is { Count: > 0 } windows)
+{
+    var length = windows.Max(window => window.End);
+
+    <div class="strip">
+        <div class="edges mono"><span>@High</span><span>@Low</span></div>
+        <div class="plot">
+            <div class="shown" style="top: @Top(Tempo.Value)"></div>
+            @foreach (var window in windows)
+            {
+                <div class="slot" title="@TempoFormat.Window(window)"
+                     style="left: @Percent(window.Start / length); width: @Percent((window.End - window.Start) / length)">
+                    <span class="tick" style="top: @Top(window.Bpm)"></span>
+                </div>
+            }
+        </div>
+        <span></span>
+        <div class="times mono"><span>@TempoFormat.Clock(0)</span><span>@TempoFormat.Clock(length)</span></div>
+    </div>
+}
+
+@code {
+    /// <summary>A drifting tempo; the strip shows where in the track it drifts (handoff 13, 2b).</summary>
+    [Parameter, EditorRequired]
+    public required TrackTempo Tempo { get; set; }
+
+    private int Low => Tempo.Range is var (low, _) ? TempoFormat.Edge(low, up: false) : 0;
+
+    private int High => Math.Max(Low + 1, Tempo.Range is var (_, high) ? TempoFormat.Edge(high, up: true) : 0);
+
+    private string Top(double figure) => Percent(Math.Clamp((High - figure) / (High - Low), 0, 1));
+
+    private static string Percent(double fraction) =>
+        string.Create(CultureInfo.InvariantCulture, $"{fraction * 100:0.##}%");
+}

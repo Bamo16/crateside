@@ -1,41 +1,134 @@
-/* Two columns on a wide screen because the argument and the measurements are read for
-   different reasons — you read the argument, and you consult the numbers. Stacked below that,
-   argument first, so the reasoning is never buried under a table of correlations. */
+.panel {
+    container-type: inline-size;
+}
+
+/* The head: the question, what answers it, and Share. */
+.head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.head h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 13px;
+    color: var(--text-60);
+}
+
+.to-timeline {
+    color: var(--text-75);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.share {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+}
+
+.share:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.caret {
+    font-size: 10px;
+    color: var(--text-60);
+}
+
+/* The argument on the left, the evidence on the right. One column below ~56rem of panel. */
 .evidence {
     display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-    gap: 2rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 44px;
     padding: 1.25rem 0 0.5rem;
 }
 
-@media (max-width: 60rem) {
+@container (max-width: 56rem) {
     .evidence {
         grid-template-columns: minmax(0, 1fr);
         gap: 1.5rem;
     }
 }
 
-.evidence h3 {
+.evidence h3,
+.evidence h4 {
     margin: 0 0 0.6rem;
-    font-size: 0.8rem;
+    font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.07em;
-    color: var(--text-dim);
+    color: var(--text-60);
+    font-weight: 600;
 }
 
 .evidence h4 {
-    margin: 1.25rem 0 0.4rem;
-    font-size: 0.78rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: var(--text-dim);
-    font-weight: 600;
+    margin-top: 1.5rem;
+}
+
+.evidence h4.first {
+    margin-top: 0;
+}
+
+.argument > h3 {
+    margin-top: 1.5rem;
+}
+
+.argument > h3:first-child {
+    margin-top: 0;
 }
 
 .reasoning {
     margin: 0;
-    max-width: 70ch;
-    white-space: pre-wrap;
+    font-size: 14.5px;
+    line-height: 1.62;
+}
+
+.older {
+    margin: -0.25rem 0 0.6rem;
+    font-size: 12px;
+    color: var(--text-40);
+}
+
+.tonic-check {
+    font-size: 14.5px;
+    line-height: 1.62;
+}
+
+/* Considered: the key in a column, then why it was not the verdict. */
+.considered {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.considered li {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 12px;
+    align-items: baseline;
+    padding: 0.5rem 0;
+    border-top: 1px solid var(--line);
+    font-size: 13.5px;
+    line-height: 1.55;
+}
+
+.candidate-key {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.candidate-why {
+    color: var(--text-75);
+    max-width: 62ch;
 }
 
 .muted {
@@ -54,10 +147,10 @@
 }
 
 .source {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 16px 112px minmax(0, 1fr);
     align-items: baseline;
-    gap: 0.5rem;
+    gap: 0.6rem;
     padding: 0.4rem 0;
     border-top: 1px solid var(--line);
 }
@@ -69,49 +162,95 @@
 /* Whether the source backed the verdict, in one glyph at the head of the row. This is what
    the schema split `states` for: it used to require reading every line of prose. */
 .stance {
-    flex: none;
-    width: 1rem;
     text-align: center;
-    color: var(--muted);
+    color: var(--text-60);
 }
 
 .source.agrees .stance {
-    color: var(--ok);
-}
-
-.source.dissents .stance {
-    color: var(--warn);
+    color: var(--text);
 }
 
 /* The kind badge is the other half of the point: what a source is worth matters more than
    what it said, because a confident algorithmic claim is still not an answer. */
+/* Monochrome: green, teal and amber mean done, working and your turn, and a source is none of
+   them. Weight carries the rank instead — filled, outlined, dashed. */
 .kind {
-    flex: none;
-    min-width: 7.5rem;
     padding: 0.05rem 0.45rem;
-    border: 1px solid var(--text-dim);
+    border: 1px solid var(--text-60);
     border-radius: 4px;
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     text-align: center;
-    color: var(--text-dim);
+    color: var(--text-75);
 }
 
 .source.authoritative .kind {
-    color: var(--ok);
-    border-color: var(--ok);
+    color: var(--ink);
+    background: var(--text);
+    border-color: var(--text);
 }
 
-.source.corroborating .kind {
-    color: var(--accent);
-    border-color: var(--accent);
+.source.algorithmic .kind,
+.source.chordrecognizer .kind {
+    border-style: dashed;
+    color: var(--text-60);
 }
 
-/* Deliberately warned rather than neutral: its key may never be the basis of a verdict. */
-.source.chordrecogniser .kind {
-    color: var(--warn);
-    border-color: var(--warn);
+.said {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.where {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.centers {
+    list-style: none;
+    margin: 0 0 1.5rem;
+    padding: 0;
+}
+
+.centers li {
+    display: grid;
+    grid-template-columns: 90px auto minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: baseline;
+    padding: 0.35rem 0;
+    border-top: 1px solid var(--line);
+}
+
+.centers li:first-child {
+    border-top: none;
+}
+
+.section-label {
+    color: var(--text-60);
+}
+
+.center-key {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* What the source covered, neutral: a source is none of the states the colors mean. */
+.covers {
+    align-self: flex-start;
+    padding: 0 0.4rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: 11px;
+    color: var(--text-60);
+}
+
+.relation {
+    font-size: 0.8rem;
+    color: var(--text-60);
 }
 
 .states,
@@ -120,6 +259,7 @@
 }
 
 .states-key {
+    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
 }
 
@@ -152,55 +292,60 @@
     margin-right: 0.4rem;
 }
 
-.tonic-check {
-    margin: 0 0 0.5rem;
+/* The first pass, superseded: quieter than the verdict, and folded. */
+.first-pass {
+    margin-top: 1.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--line);
 }
 
-
-/* Algorithms */
-.algorithms {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.algorithms th {
-    text-align: left;
+.first-pass summary {
+    cursor: pointer;
+    list-style: none;
+    font-size: 12.5px;
     font-weight: 500;
-    color: var(--text-dim);
-    padding: 0.3rem 0.75rem 0.3rem 0;
-    white-space: nowrap;
+    color: var(--text-75);
 }
 
-.algorithms td {
-    padding: 0.3rem 0.75rem 0.3rem 0;
+.first-pass summary::-webkit-details-marker {
+    display: none;
 }
 
-.algo-key {
-    font-weight: 600;
-    white-space: nowrap;
+.first-pass summary::before {
+    content: "▸ ";
 }
 
-.detail {
-    color: var(--text-dim);
-    font-size: 0.9rem;
-    width: 100%;
+.first-pass[open] summary::before {
+    content: "▾ ";
 }
 
-.flag {
-    margin-left: 0.4rem;
-    padding: 0.02rem 0.35rem;
-    border-radius: 3px;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    background: var(--line);
+.tail {
+    font-weight: 400;
+    color: var(--text-50);
 }
 
-.flag.distrust {
-    color: var(--alert);
+.first-body {
+    margin: 0.6rem 0 0 18px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-60);
 }
 
-.flag.gray {
-    color: var(--warn);
+.first-body ::deep .token {
+    color: inherit;
+}
+
+/* Under the detector table when its readings came after the verdict. */
+.late-reading {
+    margin: 0.4rem 0 0;
+    font-size: 0.82rem;
+}
+
+/* The detectors' own words about themselves. */
+.backers {
+    margin: 0.5rem 0 0;
+    font-size: 0.88rem;
+    color: var(--text-75);
 }
 
 /* The only pairwise-agreement outcome that survives into the view. See Evidence.razor for
@@ -218,36 +363,58 @@
     margin-right: 0.3rem;
 }
 
-.pair {
-    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-    font-size: 0.85rem;
+/* The progression, folded to its loops: each run reads whole, then its count. */
+.chords-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 1.5rem;
+}
+
+.chords-head h4 {
+    margin: 0;
+}
+
+.chords-count {
+    font-size: 12px;
+    color: var(--text-40);
+}
+
+.link {
+    margin-left: auto;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: 12px;
+    color: var(--text-75);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
 }
 
 .chords {
-    margin: 0;
-    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-    font-size: 0.9rem;
-    line-height: 1.7;
+    margin: 0.5rem 0 0;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.8;
 }
 
-.flicker {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
-    font-size: 0.82rem;
-    color: var(--text-dim);
-    max-height: 12rem;
-    overflow-y: auto;
+.chords .repeats {
+    white-space: nowrap;
+    font-weight: 400;
+    color: var(--text-50);
 }
 
-.flicker .t {
-    display: inline-block;
-    min-width: 4.5rem;
+.chords .sep {
+    color: var(--text-30);
 }
 
-.flicker .r {
-    color: var(--muted);
+.chords.all {
+    font-size: 12.5px;
+    font-weight: 400;
+    color: var(--text-75);
 }
 
 .tempo {
@@ -255,23 +422,99 @@
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0.6rem;
+    gap: 10px;
 }
 
 .tempo strong {
-    font-size: 1.1rem;
+    font-size: 20px;
+    font-weight: 600;
 }
 
-.beatdetect {
-    color: var(--text-dim);
-    font-size: 0.85rem;
+.tempo strong.approx {
+    font-weight: 400;
 }
 
-.beatdetect.conflict {
-    color: var(--warn);
+.tempo strong.estimate {
+    color: var(--text-50);
+}
+
+.tempo-note {
+    font-size: 12.5px;
+    color: var(--text-60);
+}
+
+.tempo-sources {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+    border-top: 1px solid var(--line);
+}
+
+.tempo-sources li {
+    display: grid;
+    grid-template-columns: 150px 64px minmax(0, 1fr);
+    gap: 12px;
+    align-items: baseline;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 12.5px;
+}
+
+.tempo-sources .label {
+    color: var(--text-60);
+    white-space: nowrap;
+}
+
+.tempo-sources .figure {
+    text-align: right;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-75);
+}
+
+.tempo-sources .figure.approx {
+    font-weight: 400;
+}
+
+.tempo-sources .pad {
+    visibility: hidden;
+}
+
+.tempo-sources .comment {
+    color: var(--text-50);
+}
+
+.tempo-sources .comment.conflict {
+    color: var(--red);
 }
 
 .provenance {
     margin: 1.5rem 0 0;
     font-size: 0.8rem;
+}
+
+/* Judging from these bars (#116): the user's direction. */
+.direction {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-bottom: 1.5rem;
+}
+
+.note-to-judge {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: rgba(236, 231, 220, 0.85);
+    white-space: pre-wrap;
+}
+
+.ear-line {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--text-60);
+}
+
+.ear-line .mono {
+    color: rgba(236, 231, 220, 0.85);
 }

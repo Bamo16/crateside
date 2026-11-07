@@ -1,8 +1,14 @@
 using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
-using Crateside.Core.Queue;
+using Crateside.Core.Orchestration.Download;
+using Crateside.Core.Orchestration.Jobs;
+using Crateside.Core.Orchestration.Separation;
+using Crateside.Core.Orchestration.Tagging;
+using Crateside.Core.Plans;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
+using Crateside.Core.WorkLists;
+using Crateside.Tests.Ledger;
 
 namespace Crateside.Tests.Tracks;
 
@@ -10,15 +16,11 @@ namespace Crateside.Tests.Tracks;
 /// The join that turns a playlist, a ledger, what is on disk and what crateside has run into one
 /// row per track.
 /// </summary>
-/// <remarks>
-/// Pure, like <see cref="QueueView.Compose"/> before it, and for the same reason: this is the
-/// part with the rules in it, and it can be exercised without a queue credential or a disk scan.
-/// </remarks>
-public class TracksViewCompositionTests : IDisposable
+public sealed class TracksViewCompositionTests : IDisposable
 {
     private const string Video = "aaaaaaaaaaa";
-    private const string FinishedRoot = @"P:\RYAN\Ableton\Mashup Samples";
-    private const string StagingRoot = @"P:\RYAN\Ableton\Sample Staging";
+    private const string FinishedRoot = @"D:\Music\Library";
+    private const string StagingRoot = @"D:\Music\Sample Staging";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -43,7 +45,7 @@ public class TracksViewCompositionTests : IDisposable
         var path = Path.Combine(_root, "runs.jsonl");
         File.WriteAllText(path, string.Empty);
 
-        return KeyLedger.Read(path);
+        return TestLedger.From(path);
     }
 
     private KeyLedger LedgerWith(string key, string confidence, double bpm)
@@ -66,18 +68,18 @@ public class TracksViewCompositionTests : IDisposable
             )
         );
 
-        return KeyLedger.Read(path);
+        return TestLedger.From(path);
     }
 
-    private static StagingSong Staged(params StagingStem[] stems) =>
+    private static StagedSong Staged(params StagedFile[] stems) =>
         new()
         {
-            SourceVideoId = Video,
+            SourceTrackKey = Video,
             DisplayName = "Rob Dougan - Furious Angels",
             Stems = stems,
         };
 
-    private static StagingStem Stem(string preset, bool tagged = false) =>
+    private static StagedFile Stem(string preset, bool tagged = false) =>
         new()
         {
             Path = Path.Combine(StagingRoot, $"track ({preset}).flac"),
@@ -111,32 +113,32 @@ public class TracksViewCompositionTests : IDisposable
             CreatedAt = created,
         };
 
-    private static QueueItem Item(string videoId = Video) =>
+    private static WorkItem Item(string trackKey = Video) =>
         new()
         {
-            PlaylistItemId = $"PLI-{videoId}",
-            VideoId = videoId,
+            PlaylistItemId = $"PLI-{trackKey}",
+            TrackKey = trackKey,
             Title = "Rob Dougan - Furious Angels",
         };
 
-    private static QueueView View(
-        IReadOnlyList<QueueItem>? items = null,
+    private static WorkListsView View(
+        IReadOnlyList<WorkItem>? items = null,
         IReadOnlySet<string>? verdictWithoutStems = null,
         IReadOnlySet<string>? separatedWithoutKey = null,
         params TrackInstruction[] instructions
     ) =>
-        QueueView.Compose(
+        WorkListsView.Compose(
             items ?? [Item()],
             new HashSet<string>(),
             verdictWithoutStems ?? new HashSet<string>(),
             separatedWithoutKey ?? new HashSet<string>(),
-            instructions.ToDictionary(t => t.VideoId, StringComparer.Ordinal)
+            instructions.ToDictionary(t => t.TrackKey, StringComparer.Ordinal)
         );
 
     private IReadOnlyList<TrackRow> Compose(
-        QueueView? view = null,
+        WorkListsView? view = null,
         KeyLedger? ledger = null,
-        IReadOnlyList<StagingSong>? staging = null,
+        IReadOnlyList<StagedSong>? staging = null,
         IReadOnlyDictionary<string, IReadOnlyList<StemOnDisk>>? onDisk = null,
         JobStore? jobs = null,
         IReadOnlyDictionary<string, Acquisition>? acquisitions = null,
@@ -150,20 +152,141 @@ public class TracksViewCompositionTests : IDisposable
                 onDisk ?? new Dictionary<string, IReadOnlyList<StemOnDisk>>(),
                 FinishedRoot,
                 jobs ?? Jobs(),
-                instructions.ToDictionary(t => t.VideoId, StringComparer.Ordinal),
-                resolvedNames: null,
-                acquisitions
+                instructions.ToDictionary(t => t.TrackKey, StringComparer.Ordinal),
+                new TrackAnnotations
+                {
+                    Acquisitions = acquisitions ?? TrackAnnotations.None.Acquisitions,
+                }
             )
             .Rows;
+
+    private static WorkListsView InLineForTheGpu() =>
+        View(verdictWithoutStems: new HashSet<string>(StringComparer.Ordinal) { Video });
+
+    [Fact]
+    public void A_judged_track_without_stems_is_in_line_for_the_gpu()
+    {
+        var row = Assert.Single(Compose(InLineForTheGpu()));
+
+        Assert.Equal(TrackState.JudgedInLine, row.State);
+        Assert.Equal(1, row.GpuPosition);
+    }
+
+    [Fact]
+    public void A_track_already_separated_is_not_in_line_when_its_stems_cannot_be_found()
+    {
+        // Stems with no source in their tags join to no track, so it still reads as unseparated;
+        // the drainer never redoes a success unasked, so the line must not claim it either.
+        var jobs = Jobs();
+        jobs.Record(Video, JobStage.Separation, JobStatus.Running);
+        jobs.Record(Video, JobStage.Separation, JobStatus.Succeeded);
+
+        var row = Assert.Single(Compose(InLineForTheGpu(), jobs: jobs));
+
+        Assert.Null(row.GpuPosition);
+        Assert.NotEqual(TrackState.JudgedInLine, row.State);
+    }
+
+    [Fact]
+    public void A_track_separation_gave_up_on_shows_as_given_up_rather_than_in_line()
+    {
+        var jobs = Jobs();
+
+        for (var i = 0; i < SeparationSelector.DefaultMaxStrikes; i++)
+        {
+            jobs.Record(Video, JobStage.Separation, JobStatus.Running);
+            jobs.Record(Video, JobStage.Separation, JobStatus.Failed, error: "AudioExportError");
+        }
+
+        var row = Assert.Single(Compose(InLineForTheGpu(), jobs: jobs));
+
+        Assert.Null(row.GpuPosition);
+        Assert.Equal(TrackState.GaveUp, row.State);
+    }
+
+    [Fact]
+    public void A_track_listed_twice_for_the_gpu_composes_into_one_row()
+    {
+        var item = Item();
+        var view = new WorkListsView
+        {
+            Items = [item],
+            Outstanding = [],
+            FullyProcessed = [],
+            AwaitingKey = [],
+            AwaitingSeparation = [item, item],
+        };
+
+        var row = Assert.Single(Compose(view));
+
+        Assert.Equal(1, row.GpuPosition);
+    }
+
+    [Fact]
+    public void A_superseded_uploads_recycled_files_show_on_the_song_that_replaced_it()
+    {
+        const string Old = "ooooooooooo";
+
+        // Two runs of one song, so the old upload resolves to this row's song after its files
+        // are gone and nothing else joins it.
+        var path = Path.Combine(_root, "runs.jsonl");
+        File.WriteAllLines(
+            path,
+            [
+                .. new[] { Old, Video }.Select(
+                    (upload, index) =>
+                        System.Text.Json.JsonSerializer.Serialize(
+                            new
+                            {
+                                timestamp = $"2026-08-0{index + 1}T00:00:00+00:00",
+                                song = "rob dougan - furious angels",
+                                source_url = $"https://www.youtube.com/watch?v={upload}",
+                                verdict = new { confidence = "WITHHELD" },
+                            }
+                        )
+                ),
+            ]
+        );
+
+        var row = Assert.Single(
+            TracksView
+                .Compose(
+                    View(),
+                    TestLedger.From(path),
+                    [],
+                    new Dictionary<string, IReadOnlyList<StemOnDisk>>(),
+                    FinishedRoot,
+                    Jobs(),
+                    new Dictionary<string, TrackInstruction>(),
+                    new TrackAnnotations
+                    {
+                        Deletions =
+                        [
+                            new Deletion
+                            {
+                                At = DateTimeOffset.Parse("2026-09-24T12:00:00+00:00"),
+                                TrackKey = Old,
+                                FileName = "Rob Dougan - Furious Angels (Vocal - Full).flac",
+                                Reason = "superseded by a source swap",
+                            },
+                        ],
+                    }
+                )
+                .Rows
+        );
+
+        Assert.Equal(
+            "Rob Dougan - Furious Angels (Vocal - Full).flac",
+            Assert.Single(row.Deletions).FileName
+        );
+    }
 
     [Fact]
     public void Every_playlist_entry_becomes_exactly_one_row()
     {
-        // One row per track, never per stem, and it never moves: state is a column rather than an
-        // address. That is the whole point of the page.
         var row = Assert.Single(Compose());
 
-        Assert.Equal(Video, row.VideoId);
+        Assert.Equal(Video, row.TrackKey);
         Assert.Equal("Rob Dougan - Furious Angels", row.Title);
         Assert.Equal(TrackState.Queued, row.State);
     }
@@ -171,8 +294,6 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void A_parked_track_says_so_rather_than_looking_like_work_the_gpu_has_not_reached()
     {
-        // The distinction ADR 0005 closed by splitting AwaitingKey out of AwaitingSeparation, and
-        // named as the next thing to close for the queue view. This is where it lands on screen.
         var row = Assert.Single(
             Compose(
                 View(
@@ -184,6 +305,86 @@ public class TracksViewCompositionTests : IDisposable
 
         Assert.Equal(TrackState.Parked, row.State);
         Assert.Equal(ParkReason.NoKey, row.ParkedFor);
+    }
+
+    [Fact]
+    public void A_source_only_track_never_judged_waits_for_the_judge_rather_than_parking_for_a_key()
+    {
+        var row = Assert.Single(Compose(View(separatedWithoutKey: new HashSet<string> { Video })));
+
+        Assert.Null(row.ParkedFor);
+        Assert.True(row.WaitingForJudge);
+        Assert.NotEqual(TrackState.Parked, row.State);
+        Assert.Equal("waiting to be judged", row.ChipLabel);
+    }
+
+    [Fact]
+    public void A_track_the_verdict_stage_left_to_the_person_reads_waiting_for_you()
+    {
+        var jobs = Jobs();
+
+        jobs.Record(Video, JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        var row = Assert.Single(Compose(jobs: jobs));
+
+        Assert.True(row.WaitingForPerson);
+        Assert.False(row.WaitingForJudge);
+        Assert.Equal("waiting for you", row.ChipLabel);
+        Assert.Equal(TrackChipStyle.AmberFilled, row.ChipStyle);
+        Assert.Equal("decide its key on its page", row.Next);
+        Assert.True(row.Matches(TrackFilter.NeedsAttention));
+    }
+
+    [Fact]
+    public void A_track_waiting_for_you_with_its_stems_parked_still_reads_waiting_for_you()
+    {
+        var jobs = Jobs();
+
+        jobs.Record(Video, JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        var row = Assert.Single(
+            Compose(View(separatedWithoutKey: new HashSet<string> { Video }), jobs: jobs)
+        );
+
+        Assert.Equal("waiting for you", row.ChipLabel);
+        Assert.False(row.WaitingForJudge);
+    }
+
+    [Fact]
+    public void A_track_waiting_for_you_in_the_gpu_line_still_reads_waiting_for_you()
+    {
+        var jobs = Jobs();
+
+        jobs.Record(Video, JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        var row = Assert.Single(
+            Compose(
+                WorkListsView.Compose(
+                    [Item()],
+                    new HashSet<string>(),
+                    new HashSet<string>(),
+                    new HashSet<string>(),
+                    new Dictionary<string, TrackInstruction>(),
+                    awaitingPerson: new HashSet<string> { Video }
+                ),
+                jobs: jobs
+            )
+        );
+
+        Assert.Equal(TrackState.JudgedInLine, row.State);
+        Assert.Equal("waiting for you", row.ChipLabel);
+    }
+
+    [Fact]
+    public void Once_the_person_has_chosen_the_row_is_no_longer_waiting_for_them()
+    {
+        var jobs = Jobs();
+
+        jobs.Record(Video, JobStage.Verdict, JobStatus.AwaitingPerson);
+
+        var row = Assert.Single(Compose(ledger: LedgerWith("A minor", "HIGH", 120), jobs: jobs));
+
+        Assert.False(row.WaitingForPerson);
     }
 
     [Fact]
@@ -203,10 +404,25 @@ public class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
+    public void A_never_judged_track_with_its_source_waiting_for_a_verdict_is_parked_over_a_poor_download_not_the_key()
+    {
+        var row = Assert.Single(
+            Compose(
+                View(separatedWithoutKey: new HashSet<string> { Video }),
+                acquisitions: new Dictionary<string, Acquisition>(StringComparer.Ordinal)
+                {
+                    [Video] = new() { PremiumStatus = PremiumStatus.NoPremiumLadder },
+                }
+            )
+        );
+
+        Assert.Equal(ParkReason.PremiumShortfall, row.ParkedFor);
+    }
+
+    [Fact]
     public void A_download_that_got_premium_audio_leaves_the_row_alone()
     {
-        // Recorded on every download, so the row has to read the outcome rather than the
-        // presence of a record.
+        // Recorded on every download, so the outcome counts, not the record's presence.
         var row = Assert.Single(
             Compose(
                 acquisitions: new Dictionary<string, Acquisition>(StringComparer.Ordinal)
@@ -243,7 +459,6 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void A_judged_track_is_numbered_by_its_place_in_the_line_for_the_gpu()
     {
-        // Separation is strictly one at a time, so "when" is a position rather than a promise.
         const string Second = "bbbbbbbbbbb";
 
         var rows = Compose(
@@ -259,9 +474,7 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void The_ledger_names_the_track_where_the_playlist_only_titles_it()
     {
-        // YouTube titles routinely omit the artist: the playlist says "99th Street" where the
-        // library holds "Starjunk 95 - 99th Street", which is the same track under a name the user
-        // cannot search for. The ledger keeps artist and title apart and properly cased.
+        // The playlist title omits the artist; the ledger keeps both.
         var row = Assert.Single(
             Compose(
                 view: View([Item() with { Title = "Furious Angels (Official Video)" }]),
@@ -275,8 +488,6 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void An_unjudged_track_keeps_the_only_name_anything_knows()
     {
-        // Nothing has run for it, so there is no identity yet and the playlist title is not a
-        // fallback so much as the only fact available.
         var row = Assert.Single(Compose(view: View([Item() with { Title = "some upload" }])));
 
         Assert.Equal("some upload", row.Title);
@@ -285,18 +496,14 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void A_track_still_in_staging_keeps_its_row_after_leaving_the_playlist()
     {
-        // A track leaves the playlist the moment it is fully processed, which is long before the
-        // user has finished with it -- the stems then sit in Sample Staging for weeks waiting to
-        // be warped. Seven of ten staged songs had no row at all because of this: the warping
-        // worklist is the folder, and the folder outlives the playlist entry.
+        // Out of the playlist, still in staging waiting to be warped.
         var row = Assert.Single(
             Compose(view: View([]), staging: [Staged(Stem("Vocal - Full", tagged: true))])
         );
 
-        Assert.Equal(Video, row.VideoId);
+        Assert.Equal(Video, row.TrackKey);
         Assert.Equal(TrackState.ReadyToWarp, row.State);
 
-        // Nothing left to remove from, which is the only thing the missing entry costs.
         Assert.Null(row.PlaylistItemId);
     }
 
@@ -305,7 +512,7 @@ public class TracksViewCompositionTests : IDisposable
     {
         var rows = Compose(staging: [Staged(Stem("Vocal - Full", tagged: true))]);
 
-        Assert.Equal(Video, Assert.Single(rows).VideoId);
+        Assert.Equal(Video, Assert.Single(rows).TrackKey);
         Assert.Equal($"PLI-{Video}", rows[0].PlaylistItemId);
     }
 
@@ -316,20 +523,17 @@ public class TracksViewCompositionTests : IDisposable
 
         Assert.Equal("C minor", row.Key);
         Assert.Equal(KeyConfidence.High, row.Confidence);
-        Assert.Equal(128, row.Bpm);
+        Assert.Equal(128, row.Bpm?.Value);
     }
 
     [Fact]
     public void A_verdict_too_weak_to_tag_with_still_carries_its_bpm()
     {
-        // A wrong tag is worse than no tag, so LOW yields no key. BPM is not gated on that: it is
-        // the one number the user needs mid-warp, it was never a tagged value, and a parked track
-        // is exactly one they may still want to work by hand.
         var row = Assert.Single(Compose(ledger: LedgerWith("C minor", "LOW", bpm: 128)));
 
         Assert.Null(row.Key);
         Assert.Equal(KeyConfidence.Low, row.Confidence);
-        Assert.Equal(128, row.Bpm);
+        Assert.Equal(128, row.Bpm?.Value);
     }
 
     [Fact]
@@ -348,8 +552,7 @@ public class TracksViewCompositionTests : IDisposable
             )
         );
 
-        // The guide is tagged like everything else and is still not a sample: it is used up
-        // rather than kept (ADR 0004, amended 2026-09-02).
+        // The warp guide is not a sample (ADR 0004).
         Assert.Equal(2, row.Samples.Count);
         Assert.True(row.HasWarpGuide);
         Assert.Contains(
@@ -363,32 +566,26 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void An_instruction_outlives_the_playlist_entry_it_was_given_for()
     {
-        // The bug this covers: a track leaves the playlist as soon as it is processed, and its row
-        // was then built with no instruction at all -- so a release recorded as having no vocals
-        // read as having them, while its stems on disk plainly said otherwise. The instruction is
-        // keyed by video ID and never stopped being true.
         var row = Assert.Single(
             Compose(
                 view: View(items: []),
                 staging: [Staged(Stem("Drums"))],
                 instructions: new TrackInstruction
                 {
-                    VideoId = Video,
+                    TrackKey = Video,
                     Plan = StemPlan.InstrumentalRelease,
                 }
             )
         );
 
         Assert.Null(row.PlaylistItemId);
-        Assert.True(row.IsInstrumentalRelease);
+        Assert.True(row.Plan.AsksTheSameAs(StemPlan.InstrumentalRelease));
         Assert.Equal(SeparationRecipe.InstrumentalRelease, row.Recipe);
     }
 
     [Fact]
     public void A_staged_samples_tag_is_the_key_Ableton_holds()
     {
-        // The verdict's key would be the wrong thing to carry: on the one row where the two
-        // disagree, showing it beside a tick says the opposite of what is true.
         var row = Assert.Single(
             Compose(
                 ledger: LedgerWith("C minor", "HIGH", bpm: 128),
@@ -403,8 +600,7 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void A_warped_sample_carries_no_Ableton_key_because_nothing_read_one()
     {
-        // Null here says nobody looked, not that the file is untagged: crateside writes tags only
-        // in Sample Staging and does not treat the store as a mirror of Ableton (ADR 0003).
+        // Null here says nobody looked, not that the file is untagged.
         var row = Assert.Single(Compose(onDisk: Finished("Vocal - Full")));
 
         Assert.All(row.Samples, sample => Assert.Null(sample.AbletonKey));
@@ -420,8 +616,6 @@ public class TracksViewCompositionTests : IDisposable
             )
         );
 
-        // Staging wins over where the rest has got to: the button exists to open the folder the
-        // user is about to drag out of.
         Assert.Equal(StagingRoot, row.Folder);
     }
 
@@ -440,7 +634,7 @@ public class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
-    public void A_sample_found_in_Mashup_Samples_is_warped_and_finishes_the_track()
+    public void A_sample_found_in_the_library_is_warped_and_finishes_the_track()
     {
         var row = Assert.Single(Compose(onDisk: Finished("Vocal - Full", "Instrumental - Full")));
 
@@ -452,8 +646,7 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void Half_a_track_moved_out_is_still_the_users_turn()
     {
-        // Staging is emptied progressively, so the two sources overlap for as long as it takes
-        // the user to finish. Each file is under exactly one root, so neither is counted twice.
+        // Each file is under exactly one root, so neither is counted twice.
         var row = Assert.Single(
             Compose(
                 staging: [Staged(Stem("Instrumental - Full", tagged: true), Stem("Drums"))],
@@ -469,8 +662,6 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void A_stage_in_flight_outranks_what_is_on_disk()
     {
-        // The staged files say "ready to warp"; the GPU says it is separating this track right
-        // now. What is happening wins, because it is the more recent fact about the same track.
         var jobs = Jobs();
         jobs.Record(Video, JobStage.Separation, JobStatus.Running);
 
@@ -480,6 +671,17 @@ public class TracksViewCompositionTests : IDisposable
 
         Assert.Equal(JobStage.Separation, row.RunningStage);
         Assert.Equal(TrackState.Separating, row.State);
+    }
+
+    [Fact]
+    public void A_stage_still_retrying_reaches_the_row()
+    {
+        var jobs = Jobs();
+        jobs.Record(Video, JobStage.Handoff, JobStatus.Failed, error: "file in use");
+
+        var row = Assert.Single(Compose(jobs: jobs));
+
+        Assert.Equal(new StageFailure(JobStage.Handoff, 1, "file in use"), row.Retrying);
     }
 
     [Fact]
@@ -500,9 +702,6 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void A_staged_track_is_dated_by_when_the_earliest_of_its_files_arrived()
     {
-        // "Staged three weeks ago" is the one thing on the In staging view that is about time,
-        // and a track can sit there for weeks. Handoff moves the files together, so the earliest
-        // is when the track arrived.
         var arrived = new DateTimeOffset(2026, 8, 12, 9, 0, 0, TimeSpan.Zero);
 
         var row = Assert.Single(
@@ -539,10 +738,6 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void The_files_name_the_track_even_when_the_ledger_has_a_better_name()
     {
-        // The row has to say what Ableton says, or the two libraries cannot be scanned side by
-        // side. The ledger's name is often the nicer one — "Estelle - American Boy" against the
-        // file's "Estelle, Kanye West, Keith Harris, William Adams - American Boy" — and renaming
-        // is how that is applied, to both at once, rather than shown on one and not the other.
         var row = Assert.Single(
             Compose(
                 View([]),
@@ -568,8 +763,6 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void A_library_only_row_is_named_by_its_files_rather_than_by_a_video_id()
     {
-        // These have no playlist entry and no staging row, so before the files were consulted the
-        // only name left was the video ID — unreadable, and the row is reachable under Done.
         var row = Assert.Single(Compose(View([]), onDisk: Finished("Vocal - Full")));
 
         Assert.Equal(TrackNameSource.Files, row.NameSource);
@@ -579,7 +772,7 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void Files_that_disagree_are_settled_by_the_most_common_name()
     {
-        // A rename that stopped part way. Whichever file was read first is not an answer.
+        // A rename that stopped part way.
         var row = Assert.Single(
             Compose(
                 View([]),
@@ -610,14 +803,13 @@ public class TracksViewCompositionTests : IDisposable
         var row = Assert.Single(
             Compose(
                 ledger: LedgerWith("C minor", "HIGH", 120),
-                instructions: new TrackInstruction { VideoId = Video, Name = "Better Name" }
+                instructions: new TrackInstruction { TrackKey = Video, Name = "Better Name" }
             )
         );
 
         Assert.Equal("Better Name", row.Title);
         Assert.True(row.IsRenamed);
 
-        // Carried so Revert has something to put back, and set exactly when IsRenamed is true.
         Assert.Equal("Rob Dougan - Furious Angels", row.DerivedTitle);
     }
 
@@ -633,13 +825,12 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void A_staged_file_not_carrying_the_stated_name_is_a_rename_left_unfinished()
     {
-        // A file Ableton had open when the rename ran. Derived from what is on disk rather than
-        // recorded, so there is no failure flag to go stale.
+        // A file Ableton had open when the rename ran.
         var row = Assert.Single(
             Compose(
                 View([]),
                 staging: [Staged(Stem("Vocal - Full"), Stem("Drums"))],
-                instructions: new TrackInstruction { VideoId = Video, Name = "track" }
+                instructions: new TrackInstruction { TrackKey = Video, Name = "track" }
             )
         );
 
@@ -651,7 +842,7 @@ public class TracksViewCompositionTests : IDisposable
             Compose(
                 View([]),
                 staging: [Staged(Stem("Vocal - Full"), Stem("Drums"))],
-                instructions: new TrackInstruction { VideoId = Video, Name = "Something Else" }
+                instructions: new TrackInstruction { TrackKey = Video, Name = "Something Else" }
             )
         );
 
@@ -662,8 +853,7 @@ public class TracksViewCompositionTests : IDisposable
     [Fact]
     public void A_track_nobody_renamed_is_never_half_renamed()
     {
-        // Measured against a stated name only. There is none here, and the ledger's better name is
-        // not one the files were ever asked to carry.
+        // Measured against a stated name only, and there is none here.
         var row = Assert.Single(
             Compose(
                 View([]),
@@ -677,12 +867,8 @@ public class TracksViewCompositionTests : IDisposable
     }
 
     [Fact]
-    public void A_track_with_a_file_in_the_library_can_no_longer_be_renamed()
+    public void A_file_in_the_library_is_part_of_what_a_rename_touches()
     {
-        // crateside writes nothing in Mashup Samples, tag store included (ADR 0003), and renaming
-        // only the files still in staging would leave one track under two names.
-        Assert.True(Assert.Single(Compose()).CanRename);
-
         var partly = Assert.Single(
             Compose(
                 View([]),
@@ -694,15 +880,13 @@ public class TracksViewCompositionTests : IDisposable
             )
         );
 
-        Assert.False(partly.CanRename);
+        Assert.Equal("2 files + folder info", partly.RenameScope);
+        Assert.Contains("Staging and the library", partly.RenameDetail);
     }
 
     [Fact]
     public void What_a_rename_would_touch_is_counted_off_the_row()
     {
-        // One sentence for every state before Mashup Samples, which is what renaming the outputs
-        // rather than the source audio buys. The warp guide counts: it is a file with the name on
-        // it, even though it is not a sample.
         Assert.Equal("at staging", Assert.Single(Compose()).RenameScope);
 
         var staged = Assert.Single(

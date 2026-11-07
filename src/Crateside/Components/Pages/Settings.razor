@@ -2,167 +2,891 @@
 @layout Crateside.Components.Layout.BareLayout
 @rendermode InteractiveServer
 
-@using Crateside.Core.Queue
+@implements IDisposable
+
+@using System.Diagnostics
+@using Crateside.Core
+@using Crateside.Core.Imports
+@using Crateside.Core.Ledger
+@using Crateside.Core.Orchestration
+@using Crateside.Core.Orchestration.Loop
+@using Crateside.Core.Orchestration.Verdict
+@using Crateside.Core.Playlist
+@using Crateside.Core.Quota
+@using Crateside.Core.Tracks
+@using Crateside.Core.Warps
+@using Crateside.Core.WorkLists
 @using Humanizer
+@using Microsoft.Extensions.Options
 
-@inject QueueService Playlist
+@inject WorkListService WorkLists
+@inject CachedPlaylist Playlist
+@inject PlaylistAuthorizer Authorizer
+@inject PlaylistSettingsStore PlaylistStore
+@inject IntakeStore Intake
+@inject TracksService Tracks
+@inject SpendDown Spend
+@inject RejudgeQueue Rejudges
+@inject LedgerStore Ledger
+@inject CratesidePaths Paths
+@inject PathOverrideStore Overrides
+@inject IOptions<WarpOptions> Warps
+@inject WarpSettingsStore WarpStore
+@inject IOptions<JudgeOptions> Judge
+@inject JudgeSettingsStore JudgeStore
+@inject TrueUpAll TrueUps
+@inject SourceRetentionStore RetentionStore
+@inject RecipeStore Recipes
+@inject ImportStore Imports
+@inject SourceBackfill SourceFill
+@inject SourceAvailability Availability
 
-<PageTitle>Settings</PageTitle>
+<PageTitle>Settings · crateside</PageTitle>
 
 <div class="settings">
     <PageHeader Active="BrandNav.Tab.Settings" Shape="PageHeader.Shapes.Flush" />
 
     <div class="body">
         <section>
-            <h2>Playlist</h2>
-            <p class="detail">
-                The queue crateside works from. Paste the playlist's URL or just its ID.
-            </p>
+            <h3>Playlist</h3>
 
-            <div class="field">
-                <input type="text" placeholder="Playlist ID, or the playlist URL"
-                       @bind="_playlist" @bind:event="oninput" />
-                <button class="primary" @onclick="Save" disabled="@(!HasPendingChange)">Save</button>
-            </div>
+            <div class="row">
+                <div class="name">
+                    <span>Playlist</span>
+                    <span class="gist">The queue crateside works from. Its URL or ID.</span>
+                </div>
+                <div class="control">
+                    <div class="field">
+                        <input type="text" placeholder="Playlist ID, or the playlist URL"
+                               @bind="_playlist" @bind:event="oninput" />
+                        <button class="primary" @onclick="Save" disabled="@(!HasPendingChange)">Save</button>
+                    </div>
 
-            @if (_playlistProblem is { } problem)
-            {
-                <p class="problem">@problem</p>
-            }
-            else if (Playlist.PlaylistId is { Length: > 0 } current)
-            {
-                <a class="out" href="@($"https://www.youtube.com/playlist?list={current}")"
-                   target="_blank" rel="noopener">Open on YouTube</a>
-            }
-        </section>
-
-        <section>
-            <h2>Looking for new tracks</h2>
-            <p class="detail">
-                The playlist is added to from other devices and <code>Sample Staging</code> is
-                emptied in Ableton. Neither tells crateside anything, so the only way either is
-                noticed is to look. This is how often the Tracks page looks; the stages read the
-                queue on their own two-minute loop regardless, so work starts either way.
-            </p>
-
-            <div class="field">
-                <select @bind="_refresh" @bind:after="SaveRefresh">
-                    @foreach (var minutes in RefreshChoices)
+                    @if (_playlistProblem is { } problem)
                     {
-                        <option value="@minutes">@RefreshLabel(minutes)</option>
+                        <span class="status problem">@problem</span>
                     }
-                </select>
+                    else if (Playlist.PlaylistId is { Length: > 0 } current)
+                    {
+                        <span class="status">
+                            <a href="@($"https://www.youtube.com/playlist?list={current}")"
+                               target="_blank" rel="noopener">Open on YouTube</a>
+                        </span>
+                    }
+                </div>
             </div>
 
-            <p class="detail">
-                Nearly free at any setting: the playlist read pages at fifty, the API's maximum, so
-                the whole list is one quota unit against a daily ten thousand — 288 a day at five
-                minutes, 48 at thirty.
-            </p>
-        </section>
+            <div class="row">
+                <div class="name">
+                    <span>Look for new tracks</span>
+                    <span class="gist">
+                        How often Tracks checks the playlist and Staging. Nothing tells
+                        crateside when either changes.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="pills">
+                        @foreach (var minutes in RefreshChoices)
+                        {
+                            <button class="pill @(minutes == _refresh ? "on plain" : "off")"
+                                    @onclick="() => SaveRefresh(minutes)" disabled="@(!HasPlaylist)">
+                                @RefreshLabel(minutes)
+                            </button>
+                        }
+                    </div>
+                    <span class="status">
+                        @if (_refresh is 0)
+                        {
+                            <text>Only when you ask.</text>
+                        }
+                        else
+                        {
+                            <text>
+                                <span class="mono value">@((MinutesPerDay / _refresh).ToString("N0"))</span>
+                                of <span class="mono">10,000</span> quota units a day. The stages
+                                still read the queue every two minutes on their own.
+                            </text>
+                        }
+                    </span>
+                </div>
+            </div>
 
-        @if (!Playlist.HasCredential)
-        {
-            <section>
-                <h2>API key</h2>
-                <p class="detail">
-                    Reading the playlist needs one. Set it once from the repo root, then restart:
-                </p>
-                <pre><code>dotnet user-secrets set "Queue:ApiKey" "&lt;key&gt;" --project src\Crateside\Crateside.csproj</code></pre>
-                <p class="detail">
-                    A read-only key restricted to the YouTube Data API is enough. See
-                    <code>docs/secrets.md</code>.
-                </p>
-            </section>
-        }
+            <div class="row">
+                <div class="name">
+                    <span>YouTube access</span>
+                    <span class="gist">Reading uses the API key. Removing needs your consent.</span>
+                </div>
+                <div class="control">
+                    <div class="access">
+                        <span class="caps">Read</span>
+                        @if (Playlist.HasCredential)
+                        {
+                            <span class="state">API key set</span>
+                        }
+                        else
+                        {
+                            <div class="state-block">
+                                <span class="state problem">No API key</span>
+                                <span class="status">
+                                    Set one from the repo root, then restart. Read-only, YouTube
+                                    Data API only (<code>docs/secrets.md</code>).
+                                </span>
+                                <pre><code>dotnet user-secrets set "Queue:ApiKey" "&lt;key&gt;" --project src\Crateside\Crateside.csproj</code></pre>
+                            </div>
+                        }
+                    </div>
 
-        <section>
-            <h2>Removing from the playlist</h2>
-
-            @if (!Playlist.CanAuthorize)
-            {
-                <p class="detail">
-                    Removing needs the user's consent, which an API key cannot give. Create a
-                    <em>Desktop app</em> OAuth client, then:
-                </p>
-                <pre><code>dotnet user-secrets set "Queue:ClientId" "&lt;id&gt;" --project src\Crateside\Crateside.csproj
+                    <div class="access">
+                        <span class="caps">Remove</span>
+                        @if (!Authorizer.IsConfigured)
+                        {
+                            <div class="state-block">
+                                <span class="state">Not set up</span>
+                                <details class="setup">
+                                    <summary>
+                                        How to set up removal
+                                        <span class="aside">a Desktop app OAuth client, two secrets</span>
+                                    </summary>
+                                    <pre><code>dotnet user-secrets set "Queue:ClientId" "&lt;id&gt;" --project src\Crateside\Crateside.csproj
 dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crateside\Crateside.csproj</code></pre>
-            }
-            else if (!Playlist.IsAuthorized)
-            {
-                <p class="detail">
-                    Opens a browser. The write token lapses about weekly, so expect to do this
-                    again — reading never stops working in the meantime.
-                </p>
-                <button class="primary" @onclick="Consent" disabled="@_working">
-                    @(_working ? "Waiting for consent…" : "Grant access to remove items")
-                </button>
-            }
-            else
-            {
-                @* Deleting from a playlist owned by a different channel fails as a bare 403. *@
-                <p class="detail">
-                    Authorized as <strong>@(_channel ?? "…")</strong>. Removal only works if that
-                    channel owns the playlist.
-                </p>
+                                </details>
+                            </div>
+                        }
+                        else if (!Authorizer.IsAuthorized)
+                        {
+                            <span class="state">Not granted</span>
+                            <button class="primary" @onclick="Consent" disabled="@_working">
+                                @(_working ? "Waiting for consent…" : "Grant access to remove items")
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="state">Authorized as <strong>@(_channel ?? "…")</strong></span>
+                            <button class="outline" @onclick="SignOut">Forget access</button>
+                        }
+                    </div>
 
-                @if (_processed is { } processed)
-                {
-                    <p class="detail">
-                        @("track".ToQuantity(processed)) here @(processed is 1 ? "has" : "have") a
-                        verdict and stems on disk. Removing them leaves their stems exactly where
-                        they are — a track's files sit in Sample Staging long after it has left the
-                        playlist.
-                    </p>
-                }
+                    @* Deleting from a playlist owned by a different channel fails as a bare 403. *@
+                    <span class="status">
+                        Removal only works if that channel owns the playlist. The token lapses about
+                        weekly; reading keeps working.
+                    </span>
 
-                <div class="actions">
-                    @if (_confirming)
+                    @if (_consentProblem is { } consent)
                     {
-                        <button class="danger" @onclick="RemoveProcessed" disabled="@_working">
-                            @(_working ? "Removing…" : "Yes, remove them")
-                        </button>
-                        <button class="outline" @onclick="() => _confirming = false" disabled="@_working">
-                            Cancel
-                        </button>
-                        <span class="detail">Re-checked at the moment of removal, not from this page.</span>
+                        <span class="status problem">@consent</span>
                     }
-                    else
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>Work</h3>
+
+            <div class="row">
+                <div class="name">
+                    <span>Library backfill</span>
+                    <span class="gist">
+                        Judges the backlog (re-judges, then hand-tagged library tracks) in the hours
+                        before the weekly Claude reset, until weekly use reaches the ceiling. Waits
+                        while the 5-hour window is near its limit, so new tracks still get judged.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="pills">
+                        <button class="pill @(Spend.IsEnabled ? "on plain" : "off")"
+                                @onclick="() => Spend.SetEnabled(true)">On</button>
+                        <button class="pill @(Spend.IsEnabled ? "off" : "on plain")"
+                                @onclick="() => Spend.SetEnabled(false)">Off</button>
+                    </div>
+
+                    <div class="numbers">
+                        <label class="status">
+                            Hours before the reset
+                            <input type="number" min="1" max="168" @bind="_spendHours" />
+                        </label>
+                        <label class="status">
+                            Weekly ceiling %
+                            <input type="number" min="1" max="100" @bind="_spendWeekly" />
+                        </label>
+                        <label class="status">
+                            5-hour ceiling %
+                            <input type="number" min="1" max="100" @bind="_spendSession" />
+                        </label>
+                        <button class="primary" @onclick="SaveSpendDown"
+                                disabled="@(PendingSpendDown == Spend.Settings)">Save</button>
+                    </div>
+
+                    <div class="counts">
+                        <span><span class="mono value">@Backfill(row => row is { Verdict: null, GaveUpAt: null })</span> waiting</span>
+                        <span><span class="mono value">@Backfill(row => row is { Verdict: not null })</span> judged</span>
+                        <span><span class="mono value">@(Judge.Value.IsConfigured ? Rejudges.Pending(Ledger.Read()).Count : 0)</span> to re-judge first</span>
+                        @if (Backfill(row => row is { Verdict: null, GaveUpAt: not null }) is > 0 and var stuck)
+                        {
+                            <span class="problem"><span class="mono">@stuck</span> gave up, see each row</span>
+                        }
+                        <span>
+                            <span class="mono value">@NotQueued</span> not queued ·
+                            <a href="dashboard#never-judged">queue them on the Dashboard</a>
+                        </span>
+                    </div>
+
+                    <span class="status">@SpendDownNote</span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="name">
+                    <span>Your ear</span>
+                    <span class="gist">How much the key you say you hear counts.</span>
+                </div>
+                <div class="control">
+                    <div class="pills">
+                        @foreach (var ear in Enum.GetValues<EarWeight>())
+                        {
+                            <button class="pill @(Ear == ear ? "on plain" : "off")"
+                                    @onclick="() => SetEar(ear)">@EarName(ear)</button>
+                        }
+                    </div>
+                    <span class="status">@EarNote(Ear)</span>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>Starter warps</h3>
+
+            <div class="row">
+                <div class="name">
+                    <span>For a track nothing is warped on</span>
+                    <span class="gist">
+                        What crateside writes beside each stem as it lands in staging. A stem
+                        already in staging keeps what it has.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="pills">
+                        @foreach (var mode in Enum.GetValues<StarterWarps>())
+                        {
+                            <button class="pill @(Starter == mode ? "on plain" : "off")"
+                                    @onclick="() => SetStarter(mode)">@StarterName(mode)</button>
+                        }
+                    </div>
+                    <span class="status">@StarterNote(Starter)</span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="name">
+                    <span>True up every warp</span>
+                    <span class="gist">
+                        Retypes each warp that drifts off its transients, as Track details does
+                        for one, with the vocal saved with it. A warp that would not hold is left.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="line">
+                        <span class="state">
+                            @if (_trueUps is { } batch)
+                            {
+                                <text>
+                                    <span class="mono">@batch.Plans.Count</span>
+                                    @("track".ToQuantity(batch.Plans.Count, ShowQuantityAs.None)) to true up,
+                                    <span class="mono">@batch.Refused</span> left because the grid would not hold
+                                </text>
+                            }
+                            else
+                            {
+                                <text>@(_trueUpWorking ? "Checking every warp…" : "Not checked yet")</text>
+                            }
+                        </span>
+                        <button class="outline" @onclick="CheckTrueUpsAsync"
+                                disabled="@(_trueUpWorking || _trueUps is { Plans.Count: > 0 })">
+                            Check the library
+                        </button>
+                    </div>
+
+                    @if (_trueUps is { Plans.Count: > 0 and var toTrueUp } && _trueUpDone is null)
                     {
-                        <button class="outline" @onclick="() => _confirming = true"
-                                disabled="@(_processed is null or 0)">
-                            Remove processed tracks
-                        </button>
-                        <button class="outline" @onclick="SignOut">Forget access</button>
+                        <div class="confirm">
+                            <span>
+                                True up <span class="mono value">@toTrueUp</span>
+                                @("track".ToQuantity(toTrueUp, ShowQuantityAs.None))? Every sidecar
+                                rewritten is backed up first, and a track saved in Live since this
+                                check is skipped.
+                            </span>
+                            <div class="actions">
+                                <button class="primary" @onclick="TrueUpAllAsync" disabled="@_trueUpWorking">
+                                    @(_trueUpWorking ? "Truing up…" : "True them up")
+                                </button>
+                                <button class="outline" @onclick="() => _trueUps = null"
+                                        disabled="@_trueUpWorking">Cancel</button>
+                            </div>
+                        </div>
                     }
+
+                    @if (_trueUpDone is { } done)
+                    {
+                        <span class="status">
+                            Trued up <span class="mono">@done.Count(item => item.Outcome is TrueUpOutcome.Retyped)</span>
+                            of <span class="mono">@done.Count</span>. Backups are in
+                            <code>%APPDATA%\crateside\backups\warps</code>.
+                        </span>
+
+                        @foreach (var item in done.Where(item => item.Outcome is not TrueUpOutcome.Retyped))
+                        {
+                            <span class="status problem">@item.Song: @WarpWording.TrueUpDone(item.Outcome, string.Empty)</span>
+                        }
+                    }
+                    else if (_trueUpProblem is { } trueUpProblem)
+                    {
+                        <span class="status problem">@trueUpProblem</span>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>Taking in tracks</h3>
+
+            <div class="row">
+                <div class="name">
+                    <span>Default recipe</span>
+                    <span class="gist">
+                        What a new track is cut into: Standard makes the vocal and instrumental
+                        stems and a drum guide; Instrumental keeps the source and the drum guide,
+                        for music with no vocal. It applies to a track when it arrives, and a
+                        folder inside the inbox named Standard or Instrumental overrides it for
+                        the files in it.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="pills">
+                        <button class="pill @(_recipe is Recipe.Standard ? "on plain" : "off")"
+                                @onclick="() => SetRecipe(Recipe.Standard)">Standard</button>
+                        <button class="pill @(_recipe is Recipe.Instrumental ? "on plain" : "off")"
+                                @onclick="() => SetRecipe(Recipe.Instrumental)">Instrumental</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="name">
+                    <span>Inbox</span>
+                    <span class="gist">
+                        Audio files and zips saved here become tracks, then are moved out of it.
+                        Change the folder with Paths:Inbox in the configuration and restart.
+                    </span>
+                </div>
+                <div class="control">
+                    <span class="status mono">@Paths.Inbox</span>
+                    <span class="status">
+                        Imported audio takes @((Imports.TotalBytes / 1_000_000_000.0).ToString("N1")) GB and is never pruned.
+                    </span>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>Source downloads</h3>
+
+            <div class="row">
+                <div class="name">
+                    <span>Keep the download</span>
+                    <span class="gist">
+                        How long a track's full-mix download stays after its last stem leaves
+                        Staging for the library. Shortening it discards on the next pass, every
+                        ten minutes.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="pills">
+                        <button class="pill @(_retention.Forever ? "off" : "on plain")"
+                                @onclick="() => SetForever(false)">Days</button>
+                        <button class="pill @(_retention.Forever ? "on plain" : "off")"
+                                @onclick="() => SetForever(true)">Forever</button>
+                    </div>
+
+                    @if (!_retention.Forever)
+                    {
+                        <div class="field">
+                            <input type="number" min="0" @bind="_days" />
+                            <button class="primary" @onclick="SaveDays"
+                                    disabled="@(_days == _retention.Days || _days < 0)">Save</button>
+                        </div>
+                    }
+
+                    <span class="status">@RetentionNote</span>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="name">
+                    <span>Download the missing ones</span>
+                    <span class="gist">
+                        Fetches the source of every library track that has none held or kept, the
+                        same way crateside downloads. Network and CPU only, no GPU. Each lands
+                        under the retention above.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="line">
+                        <span class="state">
+                            @if (_missing is { } missing)
+                            {
+                                <text>
+                                    <span class="mono value">@missing.Count</span>
+                                    @("source".ToQuantity(missing.Count, ShowQuantityAs.None)) missing, about
+                                    <span class="mono value">@((missing.Count * SourceBackfill.GuessedBytesPerSource / 1_000_000_000.0).ToString("N1")) GB</span>
+                                    (a guess: 45 MB each)
+                                </text>
+                            }
+                            else
+                            {
+                                <text>@(_missingWorking ? "Counting…" : "Not counted yet")</text>
+                            }
+                        </span>
+                        <button class="outline" @onclick="() => CountMissingAsync()"
+                                disabled="@(_missingWorking || _filling)">Count them</button>
+                    </div>
+
+                    @if (_unavailable is { Count: > 0 } gone)
+                    {
+                        <div class="line">
+                            <span class="state">
+                                <span class="mono value">@gone.Count</span>
+                                unavailable since @gone.Min(source => source.FirstSeen).ToLocalTime().ToString("d MMM yyyy"),
+                                left out of the count
+                            </span>
+                            <button class="outline" @onclick="() => _showUnavailable = !_showUnavailable">@(_showUnavailable ? "Hide" : "Which")</button>
+                            <button class="outline" @onclick="() => CountMissingAsync(true)"
+                                    disabled="@(_missingWorking || _filling)">Check again</button>
+                        </div>
+
+                        @if (_showUnavailable)
+                        {
+                            @foreach (var source in gone)
+                            {
+                                <span class="status">@source.Song: @(source.Reason is UnavailableReason.Private ? "private or embedding blocked" : "removed")</span>
+                            }
+                        }
+                    }
+
+                    @if (_missing is { Count: > 0 } toFetch && !_filling)
+                    {
+                        <div class="confirm">
+                            <span>
+                                Download <span class="mono value">@toFetch.Count</span>
+                                @("source".ToQuantity(toFetch.Count, ShowQuantityAs.None))?
+                                @if (_retention.KeepsNothing)
+                                {
+                                    <text>With the retention at 0 days they would be discarded at once, so set it first.</text>
+                                }
+                            </span>
+                            <div class="actions">
+                                <button class="primary" @onclick="() => FillAsync(toFetch)"
+                                        disabled="@_retention.KeepsNothing">Download them</button>
+                                <button class="outline" @onclick="() => _missing = null">Cancel</button>
+                            </div>
+                        </div>
+                    }
+
+                    @if (_filling)
+                    {
+                        <div class="actions">
+                            <span class="status">
+                                Downloaded <span class="mono">@_filled</span> of <span class="mono">@_fillTotal</span>…
+                            </span>
+                            <button class="outline" @onclick="() => _fillCancel?.Cancel()">Stop</button>
+                        </div>
+                    }
+                    else if (_fillFailures is { } failures)
+                    {
+                        <span class="status">
+                            Downloaded <span class="mono">@_filled</span>; <span class="mono">@failures.Count</span> failed.
+                        </span>
+
+                        @foreach (var failure in failures)
+                        {
+                            <span class="status problem">@failure.TrackKey: @failure.Error</span>
+                        }
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h3>Emptying the playlist</h3>
+
+            <div class="row">
+                <div class="name">
+                    <span>As tracks are taken on</span>
+                    <span class="gist">An entry is a message: once crateside has recorded it, it can go.</span>
+                </div>
+                <div class="control">
+                    <div class="pills">
+                        <button class="pill @(_consume ? "on plain" : "off")"
+                                @onclick="() => SaveConsume(true)" disabled="@(!CanEmpty)">On</button>
+                        <button class="pill @(_consume ? "off" : "on plain")"
+                                @onclick="() => SaveConsume(false)" disabled="@(!CanEmpty)">Off</button>
+                    </div>
+                    <span class="status">
+                        @if (HasPlaylist && !Authorizer.IsAuthorized)
+                        {
+                            <text>Needs removal access, under YouTube access above.</text>
+                        }
+                        else
+                        {
+                            <text>
+                                Turning it on removes every recorded entry on the next scan, not only
+                                new ones. <span class="mono">@RemovalUnits</span> quota units each,
+                                tried once, and not undoable from here.
+                            </text>
+                        }
+                    </span>
+                </div>
+            </div>
+
+            @if (Authorizer.IsAuthorized && HasPlaylist)
+            {
+                <div class="row">
+                    <div class="name">
+                        <span>Processed tracks</span>
+                        <span class="gist">A one-off clear-out of entries with a verdict and stems on disk.</span>
+                    </div>
+                    <div class="control">
+                        <div class="line">
+                            <span class="state">
+                                @if (_processed is { } processed)
+                                {
+                                    <text><span class="mono">@processed</span> in the playlist are done</text>
+                                }
+                                else
+                                {
+                                    <text>Not read yet</text>
+                                }
+                            </span>
+                            <button class="outline" @onclick="() => _confirming = true"
+                                    disabled="@(_confirming || _processed is null or 0)">
+                                Remove processed tracks
+                            </button>
+                        </div>
+
+                        @if (_confirming && _processed is { } count)
+                        {
+                            <div class="confirm">
+                                <span>
+                                    Remove <span class="mono value">@count</span>
+                                    @("entry".ToQuantity(count, ShowQuantityAs.None))?
+                                    <span class="mono">@((count * RemovalUnits).ToString("N0"))</span>
+                                    quota units. Re-checked at the moment of removal, not from this page.
+                                </span>
+                                <div class="actions">
+                                    <button class="danger" @onclick="RemoveProcessed" disabled="@_working">
+                                        @(_working ? "Removing…" : "Yes, remove them")
+                                    </button>
+                                    <button class="outline" @onclick="() => _confirming = false"
+                                            disabled="@_working">Cancel</button>
+                                </div>
+                            </div>
+                        }
+
+                        @if (_removals is { Count: > 0 } removals)
+                        {
+                            <span class="status">
+                                Removed <span class="mono">@removals.Count(result => result.Removed)</span>
+                                of <span class="mono">@removals.Count</span>.
+                            </span>
+
+                            @foreach (var failed in removals.Where(result => !result.Removed))
+                            {
+                                <span class="status problem">@failed.Title: @failed.Reason</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="status">Their stems stay exactly where they are.</span>
+                        }
+
+                        @if (_removeProblem is { } remove)
+                        {
+                            <span class="status problem">@remove</span>
+                        }
+                    </div>
                 </div>
             }
 
-            @if (_error is { } error)
+            @if (Intake.LeftInPlaylist is { Count: > 0 } left)
             {
-                <p class="problem">@error</p>
+                <div class="row">
+                    <div class="name">
+                        <span class="problem">Left in the playlist</span>
+                        <span class="gist">Removals that failed. Each is tried once, so these stay until retried.</span>
+                    </div>
+                    <div class="control">
+                        @foreach (var record in left)
+                        {
+                            <div class="left">
+                                <div class="state-block">
+                                    <span class="title">@record.Title</span>
+                                    <span class="status">@record.RemovalFailure!.Reason</span>
+                                </div>
+                                @if (record.RemovalFailure.CanSucceedLater)
+                                {
+                                    <button class="outline" @onclick="() => Intake.ClearRemovalAttempted([record.TrackKey])">
+                                        Try again
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+
+        <section>
+            <h3>Folders</h3>
+
+            @foreach (var folder in Folders)
+            {
+                <div class="row folder">
+                    <div class="name">
+                        <span>@folder.Name</span>
+                        <span class="gist">@folder.Gist</span>
+                    </div>
+                    <span class="path mono">@(FolderState(folder))</span>
+                    <div class="actions">
+                        @if (folder.Place is not null)
+                        {
+                            <button class="outline" @onclick="() => _choosing = folder.Place">Change</button>
+                        }
+                        <button class="outline" disabled="@(folder.Path.Length is 0)" @onclick="() => Reveal(folder)">
+                            @(folder.IsFile ? "Show in folder" : "Open")
+                        </button>
+                    </div>
+                </div>
             }
 
-            @if (_removals is { Count: > 0 })
+            @if (_choosing is { } place)
             {
-                <p class="detail">
-                    Removed @_removals.Count(result => result.Removed) of @_removals.Count.
-                </p>
-
-                @foreach (var failed in _removals.Where(result => !result.Removed))
-                {
-                    <p class="problem">@failed.Title — @failed.Reason</p>
-                }
+                <FolderChooser Title="@($"Choose the {place} folder")"
+                               Start="@(StartFor(place))"
+                               Chosen="folder => Chosen(place, folder)"
+                               Canceled="() => _choosing = null" />
             }
+
+            @if (_folderProblem is { } folderProblem)
+            {
+                <span class="status problem">@folderProblem</span>
+            }
+            else if (_foldersChanged)
+            {
+                <span class="status">Saved. Restart crateside for the new folder to apply.</span>
+            }
+
+            <span class="status note">
+                Staging, the library and Ableton projects are changed here and take effect at the next start. The rest are set in
+                <code>appsettings.json</code>, which crateside never writes.
+            </span>
+        </section>
+
+        <section>
+            <h3>API</h3>
+
+            <div class="row folder">
+                <div class="name">
+                    <span>Read-only JSON</span>
+                    <span class="gist">A track's state as the pages see it, for scripts and agents, on this machine only.</span>
+                </div>
+                <span class="path mono">/api/tracks</span>
+                <div class="actions">
+                    <a class="outline" href="scalar" target="_blank">Browse the API</a>
+                </div>
+            </div>
         </section>
     </div>
 </div>
 
 @code {
+    private EarWeight Ear => Judge.Value.Ear;
+
+    // The judge reads it at the start of each run, so it applies to the next one.
+    private void SetEar(EarWeight ear)
+    {
+        Judge.Value.Ear = ear;
+        JudgeStore.RememberEar(ear);
+    }
+
+    private static string EarName(EarWeight ear) => ear is EarWeight.HumanSource ? "Human source" : "Hint";
+
+    private static string EarNote(EarWeight ear) =>
+        ear is EarWeight.HumanSource
+            ? "Counted like an authoritative source: it can settle a split by itself."
+            : "Weighed with the rest, but it never raises confidence on its own.";
+
+    private StarterWarps Starter => Warps.Value.StarterWarps;
+
+    private SourceRetention _retention = new();
+    private Recipe _recipe;
+    private int _days;
+    private IReadOnlyList<string>? _missing;
+    private bool _missingWorking;
+    private IReadOnlyList<UnavailableSource>? _unavailable;
+    private bool _showUnavailable;
+    private bool _filling;
+    private int _filled;
+    private int _fillTotal;
+    private IReadOnlyList<BackfillResult>? _fillFailures;
+    private CancellationTokenSource? _fillCancel;
+
+    private string RetentionNote =>
+        _retention switch
+        {
+            { Forever: true } => "Every source is kept. Where each one is: source-index.json in %LOCALAPPDATA%\\crateside.",
+            { Days: <= 0 } => "Discarded as soon as the last stem leaves Staging.",
+            _ => $"Kept {"day".ToQuantity(_retention.Days)} after the last stem leaves Staging.",
+        };
+
+    private void SetRecipe(Recipe recipe)
+    {
+        Recipes.Choose(recipe);
+        _recipe = Recipes.Default;
+    }
+
+    private void SetForever(bool forever) => Remember(_retention with { Forever = forever });
+
+    private void SaveDays() => Remember(_retention with { Days = Math.Max(0, _days) });
+
+    private void Remember(SourceRetention chosen)
+    {
+        RetentionStore.Remember(chosen);
+        _retention = RetentionStore.Read();
+        _days = _retention.Days;
+    }
+
+    private async Task CountMissingAsync(bool recheckAll = false)
+    {
+        (_missingWorking, _missing, _unavailable, _fillFailures) = (true, null, null, null);
+
+        try
+        {
+            var report = await Availability.SplitAsync(
+                await Task.Run(SourceFill.Missing),
+                recheckAll
+            );
+
+            (_missing, _unavailable) = (report.Downloadable, report.Unavailable);
+        }
+        finally
+        {
+            _missingWorking = false;
+        }
+    }
+
+    private async Task FillAsync(IReadOnlyList<string> trackKeys)
+    {
+        (_filling, _filled, _fillTotal, _fillFailures) = (true, 0, trackKeys.Count, null);
+        _fillCancel = new CancellationTokenSource();
+
+        try
+        {
+            var results = await SourceFill.RunAsync(
+                trackKeys,
+                result =>
+                {
+                    if (result.Error is null)
+                        _filled++;
+
+                    _ = InvokeAsync(StateHasChanged);
+                },
+                _fillCancel.Token
+            );
+
+            _fillFailures = [.. results.Where(result => result.Error is not null)];
+        }
+        finally
+        {
+            _filling = false;
+            _missing = null;
+            _fillCancel.Dispose();
+            _fillCancel = null;
+        }
+    }
+
+    private TrueUpBatch? _trueUps;
+    private IReadOnlyList<TrueUpDone>? _trueUpDone;
+    private bool _trueUpWorking;
+    private string? _trueUpProblem;
+
+    private async Task CheckTrueUpsAsync()
+    {
+        (_trueUpWorking, _trueUps, _trueUpDone, _trueUpProblem) = (true, null, null, null);
+
+        try
+        {
+            _trueUps = await Task.Run(() => TrueUps.Plan());
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _trueUpProblem = ex.Message;
+        }
+        finally
+        {
+            _trueUpWorking = false;
+        }
+    }
+
+    private async Task TrueUpAllAsync()
+    {
+        if (_trueUps is not { } batch)
+            return;
+
+        _trueUpWorking = true;
+
+        try
+        {
+            _trueUpDone = await Task.Run(() => TrueUps.ApplyAsync(batch));
+            _trueUps = null;
+        }
+        finally
+        {
+            _trueUpWorking = false;
+        }
+
+        await Tracks.EnsureFreshAsync(TimeSpan.Zero);
+    }
+
+    // Read again by the workers each time they look, so it applies to the next stem to land.
+    private void SetStarter(StarterWarps mode)
+    {
+        Warps.Value.StarterWarps = mode;
+        WarpStore.Remember(mode);
+    }
+
+    private static string StarterName(StarterWarps mode) =>
+        mode switch
+        {
+            StarterWarps.Off => "Off",
+            _ => "On the grid",
+        };
+
+    private static string StarterNote(StarterWarps mode) =>
+        mode switch
+        {
+            StarterWarps.Off =>
+                "Nothing is written, so Live analyzes each stem itself, with its own transients.",
+            _ =>
+                "One marker at crateside's tempo reading, on a beat the transients place, and the clip starting on it. A stem whose beat cannot be placed arrives with Warp off. About one track in eleven lands half a beat off.",
+        };
+
+    private const int MinutesPerDay = 1440;
+    private const int RemovalUnits = 50;
+
     /// <summary>The intervals worth offering. Never, then coarser as it gets less urgent.</summary>
     private static readonly int[] RefreshChoices = [0, 1, 5, 15, 30, 60];
 
     private int _refresh;
+    private bool _consume;
     private string _playlist = string.Empty;
     private string? _playlistProblem;
 
@@ -170,29 +894,200 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     private int? _processed;
     private bool _confirming;
     private bool _working;
-    private string? _error;
+    private string? _consentProblem;
+    private string? _removeProblem;
+    private string? _folderProblem;
+    private Place? _choosing;
+    private bool _foldersChanged;
+    private string _staging = string.Empty;
+    private string _library = string.Empty;
+    private string _projects = string.Empty;
     private IReadOnlyList<RemovalResult>? _removals;
 
     private bool HasPendingChange =>
         PlaylistReference.TryParse(_playlist, out var parsed) && parsed != Playlist.PlaylistId;
 
-    protected override async Task OnInitializedAsync()
-    {
-        _playlist = Playlist.PlaylistId ?? string.Empty;
-        _refresh = Playlist.RefreshMinutes;
+    private bool HasPlaylist => Playlist.PlaylistId is { Length: > 0 };
 
-        await Load();
+    private bool CanEmpty => HasPlaylist && Authorizer.IsAuthorized;
+
+    private IReadOnlyList<TrackRow> Rows => Tracks.Current?.Rows ?? [];
+
+    private int NotQueued => Rows.Count(row => row is { IsLibraryOnly: true, Verdict: null, IsAddedByUrl: false, HasUpload: true });
+
+    private int _spendHours;
+    private int _spendWeekly;
+    private int _spendSession;
+
+    private SpendDownSettings PendingSpendDown =>
+        new()
+        {
+            WindowHours = _spendHours,
+            WeeklyCeiling = _spendWeekly,
+            SessionCeiling = _spendSession,
+        };
+
+    private string SpendDownNote =>
+        Spend.State switch
+        {
+            SpendDownState.Off => "Off, so the backlog waits.",
+            SpendDownState.Waiting(var opens, var resets) =>
+                $"Opens {opens.ToLocalTime():ddd h:mm tt}, {"hour".ToQuantity(Spend.Settings.WindowHours)} before the weekly reset at {resets.ToLocalTime():ddd h:mm tt}.",
+            SpendDownState.Open(var weekly, var resets) =>
+                $"Open: weekly use at {weekly:N0}%, judging until {Spend.Settings.WeeklyCeiling}% or the reset at {resets.ToLocalTime():ddd h:mm tt}.",
+            SpendDownState.Spent(var weekly, var resets) =>
+                $"Weekly use at {weekly:N0}%, the ceiling reached; nothing more until the reset at {resets.ToLocalTime():ddd h:mm tt}.",
+            SpendDownState.CutOff(var resumes) =>
+                $"A track was cut off by the usage limit; Library backfill resumes when the 5-hour window rolls at {resumes.ToLocalTime():ddd h:mm tt}.",
+            SpendDownState.SessionFull(var session, { } resets) =>
+                $"The 5-hour window is at {session:N0}%; Library backfill waits for it to reset at {resets.ToLocalTime():h:mm tt}.",
+            SpendDownState.SessionFull(var session, _) =>
+                $"The 5-hour window is at {session:N0}%; Library backfill waits for it to reset.",
+            SpendDownState.Unread when !Judge.Value.SpendsClaudeQuota =>
+                "On: the judge is off the Claude limit, so the backlog is judged whenever judging runs (ADR 0067).",
+            SpendDownState.Unread => "On, but Claude use or the weekly reset could not be read, so nothing is judged.",
+            _ => "On; the first check comes within five minutes of starting.",
+        };
+
+    private void SaveSpendDown()
+    {
+        Spend.Remember(PendingSpendDown);
+        LoadSpendDown();
     }
 
+    private void LoadSpendDown() =>
+        (_spendHours, _spendWeekly, _spendSession) = (
+            Spend.Settings.WindowHours,
+            Spend.Settings.WeeklyCeiling,
+            Spend.Settings.SessionCeiling
+        );
+
+    private IEnumerable<Folder> Folders =>
+    [
+        new("Staging", "Where new stems land.", _staging, IsFile: false, Place.Staging),
+        new("Library", "Where finished stems go.", _library, IsFile: false, Place.Library),
+        new("Ableton projects", "Your sets, relinked when a track is renamed.", _projects, IsFile: false, Place.AbletonProjects),
+        new("Key ledger", "Every key verdict, and the evidence behind it.", Paths.LedgerDatabase, IsFile: true),
+    ];
+
+    private int Backfill(Func<TrackRow, bool> matches) =>
+        Rows.Count(row => row.IsBackfill && matches(row));
+
+    public void Dispose()
+    {
+        Tracks.Changed -= OnChanged;
+        Spend.Changed -= OnChanged;
+    }
+
+    protected override void OnInitialized()
+    {
+        Tracks.Changed += OnChanged;
+        Spend.Changed += OnChanged;
+
+        _staging = Paths.StagingFolder;
+        _library = Paths.LibraryFolder;
+        _projects = Paths.AbletonProjects;
+
+        _playlist = Playlist.PlaylistId ?? string.Empty;
+        var saved = PlaylistStore.Read();
+        _refresh = saved.RefreshMinutes ?? PlaylistSettings.DefaultRefreshMinutes;
+        _consume = saved.ConsumeOnArrival;
+        _retention = RetentionStore.Read();
+        _days = _retention.Days;
+        _recipe = Recipes.Default;
+        LoadSpendDown();
+    }
+
+    // After the first paint, so the page opens before the playlist and channel are read from YouTube.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
+        await Load();
+        StateHasChanged();
+    }
+
+    // Raised on a worker thread, never the circuit's, so the render is marshalled back.
+    private void OnChanged() => _ = InvokeAsync(StateHasChanged);
+
     // Takes effect on the next poll, not at the next restart.
-    private void SaveRefresh() => Playlist.SetRefreshMinutes(_refresh);
+    private void SaveRefresh(int minutes)
+    {
+        _refresh = minutes;
+        PlaylistStore.SaveRefreshMinutes(minutes);
+    }
+
+    private void SaveConsume(bool consume)
+    {
+        _consume = consume;
+        PlaylistStore.SaveConsumeOnArrival(consume);
+    }
 
     private static string RefreshLabel(int minutes) =>
         minutes switch
         {
-            0 => "Never — only when I ask",
-            1 => "Every minute",
-            _ => $"Every {minutes} minutes",
+            0 => "Never",
+            60 => "1 hour",
+            _ => $"{minutes} min",
+        };
+
+    private void Reveal(Folder folder)
+    {
+        _folderProblem = null;
+
+        try
+        {
+            if (folder.IsFile)
+                Process.Start("explorer.exe", $"/select,\"{folder.Path}\"");
+            else
+                Process.Start(new ProcessStartInfo(folder.Path) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            _folderProblem = $"Could not open {folder.Path}: {ex.Message}";
+        }
+    }
+
+    private void Chosen(Place place, string folder)
+    {
+        _choosing = null;
+
+        if (place is Place.Staging)
+            _staging = folder;
+        else if (place is Place.Library)
+            _library = folder;
+        else
+            _projects = folder;
+
+        Overrides.Remember(
+            new PathOverrides
+            {
+                StagingFolder = _staging,
+                LibraryFolder = _library,
+                AbletonProjects = _projects,
+            }
+        );
+        _foldersChanged = true;
+    }
+
+    private string FolderState(Folder folder) =>
+        folder switch
+        {
+            { Path: { Length: > 0 } path } => path,
+            { Place: Place.AbletonProjects } =>
+                "Optional. Renamed tracks relink no sets until it is set.",
+            _ => "Not set. Choose it with Change.",
+        };
+
+    private string StartFor(Place place) =>
+        place switch
+        {
+            Place.Staging => _staging,
+            Place.Library => _library,
+            Place.AbletonProjects => _projects,
+            _ => throw new UnreachableException(),
         };
 
     private async Task Save()
@@ -211,15 +1106,15 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     private async Task Consent()
     {
         _working = true;
-        _error = null;
+        _consentProblem = null;
 
         try
         {
-            await Playlist.ConsentAsync();
+            await Authorizer.ConsentAsync();
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            _error = $"Consent did not complete: {e.Message}";
+            _consentProblem = $"Consent did not complete: {ex.Message}";
         }
         finally
         {
@@ -231,7 +1126,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
     private async Task SignOut()
     {
-        await Playlist.SignOutAsync();
+        await Authorizer.SignOutAsync();
 
         _confirming = false;
         _channel = null;
@@ -240,18 +1135,18 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     private async Task RemoveProcessed()
     {
         _working = true;
-        _error = null;
+        _removeProblem = null;
 
         try
         {
-            _removals = await Playlist.RemoveProcessedAsync();
+            _removals = await WorkLists.RemoveProcessedAsync();
             _confirming = false;
 
             await Load();
         }
-        catch (QueueUnavailableException e)
+        catch (PlaylistUnavailableException ex)
         {
-            _error = e.Message;
+            _removeProblem = ex.Message;
         }
         finally
         {
@@ -259,13 +1154,7 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
         }
     }
 
-    /// <summary>
-    /// Reads enough to say what removal would do, and stops being interesting after that.
-    /// </summary>
-    /// <remarks>
-    /// The count is a preview: <see cref="QueueService.RemoveProcessedAsync"/> derives the set
-    /// again at the moment of removal.
-    /// </remarks>
+    /// <summary>Reads enough to preview what removal would do; the removal derives its set again.</summary>
     private async Task Load()
     {
         if (!Playlist.IsConfigured)
@@ -273,15 +1162,30 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
         try
         {
-            _processed = (await Playlist.ReadAsync()).FullyProcessed.Count;
+            _processed = (await WorkLists.ReadAsync()).FullyProcessed.Count;
 
-            if (Playlist.IsAuthorized)
-                _channel = await Playlist.GetAuthorizedChannelAsync();
+            if (Authorizer.IsAuthorized)
+                _channel = await Authorizer.GetAuthorizedChannelAsync();
         }
-        catch (QueueUnavailableException e)
+        catch (PlaylistUnavailableException ex)
         {
             _processed = null;
-            _error = e.Message;
+            _removeProblem = ex.Message;
         }
+    }
+
+    private sealed record Folder(
+        string Name,
+        string Gist,
+        string Path,
+        bool IsFile,
+        Place? Place = null
+    );
+
+    private enum Place
+    {
+        Staging,
+        Library,
+        AbletonProjects,
     }
 }

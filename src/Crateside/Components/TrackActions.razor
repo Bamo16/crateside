@@ -1,0 +1,389 @@
+@using System.Diagnostics
+@using Crateside.Core.Orchestration.Edits
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Orchestration.Loop
+@using Crateside.Core.Playlist
+@using Crateside.Core.Quota
+@using Crateside.Core.Staging
+@using Crateside.Core.Tracks
+@using Crateside.Core.WorkLists
+@implements IDisposable
+@inject CachedPlaylist Playlist
+@inject PlaylistAuthorizer Authorizer
+@inject BumpedTrack Bumped
+@inject JobStore Jobs
+@inject StageSignals Signals
+@inject TrackRemoval Removal
+@inject TracksService Tracks
+@inject ActionLog Actions
+@inject QuotaGuard Quota
+
+@if (Part is Parts.Go && (Row.Folder is not null || ShowDetailsLink))
+{
+    <div class="group">
+        <div class="actions">
+            @if (Row.Folder is not null)
+            {
+                <button class="outline" @onclick="OpenFolder">Open folder</button>
+            }
+            @if (ShowDetailsLink)
+            {
+                <a class="outline" href="@Row.DetailsHref">Track details</a>
+            }
+        </div>
+        @if (_problem is { } problem)
+        {
+            <p class="problem">@problem</p>
+        }
+    </div>
+}
+else if (Part is Parts.Queue && (ShowNextSentence || HasQueueButtons))
+{
+    <div class="group">
+        <span class="stack-label">Next</span>
+
+        @if (ShowNextSentence)
+        {
+            <p class="what-next @NextTone(Row)">@Row.Next</p>
+            <p class="detail">
+                @Row.Detail
+                @if (Row.CanChangePlan)
+                {
+                    @($" {StemEditor.Cost(Row.Recipe)} Changes to what is cut apply now: nothing has been made yet.")
+                }
+                @if (Row.State is TrackState.Short)
+                {
+                    <text> Not on disk: @Editor.Missing(Row). Cutting it is @StemEditor.Cost(Row.Recipe)</text>
+                }
+            </p>
+            @if (Row.RetryNote is { } retrying)
+            {
+                <p class="detail" title="@Row.Retrying?.Error">@retrying</p>
+            }
+            @if (Row.Deletions.Count > 0)
+            {
+                <div class="recycled">
+                    <span class="recycled-head">Sent to the Recycle Bin by crateside</span>
+                    @foreach (var deletion in Row.Deletions.Take(RecycledShown))
+                    {
+                        <span class="recycled-line">
+                            <span class="mono">@deletion.At.ToLocalTime().ToString("d MMM")</span>
+                            @deletion.FileName
+                            <span class="recycled-why">@deletion.Reason</span>
+                        </span>
+                    }
+                    @if (Row.Deletions.Count > RecycledShown)
+                    {
+                        <span class="recycled-why">and @("earlier file".ToQuantity(Row.Deletions.Count - RecycledShown))</span>
+                    }
+                </div>
+            }
+        }
+
+        @if (HasQueueButtons)
+        {
+            <div class="actions">
+                @if (Row.GaveUpAt is not null)
+                {
+                    <button class="outline" @onclick="Retry">Retry</button>
+                }
+                @if (Row.State is TrackState.Short)
+                {
+                    <button class="primary" @onclick="() => Editor.CutShortfallAsync(Row)" disabled="@(_working || Editor.Working)">
+                        @(Editor.Working ? "Cutting…" : "Cut what is missing")
+                    </button>
+                }
+                @if (IsBumped)
+                {
+                    <button class="primary" @onclick="ClearBump">Stop working this first</button>
+                }
+                else if (CanBump)
+                {
+                    <button class="outline" @onclick="Bump">Work this first</button>
+                }
+                @if (IsPassed)
+                {
+                    <button class="primary" @onclick="ClearPass">Stop judging this anyway</button>
+                }
+                else if (CanPass)
+                {
+                    <button class="outline" @onclick="Pass" title="@Quota.Hold?.Reason">Judge this one anyway</button>
+                }
+            </div>
+        }
+        @if (_problem is { } problem)
+        {
+            <p class="problem">@problem</p>
+        }
+    </div>
+}
+else if (Part is Parts.Remove && HasRemove(Row, Authorizer))
+{
+    <div class="stack-part">
+        <div class="label-line">
+            <span class="stack-label">Track</span>
+            @if (Row.PlaylistItemId is { } playlistItemId && Authorizer.IsAuthorized)
+            {
+                <button class="outline" @onclick="() => Remove(playlistItemId)">
+                    Remove from playlist
+                </button>
+            }
+            else
+            {
+                <button class="outline" @onclick="ToggleRemove" disabled="@_working">Remove</button>
+            }
+        </div>
+
+        @if (_removing)
+        {
+            <div class="confirm-box">
+                <p class="detail">@RemovalQuestion()</p>
+                <div class="actions">
+                    <button class="danger" @onclick="ConfirmRemove" disabled="@_working">
+                        Remove
+                    </button>
+                    <button class="outline" @onclick="CancelRemove" disabled="@_working">Keep</button>
+                </div>
+            </div>
+        }
+        @if (_problem is { } problem)
+        {
+            <p class="problem">@problem</p>
+        }
+    </div>
+}
+
+@code {
+    private const int RecycledShown = 5;
+
+    private readonly CancellationTokenSource _circuit = new();
+
+    private bool _working;
+    private string? _problem;
+
+    private bool _removing;
+    private IReadOnlyList<StagedFile> _recycling = [];
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    [Parameter, EditorRequired]
+    public required StemEditor Editor { get; set; }
+
+    [Parameter, EditorRequired]
+    public required Parts Part { get; set; }
+
+    /// <summary>Off on Track details itself, where the link would lead back to the same page.</summary>
+    [Parameter]
+    public bool ShowDetailsLink { get; set; } = true;
+
+    /// <summary>Off on Track details, where the stage flow says what happens next.</summary>
+    [Parameter]
+    public bool ShowNextSentence { get; set; } = true;
+
+    /// <summary>Said once the track is gone, since no row or page is left to say it.</summary>
+    [Parameter]
+    public EventCallback<(string Title, string Note)> Removed { get; set; }
+
+    private bool IsBumped => Bumped.TrackKey == Row.TrackKey;
+
+    /// <summary>
+    /// Waiting is the only time this means anything: once a stage has the track, the work lists
+    /// have already been read.
+    /// </summary>
+    private bool CanBump => Row.State is TrackState.Queued or TrackState.JudgedInLine;
+
+    private bool IsPassed => Quota.PassedTrackKey == Row.TrackKey;
+
+    /// <summary>Only while weekly use holds judging back, and only for a track headed for it.</summary>
+    private bool CanPass => Row.IsAwaitingJudgment && Quota.Hold is not null;
+
+    private bool HasQueueButtons =>
+        Row is { GaveUpAt: not null } or { State: TrackState.Short } || IsBumped || CanBump || IsPassed || CanPass;
+
+    public static bool HasRemove(TrackRow row, PlaylistAuthorizer authorizer) =>
+        row is { PlaylistItemId: not null } && authorizer.IsAuthorized || row.CanForget;
+
+    public void Dispose()
+    {
+        _circuit.Cancel();
+        _circuit.Dispose();
+    }
+
+    private static string NextTone(TrackRow row) =>
+        row.State switch
+        {
+            TrackState.ReadyToWarp or TrackState.ReadyToMove => "amber",
+            TrackState.Parked or TrackState.GaveUp or TrackState.Short => "attention",
+            _ => string.Empty,
+        };
+
+    private void OpenFolder()
+    {
+        if (Row.Folder is not { } folder)
+            return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            _problem = $"Could not open {folder}: {ex.Message}";
+        }
+    }
+
+    private async Task Bump()
+    {
+        Bumped.Bump(Row.TrackKey);
+        Actions.Record(Row.TrackKey, UserActionKind.Bumped);
+
+        await Tracks.RefreshAsync(_circuit.Token);
+    }
+
+    private async Task ClearBump()
+    {
+        Bumped.Clear();
+        Actions.Record(Row.TrackKey, UserActionKind.BumpCleared);
+
+        await Tracks.RefreshAsync(_circuit.Token);
+    }
+
+    private async Task Pass()
+    {
+        Quota.Pass(Row.TrackKey);
+        Actions.Record(Row.TrackKey, UserActionKind.PassedTheHold);
+        Signals.Wake([JobStage.Verdict]);
+
+        await Tracks.RefreshAsync(_circuit.Token);
+    }
+
+    private async Task ClearPass()
+    {
+        Quota.ClearPass();
+        Actions.Record(Row.TrackKey, UserActionKind.PassCleared);
+
+        await Tracks.RefreshAsync(_circuit.Token);
+    }
+
+    private async Task Retry()
+    {
+        List<JobStage> forgiven = [];
+
+        foreach (var stage in Enum.GetValues<JobStage>())
+            if (Jobs.TryGet(Row.TrackKey, stage, out var job) && job is { Status: JobStatus.Failed })
+            {
+                Jobs.Forgive(Row.TrackKey, stage);
+                forgiven.Add(stage);
+            }
+
+        if (forgiven.Count > 0)
+            Actions.Record(
+                Row.TrackKey,
+                UserActionKind.Retried,
+                string.Join(", ", forgiven),
+                forgiven.Min()
+            );
+
+        // Every stage was forgivable, so waking only two left the rest to wait out the interval.
+        Signals.Wake([.. forgiven]);
+
+        await Tracks.RefreshAsync(_circuit.Token);
+    }
+
+    private async Task Remove(string playlistItemId)
+    {
+        _problem = null;
+
+        try
+        {
+            var results = await Playlist.RemoveAsync(
+                [
+                    new WorkItem
+                    {
+                        PlaylistItemId = playlistItemId,
+                        TrackKey = Row.TrackKey,
+                        Title = Row.Title,
+                    },
+                ]
+            );
+
+            _problem = results.FirstOrDefault(result => !result.Removed)?.Reason;
+
+            if (_problem is null)
+                Actions.Record(Row.TrackKey, UserActionKind.RemovedFromPlaylist);
+
+            await Tracks.RefreshAsync(_circuit.Token);
+        }
+        catch (PlaylistUnavailableException ex)
+        {
+            _problem = ex.Message;
+        }
+    }
+
+    private void ToggleRemove()
+    {
+        if (_removing)
+        {
+            CancelRemove();
+            return;
+        }
+
+        _problem = null;
+        _removing = true;
+        _recycling = Removal.Recycling(Row.Facts.Uploads);
+    }
+
+    private void CancelRemove()
+    {
+        _removing = false;
+        _recycling = [];
+    }
+
+    private string RemovalQuestion() =>
+        _recycling.Count is 0
+            ? "Drop crateside's record of this track? No file is touched."
+            : $"Drop crateside's record and recycle {"staged file".ToQuantity(_recycling.Count)}? "
+                + "Nothing in the library is touched.";
+
+    private async Task ConfirmRemove()
+    {
+        _working = true;
+
+        try
+        {
+            var outcome = Removal.Apply(Row.TrackKey, Row.Facts.Uploads);
+            var title = Row.Title;
+
+            if (outcome.Problem is null)
+                Actions.Record(Row.TrackKey, UserActionKind.Forgotten, $"{outcome.Recycled} recycled");
+
+            CancelRemove();
+
+            await Tracks.RefreshAsync(_circuit.Token);
+            await Removed.InvokeAsync(
+                (
+                    title,
+                    outcome.Problem
+                        ?? (
+                            outcome.Recycled is 0
+                                ? "No file was touched."
+                                : $"{"staged file".ToQuantity(outcome.Recycled)} recycled."
+                        )
+                )
+            );
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    public enum Parts
+    {
+        Go,
+        Queue,
+        Remove,
+    }
+}

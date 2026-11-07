@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
+using Crateside.Core.Ledger;
 
 namespace Crateside.Core.Pairing;
 
@@ -69,9 +70,8 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
     public string FlatName => $"{FlatNames[Chromatic]} {Mode}";
 
     /// <summary>
-    /// The ledger's spelling: ASCII accidental, lowercase mode — <c>G# major</c>. This is what
-    /// keytag records and what Ableton's recombined keywords normalize to, so it is the form
-    /// the rest of crateside joins on.
+    /// The ledger's spelling, which crateside joins on: ASCII accidental, lowercase mode —
+    /// <c>G# major</c>.
     /// </summary>
     public string LedgerName =>
         $"{SharpNames[Chromatic].Replace('♯', '#')} {Mode.ToString().ToLowerInvariant()}";
@@ -128,15 +128,13 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
         };
 
     /// <summary>
-    /// Parses a key from a name or a Camelot code. Accepts the ledger's spelling
-    /// (<c>G# major</c>), the Unicode spelling (<c>G♯ Major</c>), flats, shorthand
-    /// (<c>Am</c>), and codes (<c>8B</c>). Returns null rather than guessing.
+    /// Parses a key from any usual spelling or a Camelot code, or returns null rather than guessing.
     /// </summary>
     public static MusicKey? FromString(string? input)
     {
         if (
             string.IsNullOrWhiteSpace(input)
-            || KeyPattern().Match(input.Trim()) is not { Success: true, Groups: var groups }
+            || KeyPattern.Match(input.Trim()) is not { Success: true, Groups: var groups }
         )
         {
             return null;
@@ -172,6 +170,34 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
 
         return null;
     }
+
+    /// <summary>A center's tag as a key: its collapse.</summary>
+    public static MusicKey Of(TonalCenter center) =>
+        AllKeys.Single(key =>
+            key.Chromatic == center.Chromatic
+            && key.Mode == (TonalCenter.IsMajor(center.Mode) ? Mode.Major : Mode.Minor)
+        );
+
+    /// <summary>The key as a center on Ionian or Aeolian.</summary>
+    public static TonalCenter CenterOf(MusicKey key) =>
+        new(
+            TonalCenter.Tonics[key.Chromatic],
+            key.Mode is Mode.Major ? DiatonicMode.Ionian : DiatonicMode.Aeolian
+        );
+
+    /// <summary>The key <paramref name="semitones"/> away in the same mode, up or down.</summary>
+    public MusicKey Transposed(int semitones) =>
+        AllKeys.Single(key =>
+            key.Mode == Mode && key.Chromatic == ((Chromatic + semitones) % 12 + 12) % 12
+        );
+
+    /// <summary>The same notes in the other mode: same circle position, other letter.</summary>
+    public MusicKey Relative =>
+        AllKeys.Single(key => key.Mode != Mode && key.CirclePos == CirclePos);
+
+    /// <summary>The note alone, as the Camelot wheel labels it: majors flat, minors sharp with an m.</summary>
+    public string ShortName =>
+        Mode is Mode.Major ? FlatNames[Chromatic] : $"{SharpNames[Chromatic]}m";
 
     public bool Equals(MusicKey? other) =>
         other is not null && Chromatic == other.Chromatic && Mode == other.Mode;
@@ -209,7 +235,7 @@ public sealed partial class MusicKey : IEquatable<MusicKey>, IComparable<MusicKe
             )
         $
         ",
-        RegexOptions.Compiled | RegexOptions.ExplicitCapture | RegexOptions.IgnorePatternWhitespace
+        RegexOptions.ExplicitCapture | RegexOptions.IgnorePatternWhitespace
     )]
-    private static partial Regex KeyPattern();
+    private static partial Regex KeyPattern { get; }
 }

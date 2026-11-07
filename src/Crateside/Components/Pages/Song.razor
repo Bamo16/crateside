@@ -1,43 +1,365 @@
-@page "/song/{VideoId}"
+@page "/song/{TrackKey}"
+@layout Crateside.Components.Layout.BareLayout
+@rendermode InteractiveServer
+@implements IDisposable
+@using Crateside.Core
 @using Crateside.Core.Ledger
-@inject EvidenceService Evidence
+@using Crateside.Core.Orchestration.Verdict
+@using Crateside.Core.Tempo
+@using Crateside.Core.Tracks
+@using Microsoft.Extensions.Options
+@inject TrackDetailsReader Details
+@inject TracksService Tracks
+@inject IServiceProvider Services
 @inject NavigationManager Navigation
+@inject BarJudging Judging
+@inject PersonsKey Person
+@inject IOptions<JudgeOptions> Judge
 
-<PageTitle>@(_run?.DisplayName ?? "Song") — crateside</PageTitle>
+<PageTitle>@(Name ?? "Track details") · crateside</PageTitle>
 
-<header class="page-header">
-    <div>
-        <a class="back" href="">← Tracks</a>
-        <h1>@(_run?.DisplayName ?? "Unknown song")</h1>
-        <p class="subtitle">
-            Why this key was given, and what it was based on.
-        </p>
-    </div>
-    @if (_run is not null)
+<PageHeader Active="BrandNav.Tab.Tracks" Shape="PageHeader.Shapes.Bar" />
+
+<div class="body">
+    <a class="back" href="tracks">← Tracks</a>
+
+    @if (_row is null && _run is null)
     {
-        <a class="watch" href="@($"https://www.youtube.com/watch?v={VideoId}")"
-           target="_blank" rel="noopener noreferrer">Open on YouTube</a>
+        <h1>Track details</h1>
+        <p class="notice">
+            @(Tracks.Current is null ? "Reading tracks…" : $"crateside has no track for {TrackKey}.")
+        </p>
     }
-</header>
+    else
+    {
+        <h1>@Name</h1>
+        <p class="meta">@Meta</p>
 
-@if (_run is null)
-{
-    <div class="notice">
-        <strong>No run recorded for this video.</strong>
-        The ledger has never seen <code>@VideoId</code> — either detect-key has not run for it,
-        or the stem's provenance points at a different video than the one that was judged.
-    </div>
-}
-else
-{
-    <Evidence Run="_run" />
-}
+        @if (_row is not null)
+        {
+            <TrackFindings Row="_row" />
+        }
+
+        <section class="band @(_row?.IsLibraryOnly is true ? "library-only" : null) @(HasFlow ? "with-flow" : null)">
+            <div class="cell">
+                <span class="label">@(_row?.IsLibraryOnly is true ? "Key · tagged in Ableton" : "Key")</span>
+                @if (Center is { } center && ModeText.Lead(center, Mixed) is { } lead)
+                {
+                    <span class="mono lead">@lead <span class="arrow">→</span></span>
+                }
+                <span class="mono value key @(Key is null ? "empty" : null)">@(KeyText.Spell(Key) ?? "—")</span>
+                @if (Center is { } reasoned && ModeText.Reason(reasoned, Mixed) is { } reason)
+                {
+                    <span class="reason">@reason</span>
+                }
+                @if (OtherSections is { Count: > 0 } others)
+                {
+                    <ul class="sections">
+                        @foreach (var part in others)
+                        {
+                            <li>
+                                <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
+                                <span class="mono section-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
+                            </li>
+                        }
+                    </ul>
+                }
+                <span class="sub"><ProseText Text="@KeyNote" Inline="true" /></span>
+            </div>
+            <div class="cell">
+                <span class="label">Confidence</span>
+                @if (Judging.Of(TrackKey) is { IsRunning: true } running)
+                {
+                    <span class="judging-chip"><span class="dot"></span>judging from bars</span>
+                    <span class="sub">
+                        @JudgeText.Spans(running.Direction.Windows) · @JudgeText.Brief(running) · started @running.StartedAt.ToLocalTime().ToString("h:mm tt")
+                    </span>
+                }
+                else
+                {
+                    <span class="mono value conf @KeyText.ConfidenceTone(Confidence) @(Verdict?.DecidedBy is DecidedBy.Person ? "call" : null)">@KeyText.Headline(Verdict?.DecidedBy, Confidence)</span>
+                    <span class="sub">@ConfidenceNote</span>
+                    @if (Invitation is { } invitation)
+                    {
+                        <span class="invitation">@invitation</span>
+                        <a class="outline invite" href="@WarpViewLink" @onclick="() => _openRequests++">Judge again ↓</a>
+                    }
+                }
+            </div>
+            <div class="cell">
+                <span class="label">BPM</span>
+                <span class="mono value bpm @(_row?.State is TrackState.ReadyToWarp ? "ready" : null) @(Bpm is null ? "empty" : null) @(Bpm?.IsApproximate is true ? "approx" : null) @(Bpm?.IsEstimate is true ? "estimate" : null)">@(Bpm?.Text ?? "—")@if (Bpm is { Mark: not OffMark.None })
+                {<OffMarkGlyph Mark="Bpm.Mark" Large="true" />}</span>
+                <span class="sub">@(Bpm?.Note ?? "not measured")</span>
+                @if (Bpm?.Explanation is { } explanation)
+                {
+                    <span class="explain">@explanation@if (Bpm.Mark is not OffMark.None)
+                    {<text> </text><a href="@WarpViewLink">True up in Warp ↓</a>}</span>
+                }
+                @if (Tempo is { Drifts: true } drifting)
+                {
+                    <TempoStrip Tempo="drifting" />
+                }
+            </div>
+            <div class="cell where">
+                <span class="label">Where it is</span>
+                @if (_row is not null)
+                {
+                    <StateChip Row="_row" />
+                    <span class="next">@_row.Next</span>
+                    @if (_row.RunningSince is { } since)
+                    {
+                        <span class="mono elapsed">
+                            @Clock.Elapsed(since)@(Expected is { } expected ? $" of about {expected.Humanize()}" : null)
+                        </span>
+                        @if (Expected is { } estimate)
+                        {
+                            <span class="progress"><span style="width: @Percent(since, estimate)%"></span></span>
+                        }
+                    }
+                }
+                @if (HasEvidenceSection)
+                {
+                    <a class="why" href="@($"song/{Uri.EscapeDataString(TrackKey)}#evidence")">Why @Verdicted ↓</a>
+                }
+            </div>
+        </section>
+
+        @if (HasFlow)
+        {
+            <StageFlowStrip Row="_row!" />
+        }
+
+        <div class="columns">
+            <div class="main">
+                @if (_row is not null)
+                {
+                    <section class="samples">
+                        <StemList Editor="_stems" Row="_row" OnSelect="path => _selectedWarp = path" />
+                    </section>
+
+                    <WarpView Row="_row" @bind-SelectedPath="_selectedWarp" Run="_run" OpenRequests="_openRequests" />
+                }
+
+                @if (_row is not null)
+                {
+                    <KeyPicker Row="_row" Run="_run ?? _pending" />
+                }
+
+                @if (HasEvidenceSection)
+                {
+                    <section id="evidence" class="evidence-section">
+                        @if (_run is null && _pending is { } pending)
+                        {
+                            <Evidence Run="pending" Heading="What was found" Summary="Nothing is decided yet: the detectors' readings and the pages the lookup found."
+                                      Withheld="true" Pending="true" />
+                        }
+                        else if (_run is null)
+                        {
+                            <h2>Why @Verdicted</h2>
+                            <p class="summary">
+                                Judged @Verdict?.Timestamp.ToLocalTime().ToString("yyyy-MM-dd"), before crateside
+                                kept evidence. The verdict stands; its reasons were not saved.
+                            </p>
+                        }
+                        else
+                        {
+                            <Evidence Run="_run" Tempo="Tempo" Heading="@($"Why {HeadingKey}")" Summary="@RunSummary.Of(_run)"
+                                      Withheld="Confidence is KeyConfidence.Withheld"
+                                      WarpViewLink="@(_row is null ? null : WarpViewLink)" />
+                        }
+                    </section>
+                }
+
+                @if (_row is not null)
+                {
+                    <ActivityLog Row="_row" Header="CopyHeader(_row)" />
+                }
+            </div>
+
+            <aside class="rail">
+                @if (_row is not null)
+                {
+                    <SideStack Row="_row" Editor="_stems" OnTrackDetails="true" Uploads="_row.Uploads"
+                               Removed="OnRemoved" />
+                }
+            </aside>
+        </div>
+    }
+</div>
 
 @code {
+    private string WarpViewLink => $"{new Uri(Navigation.Uri).GetLeftPart(UriPartial.Query)}#warp-view";
+
     [Parameter]
-    public required string VideoId { get; set; }
+    public required string TrackKey { get; set; }
 
+    private TrackRow? _row;
     private RunEvidence? _run;
+    private RunEvidence? _pending;
+    private StemEditor _stems = null!;
+    private Timer? _clock;
+    private string? _selectedWarp;
+    private int _openRequests;
 
-    protected override void OnParametersSet() => _run = Evidence.ForVideoId(VideoId);
+    private LedgerRun? Verdict => _row?.Verdict;
+
+    private string? Name => _row?.Title ?? _run?.DisplayName;
+
+    private string? Key => _row is null ? _run?.Key : _row.Key ?? LibraryKey;
+
+    private string Verdicted =>
+        _pending is not null ? "no ruling"
+        : Center is { IsModal: true } modal ? ModeText.Named(modal) : KeyText.Spell(Key) ?? "this verdict";
+
+    /// <summary>The head of Why: the key in full, since the band keeps the short form beside it.</summary>
+    private string HeadingKey =>
+        Confidence is KeyConfidence.Withheld ? "no key"
+        : Center is { } center ? ModeText.Named(center)
+        : Key?.Replace("#", "♯", StringComparison.Ordinal) ?? "this verdict";
+
+    /// <summary>The verdict's tonal center, where it is the one tagged.</summary>
+    private TonalCenter? Center =>
+        _row is null ? _run?.Center : _row.Key is not null ? Verdict?.Center : null;
+
+    private bool Mixed => _row is null ? _run?.Mixed is true : Verdict?.Mixed is true;
+
+    private IReadOnlyList<Section> Sections => _row is null ? _run?.Sections ?? [] : Verdict?.Sections ?? [];
+
+    private IReadOnlyList<Section> OtherSections =>
+        [.. Sections.Where(section => section.Center != Center)];
+
+    /// <summary>A library-only track never ran through crateside, so it has no stages to draw.</summary>
+    private bool HasFlow => _row is { IsLibraryOnly: false };
+
+    private bool HasEvidenceSection => Verdict is not null || _run is not null || _pending is not null;
+
+    private KeyConfidence Confidence => _row?.Confidence ?? KeyConfidence.Unknown;
+
+    /// <summary>When it was judged, and from which of the user's bars where it was judged from some.</summary>
+    private string ConfidenceNote =>
+        (Verdict, _run?.Windows.Where(window => window.AskedBy is WindowAsker.User).ToList()) switch
+        {
+            ({ } judged, [_, ..] yours) when _run!.Timestamp == judged.Timestamp =>
+                $"judged from {JudgeText.Spans(yours)} · {Clock.Ago(judged.Timestamp)}",
+            ({ DecidedBy: DecidedBy.Judge } judged, _) =>
+                $"judged {judged.Timestamp.ToLocalTime():yyyy-MM-dd}",
+            ({ } decided, _) =>
+                $"{KeyText.Byline(decided.DecidedBy)} · {decided.Timestamp.ToLocalTime():yyyy-MM-dd}",
+            _ when _row?.WaitingForPerson is true => "waiting for you",
+            _ when _pending is not null => "no ruling yet",
+            _ => "never judged",
+        };
+
+    /// <summary>Why to judge it from bars, where the verdict is withheld or the detectors split and the warp view is there to do it in.</summary>
+    private string? Invitation =>
+        _row is { HasUpload: true, Samples.Count: > 0 } && Judge.Value.IsConfigured
+            ? JudgeText.Invitation(Confidence, _run)
+            : null;
+
+    private TrackTempo? Tempo => _row is null ? TrackTempo.Of(null, null, _run?.Bpm) : _row.Bpm;
+
+    private FormattedTempo? Bpm => Tempo is { } tempo ? TempoFormat.Format(tempo) : null;
+
+    /// <summary>How long the running stage should take, where there is an estimate: only separation has one.</summary>
+    private TimeSpan? Expected =>
+        _row is { State: TrackState.Separating, Recipe.Passes: > 0 } row ? row.Recipe.Estimate : null;
+
+    /// <summary>A library-only track has no verdict, so its key is whatever Ableton was told.</summary>
+    private string? LibraryKey =>
+        _row is { IsLibraryOnly: true } row
+            ? row.Samples.Select(sample => sample.AbletonKey).OfType<string>().FirstOrDefault()
+            : null;
+
+    private string Meta
+    {
+        get
+        {
+            string?[] parts =
+            [
+                _row?.Genre?.Written ?? _row?.Genre?.Suggested,
+                .. _row?.Release?.Describe() ?? [],
+                _row is { Uploads.Count: > 0 } ? "upload".ToQuantity(_row.Uploads.Count) : null,
+            ];
+
+            return string.Join(" · ", parts.OfType<string>());
+        }
+    }
+
+    private string KeyNote =>
+        _row switch
+        {
+            _ when Sections.FirstOrDefault(section => section.Center == Center) is { } primary =>
+                $"the {primary.Label}, and the tag follows it",
+            { Samples.Count: 0 } => "no samples yet",
+            { Samples: var samples } =>
+                $"tagged in Ableton on {samples.Count(IsTaggedWithKey)} of {"sample".ToQuantity(samples.Count)}",
+            null => string.Empty,
+        };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _stems = ActivatorUtilities.CreateInstance<StemEditor>(Services);
+        _stems.Changed += OnStemsChanged;
+        Tracks.Changed += OnChanged;
+        Judging.Changed += OnChanged;
+
+        await Tracks.EnsureFreshAsync(TimeSpan.FromSeconds(30));
+        Read();
+        await _stems.LoadAsync();
+
+        _clock = new Timer(_ => OnTick(), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+    }
+
+    protected override void OnParametersSet() => Read();
+
+    public void Dispose()
+    {
+        Tracks.Changed -= OnChanged;
+        Judging.Changed -= OnChanged;
+        _stems.Changed -= OnStemsChanged;
+        _stems.Dispose();
+        _clock?.Dispose();
+    }
+
+    // Only a running stage has a clock to move.
+    private void OnTick()
+    {
+        if (_row?.RunningSince is not null)
+            _ = InvokeAsync(StateHasChanged);
+    }
+
+    private static int Percent(DateTimeOffset since, TimeSpan expected) =>
+        (int)Math.Clamp((DateTimeOffset.UtcNow - since) / expected * 100, 0, 100);
+
+    private void OnStemsChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void OnRemoved((string Title, string Note) removed) => Navigation.NavigateTo(string.Empty);
+
+    private bool IsTaggedWithKey(TrackSample sample) =>
+        Key is { } key && key.Equals(sample.AbletonKey, StringComparison.OrdinalIgnoreCase);
+
+    private void Read()
+    {
+        (_row, _run) = Details.Find(TrackKey);
+        _pending = _run is null && _row is { Verdict: null, HasUpload: true }
+            ? Person.PendingFor(BarJudging.OrderFor(_row))
+            : null;
+    }
+
+    // Raised on a worker thread, never the circuit's, so the render is marshalled back.
+    private void OnChanged() =>
+        _ = InvokeAsync(() =>
+        {
+            Read();
+            StateHasChanged();
+        });
+
+    private IReadOnlyList<string> CopyHeader(TrackRow row) =>
+        [
+            row.Title,
+            row.HasUpload ? $"video {row.TrackKey}" : "no source recorded",
+            $"state {row.ChipLabel}",
+            $"verdict {KeyText.Spell(Key) ?? "—"} · {KeyText.Confidence(Confidence)}",
+        ];
 }

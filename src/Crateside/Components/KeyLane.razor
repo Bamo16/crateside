@@ -1,0 +1,73 @@
+@using Crateside.Core.Ledger
+@using Crateside.Core.Warps
+
+@if (!Plan.IsEmpty)
+{
+    <span class="gutter key-gutter">
+        <span class="key-name">Key</span>
+        <span class="gist">@Gist</span>
+        @foreach (var unplaced in Plan.Unplaced)
+        {
+            <span class="mono unplaced"><ProseText Text="@unplaced.Label" Inline="true" /> · @KeyStrip.Short(unplaced.Center): no time given</span>
+        }
+    </span>
+    <div class="key-strip">
+        @foreach (var band in Plan.Bands)
+        {
+            var (left, right) = (Math.Clamp(X(band.Start), 0, 100), Math.Clamp(X(band.End), 0, 100));
+            @if (right > left)
+            {
+                <div class="key-band @(band.FromWindow ? "from-window" : null) @(band.StartUnbacked ? "unbacked" : null)" style="left: @P(left)%; width: @P(right - left)%" title="@Title(band)">
+                    @if ((right - left) / 100 * PlotPixels >= 56)
+                    {
+                        <span class="mono key-label">@band.Label</span>
+                    }
+                </div>
+            }
+        }
+        @Bands
+    </div>
+}
+
+@code {
+    /// <summary>The pixels a plot is at the page's width cap, for deciding whether a label has room.</summary>
+    private const double PlotPixels = 832;
+
+    [Parameter, EditorRequired]
+    public required RunEvidence Run { get; set; }
+
+    /// <summary>The track's length in seconds.</summary>
+    [Parameter, EditorRequired]
+    public double Seconds { get; set; }
+
+    /// <summary>The stretch of the track in view, in seconds.</summary>
+    [Parameter, EditorRequired]
+    public double From { get; set; }
+
+    [Parameter, EditorRequired]
+    public double To { get; set; }
+
+    /// <summary>The window bands that run through every row, drawn over this one too.</summary>
+    [Parameter]
+    public RenderFragment? Bands { get; set; }
+
+    private KeyStripPlan Plan => KeyStrip.Plan(Run, Seconds);
+
+    private string Gist =>
+        Run.Center is { } center
+            ? Run.Sections.Select(section => section.Center).Distinct().Count() switch
+            {
+                <= 1 => $"{ModeText.Named(center)}, one center",
+                var centers when Plan.Bands.Any(band => band.FromWindow) =>
+                    $"{ModeText.Named(center)}, {centers} centers, placed from your windows",
+                var centers => $"{ModeText.Named(center)}, {centers} centers",
+            }
+            : "no key";
+
+    private static string Title(KeyBand band) =>
+        $"{(band.Section is { Length: > 0 } named ? named + " · " : null)}{ModeText.Named(band.Center)} · {WarpWording.Time(band.Start)}–{WarpWording.Time(band.End)}{(band.FromWindow ? " · from a window" : null)}{(band.StartUnbacked ? " · start not placed by a window or source" : null)}";
+
+    private double X(double seconds) => (seconds - From) / (To - From) * 100;
+
+    private static string P(double value) => value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+}

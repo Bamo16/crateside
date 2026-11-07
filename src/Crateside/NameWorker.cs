@@ -1,23 +1,20 @@
+using Crateside.Core;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
-using Crateside.Core.Queue;
+using Crateside.Core.Tracks;
+using Crateside.Core.WorkLists;
 
 namespace Crateside;
 
 /// <summary>
 /// Asks StemForge what each queued track's files will be called, so the user can decide whether
-/// to rename before the GPU runs rather than after.
+/// to rename before the GPU runs. Never paused: it contends for nothing.
 /// </summary>
-/// <remarks>
-/// Not an <see cref="IStageDrainer"/> and deliberately not pausable. It spends one yt-dlp
-/// metadata fetch per track and contends for nothing — no GPU, no Claude quota — which is the
-/// same reason detection runs unattended. A worker that started paused would sit there resolving
-/// nothing while the rows went on showing YouTube's titles.
-/// </remarks>
 public sealed class NameWorker(
-    QueueService queue,
+    WorkListService queue,
     NameResolver resolver,
     ResolvedNameStore store,
+    TracksService tracks,
     ILogger<NameWorker> logger
 ) : BackgroundService
 {
@@ -27,17 +24,28 @@ public sealed class NameWorker(
 
     /// <summary>
     /// Uploads that would not resolve, so a removed or private video is not asked about every
-    /// tick for ever. Not persisted: a restart is a cheap enough place to retry a network call
-    /// that may simply have been unlucky.
+    /// tick for ever. Held in memory only, so a restart retries them.
     /// </summary>
     private readonly HashSet<string> _unresolvable = new(StringComparer.Ordinal);
+
+    private readonly NewWork _newWork = new(
+        tracks,
+        rows =>
+            rows.Where(row => row.NameSource is TrackNameSource.Playlist)
+                .Select(row => row.TrackKey)
+    );
+
+    public override void Dispose()
+    {
+        _newWork.Dispose();
+        base.Dispose();
+    }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var delay = IdleDelay;
-
+            TimeSpan delay;
             try
             {
                 delay = await TickAsync(stoppingToken);
@@ -46,14 +54,14 @@ public sealed class NameWorker(
             {
                 break;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                logger.LogWarning(e, "Resolving names failed; trying again later");
+                logger.LogWarning(ex, "Resolving names failed; trying again later");
 
                 delay = AfterFailure;
             }
 
-            await Task.Delay(delay, stoppingToken);
+            await _newWork.WaitAsync(delay, stoppingToken);
         }
     }
 
@@ -64,12 +72,16 @@ public sealed class NameWorker(
 
         var unresolved = scan
             .View.Items.Where(item =>
-                !known.ContainsKey(item.VideoId) && !_unresolvable.Contains(item.VideoId)
+                TrackKeys.IsVideoId(item.TrackKey)
+                && !known.ContainsKey(item.TrackKey)
+                && !_unresolvable.Contains(item.TrackKey)
             )
             .ToArray();
 
         if (unresolved.Length is 0)
             return IdleDelay;
+
+        var named = 0;
 
         // Sequential on purpose: each is a network call, and there is nothing waiting on the
         // answer. Resolving the whole backlog at once would be a burst for no gain.
@@ -81,21 +93,26 @@ public sealed class NameWorker(
 
             if (await resolver.ResolveAsync(url, stoppingToken) is not { } resolved)
             {
-                _unresolvable.Add(item.VideoId);
+                _unresolvable.Add(item.TrackKey);
 
-                logger.LogInformation("No name resolved for {VideoId}", item.VideoId);
+                logger.LogInformation("No name resolved for {TrackKey}", item.TrackKey);
 
                 continue;
             }
 
-            store.Save(item.VideoId, resolved);
+            store.Save(item.TrackKey, resolved);
+            named++;
 
             logger.LogInformation(
-                "{VideoId} will be called {Name}",
-                item.VideoId,
+                "{TrackKey} will be called {Name}",
+                item.TrackKey,
                 resolved.DisplayTitle
             );
         }
+
+        // The rows carry the name, and the genre and familiarity lookups wait for it.
+        if (named > 0)
+            await tracks.RefreshAsync(stoppingToken);
 
         return IdleDelay;
     }
