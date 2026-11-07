@@ -48,7 +48,7 @@
     {
         <div class="search-wrap">
             <input type="text" class="search" placeholder="⌕ Search warped tracks" @ref="_box"
-                   @bind="_search" @bind:event="oninput" @bind:after="Search" @onkeydown="Navigate" @onblur="Cancel" />
+                   @oninput="OnSearch" @onkeydown="Navigate" @onblur="Cancel" />
 
             @if (_matches.Count > 0)
             {
@@ -206,8 +206,9 @@
             StartSearch();
     }
 
-    private void Search()
+    private void OnSearch(ChangeEventArgs e)
     {
+        _search = e.Value?.ToString() ?? string.Empty;
         _highlight = 0;
         _matches = string.IsNullOrWhiteSpace(_search)
             ? []
