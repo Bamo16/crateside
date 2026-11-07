@@ -95,7 +95,7 @@ public sealed class PersonsKeyTests : IDisposable
     {
         HoldEvidenceAndPages();
 
-        var choices = _person.ChoicesFor(Order, run: null);
+        var choices = _person.ChoicesFor(Order, run: null).Where(c => c.Mode is null).ToList();
 
         Assert.Equal(
             ["A minor", "C major", "D major", "B minor"],
@@ -105,6 +105,91 @@ public sealed class PersonsKeyTests : IDisposable
         Assert.Equal(["keydetect's runner-up", "Hooktheory page"], choices[1].NamedBy);
         Assert.Equal(["Essentia"], choices[2].NamedBy);
         Assert.Equal(["Hooktheory page"], choices[3].NamedBy);
+    }
+
+    [Fact]
+    public void A_page_that_states_a_mode_offers_that_mode_as_a_choice_of_its_own()
+    {
+        HoldEvidenceAndPages();
+
+        var modal = Assert.Single(
+            _person.ChoicesFor(Order, run: null),
+            choice => choice.Mode is not null
+        );
+
+        Assert.Equal(DiatonicMode.Dorian, modal.Mode);
+        Assert.Equal("B minor", modal.Key.LedgerName);
+        Assert.Equal(new TonalCenter("B", DiatonicMode.Dorian), modal.Center);
+        Assert.Equal(["Hooktheory page"], modal.NamedBy);
+    }
+
+    [Fact]
+    public void A_page_the_person_rejected_offers_no_mode()
+    {
+        HoldEvidenceAndPages();
+
+        var choices = new PageChoiceStore(Path.Combine(_root, "page-choices.json"));
+        var lookups = new PageLookups(new NoPages(), _set, _store, choices: choices);
+        var person = new PersonsKey(
+            _store,
+            _set,
+            new SourceIndex(_set, Path.Combine(_root, "source-index.json")),
+            lookups,
+            _jobs,
+            _time
+        );
+
+        choices.Choose(
+            TrackKey,
+            new PageChoice
+            {
+                Url = "https://www.hooktheory.com/theorytab/view/a/b",
+                Kind = PageChoiceKind.Rejected,
+                Page = new FetchedPage
+                {
+                    Site = "Hooktheory",
+                    Url = "https://www.hooktheory.com/theorytab/view/a/b",
+                },
+                At = _time.GetUtcNow(),
+            }
+        );
+
+        Assert.DoesNotContain(
+            person.ChoicesFor(Order, run: null),
+            choice => choice.Mode is not null
+        );
+        Assert.DoesNotContain(
+            person.ChoicesFor(Order, run: null),
+            choice => choice.NamedBy.Contains("Hooktheory page")
+        );
+    }
+
+    [Theory]
+    [InlineData("D", DiatonicMode.Dorian, "D minor")]
+    [InlineData("A", DiatonicMode.Mixolydian, "A major")]
+    [InlineData("B", DiatonicMode.Locrian, "B minor")]
+    [InlineData("F", DiatonicMode.Lydian, "F major")]
+    public void A_choice_with_a_mode_records_the_mode_and_is_tagged_by_its_major_or_minor(
+        string tonic,
+        DiatonicMode mode,
+        string tagged
+    )
+    {
+        HoldEvidenceAndPages();
+
+        var key = MusicKey.FromString($"{tonic} minor")!;
+
+        Assert.True(_person.Choose(Order, key, mode) is RecordOutcome.Recorded);
+        Assert.True(_store.Read().TryGetLatestByTrackKey(TrackKey, out var latest));
+        Assert.Equal(DecidedBy.Person, latest.DecidedBy);
+        Assert.Equal(new TonalCenter(tonic, mode), latest.Center);
+        Assert.Equal(tagged, latest.Key);
+
+        var ear = Assert.Single(_store.LatestEvidence()[latest.Song].Sources);
+
+        Assert.Equal(SourceKind.Ear, ear.Kind);
+        Assert.Equal(tagged, ear.StatesKey);
+        Assert.Equal(mode.ToString(), ear.StatesMode, ignoreCase: true);
     }
 
     [Fact]

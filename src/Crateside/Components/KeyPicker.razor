@@ -43,6 +43,16 @@
     private bool _working;
     private string? _problem;
     private string _other = string.Empty;
+    private string _mode = string.Empty;
+
+    private static readonly DiatonicMode[] Modes =
+    [
+        DiatonicMode.Dorian,
+        DiatonicMode.Phrygian,
+        DiatonicMode.Lydian,
+        DiatonicMode.Mixolydian,
+        DiatonicMode.Locrian,
+    ];
 
     [Parameter, EditorRequired]
     public required TrackRow Row { get; set; }
@@ -75,14 +85,14 @@
         _circuit.Dispose();
     }
 
-    private async Task Choose(MusicKey key)
+    private async Task Choose(MusicKey key, DiatonicMode? mode = null)
     {
         _working = true;
         _problem = null;
 
         try
         {
-            var outcome = Person.Choose(BarJudging.OrderFor(Row), key);
+            var outcome = Person.Choose(BarJudging.OrderFor(Row), key, mode);
 
             if (outcome is RecordOutcome.Refused(var field, var why))
             {
@@ -91,7 +101,11 @@
                 return;
             }
 
-            Actions.Record(Row.TrackKey, UserActionKind.KeyChosen, key.LedgerName);
+            Actions.Record(
+                Row.TrackKey,
+                UserActionKind.KeyChosen,
+                mode is { } chosen ? (MusicKey.CenterOf(key) with { Mode = chosen }).Name : key.LedgerName
+            );
             Signals.Wake(JobStage.Handoff, JobStage.Tagging);
             await Tracks.RefreshAsync(_circuit.Token);
         }
@@ -103,14 +117,16 @@
     }
 
     private Task ChooseOther() =>
-        MusicKey.FromString(_other) is { } key ? Choose(key) : Task.CompletedTask;
+        MusicKey.FromString(_other) is { } key
+            ? Choose(key, Enum.TryParse<DiatonicMode>(_mode, out var mode) ? mode : null)
+            : Task.CompletedTask;
 
     private RenderFragment ChoiceList() =>
         @<div class="choices">
             @foreach (var choice in Choices)
             {
-                <button class="choice" disabled="@_working" @onclick="() => Choose(choice.Key)">
-                    <span class="mono key">@KeyText.Spell(choice.Key.LedgerName)</span>
+                <button class="choice" disabled="@_working" @onclick="() => Choose(choice.Key, choice.Mode)">
+                    <span class="mono key">@KeyText.Spell(choice.Mode is null ? choice.Key.LedgerName : choice.Center.Name)</span>
                     <span class="by">@string.Join(", ", choice.NamedBy)</span>
                 </button>
             }
@@ -121,6 +137,14 @@
                     @foreach (var key in MusicKey.AllKeys.OrderBy(key => key.Chromatic).ThenBy(key => key.Mode))
                     {
                         <option value="@key.LedgerName">@KeyText.Spell(key.LedgerName)</option>
+                    }
+                </select>
+                <label for="any-mode">Mode</label>
+                <select id="any-mode" @bind="_mode">
+                    <option value="">major / minor</option>
+                    @foreach (var mode in Modes)
+                    {
+                        <option value="@mode">@mode</option>
                     }
                 </select>
                 <button class="outline" disabled="@(_working || _other.Length is 0)" @onclick="ChooseOther">Use this key</button>

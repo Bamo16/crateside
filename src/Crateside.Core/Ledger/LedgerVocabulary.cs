@@ -113,6 +113,14 @@ public static partial class LedgerVocabulary
         };
     }
 
+    /// <summary><c>D dorian</c> → D Dorian; null unless the text names a tonic with a mode other than Ionian or Aeolian.</summary>
+    public static TonalCenter? ModalCenterOf(string? text) =>
+        CollapseModalStatement(text)?.Split(' ') is [var tonic, _]
+        && ParseMode(text) is { } mode
+        && new TonalCenter(tonic, mode) is { IsModal: true } center
+            ? center
+            : null;
+
     /// <summary><c>E Mixolydian throughout</c> → <c>E major</c>; null when no mode is named.</summary>
     public static string? CollapseModalStatement(string? text) =>
         text is not null

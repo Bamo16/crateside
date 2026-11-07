@@ -71,7 +71,7 @@ internal static class VerdictRules
             .GroupBy(reading => reading.Key)
             .Select(key =>
                 (
-                    Key: key.Key,
+                    key.Key,
                     Detectors: key.Select(reading => reading.Detector).ToList(),
                     Pages: stated
                         .Where(page => page.Key == key.Key)

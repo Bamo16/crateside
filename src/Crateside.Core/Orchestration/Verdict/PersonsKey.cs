@@ -6,8 +6,16 @@ using Crateside.Core.Pairing;
 
 namespace Crateside.Core.Orchestration.Verdict;
 
-/// <summary>A key the track's evidence offers the person, and who named it.</summary>
-public sealed record KeyChoice(MusicKey Key, IReadOnlyList<string> NamedBy);
+/// <summary>A key the track's evidence offers the person, and who named it; a <paramref name="Mode"/> is one a page stated, tagged by <paramref name="Key"/>.</summary>
+public sealed record KeyChoice(
+    MusicKey Key,
+    IReadOnlyList<string> NamedBy,
+    DiatonicMode? Mode = null
+)
+{
+    public TonalCenter Center =>
+        Mode is { } mode ? MusicKey.CenterOf(Key) with { Mode = mode } : MusicKey.CenterOf(Key);
+}
 
 /// <summary>The person's own verdict on a key: what the song page offers, and what it records (ADR 0076).</summary>
 public sealed class PersonsKey(
@@ -27,18 +35,18 @@ public sealed class PersonsKey(
         if ((run ?? PendingFor(order)) is not { } evidence)
             return [];
 
-        List<(MusicKey Key, string By)> named = [];
+        List<(MusicKey Key, DiatonicMode? Mode, string By)> named = [];
 
         foreach (var algorithm in evidence.Algorithms)
         {
             if (RecordTimeCheck.KeyOf(algorithm.Key) is { } key)
-                named.Add((key, algorithm.Label));
+                named.Add((key, null, algorithm.Label));
 
             if (
                 algorithm.Name == "ffmpeg keydetect"
                 && RecordTimeCheck.KeyOf(algorithm.RunnerUpKey) is { } runnerUp
             )
-                named.Add((runnerUp, "keydetect's runner-up"));
+                named.Add((runnerUp, null, "keydetect's runner-up"));
         }
 
         foreach (
@@ -51,21 +59,32 @@ public sealed class PersonsKey(
             foreach (var pageKey in page.Keys)
             {
                 if (RecordTimeCheck.KeyOf(pageKey.Key) is { } key)
-                    named.Add((key, $"{page.Site} page"));
+                    named.Add((key, null, $"{page.Site} page"));
+
+                if (
+                    LedgerVocabulary.ModalCenterOf(pageKey.Key) is { Mode: var mode } modal
+                    && MusicKey.FromString(modal.Collapsed) is { } tag
+                )
+                    named.Add((tag, mode, $"{page.Site} page"));
             }
         }
 
         return
         [
             .. named
-                .GroupBy(entry => entry.Key)
-                .Select(group => new KeyChoice(group.Key, [.. group.Select(e => e.By).Distinct()]))
-                .OrderByDescending(choice => choice.NamedBy.Count),
+                .GroupBy(entry => (entry.Key, entry.Mode))
+                .Select(group => new KeyChoice(
+                    group.Key.Key,
+                    [.. group.Select(entry => entry.By).Distinct()],
+                    group.Key.Mode
+                ))
+                .OrderBy(choice => choice.Mode is not null)
+                .ThenByDescending(choice => choice.NamedBy.Count),
         ];
     }
 
-    /// <summary>Records the key as the person's call, HIGH, and lets the track go on if it was waiting.</summary>
-    public RecordOutcome Choose(WorkOrder order, MusicKey key)
+    /// <summary>Records the key as the person's call, HIGH, and lets the track go on if it was waiting; a <paramref name="mode"/> is kept on the center and the tag follows its major or minor.</summary>
+    public RecordOutcome Choose(WorkOrder order, MusicKey key, DiatonicMode? mode = null)
     {
         var held = lookups.HeldRun(order);
         var basis = held is null ? null : store.LatestRecord(held.Song);
@@ -73,7 +92,7 @@ public sealed class PersonsKey(
             ? (artist, title)
             : lookups.NamesOf(order);
         var audio = basis?.InputPath ?? sources.PathFor(order);
-        var center = MusicKey.CenterOf(key);
+        var center = MusicKey.CenterOf(key) with { Mode = mode ?? MusicKey.CenterOf(key).Mode };
 
         var outcome = store.Record(
             new RunRecord

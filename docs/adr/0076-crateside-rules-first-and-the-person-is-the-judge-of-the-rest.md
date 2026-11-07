@@ -181,3 +181,13 @@ Where the decision above was silent:
 - **Recording the person's call wakes the handoff and tagging stages.** `ReleaseParked` already
   runs at the start of every handoff pass, so no new wiring was needed for the stems to leave
   `Unresolved Key`; a test chooses a key and then releases a parked stem on the recorded run.
+
+## The person's mode, 2026-11-07
+
+The key picker records a mode when the person has one in mind, which in practice is when an evidence
+page states it. A counted page that states a mode other than major or minor (Hooktheory's "D dorian")
+is offered as a choice of its own beside the collapsed one, labelled by the page. The "Any key" list
+has a Mode choice beside it: major or minor by default, or Dorian, Phrygian, Lydian, Mixolydian or
+Locrian on the key's tonic. A choice with a mode is recorded as a judge's verdict with a mode is: the
+center is the tonic with that mode, the Ear source states the collapsed key and the mode, and the tag
+follows the center's major or minor (`TonalCenter.Collapsed`).
