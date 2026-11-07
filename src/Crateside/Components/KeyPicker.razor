@@ -52,12 +52,20 @@
 
     /// <summary>No key crateside can tag with, and the person is the one left to give it.</summary>
     private bool Needs =>
-        Row.WaitingForPerson || Row.Verdict is { Confidence: KeyConfidence.Withheld or KeyConfidence.Low };
+        Row.PersonMayDecide(Run is not null) || Row.Verdict is { Confidence: KeyConfidence.Withheld or KeyConfidence.Low };
 
     private string Lead =>
-        Row.WaitingForPerson
-            ? "crateside's rules could not settle this one and no judge is set up. Pick the key you hear; it is recorded as your call and the stems are tagged with it."
-            : "The verdict gave no key to tag with. Pick the key you hear; it is recorded as your call and the stems are tagged with it.";
+        (Row.Verdict, Row.Judge) switch
+        {
+            ({ Confidence: KeyConfidence.Withheld or KeyConfidence.Low }, _) =>
+                "The verdict gave no key to tag with. Pick the key you hear; it is recorded as your call and the stems are tagged with it.",
+            (_, JudgeStanding.Absent) =>
+                "crateside's rules could not settle this one and no judge is set up. Pick the key you hear; it is recorded as your call and the stems are tagged with it.",
+            (_, JudgeStanding.Paused) =>
+                "crateside's rules could not settle this one, and judging is paused. Pick the key you hear, or leave it for the judge; yours is recorded as your call and the stems are tagged with it.",
+            _ =>
+                "crateside's rules could not settle this one. The judge will reach it, or pick the key you hear now: yours is recorded as your call, the judge skips the song, and the stems are tagged with it.",
+        };
 
     private IReadOnlyList<KeyChoice> Choices => Person.ChoicesFor(BarJudging.OrderFor(Row), Run);
 

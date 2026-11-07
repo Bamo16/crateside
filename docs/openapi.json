@@ -1235,6 +1235,14 @@
         },
         "description": "One appended line: a single state change to a job. Lines are never edited or removed, so the\r\nfile is a history and TrackJob is the fold over it."
       },
+      "JudgeStanding": {
+        "enum": [
+          "Running",
+          "Paused",
+          "Absent"
+        ],
+        "description": "Whether a judge will reach the tracks the rules left open; the person may decide them in every case (ADR 0076)."
+      },
       "KeyConfidence": {
         "enum": [
           "Unknown",
@@ -3350,6 +3358,10 @@
           "waitingForPerson": {
             "type": "boolean",
             "description": "The rules left its key open and there is no judge, so the person decides it on its page (ADR 0076)."
+          },
+          "judge": {
+            "description": "Whether a judge is set up and running, paused, or absent; the wording of a wait for a key follows it.",
+            "$ref": "#/components/schemas/JudgeStanding"
           },
           "acquisition": {
             "oneOf": [

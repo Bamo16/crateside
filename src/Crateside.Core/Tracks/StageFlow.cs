@@ -92,7 +92,13 @@ public sealed record StageFlow(int Pass, string Reason, IReadOnlyList<FlowStep> 
             return new(label, FlowState.YourTurn, Note: "waiting for you");
 
         if (row.WaitingForJudge && stages.Contains(JobStage.Verdict))
-            return new(label, FlowState.NotYet, Note: "waiting to be judged");
+            return new(
+                label,
+                FlowState.NotYet,
+                Note: row.Judge is JudgeStanding.Paused
+                    ? "waiting for the judge or you"
+                    : "waiting to be judged"
+            );
 
         return jobs.Count == stages.Length && jobs.All(j => j.Status is JobStatus.Succeeded)
             ? new(label, FlowState.Done)

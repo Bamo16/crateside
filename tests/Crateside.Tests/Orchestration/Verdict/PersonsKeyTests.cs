@@ -5,7 +5,9 @@ using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Orchestration.Separation;
 using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Pairing;
+using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Crateside.Tests.Orchestration.Verdict;
@@ -190,6 +192,40 @@ public sealed class PersonsKeyTests : IDisposable
         );
         Assert.True(_jobs.TryGet(TrackKey, JobStage.Verdict, out var job));
         Assert.Equal(JobStatus.Succeeded, job.Status);
+    }
+
+    [Theory]
+    [InlineData(JudgeKind.ClaudeCode)]
+    [InlineData(JudgeKind.None)]
+    public void A_track_the_person_has_decided_leaves_the_judges_queue(JudgeKind kind)
+    {
+        HoldEvidenceAndPages();
+
+        var item = new WorkItem { TrackKey = TrackKey, Title = "Artist - Song" };
+        var view = new WorkListsView
+        {
+            Items = [item],
+            Outstanding = [item],
+            FullyProcessed = [],
+            AwaitingKey = [],
+            AwaitingSeparation = [],
+        };
+        var selector = new VerdictSelector(
+            _jobs,
+            _set,
+            judge: Options.Create(new JudgeOptions { Kind = kind })
+        );
+
+        // Queued for the judge before the person decides, with a judge to reach it.
+        if (kind is JudgeKind.ClaudeCode)
+            Assert.True(selector.TryPickNext(view, _store.Read(), out _));
+
+        Assert.IsType<RecordOutcome.Recorded>(
+            _person.Choose(Order, MusicKey.FromString("A minor")!)
+        );
+
+        Assert.False(selector.TryPickNext(view, _store.Read(), out _));
+        Assert.False(selector.TryPick(view, _store.Read(), TrackKey, out _));
     }
 
     [Fact]

@@ -60,7 +60,8 @@ public sealed record TracksView
         JobStore jobs,
         IReadOnlyDictionary<string, TrackInstruction> instructions,
         TrackAnnotations? annotations = null,
-        SampleReadings? readings = null
+        SampleReadings? readings = null,
+        JudgeStanding judge = default
     )
     {
         var known = annotations ?? TrackAnnotations.None;
@@ -273,6 +274,7 @@ public sealed record TracksView
                     && acquisition?.Stops is not true
                     && !(progress.AwaitingPerson && verdict is null),
                 WaitingForPerson = progress.AwaitingPerson && verdict is null,
+                Judge = judge,
                 Acquisition = acquisition,
                 Release = known.Releases.GetValueOrDefault(primary.TrackKey),
                 GpuPosition = members
