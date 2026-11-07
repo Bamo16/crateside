@@ -4,6 +4,8 @@
 - Date: 2026-11-07
 - Extends [ADR 0078](0078-the-person-corrects-which-pages-count-for-a-song.md) (the person
   corrects which pages count for a song).
+- Amended 2026-11-08 by [ADR 0082](0082-the-persons-decisions-live-in-the-ledger-database.md): the
+  removal is kept in the ledger database, in `SourceRemovals`, not in `page-choices.json`.
 
 ## Context
 

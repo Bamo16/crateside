@@ -311,11 +311,11 @@ by hand; everything below describes candidates against it.
   *Odd bars* is every stem of a track the user marked as not consistent 4/4
   ([ADR 0058](docs/adr/0058-a-staged-stem-shows-its-state-in-live.md)).
 - **Track mark** — a yes/no the user sets on a track in crateside (*Changes key*, *Odd bars*), kept
-  in `track-marks.json` by song and never read from Ableton. It records no place and no amount, and
+  in the ledger's `TrackMarks` table by song ([ADR 0082](docs/adr/0082-the-persons-decisions-live-in-the-ledger-database.md)) and never read from Ableton. It records no place and no amount, and
   "not marked" means "not noticed yet". Live shows it as the matching **Collection**.
 - **Page choice** — the person's correction to a track's lookup, on the song page: *Not this song* on
   a counted page, *Count this page* on a title-only candidate, or a Hooktheory or Musicnotes page
-  *added* by address. Kept in `page-choices.json` by track, apart from the lookup's own result; the
+  *added* by address. Kept in the ledger's `PageChoices` table by track, apart from the lookup's own result; the
   rules and the judge read the **effective pages** (the lookup's, with the choices applied)
   ([ADR 0078](docs/adr/0078-the-person-corrects-which-pages-count-for-a-song.md)).
 - **Index** — Ableton's own file database, `Live-files-<schema>.db` under

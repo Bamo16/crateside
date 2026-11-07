@@ -2,6 +2,8 @@
 
 - Status: Accepted
 - Date: 2026-11-03
+- Amended 2026-11-08 by [ADR 0082](0082-the-persons-decisions-live-in-the-ledger-database.md): the
+  demo library writes genre, familiarity and marks into its own `ledger.db`, not into JSON files.
 
 ## Context
 

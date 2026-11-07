@@ -40,7 +40,7 @@ user settles; only a settled genre is written.**
   tag. The first label that maps onto the list is the suggestion.
 - **Settled on the row.** The expanded row shows the list with the suggestion marked; a click
   settles it, and *none of these* is an answer too.
-- **Keyed by song identity** in `%APPDATA%\crateside\genres.json`, as the ledger keys a verdict.
+- **Keyed by song identity** in `%APPDATA%\crateside\genres.json` (since 2026-11-08 the ledger's `Genres` table, [ADR 0082](0082-the-persons-decisions-live-in-the-ledger-database.md)), as the ledger keys a verdict.
   Backing reads a file's provenance, then its song, then its settled genre, for as long as the
   file exists. That is what keeps a genre on a file moved into the library (the trap ADR 0028
   describes for Type). A song the ledger never judged is keyed by its upload.
