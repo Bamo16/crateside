@@ -1,0 +1,175 @@
+@using Crateside.Core
+@using Crateside.Core.Ledger
+@using Crateside.Core.Orchestration
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Orchestration.Loop
+@using Crateside.Core.Orchestration.Verdict
+@using Crateside.Core.Tracks
+@implements IDisposable
+@inject PageChoices Choices
+@inject TracksService Tracks
+@inject StageSignals Signals
+@inject ActionLog Actions
+
+@if (Row.HasUpload)
+{
+    <div class="corrections">
+        <h5>Pages the lookup found</h5>
+
+        @if (ChangedAfterVerdict)
+        {
+            <p class="changed">
+                You changed these pages after the @KeyText.Byline(Row.Verdict!.DecidedBy) verdict. It stands as it was:
+                it is not ruled or judged again on its own.
+            </p>
+        }
+
+        @if (Pages is [])
+        {
+            <p class="hint">Nothing found and nothing added.</p>
+        }
+        else
+        {
+            <ul class="pages">
+                @foreach (var shown in Pages)
+                {
+                    <li class="page @shown.Style">
+                        <span class="where">
+                            <span class="site">@shown.Page.Site</span>
+                            <a href="@shown.Page.Url" target="_blank" rel="noopener noreferrer">@(shown.Page.Heading ?? shown.Page.Url)</a>
+                        </span>
+                        <span class="keys mono">@(shown.Page.Keys is [] ? "no key stated" : string.Join("; ", shown.Page.Keys.Select(key => key.Key).Distinct()))</span>
+                        <span class="status">@shown.Status</span>
+                        @if (shown.Page.Note is { Length: > 0 } note)
+                        {
+                            <span class="note">@note</span>
+                        }
+                        <span class="act">
+                            @if (shown.Action is { } action)
+                            {
+                                <button class="outline" disabled="@_working" @onclick="action.Invoke">@action.Label</button>
+                            }
+                        </span>
+                    </li>
+                }
+            </ul>
+        }
+
+        <form class="add" @onsubmit="AddAsync">
+            <label for="add-page">Add a page</label>
+            <input id="add-page" type="url" placeholder="https://www.hooktheory.com/theorytab/view/artist/song" @bind="_address" @bind:event="oninput" />
+            <button class="outline" type="submit" disabled="@(_working || _address.Trim().Length is 0)">Add and count it</button>
+        </form>
+        <p class="hint">A Hooktheory TheoryTab or a Musicnotes product page. Ultimate Guitar is never counted.</p>
+
+        @if (_message is { } message)
+        {
+            <p class="@(_refused ? "problem" : "result")">@message</p>
+        }
+    </div>
+}
+
+@code {
+    private static readonly string[] CountedSites = ["Hooktheory", "Musicnotes"];
+
+    private readonly CancellationTokenSource _circuit = new();
+
+    private bool _working;
+    private bool _refused;
+    private string? _message;
+    private string _address = string.Empty;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    [Parameter, EditorRequired]
+    public required RunEvidence Run { get; set; }
+
+    private WorkOrder Order => BarJudging.OrderFor(Row);
+
+    private bool ChangedAfterVerdict =>
+        Row.Verdict is { DecidedBy: DecidedBy.Judge or DecidedBy.Person, Timestamp: var at }
+        && Choices.ChangedSince(Row.TrackKey, at);
+
+    private IReadOnlyList<ShownPage> Pages =>
+        [
+            .. Choices
+                .Shown(Row.TrackKey, Run.Lookups)
+                .SelectMany(lookup =>
+                    lookup.Pages.Select(page => Counted(lookup.Site, page))
+                        .Concat((lookup.Candidates ?? []).Select(Candidate))
+                        .Concat((lookup.Rejected ?? []).Select(Rejected))
+                ),
+        ];
+
+    public void Dispose()
+    {
+        _circuit.Cancel();
+        _circuit.Dispose();
+    }
+
+    private ShownPage Counted(string site, FetchedPage page) =>
+        (CountedSites.Contains(site), page.Chosen) switch
+        {
+            (false, _) => new(page, "shown", "Shown, not counted", null),
+            (_, PageChoiceKind.Added) => new(page, "counted", "Added by you · counted", Undo(page)),
+            (_, PageChoiceKind.Promoted) => new(page, "counted", "Counted at your say", Undo(page)),
+            _ => new(page, "counted", "Counted", new("Not this song", () => ApplyAsync(() => Choices.RejectAsync(Order, page, _circuit.Token), UserActionKind.PageRejected, page.Url))),
+        };
+
+    private ShownPage Candidate(FetchedPage page) =>
+        new(page, "candidate", "Unconfirmed · not counted", new("Count this page", () => ApplyAsync(() => Choices.CountAsync(Order, page, _circuit.Token), UserActionKind.PageCounted, page.Url)));
+
+    private ShownPage Rejected(FetchedPage page) =>
+        new(page, "rejected", "Not this song · not counted", Undo(page));
+
+    private PageAction Undo(FetchedPage page) =>
+        new("Undo", () => ApplyAsync(() => Choices.UndoAsync(Order, page.Url, _circuit.Token), UserActionKind.PageChoiceUndone, page.Url));
+
+    private Task AddAsync() =>
+        ApplyAsync(() => Choices.AddAsync(Order, _address.Trim(), _circuit.Token), UserActionKind.PageAdded, _address.Trim());
+
+    private async Task ApplyAsync(Func<Task<PageChoiceOutcome>> choose, UserActionKind kind, string detail)
+    {
+        _working = true;
+        _message = null;
+
+        try
+        {
+            var outcome = await choose();
+
+            _refused = outcome is PageChoiceOutcome.Refused;
+            _message = outcome switch
+            {
+                PageChoiceOutcome.Refused(var why) => why,
+                PageChoiceOutcome.Ruled(var summary) => $"The rules ruled again on these pages: {summary}.",
+                PageChoiceOutcome.Open when Row.Verdict is null => "The rules still leave this one to you.",
+                PageChoiceOutcome.Open => "The rules no longer settle it. The earlier ruling stands as it was.",
+                PageChoiceOutcome.Kept(var by) => $"Saved. The {KeyText.Byline(by)} verdict stands as it was; it is not judged again.",
+                _ => null,
+            };
+
+            if (outcome is PageChoiceOutcome.Refused)
+                return;
+
+            if (kind is UserActionKind.PageAdded)
+                _address = string.Empty;
+
+            Actions.Record(Row.TrackKey, kind, detail);
+
+            if (outcome is PageChoiceOutcome.Ruled)
+                Signals.Wake(JobStage.Handoff, JobStage.Tagging);
+
+            await Tracks.RefreshAsync(_circuit.Token);
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _working = false;
+        }
+    }
+
+    private sealed record PageAction(string Label, Func<Task> Invoke);
+
+    private sealed record ShownPage(FetchedPage Page, string Style, string Status, PageAction? Action);
+}

@@ -1,6 +1,7 @@
 @using System.Globalization
 @using Crateside.Core
 @using Crateside.Core.Ledger
+@using Crateside.Core.Tracks
 @inject KnownBuilds Builds
 
 <div class="panel">
@@ -139,6 +140,11 @@
                         </ul>
                     </details>
                 }
+            }
+
+            @if (Row is not null)
+            {
+                <PageCorrections Row="Row" Run="Run" />
             }
 
             @if (Run.FirstPass is { } firstPass)
@@ -311,6 +317,10 @@
     /// <summary>The song's headline tempo; the panel lists its other sources under it.</summary>
     [Parameter]
     public TrackTempo? Tempo { get; set; }
+
+    /// <summary>The track the evidence is for, where the person may correct the pages it rests on (ADR 0078).</summary>
+    [Parameter]
+    public TrackRow? Row { get; set; }
 
     private bool _chordsOpen;
 
