@@ -1,10 +1,11 @@
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Crateside.Core.Pairing;
 
 namespace Crateside.Core.Ledger;
 
 /// <summary>The words that show a verdict's mode beside its tag (design handoff 17).</summary>
-public static class ModeText
+public static partial class ModeText
 {
     /// <summary>The tag as the screen spells it: <c>A♯ min</c>.</summary>
     public static string Tag(TonalCenter center) =>
@@ -67,6 +68,22 @@ public static class ModeText
                 $"{Tonic(center)} {mode}",
             _ => statesKey,
         };
+
+    /// <summary>
+    /// What a source's own statement says beyond the key already shown from it, or null when it
+    /// only repeats that key.
+    /// </summary>
+    public static string? Elaboration(string? statesKey, string? statesMode, string? states)
+    {
+        if (states is not { Length: > 0 })
+            return null;
+
+        var shown = Words(Stated(statesKey, statesMode)).ToHashSet();
+
+        return Words(states).Any(word => !shown.Contains(word) && !Filler.Contains(word))
+            ? states
+            : null;
+    }
 
     /// <summary>
     /// What a source covered and how its key relates to it. A source that covered only some
@@ -138,6 +155,23 @@ public static class ModeText
 
         return string.Join(' ', parts.OfType<string>()) is { Length: > 0 } hover ? hover : null;
     }
+
+    private static readonly HashSet<string> Filler = ["in", "key", "of", "the", "is", "song"];
+
+    private static IEnumerable<string> Words(string? text) =>
+        WordPattern
+            .Matches((text ?? string.Empty).ToLowerInvariant().Replace('♯', '#').Replace('♭', 'b'))
+            .Select(match =>
+                match.Value switch
+                {
+                    "maj" => "major",
+                    "min" => "minor",
+                    var word => word,
+                }
+            );
+
+    [GeneratedRegex(@"[\p{L}\p{N}#]+")]
+    private static partial Regex WordPattern { get; }
 
     private static string Tonic(TonalCenter center) => center.Tonic.Replace('#', '♯');
 

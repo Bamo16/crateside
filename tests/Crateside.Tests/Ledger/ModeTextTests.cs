@@ -217,4 +217,24 @@ public sealed class SourceCoverageTests
         Assert.Equal("chorus only", source.Covers);
         Assert.Equal("matches the chorus, not the song", source.Relation);
     }
+
+    [Theory]
+    [InlineData("E minor", null, null)]
+    [InlineData("E minor", null, "Key of E minor.")]
+    [InlineData("F# minor", null, "F♯ min")]
+    [InlineData("G major", "Mixolydian", "G Mixolydian")]
+    public void A_statement_that_only_repeats_the_key_adds_nothing(
+        string statesKey,
+        string? statesMode,
+        string? states
+    )
+    {
+        Assert.Null(ModeText.Elaboration(statesKey, statesMode, states));
+    }
+
+    [Theory]
+    [InlineData("E minor", "E minor and G minor (sections)")]
+    [InlineData("E minor", "Em verses → Gm choruses with D major pivot")]
+    public void A_statement_that_says_more_than_the_key_is_kept(string statesKey, string states) =>
+        Assert.Equal(states, ModeText.Elaboration(statesKey, null, states));
 }
