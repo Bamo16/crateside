@@ -320,6 +320,15 @@ public sealed partial record EvidenceSource
     /// <summary>The TheoryTab as the lookup parsed it, where the source is one; null on runs recorded before #176.</summary>
     public HooktheoryTab? Tab { get; init; }
 
+    /// <summary>What the person removes a source by: its address, else what it was found by; null when it has neither.</summary>
+    public string? Id =>
+        Url is { Length: > 0 } ? Url
+        : Via is { Length: > 0 } ? Via
+        : null;
+
+    /// <summary>The person said this source does not count (ADR 0081).</summary>
+    public bool IsRemoved { get; init; }
+
     /// <summary>
     /// <see cref="Url"/> as something safe to render as a link, or null when it is not one.
     /// </summary>

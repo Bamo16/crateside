@@ -739,6 +739,17 @@
               }
             ]
           },
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "What the person removes a source by: its address, else what it was found by; null when it has neither."
+          },
+          "isRemoved": {
+            "type": "boolean",
+            "description": "The person said this source does not count (ADR 0081)."
+          },
           "link": {
             "type": [
               "null",

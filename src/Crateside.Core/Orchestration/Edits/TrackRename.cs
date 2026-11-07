@@ -336,7 +336,8 @@ public sealed class TrackRename(
         ];
 
     private string RootOf(string path) =>
-        path.StartsWith(paths.LibraryFolder, StringComparison.OrdinalIgnoreCase)
+        paths.LibraryFolder is { Length: > 0 } library
+        && path.StartsWith(library, StringComparison.OrdinalIgnoreCase)
             ? paths.LibraryFolder
             : paths.StagingFolder;
 

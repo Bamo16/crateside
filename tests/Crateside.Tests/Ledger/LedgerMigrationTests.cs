@@ -13,7 +13,8 @@ public sealed class LedgerMigrationTests : IDisposable
     private const string SpellingMigration = "20261025192752_AmericanSpelling";
     private const string LateReadingMigration = "20261029013237_InheritedLateReading";
     private const string LookupsMigration = "20261101225614_LookupsKept";
-    private const string NewestMigration = "20261104052541_DecidedByKept";
+    private const string DecidedByMigration = "20261104052541_DecidedByKept";
+    private const string NewestMigration = "20261107225409_LivinOnAPrayerSourceUrl";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -218,6 +219,43 @@ public sealed class LedgerMigrationTests : IDisposable
         Assert.Equal(
             new RunWindow(37.79539574431894, 158.74199331266047, null, WindowAsker.User),
             window
+        );
+    }
+
+    [Fact]
+    public void The_dead_amp_address_of_an_imported_source_is_corrected_and_no_other_address_is_touched()
+    {
+        const string Article =
+            "https://www.overthinkingit.com/2009/07/24/bon-jovi-livin-on-a-prayer-music-theory/";
+
+        using (var connection = new SqliteConnection($"Data Source={DatabasePath}"))
+        {
+            connection.Open();
+
+            var options = new DbContextOptionsBuilder<LedgerContext>()
+                .UseSqlite(connection)
+                .Options;
+
+            using (var context = new LedgerContext(options))
+                context.GetService<IMigrator>().Migrate(DecidedByMigration);
+
+            Execute(
+                connection,
+                $"""
+                INSERT INTO Runs (Id, Song, Confidence, Mixed, LocalSource, SourceUrl, RecordedAt, Tonic, Mode, DecidedBy)
+                VALUES (1, 'bon jovi - livin'' on a prayer', 'High', 0, 0, 'https://www.youtube.com/watch?v=aaaaaaaaaaa', '2026-10-28T16:40:28+00:00', 'E', 'Aeolian', 'Judge');
+                INSERT INTO Sources (RunId, Position, Kind, Url) VALUES (1, 0, 'Authoritative', '{Article}amp/');
+                INSERT INTO Sources (RunId, Position, Kind, Url) VALUES (1, 1, 'Authoritative', 'https://example.com/amp/');
+                """
+            );
+        }
+
+        using (var store = new LedgerStore(DatabasePath, _time)) { }
+
+        Assert.Equal(Article, Scalar("SELECT Url FROM Sources WHERE Position = 0"));
+        Assert.Equal(
+            "https://example.com/amp/",
+            Scalar("SELECT Url FROM Sources WHERE Position = 1")
         );
     }
 

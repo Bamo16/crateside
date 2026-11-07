@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Crateside.Core.Ledger;
 using Crateside.Core.Watching;
 
 namespace Crateside.Core.Orchestration.Verdict;
@@ -31,6 +32,15 @@ public sealed record PageChoice
     public bool IsActive => UndoneAt is null;
 }
 
+/// <summary>A recorded human source the person said does not count for a track (ADR 0081).</summary>
+public sealed record SourceRemoval(string Source, DateTimeOffset At)
+{
+    public DateTimeOffset? UndoneAt { get; init; }
+
+    [JsonIgnore]
+    public bool IsActive => UndoneAt is null;
+}
+
 /// <summary>The pages the person has rejected, counted or added, kept in <c>%APPDATA%\crateside\page-choices.json</c> by track key (ADR 0078).</summary>
 public sealed class PageChoiceStore
 {
@@ -38,6 +48,7 @@ public sealed class PageChoiceStore
     private readonly Lock _gate = new();
 
     private Dictionary<string, List<PageChoice>>? _cached;
+    private Dictionary<string, List<SourceRemoval>> _removals = [];
 
     /// <summary>Raised after a choice is made or undone, with the track it was made on.</summary>
     public event Action<string>? Changed;
@@ -63,6 +74,10 @@ public sealed class PageChoiceStore
         lock (_gate)
             return (Records().GetValueOrDefault(trackKey) ?? [])
                 .SelectMany(choice => new[] { choice.At, choice.UndoneAt ?? choice.At })
+                .Concat(
+                    Removals(trackKey)
+                        .SelectMany(removal => new[] { removal.At, removal.UndoneAt ?? removal.At })
+                )
                 .Order()
                 .Select(time => (DateTimeOffset?)time)
                 .LastOrDefault();
@@ -128,6 +143,99 @@ public sealed class PageChoiceStore
         return true;
     }
 
+    /// <summary>The sources the person removed from the track, by <see cref="EvidenceSource.Id"/>.</summary>
+    public IReadOnlyList<string> RemovedFor(string trackKey)
+    {
+        lock (_gate)
+        {
+            Records();
+
+            return
+            [
+                .. Removals(trackKey)
+                    .Where(removal => removal.IsActive)
+                    .Select(removal => removal.Source),
+            ];
+        }
+    }
+
+    /// <summary>Stops counting a recorded source for the track; false when it was already removed.</summary>
+    public bool RemoveSource(string trackKey, string source, DateTimeOffset at)
+    {
+        lock (_gate)
+        {
+            var records = Records();
+
+            if (
+                Removals(trackKey)
+                    .Any(removal => removal.IsActive && SameUrl(removal.Source, source))
+            )
+                return false;
+
+            _removals[trackKey] = [.. Removals(trackKey), new SourceRemoval(source, at)];
+            Write(records);
+        }
+
+        Changed?.Invoke(trackKey);
+
+        return true;
+    }
+
+    /// <summary>Counts a removed source again; false when it was not removed.</summary>
+    public bool RestoreSource(string trackKey, string source, DateTimeOffset at)
+    {
+        lock (_gate)
+        {
+            var records = Records();
+
+            if (
+                !Removals(trackKey)
+                    .Any(removal => removal.IsActive && SameUrl(removal.Source, source))
+            )
+                return false;
+
+            _removals[trackKey] =
+            [
+                .. Removals(trackKey)
+                    .Select(removal =>
+                        removal.IsActive && SameUrl(removal.Source, source)
+                            ? removal with
+                            {
+                                UndoneAt = at,
+                            }
+                            : removal
+                    ),
+            ];
+            Write(records);
+        }
+
+        Changed?.Invoke(trackKey);
+
+        return true;
+    }
+
+    /// <summary>The run's sources, each marked removed where the person removed it.</summary>
+    public RunEvidence Marked(string trackKey, RunEvidence run) =>
+        RemovedFor(trackKey) is [_, ..] removed
+            ? run with
+            {
+                Sources =
+                [
+                    .. run.Sources.Select(source =>
+                        source.Id is { } id && removed.Any(held => SameUrl(held, id))
+                            ? source with
+                            {
+                                IsRemoved = true,
+                            }
+                            : source
+                    ),
+                ],
+            }
+            : run;
+
+    private List<SourceRemoval> Removals(string trackKey) =>
+        _removals.GetValueOrDefault(trackKey) ?? [];
+
     internal static bool SameUrl(string a, string b) =>
         a.TrimEnd('/').Equals(b.TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
 
@@ -141,22 +249,40 @@ public sealed class PageChoiceStore
                 _path,
                 [
                     .. records
-                        .OrderBy(entry => entry.Key, StringComparer.Ordinal)
-                        .Select(entry => new PageChoicesRecord(entry.Key, entry.Value)),
+                        .Keys.Union(_removals.Keys)
+                        .Order(StringComparer.Ordinal)
+                        .Select(trackKey => new PageChoicesRecord(
+                            trackKey,
+                            records.GetValueOrDefault(trackKey) ?? []
+                        )
+                        {
+                            Removed = Removals(trackKey) is [_, ..] removed ? removed : null,
+                        }),
                 ]
             );
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
     }
 
-    private Dictionary<string, List<PageChoice>> TryReadFile() =>
-        (PageChoiceJsonContext.Default.ListPageChoicesRecord.ReadFileOrDefault(_path) ?? [])
-            .Where(record => record.Choices.Count > 0)
+    private Dictionary<string, List<PageChoice>> TryReadFile()
+    {
+        var file =
+            PageChoiceJsonContext.Default.ListPageChoicesRecord.ReadFileOrDefault(_path) ?? [];
+
+        _removals = file.Where(record => record.Removed is [_, ..])
+            .ToDictionary(record => record.TrackKey, record => record.Removed!);
+
+        return file.Where(record => record.Choices.Count > 0)
             .ToDictionary(record => record.TrackKey, record => record.Choices);
+    }
 }
 
 /// <summary>One track's choices, as the file keeps them.</summary>
-public sealed record PageChoicesRecord(string TrackKey, List<PageChoice> Choices);
+public sealed record PageChoicesRecord(string TrackKey, List<PageChoice> Choices)
+{
+    /// <summary>Recorded sources the person removed (ADR 0081); absent for a track with none.</summary>
+    public List<SourceRemoval>? Removed { get; init; }
+}
 
 [JsonSourceGenerationOptions(
     WriteIndented = true,

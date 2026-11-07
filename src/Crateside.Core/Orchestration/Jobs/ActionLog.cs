@@ -146,4 +146,6 @@ public enum UserActionKind
     PageCounted,
     PageAdded,
     PageChoiceUndone,
+    SourceRemoved,
+    SourceRestored,
 }

@@ -79,6 +79,13 @@ public sealed class PageChoices(
             ? await RuleAgainAsync(order, ct)
             : new PageChoiceOutcome.Refused("That choice was already taken back.");
 
+    /// <summary>Stops counting a recorded human source for the track; the recorded verdict stands (ADR 0081).</summary>
+    public bool RemoveSource(WorkOrder order, string source) =>
+        store.RemoveSource(order.TrackKey, source, time.GetUtcNow());
+
+    public bool RestoreSource(WorkOrder order, string source) =>
+        store.RestoreSource(order.TrackKey, source, time.GetUtcNow());
+
     private bool AlreadyCounted(WorkOrder order, FetchedPage page) =>
         lookups
             .Effective(order.TrackKey, lookups.CachedFor(order) ?? [])

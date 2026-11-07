@@ -159,6 +159,26 @@
     border-top: none;
 }
 
+/* A source the person removed stays in the list, struck through, with an undo (ADR 0081). */
+.source.removed .said > :not(.removal) {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.removal {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-60);
+}
+
+.removal button {
+    padding: 0.05rem 0.5rem;
+    font-size: 0.75rem;
+}
+
 /* Whether the source backed the verdict, in one glyph at the head of the row. This is what
    the schema split `states` for: it used to require reading every line of prose. */
 .stance {

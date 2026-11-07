@@ -1,8 +1,14 @@
 @using System.Globalization
 @using Crateside.Core
 @using Crateside.Core.Ledger
+@using Crateside.Core.Orchestration
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Orchestration.Verdict
 @using Crateside.Core.Tracks
 @inject KnownBuilds Builds
+@inject PageChoices Choices
+@inject TracksService Tracks
+@inject ActionLog Actions
 
 <div class="panel">
     <header class="head">
@@ -89,7 +95,7 @@
                 <ul class="sources">
                     @foreach (var source in Run.Sources.OrderByDescending(s => s.Kind))
                     {
-                        <li class="source @source.Kind.ToString().ToLowerInvariant() @source.Stance.ToString().ToLowerInvariant()">
+                        <li class="source @source.Kind.ToString().ToLowerInvariant() @source.Stance.ToString().ToLowerInvariant() @(source.IsRemoved ? "removed" : null)">
                             <span class="stance" title="@StanceTitle(source.Stance)">@StanceMark(source.Stance)</span>
                             <span class="kind" title="@KindTitle(source.Kind)">@KindLabel(source.Kind)</span>
                             <span class="said">
@@ -127,6 +133,20 @@
                                 @if (source.Note is { Length: > 0 } note)
                                 {
                                     <span class="note" title="The agent's note on this source."><ProseText Text="@note" Inline="true" /></span>
+                                }
+                                @if (Row is not null && !Pending && source.Id is { } id && source.Kind is not SourceKind.Ear)
+                                {
+                                    <span class="removal">
+                                        @if (source.IsRemoved)
+                                        {
+                                            <span>Removed by you · not counted</span>
+                                            <button class="outline" disabled="@_working" @onclick="() => SetRemovedAsync(id, false)">Undo</button>
+                                        }
+                                        else
+                                        {
+                                            <button class="outline" disabled="@_working" title="Stop counting this source for this song" @onclick="() => SetRemovedAsync(id, true)">Remove</button>
+                                        }
+                                    </span>
                                 }
                             </span>
                         </li>
@@ -315,6 +335,27 @@
     public TrackRow? Row { get; set; }
 
     private bool _chordsOpen;
+    private bool _working;
+
+    private async Task SetRemovedAsync(string source, bool removed)
+    {
+        _working = true;
+
+        try
+        {
+            var order = BarJudging.OrderFor(Row!);
+
+            if (removed ? Choices.RemoveSource(order, source) : Choices.RestoreSource(order, source))
+            {
+                Actions.Record(Row!.TrackKey, removed ? UserActionKind.SourceRemoved : UserActionKind.SourceRestored, source);
+                await Tracks.RefreshAsync(CancellationToken.None);
+            }
+        }
+        finally
+        {
+            _working = false;
+        }
+    }
 
     private string? BuildLabel(string? sha256) =>
         sha256 is null

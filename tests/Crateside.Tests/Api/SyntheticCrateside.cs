@@ -263,7 +263,8 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
                         Path.Combine(_root, "queue.json")
                     )
                 )
-            )
+            ),
+            new PageChoiceStore(Path.Combine(_root, "page-choices.json"))
         );
 
         var builder = WebApplication.CreateBuilder(

@@ -6,7 +6,7 @@ namespace Crateside.Core.Ledger;
 public static class RunSummary
 {
     public static string Of(RunEvidence run) =>
-        (run.Sources.Count, run.Algorithms.Count) switch
+        (run.Sources.Count(source => !source.IsRemoved), run.Algorithms.Count) switch
         {
             (0, 0) => "No human sources and no detector readings; the chord check only.",
             // A ruling makes no chord check (ADR 0076).
@@ -21,5 +21,5 @@ public static class RunSummary
         };
 
     private static int Agreeing(RunEvidence run) =>
-        run.Sources.Count(source => source.Stance is SourceStance.Agrees);
+        run.Sources.Count(source => source is { IsRemoved: false, Stance: SourceStance.Agrees });
 }
