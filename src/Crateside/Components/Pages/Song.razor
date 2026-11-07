@@ -152,7 +152,7 @@
                     <section id="evidence" class="evidence-section">
                         @if (_run is null && _pending is { } pending)
                         {
-                            <Evidence Run="pending" Heading="What was found" Summary="Nothing is decided yet: the detectors' readings and the pages the lookup found."
+                            <Evidence Run="pending" Row="_row" Heading="What was found" Summary="Nothing is decided yet: the detectors' readings and the pages the lookup found."
                                       Withheld="true" Pending="true" />
                         }
                         else if (_run is null)
@@ -165,7 +165,7 @@
                         }
                         else
                         {
-                            <Evidence Run="_run" Tempo="Tempo" Heading="@($"Why {HeadingKey}")" Summary="@RunSummary.Of(_run)"
+                            <Evidence Run="_run" Row="_row" Tempo="Tempo" Heading="@($"Why {HeadingKey}")" Summary="@RunSummary.Of(_run)"
                                       Withheld="Confidence is KeyConfidence.Withheld"
                                       WarpViewLink="@(_row is null ? null : WarpViewLink)" />
                         }
