@@ -115,6 +115,10 @@
                                     {
                                         <span class="relation"><ProseText Text="@relation" Inline="true" /></span>
                                     }
+                                    @if (ModeText.Elaboration(stated, source.StatesMode, source.States) is { } more)
+                                    {
+                                        <span class="states"><ProseText Text="@more" Inline="true" /></span>
+                                    }
                                 }
                                 else if (source.States is { Length: > 0 } states)
                                 {
@@ -128,18 +132,6 @@
                         </li>
                     }
                 </ul>
-                @if (Run.Sources.Any(s => s.StatesKey is { Length: > 0 } && s.States is { Length: > 0 }))
-                {
-                    <details class="source-prose">
-                        <summary>What each source actually said</summary>
-                        <ul>
-                            @foreach (var source in Run.Sources.Where(s => s.States is { Length: > 0 }))
-                            {
-                                <li><span class="host">@(source.Host ?? source.Via ?? "source")</span> <ProseText Text="@source.States" Inline="true" /></li>
-                            }
-                        </ul>
-                    </details>
-                }
             }
 
             @if (Row is not null)

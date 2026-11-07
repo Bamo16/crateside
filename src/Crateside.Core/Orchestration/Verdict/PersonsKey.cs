@@ -205,7 +205,7 @@ public sealed class PersonsKey(
                 CountedSites.Contains(lookup.Site) && !VerdictRules.IsUserArrangement(page)
                     ? SourceKind.Authoritative
                     : SourceKind.Corroborating,
-            States = string.Join("; ", page.Keys.Select(key => key.Key).Distinct()),
+            States = PageStatements.Of(page, page.Keys.Select(key => key.Key)),
             StatesKey = page
                 .Keys.Select(key => RecordTimeCheck.KeyOf(key.Key)?.LedgerName)
                 .FirstOrDefault(name => name is not null),

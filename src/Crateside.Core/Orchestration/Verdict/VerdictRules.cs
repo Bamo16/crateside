@@ -184,7 +184,7 @@ internal static class VerdictRules
             Kind = IsUserArrangement(keys[0].Page)
                 ? SourceKind.Corroborating
                 : SourceKind.Authoritative,
-            States = string.Join("; ", keys.Select(stated => stated.Raw).Distinct()),
+            States = PageStatements.Of(keys[0].Page, keys.Select(stated => stated.Raw)),
             StatesKey = key.LedgerName,
             StatesMode = ModeOf(keys[0].Raw),
             Note = keys[0].Page.Note,

@@ -270,28 +270,6 @@
     font-style: italic;
 }
 
-/* The prose is kept but folded away: it is worth reading when a row looks odd, and worth
-   staying out of the way when the machine-readable half already answered the question. */
-.source-prose {
-    margin-top: 0.5rem;
-    font-size: 0.85rem;
-    color: var(--text-dim);
-}
-
-.source-prose summary {
-    cursor: pointer;
-}
-
-.source-prose ul {
-    margin: 0.4rem 0 0;
-    padding-left: 1rem;
-}
-
-.source-prose .host {
-    color: var(--text);
-    margin-right: 0.4rem;
-}
-
 /* The first pass, superseded: quieter than the verdict, and folded. */
 .first-pass {
     margin-top: 1.5rem;
