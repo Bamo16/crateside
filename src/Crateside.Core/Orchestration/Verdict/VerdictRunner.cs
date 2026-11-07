@@ -28,7 +28,8 @@ public sealed partial class VerdictRunner(
     TimeProvider time,
     ILogger<VerdictRunner> log,
     string fileName = "claude",
-    IntakeStore? intake = null
+    IntakeStore? intake = null,
+    PageChoiceStore? pageChoices = null
 ) : IVerdictJudge
 {
     public const string VerdictFileName = "verdict.json";
@@ -49,7 +50,14 @@ public sealed partial class VerdictRunner(
     private static readonly string[] Tools = ["Read", "Write", "WebSearch", "WebFetch"];
 
     private readonly JudgeOptions _options = options.Value;
-    private readonly PageLookups _lookups = new(sourcePages, workingSet, store, null, intake);
+    private readonly PageLookups _lookups = new(
+        sourcePages,
+        workingSet,
+        store,
+        null,
+        intake,
+        pageChoices
+    );
 
     /// <summary>The judge's instructions, the same for every track (judge-prompt.md).</summary>
     public static string Instructions { get; } = ReadInstructions();
@@ -114,7 +122,8 @@ public sealed partial class VerdictRunner(
 
         File.Delete(verdictPath);
 
-        var lookups = await _lookups.LookUpAsync(order, ct);
+        var found = await _lookups.LookUpAsync(order, ct);
+        var lookups = _lookups.Effective(order.TrackKey, found);
 
         step(new JudgeStep.Judging());
 
@@ -153,7 +162,7 @@ public sealed partial class VerdictRunner(
                         },
                         order,
                         tally,
-                        lookups
+                        found
                     );
 
                 case VerdictCheck.WindowsAsked(var windows, var run)
@@ -178,7 +187,7 @@ public sealed partial class VerdictRunner(
                         },
                         order,
                         tally,
-                        lookups
+                        found
                     );
 
                 case VerdictCheck.Unusable when Unavailable(outcome) is { } unavailable:
@@ -192,7 +201,7 @@ public sealed partial class VerdictRunner(
 
                 case VerdictCheck.Unusable(var problem):
                     return withheld is not null
-                        ? Record(withheld, order, tally, lookups)
+                        ? Record(withheld, order, tally, found)
                         : VerdictResult.Failed(
                             outcome.Succeeded
                                 ? problem
@@ -314,7 +323,15 @@ public sealed partial class VerdictRunner(
 
         foreach (var page in lookups.SelectMany(lookup => lookup.Pages))
         {
-            var about = string.Join(", ", new[] { page.Arrangement, page.Note }.OfType<string>());
+            var about = string.Join(
+                ", ",
+                new[]
+                {
+                    page.Arrangement,
+                    page.Note,
+                    page.Chosen is { } chosen ? ChosenNote(chosen) : null,
+                }.OfType<string>()
+            );
             var keys = page.Keys is []
                 ? "no key stated"
                 : string.Join(
@@ -337,6 +354,9 @@ public sealed partial class VerdictRunner(
             }
         }
 
+        foreach (var page in lookups.SelectMany(lookup => lookup.Rejected ?? []))
+            yield return $"- the person says this is not this song, so it is left out: {page.Site}, {page.Url}, \"{page.Heading}\"";
+
         foreach (var page in lookups.SelectMany(lookup => lookup.Candidates ?? []))
             yield return $"- unconfirmed, not evidence: {page.Site}, {page.Url}, \"{page.Heading}\". "
                 + $"{page.Note}. Its keys are not a source for a verdict.";
@@ -346,6 +366,11 @@ public sealed partial class VerdictRunner(
                 ? $"- {lookup.Site}: nothing found"
                 : $"- {lookup.Site}: not reached ({lookup.Error})";
     }
+
+    private static string ChosenNote(PageChoiceKind kind) =>
+        kind is PageChoiceKind.Added
+            ? "the person added this page: it is this song"
+            : "the person says this page is this song";
 
     /// <summary>What a TheoryTab states beyond its sections' first keys: who made it, how much of the recording it maps, and where a section modulates.</summary>
     private static IEnumerable<string> TabLines(HooktheoryTab tab)

@@ -42,8 +42,9 @@ public sealed class PersonsKey(
         }
 
         foreach (
-            var page in evidence
-                .Lookups.Where(lookup => CountedSites.Contains(lookup.Site))
+            var page in lookups
+                .Effective(order.TrackKey, evidence.Lookups)
+                .Where(lookup => CountedSites.Contains(lookup.Site))
                 .SelectMany(lookup => lookup.Pages)
         )
         {
@@ -151,7 +152,8 @@ public sealed class PersonsKey(
         if (!workingSet.TryReadEvidence(order.TrackKey, out var evidence))
             return null;
 
-        var found = lookups.CachedFor(order);
+        var cached = lookups.CachedFor(order);
+        var found = cached is null ? null : lookups.Effective(order.TrackKey, cached);
 
         return RunEvidence.From(
             new RunRecord
@@ -160,7 +162,7 @@ public sealed class PersonsKey(
                 Song = order.TrackKey,
                 Confidence = KeyConfidence.Withheld,
                 Evidence = evidence,
-                Lookups = VerdictRecording.Serialized(found ?? []),
+                Lookups = VerdictRecording.Serialized(cached ?? []),
                 Sources = [.. (found ?? []).SelectMany(PageSources)],
                 Reasoning = found is null
                     ? "The Hooktheory, Musicnotes and Ultimate Guitar pages have not been looked up yet."
@@ -179,7 +181,7 @@ public sealed class PersonsKey(
         lookup.Pages.Select(page => new RunSource
         {
             Url = page.Url,
-            Via = "found by crateside's lookup",
+            Via = VerdictRules.ViaOf(page),
             Kind =
                 CountedSites.Contains(lookup.Site) && !VerdictRules.IsUserArrangement(page)
                     ? SourceKind.Authoritative

@@ -50,7 +50,9 @@ and puts what it finds in the work order:
 A page that is not there, or a site that cannot be reached, is listed as such. The lookup is made
 once per track, with the user agent `crateside/1.0`, and kept as `sources.json` beside the
 evidence. crateside matches names only; whether a page is the right recording is the judge's
-call, and the judge may still search.
+call, and the judge may still search. The judge is shown the pages as the person corrected them
+([ADR 0078](adr/0078-the-person-corrects-which-pages-count-for-a-song.md)): a page they said is not
+this song is named as left out, and one they counted or added is marked.
 
 ## The verdict file
 

@@ -24,6 +24,12 @@ public interface ISourcePages
         IReadOnlyList<string> alsoCredited,
         CancellationToken ct = default
     ) => FetchAsync(artist, title, ct);
+
+    /// <summary>One page by its address, read as a found page is; a refusal says why it is not one the rules can count (ADR 0078).</summary>
+    Task<PageFetch> FetchPageAsync(string address, CancellationToken ct = default) =>
+        Task.FromResult<PageFetch>(
+            new PageFetch.Refused("This lookup cannot fetch a page by address.")
+        );
 }
 
 /// <summary>
@@ -141,18 +147,8 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
 
         foreach (var url in HooktheoryUrls(artist, title, hits.Confirmed))
         {
-            if (await GetAsync(url, ct) is not { } page)
-                continue;
-
-            Dictionary<string, string> scores = [];
-
-            foreach (var section in HooktheoryPageReader.Read(page)?.Sections ?? [])
-            {
-                if (await SectionScoreAsync(section.Hash!, ct) is { } body)
-                    scores[section.Hash!] = body;
-            }
-
-            pages.Add(HooktheoryPage(url, page, scores));
+            if (await HooktheoryTabAsync(url, ct) is { } tab)
+                pages.Add(tab);
         }
 
         List<FetchedPage> candidates = [];
@@ -170,6 +166,22 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
         }
 
         return new(pages, candidates);
+    }
+
+    private async Task<FetchedPage?> HooktheoryTabAsync(string url, CancellationToken ct)
+    {
+        if (await GetAsync(url, ct) is not { } page)
+            return null;
+
+        Dictionary<string, string> scores = [];
+
+        foreach (var section in HooktheoryPageReader.Read(page)?.Sections ?? [])
+        {
+            if (await SectionScoreAsync(section.Hash!, ct) is { } body)
+                scores[section.Hash!] = body;
+        }
+
+        return HooktheoryPage(url, page, scores);
     }
 
     /// <summary>The slug the artist and title spell, then every other TheoryTab the search confirmed.</summary>
@@ -504,6 +516,67 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
         ];
     }
 
+    public async Task<PageFetch> FetchPageAsync(string address, CancellationToken ct = default)
+    {
+        if (CountedAddress(address) is not PageAddress.Counted(var site, var url))
+            return new PageFetch.Refused(RefusalFor(address));
+
+        try
+        {
+            var page =
+                site is "Hooktheory" ? await HooktheoryTabAsync(url, ct)
+                : await GetAsync(url, ct) is { } body ? MusicnotesPage(url, body)
+                : null;
+
+            return page switch
+            {
+                null => new PageFetch.Refused($"{site} has no page at that address."),
+                { Keys: [] } => new PageFetch.Refused(
+                    "That page states no key, so there is nothing in it for the rules to count."
+                ),
+                _ => new PageFetch.Found(page),
+            };
+        }
+        catch (Exception ex)
+            when (ex
+                    is HttpRequestException
+                        or TaskCanceledException
+                        {
+                            CancellationToken.IsCancellationRequested: false
+                        }
+            )
+        {
+            return new PageFetch.Refused($"{site} could not be reached: {ex.Message}");
+        }
+    }
+
+    /// <summary>The canonical address of a Hooktheory TheoryTab or a Musicnotes product, or neither.</summary>
+    internal static PageAddress CountedAddress(string address)
+    {
+        var text = address.Trim();
+
+        if (HooktheoryAddress.Match(text) is { Success: true } tab)
+            return new PageAddress.Counted(
+                "Hooktheory",
+                $"{HooktheoryTabs}{Canonical(tab.Groups["Artist"].Value)}/{Canonical(tab.Groups["Song"].Value)}"
+            );
+
+        return MusicnotesAddress.Match(text) is { Success: true } product
+            ? new PageAddress.Counted(
+                "Musicnotes",
+                $"https://www.musicnotes.com{product.Groups["Path"].Value}"
+            )
+            : new PageAddress.Other();
+    }
+
+    private static string Canonical(string segment) =>
+        Uri.EscapeDataString(Uri.UnescapeDataString(segment));
+
+    private static string RefusalFor(string address) =>
+        UltimateGuitarAddress.IsMatch(address.Trim())
+            ? "Ultimate Guitar pages are shown but never counted, so one cannot be added."
+            : "Only a Hooktheory TheoryTab (hooktheory.com/theorytab/view/artist/song) or a Musicnotes product page (musicnotes.com/sheetmusic/artist/title/MN…) can be added.";
+
     /// <summary>The page, or null for a page that is not there.</summary>
     private async Task<string?> GetAsync(string url, CancellationToken ct)
     {
@@ -530,6 +603,21 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
 
     [GeneratedRegex(@"searchKey:\s*""(?<Key>[^""]+)""")]
     private static partial Regex HooktheorySearchKey { get; }
+
+    [GeneratedRegex(
+        @"^https?://(www\.)?hooktheory\.com/theorytab/view/(?<Artist>[^/?#\s]+)/(?<Song>[^/?#\s]+)/?([?#].*)?$",
+        RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture
+    )]
+    private static partial Regex HooktheoryAddress { get; }
+
+    [GeneratedRegex(
+        @"^https?://(www\.)?musicnotes\.com(?<Path>/sheetmusic/[^/?#\s]+/[^/?#\s]+/MN\d+)/?([?#].*)?$",
+        RegexOptions.IgnoreCase | RegexOptions.ExplicitCapture
+    )]
+    private static partial Regex MusicnotesAddress { get; }
+
+    [GeneratedRegex(@"^https?://([a-z]+\.)?ultimate-guitar\.com/", RegexOptions.IgnoreCase)]
+    private static partial Regex UltimateGuitarAddress { get; }
 
     [GeneratedRegex(@"/sheetmusic/(?<Artist>[^""/]+)/(?<Title>[^""/]+)/MN\d+")]
     private static partial Regex MusicnotesLink { get; }
@@ -562,10 +650,33 @@ public sealed partial class SourcePages(IHttpClientFactory clients) : ISourcePag
     private static partial Regex InitialismDots { get; }
 }
 
+/// <summary>A page fetched by its address, or why it was not.</summary>
+public abstract record PageFetch
+{
+    private PageFetch() { }
+
+    public sealed record Found(FetchedPage Page) : PageFetch;
+
+    public sealed record Refused(string Message) : PageFetch;
+}
+
+internal abstract record PageAddress
+{
+    private PageAddress() { }
+
+    public sealed record Counted(string Site, string Url) : PageAddress;
+
+    public sealed record Other : PageAddress;
+}
+
 /// <summary>What one site gave for a song.</summary>
 public sealed record SiteLookup(string Site, LookupStatus Status, IReadOnlyList<FetchedPage> Pages)
 {
     public string? Error { get; init; }
+
+    /// <summary>Pages the person said are not this song: left out of what counts, and kept so they can be taken back (ADR 0078).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FetchedPage>? Rejected { get; init; }
 
     /// <summary>Pages with the exact title under no artist the track credits: shown to the judge and the person, and never a source for a rule (ADR 0077).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -629,6 +740,10 @@ public sealed record FetchedPage
 
     /// <summary>A TheoryTab's contributors, sections and sync, where the page is one.</summary>
     public HooktheoryTab? Tab { get; init; }
+
+    /// <summary>Set where the person, not the lookup, put the page among those that count (ADR 0078).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public PageChoiceKind? Chosen { get; init; }
 }
 
 /// <summary>A key as the page writes it, with the section it covers where the page says.</summary>

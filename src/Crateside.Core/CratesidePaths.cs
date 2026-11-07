@@ -126,6 +126,13 @@ public sealed class CratesidePaths
         set;
     }
 
+    /// <summary>The pages the user has rejected, counted or added for tracks (ADR 0078).</summary>
+    public string PageChoicesFile
+    {
+        get => field ?? Roaming("page-choices.json");
+        set;
+    }
+
     /// <summary>The daily log files agents read instead of the terminal.</summary>
     public string LogsFolder
     {

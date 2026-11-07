@@ -142,4 +142,8 @@ public enum UserActionKind
     PassedTheHold,
     PassCleared,
     KeyChosen,
+    PageRejected,
+    PageCounted,
+    PageAdded,
+    PageChoiceUndone,
 }
