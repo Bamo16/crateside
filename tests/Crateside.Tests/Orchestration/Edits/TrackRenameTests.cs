@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using AbleKit.Sets;
 using AbleKit.Tags;
 using Crateside.Core;
@@ -171,6 +172,53 @@ public sealed class TrackRenameTests : IDisposable
         Assert.Equal("Starjunk 95 - 99th Street (Vocal - Full).flac", entry.RelativePath);
         Assert.Equal("A minor", entry.Key);
         Assert.Equal("Vocal", entry.Type);
+    }
+
+    [Fact]
+    public void An_entry_Live_drops_while_the_files_move_is_written_back_under_the_new_name()
+    {
+        Stage("99th Street (Vocal - Full).flac");
+
+        _writer.Apply(
+            _paths.StagingFolder,
+            [
+                new TagAssignment
+                {
+                    RelativePath = "99th Street (Vocal - Full).flac",
+                    Keywords = ["Key|A", "Key|Minor", "Type|Vocal"],
+                    Collections = [4],
+                },
+            ]
+        );
+
+        // Live sees the file go and drops its entry before the rename reaches the store.
+        _sets.Users = ["A set"];
+        _sets.WhileRelinking = () =>
+        {
+            var store = Directory
+                .EnumerateFiles(Path.Combine(_paths.StagingFolder, "Ableton Folder Info"), "*.xmp")
+                .Single();
+            var document = XDocument.Load(store);
+            XNamespace ableton = "https://ns.ableton.com/xmp/fs-resources/1.0/";
+
+            document
+                .Descendants()
+                .Where(element => element.Element(ableton + "filePath") is not null)
+                .ToList()
+                .ForEach(entry => entry.Remove());
+            document.Save(store);
+        };
+
+        var outcome = Renamer().Apply(Video, "Starjunk 95 - 99th Street");
+
+        Assert.Null(outcome.Note);
+
+        var entry = Assert.Single(_reader.Read(_paths.StagingFolder).Entries);
+
+        Assert.Equal("Starjunk 95 - 99th Street (Vocal - Full).flac", entry.RelativePath);
+        Assert.Equal("A minor", entry.Key);
+        Assert.Equal("Vocal", entry.Type);
+        Assert.Equal([4], entry.Collections);
     }
 
     [Fact]
@@ -547,6 +595,7 @@ internal sealed class FakeSets : ISetLinks
     public IReadOnlyList<string> Failing { get; set; } = [];
     public List<IReadOnlyCollection<string>> Lookups { get; } = [];
     public List<IReadOnlyList<SampleMove>> Relinks { get; } = [];
+    public Action? WhileRelinking { get; set; }
 
     public IReadOnlyList<string> Using(IReadOnlyCollection<string> samples)
     {
@@ -560,6 +609,7 @@ internal sealed class FakeSets : ISetLinks
     public SetRelink Relink(IReadOnlyList<SampleMove> moves)
     {
         Relinks.Add(moves);
+        WhileRelinking?.Invoke();
 
         return new SetRelink([.. Users.Except(Failing)], Failing);
     }

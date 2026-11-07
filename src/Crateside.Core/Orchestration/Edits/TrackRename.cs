@@ -19,9 +19,16 @@ public sealed class TrackRename(
     FolderInfoWriter writer,
     CratesidePaths paths,
     ILibraryFiles? library = null,
-    ISetLinks? sets = null
+    ISetLinks? sets = null,
+    FolderInfoReader? reader = null
 )
 {
+    private const int StaleRetries = 3;
+
+    private static readonly TimeSpan StaleRetryDelay = TimeSpan.FromMilliseconds(250);
+
+    private readonly FolderInfoReader _reader = reader ?? new FolderInfoReader();
+
     /// <summary>What follows the open set's name when it stops a rename.</summary>
     public const string OpenSetRefusal =
         "is open in Ableton and uses these files. Open another set, then rename.";
@@ -102,6 +109,7 @@ public sealed class TrackRename(
         if (!SourcelessSongs.IsKey(trackKey))
             instructions.SetName(trackKey, stored);
 
+        var held = Hold(plan.Renaming);
         List<Move> done = [];
         List<string> markersLost = [];
 
@@ -119,7 +127,7 @@ public sealed class TrackRename(
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                MoveTags(done);
+                MoveTags(done, held);
 
                 return new RenameOutcome
                 {
@@ -140,7 +148,7 @@ public sealed class TrackRename(
         {
             Name = plan.Name,
             Renamed = done.Count,
-            Note = Note(MoveTags(done), markersLost, relink?.Failed ?? []),
+            Note = Note(MoveTags(done, held), markersLost, relink?.Failed ?? []),
         };
     }
 
@@ -217,30 +225,109 @@ public sealed class TrackRename(
             ? note
             : null;
 
-    /// <summary>Carries the Ableton keywords across to the new names, in each folder's store.</summary>
-    private string? MoveTags(IReadOnlyList<Move> done) =>
+    /// <summary>
+    /// Carries the Ableton keywords and Collections across to the new names, in each folder's
+    /// store. An entry Live dropped as the files moved is written back from what it held before.
+    /// </summary>
+    private string? MoveTags(
+        IReadOnlyList<Move> done,
+        IReadOnlyDictionary<string, FileTags> held
+    ) =>
         done.GroupBy(move => move.Root, StringComparer.OrdinalIgnoreCase)
             .Select(folder =>
-                TagWriteOutcome.Of(() =>
-                    writer.Rename(
-                        folder.Key,
-                        [
-                            .. folder.Select(move => new TagRename
-                            {
-                                From = Path.GetRelativePath(folder.Key, move.From),
-                                To = Path.GetRelativePath(folder.Key, move.To),
-                            }),
-                        ]
+                Failure(
+                    Retrying(() =>
+                        writer.Rename(
+                            folder.Key,
+                            [
+                                .. folder.Select(move => new TagRename
+                                {
+                                    From = Path.GetRelativePath(folder.Key, move.From),
+                                    To = Path.GetRelativePath(folder.Key, move.To),
+                                }),
+                            ]
+                        )
                     )
-                ) switch
-                {
-                    TagWriteOutcome.Stale(var error) => error,
-                    TagWriteOutcome.Rejected(var error) => error,
-                    _ => null,
-                }
+                ) ?? Restore(folder.Key, [.. folder], held)
             )
             .OfType<string>()
             .FirstOrDefault();
+
+    private string? Restore(
+        string root,
+        IReadOnlyList<Move> moves,
+        IReadOnlyDictionary<string, FileTags> held
+    )
+    {
+        List<TagAssignment> lost = [];
+
+        try
+        {
+            var store = _reader.Read(root);
+
+            foreach (var move in moves)
+                if (!store.TryGet(move.To, out _) && held.TryGetValue(move.From, out var tags))
+                    lost.Add(
+                        new TagAssignment
+                        {
+                            RelativePath = Path.GetRelativePath(root, move.To),
+                            Keywords = tags.Keywords,
+                            Collections = tags.Collections,
+                        }
+                    );
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return ex.Message;
+        }
+
+        return lost.Count is 0 ? null : Failure(Retrying(() => writer.Apply(root, lost)));
+    }
+
+    /// <summary>What each file's entry held before it moved, by its old path.</summary>
+    private Dictionary<string, FileTags> Hold(IReadOnlyList<string> files)
+    {
+        Dictionary<string, FileTags> held = new(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var root in files.GroupBy(RootOf, StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var store = _reader.Read(root.Key);
+
+                foreach (var file in root)
+                    if (store.TryGet(file, out var tags))
+                        held[file] = tags;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // A store that cannot be read now cannot be restored from; the move still goes ahead.
+            }
+        }
+
+        return held;
+    }
+
+    private static TagWriteOutcome Retrying(Func<int> write)
+    {
+        var outcome = TagWriteOutcome.Of(write);
+
+        for (var i = 0; i < StaleRetries && outcome is TagWriteOutcome.Stale; i++)
+        {
+            Thread.Sleep(StaleRetryDelay);
+            outcome = TagWriteOutcome.Of(write);
+        }
+
+        return outcome;
+    }
+
+    private static string? Failure(TagWriteOutcome outcome) =>
+        outcome switch
+        {
+            TagWriteOutcome.Stale(var error) => error,
+            TagWriteOutcome.Rejected(var error) => error,
+            _ => null,
+        };
 
     private IEnumerable<(string Path, string Root)> Files(string trackKey) =>
         [
