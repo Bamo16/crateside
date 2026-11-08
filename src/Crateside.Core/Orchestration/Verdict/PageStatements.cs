@@ -1,6 +1,6 @@
 namespace Crateside.Core.Orchestration.Verdict;
 
-internal static class PageStatements
+public static class PageStatements
 {
     /// <summary>
     /// The keys a page states, as a source's statement: a section that changes key inside itself
