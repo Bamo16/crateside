@@ -560,7 +560,7 @@ the harnesses to leave out (ADR 0085). Ordered by `videoId`; a track not listed 
       "wholeTrack": false,
       "reason": null,
       "stretches": [
-        { "startSeconds": 364.0, "endSeconds": 380.0, "typed": "183–190", "reason": "Slows down and turns to chaos" }
+        { "startSeconds": 364.0, "endSeconds": 380.0, "typed": "183–191", "reason": "Slows down and turns to chaos" }
       ]
     }
   ]

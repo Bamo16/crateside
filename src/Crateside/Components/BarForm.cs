@@ -20,17 +20,17 @@ public sealed class BarForm(bool inBars)
     public DiatonicMode? EarMode { get; set; }
 
     /// <summary>The form again with the ranges a finished run was given, for a second try.</summary>
-    public static BarForm From(BarRun run, bool inBars)
+    public static BarForm From(BarRun run, WarpGroup group)
     {
-        var form = new BarForm(inBars) { EarMode = run.Direction.Ear?.Mode };
+        var form = new BarForm(group.Lender is not null) { EarMode = run.Direction.Ear?.Mode };
 
         form.Lines.Clear();
         form.Lines.AddRange(
             run.Direction.Windows.Select(window => new BarLine
             {
                 Range =
-                    inBars && window.Bars is { } bars
-                        ? BarText(bars.First, bars.Last)
+                    form.InBars && BarRanges.Show(group, window.Start, window.End) is { } bars
+                        ? bars
                         : TimeText(window.Start, window.End),
                 Label = window.Label ?? string.Empty,
             })
@@ -43,12 +43,8 @@ public sealed class BarForm(bool inBars)
         return form;
     }
 
-    /// <summary>
-    /// A line's range as a window, or null while it does not read as one. Where it meets the next
-    /// line's range on one bar, it ends where that one begins.
-    /// </summary>
-    public RunWindow? Window(BarLine line, WarpGroup group) =>
-        Lines.IndexOf(line) is var index and >= 0 ? Resolved(group)[index] : Read(line, group);
+    /// <summary>A line's range as a window, or null while it does not read as one.</summary>
+    public RunWindow? Window(BarLine line, WarpGroup group) => Read(line, group);
 
     /// <summary>A line's resolved stretch, "bar 106 to the end (2:22–3:39)", so its meaning shows before judging.</summary>
     public string? Stretch(BarLine line, WarpGroup group) =>
@@ -61,7 +57,7 @@ public sealed class BarForm(bool inBars)
         Windows(group) is [] ? "Judge the whole track again" : "Judge from these bars";
 
     public IReadOnlyList<RunWindow> Windows(WarpGroup group) =>
-        [.. Resolved(group).OfType<RunWindow>()];
+        [.. Lines.Select(line => Read(line, group)).OfType<RunWindow>()];
 
     /// <summary>The line numbers whose range is filled in but does not read.</summary>
     public IReadOnlyList<int> Unreadable(WarpGroup group) =>
@@ -70,6 +66,17 @@ public sealed class BarForm(bool inBars)
                 .Select((line, index) => (line, index))
                 .Where(pair =>
                     pair.line.Range.Trim() is { Length: > 0 } && Window(pair.line, group) is null
+                )
+                .Select(pair => pair.index + 1),
+        ];
+
+    /// <summary>The line numbers whose bar range stops where it starts, or less than a sixteenth on.</summary>
+    public IReadOnlyList<int> Empty(WarpGroup group) =>
+        [
+            .. Lines
+                .Select((line, index) => (line, index))
+                .Where(pair =>
+                    InBars && BarRanges.Read(pair.line.Range, group) is BarRangeReading.TooShort
                 )
                 .Select(pair => pair.index + 1),
         ];
@@ -116,7 +123,7 @@ public sealed class BarForm(bool inBars)
     }
 
     /// <summary>
-    /// Puts a range dragged on the ruler, in bars or whole seconds, on its line, or on the first
+    /// Puts a range dragged on the ruler, in bars (the end is where it stops) or whole seconds, on its line, or on the first
     /// empty line (else a new one) when <paramref name="line"/> is -1.
     /// </summary>
     public void Place(int line, int first, int last)
@@ -135,36 +142,12 @@ public sealed class BarForm(bool inBars)
         Lines[line].Range = Text(first, last);
     }
 
-    private RunWindow?[] Resolved(WarpGroup group)
-    {
-        var windows = Lines.Select(line => Read(line, group)).ToArray();
-
-        // "1-106" then "106-end": the change is at the start of bar 106.
-        for (var i = 0; i < windows.Length; i++)
-        for (var j = 0; j < windows.Length; j++)
-            if (
-                windows[i] is { Bars: { } here } early
-                && windows[j] is { Bars: { } there } late
-                && here.First < there.First
-                && here.Last == there.First
-            )
-                windows[i] = early with
-                {
-                    End = late.Start,
-                    Bars = here with { Last = here.Last - 1 },
-                };
-
-        return windows;
-    }
-
     private RunWindow? Read(BarLine line, WarpGroup group)
     {
         var label = line.Label.Trim() is { Length: > 0 } given ? given : null;
 
         if (InBars)
-            return JudgeRanges.TryParseBars(line.Range, out var bars)
-                ? JudgeRanges.Window(group, bars, label)
-                : null;
+            return JudgeRanges.Window(group, line.Range, label);
 
         // A track with no stems has no length to check a range against.
         return
@@ -179,28 +162,32 @@ public sealed class BarForm(bool inBars)
             : null;
     }
 
-    private static string Where(RunWindow window, WarpGroup group) =>
-        window switch
-        {
-            { Bars: not null }
-                when group.Seconds > 0 && window.Start <= 0 && window.End >= group.Seconds =>
-                "the whole track ",
-            { Bars: { } bars } when group.Seconds > 0 && window.End >= group.Seconds =>
-                $"{Bar(bars.First)} to the end ",
-            { Bars: { } bars } when window.Start <= 0 => $"the start to {Bar(bars.Last)} ",
-            { Bars: { } bars } => bars.First == bars.Last
-                ? $"{Bar(bars.First)} "
-                : $"bars {bars.First}–{bars.Last} ",
-            _ => string.Empty,
-        };
+    private static string Where(RunWindow window, WarpGroup group)
+    {
+        if (group.BeatAt(window.Start) is not { } first || group.BeatAt(window.End) is not { } last)
+            return string.Empty;
 
-    private static string Bar(int bar) => $"bar {bar}";
+        var bars = group.Bars;
+        var (start, end) = (BarRanges.At(bars, first), BarRanges.At(bars, last));
+        var atEnd = group.Seconds > 0 && window.End >= group.Seconds;
+
+        return window switch
+        {
+            _ when atEnd && window.Start <= 0 => "the whole track ",
+            _ when atEnd => $"bar {start} to the end ",
+            { Start: <= 0 } => $"the start to bar {end} ",
+            _ when bars.IsBarLine(first) && Math.Abs(last - first - bars.BeatsPerBar) < 1e-4 =>
+                $"bar {start} ",
+            _ => $"bars {start}–{end} ",
+        };
+    }
 
     // A time range cannot be empty, as a single bar can, so it is a second at least.
     private string Text(int from, int to) =>
         InBars ? BarText(from, to) : TimeText(from, Math.Max(to, from + 1));
 
-    private static string BarText(int first, int last) => $"{first}–{last}";
+    // The end is a bar, where the selection stops (ADR 0085).
+    private static string BarText(int first, int end) => $"{first}–{end}";
 
     private static string TimeText(double start, double end) =>
         $"{TempoFormat.Clock(start)}–{TempoFormat.Clock(end)}";

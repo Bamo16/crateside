@@ -1,6 +1,7 @@
 using AbleKit.Analysis;
 using Crateside.Components;
 using Crateside.Core.Ledger;
+using Crateside.Core.Orchestration.Verdict;
 using Crateside.Core.Warps;
 
 namespace Crateside.Tests.Components;
@@ -82,11 +83,32 @@ public sealed class BarFormTests : IDisposable
     [Fact]
     public void A_row_shows_the_stretch_it_resolves_to()
     {
-        var form = Form("26-end", "start-10", "999-1000");
+        var form = Form("26-end", "start-10", "999-1000", "65-66", "65.2-66");
         var group = Warped();
 
         Assert.Equal("bar 26 to the end (0:50–3:20)", form.Stretch(form.Lines[0], group));
-        Assert.Equal("the start to bar 10 (0:00–0:20)", form.Stretch(form.Lines[1], group));
+        Assert.Equal("the start to bar 10 (0:00–0:18)", form.Stretch(form.Lines[1], group));
         Assert.Null(form.Stretch(form.Lines[2], group));
+        Assert.Equal("bar 65 (2:08–2:10)", form.Stretch(form.Lines[3], group));
+        Assert.Equal("bars 65.2.1–66 (2:09–2:10)", form.Stretch(form.Lines[4], group));
+    }
+
+    [Fact]
+    public void A_range_that_stops_where_it_starts_is_empty_rather_than_unreadable()
+    {
+        var form = Form("65-65", "chorus");
+        var group = Warped();
+
+        Assert.Equal([1], form.Empty(group));
+        Assert.Equal([1, 2], form.Unreadable(group));
+    }
+
+    [Fact]
+    public void A_typed_range_is_shown_back_as_it_was_typed()
+    {
+        var group = Warped();
+        var window = JudgeRanges.Window(group, "33-49", null)!;
+
+        Assert.Equal("33–49", BarRanges.Show(group, window.Start, window.End));
     }
 }

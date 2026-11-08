@@ -1176,7 +1176,7 @@ public sealed class VerdictRunnerTests : IDisposable
           "center": { "tonic": "C#", "mode": "aeolian" },
           "sections": [
             { "label": "Chorus", "tonic": "C#", "mode": "aeolian" },
-            { "label": "bars 82–96", "tonic": "C#", "mode": "aeolian" }
+            { "label": "bars 82–97", "tonic": "C#", "mode": "aeolian" }
           ],
           "sources": [{ "kind": "ear", "states": "C# minor" }],
           "reasoning": "Both windows read C# minor."
@@ -1216,7 +1216,7 @@ public sealed class VerdictRunnerTests : IDisposable
         var prompt = Assert.Single(Sessions.Requests).StandardInput!;
 
         Assert.Contains("\"Chorus\", 45–67 s", prompt);
-        Assert.Contains("\"bars 82–96\", 112–133 s", prompt);
+        Assert.Contains("\"bars 82–97\", 112–133 s", prompt);
         Assert.Contains("C# minor @ 112", prompt);
         Assert.Contains("listen to the choruses", prompt);
         Assert.Equal(
@@ -1245,7 +1245,7 @@ public sealed class VerdictRunnerTests : IDisposable
             evidence.Direction
         );
         Assert.Equal(
-            [("Chorus", "C# minor @ 45"), ("bars 82–96", "C# minor @ 112")],
+            [("Chorus", "C# minor @ 45"), ("bars 82–97", "C# minor @ 112")],
             evidence.Readings.Select(reading =>
                 (reading.Section!.Label, reading.Algorithms.Single(a => a.Key is not null).Key)
             )

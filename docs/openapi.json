@@ -442,9 +442,23 @@
               "string"
             ],
             "format": "int32"
+          },
+          "end": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
-        "description": "Bars int BarSpan.First to int BarSpan.Last, both included."
+        "description": "Bars int BarSpan.First to int BarSpan.Last, both included; shown as Live's selection, to the start of int BarSpan.End (ADR 0085)."
       },
       "BeatCandidate": {
         "required": [

@@ -59,11 +59,11 @@ public sealed class MeasuringStretchesTests : IDisposable
     [Fact]
     public void Bars_become_seconds_of_the_source_through_the_warp_to_the_end_of_the_last_bar()
     {
-        Assert.True(MeasuringStretches.TryRead("183–190", "why", Warped(), out var stretch));
+        Assert.True(MeasuringStretches.TryRead("183–191", "why", Warped(), out var stretch));
 
         Assert.Equal(364, stretch.StartSeconds, 0.001);
         Assert.Equal(380, stretch.EndSeconds, 0.001);
-        Assert.Equal("183–190", stretch.Typed);
+        Assert.Equal("183–191", stretch.Typed);
         Assert.Equal("why", stretch.Reason);
     }
 
@@ -95,6 +95,13 @@ public sealed class MeasuringStretchesTests : IDisposable
         Assert.False(MeasuringStretches.TryRead(text, "why", Warped(), out _));
 
     [Fact]
+    public void A_stretch_that_stops_where_it_starts_is_refused_with_the_reason()
+    {
+        Assert.False(MeasuringStretches.TryRead("183–183", "why", Warped(), out _));
+        Assert.Equal(BarRanges.EmptyMessage, MeasuringStretches.Refusal("183–183", Warped()));
+    }
+
+    [Fact]
     public void Without_a_warp_a_stretch_is_in_minutes_and_seconds()
     {
         Assert.True(MeasuringStretches.TryRead("2:22–3:39", "why", Unwarped, out var stretch));
@@ -112,10 +119,10 @@ public sealed class MeasuringStretchesTests : IDisposable
     [Fact]
     public void A_stretch_is_shown_as_the_bars_it_was_typed_in_with_a_warp_and_as_time_without()
     {
-        Assert.True(MeasuringStretches.TryRead("183–190", "why", Warped(), out var stretch));
+        Assert.True(MeasuringStretches.TryRead("183–191", "why", Warped(), out var stretch));
         Assert.True(MeasuringStretches.TryRead("183.3-190.2", "why", Warped(), out var inside));
 
-        Assert.Equal("bars 183–190 (6:04–6:20)", MeasuringStretches.Describe(stretch, Warped()));
+        Assert.Equal("bars 183–191 (6:04–6:20)", MeasuringStretches.Describe(stretch, Warped()));
         Assert.Equal(
             "bars 183.3.1–190.2.1 (6:05–6:19)",
             MeasuringStretches.Describe(inside, Warped())

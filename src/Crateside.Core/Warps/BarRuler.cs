@@ -45,6 +45,17 @@ public readonly record struct BarRuler(int Numerator, int Denominator)
     /// <summary>Bars counted from beat 0, which is index 0, with no gap where Live skips bar 0.</summary>
     public int IndexAt(double beat) => (int)Math.Floor(beat / BeatsPerBar + Snap);
 
+    /// <summary>Whether a beat is on a bar line, give or take the hair a beat read back from seconds is off.</summary>
+    public bool IsBarLine(double beat)
+    {
+        var inBars = beat / BeatsPerBar;
+
+        return Math.Abs(inBars - Math.Round(inBars)) < 1e-4;
+    }
+
+    /// <summary>The bar after this one, there being no bar 0.</summary>
+    public static int Next(int bar) => bar is -1 ? 1 : bar + 1;
+
     public static int Number(int index) => index >= 0 ? index + 1 : index;
 
     public static int Index(int bar) => bar > 0 ? bar - 1 : bar;
