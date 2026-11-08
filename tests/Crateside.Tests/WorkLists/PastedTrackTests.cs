@@ -1,3 +1,4 @@
+using Crateside.Core.Ledger;
 using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
@@ -6,33 +7,13 @@ using Microsoft.Extensions.Options;
 namespace Crateside.Tests.WorkLists;
 
 /// <summary>crateside's own record of a track the playlist does not hold (ADR 0010).</summary>
-public sealed class PastedTrackTests : IDisposable
+public sealed class PastedTrackTests
 {
     private const string Pasted = "aaaaaaaaaaa";
 
-    private readonly string _directory = Path.Combine(
-        Path.GetTempPath(),
-        "crateside-tests",
-        Guid.NewGuid().ToString("n")
-    );
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
-    public PastedTrackTests() => Directory.CreateDirectory(_directory);
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_directory))
-            Directory.Delete(_directory, recursive: true);
-
-        GC.SuppressFinalize(this);
-    }
-
-    private TrackInstructionStore Store() =>
-        new(
-            new QueueFile(
-                Options.Create(new PlaylistOptions()),
-                Path.Combine(_directory, "queue.json")
-            )
-        );
+    private TrackInstructionStore Store() => new(_ledger);
 
     [Fact]
     public void A_pasted_track_is_worth_storing_on_its_own()
@@ -89,7 +70,7 @@ public sealed class PastedTrackTests : IDisposable
             StemPlan.Default.Adding(new AddedSource { TrackKey = "bbbbbbbbbbb", Label = "Live" })
         );
 
-        var json = File.ReadAllText(Path.Combine(_directory, "queue.json"));
+        var json = _ledger.Query(context => context.TrackInstructions.Single().Plan)!;
 
         Assert.DoesNotContain("isEmpty", json, StringComparison.Ordinal);
         Assert.DoesNotContain("watchUrl", json, StringComparison.Ordinal);

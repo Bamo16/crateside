@@ -1,3 +1,4 @@
+using Crateside.Core.Ledger;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
 
@@ -7,6 +8,8 @@ namespace Crateside.Tests.WorkLists;
 public sealed class UnreadablePlaylistTests : IDisposable
 {
     private const string Known = "RzQRxV2XqFU";
+
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
@@ -27,12 +30,12 @@ public sealed class UnreadablePlaylistTests : IDisposable
     private string PathIn(string name) => Path.Combine(_directory, name);
 
     private WorkListService Unreadable(IntakeStore intake, out CachedPlaylist playlist) =>
-        UnreadableWorkLists.In(_directory, intake, out playlist);
+        UnreadableWorkLists.In(_directory, _ledger, intake, out playlist);
 
     [Fact]
     public async Task The_scan_still_yields_what_crateside_has_taken_on()
     {
-        var intake = new IntakeStore(PathIn("intake.json"));
+        var intake = new IntakeStore(_ledger);
 
         intake.Record([
             new WorkItem
@@ -51,7 +54,7 @@ public sealed class UnreadablePlaylistTests : IDisposable
     [Fact]
     public async Task The_refusal_is_reported_rather_than_thrown()
     {
-        var service = Unreadable(new IntakeStore(PathIn("intake.json")), out var playlist);
+        var service = Unreadable(new IntakeStore(_ledger), out var playlist);
 
         await service.ReadAsync(TestContext.Current.CancellationToken);
 
@@ -61,7 +64,7 @@ public sealed class UnreadablePlaylistTests : IDisposable
     [Fact]
     public async Task A_scan_that_could_not_read_reports_no_problem_once_it_can()
     {
-        var service = Unreadable(new IntakeStore(PathIn("intake.json")), out var playlist);
+        var service = Unreadable(new IntakeStore(_ledger), out var playlist);
 
         var scan = await service.ScanAsync(TestContext.Current.CancellationToken);
 

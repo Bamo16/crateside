@@ -257,12 +257,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
                 familiarity,
                 marks,
                 names,
-                new TrackInstructionStore(
-                    new QueueFile(
-                        Options.Create(new PlaylistOptions()),
-                        Path.Combine(_root, "queue.json")
-                    )
-                )
+                new TrackInstructionStore(ledger)
             ),
             new PageChoiceStore(ledger)
         );

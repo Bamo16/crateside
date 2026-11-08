@@ -1,38 +1,51 @@
-using Crateside.Core.WorkLists;
+using Crateside.Core.Ledger;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Playlist;
 
-/// <summary>The playlist settings the user can change from the UI, kept in <see cref="QueueFile"/>.</summary>
-public sealed class PlaylistSettingsStore(QueueFile file)
+/// <summary>
+/// The playlist settings the user can change from the UI, kept in the ledger database (ADR 0083).
+/// Configuration supplies the playlist until one is saved.
+/// </summary>
+public sealed class PlaylistSettingsStore(LedgerStore ledger, IOptions<PlaylistOptions> fallback)
 {
-    public PlaylistSettings Read()
-    {
-        var document = file.Read();
+    private readonly string? _configuredPlaylistId = fallback.Value.PlaylistId;
 
-        return new PlaylistSettings
-        {
-            PlaylistId = document.PlaylistId,
-            RefreshMinutes = document.RefreshMinutes,
-            ConsumeOnArrival = document.ConsumeOnArrival,
-        };
-    }
+    public PlaylistSettings Read() =>
+        ledger.Query(context =>
+            context.PlaylistSettings.AsNoTracking().FirstOrDefault() is { } row
+                ? new PlaylistSettings
+                {
+                    PlaylistId = row.PlaylistId ?? _configuredPlaylistId,
+                    RefreshMinutes = row.RefreshMinutes,
+                    ConsumeOnArrival = row.ConsumeOnArrival,
+                }
+                : new PlaylistSettings { PlaylistId = _configuredPlaylistId }
+        );
 
     /// <summary>Saves the playlist ID. Pass null or empty to clear it.</summary>
     public void SavePlaylistId(string? playlistId) =>
-        file.Save(document =>
-            document with
-            {
-                PlaylistId = PlaylistReference.TryParse(playlistId, out var parsed) ? parsed : null,
-            }
+        Save(row =>
+            row.PlaylistId = PlaylistReference.TryParse(playlistId, out var parsed) ? parsed : null
         );
 
     /// <summary>How often to look at the playlist unprompted. Null restores the default.</summary>
-    public void SaveRefreshMinutes(int? minutes) =>
-        file.Save(document => document with { RefreshMinutes = minutes });
+    public void SaveRefreshMinutes(int? minutes) => Save(row => row.RefreshMinutes = minutes);
 
     /// <summary>Whether crateside empties the playlist as it takes tracks on.</summary>
-    public void SaveConsumeOnArrival(bool consume) =>
-        file.Save(document => document with { ConsumeOnArrival = consume });
+    public void SaveConsumeOnArrival(bool consume) => Save(row => row.ConsumeOnArrival = consume);
+
+    private void Save(Action<PlaylistSettingsRow> change) =>
+        ledger.Save(context =>
+        {
+            var row = context.PlaylistSettings.FirstOrDefault();
+
+            if (row is null)
+                context.PlaylistSettings.Add(row = new PlaylistSettingsRow());
+
+            change(row);
+        });
 }
 
 /// <summary>User-editable playlist settings. Contains no secrets.</summary>

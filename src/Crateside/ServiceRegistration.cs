@@ -486,7 +486,6 @@ public static class ServiceRegistration
 
     private static IServiceCollection AddWorkLists(this IServiceCollection services)
     {
-        services.AddSingleton<QueueFile>();
         services.AddSingleton<TrackInstructionStore>();
         services.AddSingleton<BumpedTrack>();
         services.AddSingleton<WorkListService>();

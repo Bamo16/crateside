@@ -1,3 +1,4 @@
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Orchestration.Loop;
@@ -21,6 +22,8 @@ public sealed class SourceAddTests : IDisposable
         Uploads = ["aaaaaaaaaaa"],
     };
 
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
+
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
         "crateside-tests",
@@ -38,12 +41,7 @@ public sealed class SourceAddTests : IDisposable
     private SourceAdd Sources() =>
         new(
             TestLedger.Store(),
-            new TrackInstructionStore(
-                new QueueFile(
-                    Options.Create(new PlaylistOptions()),
-                    Path.Combine(_root, "queue.json")
-                )
-            ),
+            new TrackInstructionStore(_ledger),
             new SourceProbe(new ProcessRunner())
         );
 

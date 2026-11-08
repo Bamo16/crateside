@@ -1,3 +1,5 @@
+using Crateside.Core.Imports;
+using Crateside.Core.Ledger;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
 
@@ -6,28 +8,14 @@ namespace Crateside.Tests.Playlist;
 /// <summary>
 /// What crateside keeps so it never has to ask the playlist again (ADR 0021).
 /// </summary>
-public sealed class IntakeStoreTests : IDisposable
+public sealed class IntakeStoreTests
 {
     private const string Track = "aaaaaaaaaaa";
     private const string Other = "bbbbbbbbbbb";
 
-    private readonly string _directory = Path.Combine(
-        Path.GetTempPath(),
-        "crateside-tests",
-        Guid.NewGuid().ToString("n")
-    );
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
-    public IntakeStoreTests() => Directory.CreateDirectory(_directory);
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_directory))
-            Directory.Delete(_directory, recursive: true);
-
-        GC.SuppressFinalize(this);
-    }
-
-    private IntakeStore Store() => new(Path.Combine(_directory, "intake.json"));
+    private IntakeStore Store() => new(_ledger);
 
     private static WorkItem Item(string trackKey, string title = "Some Track") =>
         new()
@@ -106,16 +94,6 @@ public sealed class IntakeStoreTests : IDisposable
     public void A_store_that_has_never_been_written_reads_as_empty() =>
         Assert.Empty(Store().Read());
 
-    [Fact]
-    public void An_unreadable_store_reads_as_empty_rather_than_throwing()
-    {
-        var path = Path.Combine(_directory, "intake.json");
-
-        File.WriteAllText(path, "{ this is not json");
-
-        Assert.Empty(new IntakeStore(path).Read());
-    }
-
     /// <summary>
     /// What the playlist has delivered, which is every entry already recorded — not only the ones
     /// this scan recorded.
@@ -135,28 +113,57 @@ public sealed class IntakeStoreTests : IDisposable
     }
 
     [Fact]
-    public void A_store_that_has_written_cleanly_is_durable()
+    public void A_write_that_fails_throws_and_is_not_remembered()
     {
-        var store = Store();
+        using var ledger = new LedgerStore(LedgerStore.InMemory, TimeProvider.System);
+        var store = new IntakeStore(ledger);
 
         store.Record([Item(Track)]);
+        ledger.Dispose();
 
-        Assert.True(store.IsDurable);
+        Assert.ThrowsAny<Exception>(() => store.Record([Item(Other)]));
+        Assert.Equal(Track, Assert.Single(store.Read()).TrackKey);
     }
 
     [Fact]
-    public void A_store_that_cannot_write_is_not_durable()
+    public void Every_field_of_a_record_survives_a_restart()
     {
-        var path = Path.Combine(_directory, "intake.json");
+        var record = new IntakeRecord
+        {
+            TrackKey = "file~25edb68200c05e82",
+            Title = "Dave Wise - Lockjaw's Saga",
+            ChannelTitle = "Rare",
+            AddedAt = DateTimeOffset.Parse("2026-11-06T20:19:06.3859908+00:00"),
+            PremiumOutlook = PremiumOutlook.ArtTrack,
+            IsUnavailable = true,
+            PageUrl = "https://example.org/page",
+            Artist = "Dave Wise",
+            SongTitle = "Lockjaw's Saga",
+            Release = new Release
+            {
+                Album = "Donkey Kong Country 2",
+                Track = 6,
+                Year = 1995,
+                YearKind = YearKind.Release,
+                Cover = "file~25edb68200c05e82.png",
+            },
+            RemovalAttemptedAt = DateTimeOffset.Parse("2026-11-07T01:00:00+00:00"),
+            RemovalFailure = new RemovalFailure { Reason = "forbidden", CanSucceedLater = true },
+            RemovedEntryId = "PLI-1",
+        };
 
-        // A directory where the file belongs, so writing it fails.
-        Directory.CreateDirectory(path);
+        Assert.True(Store().TakeIn(record));
 
-        var store = new IntakeStore(path);
+        Assert.Equal(record, Assert.Single(Store().Read()));
+    }
 
-        store.Record([Item(Track)]);
+    [Fact]
+    public void Records_read_back_in_the_order_they_arrived()
+    {
+        Store().Record([Item(Other), Item(Track)]);
+        Store().MarkRemovalAttempted([Other], DateTimeOffset.UtcNow);
 
-        Assert.False(store.IsDurable);
+        Assert.Equal([Other, Track], Store().Read().Select(record => record.TrackKey));
     }
 
     [Fact]
@@ -202,7 +209,7 @@ public sealed class IntakeStoreTests : IDisposable
         store.Record([Item(Track)]);
         store.MarkRemovalAttempted([Track], DateTimeOffset.UtcNow);
 
-        Assert.Empty(Offerable(new IntakeStore(Path.Combine(_directory, "intake.json"))));
+        Assert.Empty(Offerable(new IntakeStore(_ledger)));
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using Crateside.Core;
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Jobs;
 using Crateside.Core.Playlist;
@@ -12,6 +13,8 @@ namespace Crateside.Tests.Orchestration;
 public sealed class WorkingSetJanitorTests : IDisposable
 {
     private const string TrackKey = "dQw4w9WgXcQ";
+
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
@@ -29,13 +32,7 @@ public sealed class WorkingSetJanitorTests : IDisposable
     private SourceRetentionStore Retention =>
         field ??= new SourceRetentionStore(Path.Combine(_directory, "retention.json"));
 
-    private TrackInstructionStore Instructions =>
-        field ??= new TrackInstructionStore(
-            new QueueFile(
-                Options.Create(new PlaylistOptions()),
-                Path.Combine(_directory, "queue.json")
-            )
-        );
+    private TrackInstructionStore Instructions => field ??= new TrackInstructionStore(_ledger);
 
     private WorkingSetJanitor Janitor =>
         field ??= new WorkingSetJanitor(

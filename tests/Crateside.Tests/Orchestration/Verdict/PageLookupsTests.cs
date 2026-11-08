@@ -1,3 +1,4 @@
+using Crateside.Core.Ledger;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Verdict;
@@ -9,6 +10,8 @@ namespace Crateside.Tests.Orchestration.Verdict;
 public sealed class PageLookupsTests : IDisposable
 {
     private const string TrackKey = "IijgrkA_P50";
+
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
@@ -68,7 +71,7 @@ public sealed class PageLookupsTests : IDisposable
     [Fact]
     public async Task A_file_with_tags_is_looked_up_by_them_and_its_other_credits_are_passed_on()
     {
-        var intake = new Core.Playlist.IntakeStore(Path.Combine(_directory, "intake.json"));
+        var intake = new Core.Playlist.IntakeStore(_ledger);
 
         intake.TakeIn(
             new Core.Playlist.IntakeRecord
@@ -105,7 +108,7 @@ public sealed class PageLookupsTests : IDisposable
     [Fact]
     public async Task A_file_with_no_title_tag_is_looked_up_by_its_whole_name_not_split_at_a_dash()
     {
-        var intake = new Core.Playlist.IntakeStore(Path.Combine(_directory, "intake.json"));
+        var intake = new Core.Playlist.IntakeStore(_ledger);
 
         intake.TakeIn(
             new Core.Playlist.IntakeRecord

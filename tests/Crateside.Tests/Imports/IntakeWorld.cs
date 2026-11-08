@@ -1,5 +1,6 @@
 using Crateside.Core;
 using Crateside.Core.Imports;
+using Crateside.Core.Ledger;
 using Crateside.Core.Naming;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
@@ -25,18 +26,15 @@ internal sealed class IntakeWorld : IDisposable
             WorkingFolder = Path.Combine(Root, "working"),
             Inbox = Path.Combine(Root, "inbox"),
             RecipeFile = Path.Combine(Root, "recipe.json"),
-            IntakeFile = Path.Combine(Root, "intake.json"),
             ResolvedNamesFile = Path.Combine(Root, "names.json"),
-            QueueFile = Path.Combine(Root, "queue.json"),
         };
 
         Time = new FakeTimeProvider(new DateTimeOffset(2026, 11, 4, 12, 0, 0, TimeSpan.Zero));
         Imports = new ImportStore(Paths);
-        Intake = new IntakeStore(Paths);
+        Ledger = new LedgerStore(LedgerStore.InMemory, Time);
+        Intake = new IntakeStore(Ledger);
         Names = new ResolvedNameStore(Paths);
-        Instructions = new TrackInstructionStore(
-            new QueueFile(Options.Create(new PlaylistOptions()), Paths)
-        );
+        Instructions = new TrackInstructionStore(Ledger);
         Recipes = new RecipeStore(Paths);
         Files = new TrackIntake(Imports, Intake, Names, Instructions, Recipes, Paths, Time);
     }
@@ -46,6 +44,8 @@ internal sealed class IntakeWorld : IDisposable
     public CratesidePaths Paths { get; }
 
     public FakeTimeProvider Time { get; }
+
+    public LedgerStore Ledger { get; }
 
     public ImportStore Imports { get; }
 
@@ -61,12 +61,14 @@ internal sealed class IntakeWorld : IDisposable
 
     public void Dispose()
     {
+        Ledger.Dispose();
+
         if (Directory.Exists(Root))
             Directory.Delete(Root, recursive: true);
     }
 
     /// <summary>A FLAC tagged as a gamerip is: artist, title, album, date text, composer, organization, cover.</summary>
-    public string TaggedFlac(
+    public static string TaggedFlac(
         string folder,
         string name,
         string title = "GRADUATION",

@@ -19,14 +19,6 @@ public sealed record TrackInstruction
     public StemPlan? Plan { get; init; }
 
     /// <summary>
-    /// The pre-<see cref="StemPlan"/> fact, read so an existing <c>queue.json</c> converts itself
-    /// and never written back.
-    /// </summary>
-    [JsonPropertyName("instrumentalRelease")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public bool WasInstrumentalRelease { get; init; }
-
-    /// <summary>
     /// What the user calls this track, which beats every derived name — a name, not a filename.
     /// Null when they have not said.
     /// </summary>

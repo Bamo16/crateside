@@ -1,4 +1,5 @@
 using Crateside.Core;
+using Crateside.Core.Ledger;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
@@ -12,6 +13,7 @@ internal static class UnreadableWorkLists
     /// <summary>A service whose reader has no credential, so every read refuses.</summary>
     public static WorkListService In(
         string directory,
+        LedgerStore ledger,
         IntakeStore intake,
         out CachedPlaylist playlist
     )
@@ -19,7 +21,6 @@ internal static class UnreadableWorkLists
         string PathIn(string name) => Path.Combine(directory, name);
 
         var options = Options.Create(new PlaylistOptions());
-        var file = new QueueFile(options, PathIn("queue.json"));
         var authorizer = new PlaylistAuthorizer(
             options,
             new ProtectedTokenStore(
@@ -28,7 +29,7 @@ internal static class UnreadableWorkLists
             ),
             new PlaylistWriteAccess(TimeProvider.System)
         );
-        var settings = new PlaylistSettingsStore(file);
+        var settings = new PlaylistSettingsStore(ledger, options);
         playlist = new CachedPlaylist(
             new PlaylistReader(options),
             settings,
@@ -47,7 +48,7 @@ internal static class UnreadableWorkLists
                     StemsUnresolvedKey = PathIn("unresolved"),
                 }
             ),
-            new TrackInstructionStore(file),
+            new TrackInstructionStore(ledger),
             new BumpedTrack(),
             intake,
             playlist,

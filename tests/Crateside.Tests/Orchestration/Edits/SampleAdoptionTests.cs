@@ -1,4 +1,5 @@
 using Crateside.Core;
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Plans;
 using Crateside.Core.Playlist;
@@ -12,6 +13,8 @@ namespace Crateside.Tests.Orchestration.Edits;
 public sealed class SampleAdoptionTests : IDisposable
 {
     private const string Track = "aaaaaaaaaaa";
+
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -32,9 +35,7 @@ public sealed class SampleAdoptionTests : IDisposable
         Directory.CreateDirectory(_paths.StagingFolder);
         Directory.CreateDirectory(_paths.LibraryFolder);
 
-        _settings = new TrackInstructionStore(
-            new QueueFile(Options.Create(new PlaylistOptions()), Path.Combine(_root, "queue.json"))
-        );
+        _settings = new TrackInstructionStore(_ledger);
     }
 
     public void Dispose()

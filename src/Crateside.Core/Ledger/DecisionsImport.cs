@@ -4,6 +4,9 @@ using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Marks;
 using Crateside.Core.Orchestration.Verdict;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
+using Crateside.Core.WorkLists;
 using Microsoft.EntityFrameworkCore;
 
 namespace Crateside.Core.Ledger;
@@ -42,6 +45,18 @@ public sealed class DecisionsImport(CratesidePaths paths, LedgerStore ledger, Ti
                     FamiliarityJsonContext.Default.ListFamiliarityRecord,
                     context => !context.Familiarities.Any(),
                     AddFamiliarities
+                ),
+                ImportFile(
+                    paths.QueueFile,
+                    LegacyDecisionJsonContext.Default.LegacyQueueFile,
+                    context => !context.TrackInstructions.Any() && !context.PlaylistSettings.Any(),
+                    AddQueue
+                ),
+                ImportFile(
+                    paths.IntakeFile,
+                    LegacyDecisionJsonContext.Default.ListIntakeRecord,
+                    context => !context.Intake.Any(),
+                    AddIntake
                 ),
             }.OfType<DecisionFileImport>(),
         ];
@@ -147,6 +162,44 @@ public sealed class DecisionsImport(CratesidePaths paths, LedgerStore ledger, Ti
 
         return rows.Count;
     }
+
+    private static int AddQueue(LedgerContext context, LegacyQueueFile file)
+    {
+        var rows = (file.Tracks ?? [])
+            .Select(track => track.Current())
+            .Where(track => track.SaysSomething)
+            .DistinctBy(track => track.TrackKey, StringComparer.Ordinal)
+            .Select(TrackInstructionRow.From)
+            .ToList();
+
+        context.TrackInstructions.AddRange(rows);
+
+        // A file that never saved a setting leaves the row out, so configuration stays in charge.
+        if (file is { PlaylistId: null, RefreshMinutes: null, ConsumeOnArrival: not true })
+            return rows.Count;
+
+        context.PlaylistSettings.Add(
+            new PlaylistSettingsRow
+            {
+                PlaylistId = file.PlaylistId,
+                RefreshMinutes = file.RefreshMinutes,
+                ConsumeOnArrival = file.ConsumeOnArrival is true,
+            }
+        );
+
+        return rows.Count + 1;
+    }
+
+    private static int AddIntake(LedgerContext context, List<IntakeRecord> file)
+    {
+        var rows = file.DistinctBy(record => record.TrackKey, StringComparer.Ordinal)
+            .Select(IntakeRow.From)
+            .ToList();
+
+        context.Intake.AddRange(rows);
+
+        return rows.Count;
+    }
 }
 
 public enum DecisionFileOutcome
@@ -172,6 +225,58 @@ internal sealed record PageChoicesRecord(string TrackKey, List<PageChoice> Choic
     public List<SourceRemoval>? Removed { get; init; }
 }
 
+/// <summary>What <c>queue.json</c> held: the playlist settings and the per-track instructions.</summary>
+internal sealed record LegacyQueueFile
+{
+    public string? PlaylistId { get; init; }
+
+    public int? RefreshMinutes { get; init; }
+
+    public bool? ConsumeOnArrival { get; init; }
+
+    public List<LegacyTrackInstruction>? Tracks { get; init; }
+}
+
+/// <summary>An instruction as <c>queue.json</c> kept it, including the field that preceded <see cref="StemPlan"/>.</summary>
+internal sealed record LegacyTrackInstruction
+{
+    [JsonPropertyName("videoId")]
+    public required string TrackKey { get; init; }
+
+    public StemPlan? Plan { get; init; }
+
+    public bool InstrumentalRelease { get; init; }
+
+    public string? Name { get; init; }
+
+    public string? SourceUrl { get; init; }
+
+    public bool AddedByUrl { get; init; }
+
+    public string? DifferentFrom { get; init; }
+
+    public string? AcceptedUpload { get; init; }
+
+    public DateTimeOffset? CutRequestedAt { get; init; }
+
+    public bool Backfill { get; init; }
+
+    /// <summary>The instruction with the old instrumental-release flag turned into the plan it meant.</summary>
+    public TrackInstruction Current() =>
+        new()
+        {
+            TrackKey = TrackKey,
+            Plan = Plan ?? (InstrumentalRelease ? StemPlan.InstrumentalRelease : null),
+            Name = Name,
+            SourceUrl = SourceUrl,
+            AddedByUrl = AddedByUrl,
+            DifferentFrom = DifferentFrom,
+            AcceptedUpload = AcceptedUpload,
+            CutRequestedAt = CutRequestedAt,
+            Backfill = Backfill,
+        };
+}
+
 [JsonSourceGenerationOptions(
     WriteIndented = true,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
@@ -179,4 +284,6 @@ internal sealed record PageChoicesRecord(string TrackKey, List<PageChoice> Choic
     UseStringEnumConverter = true
 )]
 [JsonSerializable(typeof(List<PageChoicesRecord>))]
+[JsonSerializable(typeof(LegacyQueueFile))]
+[JsonSerializable(typeof(List<IntakeRecord>))]
 internal sealed partial class LegacyDecisionJsonContext : JsonSerializerContext { }

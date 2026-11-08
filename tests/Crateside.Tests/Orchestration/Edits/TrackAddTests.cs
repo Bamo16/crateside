@@ -1,4 +1,5 @@
 using Crateside.Core;
+using Crateside.Core.Ledger;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration.Download;
 using Crateside.Core.Orchestration.Edits;
@@ -15,6 +16,8 @@ namespace Crateside.Tests.Orchestration.Edits;
 public sealed class TrackAddTests : IDisposable
 {
     private const string Upload = "wpf8JgkOrnQ";
+
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
     private readonly string _scratch = Path.Combine(
         Path.GetTempPath(),
@@ -112,14 +115,7 @@ public sealed class TrackAddTests : IDisposable
     {
         Directory.CreateDirectory(_scratch);
 
-        var paths = new CratesidePaths();
-
-        settings = new TrackInstructionStore(
-            new QueueFile(
-                Options.Create(new PlaylistOptions()),
-                Path.Combine(_scratch, "queue.json")
-            )
-        );
+        settings = new TrackInstructionStore(_ledger);
 
         return new TrackAdd(
             TestLedger.Store(Path.Combine(_scratch, "runs.jsonl")),

@@ -2994,10 +2994,6 @@
               }
             ]
           },
-          "instrumentalRelease": {
-            "type": "boolean",
-            "description": "The pre-StemPlan fact, read so an existing `queue.json` converts itself\r\nand never written back."
-          },
           "name": {
             "type": [
               "null",

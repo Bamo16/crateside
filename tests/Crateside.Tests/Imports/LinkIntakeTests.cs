@@ -9,16 +9,15 @@ namespace Crateside.Tests.Imports;
 
 public sealed class LinkIntakeTests : IDisposable
 {
+    private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
+
     private readonly IntakeWorld _world = new();
 
     public void Dispose() => _world.Dispose();
 
     /// <summary>A stemforge-cli that writes a tagged FLAC into --output and says what the source was.</summary>
-    private sealed class FakeDownload(
-        IntakeWorld world,
-        Func<string, object?> reports,
-        string? failure = null
-    ) : IProcessRunner
+    private sealed class FakeDownload(Func<string, object?> reports, string? failure = null)
+        : IProcessRunner
     {
         public List<IReadOnlyList<string>> Calls { get; } = [];
 
@@ -38,16 +37,13 @@ public sealed class LinkIntakeTests : IDisposable
 
             var output = request.Arguments[request.Arguments.ToList().IndexOf("--output") + 1];
             var url = request.Arguments[1];
-            var file = world.TaggedFlac(output, "downloaded.flac", seed: url);
+            var file = IntakeWorld.TaggedFlac(output, "downloaded.flac", seed: url);
 
             return Task.FromResult(
                 new ProcessOutcome
                 {
                     ExitCode = 0,
-                    StandardOutput = JsonSerializer.Serialize(
-                        new[] { reports(file) },
-                        new JsonSerializerOptions(JsonSerializerDefaults.Web)
-                    ),
+                    StandardOutput = JsonSerializer.Serialize(new[] { reports(file) }, Web),
                     StandardError = string.Empty,
                 }
             );
@@ -96,10 +92,7 @@ public sealed class LinkIntakeTests : IDisposable
     [Fact]
     public async Task A_direct_link_becomes_a_file_keyed_track_in_the_imports()
     {
-        var download = new FakeDownload(
-            _world,
-            Reply(Source("Generic", "tone.flac", generic: true))
-        );
+        var download = new FakeDownload(Reply(Source("Generic", "tone.flac", generic: true)));
 
         var outcome = await Links(download)
             .TakeInAsync("http://127.0.0.1/tone.flac", ct: TestContext.Current.CancellationToken);
@@ -117,7 +110,6 @@ public sealed class LinkIntakeTests : IDisposable
     public async Task A_site_track_is_keyed_by_its_extractor_and_id_and_stays_in_the_working_set()
     {
         var download = new FakeDownload(
-            _world,
             Reply(Source("Soundcloud", "242136202", generic: false, "djfoo"))
         );
 
@@ -139,7 +131,7 @@ public sealed class LinkIntakeTests : IDisposable
     [Fact]
     public async Task A_link_already_taken_in_is_not_downloaded_again()
     {
-        var download = new FakeDownload(_world, Reply(Source("Soundcloud", "1", generic: false)));
+        var download = new FakeDownload(Reply(Source("Soundcloud", "1", generic: false)));
         var links = Links(download);
 
         await links.TakeInAsync(
@@ -158,7 +150,7 @@ public sealed class LinkIntakeTests : IDisposable
     [Fact]
     public async Task A_failed_download_is_refused_with_its_reason_and_leaves_nothing_behind()
     {
-        var outcome = await Links(new FakeDownload(_world, Reply([]), failure: "HTTP Error 404"))
+        var outcome = await Links(new FakeDownload(Reply([]), failure: "HTTP Error 404"))
             .TakeInAsync(
                 "https://example.com/gone.flac",
                 ct: TestContext.Current.CancellationToken
@@ -174,7 +166,7 @@ public sealed class LinkIntakeTests : IDisposable
     [Fact]
     public async Task An_old_stemforge_that_does_not_say_what_the_source_is_is_named_as_too_old()
     {
-        var outcome = await Links(new FakeDownload(_world, path => new { succeeded = true, path }))
+        var outcome = await Links(new FakeDownload(path => new { succeeded = true, path }))
             .TakeInAsync("https://example.com/a.flac", ct: TestContext.Current.CancellationToken);
 
         Assert.Equal(

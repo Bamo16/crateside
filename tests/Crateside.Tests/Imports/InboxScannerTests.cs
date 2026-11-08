@@ -27,7 +27,7 @@ public sealed class InboxScannerTests : IDisposable
     [Fact]
     public void A_file_is_taken_in_only_once_its_size_has_held_still_and_is_then_consumed()
     {
-        var file = _world.TaggedFlac(Inbox, "song.flac");
+        var file = IntakeWorld.TaggedFlac(Inbox, "song.flac");
 
         Assert.Empty(Scanner.Scan().Outcomes);
         _world.Time.Advance(InboxScanner.StillFor - TimeSpan.FromSeconds(1));
@@ -44,7 +44,7 @@ public sealed class InboxScannerTests : IDisposable
     [Fact]
     public void A_file_that_is_still_growing_is_left_alone()
     {
-        var file = _world.TaggedFlac(Inbox, "song.flac");
+        var file = IntakeWorld.TaggedFlac(Inbox, "song.flac");
 
         Scanner.Scan();
         _world.Time.Advance(InboxScanner.StillFor);
@@ -87,8 +87,8 @@ public sealed class InboxScannerTests : IDisposable
     public void A_zip_is_extracted_into_tracks_and_deleted()
     {
         var staging = Path.Combine(_world.Root, "zipsource");
-        var first = _world.TaggedFlac(staging, "1-01. One.flac", seed: "1");
-        var second = _world.TaggedFlac(staging, "1-02. Two.flac", seed: "2");
+        var first = IntakeWorld.TaggedFlac(staging, "1-01. One.flac", seed: "1");
+        var second = IntakeWorld.TaggedFlac(staging, "1-02. Two.flac", seed: "2");
         var zip = Path.Combine(Directory.CreateDirectory(Inbox).FullName, "album.zip");
 
         using (var archive = ZipFile.Open(zip, ZipArchiveMode.Create))
@@ -111,9 +111,9 @@ public sealed class InboxScannerTests : IDisposable
     [Fact]
     public void A_folder_named_for_a_recipe_gives_its_files_that_recipe_and_any_other_folder_does_not()
     {
-        _world.TaggedFlac(Path.Combine(Inbox, "Instrumental"), "a.flac", seed: "1");
-        _world.TaggedFlac(Path.Combine(Inbox, "instrumental", "disc 1"), "b.flac", seed: "2");
-        _world.TaggedFlac(Path.Combine(Inbox, "Some Album"), "c.flac", seed: "3");
+        IntakeWorld.TaggedFlac(Path.Combine(Inbox, "Instrumental"), "a.flac", seed: "1");
+        IntakeWorld.TaggedFlac(Path.Combine(Inbox, "instrumental", "disc 1"), "b.flac", seed: "2");
+        IntakeWorld.TaggedFlac(Path.Combine(Inbox, "Some Album"), "c.flac", seed: "3");
 
         var scan = SettleAndScan();
 

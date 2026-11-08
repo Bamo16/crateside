@@ -75,6 +75,64 @@ namespace Crateside.Core.Ledger.Migrations
                     b.ToTable("Genres", (string)null);
                 });
 
+            modelBuilder.Entity("Crateside.Core.Ledger.IntakeRow", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AddedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Artist")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ChannelTitle")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsUnavailable")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PageUrl")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("PremiumOutlook")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Release")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RemovalAttemptedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("RemovalFailureCanSucceedLater")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("RemovalFailureReason")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RemovedEntryId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SongTitle")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("TrackKey")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TrackKey")
+                        .IsUnique();
+
+                    b.ToTable("Intake", (string)null);
+                });
+
             modelBuilder.Entity("Crateside.Core.Ledger.PageChoiceRow", b =>
                 {
                     b.Property<long>("Id")
@@ -109,6 +167,28 @@ namespace Crateside.Core.Ledger.Migrations
                     b.HasIndex("TrackKey");
 
                     b.ToTable("PageChoices", (string)null);
+                });
+
+            modelBuilder.Entity("Crateside.Core.Ledger.PlaylistSettingsRow", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("ConsumeOnArrival")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("PlaylistId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("RefreshMinutes")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PlaylistSettings", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_PlaylistSettings_Only", "Id = 1");
+                        });
                 });
 
             modelBuilder.Entity("Crateside.Core.Ledger.RestatementRow", b =>
@@ -253,6 +333,40 @@ namespace Crateside.Core.Ledger.Migrations
                     b.HasIndex("TrackKey");
 
                     b.ToTable("SourceRemovals", (string)null);
+                });
+
+            modelBuilder.Entity("Crateside.Core.Ledger.TrackInstructionRow", b =>
+                {
+                    b.Property<string>("TrackKey")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AcceptedUpload")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("AddedByUrl")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Backfill")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CutRequestedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DifferentFrom")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Plan")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SourceUrl")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("TrackKey");
+
+                    b.ToTable("TrackInstructions", (string)null);
                 });
 
             modelBuilder.Entity("Crateside.Core.Ledger.TrackMarkRow", b =>

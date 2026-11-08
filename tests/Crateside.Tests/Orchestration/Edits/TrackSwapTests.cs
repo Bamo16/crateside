@@ -64,7 +64,7 @@ public sealed class TrackSwapTests : IDisposable
     }
 
     [Fact]
-    public void A_track_the_ledger_has_never_seen_can_still_be_swapped()
+    public void A_track_theLedger_has_never_seen_can_still_be_swapped()
     {
         // A premium shortfall stops a track before the verdict (ADR 0016).
         var plan = Swap().PlanFor("neverJudged", Replacement);
@@ -250,13 +250,7 @@ public sealed class TrackSwapTests : IDisposable
             TimeProvider.System
         );
 
-    private TrackInstructionStore Settings() =>
-        new(
-            new QueueFile(
-                Options.Create(new PlaylistOptions()),
-                Path.Combine(_root, "settings.json")
-            )
-        );
+    private TrackInstructionStore Settings() => new(Ledger);
 
     private JobStore Jobs() => new(Path.Combine(_root, "jobs.jsonl"));
 

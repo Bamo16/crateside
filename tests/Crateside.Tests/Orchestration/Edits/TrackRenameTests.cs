@@ -3,6 +3,7 @@ using AbleKit.Sets;
 using AbleKit.Tags;
 using Crateside.Core;
 using Crateside.Core.Ableton;
+using Crateside.Core.Ledger;
 using Crateside.Core.Library;
 using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Playlist;
@@ -16,6 +17,8 @@ namespace Crateside.Tests.Orchestration.Edits;
 public sealed class TrackRenameTests : IDisposable
 {
     private const string Video = "aaaaaaaaaaa";
+
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -50,13 +53,7 @@ public sealed class TrackRenameTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private TrackInstructionStore Settings() =>
-        new(
-            new QueueFile(
-                Options.Create(new PlaylistOptions()),
-                Path.Combine(_root, "settings.json")
-            )
-        );
+    private TrackInstructionStore Settings() => new(_ledger);
 
     private TrackRename Renamer(TrackInstructionStore? settings = null) =>
         new(

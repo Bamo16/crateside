@@ -23,7 +23,6 @@ public sealed class PlaylistConsumer(
         if (
             !settings.Read().ConsumeOnArrival
             || !authorizer.IsAuthorized
-            || !intake.IsDurable
             || playlist.Problem is not null
         )
             return;

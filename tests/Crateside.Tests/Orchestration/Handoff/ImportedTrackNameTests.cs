@@ -14,7 +14,10 @@ public sealed class ImportedTrackNameTests : IDisposable
 
     private (string Key, string Name) Import() =>
         _world.Files.TakeInFile(
-            _world.TaggedFlac(Path.Combine(_world.Root, "in"), "1-05 Fight Against Koopa.flac"),
+            IntakeWorld.TaggedFlac(
+                Path.Combine(_world.Root, "in"),
+                "1-05 Fight Against Koopa.flac"
+            ),
             IntakeMode.Copy
         ) switch
         {
