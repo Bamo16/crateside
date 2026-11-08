@@ -38,7 +38,7 @@
                             <span class="site">@shown.Page.Site</span>
                             <a href="@shown.Page.Url" target="_blank" rel="noopener noreferrer">@(shown.Page.Heading ?? shown.Page.Url)</a>
                         </span>
-                        <span class="keys mono">@(shown.Page.Keys is [] ? "no key stated" : string.Join("; ", shown.Page.Keys.Select(key => key.Key).Distinct()))</span>
+                        <span class="keys mono">@(shown.Page.Keys is [] ? "no key stated" : PageStatements.Of(shown.Page, shown.Page.Keys.Select(key => key.Key)))</span>
                         <span class="status">@shown.Status</span>
                         @if (shown.Page.Note is { Length: > 0 } note)
                         {
