@@ -38,6 +38,7 @@ public sealed class WorkingSet(CratesidePaths paths, TimeProvider? time = null)
 
     private readonly string _root = paths.WorkingFolder;
     private readonly string _imports = paths.ImportsFolder;
+    private readonly string _judging = paths.JudgingFolder;
 
     internal WorkingSet(string root, TimeProvider? time = null)
         : this(
@@ -45,6 +46,7 @@ public sealed class WorkingSet(CratesidePaths paths, TimeProvider? time = null)
             {
                 WorkingFolder = root,
                 ImportsFolder = Path.Combine(Path.GetDirectoryName(root) ?? root, "imports"),
+                JudgingFolder = Path.Combine(Path.GetDirectoryName(root) ?? root, "judging"),
             },
             time
         ) { }
@@ -72,6 +74,14 @@ public sealed class WorkingSet(CratesidePaths paths, TimeProvider? time = null)
 
         return path;
     }
+
+    /// <summary>
+    /// The folder a judge session runs in and writes its verdict to, created if it is not there yet.
+    /// Its name has no <c>~</c>: Claude Code refuses to write a path with a tilde before a digit
+    /// (it reads as a Windows 8.3 short name), and an imported track's key is <c>file~</c> and hex (ADR 0084).
+    /// </summary>
+    public string JudgeFolderFor(string trackKey) =>
+        Directory.CreateDirectory(JudgingPath(trackKey)).FullName;
 
     /// <summary>Where the whole-file evidence for this track belongs.</summary>
     public string EvidencePathFor(string trackKey) =>
@@ -291,6 +301,9 @@ public sealed class WorkingSet(CratesidePaths paths, TimeProvider? time = null)
         {
             if (Directory.Exists(DirectoryFor(trackKey)))
                 Directory.Delete(DirectoryFor(trackKey), recursive: true);
+
+            if (Directory.Exists(JudgingPath(trackKey)))
+                Directory.Delete(JudgingPath(trackKey), recursive: true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -299,6 +312,9 @@ public sealed class WorkingSet(CratesidePaths paths, TimeProvider? time = null)
     }
 
     private string DirectoryFor(string trackKey) => Path.Combine(_root, trackKey);
+
+    private string JudgingPath(string trackKey) =>
+        Path.Combine(_judging, trackKey.Replace('~', '-'));
 
     private static long TryLength(string path)
     {

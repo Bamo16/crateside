@@ -109,7 +109,8 @@ public sealed partial class VerdictRunner(
         }
 
         var folder = workingSet.Prepare(order.TrackKey);
-        var verdictPath = Path.Combine(folder, VerdictFileName);
+        var judgeFolder = workingSet.JudgeFolderFor(order.TrackKey);
+        var verdictPath = Path.Combine(judgeFolder, VerdictFileName);
         var session = Guid.NewGuid().ToString();
         var audio = direction?.Audio ?? SourceFor(order);
         var given = direction is null
@@ -130,7 +131,7 @@ public sealed partial class VerdictRunner(
         var outcome = await SessionAsync(
             ["--session-id", session],
             Prompt(order, verdictPath, lookups, direction, given, audio),
-            folder,
+            judgeFolder,
             order,
             tally,
             ct
@@ -215,7 +216,14 @@ public sealed partial class VerdictRunner(
             }
 
             File.Delete(verdictPath);
-            outcome = await SessionAsync(["--resume", session], prompt, folder, order, tally, ct);
+            outcome = await SessionAsync(
+                ["--resume", session],
+                prompt,
+                judgeFolder,
+                order,
+                tally,
+                ct
+            );
         }
     }
 

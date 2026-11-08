@@ -56,7 +56,7 @@ this song is named as left out, and one they counted or added is marked.
 
 ## The verdict file
 
-`verdict.json` in the working set, UTF-8 JSON in the shape the instructions give. crateside
+`verdict.json` in the track's judging folder (`judging\<key>`, with a `~` in the key written as `-`: [ADR 0084](adr/0084-the-judge-runs-and-writes-in-a-folder-with-no-tilde.md)), UTF-8 JSON in the shape the instructions give. crateside
 fills in what the session cannot know: the time, the upload, the input file, the evidence, and
 the song identity (kept from an earlier run of the same upload). It is checked against the
 [ledger's rules](ledger.md#what-is-refused) before anything is recorded. A file that is not

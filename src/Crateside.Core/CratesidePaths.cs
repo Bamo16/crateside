@@ -301,6 +301,13 @@ public sealed class CratesidePaths
         set;
     }
 
+    /// <summary>Where each judge session runs and writes its verdict, one folder per track, named without a tilde (ADR 0084).</summary>
+    public string JudgingFolder
+    {
+        get => field ?? Local("judging");
+        set;
+    }
+
     /// <summary>The audio of tracks that are not on YouTube, one folder per track key; never pruned (ADR 0077).</summary>
     public string ImportsFolder
     {
