@@ -91,6 +91,12 @@ public sealed record StageFlow(int Pass, string Reason, IReadOnlyList<FlowStep> 
         if (row.WaitingForPerson && stages.Contains(JobStage.Verdict))
             return new(label, FlowState.YourTurn, Note: "waiting for you");
 
+        if (
+            row is { WaitingForJudge: true, Refusal: { } refusal }
+            && stages.Contains(JobStage.Verdict)
+        )
+            return new(label, FlowState.NotYet, Note: refusal.Short(row.Judge));
+
         if (row.WaitingForJudge && stages.Contains(JobStage.Verdict))
             return new(
                 label,

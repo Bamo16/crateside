@@ -61,7 +61,7 @@ public class DrainControl : DrainSignal
 
     public void Pause() => Set(paused: true);
 
-    public void Resume() => Set(paused: false);
+    public virtual void Resume() => Set(paused: false);
 
     /// <summary>Records what the worker is on, for the UI. Pass null when it goes idle.</summary>
     public void Report(string? activity)

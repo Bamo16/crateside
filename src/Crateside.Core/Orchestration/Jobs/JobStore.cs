@@ -147,6 +147,7 @@ public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, St
                 JobStatus.Succeeded => null,
                 _ => update.Error ?? previous?.Error,
             },
+            HeldUntil = update.Status is JobStatus.Held ? update.HeldUntil : null,
             Strikes = (previous?.Strikes ?? 0) + (update.Status is JobStatus.Failed ? 1 : 0),
             AdoptedAt = update.Adopted is true ? update.Timestamp : null,
             Promise = update switch

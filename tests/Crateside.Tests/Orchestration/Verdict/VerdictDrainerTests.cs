@@ -290,6 +290,55 @@ public sealed class VerdictDrainerTests : IDisposable
     }
 
     [Fact]
+    public async Task Five_refusals_in_a_row_pause_judging_and_only_the_users_resume_tries_again()
+    {
+        Hold(FullEvidence, withSource: false);
+        _sessions.Output =
+            """{"type":"result","subtype":"success","is_error":true,"num_turns":1,"api_error_status":401,"result":"Failed to authenticate. API Error: 401 DeepSeek rejected every saved login. Log in and connect again."}""";
+
+        foreach (var _ in Enumerable.Range(0, JudgeBackoff.PauseAfter))
+        {
+            Assert.False(_control.IsPaused);
+
+            await JudgeBackfillAsync();
+            _time.Advance(TimeSpan.FromMinutes(31));
+        }
+
+        Assert.True(_control.IsPausedByRefusals);
+        Assert.Equal(JudgeBackoff.PauseAfter, _sessions.Prompts.Count);
+        Assert.Contains("DeepSeek rejected every saved login", _control.Backoff.Last?.Reason);
+
+        var stopped = await JudgeBackfillAsync();
+
+        Assert.Equal(StageOutcome.Idle, stopped.Outcome);
+        Assert.Equal(JudgeBackoff.PauseAfter, _sessions.Prompts.Count);
+        Assert.True(_jobs.TryGet(TrackKey, JobStage.Verdict, out var job));
+        Assert.Equal(0, job.Strikes);
+
+        _control.Resume();
+
+        await JudgeBackfillAsync();
+
+        Assert.Equal(JudgeBackoff.PauseAfter + 1, _sessions.Prompts.Count);
+    }
+
+    [Fact]
+    public async Task The_spend_down_does_not_try_a_refusing_endpoint_after_the_fifth_refusal()
+    {
+        Hold(FullEvidence, withSource: false);
+
+        foreach (var _ in Enumerable.Range(0, JudgeBackoff.PauseAfter))
+            _control.Backoff.Refused("no login", retryAfter: null);
+
+        _time.Advance(TimeSpan.FromHours(2));
+
+        var tick = await JudgeBackfillAsync();
+
+        Assert.Equal(StageOutcome.Idle, tick.Outcome);
+        Assert.Empty(_sessions.Prompts);
+    }
+
+    [Fact]
     public async Task A_session_the_endpoint_served_ends_the_backoff()
     {
         Hold(FullEvidence, withSource: false);

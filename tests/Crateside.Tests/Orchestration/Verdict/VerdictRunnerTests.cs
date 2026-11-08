@@ -871,6 +871,44 @@ public sealed class VerdictRunnerTests : IDisposable
 
     [Theory]
     [InlineData(
+        "Failed to authenticate. API Error: 401 DeepSeek rejected every saved login. Log in and connect again.",
+        "refused the session: DeepSeek rejected every saved login. Log in and connect again."
+    )]
+    [InlineData(
+        "Failed to authenticate. API Error: 401 {\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"authentication_error\\\",\\\"message\\\":\\\"DeepSeek session expired. Connect again.\\\"}}",
+        "refused the session: DeepSeek session expired. Connect again."
+    )]
+    [InlineData(
+        "API Error: 401 DeepSeek session expired. Connect again.",
+        "refused the session: DeepSeek session expired. Connect again."
+    )]
+    [InlineData(
+        "Failed to authenticate. API Error: 401 Invalid API key.",
+        "refused its key: Invalid API key."
+    )]
+    [InlineData("Failed to authenticate.", "refused the session")]
+    public async Task A_refused_login_is_reported_in_the_endpoints_words_and_a_key_only_when_it_says_key(
+        string error,
+        string reason
+    )
+    {
+        GiveEvidence();
+        Session(
+            writes: null,
+            stdout: $$"""{"type":"result","subtype":"success","is_error":true,"api_error_status":401,"result":"{{error}}"}"""
+        );
+
+        var result = await RunAsync();
+
+        Assert.True(result.IsRefused);
+        Assert.Contains(reason, result.Error);
+
+        if (!reason.Contains("key", StringComparison.Ordinal))
+            Assert.DoesNotContain("its key", result.Error);
+    }
+
+    [Theory]
+    [InlineData(
         """{"type":"result","subtype":"success","is_error":true,"num_turns":1,"duration_ms":412,"api_error_status":429,"result":"API Error: Request rejected (429) · DeepSeek rate limit: Messages too frequent. Try again later."}""",
         "reported its rate limit"
     )]

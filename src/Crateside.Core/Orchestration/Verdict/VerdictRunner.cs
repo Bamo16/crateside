@@ -822,8 +822,17 @@ public sealed partial class VerdictRunner(
         if (Mentions(streams, "ECONNREFUSED", "Unable to connect to API"))
             return Refused("the judge's endpoint cannot be reached");
 
-        if (Mentions(streams, "Failed to authenticate"))
-            return Refused("the judge's endpoint refused its key");
+        if (status is 401 or 403 || Mentions(streams, "Failed to authenticate"))
+            return Refused(
+                EndpointError.WordsOf(EndpointError.ResultOf(outcome.StandardOutput)) switch
+                {
+                    // "refused its key" only where the endpoint speaks of a key.
+                    { } words when words.Contains("key", StringComparison.OrdinalIgnoreCase) =>
+                        $"the judge's endpoint refused its key: {words}",
+                    { } words => $"the judge's endpoint refused the session: {words}",
+                    null => "the judge's endpoint refused the session",
+                }
+            );
 
         var error = ApiError(outcome);
 
@@ -892,12 +901,10 @@ public sealed partial class VerdictRunner(
     /// (any 422 prints as "unrecognized_model").
     /// </summary>
     private static string? ApiError(ProcessOutcome outcome) =>
-        SessionApiError.Match(outcome.StandardOutput) is { Success: true } match
-            ? match.Groups["Message"].Value
+        EndpointError.ResultOf(outcome.StandardOutput) is { } result
+        && result.StartsWith("API Error:", StringComparison.Ordinal)
+            ? result
             : null;
-
-    [GeneratedRegex(@"""result"":""(?<Message>API Error:[^""]*)""", RegexOptions.ExplicitCapture)]
-    private static partial Regex SessionApiError { get; }
 
     private sealed record DetectedWindow(RunWindow Window, string? Evidence, string? Error);
 

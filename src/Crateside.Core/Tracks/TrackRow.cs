@@ -269,6 +269,9 @@ public sealed record TrackRow
     /// <summary>Detected and never judged: the judge has it, nothing about its key is missing yet.</summary>
     public bool WaitingForJudge { get; init; }
 
+    /// <summary>The judge's endpoint refused the last session for this track, which is still waiting to be judged (ADR 0070).</summary>
+    public JudgeRefusal? Refusal { get; init; }
+
     /// <summary>The rules left its key open and there is no judge, so the person decides it on its page (ADR 0076).</summary>
     public bool WaitingForPerson { get; init; }
 
@@ -404,6 +407,7 @@ public sealed record TrackRow
         {
             TrackState.Queued or TrackState.JudgedInLine when WaitingForPerson => "waiting for you",
             TrackState.Queued when Lookalike is not null => "same song?",
+            TrackState.Queued when WaitingForJudge && Refusal is not null => "judge refused",
             TrackState.Queued when WaitingForJudge => Judge is JudgeStanding.Paused
                 ? "waiting for the judge or you"
                 : "waiting to be judged",
@@ -460,6 +464,7 @@ public sealed record TrackRow
                 "decide its key on its page",
             TrackState.Queued when Lookalike is { } like =>
                 $"is this {like.DisplayName}? judging waits for your answer",
+            TrackState.Queued when WaitingForJudge && Refusal is { } refusal => refusal.Says(Judge),
             TrackState.Queued when WaitingForJudge => Judge switch
             {
                 JudgeStanding.Paused =>
@@ -514,6 +519,8 @@ public sealed record TrackRow
         {
             { Verdict: null, WaitingForPerson: true } =>
                 "No ruling and no judge: decide its key on its page.",
+            { Verdict: null, WaitingForJudge: true, Refusal: { } refusal } =>
+                $"No ruling yet; {refusal.Says(Judge)}.",
             { Verdict: null, WaitingForJudge: true, Judge: JudgeStanding.Paused } =>
                 "No ruling yet, and judging is paused: the judge or you can decide its key.",
             { Verdict: null } => "Never judged.",

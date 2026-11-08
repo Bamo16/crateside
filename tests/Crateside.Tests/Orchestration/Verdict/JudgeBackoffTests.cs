@@ -115,6 +115,98 @@ public sealed class JudgeBackoffTests : IDisposable
         );
     }
 
+    [Fact]
+    public void Five_refusals_in_a_row_exhaust_the_backoff()
+    {
+        foreach (var _ in Enumerable.Range(0, JudgeBackoff.PauseAfter - 1))
+            Refuse();
+
+        Assert.False(Backoff.IsExhausted);
+
+        Refuse();
+
+        Assert.True(Backoff.IsExhausted);
+        Assert.Equal(JudgeBackoff.PauseAfter, Backoff.Refusals);
+    }
+
+    [Fact]
+    public void A_session_served_between_refusals_starts_the_count_again()
+    {
+        foreach (var _ in Enumerable.Range(0, JudgeBackoff.PauseAfter - 1))
+            Refuse();
+
+        Backoff.Served();
+        Refuse();
+
+        Assert.False(Backoff.IsExhausted);
+        Assert.Equal(1, Backoff.Refusals);
+    }
+
+    [Fact]
+    public void Clearing_forgets_the_hold_and_the_count_across_a_restart_too()
+    {
+        var store = new PauseStore(Path.Combine(_directory, "paused.json"));
+        var before = new VerdictControl(store, _time);
+
+        foreach (var _ in Enumerable.Range(0, 3))
+            before.Backoff.Refused("no login", retryAfter: null);
+
+        before.Backoff.Clear();
+
+        var after = new VerdictControl(store, _time).Backoff;
+
+        Assert.Null(after.Hold);
+        Assert.Equal(0, after.Refusals);
+    }
+
+    [Fact]
+    public void A_restart_after_the_fifth_refusal_comes_up_paused_with_the_count_kept()
+    {
+        var store = new PauseStore(Path.Combine(_directory, "paused.json"));
+        var before = new VerdictControl(store, _time);
+
+        foreach (var _ in Enumerable.Range(0, JudgeBackoff.PauseAfter))
+            before.Backoff.Refused("no login", retryAfter: null);
+
+        var after = new VerdictControl(store, _time);
+
+        Assert.True(after.IsPaused);
+        Assert.True(after.IsPausedByRefusals);
+        Assert.Equal("no login", after.Backoff.Last?.Reason);
+    }
+
+    [Fact]
+    public void A_restart_after_four_refusals_is_not_paused()
+    {
+        var store = new PauseStore(Path.Combine(_directory, "paused.json"));
+        var before = new VerdictControl(store, _time);
+
+        foreach (var _ in Enumerable.Range(0, JudgeBackoff.PauseAfter - 1))
+            before.Backoff.Refused("no login", retryAfter: null);
+
+        Assert.False(new VerdictControl(store, _time).IsPaused);
+    }
+
+    [Fact]
+    public void Resuming_clears_the_hold_the_count_and_what_a_restart_would_remember()
+    {
+        var store = new PauseStore(Path.Combine(_directory, "paused.json"));
+        var control = new VerdictControl(store, _time);
+
+        foreach (var _ in Enumerable.Range(0, JudgeBackoff.PauseAfter))
+            control.Backoff.Refused("no login", retryAfter: null);
+
+        control.Pause();
+        control.SetHold(control.Backoff.Last);
+        control.Resume();
+
+        Assert.False(control.IsPaused);
+        Assert.Null(control.Hold);
+        Assert.Null(control.Backoff.Hold);
+        Assert.Equal(0, control.Backoff.Refusals);
+        Assert.False(new VerdictControl(store, _time).IsPaused);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_directory))

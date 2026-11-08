@@ -53,4 +53,33 @@ nothing wrong, and each was resumed once for a second session before failing.
   the next refusal wait a minute again, so the backoff looked as if it never grew.
 - Claude Code's own retries inside one session are untouched; crateside decides only when the
   next session starts.
-- A user's pause and resume clears the shown hold but not the backoff, so judging still waits it out.
+- ~~A user's pause and resume clears the shown hold but not the backoff, so judging still waits it out.~~ Superseded by the amendment below.
+
+## Amendment, 2026-11-08 (#181)
+
+From 2026-11-03 the endpoint refused every session for days. **Measured** in `jobs.jsonl`: the
+judge retried at 30-minute intervals all night, about 30 refusals, while the Track page said only
+"waiting to be judged". The reason on record was "refused its key", which sent the maintainer to
+check an API key that was fine; the endpoint's own error read "DeepSeek rejected every saved
+login. Log in and connect again." (the account was suspended). The 30-minute hold also outlived
+the fix, because only a served session cleared it.
+
+- **Five refusals in a row, with no served session between, pause judging by itself**
+  (`JudgeBackoff.PauseAfter`), as a spent Claude allowance does. The waits before it are 1, 2, 4, 8
+  and 16 minutes, so crateside gives up after about half an hour. The Dashboard's Judging card says
+  so ("Paused by crateside after 5 refusals in a row: <reason>. Resume to try again."). A pause
+  made this way is not stored as the user's: the count in `paused.json` is, so a restart comes up
+  paused while the count stands. The spend-down stops on the same count.
+- **The user's resume is the only way out.** Resume clears the hold and the count, here and in
+  `paused.json`, so after fixing the cause the next pass tries at once. This replaces the old
+  consequence that a pause and resume left the backoff standing.
+- **The reason carries the endpoint's own words.** A rejected login is "the judge's endpoint
+  refused the session: <what the endpoint said>", read from the `result` of Claude Code's JSON
+  (lead-in "Failed to authenticate." and "API Error: 401" removed, and the `message` of a JSON error
+  body taken out). "Refused its key" is said only when those words mention a key. A 401 or 403
+  that Claude Code did not word as "Failed to authenticate" is classified the same way. Nothing
+  here knows any bridge or provider by name.
+- **A refusal is shown on the track.** A track whose last verdict attempt was refused (a `Held`
+  job that stated a wait) reads "judge refused" on its chip, and its Next line, the Track page's
+  Judge step and its confidence note read "judge refused: <reason> · next try 4:15 PM", or
+  "· judging paused" once judging is paused. It is still never a strike, and never in the ledger.
