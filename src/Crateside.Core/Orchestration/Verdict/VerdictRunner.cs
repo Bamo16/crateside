@@ -578,13 +578,15 @@ public sealed partial class VerdictRunner(
 
         tally.Turns += result["num_turns"]?.GetValue<int>() ?? 0;
         tally.Seconds += result["duration_ms"]?.GetValue<double>() / 1000 ?? 0;
+        tally.CostUsd += result["total_cost_usd"]?.GetValue<double>() ?? 0;
 
         log.LogInformation(
-            "Judge session for {TrackKey} on {Model}: {Turns} turns, {Seconds:0} s",
+            "Judge session for {TrackKey} on {Model}: {Turns} turns, {Seconds:0} s, ${CostUsd:0.00}",
             order.TrackKey,
             _options.Model,
             result["num_turns"]?.GetValue<int>(),
-            result["duration_ms"]?.GetValue<double>() / 1000
+            result["duration_ms"]?.GetValue<double>() / 1000,
+            result["total_cost_usd"]?.GetValue<double>()
         );
     }
 
@@ -790,7 +792,7 @@ public sealed partial class VerdictRunner(
 
         return string.Create(
             CultureInfo.InvariantCulture,
-            $"{verdict}, {"section".ToQuantity(run.Sections.Count)}; {"turn".ToQuantity(tally.Turns)} on {model}, {tally.Seconds:0} s"
+            $"{verdict}, {"section".ToQuantity(run.Sections.Count)}; {"turn".ToQuantity(tally.Turns)} on {model}, {tally.Seconds:0} s{(tally.CostUsd > 0 ? $", ${tally.CostUsd:0.00}" : string.Empty)}"
         );
     }
 
@@ -914,6 +916,9 @@ public sealed partial class VerdictRunner(
         public int Turns { get; set; }
 
         public double Seconds { get; set; }
+
+        /// <summary>Claude Code's own estimate; zero when the endpoint isn't one it can price.</summary>
+        public double CostUsd { get; set; }
     }
 }
 
