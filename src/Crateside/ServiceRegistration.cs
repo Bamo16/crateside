@@ -266,8 +266,14 @@ public static class ServiceRegistration
         return services;
     }
 
-    private static IServiceCollection AddMarks(this IServiceCollection services) =>
+    private static IServiceCollection AddMarks(this IServiceCollection services)
+    {
         services.AddSingleton<TrackMarkStore>();
+        services.AddSingleton<MeasuringExclusionStore>();
+        services.AddSingleton<MeasuringExclusionsReader>();
+
+        return services;
+    }
 
     private static IServiceCollection AddNaming(this IServiceCollection services)
     {

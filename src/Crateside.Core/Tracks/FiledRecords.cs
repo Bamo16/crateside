@@ -18,6 +18,10 @@ public sealed record FiledRecords
     public IReadOnlyDictionary<string, TrackMarkRecord> Marks { get; init; } =
         new Dictionary<string, TrackMarkRecord>();
 
+    /// <summary>Whether, and where, detectors are not to be judged on the track (ADR 0085).</summary>
+    public IReadOnlyDictionary<string, MeasuringExclusion> MeasuringExclusions { get; init; } =
+        new Dictionary<string, MeasuringExclusion>();
+
     /// <summary>The names StemForge gave when asked, by video ID (ADR 0014).</summary>
     public IReadOnlyDictionary<string, ResolvedName> ResolvedNames { get; init; } =
         new Dictionary<string, ResolvedName>();
@@ -32,6 +36,7 @@ public sealed class FiledRecordsReader(
     GenreStore genres,
     FamiliarityStore familiarity,
     TrackMarkStore marks,
+    MeasuringExclusionStore exclusions,
     ResolvedNameStore names,
     TrackInstructionStore instructions
 )
@@ -43,6 +48,7 @@ public sealed class FiledRecordsReader(
             Genres = FiledUnder(genres.Read(), keys),
             Familiarity = FiledUnder(familiarity.Read(), keys),
             Marks = FiledUnder(marks.Read(), keys),
+            MeasuringExclusions = FiledUnder(exclusions.Read(), keys),
             ResolvedNames = FiledUnder(names.Read(), keys),
             Instructions = FiledUnder(
                 instructions.Read().ToDictionary(instruction => instruction.TrackKey),

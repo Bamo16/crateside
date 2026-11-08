@@ -186,6 +186,18 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         var marks = new TrackMarkStore(ledger);
         marks.Set(Song, TrackMark.OddBars, marked: true);
 
+        var exclusions = new MeasuringExclusionStore(ledger);
+        exclusions.AddStretch(
+            Song,
+            new MeasuringStretch
+            {
+                StartSeconds = 6.5,
+                EndSeconds = 9.5,
+                Typed = "3–4",
+                Reason = "Slows down and turns to chaos",
+            }
+        );
+
         var names = new ResolvedNameStore(Path.Combine(_root, "names.json"));
         names.Save(
             Waiting,
@@ -256,6 +268,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
                 genres,
                 familiarity,
                 marks,
+                exclusions,
                 names,
                 new TrackInstructionStore(ledger)
             ),
@@ -269,6 +282,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         builder.Services.AddCratesideApi();
         builder.Services.AddSingleton(_tracks);
         builder.Services.AddSingleton(details);
+        builder.Services.AddSingleton(new MeasuringExclusionsReader(_tracks, exclusions));
 
         _app = builder.Build();
         _app.MapCratesideApi();

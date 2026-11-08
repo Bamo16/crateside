@@ -6,6 +6,27 @@
     "version": "1.0.0"
   },
   "paths": {
+    "/api/measuring-exclusions": {
+      "get": {
+        "tags": [
+          "Tracks"
+        ],
+        "summary": "The tracks, and stretches of tracks, marked as not fit for measuring detectors, by video ID.",
+        "operationId": "ListMeasuringExclusions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeasuringExclusionsView"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/tracks": {
       "get": {
         "tags": [
@@ -930,6 +951,13 @@
               "$ref": "#/components/schemas/TrackMarkRecord"
             }
           },
+          "measuringExclusions": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MeasuringExclusion"
+            },
+            "description": "Whether, and where, detectors are not to be judged on the track (ADR 0085)."
+          },
           "resolvedNames": {
             "type": "object",
             "additionalProperties": {
@@ -1472,6 +1500,85 @@
           "NotFound",
           "Unreachable"
         ]
+      },
+      "MeasuringExclusion": {
+        "required": [
+          "song"
+        ],
+        "type": "object",
+        "properties": {
+          "song": {
+            "type": "string",
+            "description": "The ledger's song identity, or the upload's video ID for a song it never judged."
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Why the whole track is out; null when only the stretches are."
+          },
+          "stretches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeasuringStretch"
+            }
+          },
+          "wholeTrack": {
+            "type": "boolean"
+          }
+        },
+        "description": "A song marked as not fit for measuring detectors: all of it, or the stretches given (ADR 0085)."
+      },
+      "MeasuringExclusionsView": {
+        "required": [
+          "tracks"
+        ],
+        "type": "object",
+        "properties": {
+          "tracks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackExclusion"
+            }
+          }
+        },
+        "description": "Every track marked as not fit for measuring detectors, by the video ID the harnesses know it by (ADR 0085)."
+      },
+      "MeasuringStretch": {
+        "required": [
+          "startSeconds",
+          "endSeconds",
+          "typed",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "startSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "endSeconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "typed": {
+            "type": "string",
+            "description": "The range as the maintainer typed it: clip bars with a warp, m:ss without."
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "description": "One stretch of a track that detectors are not judged on, in seconds of the source file."
       },
       "PageChoiceKind": {
         "enum": [
@@ -2980,6 +3087,39 @@
           }
         },
         "description": "Everything crateside knows about one track, gathered from the stores the pages read (#167)."
+      },
+      "TrackExclusion": {
+        "required": [
+          "videoId",
+          "song",
+          "wholeTrack"
+        ],
+        "type": "object",
+        "properties": {
+          "videoId": {
+            "type": "string"
+          },
+          "song": {
+            "type": "string"
+          },
+          "wholeTrack": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Why the whole track is out; null when only stretches are."
+          },
+          "stretches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MeasuringStretch"
+            }
+          }
+        },
+        "description": "One track's exclusion: all of it, or the stretches given, in seconds of the source file."
       },
       "TrackFilter": {
         "enum": [

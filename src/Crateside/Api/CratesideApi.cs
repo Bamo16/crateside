@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Crateside.Core.Marks;
 using Crateside.Core.Tracks;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -57,7 +58,26 @@ public static class CratesideApi
                 "One track: its row, verdict evidence, job history, stems with their warps, and its store records."
             );
 
+        endpoints
+            .MapGet("/api/measuring-exclusions", ReadExclusionsAsync)
+            .WithTags("Tracks")
+            .WithName("ListMeasuringExclusions")
+            .WithSummary(
+                "The tracks, and stretches of tracks, marked as not fit for measuring detectors, by video ID."
+            );
+
         return endpoints;
+    }
+
+    private static async Task<Ok<MeasuringExclusionsView>> ReadExclusionsAsync(
+        TracksService tracks,
+        MeasuringExclusionsReader exclusions,
+        CancellationToken ct
+    )
+    {
+        await tracks.EnsureFreshAsync(Freshness, ct);
+
+        return TypedResults.Ok(exclusions.Read());
     }
 
     private static async Task<Results<Ok<TracksView>, ProblemHttpResult>> ListAsync(
@@ -120,4 +140,5 @@ public static class CratesideApi
 )]
 [JsonSerializable(typeof(TracksView))]
 [JsonSerializable(typeof(TrackDetails))]
+[JsonSerializable(typeof(MeasuringExclusionsView))]
 internal sealed partial class ApiJsonContext : JsonSerializerContext { }

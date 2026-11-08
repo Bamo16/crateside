@@ -19,6 +19,7 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
     public DbSet<SourceRemovalRow> SourceRemovals => Set<SourceRemovalRow>();
 
     public DbSet<TrackMarkRow> TrackMarks => Set<TrackMarkRow>();
+    public DbSet<MeasuringExclusionRow> MeasuringExclusions => Set<MeasuringExclusionRow>();
 
     public DbSet<GenreRow> Genres => Set<GenreRow>();
 
@@ -137,6 +138,13 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
             mark.ToTable("TrackMarks");
             mark.HasKey(row => new { row.Song, row.Mark });
             mark.Property(row => row.Song).UseCollation("NOCASE");
+        });
+
+        model.Entity<MeasuringExclusionRow>(exclusion =>
+        {
+            exclusion.ToTable("MeasuringExclusions");
+            exclusion.HasIndex(row => row.Song);
+            exclusion.Property(row => row.Song).UseCollation("NOCASE");
         });
 
         model.Entity<GenreRow>(genre =>
