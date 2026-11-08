@@ -223,6 +223,24 @@ public sealed class VerdictRunnerTests : IDisposable
         GiveAudio();
         Session(
             Verdict,
+            stdout: """{"type":"result","subtype":"success","is_error":false,"num_turns":3,"duration_ms":150400,"total_cost_usd":0.4213,"result":"done"}"""
+        );
+
+        var result = await RunAsync();
+
+        Assert.Equal(
+            $"A minor, HIGH, 0 sections; 3 turns on {Judge.Model}, 150 s, $0.42",
+            result.Summary
+        );
+    }
+
+    [Fact]
+    public async Task A_session_with_no_reported_cost_leaves_the_cost_out_of_the_summary()
+    {
+        GiveEvidence();
+        GiveAudio();
+        Session(
+            Verdict,
             stdout: """{"type":"result","subtype":"success","is_error":false,"num_turns":3,"duration_ms":150400,"result":"done"}"""
         );
 
