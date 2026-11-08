@@ -264,7 +264,7 @@ internal sealed class DemoLibrary
         BeatJsonContext.Default.BeatFile.WriteFile(_paths.BeatCache, new BeatFile(2, _beats));
     }
 
-    private static void WriteSongRecords(LedgerStore ledger)
+    private void WriteSongRecords(LedgerStore ledger)
     {
         var genres = new GenreStore(ledger);
         var familiarity = new FamiliarityStore(ledger);
