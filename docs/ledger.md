@@ -67,10 +67,21 @@ restores both. They change; a run does not.
   JSON list), by `Song`.
 - **Familiarities**: a song's reach as Deezer measured it and the familiarity the person settled, by
   `Song`.
+- **TrackInstructions**: what the person told crateside about a track
+  ([ADR 0083](adr/0083-track-instructions-playlist-settings-and-intake-live-in-the-ledger-database.md)),
+  by `TrackKey` (a video ID, case-sensitive): the stem plan (`Plan`, JSON), `Name`, `SourceUrl`,
+  `DifferentFrom`, `AcceptedUpload`, `CutRequestedAt`, `AddedByUrl`, `Backfill`.
+- **PlaylistSettings**: one row (`Id = 1`): `PlaylistId`, `RefreshMinutes`, `ConsumeOnArrival`.
+  No row means configuration decides.
+- **Intake**: one row per track crateside has taken on, in arrival order, `TrackKey` unique: what
+  the playlist or the file said about it (`Title`, `ChannelTitle`, `AddedAt`, `PremiumOutlook`,
+  `PageUrl`, `Artist`, `SongTitle`, `Release` as JSON) and whether its playlist entry was offered
+  back (`RemovalAttemptedAt`, `RemovalFailureReason`, `RemovalFailureCanSucceedLater`,
+  `RemovedEntryId`).
 
 A `Song` is the song identity, or the upload's video ID for a song never judged; it moves to the song
 when the verdict arrives (ADR 0071). At start, a pending `page-choices.json`, `track-marks.json`,
-`genres.json` or `familiarity.json` is imported once into an empty table and renamed
+`genres.json`, `familiarity.json`, `queue.json` or `intake.json` is imported once into an empty table and renamed
 `<name>.imported-<yyyyMMdd>`.
 
 The 24-key tag is never stored. It is the **collapse** of the center: the tonic kept, the
@@ -111,6 +122,6 @@ join on. A YouTube track's is its video ID; any other track's is `<source>~<id>`
 ([ADR 0077](adr/0077-a-track-that-is-not-on-youtube-is-keyed-by-its-source-and-named-from-its-tags.md)).
 `TrackKeys` in `Crateside.Core` is the one place that knows these shapes. **Nothing stored changed
 name**: the JSON files and API keep `videoId` and `sourceVideoId`, and the ledger's columns are the
-ones above, so a stored key is read as before whatever it holds. `intake.json` gained optional
+ones above, so a stored key is read as before whatever it holds. The intake (once `intake.json`) gained optional
 `pageUrl`, `artist`, `songTitle` and `release` fields on a record, which older readers ignore, and
 `recipe.json` is new.

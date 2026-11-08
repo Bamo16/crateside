@@ -1,5 +1,6 @@
 using Crateside.Core;
 using Crateside.Core.Ableton;
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Loop;
 using Crateside.Core.Playlist;
@@ -10,6 +11,8 @@ namespace Crateside.Tests.Tracks;
 
 public sealed class CacheKeeperTests : IDisposable
 {
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
+
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
         "crateside-tests",
@@ -34,7 +37,8 @@ public sealed class CacheKeeperTests : IDisposable
         var index = Path.Combine(_directory, "source-index.json");
         var workLists = UnreadableWorkLists.In(
             _directory,
-            new IntakeStore(Path.Combine(_directory, "intake.json")),
+            _ledger,
+            new IntakeStore(_ledger),
             out _
         );
 
@@ -61,7 +65,8 @@ public sealed class CacheKeeperTests : IDisposable
         var tempos = new WarpTempoReader(cache);
         var workLists = UnreadableWorkLists.In(
             _directory,
-            new IntakeStore(Path.Combine(_directory, "intake.json")),
+            _ledger,
+            new IntakeStore(_ledger),
             out _
         );
         var set = new WorkingSet(Path.Combine(_directory, "working"));

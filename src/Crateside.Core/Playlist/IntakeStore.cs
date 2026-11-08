@@ -1,44 +1,25 @@
 using System.Text.Json.Serialization;
+using Crateside.Core.Ledger;
 using Crateside.Core.WorkLists;
+using Microsoft.EntityFrameworkCore;
 
 namespace Crateside.Core.Playlist;
 
 /// <summary>
-/// What crateside keeps in <c>%APPDATA%\crateside\intake.json</c> about a playlist entry, so it
-/// never has to read the entry again (ADR 0021).
+/// What crateside keeps in the ledger database about a playlist entry, so it never has to read the
+/// entry again (ADR 0021, ADR 0083). A write that fails throws.
 /// </summary>
-public sealed class IntakeStore(CratesidePaths paths)
+public sealed class IntakeStore(LedgerStore ledger)
 {
-    private readonly string _path = paths.IntakeFile;
     private readonly Lock _gate = new();
 
-    internal IntakeStore(string path)
-        : this(new CratesidePaths { IntakeFile = path }) { }
-
     private IReadOnlyList<IntakeRecord>? _cached;
-    private bool _durable = true;
 
-    /// <summary>
-    /// Whether everything recorded has reached disk — false for the rest of the run once a write
-    /// has failed.
-    /// </summary>
-    public bool IsDurable
-    {
-        get
-        {
-            lock (_gate)
-                return _durable;
-        }
-    }
-
-    /// <summary>
-    /// Every track crateside has taken on. Never throws — an unreadable file reads as empty,
-    /// which costs a re-read of the playlist rather than losing anything.
-    /// </summary>
+    /// <summary>Every track crateside has taken on, in the order it did.</summary>
     public IReadOnlyList<IntakeRecord> Read()
     {
         lock (_gate)
-            return _cached ??= TryReadFile() ?? [];
+            return _cached ??= Load();
     }
 
     /// <summary>Entries crateside tried to empty from the playlist and could not.</summary>
@@ -319,23 +300,39 @@ public sealed class IntakeStore(CratesidePaths paths)
             PageUrl = record.PageUrl,
         };
 
-    private IReadOnlyList<IntakeRecord>? TryReadFile() =>
-        IntakeJsonContext.Default.IReadOnlyListIntakeRecord.ReadFileOrDefault(_path);
+    private List<IntakeRecord> Load() =>
+        [
+            .. ledger
+                .Query(context => context.Intake.AsNoTracking().OrderBy(row => row.Id).ToList())
+                .Select(row => row.ToRecord()),
+        ];
 
+    /// <summary>Saves what differs from the held records, then holds <paramref name="records"/>.</summary>
     private void Write(IReadOnlyList<IntakeRecord> records)
     {
-        _cached = records;
+        var before = Read().ToDictionary(record => record.TrackKey, StringComparer.Ordinal);
+        var gone = before.Keys.Except(records.Select(record => record.TrackKey)).ToList();
 
-        try
+        ledger.Save(context =>
         {
-            IntakeJsonContext.Default.IReadOnlyListIntakeRecord.WriteFile(_path, records);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // Kept in memory rather than failing the scan, but nothing may be consumed on the
-            // strength of it: see IsDurable.
-            _durable = false;
-        }
+            context.Intake.RemoveRange(context.Intake.Where(row => gone.Contains(row.TrackKey)));
+
+            foreach (var record in records)
+            {
+                if (!before.TryGetValue(record.TrackKey, out var held))
+                    context.Intake.Add(IntakeRow.From(record));
+                else if (held != record)
+                {
+                    var row = context.Intake.Single(row => row.TrackKey == record.TrackKey);
+                    var changed = IntakeRow.From(record);
+
+                    changed.Id = row.Id;
+                    context.Entry(row).CurrentValues.SetValues(changed);
+                }
+            }
+        });
+
+        _cached = records;
     }
 }
 

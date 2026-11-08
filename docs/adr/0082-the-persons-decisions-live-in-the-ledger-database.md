@@ -67,8 +67,8 @@ empty, it adds every record in one transaction and renames the file `<name>.impo
 |---|---|---|
 | `key-corrections.json` | not moved | ADR 0052 removed the feature; no code reads it and it holds `{}` |
 | `names.json` | not moved | names StemForge resolved, or crateside derived from tags: a cache, one metadata fetch per track to rebuild. The names the person typed are in `queue.json` |
-| `queue.json` | **not moved yet** | its `tracks` are the person's decisions (the stems wanted, a name, an upload to use, "this is not that song", an accepted upload), the largest remaining loss. They share the file with the playlist settings and the work list, and move as their own change |
-| `intake.json` | not moved | a record of what was taken on, not a decision; with consume-on-arrival the playlist no longer holds those entries, so it is worth backing up and goes with `queue.json` |
+| `queue.json` | not moved here; moved by [ADR 0083](0083-track-instructions-playlist-settings-and-intake-live-in-the-ledger-database.md) | its `tracks` are the person's decisions (the stems wanted, a name, an upload to use, "this is not that song", an accepted upload), the largest remaining loss. They share the file with the playlist settings and the work list, and move as their own change |
+| `intake.json` | not moved here; moved by ADR 0083 | a record of what was taken on, not a decision; with consume-on-arrival the playlist no longer holds those entries, so it is worth backing up and goes with `queue.json` |
 | `warp-settings.json`, `source-retention.json`, `judge-settings.json`, `spend-down.json`, `recipe.json`, `paths.json` | not moved | one value each, chosen in Settings and set again in seconds if lost |
 | `paused.json` | not moved | the pause switches and the judge's backoff: state of a run, not a decision about a song |
 | `retyped-warps.json`, `written-warps.json`, `transients.json` | not moved | what crateside did to sidecars, re-derived by reading them |

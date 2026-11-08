@@ -13,6 +13,8 @@ public sealed class FiledArrivalTests : IDisposable
     private const string OtherUpload = "Zb2mXyVq1Rc";
     private const string NewSong = "p3NZn0mA_XI";
 
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
+
     private readonly string _directory = Path.Combine(
         Path.GetTempPath(),
         "crateside-tests",
@@ -169,7 +171,7 @@ public sealed class FiledArrivalTests : IDisposable
         file.Save();
     }
 
-    private IntakeStore Store() => new(Path.Combine(_directory, "intake.json"));
+    private IntakeStore Store() => new(_ledger);
 
     private static WorkItem Item(string trackKey, string entry, string title = "Some Song") =>
         new()

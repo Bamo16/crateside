@@ -24,6 +24,12 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
 
     public DbSet<FamiliarityRow> Familiarities => Set<FamiliarityRow>();
 
+    public DbSet<TrackInstructionRow> TrackInstructions => Set<TrackInstructionRow>();
+
+    public DbSet<IntakeRow> Intake => Set<IntakeRow>();
+
+    public DbSet<PlaylistSettingsRow> PlaylistSettings => Set<PlaylistSettingsRow>();
+
     /// <summary>Updates the row <paramref name="match"/> finds, or adds <paramref name="row"/> when there is none.</summary>
     public void Upsert<TRow>(DbSet<TRow> rows, Expression<Func<TRow, bool>> match, TRow row)
         where TRow : class
@@ -145,6 +151,29 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
             familiarity.ToTable("Familiarities");
             familiarity.HasKey(row => row.Song);
             familiarity.Property(row => row.Song).UseCollation("NOCASE");
+        });
+
+        // Video IDs are case-sensitive, so these keys keep the default binary collation.
+        model.Entity<TrackInstructionRow>(instruction =>
+        {
+            instruction.ToTable("TrackInstructions");
+            instruction.HasKey(row => row.TrackKey);
+        });
+
+        model.Entity<IntakeRow>(intake =>
+        {
+            intake.ToTable("Intake");
+            intake.HasIndex(row => row.TrackKey).IsUnique();
+        });
+
+        model.Entity<PlaylistSettingsRow>(settings =>
+        {
+            settings.ToTable(
+                "PlaylistSettings",
+                table => table.HasCheckConstraint("CK_PlaylistSettings_Only", "Id = 1")
+            );
+            settings.HasKey(row => row.Id);
+            settings.Property(row => row.Id).ValueGeneratedNever();
         });
     }
 

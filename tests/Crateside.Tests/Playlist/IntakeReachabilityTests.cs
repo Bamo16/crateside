@@ -1,31 +1,18 @@
+using Crateside.Core.Ledger;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
 
 namespace Crateside.Tests.Playlist;
 
 /// <summary>A track crateside has taken on stays reachable after the playlist lets it go (ADR 0021).</summary>
-public sealed class IntakeReachabilityTests : IDisposable
+public sealed class IntakeReachabilityTests
 {
     private const string Gone = "RzQRxV2XqFU";
     private const string Held = "x3U22KHsrqE";
 
-    private readonly string _directory = Path.Combine(
-        Path.GetTempPath(),
-        "crateside-tests",
-        Guid.NewGuid().ToString("n")
-    );
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
-    public IntakeReachabilityTests() => Directory.CreateDirectory(_directory);
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_directory))
-            Directory.Delete(_directory, recursive: true);
-
-        GC.SuppressFinalize(this);
-    }
-
-    private IntakeStore Store() => new(Path.Combine(_directory, "intake.json"));
+    private IntakeStore Store() => new(_ledger);
 
     private static WorkItem Entry(string trackKey, string title, int addedDay = 1) =>
         new()

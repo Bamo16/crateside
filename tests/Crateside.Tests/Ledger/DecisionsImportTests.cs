@@ -2,10 +2,15 @@ using System.Text.Json;
 using Crateside.Core;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
+using Crateside.Core.Imports;
 using Crateside.Core.Ledger;
 using Crateside.Core.Marks;
 using Crateside.Core.Orchestration.Verdict;
+using Crateside.Core.Plans;
+using Crateside.Core.Playlist;
+using Crateside.Core.WorkLists;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Crateside.Tests.Ledger;
@@ -35,6 +40,8 @@ public sealed class DecisionsImportTests : IDisposable
             FamiliarityFile = Path.Combine(_root, "familiarity.json"),
             TrackMarksFile = Path.Combine(_root, "track-marks.json"),
             PageChoicesFile = Path.Combine(_root, "page-choices.json"),
+            QueueFile = Path.Combine(_root, "queue.json"),
+            IntakeFile = Path.Combine(_root, "intake.json"),
         };
     }
 
@@ -385,6 +392,144 @@ public sealed class DecisionsImportTests : IDisposable
         );
 
         Assert.Equal(1, Assert.Single(Import()).Rows);
+    }
+
+    [Fact]
+    public void The_queue_file_imports_its_instructions_and_settings_and_converts_the_old_flag()
+    {
+        File.WriteAllText(
+            _paths.QueueFile,
+            """
+            {
+              "playlistId": "PL_user",
+              "refreshMinutes": 7,
+              "consumeOnArrival": true,
+              "held": [ { "videoId": "gone", "reason": "wrong upload" } ],
+              "tracks": [
+                { "videoId": "withplan", "plan": { "presets": [ "vocal_full" ], "keepSource": true,
+                    "addedSources": [ { "videoId": "glF85prh3e4", "label": "A Cappella", "type": null } ],
+                    "adoptedSamples": [ { "label": "My edit" } ] },
+                  "name": "Starjunk", "sourceUrl": "https://example.org/x",
+                  "differentFrom": "Other - Song", "acceptedUpload": "up1",
+                  "cutRequestedAt": "2026-10-01T10:00:00+00:00", "addedByUrl": true, "backfill": true,
+                  "held": true, "holdReason": "x" },
+                { "videoId": "oldflag", "instrumentalRelease": true },
+                { "videoId": "empty" },
+                { "videoId": "withplan", "name": "A duplicate" }
+              ]
+            }
+            """
+        );
+
+        Assert.Equal(
+            new DecisionFileImport("queue.json", 3, DecisionFileOutcome.Imported),
+            Assert.Single(Import())
+        );
+
+        var instructions = new TrackInstructionStore(_ledger).Read().ToDictionary(i => i.TrackKey);
+        var withPlan = instructions["withplan"];
+
+        Assert.Equal(2, instructions.Count);
+        Assert.Equal("Starjunk", withPlan.Name);
+        Assert.Equal("https://example.org/x", withPlan.SourceUrl);
+        Assert.Equal("Other - Song", withPlan.DifferentFrom);
+        Assert.Equal("up1", withPlan.AcceptedUpload);
+        Assert.Equal(DateTimeOffset.Parse("2026-10-01T10:00:00+00:00"), withPlan.CutRequestedAt);
+        Assert.True(withPlan.AddedByUrl);
+        Assert.True(withPlan.Backfill);
+        Assert.Equal(["vocal_full"], withPlan.Plan!.Presets);
+        Assert.True(withPlan.Plan.KeepSource);
+        Assert.Equal("glF85prh3e4", Assert.Single(withPlan.Plan.AddedSources).TrackKey);
+        Assert.Equal("My edit", Assert.Single(withPlan.Plan.AdoptedSamples).Label);
+        Assert.True(instructions["oldflag"].Plan!.AsksTheSameAs(StemPlan.InstrumentalRelease));
+
+        var settings = new PlaylistSettingsStore(
+            _ledger,
+            Options.Create(new PlaylistOptions { PlaylistId = "PL_config" })
+        ).Read();
+
+        Assert.Equal("PL_user", settings.PlaylistId);
+        Assert.Equal(7, settings.RefreshMinutes);
+        Assert.True(settings.ConsumeOnArrival);
+        Assert.False(File.Exists(_paths.QueueFile));
+        Assert.True(File.Exists($"{_paths.QueueFile}.imported-20261108"));
+    }
+
+    [Fact]
+    public void A_queue_file_that_never_saved_a_setting_leaves_configuration_in_charge()
+    {
+        File.WriteAllText(
+            _paths.QueueFile,
+            """{ "tracks": [ { "videoId": "abc", "name": "Named" } ] }"""
+        );
+
+        Assert.Equal(1, Assert.Single(Import()).Rows);
+        Assert.Equal(
+            "PL_config",
+            new PlaylistSettingsStore(
+                _ledger,
+                Options.Create(new PlaylistOptions { PlaylistId = "PL_config" })
+            )
+                .Read()
+                .PlaylistId
+        );
+    }
+
+    [Fact]
+    public void Every_intake_field_survives_the_import_in_the_order_the_file_had()
+    {
+        File.WriteAllText(
+            _paths.IntakeFile,
+            """
+            [
+              { "videoId": "second", "title": "Second", "premiumOutlook": 1, "removalAttemptedAt": "2026-10-01T10:00:00+00:00",
+                "removalFailure": { "reason": "forbidden", "canSucceedLater": true }, "removedEntryId": "PLI-9" },
+              { "videoId": "file~25edb68200c05e82", "title": "Dave Wise - Lockjaw's Saga", "channelTitle": "Rare",
+                "addedAt": "2026-11-06T20:19:06.3859908+00:00", "premiumOutlook": 0, "isUnavailable": true,
+                "pageUrl": "https://example.org/p", "artist": "Dave Wise", "songTitle": "Lockjaw's Saga",
+                "release": { "album": "Donkey Kong Country 2", "track": 6, "trackCount": 33, "year": 1995,
+                             "yearText": "1995", "yearKind": "Release", "cover": "file~25edb68200c05e82.png" } },
+              { "videoId": "second", "title": "A duplicate" }
+            ]
+            """
+        );
+
+        Assert.Equal(
+            new DecisionFileImport("intake.json", 2, DecisionFileOutcome.Imported),
+            Assert.Single(Import())
+        );
+
+        var read = new IntakeStore(_ledger).Read();
+
+        Assert.Equal(["second", "file~25edb68200c05e82"], read.Select(record => record.TrackKey));
+        Assert.Equal(PremiumOutlook.ArtTrack, read[0].PremiumOutlook);
+        Assert.Equal(
+            new RemovalFailure { Reason = "forbidden", CanSucceedLater = true },
+            read[0].RemovalFailure
+        );
+        Assert.Equal("PLI-9", read[0].RemovedEntryId);
+        Assert.Equal(DateTimeOffset.Parse("2026-10-01T10:00:00+00:00"), read[0].RemovalAttemptedAt);
+        Assert.True(read[1].IsUnavailable);
+        Assert.Equal("Rare", read[1].ChannelTitle);
+        Assert.Equal("Dave Wise", read[1].Artist);
+        Assert.Equal("Donkey Kong Country 2", read[1].Release!.Album);
+        Assert.Equal(YearKind.Release, read[1].Release!.YearKind);
+        Assert.Equal(33, read[1].Release!.TrackCount);
+        Assert.True(File.Exists($"{_paths.IntakeFile}.imported-20261108"));
+    }
+
+    [Fact]
+    public void An_intake_file_beside_an_intake_that_already_holds_rows_is_left_alone()
+    {
+        new IntakeStore(_ledger).TakeIn(new IntakeRecord { TrackKey = "kept", Title = "Kept" });
+        File.WriteAllText(_paths.IntakeFile, """[ { "videoId": "other", "title": "Other" } ]""");
+
+        Assert.Equal(
+            new DecisionFileImport("intake.json", 0, DecisionFileOutcome.TableNotEmpty),
+            Assert.Single(Import())
+        );
+        Assert.Equal("kept", Assert.Single(new IntakeStore(_ledger).Read()).TrackKey);
+        Assert.True(File.Exists(_paths.IntakeFile));
     }
 
     private IReadOnlyList<DecisionFileImport> Import() =>

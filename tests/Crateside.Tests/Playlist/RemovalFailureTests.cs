@@ -1,4 +1,5 @@
 using System.Net;
+using Crateside.Core.Ledger;
 using Crateside.Core.Playlist;
 using Crateside.Core.WorkLists;
 using Google;
@@ -7,26 +8,12 @@ using Google.Apis.Requests;
 namespace Crateside.Tests.Playlist;
 
 /// <summary>A playlist entry crateside could not remove says so, and whether a retry could help (#34).</summary>
-public sealed class RemovalFailureTests : IDisposable
+public sealed class RemovalFailureTests
 {
     private const string Track = "2E33rkabbF4";
     private const string Other = "p3NZn0mA_XI";
 
-    private readonly string _directory = Path.Combine(
-        Path.GetTempPath(),
-        "crateside-tests",
-        Guid.NewGuid().ToString("n")
-    );
-
-    public RemovalFailureTests() => Directory.CreateDirectory(_directory);
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_directory))
-            Directory.Delete(_directory, recursive: true);
-
-        GC.SuppressFinalize(this);
-    }
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
     [Fact]
     public void Why_an_entry_was_left_behind_survives_a_restart()
@@ -126,7 +113,7 @@ public sealed class RemovalFailureTests : IDisposable
         Assert.Equal(canSucceedLater, PlaylistRemover.CanSucceedLater(error));
     }
 
-    private IntakeStore Store() => new(Path.Combine(_directory, "intake.json"));
+    private IntakeStore Store() => new(_ledger);
 
     private static WorkItem Item(string trackKey) =>
         new()

@@ -1,3 +1,4 @@
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Orchestration.Jobs;
@@ -24,6 +25,8 @@ public sealed class StemRecutTests : IDisposable
         ]
         """
     );
+
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -52,13 +55,7 @@ public sealed class StemRecutTests : IDisposable
 
     private JobStore Jobs() => new(Path.Combine(_root, "jobs.jsonl"));
 
-    private TrackInstructionStore Settings() =>
-        new(
-            new QueueFile(
-                Options.Create(new PlaylistOptions()),
-                Path.Combine(_root, "settings.json")
-            )
-        );
+    private TrackInstructionStore Settings() => new(_ledger);
 
     /// <summary>A working set holding source audio for the track, as one still in staging has.</summary>
     private WorkingSet WorkingSetWithSource()

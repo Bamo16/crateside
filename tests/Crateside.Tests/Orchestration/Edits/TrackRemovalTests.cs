@@ -1,3 +1,4 @@
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Edits;
 using Crateside.Core.Plans;
@@ -12,6 +13,8 @@ namespace Crateside.Tests.Orchestration.Edits;
 public sealed class TrackRemovalTests : IDisposable
 {
     private const string Video = "OwGuSPXPyX4";
+
+    private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),
@@ -116,12 +119,9 @@ public sealed class TrackRemovalTests : IDisposable
             new ListedStagedFiles(() => _staged)
         );
 
-    private TrackInstructionStore Settings() =>
-        new(
-            new QueueFile(Options.Create(new PlaylistOptions()), Path.Combine(_root, "queue.json"))
-        );
+    private TrackInstructionStore Settings() => new(_ledger);
 
-    private IntakeStore Intake() => new(Path.Combine(_root, "intake.json"));
+    private IntakeStore Intake() => new(_ledger);
 
     private string Stage(string name, string? adopted = null)
     {

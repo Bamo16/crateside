@@ -38,14 +38,6 @@ public partial class StoreFormatRealDataTests
         RoundTrips("names.json", NamingJsonContext.Default.DictionaryStringResolvedName);
 
     [Fact]
-    public void Intake_round_trips() =>
-        RoundTrips("intake.json", IntakeJsonContext.Default.IReadOnlyListIntakeRecord);
-
-    [Fact]
-    public void Queue_settings_round_trip() =>
-        RoundTrips("queue.json", QueueFileJsonContext.Default.QueueDocument);
-
-    [Fact]
     public void Jobs_round_trip_once_respelled()
     {
         var path = Path.Combine(Data, "jobs.jsonl");

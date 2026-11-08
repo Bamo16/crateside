@@ -339,7 +339,7 @@ public sealed class CratesidePaths
         set;
     }
 
-    /// <summary>The playlist entries crateside has taken on.</summary>
+    /// <summary>The file the intake was kept in, read once by the import (ADR 0083).</summary>
     public string IntakeFile
     {
         get => field ?? Roaming("intake.json");
@@ -374,7 +374,7 @@ public sealed class CratesidePaths
         set;
     }
 
-    /// <summary>The playlist settings and the track instructions.</summary>
+    /// <summary>The file the playlist settings and track instructions were kept in, read once by the import (ADR 0083).</summary>
     public string QueueFile
     {
         get => field ?? Roaming("queue.json");

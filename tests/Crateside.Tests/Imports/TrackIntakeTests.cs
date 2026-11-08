@@ -46,7 +46,7 @@ public sealed class TrackTagsTests
     public void Every_tag_a_gamerip_carries_is_read()
     {
         using var world = new IntakeWorld();
-        var path = world.TaggedFlac(world.Root, "1-01. GRADUATION.flac");
+        var path = IntakeWorld.TaggedFlac(world.Root, "1-01. GRADUATION.flac");
 
         var tags = TrackTags.TryRead(path)!;
 
@@ -86,7 +86,7 @@ public sealed class TrackIntakeTests
     public void A_tagged_file_becomes_a_track_named_from_its_tags_with_its_release_kept()
     {
         using var world = new IntakeWorld();
-        var path = world.TaggedFlac(world.Root, "1-01. GRADUATION.flac");
+        var path = IntakeWorld.TaggedFlac(world.Root, "1-01. GRADUATION.flac");
 
         var outcome = Assert.IsType<IntakeOutcome.TakenIn>(
             world.Files.TakeInFile(path, IntakeMode.Copy)
@@ -115,7 +115,7 @@ public sealed class TrackIntakeTests
     {
         using var world = new IntakeWorld();
         var outcome = Assert.IsType<IntakeOutcome.TakenIn>(
-            world.Files.TakeInFile(world.TaggedFlac(world.Root, "a.flac"), IntakeMode.Copy)
+            world.Files.TakeInFile(IntakeWorld.TaggedFlac(world.Root, "a.flac"), IntakeMode.Copy)
         );
 
         var cover = world.Intake.Read()[0].Release?.Cover;
@@ -131,8 +131,8 @@ public sealed class TrackIntakeTests
     public void Dropping_copies_and_the_inbox_consumes()
     {
         using var world = new IntakeWorld();
-        var dropped = world.TaggedFlac(world.Root, "dropped.flac", seed: "1");
-        var inboxed = world.TaggedFlac(world.Root, "inboxed.flac", seed: "2");
+        var dropped = IntakeWorld.TaggedFlac(world.Root, "dropped.flac", seed: "1");
+        var inboxed = IntakeWorld.TaggedFlac(world.Root, "inboxed.flac", seed: "2");
 
         world.Files.TakeInFile(dropped, IntakeMode.Copy);
         world.Files.TakeInFile(inboxed, IntakeMode.Move);
@@ -145,8 +145,8 @@ public sealed class TrackIntakeTests
     public void The_same_file_twice_is_one_track_and_the_inbox_copy_is_consumed()
     {
         using var world = new IntakeWorld();
-        var first = world.TaggedFlac(world.Root, "first.flac");
-        var again = world.TaggedFlac(Path.Combine(world.Root, "elsewhere"), "again.flac");
+        var first = IntakeWorld.TaggedFlac(world.Root, "first.flac");
+        var again = IntakeWorld.TaggedFlac(Path.Combine(world.Root, "elsewhere"), "again.flac");
 
         world.Files.TakeInFile(first, IntakeMode.Copy);
         var outcome = world.Files.TakeInFile(again, IntakeMode.Move);
@@ -174,7 +174,7 @@ public sealed class TrackIntakeTests
     {
         using var world = new IntakeWorld();
         var outcome = Assert.IsType<IntakeOutcome.TakenIn>(
-            world.Files.TakeInFile(world.TaggedFlac(world.Root, "a.flac"), IntakeMode.Copy)
+            world.Files.TakeInFile(IntakeWorld.TaggedFlac(world.Root, "a.flac"), IntakeMode.Copy)
         );
 
         Assert.DoesNotContain(
@@ -189,7 +189,7 @@ public sealed class TrackIntakeTests
         using var world = new IntakeWorld();
         var named = Assert.IsType<IntakeOutcome.TakenIn>(
             world.Files.TakeInFile(
-                world.TaggedFlac(world.Root, "a.flac", seed: "1"),
+                IntakeWorld.TaggedFlac(world.Root, "a.flac", seed: "1"),
                 IntakeMode.Copy,
                 Recipe.Instrumental
             )
@@ -199,7 +199,7 @@ public sealed class TrackIntakeTests
 
         var defaulted = Assert.IsType<IntakeOutcome.TakenIn>(
             world.Files.TakeInFile(
-                world.TaggedFlac(world.Root, "b.flac", seed: "2"),
+                IntakeWorld.TaggedFlac(world.Root, "b.flac", seed: "2"),
                 IntakeMode.Copy
             )
         );
@@ -227,7 +227,10 @@ public sealed class TrackIntakeTests
     public void A_site_track_with_no_release_year_keeps_its_upload_date_as_an_upload()
     {
         using var world = new IntakeWorld();
-        var audio = world.TaggedFlac(Path.Combine(world.Root, "working", "soundcloud~1"), "t.flac");
+        var audio = IntakeWorld.TaggedFlac(
+            Path.Combine(world.Root, "working", "soundcloud~1"),
+            "t.flac"
+        );
 
         using (var file = TagLib.File.Create(audio))
         {

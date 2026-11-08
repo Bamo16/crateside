@@ -26,8 +26,8 @@ The section is still called `Queue` though the classes that read it are `Playlis
 would strand every key already set.
 
 **The playlist ID is not a secret and does not go here** — set it on the Settings page. It is
-saved to `%APPDATA%\crateside\queue.json`, which also keeps it out of the working tree, but
-for tidiness rather than secrecy. The key is the only thing user-secrets holds.
+saved to the ledger database (`%LOCALAPPDATA%\crateside\ledger.db`), which also keeps it out of
+the working tree, but for tidiness rather than secrecy. The key is the only thing user-secrets holds.
 
 `set` takes exactly `<key> <value>` positionally — the project goes in `--project`, and it
 must be the **csproj**, not `Crateside.slnx` (user-secrets resolves a project, not a

@@ -48,9 +48,9 @@ internal sealed class DemoLibrary
         {
             WriteLedger(ledger);
             WriteSongRecords(ledger);
+            WriteIntake(ledger);
         }
 
-        WriteIntake();
         WriteJobs();
         WriteNames();
         WriteReadings();
@@ -159,9 +159,9 @@ internal sealed class DemoLibrary
             );
     }
 
-    private void WriteIntake()
+    private void WriteIntake(LedgerStore ledger)
     {
-        var intake = new IntakeStore(_paths);
+        var intake = new IntakeStore(ledger);
 
         intake.Record([
             .. DemoCast.All.Select(track => new WorkItem

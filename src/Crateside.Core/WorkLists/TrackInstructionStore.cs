@@ -1,11 +1,24 @@
+using Crateside.Core.Ledger;
 using Crateside.Core.Plans;
+using Microsoft.EntityFrameworkCore;
 
 namespace Crateside.Core.WorkLists;
 
-/// <summary>The user's standing instructions about particular tracks, kept in <see cref="QueueFile"/>.</summary>
-public sealed class TrackInstructionStore(QueueFile file)
+/// <summary>
+/// The user's standing instructions about particular tracks, kept in the ledger database
+/// (ADR 0083). Each keeps an in-memory copy, loaded on first use.
+/// </summary>
+public sealed class TrackInstructionStore(LedgerStore ledger)
 {
-    public IReadOnlyList<TrackInstruction> Read() => file.Read().Tracks;
+    private readonly Lock _gate = new();
+
+    private Dictionary<string, TrackInstruction>? _cached;
+
+    public IReadOnlyList<TrackInstruction> Read()
+    {
+        lock (_gate)
+            return [.. (_cached ??= Load()).Values];
+    }
 
     /// <summary>
     /// Records which files the user wants made for a track. Null clears the choice, putting the
@@ -61,25 +74,35 @@ public sealed class TrackInstructionStore(QueueFile file)
     /// Applies a change to one track's instruction, adding it if there was none and dropping it
     /// again once it says nothing.
     /// </summary>
-    private void Upsert(string trackKey, Func<TrackInstruction, TrackInstruction> change) =>
-        file.Save(document =>
+    private void Upsert(string trackKey, Func<TrackInstruction, TrackInstruction> change)
+    {
+        lock (_gate)
         {
-            var existing =
-                document.Tracks.FirstOrDefault(track =>
-                    track.TrackKey.Equals(trackKey, StringComparison.Ordinal)
-                ) ?? new TrackInstruction { TrackKey = trackKey };
+            var instructions = _cached ??= Load();
+            var changed = change(
+                instructions.GetValueOrDefault(trackKey)
+                    ?? new TrackInstruction { TrackKey = trackKey }
+            );
 
-            var changed = change(existing);
-
-            return document with
+            ledger.Save(context =>
             {
-                Tracks =
-                [
-                    .. document.Tracks.Where(track =>
-                        !track.TrackKey.Equals(trackKey, StringComparison.Ordinal)
-                    ),
-                    .. changed.SaysSomething ? new[] { changed } : [],
-                ],
-            };
-        });
+                context.TrackInstructions.RemoveRange(
+                    context.TrackInstructions.Where(row => row.TrackKey == trackKey)
+                );
+
+                if (changed.SaysSomething)
+                    context.TrackInstructions.Add(TrackInstructionRow.From(changed));
+            });
+
+            if (changed.SaysSomething)
+                instructions[trackKey] = changed;
+            else
+                instructions.Remove(trackKey);
+        }
+    }
+
+    private Dictionary<string, TrackInstruction> Load() =>
+        ledger
+            .Query(context => context.TrackInstructions.AsNoTracking().ToList())
+            .ToDictionary(row => row.TrackKey, row => row.ToInstruction(), StringComparer.Ordinal);
 }
