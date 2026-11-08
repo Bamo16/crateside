@@ -66,7 +66,7 @@
                     <span class="form-label">@form.Title(group)</span>
                     <span class="unit-note">
                         @(form.InBars
-                            ? "Bars as Live's ruler numbers them: bar 1 is the warp's 1.1.1, and bars before it are -1, -2…"
+                            ? "Bars as Live's ruler numbers them, ranges as its Time Selection reads them: 33–49 runs from the start of bar 33 to the start of bar 49 (155.1.1–156.3.1 works too). Bar 1 is the warp's 1.1.1, and bars before it are -1, -2…"
                             : "No warp yet, so ranges are in minutes and seconds. Warp it in Live and the form takes bars.")
                     </span>
                 </div>
@@ -82,7 +82,7 @@
                     <div class="range-row @(unreadable.Contains(index + 1) ? "unreadable" : null)">
                         <span class="mono number">@(index + 1)</span>
                         <input class="mono range-field" @bind="line.Range" @bind:event="oninput"
-                               placeholder="@(form.InBars ? "33–48, 106-end" : "0:45–1:07")" aria-label="Range @(index + 1)" />
+                               placeholder="@(form.InBars ? "33–49, 106-end" : "0:45–1:07")" aria-label="Range @(index + 1)" />
                         <input @bind="line.Label" @bind:event="oninput" placeholder="e.g. Opening, Final chorus" aria-label="Label" />
                         <input @bind="line.Note" @bind:event="oninput" placeholder="Note to the judge (optional)"
                                aria-label="Note to the judge" @onkeydown="key => AddOnEnter(key, form, index)" />
@@ -118,7 +118,14 @@
                         @if (unreadable is [var first, ..])
                         {
                             <span class="problem">
-                                Range @first doesn't read as @(form.InBars ? "bars, such as 33–48" : "minutes and seconds, such as 0:45–1:07").
+                                @if (form.Empty(group) is [var empty, ..])
+                                {
+                                    <text>Range @empty is empty. @BarRanges.EmptyMessage</text>
+                                }
+                                else
+                                {
+                                    <text>Range @first doesn't read as @(form.InBars ? "bars, such as 33–49" : "minutes and seconds, such as 0:45–1:07").</text>
+                                }
                             </span>
                         }
                         else
@@ -597,8 +604,8 @@
     }
 
     private static string DrawerSpan(WarpGroup group, RunWindow window) =>
-        JudgeRanges.BarsOf(group, window.Start, window.End) is { } bars
-            ? $"bars {bars.First}–{bars.Last} · {JudgeText.Time(window)}"
+        BarRanges.Show(group, window.Start, window.End) is { } bars
+            ? $"bars {bars} · {JudgeText.Time(window)}"
             : JudgeText.Time(window);
 
     /// <summary>The middle of a window in the view, as a percentage of the plot, for the drawer's caret.</summary>
@@ -638,8 +645,8 @@
 
     /// <summary>A window's span in bars where the warp can say, else in time.</summary>
     private static string Span(WarpGroup group, RunWindow window) =>
-        JudgeRanges.BarsOf(group, window.Start, window.End) is { } bars
-            ? $"bars {bars.First}–{bars.Last}"
+        BarRanges.Show(group, window.Start, window.End) is { } bars
+            ? $"bars {bars}"
             : JudgeText.Span(window);
 
     /// <summary>What the finished run came to, or null once there is nothing new to say.</summary>
@@ -701,7 +708,7 @@
             return;
 
         _reopenedAfter = finishedAt;
-        _form = BarForm.From(run, _group.Lender is not null);
+        _form = BarForm.From(run, _group);
     }
 
     private void OnJudgingChanged() =>
@@ -823,7 +830,7 @@
         if (!form.InBars)
             form.Place(line, (int)Math.Round(startSeconds), (int)Math.Round(endSeconds));
         else if (group.BeatAt(startSeconds) is { } first && group.BeatAt(endSeconds) is { } last)
-            form.Place(line, group.Bars.BarAt(first + 0.001), group.Bars.BarAt(last - 0.001));
+            form.Place(line, group.Bars.BarAt(first + 0.001), BarRuler.Next(group.Bars.BarAt(last - 0.001)));
 
         StateHasChanged();
     }
@@ -1223,8 +1230,8 @@
     }
 
     private static string ViewLabel(WarpGroup group, double from, double to) =>
-        JudgeRanges.BarsOf(group, from, to) is { } bars
-            ? $"bars {bars.First}–{bars.Last} · {TempoFormat.Clock(from)}–{TempoFormat.Clock(to)}"
+        BarRanges.Show(group, from, to) is { } bars
+            ? $"bars {bars} · {TempoFormat.Clock(from)}–{TempoFormat.Clock(to)}"
             : $"{TempoFormat.Clock(from)}–{TempoFormat.Clock(to)}";
 
     private IEnumerable<(double At, int Bar, bool Numbered, bool Beat)> BarTicks(WarpGroup group, double from, double to)

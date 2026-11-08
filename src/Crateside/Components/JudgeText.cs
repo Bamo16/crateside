@@ -16,12 +16,12 @@ public static class JudgeText
         {
             [] => string.Empty,
             var all when all.All(window => window.Bars is not null) =>
-                $"bars {string.Join(", ", all.Select(window => $"{window.Bars!.First}–{window.Bars.Last}"))}",
+                $"bars {string.Join(", ", all.Select(window => window.Bars!.Text))}",
             var all => string.Join(", ", all.Select(Time)),
         };
 
     public static string Span(RunWindow window) =>
-        window.Bars is { } bars ? $"bars {bars.First}–{bars.Last}" : Time(window);
+        window.Bars is { } bars ? $"bars {bars.Text}" : Time(window);
 
     public static string Time(RunWindow window) =>
         $"{TempoFormat.Clock(window.Start)}–{TempoFormat.Clock(window.End)}";

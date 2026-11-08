@@ -1,4 +1,5 @@
 using Crateside.Core.Tempo;
+using Crateside.Core.Warps;
 
 namespace Crateside.Core.Ledger;
 
@@ -101,15 +102,17 @@ public sealed record RunWindow(double Start, double End, string? Label, WindowAs
     /// <summary>What the window's section is called: its label, else its span.</summary>
     public string Name =>
         Label is { Length: > 0 } label ? label
-        : Bars is { } bars ? $"bars {bars.First}–{bars.Last}"
+        : Bars is { } bars ? $"bars {bars.Text}"
         : $"{TempoFormat.Clock(Start)}–{TempoFormat.Clock(End)}";
 }
 
-/// <summary>Bars <see cref="First"/> to <see cref="Last"/>, both included.</summary>
-public sealed record BarSpan(int First, int Last);
+/// <summary>Bars <see cref="First"/> to <see cref="Last"/>, both included; shown as Live's selection, to the start of <see cref="End"/> (ADR 0085).</summary>
+public sealed record BarSpan(int First, int Last)
+{
+    public int End => BarRuler.Next(Last);
 
-/// <summary>Bars as typed: a null side is open, to the start or end of the file.</summary>
-public sealed record BarRange(int? First, int? Last);
+    public string Text => $"{First}–{End}";
+}
 
 /// <summary>Who made a verdict: an agent session, crateside's rules, or the person (ADR 0076).</summary>
 public enum DecidedBy

@@ -3,7 +3,8 @@
 - Status: Accepted
 - Date: 2026-11-08
 - Sits beside the track marks of [ADR 0082](0082-the-persons-decisions-live-in-the-ledger-database.md).
-  Reads bars as [ADR 0072](0072-bars-are-numbered-as-lives-ruler-numbers-them.md) numbers them.
+  The end of a typed range is where the selection stops, by [ADR 0086](0086-a-typed-bar-range-ends-where-the-selection-stops.md),
+  which amends the examples below. Reads bars as [ADR 0072](0072-bars-are-numbered-as-lives-ruler-numbers-them.md) numbers them.
 
 ## Context
 
@@ -24,10 +25,10 @@ say "from bar 183". (#188)
   any stretches; adding a stretch to a marked track leaves only the stretches. **A reason is
   required** for the whole track and for every stretch.
 - **A stretch is stored in seconds of the source file**, which is what the harnesses compare
-  against, **and as typed** (`183–190`), so the maintainer's own words come back.
+  against, **and as typed** (`183–191`), so the maintainer's own words come back.
 - **Bars are typed in Live's ruler (ADR 0072) when the track has a warp, in `m:ss` when it has
   none.** The warp is the track's shared warp (`WarpGroup`, as the warp view reads it).
-  - `183–190`: from the start of bar 183 to the end of bar 190.
+  - `183–191`: from the start of bar 183 to the start of bar 191 (ADR 0086).
   - `183.3–190.2`: from bar 183 beat 3 to the start of bar 190 beat 2. `bar.beat.sixteenth` is
     accepted too, as Live's Start field writes it.
   - `start` and `end` are the file's edges, and the end is clamped to the file's length. `-4–2` is
@@ -62,7 +63,7 @@ listed.
         {
           "startSeconds": 364.0,
           "endSeconds": 380.0,
-          "typed": "183–190",
+          "typed": "183–191",
           "reason": "Slows down and turns to chaos on every instrument"
         }
       ]

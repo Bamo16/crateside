@@ -26,14 +26,14 @@ public sealed class MeasuringExclusionStoreTests : IDisposable
     {
         new MeasuringExclusionStore(_ledger).AddStretch(
             "artist - title",
-            Stretch(364, 380, "183–190")
+            Stretch(364, 380, "183–191")
         );
 
         var held = new MeasuringExclusionStore(_ledger).Of("artist - title");
 
         Assert.NotNull(held);
         Assert.False(held.WholeTrack);
-        Assert.Equal([Stretch(364, 380, "183–190")], held.Stretches);
+        Assert.Equal([Stretch(364, 380, "183–191")], held.Stretches);
     }
 
     [Fact]

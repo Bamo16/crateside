@@ -43,7 +43,7 @@
             {
                 <label>
                     <span>@(InBars ? "Bars in Live" : "Time")</span>
-                    <input class="mono" placeholder="@(InBars ? "183–190, or 183.3–190.2" : "2:22–3:39")"
+                    <input class="mono" placeholder="@(InBars ? "183–190, or 155.1.1–156.3.1" : "2:22–3:39")"
                            @bind="_range" @bind:event="oninput" />
                 </label>
             }
@@ -119,9 +119,7 @@
             Exclusions.AddStretch(Row.Song, stretch);
         else
         {
-            _problem = InBars
-                ? "Read as bars: 183–190, or 183.3–190.2 for bar 183 beat 3 to bar 190 beat 2."
-                : "Read as time: 2:22–3:39.";
+            _problem = MeasuringStretches.Refusal(_range, _group!);
 
             return;
         }

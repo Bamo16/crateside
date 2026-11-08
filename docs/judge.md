@@ -90,7 +90,7 @@ waiting for them.
 **The text fields** have one job each (ADR 0064): `tonicCheck` is what the music does (at most 70 words), `reasoning` what the evidence is worth (at most 100 words in at most 2 paragraphs), `candidates` the 0 to 3 other keys weighed, each with a sentence, and a window's `why` one sentence. They are plain text with a blank line between paragraphs. An overrun is logged by the verdict run and never refused, since resuming a session to shorten it costs its start-up; a candidate equal to the verdict's key is dropped and logged. The screen typesets the text when it renders (`JudgeProse`), so old verdicts read the same way without being judged again.
 
 **Judging from these bars** (#116). On a track's page the user gives windows themselves: bar
-ranges from their warp, numbered as Live's ruler numbers them from the warp's beat 0 (ADR 0072)
+ranges from their warp, numbered as Live's ruler numbers them from the warp's beat 0 (ADR 0072) and read as its Time Selection reads them, the end being where the selection stops (`33–49` is bars 33 to 48; ADR 0086)
 and converted to seconds through the warp of the sample Ableton shows, or
 minutes and seconds where there is no warp, each with an optional label, plus a note to the judge
 and what they hear. A track with no stems has no warp view, so the same form shows on its page in

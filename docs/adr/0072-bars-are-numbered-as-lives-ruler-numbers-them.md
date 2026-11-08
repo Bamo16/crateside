@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-31
+- A range's end is read as Live's Time Selection reads it by [ADR 0086](0086-a-typed-bar-range-ends-where-the-selection-stops.md).
 - Replaces the numbering in design handoffs 14 (the warp view: "bars are counted from the shared
   warp's bar 1 (the clip start)", the outside of the clip dimmed) and 18 (judge from these bars).
 
