@@ -546,6 +546,32 @@ shows no genre.
 }
 ```
 
+## `GET /api/measuring-exclusions`
+
+The tracks, and stretches of tracks, the maintainer marked as not fit for measuring detectors, for
+the harnesses to leave out (ADR 0085). Ordered by `videoId`; a track not listed is not marked.
+
+```json
+{
+  "tracks": [
+    {
+      "videoId": "Zx3TrackA01",
+      "song": "the examples - synthetic song",
+      "wholeTrack": false,
+      "reason": null,
+      "stretches": [
+        { "startSeconds": 364.0, "endSeconds": 380.0, "typed": "183–190", "reason": "Slows down and turns to chaos" }
+      ]
+    }
+  ]
+}
+```
+
+`wholeTrack` true means leave the whole track out (`reason` says why, `stretches` is empty); false
+means leave out each stretch, in seconds of the source file. `typed` is what the maintainer wrote
+(Live's bars, or `m:ss` for a track with no warp) and is for display. The same record is in
+`GET /api/tracks/{trackKey}` at `records.measuringExclusions`.
+
 ## Investigating a track
 
 Start here: `curl` the track, then read `row.state`, `row.next` and `jobs` for where it is and

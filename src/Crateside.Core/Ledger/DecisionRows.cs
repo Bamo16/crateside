@@ -72,6 +72,41 @@ internal sealed class TrackMarkRow
     public TrackMark Mark { get; set; }
 }
 
+internal sealed class MeasuringExclusionRow
+{
+    public long Id { get; set; }
+    public string Song { get; set; } = string.Empty;
+
+    /// <summary>Null on the one row that marks the whole track.</summary>
+    public double? StartSeconds { get; set; }
+    public double? EndSeconds { get; set; }
+    public string? Typed { get; set; }
+    public string Reason { get; set; } = string.Empty;
+
+    public static IEnumerable<MeasuringExclusionRow> From(MeasuringExclusion record) =>
+        record.Reason is { } reason
+            ? [new() { Song = record.Song, Reason = reason }]
+            : record.Stretches.Select(stretch => new MeasuringExclusionRow
+            {
+                Song = record.Song,
+                StartSeconds = stretch.StartSeconds,
+                EndSeconds = stretch.EndSeconds,
+                Typed = stretch.Typed,
+                Reason = stretch.Reason,
+            });
+
+    public MeasuringStretch? ToStretch() =>
+        this is { StartSeconds: { } start, EndSeconds: { } end }
+            ? new MeasuringStretch
+            {
+                StartSeconds = start,
+                EndSeconds = end,
+                Typed = Typed ?? string.Empty,
+                Reason = Reason,
+            }
+            : null;
+}
+
 internal sealed class GenreRow
 {
     public string Song { get; set; } = string.Empty;

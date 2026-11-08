@@ -147,6 +147,32 @@ public sealed class CratesideApiTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task A_stretch_marked_as_unfit_for_measuring_is_listed_by_video_ID_in_seconds_of_the_source()
+    {
+        var listed = await GetAsync("/api/measuring-exclusions");
+        var track = Assert.Single(listed["tracks"]!.AsArray())!;
+        var stretch = Assert.Single(track["stretches"]!.AsArray())!;
+
+        Assert.Equal(SyntheticCrateside.Judged, (string?)track["videoId"]);
+        Assert.Equal(SyntheticCrateside.Song, (string?)track["song"]);
+        Assert.False((bool?)track["wholeTrack"]);
+        Assert.Null(track["reason"]);
+        Assert.Equal(6.5, (double?)stretch["startSeconds"]);
+        Assert.Equal(9.5, (double?)stretch["endSeconds"]);
+        Assert.Equal("3–4", (string?)stretch["typed"]);
+        Assert.Equal("Slows down and turns to chaos", (string?)stretch["reason"]);
+    }
+
+    [Fact]
+    public async Task The_track_s_records_carry_the_same_exclusion()
+    {
+        var track = await GetAsync($"/api/tracks/{SyntheticCrateside.Judged}");
+        var exclusion = track["records"]!["measuringExclusions"]![SyntheticCrateside.Song]!;
+
+        Assert.Equal(6.5, (double?)exclusion["stretches"]![0]!["startSeconds"]);
+    }
+
     private async Task<string[]> TrackKeysAsync(string url) =>
         [
             .. (await GetAsync(url))["rows"]!

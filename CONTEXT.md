@@ -313,6 +313,12 @@ by hand; everything below describes candidates against it.
 - **Track mark** — a yes/no the user sets on a track in crateside (*Changes key*, *Odd bars*), kept
   in the ledger's `TrackMarks` table by song ([ADR 0082](docs/adr/0082-the-persons-decisions-live-in-the-ledger-database.md)) and never read from Ableton. It records no place and no amount, and
   "not marked" means "not noticed yet". Live shows it as the matching **Collection**.
+- **Not fit for measuring** — a mark on a track, or on stretches of it, that the harnesses leave out
+  when scoring detectors, each with a reason. Stretches are typed in Live's bars with a warp and in
+  `m:ss` without, and kept in seconds of the source. In the ledger's `MeasuringExclusions` table by
+  song, and served at `/api/measuring-exclusions`
+  ([ADR 0085](docs/adr/0085-a-track-or-a-stretch-of-it-can-be-marked-unfit-for-measuring-detectors.md)).
+  It is not a **Track mark** and not a Collection.
 - **Page choice** — the person's correction to a track's lookup, on the song page: *Not this song* on
   a counted page, *Count this page* on a title-only candidate, or a Hooktheory or Musicnotes page
   *added* by address. Kept in the ledger's `PageChoices` table by track, apart from the lookup's own result; the

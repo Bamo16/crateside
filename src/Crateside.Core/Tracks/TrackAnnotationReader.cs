@@ -16,7 +16,8 @@ public sealed class TrackAnnotationReader(
     GenreStore genres,
     FamiliarityStore familiarity,
     TrackMarkStore marks,
-    IntakeStore? intake = null
+    IntakeStore? intake = null,
+    MeasuringExclusionStore? exclusions = null
 )
 {
     /// <summary>Everything recorded about the tracks, once what was kept under a judged upload has moved to its song.</summary>
@@ -42,11 +43,12 @@ public sealed class TrackAnnotationReader(
     }
 
     /// <summary>
-    /// Moves every genre, familiarity and mark record kept under a video ID onto the song the
+    /// Moves every genre, familiarity, mark and measuring-exclusion record kept under a video ID onto the song the
     /// ledger has since judged it as; returns how many moved (ADR 0071).
     /// </summary>
     public int FollowSongs(KeyLedger ledger) =>
         genres.FollowSongs(ledger.SongFor)
         + familiarity.FollowSongs(ledger.SongFor)
-        + marks.FollowSongs(ledger.SongFor);
+        + marks.FollowSongs(ledger.SongFor)
+        + (exclusions?.FollowSongs(ledger.SongFor) ?? 0);
 }

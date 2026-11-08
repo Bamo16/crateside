@@ -133,6 +133,37 @@ namespace Crateside.Core.Ledger.Migrations
                     b.ToTable("Intake", (string)null);
                 });
 
+            modelBuilder.Entity("Crateside.Core.Ledger.MeasuringExclusionRow", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double?>("EndSeconds")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Song")
+                        .IsRequired()
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
+
+                    b.Property<double?>("StartSeconds")
+                        .HasColumnType("REAL");
+
+                    b.Property<string>("Typed")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Song");
+
+                    b.ToTable("MeasuringExclusions", (string)null);
+                });
+
             modelBuilder.Entity("Crateside.Core.Ledger.PageChoiceRow", b =>
                 {
                     b.Property<long>("Id")

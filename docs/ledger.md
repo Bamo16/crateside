@@ -63,6 +63,7 @@ restores both. They change; a run does not.
 - **SourceRemovals**: a recorded source taken off a track (ADR 0081), by `TrackKey`: `Source`, `At`,
   `UndoneAt`.
 - **TrackMarks**: a mark on a song (`ChangesKey`, `OddBars`), one row each, by `Song`.
+- **MeasuringExclusions**: a song, or stretches of it, not fit for measuring detectors (ADR 0085), by `Song`: one row with null `StartSeconds` for the whole track, else one row per stretch with `StartSeconds`, `EndSeconds` (seconds of the source), `Typed` and `Reason`.
 - **Genres**: a song's genre as the person settled it and as the sources suggested it (`Heard` is a
   JSON list), by `Song`.
 - **Familiarities**: a song's reach as Deezer measured it and the familiarity the person settled, by
