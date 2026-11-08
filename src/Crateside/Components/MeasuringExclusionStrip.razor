@@ -1,0 +1,151 @@
+@using Humanizer
+@using Crateside.Core.Marks
+@using Crateside.Core.Orchestration.Jobs
+@using Crateside.Core.Tracks
+@using Crateside.Core.Warps
+@inject MeasuringExclusionStore Exclusions
+@inject StemWarpReader Warps
+@inject TracksService Tracks
+@inject ActionLog Actions
+
+<div class="tag-line">
+    <span class="tag-label">Not fit for measuring</span>
+    <span class="tag-value @(Held is null ? "quiet" : null)">@Summary</span>
+    <button class="outline" @onclick="Toggle">@(_open ? "Close" : Held is null ? "Mark" : "Edit")</button>
+</div>
+
+@if (_open)
+{
+    <div class="measuring">
+        @if (Held is { WholeTrack: true } whole)
+        {
+            <div class="held">
+                <span>Whole track · @whole.Reason</span>
+            </div>
+        }
+        else if (Held is { } held)
+        {
+            @foreach (var stretch in held.Stretches)
+            {
+                <div class="held">
+                    <span>@MeasuringStretches.Describe(stretch, _group!) · @stretch.Reason</span>
+                    <button class="outline" @onclick="() => Remove(stretch)">Remove</button>
+                </div>
+            }
+        }
+
+        <div class="fields">
+            <div class="kind">
+                <button class="outline @(_whole ? "on" : null)" @onclick="() => _whole = true">Whole track</button>
+                <button class="outline @(_whole ? null : "on")" @onclick="() => _whole = false">A stretch</button>
+            </div>
+            @if (!_whole)
+            {
+                <label>
+                    <span>@(InBars ? "Bars in Live" : "Time")</span>
+                    <input class="mono" placeholder="@(InBars ? "183–190, or 183.3–190.2" : "2:22–3:39")"
+                           @bind="_range" @bind:event="oninput" />
+                </label>
+            }
+            <label>
+                <span>Why</span>
+                <input placeholder="Slows down and turns to chaos on every instrument"
+                       @bind="_reason" @bind:event="oninput" />
+            </label>
+        </div>
+
+        @if (_problem is { } problem)
+        {
+            <p class="problem">@problem</p>
+        }
+
+        <div class="actions">
+            <button class="primary" @onclick="Add">Add</button>
+            @if (Held is not null)
+            {
+                <button class="outline" @onclick="Clear">Clear</button>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private bool _open;
+    private bool _whole = true;
+    private string _range = string.Empty;
+    private string _reason = string.Empty;
+    private string? _problem;
+    private WarpGroup? _group;
+
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    // From the store, not the row, which is a rescan behind.
+    private MeasuringExclusion? Held => Exclusions.Of(Row.Song);
+
+    private bool InBars => _group?.Lender is not null;
+
+    private string Summary =>
+        Held switch
+        {
+            null => "Not marked",
+            { WholeTrack: true } => "Whole track",
+            { Stretches: var stretches } => "stretch".ToQuantity(stretches.Count),
+        };
+
+    private void Toggle()
+    {
+        _open = !_open;
+        _problem = null;
+
+        if (_open)
+            _group = Warps.GroupOf(Row);
+    }
+
+    private void Add()
+    {
+        _problem = null;
+
+        if (_reason.Trim() is not { Length: > 0 } reason)
+        {
+            _problem = "Say why: harness reports quote it.";
+
+            return;
+        }
+
+        if (_whole)
+            Exclusions.MarkWholeTrack(Row.Song, reason);
+        else if (MeasuringStretches.TryRead(_range, reason, _group!, out var stretch))
+            Exclusions.AddStretch(Row.Song, stretch);
+        else
+        {
+            _problem = InBars
+                ? "Read as bars: 183–190, or 183.3–190.2 for bar 183 beat 3 to bar 190 beat 2."
+                : "Read as time: 2:22–3:39.";
+
+            return;
+        }
+
+        Record(UserActionKind.MarkSet);
+        (_range, _reason) = (string.Empty, string.Empty);
+    }
+
+    private void Remove(MeasuringStretch stretch)
+    {
+        Exclusions.RemoveStretch(Row.Song, stretch);
+        Record(UserActionKind.MarkCleared);
+    }
+
+    private void Clear()
+    {
+        Exclusions.Clear(Row.Song);
+        Record(UserActionKind.MarkCleared);
+    }
+
+    private void Record(UserActionKind kind)
+    {
+        Actions.Record(Row.TrackKey, kind, "Not fit for measuring");
+
+        _ = Tracks.RefreshAsync();
+    }
+}

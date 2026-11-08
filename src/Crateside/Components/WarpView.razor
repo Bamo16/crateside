@@ -964,7 +964,7 @@
     /// <summary>Re-reads the sidecars when any changed on disk; whether it did.</summary>
     private bool Reload(bool force)
     {
-        var paths = LanePaths();
+        var paths = StemWarpReader.LanePaths(Row);
         var stamp = Stamp(paths);
 
         if (!force && stamp == _stamp)
@@ -975,23 +975,6 @@
         _offGrid = _group.Lender is { } lender ? WarpTrueUp.Check(lender) : null;
 
         return true;
-    }
-
-    /// <summary>The samples cut from the upload most of the track's samples share, in the sample list's order.</summary>
-    private List<string> LanePaths()
-    {
-        var upload = Row
-            .Samples.GroupBy(sample => sample.SourceTrackKey)
-            .OrderByDescending(cut => cut.Count())
-            .Select(cut => cut.Key)
-            .FirstOrDefault();
-
-        return
-        [
-            .. Row
-                .Samples.Where(sample => sample.SourceTrackKey == upload && sample.Path is { Length: > 0 })
-                .Select(sample => sample.Path),
-        ];
     }
 
     private string Stamp(IEnumerable<string> paths)
