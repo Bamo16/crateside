@@ -33,6 +33,9 @@ public sealed record TrackJob
     /// <summary>Why the last failure failed.</summary>
     public string? Error { get; init; }
 
+    /// <summary>When the judge's endpoint may be tried again, while the job is <see cref="JobStatus.Held"/> by a refusal.</summary>
+    public DateTimeOffset? HeldUntil { get; init; }
+
     /// <summary>
     /// How many times this job has failed, counted over its whole history. Derived rather than
     /// stored, so it cannot drift from the record it summarizes.

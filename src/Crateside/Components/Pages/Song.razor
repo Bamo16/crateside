@@ -248,6 +248,8 @@
             ({ } decided, _) =>
                 $"{KeyText.Byline(decided.DecidedBy)} · {decided.Timestamp.ToLocalTime():yyyy-MM-dd}",
             _ when _row?.WaitingForPerson is true => "waiting for you",
+            _ when _row is { WaitingForJudge: true, Refusal: { } refusal } row =>
+                refusal.Says(row.Judge),
             _ when _row is { WaitingForJudge: true, Judge: JudgeStanding.Paused } =>
                 "waiting for the judge or you",
             _ when _pending is not null => "no ruling yet",

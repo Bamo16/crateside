@@ -335,7 +335,7 @@ public sealed class TracksViewCompositionTests : IDisposable
         Assert.True(row.Matches(TrackFilter.NeedsAttention));
     }
 
-    private TrackRow WaitingForJudge(JudgeStanding judge) =>
+    private TrackRow WaitingForJudge(JudgeStanding judge, JobStore? jobs = null) =>
         Assert.Single(
             TracksView
                 .Compose(
@@ -344,7 +344,7 @@ public sealed class TracksViewCompositionTests : IDisposable
                     [],
                     new Dictionary<string, IReadOnlyList<StemOnDisk>>(),
                     FinishedRoot,
-                    Jobs(),
+                    jobs ?? Jobs(),
                     new Dictionary<string, TrackInstruction>(),
                     judge: judge
                 )
@@ -389,6 +389,83 @@ public sealed class TracksViewCompositionTests : IDisposable
         Assert.Contains("paused", paused.Next);
         Assert.Equal("waiting to be judged", running.ChipLabel);
         Assert.Contains("when the judge reaches it", running.Next);
+    }
+
+    [Fact]
+    public void A_refused_session_says_why_and_when_the_next_try_is_on_the_row()
+    {
+        var jobs = Jobs();
+        var retryAt = DateTimeOffset.Parse("2026-11-08T16:15:00+00:00");
+
+        jobs.Record(
+            Video,
+            JobStage.Verdict,
+            JobStatus.Held,
+            error: "the judge's endpoint refused the session: no login",
+            heldUntil: retryAt
+        );
+
+        var row = WaitingForJudge(JudgeStanding.Running, jobs);
+
+        Assert.Equal("judge refused", row.ChipLabel);
+        Assert.Equal(
+            $"judge refused: the judge's endpoint refused the session: no login · next try {retryAt.ToLocalTime():t}",
+            row.Next
+        );
+        Assert.Contains("No ruling yet; judge refused:", row.Detail);
+        Assert.True(jobs.TryGet(Video, JobStage.Verdict, out var job));
+        Assert.Equal(0, job.Strikes);
+    }
+
+    [Fact]
+    public void A_refusal_on_a_paused_judge_says_judging_is_paused_instead_of_a_next_try()
+    {
+        var jobs = Jobs();
+
+        jobs.Record(
+            Video,
+            JobStage.Verdict,
+            JobStatus.Held,
+            error: "rate limited",
+            heldUntil: DateTimeOffset.Parse("2026-11-08T16:15:00+00:00")
+        );
+
+        var row = WaitingForJudge(JudgeStanding.Paused, jobs);
+
+        Assert.Equal("judge refused: rate limited · judging paused", row.Next);
+        Assert.Equal("refused · judging paused", row.Refusal?.Short(row.Judge));
+    }
+
+    [Fact]
+    public void A_hold_without_a_wait_is_not_a_refusal()
+    {
+        var jobs = Jobs();
+
+        jobs.Record(
+            Video,
+            JobStage.Verdict,
+            JobStatus.Held,
+            error: "the Claude allowance is spent"
+        );
+
+        Assert.Null(WaitingForJudge(JudgeStanding.Running, jobs).Refusal);
+    }
+
+    [Fact]
+    public void A_refusal_is_forgotten_once_a_session_runs_again()
+    {
+        var jobs = Jobs();
+
+        jobs.Record(
+            Video,
+            JobStage.Verdict,
+            JobStatus.Held,
+            error: "rate limited",
+            heldUntil: DateTimeOffset.Parse("2026-11-08T16:15:00+00:00")
+        );
+        jobs.Record(Video, JobStage.Verdict, JobStatus.Running);
+
+        Assert.Null(WaitingForJudge(JudgeStanding.Running, jobs).Refusal);
     }
 
     [Fact]

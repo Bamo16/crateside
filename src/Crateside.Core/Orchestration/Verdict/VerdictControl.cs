@@ -31,10 +31,26 @@ public sealed class VerdictControl : DrainControl
 
     /// <summary>Paused or not as the user last left judging.</summary>
     public VerdictControl(PauseStore remembered, TimeProvider time)
-        : base(remembered.Read().Judging, time) => Backoff = new JudgeBackoff(time, remembered);
+        : base(
+            remembered.Read()
+                is { Judging: true }
+                    or { Backoff.Refusals: >= JudgeBackoff.PauseAfter },
+            time
+        ) => Backoff = new JudgeBackoff(time, remembered);
 
     internal VerdictControl(bool startPaused = true, TimeProvider? time = null)
         : base(startPaused, time) => Backoff = new JudgeBackoff(time ?? TimeProvider.System);
+
+    /// <summary>Whether judging paused itself after a run of refusals, and so says why until the user resumes it (#181).</summary>
+    public bool IsPausedByRefusals => IsPaused && Backoff.IsExhausted;
+
+    /// <summary>The user's resume also clears the refusals and their hold, so the next pass tries at once (#181).</summary>
+    public override void Resume()
+    {
+        Backoff.Clear();
+        SetHold(null);
+        base.Resume();
+    }
 
     /// <summary>Records which track a session is judging, so the UI can show it before the Tracks rows catch up.</summary>
     public void ReportJudging(string trackKey, string activity)

@@ -600,6 +600,11 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   Nothing counts the units actually spent, so there is no "today" and no reset time.
 - **Judging has no progress bar**: it has no time estimate to measure against. Its card shows
   the elapsed time and the waiting count.
+- **The Judging card says why it holds or stopped**, as a `status` line under the Paused chip:
+  *Held: <reason>. Trying again at 4:15 PM.* while the endpoint refuses, and after five refusals in
+  a row *Paused by crateside after 5 refusals in a row: <reason>. Resume to try again.* (#181).
+  Resume clears the count. A track the endpoint refused reads `judge refused` on its chip and
+  *judge refused: <reason> · next try 4:15 PM* (*· judging paused* when paused) in its Next line.
 - **Background work** (the canvas's *Background readers*) also shows the download and key-detection
   stages, the track each is on or *idle*: they had no place on the canvas (user, 2026-09-29). The
   beatdetect row reads *BPM detection*, beside *Key detection*.

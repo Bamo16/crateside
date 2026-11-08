@@ -119,6 +119,12 @@
         {
             <span class="status">@hold.Reason@(Judging.IsPaused ? " Your pause stays until you resume." : null)</span>
         }
+        else if (Judging is { IsPausedByRefusals: true, Backoff: { Last: var last, Refusals: var refusals } })
+        {
+            <span class="status">
+                Paused by crateside after @refusals refusals in a row@(last is { } refused ? $": {refused.Reason}" : null). Resume to try again.
+            </span>
+        }
         else if (Judging.Hold is { } held)
         {
             <span class="status">

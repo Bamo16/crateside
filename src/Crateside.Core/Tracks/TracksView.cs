@@ -139,6 +139,19 @@ public sealed record TracksView
             ]),
         };
 
+        // Only a refusal records a wait with its Held; a spent allowance or a missing login does not.
+        JudgeRefusal? RefusalOf(IReadOnlyList<RowSeed> members) =>
+            members
+                .Select(seed =>
+                    jobs.TryGet(seed.TrackKey, JobStage.Verdict, out var job) ? job : null
+                )
+                .FirstOrDefault(job =>
+                    job is { Status: JobStatus.Held, Error.Length: > 0, HeldUntil: not null }
+                )
+                is { Error: { } reason, HeldUntil: { } until }
+                ? new JudgeRefusal(reason, until)
+                : null;
+
         TrackRow Row(IReadOnlyList<RowSeed> members)
         {
             // Resolves through song identity, so every upload of this song lands on the same
@@ -274,6 +287,7 @@ public sealed record TracksView
                     && acquisition?.Stops is not true
                     && !(progress.AwaitingPerson && verdict is null),
                 WaitingForPerson = progress.AwaitingPerson && verdict is null,
+                Refusal = verdict is null ? RefusalOf(members) : null,
                 Judge = judge,
                 Acquisition = acquisition,
                 Release = known.Releases.GetValueOrDefault(primary.TrackKey),

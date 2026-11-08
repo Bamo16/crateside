@@ -146,7 +146,9 @@ off the weekly Claude limit: the quota guard never holds it, and with Library ba
 judging works the backlog too ([ADR 0067](adr/0067-a-judge-off-the-claude-limit-is-not-held-by-it.md)).
 When the endpoint refuses a session (a rate limit, an overload, a server error, or no answer), judging
 holds for the wait the endpoint states, up to an hour, or else a minute doubling to thirty, until a
-session is served; the song is not failed for it
+session is served; the song is not failed for it. After five refusals in a row judging pauses itself,
+says why on the Dashboard's Judging card with the endpoint's own words, and resumes only when the
+user does, which also clears the wait
 ([ADR 0070](adr/0070-a-refusing-endpoint-holds-judging-with-a-backoff.md)). A spent Claude allowance
 still pauses judging.
 Claude Code sends its claude.ai login in the `Authorization` header unless `ANTHROPIC_AUTH_TOKEN`

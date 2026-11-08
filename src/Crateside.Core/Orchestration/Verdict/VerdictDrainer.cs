@@ -311,6 +311,10 @@ public sealed class VerdictDrainer(
         CancellationToken ct
     )
     {
+        // The pause does not hold the spend-down, so it stops for the same refusals by itself.
+        if (backfill && control.Backoff.IsExhausted)
+            return StageTick.Idle;
+
         // Checked on every pass, since another stage's wake ends the worker's wait early (ADR 0070).
         if (control.Backoff.Hold is { RetryAt: { } until, Reason: var holding })
             return StageTick.Held(holding, until - time.GetUtcNow());
@@ -397,6 +401,11 @@ public sealed class VerdictDrainer(
             if (result is { IsRefused: true, Error: { } reason })
             {
                 var refused = control.Backoff.Refused(reason, result.RetryAfter);
+
+                // The endpoint has refused too often to go on trying by itself; only the user's
+                // resume tries again (ADR 0070).
+                if (control.Backoff.IsExhausted)
+                    control.Pause();
 
                 jobs.Record(
                     item.TrackKey,

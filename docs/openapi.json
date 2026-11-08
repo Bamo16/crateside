@@ -1257,6 +1257,26 @@
         },
         "description": "One appended line: a single state change to a job. Lines are never edited or removed, so the\r\nfile is a history and TrackJob is the fold over it."
       },
+      "JudgeRefusal": {
+        "required": [
+          "reason",
+          "retryAt"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          },
+          "retryAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        },
+        "description": "Why the judge's endpoint last refused a session for a track, and when judging tries again (ADR 0070)."
+      },
       "JudgeStanding": {
         "enum": [
           "Running",
@@ -3401,6 +3421,17 @@
           "waitingForJudge": {
             "type": "boolean",
             "description": "Detected and never judged: the judge has it, nothing about its key is missing yet."
+          },
+          "refusal": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The judge's endpoint refused the last session for this track, which is still waiting to be judged (ADR 0070).",
+                "$ref": "#/components/schemas/JudgeRefusal"
+              }
+            ]
           },
           "waitingForPerson": {
             "type": "boolean",

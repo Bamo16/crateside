@@ -8,6 +8,9 @@ namespace Crateside.Core.Orchestration.Verdict;
 /// </summary>
 public sealed class JudgeBackoff
 {
+    /// <summary>Refusals in a row, with no session served between, after which judging pauses itself.</summary>
+    public const int PauseAfter = 5;
+
     private static readonly TimeSpan First = TimeSpan.FromMinutes(1);
     private static readonly TimeSpan Longest = TimeSpan.FromMinutes(30);
 
@@ -25,6 +28,29 @@ public sealed class JudgeBackoff
 
         if (remembered?.Read().Backoff is { } kept)
             (_refusals, _hold) = (kept.Refusals, kept.Hold);
+    }
+
+    /// <summary>Refusals since a session was last served.</summary>
+    public int Refusals
+    {
+        get
+        {
+            lock (_gate)
+                return _refusals;
+        }
+    }
+
+    /// <summary>Whether enough refusals came in a row that judging stays paused until the user resumes it.</summary>
+    public bool IsExhausted => Refusals >= PauseAfter;
+
+    /// <summary>The latest refusal, whether or not its wait has passed.</summary>
+    public JudgeHold? Last
+    {
+        get
+        {
+            lock (_gate)
+                return _hold;
+        }
     }
 
     /// <summary>The hold in force, or null once its time has passed.</summary>
@@ -51,7 +77,10 @@ public sealed class JudgeBackoff
     }
 
     /// <summary>Clears the hold and starts the next refusal's wait at a minute again.</summary>
-    public void Served()
+    public void Served() => Clear();
+
+    /// <summary>Forgets the refusals and the hold, as the user's resume does, so judging tries at once.</summary>
+    public void Clear()
     {
         lock (_gate)
         {
