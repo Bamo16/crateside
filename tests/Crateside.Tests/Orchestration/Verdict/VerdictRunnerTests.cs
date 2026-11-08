@@ -72,7 +72,7 @@ public sealed class VerdictRunnerTests : IDisposable
     private WorkingSet Set => field ??= new WorkingSet(Path.Combine(_directory, "working"));
     private LedgerStore Ledger => field ??= TestLedger.Store();
     private string VerdictPath =>
-        Path.Combine(Set.Prepare(TrackKey), VerdictRunner.VerdictFileName);
+        Path.Combine(Set.JudgeFolderFor(TrackKey), VerdictRunner.VerdictFileName);
     private FakeSessions Sessions { get; } = new();
     private FakeDetector Detector { get; } = new();
     private FakePages Pages { get; } = new();
@@ -151,6 +151,47 @@ public sealed class VerdictRunnerTests : IDisposable
 
     private Task<VerdictResult> RunAsync(WorkOrder? order = null) =>
         Runner.RunAsync(order ?? Order(), TestContext.Current.CancellationToken);
+
+    [Fact]
+    public async Task An_imported_tracks_judge_is_given_a_path_with_no_tilde_before_a_digit()
+    {
+        const string key = "file~86590e76549a8e2c";
+        var order = WorkOrder.Compose(
+            new WorkItem
+            {
+                PlaylistItemId = "PLI1",
+                TrackKey = key,
+                Title = "Yes - Owner of a Lonely Heart",
+                Plan = StemPlan.Default,
+            },
+            TestLedger.From("does-not-exist")
+        );
+        Set.Prepare(key);
+        File.WriteAllText(Set.EvidencePathFor(key), BackedByBoth);
+        Sessions.Turns.Enqueue(_ => new ProcessOutcome
+        {
+            ExitCode = 0,
+            StandardOutput = string.Empty,
+            StandardError = string.Empty,
+        });
+        Sessions.Turns.Enqueue(_ => new ProcessOutcome
+        {
+            ExitCode = 0,
+            StandardOutput = string.Empty,
+            StandardError = string.Empty,
+        });
+
+        await RunAsync(order);
+
+        var request = Sessions.Requests[0];
+        var verdictLine = Assert.Single(
+            request.StandardInput!.Split('\n'),
+            line => line.StartsWith("- verdict file: ", StringComparison.Ordinal)
+        );
+
+        Assert.DoesNotMatch(@"~\d", verdictLine);
+        Assert.DoesNotMatch(@"~\d", request.WorkingDirectory!);
+    }
 
     [Fact]
     public async Task A_valid_verdict_file_is_recorded_under_the_orders_upload()
@@ -949,7 +990,7 @@ public sealed class VerdictRunnerTests : IDisposable
         );
         Assert.Equal(VerdictRunner.Instructions, After(request, "--append-system-prompt"));
         Assert.Contains("--safe-mode", request.Arguments);
-        Assert.Equal(Set.Prepare(TrackKey), request.WorkingDirectory);
+        Assert.Equal(Set.JudgeFolderFor(TrackKey), request.WorkingDirectory);
         Assert.Equal("https://api.anthropic.com", request.Environment["ANTHROPIC_BASE_URL"]);
         Assert.Equal("false", request.Environment["ENABLE_TOOL_SEARCH"]);
         Assert.False(Judge.Environment.ContainsKey("ENABLE_TOOL_SEARCH"));
