@@ -19,6 +19,7 @@ Open any `.dc.html` in a browser. They need `support.js` beside them. Each is a 
 | `Crateside Counts Page.dc.html` | 1a · the Library page as **Counts**, whole page · 1b · a detector band opened | Handoff 08 (#68, #60, #56). |
 | `Crateside Tools Page.dc.html` | 1a · Partners inside **Tools** · 1b–1d · Re-Pitch · 2a · Re-Pitch inside Partners' table (not recommended) | Handoff 09 (#57, #58). |
 | `Crateside Settings Page.dc.html` | 1a · Settings, everyday · 1b · first run · 1c · removal confirm and failures | Handoff 10 (#74). |
+| `Crateside Dashboard.dc.html` | 1a · Counts becomes the Dashboard, whole page, sections folding (#78) | Handoff 11, built with differences in `DESIGN.md`. *Latest activity* in its *Over time* row is superseded by Activity Panel (handoff 21). |
 | `Crateside BPM Display.dc.html` | 1 · how each tempo state reads, everywhere a BPM shows (1a–1f) · 2 · how much a drifting tempo drifts: range, spread, tempo strip (2a–2c) | Handoff 13 (#92). |
 | `Crateside Warp View.dc.html` | 1 · each stem's warp in Track details: two markers (1a), dense with a stem on its own (1b), 8-bar zoom (1c), every provenance state (1d), both controls step by step (1e), zoom and room to grow (1f) | Handoff 14 (#97). |
 | `Crateside Off Its Tempo.dc.html` | 1 · a warp that sits off its tempo: the BPM-cell mark and filter (1a), Track details (1b), the Off the grid row and True up step by step (1c), the shape of each state (1d) | Handoff 16 (#96). Delivered as a bundle (v2), then as a `.dc.html` that needs `support.js` (v3, which also draws the warp view's bar numbers and time axis). |
@@ -26,6 +27,7 @@ Open any `.dc.html` in a browser. They need `support.js` beside them. Each is a 
 | `Crateside Judge From These Bars.dc.html` | 1 · judging from bars the maintainer names: the band (1a), the warp view form, bands and run states (1b), Why this key's windows (1c), the Ear setting (1d) | Handoff 18 (#116). 1c (window blocks in Why this key) superseded by handoff 20, where windows open from their bands. |
 | `Crateside Partners By Notes.dc.html` | 1a · Partners pairs by notes: notes shared, the shift span, sections as a basis, tonic and mode by hand; live | Handoff 19 (#125). Supersedes 1d of Mode Beside Its Tag. |
 | `Crateside Evidence And Sharing.dc.html` | 1 · Track details: the evidence panel in two balanced columns (1a), the warp view as the track's timeline, with window drawers, the key strip and room for chords and playback (1b), the share card (1c); live | Handoff 20 (#150, #151, #152). |
+| `Crateside Activity Panel.dc.html` | 1 · the dashboard's Activity section: in place at 2000px, live, with filters, paging and opened rows (1a), every row state (1b), narrow, paged away, empty and folded (1c) | Handoff 21 (#189). Supersedes *Latest activity* in the Dashboard canvas's *Over time* row. |
 | `Crateside Brand.dc.html` | 1 · five marks · 2 · fifteen more | **1a chosen** (interim). The rest are kept in case the brand is revisited. |
 
 ### `handoffs/`: what was sent to the implementing agent each time
@@ -56,6 +58,7 @@ The written spec for each canvas turn, in the order it was sent. The later ones 
 | `18-judge-from-these-bars.md` | Judge From These Bars | #116 |
 | `19-partners-by-notes.md` | Partners By Notes | #125 |
 | `20-track-page.md` | Evidence And Sharing | #150, #151, #152 |
+| `21-activity.md` | Activity Panel | #189 |
 
 ### `brand/`: the 1a assets
 `mark.svg` (header), `favicon.svg` plus PNG fallbacks (browser tab), `lockup.svg` (README), `mark-tile.svg` (app icon). Usage rules are in `handoffs/04-brand.md`.
