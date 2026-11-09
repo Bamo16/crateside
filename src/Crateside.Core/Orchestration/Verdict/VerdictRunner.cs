@@ -275,7 +275,7 @@ public sealed class VerdictRunner(
 
         return string.Create(
             CultureInfo.InvariantCulture,
-            $"{verdict}, {"section".ToQuantity(run.Sections.Count)}; {"turn".ToQuantity(tally.Turns)} on {model}, {tally.Seconds:0} s{(tally.CostUsd > 0 ? $", ${tally.CostUsd:0.00}" : string.Empty)}"
+            $"{verdict}, {"section".ToQuantity(run.Sections.Count)}; {"turn".ToQuantity(tally.Turns)} on {model}, {tally.Seconds:0} s{tally.TokensText}"
         );
     }
 }

@@ -249,19 +249,19 @@ public sealed class VerdictRunnerTests : IDisposable
         GiveAudio();
         Session(
             Verdict,
-            stdout: """{"type":"result","subtype":"success","is_error":false,"num_turns":3,"duration_ms":150400,"total_cost_usd":0.4213,"result":"done"}"""
+            stdout: """{"type":"result","subtype":"success","is_error":false,"num_turns":3,"duration_ms":150400,"usage":{"input_tokens":3,"cache_creation_input_tokens":2291,"cache_read_input_tokens":27305,"output_tokens":1600},"result":"done"}"""
         );
 
         var result = await RunAsync();
 
         Assert.Equal(
-            $"A minor, HIGH, 0 sections; 3 turns on {Judge.Model}, 150 s, $0.42",
+            $"A minor, HIGH, 0 sections; 3 turns on {Judge.Model}, 150 s, 30k in (27k cached) · 1.6k out",
             result.Summary
         );
     }
 
     [Fact]
-    public async Task A_session_with_no_reported_cost_leaves_the_cost_out_of_the_summary()
+    public async Task A_session_with_no_reported_usage_leaves_the_tokens_out_of_the_summary()
     {
         GiveEvidence();
         GiveAudio();
