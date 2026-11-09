@@ -40,6 +40,11 @@ They are read off Deezer's numbers where those are clear, and the user answers t
   artists included. That catches a big-name feature: Estelle – *American Boy* credits Kanye West. The lookup
   searches by the song and reads its credits, so names that do not split cleanly ("Polo & Pan",
   "Jay-Z") are not guessed at.
+- **Which song:** the most popular Deezer hit with the same title whose artist is the song's artist
+  (or one of its credited artists) as a whole name, compared without case, accents, punctuation, and
+  with `&` read as "and". A longer name that merely contains it ("Adele Taylor", "Hello I'm Adele") is
+  not the artist, and a hit marked karaoke, tribute, cover or "originally performed" is passed over
+  for the next one (lookup version 3, 2026-11-09).
 - **Written by the backing pass** beside genre, under the same rules: only onto a keyed entry, it
   replaces only a keyword of its own group, and a value the user took off by hand is never put back.
 

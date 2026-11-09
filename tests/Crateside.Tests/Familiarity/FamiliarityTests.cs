@@ -79,7 +79,7 @@ public sealed class FamiliarityStoreTests : IDisposable
     }
 
     [Fact]
-    public void A_song_an_older_lookup_missed_is_owed_another_but_one_it_found_is_not()
+    public void A_song_an_older_lookup_read_is_owed_another_but_a_current_one_is_not()
     {
         var store = new FamiliarityStore(_ledger);
 
@@ -90,9 +90,16 @@ public sealed class FamiliarityStoreTests : IDisposable
             DateTimeOffset.UtcNow,
             version: 1
         );
+        store.Measure(
+            "current",
+            new FamiliarityReading("A", 1, 1),
+            DateTimeOffset.UtcNow,
+            FamiliarityLookup.Version
+        );
 
         Assert.True(store.Read()["missed"].IsOwedALookup);
-        Assert.False(store.Read()["found"].IsOwedALookup);
+        Assert.True(store.Read()["found"].IsOwedALookup);
+        Assert.False(store.Read()["current"].IsOwedALookup);
     }
 
     [Fact]
@@ -127,6 +134,40 @@ public sealed class FamiliarityLookupTests
     [Fact]
     public void A_cover_by_someone_else_is_not_by_one_of_the_artists() =>
         Assert.False(FamiliarityLookup.ByOneOf("Bananarama", "Ace of Base"));
+
+    [Theory]
+    [InlineData("Adele", "Adele Taylor")]
+    [InlineData("Adele", "Hello I'm Adele")]
+    [InlineData("Adele", "Adele Tribute Band")]
+    [InlineData("Kanye West", "Kanye")]
+    public void A_longer_name_containing_the_artist_is_not_the_artist(
+        string credited,
+        string found
+    ) => Assert.False(FamiliarityLookup.ByOneOf(credited, found));
+
+    [Theory]
+    [InlineData("Polo & Pan", "Polo and Pan")]
+    [InlineData("Hall and Oates", "Hall & Oates")]
+    [InlineData("Estelle & Kanye West", "Kanye West")]
+    [InlineData("Estelle, Kanye West", "Estelle")]
+    public void Ampersands_and_credit_splits_still_match(string credited, string found) =>
+        Assert.True(FamiliarityLookup.ByOneOf(credited, found));
+
+    [Theory]
+    [InlineData("Hello", "Ameritz Karaoke", "Hello", true)]
+    [InlineData("Hello (Karaoke Version)", "Adele", "Hello", true)]
+    [InlineData("Hello (Cover)", "Adele", "Hello", true)]
+    [InlineData("Hello (Originally Performed by Adele)", "Studio Band", "Hello", true)]
+    [InlineData("Hello", "Adele Tribute Project", "Hello", true)]
+    [InlineData("Cover Me", "Bruce Springsteen", "Cover Me", false)]
+    [InlineData("Karaoke", "Hanson", "Karaoke", false)]
+    [InlineData("Hello", "Adele", "Hello", false)]
+    public void Karaoke_tribute_and_cover_uploads_are_recognised(
+        string title,
+        string artist,
+        string wanted,
+        bool expected
+    ) => Assert.Equal(expected, FamiliarityLookup.IsImitation(title, artist, wanted));
 
     private sealed class Deezer(Dictionary<string, string> answers) : HttpMessageHandler
     {
@@ -183,6 +224,55 @@ public sealed class FamiliarityLookupTests
         );
 
         Assert.Equal(new FamiliarityReading("Kanye West", 14_000_000, 900_317), reading);
+    }
+
+    [Fact]
+    public async Task A_cover_upload_is_passed_over_for_the_real_artists_track()
+    {
+        const string search = """
+            {"data":[
+              {"id":1,"title":"Hello","rank":107048,"artist":{"name":"Adele Taylor"}},
+              {"id":2,"title":"Hello","rank":90000,"artist":{"name":"Hello I'm Adele"}},
+              {"id":3,"title":"Hello (Karaoke Version)","rank":500000,"artist":{"name":"Adele"}},
+              {"id":4,"title":"Hello","rank":800000,"artist":{"name":"Karaoke Hits"}},
+              {"id":5,"title":"Hello","rank":700000,"artist":{"name":"Adele"}}
+            ]}
+            """;
+        var lookup = new FamiliarityLookup(
+            new FixedHttpClientFactory(
+                new HttpClient(
+                    new Deezer(
+                        new()
+                        {
+                            ["/search"] = search,
+                            ["/track/5"] = """{"contributors":[{"id":20,"role":"Main"}]}""",
+                            ["/artist/20"] = """{"name":"Adele","nb_fan":20000000}""",
+                        }
+                    )
+                )
+            )
+        );
+
+        Assert.Equal(
+            new FamiliarityReading("Adele", 20_000_000, 700_000),
+            await lookup.ReadAsync("Adele", "Hello", TestContext.Current.CancellationToken)
+        );
+    }
+
+    [Fact]
+    public async Task Only_cover_uploads_read_as_unknown_rather_than_as_the_cover()
+    {
+        const string search = """
+            {"data":[{"id":1,"title":"Hello","rank":107048,"artist":{"name":"Adele Taylor"}}]}
+            """;
+        var lookup = new FamiliarityLookup(
+            new FixedHttpClientFactory(new HttpClient(new Deezer(new() { ["/search"] = search })))
+        );
+
+        Assert.Equal(
+            FamiliarityReading.Unknown,
+            await lookup.ReadAsync("Adele", "Hello", TestContext.Current.CancellationToken)
+        );
     }
 
     [Fact]
