@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-09
+- Built by [#192](https://github.com/Bamo16/crateside/issues/192) (answers from Live) and [#193](https://github.com/Bamo16/crateside/issues/193) (the song page).
 - Amends [ADR 0030](0030-genre-is-a-tag-group-of-our-own-settled-by-the-user.md) (only a settled
   genre is written) and [ADR 0032](0032-familiarity-is-read-off-reach-artist-first-then-song.md)
   (the user answers the rest). Applies [ADR 0076](0076-crateside-rules-first-and-the-person-is-the-judge-of-the-rest.md)'s

@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-09
+- Built by [#194](https://github.com/Bamo16/crateside/issues/194) (the measurement) and [#195](https://github.com/Bamo16/crateside/issues/195) (the tagging).
 - Follows [ADR 0087](0087-crateside-tags-every-song-and-the-person-corrects-in-crateside-or-in-live.md).
 
 ## Context

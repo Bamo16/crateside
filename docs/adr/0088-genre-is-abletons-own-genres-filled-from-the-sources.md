@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-09
+- Built by [#190](https://github.com/Bamo16/crateside/issues/190).
 - Supersedes [ADR 0030](0030-genre-is-a-tag-group-of-our-own-settled-by-the-user.md). Amends
   [ADR 0033](0033-a-genre-can-be-learned-from-the-users-answers-for-an-artist.md). Follows
   [ADR 0087](0087-crateside-tags-every-song-and-the-person-corrects-in-crateside-or-in-live.md).
