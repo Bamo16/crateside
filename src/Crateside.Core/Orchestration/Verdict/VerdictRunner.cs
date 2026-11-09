@@ -23,11 +23,9 @@ public sealed class VerdictRunner(
     JudgePrompt prompt,
     VerdictCompletion completion,
     JudgeAvailability availability,
-    ISourcePages sourcePages,
+    PageLookups pages,
     IOptions<JudgeOptions> options,
-    ILogger<VerdictRunner> log,
-    IntakeStore? intake = null,
-    PageChoiceStore? pageChoices = null
+    ILogger<VerdictRunner> log
 ) : IVerdictJudge
 {
     public const string VerdictFileName = "verdict.json";
@@ -36,14 +34,6 @@ public sealed class VerdictRunner(
     public const string SourcesFileName = PageLookups.SourcesFileName;
 
     private readonly string _model = options.Value.Model;
-    private readonly PageLookups _lookups = new(
-        sourcePages,
-        workingSet,
-        store,
-        null,
-        intake,
-        pageChoices
-    );
 
     /// <summary>Judges one track: records its verdict, or says why there is none.</summary>
     public Task<VerdictResult> RunAsync(WorkOrder order, CancellationToken ct = default) =>
@@ -106,8 +96,8 @@ public sealed class VerdictRunner(
 
         File.Delete(verdictPath);
 
-        var found = await _lookups.LookUpAsync(order, ct);
-        var lookups = _lookups.Effective(order.TrackKey, found);
+        var found = await pages.LookUpAsync(order, ct);
+        var lookups = pages.Effective(order.TrackKey, found);
 
         step(new JudgeStep.Judging());
 
@@ -117,7 +107,7 @@ public sealed class VerdictRunner(
                 order,
                 verdictPath,
                 lookups,
-                _lookups.HeldRun(order),
+                pages.HeldRun(order),
                 direction,
                 given,
                 audio
@@ -136,7 +126,7 @@ public sealed class VerdictRunner(
                 completion.Assess(
                     VerdictFile.Check(verdictPath),
                     order,
-                    _lookups.HeldRun(order),
+                    pages.HeldRun(order),
                     direction,
                     audio,
                     detected,
@@ -152,7 +142,7 @@ public sealed class VerdictRunner(
                         completion.Complete(
                             VerdictCompletion.WithNote(run, note),
                             order,
-                            _lookups.HeldRun(order),
+                            pages.HeldRun(order),
                             direction,
                             audio,
                             detected
@@ -182,7 +172,7 @@ public sealed class VerdictRunner(
                     withheld = completion.Complete(
                         run,
                         order,
-                        _lookups.HeldRun(order),
+                        pages.HeldRun(order),
                         direction,
                         audio,
                         detected
@@ -198,7 +188,7 @@ public sealed class VerdictRunner(
                         completion.Complete(
                             run,
                             order,
-                            _lookups.HeldRun(order),
+                            pages.HeldRun(order),
                             direction,
                             audio,
                             detected

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Crateside.Core.Ledger;
+using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Loop;
@@ -99,11 +100,13 @@ public sealed class VerdictRunnerTests : IDisposable
             new SourceIndex(Set, IndexPath),
             Sessions,
             Detector,
-            Pages,
+            new PageLookups(Pages, Set, Ledger, Names),
             Options.Create(Judge),
             _time,
             _log
         );
+
+    private ResolvedNameStore? Names { get; set; }
 
     private string PromptFor(WorkOrder order) =>
         new JudgePrompt(Set, Options.Create(Judge)).Build(
@@ -127,6 +130,18 @@ public sealed class VerdictRunnerTests : IDisposable
                 Title = "Yes - Owner of a Lonely Heart",
                 Plan = instrumentalRelease ? StemPlan.InstrumentalRelease : StemPlan.Default,
                 StatedSourceUrl = statedSource,
+            },
+            TestLedger.From("does-not-exist")
+        );
+
+    private static WorkOrder TopicOrder() =>
+        WorkOrder.Compose(
+            new WorkItem
+            {
+                PlaylistItemId = "PLI1",
+                TrackKey = TrackKey,
+                Title = "Owner of a Lonely Heart",
+                Plan = StemPlan.Default,
             },
             TestLedger.From("does-not-exist")
         );
@@ -1115,6 +1130,26 @@ public sealed class VerdictRunnerTests : IDisposable
     {
         Assert.Contains("caps the verdict at MEDIUM", JudgePrompt.Instructions);
         Assert.Contains("Tunebat", JudgePrompt.Instructions);
+    }
+
+    [Fact]
+    public async Task A_title_with_no_artist_is_looked_up_by_the_name_stemforge_resolved()
+    {
+        Names = new ResolvedNameStore(Path.Combine(_directory, "names.json"));
+        Names.Save(
+            TrackKey,
+            new ResolvedName
+            {
+                DisplayTitle = "Yes - Owner of a Lonely Heart",
+                BaseName = "Yes - Owner of a Lonely Heart",
+            }
+        );
+        GiveEvidence();
+        Session(Verdict);
+
+        await RunAsync(TopicOrder());
+
+        Assert.Equal(("Yes", "Owner of a Lonely Heart"), Assert.Single(Pages.Asked));
     }
 
     [Fact]

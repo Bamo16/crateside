@@ -90,7 +90,7 @@ public sealed class VerdictDrainerTests : IDisposable
                 _sources,
                 _sessions,
                 new NoWindows(),
-                new NoPages(),
+                new PageLookups(new NoPages(), _set, _store),
                 judge,
                 new FakeTimeProvider(),
                 NullLogger<VerdictRunner>.Instance

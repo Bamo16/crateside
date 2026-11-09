@@ -1,5 +1,6 @@
 using Crateside.Core;
 using Crateside.Core.KeyDetection;
+using Crateside.Core.Ledger;
 using Crateside.Core.Orchestration;
 using Crateside.Core.Orchestration.Evidence;
 using Crateside.Core.Orchestration.Loop;
@@ -19,9 +20,11 @@ public sealed class VerdictRunnerRealDataTests
 
     private static readonly WorkingSet Set = new(new CratesidePaths());
 
-    private static VerdictRunner Runner =>
+    private static VerdictRunner Runner => CreateRunner(TestLedger.Store());
+
+    private static VerdictRunner CreateRunner(LedgerStore store) =>
         VerdictRunners.Create(
-            TestLedger.Store(),
+            store,
             Set,
             new SourceIndex(Set, new CratesidePaths()),
             new ProcessRunner(),
@@ -29,7 +32,11 @@ public sealed class VerdictRunnerRealDataTests
                 Set,
                 DetectorSet.For(new ProcessRunner(), new CratesidePaths().KeydetectFfmpeg)
             ),
-            new SourcePages(new FixedHttpClientFactory(new HttpClient())),
+            new PageLookups(
+                new SourcePages(new FixedHttpClientFactory(new HttpClient())),
+                Set,
+                store
+            ),
             Options.Create(new JudgeOptions()),
             TimeProvider.System,
             NullLogger<VerdictRunner>.Instance
