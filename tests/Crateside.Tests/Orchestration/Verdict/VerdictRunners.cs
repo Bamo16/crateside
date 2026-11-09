@@ -17,7 +17,7 @@ internal static class VerdictRunners
         SourceIndex sources,
         IProcessRunner processes,
         IWindowDetector detector,
-        ISourcePages pages,
+        PageLookups lookups,
         IOptions<JudgeOptions> options,
         TimeProvider time,
         ILogger<VerdictRunner> log
@@ -31,7 +31,7 @@ internal static class VerdictRunners
             new JudgePrompt(workingSet, options),
             new VerdictCompletion(workingSet, options, time),
             new JudgeAvailability(options),
-            pages,
+            lookups,
             options,
             log
         );
