@@ -14,7 +14,7 @@ namespace Crateside;
 
 /// <summary>
 /// Keeps the library's keys backed against hand-applied tags (ADR 0023) and every keyed file's
-/// genre (ADR 0030) and familiarity (#52) written. Never paused: it contends for nothing.
+/// genres (ADR 0088) and familiarity (#52) written. Never paused: it contends for nothing.
 /// </summary>
 public sealed class BackingWorker(
     BackingRunner runner,
@@ -112,15 +112,29 @@ public sealed class BackingWorker(
         var settled = genres.Read();
         var reach = familiarity.Read();
 
+        // Asked before the write, so a genre that changes later is known to have been asked.
+        genres.MarkTagged(
+            settled
+                .Values.Where(record => record.Genres.Except(record.Tagged).Any())
+                .Select(record => (record.Song, record.Genres))
+        );
+        settled = genres.Read();
+
+        IReadOnlyList<string> RetiredOf(string trackKey) =>
+            [
+                .. settled
+                    .GetValueOrDefault(ledger.SongFor(trackKey) ?? trackKey)
+                    ?.Retired.Select(GenreVocabulary.Keyword)
+                    ?? [],
+            ];
+
         IReadOnlyList<string> OwnedOf(string trackKey)
         {
             var song = ledger.SongFor(trackKey) ?? trackKey;
 
             return
             [
-                .. settled.GetValueOrDefault(song)?.Written is { } genre
-                    ? [GenreVocabulary.Keyword(genre)]
-                    : Array.Empty<string>(),
+                .. settled.GetValueOrDefault(song)?.Genres.Select(GenreVocabulary.Keyword) ?? [],
                 .. reach.GetValueOrDefault(song)?.Written is { } known
                     ? [FamiliarityVocabulary.Keyword(known)]
                     : Array.Empty<string>(),
@@ -137,7 +151,8 @@ public sealed class BackingWorker(
                 OwnedOf,
                 index: libraryIndex,
                 marksOf: trackMarks.Of,
-                beforeWrite: backups.Save
+                beforeWrite: backups.Save,
+                retiredOf: RetiredOf
             ),
             "the library",
             started
@@ -146,7 +161,13 @@ public sealed class BackingWorker(
         started = Stopwatch.GetTimestamp();
 
         var staging = Report(
-            runner.Run(_paths.StagingFolder, ledger, OwnedOf, backKeys: false),
+            runner.Run(
+                _paths.StagingFolder,
+                ledger,
+                OwnedOf,
+                backKeys: false,
+                retiredOf: RetiredOf
+            ),
             "Staging",
             started
         );

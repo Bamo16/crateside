@@ -19,12 +19,16 @@ public sealed class TrackAnnotationReaderTests : IDisposable
     [Fact]
     public void A_genre_looked_up_before_the_verdict_is_suggested_on_the_judged_row()
     {
-        new GenreStore(_fixture.Decisions).Suggest(Video, ["Pop", "country pop"], At);
+        new GenreStore(_fixture.Decisions).Hear(
+            Video,
+            new GenreHearing(["Pop", "country pop"], null),
+            At
+        );
 
         var row = Row(_fixture.Judged(), _fixture.Reader());
 
         Assert.Equal(Song, row.Song);
-        Assert.Equal("Pop", row.Genre?.Suggested);
+        Assert.Equal(["Pop"], row.Genre?.Genres);
         Assert.Equal(At, row.Genre?.LookedUpAt);
     }
 
@@ -32,25 +36,25 @@ public sealed class TrackAnnotationReaderTests : IDisposable
     public void A_genre_settled_on_the_judged_row_reads_back_after_a_restart()
     {
         GenreStore genres = new(_fixture.Decisions);
-        genres.Suggest(Video, ["Pop", "country pop"], At);
+        genres.Hear(Video, new GenreHearing(["Pop", "country pop"], null), At);
         var ledger = _fixture.Judged();
 
-        genres.Settle(Row(ledger, _fixture.Reader(genres)).Song, "Pop");
+        genres.Choose(Row(ledger, _fixture.Reader(genres)).Song, "Pop");
 
-        Assert.Equal("Pop", Row(ledger, _fixture.Reader()).Genre?.Written);
+        Assert.Equal(["Pop"], Row(ledger, _fixture.Reader()).Genre?.Mine);
         Assert.Equal([Song], new GenreStore(_fixture.Decisions).Read().Keys);
     }
 
     [Fact]
     public void An_answer_given_before_the_verdict_survives_it()
     {
-        new GenreStore(_fixture.Decisions).Settle(Video, "Rock");
+        new GenreStore(_fixture.Decisions).Choose(Video, "Rock");
         new FamiliarityStore(_fixture.Decisions).Settle(Video, "Mainstream");
         new TrackMarkStore(_fixture.Decisions).Set(Video, TrackMark.ChangesKey, true);
 
         var row = Row(_fixture.Judged(), _fixture.Reader());
 
-        Assert.Equal("Rock", row.Genre?.Written);
+        Assert.Equal(["Rock"], row.Genre?.Genres);
         Assert.Equal("Mainstream", row.Familiarity?.Settled);
         Assert.Equal([TrackMark.ChangesKey], row.Marks);
     }
@@ -59,34 +63,34 @@ public sealed class TrackAnnotationReaderTests : IDisposable
     public void The_users_answer_under_the_upload_outranks_a_suggestion_under_the_song()
     {
         GenreStore genres = new(_fixture.Decisions);
-        genres.Settle(Video, "Rock");
-        genres.Suggest(Song, ["Pop"], At);
+        genres.Choose(Video, "Rock");
+        genres.Hear(Song, new GenreHearing(["Pop"], null), At);
 
         var record = Row(_fixture.Judged(), _fixture.Reader()).Genre;
 
-        Assert.Equal("Rock", record?.Written);
-        Assert.Equal("Pop", record?.Suggested);
+        Assert.Equal(["Rock"], record?.Genres);
+        Assert.Equal(["Pop"], record?.FromSources);
     }
 
     [Fact]
     public void The_users_answer_under_the_song_outranks_one_under_the_upload()
     {
         GenreStore genres = new(_fixture.Decisions);
-        genres.Settle(Video, "Rock");
-        genres.Settle(Song, "Pop");
+        genres.Choose(Video, "Rock");
+        genres.Choose(Song, "Pop");
 
-        Assert.Equal("Pop", Row(_fixture.Judged(), _fixture.Reader()).Genre?.Written);
+        Assert.Equal(["Pop"], Row(_fixture.Judged(), _fixture.Reader()).Genre?.Mine);
     }
 
     [Fact]
     public void An_unjudged_uploads_records_stay_under_its_video_id()
     {
-        new GenreStore(_fixture.Decisions).Suggest(Video, ["Pop"], At);
+        new GenreStore(_fixture.Decisions).Hear(Video, new GenreHearing(["Pop"], null), At);
 
         var row = Row(_fixture.Unjudged(), _fixture.Reader());
 
         Assert.Equal(Video, row.Song);
-        Assert.Equal("Pop", row.Genre?.Suggested);
+        Assert.Equal(["Pop"], row.Genre?.Genres);
         Assert.Equal([Video], new GenreStore(_fixture.Decisions).Read().Keys);
     }
 

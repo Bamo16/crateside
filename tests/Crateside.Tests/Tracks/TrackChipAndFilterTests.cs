@@ -224,9 +224,8 @@ public sealed class TrackChipAndFilterTests
         new()
         {
             Song = "rob dougan - furious angels",
-            Genre = settled ? "Electronic" : null,
-            IsSettled = settled,
-            Suggested = "Electronic",
+            Heard = ["Electronic"],
+            Mine = settled ? ["Electronica"] : [],
             LookedUpAt = LookedUp,
         };
 
@@ -239,8 +238,8 @@ public sealed class TrackChipAndFilterTests
         };
 
     [Fact]
-    public void An_unanswered_genre_is_a_tag_to_answer() =>
-        Assert.True(
+    public void A_genre_nobody_has_answered_is_not_a_tag_to_answer() =>
+        Assert.False(
             Tagged(Genre(settled: false), Familiarity(1_000_000)).Matches(TrackFilter.TagsToAnswer)
         );
 

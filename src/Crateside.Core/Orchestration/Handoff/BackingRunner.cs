@@ -13,7 +13,7 @@ namespace Crateside.Core.Orchestration.Handoff;
 
 /// <summary>
 /// Gives every unbacked file in a root the entry its verdict earns, so its key survives the next
-/// write (ADR 0023), and every keyed entry crateside's own tags: genre (ADR 0030), familiarity (#52)
+/// write (ADR 0023), and every keyed entry crateside's own tags: genres (ADR 0088), familiarity (#52)
 /// and its track's Collections (#130). A key that differs from its song's verdict is rewritten to it
 /// (ADR 0052, amended by #175).
 /// </summary>
@@ -34,6 +34,7 @@ public sealed class BackingRunner(
     /// reconciles the index to the store, so a second would undo the first.
     /// </summary>
     /// <param name="ownedOf">A video ID's keywords in crateside's own groups; a group left out is left alone.</param>
+    /// <param name="retiredOf">A video ID's keywords crateside wrote before and no longer wants, which are taken off; every other keyword is left alone.</param>
     /// <param name="backKeys">False where another stage writes the keys, which is staging.</param>
     /// <param name="correctKeys">True rewrites a keyed entry's key to its song's verdict where they differ (#175).</param>
     /// <param name="index">Live's index of the root, which an imported file's Collections arrive in; null leaves Collections alone.</param>
@@ -49,14 +50,25 @@ public sealed class BackingRunner(
         FolderInfo? index = null,
         Func<string, IReadOnlyCollection<TrackMark>>? marksOf = null,
         Action<string>? beforeWrite = null,
-        string? song = null
+        string? song = null,
+        Func<string, IReadOnlyList<string>>? retiredOf = null
     )
     {
         IReadOnlyList<Planned> unbacked;
 
         try
         {
-            unbacked = Plan(root, ledger, ownedOf, backKeys, correctKeys, index, marksOf, song);
+            unbacked = Plan(
+                root,
+                ledger,
+                ownedOf,
+                backKeys,
+                correctKeys,
+                index,
+                marksOf,
+                song,
+                retiredOf
+            );
         }
         // A store Live is writing reads as nothing backed; wait for it rather than back everything.
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -99,10 +111,11 @@ public sealed class BackingRunner(
         bool correctKeys = true,
         FolderInfo? index = null,
         Func<string, IReadOnlyCollection<TrackMark>>? marksOf = null,
-        string? song = null
+        string? song = null,
+        Func<string, IReadOnlyList<string>>? retiredOf = null
     ) =>
         [
-            .. Plan(root, ledger, ownedOf, backKeys, correctKeys, index, marksOf, song)
+            .. Plan(root, ledger, ownedOf, backKeys, correctKeys, index, marksOf, song, retiredOf)
                 .Select(planned => planned.Assignment),
         ];
 
@@ -114,7 +127,8 @@ public sealed class BackingRunner(
         bool correctKeys,
         FolderInfo? index,
         Func<string, IReadOnlyCollection<TrackMark>>? marksOf,
-        string? song
+        string? song,
+        Func<string, IReadOnlyList<string>>? retiredOf
     )
     {
         if (!Directory.Exists(root))
@@ -171,7 +185,14 @@ public sealed class BackingRunner(
                     );
                     var corrects = correctedTo is not null;
                     var merged = WithMode(
-                        Merged(file.Existing, keywords, correcting: corrects),
+                        Merged(
+                            file.Existing,
+                            keywords,
+                            correcting: corrects,
+                            retired: provenance is { SourceTrackKey: { } trackKey }
+                                ? retiredOf?.Invoke(trackKey)
+                                : null
+                        ),
                         file.Existing,
                         provenance,
                         ledger,
@@ -263,7 +284,7 @@ public sealed class BackingRunner(
             existing is { Key: null, HasPartialKey: false }
             // A keyword the writer does not know would be refused, taking the whole pass with it,
             // and dropping it to get the write through would lose what the user put there.
-            && existing.Keywords.All(CratesideKeywords.IsKnown)
+            && existing.Keywords.All(IsKnownOrRetired)
         );
 
     /// <summary>
@@ -271,24 +292,33 @@ public sealed class BackingRunner(
     /// next write to a keyless entry would replace its bag, and them with it.
     /// </summary>
     internal static bool CanTakeOwnedTags(FileTags? existing) =>
-        existing is { IsKeyTagged: true } && existing.Keywords.All(CratesideKeywords.IsKnown);
+        existing is { IsKeyTagged: true } && existing.Keywords.All(IsKnownOrRetired);
+
+    // A retired Genre| keyword must not keep a file from being rewritten: the rewrite takes it off.
+    private static bool IsKnownOrRetired(string keyword) =>
+        CratesideKeywords.IsKnown(keyword) || GenreVocabulary.IsRetiredKeyword(keyword);
 
     /// <summary>
     /// The entry's whole bag plus the key it lacks and its own tags, each replacing the one of its
-    /// group. The writer replaces the whole bag, so anything left out here is destroyed.
+    /// group, except <c>Genres</c>, which only gains: Live's own content carries tags of that group
+    /// too. The writer replaces the whole bag, so anything left out here is destroyed.
     /// </summary>
     /// <param name="correcting">The key replaces the entry's own, which differs from the verdict (ADR 0052).</param>
     internal static IReadOnlyList<string> Merged(
         FileTags? existing,
         IReadOnlyList<string> keywords,
-        bool correcting = false
+        bool correcting = false,
+        IReadOnlyList<string>? retired = null
     )
     {
         var hidden = existing?.HiddenKeywords ?? [];
         var owned = keywords
             .Where(keyword => IsOwned(keyword) && !hidden.Contains(keyword, StringComparer.Ordinal))
             .ToArray();
-        var replaced = owned.Select(GroupOf).ToHashSet(StringComparer.Ordinal);
+        var replaced = owned
+            .Select(GroupOf)
+            .Where(group => group != GenreVocabulary.Group)
+            .ToHashSet(StringComparer.Ordinal);
 
         if (correcting)
             replaced.Add("Key");
@@ -297,7 +327,11 @@ public sealed class BackingRunner(
             ? keywords.Where(keyword => !IsOwned(keyword)).ToArray()
             :
             [
-                .. existing.Keywords.Where(keyword => !replaced.Contains(GroupOf(keyword))),
+                .. existing.Keywords.Where(keyword =>
+                    !replaced.Contains(GroupOf(keyword))
+                    && !GenreVocabulary.IsRetiredKeyword(keyword)
+                    && retired?.Contains(keyword, StringComparer.Ordinal) is not true
+                ),
                 .. keywords.Where(keyword =>
                     // A corrected key is written whole, or the file would be left with half of one.
                     (correcting && IsKey(keyword))
@@ -314,7 +348,7 @@ public sealed class BackingRunner(
                 ),
             ];
 
-        return [.. kept, .. owned];
+        return [.. kept.Concat(owned).Distinct(StringComparer.Ordinal)];
     }
 
     /// <summary>Gives a keyed entry the mode tag its verdict calls for and takes off any other (#127).</summary>

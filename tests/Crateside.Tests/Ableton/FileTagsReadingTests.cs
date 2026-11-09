@@ -1,6 +1,7 @@
 using AbleKit.Tags;
 using Crateside.Core;
 using Crateside.Core.Ableton;
+using Crateside.Core.Genres;
 
 namespace Crateside.Tests.Ableton;
 
@@ -41,18 +42,22 @@ public sealed class FileTagsReadingTests
     }
 
     [Fact]
-    public void Reads_the_genre_crateside_wrote()
+    public void Reads_the_genres_of_the_entry()
     {
-        var tags = TestTags.Of("a.flac", ["Key|A", "Key|Minor", "Genre|Rock"]);
+        var tags = TestTags.Of(
+            "a.flac",
+            ["Key|A", "Key|Minor", "Genres|Hip Hop", "Genres|Pop", "Genre|Rock"]
+        );
 
-        Assert.Equal("Rock", tags.Genre);
+        Assert.Equal(["Hip Hop", "Pop"], tags.Genres);
     }
 
     [Theory]
     [InlineData("Mood|Dark")]
     [InlineData("Key|C#")]
     [InlineData("Type|Drums")]
-    [InlineData("Genre|Polka")]
+    [InlineData("Genre|Rock")]
+    [InlineData("Genres|")]
     public void A_keyword_outside_cratesides_vocabulary_is_not_known(string keyword) =>
         Assert.False(CratesideKeywords.IsKnown(keyword));
 
@@ -66,6 +71,8 @@ public sealed class FileTagsReadingTests
             .Where(Directory.Exists)
             .SelectMany(root => reader.Read(root).Entries)
             .SelectMany(entry => entry.Keywords)
+            // The retired group is taken off by the next backing pass, not accepted again.
+            .Where(keyword => !GenreVocabulary.IsRetiredKeyword(keyword))
             .Distinct(StringComparer.Ordinal)
             .ToList();
 

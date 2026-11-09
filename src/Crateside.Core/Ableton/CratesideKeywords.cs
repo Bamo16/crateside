@@ -25,7 +25,8 @@ public static partial class CratesideKeywords
                 || KeyTags.Modes.Contains(value)
                 || ModeTags.IsModal(value),
             ["Type", var value] => Types.Contains(value),
-            [GenreVocabulary.Group, var value] => GenreVocabulary.IsGenre(value),
+            // One of Ableton's 29, a genre of the person's own, or one of Live's own content (ADR 0088).
+            [GenreVocabulary.Group, var value] => GenreVocabulary.IsName(value),
             [FamiliarityVocabulary.Group, var value] => FamiliarityVocabulary.IsValue(value),
             // Set by the maintainer in Live (#154): any n/d, Mixed, or Odd bars.
             ["Meter", var value] => value is "Mixed" or "Odd bars" || Meter.IsMatch(value),

@@ -4,8 +4,9 @@ using Crateside.Core.Tracks;
 namespace Crateside;
 
 /// <summary>
-/// Asks the free sources for a genre suggestion for every song that has none, one at a time.
-/// Never paused: it contends for nothing, and it writes no tag (ADR 0030).
+/// Asks the free sources for the labels of every song not asked yet, one at a time, and learns
+/// genres from the person's answers. Never paused: it contends for nothing, and it writes no tag
+/// (ADR 0088).
 /// </summary>
 public sealed class GenreWorker(
     TracksService tracks,
@@ -49,7 +50,7 @@ public sealed class GenreWorker(
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Suggesting genres failed; trying again later");
+                logger.LogWarning(ex, "Looking up genres failed; trying again later");
 
                 delay = AfterFailure;
             }
@@ -79,7 +80,7 @@ public sealed class GenreWorker(
             if (name is not ({ } artist, { } title))
                 continue;
 
-            if (await lookup.HearAsync(artist, title, stoppingToken) is not { } heard)
+            if (await lookup.HearAsync(artist, title, stoppingToken) is not { } hearing)
             {
                 logger.LogInformation(
                     "A genre source could not be reached for {Song}; trying again later",
@@ -89,13 +90,13 @@ public sealed class GenreWorker(
                 return AfterFailure;
             }
 
-            store.Suggest(song, heard, time.GetUtcNow());
+            store.Hear(song, hearing, time.GetUtcNow());
             suggested++;
         }
 
         if (suggested > 0)
         {
-            logger.LogInformation("Suggested genres for {Count} songs", suggested);
+            logger.LogInformation("Looked up genres for {Count} songs", suggested);
             await tracks.RefreshAsync(stoppingToken);
         }
 
@@ -103,8 +104,8 @@ public sealed class GenreWorker(
     }
 
     /// <summary>
-    /// Settles every unanswered song whose artist the user's answers have settled, and takes back
-    /// any such genre the answers no longer support.
+    /// Gives every unanswered song whose sources map onto nothing the genre the person's answers
+    /// have settled for its artist, and takes back any such genre the answers no longer support.
     /// </summary>
     private void SettleFromArtists(IReadOnlyList<TrackRow> rows)
     {
@@ -123,32 +124,29 @@ public sealed class GenreWorker(
         var learned = GenreByArtist.Learn(
             songs
                 .Where(song => song.Record is { IsTheUsersAnswer: true })
-                .Select(song => (song.Artist, song.Record!.Genre))
+                .SelectMany(song =>
+                    song.Record!.Mine.Where(GenreVocabulary.IsGenre)
+                        .Select(genre => (song.Artist, (string?)genre))
+                )
         );
 
         var changed = 0;
 
         foreach (var (song, artist, record) in songs)
         {
-            // Never over the song's own sources: an artist's outliers name another genre (ADR 0033).
-            var fits = learned.GetValueOrDefault(artist);
-            var genre =
-                fits is not null && (record?.Suggested is null || record.Suggested == fits)
-                    ? fits
-                    : null;
+            if (record is not { LookedUpAt: not null, IsTheUsersAnswer: false })
+                continue;
 
-            if (
-                record is { IsTheUsersAnswer: true }
-                || record?.Genre == genre && record?.LearnedFrom is not null
-            )
+            // Only where the song's own sources name nothing (ADR 0088).
+            var genre = record.FromSources.Count is 0 ? learned.GetValueOrDefault(artist) : null;
+
+            if (genre == record.Learned)
                 continue;
 
             if (genre is not null)
-                store.SettleFromArtist(song, genre, artist);
-            else if (record?.LearnedFrom is not null)
-                store.Unlearn(song);
+                store.Learn(song, genre, artist);
             else
-                continue;
+                store.Unlearn(song);
 
             changed++;
         }

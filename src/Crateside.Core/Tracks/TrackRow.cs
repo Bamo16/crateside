@@ -152,7 +152,7 @@ public sealed record TrackRow
     /// </summary>
     public string Song => Verdict?.Song ?? TrackKey;
 
-    /// <summary>The song's genre as settled or suggested, or null when nothing has asked yet.</summary>
+    /// <summary>The song's genres from the sources and the person's choices, or null when nothing has asked yet.</summary>
     public GenreRecord? Genre { get; init; }
 
     /// <summary>How far the song reaches, measured or settled, or null when nothing has asked yet.</summary>
@@ -161,10 +161,7 @@ public sealed record TrackRow
     /// <summary>What the maintainer has marked this track as.</summary>
     public IReadOnlyList<TrackMark> Marks { get; init; } = [];
 
-    public bool HasTagsToAnswer =>
-        this
-            is { Genre: { IsSettled: false, LookedUpAt: not null } }
-                or { Familiarity: { Written: null, LookedUpAt: not null } };
+    public bool HasTagsToAnswer => this is { Familiarity: { Written: null, LookedUpAt: not null } };
 
     /// <summary>
     /// The ledger's artist and title, else the row's own name split at its dash. Null while the row

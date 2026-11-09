@@ -7,4 +7,5 @@ namespace Crateside.Core.Genres;
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase
 )]
 [JsonSerializable(typeof(List<GenreRecord>))]
+[JsonSerializable(typeof(Dictionary<string, string[]>))]
 internal sealed partial class GenreJsonContext : JsonSerializerContext { }

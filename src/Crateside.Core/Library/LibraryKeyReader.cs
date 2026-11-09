@@ -86,7 +86,7 @@ public sealed class LibraryKeyReader(
             [
                 .. GenreVocabulary.All.Select(g => new GenreCount(
                     g,
-                    songs.Count(song => song.Genre == g)
+                    songs.Count(song => song.Genres.Contains(g, StringComparer.OrdinalIgnoreCase))
                 )),
             ],
             FileCount = files,
@@ -126,7 +126,12 @@ public sealed class LibraryKeyReader(
                 ? ArtistCredit.Primary(credited)
                 : null,
             Key = MusicKey.FromString(MostCommon(samples, s => s.Tags?.Key)),
-            Genre = MostCommon(samples, s => s.Tags?.Genre),
+            Genres =
+            [
+                .. samples
+                    .SelectMany(s => s.Tags?.Genres ?? [])
+                    .Distinct(StringComparer.OrdinalIgnoreCase),
+            ],
             Tempo = tempo,
             Beats = reading,
             Starter = StarterFates.Of(reading, tempo),
@@ -164,7 +169,7 @@ public sealed record KeyDistribution
     /// <summary>All 24 keys, always — a key with no tracks is worth showing as a zero.</summary>
     public required IReadOnlyList<KeyCount> Counts { get; init; }
 
-    /// <summary>Every genre on the list, a zero included, from the same scan (ADR 0030).</summary>
+    /// <summary>Each of Ableton's 29 genres, a zero included, from the same scan (ADR 0088); a song with two counts under both.</summary>
     public IReadOnlyList<GenreCount> Genres { get; init; } = [];
 
     public required int FileCount { get; init; }
@@ -187,8 +192,8 @@ public sealed record KeyDistribution
 
     public int KeyedTrackCount => Counts.Sum(c => c.Tracks);
 
-    /// <summary>Tracks with no genre yet — not looked at, which is not the same as having none.</summary>
-    public int UngenredCount => TrackCount - Genres.Sum(g => g.Tracks);
+    /// <summary>Tracks carrying none of Ableton's genres — not looked at, which is not the same as having none.</summary>
+    public int UngenredCount => Songs.Count(song => !song.Genres.Any(GenreVocabulary.IsGenre));
 
     /// <summary>The largest bucket, for scaling a bar against.</summary>
     public int Largest => Counts.Count is 0 ? 0 : Counts.Max(c => c.Tracks);

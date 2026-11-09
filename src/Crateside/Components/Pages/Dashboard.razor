@@ -355,8 +355,7 @@
                                 <p class="lead">
                                     <span class="mono">@_distribution.UngenredCount</span>
                                     @("song".ToQuantity(_distribution.UngenredCount, ShowQuantityAs.None))
-                                    carry no genre yet: nobody has settled one.
-                                    <a href="tracks?filter=TagsToAnswer">Answer them on Tracks</a>
+                                    carry none of these genres yet: the sources are still being asked, or name nothing the table maps.
                                 </p>
 
                                 <table class="distribution">
@@ -378,8 +377,8 @@
                                 {
                                     <details class="opener">
                                         <summary>
-                                            What the sources called the rest
-                                            <span class="aside">settled as none of the list, or not placed on it</span>
+                                            What the sources called that no genre covers
+                                            <span class="aside">labels the table does not map onto a genre</span>
                                         </summary>
                                         <ul class="gaps">
                                             @foreach (var gap in _gaps.Take(15))

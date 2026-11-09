@@ -14,7 +14,7 @@ public sealed class SongKeyMigrationTests : IDisposable
     [Fact]
     public void A_record_under_a_judged_upload_moves_to_its_song()
     {
-        new GenreStore(_fixture.Decisions).Suggest(Video, ["Pop"], At);
+        new GenreStore(_fixture.Decisions).Hear(Video, new GenreHearing(["Pop"], null), At);
 
         var moved = Migration().Run();
 
@@ -25,7 +25,7 @@ public sealed class SongKeyMigrationTests : IDisposable
     [Fact]
     public void A_second_run_moves_nothing()
     {
-        new GenreStore(_fixture.Decisions).Suggest(Video, ["Pop"], At);
+        new GenreStore(_fixture.Decisions).Hear(Video, new GenreHearing(["Pop"], null), At);
         Migration().Run();
 
         var moved = Migration().Run();
@@ -37,7 +37,11 @@ public sealed class SongKeyMigrationTests : IDisposable
     [Fact]
     public void A_store_with_nothing_to_move_is_left_untouched()
     {
-        new GenreStore(_fixture.Decisions).Suggest("someone - something", ["Pop"], At);
+        new GenreStore(_fixture.Decisions).Hear(
+            "someone - something",
+            new GenreHearing(["Pop"], null),
+            At
+        );
 
         Assert.Equal(0, Migration().Run());
         Assert.Equal(["someone - something"], new GenreStore(_fixture.Decisions).Read().Keys);

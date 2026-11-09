@@ -6,6 +6,8 @@ namespace Crateside.Tests.Genres;
 
 public sealed class GenreByArtistTests : IDisposable
 {
+    private static readonly DateTimeOffset At = new(2026, 11, 9, 12, 0, 0, TimeSpan.Zero);
+
     private readonly LedgerStore _ledger = new(LedgerStore.InMemory, TimeProvider.System);
 
     public void Dispose()
@@ -22,8 +24,8 @@ public sealed class GenreByArtistTests : IDisposable
             ("Kanye West", "Hip Hop"),
             ("kanye west", "Hip Hop"),
             ("Kanye West", "Hip Hop"),
-            ("Snail's House", "Future Bass"),
-            ("Snail's House", "Future Bass"),
+            ("Snail's House", "EDM"),
+            ("Snail's House", "EDM"),
         ]);
 
         Assert.Equal("Hip Hop", learned["Kanye West"]);
@@ -31,16 +33,16 @@ public sealed class GenreByArtistTests : IDisposable
     }
 
     [Fact]
-    public void Any_disagreement_including_none_of_these_settles_nothing()
+    public void Any_disagreement_settles_nothing()
     {
         var learned = GenreByArtist.Learn([
             ("Lil Dicky", "Hip Hop"),
             ("Lil Dicky", "Hip Hop"),
             ("Lil Dicky", "Hip Hop"),
-            ("Lil Dicky", null),
-            ("Moe Shop", "Future Bass"),
-            ("Moe Shop", "Future Bass"),
-            ("Moe Shop", "J-Pop"),
+            ("Lil Dicky", "Pop"),
+            ("Moe Shop", "EDM"),
+            ("Moe Shop", "EDM"),
+            ("Moe Shop", "Pop"),
         ]);
 
         Assert.Empty(learned);
@@ -51,22 +53,22 @@ public sealed class GenreByArtistTests : IDisposable
     {
         var store = new GenreStore(_ledger);
 
-        store.Settle("answered", "Pop");
-        store.SettleFromArtist("answered", "Hip Hop", "Kanye West");
-        store.SettleFromArtist("learned", "Hip Hop", "Kanye West");
+        store.Choose("answered", "Pop");
+        store.Learn("answered", "Hip Hop", "Kanye West");
+        store.Learn("learned", "Hip Hop", "Kanye West");
 
         var records = store.Read();
-        Assert.Equal("Pop", records["answered"].Written);
+        Assert.Equal(["Pop"], records["answered"].Genres);
         Assert.True(records["answered"].IsTheUsersAnswer);
-        Assert.Equal("Hip Hop", records["learned"].Written);
+        Assert.Equal(["Hip Hop"], records["learned"].Genres);
         Assert.False(records["learned"].IsTheUsersAnswer);
 
         store.Unlearn("learned");
         store.Unlearn("answered");
 
         records = new GenreStore(_ledger).Read();
-        Assert.Null(records["learned"].Written);
-        Assert.Equal("Pop", records["answered"].Written);
+        Assert.Empty(records["learned"].Genres);
+        Assert.Equal(["Pop"], records["answered"].Genres);
     }
 
     [Fact]
@@ -74,10 +76,35 @@ public sealed class GenreByArtistTests : IDisposable
     {
         var store = new GenreStore(_ledger);
 
-        store.SettleFromArtist("song", "Hip Hop", "Kanye West");
-        store.Settle("song", "Pop");
+        store.Learn("song", "Hip Hop", "Kanye West");
+        store.Choose("song", "Pop");
 
-        Assert.True(store.Read()["song"].IsTheUsersAnswer);
+        var record = store.Read()["song"];
+
+        Assert.True(record.IsTheUsersAnswer);
+        Assert.Null(record.Learned);
+    }
+
+    [Fact]
+    public void A_learned_genre_gives_way_to_what_the_songs_own_sources_map_onto()
+    {
+        var store = new GenreStore(_ledger);
+
+        store.Learn("song", "Hip Hop", "Kanye West");
+        store.Hear("song", new GenreHearing(["drum and bass"], null), At);
+
+        Assert.Equal(["Drum & Bass"], store.Read()["song"].Genres);
+    }
+
+    [Fact]
+    public void A_learned_genre_stands_where_the_sources_map_onto_nothing()
+    {
+        var store = new GenreStore(_ledger);
+
+        store.Learn("song", "Hip Hop", "Kanye West");
+        store.Hear("song", new GenreHearing(["soundtrack"], null), At);
+
+        Assert.Equal(["Hip Hop"], store.Read()["song"].Genres);
     }
 
     [Theory]

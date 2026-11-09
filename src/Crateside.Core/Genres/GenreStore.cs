@@ -5,8 +5,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Crateside.Core.Genres;
 
 /// <summary>
-/// Each song's genre as the user settled it and as the sources suggested it, kept in the ledger
-/// by song identity, as it keeps the key (ADR 0030, 0082).
+/// Each song's genres as the sources said them, as the person chose them and as learned from the
+/// artist, kept in the ledger by song identity, as it keeps the key (ADR 0088, 0082).
 /// </summary>
 public sealed class GenreStore(LedgerStore ledger)
 {
@@ -24,68 +24,123 @@ public sealed class GenreStore(LedgerStore ledger)
             );
     }
 
-    /// <summary>Records what the sources said, leaving anything the user settled alone.</summary>
-    public void Suggest(string song, IReadOnlyList<string> heard, DateTimeOffset at) =>
+    /// <summary>Records what the sources said, leaving the person's genres and a learned one alone.</summary>
+    public void Hear(string song, GenreHearing hearing, DateTimeOffset at) =>
         Update(
             song,
             record =>
                 record with
                 {
-                    Heard = heard,
-                    Suggested = heard
-                        .Select(GenreVocabulary.FromHeard)
-                        .OfType<string>()
-                        .FirstOrDefault(),
+                    Heard = hearing.Labels,
+                    RecordingMbid = hearing.RecordingMbid ?? record.RecordingMbid,
                     LookedUpAt = at,
                 }
         );
 
-    /// <summary>The user's answer: a genre from the list, or null for none of them.</summary>
-    public void Settle(string song, string? genre)
-    {
-        if (genre is not null && !GenreVocabulary.IsGenre(genre))
-            throw new ArgumentException($"'{genre}' is not on the genre list.", nameof(genre));
-
-        Update(song, record => record with { Genre = genre, IsSettled = true, LearnedFrom = null });
-    }
-
     /// <summary>
-    /// Settles a song the user has not answered from what their answers say about its artist; a
-    /// song they answered themselves is left alone (#61).
+    /// The person's genre: one of the 29 replaces the one they chose before, one of their own is
+    /// added to the rest.
     /// </summary>
-    public void SettleFromArtist(string song, string genre, string artist)
+    public void Choose(string song, string genre)
     {
-        if (!GenreVocabulary.IsGenre(genre))
-            throw new ArgumentException($"'{genre}' is not on the genre list.", nameof(genre));
+        if (!GenreVocabulary.IsName(genre))
+            throw new ArgumentException($"'{genre}' cannot be a genre.", nameof(genre));
+
+        var isListed = GenreVocabulary.IsGenre(genre);
 
         Update(
             song,
             record =>
-                record is { IsSettled: true, LearnedFrom: null }
+                record with
+                {
+                    Mine =
+                    [
+                        .. record
+                            .Mine.Where(mine => !isListed || !GenreVocabulary.IsGenre(mine))
+                            .Where(mine => mine != genre),
+                        genre,
+                    ],
+                    Learned = isListed ? null : record.Learned,
+                    LearnedFrom = isListed ? null : record.LearnedFrom,
+                }
+        );
+    }
+
+    /// <summary>
+    /// Gives a song the person has not answered what their answers say about its artist; a song
+    /// they answered themselves is left alone (#61).
+    /// </summary>
+    public void Learn(string song, string genre, string artist)
+    {
+        if (!GenreVocabulary.IsGenre(genre))
+            throw new ArgumentException(
+                $"'{genre}' is not one of Ableton's genres.",
+                nameof(genre)
+            );
+
+        Update(
+            song,
+            record =>
+                record.IsTheUsersAnswer
                     ? record
                     : record with
                     {
-                        Genre = genre,
-                        IsSettled = true,
+                        Learned = genre,
                         LearnedFrom = artist,
                     }
         );
     }
 
-    /// <summary>Takes back a genre settled from the artist, once the user's answers stop supporting it.</summary>
+    /// <summary>Takes back a genre learned from the artist, once the person's answers stop supporting it.</summary>
     public void Unlearn(string song) =>
         Update(
             song,
             record =>
-                record.LearnedFrom is null
+                record.Learned is null && record.LearnedFrom is null
                     ? record
                     : record with
                     {
-                        Genre = null,
-                        IsSettled = false,
+                        Learned = null,
                         LearnedFrom = null,
                     }
         );
+
+    /// <summary>Notes the genres asked of each song's files, so a later change can take them off again.</summary>
+    public void MarkTagged(IEnumerable<(string Song, IReadOnlyList<string> Genres)> asked)
+    {
+        lock (_gate)
+        {
+            var records = _cached ??= Load();
+            var changed = asked
+                .Select(song => (Record: records.GetValueOrDefault(song.Song), song.Genres))
+                .Where(song =>
+                    song.Record is not null && song.Genres.Except(song.Record.Tagged).Any()
+                )
+                .Select(song =>
+                    song.Record! with
+                    {
+                        Tagged = [.. song.Record.Tagged, .. song.Genres.Except(song.Record.Tagged)],
+                    }
+                )
+                .ToArray();
+
+            if (changed.Length is 0)
+                return;
+
+            foreach (var record in changed)
+                records[record.Song] = record;
+
+            ledger.Save(context =>
+            {
+                foreach (var record in changed)
+                    context.Upsert(
+                        context.Genres,
+                        row => row.Song == record.Song,
+                        GenreRow.From(record)
+                    );
+            });
+        }
+    }
 
     /// <summary>Moves each record kept under a video ID onto the song the ledger has since judged it as; returns how many moved.</summary>
     public int FollowSongs(Func<string, string?> songFor)
@@ -125,24 +180,28 @@ public sealed class GenreStore(LedgerStore ledger)
         }
     }
 
-    /// <summary>The user's own answer wins wherever it was given; otherwise the song's record, the later one.</summary>
+    /// <summary>The person's genres are kept wherever they were given; the later lookup stands.</summary>
     private static GenreRecord Merged(string song, GenreRecord moved, GenreRecord? held)
     {
         if (held is null)
             return moved with { Song = song };
 
-        var answer =
-            held.IsTheUsersAnswer || !moved.IsTheUsersAnswer && held.IsSettled ? held : moved;
         var lookup = held.LookedUpAt is not null ? held : moved;
+        var learned = held.Learned is not null ? held : moved;
 
         return held with
         {
-            Genre = answer.Genre,
-            IsSettled = answer.IsSettled,
-            LearnedFrom = answer.LearnedFrom,
             Heard = lookup.Heard,
-            Suggested = lookup.Suggested,
+            RecordingMbid = held.RecordingMbid ?? moved.RecordingMbid,
             LookedUpAt = lookup.LookedUpAt,
+            Learned = learned.Learned,
+            LearnedFrom = learned.LearnedFrom,
+            Mine =
+            [
+                .. (held.IsTheUsersAnswer ? held : moved).Mine.Where(GenreVocabulary.IsGenre),
+                .. held.Mine.Union(moved.Mine).Where(mine => !GenreVocabulary.IsGenre(mine)),
+            ],
+            Tagged = [.. held.Tagged.Union(moved.Tagged)],
         };
     }
 
@@ -172,37 +231,65 @@ public sealed class GenreStore(LedgerStore ledger)
             .ToDictionary(row => row.Song, row => row.ToRecord(), StringComparer.OrdinalIgnoreCase);
 }
 
-/// <summary>One song's genre, settled or suggested.</summary>
+/// <summary>One song's genres: what the sources said, what crateside took from it, and what the person chose.</summary>
 public sealed record GenreRecord
 {
     /// <summary>The ledger's song identity, or the upload's video ID for a song it never judged.</summary>
     public required string Song { get; init; }
 
-    /// <summary>What the user settled on, or null — which, once settled, means none of the list.</summary>
-    public string? Genre { get; init; }
-
-    public bool IsSettled { get; init; }
-
-    /// <summary>
-    /// The artist whose other tracks settled this one, or null when the user settled it or nobody has.
-    /// </summary>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? LearnedFrom { get; init; }
-
-    /// <summary>The user answered this song themselves: the only answer that teaches anything.</summary>
-    [JsonIgnore]
-    public bool IsTheUsersAnswer => IsSettled && LearnedFrom is null;
-
-    /// <summary>The first thing the sources said that maps onto the list, or null.</summary>
-    public string? Suggested { get; init; }
-
-    /// <summary>Everything the sources said, verbatim, whether it maps onto the list or not.</summary>
+    /// <summary>Every label the sources gave, verbatim, in the lookup's order: MusicBrainz recording, MusicBrainz artist, Deezer, iTunes.</summary>
     public IReadOnlyList<string> Heard { get; init; } = [];
+
+    /// <summary>The MusicBrainz recording the lookup matched, or null when none matched.</summary>
+    public string? RecordingMbid { get; init; }
 
     /// <summary>When the sources were last asked, or null when they never have been.</summary>
     public DateTimeOffset? LookedUpAt { get; init; }
 
-    /// <summary>The genre to write: only ever a settled one.</summary>
+    /// <summary>A genre taken from the person's answers for the artist, used only where the sources map onto nothing.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Learned { get; init; }
+
+    /// <summary>The artist whose answers the learned genre came from.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LearnedFrom { get; init; }
+
+    /// <summary>The genres the person chose: among the 29, or of their own.</summary>
+    public IReadOnlyList<string> Mine { get; init; } = [];
+
+    /// <summary>Every genre crateside has asked to be written onto the song's files.</summary>
+    public IReadOnlyList<string> Tagged { get; init; } = [];
+
+    /// <summary>The sources' labels, kept as the song's styles and never written as tags.</summary>
+    public IReadOnlyList<string> Styles => Heard;
+
+    /// <summary>What the sources' labels map onto, at most two of the 29.</summary>
     [JsonIgnore]
-    public string? Written => IsSettled ? Genre : null;
+    public IReadOnlyList<string> FromSources => GenreMapping.Pick(Heard);
+
+    /// <summary>What crateside assigns: the sources' genres, else the one learned from the artist.</summary>
+    [JsonIgnore]
+    public IReadOnlyList<string> Assigned =>
+        FromSources is [_, ..] sources ? sources
+        : Learned is { } learned ? [learned]
+        : [];
+
+    /// <summary>The person chose one of the 29, which replaces crateside's and is the only answer that teaches.</summary>
+    [JsonIgnore]
+    public bool IsTheUsersAnswer => Mine.Any(GenreVocabulary.IsGenre);
+
+    /// <summary>The genres to write: the person's choice among the 29, else crateside's, and always the person's own.</summary>
+    public IReadOnlyList<string> Genres =>
+        [
+            .. (IsTheUsersAnswer ? Mine.Where(GenreVocabulary.IsGenre) : Assigned).Concat(
+                Mine.Where(mine => !GenreVocabulary.IsGenre(mine))
+            ),
+        ];
+
+    /// <summary>Genres crateside asked to be written before that the song no longer has.</summary>
+    [JsonIgnore]
+    public IReadOnlyList<string> Retired => [.. Tagged.Except(Genres)];
 }
+
+/// <summary>What one lookup found: the labels of every source, and the recording MusicBrainz matched.</summary>
+public sealed record GenreHearing(IReadOnlyList<string> Labels, string? RecordingMbid);

@@ -282,7 +282,7 @@
         {
             string?[] parts =
             [
-                _row?.Genre?.Written ?? _row?.Genre?.Suggested,
+                _row?.Genre is { Genres: [_, ..] genres } ? string.Join(", ", genres) : null,
                 .. _row?.Release?.Describe() ?? [],
                 _row is { Uploads.Count: > 0 } ? "upload".ToQuantity(_row.Uploads.Count) : null,
             ];
