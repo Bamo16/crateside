@@ -351,12 +351,16 @@ by hand; everything below describes candidates against it.
   what was there before: a tag added and taken off a minute later is hidden too. crateside never
   writes one back.
 - **Genre** — what kind of music a **song** is: up to two of the 29 tags of Ableton's own *Genres*
-  group, filled in from the sources, plus any the person adds of their own (`Genres|Meme`). A
-  property of the song, not the file: every **sample** of a song carries the same ones. Learned
-  from the person's answers for the song's primary artist where the sources name nothing
+  group, the ones most of the song's **styles** map onto through a table shipped with crateside,
+  plus any the person adds of their own (`Genres|Meme`). A property of the song, not the file:
+  every **sample** of a song carries the same ones. The person's choice among the 29 replaces
+  crateside's; one of their own is added beside it. Learned from the person's answers for the song's
+  primary artist where the styles map onto nothing
   ([ADR 0088](docs/adr/0088-genre-is-abletons-own-genres-filled-from-the-sources.md)).
-- **Style** — a source's finer label for a song's genre (`boom bap`), shown in crateside and never
-  written as a tag.
+- **Style** — a source's label for a song (`boom bap`, `Dance`), every one kept as the sources gave
+  it (MusicBrainz recording, MusicBrainz artist, Deezer, iTunes), shown in crateside and never
+  written as a tag. The table that maps them onto genres lists the ones it does not map on the
+  Library page.
 - **Type** — the part a **sample** plays in a mashup: **Vocal** or **Instrumental**, and
   nothing else. It names a use, not the audio: a kept full mix is Instrumental. Carried in
   Ableton's own *Type* tag group, whose built-in tags (Loop, One Shot and the rest) mean
