@@ -152,11 +152,11 @@ public sealed record FamiliarityRecord
     public int LookupVersion { get; init; }
 
     /// <summary>
-    /// Worth asking again: never asked, or not found by a lookup older than the current one.
+    /// Worth asking again: never asked, or asked by a lookup older than the current one, whose
+    /// matching may have taken a cover for the song.
     /// </summary>
     [JsonIgnore]
-    public bool IsOwedALookup =>
-        LookedUpAt is null || (SongRank is null && LookupVersion < FamiliarityLookup.Version);
+    public bool IsOwedALookup => LookedUpAt is null || LookupVersion < FamiliarityLookup.Version;
 
     /// <summary>The user's answer, or null when they have not given one.</summary>
     public string? Settled { get; init; }

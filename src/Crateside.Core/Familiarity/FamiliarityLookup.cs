@@ -15,7 +15,7 @@ public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
     public const string ClientName = "familiarity-lookup";
 
     /// <summary>Raised whenever matching changes, so songs an older lookup missed are asked again.</summary>
-    public const int Version = 2;
+    public const int Version = 3;
 
     private const int QuotaExceeded = 4;
 
@@ -27,6 +27,12 @@ public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
 
     [GeneratedRegex(@"[^\p{L}\p{N}*]+")]
     private static partial Regex NotLetterOrDigit { get; }
+
+    [GeneratedRegex(
+        @"karaoke|tribute|originally\s+performed|made\s+famous|in\s+the\s+style\s+of|backing\s+track|\bcovered\s+by\b|\bcover\s+(version|band)\b|[\(\[][^\)\]]*\bcover\b[^\)\]]*[\)\]]",
+        RegexOptions.IgnoreCase
+    )]
+    private static partial Regex ImitationMarker { get; }
 
     /// <summary>
     /// What Deezer knows, <see cref="FamiliarityReading.Unknown"/> when it does not know the song,
@@ -93,7 +99,8 @@ public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
 
     /// <summary>
     /// The most popular hit that is this song by one of its artists, so the original outranks a
-    /// live cut or a remaster of it.
+    /// live cut or a remaster of it. A hit by a karaoke, tribute or cover act is passed over for the
+    /// next one.
     /// </summary>
     private static (long Id, int Rank)? Match(JsonElement search, string artist, string title) =>
         search.TryGetProperty("data", out var hits)
@@ -103,6 +110,7 @@ public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
                     && SameTitle(found.GetString() ?? string.Empty, title)
                     && hit.GetProperty("artist").GetProperty("name").GetString() is { } by
                     && ByOneOf(artist, by)
+                    && !IsImitation(found.GetString() ?? string.Empty, by, title)
                 )
                 .Select(hit =>
                     ((long Id, int Rank)?)
@@ -130,22 +138,19 @@ public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
             && f.Zip(w).All(pair => pair.First is '*' || pair.First == pair.Second);
     }
 
-    /// <summary>Whether Deezer's artist is one of those credited, however either spells them.</summary>
-    internal static bool ByOneOf(string credited, string found)
-    {
-        var by = Squash(found);
+    /// <summary>
+    /// Whether Deezer's artist is the credited one, or one of several credited, however either
+    /// spells the name: the whole name, not a part of a longer one.
+    /// </summary>
+    internal static bool ByOneOf(string credited, string found) =>
+        Squash(found) is { Length: > 0 } by
+        && ArtistCredit.Split(credited).Append(credited).Any(one => Squash(one) == by);
 
-        return ArtistCredit
-            .Split(credited)
-            .Select(Squash)
-            .Any(one =>
-                one.Length > 0
-                && (
-                    by.Contains(one, StringComparison.Ordinal)
-                    || one.Contains(by, StringComparison.Ordinal)
-                )
-            );
-    }
+    /// <summary>Whether the hit calls itself a karaoke, tribute or cover rendition the wanted song is not.</summary>
+    internal static bool IsImitation(string foundTitle, string foundArtist, string wantedTitle) =>
+        ImitationMarker.Match($"{foundTitle} | {foundArtist}")
+            is { Success: true, Value: var marker }
+        && !wantedTitle.Contains(marker, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Lowercase letters, digits and <c>*</c> only, accents folded and <c>$</c> read as S.</summary>
     private static string Squash(string text)
@@ -153,6 +158,7 @@ public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
         var folded = Bracketed
             .Replace(text, string.Empty)
             .Replace('$', 's')
+            .Replace("&", "and")
             .Normalize(NormalizationForm.FormD)
             .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) is not UnicodeCategory.NonSpacingMark)
             .ToArray();
