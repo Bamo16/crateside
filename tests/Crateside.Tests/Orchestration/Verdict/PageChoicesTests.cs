@@ -419,7 +419,7 @@ public sealed class PageChoicesTests : IDisposable
             [Choice(PageChoiceKind.Rejected, rejected), Choice(PageChoiceKind.Added, added)]
         );
 
-        var lines = string.Join('\n', VerdictRunner.PagesLines(effective));
+        var lines = string.Join('\n', JudgePrompt.PagesLines(effective));
 
         Assert.Contains(
             $"the person says this is not this song, so it is left out: Hooktheory, {Wrong}",

@@ -61,7 +61,7 @@ public sealed class HookpadChordTests
     {
         var epic = Section("faith-no-more/epic", "Chorus");
         var score = Score(epic);
-        var lines = VerdictRunner.PagesLines([
+        var lines = JudgePrompt.PagesLines([
             new(
                 "Hooktheory",
                 LookupStatus.Found,

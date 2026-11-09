@@ -33,7 +33,7 @@ public sealed class HooktheoryTabTests
     [Fact]
     public void A_thin_tab_is_marked_in_the_work_order()
     {
-        var lines = VerdictRunner.PagesLines([
+        var lines = JudgePrompt.PagesLines([
             new(
                 "Hooktheory",
                 LookupStatus.Found,

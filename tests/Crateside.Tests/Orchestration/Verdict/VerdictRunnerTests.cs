@@ -93,7 +93,7 @@ public sealed class VerdictRunnerTests : IDisposable
     }
 
     private VerdictRunner Runner =>
-        new(
+        VerdictRunners.Create(
             Ledger,
             Set,
             new SourceIndex(Set, IndexPath),
@@ -103,6 +103,17 @@ public sealed class VerdictRunnerTests : IDisposable
             Options.Create(Judge),
             _time,
             _log
+        );
+
+    private string PromptFor(WorkOrder order) =>
+        new JudgePrompt(Set, Options.Create(Judge)).Build(
+            order,
+            VerdictPath,
+            [],
+            held: null,
+            direction: null,
+            given: [],
+            audio: Runner.SourceFor(order)
         );
 
     private string IndexPath => Path.Combine(_directory, "source-index.json");
@@ -725,7 +736,7 @@ public sealed class VerdictRunnerTests : IDisposable
 
         Assert.Equal((62.0, 94.5), Assert.Single(Detector.Asked));
         Assert.Equal("full_mix", Ledger.EvidenceFor("yes - owner of a lonely heart")!.InputKind);
-        Assert.DoesNotContain(VerdictRunner.NoAudioLine, Sessions.Requests[0].StandardInput);
+        Assert.DoesNotContain(JudgePrompt.NoAudioLine, Sessions.Requests[0].StandardInput);
     }
 
     [Fact]
@@ -733,11 +744,11 @@ public sealed class VerdictRunnerTests : IDisposable
     {
         GiveEvidence();
 
-        Assert.Contains(VerdictRunner.NoAudioLine, Runner.Prompt(Order(), VerdictPath, []));
+        Assert.Contains(JudgePrompt.NoAudioLine, PromptFor(Order()));
 
         GiveAudio();
 
-        Assert.DoesNotContain(VerdictRunner.NoAudioLine, Runner.Prompt(Order(), VerdictPath, []));
+        Assert.DoesNotContain(JudgePrompt.NoAudioLine, PromptFor(Order()));
     }
 
     [Fact]
@@ -1044,7 +1055,7 @@ public sealed class VerdictRunnerTests : IDisposable
             request.Arguments,
             argument => argument.Contains("Bash") || argument.Contains("Skill")
         );
-        Assert.Equal(VerdictRunner.Instructions, After(request, "--append-system-prompt"));
+        Assert.Equal(JudgePrompt.Instructions, After(request, "--append-system-prompt"));
         Assert.Contains("--safe-mode", request.Arguments);
         Assert.Equal(Set.JudgeFolderFor(TrackKey), request.WorkingDirectory);
         Assert.Equal("https://api.anthropic.com", request.Environment["ANTHROPIC_BASE_URL"]);
@@ -1057,7 +1068,7 @@ public sealed class VerdictRunnerTests : IDisposable
     {
         GiveEvidence();
 
-        var prompt = Runner.Prompt(Order(), VerdictPath, []);
+        var prompt = PromptFor(Order());
 
         Assert.Contains(Set.EvidencePathFor(TrackKey), prompt);
         Assert.Contains(VerdictPath, prompt);
@@ -1070,7 +1081,7 @@ public sealed class VerdictRunnerTests : IDisposable
     {
         GiveEvidence($$"""{"key_events":"{{new string('x', 64 * 1024)}}"}""");
 
-        var prompt = Runner.Prompt(Order(), VerdictPath, []);
+        var prompt = PromptFor(Order());
 
         Assert.DoesNotContain("```json", prompt);
         Assert.Contains(Set.EvidencePathFor(TrackKey), prompt);
@@ -1082,7 +1093,7 @@ public sealed class VerdictRunnerTests : IDisposable
         // Judging has nothing to do with which files get cut (ADR 0018).
         GiveEvidence();
 
-        var prompt = Runner.Prompt(Order(instrumentalRelease: true), VerdictPath, []);
+        var prompt = PromptFor(Order(instrumentalRelease: true));
 
         Assert.DoesNotContain("instrumental", prompt, StringComparison.OrdinalIgnoreCase);
     }
@@ -1092,18 +1103,18 @@ public sealed class VerdictRunnerTests : IDisposable
     {
         GiveEvidence();
 
-        Assert.Contains("never raises confidence", Runner.Prompt(Order(), VerdictPath, []));
+        Assert.Contains("never raises confidence", PromptFor(Order()));
 
         Judge.Ear = EarWeight.HumanSource;
 
-        Assert.Contains("caps the verdict at MEDIUM", Runner.Prompt(Order(), VerdictPath, []));
+        Assert.Contains("caps the verdict at MEDIUM", PromptFor(Order()));
     }
 
     [Fact]
     public void The_instructions_carry_the_two_fixed_rules()
     {
-        Assert.Contains("caps the verdict at MEDIUM", VerdictRunner.Instructions);
-        Assert.Contains("Tunebat", VerdictRunner.Instructions);
+        Assert.Contains("caps the verdict at MEDIUM", JudgePrompt.Instructions);
+        Assert.Contains("Tunebat", JudgePrompt.Instructions);
     }
 
     [Fact]
