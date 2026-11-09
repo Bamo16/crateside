@@ -9,8 +9,8 @@
   "genre": "Pop",
   "instrumentalLufs": -12.1,
   "vocalLufs": -13.9,
-  "artistFans": 12763143,
-  "songRank": 662411,
+  "pageviews": 31907,
+  "listeners": 6624,
   "heard": [
    "Pop",
    "country",
@@ -31,8 +31,8 @@
   "instrumentalLufs": -14.6,
   "vocalLufs": -14.6,
   "fate": "LeftAtBeatZero",
-  "artistFans": 1379,
-  "songRank": 92926,
+  "pageviews": 3,
+  "listeners": 929,
   "heard": [
    "Pop",
    "soul",
@@ -53,8 +53,8 @@
   "instrumentalLufs": -15.4,
   "vocalLufs": -15.7,
   "fate": "Kept",
-  "artistFans": 5217442,
-  "songRank": 954234,
+  "pageviews": 13043,
+  "listeners": 9542,
   "heard": [
    "Pop"
   ],
@@ -71,8 +71,8 @@
   "instrumentalLufs": -12.2,
   "vocalLufs": -16,
   "fate": "LeftAtBeatZero",
-  "artistFans": 19125014,
-  "songRank": 961431,
+  "pageviews": 47812,
+  "listeners": 9614,
   "heard": [
    "Hip-Hop/Rap",
    "hip hop",
@@ -96,8 +96,8 @@
   "fate": "OtherOctave",
   "weeksAgo": 1,
   "fraction": 0.2,
-  "artistFans": 819,
-  "songRank": 107048,
+  "pageviews": 2,
+  "listeners": 1070,
   "heard": [
    "Pop",
    "soul",
@@ -118,8 +118,8 @@
   "vocalLufs": -12.7,
   "weeksAgo": 1,
   "fraction": 0.57,
-  "artistFans": 1379,
-  "songRank": 210785,
+  "pageviews": 3,
+  "listeners": 2107,
   "heard": [
    "Pop",
    "soul",
@@ -141,8 +141,8 @@
   "fate": "Kept",
   "weeksAgo": 1,
   "fraction": 0.34,
-  "artistFans": 5713352,
-  "songRank": 698325,
+  "pageviews": 14283,
+  "listeners": 6983,
   "heard": [
    "Pop",
    "pop punk",
@@ -163,8 +163,8 @@
   "vocalLufs": -14.2,
   "weeksAgo": 1,
   "fraction": 0.71,
-  "artistFans": 1145956,
-  "songRank": 629913,
+  "pageviews": 2864,
+  "listeners": 6299,
   "heard": [
    "Pop",
    "teen pop",
@@ -185,8 +185,8 @@
   "fate": "LeftAtBeatZero",
   "weeksAgo": 1,
   "fraction": 0.48,
-  "artistFans": 12840474,
-  "songRank": 927130,
+  "pageviews": 32101,
+  "listeners": 9271,
   "heard": [
    "Pop",
    "r&b",
@@ -208,8 +208,8 @@
   "fate": "LeftAtBeatZero",
   "weeksAgo": 2,
   "fraction": 0.25,
-  "artistFans": 12848598,
-  "songRank": 767816,
+  "pageviews": 32121,
+  "listeners": 7678,
   "heard": [
    "Pop",
    "r&b",
@@ -230,8 +230,8 @@
   "vocalLufs": -17.1,
   "weeksAgo": 2,
   "fraction": 0.62,
-  "artistFans": 9269807,
-  "songRank": 932130,
+  "pageviews": 23174,
+  "listeners": 9321,
   "heard": [
    "Alternative",
    "electropop",
@@ -253,8 +253,8 @@
   "vocalLufs": -13.8,
   "weeksAgo": 2,
   "fraction": 0.39,
-  "artistFans": 5280917,
-  "songRank": 967801,
+  "pageviews": 13202,
+  "listeners": 9678,
   "heard": [
    "Hard Rock",
    "rock",
@@ -276,8 +276,8 @@
   "fate": "Kept",
   "weeksAgo": 2,
   "fraction": 0.76,
-  "artistFans": 2509698,
-  "songRank": 302706,
+  "pageviews": 6274,
+  "listeners": 3027,
   "heard": [
    "Pop",
    "electropop",
@@ -299,8 +299,8 @@
   "fate": "LeftAtBeatZero",
   "weeksAgo": 2,
   "fraction": 0.53,
-  "artistFans": 9076338,
-  "songRank": 704267,
+  "pageviews": 22690,
+  "listeners": 7042,
   "heard": []
  },
  {
@@ -315,8 +315,8 @@
   "fate": "LeftAtBeatZero",
   "weeksAgo": 3,
   "fraction": 0.3,
-  "artistFans": 1049973,
-  "songRank": 945998,
+  "pageviews": 2624,
+  "listeners": 9459,
   "heard": [
    "Pop",
    "blues",
@@ -338,8 +338,8 @@
   "fate": "OtherOctave",
   "weeksAgo": 3,
   "fraction": 0.67,
-  "artistFans": 19134331,
-  "songRank": 980436,
+  "pageviews": 47835,
+  "listeners": 9804,
   "heard": [
    "Soundtrack",
    "hip hop",
@@ -362,8 +362,8 @@
   "fate": "Kept",
   "weeksAgo": 3,
   "fraction": 0.44,
-  "artistFans": 4740037,
-  "songRank": 828040,
+  "pageviews": 11850,
+  "listeners": 8280,
   "heard": [
    "Hip-Hop/Rap"
   ]
@@ -381,8 +381,8 @@
   "fate": "LeftAtBeatZero",
   "weeksAgo": 3,
   "fraction": 0.21,
-  "artistFans": 4592516,
-  "songRank": 806154,
+  "pageviews": 11481,
+  "listeners": 8061,
   "heard": [
    "Rock",
    "alternative rock",
@@ -403,8 +403,8 @@
   "fate": "Kept",
   "weeksAgo": 3,
   "fraction": 0.58,
-  "artistFans": 140544,
-  "songRank": 182273,
+  "pageviews": 351,
+  "listeners": 1822,
   "heard": [
    "Alternative",
    "alternative hip hop",
@@ -427,8 +427,8 @@
   "fate": "Kept",
   "weeksAgo": 4,
   "fraction": 0.35,
-  "artistFans": 1236297,
-  "songRank": 159285,
+  "pageviews": 3090,
+  "listeners": 1592,
   "heard": [
    "Pop",
    "alternative pop",
@@ -450,8 +450,8 @@
   "fate": "OtherOctave",
   "weeksAgo": 4,
   "fraction": 0.72,
-  "artistFans": 3402905,
-  "songRank": 159850,
+  "pageviews": 8507,
+  "listeners": 1598,
   "heard": [
    "Hip-Hop/Rap"
   ]
@@ -469,8 +469,8 @@
   "fate": "OtherOctave",
   "weeksAgo": 4,
   "fraction": 0.49,
-  "artistFans": 4547550,
-  "songRank": 794094,
+  "pageviews": 11368,
+  "listeners": 7940,
   "heard": [
    "Hip-Hop/Rap",
    "hip hop",
@@ -493,8 +493,8 @@
   "fate": "Kept",
   "weeksAgo": 4,
   "fraction": 0.26,
-  "artistFans": 3149400,
-  "songRank": 261303,
+  "pageviews": 7873,
+  "listeners": 2613,
   "heard": [
    "Pop",
    "pop rock"
@@ -513,8 +513,8 @@
   "fate": "BeatMoved",
   "weeksAgo": 4,
   "fraction": 0.63,
-  "artistFans": 5838869,
-  "songRank": 811056,
+  "pageviews": 14597,
+  "listeners": 8110,
   "heard": [
    "Hip-Hop/Rap"
   ]
@@ -532,8 +532,8 @@
   "fate": "Kept",
   "weeksAgo": 5,
   "fraction": 0.4,
-  "artistFans": 3452114,
-  "songRank": 796129,
+  "pageviews": 8630,
+  "listeners": 7961,
   "heard": [
    "Pop",
    "contemporary r&b",
@@ -555,8 +555,8 @@
   "fate": "Kept",
   "weeksAgo": 5,
   "fraction": 0.77,
-  "artistFans": 11421330,
-  "songRank": 820349,
+  "pageviews": 28553,
+  "listeners": 8203,
   "heard": [
    "Pop",
    "pop rock",
@@ -577,8 +577,8 @@
   "fate": "LeftAtBeatZero",
   "weeksAgo": 5,
   "fraction": 0.54,
-  "artistFans": 13156741,
-  "songRank": 850942,
+  "pageviews": 32891,
+  "listeners": 8509,
   "heard": [
    "Pop",
    "dance-pop",
@@ -599,8 +599,8 @@
   "fate": "OtherOctave",
   "weeksAgo": 5,
   "fraction": 0.31,
-  "artistFans": 7240956,
-  "songRank": 306490,
+  "pageviews": 18102,
+  "listeners": 3064,
   "heard": [
    "Pop",
    "pop rock",
@@ -644,8 +644,8 @@
   "fate": "Kept",
   "weeksAgo": 6,
   "fraction": 0.45,
-  "artistFans": 7408191,
-  "songRank": 728185,
+  "pageviews": 18520,
+  "listeners": 7281,
   "heard": [
    "Hip-Hop/Rap",
    "hip hop",
@@ -667,8 +667,8 @@
   "fate": "Kept",
   "weeksAgo": 6,
   "fraction": 0.22,
-  "artistFans": 4661844,
-  "songRank": 698679,
+  "pageviews": 11654,
+  "listeners": 6986,
   "heard": [
    "Pop",
    "pop rock",
@@ -689,8 +689,8 @@
   "vocalLufs": -16.8,
   "weeksAgo": 6,
   "fraction": 0.59,
-  "artistFans": 2003868,
-  "songRank": 874322,
+  "pageviews": 5009,
+  "listeners": 8743,
   "heard": [
    "alternative metal",
    "hard rock",
@@ -713,8 +713,8 @@
   "vocalLufs": -16.3,
   "weeksAgo": 6,
   "fraction": 0.36,
-  "artistFans": 4097539,
-  "songRank": 978547,
+  "pageviews": 10243,
+  "listeners": 9785,
   "heard": [
    "Alternative",
    "alternative rock",
@@ -736,8 +736,8 @@
   "fate": "Kept",
   "weeksAgo": 7,
   "fraction": 0.73,
-  "artistFans": 22897,
-  "songRank": 110570,
+  "pageviews": 57,
+  "listeners": 1105,
   "heard": [
    "Fitness & Workout",
    "hip hop",
@@ -758,8 +758,8 @@
   "fate": "Kept",
   "weeksAgo": 7,
   "fraction": 0.5,
-  "artistFans": 7966348,
-  "songRank": 721453,
+  "pageviews": 19915,
+  "listeners": 7214,
   "heard": [
    "Hip-Hop/Rap",
    "hip hop",
@@ -781,8 +781,8 @@
   "fate": "Kept",
   "weeksAgo": 7,
   "fraction": 0.27,
-  "artistFans": 12731529,
-  "songRank": 696539,
+  "pageviews": 31828,
+  "listeners": 6965,
   "heard": [
    "Pop",
    "country",
@@ -804,8 +804,8 @@
   "fate": "LeftAtBeatZero",
   "weeksAgo": 7,
   "fraction": 0.64,
-  "artistFans": 2240153,
-  "songRank": 500729,
+  "pageviews": 5600,
+  "listeners": 5007,
   "heard": [
    "Rock",
    "alternative rock",
@@ -827,8 +827,8 @@
   "fate": "Kept",
   "weeksAgo": 7,
   "fraction": 0.41,
-  "artistFans": 11158399,
-  "songRank": 943988,
+  "pageviews": 27895,
+  "listeners": 9439,
   "heard": [
    "Pop",
    "hip hop",
@@ -850,8 +850,8 @@
   "fate": "Kept",
   "weeksAgo": 8,
   "fraction": 0.78,
-  "artistFans": 14724615,
-  "songRank": 984833,
+  "pageviews": 36811,
+  "listeners": 9848,
   "heard": [
    "soul",
    "r&b",
@@ -872,8 +872,8 @@
   "vocalLufs": -13.1,
   "weeksAgo": 8,
   "fraction": 0.55,
-  "artistFans": 1933750,
-  "songRank": 599139,
+  "pageviews": 4834,
+  "listeners": 5991,
   "heard": [
    "Rock",
    "alternative rock",
@@ -895,8 +895,8 @@
   "fate": "Kept",
   "weeksAgo": 8,
   "fraction": 0.32,
-  "artistFans": 7220205,
-  "songRank": 910078,
+  "pageviews": 18050,
+  "listeners": 9100,
   "heard": [
    "R&B/Soul"
   ]
@@ -914,8 +914,8 @@
   "fate": "Kept",
   "weeksAgo": 8,
   "fraction": 0.69,
-  "artistFans": 191,
-  "songRank": 63163,
+  "pageviews": 0,
+  "listeners": 631,
   "heard": [
    "Hip-Hop/Rap",
    "hip hop",
@@ -938,8 +938,8 @@
   "fate": "OtherOctave",
   "weeksAgo": 8,
   "fraction": 0.46,
-  "artistFans": 4549292,
-  "songRank": 870128,
+  "pageviews": 11373,
+  "listeners": 8701,
   "heard": [
    "Hip-Hop/Rap"
   ]
@@ -956,8 +956,8 @@
   "fate": "Kept",
   "weeksAgo": 9,
   "fraction": 0.23,
-  "artistFans": 874918,
-  "songRank": 412328,
+  "pageviews": 2187,
+  "listeners": 4123,
   "heard": [
    "Pop"
   ]
@@ -975,8 +975,8 @@
   "fate": "LeftAtBeatZero",
   "weeksAgo": 9,
   "fraction": 0.6,
-  "artistFans": 1182404,
-  "songRank": 520208,
+  "pageviews": 2956,
+  "listeners": 5202,
   "heard": [
    "Hip-Hop/Rap",
    "contemporary r&b",
@@ -999,8 +999,8 @@
   "fate": "Kept",
   "weeksAgo": 9,
   "fraction": 0.37,
-  "artistFans": 63345,
-  "songRank": 674517,
+  "pageviews": 158,
+  "listeners": 6745,
   "heard": [
    "Hip-Hop/Rap",
    "contemporary r&b",
@@ -1023,8 +1023,8 @@
   "fate": "LeftAtBeatZero",
   "weeksAgo": 9,
   "fraction": 0.74,
-  "artistFans": 19168,
-  "songRank": 784572,
+  "pageviews": 47,
+  "listeners": 7845,
   "heard": [
    "Hip-Hop/Rap",
    "house"

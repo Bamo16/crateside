@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Crateside.Core;
-using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Imports;
 using Crateside.Core.Ledger;
@@ -37,7 +36,6 @@ public sealed class DecisionsImportTests : IDisposable
         _paths = new CratesidePaths
         {
             GenresFile = Path.Combine(_root, "genres.json"),
-            FamiliarityFile = Path.Combine(_root, "familiarity.json"),
             TrackMarksFile = Path.Combine(_root, "track-marks.json"),
             PageChoicesFile = Path.Combine(_root, "page-choices.json"),
             QueueFile = Path.Combine(_root, "queue.json"),
@@ -112,42 +110,6 @@ public sealed class DecisionsImportTests : IDisposable
         Assert.Equal(3, read.Count);
         Assert.False(File.Exists(_paths.GenresFile));
         Assert.True(File.Exists($"{_paths.GenresFile}.imported-20261108"));
-    }
-
-    [Fact]
-    public void Every_familiarity_field_survives_the_import()
-    {
-        FamiliarityRecord[] records =
-        [
-            new()
-            {
-                Song = "Moe Shop - Love Taste",
-                Artist = "Moe Shop",
-                ArtistFans = 17_522,
-                SongRank = 167_703,
-                LookedUpAt = At.AddHours(-5),
-                LookupVersion = 2,
-                Settled = "Obscure",
-            },
-            new() { Song = "unmeasured", Settled = "Mainstream" },
-            new() { Song = "not found", LookedUpAt = At },
-        ];
-        FamiliarityJsonContext.Default.ListFamiliarityRecord.WriteFile(
-            _paths.FamiliarityFile,
-            [.. records]
-        );
-
-        Assert.Equal(
-            new DecisionFileImport("familiarity.json", 3, DecisionFileOutcome.Imported),
-            Assert.Single(Import())
-        );
-
-        var read = new FamiliarityStore(_ledger).Read();
-
-        foreach (var expected in records)
-            Assert.Equal(expected, read[expected.Song]);
-
-        Assert.True(File.Exists($"{_paths.FamiliarityFile}.imported-20261108"));
     }
 
     [Fact]

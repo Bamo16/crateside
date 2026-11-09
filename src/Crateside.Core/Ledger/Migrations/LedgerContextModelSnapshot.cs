@@ -22,10 +22,7 @@ namespace Crateside.Core.Ledger.Migrations
                         .HasColumnType("TEXT")
                         .UseCollation("NOCASE");
 
-                    b.Property<string>("Artist")
-                        .HasColumnType("TEXT");
-
-                    b.Property<long?>("ArtistFans")
+                    b.Property<int?>("Listeners")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("LookedUpAt")
@@ -34,11 +31,14 @@ namespace Crateside.Core.Ledger.Migrations
                     b.Property<int>("LookupVersion")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int?>("Pageviews")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Settled")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("SongRank")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("WikidataItem")
+                        .HasColumnType("TEXT");
 
                     b.HasKey("Song");
 

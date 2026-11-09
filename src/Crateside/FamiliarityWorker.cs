@@ -4,8 +4,9 @@ using Crateside.Core.Tracks;
 namespace Crateside;
 
 /// <summary>
-/// Asks Deezer how far every song reaches that it has not been asked about, one at a time. Never
-/// paused: it contends for nothing, and the backing pass is what writes the tag (#52).
+/// Asks ListenBrainz and Wikipedia how far every song reaches that it has not been asked about, one
+/// at a time. Never paused: it contends for nothing, and the backing pass is what writes the tag
+/// (ADR 0089).
 /// </summary>
 public sealed class FamiliarityWorker(
     TracksService tracks,
@@ -82,7 +83,14 @@ public sealed class FamiliarityWorker(
                 continue;
 
             if (await lookup.ReadAsync(artist, title, stoppingToken) is not { } reading)
+            {
+                logger.LogInformation(
+                    "A familiarity source could not be reached for {Song}; trying again later",
+                    song
+                );
+
                 return AfterFailure;
+            }
 
             store.Measure(song, reading, time.GetUtcNow(), FamiliarityLookup.Version);
             measured++;

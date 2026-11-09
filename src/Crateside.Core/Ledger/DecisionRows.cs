@@ -161,9 +161,9 @@ internal sealed class GenreRow
 internal sealed class FamiliarityRow
 {
     public string Song { get; set; } = string.Empty;
-    public string? Artist { get; set; }
-    public long? ArtistFans { get; set; }
-    public int? SongRank { get; set; }
+    public int? Listeners { get; set; }
+    public int? Pageviews { get; set; }
+    public string? WikidataItem { get; set; }
     public DateTimeOffset? LookedUpAt { get; set; }
     public int LookupVersion { get; set; }
     public string? Settled { get; set; }
@@ -172,9 +172,9 @@ internal sealed class FamiliarityRow
         new()
         {
             Song = record.Song,
-            Artist = record.Artist,
-            ArtistFans = record.ArtistFans,
-            SongRank = record.SongRank,
+            Listeners = record.Listeners,
+            Pageviews = record.Pageviews,
+            WikidataItem = record.WikidataItem,
             LookedUpAt = record.LookedUpAt,
             LookupVersion = record.LookupVersion,
             Settled = record.Settled,
@@ -184,9 +184,9 @@ internal sealed class FamiliarityRow
         new()
         {
             Song = Song,
-            Artist = Artist,
-            ArtistFans = ArtistFans,
-            SongRank = SongRank,
+            Listeners = Listeners,
+            Pageviews = Pageviews,
+            WikidataItem = WikidataItem,
             LookedUpAt = LookedUpAt,
             LookupVersion = LookupVersion,
             Settled = Settled,

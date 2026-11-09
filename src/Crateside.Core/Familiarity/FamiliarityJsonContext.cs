@@ -2,10 +2,11 @@ using System.Text.Json.Serialization;
 
 namespace Crateside.Core.Familiarity;
 
-[JsonSourceGenerationOptions(
-    WriteIndented = true,
-    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-)]
-[JsonSerializable(typeof(List<FamiliarityRecord>))]
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.SnakeCaseLower)]
+[JsonSerializable(typeof(ListenBrainzQuery))]
+[JsonSerializable(typeof(List<ListenBrainzPopularity>))]
 internal sealed partial class FamiliarityJsonContext : JsonSerializerContext { }
+
+internal sealed record ListenBrainzQuery(IReadOnlyList<string> RecordingMbids);
+
+internal sealed record ListenBrainzPopularity(string RecordingMbid, int? TotalUserCount);

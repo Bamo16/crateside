@@ -40,7 +40,7 @@ measured keyless signals against 52 songs the maintainer had labelled known or n
   extreme, 6 in `Niche` and 4 on the wrong one.
 - **The cuts are fitted on those 52** and live in one method.
 - **The recording** is the MusicBrainz recording the genre lookup ([ADR 0088](0088-genre-is-abletons-own-genres-filled-from-the-sources.md))
-  matches, so both share one search.
+  matches, so both share one search. (Built differently: see Built.)
 - **The article** is found through Wikidata: an item for a song whose performer is the song's
   artist, and its English Wikipedia sitelink. Searching Wikipedia by title is not used: it matched
   *Waterfall* to another band's song.
@@ -71,3 +71,43 @@ measured keyless signals against 52 songs the maintainer had labelled known or n
 - ListenBrainz's listeners skew to its own users, who are not a general audience. Unmeasured beyond
   the 52.
 - A song with no Wikipedia article can never read `Mainstream`.
+
+## Built
+
+Built by [#191](https://github.com/Bamo16/crateside/issues/191) on 2026-11-09. Where the build differs
+from the decision, and where it had to choose:
+
+- **The listeners are the most any recording of the song has, not the genre lookup's recording.** The
+  decision shares the genre lookup's one MusicBrainz match. Measured on the 52 with that first hit,
+  one of the 22 known songs read `Mainstream` (the note's table has 15): a song's listens are spread
+  over its releases and the first hit is as often an unplayed one (*Rolling in the Deep*,
+  *Hello*, *Bye Bye Bye* all read no listeners). The note took the best-listened of up to 100 hits, so
+  the lookup does: it asks MusicBrainz for up to 100 recordings of the title by the first credited
+  artist, keeps those whose title is the song's and whose credit names one of its artists, asks
+  ListenBrainz for all of them in one request and takes the largest user count. The familiarity
+  lookup therefore does not wait for the genre lookup, and the recording the genre lookup stores is
+  not used by it. With this, the 52 read 14 / 4 / 4 known and 1 / 2 / 27 unknown against the note's
+  15 / 4 / 3 and 1 / 2 / 27.
+- **The cuts are 3,500 and 20,000**, the round figures the issue gave, where the note fitted 3,481
+  and 20,461. On the note's numbers this moves one song, *Ooh La La* (3,481 listeners), from `Niche`
+  to `Obscure`.
+- **The article** is found by Wikidata's own search, restricted to items that have a performer
+  (`haswbstatement:P175`), for the exact title with its brackets taken off. A candidate counts when
+  its English label or alias is that title once squashed to letters and digits, it is a song,
+  single, musical work or musical composition (an album of the same name is passed over), and one of
+  its performers' labels or aliases is one of the song's credited artists. Of several, the first with
+  an English Wikipedia link wins. English Wikipedia holds most songs' articles on the musical-work
+  item, not the single's, which is why those types are all accepted.
+- **Pageviews** are the user agent's all-access monthly views over the twelve whole months before the
+  current one; an article the API has no record of reads 0.
+- **Pacing** is 0.6 s between requests to ListenBrainz, Wikidata and Wikimedia and 1.2 s before
+  MusicBrainz, with crateside's User-Agent. A song takes six requests, about ten seconds with the
+  servers' own time. ListenBrainz refuses a request body sent chunked, and answers `null` counts for
+  a recording nobody played; both are handled.
+- **The migration** (`FamiliarityFromListeners`) deletes every row and swaps the Deezer columns for
+  `Listeners`, `Pageviews` and `WikidataItem`. The person's 45 answers are in the ledger's
+  `before-<migration>.db` copy. `familiarity.json` is no longer imported.
+- **Deezer** stays in the genre lookup only, which now owns its matching (`DeezerMatch`); the name
+  matching the two lookups share is `NameMatch`.
+- **Until a song is asked again**, the `Familiarity|` keyword already on its files stays; the backing
+  pass replaces it when the song has a new value.

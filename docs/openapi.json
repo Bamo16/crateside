@@ -828,38 +828,39 @@
             "type": "string",
             "description": "The ledger's song identity, or the upload's video ID for a song it never judged."
           },
-          "artist": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "description": "The most-followed artist credited on the song Deezer matched."
-          },
-          "artistFans": {
+          "listeners": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
               "integer",
               "string"
             ],
-            "format": "int64"
-          },
-          "songRank": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "description": "Deezer's popularity figure for the song itself, 0 to about 1,000,000.",
+            "description": "Distinct ListenBrainz users of the song's best-played recording; null when it has none.",
             "format": "int32"
+          },
+          "pageviews": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "description": "User pageviews of the song's English Wikipedia article over the last twelve months; 0 for no article.",
+            "format": "int32"
+          },
+          "wikidataItem": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The Wikidata item the song's article was found through, or null when none matched."
           },
           "lookedUpAt": {
             "type": [
               "null",
               "string"
             ],
-            "description": "When Deezer was last asked, or null when it never has been.",
+            "description": "When the sources were last asked, or null when they never have been.",
             "format": "date-time"
           },
           "lookupVersion": {

@@ -181,7 +181,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         genres.Hear(Judged, new GenreHearing(["synthwave"], null), At);
 
         var familiarity = new FamiliarityStore(ledger);
-        familiarity.Measure(Song, new FamiliarityReading("The Examples", 1_200, 50_000), At, 1);
+        familiarity.Measure(Song, new FamiliarityReading(1_200, 50_000, "Q42"), At, 1);
 
         var marks = new TrackMarkStore(ledger);
         marks.Set(Song, TrackMark.OddBars, marked: true);
