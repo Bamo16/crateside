@@ -512,13 +512,19 @@ shows no genre.
     "genres": {
       "Zx3TrackA01": {
         "song": "Zx3TrackA01",
-        "genre": null,
-        "isSettled": false,
-        "suggested": null,
         "heard": [
           "synthwave"
         ],
-        "lookedUpAt": "2026-10-01T12:00:00+00:00"
+        "recordingMbid": null,
+        "lookedUpAt": "2026-10-01T12:00:00+00:00",
+        "mine": [],
+        "tagged": [],
+        "styles": [
+          "synthwave"
+        ],
+        "genres": [
+          "Synthpop"
+        ]
       }
     },
     "familiarity": {

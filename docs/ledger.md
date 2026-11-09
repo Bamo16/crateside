@@ -64,8 +64,13 @@ restores both. They change; a run does not.
   `UndoneAt`.
 - **TrackMarks**: a mark on a song (`ChangesKey`, `OddBars`), one row each, by `Song`.
 - **MeasuringExclusions**: a song, or stretches of it, not fit for measuring detectors (ADR 0085), by `Song`: one row with null `StartSeconds` for the whole track, else one row per stretch with `StartSeconds`, `EndSeconds` (seconds of the source), `Typed` and `Reason`.
-- **Genres**: a song's genre as the person settled it and as the sources suggested it (`Heard` is a
-  JSON list), by `Song`.
+- **Genres**: a song's genres ([ADR 0088](adr/0088-genre-is-abletons-own-genres-filled-from-the-sources.md)),
+  by `Song`. `Heard` is every label the sources gave (a JSON list, in the lookup's order), kept as the
+  song's styles; the genres crateside assigns are mapped from it when read, so the table can change
+  without a new lookup. `RecordingMbid` is the MusicBrainz recording the lookup matched; `Learned` and
+  `LearnedFrom` a genre taken from the person's answers for the artist; `Mine` the genres the person
+  chose (a JSON list: among Ableton's 29, or their own); `Tagged` every genre crateside has asked to be
+  written onto the song's files, so one it later drops can be taken off again.
 - **Familiarities**: a song's reach as Deezer measured it and the familiarity the person settled, by
   `Song`.
 - **TrackInstructions**: what the person told crateside about a track

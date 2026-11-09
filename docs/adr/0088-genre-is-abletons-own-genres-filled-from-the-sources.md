@@ -65,3 +65,25 @@ from the sources. Styles are kept in crateside and never written as tags.**
   Hop, EDM, Electronica). A person who wants one adds it as their own.
 - The expanded `Genres` group shows all 29 whether used or not, as Ableton's own group always does.
 - A wrong mapping tags many songs at once; it is fixed once in the table.
+
+## Built
+
+Built by [#190](https://github.com/Bamo16/crateside/issues/190) on 2026-11-09. Where the build had to
+choose:
+
+- **Two per song** are the two genres the most distinct labels map onto, the second only when at
+  least half as many labels back it as the first; a tie goes to the label heard first. The lookup's
+  order is MusicBrainz recording, MusicBrainz artist, Deezer (the album's genres, on the same track
+  match familiarity uses), iTunes.
+- **The table** (`genre-labels.json`) covers every label that was on three or more songs on
+  2026-11-09, except four that name no genre (`soundtrack`, `comedy`, `instrumental`, `ballad`);
+  those stay on the Library page's list. Deezer's own genre names, which no lookup had kept yet,
+  were entered from what Deezer is known to call them and are **unmeasured** until the lookup has
+  run.
+- **A genre dropped later is taken off the files** only if crateside asked for it before: the song's
+  record keeps every genre it has asked to be written (`Tagged`). That is how a `Genres|` tag of
+  Live's own stays, and how a changed mapping or the person's replacement takes crateside's off.
+- **The migration** (`GenresFromAbleton`) drops the answer, learned and suggested columns, clears
+  `LookedUpAt` so every song is asked again, and keeps `Heard`, so songs show their genres from the
+  labels already kept until the new lookup runs. The ledger's `before-<migration>.db` copy is made by
+  the ledger before any migration applies.
