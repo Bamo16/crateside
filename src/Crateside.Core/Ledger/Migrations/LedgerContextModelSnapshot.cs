@@ -51,15 +51,12 @@ namespace Crateside.Core.Ledger.Migrations
                         .HasColumnType("TEXT")
                         .UseCollation("NOCASE");
 
-                    b.Property<string>("Genre")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Heard")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("IsSettled")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Learned")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("LearnedFrom")
                         .HasColumnType("TEXT");
@@ -67,7 +64,15 @@ namespace Crateside.Core.Ledger.Migrations
                     b.Property<string>("LookedUpAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Suggested")
+                    b.Property<string>("Mine")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RecordingMbid")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Tagged")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Song");

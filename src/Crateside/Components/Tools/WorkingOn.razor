@@ -36,10 +36,10 @@
                 }
             </span>
             <span class="meta">
-                @string.Join(" · ", new[] { track.Genre, Familiarity }.OfType<string>())
+                @string.Join(" · ", new[] { Genres, Familiarity }.OfType<string>())
                 @if (DetailsHref is { } href)
                 {
-                    @(track.Genre is null && Familiarity is null ? null : " · ")<a href="@href" @onclick:stopPropagation="true">Track details</a>
+                    @(Genres is null && Familiarity is null ? null : " · ")<a href="@href" @onclick:stopPropagation="true">Track details</a>
                 }
             </span>
         </div>
@@ -165,6 +165,8 @@
 
     [Parameter]
     public EventCallback<string> OnBpm { get; set; }
+
+    private string? Genres => Track is { Genres: [_, ..] genres } ? string.Join(", ", genres) : null;
 
     private DiatonicMode Mode => Center?.Mode ?? _mode;
 

@@ -1,10 +1,11 @@
 using System.Text.Json;
+using Crateside.Core.Familiarity;
 
 namespace Crateside.Core.Genres;
 
 /// <summary>
-/// Asks free sources what genre a song is: MusicBrainz's community tags, which know drum and bass
-/// from dance, then iTunes's one storefront genre (#4). Needs no key.
+/// Asks free sources what genre a song is: MusicBrainz's community tags for the recording and then
+/// the artist, Deezer's album genres, then iTunes's one storefront genre (#4). Needs no key.
 /// </summary>
 public sealed class GenreLookup(IHttpClientFactory clients)
 {
@@ -13,11 +14,13 @@ public sealed class GenreLookup(IHttpClientFactory clients)
     /// <summary>MusicBrainz allows one request a second from a client like this.</summary>
     private static readonly TimeSpan MusicBrainzPace = TimeSpan.FromSeconds(1.1);
 
+    private static readonly TimeSpan DeezerPace = TimeSpan.FromMilliseconds(150);
+
     /// <summary>
-    /// Everything the sources said, recording first and artist last, or null when a source could
-    /// not be reached — which is worth asking again, where an empty answer is not.
+    /// Everything the sources said, recording first, then the artist, Deezer and iTunes, or null
+    /// when a source could not be reached — which is worth asking again, where an empty answer is not.
     /// </summary>
-    public async Task<IReadOnlyList<string>?> HearAsync(
+    public async Task<GenreHearing?> HearAsync(
         string artist,
         string title,
         CancellationToken ct = default
@@ -25,16 +28,20 @@ public sealed class GenreLookup(IHttpClientFactory clients)
     {
         try
         {
-            var (recording, byArtist) = await MusicBrainzAsync(artist, title, ct);
+            var (recording, byArtist, mbid) = await MusicBrainzAsync(artist, title, ct);
+            var deezer = await DeezerAsync(artist, title, ct);
             var storefront = await ITunesAsync(artist, title, ct);
 
-            return
-            [
-                .. recording
-                    .Concat(storefront is null ? [] : [storefront])
-                    .Concat(byArtist)
-                    .Distinct(StringComparer.OrdinalIgnoreCase),
-            ];
+            return new GenreHearing(
+                [
+                    .. recording
+                        .Concat(byArtist)
+                        .Concat(deezer)
+                        .Concat(storefront is null ? [] : [storefront])
+                        .Distinct(StringComparer.OrdinalIgnoreCase),
+                ],
+                mbid
+            );
         }
         catch (Exception ex)
             when (ex is HttpRequestException or TaskCanceledException or JsonException
@@ -47,7 +54,8 @@ public sealed class GenreLookup(IHttpClientFactory clients)
 
     private async Task<(
         IReadOnlyList<string> Recording,
-        IReadOnlyList<string> Artist
+        IReadOnlyList<string> Artist,
+        string? Mbid
     )> MusicBrainzAsync(string artist, string title, CancellationToken ct)
     {
         var query = Uri.EscapeDataString(
@@ -63,14 +71,15 @@ public sealed class GenreLookup(IHttpClientFactory clients)
             !search.RootElement.TryGetProperty("recordings", out var recordings)
             || recordings.GetArrayLength() is 0
         )
-            return ([], []);
+            return ([], [], null);
 
         var hit = recordings[0];
+        var mbid = hit.GetProperty("id").GetString();
 
         await Task.Delay(MusicBrainzPace, ct);
 
         using var recording = await GetAsync(
-            $"https://musicbrainz.org/ws/2/recording/{hit.GetProperty("id").GetString()}?inc=genres+artist-credits&fmt=json",
+            $"https://musicbrainz.org/ws/2/recording/{mbid}?inc=genres+artist-credits&fmt=json",
             ct
         );
 
@@ -93,7 +102,37 @@ public sealed class GenreLookup(IHttpClientFactory clients)
 
         await Task.Delay(MusicBrainzPace, ct);
 
-        return (Genres(recording.RootElement, take: 5), byArtist);
+        return (Genres(recording.RootElement, take: 5), byArtist, mbid);
+    }
+
+    /// <summary>The genres of the album Deezer's best match for the song is on, or none when it matches nothing.</summary>
+    private async Task<IReadOnlyList<string>> DeezerAsync(
+        string artist,
+        string title,
+        CancellationToken ct
+    )
+    {
+        using var search = await GetAsync(FamiliarityLookup.SearchUrl(artist, title), ct);
+
+        if (
+            FamiliarityLookup.Match(search.RootElement, artist, title) is not { AlbumId: { } album }
+        )
+            return [];
+
+        await Task.Delay(DeezerPace, ct);
+
+        using var detail = await GetAsync($"https://api.deezer.com/album/{album}", ct);
+
+        return
+            detail.RootElement.TryGetProperty("genres", out var genres)
+            && genres.TryGetProperty("data", out var data)
+            ?
+            [
+                .. data.EnumerateArray()
+                    .Select(genre => genre.GetProperty("name").GetString())
+                    .OfType<string>(),
+            ]
+            : [];
     }
 
     /// <summary>The storefront's genre, when its first hit is by the same artist; else null.</summary>

@@ -26,8 +26,8 @@ public static class FileTagsReading
         /// <summary>The <c>Type|</c> keyword: Instrumental, Vocal, Loop.</summary>
         public string? Type => Values(tags.Keywords, TypeCategory).FirstOrDefault();
 
-        /// <summary>The <c>Genre|</c> keyword crateside writes, or null (ADR 0030).</summary>
-        public string? Genre => Values(tags.Keywords, GenreVocabulary.Group).FirstOrDefault();
+        /// <summary>The <c>Genres|</c> keywords, in the order the entry holds them (ADR 0088).</summary>
+        public IReadOnlyList<string> Genres => [.. Values(tags.Keywords, GenreVocabulary.Group)];
     }
 
     /// <summary>Live spells the tonic with ♯/♭ (<c>Key|G♯</c>); the ledger with ASCII.</summary>

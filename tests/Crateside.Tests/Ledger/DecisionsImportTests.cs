@@ -59,23 +59,18 @@ public sealed class DecisionsImportTests : IDisposable
             new()
             {
                 Song = "Fox Stevenson - Glue Gun",
-                Genre = "Drum & Bass",
-                IsSettled = true,
+                Learned = "Drum & Bass",
                 LearnedFrom = "Fox Stevenson",
-                Suggested = "Drum & Bass",
+                Mine = ["Funk", "Meme"],
+                Tagged = ["Drum & Bass"],
+                RecordingMbid = "5b3a4c5d-0000-4000-8000-000000000000",
                 Heard = ["Dance", "drum and bass", "electronic"],
                 LookedUpAt = At.AddDays(-3),
             },
-            new()
-            {
-                Song = "xg - woke up",
-                Genre = null,
-                IsSettled = true,
-            },
+            new() { Song = "xg - woke up" },
             new()
             {
                 Song = "yt9XdQw4w9W",
-                Suggested = "Pop",
                 Heard = ["pop"],
                 LookedUpAt = At,
             },
@@ -95,8 +90,23 @@ public sealed class DecisionsImportTests : IDisposable
         {
             var actual = read[expected.Song];
 
-            Assert.Equal(expected with { Heard = [] }, actual with { Heard = [] });
+            Assert.Equal(
+                expected with
+                {
+                    Heard = [],
+                    Mine = [],
+                    Tagged = [],
+                },
+                actual with
+                {
+                    Heard = [],
+                    Mine = [],
+                    Tagged = [],
+                }
+            );
             Assert.Equal(expected.Heard, actual.Heard);
+            Assert.Equal(expected.Mine, actual.Mine);
+            Assert.Equal(expected.Tagged, actual.Tagged);
         }
 
         Assert.Equal(3, read.Count);
@@ -284,14 +294,7 @@ public sealed class DecisionsImportTests : IDisposable
     {
         GenreJsonContext.Default.ListGenreRecord.WriteFile(
             _paths.GenresFile,
-            [
-                new GenreRecord
-                {
-                    Song = "a - b",
-                    Genre = "Pop",
-                    IsSettled = true,
-                },
-            ]
+            [new GenreRecord { Song = "a - b", Mine = ["Pop"] }]
         );
         Import();
 
@@ -302,17 +305,10 @@ public sealed class DecisionsImportTests : IDisposable
     [Fact]
     public void A_file_beside_a_table_that_already_holds_rows_is_left_alone()
     {
-        new GenreStore(_ledger).Settle("kept", "Pop");
+        new GenreStore(_ledger).Choose("kept", "Pop");
         GenreJsonContext.Default.ListGenreRecord.WriteFile(
             _paths.GenresFile,
-            [
-                new GenreRecord
-                {
-                    Song = "other",
-                    Genre = "Rock",
-                    IsSettled = true,
-                },
-            ]
+            [new GenreRecord { Song = "other", Mine = ["Rock"] }]
         );
 
         Assert.Equal(
@@ -341,28 +337,14 @@ public sealed class DecisionsImportTests : IDisposable
     {
         GenreJsonContext.Default.ListGenreRecord.WriteFile(
             _paths.GenresFile,
-            [
-                new GenreRecord
-                {
-                    Song = "first",
-                    Genre = "Pop",
-                    IsSettled = true,
-                },
-            ]
+            [new GenreRecord { Song = "first", Mine = ["Pop"] }]
         );
         Import();
 
         _ledger.Save(context => context.Genres.RemoveRange(context.Genres));
         GenreJsonContext.Default.ListGenreRecord.WriteFile(
             _paths.GenresFile,
-            [
-                new GenreRecord
-                {
-                    Song = "second",
-                    Genre = "Rock",
-                    IsSettled = true,
-                },
-            ]
+            [new GenreRecord { Song = "second", Mine = ["Rock"] }]
         );
         Import();
 
@@ -376,18 +358,8 @@ public sealed class DecisionsImportTests : IDisposable
         GenreJsonContext.Default.ListGenreRecord.WriteFile(
             _paths.GenresFile,
             [
-                new GenreRecord
-                {
-                    Song = "A - B",
-                    Genre = "Pop",
-                    IsSettled = true,
-                },
-                new GenreRecord
-                {
-                    Song = "a - b",
-                    Genre = "Pop",
-                    IsSettled = true,
-                },
+                new GenreRecord { Song = "A - B", Mine = ["Pop"] },
+                new GenreRecord { Song = "a - b", Mine = ["Pop"] },
             ]
         );
 

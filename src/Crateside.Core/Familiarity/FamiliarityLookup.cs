@@ -46,10 +46,7 @@ public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
     {
         try
         {
-            using var search = await GetAsync(
-                $"https://api.deezer.com/search?q={Uri.EscapeDataString($"{ArtistCredit.Primary(artist)} {Bracketed.Replace(title, string.Empty).Trim()}")}",
-                ct
-            );
+            using var search = await GetAsync(SearchUrl(artist, title), ct);
 
             if (search is null)
                 return null;
@@ -97,12 +94,19 @@ public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
         }
     }
 
+    internal static string SearchUrl(string artist, string title) =>
+        $"https://api.deezer.com/search?q={Uri.EscapeDataString($"{ArtistCredit.Primary(artist)} {Bracketed.Replace(title, string.Empty).Trim()}")}";
+
     /// <summary>
     /// The most popular hit that is this song by one of its artists, so the original outranks a
     /// live cut or a remaster of it. A hit by a karaoke, tribute or cover act is passed over for the
     /// next one.
     /// </summary>
-    private static (long Id, int Rank)? Match(JsonElement search, string artist, string title) =>
+    internal static (long Id, int Rank, long? AlbumId)? Match(
+        JsonElement search,
+        string artist,
+        string title
+    ) =>
         search.TryGetProperty("data", out var hits)
             ? hits.EnumerateArray()
                 .Where(hit =>
@@ -113,8 +117,15 @@ public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
                     && !IsImitation(found.GetString() ?? string.Empty, by, title)
                 )
                 .Select(hit =>
-                    ((long Id, int Rank)?)
-                        (hit.GetProperty("id").GetInt64(), hit.GetProperty("rank").GetInt32())
+                    ((long Id, int Rank, long? AlbumId)?)
+                        (
+                            hit.GetProperty("id").GetInt64(),
+                            hit.GetProperty("rank").GetInt32(),
+                            hit.TryGetProperty("album", out var album)
+                            && album.TryGetProperty("id", out var albumId)
+                                ? albumId.GetInt64()
+                                : null
+                        )
                 )
                 .MaxBy(hit => hit!.Value.Rank)
             : null;

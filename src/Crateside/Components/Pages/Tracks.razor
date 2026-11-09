@@ -823,7 +823,6 @@
             " · ",
             new[]
             {
-                row.Genre is { IsSettled: false } ? GenreStrip.Heard(row.Genre) : null,
                 row.Familiarity is { Written: null, LookedUpAt: not null } ? "your call on familiarity" : null,
             }.OfType<string>()
         );

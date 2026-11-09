@@ -30,6 +30,7 @@
             Include="Orchestration\Verdict\judge-prompt.md"
             LogicalName="judge-prompt.md"
         />
+        <EmbeddedResource Include="Genres\genre-labels.json" LogicalName="genre-labels.json" />
         <EmbeddedResource
             Include="KeyDetection\Madmom\key-cnn.onnx"
             LogicalName="madmom-key-cnn.onnx"

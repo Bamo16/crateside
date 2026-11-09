@@ -52,7 +52,7 @@ public sealed class BackingRunnerTests : IDisposable
     [Fact]
     public void An_entry_carrying_a_keyword_the_writer_cannot_write_is_left_alone()
     {
-        Assert.False(Needs(Tags("Type|Vocal", "Genre|Rap")));
+        Assert.False(Needs(Tags("Type|Vocal", "Mood|Dark")));
     }
 
     [Fact]
@@ -121,29 +121,63 @@ public sealed class BackingRunnerTests : IDisposable
     [Fact]
     public void A_settled_genre_is_added_to_a_keyed_entry_and_everything_else_survives()
     {
-        var merged = Merge(Tags("Key|G♯", "Key|Minor", "Type|Vocal"), ["Genre|Hip Hop"]);
+        var merged = Merge(Tags("Key|G♯", "Key|Minor", "Type|Vocal"), ["Genres|Hip Hop"]);
 
-        Assert.Equal(["Key|G♯", "Key|Minor", "Type|Vocal", "Genre|Hip Hop"], merged);
+        Assert.Equal(["Key|G♯", "Key|Minor", "Type|Vocal", "Genres|Hip Hop"], merged);
     }
 
     [Fact]
-    public void A_changed_genre_replaces_the_one_crateside_wrote_before()
+    public void A_genre_crateside_wrote_and_no_longer_wants_is_taken_off()
     {
-        var merged = Merge(Tags("Key|G♯", "Key|Minor", "Genre|Pop"), ["Genre|K-Pop"]);
+        var merged = Merge(
+            Tags("Key|G♯", "Key|Minor", "Genres|Pop"),
+            ["Genres|Hip Hop"],
+            retired: ["Genres|Pop"]
+        );
 
-        Assert.Contains("Genre|K-Pop", merged);
-        Assert.DoesNotContain("Genre|Pop", merged);
+        Assert.Equal(["Key|G♯", "Key|Minor", "Genres|Hip Hop"], merged);
+    }
+
+    [Fact]
+    public void A_genres_keyword_crateside_did_not_write_is_left_alone()
+    {
+        var merged = Merge(
+            Tags("Key|G♯", "Key|Minor", "Genres|Funk"),
+            ["Genres|Hip Hop"],
+            retired: ["Genres|Pop"]
+        );
+
+        Assert.Equal(["Key|G♯", "Key|Minor", "Genres|Funk", "Genres|Hip Hop"], merged);
+    }
+
+    [Fact]
+    public void A_genre_already_on_the_entry_is_not_written_twice()
+    {
+        var merged = Merge(Tags("Key|G♯", "Key|Minor", "Genres|Pop"), ["Genres|Pop"]);
+
+        Assert.Equal(["Key|G♯", "Key|Minor", "Genres|Pop"], merged);
+    }
+
+    [Fact]
+    public void The_retired_genre_group_is_taken_off_and_its_genre_written_in_the_new_one()
+    {
+        var merged = Merge(
+            Tags("Key|G♯", "Key|Minor", "Genre|Hip Hop", "Genres|Funk"),
+            ["Genres|Hip Hop"]
+        );
+
+        Assert.Equal(["Key|G♯", "Key|Minor", "Genres|Funk", "Genres|Hip Hop"], merged);
     }
 
     [Fact]
     public void A_genre_the_user_took_off_is_not_put_back()
     {
         var merged = Merge(
-            TestTags.Of(File1, ["Key|G♯", "Key|Minor"], ["Genre|Rock"]),
-            ["Genre|Rock"]
+            TestTags.Of(File1, ["Key|G♯", "Key|Minor"], ["Genres|Rock"]),
+            ["Genres|Rock"]
         );
 
-        Assert.DoesNotContain("Genre|Rock", merged);
+        Assert.DoesNotContain("Genres|Rock", merged);
     }
 
     [Fact]
@@ -152,18 +186,19 @@ public sealed class BackingRunnerTests : IDisposable
         Assert.True(BackingRunner.CanTakeOwnedTags(Tags("Key|G♯", "Key|Minor")));
         Assert.False(BackingRunner.CanTakeOwnedTags(Tags("Type|Vocal")));
         Assert.False(BackingRunner.CanTakeOwnedTags(null));
-        Assert.False(BackingRunner.CanTakeOwnedTags(Tags("Key|G♯", "Key|Minor", "Genre|Rap")));
+        Assert.False(BackingRunner.CanTakeOwnedTags(Tags("Key|G♯", "Key|Minor", "Mood|Dark")));
+        Assert.True(BackingRunner.CanTakeOwnedTags(Tags("Key|G♯", "Key|Minor", "Genre|Rap")));
     }
 
     [Fact]
     public void Genre_and_familiarity_each_replace_only_their_own_group()
     {
         var merged = Merge(
-            Tags("Key|G♯", "Key|Minor", "Genre|Pop", "Familiarity|Obscure"),
+            Tags("Key|G♯", "Key|Minor", "Genres|Pop", "Familiarity|Obscure"),
             ["Familiarity|Mainstream"]
         );
 
-        Assert.Equal(["Key|G♯", "Key|Minor", "Genre|Pop", "Familiarity|Mainstream"], merged);
+        Assert.Equal(["Key|G♯", "Key|Minor", "Genres|Pop", "Familiarity|Mainstream"], merged);
     }
 
     [Fact]
@@ -171,10 +206,10 @@ public sealed class BackingRunnerTests : IDisposable
     {
         var merged = Merge(
             TestTags.Of(File1, ["Key|G♯", "Key|Minor"], ["Familiarity|Mainstream"]),
-            ["Genre|Rock", "Familiarity|Mainstream"]
+            ["Genres|Rock", "Familiarity|Mainstream"]
         );
 
-        Assert.Equal(["Key|G♯", "Key|Minor", "Genre|Rock"], merged);
+        Assert.Equal(["Key|G♯", "Key|Minor", "Genres|Rock"], merged);
     }
 
     [Fact]
@@ -205,12 +240,12 @@ public sealed class BackingRunnerTests : IDisposable
     public void A_correction_replaces_the_whole_key_and_keeps_everything_else()
     {
         var merged = BackingRunner.Merged(
-            Tags("Key|F♯", "Key|Major", "Type|Vocal", "Genre|Pop"),
+            Tags("Key|F♯", "Key|Major", "Type|Vocal", "Genres|Pop"),
             ["Key|D♯", "Key|Minor", "Type|Instrumental"],
             correcting: true
         );
 
-        Assert.Equal(["Type|Vocal", "Genre|Pop", "Key|D♯", "Key|Minor"], merged);
+        Assert.Equal(["Type|Vocal", "Genres|Pop", "Key|D♯", "Key|Minor"], merged);
     }
 
     [Fact]
@@ -252,6 +287,67 @@ public sealed class BackingRunnerTests : IDisposable
         Assert.Equal("A minor", tags.Key);
         Assert.Contains("Type|Vocal", tags.Keywords);
         Assert.Equal([$"retagged {Path.GetFileName(stem)}: C# major → A minor"], log.Messages);
+    }
+
+    [Fact]
+    public void A_sample_with_the_retired_genre_ends_with_the_new_one_and_a_genres_tag_of_lives_is_left_alone()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|A", "Key|Minor", "Genre|Hip Hop", "Genres|Funk"],
+                },
+            ]
+        );
+
+        var outcome = Runner()
+            .Run(
+                _root,
+                Ledger("HIGH"),
+                ownedOf: _ => ["Genres|Hip Hop"],
+                backKeys: false,
+                retiredOf: _ => ["Genres|Pop"]
+            );
+
+        Assert.IsType<TagWriteOutcome.Written>(outcome);
+        Assert.True(new FolderInfoReader().Read(_root).TryGet(stem, out var tags));
+        Assert.Contains("Genres|Hip Hop", tags.Keywords);
+        Assert.Contains("Genres|Funk", tags.Keywords);
+        Assert.DoesNotContain(tags.Keywords, keyword => keyword.StartsWith("Genre|"));
+    }
+
+    [Fact]
+    public void A_genre_crateside_wrote_and_has_since_retired_is_taken_off_the_file()
+    {
+        var stem = LibraryStem();
+        new FolderInfoWriter().Apply(
+            _root,
+            [
+                new()
+                {
+                    RelativePath = Path.GetFileName(stem),
+                    Keywords = ["Key|A", "Key|Minor", "Genres|Pop", "Genres|Funk"],
+                },
+            ]
+        );
+
+        Runner()
+            .Run(
+                _root,
+                Ledger("HIGH"),
+                ownedOf: _ => ["Genres|Hip Hop"],
+                backKeys: false,
+                retiredOf: _ => ["Genres|Pop"]
+            );
+
+        Assert.True(new FolderInfoReader().Read(_root).TryGet(stem, out var tags));
+        Assert.DoesNotContain("Genres|Pop", tags.Keywords);
+        Assert.Contains("Genres|Funk", tags.Keywords);
+        Assert.Contains("Genres|Hip Hop", tags.Keywords);
     }
 
     [Fact]
@@ -490,6 +586,7 @@ public sealed class BackingRunnerTests : IDisposable
 
     private static IReadOnlyList<string> Merge(
         FileTags? existing,
-        IReadOnlyList<string> keywords
-    ) => BackingRunner.Merged(existing, keywords);
+        IReadOnlyList<string> keywords,
+        IReadOnlyList<string>? retired = null
+    ) => BackingRunner.Merged(existing, keywords, retired: retired);
 }

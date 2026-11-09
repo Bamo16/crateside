@@ -1050,36 +1050,19 @@
             "type": "string",
             "description": "The ledger's song identity, or the upload's video ID for a song it never judged."
           },
-          "genre": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "description": "What the user settled on, or null — which, once settled, means none of the list."
-          },
-          "isSettled": {
-            "type": "boolean"
-          },
-          "learnedFrom": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "description": "The artist whose other tracks settled this one, or null when the user settled it or nobody has."
-          },
-          "suggested": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "description": "The first thing the sources said that maps onto the list, or null."
-          },
           "heard": {
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "Everything the sources said, verbatim, whether it maps onto the list or not."
+            "description": "Every label the sources gave, verbatim, in the lookup's order: MusicBrainz recording, MusicBrainz artist, Deezer, iTunes."
+          },
+          "recordingMbid": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The MusicBrainz recording the lookup matched, or null when none matched."
           },
           "lookedUpAt": {
             "type": [
@@ -1088,9 +1071,57 @@
             ],
             "description": "When the sources were last asked, or null when they never have been.",
             "format": "date-time"
+          },
+          "learned": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A genre taken from the person's answers for the artist, used only where the sources map onto nothing."
+          },
+          "learnedFrom": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The artist whose answers the learned genre came from."
+          },
+          "mine": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The genres the person chose: among the 29, or of their own."
+          },
+          "tagged": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Every genre crateside has asked to be written onto the song's files."
+          },
+          "styles": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "The sources' labels, kept as the song's styles and never written as tags."
+          },
+          "genres": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "The genres to write: the person's choice among the 29, else crateside's, and always the person's own."
           }
         },
-        "description": "One song's genre, settled or suggested."
+        "description": "One song's genres: what the sources said, what crateside took from it, and what the person chose."
       },
       "GridLine": {
         "required": [
@@ -3399,7 +3430,7 @@
                 "type": "null"
               },
               {
-                "description": "The song's genre as settled or suggested, or null when nothing has asked yet.",
+                "description": "The song's genres from the sources and the person's choices, or null when nothing has asked yet.",
                 "$ref": "#/components/schemas/GenreRecord"
               }
             ]

@@ -1,27 +1,19 @@
 namespace Crateside.Core.Genres;
 
 /// <summary>
-/// What the sources called the songs the list does not cover, most common first — the signal that
-/// the list wants another genre (ADR 0030).
+/// What the sources called the songs the table does not map, most common first — the signal that
+/// the table wants another line (ADR 0088).
 /// </summary>
 public static class GenreGaps
 {
-    /// <summary>
-    /// Songs settled as none of the list, or suggested nothing, counted under each label that maps
-    /// onto nothing; a song counts once per label.
-    /// </summary>
+    /// <summary>Songs counted under each label that maps onto nothing; a song counts once per label.</summary>
     public static IReadOnlyList<GenreGap> From(IEnumerable<GenreRecord> records) =>
         [
             .. records
-                .Where(record =>
-                    record
-                        is { IsSettled: true, Genre: null }
-                            or { IsSettled: false, Suggested: null, LookedUpAt: not null }
-                )
                 .SelectMany(record =>
                     record
-                        .Heard.Where(heard => GenreVocabulary.FromHeard(heard) is null)
-                        .Select(heard => heard.Trim().ToLowerInvariant())
+                        .Heard.Where(heard => GenreMapping.Map(heard).Count is 0)
+                        .Select(GenreMapping.Normalise)
                         .Distinct()
                         .Select(label => (Label: label, record.Song))
                 )

@@ -178,7 +178,7 @@ internal sealed class SyntheticCrateside : IAsyncDisposable
         jobs.Record(Waiting, JobStage.Download, JobStatus.Queued);
 
         var genres = new GenreStore(ledger);
-        genres.Suggest(Judged, ["synthwave"], At);
+        genres.Hear(Judged, new GenreHearing(["synthwave"], null), At);
 
         var familiarity = new FamiliarityStore(ledger);
         familiarity.Measure(Song, new FamiliarityReading("The Examples", 1_200, 50_000), At, 1);

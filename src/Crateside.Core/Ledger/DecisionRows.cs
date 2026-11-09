@@ -110,42 +110,52 @@ internal sealed class MeasuringExclusionRow
 internal sealed class GenreRow
 {
     public string Song { get; set; } = string.Empty;
-    public string? Genre { get; set; }
-    public bool IsSettled { get; set; }
-    public string? LearnedFrom { get; set; }
-    public string? Suggested { get; set; }
 
-    /// <summary>Everything the sources said, as a JSON list.</summary>
+    /// <summary>Every label the sources gave, in the lookup's order, as a JSON list.</summary>
     public string Heard { get; set; } = "[]";
 
+    public string? RecordingMbid { get; set; }
     public DateTimeOffset? LookedUpAt { get; set; }
+    public string? Learned { get; set; }
+    public string? LearnedFrom { get; set; }
+
+    /// <summary>The person's own genres, as a JSON list.</summary>
+    public string Mine { get; set; } = "[]";
+
+    /// <summary>Every genre crateside has asked to be written onto the song's files, as a JSON list.</summary>
+    public string Tagged { get; set; } = "[]";
 
     public static GenreRow From(GenreRecord record) =>
         new()
         {
             Song = record.Song,
-            Genre = record.Genre,
-            IsSettled = record.IsSettled,
-            LearnedFrom = record.LearnedFrom,
-            Suggested = record.Suggested,
-            Heard = JsonSerializer.Serialize(
-                [.. record.Heard],
-                DecisionJsonContext.Default.ListString
-            ),
+            Heard = Json(record.Heard),
+            RecordingMbid = record.RecordingMbid,
             LookedUpAt = record.LookedUpAt,
+            Learned = record.Learned,
+            LearnedFrom = record.LearnedFrom,
+            Mine = Json(record.Mine),
+            Tagged = Json(record.Tagged),
         };
 
     public GenreRecord ToRecord() =>
         new()
         {
             Song = Song,
-            Genre = Genre,
-            IsSettled = IsSettled,
-            LearnedFrom = LearnedFrom,
-            Suggested = Suggested,
-            Heard = JsonSerializer.Deserialize(Heard, DecisionJsonContext.Default.ListString) ?? [],
+            Heard = List(Heard),
+            RecordingMbid = RecordingMbid,
             LookedUpAt = LookedUpAt,
+            Learned = Learned,
+            LearnedFrom = LearnedFrom,
+            Mine = List(Mine),
+            Tagged = List(Tagged),
         };
+
+    private static string Json(IReadOnlyList<string> values) =>
+        JsonSerializer.Serialize([.. values], DecisionJsonContext.Default.ListString);
+
+    private static List<string> List(string json) =>
+        JsonSerializer.Deserialize(json, DecisionJsonContext.Default.ListString) ?? [];
 }
 
 internal sealed class FamiliarityRow
