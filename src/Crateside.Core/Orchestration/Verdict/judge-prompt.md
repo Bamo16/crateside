@@ -77,7 +77,7 @@ Write UTF-8 JSON to the path the work order names, in this shape, leaving out wh
 }
 ```
 
-`artist` and `title` name the song and nothing about how it was judged. `windows` goes only with WITHHELD. Leave out `candidates` when you weighed nothing besides your verdict. crateside checks the file when you finish; if it is refused, you are told why and resumed once to fix it.
+`artist` and `title` name the song and nothing about how it was judged. `windows` goes only with WITHHELD. Leave out `candidates` when you weighed nothing besides your verdict. crateside checks the file when you finish; if it is refused, you are told why and resumed once to fix it. Once the file is written, your final reply is exactly `done` and nothing else: no summary, no restating the verdict.
 
 ## What each text field is for
 
