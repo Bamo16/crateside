@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Nodes;
 using Crateside.Core.Orchestration.Loop;
 using Microsoft.Extensions.Logging;
@@ -79,17 +80,27 @@ public sealed class JudgeSessions(
         if (TryParseResult(outcome.StandardOutput) is not { } result)
             return;
 
-        tally.Turns += result["num_turns"]?.GetValue<int>() ?? 0;
-        tally.Seconds += result["duration_ms"]?.GetValue<double>() / 1000 ?? 0;
-        tally.CostUsd += result["total_cost_usd"]?.GetValue<double>() ?? 0;
+        var session = new SessionTally
+        {
+            Turns = result["num_turns"]?.GetValue<int>() ?? 0,
+            Seconds = result["duration_ms"]?.GetValue<double>() / 1000 ?? 0,
+            InputTokens =
+                (result["usage"]?["input_tokens"]?.GetValue<long>() ?? 0)
+                + (result["usage"]?["cache_creation_input_tokens"]?.GetValue<long>() ?? 0)
+                + (result["usage"]?["cache_read_input_tokens"]?.GetValue<long>() ?? 0),
+            CachedTokens = result["usage"]?["cache_read_input_tokens"]?.GetValue<long>() ?? 0,
+            OutputTokens = result["usage"]?["output_tokens"]?.GetValue<long>() ?? 0,
+        };
+
+        tally.Add(session);
 
         log.LogInformation(
-            "Judge session for {TrackKey} on {Model}: {Turns} turns, {Seconds:0} s, ${CostUsd:0.00}",
+            "Judge session for {TrackKey} on {Model}: {Turns} turns, {Seconds:0} s{Tokens}",
             order.TrackKey,
             _options.Model,
-            result["num_turns"]?.GetValue<int>(),
-            result["duration_ms"]?.GetValue<double>() / 1000,
-            result["total_cost_usd"]?.GetValue<double>()
+            session.Turns,
+            session.Seconds,
+            session.TokensText
         );
     }
 
@@ -113,6 +124,34 @@ internal sealed class SessionTally
 
     public double Seconds { get; set; }
 
-    /// <summary>Claude Code's own estimate; zero when the endpoint isn't one it can price.</summary>
-    public double CostUsd { get; set; }
+    /// <summary>Input, cache creation and cache read tokens together.</summary>
+    public long InputTokens { get; set; }
+
+    /// <summary>The part of <see cref="InputTokens"/> read from the cache.</summary>
+    public long CachedTokens { get; set; }
+
+    public long OutputTokens { get; set; }
+
+    /// <summary>", 30k in (27k cached) · 1.6k out", or empty when the endpoint reported no usage.</summary>
+    public string TokensText =>
+        InputTokens + OutputTokens is 0
+            ? string.Empty
+            : $", {Abbreviate(InputTokens)} in ({Abbreviate(CachedTokens)} cached) · {Abbreviate(OutputTokens)} out";
+
+    public void Add(SessionTally other)
+    {
+        Turns += other.Turns;
+        Seconds += other.Seconds;
+        InputTokens += other.InputTokens;
+        CachedTokens += other.CachedTokens;
+        OutputTokens += other.OutputTokens;
+    }
+
+    private static string Abbreviate(long tokens) =>
+        tokens switch
+        {
+            < 1000 => tokens.ToString(CultureInfo.InvariantCulture),
+            < 10_000 => $"{(tokens / 1000.0).ToString("0.0", CultureInfo.InvariantCulture)}k",
+            _ => $"{Math.Round(tokens / 1000.0).ToString(CultureInfo.InvariantCulture)}k",
+        };
 }

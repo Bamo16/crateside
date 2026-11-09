@@ -242,7 +242,7 @@ leaving visible here, because this file already documents one measurement that w
 different reason, and a caveat invented out of caution is still a caveat that was not measured.*
 
 There is a robust alternative worth knowing, because it needs no credential and cannot break:
-every verdict run already returns exact `modelUsage` and `total_cost_usd` in its result JSON, so
+every verdict run already returns exact `modelUsage` and `usage` token counts in its result JSON, so
 crateside can account for its own spend precisely. What that cannot know is the denominator, or
 what the user spent in their own interactive sessions — which is exactly why the meter is worth
 reading despite being undocumented.
