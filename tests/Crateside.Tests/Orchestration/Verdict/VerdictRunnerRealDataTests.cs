@@ -20,7 +20,7 @@ public sealed class VerdictRunnerRealDataTests
     private static readonly WorkingSet Set = new(new CratesidePaths());
 
     private static VerdictRunner Runner =>
-        new(
+        VerdictRunners.Create(
             TestLedger.Store(),
             Set,
             new SourceIndex(Set, new CratesidePaths()),
@@ -75,7 +75,15 @@ public sealed class VerdictRunnerRealDataTests
 
         foreach (var trackKey in Detected)
         {
-            var prompt = Runner.Prompt(Order(trackKey), VerdictRunner.VerdictFileName, []);
+            var prompt = new JudgePrompt(Set, Options.Create(new JudgeOptions())).Build(
+                Order(trackKey),
+                VerdictRunner.VerdictFileName,
+                [],
+                held: null,
+                direction: null,
+                given: [],
+                audio: Runner.SourceFor(Order(trackKey))
+            );
 
             Assert.Contains("\"algorithms\"", prompt);
             Assert.Contains("```json", prompt);

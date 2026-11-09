@@ -84,7 +84,7 @@ public sealed class VerdictDrainerTests : IDisposable
         return new VerdictDrainer(
             _store,
             null!,
-            new VerdictRunner(
+            VerdictRunners.Create(
                 _store,
                 _set,
                 _sources,
@@ -229,7 +229,7 @@ public sealed class VerdictDrainerTests : IDisposable
         Assert.Contains($"https://music.youtube.com/watch?v={TrackKey}", download.Arguments);
         Assert.Contains(_set.Prepare(TrackKey), download.Arguments);
         Assert.NotEmpty(_sessions.Prompts);
-        Assert.DoesNotContain(VerdictRunner.NoAudioLine, _sessions.Prompts[0]);
+        Assert.DoesNotContain(JudgePrompt.NoAudioLine, _sessions.Prompts[0]);
     }
 
     [Fact]

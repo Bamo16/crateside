@@ -9,7 +9,7 @@ public sealed class PagesLinesTests
 
     private static List<string> MoneyLines(Dictionary<string, string> scores) =>
         [
-            .. VerdictRunner.PagesLines([
+            .. JudgePrompt.PagesLines([
                 new(
                     "Hooktheory",
                     LookupStatus.Found,
@@ -107,7 +107,7 @@ public sealed class PagesLinesTests
     [Fact]
     public void A_candidate_is_shown_to_the_judge_as_unconfirmed_and_not_evidence()
     {
-        var lines = VerdictRunner.PagesLines([
+        var lines = JudgePrompt.PagesLines([
             new SiteLookup("Hooktheory", LookupStatus.NotFound, [])
             {
                 Candidates =

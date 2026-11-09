@@ -343,6 +343,11 @@ public static class ServiceRegistration
         services.AddSingleton<PageChoiceStore>();
         services.AddSingleton<PageChoices>();
         services.AddSingleton<PersonsKey>();
+        services.AddSingleton<JudgeSessions>();
+        services.AddSingleton<JudgeDetection>();
+        services.AddSingleton<JudgePrompt>();
+        services.AddSingleton<VerdictCompletion>();
+        services.AddSingleton<JudgeAvailability>();
         services.AddSingleton<IVerdictJudge, VerdictRunner>();
         services.AddSingleton<VerdictDrainer>();
         services.AddSingleton<BarJudging>();
