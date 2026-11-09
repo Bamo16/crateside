@@ -4,7 +4,6 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
 using System.Text.RegularExpressions;
 using Crateside.Core;
-using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Naming;
 using Crateside.Core.Orchestration;
@@ -24,10 +23,6 @@ public partial class StoreFormatRealDataTests
 
     private static readonly string Working =
         Environment.SpecialFolder.LocalApplicationData.GetFolderPath("crateside", "working");
-
-    [Fact]
-    public void Familiarity_round_trips() =>
-        RoundTrips("familiarity.json", FamiliarityJsonContext.Default.ListFamiliarityRecord);
 
     [Fact]
     public void Genres_round_trip() =>

@@ -71,8 +71,12 @@ restores both. They change; a run does not.
   `LearnedFrom` a genre taken from the person's answers for the artist; `Mine` the genres the person
   chose (a JSON list: among Ableton's 29, or their own); `Tagged` every genre crateside has asked to be
   written onto the song's files, so one it later drops can be taken off again.
-- **Familiarities**: a song's reach as Deezer measured it and the familiarity the person settled, by
-  `Song`.
+- **Familiarities**: a song's familiarity ([ADR 0089](adr/0089-familiarity-is-read-off-the-songs-own-listeners-and-its-wikipedia-article.md)),
+  by `Song`. `Listeners` is the most distinct ListenBrainz users any of its MusicBrainz recordings has (null
+  when it has none); `Pageviews` the user views of its English Wikipedia article over the last twelve whole
+  months (0 for no article); `WikidataItem` the item the article was found through. `LookedUpAt` and
+  `LookupVersion` say when and by which matching it was asked; `Settled` is the person's answer. The
+  value written is `Settled`, else what the two votes say of the numbers.
 - **TrackInstructions**: what the person told crateside about a track
   ([ADR 0083](adr/0083-track-instructions-playlist-settings-and-intake-live-in-the-ledger-database.md)),
   by `TrackKey` (a video ID, case-sensitive): the stem plan (`Plan`, JSON), `Name`, `SourceUrl`,
@@ -87,7 +91,7 @@ restores both. They change; a run does not.
 
 A `Song` is the song identity, or the upload's video ID for a song never judged; it moves to the song
 when the verdict arrives (ADR 0071). At start, a pending `page-choices.json`, `track-marks.json`,
-`genres.json`, `familiarity.json`, `queue.json` or `intake.json` is imported once into an empty table and renamed
+`genres.json`, `queue.json` or `intake.json` is imported once into an empty table and renamed
 `<name>.imported-<yyyyMMdd>`.
 
 The 24-key tag is never stored. It is the **collapse** of the center: the tonic kept, the

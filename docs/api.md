@@ -103,9 +103,9 @@ track, the same state the API's tests stand on. Each row is the whole `TrackRow`
       "genre": null,
       "familiarity": {
         "song": "the examples - synthetic song",
-        "artist": "The Examples",
-        "artistFans": 1200,
-        "songRank": 50000,
+        "listeners": 1200,
+        "pageviews": 50000,
+        "wikidataItem": "Q42",
         "lookedUpAt": "2026-10-01T12:00:00+00:00",
         "lookupVersion": 1,
         "settled": null
@@ -530,9 +530,9 @@ shows no genre.
     "familiarity": {
       "the examples - synthetic song": {
         "song": "the examples - synthetic song",
-        "artist": "The Examples",
-        "artistFans": 1200,
-        "songRank": 50000,
+        "listeners": 1200,
+        "pageviews": 50000,
+        "wikidataItem": "Q42",
         "lookedUpAt": "2026-10-01T12:00:00+00:00",
         "lookupVersion": 1,
         "settled": null

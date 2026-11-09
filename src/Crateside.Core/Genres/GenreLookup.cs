@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Crateside.Core.Familiarity;
 
 namespace Crateside.Core.Genres;
 
@@ -112,11 +111,9 @@ public sealed class GenreLookup(IHttpClientFactory clients)
         CancellationToken ct
     )
     {
-        using var search = await GetAsync(FamiliarityLookup.SearchUrl(artist, title), ct);
+        using var search = await GetAsync(DeezerMatch.SearchUrl(artist, title), ct);
 
-        if (
-            FamiliarityLookup.Match(search.RootElement, artist, title) is not { AlbumId: { } album }
-        )
+        if (DeezerMatch.Match(search.RootElement, artist, title) is not { AlbumId: { } album })
             return [];
 
         await Task.Delay(DeezerPace, ct);

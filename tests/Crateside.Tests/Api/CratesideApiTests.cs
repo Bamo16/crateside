@@ -25,7 +25,7 @@ public sealed class CratesideApiTests : IAsyncLifetime
                 .Select(heard => (string?)heard)
         );
         Assert.Null(records["genres"]![SyntheticCrateside.Song]);
-        Assert.Equal(1_200, (long?)records["familiarity"]![SyntheticCrateside.Song]!["artistFans"]);
+        Assert.Equal(1_200, (int?)records["familiarity"]![SyntheticCrateside.Song]!["listeners"]);
         Assert.Equal("OddBars", (string?)records["marks"]![SyntheticCrateside.Song]!["marks"]![0]);
         Assert.Empty(records["resolvedNames"]!.AsObject());
     }

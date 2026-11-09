@@ -229,11 +229,11 @@ public sealed class TrackChipAndFilterTests
             LookedUpAt = LookedUp,
         };
 
-    private static FamiliarityRecord Familiarity(long? fans) =>
+    private static FamiliarityRecord Familiarity(int? listeners) =>
         new()
         {
             Song = "rob dougan - furious angels",
-            ArtistFans = fans,
+            Listeners = listeners,
             LookedUpAt = LookedUp,
         };
 
@@ -241,12 +241,6 @@ public sealed class TrackChipAndFilterTests
     public void A_genre_nobody_has_answered_is_not_a_tag_to_answer() =>
         Assert.False(
             Tagged(Genre(settled: false), Familiarity(1_000_000)).Matches(TrackFilter.TagsToAnswer)
-        );
-
-    [Fact]
-    public void A_familiarity_the_numbers_leave_to_the_user_is_a_tag_to_answer() =>
-        Assert.True(
-            Tagged(Genre(settled: true), Familiarity(fans: null)).Matches(TrackFilter.TagsToAnswer)
         );
 
     [Fact]

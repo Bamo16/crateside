@@ -276,25 +276,30 @@ internal sealed class DemoLibrary
             var at = StartOf(track) + TimeSpan.FromMinutes(12);
 
             if (track.Heard is [_, ..] heard)
-                genres.Suggest(song, heard, at);
+                genres.Hear(song, new GenreHearing(heard, null), at);
             else if (track.Genre is { } suggested)
-                genres.Suggest(song, [suggested.ToLowerInvariant()], at);
+                genres.Hear(song, new GenreHearing([suggested.ToLowerInvariant()], null), at);
 
             if (
                 track is { Genre: { } genre, HasStems: true }
                 && track.Stage is not DemoStage.Parked
             )
-                genres.Settle(song, genre);
+                genres.Choose(song, genre);
 
-            var (fans, rank) = track switch
+            var (listeners, pageviews) = track switch
             {
-                { ArtistFans: { } recorded, SongRank: { } place } => (recorded, place),
-                { Familiarity: "Mainstream" } => (900_000L, 700_000),
-                { Familiarity: "Obscure" } => (6_000L, 20_000),
-                _ => (40_000L, 300_000),
+                { Listeners: { } recorded, Pageviews: { } views } => (recorded, views),
+                { Familiarity: "Mainstream" } => (50_000, 90_000),
+                { Familiarity: "Obscure" } => (300, 0),
+                _ => (5_000, 2_000),
             };
 
-            familiarity.Measure(song, new FamiliarityReading(track.Artist, fans, rank), at, 1);
+            familiarity.Measure(
+                song,
+                new FamiliarityReading(listeners, pageviews, null),
+                at,
+                FamiliarityLookup.Version
+            );
 
             if (track.Familiarity is { } settled && track.HasStems)
                 familiarity.Settle(song, settled);

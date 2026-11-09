@@ -240,7 +240,7 @@ those are absent.
 - madmom's key model is by Filip Korzeniowski and Gerhard Widmer
   ([madmom_models](https://github.com/CPJKU/madmom_models)); the `edma` profile is Essentia's.
 - Hooktheory, Musicnotes and Ultimate Guitar are read for the human sources; MusicBrainz, Deezer and
-  the iTunes Search API for genre and familiarity.
+  the iTunes Search API for genre; ListenBrainz, Wikidata and Wikimedia's pageview counts for familiarity.
 
 ## License
 

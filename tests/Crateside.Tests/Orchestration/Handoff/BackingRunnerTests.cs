@@ -213,7 +213,7 @@ public sealed class BackingRunnerTests : IDisposable
     }
 
     [Fact]
-    public void Both_familiarities_are_keywords_the_writer_accepts() =>
+    public void All_three_familiarities_are_keywords_the_writer_accepts() =>
         Assert.All(
             Crateside.Core.Familiarity.FamiliarityVocabulary.All,
             value =>

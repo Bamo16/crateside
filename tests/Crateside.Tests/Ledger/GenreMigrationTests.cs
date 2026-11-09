@@ -12,7 +12,9 @@ namespace Crateside.Tests.Ledger;
 public sealed class GenreMigrationTests : IDisposable
 {
     private const string Before = "20261108192456_MeasuringExclusions";
-    private const string Migration = "20261109223108_GenresFromAbleton";
+
+    // The copy is named after the newest pending migration, which is the one that follows genre.
+    private const string Migration = "20261109225826_FamiliarityFromListeners";
 
     private readonly string _folder = Path.Combine(
         Path.GetTempPath(),

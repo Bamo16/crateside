@@ -14,7 +14,7 @@ public sealed class LedgerMigrationTests : IDisposable
     private const string LateReadingMigration = "20261029013237_InheritedLateReading";
     private const string LookupsMigration = "20261101225614_LookupsKept";
     private const string DecidedByMigration = "20261104052541_DecidedByKept";
-    private const string NewestMigration = "20261109223108_GenresFromAbleton";
+    private const string NewestMigration = "20261109225826_FamiliarityFromListeners";
 
     private readonly string _root = Path.Combine(
         Path.GetTempPath(),

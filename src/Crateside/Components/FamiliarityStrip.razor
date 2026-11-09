@@ -28,25 +28,23 @@
             )),
         ];
 
-    /// <summary>What the value rests on: the loudest credited artist and the song's own rank.</summary>
+    /// <summary>What the value rests on: the song's listeners and its article's yearly views.</summary>
     private static string Note(FamiliarityRecord? record) =>
         record switch
         {
             null or { LookedUpAt: null } => "not looked up yet",
-            { Artist: null, SongRank: null } => "Deezer does not know it · your call",
             _ => string.Join(
                 " · ",
                 new[]
                 {
-                    record.Artist is { } artist ? $"{artist} {record.ArtistFans:N0} fans" : null,
-                    record.SongRank is { } rank ? $"song rank {rank:N0}" : null,
-                    record switch
-                    {
-                        { Settled: not null } => null,
-                        { Suggested: null } => "your call",
-                        _ => "from these numbers",
-                    },
-                }.OfType<string>()
+                    record.Listeners is { } listeners
+                        ? $"{listeners:N0} listeners"
+                        : "no ListenBrainz match",
+                    record.Pageviews is > 0 and var views
+                        ? $"{views:N0} Wikipedia views a year"
+                        : "no Wikipedia article",
+                    record.Settled is null ? "from these numbers" : "your call",
+                }
             ),
         };
 

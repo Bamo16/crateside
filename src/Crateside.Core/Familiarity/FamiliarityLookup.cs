@@ -1,42 +1,50 @@
 using System.Globalization;
+using System.Net;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Crateside.Core.Tracks;
 
 namespace Crateside.Core.Familiarity;
 
 /// <summary>
-/// Asks Deezer's public API, which needs no key, how far a song reaches: the song's own rank and
-/// the fans of the most-followed artist credited on it, featured artists included (#52).
+/// Asks ListenBrainz how many people played the song's recordings, and Wikimedia how many read its
+/// own Wikipedia article, found through Wikidata and never by searching Wikipedia (ADR 0089). Needs
+/// no key.
 /// </summary>
-public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
+public sealed class FamiliarityLookup
 {
     public const string ClientName = "familiarity-lookup";
 
     /// <summary>Raised whenever matching changes, so songs an older lookup missed are asked again.</summary>
-    public const int Version = 3;
+    public const int Version = 4;
 
-    private const int QuotaExceeded = 4;
+    private const string Performer = "P175";
 
-    /// <summary>Deezer allows 50 requests in 5 seconds; this stays well under it.</summary>
-    private static readonly TimeSpan Pace = TimeSpan.FromMilliseconds(150);
+    private const string InstanceOf = "P31";
 
-    [GeneratedRegex(@"\s*[\(\[][^\)\]]*[\)\]]")]
-    private static partial Regex Bracketed { get; }
+    private static readonly TimeSpan DefaultPace = TimeSpan.FromMilliseconds(600);
 
-    [GeneratedRegex(@"[^\p{L}\p{N}*]+")]
-    private static partial Regex NotLetterOrDigit { get; }
+    /// <summary>Song, single, musical work and musical composition: the items a recording's song can be.</summary>
+    private static readonly string[] SongTypes = ["Q7366", "Q134556", "Q105543609", "Q207628"];
 
-    [GeneratedRegex(
-        @"karaoke|tribute|originally\s+performed|made\s+famous|in\s+the\s+style\s+of|backing\s+track|\bcovered\s+by\b|\bcover\s+(version|band)\b|[\(\[][^\)\]]*\bcover\b[^\)\]]*[\)\]]",
-        RegexOptions.IgnoreCase
-    )]
-    private static partial Regex ImitationMarker { get; }
+    private readonly IHttpClientFactory _clients;
+    private readonly TimeProvider _time;
+    private readonly TimeSpan _pace;
+
+    public FamiliarityLookup(IHttpClientFactory clients, TimeProvider time)
+        : this(clients, time, DefaultPace) { }
+
+    internal FamiliarityLookup(IHttpClientFactory clients, TimeProvider time, TimeSpan pace)
+    {
+        _clients = clients;
+        _time = time;
+        _pace = pace;
+    }
 
     /// <summary>
-    /// What Deezer knows, <see cref="FamiliarityReading.Unknown"/> when it does not know the song,
-    /// or null when it could not be reached — which is worth asking again, where unknown is not.
+    /// What the sources say, or null when one could not be reached — which is worth asking again,
+    /// where a song they do not know is not.
     /// </summary>
     public async Task<FamiliarityReading?> ReadAsync(
         string artist,
@@ -46,44 +54,11 @@ public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
     {
         try
         {
-            using var search = await GetAsync(SearchUrl(artist, title), ct);
+            var listeners = await ListenersAsync(artist, title, ct);
+            var (item, article) = await ArticleAsync(artist, title, ct);
+            var pageviews = article is null ? 0 : await PageviewsAsync(article, ct);
 
-            if (search is null)
-                return null;
-
-            if (Match(search.RootElement, artist, title) is not { } track)
-                return FamiliarityReading.Unknown;
-
-            await Task.Delay(Pace, ct);
-
-            using var detail = await GetAsync($"https://api.deezer.com/track/{track.Id}", ct);
-
-            if (detail is null)
-                return null;
-
-            (string Name, long Fans)? loudest = null;
-
-            foreach (var contributor in Contributors(detail.RootElement))
-            {
-                await Task.Delay(Pace, ct);
-
-                using var credited = await GetAsync(
-                    $"https://api.deezer.com/artist/{contributor}",
-                    ct
-                );
-
-                if (credited is null)
-                    return null;
-
-                if (
-                    credited.RootElement.TryGetProperty("nb_fan", out var fans)
-                    && credited.RootElement.TryGetProperty("name", out var name)
-                    && fans.GetInt64() > (loudest?.Fans ?? -1)
-                )
-                    loudest = (name.GetString() ?? string.Empty, fans.GetInt64());
-            }
-
-            return new FamiliarityReading(loudest?.Name, loudest?.Fans, track.Rank);
+            return new FamiliarityReading(listeners, pageviews, item);
         }
         catch (Exception ex)
             when (ex is HttpRequestException or TaskCanceledException or JsonException
@@ -94,102 +69,218 @@ public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
         }
     }
 
-    internal static string SearchUrl(string artist, string title) =>
-        $"https://api.deezer.com/search?q={Uri.EscapeDataString($"{ArtistCredit.Primary(artist)} {Bracketed.Replace(title, string.Empty).Trim()}")}";
-
-    /// <summary>
-    /// The most popular hit that is this song by one of its artists, so the original outranks a
-    /// live cut or a remaster of it. A hit by a karaoke, tribute or cover act is passed over for the
-    /// next one.
-    /// </summary>
-    internal static (long Id, int Rank, long? AlbumId)? Match(
-        JsonElement search,
-        string artist,
-        string title
-    ) =>
-        search.TryGetProperty("data", out var hits)
-            ? hits.EnumerateArray()
-                .Where(hit =>
-                    hit.TryGetProperty("title", out var found)
-                    && SameTitle(found.GetString() ?? string.Empty, title)
-                    && hit.GetProperty("artist").GetProperty("name").GetString() is { } by
-                    && ByOneOf(artist, by)
-                    && !IsImitation(found.GetString() ?? string.Empty, by, title)
-                )
-                .Select(hit =>
-                    ((long Id, int Rank, long? AlbumId)?)
-                        (
-                            hit.GetProperty("id").GetInt64(),
-                            hit.GetProperty("rank").GetInt32(),
-                            hit.TryGetProperty("album", out var album)
-                            && album.TryGetProperty("id", out var albumId)
-                                ? albumId.GetInt64()
-                                : null
-                        )
-                )
-                .MaxBy(hit => hit!.Value.Rank)
-            : null;
-
-    /// <summary>
-    /// The same title once both are squashed to letters and digits, one a prefix of the other, and
-    /// with Deezer's censoring asterisks standing for any letter.
-    /// </summary>
-    internal static bool SameTitle(string found, string wanted)
+    /// <summary>The most distinct users any one recording of the song has, or null when it has no recording.</summary>
+    private async Task<int?> ListenersAsync(string artist, string title, CancellationToken ct)
     {
-        var (f, w) = (Squash(found), Squash(wanted));
+        if (await RecordingsAsync(artist, title, ct) is not [_, ..] recordings)
+            return null;
 
-        if (f.Length is 0 || w.Length is 0)
-            return false;
+        await Task.Delay(_pace, _time, ct);
 
-        if (!f.Contains('*'))
-            return f.StartsWith(w, StringComparison.Ordinal)
-                || w.StartsWith(f, StringComparison.Ordinal);
+        // ListenBrainz refuses a chunked body, so the length is known before the request goes.
+        using var body = new StringContent(
+            JsonSerializer.Serialize(
+                new ListenBrainzQuery(recordings),
+                FamiliarityJsonContext.Default.ListenBrainzQuery
+            ),
+            Encoding.UTF8,
+            "application/json"
+        );
+        using var response = await _clients
+            .CreateClient(ClientName)
+            .PostAsync("https://api.listenbrainz.org/1/popularity/recording", body, ct);
 
-        return w.Length >= f.Length
-            && f.Zip(w).All(pair => pair.First is '*' || pair.First == pair.Second);
+        response.EnsureSuccessStatusCode();
+
+        var popularity = await response.Content.ReadFromJsonAsync(
+            FamiliarityJsonContext.Default.ListListenBrainzPopularity,
+            ct
+        );
+
+        return popularity?.Max(one => one.TotalUserCount);
     }
 
     /// <summary>
-    /// Whether Deezer's artist is the credited one, or one of several credited, however either
-    /// spells the name: the whole name, not a part of a longer one.
+    /// Every MusicBrainz recording of this title by one of the artists, since a song's listens are
+    /// spread over its releases and the first hit is as likely as not an unplayed one.
     /// </summary>
-    internal static bool ByOneOf(string credited, string found) =>
-        Squash(found) is { Length: > 0 } by
-        && ArtistCredit.Split(credited).Append(credited).Any(one => Squash(one) == by);
-
-    /// <summary>Whether the hit calls itself a karaoke, tribute or cover rendition the wanted song is not.</summary>
-    internal static bool IsImitation(string foundTitle, string foundArtist, string wantedTitle) =>
-        ImitationMarker.Match($"{foundTitle} | {foundArtist}")
-            is { Success: true, Value: var marker }
-        && !wantedTitle.Contains(marker, StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>Lowercase letters, digits and <c>*</c> only, accents folded and <c>$</c> read as S.</summary>
-    private static string Squash(string text)
+    private async Task<IReadOnlyList<string>> RecordingsAsync(
+        string artist,
+        string title,
+        CancellationToken ct
+    )
     {
-        var folded = Bracketed
-            .Replace(text, string.Empty)
-            .Replace('$', 's')
-            .Replace("&", "and")
-            .Normalize(NormalizationForm.FormD)
-            .Where(c => CharUnicodeInfo.GetUnicodeCategory(c) is not UnicodeCategory.NonSpacingMark)
+        var wanted = NameMatch.WithoutBrackets(title).Replace("\"", string.Empty);
+
+        if (wanted.Length is 0)
+            return [];
+
+        var primary = ArtistCredit.Primary(artist).Replace("\"", string.Empty);
+
+        await Task.Delay(_pace * 2, _time, ct);
+
+        using var response = await _clients
+            .CreateClient(ClientName)
+            .GetAsync(
+                $"https://musicbrainz.org/ws/2/recording?fmt=json&limit=100&query={Uri.EscapeDataString($"recording:\"{wanted}\" AND artist:\"{primary}\"")}",
+                ct
+            );
+
+        response.EnsureSuccessStatusCode();
+
+        using var search = await JsonDocument.ParseAsync(
+            await response.Content.ReadAsStreamAsync(ct),
+            cancellationToken: ct
+        );
+
+        return search.RootElement.TryGetProperty("recordings", out var recordings)
+            ?
+            [
+                .. recordings
+                    .EnumerateArray()
+                    .Where(hit =>
+                        hit.TryGetProperty("title", out var found)
+                        && NameMatch.SameTitle(found.GetString() ?? string.Empty, wanted)
+                        && CreditedNames(hit).Any(name => NameMatch.ByOneOf(artist, name))
+                    )
+                    .Select(hit => hit.GetProperty("id").GetString())
+                    .OfType<string>()
+                    .Distinct(),
+            ]
+            : [];
+    }
+
+    private static IEnumerable<string> CreditedNames(JsonElement recording) =>
+        recording.TryGetProperty("artist-credit", out var credits)
+            ? credits
+                .EnumerateArray()
+                .Select(credit =>
+                    credit.TryGetProperty("name", out var name) ? name.GetString() : null
+                )
+                .OfType<string>()
+            : [];
+
+    /// <summary>
+    /// The Wikidata item of a song or single whose performer is one of the artists and whose title
+    /// is the song's, and the English Wikipedia article it links to, each null when there is none.
+    /// </summary>
+    private async Task<(string? Item, string? Article)> ArticleAsync(
+        string artist,
+        string title,
+        CancellationToken ct
+    )
+    {
+        var wanted = NameMatch.WithoutBrackets(title).Replace("\"", string.Empty);
+
+        if (wanted.Length is 0)
+            return (null, null);
+
+        using var search = await WikidataAsync(
+            $"action=query&list=search&srnamespace=0&srlimit=50&srsearch={Uri.EscapeDataString($"\"{wanted}\" haswbstatement:{Performer}")}",
+            ct
+        );
+
+        string[] found =
+        [
+            .. search
+                .RootElement.GetProperty("query")
+                .GetProperty("search")
+                .EnumerateArray()
+                .Select(hit => hit.GetProperty("title").GetString())
+                .OfType<string>(),
+        ];
+
+        if (found.Length is 0)
+            return (null, null);
+
+        using var items = await WikidataAsync(
+            $"action=wbgetentities&props=claims|sitelinks|labels|aliases&languages=en&sitefilter=enwiki&ids={string.Join('|', found)}",
+            ct
+        );
+
+        var entities = items.RootElement.GetProperty("entities");
+        var candidates = found
+            .Where(id => entities.TryGetProperty(id, out _))
+            .Select(id => (Id: id, Entity: entities.GetProperty(id)))
+            .Where(item =>
+                Names(item.Entity).Any(name => NameMatch.SameTitle(name, wanted))
+                && Related(item.Entity, InstanceOf).Intersect(SongTypes).Any()
+            )
+            .Select(item => (item.Id, item.Entity, Performers: Related(item.Entity, Performer)))
+            .Where(item => item.Performers.Count > 0)
             .ToArray();
 
-        return NotLetterOrDigit.Replace(new string(folded), string.Empty).ToLowerInvariant();
+        if (candidates.Length is 0)
+            return (null, null);
+
+        string[] performerIds =
+        [
+            .. candidates.SelectMany(item => item.Performers).Distinct().Take(50),
+        ];
+
+        using var performers = await WikidataAsync(
+            $"action=wbgetentities&props=labels|aliases&languages=en&ids={string.Join('|', performerIds)}",
+            ct
+        );
+
+        var people = performers.RootElement.GetProperty("entities");
+        var matching = candidates
+            .Where(item =>
+                item.Performers.Any(id =>
+                    people.TryGetProperty(id, out var person)
+                    && Names(person).Any(name => NameMatch.ByOneOf(artist, name))
+                )
+            )
+            .Select(item => (item.Id, Article: ArticleOf(item.Entity)))
+            .ToArray();
+
+        return matching
+            .Where(item => item.Article is not null)
+            .Concat(matching)
+            .Select(item => ((string?)item.Id, item.Article))
+            .FirstOrDefault();
     }
 
-    private static IEnumerable<long> Contributors(JsonElement track) =>
-        track.TryGetProperty("contributors", out var contributors)
-            ? contributors.EnumerateArray().Select(c => c.GetProperty("id").GetInt64()).Distinct()
-        : track.TryGetProperty("artist", out var artist) ? [artist.GetProperty("id").GetInt64()]
-        : [];
-
-    /// <summary>
-    /// The body, or null when Deezer's rate limit refused it. Any other error body comes back as
-    /// it is and reads as knowing nothing.
-    /// </summary>
-    private async Task<JsonDocument?> GetAsync(string url, CancellationToken ct)
+    /// <summary>The views by people, not crawlers, over the last twelve whole months; none for an article with no views.</summary>
+    private async Task<int> PageviewsAsync(string article, CancellationToken ct)
     {
-        using var response = await clients.CreateClient(ClientName).GetAsync(url, ct);
+        var now = _time.GetUtcNow();
+        var thisMonth = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var name = Uri.EscapeDataString(article.Replace(' ', '_'));
+        var window = $"{Day(thisMonth.AddMonths(-12))}/{Day(thisMonth.AddDays(-1))}";
+
+        await Task.Delay(_pace, _time, ct);
+
+        using var response = await _clients
+            .CreateClient(ClientName)
+            .GetAsync(
+                $"https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/en.wikipedia/all-access/user/{name}/monthly/{window}",
+                ct
+            );
+
+        if (response.StatusCode is HttpStatusCode.NotFound)
+            return 0;
+
+        response.EnsureSuccessStatusCode();
+
+        using var views = await JsonDocument.ParseAsync(
+            await response.Content.ReadAsStreamAsync(ct),
+            cancellationToken: ct
+        );
+
+        return views
+            .RootElement.GetProperty("items")
+            .EnumerateArray()
+            .Sum(month => month.GetProperty("views").GetInt32());
+    }
+
+    private async Task<JsonDocument> WikidataAsync(string query, CancellationToken ct)
+    {
+        await Task.Delay(_pace, _time, ct);
+
+        using var response = await _clients
+            .CreateClient(ClientName)
+            .GetAsync($"https://www.wikidata.org/w/api.php?format=json&{query}", ct);
 
         response.EnsureSuccessStatusCode();
 
@@ -198,16 +289,63 @@ public sealed partial class FamiliarityLookup(IHttpClientFactory clients)
             cancellationToken: ct
         );
 
-        if (
-            document.RootElement is not { ValueKind: JsonValueKind.Object } root
-            || !root.TryGetProperty("error", out var error)
-            || !error.TryGetProperty("code", out var code)
-            || code.GetInt32() is not QuotaExceeded
-        )
+        if (!document.RootElement.TryGetProperty("error", out _))
             return document;
 
         document.Dispose();
 
-        return null;
+        throw new HttpRequestException("Wikidata refused the request.");
     }
+
+    private static string Day(DateTime day) =>
+        day.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+
+    private static string? ArticleOf(JsonElement entity) =>
+        entity.TryGetProperty("sitelinks", out var links)
+        && links.TryGetProperty("enwiki", out var wiki)
+            ? wiki.GetProperty("title").GetString()
+            : null;
+
+    /// <summary>The label and the English aliases of a Wikidata entity.</summary>
+    private static IEnumerable<string> Names(JsonElement entity)
+    {
+        if (
+            entity.TryGetProperty("labels", out var labels)
+            && labels.TryGetProperty("en", out var label)
+            && label.GetProperty("value").GetString() is { } name
+        )
+            yield return name;
+
+        if (
+            entity.TryGetProperty("aliases", out var aliases)
+            && aliases.TryGetProperty("en", out var english)
+        )
+        {
+            foreach (var alias in english.EnumerateArray())
+            {
+                if (alias.GetProperty("value").GetString() is { } other)
+                    yield return other;
+            }
+        }
+    }
+
+    /// <summary>The items an entity's statements of one property point at.</summary>
+    private static IReadOnlyList<string> Related(JsonElement entity, string property) =>
+        entity.TryGetProperty("claims", out var claims)
+        && claims.TryGetProperty(property, out var statements)
+            ?
+            [
+                .. statements
+                    .EnumerateArray()
+                    .Select(statement =>
+                        statement.TryGetProperty("mainsnak", out var snak)
+                        && snak.TryGetProperty("datavalue", out var data)
+                        && data.TryGetProperty("value", out var value)
+                        && value.TryGetProperty("id", out var id)
+                            ? id.GetString()
+                            : null
+                    )
+                    .OfType<string>(),
+            ]
+            : [];
 }

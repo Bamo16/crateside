@@ -224,13 +224,6 @@ public sealed class CratesidePaths
         set;
     }
 
-    /// <summary>The file the familiarities were kept in, read once by the import (ADR 0082).</summary>
-    public string FamiliarityFile
-    {
-        get => field ?? Roaming("familiarity.json");
-        set;
-    }
-
     /// <summary>The names StemForge has resolved.</summary>
     public string ResolvedNamesFile
     {

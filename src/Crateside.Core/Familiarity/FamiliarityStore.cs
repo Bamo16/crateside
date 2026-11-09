@@ -5,8 +5,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Crateside.Core.Familiarity;
 
 /// <summary>
-/// Each song's reach as Deezer measured it and the familiarity the user settled, kept in the
-/// ledger by song identity, as genre is (#52, ADR 0082).
+/// Each song's listeners and Wikipedia pageviews and the familiarity the user settled, kept in the
+/// ledger by song identity, as genre is (ADR 0089, 0082).
 /// </summary>
 public sealed class FamiliarityStore(LedgerStore ledger)
 {
@@ -24,16 +24,16 @@ public sealed class FamiliarityStore(LedgerStore ledger)
             );
     }
 
-    /// <summary>Records what Deezer said, leaving anything the user settled alone.</summary>
+    /// <summary>Records what the sources said, leaving anything the user settled alone.</summary>
     public void Measure(string song, FamiliarityReading reading, DateTimeOffset at, int version) =>
         Update(
             song,
             record =>
                 record with
                 {
-                    Artist = reading.Artist,
-                    ArtistFans = reading.ArtistFans,
-                    SongRank = reading.SongRank,
+                    Listeners = reading.Listeners,
+                    Pageviews = reading.Pageviews,
+                    WikidataItem = reading.WikidataItem,
                     LookedUpAt = at,
                     LookupVersion = version,
                 }
@@ -137,15 +137,16 @@ public sealed record FamiliarityRecord
     /// <summary>The ledger's song identity, or the upload's video ID for a song it never judged.</summary>
     public required string Song { get; init; }
 
-    /// <summary>The most-followed artist credited on the song Deezer matched.</summary>
-    public string? Artist { get; init; }
+    /// <summary>Distinct ListenBrainz users of the song's best-played recording; null when it has none.</summary>
+    public int? Listeners { get; init; }
 
-    public long? ArtistFans { get; init; }
+    /// <summary>User pageviews of the song's English Wikipedia article over the last twelve months; 0 for no article.</summary>
+    public int? Pageviews { get; init; }
 
-    /// <summary>Deezer's popularity figure for the song itself, 0 to about 1,000,000.</summary>
-    public int? SongRank { get; init; }
+    /// <summary>The Wikidata item the song's article was found through, or null when none matched.</summary>
+    public string? WikidataItem { get; init; }
 
-    /// <summary>When Deezer was last asked, or null when it never has been.</summary>
+    /// <summary>When the sources were last asked, or null when they never have been.</summary>
     public DateTimeOffset? LookedUpAt { get; init; }
 
     /// <summary>Which <see cref="FamiliarityLookup.Version"/> asked; zero for the first.</summary>
@@ -153,7 +154,7 @@ public sealed record FamiliarityRecord
 
     /// <summary>
     /// Worth asking again: never asked, or asked by a lookup older than the current one, whose
-    /// matching may have taken a cover for the song.
+    /// matching may have missed the song.
     /// </summary>
     [JsonIgnore]
     public bool IsOwedALookup => LookedUpAt is null || LookupVersion < FamiliarityLookup.Version;
@@ -161,18 +162,15 @@ public sealed record FamiliarityRecord
     /// <summary>The user's answer, or null when they have not given one.</summary>
     public string? Settled { get; init; }
 
-    /// <summary>What the numbers settle on their own, or null for the band that asks the user.</summary>
+    /// <summary>What the numbers say, or null before the sources have been asked.</summary>
     [JsonIgnore]
     public string? Suggested =>
-        LookedUpAt is null ? null : FamiliarityVocabulary.FromReach(ArtistFans, SongRank);
+        LookedUpAt is null ? null : FamiliarityVocabulary.FromReach(Listeners, Pageviews);
 
-    /// <summary>The value to tag with: the user's, else one the numbers settled; null means ask.</summary>
+    /// <summary>The value to tag with: the user's, else the numbers'; null only before the first lookup.</summary>
     [JsonIgnore]
     public string? Written => Settled ?? Suggested;
 }
 
-/// <summary>What Deezer said about one song, or all nulls when it did not know it.</summary>
-public sealed record FamiliarityReading(string? Artist, long? ArtistFans, int? SongRank)
-{
-    public static FamiliarityReading Unknown { get; } = new(null, null, null);
-}
+/// <summary>What the sources said about one song.</summary>
+public sealed record FamiliarityReading(int? Listeners, int? Pageviews, string? WikidataItem);

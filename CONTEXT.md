@@ -343,8 +343,11 @@ by hand; everything below describes candidates against it.
   ([ADR 0023](docs/adr/0023-a-key-with-no-store-entry-is-not-durable.md)).
 - **Familiarity** — how likely the audience is to recognise a **song**: `Mainstream`, `Niche`
   (known within a scene, not generally) or `Obscure`, under a tag group of crateside's own
-  (`Familiarity|Niche`). Read off the song's own listeners and its Wikipedia article, never the
-  artist's; the person corrects it, song by song
+  (`Familiarity|Niche`). Two votes read off the song's own signals, never the artist's: some
+  recording of it has 3,500 or more distinct ListenBrainz listeners, and its own English Wikipedia
+  article had 20,000 or more views by people in the last twelve months. Both is `Mainstream`,
+  neither `Obscure`, one `Niche`; a song with no recording, or no article, votes no. Every song with
+  an artist and a title gets a value. The person corrects it, song by song
   ([ADR 0089](docs/adr/0089-familiarity-is-read-off-the-songs-own-listeners-and-its-wikipedia-article.md)).
 - **Hidden keyword** — a keyword the user took off a file by hand, which Ableton keeps in the
   file's **tag store** entry beside the keywords it still has. It records the removal itself, not

@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
 using Crateside.Core.Marks;
 using Crateside.Core.Orchestration.Verdict;
@@ -39,12 +38,6 @@ public sealed class DecisionsImport(CratesidePaths paths, LedgerStore ledger, Ti
                     GenreJsonContext.Default.ListGenreRecord,
                     context => !context.Genres.Any(),
                     AddGenres
-                ),
-                ImportFile(
-                    paths.FamiliarityFile,
-                    FamiliarityJsonContext.Default.ListFamiliarityRecord,
-                    context => !context.Familiarities.Any(),
-                    AddFamiliarities
                 ),
                 ImportFile(
                     paths.QueueFile,
@@ -148,17 +141,6 @@ public sealed class DecisionsImport(CratesidePaths paths, LedgerStore ledger, Ti
             .ToList();
 
         context.Genres.AddRange(rows);
-
-        return rows.Count;
-    }
-
-    private static int AddFamiliarities(LedgerContext context, List<FamiliarityRecord> file)
-    {
-        var rows = file.Select(FamiliarityRow.From)
-            .DistinctBy(row => row.Song.ToUpperInvariant())
-            .ToList();
-
-        context.Familiarities.AddRange(rows);
 
         return rows.Count;
     }

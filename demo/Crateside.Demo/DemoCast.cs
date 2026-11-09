@@ -42,9 +42,9 @@ internal sealed record DemoTrack(
     /// <summary>How the starter warp fared against the finished one; null leaves the song out of that panel.</summary>
     public StarterFate? Fate { get; init; }
 
-    public long? ArtistFans { get; init; }
+    public int? Listeners { get; init; }
 
-    public int? SongRank { get; init; }
+    public int? Pageviews { get; init; }
 
     /// <summary>What the lookups called the genre, before it was settled.</summary>
     public IReadOnlyList<string> Heard { get; init; } = [];
@@ -272,8 +272,8 @@ internal static class DemoCast
                     InstrumentalLufs = seed.InstrumentalLufs,
                     VocalLufs = seed.VocalLufs,
                     Fate = seed.Fate,
-                    ArtistFans = seed.ArtistFans,
-                    SongRank = seed.SongRank,
+                    Listeners = seed.Listeners,
+                    Pageviews = seed.Pageviews,
                     Heard = seed.Heard,
                 }),
         ];
@@ -294,8 +294,8 @@ internal sealed record LibrarySeed
     public double? InstrumentalLufs { get; init; }
     public double? VocalLufs { get; init; }
     public StarterFate? Fate { get; init; }
-    public long? ArtistFans { get; init; }
-    public int? SongRank { get; init; }
+    public int? Listeners { get; init; }
+    public int? Pageviews { get; init; }
     public IReadOnlyList<string> Heard { get; init; } = [];
 
     /// <summary>Hours before the demo was written, for a song that finished this week or last.</summary>

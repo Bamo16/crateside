@@ -2,16 +2,20 @@ namespace Crateside.Core.Familiarity;
 
 /// <summary>
 /// How likely a listener is to know a song, as a tag group of crateside's own: the axis mashup
-/// pairs are chosen on, one familiar half carrying one new one (#52).
+/// pairs are chosen on, one familiar half carrying one new one (ADR 0089).
 /// </summary>
 public static class FamiliarityVocabulary
 {
     public const string Group = "Familiarity";
 
     public const string Mainstream = "Mainstream";
+    public const string Niche = "Niche";
     public const string Obscure = "Obscure";
 
-    public static IReadOnlyList<string> All { get; } = [Mainstream, Obscure];
+    public const int ListenerCut = 3_500;
+    public const int PageviewCut = 20_000;
+
+    public static IReadOnlyList<string> All { get; } = [Mainstream, Niche, Obscure];
 
     public static string Keyword(string value) => $"{Group}|{value}";
 
@@ -22,15 +26,14 @@ public static class FamiliarityVocabulary
         keyword.StartsWith($"{Group}|", StringComparison.Ordinal);
 
     /// <summary>
-    /// The value the numbers settle on their own, or null for the middle band the user decides:
-    /// the artist first, then the song, which catches a one-hit wonder by a small artist.
+    /// Two votes: the song's ListenBrainz listeners and its Wikipedia article's yearly pageviews.
+    /// Both is mainstream, neither obscure, one niche; a missing number is a vote against.
     /// </summary>
-    public static string? FromReach(long? artistFans, int? songRank) =>
-        (artistFans, songRank) switch
+    public static string FromReach(int? listeners, int? pageviews) =>
+        (listeners >= ListenerCut, pageviews >= PageviewCut) switch
         {
-            (>= 150_000, _) => Mainstream,
-            (_, >= 600_000) => Mainstream,
-            (< 20_000, null or < 400_000) => Obscure,
-            _ => null,
+            (true, true) => Mainstream,
+            (false, false) => Obscure,
+            _ => Niche,
         };
 }
