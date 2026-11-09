@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-11-09
+- Built by [#191](https://github.com/Bamo16/crateside/issues/191); re-measured by [#196](https://github.com/Bamo16/crateside/issues/196).
 - Supersedes [ADR 0032](0032-familiarity-is-read-off-reach-artist-first-then-song.md). Follows
   [ADR 0087](0087-crateside-tags-every-song-and-the-person-corrects-in-crateside-or-in-live.md).
 
