@@ -147,6 +147,10 @@
     color: var(--amber);
 }
 
+.index .count.teal {
+    color: var(--teal);
+}
+
 .index a.panel {
     padding-left: 22px;
     font-size: 12.5px;
@@ -487,4 +491,17 @@ h4 {
     padding: 4px 12px;
     font-size: 13px;
     color: var(--text-60);
+}
+
+.failed-link {
+    padding: 0;
+    background: none;
+    border: 0;
+    font: inherit;
+    color: var(--red);
+    cursor: pointer;
+}
+
+.failed-link:hover {
+    text-decoration: underline;
 }

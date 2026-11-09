@@ -57,27 +57,6 @@
             what needs attention on Tracks.
         </span>
     </div>
-
-    <div class="column">
-        <span class="caps">Latest activity</span>
-        <div class="log">
-            @foreach (var line in History.Latest)
-            {
-                var song = line.TrackKey is { } trackKey ? NameOf(trackKey) : null;
-
-                <div class="log-line">
-                    <span class="mono at">@line.At.ToLocalTime().ToString("t")</span>
-                    <span class="entry" title="@(song is null ? line.What : $"{line.What} {song}")">
-                        <span class="what">@line.What</span>
-                        @if (line.TrackKey is { } id)
-                        {
-                            <a class="song" href="song/@Uri.EscapeDataString(id)">@song</a>
-                        }
-                    </span>
-                </div>
-            }
-        </div>
-    </div>
 </div>
 
 @code {
@@ -85,10 +64,6 @@
 
     [Parameter, EditorRequired]
     public required JobHistory History { get; set; }
-
-    /// <summary>A track's name by video ID, falling back to the ID.</summary>
-    [Parameter, EditorRequired]
-    public required Func<string, string> NameOf { get; set; }
 
     private int Height(int tracks) =>
         History.Weeks.Max(week => week.Tracks) is > 0 and var tallest ? tracks * ChartHeight / tallest : 0;
