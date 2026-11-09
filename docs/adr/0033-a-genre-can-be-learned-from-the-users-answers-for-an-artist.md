@@ -1,6 +1,6 @@
 # 0033 — a genre can be learned from the user's answers for an artist
 
-- Status: Accepted
+- Status: Accepted; amended by [ADR 0088](0088-genre-is-abletons-own-genres-filled-from-the-sources.md) on 2026-11-09: it counts only answers among Ableton's 29 and fills only songs whose sources name nothing
 - Date: 2026-09-25
 - Part of [#61](https://github.com/Bamo16/crateside/issues/61). Amends [ADR 0030](0030-genre-is-a-tag-group-of-our-own-settled-by-the-user.md).
 

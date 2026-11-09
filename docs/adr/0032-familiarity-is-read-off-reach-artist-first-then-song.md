@@ -1,6 +1,6 @@
 # 0032 — familiarity is read off reach: the artist first, then the song
 
-- Status: Accepted
+- Status: Accepted; superseded by [ADR 0089](0089-familiarity-is-read-off-the-songs-own-listeners-and-its-wikipedia-article.md) on 2026-11-09
 - Date: 2026-09-25
 - Settles [#52](https://github.com/Bamo16/crateside/issues/52). Follows [ADR 0030](0030-genre-is-a-tag-group-of-our-own-settled-by-the-user.md).
 

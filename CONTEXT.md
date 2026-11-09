@@ -341,25 +341,29 @@ by hand; everything below describes candidates against it.
   *durable* rather than what records it. Every file arrives in **the library** unbacked, because
   a move carries the keyword in the index and writes no entry
   ([ADR 0023](docs/adr/0023-a-key-with-no-store-entry-is-not-durable.md)).
-- **Familiarity** — how likely a listener is to know a **song**: `Mainstream` or `Obscure`, under
-  a tag group of crateside's own (`Familiarity|Mainstream`). Read off the reach of the
-  most-followed credited artist, then the song's own, where those are clear; the user answers the
-  rest, and their answer always wins
-  ([ADR 0032](docs/adr/0032-familiarity-is-read-off-reach-artist-first-then-song.md)).
+- **Familiarity** — how likely the audience is to recognise a **song**: `Mainstream`, `Niche`
+  (known within a scene, not generally) or `Obscure`, under a tag group of crateside's own
+  (`Familiarity|Niche`). Read off the song's own listeners and its Wikipedia article, never the
+  artist's; the person corrects it, song by song
+  ([ADR 0089](docs/adr/0089-familiarity-is-read-off-the-songs-own-listeners-and-its-wikipedia-article.md)).
 - **Hidden keyword** — a keyword the user took off a file by hand, which Ableton keeps in the
   file's **tag store** entry beside the keywords it still has. It records the removal itself, not
   what was there before: a tag added and taken off a minute later is hidden too. crateside never
   writes one back.
-- **Genre** — what kind of music a **song** is, from a short closed list crateside owns and
-  writes under a tag group of its own (`Genre|Hip Hop`). A property of the song, not the file:
-  every **sample** of a song carries the same one. **Suggested** by a lookup, **settled** by the
-  user, or **learned** from the user's answers for the song's primary artist
-  ([ADR 0033](docs/adr/0033-a-genre-can-be-learned-from-the-users-answers-for-an-artist.md)); only
-  a settled or learned genre is written. Not Ableton's built-in *Genres* group.
+- **Genre** — what kind of music a **song** is: up to two of the 29 tags of Ableton's own *Genres*
+  group, filled in from the sources, plus any the person adds of their own (`Genres|Meme`). A
+  property of the song, not the file: every **sample** of a song carries the same ones. Learned
+  from the person's answers for the song's primary artist where the sources name nothing
+  ([ADR 0088](docs/adr/0088-genre-is-abletons-own-genres-filled-from-the-sources.md)).
+- **Style** — a source's finer label for a song's genre (`boom bap`), shown in crateside and never
+  written as a tag.
 - **Type** — the part a **sample** plays in a mashup: **Vocal** or **Instrumental**, and
   nothing else. It names a use, not the audio: a kept full mix is Instrumental. Carried in
   Ableton's own *Type* tag group, whose built-in tags (Loop, One Shot and the rest) mean
   nothing here.
+- **Lead** / **Sparse** — whether a vocal stem can carry a mashup as its vocal, or is kept for
+  chops: `Type|Vocal|Lead` or `Type|Vocal|Sparse`. A property of the stem file, measured from its
+  audio ([ADR 0090](docs/adr/0090-a-vocal-stem-is-lead-or-sparse-measured-from-its-audio.md)).
 - **Written root** — a root whose **tag store** holds its whole tag state, which is
   **Staging** and only ever that: every key there is one crateside wrote into the
   store itself. Read from the store, because that is the only place crateside can see its
