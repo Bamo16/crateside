@@ -328,19 +328,32 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
 Handoff 11, superseding Counts (handoff 08). The landing page and first tab (**Dashboard · Tracks ·
 Tools · Settings**), at `/` and `/dashboard`; Tracks moved to `/tracks`. No width cap on the body.
 
-- **Four sections, fixed order**: *Your turn*, *Working now*, *Over time*, *The library*. Not
+- **Five sections, fixed order**: *Your turn*, *Working now*, *Activity*, *Over time*, *The library*. Not
   customizable. Each head (▾/▸, `h3`, a quiet gist) folds its section, and the fold is remembered
   per browser. **A folded section shows one summary line** in its place, so the page still says
   what is going on with everything folded; *The library* folds to its head, which carries its totals.
-- **The index** (sticky, 168px) lists the four sections, then the library's panels indented 22px.
-  *Your turn*'s count is amber when non-zero. Below 1100px it is a wrapping row.
+- **The index** (sticky, 168px) lists the five sections, then the library's panels indented 22px.
+  *Your turn*'s count is amber when non-zero; *Activity*'s is the number running, teal, followed by `●`, and absent while idle. Below 1100px it is a wrapping row.
 - **Tiles**: an amber count is a link to the filter it counts (or the Settings row). A zero goes
   monochrome and says *none right now*; the tile stays, so the grid never shifts.
 - **Working now** is five cards: Separation (with Pause), Judging (with Pause), Quotas (monochrome
   bars: neither working nor your turn), Background readers, Library backfill. Live, as the Tracks
   header is.
-- **Over time**: tracks finished by ISO week (the current week dashed, "so far"), stages run, and
-  the latest eight stage events.
+- **Activity** (handoff 21, #189) is one table, one row per action: a stage's start and finish
+  joined on the job id and ordered by start, so a row never moves (a running row is replaced in place
+  when it finishes). Fixed columns (`16px 72px 92px 300px 1fr 92px`: status, Started, Stage, Track,
+  Result, Took) under `--table-activity`. Rows sit in buckets (*Last 10 minutes*, *Earlier today*,
+  *Yesterday*, then dates); a run of one track shows a rule instead of repeating the name. States:
+  teal pulsing dot and wash while running (*Took* ticks, *so far*), green ✓ for 10 minutes then
+  grey, red ✕ and `failed: …` kept red, grey – for canceled. The result is the job's `summary`
+  (a failure's `error`), as Track details' activity log words it, and a click opens the whole text
+  with its meta line and links. Stage pills combine (All clears them), *Failed or canceled* narrows;
+  page size 12/25/50/100 and *Failed or canceled* are remembered in the `crateside.dashboard.activity`
+  cookie, the page is not. Page 1 is live; a later page holds still behind *↑ N new since you
+  paged away*. Under 1100px of the box's own width each row stacks. Folded, it says what runs, the
+  last finish and today's failures (a red link that unfolds it filtered).
+- **Over time**: tracks finished by ISO week (the current week dashed, "so far") and stages run, two
+  equal columns under `--table-activity`.
 - **The library grid** is three columns at ≥ 2000px, two below, one below 1400px. Key detectors,
   Loudness adjustments and How the starter warps fared span two wherever there are two. Order: Key
   detectors, Loudness adjustments, By key, By tempo, How the starter warps fared, By genre (with *What the sources called the rest* behind a dashed opener), By
@@ -439,7 +452,8 @@ Handoff 10. Every setting is one **row**: name (14px/500) and a one-line gist (`
 ## Table caps
 
 One width cap per table shape: `--table-partners` 50rem, `--table-library` 56rem,
-`--table-tracks` 92rem. Track details uses `--table-tracks`. The Tools column caps itself at
+`--table-tracks` 92rem, `--table-activity` 97.5rem (1560px; the dashboard's Activity table and Over
+time). Track details uses `--table-tracks`. The Tools column caps itself at
 860px, Re-Pitch and Partners alike.
 
 ## Differs from the design
@@ -615,8 +629,8 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
   *Re-read* is a refresh button too.
 - **The Claude quota has its own refresh**, under its bar: *resets at … · checked … ago* ↻. It is
   also re-read once a minute.
-- **No "The whole log →" link.** The activity log is per track, on Track details; there is no
-  page-wide log to open.
+- **No "The whole log →" link.** The activity log is per track, on Track details; Activity's
+  filters and pager (handoff 21) answer it, still with no separate page.
 - **Key-detector figures are live**, read from the ledger on load and Re-read, so they move as
   verdicts arrive (406 HIGH or MEDIUM songs on 2026-09-28, against the brief's 397). A verdict
   recorded by hand carries no detectors, so its song uses the latest run that has them.
@@ -627,6 +641,22 @@ Where the build departs from a canvas, by page. Clear an entry once a later desi
 - **Key detectors shows the three detectors crateside still runs**: keydetect, madmom and edma (#113).
   CREMA and librosa are retired from the panel and its miss table (their readings stay in older
   ledger runs, untouched). A song counts as *all three wrong* when all three read it and all miss.
+
+### Activity (handoff 21, #189)
+
+- **Running text is just *running*.** The design's *1 of 3 files written* and *turn 4 on
+  deepseek-web* need the files on disk and the judge session, which the job record does not carry.
+- **Held and waiting-for-you rows** (judging held by the endpoint, a verdict awaiting the person)
+  have no state in the design. They are drawn like a cancellation (grey –) with `held: <reason>` or
+  *waiting for you*, and *Failed or canceled* leaves them out. A held judging that repeats its
+  reason is listed once.
+- **A finish with no recorded start** (older lines) shows its finish time as the start and *—* for
+  *Took*.
+- **A running record never closed** (the app died, and nothing adopted it) stays *running* until a
+  later line for the job closes it; a new start for the same job that was not an adoption replaces it.
+- **The page is held with the newest start's position in `jobs.jsonl`**, not its time, so two
+  starts in the same instant cannot slip past it.
+- **Over time's folded line** no longer names the last event: Activity's does.
 
 ### Tools (handoff 12, #79)
 

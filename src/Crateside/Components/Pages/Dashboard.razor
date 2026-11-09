@@ -58,7 +58,7 @@
             {
                 <a href="dashboard#@entry.Id" data-panel="@entry.Id" class="@(entry.IsPanel ? "panel" : null)">
                     <span>@entry.Label</span>
-                    <span class="mono count @(entry.Id is TurnId && entry.Count > 0 ? "amber" : null)">@entry.Count</span>
+                    <span class="mono count @(entry.Id is TurnId && entry.Count > 0 ? "amber" : entry.Id is ActId && entry.Count > 0 ? "teal" : null)">@entry.Count@(entry.Id is ActId && entry.Count > 0 ? " ●" : null)</span>
                 </a>
             }
         </nav>
@@ -129,18 +129,55 @@
                 </ChildContent>
             </DashSection>
 
+            <DashSection Id="@ActId" Title="Activity" Open="@IsOpen(ActId)" OnToggle="ToggleFold">
+                <Gist>
+                    live ·
+                    @if (_feed.Running > 0)
+                    {
+                        <span class="mono teal">@_feed.Running running</span>
+                    }
+                    else
+                    {
+                        <text>idle</text>
+                    }
+                    ·
+                    <span class="mono">@_feed.FinishedRecently(DateTimeOffset.UtcNow)</span> finished in the last 10 minutes
+                    @if (_feed.LastAt is { } lastAt)
+                    {
+                        <text> · last at <span class="mono">@lastAt.ToLocalTime().ToString("t")</span></text>
+                    }
+                </Gist>
+                <Summary>
+                    @if (_feed.Running > 0)
+                    {
+                        <span class="mono teal">@_feed.Running running</span>
+                    }
+                    else
+                    {
+                        <text>idle</text>
+                    }
+                    @if (_feed.LastFinished is { } finished)
+                    {
+                        <text> · last finished <span class="mono">@finished.FinishedAt?.ToLocalTime().ToString("t")</span>, @ActivitySection.StageName(finished.Stage), @ActivityName(finished.TrackKey)</text>
+                    }
+                    @if (_feed.FailedSince(DateTimeOffset.Now.Date.ToUniversalTime()) is > 0 and var failedToday)
+                    {
+                        <text> · </text><button class="failed-link" @onclick="ShowFailed"><span class="mono">@failedToday</span> failed today</button>
+                    }
+                </Summary>
+                <ChildContent>
+                    <ActivitySection Feed="_feed" Query="_activity" NameOf="ActivityName" Now="DateTimeOffset.UtcNow" OnQuery="SetActivity" />
+                </ChildContent>
+            </DashSection>
+
             <DashSection Id="@TimeId" Title="Over time" Open="@IsOpen(TimeId)" OnToggle="ToggleFold">
                 <Gist>@TimeGist</Gist>
                 <Summary>
                     <span class="mono value">@ThisWeek</span> finished this week,
                     <span class="mono value">@LastWeek</span> last week
-                    @if (_history.Latest is [var last, ..])
-                    {
-                        <text> · last event <span class="mono">@last.At.ToLocalTime().ToString("t")</span> @last.What @(last.TrackKey is { } lastId ? NameOf(lastId) : null)</text>
-                    }
                 </Summary>
                 <ChildContent>
-                    <OverTime History="_history" NameOf="NameOf" />
+                    <OverTime History="_history" />
                 </ChildContent>
             </DashSection>
 
@@ -454,13 +491,15 @@
 @code {
     private const string TurnId = "d-turn";
     private const string WorkId = "d-work";
+    private const string ActId = "d-act";
     private const string TimeId = "d-time";
     private const string LibraryId = "d-lib";
     private const string FoldCookie = "crateside.dashboard.folded";
+    private const string ActivityCookie = "crateside.dashboard.activity";
     private const int KeysShown = 8;
     private const int ArtistsShown = 12;
 
-    private static readonly string[] Sections = [TurnId, WorkId, TimeId, LibraryId];
+    private static readonly string[] Sections = [TurnId, WorkId, ActId, TimeId, LibraryId];
 
     private static readonly TimeSpan Tick = TimeSpan.FromSeconds(1);
 
@@ -480,6 +519,8 @@
     private IReadOnlyList<TrackRow> _rows = [];
     private IReadOnlyList<TurnTile> _tiles = [];
     private JobHistory _history = JobHistory.From([], DateTimeOffset.Now);
+    private ActivityFeed _feed = new([]);
+    private ActivityQuery _activity = new();
     private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
     private DateTimeOffset _quotaReadAt;
     private bool _quotaReading;
@@ -503,6 +544,10 @@
     /// <summary>The folded sections, read from the cookie while prerendering, so the first paint is already folded.</summary>
     [PersistentState]
     public string[]? Folded { get; set; }
+
+    /// <summary>The activity filters, read from their cookie while prerendering for the same reason.</summary>
+    [PersistentState]
+    public string? ActivityRemembered { get; set; }
 
     private IReadOnlyList<TrackRowFacts> Unjudged =>
         [
@@ -538,6 +583,7 @@
         {
             new(TurnId, "Your turn", _tiles.Sum(tile => tile.Count)),
             new(WorkId, "Working now", null),
+            new(ActId, "Activity", _feed.Running is > 0 and var running ? running : null),
             new(TimeId, "Over time", ThisWeek),
             new(LibraryId, "The library", _distribution.TrackCount),
             _keysBoth.Songs > 0 ? new("p-kdet", "Key detectors", _keysBoth.Songs, IsPanel: true) : null,
@@ -557,6 +603,9 @@
     {
         Folded ??= HttpContext?.Request.Cookies[FoldCookie]?.Split('|') ?? [];
         _folded.UnionWith(Folded.Intersect(Sections));
+
+        ActivityRemembered ??= HttpContext?.Request.Cookies[ActivityCookie];
+        _activity = ActivityQuery.FromCookie(ActivityRemembered);
 
         Tracks.Changed += OnChanged;
         Separation.Changed += OnChanged;
@@ -620,6 +669,25 @@
             await _module.InvokeVoidAsync("remember", FoldCookie, string.Join('|', _folded));
     }
 
+    private async Task SetActivity(ActivityQuery query)
+    {
+        _activity = query;
+
+        if (_module is not null)
+            await _module.InvokeVoidAsync("remember", ActivityCookie, query.ToCookie());
+    }
+
+    /// <summary>Unfolds Activity with only the failed or canceled actions on show.</summary>
+    private async Task ShowFailed()
+    {
+        _folded.Remove(ActId);
+
+        if (_module is not null)
+            await _module.InvokeVoidAsync("remember", FoldCookie, string.Join('|', _folded));
+
+        await SetActivity(_activity with { FailedOnly = true, Page = 1, AnchorSequence = null });
+    }
+
     private void OnChanged()
     {
         Follow();
@@ -630,7 +698,9 @@
     private void Follow()
     {
         _rows = Tracks.Current?.Rows ?? [];
-        _history = JobHistory.From(Jobs.Updates(), DateTimeOffset.Now);
+        var updates = Jobs.Updates();
+        _history = JobHistory.From(updates, DateTimeOffset.Now);
+        _feed = ActivityFeed.From(updates);
         _tiles =
         [
             new("In staging", _rows.Count(TrackFilter.InStaging), "ready to warp", "Tracks · In staging", "tracks?filter=InStaging"),
@@ -694,8 +764,11 @@
         }
     }
 
-    private string NameOf(string trackKey) =>
-        _rows.FirstOrDefault(row => row.TrackKey.Equals(trackKey, StringComparison.Ordinal))?.Title ?? trackKey;
+    /// <summary>"Artist – Title", or the ID of a track no longer listed.</summary>
+    private string ActivityName(string trackKey) =>
+        _rows.FirstOrDefault(row => row.TrackKey.Equals(trackKey, StringComparison.Ordinal)) is { } row
+            ? row.ArtistAndTitle is var (artist, title) ? $"{artist} – {title}" : row.Title
+            : trackKey;
 
     private void Count(KeyDistribution distribution)
     {

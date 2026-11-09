@@ -57,6 +57,7 @@
     --table-partners: 50rem;
     --table-library: 56rem;
     --table-tracks: 92rem;
+    --table-activity: 97.5rem;
 
     /* Older names, kept as aliases. --text-dim and --muted were doing the job --text-75 and
        --text-50 do now; --accent was a blue that no longer exists. */
