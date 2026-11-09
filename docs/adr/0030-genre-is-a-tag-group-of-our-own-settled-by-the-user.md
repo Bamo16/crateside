@@ -1,6 +1,6 @@
 # 0030 — genre is a tag group of our own, settled by the user
 
-- Status: Accepted
+- Status: Accepted; superseded by [ADR 0088](0088-genre-is-abletons-own-genres-filled-from-the-sources.md) on 2026-11-09
 - Date: 2026-09-24
 - Settles [#2](https://github.com/Bamo16/crateside/issues/2), [#4](https://github.com/Bamo16/crateside/issues/4),
   [#5](https://github.com/Bamo16/crateside/issues/5) and [#6](https://github.com/Bamo16/crateside/issues/6).
