@@ -41,4 +41,30 @@ public sealed class WarpSettingsStoreTests : IDisposable
 
         Assert.Null(new WarpSettingsStore(path).Read());
     }
+
+    [Fact]
+    public void The_clip_flag_is_unchosen_until_it_is_switched()
+    {
+        var path = Path.Combine(_root, "flag.json");
+
+        Assert.Null(new WarpSettingsStore(path).ReadFlagClipOffBarLine());
+
+        new WarpSettingsStore(path).RememberFlagClipOffBarLine(false);
+
+        Assert.False(new WarpSettingsStore(path).ReadFlagClipOffBarLine());
+    }
+
+    [Fact]
+    public void Choosing_one_setting_keeps_the_other()
+    {
+        var path = Path.Combine(_root, "both.json");
+        var store = new WarpSettingsStore(path);
+
+        store.Remember(StarterWarps.Off);
+        store.RememberFlagClipOffBarLine(false);
+        store.Remember(StarterWarps.OnTheGrid);
+
+        Assert.Equal(StarterWarps.OnTheGrid, store.Read());
+        Assert.False(store.ReadFlagClipOffBarLine());
+    }
 }

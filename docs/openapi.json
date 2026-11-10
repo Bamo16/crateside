@@ -635,6 +635,32 @@
         },
         "description": "One of a track's files, and what it is to the plan."
       },
+      "ClipStartPosition": {
+        "required": [
+          "beat",
+          "position",
+          "onBarLine"
+        ],
+        "type": "object",
+        "properties": {
+          "beat": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "position": {
+            "type": "string",
+            "description": "Live's Start field: `34` on a bar line, else `33.2.1`."
+          },
+          "onBarLine": {
+            "type": "boolean"
+          }
+        },
+        "description": "Where a default clip starts on Live's ruler, and whether that is a bar line."
+      },
       "DecidedBy": {
         "enum": [
           "Judge",
@@ -3211,6 +3237,7 @@
           "TagsToAnswer",
           "TempoDrifts",
           "OffItsTempo",
+          "ClipOffBarLine",
           "All"
         ],
         "description": "How the one list is narrowed."
@@ -3540,6 +3567,10 @@
           "offItsTempo": {
             "type": "boolean",
             "description": "A steady warp whose grid falls away from the audio (#96)."
+          },
+          "clipStartsOffBarLine": {
+            "type": "boolean",
+            "description": "Some sample's default clip starts off a bar line of Live's ruler (#177)."
           },
           "runningStage": {
             "oneOf": [
@@ -4514,6 +4545,17 @@
               {
                 "description": "The first and last bar line the clip spans, so a steady warp's beat at any time can be read off it.",
                 "$ref": "#/components/schemas/GridLine"
+              }
+            ]
+          },
+          "clipStart": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Where the default clip starts on Live's ruler (ADR 0072).",
+                "$ref": "#/components/schemas/ClipStartPosition"
               }
             ]
           },

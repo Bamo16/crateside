@@ -148,6 +148,12 @@ public sealed class WarpOptions
     /// Settings while crateside runs, so every reader looks again each time.
     /// </summary>
     public StarterWarps StarterWarps { get; set; } = StarterWarps.OnTheGrid;
+
+    /// <summary>
+    /// Whether the song page flags a default clip whose start is off a bar line, and the Tracks page
+    /// offers the filter for it (#177). Changed from Settings while crateside runs.
+    /// </summary>
+    public bool FlagClipOffBarLine { get; set; } = true;
 }
 
 /// <summary>What crateside writes for a stem nothing of its upload is warped on.</summary>

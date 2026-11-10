@@ -504,6 +504,11 @@
     color: var(--text-30);
 }
 
+.fact-value.offline,
+.fact-note.offline {
+    color: var(--amber);
+}
+
 .fact-value.approx {
     font-weight: 400;
 }

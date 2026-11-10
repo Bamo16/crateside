@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using AbleKit.Analysis;
 using Crateside.Core.Tempo;
+using Crateside.Core.Warps;
 
 namespace Crateside.Core.Ableton;
 
@@ -35,6 +36,9 @@ public sealed record WarpTempo(
     /// <summary>The first and last bar line the clip spans, so a steady warp's beat at any time can be read off it.</summary>
     public GridLine? Line { get; init; }
 
+    /// <summary>Where the default clip starts on Live's ruler (ADR 0072).</summary>
+    public ClipStartPosition? ClipStart { get; init; }
+
     /// <summary>Where a steady warp's grid sits against the audio's transients; null for any other shape (ADR 0050).</summary>
     public WarpGrid? Grid { get; init; }
 
@@ -42,12 +46,20 @@ public sealed record WarpTempo(
     public static WarpTempo? Of(AnalysisFile analysis, int sampleRate) =>
         analysis.DefaultClip is { } clip
         && Of(clip, analysis.Warp, analysis.Audio.Overview, sampleRate) is { } tempo
-            ? tempo is { Shape: TempoShape.Steady }
-                ? tempo with
-                {
-                    Grid = TrueUpDecision.GridOf(analysis, sampleRate),
-                }
-                : tempo
+            ? (
+                tempo is { Shape: TempoShape.Steady }
+                    ? tempo with
+                    {
+                        Grid = TrueUpDecision.GridOf(analysis, sampleRate),
+                    }
+                    : tempo
+            ) with
+            {
+                ClipStart = ClipStartPosition.Of(
+                    clip.Start,
+                    BarRuler.Of(analysis.Warp.TimeSignature)
+                ),
+            }
             : null;
 
     /// <summary>The tempo across <paramref name="clip"/>; bars <paramref name="overview"/> shows silent are set aside.</summary>
@@ -266,4 +278,12 @@ public enum TempoShape
 
     /// <summary>No tempo holds for eight audible bars: nearly always a drifting track.</summary>
     Drifting,
+}
+
+/// <summary>Where a default clip starts on Live's ruler, and whether that is a bar line.</summary>
+/// <param name="Position">Live's Start field: <c>34</c> on a bar line, else <c>33.2.1</c>.</param>
+public sealed record ClipStartPosition(double Beat, string Position, bool OnBarLine)
+{
+    public static ClipStartPosition Of(double beat, BarRuler ruler) =>
+        new(beat, ruler.Position(beat), ruler.IsBarLine(beat));
 }
