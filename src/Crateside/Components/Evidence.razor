@@ -5,6 +5,7 @@
 @using Crateside.Core.Orchestration.Jobs
 @using Crateside.Core.Orchestration.Verdict
 @using Crateside.Core.Tracks
+@using Crateside.Core.Warps
 @inject KnownBuilds Builds
 @inject PageChoices Choices
 @inject TracksService Tracks
@@ -38,13 +39,70 @@
                 <ul class="centers">
                     @foreach (var part in Run.Sections)
                     {
-                        <li>
-                            <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
-                            <span class="mono center-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
-                            <span class="muted">@(part.Center == primary ? "primary · the tag follows it" : null)</span>
+                        <li class="@(IsPicked(part.Label) ? "picked" : null)">
+                            <button class="section-pick" aria-pressed="@(IsPicked(part.Label) ? "true" : "false")" title="@(IsPicked(part.Label) ? "Back to the whole track" : "What was found for this section")" @onclick="() => PickAsync(part.Label)">
+                                <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
+                                <span class="mono center-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
+                                <span class="muted">@(part.Center == primary ? "primary · the tag follows it" : null)</span>
+                            </button>
                         </li>
                     }
                 </ul>
+
+                @if (Picked is { } picked)
+                {
+                    <div class="picked-section" role="region" aria-label="@picked.Section.Label">
+                        <h4 class="first">
+                            <ProseText Text="@picked.Section.Label" Inline="true" />: @ModeText.Named(picked.Section.Center)
+                            @if (picked.Section.Start is { } start)
+                            {
+                                <span class="muted"> · from @WarpWording.Time(start)</span>
+                            }
+                        </h4>
+
+                        @foreach (var reading in picked.Windows)
+                        {
+                            <div class="picked-window">
+                                <p>
+                                    <span class="who @(reading.Window.AskedBy is WindowAsker.User ? "yours" : "judges")">@(reading.Window.AskedBy is WindowAsker.User ? "yours" : "judge")</span>
+                                    <span class="mono">@reading.Window.Name</span>
+                                    @if (Run.WhyOf(reading.Window) is { } windowWhy)
+                                    {
+                                        <text> · </text><ProseText Text="@windowWhy" Inline="true" />
+                                    }
+                                </p>
+                                <DetectorRows Algorithms="reading.Algorithms" Heads="true" />
+                            </div>
+                        }
+                        @if (picked.Windows.Count == 0)
+                        {
+                            <p class="muted">No window of its own: this section was placed from the whole track.</p>
+                        }
+
+                        @if (picked.Naming.Count > 0)
+                        {
+                            <h4>Sources that named it</h4>
+                            <ul class="picked-sources">
+                                @foreach (var source in picked.Naming)
+                                {
+                                    <li>@_sourceLine(source)</li>
+                                }
+                            </ul>
+                        }
+                        @if (picked.WholeSong.Count > 0)
+                        {
+                            <h4>Sources that covered the whole song</h4>
+                            <ul class="picked-sources">
+                                @foreach (var source in picked.WholeSong)
+                                {
+                                    <li>@_sourceLine(source)</li>
+                                }
+                            </ul>
+                        }
+
+                        <p class="muted">The judge wrote one reasoning for the whole track; it follows.</p>
+                    </div>
+                }
             }
 
             <h3>@(Pending ? "Why the rules gave no ruling" : "Why this key")</h3>
@@ -334,8 +392,44 @@
     [Parameter]
     public TrackRow? Row { get; set; }
 
+    /// <summary>The label of the section whose own findings are shown first; null for the whole track.</summary>
+    [Parameter]
+    public string? SelectedSection { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> SelectedSectionChanged { get; set; }
+
     private bool _chordsOpen;
     private bool _working;
+
+    private SectionEvidence? Picked =>
+        SelectedSection is { } label ? SectionEvidence.Of(Run, label) : null;
+
+    private bool IsPicked(string label) =>
+        string.Equals(SelectedSection, label, StringComparison.OrdinalIgnoreCase);
+
+    private Task PickAsync(string label) =>
+        SelectedSectionChanged.InvokeAsync(IsPicked(label) ? null : label);
+
+    private readonly RenderFragment<EvidenceSource> _sourceLine = source =>
+        @<text>
+            @if (source.Link is { } link)
+            {
+                <a href="@link" target="_blank" rel="noopener noreferrer">@(source.Host ?? link.ToString())</a>
+            }
+            else
+            {
+                <text>(no page)</text>
+            }
+            @if (source.StatesKey is { Length: > 0 } stated)
+            {
+                <text> · </text><ProseText Text="@ModeText.Stated(stated, source.StatesMode)" Inline="true" Mono="true" />
+            }
+            @if (source.Relation is { } relation)
+            {
+                <text> · </text><ProseText Text="@relation" Inline="true" />
+            }
+        </text>;
 
     private async Task SetRemovedAsync(string source, bool removed)
     {

@@ -237,12 +237,58 @@
 }
 
 .centers li {
+    border-top: 1px solid var(--line);
+}
+
+.section-pick {
     display: grid;
     grid-template-columns: 90px auto minmax(0, 1fr);
     gap: 0.6rem;
     align-items: baseline;
+    width: 100%;
     padding: 0.35rem 0;
-    border-top: 1px solid var(--line);
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.section-pick:hover .section-label,
+.centers li.picked .section-label {
+    color: var(--text);
+}
+
+.picked-section {
+    margin: 0 0 1.5rem;
+    padding: 0.8rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+}
+
+.picked-window {
+    margin: 0.6rem 0 0;
+}
+
+.picked-window .who {
+    padding: 1px 6px;
+    border: 1px dashed rgba(236, 231, 220, 0.45);
+    border-radius: 4px;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.picked-window .who.yours {
+    color: var(--ink);
+    background: var(--text);
+    border: 1px solid var(--text);
+}
+
+.picked-sources {
+    margin: 0;
+    padding: 0 0 0 1.1rem;
 }
 
 .centers li:first-child {

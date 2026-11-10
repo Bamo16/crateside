@@ -81,8 +81,18 @@ h1 {
 
 .sections li {
     display: flex;
+}
+
+.section-pick {
+    display: flex;
     gap: 0.6rem;
     align-items: baseline;
+    color: inherit;
+    text-decoration: none;
+}
+
+.section-pick:hover .section-label {
+    color: var(--text);
 }
 
 .section-label {
