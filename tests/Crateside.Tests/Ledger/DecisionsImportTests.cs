@@ -94,12 +94,16 @@ public sealed class DecisionsImportTests : IDisposable
                     Heard = [],
                     Mine = [],
                     Tagged = [],
+                    Rejected = [],
+                    RemovalsSeen = [],
                 },
                 actual with
                 {
                     Heard = [],
                     Mine = [],
                     Tagged = [],
+                    Rejected = [],
+                    RemovalsSeen = [],
                 }
             );
             Assert.Equal(expected.Heard, actual.Heard);

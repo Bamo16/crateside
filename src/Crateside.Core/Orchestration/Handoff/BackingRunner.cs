@@ -7,6 +7,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Marks;
 using Crateside.Core.Orchestration.Tagging;
 using Crateside.Core.Samples;
+using Crateside.Core.Vocals;
 using Microsoft.Extensions.Logging;
 
 namespace Crateside.Core.Orchestration.Handoff;
@@ -118,6 +119,79 @@ public sealed class BackingRunner(
             .. Plan(root, ledger, ownedOf, backKeys, correctKeys, index, marksOf, song, retiredOf)
                 .Select(planned => planned.Assignment),
         ];
+
+    /// <summary>
+    /// The descriptive keywords the person added in Live, or took off one crateside wrote, on the
+    /// files of a keyed track (ADR 0087). An unreadable store reads as no edits; the next pass reads it again.
+    /// </summary>
+    /// <param name="index">Live's index of the root, which holds an addition before the store does; null reads the store alone.</param>
+    /// <param name="writtenOf">A song's keywords crateside has written; an owned keyword outside it is the person's.</param>
+    public IReadOnlyList<LiveEdit> LiveEdits(
+        string root,
+        KeyLedger ledger,
+        FolderInfo? index,
+        Func<string, IReadOnlySet<string>> writtenOf
+    )
+    {
+        if (!Directory.Exists(root))
+            return [];
+
+        FolderInfo backed;
+
+        try
+        {
+            backed = folderInfo.Read(root);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return [];
+        }
+
+        var edits = new List<LiveEdit>();
+
+        foreach (var path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+        {
+            if (!SampleFiles.IsAudio(path))
+                continue;
+
+            var stored = backed.TryGet(path, out var held) ? held : null;
+            var indexed = index is not null && index.TryGet(path, out var seen) ? seen : null;
+            var present = (stored?.Keywords ?? []).Concat(indexed?.Keywords ?? []).Distinct();
+            var hidden = stored?.HiddenKeywords ?? [];
+
+            if (!present.Concat(hidden).Any(IsDescriptive))
+                continue;
+
+            if (ProvenanceOf(path) is not { SourceTrackKey: { } trackKey } provenance)
+                continue;
+
+            var song = ledger.SongFor(trackKey) ?? trackKey;
+            var stem = $"{trackKey}|{provenance.Preset ?? provenance.Model ?? provenance.Label}";
+            var written = writtenOf(song);
+
+            edits.AddRange(
+                present
+                    .Where(keyword =>
+                        IsDescriptive(keyword)
+                        && (VocalVocabulary.IsKeyword(keyword) || !written.Contains(keyword))
+                    )
+                    .Select(keyword => new LiveEdit(song, stem, keyword, Removed: false))
+            );
+            edits.AddRange(
+                hidden
+                    .Where(keyword =>
+                        IsDescriptive(keyword)
+                        && (VocalVocabulary.IsKeyword(keyword) || written.Contains(keyword))
+                    )
+                    .Select(keyword => new LiveEdit(song, stem, keyword, Removed: true))
+            );
+        }
+
+        return edits;
+    }
+
+    private static bool IsDescriptive(string keyword) =>
+        IsOwned(keyword) || VocalVocabulary.IsKeyword(keyword);
 
     private IReadOnlyList<Planned> Plan(
         string root,

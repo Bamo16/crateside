@@ -62,9 +62,27 @@ public sealed class GenreStore(LedgerStore ledger)
                     ],
                     Learned = isListed ? null : record.Learned,
                     LearnedFrom = isListed ? null : record.LearnedFrom,
+                    Rejected = [.. record.Rejected.Where(rejected => rejected != genre)],
                 }
         );
     }
+
+    /// <summary>
+    /// The person took the genre off a file in Live: it stops being the song's, and is not assigned
+    /// again until they choose it (ADR 0087).
+    /// </summary>
+    /// <param name="removal">Names the file's removal, which is not acted on twice.</param>
+    public void Reject(string song, string genre, string removal) =>
+        Update(
+            song,
+            record =>
+                record with
+                {
+                    Mine = [.. record.Mine.Where(mine => mine != genre)],
+                    Rejected = [.. record.Rejected.Union([genre])],
+                    RemovalsSeen = [.. record.RemovalsSeen.Union([removal])],
+                }
+        );
 
     /// <summary>
     /// Gives a song the person has not answered what their answers say about its artist; a song
@@ -202,6 +220,8 @@ public sealed class GenreStore(LedgerStore ledger)
                 .. held.Mine.Union(moved.Mine).Where(mine => !GenreVocabulary.IsGenre(mine)),
             ],
             Tagged = [.. held.Tagged.Union(moved.Tagged)],
+            Rejected = [.. held.Rejected.Union(moved.Rejected)],
+            RemovalsSeen = [.. held.RemovalsSeen.Union(moved.RemovalsSeen)],
         };
     }
 
@@ -260,6 +280,12 @@ public sealed record GenreRecord
     /// <summary>Every genre crateside has asked to be written onto the song's files.</summary>
     public IReadOnlyList<string> Tagged { get; init; } = [];
 
+    /// <summary>Genres the person took off in Live, which are not assigned again until they choose them.</summary>
+    public IReadOnlyList<string> Rejected { get; init; } = [];
+
+    /// <summary>Each removal already acted on, per stem file, so a choice made since is not undone by the same removal.</summary>
+    public IReadOnlyList<string> RemovalsSeen { get; init; } = [];
+
     /// <summary>The sources' labels, kept as the song's styles and never written as tags.</summary>
     public IReadOnlyList<string> Styles => Heard;
 
@@ -278,12 +304,12 @@ public sealed record GenreRecord
     [JsonIgnore]
     public bool IsTheUsersAnswer => Mine.Any(GenreVocabulary.IsGenre);
 
-    /// <summary>The genres to write: the person's choice among the 29, else crateside's, and always the person's own.</summary>
+    /// <summary>The genres to write: the person's choice among the 29, else crateside's, and always the person's own; never one they took off.</summary>
     public IReadOnlyList<string> Genres =>
         [
-            .. (IsTheUsersAnswer ? Mine.Where(GenreVocabulary.IsGenre) : Assigned).Concat(
-                Mine.Where(mine => !GenreVocabulary.IsGenre(mine))
-            ),
+            .. (IsTheUsersAnswer ? Mine.Where(GenreVocabulary.IsGenre) : Assigned)
+                .Concat(Mine.Where(mine => !GenreVocabulary.IsGenre(mine)))
+                .Where(genre => !Rejected.Contains(genre)),
         ];
 
     /// <summary>Genres crateside asked to be written before that the song no longer has.</summary>

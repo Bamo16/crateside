@@ -34,7 +34,19 @@ namespace Crateside.Core.Ledger.Migrations
                     b.Property<int?>("Pageviews")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Rejected")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RemovalsSeen")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Settled")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Tagged")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("WikidataItem")
@@ -69,6 +81,14 @@ namespace Crateside.Core.Ledger.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RecordingMbid")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Rejected")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("RemovalsSeen")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Tagged")
@@ -417,6 +437,20 @@ namespace Crateside.Core.Ledger.Migrations
                     b.HasKey("Song", "Mark");
 
                     b.ToTable("TrackMarks", (string)null);
+                });
+
+            modelBuilder.Entity("Crateside.Core.Ledger.VocalAnswerRow", b =>
+                {
+                    b.Property<string>("Stem")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Answer")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Stem");
+
+                    b.ToTable("VocalAnswers", (string)null);
                 });
 
             modelBuilder.Entity("Crateside.Core.Ledger.RestatementRow", b =>

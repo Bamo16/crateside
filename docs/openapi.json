@@ -878,6 +878,27 @@
               "string"
             ],
             "description": "The user's answer, or null when they have not given one."
+          },
+          "tagged": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Every value crateside has asked to be written onto the song's files."
+          },
+          "rejected": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Values the person took off in Live, which are not written again until they settle them."
+          },
+          "removalsSeen": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Each removal already acted on, per stem file, so a choice made since is not undone by the same removal."
           }
         },
         "description": "One song's familiarity: measured, settled, or both."
@@ -1101,6 +1122,20 @@
             },
             "description": "Every genre crateside has asked to be written onto the song's files."
           },
+          "rejected": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Genres the person took off in Live, which are not assigned again until they choose them."
+          },
+          "removalsSeen": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Each removal already acted on, per stem file, so a choice made since is not undone by the same removal."
+          },
           "styles": {
             "type": [
               "null",
@@ -1119,7 +1154,7 @@
             "items": {
               "type": "string"
             },
-            "description": "The genres to write: the person's choice among the 29, else crateside's, and always the person's own."
+            "description": "The genres to write: the person's choice among the 29, else crateside's, and always the person's own; never one they took off."
           }
         },
         "description": "One song's genres: what the sources said, what crateside took from it, and what the person chose."

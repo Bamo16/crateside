@@ -49,3 +49,30 @@ it has a signal, and the person corrects it in either place.**
   findable.
 - A person's answer recorded from Live is only as good as the backing pass's read of the index, so
   a sample that is not keyed to a song (no provenance) cannot spread its answer.
+
+## Built
+
+[#192](https://github.com/Bamo16/crateside/issues/192) built the Live half on 2026-11-10; the song
+page is [#193](https://github.com/Bamo16/crateside/issues/193).
+
+- **Added**: a `Genres|` or `Familiarity|` keyword on a keyed file, in the tag store or Live's index,
+  that crateside did not ask to be written (the song's `Tagged`, less what it was told to drop). A
+  genre goes through the same choice the song page makes, so a pick among the 29 replaces
+  crateside's and the person's earlier pick, and a genre of their own is added beside them. A
+  familiarity is the song's `Settled`. Both are then written onto the song's other samples.
+- **Removed**: a hidden keyword that crateside asked for. The song keeps a `Rejected` list; a
+  rejected genre or familiarity is not assigned or written again, and the copies on the song's other
+  samples are taken off. A later choice in crateside clears it. `RemovalsSeen` keeps each removal
+  already acted on (stem file and keyword), so a hidden keyword the store still holds does not undo
+  that choice, and a removal on another sample still counts.
+- **Newer wins** comes out of the order the pass sees things in: an answer is recorded when the pass
+  first sees it, and each recorded answer replaces the one before. No time is stored, so an answer
+  given in Live and read after one made in crateside wins, even if Live's was older.
+- **Familiarity** gained a `Tagged` list for this. The migration seeds it with the value each song
+  has now, so what is on the files already is not read as an answer. A familiarity on a song with
+  nothing in `Tagged` is left alone, since an earlier lookup may have written it.
+- **Lead or Sparse** is recorded per stem file (`VocalAnswers`, by track and preset), and
+  `Type|Vocal|Lead` / `Type|Vocal|Sparse` are keywords crateside accepts, so the stems tagged by hand
+  on 2026-11-09 read as answers and take crateside's other tags. crateside writes none yet, so only
+  an answer given or taken off in Live is recorded; the rejection of a value crateside wrote waits
+  for [#195](https://github.com/Bamo16/crateside/issues/195).

@@ -8,6 +8,7 @@ using Crateside.Core.Genres;
 using Crateside.Core.Ledger;
 using Crateside.Core.Marks;
 using Crateside.Core.Orchestration.Handoff;
+using Humanizer;
 using Microsoft.Extensions.Options;
 
 namespace Crateside;
@@ -20,6 +21,7 @@ public sealed class BackingWorker(
     BackingRunner runner,
     GenreStore genres,
     FamiliarityStore familiarity,
+    LiveAnswers answers,
     TrackMarkStore trackMarks,
     TagStoreBackups backups,
     FileIndexReader index,
@@ -109,24 +111,39 @@ public sealed class BackingWorker(
     private TimeSpan Tick()
     {
         var ledger = store.Read();
+        var libraryIndex = ReadLibraryIndex();
+
+        // Before anything is written, so an answer given in Live outranks what this pass would write.
+        RecordLiveAnswers(ledger, libraryIndex);
+
         var settled = genres.Read();
         var reach = familiarity.Read();
 
-        // Asked before the write, so a genre that changes later is known to have been asked.
+        // Asked before the write, so a value that changes later is known to have been asked.
         genres.MarkTagged(
             settled
                 .Values.Where(record => record.Genres.Except(record.Tagged).Any())
                 .Select(record => (record.Song, record.Genres))
         );
+        familiarity.MarkTagged(
+            reach
+                .Values.Where(record => record.Written is not null)
+                .Select(record => (record.Song, record.Written!))
+        );
         settled = genres.Read();
+        reach = familiarity.Read();
 
-        IReadOnlyList<string> RetiredOf(string trackKey) =>
+        IReadOnlyList<string> RetiredOf(string trackKey)
+        {
+            var song = ledger.SongFor(trackKey) ?? trackKey;
+
+            return
             [
-                .. settled
-                    .GetValueOrDefault(ledger.SongFor(trackKey) ?? trackKey)
-                    ?.Retired.Select(GenreVocabulary.Keyword)
+                .. settled.GetValueOrDefault(song)?.Retired.Select(GenreVocabulary.Keyword) ?? [],
+                .. reach.GetValueOrDefault(song)?.Retired.Select(FamiliarityVocabulary.Keyword)
                     ?? [],
             ];
+        }
 
         IReadOnlyList<string> OwnedOf(string trackKey)
         {
@@ -141,7 +158,6 @@ public sealed class BackingWorker(
             ];
         }
 
-        var libraryIndex = ReadLibraryIndex();
         var started = Stopwatch.GetTimestamp();
 
         var library = Report(
@@ -173,6 +189,23 @@ public sealed class BackingWorker(
         );
 
         return library < staging ? library : staging;
+    }
+
+    private void RecordLiveAnswers(KeyLedger ledger, FolderInfo? libraryIndex)
+    {
+        var edits = runner
+            .LiveEdits(_paths.LibraryFolder, ledger, libraryIndex, answers.WrittenFor)
+            .Concat(
+                runner.LiveEdits(_paths.StagingFolder, ledger, index: null, answers.WrittenFor)
+            );
+
+        var recorded = answers.Record(edits);
+
+        if (recorded > 0)
+            logger.LogInformation(
+                "Recorded {Answers} from Live as the person's own",
+                "answer".ToQuantity(recorded)
+            );
     }
 
     /// <summary>Writes the Collections of each song marked since the last pass, ahead of the whole pass (#144).</summary>

@@ -70,13 +70,19 @@ restores both. They change; a run does not.
   without a new lookup. `RecordingMbid` is the MusicBrainz recording the lookup matched; `Learned` and
   `LearnedFrom` a genre taken from the person's answers for the artist; `Mine` the genres the person
   chose (a JSON list: among Ableton's 29, or their own); `Tagged` every genre crateside has asked to be
-  written onto the song's files, so one it later drops can be taken off again.
+  written onto the song's files, so one it later drops can be taken off again. `Rejected` is the genres
+  the person took off in Live, which are not assigned again until they choose them; `RemovalsSeen` the
+  removals already acted on (`<stem>|<keyword>`), so a choice made since is not undone by the same
+  removal ([ADR 0087](adr/0087-crateside-tags-every-song-and-the-person-corrects-in-crateside-or-in-live.md)).
 - **Familiarities**: a song's familiarity ([ADR 0089](adr/0089-familiarity-is-read-off-the-songs-own-listeners-and-its-wikipedia-article.md)),
   by `Song`. `Listeners` is the most distinct ListenBrainz users any of its MusicBrainz recordings has (null
   when it has none); `Pageviews` the user views of its English Wikipedia article over the last twelve whole
   months (0 for no article); `WikidataItem` the item the article was found through. `LookedUpAt` and
   `LookupVersion` say when and by which matching it was asked; `Settled` is the person's answer. The
-  value written is `Settled`, else what the two votes say of the numbers.
+  value written is `Settled`, else what the two votes say of the numbers, unless the person took it off
+  in Live. `Tagged`, `Rejected` and `RemovalsSeen` are kept as `Genres` keeps them.
+- **VocalAnswers**: the Lead or Sparse the person gave a vocal stem in Live (ADR 0087, 0090), by `Stem`
+  (the track's key, `|`, and the preset that cut the stem), with the `Answer`.
 - **TrackInstructions**: what the person told crateside about a track
   ([ADR 0083](adr/0083-track-instructions-playlist-settings-and-intake-live-in-the-ledger-database.md)),
   by `TrackKey` (a video ID, case-sensitive): the stem plan (`Plan`, JSON), `Name`, `SourceUrl`,

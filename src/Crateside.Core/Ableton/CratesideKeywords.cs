@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using AbleKit.Tags;
 using Crateside.Core.Familiarity;
 using Crateside.Core.Genres;
+using Crateside.Core.Vocals;
 
 namespace Crateside.Core.Ableton;
 
@@ -25,6 +26,8 @@ public static partial class CratesideKeywords
                 || KeyTags.Modes.Contains(value)
                 || ModeTags.IsModal(value),
             ["Type", var value] => Types.Contains(value),
+            // The subtag a vocal stem takes, which the person sets in Live (ADR 0090).
+            ["Type", "Vocal", _] => VocalVocabulary.IsKeyword(keyword),
             // One of Ableton's 29, a genre of the person's own, or one of Live's own content (ADR 0088).
             [GenreVocabulary.Group, var value] => GenreVocabulary.IsName(value),
             [FamiliarityVocabulary.Group, var value] => FamiliarityVocabulary.IsValue(value),
