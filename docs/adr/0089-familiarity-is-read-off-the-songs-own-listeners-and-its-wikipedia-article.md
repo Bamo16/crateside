@@ -111,3 +111,6 @@ from the decision, and where it had to choose:
   matching the two lookups share is `NameMatch`.
 - **Until a song is asked again**, the `Familiarity|` keyword already on its files stays; the backing
   pass replaces it when the song has a new value.
+- **Measured over the ledger** on 2026-11-09 (666 songs with an artist and title, a copy of the
+  ledger): 196 `Mainstream`, 137 `Niche`, 333 `Obscure`. 291 had a Wikidata item, 83 no
+  recording with listeners. The run took 110 minutes, about ten seconds a song.
