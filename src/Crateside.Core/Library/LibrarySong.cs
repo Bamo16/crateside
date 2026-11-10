@@ -33,6 +33,9 @@ public sealed record LibrarySong
 
     public LedgerRun? Run { get; init; }
 
+    /// <summary>The song's stems are in Staging, not yet in the library (#155).</summary>
+    public bool IsStaged { get; init; }
+
     /// <summary>What Partners works from: the verdict's primary center, else the samples' Key tag (ADR 0056).</summary>
     public TonalCenter? Center => Run?.Center ?? (Key is { } key ? MusicKey.CenterOf(key) : null);
 

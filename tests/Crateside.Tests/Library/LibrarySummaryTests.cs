@@ -2,9 +2,11 @@ using AbleKit.Tags;
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Library;
+using Crateside.Core.Watching;
 using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Crateside.Tests.Library;
 
@@ -74,6 +76,59 @@ public sealed class LibrarySummaryTests : IDisposable
     }
 
     [Fact]
+    public async Task A_change_in_the_library_is_picked_up_in_the_background_without_a_button()
+    {
+        var time = new FakeTimeProvider();
+        var changes = new FileChanges(time);
+        var summary = Summary(time, changes);
+
+        Assert.Equal(2, summary.Current.FileCount);
+
+        Add("three.flac");
+        changes.Notify(inLibrary: true);
+        time.Advance(LibrarySummary.LeastBetweenReads);
+
+        // The look that finds it stale still gets the old figure and starts the read.
+        Assert.Equal(2, summary.Current.FileCount);
+
+        await summary.Refreshing!;
+
+        Assert.Equal(3, summary.Current.FileCount);
+    }
+
+    [Fact]
+    public void A_change_outside_the_library_leaves_the_distribution_alone()
+    {
+        var time = new FakeTimeProvider();
+        var changes = new FileChanges(time);
+        var summary = Summary(time, changes);
+
+        _ = summary.Current;
+        Add("three.flac");
+        changes.Notify();
+        time.Advance(LibrarySummary.LeastBetweenReads);
+
+        Assert.Equal(2, summary.Current.FileCount);
+        Assert.Null(summary.Refreshing);
+    }
+
+    [Fact]
+    public void A_change_is_not_read_again_before_the_least_time_between_reads_has_passed()
+    {
+        var time = new FakeTimeProvider();
+        var changes = new FileChanges(time);
+        var summary = Summary(time, changes);
+
+        _ = summary.Current;
+        Add("three.flac");
+        changes.Notify(inLibrary: true);
+        time.Advance(FileChanges.Quiet);
+
+        Assert.Equal(2, summary.Current.FileCount);
+        Assert.Null(summary.Refreshing);
+    }
+
+    [Fact]
     public void A_root_that_does_not_exist_reads_as_nothing_rather_than_throwing()
     {
         var paths = Options.Create(
@@ -94,7 +149,7 @@ public sealed class LibrarySummaryTests : IDisposable
         Assert.Empty(distribution.Counts);
     }
 
-    private LibrarySummary Summary()
+    private LibrarySummary Summary(TimeProvider? time = null, FileChanges? changes = null)
     {
         var paths = Options.Create(new CratesidePaths { LibraryFolder = _root });
 
@@ -109,7 +164,8 @@ public sealed class LibrarySummaryTests : IDisposable
                 new FolderInfoReader(),
                 new WarpTempoReader()
             ),
-            TimeProvider.System
+            time ?? TimeProvider.System,
+            changes
         );
     }
 

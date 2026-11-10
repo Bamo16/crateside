@@ -12,15 +12,30 @@ public sealed class FileChanges(TimeProvider time)
     private readonly Lock _gate = new();
     private ITimer? _timer;
     private long _version;
+    private long _libraryVersion;
+    private bool _libraryPending;
     private TaskCompletionSource _fired = NewSignal();
 
     /// <summary>A worker's view of the wake-ups, which remembers the last one it acted on.</summary>
     public Listener Listen() => new(this);
 
-    public void Notify()
+    /// <summary>Counts the wake-ups that came with a change inside the library, which readers of the library compare against the one they read at.</summary>
+    public long LibraryVersion
+    {
+        get
+        {
+            lock (_gate)
+                return _libraryVersion;
+        }
+    }
+
+    /// <param name="inLibrary">The change is inside the library folder.</param>
+    public void Notify(bool inLibrary = false)
     {
         lock (_gate)
         {
+            _libraryPending |= inLibrary;
+
             if (_timer is null)
                 _timer = _time.CreateTimer(_ => Fire(), null, Quiet, Timeout.InfiniteTimeSpan);
             else
@@ -42,6 +57,11 @@ public sealed class FileChanges(TimeProvider time)
         lock (_gate)
         {
             _version++;
+
+            if (_libraryPending)
+                _libraryVersion++;
+
+            _libraryPending = false;
             _fired.TrySetResult();
             _fired = NewSignal();
         }
