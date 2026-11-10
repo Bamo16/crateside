@@ -421,7 +421,8 @@
 
                 @if (Run is not null)
                 {
-                    <KeyLane Run="Run" Seconds="group.Seconds" From="from" To="to" Bands="BandsIn(bands, from, to, tags: false)" />
+                    <KeyLane Run="Run" Seconds="group.Seconds" From="from" To="to" Bands="BandsIn(bands, from, to, tags: false)"
+                             SelectedSection="SelectedSection" SelectedSectionChanged="SelectedSectionChanged" />
                 }
 
                 <span class="gutter"></span>
@@ -561,6 +562,13 @@
     /// <summary>The verdict's evidence, whose windows are drawn as bands once recorded.</summary>
     [Parameter]
     public RunEvidence? Run { get; set; }
+
+    /// <summary>The section whose findings the evidence shows, picked from the key strip.</summary>
+    [Parameter]
+    public string? SelectedSection { get; set; }
+
+    [Parameter]
+    public EventCallback<string?> SelectedSectionChanged { get; set; }
 
     /// <summary>Raised by the band's invitation: each new value opens the form.</summary>
     [Parameter]

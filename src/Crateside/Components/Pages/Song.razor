@@ -59,8 +59,10 @@
                         @foreach (var part in others)
                         {
                             <li>
-                                <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
-                                <span class="mono section-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
+                                <a class="section-pick" href="@($"song/{Uri.EscapeDataString(TrackKey)}#evidence")" title="What was found for this section" @onclick="() => _section = part.Label">
+                                    <span class="section-label"><ProseText Text="@part.Label" Inline="true" /></span>
+                                    <span class="mono section-key">@(ModeText.Arrow(part.Center, false) ?? ModeText.Tag(part.Center))</span>
+                                </a>
                             </li>
                         }
                     </ul>
@@ -139,7 +141,7 @@
                         <StemList Editor="_stems" Row="_row" OnSelect="path => _selectedWarp = path" />
                     </section>
 
-                    <WarpView Row="_row" @bind-SelectedPath="_selectedWarp" Run="_run" OpenRequests="_openRequests" />
+                    <WarpView Row="_row" @bind-SelectedPath="_selectedWarp" Run="_run" OpenRequests="_openRequests" @bind-SelectedSection="_section" />
                 }
 
                 @if (_row is not null)
@@ -167,7 +169,7 @@
                         {
                             <Evidence Run="_run" Row="_row" Tempo="Tempo" Heading="@($"Why {HeadingKey}")" Summary="@RunSummary.Of(_run)"
                                       Withheld="Confidence is KeyConfidence.Withheld"
-                                      WarpViewLink="@(_row is null ? null : WarpViewLink)" />
+                                      WarpViewLink="@(_row is null ? null : WarpViewLink)" @bind-SelectedSection="_section" />
                         }
                     </section>
                 }
@@ -202,6 +204,7 @@
     private Timer? _clock;
     private string? _selectedWarp;
     private int _openRequests;
+    private string? _section;
 
     private LedgerRun? Verdict => _row?.Verdict;
 

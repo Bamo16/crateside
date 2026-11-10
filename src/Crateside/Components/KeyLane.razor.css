@@ -49,6 +49,20 @@
     background: rgba(236, 231, 220, 0.03);
 }
 
+/* A band with a section's name opens what was found for that section. */
+.key-band.pickable {
+    cursor: pointer;
+}
+
+.key-band.pickable:hover,
+.key-band.picked {
+    border-color: var(--text);
+}
+
+.key-band.picked {
+    background: rgba(236, 231, 220, 0.14);
+}
+
 /* A start only the judge gave: dashed, since nothing places it. */
 .key-band.unbacked {
     border-style: dashed;
