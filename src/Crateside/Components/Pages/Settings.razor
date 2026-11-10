@@ -278,6 +278,25 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
 
             <div class="row">
                 <div class="name">
+                    <span>Flag a clip start off a bar line</span>
+                    <span class="gist">
+                        The song page notes a default clip that starts between two bars of Live's
+                        ruler, and Tracks gets a filter for them. Switch it off if your clips start
+                        where they like.
+                    </span>
+                </div>
+                <div class="control">
+                    <div class="pills">
+                        <button class="pill @(Warps.Value.FlagClipOffBarLine ? "on plain" : "off")"
+                                @onclick="() => SetClipFlag(true)">On</button>
+                        <button class="pill @(Warps.Value.FlagClipOffBarLine ? "off" : "on plain")"
+                                @onclick="() => SetClipFlag(false)">Off</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="name">
                     <span>True up every warp</span>
                     <span class="gist">
                         Retypes each warp that drifts off its transients, as Track details does
@@ -861,6 +880,12 @@ dotnet user-secrets set "Queue:ClientSecret" "&lt;secret&gt;" --project src\Crat
     {
         Warps.Value.StarterWarps = mode;
         WarpStore.Remember(mode);
+    }
+
+    private void SetClipFlag(bool flag)
+    {
+        Warps.Value.FlagClipOffBarLine = flag;
+        WarpStore.RememberFlagClipOffBarLine(flag);
     }
 
     private static string StarterName(StarterWarps mode) =>

@@ -134,6 +134,9 @@ public static class ServiceRegistration
                 {
                     if (store.Read() is { } chosen)
                         options.StarterWarps = chosen;
+
+                    if (store.ReadFlagClipOffBarLine() is { } flag)
+                        options.FlagClipOffBarLine = flag;
                 }
             );
 

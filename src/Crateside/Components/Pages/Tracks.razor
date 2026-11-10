@@ -20,6 +20,7 @@
 @using Crateside.Core.Tempo
 @using Crateside.Core.Quota
 @using Crateside.Core.Tracks
+@using Crateside.Core.Warps
 @using Crateside.Core.WorkLists
 @using Humanizer
 
@@ -39,6 +40,7 @@
 @inject IJSRuntime Js
 @inject IServiceProvider Services
 @inject ActionLog Actions
+@inject IOptions<WarpOptions> Warps
 
 <PageTitle>Tracks · crateside</PageTitle>
 
@@ -131,7 +133,7 @@
     </PageHeader>
 
     <div class="filters">
-        @foreach (var filter in Enum.GetValues<TrackFilter>())
+        @foreach (var filter in Enum.GetValues<TrackFilter>().Where(filter => filter is not TrackFilter.ClipOffBarLine || Warps.Value.FlagClipOffBarLine))
         {
             <button class="pill @(filter == Viewing ? "on " + Tone(filter) : "off")"
                     @onclick="() => ShowFilter(filter)">
@@ -152,6 +154,10 @@
         @if (Viewing is TrackFilter.OffItsTempo)
         {
             <span class="gist">steady warps whose grid falls away from the audio · furthest first</span>
+        }
+        else if (Viewing is TrackFilter.ClipOffBarLine)
+        {
+            <span class="gist">default clips that start between two bars of Live's ruler</span>
         }
         <div class="search">
             <input type="search" placeholder="Find a track" aria-label="Find a track"
@@ -785,12 +791,15 @@
     private bool Searching => !string.IsNullOrWhiteSpace(_search);
 
     /// <summary>A search looks through every track, so the chip and the familiarity wait until it is cleared (#142).</summary>
-    private TrackFilter Viewing => Searching ? TrackFilter.All : _filter;
+    private TrackFilter Viewing =>
+        Searching ? TrackFilter.All
+        : _filter is TrackFilter.ClipOffBarLine && !Warps.Value.FlagClipOffBarLine ? TrackFilter.Unfinished
+        : _filter;
 
     private IEnumerable<TrackRow> Shown =>
         Viewing is TrackFilter.TagsToAnswer
             ? Answering().Where(row => row.HasFamiliarity(_familiarity))
-            : Rows.Narrow(_filter, _search, _familiarity);
+            : Rows.Narrow(Viewing, _search, _familiarity);
 
     private IEnumerable<TrackRow> Answering()
     {
@@ -1141,6 +1150,7 @@
             TrackFilter.TagsToAnswer => "Tags to answer",
             TrackFilter.TempoDrifts => "Tempo drifts",
             TrackFilter.OffItsTempo => "Off its tempo",
+            TrackFilter.ClipOffBarLine => "Clip off a bar line",
             _ => filter.ToString(),
         };
 

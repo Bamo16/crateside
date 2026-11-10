@@ -28,6 +28,9 @@ public enum TrackFilter
     /// <summary>A steady warp whose grid falls away from the audio, which a retype fixes (#96).</summary>
     OffItsTempo,
 
+    /// <summary>A default clip whose start is not on a bar line of Live's ruler (#177).</summary>
+    ClipOffBarLine,
+
     /// <summary>
     /// Every row there is, the finished library included. Answers "do I have this track in any
     /// shape or form", which is a search question.
@@ -63,6 +66,7 @@ public static class TrackFilters
             TrackFilter.TagsToAnswer => row.HasTagsToAnswer,
             TrackFilter.TempoDrifts => row.TempoDrifts,
             TrackFilter.OffItsTempo => row.OffItsTempo,
+            TrackFilter.ClipOffBarLine => row.ClipStartsOffBarLine,
             TrackFilter.All => true,
             _ => false,
         };

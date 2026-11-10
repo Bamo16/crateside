@@ -215,6 +215,10 @@ public sealed record TrackRow
     /// <summary>A steady warp whose grid falls away from the audio (#96).</summary>
     public bool OffItsTempo => this is { Bpm.Off.DriftMs: not null };
 
+    /// <summary>Some sample's default clip starts off a bar line of Live's ruler (#177).</summary>
+    public bool ClipStartsOffBarLine =>
+        Samples.Any(sample => sample.Tempo is { ClipStart.OnBarLine: false });
+
     /// <summary>The stage crateside currently believes is working this track, if any.</summary>
     public JobStage? RunningStage { get; init; }
 

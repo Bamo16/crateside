@@ -26,16 +26,32 @@ public sealed class WarpSettingsStore(CratesidePaths paths)
                 : null;
     }
 
-    public void Remember(StarterWarps chosen)
+    /// <summary>Never throws: an unreadable file reads as nothing chosen.</summary>
+    public bool? ReadFlagClipOffBarLine()
+    {
+        lock (_gate)
+            return WarpSettingsJsonContext
+                .Default.WarpSettings.ReadFileOrDefault(_path)
+                ?.FlagClipOffBarLine;
+    }
+
+    public void Remember(StarterWarps chosen) =>
+        Write(settings => settings with { StarterWarps = chosen });
+
+    public void RememberFlagClipOffBarLine(bool flag) =>
+        Write(settings => settings with { FlagClipOffBarLine = flag });
+
+    private void Write(Func<WarpSettings, WarpSettings> change)
     {
         lock (_gate)
         {
             try
             {
-                WarpSettingsJsonContext.Default.WarpSettings.WriteFile(
-                    _path,
-                    new WarpSettings { StarterWarps = chosen }
-                );
+                var settings =
+                    WarpSettingsJsonContext.Default.WarpSettings.ReadFileOrDefault(_path)
+                    ?? new WarpSettings();
+
+                WarpSettingsJsonContext.Default.WarpSettings.WriteFile(_path, change(settings));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         }
@@ -45,6 +61,8 @@ public sealed class WarpSettingsStore(CratesidePaths paths)
 public sealed record WarpSettings
 {
     public StarterWarps? StarterWarps { get; init; }
+
+    public bool? FlagClipOffBarLine { get; init; }
 }
 
 [JsonSourceGenerationOptions(

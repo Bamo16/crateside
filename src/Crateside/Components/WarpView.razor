@@ -20,6 +20,7 @@
 @inject BarJudging Judging
 @inject QuotaGuard Guard
 @inject IOptions<JudgeOptions> Judge
+@inject IOptions<WarpOptions> WarpOptions
 @inject IJSRuntime Js
 
 @if (_group is { } group && (group.Stems.Count > 0 || (Row.HasUpload && Judge.Value.IsConfigured)))
@@ -452,12 +453,12 @@
                     </div>
 
                     <div class="facts">
-                        @foreach (var (label, value, note, tone) in Facts(selected, sample, wording, group))
+                        @foreach (var (label, value, note, tone) in Facts(selected, sample, wording, group, WarpOptions.Value.FlagClipOffBarLine))
                         {
                             <div class="fact">
                                 <span class="fact-label">@label</span>
                                 <span class="mono fact-value @tone">@value</span>
-                                <span class="fact-note">@note</span>
+                                <span class="fact-note @(tone is "offline" ? "offline" : null)">@note</span>
                             </div>
                         }
                     </div>
@@ -1402,7 +1403,8 @@
         StemWarp stem,
         TrackSample? sample,
         WarpWording wording,
-        WarpGroup group
+        WarpGroup group,
+        bool flagOffBarLine
     )
     {
         if (stem.Sidecar is not { } sidecar)
@@ -1425,11 +1427,15 @@
         yield return ("Transients", $"{sidecar.Audio.Transients.Count}", WarpWording.TransientsNote(stem), null);
 
         var (clipStart, clipEnd) = stem.Clip;
+        var offLine = flagOffBarLine && stem.IsWarped && group.BeatAt(clipStart) is { } startBeat && !group.Bars.IsBarLine(startBeat);
+
         yield return (
             "Clip",
             $"{WarpWording.Time(clipStart)}–{WarpWording.Time(clipEnd)}",
-            stem.IsWarped ? StartsAt(group, clipStart) : string.Empty,
-            null
+            offLine ? $"clip start at {group.Bars.Position(group.BeatAt(clipStart)!.Value)}, not on a bar line"
+            : stem.IsWarped ? StartsAt(group, clipStart)
+            : string.Empty,
+            offLine ? "offline" : null
         );
 
         yield return stem.Loop is { } loop && loop is var (loopStart, loopEnd, on)

@@ -11,7 +11,7 @@ namespace Crateside.Core.Ableton;
 public sealed class WarpTempoReader
 {
     // Bump when WarpTempo.Of changes what it computes, or a kept tempo outlives the rule that made it.
-    private const int Version = 6;
+    private const int Version = 7;
 
     private readonly string? _path;
     private readonly WrittenWarps? _written;
