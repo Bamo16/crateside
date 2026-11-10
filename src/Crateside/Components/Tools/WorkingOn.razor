@@ -10,6 +10,10 @@
         <div class="card" role="button" tabindex="0" @onclick="StartSearch" @onkeydown="OnCardKey">
             <div class="card-head">
                 <span class="song">@track.Name</span>
+                @if (track.IsStaged)
+                {
+                    <span class="staged" title="In Staging, not in the library yet">staged</span>
+                }
                 <span class="change">Change ▾</span>
             </div>
             <span class="facts">
@@ -47,7 +51,7 @@
     else
     {
         <div class="search-wrap">
-            <input type="text" class="search" placeholder="⌕ Search warped tracks" @ref="_box"
+            <input type="text" class="search" placeholder="⌕ Search warped and staged tracks" @ref="_box"
                    @oninput="OnSearch" @onkeydown="Navigate" @onblur="Cancel" />
 
             @if (_matches.Count > 0)
@@ -59,6 +63,10 @@
 
                         <li class="@(i == _highlight ? "highlight" : null)" @onmousedown="() => Pick(song)">
                             <span class="song">@song.Name</span>
+                            @if (song.IsStaged)
+                            {
+                                <span class="staged" title="In Staging, not in the library yet">staged</span>
+                            }
                             @if (song.Bpm is { } tempo)
                             {
                                 <TempoFigure Tempo="tempo" />
@@ -110,7 +118,7 @@
             </span>
         </label>
         <span class="hint">
-            @(Track is null ? "Or pick a warped track above."
+            @(Track is null ? "Or pick a warped or staged track above."
               : Shown is { IsApproximate: true } ? "The tempo drifts, so every figure here is approximate. Typing in the field drops the track."
               : "The verdict's center, mode included. Editing any of these drops the track and keeps what you picked.")
         </span>
@@ -140,7 +148,7 @@
     [Parameter]
     public LibrarySong? Track { get; set; }
 
-    /// <summary>Warped songs to pick from.</summary>
+    /// <summary>Warped songs to pick from, and staged ones.</summary>
     [Parameter, EditorRequired]
     public required IReadOnlyList<LibrarySong> Songs { get; set; }
 

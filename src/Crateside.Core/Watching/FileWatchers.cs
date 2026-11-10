@@ -13,9 +13,9 @@ public sealed class FileWatchers : IDisposable
 
     public FileWatchers(CratesidePaths paths, FileChanges changes)
     {
-        Watch(paths.StagingFolder, includeSubdirectories: false, changes);
-        Watch(paths.LibraryFolder, includeSubdirectories: true, changes);
-        Watch(paths.KeptWarpGuides, includeSubdirectories: false, changes);
+        Watch(paths.StagingFolder, includeSubdirectories: false, changes, inLibrary: false);
+        Watch(paths.LibraryFolder, includeSubdirectories: true, changes, inLibrary: true);
+        Watch(paths.KeptWarpGuides, includeSubdirectories: false, changes, inLibrary: false);
     }
 
     public void Dispose()
@@ -24,7 +24,7 @@ public sealed class FileWatchers : IDisposable
             watcher.Dispose();
     }
 
-    private void Watch(string root, bool includeSubdirectories, FileChanges changes)
+    private void Watch(string root, bool includeSubdirectories, FileChanges changes, bool inLibrary)
     {
         if (!Directory.Exists(root))
             return;
@@ -45,7 +45,7 @@ public sealed class FileWatchers : IDisposable
             void Changed(object? sender, FileSystemEventArgs e)
             {
                 if (Matters(e.FullPath))
-                    changes.Notify();
+                    changes.Notify(inLibrary);
             }
 
             watcher.Created += Changed;
@@ -54,10 +54,10 @@ public sealed class FileWatchers : IDisposable
             watcher.Renamed += (_, e) =>
             {
                 if (Matters(e.FullPath) || Matters(e.OldFullPath))
-                    changes.Notify();
+                    changes.Notify(inLibrary);
             };
             // An overflow says only that events were lost; the scan covers what was missed.
-            watcher.Error += (_, _) => changes.Notify();
+            watcher.Error += (_, _) => changes.Notify(inLibrary);
             watcher.EnableRaisingEvents = true;
 
             _watchers.Add(watcher);

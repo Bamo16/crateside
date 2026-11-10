@@ -131,8 +131,12 @@
     [SupplyParameterFromQuery(Name = "section")]
     public int? SectionFromQuery { get; set; }
 
+    /// <summary>The library's warped songs, then the staged ones, which have whatever tempo crateside read (#155).</summary>
     private IReadOnlyList<LibrarySong> Warped =>
-        [.. Library.Current.Songs.Where(song => song.Tempo is not null)];
+    [
+        .. Library.Current.Songs.Where(song => song.Tempo is not null),
+        .. StagedSongs.Of(Tracks.Current?.Rows ?? [], Library.Current.Songs),
+    ];
 
     private IReadOnlyList<Section> Sections => _track?.Run?.Sections ?? [];
 

@@ -41,6 +41,17 @@
     font-weight: 500;
 }
 
+.staged {
+    flex: none;
+    padding: 0 6px;
+    border: 1px dashed var(--text-50);
+    border-radius: 4px;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-50);
+}
+
 .change {
     flex: none;
     font-size: 12px;
