@@ -12,7 +12,7 @@ namespace Crateside.Tests.Ledger;
 public sealed class FamiliarityMigrationTests : IDisposable
 {
     private const string Before = "20261109223108_GenresFromAbleton";
-    private const string Migration = "20261109225826_FamiliarityFromListeners";
+    private const string Migration = "20261110212347_LiveAnswers";
 
     private readonly string _folder = Path.Combine(
         Path.GetTempPath(),

@@ -25,6 +25,8 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
 
     public DbSet<FamiliarityRow> Familiarities => Set<FamiliarityRow>();
 
+    public DbSet<VocalAnswerRow> VocalAnswers => Set<VocalAnswerRow>();
+
     public DbSet<TrackInstructionRow> TrackInstructions => Set<TrackInstructionRow>();
 
     public DbSet<IntakeRow> Intake => Set<IntakeRow>();
@@ -159,6 +161,12 @@ internal sealed class LedgerContext(DbContextOptions<LedgerContext> options) : D
             familiarity.ToTable("Familiarities");
             familiarity.HasKey(row => row.Song);
             familiarity.Property(row => row.Song).UseCollation("NOCASE");
+        });
+
+        model.Entity<VocalAnswerRow>(answer =>
+        {
+            answer.ToTable("VocalAnswers");
+            answer.HasKey(row => row.Stem);
         });
 
         // Video IDs are case-sensitive, so these keys keep the default binary collation.

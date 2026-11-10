@@ -125,6 +125,9 @@ internal sealed class GenreRow
     /// <summary>Every genre crateside has asked to be written onto the song's files, as a JSON list.</summary>
     public string Tagged { get; set; } = "[]";
 
+    public string Rejected { get; set; } = "[]";
+    public string RemovalsSeen { get; set; } = "[]";
+
     public static GenreRow From(GenreRecord record) =>
         new()
         {
@@ -136,6 +139,8 @@ internal sealed class GenreRow
             LearnedFrom = record.LearnedFrom,
             Mine = Json(record.Mine),
             Tagged = Json(record.Tagged),
+            Rejected = Json(record.Rejected),
+            RemovalsSeen = Json(record.RemovalsSeen),
         };
 
     public GenreRecord ToRecord() =>
@@ -149,6 +154,8 @@ internal sealed class GenreRow
             LearnedFrom = LearnedFrom,
             Mine = List(Mine),
             Tagged = List(Tagged),
+            Rejected = List(Rejected),
+            RemovalsSeen = List(RemovalsSeen),
         };
 
     private static string Json(IReadOnlyList<string> values) =>
@@ -168,6 +175,12 @@ internal sealed class FamiliarityRow
     public int LookupVersion { get; set; }
     public string? Settled { get; set; }
 
+    /// <summary>Every value crateside has asked to be written onto the song's files, as a JSON list.</summary>
+    public string Tagged { get; set; } = "[]";
+
+    public string Rejected { get; set; } = "[]";
+    public string RemovalsSeen { get; set; } = "[]";
+
     public static FamiliarityRow From(FamiliarityRecord record) =>
         new()
         {
@@ -178,6 +191,9 @@ internal sealed class FamiliarityRow
             LookedUpAt = record.LookedUpAt,
             LookupVersion = record.LookupVersion,
             Settled = record.Settled,
+            Tagged = Json(record.Tagged),
+            Rejected = Json(record.Rejected),
+            RemovalsSeen = Json(record.RemovalsSeen),
         };
 
     public FamiliarityRecord ToRecord() =>
@@ -190,7 +206,22 @@ internal sealed class FamiliarityRow
             LookedUpAt = LookedUpAt,
             LookupVersion = LookupVersion,
             Settled = Settled,
+            Tagged = List(Tagged),
+            Rejected = List(Rejected),
+            RemovalsSeen = List(RemovalsSeen),
         };
+
+    private static string Json(IReadOnlyList<string> values) =>
+        JsonSerializer.Serialize([.. values], DecisionJsonContext.Default.ListString);
+
+    private static List<string> List(string json) =>
+        JsonSerializer.Deserialize(json, DecisionJsonContext.Default.ListString) ?? [];
+}
+
+internal sealed class VocalAnswerRow
+{
+    public string Stem { get; set; } = string.Empty;
+    public string Answer { get; set; } = string.Empty;
 }
 
 internal sealed class TrackInstructionRow

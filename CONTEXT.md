@@ -359,7 +359,10 @@ by hand; everything below describes candidates against it.
   every **sample** of a song carries the same ones. The person's choice among the 29 replaces
   crateside's; one of their own is added beside it. Learned from the person's answers for the song's
   primary artist where the styles map onto nothing
-  ([ADR 0088](docs/adr/0088-genre-is-abletons-own-genres-filled-from-the-sources.md)).
+  ([ADR 0088](docs/adr/0088-genre-is-abletons-own-genres-filled-from-the-sources.md)). A genre added
+  in Live to a **sample** crateside did not write is the person's answer for the song; one crateside
+  wrote and the person took off is not assigned again
+  ([ADR 0087](docs/adr/0087-crateside-tags-every-song-and-the-person-corrects-in-crateside-or-in-live.md)).
 - **Style** — a source's label for a song (`boom bap`, `Dance`), every one kept as the sources gave
   it (MusicBrainz recording, MusicBrainz artist, Deezer, iTunes), shown in crateside and never
   written as a tag. The table that maps them onto genres lists the ones it does not map on the

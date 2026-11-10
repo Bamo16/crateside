@@ -24,7 +24,8 @@ public static class FileTagsReading
         public bool IsKeyTagged => tags.Key is not null;
 
         /// <summary>The <c>Type|</c> keyword: Instrumental, Vocal, Loop.</summary>
-        public string? Type => Values(tags.Keywords, TypeCategory).FirstOrDefault();
+        public string? Type =>
+            Values(tags.Keywords, TypeCategory).FirstOrDefault(value => !value.Contains('|'));
 
         /// <summary>The <c>Genres|</c> keywords, in the order the entry holds them (ADR 0088).</summary>
         public IReadOnlyList<string> Genres => [.. Values(tags.Keywords, GenreVocabulary.Group)];

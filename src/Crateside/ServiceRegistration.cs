@@ -25,6 +25,7 @@ using Crateside.Core.Playlist;
 using Crateside.Core.Quota;
 using Crateside.Core.Staging;
 using Crateside.Core.Tracks;
+using Crateside.Core.Vocals;
 using Crateside.Core.Warps;
 using Crateside.Core.Watching;
 using Crateside.Core.WorkLists;
@@ -211,6 +212,8 @@ public static class ServiceRegistration
     private static IServiceCollection AddFamiliarity(this IServiceCollection services)
     {
         services.AddSingleton<FamiliarityStore>();
+        services.AddSingleton<VocalAnswerStore>();
+        services.AddSingleton<LiveAnswers>();
         services.AddSingleton<FamiliarityLookup>();
         services.AddHostedService<FamiliarityWorker>();
 
