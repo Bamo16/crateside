@@ -6,6 +6,7 @@ using Crateside.Core.Ledger;
 using Crateside.Core.Pairing;
 using Crateside.Core.Samples;
 using Crateside.Core.Tracks;
+using Crateside.Core.WorkLists;
 using Microsoft.Extensions.Options;
 
 namespace Crateside.Core.Library;
@@ -16,6 +17,7 @@ namespace Crateside.Core.Library;
 /// </summary>
 public sealed class LibraryKeyReader(
     LedgerStore store,
+    TrackInstructionStore instructions,
     IOptions<CratesidePaths> paths,
     FileIndexReader index,
     FolderInfoReader folderInfo,
@@ -35,6 +37,10 @@ public sealed class LibraryKeyReader(
         var tags = AbletonReads.TagsOrEmpty(index.Read, root);
         var backed = AbletonReads.TagsOrEmpty(folderInfo.Read, root);
         var ledger = store.Read();
+        var names = instructions
+            .Read()
+            .Where(instruction => instruction.Name is { Length: > 0 })
+            .ToDictionary(instruction => instruction.TrackKey, instruction => instruction.Name!);
         var tracks = new Dictionary<string, List<(string File, FileTags? Tags)>>(
             StringComparer.OrdinalIgnoreCase
         );
@@ -68,7 +74,7 @@ public sealed class LibraryKeyReader(
         }
 
         var songs = tracks
-            .Select(pair => Song(pair.Key, pair.Value, trackKeys, ledger))
+            .Select(pair => Song(pair.Key, pair.Value, trackKeys, ledger, names))
             .OrderBy(song => song.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -101,13 +107,22 @@ public sealed class LibraryKeyReader(
         string track,
         List<(string File, FileTags? Tags)> samples,
         Dictionary<string, string?> trackKeys,
-        KeyLedger ledger
+        KeyLedger ledger,
+        Dictionary<string, string> names
     )
     {
         var run = ledger.TryGetLatestBySong(track, out var found) ? found : null;
-        var name = run is { Artist.Length: > 0, Title.Length: > 0 }
-            ? run.DisplayName
-            : StemFileName.WithoutPreset(samples[0].File);
+        var name =
+            samples
+                .Select(sample => trackKeys[sample.File])
+                .OfType<string>()
+                .Select(trackKey => names.GetValueOrDefault(trackKey))
+                .FirstOrDefault(renamed => renamed is not null)
+            ?? (
+                run is { Artist.Length: > 0, Title.Length: > 0 }
+                    ? run.DisplayName
+                    : StemFileName.WithoutPreset(samples[0].File)
+            );
 
         var instrumentals = samples.Where(s => BeatReader.IsInstrumental(s.File, s.Tags)).ToList();
         var tempo = samples

@@ -2,6 +2,7 @@ using AbleKit.Tags;
 using Crateside.Core;
 using Crateside.Core.Ableton;
 using Crateside.Core.Library;
+using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Options;
 
@@ -79,8 +80,10 @@ public sealed class LibrarySummaryTests : IDisposable
             new CratesidePaths { LibraryFolder = Path.Combine(_root, "gone") }
         );
 
+        var ledger = TestLedger.Store();
         var distribution = new LibraryKeyReader(
-            TestLedger.Store(),
+            ledger,
+            new TrackInstructionStore(ledger),
             paths,
             new FileIndexReader(paths.Value.AbletonIndex),
             new FolderInfoReader(),
@@ -95,9 +98,12 @@ public sealed class LibrarySummaryTests : IDisposable
     {
         var paths = Options.Create(new CratesidePaths { LibraryFolder = _root });
 
+        var ledger = TestLedger.Store();
+
         return new LibrarySummary(
             new LibraryKeyReader(
-                TestLedger.Store(),
+                ledger,
+                new TrackInstructionStore(ledger),
                 paths,
                 new FileIndexReader(paths.Value.AbletonIndex),
                 new FolderInfoReader(),

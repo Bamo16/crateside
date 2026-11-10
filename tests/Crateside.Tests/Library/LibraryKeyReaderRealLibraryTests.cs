@@ -4,6 +4,7 @@ using Crateside.Core.Ableton;
 using Crateside.Core.Ledger;
 using Crateside.Core.Library;
 using Crateside.Core.Samples;
+using Crateside.Core.WorkLists;
 using Crateside.Tests.Ledger;
 using Microsoft.Extensions.Options;
 
@@ -67,6 +68,41 @@ public sealed class LibraryKeyReaderRealLibraryTests
         );
     }
 
+    [Fact]
+    public void A_song_the_user_renamed_is_named_as_the_Tracks_page_names_it()
+    {
+        SkipUnlessPresent();
+        Assert.SkipUnless(TestLedger.HasReal, "No ledger on this machine.");
+
+        using var store = TestLedger.StoreReal();
+        var ledger = store.Read();
+        var paths = Options.Create(Paths);
+        var songs = new LibraryKeyReader(
+            store,
+            new TrackInstructionStore(store),
+            paths,
+            new FileIndexReader(paths.Value.AbletonIndex),
+            new FolderInfoReader(),
+            new WarpTempoReader()
+        )
+            .Read()
+            .Songs.ToDictionary(song => song.Song, StringComparer.OrdinalIgnoreCase);
+
+        var renamed = new TrackInstructionStore(store)
+            .Read()
+            .Where(instruction => instruction.Name is { Length: > 0 })
+            .Select(instruction =>
+                (
+                    instruction.Name,
+                    Song: ledger.SongFor(instruction.TrackKey) ?? instruction.TrackKey
+                )
+            )
+            .Where(pair => songs.ContainsKey(pair.Song))
+            .ToArray();
+
+        Assert.All(renamed, pair => Assert.Equal(pair.Name, songs[pair.Song].Name));
+    }
+
     private static string? Applied(FolderInfo tags, string file) =>
         tags.TryGet(file, out var applied) && applied.IsKeyTagged ? applied.Key : null;
 
@@ -82,9 +118,11 @@ public sealed class LibraryKeyReaderRealLibraryTests
     private static KeyDistribution Read()
     {
         var paths = Options.Create(Paths);
+        var ledger = TestLedger.Store();
 
         return new LibraryKeyReader(
-            TestLedger.Store(),
+            ledger,
+            new TrackInstructionStore(ledger),
             paths,
             new FileIndexReader(paths.Value.AbletonIndex),
             new FolderInfoReader(),
