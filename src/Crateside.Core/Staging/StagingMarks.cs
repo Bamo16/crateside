@@ -19,7 +19,8 @@ public sealed class StagingMarks(
     LedgerStore store,
     TrackMarkStore trackMarks,
     FolderInfoReader reader,
-    FolderInfoWriter writer
+    FolderInfoWriter writer,
+    MeterStore? meters = null
 )
 {
     /// <summary>Gives every staged stem's saved sidecar its clip color, and returns the ones rewritten.</summary>
@@ -50,7 +51,7 @@ public sealed class StagingMarks(
                 .Select(path =>
                 {
                     var has = existing.TryGet(path, out var tags) ? tags.Collections : [];
-                    var wanted = Wanted(warps.Read(path), ledger, marked, has);
+                    var wanted = Wanted(warps.Read(path), ledger, marked, has, meters);
 
                     return has.SequenceEqual(wanted)
                         ? null
@@ -72,7 +73,8 @@ public sealed class StagingMarks(
         StemWarp stem,
         KeyLedger ledger,
         IReadOnlyDictionary<string, TrackMarkRecord> marked,
-        IReadOnlyList<int> has
+        IReadOnlyList<int> has,
+        MeterStore? meters
     )
     {
         LedgerRun? verdict = null;
@@ -81,7 +83,10 @@ public sealed class StagingMarks(
         if (StemTagReader.Read(stem.Path)?.SourceTrackKey is { } trackKey)
         {
             ledger.TryGetLatestByTrackKey(trackKey, out verdict);
-            mine = marked.GetValueOrDefault(verdict?.Song ?? trackKey)?.Marks ?? [];
+            var song = verdict?.Song ?? trackKey;
+
+            mine = marked.GetValueOrDefault(song)?.Marks ?? [];
+            mine = meters?.MarksFor(song, mine) ?? mine;
         }
 
         var marks = BrowserCollections.TrackMarksFor(verdict, mine);

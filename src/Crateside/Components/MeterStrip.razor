@@ -1,0 +1,51 @@
+@using System.Diagnostics
+@using Crateside.Core.Library
+@using Crateside.Core.Marks
+@using Crateside.Core.Tracks
+@inject MeterStore Meters
+
+@if (Meters.Of(Row.Song) is { } record && (record.Contradicts || record.Applied.Count > 0))
+{
+    <div class="tag-line">
+        <span class="tag-label">Meter</span>
+        @if (record.Contradicts)
+        {
+            <span class="tag-value">The stems disagree</span>
+            <span class="tag-note">Set one Meter tag the same on every stem in Live; nothing is copied until they agree.</span>
+        }
+        else
+        {
+            <span class="tag-value">@string.Join(", ", record.Applied)</span>
+            <span class="tag-note">Set in Live</span>
+        }
+    </div>
+}
+else
+{
+    <TrackMarkStrip Row="Row" Mark="TrackMark.OddBars" />
+}
+
+@if (StarterFates.Of(Row.Beats, Row.Tempo) is { } fate)
+{
+    <div class="tag-line">
+        <span class="tag-label">Starter</span>
+        <span class="tag-value">@Outcome(fate)</span>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required TrackRow Row { get; set; }
+
+    private static string Outcome(StarterFate fate) =>
+        fate switch
+        {
+            StarterFate.Kept => "Kept as written",
+            StarterFate.BeatMoved => "Marker moved",
+            StarterFate.OtherOctave => "Tempo halved or doubled",
+            StarterFate.BarCorrected => "Bar corrected",
+            StarterFate.LeftAtBeatZero => "Left at beat 0, bars renumbered",
+            StarterFate.NoStarter => "No starter written",
+            _ => throw new UnreachableException(),
+        };
+}

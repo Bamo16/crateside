@@ -23,6 +23,7 @@ public sealed class BackingWorker(
     FamiliarityStore familiarity,
     LiveAnswers answers,
     TrackMarkStore trackMarks,
+    MeterStore meters,
     TagStoreBackups backups,
     FileIndexReader index,
     IOptions<CratesidePaths> paths,
@@ -115,6 +116,7 @@ public sealed class BackingWorker(
 
         // Before anything is written, so an answer given in Live outranks what this pass would write.
         RecordLiveAnswers(ledger, libraryIndex);
+        SettleMeters(ledger, libraryIndex);
 
         var settled = genres.Read();
         var reach = familiarity.Read();
@@ -139,6 +141,7 @@ public sealed class BackingWorker(
 
             return
             [
+                .. meters.Retired(song),
                 .. settled.GetValueOrDefault(song)?.Retired.Select(GenreVocabulary.Keyword) ?? [],
                 .. reach.GetValueOrDefault(song)?.Retired.Select(FamiliarityVocabulary.Keyword)
                     ?? [],
@@ -151,6 +154,7 @@ public sealed class BackingWorker(
 
             return
             [
+                .. meters.Wanted(song),
                 .. settled.GetValueOrDefault(song)?.Genres.Select(GenreVocabulary.Keyword) ?? [],
                 .. reach.GetValueOrDefault(song)?.Written is { } known
                     ? [FamiliarityVocabulary.Keyword(known)]
@@ -166,7 +170,7 @@ public sealed class BackingWorker(
                 ledger,
                 OwnedOf,
                 index: libraryIndex,
-                marksOf: trackMarks.Of,
+                marksOf: MarksOf,
                 beforeWrite: backups.Save,
                 retiredOf: RetiredOf
             ),
@@ -189,6 +193,29 @@ public sealed class BackingWorker(
         );
 
         return library < staging ? library : staging;
+    }
+
+    private IReadOnlyCollection<TrackMark> MarksOf(string song) =>
+        meters.MarksFor(song, trackMarks.Of(song));
+
+    /// <summary>Carries a Meter tag set or taken off on one stem to the song's others (#154).</summary>
+    private void SettleMeters(KeyLedger ledger, FolderInfo? libraryIndex)
+    {
+        var changed = runner
+            .MeterReadings(_paths.LibraryFolder, ledger, libraryIndex)
+            .Concat(runner.MeterReadings(_paths.StagingFolder, ledger, index: null))
+            .GroupBy(stem => stem.Song, StringComparer.OrdinalIgnoreCase)
+            .Where(song => meters.Settle(song.Key, [.. song]))
+            .ToList();
+
+        foreach (var song in changed)
+            logger.LogInformation(
+                "Meter of {Song}: {Meter}",
+                song.Key,
+                meters.Of(song.Key) is { Contradicts: true }
+                    ? "the stems contradict"
+                    : string.Join(", ", meters.Of(song.Key)?.Applied ?? [])
+            );
     }
 
     private void RecordLiveAnswers(KeyLedger ledger, FolderInfo? libraryIndex)
@@ -225,7 +252,7 @@ public sealed class BackingWorker(
                 _paths.LibraryFolder,
                 ledger,
                 index: libraryIndex,
-                marksOf: trackMarks.Of,
+                marksOf: MarksOf,
                 beforeWrite: backups.Save,
                 song: song
             );
