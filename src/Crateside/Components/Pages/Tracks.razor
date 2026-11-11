@@ -334,7 +334,7 @@
                     <span class="chevron mono">@(open ? "⌄" : "›")</span>
 
                     <span class="song-cell">
-                        <span class="song"><a class="title" href="@row.DetailsHref" @onclick:stopPropagation="true">@row.Title</a></span>
+                        <span class="song"><Cover TrackKey="@row.TrackKey" /><a class="title" href="@row.DetailsHref" @onclick:stopPropagation="true">@row.Title</a></span>
                         <span class="tag-note">@TagNote(row)</span>
                     </span>
 
@@ -353,7 +353,7 @@
                     <span class="chevron mono">@(open ? "⌄" : "›")</span>
 
                     <span class="song-cell">
-                        <span class="song"><a class="title" href="@row.DetailsHref" @onclick:stopPropagation="true">@row.Title</a></span>
+                        <span class="song"><Cover TrackKey="@row.TrackKey" /><a class="title" href="@row.DetailsHref" @onclick:stopPropagation="true">@row.Title</a></span>
                     </span>
 
                     <span class="mono key @(row.Key is null ? "none" : null)">@(KeyText.Spell(row.Key) ?? "—")</span>
@@ -378,6 +378,7 @@
                 <span class="chevron mono">@(open ? "⌄" : "›")</span>
 
                 <span class="song">
+                    <Cover TrackKey="@row.TrackKey" />
                     <a class="title" href="@row.DetailsHref" @onclick:stopPropagation="true">@row.Title</a>
                     @if (row.AuditNote is { } note)
                     {

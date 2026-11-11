@@ -110,7 +110,7 @@
                     }
                     else
                     {
-                        <a class="track" href="song/@Uri.EscapeDataString(action.TrackKey)" title="@name">@name</a>
+                        <a class="track" href="song/@Uri.EscapeDataString(action.TrackKey)" title="@name"><Cover TrackKey="@action.TrackKey" Side="28" /><span class="name">@name</span></a>
                     }
                     <button class="result" aria-expanded="@open" title="@(lead + action.Text)"
                             @onclick="() => Toggle(action.Sequence)">

@@ -29,6 +29,7 @@
         {
             <div class="subject">
                 <StateChip Row="row" />
+                <Cover TrackKey="@row.TrackKey" Side="28" />
                 <a href="@row.DetailsHref">@row.Title</a>
             </div>
             @if (row.RunningSince is { } since)
@@ -61,6 +62,7 @@
         {
             <div class="subject">
                 <StateChip Row="judged" />
+                <Cover TrackKey="@judged.TrackKey" Side="28" />
                 <a href="@judged.DetailsHref">@judged.Title</a>
             </div>
             <span class="status">
@@ -86,6 +88,7 @@
                 <StateChip Label="judging" Style="TrackChipStyle.TealFilled" />
                 @if (Rows.FirstOrDefault(row => row.TrackKey == Judging.JudgingTrackKey) is { } session)
                 {
+                    <Cover TrackKey="@session.TrackKey" Side="28" />
                     <a href="@session.DetailsHref">@session.Title</a>
                 }
                 else

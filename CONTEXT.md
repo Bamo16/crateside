@@ -398,6 +398,11 @@ by hand; everything below describes candidates against it.
   right now?": what is in **Staging**, plus the tracks still in flight or
   stopped. Entirely derived — it holds no state of its own and nothing on it is
   marked done by hand.
+- **Cover** — the picture StemForge embeds in a track's audio, shown beside the track on Tracks, the
+  song page and the dashboard. It is taken from the track's own file (a sample in Staging or the
+  library, else the working set's source) the first time it is asked for, kept under
+  `%LOCALAPPDATA%\crateside\art\` until that file changes, and served at
+  `/art/{trackKey}?size=small|full`. A track with no picture gets a plain grey tile.
 - **Partners** — the interactive answer to "what else can I use with this?".
   Returns **keys** to filter for, never files, because Ableton Live Lite admits no
   extensions and the filtering therefore happens in Ableton's own browser.

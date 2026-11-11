@@ -33,8 +33,13 @@
     }
     else
     {
-        <h1>@Name</h1>
-        <p class="meta">@Meta</p>
+        <header class="heading">
+            <Cover TrackKey="@TrackKey" Side="200" />
+            <div class="heading-text">
+                <h1>@Name</h1>
+                <p class="meta">@Meta</p>
+            </div>
+        </header>
 
         @if (_row is not null)
         {
