@@ -46,8 +46,8 @@ public sealed class RejudgeApiTests : IAsyncLifetime
             TrackActivity.Build([], [], _crateside.Actions.For(SyntheticCrateside.Judged))
         );
 
-        Assert.Equal("agent: coordination", shown.Source);
-        Assert.Equal("rejudged: judged on the wrong stretches", shown.Message);
+        Assert.Equal("agent: coordination", shown.Label);
+        Assert.Equal("rejudged: judged on the wrong stretches", shown.Text);
     }
 
     [Fact]

@@ -1,5 +1,4 @@
 @using Crateside.Core.Orchestration.Jobs
-@using Humanizer
 
 @{
     var view = Feed.PageOf(Query);
@@ -13,7 +12,7 @@
                 @onclick="() => Change(Query with { Stages = new HashSet<JobStage>() })">
             All <span class="mono count">@Feed.Count(null).ToString("N0")</span>
         </button>
-        @foreach (var (stage, label) in Stages)
+        @foreach (var (stage, label) in ActivityFeed.StageLabels)
         {
             var on = Query.Stages.Contains(stage);
             <button class="pill @(on ? "on plain" : "off")" aria-pressed="@on" @onclick="() => ToggleStage(stage)">
@@ -45,97 +44,7 @@
         }
         else
         {
-            <div class="head row-grid" aria-hidden="true">
-                <span></span>
-                <span>Started</span>
-                <span>Stage</span>
-                <span>Track</span>
-                <span>Result · click for all of it</span>
-                <span class="took">Took</span>
-            </div>
-
-            string? bucket = null;
-            ActivityAction? above = null;
-
-            @foreach (var action in view.Actions)
-            {
-                var group = ActivityFeed.BucketOf(action.StartedAt, Now);
-                var starts = group.Label != bucket;
-                var name = NameOf(action.TrackKey);
-                var open = _open.Contains(action.Sequence);
-                var took = action.Took(Now);
-                var recent = action.State is ActivityState.Done && Now - action.FinishedAt < ActivityFeed.Recent;
-                var lead = action.State switch
-                {
-                    ActivityState.Failed => "failed: ",
-                    ActivityState.Canceled => "canceled: ",
-                    _ => string.Empty,
-                };
-
-                if (starts)
-                {
-                    bucket = group.Label;
-                    <div class="bucket">
-                        <span class="caps">@group.Label</span>
-                        @if (group.Range.Length > 0)
-                        {
-                            <span class="mono range">@group.Range</span>
-                        }
-                    </div>
-                }
-
-                <div class="row row-grid @action.State.ToString().ToLowerInvariant()">
-                    <span class="glyph" aria-label="@action.State.ToString().ToLowerInvariant()">
-                        @switch (action.State)
-                        {
-                            case ActivityState.Running:
-                                <span class="dot"></span>
-                                break;
-                            case ActivityState.Done:
-                                <span class="mono check @(recent ? "recent" : null)">✓</span>
-                                break;
-                            case ActivityState.Failed:
-                                <span class="cross">✕</span>
-                                break;
-                            default:
-                                <span class="mono dash">–</span>
-                                break;
-                        }
-                    </span>
-                    <span class="mono at" title="@Ago(action)">@action.StartedAt.ToLocalTime().ToString("t")</span>
-                    <span class="stage">@StageName(action.Stage)</span>
-                    @if (!starts && above is { } previous && previous.TrackKey == action.TrackKey)
-                    {
-                        <span class="track same" aria-label="@name"><span class="rule"></span></span>
-                    }
-                    else
-                    {
-                        <a class="track" href="song/@Uri.EscapeDataString(action.TrackKey)" title="@name"><Cover TrackKey="@action.TrackKey" Side="28" /><span class="name">@name</span></a>
-                    }
-                    <button class="result" aria-expanded="@open" title="@(lead + action.Text)"
-                            @onclick="() => Toggle(action.Sequence)">
-                        <span class="text">@(lead + action.Text)@(action.IsRunning ? " …" : null)</span>
-                        <span class="mono caret">@(open ? "▾" : "▸")</span>
-                    </button>
-                    <span class="mono took">@Took(took, action.IsRunning)</span>
-                </div>
-
-                if (open)
-                {
-                    <div class="detail row-grid">
-                        <div class="body">
-                            <p class="whole">@(lead + action.Text)</p>
-                            <p class="mono meta">@Meta(action, took)</p>
-                            <p class="links">
-                                <a href="song/@Uri.EscapeDataString(action.TrackKey)">Track details →</a>
-                                <a class="quiet" href="song/@Uri.EscapeDataString(action.TrackKey)#activity">Its activity log →</a>
-                            </p>
-                        </div>
-                    </div>
-                }
-
-                above = action;
-            }
+            <ActivityRows Actions="view.Actions" Now="Now" NameOf="NameOf" />
         }
 
         <div class="more">
@@ -169,18 +78,6 @@
 </div>
 
 @code {
-    private static readonly (JobStage Stage, string Label)[] Stages =
-    [
-        (JobStage.Download, "Download"),
-        (JobStage.Evidence, "Detection"),
-        (JobStage.Verdict, "Judging"),
-        (JobStage.Separation, "Separation"),
-        (JobStage.Handoff, "Handoff"),
-        (JobStage.Tagging, "Tagging"),
-    ];
-
-    private readonly HashSet<int> _open = [];
-
     [Parameter, EditorRequired]
     public required ActivityFeed Feed { get; set; }
 
@@ -196,51 +93,6 @@
     [Parameter]
     public EventCallback<ActivityQuery> OnQuery { get; set; }
 
-    public static string StageName(JobStage stage) => Stages.First(entry => entry.Stage == stage).Label;
-
-    /// <summary>A duration as the table shows it: <c>3 min 21 s</c>, <c>14 s</c>, <c>&lt;1 s</c>.</summary>
-    public static string Duration(TimeSpan span) =>
-        span.TotalSeconds switch
-        {
-            < 1 => "<1 s",
-            < 60 => $"{(int)span.TotalSeconds} s",
-            _ when span.Seconds is 0 && span.Hours is 0 => $"{(int)span.TotalMinutes} min",
-            _ when span.TotalHours < 1 => $"{(int)span.TotalMinutes} min {span.Seconds} s",
-            _ => $"{(int)span.TotalHours} h {span.Minutes} min",
-        };
-
-    private static string Took(TimeSpan? took, bool running) =>
-        took is not { } span ? "—" : running ? $"{Duration(span)} so far" : Duration(span);
-
-    private string Ago(ActivityAction action) =>
-        Now - action.StartedAt is { TotalMinutes: < 1 }
-            ? "just now"
-            : $"{(Now - action.StartedAt).Humanize(minUnit: TimeUnit.Minute)} ago";
-
-    private string Meta(ActivityAction action, TimeSpan? took)
-    {
-        var parts = new List<string> { $"started {action.StartedAt.ToLocalTime():T}" };
-
-        if (action.FinishedAt is { } finished)
-        {
-            var verb = action.State switch
-            {
-                ActivityState.Failed => "failed",
-                ActivityState.Canceled => "canceled",
-                ActivityState.Held => "held",
-                _ => "finished",
-            };
-            parts.Add($"{verb} {finished.ToLocalTime():T}");
-        }
-
-        if (took is { } span)
-            parts.Add(action.IsRunning ? $"running {Duration(span)}" : Duration(span));
-
-        parts.Add(action.Id);
-
-        return string.Join(" · ", parts);
-    }
-
     private Task ToggleStage(JobStage stage)
     {
         HashSet<JobStage> stages = [.. Query.Stages];
@@ -249,12 +101,6 @@
             stages.Add(stage);
 
         return Change(Query with { Stages = stages });
-    }
-
-    private void Toggle(int sequence)
-    {
-        if (!_open.Remove(sequence))
-            _open.Add(sequence);
     }
 
     /// <summary>Leaving page 1 holds the list still at its newest start; coming back lets new rows in.</summary>

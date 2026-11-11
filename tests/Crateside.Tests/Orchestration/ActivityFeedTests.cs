@@ -78,14 +78,14 @@ public sealed class ActivityFeedTests
     }
 
     [Fact]
-    public void A_finish_with_no_recorded_start_has_no_duration_and_falls_back_to_the_status()
+    public void A_finish_with_no_recorded_start_has_no_duration_and_says_it_finished()
     {
         var feed = ActivityFeed.From([Update("a", JobStage.Tagging, JobStatus.Succeeded, -3)]);
 
         var action = Assert.Single(feed.Actions);
 
         Assert.Null(action.Took(Now));
-        Assert.Equal("succeeded", action.Text);
+        Assert.Equal("finished, no details recorded", action.Text);
     }
 
     [Fact]
