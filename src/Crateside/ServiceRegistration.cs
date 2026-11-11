@@ -388,6 +388,8 @@ public static class ServiceRegistration
         services.AddHostedService<StageWorker<TaggingDrainer>>();
 
         services.AddSingleton<TrackAdd>();
+        services.AddSingleton<PlaylistExpander>();
+        services.AddSingleton<PlaylistUrlAdd>();
         services.AddSingleton<TrackRemoval>();
         services.AddSingleton<SampleAdoption>();
         services.AddSingleton<SourceAdd>();

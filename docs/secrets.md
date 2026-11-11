@@ -2,7 +2,7 @@
 
 crateside holds up to three secrets, and they are worth very different amounts. All are optional:
 the YouTube pair is needed only to read a playlist and remove entries from it; without them,
-tracks are added by URL on the Tracks page.
+tracks are added by URL on the Tracks page, and a public or unlisted playlist URL adds every video in it.
 
 | secret | what it can do | where it lives |
 |---|---|---|

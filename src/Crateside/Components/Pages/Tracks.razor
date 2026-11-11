@@ -28,6 +28,7 @@
 @inject CachedPlaylist Playlist
 @inject JobStore Jobs
 @inject TrackAdd Adding
+@inject PlaylistUrlAdd PlaylistAdding
 @inject LinkIntake Links
 @inject TrackIntake Files
 @inject IOptions<CratesidePaths> Paths
@@ -185,7 +186,7 @@
     {
         <div class="add-track">
             <label>
-                <span>YouTube URL or video ID, or a link to a track elsewhere</span>
+                <span>YouTube URL, playlist URL or video ID, or a link to a track elsewhere</span>
                 <input class="mono" @ref="_trackBox" value="@_trackUrl"
                        @oninput="e => OnAddTrack(e.Value?.ToString())"
                        @onkeydown="OnAddTrackKey" />
@@ -195,6 +196,18 @@
                 @if (_linkProblem is { } linkProblem)
                 {
                     @linkProblem
+                }
+                else if (_isPlaylist)
+                {
+                    <text>
+                        A YouTube playlist. crateside lists it without an API key and adds every
+                        video it does not already have, as if you had pasted each. Judging spends
+                        Claude quota for each. Nothing is added to or removed from the playlist.
+                    </text>
+                }
+                else if (_playlistNote is { } playlistNote)
+                {
+                    @playlistNote
                 }
                 else if (_isLink)
                 {
@@ -245,9 +258,9 @@
                 }
                 else
                 {
-                    <button class="primary" disabled="@(_working || (!_isLink && _trackPlan?.IsPossible is not true))"
+                    <button class="primary" disabled="@(_working || (!_isLink && !_isPlaylist && _trackPlan?.IsPossible is not true))"
                             @onclick="() => ConfirmAddTrack()">
-                        @(_working ? (_isLink ? "Downloading…" : "Reading the upload…") : "Add")
+                        @(_working ? (_isPlaylist ? $"Adding… {_playlistDone} of {_playlistTotal}" : _isLink ? "Downloading…" : "Reading the upload…") : _isPlaylist ? "Add playlist" : "Add")
                     </button>
                 }
                 <button class="outline" @onclick="CancelAddTrack" disabled="@_working">Cancel</button>
@@ -553,6 +566,10 @@
     private AddTrackPlan? _trackPlan;
     private ProbedSource? _trackShortfall;
     private bool _isLink;
+    private bool _isPlaylist;
+    private int _playlistDone;
+    private int _playlistTotal;
+    private string? _playlistNote;
     private string? _linkProblem;
     private string? _dropNote;
 
@@ -576,6 +593,8 @@
         _trackPlan = null;
         _trackShortfall = null;
         _isLink = false;
+        _isPlaylist = false;
+        _playlistNote = null;
         _linkProblem = null;
     }
 
@@ -584,9 +603,16 @@
         _trackUrl = url ?? string.Empty;
         _trackShortfall = null;
         _linkProblem = null;
+        _playlistNote = null;
+        _isPlaylist = PlaylistExpander.IsPlaylistUrl(_trackUrl);
         _isLink =
-            !TrackKeys.TryParse(_trackUrl, out _) && YouTubeUrl.TryNormalize(_trackUrl, out _);
-        _trackPlan = _isLink ? null : Adding.PlanFor(_trackUrl, [.. Rows.Select(row => row.Facts)]);
+            !_isPlaylist
+            && !TrackKeys.TryParse(_trackUrl, out _)
+            && YouTubeUrl.TryNormalize(_trackUrl, out _);
+        _trackPlan =
+            _isLink || _isPlaylist
+                ? null
+                : Adding.PlanFor(_trackUrl, [.. Rows.Select(row => row.Facts)]);
     }
 
     /// <summary>Enter does what the button would, so on an upload found wanting it is the acceptance.</summary>
@@ -594,7 +620,7 @@
     {
         if (e.Key is "Escape")
             CancelAddTrack();
-        else if (e.Key is "Enter" && (_isLink || _trackPlan?.IsPossible is true))
+        else if (e.Key is "Enter" && (_isLink || _isPlaylist || _trackPlan?.IsPossible is true))
             await ConfirmAddTrack(anyway: _trackShortfall is not null);
     }
 
@@ -605,6 +631,13 @@
 
         try
         {
+            if (_isPlaylist)
+            {
+                await TakeInPlaylistAsync();
+
+                return;
+            }
+
             if (_isLink)
             {
                 await TakeInLinkAsync();
@@ -639,6 +672,42 @@
         {
             _working = false;
         }
+    }
+
+    private async Task TakeInPlaylistAsync()
+    {
+        _playlistDone = 0;
+        _playlistTotal = 0;
+
+        var outcome = await PlaylistAdding.AddAsync(
+            _trackUrl,
+            [.. Rows.Select(row => row.Facts)],
+            (done, total) =>
+            {
+                (_playlistDone, _playlistTotal) = (done, total);
+                _ = InvokeAsync(StateHasChanged);
+            },
+            _circuit.Token
+        );
+
+        foreach (var entry in outcome.Added)
+            Actions.Record(entry.VideoId, UserActionKind.Added, _trackUrl);
+
+        if (outcome.Added.Count > 0)
+            Signals.Wake(JobStage.Download);
+
+        if (outcome.Problem is { } problem)
+        {
+            _linkProblem = problem;
+        }
+        else
+        {
+            _trackUrl = string.Empty;
+            _isPlaylist = false;
+            _playlistNote = outcome.Summary;
+        }
+
+        await Source.RefreshAsync(_circuit.Token);
     }
 
     private async Task TakeInLinkAsync()
