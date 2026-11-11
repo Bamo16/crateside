@@ -14,9 +14,23 @@ public sealed class OnsetDetector(OnsetSettings? settings = null) : ITransientDe
     private readonly OnsetSettings _settings = settings ?? new OnsetSettings();
 
     /// <summary>Raise it whenever a change moves what the detector finds.</summary>
-    public string Version => "onsets 1";
+    public string Version => "onsets 2";
 
     public IReadOnlyList<Transient> Detect(DecodedAudio audio)
+    {
+        var floor = MathF.Pow(10, _settings.FloorDb / 20);
+        var heard = Onsets(audio).Where(onset => onset.Loudest >= floor).ToList();
+
+        if (heard is [])
+            return [];
+
+        var strongest = heard.Max(onset => onset.Flux);
+
+        return [.. heard.Select(onset => new Transient(onset.Position, onset.Flux / strongest))];
+    }
+
+    /// <summary>Every onset found, however quiet, with the loudest the envelope gets around its attack.</summary>
+    private List<Onset> Onsets(DecodedAudio audio)
     {
         var s = _settings;
         var mono = Mono(audio);
@@ -33,28 +47,29 @@ public sealed class OnsetDetector(OnsetSettings? settings = null) : ITransientDe
             s.Delta,
             (int)Math.Round(s.MinimumGapSeconds * hopsPerSecond)
         );
-
-        if (peaks is [])
-            return [];
-
         var envelope = Envelope(mono, s.EnvelopeHop);
-        var strongest = peaks.Max(peak => flux[peak]);
-        List<Transient> transients = [];
+        List<Onset> onsets = [];
 
         foreach (var peak in peaks)
         {
             // The flux frame is centered on its window; the attack it saw starts before that.
             var center = peak * s.HopSize + s.WindowSize / 2;
-            var start = AttackStart(envelope, s.EnvelopeHop, center, audio.SampleRate, s);
+            var (start, loudest) = AttackStart(
+                envelope,
+                s.EnvelopeHop,
+                center,
+                audio.SampleRate,
+                s
+            );
             var position = Math.Clamp(start, 0, audio.Frames - 1);
 
-            if (transients is [.., { Position: var lastPosition }] && position < lastPosition)
+            if (onsets is [.., { Position: var lastPosition }] && position < lastPosition)
                 position = lastPosition;
 
-            transients.Add(new Transient(position, flux[peak] / strongest));
+            onsets.Add(new Onset(position, flux[peak], loudest));
         }
 
-        return transients;
+        return onsets;
     }
 
     private static float[] Mono(DecodedAudio audio)
@@ -209,7 +224,7 @@ public sealed class OnsetDetector(OnsetSettings? settings = null) : ITransientDe
     }
 
     /// <summary>Where the attack around <paramref name="center"/> crosses halfway from its floor to its peak, in decibels.</summary>
-    private static int AttackStart(
+    private static (int Start, float Loudest) AttackStart(
         float[] envelope,
         int hop,
         int center,
@@ -247,7 +262,7 @@ public sealed class OnsetDetector(OnsetSettings? settings = null) : ITransientDe
         while (start > floor && MathF.Log10(envelope[start - 1] + Silence) > level)
             start--;
 
-        return start * hop;
+        return (start * hop, envelope[peak]);
     }
 
     private static float[] Hann(int size)
@@ -260,6 +275,8 @@ public sealed class OnsetDetector(OnsetSettings? settings = null) : ITransientDe
         return window;
     }
 }
+
+internal readonly record struct Onset(int Position, float Flux, float Loudest);
 
 /// <summary>The detector's tunings; the defaults are the ones scored in the note.</summary>
 public sealed record OnsetSettings
@@ -280,6 +297,12 @@ public sealed record OnsetSettings
     public int EnvelopeHop { get; init; } = 32;
     public double BacktrackSeconds { get; init; } = 0.04;
     public double PeakAheadSeconds { get; init; } = 0.02;
+
+    /// <summary>
+    /// The level in dBFS under which the loudest stretch of an attack's envelope marks no transient,
+    /// so a silent stem has none; <see cref="float.NegativeInfinity"/> marks every peak.
+    /// </summary>
+    public float FloorDb { get; init; } = -50;
 
     /// <summary>Where on the attack's rise, in decibels from its floor (0) to its peak (1), the transient goes.</summary>
     public float AttackFraction { get; init; } = 0.5f;

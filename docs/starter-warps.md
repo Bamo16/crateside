@@ -74,7 +74,8 @@ replaces a lent warp or the maintainer's own.
    library they refused steady tracks the check in step 6 passes, and caught nothing it misses
    (ADR 0048).
 4. **Get the reference stem's transients.** Live's, when that stem has a Live analysis, else
-   crateside's own onset detector (`SidecarWriter.TransientsFor`).
+   crateside's own onset detector (`SidecarWriter.TransientsFor`), which marks nothing whose
+   attack never reaches −50 dBFS, so a silent stem has none and gets no beat.
 5. **Refine the tempo** on the louder half of those transients: the tempo within ±0.06 BPM of the
    reading, in steps of 0.0005, that best fits them to a 16th-note grid (`GridCheck.Refine`). This
    needs 32 or more transients; with fewer, the reading's tempo is used.
