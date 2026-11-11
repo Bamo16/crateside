@@ -22,7 +22,11 @@ public abstract record BuildAddOutcome
 /// The builds crateside knows for each filter and the one it pins for that filter alone; the ffmpeg
 /// on PATH is untouched (#102, ADR 0066). Kept across restarts.
 /// </summary>
-public sealed class KnownBuilds(IProcessRunner processes, CratesidePaths paths)
+public sealed class KnownBuilds(
+    IProcessRunner processes,
+    CratesidePaths paths,
+    BuildFetcher? fetcher = null
+)
 {
     private readonly Lock _gate = new();
     private Dictionary<string, FilterBuilds> _state = Load(paths.KnownBuildsFile);
@@ -126,15 +130,46 @@ public sealed class KnownBuilds(IProcessRunner processes, CratesidePaths paths)
         }
     }
 
-    /// <summary>For each filter that knows no build yet, adds the configured one and pins it.</summary>
+    /// <summary>
+    /// For each filter that knows no build yet, adds the configured one and pins it; where nothing is
+    /// configured, the built-in build is fetched and pinned instead (#163). A build pinned any other way
+    /// is never replaced, and a built-in pin left by an older crateside moves to the current one.
+    /// </summary>
     public async Task SeedAsync(CancellationToken ct)
     {
         foreach (var filter in Enum.GetValues<FfmpegFilter>())
         {
-            if (All(filter) is [])
+            if (await SeedBuiltInAsync(filter, ct) is { } known)
+                Pin(filter, known.Build.Sha256);
+            else if (All(filter) is [])
                 await AddAsync(filter, Seed(filter), ct);
         }
     }
+
+    private async Task<KnownBuild?> SeedBuiltInAsync(FfmpegFilter filter, CancellationToken ct)
+    {
+        if (
+            fetcher?.PinFor(filter) is not { } builtIn
+            || !IsUnconfigured(Seed(filter))
+            || !Wants(builtIn)
+            || await fetcher.EnsureAsync(builtIn, ct) is not BuildFetchOutcome.Ready(var fileName)
+        )
+            return null;
+
+        return await AddAsync(filter, fileName, ct) switch
+        {
+            BuildAddOutcome.Added(var known) => known,
+            BuildAddOutcome.AlreadyKnown(var known) => known,
+            _ => null,
+        };
+    }
+
+    // Nothing pinned, or a pin that was fetched and has since been superseded.
+    private bool Wants(BuiltInBuild builtIn) =>
+        Pinned(builtIn.Filter) is not { } pinned
+        || fetcher!.Fetched(pinned.Path) && !IsSame(pinned.Build.Sha256, builtIn.ExecutableSha256);
+
+    private static bool IsUnconfigured(string seed) => seed is "" or "ffmpeg";
 
     private string Seed(FfmpegFilter filter) =>
         filter switch

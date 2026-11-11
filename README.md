@@ -163,13 +163,17 @@ subscription each track costs about 37k tokens of session start-up, and backgrou
 - **Ableton Live**, with a Staging folder and a library folder, both chosen in Settings.
 - **[StemForge](https://github.com/Bamo16/StemForge)'s `stemforge-cli` on `PATH`**, set up for
   separation, and a GPU for it to use.
-- **An ffmpeg build carrying NoMercy's `keydetect` and `beatdetect` filters**: the
-  [NoMercy FFmpeg](https://github.com/NoMercy-Entertainment/nomercy-ffmpeg) build, whose filter
-  sources are [`ffmpeg-keydetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-keydetect) and
-  [`ffmpeg-beatdetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-beatdetect). crateside uses the `ffmpeg` on `PATH`, or the builds named by
-  `Paths:KeydetectFfmpeg` and `Paths:BeatdetectFfmpeg`, and pins the first build it sees for each
-  filter in `%APPDATA%\crateside\builds.json`
-  ([ADR 0066](docs/adr/0066-keydetect-has-its-own-pinned-build.md)).
+- **An ffmpeg build carrying NoMercy's `keydetect` and `beatdetect` filters**, which crateside
+  fetches itself on first run. The filters are FiLL's
+  [`ffmpeg-keydetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-keydetect) and
+  [`ffmpeg-beatdetect`](https://forgejo.phillippepelzer.me/FiLL/ffmpeg-beatdetect), built into the
+  [NoMercy FFmpeg](https://github.com/NoMercy-Entertainment/nomercy-ffmpeg) build. Each release is
+  pinned by hash and kept in `%LOCALAPPDATA%\crateside\tools`
+  ([ADR 0093](docs/adr/0093-the-filter-builds-are-fetched-by-pin-on-first-run.md)). A build pinned
+  in `%APPDATA%\crateside\builds.json`, or named by `Paths:KeydetectFfmpeg` or
+  `Paths:BeatdetectFfmpeg`, is used instead and nothing is downloaded
+  ([ADR 0066](docs/adr/0066-keydetect-has-its-own-pinned-build.md)). The filters are free to use
+  and their builds must not be sold.
 - **Optional: the `claude` CLI on `PATH`, logged in**, or set up for another endpoint
   ([docs/judge.md](docs/judge.md)), to judge what the rules leave. Without it (`Judge:Kind` is
   `None`), those tracks wait for you instead.
