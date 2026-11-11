@@ -256,7 +256,7 @@ public sealed class VerdictRunnerTests : IDisposable
 
         Assert.Equal(
             $"A minor, HIGH, 0 sections; 3 turns on {Judge.Model}, 150 s, 30k in (27k cached) · 1.6k out",
-            result.Summary
+            result.Facts?.Text
         );
     }
 
@@ -272,7 +272,10 @@ public sealed class VerdictRunnerTests : IDisposable
 
         var result = await RunAsync();
 
-        Assert.Equal($"A minor, HIGH, 0 sections; 3 turns on {Judge.Model}, 150 s", result.Summary);
+        Assert.Equal(
+            $"A minor, HIGH, 0 sections; 3 turns on {Judge.Model}, 150 s",
+            result.Facts?.Text
+        );
     }
 
     [Fact]

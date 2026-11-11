@@ -138,7 +138,8 @@ public sealed class VerdictDrainer(
                     _ => JobStatus.Failed,
                 },
                 error: result.Error,
-                summary: result.Summary
+                summary: result.Summary,
+                facts: result.Facts
             );
 
             switch (result)
@@ -437,7 +438,8 @@ public sealed class VerdictDrainer(
                 JobStage.Verdict,
                 result.IsSuccess ? JobStatus.Succeeded : JobStatus.Failed,
                 error: result.Error,
-                summary: result.Summary
+                summary: result.Summary,
+                facts: result.Facts
             );
 
             return StageTick.Ran(order, result.IsSuccess, result.Error);

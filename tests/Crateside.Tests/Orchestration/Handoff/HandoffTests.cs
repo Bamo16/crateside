@@ -108,11 +108,8 @@ public sealed class HandoffTests : IDisposable
     [Fact]
     public void A_handoff_summary_counts_the_stems_and_any_superseded_files_removed()
     {
-        Assert.Equal("staged 2 stems", HandoffDrainer.Summarize(HandoffResult.Succeeded(2)));
-        Assert.Equal(
-            "staged 1 stem, removed 2 superseded files",
-            HandoffDrainer.Summarize(HandoffResult.Succeeded(1, cleared: 2))
-        );
+        Assert.Equal("staged 2 stems", new HandoffFacts(2, 0).Text);
+        Assert.Equal("staged 1 stem, removed 2 superseded files", new HandoffFacts(1, 2).Text);
     }
 
     [Fact]

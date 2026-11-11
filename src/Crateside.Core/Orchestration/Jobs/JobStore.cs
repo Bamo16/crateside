@@ -70,7 +70,8 @@ public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, St
         bool adopted = false,
         SeparationPromise? promise = null,
         DateTimeOffset? heldUntil = null,
-        string? summary = null
+        string? summary = null,
+        JobFacts? facts = null
     )
     {
         var update = new JobUpdate
@@ -88,6 +89,7 @@ public sealed class JobStore(CratesidePaths paths, TimeProvider? time = null, St
             Destination = promise?.Destination,
             HeldUntil = heldUntil,
             Summary = summary,
+            Facts = facts,
         };
 
         TrackJob job;
@@ -262,4 +264,17 @@ public sealed record JobUpdate
 
     /// <summary>One line on what a finished stage did, which the activity feed shows in place of "succeeded" (#170); lines written before it have none.</summary>
     public string? Summary { get; init; }
+
+    /// <summary>The numbers <see cref="SummaryText"/> is worded from, where the stage stores them; wins over <see cref="Summary"/>.</summary>
+    public JobFacts? Facts { get; init; }
+
+    /// <summary>What the line says it did: the facts in today's words, else the stored text (a judge's old dollar figure dropped).</summary>
+    [JsonIgnore]
+    public string? SummaryText =>
+        Facts?.Text
+        ?? (
+            Stage is JobStage.Verdict && Summary is { } stored
+                ? LegacyJudgeText.WithoutDollars(stored)
+                : Summary
+        );
 }

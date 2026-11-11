@@ -67,7 +67,7 @@ public static class TrackActivity
                 ? begun
                 : null;
 
-            if (update is { Status: JobStatus.Running } && next is { Summary.Length: > 0 })
+            if (update is { Status: JobStatus.Running } && next is { SummaryText.Length: > 0 })
                 continue;
 
             var message = update switch
@@ -79,9 +79,9 @@ public static class TrackActivity
                             job.Id == update.Id && job.UpdatedAt == update.Timestamp
                         ) => $"running since {update.Timestamp.ToLocalTime():HH:mm}",
                 { Status: JobStatus.Running } => "started",
-                { Summary: { Length: > 0 } summary } when started is not null =>
+                { SummaryText: { Length: > 0 } summary } when started is not null =>
                     $"{summary} · {Took(update.Timestamp - started.Timestamp)}",
-                { Summary: { Length: > 0 } summary } => summary,
+                { SummaryText: { Length: > 0 } summary } => summary,
                 { Status: JobStatus.Held, Error: { Length: > 0 } error, HeldUntil: { } until } =>
                     $"held: {error}; next try {until.ToLocalTime():HH:mm}",
                 { Error: { Length: > 0 } error } =>

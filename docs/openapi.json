@@ -1349,6 +1349,174 @@
         },
         "description": "What a TheoryTab says beyond each section's first key (#124)."
       },
+      "JobFacts": {
+        "required": [
+          "kind"
+        ],
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/JobFactsJudgeFacts"
+          },
+          {
+            "$ref": "#/components/schemas/JobFactsHandoffFacts"
+          },
+          {
+            "$ref": "#/components/schemas/JobFactsTaggingFacts"
+          }
+        ],
+        "description": "What a finished stage's summary is worded from, stored as numbers so a wording change reaches old lines (#197).",
+        "discriminator": {
+          "propertyName": "kind",
+          "mapping": {
+            "judge": "#/components/schemas/JobFactsJudgeFacts",
+            "handoff": "#/components/schemas/JobFactsHandoffFacts",
+            "tagging": "#/components/schemas/JobFactsTaggingFacts"
+          }
+        }
+      },
+      "JobFactsHandoffFacts": {
+        "required": [
+          "moved",
+          "cleared"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "handoff"
+            ],
+            "type": "string"
+          },
+          "moved": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "cleared": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "JobFactsJudgeFacts": {
+        "required": [
+          "key",
+          "confidence",
+          "sections",
+          "turns",
+          "model",
+          "seconds",
+          "inputTokens",
+          "cachedTokens",
+          "outputTokens"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "judge"
+            ],
+            "type": "string"
+          },
+          "key": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The key judged, or null when it was withheld."
+          },
+          "confidence": {
+            "type": "string",
+            "description": "As the ledger names it."
+          },
+          "sections": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "turns": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "model": {
+            "type": "string"
+          },
+          "seconds": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?(?:[eE][+-]?\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "inputTokens": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "cachedTokens": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "outputTokens": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          }
+        }
+      },
+      "JobFactsTaggingFacts": {
+        "required": [
+          "applied",
+          "key"
+        ],
+        "properties": {
+          "kind": {
+            "enum": [
+              "tagging"
+            ],
+            "type": "string"
+          },
+          "applied": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "key": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The one key every file carries, or null when they differ."
+          }
+        }
+      },
       "JobStage": {
         "enum": [
           "Download",
@@ -1461,6 +1629,17 @@
               "string"
             ],
             "description": "One line on what a finished stage did, which the activity feed shows in place of \"succeeded\" (#170); lines written before it have none."
+          },
+          "facts": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The numbers string? JobUpdate.SummaryText is worded from, where the stage stores them; wins over string? JobUpdate.Summary.",
+                "$ref": "#/components/schemas/JobFacts"
+              }
+            ]
           }
         },
         "description": "One appended line: a single state change to a job. Lines are never edited or removed, so the\r\nfile is a history and TrackJob is the fold over it."

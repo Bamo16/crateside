@@ -69,6 +69,57 @@ public sealed class JobStoreTests : IDisposable
     }
 
     [Fact]
+    public void A_judge_line_stores_its_numbers_and_words_them_when_read()
+    {
+        Store()
+            .Record(
+                TrackKey,
+                JobStage.Verdict,
+                JobStatus.Succeeded,
+                facts: new JudgeFacts(
+                    "A minor",
+                    "High",
+                    2,
+                    3,
+                    "sonnet",
+                    150.4,
+                    30_000,
+                    27_000,
+                    1_600
+                )
+            );
+
+        var line = File.ReadAllLines(_path).Single();
+        var update = Store().History(TrackKey).Single();
+
+        Assert.Contains("\"turns\":3", line);
+        Assert.DoesNotContain("summary", line);
+        Assert.DoesNotContain("A minor, HIGH", line);
+        Assert.Equal(
+            "A minor, HIGH, 2 sections; 3 turns on sonnet, 150 s, 30k in (27k cached) · 1.6k out",
+            update.SummaryText
+        );
+    }
+
+    [Fact]
+    public void A_text_only_line_shows_as_stored_but_a_judge_line_loses_its_dollar_figure()
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+        File.WriteAllLines(
+            _path,
+            [
+                $$$"""{"id":"{{{TrackKey}}}:Verdict","videoId":"{{{TrackKey}}}","stage":"Verdict","status":"Succeeded","timestamp":"2026-11-08T21:00:00+00:00","summary":"D major, HIGH, 2 sections; 3 turns on sonnet, 150 s, $0.05"}""",
+                $$$"""{"id":"{{{TrackKey}}}:Handoff","videoId":"{{{TrackKey}}}","stage":"Handoff","status":"Succeeded","timestamp":"2026-11-08T21:05:00+00:00","summary":"staged 2 stems, $3 kept"}""",
+            ]
+        );
+
+        var history = Store().History(TrackKey);
+
+        Assert.Equal("D major, HIGH, 2 sections; 3 turns on sonnet, 150 s", history[0].SummaryText);
+        Assert.Equal("staged 2 stems, $3 kept", history[1].SummaryText);
+    }
+
+    [Fact]
     public void State_survives_a_restart()
     {
         Store().Record(TrackKey, JobStage.Separation, JobStatus.Running, processId: 4242);

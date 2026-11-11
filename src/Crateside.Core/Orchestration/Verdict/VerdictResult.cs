@@ -1,3 +1,5 @@
+using Crateside.Core.Orchestration.Jobs;
+
 namespace Crateside.Core.Orchestration.Verdict;
 
 /// <summary>How one verdict run turned out.</summary>
@@ -22,8 +24,16 @@ public sealed record VerdictResult
     /// <summary>The verdict recorded and what the judge spent, in a line for the activity feed (#170). Null unless it succeeded.</summary>
     public string? Summary { get; init; }
 
-    public static VerdictResult Succeeded(string? summary = null) =>
-        new() { IsSuccess = true, Summary = summary };
+    /// <summary>The numbers <see cref="Summary"/> would be worded from, when the judge ran; the job record stores these.</summary>
+    public JobFacts? Facts { get; init; }
+
+    public static VerdictResult Succeeded(string? summary = null, JobFacts? facts = null) =>
+        new()
+        {
+            IsSuccess = true,
+            Summary = summary,
+            Facts = facts,
+        };
 
     public static VerdictResult Failed(string error) => new() { IsSuccess = false, Error = error };
 
