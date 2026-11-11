@@ -79,7 +79,9 @@ choose:
   2026-11-09, except four that name no genre (`soundtrack`, `comedy`, `instrumental`, `ballad`);
   those stay on the Library page's list. Deezer's own genre names, which no lookup had kept yet,
   were entered from what Deezer is known to call them and are **unmeasured** until the lookup has
-  run.
+  run. On 2026-11-10 the ledger had five more labels on three or more songs: `international pop`
+  and `techno house` joined the table, and `asian music`, `film scores` and `films games` joined
+  the labels that name no genre.
 - **A genre dropped later is taken off the files** only if crateside asked for it before: the song's
   record keeps every genre it has asked to be written (`Tagged`). That is how a `Genres|` tag of
   Live's own stays, and how a changed mapping or the person's replacement takes crateside's off.
