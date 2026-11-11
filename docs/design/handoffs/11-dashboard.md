@@ -52,7 +52,6 @@ count (mono 34px/500, **amber**), label (14px/500), gist (12.5px `--text-60`), t
 |---|---|---|
 | In staging | ready to warp | Tracks, *In staging* |
 | Needs attention | stopped, parked or with a finding | Tracks, *Needs attention* |
-| Tags to answer | genre or familiarity | Tracks, *Tags to answer* |
 | Tempo drifts | not warped, flagged by #75 | Tracks, a new *Tempo drifts* filter |
 | Left in the playlist | failed removals | Settings, the removal row's failure list |
 | Gave up | at any stage | Tracks, *Needs attention* |

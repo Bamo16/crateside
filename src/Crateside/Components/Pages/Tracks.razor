@@ -255,16 +255,7 @@
         </div>
     }
 
-    @if (Viewing is TrackFilter.TagsToAnswer)
-    {
-        <div class="heads tags">
-            <span></span>
-            <span>Song</span>
-            <span>Genre</span>
-            <span>Familiarity</span>
-        </div>
-    }
-    else if (Viewing is TrackFilter.OffItsTempo)
+    @if (Viewing is TrackFilter.OffItsTempo)
     {
         <div class="heads off">
             <span></span>
@@ -327,27 +318,7 @@
             var open = _expanded == row.TrackKey;
             var bpm = row.Bpm is { } tempo ? TempoFormat.Format(tempo) : null;
 
-            @if (Viewing is TrackFilter.TagsToAnswer)
-            {
-                <div id="@Anchor(row)" class="row tags @(open ? "open" : null) @(row.HasTagsToAnswer ? null : "answered")"
-                     @onclick="() => Expand(row)">
-                    <span class="chevron mono">@(open ? "⌄" : "›")</span>
-
-                    <span class="song-cell">
-                        <span class="song"><Cover TrackKey="@row.TrackKey" /><a class="title" href="@row.DetailsHref" @onclick:stopPropagation="true">@row.Title</a></span>
-                        <span class="tag-note">@TagNote(row)</span>
-                    </span>
-
-                    <span class="tag-cell" @onclick:stopPropagation="true">
-                        <GenreStrip Row="row" Shape="GenreStrip.Shapes.Chips" />
-                    </span>
-
-                    <span class="tag-cell" @onclick:stopPropagation="true">
-                        <FamiliarityStrip Row="row" Inline="true" />
-                    </span>
-                </div>
-            }
-            else if (Viewing is TrackFilter.OffItsTempo && row.Bpm is { } off)
+            @if (Viewing is TrackFilter.OffItsTempo && row.Bpm is { } off)
             {
                 <div id="@Anchor(row)" class="row off @(open ? "open" : null)" @onclick="() => Expand(row)">
                     <span class="chevron mono">@(open ? "⌄" : "›")</span>
@@ -527,7 +498,7 @@
     private TrackFilter _filter = TrackFilter.Unfinished;
     private string? _familiarity;
 
-    /// <summary>A filter to open on, by name, as Counts links to Tags to answer.</summary>
+    /// <summary>A filter to open on, by name, as the dashboard's tiles link to one.</summary>
     [SupplyParameterFromQuery(Name = "filter")]
     public string? OpenOn { get; set; }
     private QuotaSnapshot _quota = QuotaSnapshot.Unknown;
@@ -783,12 +754,6 @@
     /// <summary>Everything answering the search, before the filter narrows it.</summary>
     private IEnumerable<TrackRow> Found => Rows.Where(row => row.Matches(_search));
 
-    /// <summary>
-    /// Rows the Tags to answer view has shown, kept in place once answered so nothing moves under
-    /// the cursor until the view is left.
-    /// </summary>
-    private readonly HashSet<string> _held = new(StringComparer.Ordinal);
-
     private bool Searching => !string.IsNullOrWhiteSpace(_search);
 
     /// <summary>A search looks through every track, so the chip and the familiarity wait until it is cleared (#142).</summary>
@@ -798,23 +763,12 @@
         : _filter;
 
     private IEnumerable<TrackRow> Shown =>
-        Viewing is TrackFilter.TagsToAnswer
-            ? Answering().Where(row => row.HasFamiliarity(_familiarity))
-            : Rows.Narrow(Viewing, _search, _familiarity);
-
-    private IEnumerable<TrackRow> Answering()
-    {
-        foreach (var row in Found.Where(row => row.HasTagsToAnswer))
-            _held.Add(row.TrackKey);
-
-        return Found.Where(row => _held.Contains(row.TrackKey));
-    }
+        Rows.Narrow(Viewing, _search, _familiarity);
 
     private async Task ShowFamiliarity(string value)
     {
         _familiarity = _familiarity == value && !Searching ? null : value;
         EmptySearch();
-        _held.Clear();
 
         await ResetSpacerAsync();
     }
@@ -822,20 +776,10 @@
     private async Task ShowFilter(TrackFilter filter)
     {
         _filter = filter;
-        _held.Clear();
         EmptySearch();
 
         await ResetSpacerAsync();
     }
-
-    private static string TagNote(TrackRow row) =>
-        string.Join(
-            " · ",
-            new[]
-            {
-                row.Familiarity is { Written: null, LookedUpAt: not null } ? "your call on familiarity" : null,
-            }.OfType<string>()
-        );
 
     protected override async Task OnInitializedAsync()
     {
@@ -1148,7 +1092,6 @@
             TrackFilter.InStaging => "In staging",
             TrackFilter.InFlight => "In flight",
             TrackFilter.NeedsAttention => "Needs attention",
-            TrackFilter.TagsToAnswer => "Tags to answer",
             TrackFilter.TempoDrifts => "Tempo drifts",
             TrackFilter.OffItsTempo => "Off its tempo",
             TrackFilter.ClipOffBarLine => "Clip off a bar line",

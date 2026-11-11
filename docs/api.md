@@ -33,7 +33,7 @@ The Tracks page's rows, narrowed by the page's own filters:
 
 | query | means |
 |---|---|
-| `filter` | `Unfinished` (when not given), `InStaging`, `InFlight`, `NeedsAttention`, `TagsToAnswer`, `TempoDrifts`, `OffItsTempo`, `ClipOffBarLine` or `All`, spelled exactly so; any other value is a 400 |
+| `filter` | `Unfinished` (when not given), `InStaging`, `InFlight`, `NeedsAttention`, `TempoDrifts`, `OffItsTempo`, `ClipOffBarLine` or `All`, spelled exactly so; any other value is a 400 |
 | `search` | a name, key or video ID; like the page's search, it looks through every track and ignores `filter` and `familiarity` |
 | `familiarity` | only rows whose familiarity is tagged as this |
 
@@ -113,7 +113,6 @@ track, the same state the API's tests stand on. Each row is the whole `TrackRow`
       "marks": [
         "OddBars"
       ],
-      "hasTagsToAnswer": false,
       "artistAndTitle": {
         "item1": "The Examples",
         "item2": "Synthetic Song"

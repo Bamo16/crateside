@@ -82,7 +82,7 @@ all of it deserves a place.
 
 **Waiting on the user.** Amber in DESIGN.md means *your turn*, so this is where amber belongs.
 - The Tracks filters, with counts: *In staging* (ready to warp), *Needs attention* (stopped,
-  parked, or carrying a finding), *Tags to answer* (genre or familiarity).
+  parked, or carrying a finding).
 - Tracks that gave up at a stage, and failed playlist removals (*Left in the playlist*).
 - New from #75: a **tempo drifts** flag on tracks not yet warped (expect a hard warp).
 

@@ -161,8 +161,6 @@ public sealed record TrackRow
     /// <summary>What the maintainer has marked this track as.</summary>
     public IReadOnlyList<TrackMark> Marks { get; init; } = [];
 
-    public bool HasTagsToAnswer => this is { Familiarity: { Written: null, LookedUpAt: not null } };
-
     /// <summary>
     /// The ledger's artist and title, else the row's own name split at its dash. Null while the row
     /// has only the upload's title, whose artist is a guess.

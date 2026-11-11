@@ -288,10 +288,6 @@ Remove). A group with nothing to show is not drawn. Findings stay full width abo
 - A **Genre** column between BPM and State (150px). A suggestion is an amber dashed chip that
   settles it in one click; a settled genre is plain text; no suggestion is a *choose* chip that
   opens the row. `GenreStrip Shape="Cell"`.
-- A **Tags to answer** filter: songs with an unanswered genre, or a familiarity the numbers leave
-  to the user. Its rows show Song (with the genre note under it), every genre chip, and
-  Mainstream / Obscure (`GenreStrip Shape="Chips"`, `FamiliarityStrip Inline`). An answered row
-  stays in place at 45% until the view is left.
 - A **Tempo drifts** filter (#75): tracks not warped yet whose tempo beatdetect reads drifting.
 - An **Off its tempo** filter (handoff 16, #96) beside it: steady warps whose grid falls away from
   the audio, the furthest first. Columns Song · Key · BPM · **Runs** (`0.017 slow`, mono 13
